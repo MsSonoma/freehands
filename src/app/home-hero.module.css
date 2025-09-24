@@ -2,7 +2,7 @@
   width: 100%;
   max-width: 1100px;
   margin: 0 auto;
-  padding: 36px 12px 0; /* more top whitespace, equal left/right padding */
+  padding: 36px 0 0; /* remove left/right padding, keep top spacing */
   display: grid;
   gap: 24px;
   align-items: center;
@@ -13,7 +13,7 @@
   .homeHero {
     grid-template-columns: 1fr; /* keep stacked on desktop for exact horizontal centering */
     gap: 28px;
-    padding: 56px 12px 0; /* more top whitespace, equal left/right padding */
+    padding: 56px 0 0; /* remove left/right padding, keep top spacing */
   }
 }
 

@@ -458,32 +458,10 @@ function SessionPageInner() {
   const [captionSentences, setCaptionSentences] = useState([]);
   const [captionIndex, setCaptionIndex] = useState(0);
   const captionBoxRef = useRef(null);
-  // UI scaling: render content at a base width and scale uniformly to fit the smaller viewport side.
-  // Prevent shrinking below ~300px logical width.
-  const baseWidth = 700; // designed width for layout before scaling
-  const minLogicalPx = 300;
-  const [uiScale, setUiScale] = useState(1);
-  // Snap scaled width to whole pixels to avoid subpixel centering drift
-  const scaledWidth = Math.max(0, Math.round(baseWidth * uiScale));
-  const snappedScale = scaledWidth > 0 ? scaledWidth / baseWidth : uiScale;
-  useEffect(() => {
-    const computeScale = () => {
-      try {
-        const vw = Math.max(0, window.innerWidth || 0);
-        const vh = Math.max(0, window.innerHeight || 0);
-        const margin = 24 * 2; // side padding breathing room
-        const available = Math.max(0, Math.min(vw, vh) - margin);
-        const minScale = Math.min(1, minLogicalPx / baseWidth);
-        const s = Math.max(minScale, Math.min(1, available / baseWidth));
-        setUiScale(s);
-      } catch {
-        setUiScale(1);
-      }
-    };
-    computeScale();
-    window.addEventListener('resize', computeScale);
-    return () => window.removeEventListener('resize', computeScale);
-  }, []);
+  // UI base width used for simple maxWidth centering (no scaling of the container)
+  const baseWidth = 700;
+  // Fixed scale factor to avoid any auto-shrinking behavior
+  const snappedScale = 1;
   // Media & caption refs (restored after refactor removal)
   const videoRef = useRef(null); // controls lesson video playback synchrony with TTS
   const audioRef = useRef(null); // active Audio element for synthesized speech
@@ -4480,14 +4458,14 @@ function SessionPageInner() {
   };
 
   return (
-    <div style={{ width: '100%', minWidth: 300, minHeight: '100svh', display: 'grid', placeItems: 'center' }}>
-      {/* Bounding wrapper: keep centered in viewport, but do not grid-center children to avoid double centering when using translateX */}
-  <div style={{ width: '100%', position: 'relative', display: 'flex', justifyContent: 'center' }}>
+    <div style={{ width: '100%', minHeight: '100svh' }}>
+      {/* Bounding wrapper: regular flow; inner container handles centering via margin auto */}
+  <div style={{ width: '100%', position: 'relative' }}>
         {/* Width-matched wrapper: center by actual scaled width */}
-  <div style={{ width: `${scaledWidth}px`, position: 'relative' }}>
-          {/* Scaled content anchored from top-left to fit the wrapper width */}
-          <div style={{ width: baseWidth, transform: `scale(${snappedScale})`, transformOrigin: 'top left' }}>
-          <div style={{ width: '100%', boxSizing: 'border-box', padding: '0 24px 6px', display: 'grid', justifyItems: 'center' }}>
+  <div style={{ width: '100%', maxWidth: baseWidth, position: 'relative', margin: '0 auto', boxSizing: 'border-box' }}>
+    {/* Content wrapper (no transform scaling) */}
+    <div style={{ width: '100%' }}>
+      <div style={{ width: '100%', boxSizing: 'border-box', padding: '0 0 6px', minWidth: 0 }}>
   <h1 style={{ textAlign: "center", marginTop: 0, marginBottom: 8 }}>{(lessonData && (lessonData.title || lessonData.lessonTitle)) || manifestInfo.title}</h1>
 
       <Timeline timelinePhases={timelinePhases} timelineHighlight={timelineHighlight} />
@@ -4702,9 +4680,9 @@ const primaryButtonStyle = {
 
 function Timeline({ timelinePhases, timelineHighlight }) {
   const columns = Array.isArray(timelinePhases) && timelinePhases.length > 0 ? timelinePhases.length : 5;
-  const gridTemplateColumns = `repeat(${columns}, ${(100 / columns)}%)`;
+  const gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
   return (
-    <div style={{ display: "grid", gridTemplateColumns, gap: 0, marginBottom: 5, width: '100%' }}>
+    <div style={{ display: "grid", gridTemplateColumns, gap: 0, marginBottom: 5, width: '100%', minWidth: 0 }}>
       {timelinePhases.map((phaseKey) => (
         <div
           key={phaseKey}

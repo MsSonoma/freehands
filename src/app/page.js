@@ -9,7 +9,7 @@ export default function Home() {
       justifyItems: 'center',
       maxWidth: 1200,
       margin: '0 auto',
-      padding: '0 16px',
+      padding: 0,
       paddingBottom: 'clamp(56px, 12vh, 160px)', // add generous bottom whitespace
       overflowX: 'hidden'
     }}>
