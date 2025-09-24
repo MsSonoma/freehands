@@ -87,23 +87,30 @@ function loadTtsCredentials() {
 }
 
 async function getTtsClient() {
-  if (ttsClientPromise !== undefined) {
-    return ttsClientPromise
+  // Only return cached promise when it exists and is truthy.
+  if (ttsClientPromise) return ttsClientPromise
+
+  // Attempt to load credentials each call if we don't have a cached client
+  const credentials = loadTtsCredentials()
+  if (!credentials) {
+    // Do NOT cache the null result; allow future calls to retry after envs are added
+    console.warn('[Ms. Sonoma API] Google TTS credentials are not configured; voice playback disabled.')
+    return null
   }
 
   ttsClientPromise = (async () => {
-    const credentials = loadTtsCredentials()
-    if (!credentials) {
-      console.warn('[Ms. Sonoma API] Google TTS credentials are not configured; voice playback disabled.')
+    try {
+      return new TextToSpeechClient({ credentials })
+    } catch (error) {
+      console.error('[Ms. Sonoma API] Failed to initialize Google TTS client:', error)
+      // Reset to allow future retries
+      ttsClientPromise = undefined
       return null
     }
+  })()
 
-    return new TextToSpeechClient({ credentials })
-  })().catch(error => {
-    console.error('[Ms. Sonoma API] Failed to initialize Google TTS client:', error)
-    return null
-  })
-
+  // If the promise rejects, clear cache so a future call can retry
+  ttsClientPromise.catch(() => { ttsClientPromise = undefined })
   return ttsClientPromise
 }
 

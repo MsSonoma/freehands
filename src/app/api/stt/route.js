@@ -10,15 +10,41 @@ export const runtime = 'nodejs'
 
 let cachedSpeechClient = null
 
-async function getCredentialsJSON() {
-  // Reuse TTS credential logic: env var GOOGLE_TTS_CREDENTIALS (JSON), or local google-tts-key.json
-  if (process.env.GOOGLE_TTS_CREDENTIALS) {
-    try { return JSON.parse(process.env.GOOGLE_TTS_CREDENTIALS) } catch { /* ignore */ }
+function decodeCredentials(raw) {
+  if (!raw) return null
+  try {
+    return JSON.parse(raw)
+  } catch {
+    try {
+      const decoded = Buffer.from(raw, 'base64').toString('utf8')
+      return JSON.parse(decoded)
+    } catch {
+      return null
+    }
   }
+}
+
+async function getCredentialsJSON() {
+  // Prefer inline env var (JSON or base64-encoded JSON)
+  const inline = process.env.GOOGLE_TTS_CREDENTIALS
+  const inlineCreds = decodeCredentials(inline)
+  if (inlineCreds) return inlineCreds
+
+  // If GOOGLE_APPLICATION_CREDENTIALS points to a file, try reading it
+  const credPath = process.env.GOOGLE_APPLICATION_CREDENTIALS
+  if (credPath) {
+    try {
+      const raw = await fs.promises.readFile(credPath, 'utf8')
+      const parsed = decodeCredentials(raw) || JSON.parse(raw)
+      if (parsed) return parsed
+    } catch { /* ignore */ }
+  }
+
+  // Fallback to repo-local file for development
   const filePath = path.join(process.cwd(), 'google-tts-key.json')
   try {
     const raw = await fs.promises.readFile(filePath, 'utf8')
-    return JSON.parse(raw)
+    return decodeCredentials(raw) || JSON.parse(raw)
   } catch { return null }
 }
 

@@ -497,6 +497,11 @@ function SessionPageInner() {
   // Mirror latest mute state for async callbacks (prevents stale closures)
   const mutedRef = useRef(false);
   const [userPaused, setUserPaused] = useState(false); // user-level pause covering video + TTS
+  // iOS/Safari audio unlock (when autoplay is blocked)
+  const [needsAudioUnlock, setNeedsAudioUnlock] = useState(false);
+  const lastAudioBase64Ref = useRef(null);
+  const lastSentencesRef = useRef([]);
+  const lastStartIndexRef = useRef(0);
   // Test phase state
   const [testActiveIndex, setTestActiveIndex] = useState(0); // index of current test question during active test taking
   const [testUserAnswers, setTestUserAnswers] = useState([]); // collected user answers
@@ -905,13 +910,35 @@ function SessionPageInner() {
     }
   };
 
+  // Schedule captions against a known duration (used by WebAudio fallback)
+  const scheduleCaptionsForDuration = (durationSeconds, sentences, startIndex = 0) => {
+    clearCaptionTimers();
+    if (!sentences || !sentences.length) return;
+
+    const totalWords = sentences.reduce((sum, s) => sum + (countWords(s) || 1), 0) || sentences.length;
+    const safeDuration = durationSeconds && Number.isFinite(durationSeconds) && durationSeconds > 0
+      ? durationSeconds
+      : Math.max(totalWords / 3.6, Math.min(sentences.length * 1.5, 12));
+    const minPerSentence = 0.6;
+
+    let elapsed = 0;
+    setCaptionIndex(startIndex);
+    for (let i = 1; i < sentences.length; i += 1) {
+      const prevWords = countWords(sentences[i - 1]) || 1;
+      const step = Math.max(minPerSentence, safeDuration * (prevWords / totalWords));
+      elapsed += step;
+      const timer = window.setTimeout(() => setCaptionIndex(startIndex + i), Math.round(elapsed * 1000));
+      captionTimersRef.current.push(timer);
+    }
+  };
+
   const playAudioFromBase64 = async (audioBase64, batchSentences = [], startIndex = 0) => {
     clearCaptionTimers();
 
     if (!audioBase64) {
       // Silent step: advance captions using a heuristic so it still feels paced
-      // Ensure the video does not run ahead during silent steps
-      try { if (videoRef.current && !userPaused) { videoRef.current.pause(); } } catch {}
+      // Allow subtle background motion even without audio
+      try { if (videoRef.current && !userPaused) { videoRef.current.play?.().catch(() => {}); } } catch {}
       const sentences = batchSentences || [];
       if (sentences.length > 1) {
         // Rough pacing with minimum per-sentence time
@@ -932,12 +959,26 @@ function SessionPageInner() {
     }
 
     try {
+      // Stash last audio payload in case we need to retry after an iOS unlock
+      lastAudioBase64Ref.current = audioBase64 || null;
+      lastSentencesRef.current = Array.isArray(batchSentences) ? batchSentences : [];
+      lastStartIndexRef.current = Number.isFinite(startIndex) ? startIndex : 0;
       const binaryString = atob(audioBase64);
       const len = binaryString.length;
       const bytes = new Uint8Array(len);
       for (let i = 0; i < len; i += 1) {
         bytes[i] = binaryString.charCodeAt(i);
       }
+
+      // If we're on iOS and the WebAudio context is already unlocked, prefer WebAudio path directly
+      try {
+        const ua = (typeof navigator !== 'undefined' ? navigator.userAgent || '' : '').toLowerCase();
+        const isIOS = /iphone|ipad|ipod/.test(ua) || (typeof navigator !== 'undefined' && navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        if (isIOS && audioCtxRef.current && audioCtxRef.current.state !== 'suspended') {
+          await playViaWebAudio(audioBase64, batchSentences || [], startIndex);
+          return;
+        }
+      } catch {/* fall back to HTMLAudio below */}
 
       if (audioRef.current) {
         try {
@@ -997,7 +1038,17 @@ function SessionPageInner() {
             try { videoRef.current.play().catch(() => {}); } catch {}
           }
           if (playPromise && playPromise.catch) {
-            playPromise.catch(cleanup);
+            playPromise.catch((err) => {
+              console.warn('[Session] Audio autoplay blocked or failed.', err);
+              try { setIsSpeaking(false); } catch {}
+              // If audio cannot start, pause the background video to avoid a perpetual "speaking" feel
+              if (videoRef.current && !userPaused) {
+                try { videoRef.current.pause(); } catch {}
+              }
+              // Show unlock UI prompt so user can enable audio on iOS/Safari
+              try { setNeedsAudioUnlock(true); } catch {}
+              cleanup();
+            });
           }
         } else {
           // User paused: do not auto play; ensure speaking state is false
@@ -1014,6 +1065,166 @@ function SessionPageInner() {
     }
   };
 
+  // Persistent WebAudio context + nodes for iOS fallback
+  const audioCtxRef = useRef(null);
+  const webAudioGainRef = useRef(null);
+  const webAudioSourceRef = useRef(null);
+
+  const ensureAudioContext = () => {
+    const Ctx = (typeof window !== 'undefined') && (window.AudioContext || window.webkitAudioContext);
+    if (!Ctx) return null;
+    if (!audioCtxRef.current) {
+      try {
+        const ctx = new Ctx();
+        const gain = ctx.createGain();
+        gain.gain.value = mutedRef.current ? 0 : 1;
+        gain.connect(ctx.destination);
+        audioCtxRef.current = ctx;
+        webAudioGainRef.current = gain;
+      } catch (e) {
+        console.warn('[Session] Failed to create AudioContext', e);
+        return null;
+      }
+    }
+    try {
+      if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+        // resume without awaiting to keep in gesture
+        audioCtxRef.current.resume();
+      }
+    } catch {}
+    return audioCtxRef.current;
+  };
+
+  const stopWebAudioSource = () => {
+    const src = webAudioSourceRef.current;
+    if (src) {
+      try { src.onended = null; } catch {}
+      try { src.stop(); } catch {}
+      try { src.disconnect(); } catch {}
+      webAudioSourceRef.current = null;
+    }
+  };
+
+  const base64ToArrayBuffer = (b64) => {
+    const binaryString = atob(b64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i += 1) bytes[i] = binaryString.charCodeAt(i);
+    return bytes.buffer;
+  };
+
+  const playViaWebAudio = async (b64, sentences, startIndex) => {
+    const ctx = ensureAudioContext();
+    if (!ctx) throw new Error('WebAudio not available');
+    stopWebAudioSource();
+    try {
+      const arr = base64ToArrayBuffer(b64);
+      const buffer = await ctx.decodeAudioData(arr.slice(0));
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      try {
+        if (!webAudioGainRef.current) {
+          const gain = ctx.createGain();
+          gain.gain.value = mutedRef.current ? 0 : 1;
+          gain.connect(ctx.destination);
+          webAudioGainRef.current = gain;
+        }
+      } catch {}
+      src.connect(webAudioGainRef.current || ctx.destination);
+      webAudioSourceRef.current = src;
+
+      if (!userPaused) {
+        try { scheduleCaptionsForDuration(buffer.duration, sentences || [], startIndex || 0); } catch {}
+        if (videoRef.current) { try { videoRef.current.play(); } catch {} }
+      }
+      setIsSpeaking(true);
+      await new Promise((resolve) => {
+        src.onended = () => {
+          try {
+            setIsSpeaking(false);
+            if (videoRef.current && !userPaused) { try { videoRef.current.pause(); } catch {} }
+          } catch {}
+          stopWebAudioSource();
+          resolve();
+        };
+        try { src.start(0); } catch (e) { console.warn('[Session] WebAudio start failed', e); resolve(); }
+      });
+    } catch (e) {
+      console.warn('[Session] WebAudio decode/play failed', e);
+      throw e;
+    }
+  };
+
+  // One-time audio unlock flow for iOS: resume/create AudioContext, try HTMLAudio immediately, then fallback to WebAudio
+  const unlockAudioPlayback = useCallback(() => {
+    try {
+      // Create/resume AudioContext during the gesture
+      const ctx = ensureAudioContext();
+      try {
+        // Small near-silent blip to solidify unlock; do not await
+        if (ctx) {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          g.gain.value = 0.0001;
+          osc.connect(g).connect(webAudioGainRef.current || ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.03);
+        }
+      } catch {}
+
+      setNeedsAudioUnlock(false);
+
+      const b64 = lastAudioBase64Ref.current;
+      const sents = Array.isArray(lastSentencesRef.current) ? lastSentencesRef.current : [];
+      const idx = Number.isFinite(lastStartIndexRef.current) ? lastStartIndexRef.current : 0;
+      if (!b64) return;
+
+      // Try HTMLAudio path synchronously within gesture
+      try {
+        const arr = base64ToArrayBuffer(b64);
+        const blob = new Blob([arr], { type: 'audio/mpeg' });
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audioRef.current = audio;
+        audio.muted = Boolean(mutedRef.current);
+        audio.volume = mutedRef.current ? 0 : 1;
+        if (!userPaused) { try { scheduleCaptionsForAudio(audio, sents, idx); } catch {} }
+        audio.onended = () => {
+          try {
+            setIsSpeaking(false);
+            if (videoRef.current && !userPaused) { try { videoRef.current.pause(); } catch {} }
+          } catch {}
+          try { URL.revokeObjectURL(url); } catch {}
+          audioRef.current = null;
+        };
+        audio.onerror = () => {
+          try { setIsSpeaking(false); } catch {}
+          try { URL.revokeObjectURL(url); } catch {}
+          audioRef.current = null;
+        };
+        setIsSpeaking(true);
+        if (videoRef.current && !userPaused) { try { videoRef.current.play(); } catch {} }
+        const p = audio.play();
+        if (p && p.catch) {
+          p.catch(async (err) => {
+            console.info('[Session] HTMLAudio still blocked post-unlock; falling back to WebAudio', err?.name || err);
+            try { setIsSpeaking(false); } catch {}
+            try { URL.revokeObjectURL(url); } catch {}
+            audioRef.current = null;
+            // WebAudio fallback (async; gesture no longer required since context is resumed)
+            try { await playViaWebAudio(b64, sents, idx); } catch {}
+          });
+        }
+      } catch (e) {
+        console.info('[Session] Immediate HTMLAudio path failed; trying WebAudio', e?.name || e);
+        // Fallback to WebAudio
+        (async () => { try { await playViaWebAudio(b64, sents, idx); } catch {} })();
+      }
+    } catch (e) {
+      console.warn('[Session] Audio unlock attempt failed', e);
+    }
+  }, [scheduleCaptionsForAudio]);
+
   // React to mute toggle on current audio and keep a ref for async use
   useEffect(() => {
     mutedRef.current = muted;
@@ -1022,6 +1233,10 @@ function SessionPageInner() {
         audioRef.current.muted = muted;
         audioRef.current.volume = muted ? 0 : 1;
       } catch {}
+    }
+    // Propagate mute to WebAudio gain if present
+    if (webAudioGainRef.current) {
+      try { webAudioGainRef.current.gain.value = muted ? 0 : 1; } catch {}
     }
   }, [muted]);
 
@@ -4302,6 +4517,8 @@ function SessionPageInner() {
         exerciseSkippedAwaitBegin={exerciseSkippedAwaitBegin}
         skipPendingLessonLoad={skipPendingLessonLoad}
         currentCompProblem={currentCompProblem}
+        needsAudioUnlock={needsAudioUnlock}
+        onUnlockAudio={unlockAudioPlayback}
         onCompleteLesson={() => {
           const key = getAssessmentStorageKey();
           if (key) { try { clearAssessments(key); } catch { /* ignore */ } }
@@ -4513,7 +4730,7 @@ function Timeline({ timelinePhases, timelineHighlight }) {
   );
 }
 
-function VideoPanel({ videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, onPrev, onNext, phase, subPhase, ticker, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, onTogglePlayPause, loading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson }) {
+function VideoPanel({ videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, onPrev, onNext, phase, subPhase, ticker, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, onTogglePlayPause, loading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, needsAudioUnlock, onUnlockAudio }) {
   // Trim bottom 20% visually by constraining aspect ratio and anchoring video to top
   return (
     <div style={{ position: 'relative', margin: '0 auto', maxWidth: 640, width: '100%' }}>
@@ -4569,6 +4786,16 @@ function VideoPanel({ videoRef, showBegin, isSpeaking, onBegin, onBeginComprehen
         )}
         {showBegin && phase === 'discussion' && (
           <button type="button" onClick={onBegin} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '16px 40px', fontWeight: 700, fontSize: 22, border: 'none', boxShadow: '0 2px 16px rgba(199,68,46,0.18)', cursor: 'pointer', zIndex: 6 }}>Begin</button>
+        )}
+        {/* iOS/Safari audio unlock prompt */}
+        {needsAudioUnlock && (
+          <button
+            type="button"
+            onClick={onUnlockAudio}
+            style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#1f2937', color: '#fff', borderRadius: 14, padding: '14px 26px', fontWeight: 800, fontSize: 18, border: 'none', boxShadow: '0 2px 14px rgba(0,0,0,0.35)', cursor: 'pointer', zIndex: 7 }}
+          >
+            Tap to enable sound
+          </button>
         )}
         {phase === 'congrats' && !loading && (
           <button type="button" onClick={onCompleteLesson} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '18px 46px', fontWeight: 800, fontSize: 26, letterSpacing: 0.5, border: 'none', boxShadow: '0 4px 20px rgba(199,68,46,0.35)', cursor: 'pointer', zIndex: 4, textShadow: '0 2px 4px rgba(0,0,0,0.35)' }}>Complete Lesson</button>
@@ -4885,6 +5112,40 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
           </svg>
         )}
       </button>
+      {/* iOS-only: quick test sound to diagnose device mute vs. app playback */}
+      {(() => {
+        try {
+          const ua = (typeof navigator !== 'undefined' ? navigator.userAgent || '' : '').toLowerCase();
+          const isIOS = /iphone|ipad|ipod/.test(ua) || (typeof navigator !== 'undefined' && navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+          if (!isIOS) return null;
+        } catch { return null; }
+        const onTestSound = () => {
+          try {
+            const ctx = ensureAudioContext();
+            if (!ctx) return;
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            g.gain.value = 0.15; // audible chirp
+            osc.frequency.value = 880; // A5
+            osc.connect(g).connect(webAudioGainRef.current || ctx.destination);
+            try { if (ctx.state === 'suspended') ctx.resume(); } catch {}
+            const now = ctx.currentTime;
+            try { osc.start(now); } catch {}
+            try { osc.stop(now + 0.18); } catch {}
+          } catch {}
+        };
+        return (
+          <button
+            type="button"
+            onClick={onTestSound}
+            aria-label="Test sound"
+            title="Test sound"
+            style={{ background: '#374151', color: '#fff', border: 'none', width: 42, height: 42, display: 'grid', placeItems: 'center', borderRadius: '50%', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15 8a7 7 0 010 8"/></svg>
+          </button>
+        );
+      })()}
       <input
         ref={inputRef}
             title={isRecording ? 'Release Numpad + to stop' : 'Hold Numpad + to talk'}
