@@ -4511,6 +4511,7 @@ function SessionPageInner() {
         lessonParam={lessonParam}
         muted={muted}
         userPaused={userPaused}
+        onToggleMute={toggleMute}
         onTogglePlayPause={togglePlayPause}
         loading={loading}
         exerciseSkippedAwaitBegin={exerciseSkippedAwaitBegin}
@@ -4729,7 +4730,7 @@ function Timeline({ timelinePhases, timelineHighlight }) {
   );
 }
 
-function VideoPanel({ videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, onPrev, onNext, phase, subPhase, ticker, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onTogglePlayPause, loading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, needsAudioUnlock, onUnlockAudio }) {
+function VideoPanel({ videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, onPrev, onNext, phase, subPhase, ticker, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, onTogglePlayPause, loading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, needsAudioUnlock, onUnlockAudio }) {
   // Trim bottom 20% visually by constraining aspect ratio and anchoring video to top
   return (
     <div style={{ position: 'relative', margin: '0 auto', maxWidth: 640, width: '100%' }}>

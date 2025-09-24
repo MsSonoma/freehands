@@ -287,6 +287,17 @@
 				"build"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Build Next.js for sanity",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build"
 		}
 	]
 }
