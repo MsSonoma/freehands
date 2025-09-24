@@ -4492,51 +4492,51 @@ function SessionPageInner() {
 
       <Timeline timelinePhases={timelinePhases} timelineHighlight={timelineHighlight} />
 
-      <VideoPanel
-        videoRef={videoRef}
-        showBegin={showBegin}
-        isSpeaking={isSpeaking}
-        onBegin={beginSession}
-        onBeginComprehension={beginComprehensionPhase}
-        onBeginWorksheet={beginWorksheetPhase}
-        onBeginTest={beginTestPhase}
-        onBeginSkippedExercise={beginSkippedExercise}
-        onPrev={skipBackwardPhase}
-        onNext={skipForwardPhase}
-        phase={phase}
-        subPhase={subPhase}
-        ticker={ticker}
-        testCorrectCount={testCorrectCount}
-        testFinalPercent={testFinalPercent}
-        lessonParam={lessonParam}
-        muted={muted}
-        userPaused={userPaused}
-        onToggleMute={toggleMute}
-        onTogglePlayPause={togglePlayPause}
-        loading={loading}
-        exerciseSkippedAwaitBegin={exerciseSkippedAwaitBegin}
-        skipPendingLessonLoad={skipPendingLessonLoad}
-        currentCompProblem={currentCompProblem}
-        needsAudioUnlock={needsAudioUnlock}
-        onUnlockAudio={unlockAudioPlayback}
-        onCompleteLesson={() => {
-          const key = getAssessmentStorageKey();
-          if (key) { try { clearAssessments(key); } catch { /* ignore */ } }
-          // Reset UI state so a fresh session can start if the user stays
-          setShowBegin(true);
-          setPhase('discussion');
-          setSubPhase('greeting');
-          // Return to initial locked state pending Begin
-          setCanSend(false);
-          setGeneratedWorksheet(null);
-          setGeneratedTest(null);
-    setCurrentWorksheetIndex(0);
-    worksheetIndexRef.current = 0;
-          // Also navigate back to lessons list per previous overlay behavior
-          if (typeof window !== 'undefined') {
-            window.location.href = '/learn/lessons';
-          }
-        }}
+  <VideoPanel
+    videoRef={videoRef}
+    showBegin={showBegin}
+    isSpeaking={isSpeaking}
+    onBegin={beginSession}
+    onBeginComprehension={beginComprehensionPhase}
+    onBeginWorksheet={beginWorksheetPhase}
+    onBeginTest={beginTestPhase}
+    onBeginSkippedExercise={beginSkippedExercise}
+    onPrev={skipBackwardPhase}
+    onNext={skipForwardPhase}
+    phase={phase}
+    subPhase={subPhase}
+    ticker={ticker}
+    testCorrectCount={testCorrectCount}
+    testFinalPercent={testFinalPercent}
+    lessonParam={lessonParam}
+    muted={muted}
+    userPaused={userPaused}
+    onToggleMute={toggleMute}
+    onTogglePlayPause={togglePlayPause}
+    loading={loading}
+    exerciseSkippedAwaitBegin={exerciseSkippedAwaitBegin}
+    skipPendingLessonLoad={skipPendingLessonLoad}
+    currentCompProblem={currentCompProblem}
+    needsAudioUnlock={needsAudioUnlock}
+    onUnlockAudio={unlockAudioPlayback}
+    onCompleteLesson={() => {
+      const key = getAssessmentStorageKey();
+      if (key) { try { clearAssessments(key); } catch { /* ignore */ } }
+      // Reset UI state so a fresh session can start if the user stays
+      setShowBegin(true);
+      setPhase('discussion');
+      setSubPhase('greeting');
+      // Return to initial locked state pending Begin
+      setCanSend(false);
+      setGeneratedWorksheet(null);
+      setGeneratedTest(null);
+      setCurrentWorksheetIndex(0);
+      worksheetIndexRef.current = 0;
+      // Also navigate back to lessons list per previous overlay behavior
+      if (typeof window !== 'undefined') {
+        window.location.href = '/learn/lessons';
+      }
+    }}
       />
 
       <CaptionPanel
@@ -4553,6 +4553,7 @@ function SessionPageInner() {
         canSend={canSend}
         loading={loading}
         abortKey={abortKey}
+        needsAudioUnlock={needsAudioUnlock}
         showBegin={showBegin}
         isSpeaking={isSpeaking}
         phase={phase}
@@ -4898,7 +4899,7 @@ function CurrentAssessmentPrompt({ phase, subPhase }) {
   return prompt ? <span>{prompt}</span> : null;
 }
 
-function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, loading, onSend, showBegin, isSpeaking, phase, subPhase, tipOverride, abortKey, currentCompProblem }) {
+function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, loading, onSend, showBegin, isSpeaking, phase, subPhase, tipOverride, abortKey, currentCompProblem, needsAudioUnlock }) {
   const [focused, setFocused] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -5053,6 +5054,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
     }
   }, [canSend]);
   const computePlaceholder = () => {
+    if (needsAudioUnlock) return 'Press "Tap to enable sound"';
     if (tipOverride) return tipOverride;
     if (showBegin) return 'Press "Begin"';
     if (phase === 'congrats') return 'Press "Complete Lesson"';
@@ -5073,22 +5075,22 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, width: '100%', maxWidth: 640, marginLeft: 'auto', marginRight: 'auto' }}>
       <button
         style={{
-          background: sendDisabled ? "#4b5563" : '#c7442e',
+          background: (sendDisabled || needsAudioUnlock) ? "#4b5563" : '#c7442e',
           color: "#fff",
           borderRadius: 8,
           padding: "8px 12px",
           fontWeight: 600,
           border: "none",
-          cursor: sendDisabled ? "not-allowed" : "pointer",
-          opacity: sendDisabled ? 0.7 : 1,
+          cursor: (sendDisabled || needsAudioUnlock) ? "not-allowed" : "pointer",
+          opacity: (sendDisabled || needsAudioUnlock) ? 0.7 : 1,
           transition: "background 0.2s, opacity 0.2s, box-shadow 0.2s",
           position: 'relative',
           boxShadow: isRecording ? '0 0 0 4px rgba(199,68,46,0.35), 0 0 12px 4px rgba(199,68,46,0.55)' : '0 2px 6px rgba(0,0,0,0.25)'
         }}
         aria-label={isRecording ? 'Stop recording' : 'Start recording'}
-        disabled={sendDisabled}
+        disabled={sendDisabled || needsAudioUnlock}
         onClick={() => {
-          if (sendDisabled) return;
+          if (sendDisabled || needsAudioUnlock) return;
           if (isRecording) {
             stopRecording();
           } else {
@@ -5123,39 +5125,39 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
-            if (!sendDisabled) {
+            if (!sendDisabled && !needsAudioUnlock) {
               handleSend();
             }
           }
         }}
         placeholder={computePlaceholder()}
-        disabled={sendDisabled}
+        disabled={sendDisabled || needsAudioUnlock}
         style={{
           flex: 1,
           padding: "10px",
           borderRadius: 6,
           border: "1px solid #bdbdbd",
           fontSize: 16,
-          background: !sendDisabled ? "#fff" : "#f3f4f6",
-          color: !sendDisabled ? "#111827" : "#9ca3af",
+          background: (!sendDisabled && !needsAudioUnlock) ? "#fff" : "#f3f4f6",
+          color: (!sendDisabled && !needsAudioUnlock) ? "#111827" : "#9ca3af",
           transition: 'background 0.2s, color 0.2s',
           ...(loading ? { animation: 'flashInputPlaceholder 0.85s ease-in-out infinite' } : {})
         }}
       />
       <button
         style={{
-          background: sendDisabled ? "#4b5563" : "#c7442e",
+          background: (sendDisabled || needsAudioUnlock) ? "#4b5563" : "#c7442e",
           color: "#fff",
           borderRadius: 8,
           padding: "8px 12px",
           fontWeight: 600,
           border: "none",
-          cursor: sendDisabled ? "not-allowed" : "pointer",
-          opacity: sendDisabled ? 0.7 : 1,
+          cursor: (sendDisabled || needsAudioUnlock) ? "not-allowed" : "pointer",
+          opacity: (sendDisabled || needsAudioUnlock) ? 0.7 : 1,
           transition: "background 0.2s, opacity 0.2s",
         }}
         aria-label="Send response"
-        disabled={sendDisabled}
+        disabled={sendDisabled || needsAudioUnlock}
   onClick={handleSend}
       >
         <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
