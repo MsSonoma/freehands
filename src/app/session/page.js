@@ -4511,7 +4511,6 @@ function SessionPageInner() {
         lessonParam={lessonParam}
         muted={muted}
         userPaused={userPaused}
-        onToggleMute={toggleMute}
         onTogglePlayPause={togglePlayPause}
         loading={loading}
         exerciseSkippedAwaitBegin={exerciseSkippedAwaitBegin}
@@ -4730,7 +4729,7 @@ function Timeline({ timelinePhases, timelineHighlight }) {
   );
 }
 
-function VideoPanel({ videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, onPrev, onNext, phase, subPhase, ticker, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, onTogglePlayPause, loading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, needsAudioUnlock, onUnlockAudio }) {
+function VideoPanel({ videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, onPrev, onNext, phase, subPhase, ticker, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onTogglePlayPause, loading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, needsAudioUnlock, onUnlockAudio }) {
   // Trim bottom 20% visually by constraining aspect ratio and anchoring video to top
   return (
     <div style={{ position: 'relative', margin: '0 auto', maxWidth: 640, width: '100%' }}>
@@ -4818,13 +4817,6 @@ function VideoPanel({ videoRef, showBegin, isSpeaking, onBegin, onBeginComprehen
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 5v14l11-7z" /></svg>
             ) : (
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
-            )}
-          </button>
-          <button type="button" onClick={onToggleMute} aria-label={muted ? 'Unmute' : 'Mute'} style={{ background: '#1f2937', color: '#fff', border: 'none', width: 42, height: 42, display: 'grid', placeItems: 'center', borderRadius: '50%', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}>
-            {muted ? (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
-            ) : (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M19 8a5 5 0 010 8" /><path d="M15 11a2 2 0 010 2" /></svg>
             )}
           </button>
         </div>
