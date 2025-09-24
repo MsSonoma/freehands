@@ -35,6 +35,39 @@ const AUDIO_CONFIG = {
   speakingRate: 0.92
 }
 
+// Configurable pause between multiple choice labels in SSML (milliseconds)
+// Override with env SONOMA_TTS_MC_BREAK_MS, e.g., "450" or "700"
+function getMcBreakMs() {
+  const raw = (process.env.SONOMA_TTS_MC_BREAK_MS || '').trim()
+  const n = Number(raw)
+  if (!Number.isNaN(n) && n >= 200 && n <= 2000) return Math.round(n)
+  return 550
+}
+
+// Escape plain text for inclusion in SSML
+function escapeForSsml(s) {
+  if (!s) return ''
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+// Insert short breaks before MC labels B. through Z. so each choice sounds separate
+function addMcBreaks(escaped, breakMs) {
+  const ms = typeof breakMs === 'number' ? breakMs : getMcBreakMs()
+  // Pattern: whitespace + [B-Z]. + space -> break + label (leave A. alone)
+  return escaped.replace(/\s([B-Z])\.\s/g, ` <break time="${ms}ms"/>$1. `)
+}
+
+// Convert plain text to SSML with MC pauses
+function toSsml(text) {
+  const safe = escapeForSsml(text)
+  const withBreaks = addMcBreaks(safe, getMcBreakMs())
+  return `<speak>${withBreaks}</speak>`
+}
+
 // Control how much of large strings we print in logs.
 // Configure with env SONOMA_LOG_PREVIEW_MAX:
 //  - 'full' | 'none' | '0' | 'off'  => no truncation
@@ -303,8 +336,10 @@ export async function POST(req) {
       const ttsClient = await getTtsClient()
       if (ttsClient) {
         try {
+          // Build SSML from plain text so we can add natural pauses for MC choices without changing transcripts
+          const ssml = toSsml(msSonomaReply)
           const [ttsResponse] = await ttsClient.synthesizeSpeech({
-            input: { text: msSonomaReply },
+            input: { ssml },
             voice: DEFAULT_VOICE,
             audioConfig: AUDIO_CONFIG
           })
@@ -472,8 +507,10 @@ async function buildDevStubWithOptionalTts(trimmedInstructions, trimmedInnertext
     } else {
       const ttsClient = await getTtsClient()
       if (ttsClient && stub) {
+        // Use SSML in dev too for consistent pauses between MC choices
+        const ssml = toSsml(stub)
         const [ttsResponse] = await ttsClient.synthesizeSpeech({
-          input: { text: stub },
+          input: { ssml },
           voice: DEFAULT_VOICE,
           audioConfig: AUDIO_CONFIG
         })

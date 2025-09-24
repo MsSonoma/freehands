@@ -70,3 +70,10 @@ export async function POST(req) {
     return NextResponse.json({ error: err?.message || 'Unexpected error' }, { status: 500 });
   }
 }
+
+// Provide a no-op GET to avoid build-time module resolution issues if Next tries to
+// prefetch or inspect the route for static analysis. Returns 405 instructing clients
+// to use POST. (Some Next.js internals may attempt to load the file generically.)
+export async function GET() {
+  return NextResponse.json({ error: 'Method not allowed. Use POST.' }, { status: 405 });
+}

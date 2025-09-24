@@ -24,5 +24,13 @@ export function getSupabaseClient() {
   return browserClient;
 }
 
-const supabaseApi = { getSupabaseClient, hasSupabaseEnv };
+// Resolve the public site URL for redirects (supports LAN/tunnels during testing)
+export function getPublicSiteUrl() {
+  if (typeof window !== 'undefined') {
+    return process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+  }
+  return process.env.NEXT_PUBLIC_SITE_URL || '';
+}
+
+const supabaseApi = { getSupabaseClient, hasSupabaseEnv, getPublicSiteUrl };
 export default supabaseApi;

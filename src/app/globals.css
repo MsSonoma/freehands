@@ -34,7 +34,42 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Pseudo fullscreen (fallback for iOS Safari where Fullscreen API is limited) */
+.ms-pseudo-fullscreen-enabled {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  background: #000; /* neutral backdrop behind session */
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+}
+
+html.ms-fullscreen-locked, body.ms-fullscreen-locked {
+  overflow: hidden !important;
+  touch-action: none;
+  overscroll-behavior: contain;
+  height: 100vh !important;
+}
+
+/* When header hidden in fullscreen pseudo mode */
+.ms-fullscreen-hide-header header { display: none !important; }
+
+/* Utility to stretch session root when using pseudo fullscreen */
+.ms-session-root-full { flex: 1 1 auto; display: flex; flex-direction: column; }
+
 /* Use border-box sizing globally so padding/borders do not increase element widths unexpectedly */
 *, *::before, *::after {
   box-sizing: border-box;
+}
+
+/* Add white space around the page title only in portrait orientation */
+@media (orientation: portrait) {
+  .portrait-title-spacer {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
 }

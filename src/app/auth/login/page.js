@@ -100,7 +100,10 @@ export default function LoginPage() {
 					setInfo('');
 					setResendLoading(true);
 					const supabase = getSupabaseClient();
-					const emailRedirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
+					// Prefer a configured public site URL for redirects to work on LAN or via tunnels
+					const emailRedirectTo = (typeof window !== 'undefined')
+					  ? (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin)
+					  : process.env.NEXT_PUBLIC_SITE_URL;
 					const { error } = await supabase.auth.resend({ type: 'signup', email, options: emailRedirectTo ? { emailRedirectTo } : undefined });
 					if (error) throw new Error(error.message || 'Could not resend confirmation');
 					setInfo('Confirmation email resent. Please check your inbox and spam folder.');
@@ -197,7 +200,11 @@ export default function LoginPage() {
 							onClick={async () => {
 								try {
 									const supabase = getSupabaseClient();
-									const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/facilitator?rts=${Date.now()}` : undefined;
+									// Prefer configured site URL so OAuth works when testing on LAN IPs
+									const base = (typeof window !== 'undefined')
+									  ? (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin)
+									  : process.env.NEXT_PUBLIC_SITE_URL;
+									const redirectTo = base ? `${base}/facilitator?rts=${Date.now()}` : undefined;
 									const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: redirectTo ? { redirectTo } : {} });
 									if (error) throw error;
 									if (data?.url) window.location.assign(data.url);

@@ -80,12 +80,11 @@ function buildSystemMessage({ lessonTitle = "", teachingNotes = "", vocab = [], 
     ? `Gate phrase: Say this phrase verbatim once at the appropriate moment: "${gatePhrase}"`
     : "";
 
-  // Neutral normalization note is permitted globally (non-grading, general guidance)
-  const NORMALIZATION_NOTE = "Normalization note: When internally comparing short answers, you may lowercase, trim, collapse spaces, ignore punctuation, and map number words zero–twenty to digits.";
+  // Neutral normalization note may be included globally (non-grading, general guidance)
+  const NORMALIZATION_NOTE = "Normalize by lowercasing, trimming, collapsing spaces, removing punctuation, and mapping number words zero–twenty to digits.";
 
   const parts = [
     CLEAN_SPEECH_INSTRUCTION,
-    // concise identity + scope directive (no mention of variables or files)
     "You are Ms. Sonoma. Follow the defined lesson. Include provided vocab only during the teaching segment.",
     `Lesson background (do not read aloud): ${scopeText}`,
     vocabContent,
@@ -154,35 +153,27 @@ async function ensureRuntimeTargets(forceReload = false) {
       try {
         const raw = typeof window !== 'undefined' ? localStorage.getItem('facilitator_learners') : null;
         if (raw) {
-          const list = JSON.parse(raw);
-          // Use the first matching learner by name (remove strict single-match requirement)
-          const matches = Array.isArray(list) ? list.filter(x => x?.name === learnerName) : [];
-          if (matches.length > 0) {
-            const match = matches[0]; // Use first match instead of requiring exactly one
-            const c = (v) => (v == null ? undefined : Number(v));
-            COMPREHENSION_TARGET = c(match.comprehension ?? match.targets?.comprehension) ?? COMPREHENSION_TARGET;
-            EXERCISE_TARGET = c(match.exercise ?? match.targets?.exercise) ?? EXERCISE_TARGET;
-            WORKSHEET_TARGET = c(match.worksheet ?? match.targets?.worksheet) ?? WORKSHEET_TARGET;
-            TEST_TARGET = c(match.test ?? match.targets?.test) ?? TEST_TARGET;
-            
-            console.log(`[Session] Loaded targets for learner ${learnerName} (by name):`, {
-              comprehension: COMPREHENSION_TARGET,
-              exercise: EXERCISE_TARGET,
-              worksheet: WORKSHEET_TARGET,
-              test: TEST_TARGET
-            });
-          }
-          // If no matches found, use defaults
+          try {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) {
+              const match = list.find(l => l && (l.name === learnerName || l.full_name === learnerName));
+              if (match) {
+                const n = (v) => (v == null ? undefined : Number(v));
+                COMPREHENSION_TARGET = n(match.comprehension ?? match.targets?.comprehension) ?? COMPREHENSION_TARGET;
+                EXERCISE_TARGET = n(match.exercise ?? match.targets?.exercise) ?? EXERCISE_TARGET;
+                WORKSHEET_TARGET = n(match.worksheet ?? match.targets?.worksheet) ?? WORKSHEET_TARGET;
+                TEST_TARGET = n(match.test ?? match.targets?.test) ?? TEST_TARGET;
+              }
+            }
+          } catch {/* ignore parse errors */}
         }
-      } catch (error) {
-        console.warn('[Session] Failed to load learner data by name:', error);
-      }
+      } catch {/* ignore fallback errors */}
     }
-    // Final localStorage overrides (if present) - now learner-specific
+
+    // LocalStorage overrides (user-adjustable targets) – learner-specific first
     try {
-      const currentLearnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
-      if (currentLearnerId && currentLearnerId !== 'demo') {
-        // Use learner-specific override keys
+      const currentLearnerId = (learnerId && learnerId !== 'demo') ? learnerId : null;
+      if (currentLearnerId) {
         const lc = Number(localStorage.getItem(`target_comprehension_${currentLearnerId}`));
         const le = Number(localStorage.getItem(`target_exercise_${currentLearnerId}`));
         const lw = Number(localStorage.getItem(`target_worksheet_${currentLearnerId}`));
@@ -192,7 +183,7 @@ async function ensureRuntimeTargets(forceReload = false) {
         if (!Number.isNaN(lw) && lw > 0) WORKSHEET_TARGET = lw;
         if (!Number.isNaN(lt) && lt > 0) TEST_TARGET = lt;
       } else {
-        // For demo/missing learner, use global overrides
+        // Global overrides for demo / no learner selected
         const lc = Number(localStorage.getItem('target_comprehension'));
         const le = Number(localStorage.getItem('target_exercise'));
         const lw = Number(localStorage.getItem('target_worksheet'));
@@ -202,11 +193,9 @@ async function ensureRuntimeTargets(forceReload = false) {
         if (!Number.isNaN(lw) && lw > 0) WORKSHEET_TARGET = lw;
         if (!Number.isNaN(lt) && lt > 0) TEST_TARGET = lt;
       }
-    } catch {}
+    } catch {/* ignore override read errors */}
   } catch (error) {
     console.error('[Session] Error loading runtime targets:', error);
-  } finally {
-    // no-op
   }
 }
 // Manifest removed: lessons now resolved directly by filename (drag-and-drop JSON in /public/lessons/{subject}).
@@ -222,7 +211,7 @@ const LEGACY_LESSON_MAP = {
 const timelinePhases = ["discussion", "comprehension", "exercise", "worksheet", "test"];
 const phaseLabels = {
   discussion: "Discussion",
-  comprehension: "Comprehension",
+  comprehension: "Comp",
   exercise: "Exercise",
   worksheet: "Worksheet",
   test: "Test",
@@ -406,6 +395,27 @@ function SessionPageInner() {
   const [generatedExercise, setGeneratedExercise] = useState(null);
   const [currentCompIndex, setCurrentCompIndex] = useState(0);
   const [currentExIndex, setCurrentExIndex] = useState(0);
+  // Dynamic max height for video in mobile landscape (computed from viewport)
+  const [videoMaxHeight, setVideoMaxHeight] = useState(null);
+  useEffect(() => {
+    const calcVideoHeight = () => {
+      try {
+        const w = window.innerWidth; const h = window.innerHeight;
+        const isLandscape = w > h; const isMobile = Math.min(w, h) <= 820;
+        if (!(isLandscape && isMobile)) { setVideoMaxHeight(null); return; }
+        // Estimate header + timeline + padding footprint (compact header 52 + ~72 timeline/padding)
+        const reserved = 52 + 72;
+        const usable = Math.max(180, h - reserved);
+        // Let video occupy at most 48% of viewport height, but not exceed usable
+        const target = Math.min(usable, Math.round(h * 0.48));
+        setVideoMaxHeight(target);
+      } catch { setVideoMaxHeight(null); }
+    };
+    calcVideoHeight();
+    window.addEventListener('resize', calcVideoHeight);
+    window.addEventListener('orientationchange', calcVideoHeight);
+    return () => { window.removeEventListener('resize', calcVideoHeight); window.removeEventListener('orientationchange', calcVideoHeight); };
+  }, []);
 
   // (moved below state declarations that reference it)
   // Consistent key for saving/loading/clearing generated assessments
@@ -459,9 +469,133 @@ function SessionPageInner() {
   const [captionIndex, setCaptionIndex] = useState(0);
   const captionBoxRef = useRef(null);
   // UI base width used for simple maxWidth centering (no scaling of the container)
-  const baseWidth = 700;
+  const baseWidth = 1000;
+  // Side-by-side layout refs (mobile landscape) for equal height sync
+  const videoColRef = useRef(null);
+  const captionColRef = useRef(null);
+  const [sideBySideHeight, setSideBySideHeight] = useState(null);
+  // Mobile landscape detector: small viewport height with landscape orientation (declared before any effect uses it)
+  const [isMobileLandscape, setIsMobileLandscape] = useState(false);
+  // When captions are stacked below the video (not mobile landscape), we size them to ~60% of the video panel height
+  const [stackedCaptionHeight, setStackedCaptionHeight] = useState(null);
+  useEffect(() => {
+    if (!isMobileLandscape) { setSideBySideHeight(null); return; }
+    const v = videoColRef.current;
+    const c = captionColRef.current;
+    if (!v || !c) return;
+    const measure = () => {
+      try {
+        const h = v.getBoundingClientRect().height;
+        if (Number.isFinite(h) && h > 0) setSideBySideHeight(h);
+      } catch {}
+    };
+    measure();
+    let ro;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => measure());
+      try { ro.observe(v); } catch {}
+    } else if (typeof window !== 'undefined') {
+      window.addEventListener('resize', measure);
+      window.addEventListener('orientationchange', measure);
+    }
+    return () => {
+      try { ro && ro.disconnect(); } catch {}
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('resize', measure);
+        window.removeEventListener('orientationchange', measure);
+      }
+    };
+  }, [isMobileLandscape]);
+  useEffect(() => {
+    const check = () => {
+      try {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const isLandscape = w > h;
+        // New rule: side-by-side only below 700px smallest dimension
+        const withinSideBySideRange = Math.min(w, h) < 700;
+        setIsMobileLandscape(withinSideBySideRange && isLandscape);
+      } catch {}
+    };
+    check();
+    window.addEventListener('resize', check);
+    window.addEventListener('orientationchange', check);
+    return () => { window.removeEventListener('resize', check); window.removeEventListener('orientationchange', check); };
+  }, []);
+
+  // Measure to size stacked caption panel. Rule: if viewport height < 700px, match video height exactly; otherwise square (height ≈ width).
+  useEffect(() => {
+    if (isMobileLandscape) { setStackedCaptionHeight(null); return; }
+    const measureTarget = videoColRef.current; // video defines canonical height
+    const widthTarget = captionColRef.current || videoColRef.current;
+    if (!measureTarget || !widthTarget) return;
+    const measure = () => {
+      try {
+        const vRect = measureTarget.getBoundingClientRect();
+        const wRect = widthTarget.getBoundingClientRect();
+        const videoH = vRect.height;
+        const w = wRect.width;
+        const vh = window.innerHeight;
+        if (vh < 700) {
+          if (Number.isFinite(videoH) && videoH > 0) {
+            setStackedCaptionHeight(Math.round(videoH));
+          }
+        } else {
+          if (Number.isFinite(w) && w > 0) {
+            const vhCap = vh * 0.85;
+            const target = Math.max(260, Math.min(Math.round(w), Math.round(vhCap)));
+            setStackedCaptionHeight(target);
+          }
+        }
+      } catch {}
+    };
+    measure();
+    let ro;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => measure());
+      try { ro.observe(measureTarget); } catch {}
+      if (widthTarget && widthTarget !== measureTarget) { try { ro.observe(widthTarget); } catch {} }
+    } else if (typeof window !== 'undefined') {
+      window.addEventListener('resize', measure);
+      window.addEventListener('orientationchange', measure);
+    }
+    return () => {
+      try { ro && ro.disconnect(); } catch {}
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('resize', measure);
+        window.removeEventListener('orientationchange', measure);
+      }
+    };
+  }, [isMobileLandscape]);
+
+  // (moved lower originally) placeholder: title dispatch effect defined after manifestInfo/effectiveLessonTitle
   // Fixed scale factor to avoid any auto-shrinking behavior
   const snappedScale = 1;
+  // Measure the fixed footer height to reserve exact space and avoid blank scroll area
+  const footerRef = useRef(null);
+  const [footerHeight, setFooterHeight] = useState(0);
+  useEffect(() => {
+    const el = footerRef.current;
+    if (!el) return;
+    const measure = () => {
+      try {
+        const h = Math.ceil(el.getBoundingClientRect().height);
+        if (Number.isFinite(h) && h >= 0) setFooterHeight(h);
+      } catch {}
+    };
+    measure();
+    let ro;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => measure());
+      try { ro.observe(el); } catch {}
+    } else if (typeof window !== 'undefined') {
+      window.addEventListener('resize', measure);
+    }
+    return () => {
+      try { ro && ro.disconnect(); } catch {}
+      if (typeof window !== 'undefined') window.removeEventListener('resize', measure);
+    };
+  }, []);
   // Media & caption refs (restored after refactor removal)
   const videoRef = useRef(null); // controls lesson video playback synchrony with TTS
   const audioRef = useRef(null); // active Audio element for synthesized speech
@@ -586,6 +720,15 @@ function SessionPageInner() {
     return typeof t === "string" ? t.trim() : String(t);
   }, [lessonData, manifestInfo.title]);
   const teachingSteps = useMemo(() => getTeachingSteps(effectiveLessonTitle), [effectiveLessonTitle]);
+  // Dispatch lesson title to header (mobile landscape) now that manifestInfo/effectiveLessonTitle are initialized
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const pageTitle = ((lessonData && (lessonData.title || lessonData.lessonTitle)) || manifestInfo.title || effectiveLessonTitle || '').toString();
+      const detail = isMobileLandscape ? pageTitle : '';
+      window.dispatchEvent(new CustomEvent('ms:session:title', { detail }));
+    } catch {}
+  }, [isMobileLandscape, lessonData, manifestInfo.title, effectiveLessonTitle]);
   // Shared constants
   // Import centrally defined worksheet progress cue variants
   // Note: keep relative path stable if this file moves
@@ -598,9 +741,9 @@ function SessionPageInner() {
     ? `/lessons/${encodeURIComponent(subjectSegment)}/${encodeURIComponent(lessonFilename)}`
     : "";
 
-  // Build a normalized QA pool for comprehension/exercise with enforced ratio for math:
-  // - Math: interleave ~70% from sample and ~30% from wordProblems (when available)
-  // - Others: use sample only (fall back to category groups)
+  // Build a normalized QA pool for comprehension/exercise
+  // - Math: use a broad pool that includes Samples + category groups (TF/MC/FIB/Short Answer)
+  // - Others: prefer Samples; fall back to TF/MC/FIB only (no Short Answer in comprehension/exercise)
   // - Normalize fields so both 'answer' and 'expected' exist on each item, and coerce single-object fields to arrays
   const buildQAPool = useCallback(() => {
     const arrify = (val) => (Array.isArray(val) ? val : (val ? [val] : []));
@@ -628,21 +771,19 @@ function SessionPageInner() {
       }
       return copy;
     };
+    const isMath = (subjectParam === 'math');
 
-    // Prefer explicit samples for comprehension/exercise, but NEVER include Short Answer items
-    const samplesRaw = arrify(lessonData?.sample);
-    if (samplesRaw.length) {
-      const cleaned = samplesRaw
-        .map(normalize)
-        .filter((q) => !isShortAnswer(q));
-      if (cleaned.length) return shuffle(cleaned);
-      // fall through to categories if all samples were short answer
-    }
+    // Prepare Samples
+    const samplesRaw = arrify(lessonData?.sample).map(normalize);
+    const samplesForPhase = isMath
+      ? samplesRaw // allow Short Answer in Math comprehension/exercise
+      : samplesRaw.filter((q) => !isShortAnswer(q)); // exclude SA for non-Math
 
-    // Fallbacks when samples are absent or filtered: use category groups (accept single object or array)
+    // Prepare categories (accept single object or array)
     const tf = arrify(lessonData?.truefalse).map(q => ({ ...q, sourceType: 'tf' })).map(normalize);
     const mc = arrify(lessonData?.multiplechoice).map(q => ({ ...q, sourceType: 'mc' })).map(normalize);
     const fib = arrify(lessonData?.fillintheblank).map(q => ({ ...q, sourceType: 'fib' })).map(normalize);
+    const sa = arrify(lessonData?.shortanswer).map(q => ({ ...q, sourceType: 'short' })).map(normalize);
 
     // Exclude invalid MC entries that have no options/choices (would behave like short answer)
     const mcValid = mc.filter(q => {
@@ -650,6 +791,14 @@ function SessionPageInner() {
       return hasChoices;
     });
 
+    if (isMath) {
+      // Math: Mix Samples with TF/MC/FIB/SA
+      const pool = [...samplesForPhase, ...tf, ...mcValid, ...fib, ...sa];
+      return shuffle(pool);
+    }
+
+    // Non-Math: Prefer Samples (no SA). If none, fall back to TF/MC/FIB only.
+    if (samplesForPhase.length) return shuffle(samplesForPhase);
     const catPool = [...tf, ...mcValid, ...fib];
     return shuffle(catPool);
   }, [lessonData]);
@@ -732,7 +881,7 @@ function SessionPageInner() {
                 }
                 return copy;
               };
-              // Select a blended set (for math): ~70% from samples and ~30% from word problems
+              // Select a blended set (for math): ~70% from samples/categories and ~30% from word problems
               const selectMixed = (samples = [], wpArr = [], target = 0, isTest = false) => {
                 const wpAvail = Array.isArray(wpArr) ? wpArr : [];
                 const baseAvail = Array.isArray(samples) ? samples : [];
@@ -751,19 +900,28 @@ function SessionPageInner() {
               if (subjectParam === 'math') {
                 const samples = reserveSamples(WORKSHEET_TARGET + TEST_TARGET);
                 const words = reserveWords(WORKSHEET_TARGET + TEST_TARGET);
-                if ((samples && samples.length) || (words && words.length)) {
+                // Include category pools in addition to samples
+                const tf = Array.isArray(data.truefalse) ? data.truefalse.map(q => ({ ...q, sourceType: 'tf' })) : [];
+                const mc = Array.isArray(data.multiplechoice) ? data.multiplechoice.map(q => ({ ...q, sourceType: 'mc' })) : [];
+                const fib = Array.isArray(data.fillintheblank) ? data.fillintheblank.map(q => ({ ...q, sourceType: 'fib' })) : [];
+                const sa = Array.isArray(data.shortanswer) ? data.shortanswer.map(q => ({ ...q, sourceType: 'short' })) : [];
+                const cats = [...tf, ...mc, ...fib, ...sa];
+                if ((samples && samples.length) || (words && words.length) || cats.length) {
                   const takeMixed = (target, isTest) => {
                     const desiredWp = Math.round(target * 0.3);
                     const wpSel = (words || []).slice(0, desiredWp).map(q => ({ ...(isTest ? ({ ...q, expected: q.expected ?? q.answer }) : q), sourceType: 'word' }));
-                    // Cap SA/FIB to 10% each in the remainder from samples
+                    // Cap SA/FIB to 10% each in the remainder from samples+categories
                     const remainder = Math.max(0, target - wpSel.length);
                     const cap = Math.max(0, Math.floor(target * 0.10));
-                    const fromSamples = (samples || []).map(q => ({ ...q, sourceType: 'sample' }));
-                    const sa = fromSamples.filter(q => /short\s*answer|shortanswer/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'short');
-                    const fib = fromSamples.filter(q => /fill\s*in\s*the\s*blank|fillintheblank/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'fib');
-                    const others = fromSamples.filter(q => !sa.includes(q) && !fib.includes(q));
-                    const saPick = shuffleArr(sa).slice(0, Math.min(cap, sa.length));
-                    const fibPick = shuffleArr(fib).slice(0, Math.min(cap, fib.length));
+                    const fromBase = [
+                      ...((samples || []).map(q => ({ ...q, sourceType: 'sample' }))),
+                      ...cats
+                    ];
+                    const saArr = fromBase.filter(q => /short\s*answer|shortanswer/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'short');
+                    const fibArr = fromBase.filter(q => /fill\s*in\s*the\s*blank|fillintheblank/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'fib');
+                    const others = fromBase.filter(q => !saArr.includes(q) && !fibArr.includes(q));
+                    const saPick = shuffleArr(saArr).slice(0, Math.min(cap, saArr.length));
+                    const fibPick = shuffleArr(fibArr).slice(0, Math.min(cap, fibArr.length));
                     const remaining = Math.max(0, remainder - saPick.length - fibPick.length);
                     const otherPick = shuffleArr(others).slice(0, remaining);
                     const baseSel = shuffleArr([...saPick, ...fibPick, ...otherPick]);
@@ -2102,15 +2260,31 @@ function SessionPageInner() {
         return copy;
       };
       if (subjectParam === 'math') {
-        const samples = Array.isArray(lessonData.sample) ? lessonData.sample : [];
-        const words = Array.isArray(lessonData.wordProblems) ? lessonData.wordProblems : [];
+        const samples = Array.isArray(lessonData.sample) ? lessonData.sample.map(q => ({ ...q, sourceType: 'sample' })) : [];
+        const words = Array.isArray(lessonData.wordProblems) ? lessonData.wordProblems.map(q => ({ ...q, sourceType: 'word' })) : [];
+        const tf = Array.isArray(lessonData.truefalse) ? lessonData.truefalse.map(q => ({ ...q, sourceType: 'tf' })) : [];
+        const mc = Array.isArray(lessonData.multiplechoice) ? lessonData.multiplechoice.map(q => ({ ...q, sourceType: 'mc' })) : [];
+        const fib = Array.isArray(lessonData.fillintheblank) ? lessonData.fillintheblank.map(q => ({ ...q, sourceType: 'fib' })) : [];
+        const sa = Array.isArray(lessonData.shortanswer) ? lessonData.shortanswer.map(q => ({ ...q, sourceType: 'short' })) : [];
+        const cats = [...tf, ...mc, ...fib, ...sa];
         const desiredWp = Math.round(WORKSHEET_TARGET * 0.3);
-        const wpSel = shuffle(words).slice(0, Math.min(desiredWp, words.length)).map(q => ({ ...q, sourceType: 'word' }));
-        const baseSel = shuffle(samples).slice(0, Math.max(0, WORKSHEET_TARGET - wpSel.length)).map(q => ({ ...q, sourceType: 'sample' }));
-        const base = shuffle([...wpSel, ...baseSel]);
-        const remOthers = shuffle(samples).filter(q => !new Set(base.map(promptKey)).has(promptKey(q))).map(q => ({ ...q, sourceType: q.sourceType || 'sample' }));
-        const remWords = shuffle(words).filter(q => !new Set(base.map(promptKey)).has(promptKey(q))).map(q => ({ ...q, sourceType: 'word' }));
-        source = ensureExactCount(base, WORKSHEET_TARGET, [remOthers, remWords]);
+        const wpSel = shuffle(words).slice(0, Math.min(desiredWp, words.length));
+        // Cap SA/FIB to 10% each in remainder from samples+categories
+        const remainder = Math.max(0, WORKSHEET_TARGET - wpSel.length);
+        const cap = Math.max(0, Math.floor(WORKSHEET_TARGET * 0.10));
+        const fromBase = shuffle([...samples, ...cats]);
+        const saArr = fromBase.filter(q => /short\s*answer|shortanswer/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'short');
+        const fibArr = fromBase.filter(q => /fill\s*in\s*the\s*blank|fillintheblank/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'fib');
+        const others = fromBase.filter(q => !saArr.includes(q) && !fibArr.includes(q));
+        const saPick = saArr.slice(0, Math.min(cap, saArr.length));
+        const fibPick = fibArr.slice(0, Math.min(cap, fibArr.length));
+        const remaining = Math.max(0, remainder - saPick.length - fibPick.length);
+        const otherPick = others.slice(0, remaining);
+        const base = shuffle([...wpSel, ...saPick, ...fibPick, ...otherPick]);
+        const used = new Set(base.map(promptKey));
+        const remBase = shuffle([...samples, ...cats]).filter(q => !used.has(promptKey(q)));
+        const remWords = shuffle(words).filter(q => !used.has(promptKey(q)));
+        source = ensureExactCount(base, WORKSHEET_TARGET, [remBase, remWords]);
       } else {
         const tf = Array.isArray(lessonData.truefalse) ? lessonData.truefalse.map(q => ({ ...q, sourceType: 'tf' })) : [];
         const mc = Array.isArray(lessonData.multiplechoice) ? lessonData.multiplechoice.map(q => ({ ...q, sourceType: 'mc' })) : [];
@@ -2165,16 +2339,31 @@ function SessionPageInner() {
         return copy;
       };
       if (subjectParam === 'math') {
-        const samples = Array.isArray(lessonData.sample) ? lessonData.sample : [];
-        const words = Array.isArray(lessonData.wordProblems) ? lessonData.wordProblems : [];
+        const samples = Array.isArray(lessonData.sample) ? lessonData.sample.map(q => ({ ...q, sourceType: 'sample' })) : [];
+        const words = Array.isArray(lessonData.wordProblems) ? lessonData.wordProblems.map(q => ({ ...q, sourceType: 'word' })) : [];
+        const tf = Array.isArray(lessonData.truefalse) ? lessonData.truefalse.map(q => ({ ...q, sourceType: 'tf' })) : [];
+        const mc = Array.isArray(lessonData.multiplechoice) ? lessonData.multiplechoice.map(q => ({ ...q, sourceType: 'mc' })) : [];
+        const fib = Array.isArray(lessonData.fillintheblank) ? lessonData.fillintheblank.map(q => ({ ...q, sourceType: 'fib' })) : [];
+        const sa = Array.isArray(lessonData.shortanswer) ? lessonData.shortanswer.map(q => ({ ...q, sourceType: 'short' })) : [];
+        const cats = [...tf, ...mc, ...fib, ...sa];
         const desiredWp = Math.round(TEST_TARGET * 0.3);
         const wpSel = shuffle(words).slice(0, Math.min(desiredWp, words.length)).map(q => ({ ...q, expected: q.expected ?? q.answer, sourceType: 'word' }));
-        const baseSel = shuffle(samples).slice(0, Math.max(0, TEST_TARGET - wpSel.length)).map(q => ({ ...q, sourceType: 'sample' }));
-        const base = shuffle([...wpSel, ...baseSel]);
+        // Cap SA/FIB to 10% each in remainder from samples+categories
+        const remainder = Math.max(0, TEST_TARGET - wpSel.length);
+        const cap = Math.max(0, Math.floor(TEST_TARGET * 0.10));
+        const fromBase = shuffle([...samples, ...cats]);
+        const saArr = fromBase.filter(q => /short\s*answer|shortanswer/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'short');
+        const fibArr = fromBase.filter(q => /fill\s*in\s*the\s*blank|fillintheblank/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'fib');
+        const others = fromBase.filter(q => !saArr.includes(q) && !fibArr.includes(q));
+        const saPick = saArr.slice(0, Math.min(cap, saArr.length));
+        const fibPick = fibArr.slice(0, Math.min(cap, fibArr.length));
+        const remaining = Math.max(0, remainder - saPick.length - fibPick.length);
+        const otherPick = others.slice(0, remaining);
+        const base = shuffle([...wpSel, ...saPick, ...fibPick, ...otherPick]);
         const used = new Set(base.map(promptKey));
-        const remOthers = shuffle(samples).filter(q => !used.has(promptKey(q))).map(q => ({ ...q, sourceType: q.sourceType || 'sample' }));
-        const remWords = shuffle(words).filter(q => !used.has(promptKey(q))).map(q => ({ ...q, sourceType: 'word' }));
-        source = ensureExactCount(base, TEST_TARGET, [remOthers, remWords]);
+        const remBase = shuffle([...samples, ...cats]).filter(q => !used.has(promptKey(q)));
+        const remWords = shuffle(words).filter(q => !used.has(promptKey(q)));
+        source = ensureExactCount(base, TEST_TARGET, [remBase, remWords]);
       } else {
         const tf = Array.isArray(lessonData.truefalse) ? lessonData.truefalse.map(q => ({ ...q, sourceType: 'tf' })) : [];
         const mc = Array.isArray(lessonData.multiplechoice) ? lessonData.multiplechoice.map(q => ({ ...q, sourceType: 'mc' })) : [];
@@ -2210,6 +2399,121 @@ function SessionPageInner() {
     }
     createPdfForItems(source.map((q, i) => ({ ...q, number: i + 1 })), "test", previewWin);
   };
+
+  // Re-generate fresh randomized worksheet and test sets and reset session progress
+  const handleRefreshWorksheetAndTest = useCallback(async () => {
+    // Clear persisted sets for this lesson
+    const key = getAssessmentStorageKey();
+    if (key) { try { clearAssessments(key); } catch { /* ignore */ } }
+    // Reset current worksheet/test state
+    setGeneratedWorksheet(null);
+    setGeneratedTest(null);
+    setCurrentWorksheetIndex(0);
+    worksheetIndexRef.current = 0;
+    setTestActiveIndex(0);
+    setTestUserAnswers([]);
+    // Re-run generation logic by reloading the lesson data block
+    try {
+      // Force re-evaluation of targets in case learner or runtime changed
+      runtimeTargetsLoaded = false;
+      await ensureRuntimeTargets(true); // Force fresh reload
+      // Force immediate regeneration using existing logic just below lesson load
+      const data = lessonData;
+      if (!data) return;
+      const storageKey = getAssessmentStorageKey({ data, manifest: manifestInfo, param: lessonParam });
+      // Copy of the generation logic pathway; rely on helper decks already initialized
+      const shuffle = (arr) => {
+        const copy = [...arr];
+        for (let i = copy.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+      };
+      let gW = [];
+      let gT = [];
+      if (subjectParam === 'math') {
+        const samples = reserveSamples(WORKSHEET_TARGET + TEST_TARGET);
+        const words = reserveWords(WORKSHEET_TARGET + TEST_TARGET);
+        const takeMixed = (target, isTest) => {
+          const desiredWp = Math.round(target * 0.3);
+          const wpSel = (words || []).slice(0, desiredWp).map(q => ({ ...(isTest ? ({ ...q, expected: q.expected ?? q.answer }) : q), sourceType: 'word' }));
+          const remainder = Math.max(0, target - wpSel.length);
+          const cap = Math.max(0, Math.floor(target * 0.10));
+          const fromSamples = (samples || []).map(q => ({ ...q, sourceType: 'sample' }));
+          const sa = fromSamples.filter(q => /short\s*answer|shortanswer/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'short');
+          const fib = fromSamples.filter(q => /fill\s*in\s*the\s*blank|fillintheblank/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'fib');
+          const others = fromSamples.filter(q => !sa.includes(q) && !fib.includes(q));
+          const shuffleArr = (arr) => shuffle(arr);
+          const saPick = shuffleArr(sa).slice(0, Math.min(cap, sa.length));
+          const fibPick = shuffleArr(fib).slice(0, Math.min(cap, fib.length));
+          const remaining = Math.max(0, remainder - saPick.length - fibPick.length);
+          const otherPick = shuffleArr(others).slice(0, remaining);
+          const baseSel = shuffleArr([...saPick, ...fibPick, ...otherPick]);
+          const base = shuffleArr([...wpSel, ...baseSel]);
+          if (base.length >= target) return base.slice(0, target);
+          const usedKeys = new Set(base.map(promptKey));
+          const remOthers = others.filter(q => !usedKeys.has(promptKey(q)));
+          const remSa = sa.filter(q => !usedKeys.has(promptKey(q)));
+          const remFib = fib.filter(q => !usedKeys.has(promptKey(q)));
+          const remWords = (words || []).slice(desiredWp).filter(q => !usedKeys.has(promptKey(q)));
+          return ensureExactCount(base, target, [shuffleArr(remOthers), shuffleArr(remSa), shuffleArr(remFib), shuffleArr(remWords)]);
+        };
+        gW = takeMixed(WORKSHEET_TARGET, false);
+        gT = takeMixed(TEST_TARGET, true);
+        setGeneratedWorksheet(gW);
+        setGeneratedTest(gT);
+      } else {
+        const tf = Array.isArray(data.truefalse) ? data.truefalse.map(q => ({ ...q, sourceType: 'tf' })) : [];
+        const mc = Array.isArray(data.multiplechoice) ? data.multiplechoice.map(q => ({ ...q, sourceType: 'mc' })) : [];
+        const fib = Array.isArray(data.fillintheblank) ? data.fillintheblank.map(q => ({ ...q, sourceType: 'fib' })) : [];
+        const sa = Array.isArray(data.shortanswer) ? data.shortanswer.map(q => ({ ...q, sourceType: 'short' })) : [];
+        const anyCats = tf.length || mc.length || fib.length || sa.length;
+        if (anyCats) {
+          const gFromCats = (target) => {
+            const capLocal = Math.max(0, Math.floor(target * 0.10));
+            const saPick = shuffle(sa).slice(0, Math.min(capLocal, sa.length));
+            const fibPick = shuffle(fib).slice(0, Math.min(capLocal, fib.length));
+            const others = shuffle([...tf, ...mc]);
+            const remaining = Math.max(0, target - saPick.length - fibPick.length);
+            const otherPick = others.slice(0, remaining);
+            const base = shuffle([...saPick, ...fibPick, ...otherPick]);
+            if (base.length >= target) return base.slice(0, target);
+            const usedKeys = new Set(base.map(promptKey));
+            const remOthers = others.slice(remaining).filter(q => !usedKeys.has(promptKey(q)));
+            const remFib = fib.filter(q => !usedKeys.has(promptKey(q)));
+            const remSa = sa.filter(q => !usedKeys.has(promptKey(q)));
+            const legacy = label => (Array.isArray(data[label]) ? data[label] : []).filter(q => !usedKeys.has(promptKey(q)));
+            const legacyAll = [...legacy('worksheet'), ...legacy('test')];
+            return ensureExactCount(base, target, [shuffle(remOthers), shuffle(remFib), shuffle(remSa), shuffle(legacyAll)]);
+          };
+          gW = gFromCats(WORKSHEET_TARGET);
+          gT = gFromCats(TEST_TARGET);
+          setGeneratedWorksheet(gW);
+          setGeneratedTest(gT);
+        } else {
+          if (Array.isArray(data.worksheet) && data.worksheet.length) setGeneratedWorksheet(ensureExactCount(shuffle(data.worksheet).slice(0, WORKSHEET_TARGET), WORKSHEET_TARGET, [shuffle(data.worksheet)]));
+          if (Array.isArray(data.test) && data.test.length) setGeneratedTest(ensureExactCount(shuffle(data.test).slice(0, TEST_TARGET), TEST_TARGET, [shuffle(data.test)]));
+        }
+      }
+      if (storageKey) { try { saveAssessments(storageKey, { worksheet: gW, test: gT }); } catch {} }
+    } catch {}
+  }, [lessonData, lessonParam, manifestInfo, subjectParam]);
+
+  // Make header print dropdown trigger the same actions
+  useEffect(() => {
+    const onWs = () => { try { handleDownloadWorksheet(); } catch {} };
+    const onTest = () => { try { handleDownloadTest(); } catch {} };
+    const onRefresh = () => { try { handleRefreshWorksheetAndTest(); } catch {} };
+    window.addEventListener('ms:print:worksheet', onWs);
+    window.addEventListener('ms:print:test', onTest);
+    window.addEventListener('ms:print:refresh', onRefresh);
+    return () => {
+      window.removeEventListener('ms:print:worksheet', onWs);
+      window.removeEventListener('ms:print:test', onTest);
+      window.removeEventListener('ms:print:refresh', onRefresh);
+    };
+  }, [handleDownloadWorksheet, handleDownloadTest, handleRefreshWorksheetAndTest]);
 
   // Enable downloads when generated sets exist; for non-math also allow when categories/legacy arrays are present
   const hasNonMathCats = subjectParam !== 'math' && Boolean(
@@ -2294,9 +2598,22 @@ function SessionPageInner() {
         if (isTF && !/^true\s*\/\s*false\s*:/i.test(trimmed) && !/^true\s*false\s*:/i.test(trimmed)) {
           base = `True/False: ${base}`;
         }
-        const choicesLine = Array.isArray(item.choices) && item.choices.length
-          ? item.choices.join('   ')
-          : null;
+        // Normalize and label multiple-choice options consistently (A., B., C., ...)
+        let choicesLine = null;
+        const opts = Array.isArray(item?.options)
+          ? item.options.filter(Boolean)
+          : (Array.isArray(item?.choices) ? item.choices.filter(Boolean) : []);
+        if (opts.length) {
+          const labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+          const anyLabel = /^\s*\(?[A-Z]\)?\s*[\.:\)\-]\s*/i;
+          const parts = opts.map((o, i) => {
+            const raw = String(o ?? '').trim();
+            const cleaned = raw.replace(anyLabel, '').trim();
+            const lbl = labels[i] || '';
+            return `${lbl}. ${cleaned}`;
+          });
+          choicesLine = parts.join('   ');
+        }
         return { prompt: base, choicesLine };
       };
       if (label === 'worksheet') {
@@ -2734,31 +3051,44 @@ function SessionPageInner() {
       }
       return copy;
     };
-    const selectMixed2 = (samples = [], wpArr = [], target = 0, isTest = false) => {
-      const wpAvail = Array.isArray(wpArr) ? wpArr : [];
-      const baseAvail = Array.isArray(samples) ? samples : [];
+    const buildMathSet = (target = 0, isTest = false) => {
+      const samples = Array.isArray(lessonData.sample) ? lessonData.sample.map(q => ({ ...q, sourceType: 'sample' })) : [];
+      const words = Array.isArray(lessonData.wordProblems) ? lessonData.wordProblems.map(q => ({ ...q, sourceType: 'word' })) : [];
+      const tf = Array.isArray(lessonData.truefalse) ? lessonData.truefalse.map(q => ({ ...q, sourceType: 'tf' })) : [];
+      const mc = Array.isArray(lessonData.multiplechoice) ? lessonData.multiplechoice.map(q => ({ ...q, sourceType: 'mc' })) : [];
+      const fib = Array.isArray(lessonData.fillintheblank) ? lessonData.fillintheblank.map(q => ({ ...q, sourceType: 'fib' })) : [];
+      const sa = Array.isArray(lessonData.shortanswer) ? lessonData.shortanswer.map(q => ({ ...q, sourceType: 'short' })) : [];
+      const cats = [...tf, ...mc, ...fib, ...sa];
       const desiredWp = Math.round(target * 0.3);
-      const wpCount = Math.min(Math.max(0, desiredWp), wpAvail.length);
-      const baseCount = Math.max(0, target - wpCount);
-      const wpSel = shuffle2(wpAvail).slice(0, wpCount).map(q => {
-        const core = isTest ? ({ ...q, expected: q.expected ?? q.answer }) : q;
-        return { ...core, sourceType: 'word' };
-      });
-      const baseSel = shuffle2(baseAvail).slice(0, baseCount).map(q => ({ ...q, sourceType: 'sample' }));
-      return shuffle2([...wpSel, ...baseSel]);
+      const wpSel = shuffle2(words).slice(0, Math.min(desiredWp, words.length)).map(q => ({ ...(isTest ? ({ ...q, expected: q.expected ?? q.answer }) : q) }));
+      const remainder = Math.max(0, target - wpSel.length);
+      const cap = Math.max(0, Math.floor(target * 0.10));
+      const fromBase = shuffle2([...samples, ...cats]);
+      const saArr = fromBase.filter(q => /short\s*answer|shortanswer/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'short');
+      const fibArr = fromBase.filter(q => /fill\s*in\s*the\s*blank|fillintheblank/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'fib');
+      const others = fromBase.filter(q => !saArr.includes(q) && !fibArr.includes(q));
+      const saPick = saArr.slice(0, Math.min(cap, saArr.length));
+      const fibPick = fibArr.slice(0, Math.min(cap, fibArr.length));
+      const remaining = Math.max(0, remainder - saPick.length - fibPick.length);
+      const otherPick = others.slice(0, remaining);
+      const base = shuffle2([...wpSel, ...saPick, ...fibPick, ...otherPick]);
+      const used = new Set(base.map(promptKey));
+      const remBase = shuffle2([...samples, ...cats]).filter(q => !used.has(promptKey(q)));
+      const remWords = shuffle2(words).filter(q => !used.has(promptKey(q)));
+      return ensureExactCount(base, target, [remBase, remWords]);
     };
     if (subjectParam === 'math') {
-      const samples = Array.isArray(lessonData.sample) ? lessonData.sample : [];
-      const words = Array.isArray(lessonData.wordProblems) ? lessonData.wordProblems : [];
-      if (!gW && (samples.length || words.length)) {
-        gW = selectMixed2(samples, words, WORKSHEET_TARGET, false);
-        setGeneratedWorksheet(gW);
-  setCurrentWorksheetIndex(0);
-  worksheetIndexRef.current = 0;
+      if (!gW) {
+        gW = buildMathSet(WORKSHEET_TARGET, false);
+        if (gW && gW.length) {
+          setGeneratedWorksheet(gW);
+          setCurrentWorksheetIndex(0);
+          worksheetIndexRef.current = 0;
+        }
       }
-      if (!gT && (samples.length || words.length)) {
-        gT = selectMixed2(samples, words, TEST_TARGET, true);
-        setGeneratedTest(gT);
+      if (!gT) {
+        gT = buildMathSet(TEST_TARGET, true);
+        if (gT && gT.length) setGeneratedTest(gT);
       }
     } else {
       // Build from category arrays if present; cap short answers to 30%
@@ -3188,14 +3518,17 @@ function SessionPageInner() {
   // Frontend picks one unused cue phrase and embeds it verbatim; do not send the list.
   const unusedCuePhrases = CORRECT_TEST_CUE_PHRASES.filter(p => !usedTestCuePhrases.includes(p));
   const chosenCue = (unusedCuePhrases.length ? unusedCuePhrases : CORRECT_TEST_CUE_PHRASES)[Math.floor(Math.random() * (unusedCuePhrases.length ? unusedCuePhrases.length : CORRECT_TEST_CUE_PHRASES.length))];
+    // Safe prompt/expected fallbacks to avoid sending undefined
+    const promptForReview = (q.prompt || q.question || '').trim() || 'Prompt missing';
+    const expectedForReview = (expectedPrimary || '').toString().trim() || 'Expected missing';
     const instructionParts = [
       'Test review item structured output only.',
       `ACCEPTABLE_ANSWERS: [${acceptable.join(', ')}]`,
       Array.isArray(q.keywords) && q.keywords.length ? `KEYWORDS: [${q.keywords.join(', ')}]` : null,
       Number.isInteger(q.minKeywords) ? `MIN: ${q.minKeywords}` : null,
       `Question number: ${idx + 1}`,
-      `Question: ${q.prompt}`,
-      `Expected: ${expectedPrimary}`,
+      `Question: ${promptForReview}`,
+      `Expected: ${expectedForReview}`,
       `Learner answered: ${learnerAnsForDisplay}`,
       isOpenEndedTestItem(q) ? JUDGING_LENIENCY_OPEN_ENDED : null,
       'Produce exactly FIVE conversational sentences (no numbering):',
@@ -3217,12 +3550,11 @@ function SessionPageInner() {
       const replyText = result.data && result.data.reply ? result.data.reply : '';
       if (replyText) {
         const replyLower = replyText.toLowerCase();
+        // Count a correct answer if ANY allowed cue phrase appears in the reply.
+        // Do not require cross-question uniqueness; we only care about presence per item.
         let matchedCue = null;
         for (const phrase of CORRECT_TEST_CUE_PHRASES) {
-          if (!usedTestCuePhrases.includes(phrase) && replyLower.includes(phrase.toLowerCase())) {
-            matchedCue = phrase;
-            break;
-          }
+          if (replyLower.includes(phrase.toLowerCase())) { matchedCue = phrase; break; }
         }
         if (matchedCue) {
           setUsedTestCuePhrases(prev => [...prev, matchedCue]);
@@ -3288,9 +3620,11 @@ function SessionPageInner() {
   try { usedTestCuePhrases.forEach(p => prior.add(p)); } catch {}
   const candidates = CORRECT_TEST_CUE_PHRASES.filter(p => !prior.has(p));
   const cueForThis = (candidates.length ? candidates : CORRECT_TEST_CUE_PHRASES)[Math.floor(Math.random() * (candidates.length ? candidates.length : CORRECT_TEST_CUE_PHRASES.length))];
+      const promptForReview = (q.prompt || q.question || '').trim() || 'Prompt missing';
+      const expectedForReview = (expectedPrimary || '').toString().trim() || 'Expected missing';
       const lines = [
-        `QUESTION_${i + 1}_PROMPT: ${q.prompt}`,
-        `QUESTION_${i + 1}_EXPECTED: ${expectedPrimary}`,
+        `QUESTION_${i + 1}_PROMPT: ${promptForReview}`,
+        `QUESTION_${i + 1}_EXPECTED: ${expectedForReview}`,
   `QUESTION_${i + 1}_ACCEPTABLE: [${acceptable.join(', ')}]`,
         `QUESTION_${i + 1}_LEARNER: ${learnerAnsRaw}`,
         `QUESTION_${i + 1}_CUE: ${cueForThis}`
@@ -3345,20 +3679,20 @@ function SessionPageInner() {
           blocks.push({ q: qNumber, text: replyText.slice(start, end) });
         }
       }
-      const used = new Set();
+      // Count correctness per block if ANY allowed cue phrase appears in that block (case-insensitive).
+      // We do not enforce uniqueness across different questions; duplicates are acceptable.
+      let correct = 0;
+      const found = [];
       for (const block of blocks) {
-        // Find first cue phrase present in this block (case-insensitive) that is not yet used.
         const lowerBlock = block.text.toLowerCase();
         let chosen = null;
         for (const phrase of CORRECT_TEST_CUE_PHRASES) {
-          if (!used.has(phrase) && lowerBlock.includes(phrase.toLowerCase())) { chosen = phrase; break; }
+          if (lowerBlock.includes(phrase.toLowerCase())) { chosen = phrase; break; }
         }
-        if (chosen) used.add(chosen);
+        if (chosen) { correct++; found.push(chosen); }
       }
-      const correct = Math.min(used.size, total); // cap just in case
-      const uniqueFound = Array.from(used);
-      setUsedTestCuePhrases(uniqueFound);
-      setTestCorrectCount(correct);
+      setUsedTestCuePhrases(found);
+      setTestCorrectCount(Math.min(correct, total));
       const percent = Math.round((correct / Math.max(1, total)) * 100);
       // We want ticker to appear right after audio finishes, before final summary.
       const interval = setInterval(() => {
@@ -4024,7 +4358,7 @@ function SessionPageInner() {
         }
       } catch {}
 
-      // Do not pre-advance state locally; wait for the model to emit the cue + next question to keep flow aligned.
+  // Do not pre-advance state locally; wait for the model to emit the cue to keep flow aligned.
 
       const lines = [
         'Worksheet judging (provided):',
@@ -4089,12 +4423,11 @@ function SessionPageInner() {
         const nextCueDetected = !isFinal && WORKSHEET_CUE_VARIANTS.some(
           (p) => new RegExp(p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(body)
         );
+        // Note: advancement now depends ONLY on detecting a valid cue phrase.
+        // We no longer require the next question to be present or exclude re-asks.
   const nextQ = !isFinal && nextObj ? formatQuestionForSpeech(nextObj) : '';
   const nextQN = norm(nextQ);
-  // Also allow matching just the raw prompt (without MC options/labels),
-  // since the model may introduce the next question without repeating choices.
   const nextPromptOnlyN = !isFinal && nextObj ? norm(nextObj.prompt || nextObj.question || '') : '';
-  const mentionsNext = (!!nextQN && bodyN.includes(nextQN)) || (!!nextPromptOnlyN && bodyN.includes(nextPromptOnlyN));
         if (isFinal && completionPhrase) {
           // Transition to test gating
             setPhase('test');
@@ -4103,62 +4436,12 @@ function SessionPageInner() {
             setCanSend(false);
             return;
         }
-    // Advance primarily when: not final, cue is present, the reply includes the NEXT question verbatim,
-    // and it does NOT contain the current question (to avoid advancing on a wrong-answer re-ask).
-  if (!isFinal && nextCueDetected && mentionsNext && !reAsk) {
-          // Advance to next distinct question
+        // Advance to the next item using a single condition: cue detected.
+        if (!isFinal && nextCueDetected) {
           if (hasDistinctNext) {
-            // Update UI caption to the next question immediately
             const nextBody = formatQuestionForSpeech(generatedWorksheet[nextIndex]);
             captionSentencesRef.current = [`${nextIndex + 1}. ${nextBody}`];
             setCaptionSentences([`${nextIndex + 1}. ${nextBody}`]);
-            setCaptionIndex(0);
-            setLearnerInput('');
-            setCanSend(false);
-            worksheetIndexRef.current = nextIndex;
-            setCurrentWorksheetIndex(nextIndex);
-            setTicker(nextIndex + 1);
-          } else {
-            // No distinct next remains; finish worksheet gracefully
-            setPhase('test');
-            setSubPhase('test-awaiting-begin');
-            setTicker(0);
-            setCanSend(false);
-            return;
-          }
-  } else if (!isFinal && nextCueDetected && !mentionsNext && reAsk) {
-          // Fallback: model signaled cue but re-asked SAME question.
-          // If this item is exact-match (not keyword short-answer) AND learner's normalized answer is acceptable,
-          // treat it as correct and advance to the next distinct item to prevent loops.
-          if (!isShortW) {
-            const normAns = (s) => normalizeAnswer(String(s ?? ''));
-            const learnerOk = acceptableW.map(a => normAns(a)).includes(normAns(trimmed));
-            if (learnerOk) {
-              if (hasDistinctNext) {
-                const nextBody2 = formatQuestionForSpeech(generatedWorksheet[nextIndex]);
-                captionSentencesRef.current = [`${nextIndex + 1}. ${nextBody2}`];
-                setCaptionSentences([`${nextIndex + 1}. ${nextBody2}`]);
-                setCaptionIndex(0);
-                setLearnerInput('');
-                setCanSend(false);
-                worksheetIndexRef.current = nextIndex;
-                setCurrentWorksheetIndex(nextIndex);
-                setTicker(nextIndex + 1);
-              } else {
-                setPhase('test');
-                setSubPhase('test-awaiting-begin');
-                setTicker(0);
-                setCanSend(false);
-                return;
-              }
-            }
-          }
-        } else if (!isFinal && isCorrectLocal) {
-          // Last-resort fallback: If our local rubric marks this turn correct, advance to avoid repeating NEXT_WORKSHEET_QUESTION
-          if (hasDistinctNext) {
-            const nextBody3 = formatQuestionForSpeech(generatedWorksheet[nextIndex]);
-            captionSentencesRef.current = [`${nextIndex + 1}. ${nextBody3}`];
-            setCaptionSentences([`${nextIndex + 1}. ${nextBody3}`]);
             setCaptionIndex(0);
             setLearnerInput('');
             setCanSend(false);
@@ -4458,199 +4741,210 @@ function SessionPageInner() {
   };
 
   return (
-    <div style={{ width: '100%', minHeight: '100svh' }}>
-      {/* Bounding wrapper: regular flow; inner container handles centering via margin auto */}
-  <div style={{ width: '100%', position: 'relative' }}>
-        {/* Width-matched wrapper: center by actual scaled width */}
-  <div style={{ width: '100%', maxWidth: baseWidth, position: 'relative', margin: '0 auto', boxSizing: 'border-box' }}>
+    <div style={{ width: '100%', height: '100svh', overflow: 'hidden' }}>
+  {/* Bounding wrapper: regular flow; inner container handles centering via margin auto */}
+  <div style={{ width: '100%', position: 'relative', height: '100%' }}>
+    {/* Scroll area sized to the viewport; disable scrolling to keep top cluster fixed */}
+  <div style={{ height: '100%', overflowY: 'hidden', WebkitOverflowScrolling: 'touch', overscrollBehaviorY: 'contain' }}>
+    {/* Width-matched wrapper: center by actual scaled width */}
+  <div style={{ width: '100%', maxWidth: baseWidth, position: 'relative', margin: '0 auto', boxSizing: 'border-box', paddingBottom: footerHeight }}>
     {/* Content wrapper (no transform scaling) */}
     <div style={{ width: '100%' }}>
-      <div style={{ width: '100%', boxSizing: 'border-box', padding: '0 0 6px', minWidth: 0 }}>
-  <h1 style={{ textAlign: "center", marginTop: 0, marginBottom: 8 }}>{(lessonData && (lessonData.title || lessonData.lessonTitle)) || manifestInfo.title}</h1>
+      {/* Sticky cluster: title + timeline + video + captions stick under the header without moving into it */}
+  <div style={{ position: 'sticky', top: (isMobileLandscape ? 52 : 64), zIndex: 25, background: '#ffffff' }}>
+        <div style={{ width: '100%', boxSizing: 'border-box', padding: '0 0 6px', minWidth: 0 }}>
+  <div className="portrait-title-spacer" style={!isMobileLandscape ? { paddingTop: '5%', paddingBottom: '5%' } : undefined}>
+    {!isMobileLandscape && (
+      <h1 style={{ textAlign: "center", marginTop: 0, marginBottom: 8 }}>
+        {(lessonData && (lessonData.title || lessonData.lessonTitle)) || manifestInfo.title}
+      </h1>
+    )}
+  </div>
+  {/** Clickable timeline jump logic */}
+  {(() => {
+    const handleJumpPhase = (target) => {
+      // Jump directly to a major phase emulating skip button side-effects
+      // This centralizes transitional resets so timeline navigation = skip navigation.
+      try { abortAllActivity(); } catch {}
+      setLoading(false); // allow overlays/buttons to show immediately
 
-      <Timeline timelinePhases={timelinePhases} timelineHighlight={timelineHighlight} />
+      const goDiscussion = () => {
+        setPhase('discussion');
+        setSubPhase('greeting');
+        setShowBegin(true); // initial big Begin overlay
+        setCanSend(false);
+        setTicker(0);
+      };
 
-  <VideoPanel
-    videoRef={videoRef}
-    showBegin={showBegin}
-    isSpeaking={isSpeaking}
-    onBegin={beginSession}
-    onBeginComprehension={beginComprehensionPhase}
-    onBeginWorksheet={beginWorksheetPhase}
-    onBeginTest={beginTestPhase}
-    onBeginSkippedExercise={beginSkippedExercise}
-    onPrev={skipBackwardPhase}
-    onNext={skipForwardPhase}
-    phase={phase}
-    subPhase={subPhase}
-    ticker={ticker}
-    testCorrectCount={testCorrectCount}
-    testFinalPercent={testFinalPercent}
-    lessonParam={lessonParam}
-    muted={muted}
-    userPaused={userPaused}
-    onToggleMute={toggleMute}
-    onTogglePlayPause={togglePlayPause}
-    loading={loading}
-    exerciseSkippedAwaitBegin={exerciseSkippedAwaitBegin}
-    skipPendingLessonLoad={skipPendingLessonLoad}
-    currentCompProblem={currentCompProblem}
-    needsAudioUnlock={needsAudioUnlock}
-    onUnlockAudio={unlockAudioPlayback}
-    onCompleteLesson={() => {
-      const key = getAssessmentStorageKey();
-      if (key) { try { clearAssessments(key); } catch { /* ignore */ } }
-      // Reset UI state so a fresh session can start if the user stays
-      setShowBegin(true);
-      setPhase('discussion');
-      setSubPhase('greeting');
-      // Return to initial locked state pending Begin
-      setCanSend(false);
-      setGeneratedWorksheet(null);
-      setGeneratedTest(null);
-      setCurrentWorksheetIndex(0);
-      worksheetIndexRef.current = 0;
-      // Also navigate back to lessons list per previous overlay behavior
-      if (typeof window !== 'undefined') {
-        window.location.href = '/learn/lessons';
+      const goComprehension = () => {
+        ensureBaseSessionSetup();
+        setPhase('comprehension');
+        setSubPhase('comprehension-start');
+        setShowBegin(false); // we use the dedicated Begin Comprehension button, not global overlay
+        setCurrentCompProblem(null);
+        setCanSend(false);
+        setTicker(0);
+        try {
+          comprehensionAwaitingLockRef.current = true;
+          setTimeout(() => { comprehensionAwaitingLockRef.current = false; }, 800);
+        } catch {}
+      };
+
+      const goExercise = () => {
+        ensureBaseSessionSetup();
+        setPhase('exercise');
+        setSubPhase('exercise-awaiting-begin');
+        setShowBegin(false);
+        setExerciseSkippedAwaitBegin(true); // ensures Begin Exercise button path
+        setCurrentExerciseProblem(null);
+        setCanSend(false);
+        setTicker(0);
+        try {
+          exerciseAwaitingLockRef.current = true;
+          setTimeout(() => { exerciseAwaitingLockRef.current = false; }, 800);
+        } catch {}
+      };
+
+      const goWorksheet = () => {
+        ensureBaseSessionSetup();
+        setPhase('worksheet');
+        setSubPhase('worksheet-awaiting-begin');
+        setShowBegin(false);
+        setWorksheetSkippedAwaitBegin(true);
+        setCanSend(false);
+        setTicker(0);
+      };
+
+      const goTest = () => {
+        ensureBaseSessionSetup();
+        setPhase('test');
+        setSubPhase('test-awaiting-begin');
+        setShowBegin(false);
+        setCanSend(false);
+        setTicker(0);
+      };
+
+      switch (target) {
+        case 'discussion':
+          goDiscussion();
+          break;
+        case 'comprehension':
+          goComprehension();
+          break;
+        case 'exercise':
+          goExercise();
+          break;
+        case 'worksheet':
+          goWorksheet();
+          break;
+        case 'test':
+          goTest();
+          break;
+        default:
+          break;
       }
-    }}
-      />
+    };
+    return (
+      <div style={{ position: 'relative', zIndex: 9999 }}>
+        <Timeline timelinePhases={timelinePhases} timelineHighlight={timelineHighlight} compact={isMobileLandscape} onJumpPhase={handleJumpPhase} />
+      </div>
+    );
+  })()}
 
+  {/* Video + captions: stack normally; side-by-side on mobile landscape */}
+  <div style={isMobileLandscape ? { display:'flex', alignItems:'stretch', width:'100%', paddingBottom:4 } : {}}>
+    <div ref={videoColRef} style={isMobileLandscape ? { flex:'0 0 50%', display:'flex', flexDirection:'column', minWidth:0 } : {}}>
+      <VideoPanel
+        isMobileLandscape={isMobileLandscape}
+        videoMaxHeight={videoMaxHeight}
+        videoRef={videoRef}
+        showBegin={showBegin}
+        isSpeaking={isSpeaking}
+        onBegin={beginSession}
+        onBeginComprehension={beginComprehensionPhase}
+        onBeginWorksheet={beginWorksheetPhase}
+        onBeginTest={beginTestPhase}
+        onBeginSkippedExercise={beginSkippedExercise}
+        onPrev={skipBackwardPhase}
+        onNext={skipForwardPhase}
+        phase={phase}
+        subPhase={subPhase}
+        ticker={ticker}
+        testCorrectCount={testCorrectCount}
+        testFinalPercent={testFinalPercent}
+        lessonParam={lessonParam}
+        muted={muted}
+        userPaused={userPaused}
+        onToggleMute={toggleMute}
+        onTogglePlayPause={togglePlayPause}
+        loading={loading}
+        exerciseSkippedAwaitBegin={exerciseSkippedAwaitBegin}
+        skipPendingLessonLoad={skipPendingLessonLoad}
+        currentCompProblem={currentCompProblem}
+        needsAudioUnlock={needsAudioUnlock}
+        onUnlockAudio={unlockAudioPlayback}
+        onCompleteLesson={() => {
+          const key = getAssessmentStorageKey();
+          if (key) { try { clearAssessments(key); } catch { /* ignore */ } }
+          setShowBegin(true);
+          setPhase('discussion');
+          setSubPhase('greeting');
+          setCanSend(false);
+          setGeneratedWorksheet(null);
+          setGeneratedTest(null);
+          setCurrentWorksheetIndex(0);
+          worksheetIndexRef.current = 0;
+          if (typeof window !== 'undefined') {
+            window.location.href = '/learn/lessons';
+          }
+        }}
+      />
+    </div>
+  <div ref={captionColRef} style={isMobileLandscape ? { flex:'0 0 50%', minWidth:0, display:'flex', height: sideBySideHeight ? sideBySideHeight : 'auto' } : (stackedCaptionHeight ? { maxHeight: stackedCaptionHeight, height: stackedCaptionHeight, overflowY:'hidden', marginTop:8 } : {})}>
       <CaptionPanel
         sentences={captionSentences}
         activeIndex={captionIndex}
         boxRef={captionBoxRef}
-  scaleFactor={snappedScale}
+        scaleFactor={snappedScale}
+        compact={isMobileLandscape}
+        fullHeight={isMobileLandscape && !!sideBySideHeight}
+        stackedHeight={(!isMobileLandscape && stackedCaptionHeight) ? stackedCaptionHeight : null}
       />
+    </div>
+  </div>
+        </div>
+      </div>
 
-      <InputPanel
-        learnerInput={learnerInput}
-        setLearnerInput={setLearnerInput}
-        sendDisabled={sendDisabled}
-        canSend={canSend}
-        loading={loading}
-        abortKey={abortKey}
-        needsAudioUnlock={needsAudioUnlock}
-        showBegin={showBegin}
-        isSpeaking={isSpeaking}
-        phase={phase}
-        subPhase={subPhase}
-        currentCompProblem={currentCompProblem}
-        tipOverride={tipOverride}
-        onSend={handleSend}
-      />
+  {/* End scroll content area before fixed footer */}
+  </div> {/* end inner band */}
+  </div> {/* end content wrapper */}
+  </div> {/* end width-matched wrapper */}
+  </div> {/* end scroll container */}
 
-      {/* Removed duplicate inline "Complete Lesson" button; using overlay button in VideoPanel */}
+      {/* Fixed footer with input controls (downloads removed) */}
+      <div ref={footerRef} style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 999, background: '#ffffff', borderTop: '1px solid #e5e7eb', boxShadow: '0 -4px 20px rgba(0,0,0,0.06)' }}>
+        <div style={{ margin: '0 auto', width: '100%', maxWidth: baseWidth, boxSizing: 'border-box', padding: isMobileLandscape ? '6px 0 calc(6px + env(safe-area-inset-bottom, 0px))' : '10px 0 calc(10px + env(safe-area-inset-bottom, 0px))' }}>
+          <InputPanel
+            learnerInput={learnerInput}
+            setLearnerInput={setLearnerInput}
+            sendDisabled={sendDisabled}
+            canSend={canSend}
+            loading={loading}
+            abortKey={abortKey}
+            needsAudioUnlock={needsAudioUnlock}
+            showBegin={showBegin}
+            isSpeaking={isSpeaking}
+            phase={phase}
+            subPhase={subPhase}
+            currentCompProblem={currentCompProblem}
+            tipOverride={tipOverride}
+            onSend={handleSend}
+            compact={isMobileLandscape}
+          />
+        </div>
+      </div>
 
-      <DownloadPanel
-        lessonDataLoading={lessonDataLoading}
-        canDownloadWorksheet={canDownloadWorksheet}
-        canDownloadTest={canDownloadTest}
-        onDownloadWorksheet={handleDownloadWorksheet}
-        onDownloadTest={handleDownloadTest}
-        onReroll={async () => {
-          // Clear persisted sets for this lesson
-          const key = getAssessmentStorageKey();
-          if (key) { try { clearAssessments(key); } catch { /* ignore */ } }
-          // Reset current worksheet/test state
-          setGeneratedWorksheet(null);
-          setGeneratedTest(null);
-    setCurrentWorksheetIndex(0);
-    worksheetIndexRef.current = 0;
-          setTestActiveIndex(0);
-          setTestUserAnswers([]);
-          // Re-run generation logic by reloading the lesson data block
-          // Easiest safe nudge: toggle lessonData to trigger effect block that regenerates sets
-          try {
-            // Force re-evaluation of targets in case learner or runtime changed
-            runtimeTargetsLoaded = false;
-            await ensureRuntimeTargets(true); // Force fresh reload
-            // Force immediate regeneration using existing logic just below lesson load
-            const data = lessonData;
-            if (!data) return;
-            const storageKey = getAssessmentStorageKey({ data, manifest: manifestInfo, param: lessonParam });
-            // Copy of the generation logic pathway; rely on helper decks already initialized
-            const shuffle = (arr) => {
-              const copy = [...arr];
-              for (let i = copy.length - 1; i > 0; i -= 1) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [copy[i], copy[j]] = [copy[j], copy[i]];
-              }
-              return copy;
-            };
-            let gW = [];
-            let gT = [];
-            if (subjectParam === 'math') {
-              const samples = reserveSamples(WORKSHEET_TARGET + TEST_TARGET);
-              const words = reserveWords(WORKSHEET_TARGET + TEST_TARGET);
-              const takeMixed = (target, isTest) => {
-                const desiredWp = Math.round(target * 0.3);
-                const wpSel = (words || []).slice(0, desiredWp).map(q => ({ ...(isTest ? ({ ...q, expected: q.expected ?? q.answer }) : q), sourceType: 'word' }));
-                const remainder = Math.max(0, target - wpSel.length);
-                const cap = Math.max(0, Math.floor(target * 0.10));
-                const fromSamples = (samples || []).map(q => ({ ...q, sourceType: 'sample' }));
-                const sa = fromSamples.filter(q => /short\s*answer|shortanswer/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'short');
-                const fib = fromSamples.filter(q => /fill\s*in\s*the\s*blank|fillintheblank/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'fib');
-                const others = fromSamples.filter(q => !sa.includes(q) && !fib.includes(q));
-                const shuffleArr = (arr) => shuffle(arr);
-                const saPick = shuffleArr(sa).slice(0, Math.min(cap, sa.length));
-                const fibPick = shuffleArr(fib).slice(0, Math.min(cap, fib.length));
-                const remaining = Math.max(0, remainder - saPick.length - fibPick.length);
-                const otherPick = shuffleArr(others).slice(0, remaining);
-                const baseSel = shuffleArr([...saPick, ...fibPick, ...otherPick]);
-                const base = shuffleArr([...wpSel, ...baseSel]);
-                if (base.length >= target) return base.slice(0, target);
-                const usedKeys = new Set(base.map(promptKey));
-                const remOthers = others.filter(q => !usedKeys.has(promptKey(q)));
-                const remSa = sa.filter(q => !usedKeys.has(promptKey(q)));
-                const remFib = fib.filter(q => !usedKeys.has(promptKey(q)));
-                const remWords = (words || []).slice(desiredWp).filter(q => !usedKeys.has(promptKey(q)));
-                return ensureExactCount(base, target, [shuffleArr(remOthers), shuffleArr(remSa), shuffleArr(remFib), shuffleArr(remWords)]);
-              };
-              gW = takeMixed(WORKSHEET_TARGET, false);
-              gT = takeMixed(TEST_TARGET, true);
-              setGeneratedWorksheet(gW);
-              setGeneratedTest(gT);
-            } else {
-              const tf = Array.isArray(data.truefalse) ? data.truefalse.map(q => ({ ...q, sourceType: 'tf' })) : [];
-              const mc = Array.isArray(data.multiplechoice) ? data.multiplechoice.map(q => ({ ...q, sourceType: 'mc' })) : [];
-              const fib = Array.isArray(data.fillintheblank) ? data.fillintheblank.map(q => ({ ...q, sourceType: 'fib' })) : [];
-              const sa = Array.isArray(data.shortanswer) ? data.shortanswer.map(q => ({ ...q, sourceType: 'short' })) : [];
-              const anyCats = tf.length || mc.length || fib.length || sa.length;
-              if (anyCats) {
-                const gFromCats = (target) => {
-                  const capLocal = Math.max(0, Math.floor(target * 0.10));
-                  const saPick = shuffle(sa).slice(0, Math.min(capLocal, sa.length));
-                  const fibPick = shuffle(fib).slice(0, Math.min(capLocal, fib.length));
-                  const others = shuffle([...tf, ...mc]);
-                  const remaining = Math.max(0, target - saPick.length - fibPick.length);
-                  const otherPick = others.slice(0, remaining);
-                  const base = shuffle([...saPick, ...fibPick, ...otherPick]);
-                  if (base.length >= target) return base.slice(0, target);
-                  const usedKeys = new Set(base.map(promptKey));
-                  const remOthers = others.slice(remaining).filter(q => !usedKeys.has(promptKey(q)));
-                  const remFib = fib.filter(q => !usedKeys.has(promptKey(q)));
-                  const remSa = sa.filter(q => !usedKeys.has(promptKey(q)));
-                  const legacy = label => (Array.isArray(data[label]) ? data[label] : []).filter(q => !usedKeys.has(promptKey(q)));
-                  const legacyAll = [...legacy('worksheet'), ...legacy('test')];
-                  return ensureExactCount(base, target, [shuffle(remOthers), shuffle(remFib), shuffle(remSa), shuffle(legacyAll)]);
-                };
-                gW = gFromCats(WORKSHEET_TARGET);
-                gT = gFromCats(TEST_TARGET);
-                setGeneratedWorksheet(gW);
-                setGeneratedTest(gT);
-              } else {
-                if (Array.isArray(data.worksheet) && data.worksheet.length) setGeneratedWorksheet(ensureExactCount(shuffle(data.worksheet).slice(0, WORKSHEET_TARGET), WORKSHEET_TARGET, [shuffle(data.worksheet)]));
-                if (Array.isArray(data.test) && data.test.length) setGeneratedTest(ensureExactCount(shuffle(data.test).slice(0, TEST_TARGET), TEST_TARGET, [shuffle(data.test)]));
-              }
-            }
-            if (storageKey) { try { saveAssessments(storageKey, { worksheet: gW, test: gT }); } catch {} }
-          } catch {}
-        }}
-      />
-
-      {/* Intentionally nothing rendered below DownloadPanel */}
+      {/* Intentionally nothing rendered below the fixed footer */}
       <style jsx global>{`
         .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
         .scrollbar-hidden::-webkit-scrollbar { display: none; }
@@ -4659,11 +4953,8 @@ function SessionPageInner() {
         .ms-spinner { position: relative; box-sizing: border-box; width:72px; height:72px; border:7px solid rgba(255,255,255,0.25); border-top-color:#ffffff; border-radius:50%; animation: msSpinFade 0.85s linear infinite; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.45)); }
   .ms-spinner::after { content:""; position:absolute; inset:12px; border:4px solid transparent; border-top-color:#c7442e; border-radius:50%; animation: msSpinFade 1.4s linear infinite reverse; }
       `}</style>
-          </div>
-        </div>
+        {/* Close outer viewport container */}
       </div>
-      </div>
-    </div>
   );
 }
 
@@ -4678,14 +4969,76 @@ const primaryButtonStyle = {
   cursor: "pointer",
 };
 
-function Timeline({ timelinePhases, timelineHighlight }) {
+function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPhase }) {
   const columns = Array.isArray(timelinePhases) && timelinePhases.length > 0 ? timelinePhases.length : 5;
   const gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
+  const containerRef = useRef(null);
+  const [labelFontSize, setLabelFontSize] = useState(16);
+
+  // Compute a shared font size so the longest label fits within a single column
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const BASE = 16; // px
+    const MIN = 12;  // px - keep readable on small screens
+    const MAX = 16;  // px - do not upscale above base
+    const PADDING_X = 18 * 2 + 4; // left+right padding plus a little slack for borders
+
+    const labels = (Array.isArray(timelinePhases) ? timelinePhases : []).map(k => String(phaseLabels[k] || ''));
+    if (!labels.length) return;
+
+    const compute = () => {
+      const totalWidth = el.clientWidth || 0;
+      if (totalWidth <= 0) { setLabelFontSize(BASE); return; }
+      const colWidth = totalWidth / columns;
+      const available = Math.max(0, colWidth - PADDING_X);
+
+      // Build a hidden measurer span to measure widths at BASE size and bold weight (worst case)
+      const meas = document.createElement('span');
+      meas.style.position = 'fixed';
+      meas.style.left = '-99999px';
+      meas.style.top = '0';
+      meas.style.whiteSpace = 'nowrap';
+      meas.style.visibility = 'hidden';
+      const cs = window.getComputedStyle(el);
+      meas.style.fontFamily = cs.fontFamily || 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial';
+      meas.style.fontWeight = '700'; // measure bold to avoid overflow when highlighted
+      meas.style.fontSize = `${BASE}px`;
+      document.body.appendChild(meas);
+      let maxLabelWidth = 0;
+      for (const text of labels) {
+        meas.textContent = text;
+        const w = meas.getBoundingClientRect().width;
+        if (w > maxLabelWidth) maxLabelWidth = w;
+      }
+      document.body.removeChild(meas);
+
+      if (maxLabelWidth <= 0 || available <= 0) { setLabelFontSize(BASE); return; }
+      const scale = Math.min(1, available / maxLabelWidth);
+      const next = Math.max(MIN, Math.min(MAX, Math.floor(BASE * scale)));
+      setLabelFontSize(next);
+    };
+
+    // Initial compute + observe container size changes
+    compute();
+    const ro = new ResizeObserver(() => compute());
+    try { ro.observe(el); } catch {}
+    // Recompute on window orientation changes
+    const onResize = () => compute();
+    window.addEventListener('resize', onResize);
+    return () => {
+      try { ro.disconnect(); } catch {}
+      window.removeEventListener('resize', onResize);
+    };
+  }, [timelinePhases, columns]);
+
   return (
-    <div style={{ display: "grid", gridTemplateColumns, gap: 0, marginBottom: 5, width: '100%', minWidth: 0 }}>
+  <div ref={containerRef} style={{ display: "grid", gridTemplateColumns, gap: 6, marginBottom: compact ? 4 : 8, width: '100%', minWidth: 0, position: 'relative', zIndex: 9999, padding: 4, boxSizing: 'border-box' }}>
       {timelinePhases.map((phaseKey) => (
         <div
           key={phaseKey}
+          onClick={onJumpPhase ? () => onJumpPhase(phaseKey) : undefined}
           style={{
             width: '100%',
             display: 'flex',
@@ -4693,13 +5046,23 @@ function Timeline({ timelinePhases, timelineHighlight }) {
             justifyContent: 'center',
             textAlign: 'center',
             boxSizing: 'border-box',
-            padding: "8px 18px",
+            padding: compact ? "4px 10px" : "8px 18px",
             borderRadius: 12,
             background: timelineHighlight === phaseKey ? "#c7442e" : "#e5e7eb",
             color: timelineHighlight === phaseKey ? "#fff" : "#374151",
             fontWeight: timelineHighlight === phaseKey ? 700 : 500,
             boxShadow: timelineHighlight === phaseKey ? "0 0 0 3px #c7442e, 0 2px 8px #c7442e" : undefined,
             border: "2px solid transparent",
+            // Responsive label typography
+            fontSize: labelFontSize,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            minWidth: 0,
+            cursor: onJumpPhase ? 'pointer' : 'default',
+            userSelect: 'none',
+            transition: 'background 120ms ease, transform 120ms ease',
+            ...(onJumpPhase ? {':hover': {}} : {})
           }}
         >
           {phaseLabels[phaseKey]}
@@ -4709,11 +5072,52 @@ function Timeline({ timelinePhases, timelineHighlight }) {
   );
 }
 
-function VideoPanel({ videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, onPrev, onNext, phase, subPhase, ticker, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, onTogglePlayPause, loading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, needsAudioUnlock, onUnlockAudio }) {
-  // Trim bottom 20% visually by constraining aspect ratio and anchoring video to top
+function VideoPanel({ isMobileLandscape, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, onPrev, onNext, phase, subPhase, ticker, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, onTogglePlayPause, loading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, needsAudioUnlock, onUnlockAudio }) {
+  // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
+  const containerMaxWidth = isMobileLandscape ? 'clamp(300px, 52vw, 520px)' : 1000;
+  const dynamicHeightStyle = (isMobileLandscape && videoMaxHeight) ? { maxHeight: videoMaxHeight, height: videoMaxHeight, minHeight: 0 } : {};
+  // Responsive control sizing: derive a target size from container width via CSS clamp.
+  // We'll expose a CSS variable --ctrlSize and reuse for skip + play/pause/mute for symmetry.
+  const controlClusterStyle = {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    display: 'flex',
+    gap: 12,
+    zIndex: 10,
+    // size calculation moved to child buttons via CSS var
+  };
+  const controlButtonBase = {
+    background: '#1f2937',
+    color: '#fff',
+    border: 'none',
+    width: 'var(--ctrlSize)',
+    height: 'var(--ctrlSize)',
+    display: 'grid',
+    placeItems: 'center',
+    borderRadius: '50%',
+    cursor: 'pointer',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+  };
+  // Determine if we are sitting at a phase-begin state where a Begin button is displayed.
+  // In these states playing/pausing the ambient video causes issues, so we disable the control entirely.
+  const atPhaseBegin = (
+    (phase === 'discussion' && showBegin) ||
+    (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin') ||
+    (phase === 'test' && subPhase === 'test-awaiting-begin') ||
+    (phase === 'comprehension' && subPhase === 'comprehension-start' && !currentCompProblem) ||
+    (phase === 'exercise' && subPhase === 'exercise-awaiting-begin')
+  );
+  // Portrait refinement: instead of padding the outer wrapper, shrink the video width a bit so
+  // the empty space on each side is symmetrical and the video remains visually centered.
+  // We choose a slight shrink (e.g. 92%) to create subtle gutters. Landscape keeps full width.
+  const outerWrapperStyle = { position: 'relative', margin: '0 auto', maxWidth: containerMaxWidth, width: '100%' };
+  const innerVideoWrapperStyle = isMobileLandscape
+    ? { position: 'relative', overflow: 'hidden', aspectRatio: '16 / 7.2', minHeight: 200, width: '100%', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', background: '#000', '--ctrlSize': 'clamp(34px, 6.2vw, 52px)', ...dynamicHeightStyle }
+    : { position: 'relative', overflow: 'hidden', aspectRatio: '16 / 7.2', minHeight: 200, width: '92%', margin: '0 auto', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', background: '#000', '--ctrlSize': 'clamp(34px, 6.2vw, 52px)', ...dynamicHeightStyle };
   return (
-    <div style={{ position: 'relative', margin: '0 auto', maxWidth: 640, width: '100%' }}>
-      <div style={{ position: 'relative', overflow: 'hidden', aspectRatio: '16 / 7.2', minHeight: 260, width: '100%', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', background: '#000' }}>
+    <div style={outerWrapperStyle}>
+      <div style={innerVideoWrapperStyle}>
         <video
           ref={videoRef}
           src="/media/ms-sonoma-3.mp4"
@@ -4734,7 +5138,7 @@ function VideoPanel({ videoRef, showBegin, isSpeaking, onBegin, onBeginComprehen
         />
         {phase === 'test' && subPhase === 'test-active' && (
           <div style={{ position: 'absolute', inset: 0, background: '#000', color: '#fff', borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', textAlign: 'center' }}>
-            <div style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.3, maxWidth: 640 }}>
+            <div style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.3, maxWidth: 1000 }}>
               <span />
             </div>
           </div>
@@ -4791,25 +5195,38 @@ function VideoPanel({ videoRef, showBegin, isSpeaking, onBegin, onBeginComprehen
         {phase === 'exercise' && subPhase === 'exercise-awaiting-begin' && (
           <button type="button" onClick={onBeginSkippedExercise} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '16px 40px', fontWeight: 700, fontSize: 22, border: 'none', boxShadow: '0 2px 16px rgba(199,68,46,0.18)', cursor: 'pointer', zIndex: 6 }}>Begin Exercise</button>
         )}
-        <div style={{ position: 'absolute', bottom: 10, right: 10, display: 'flex', gap: 10, zIndex: 10 }}>
-          <button type="button" onClick={onTogglePlayPause} aria-label={userPaused ? 'Play' : 'Pause'} style={{ background: '#1f2937', color: '#fff', border: 'none', width: 42, height: 42, display: 'grid', placeItems: 'center', borderRadius: '50%', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}>
+  {/* Primary control cluster (play/pause + mute) */}
+  <div style={controlClusterStyle}>
+          <button
+            type="button"
+            onClick={atPhaseBegin ? undefined : onTogglePlayPause}
+            aria-label={userPaused ? 'Play' : 'Pause'}
+            disabled={atPhaseBegin}
+            title={atPhaseBegin ? 'Press Begin first' : (userPaused ? 'Play' : 'Pause')}
+            style={{
+              ...controlButtonBase,
+              cursor: atPhaseBegin ? 'not-allowed' : 'pointer',
+              opacity: atPhaseBegin ? 0.4 : 1
+            }}
+          >
             {userPaused ? (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 5v14l11-7z" /></svg>
+              <svg style={{ width: '55%', height: '55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 5v14l11-7z" /></svg>
             ) : (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
+              <svg style={{ width: '55%', height: '55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
             )}
           </button>
-          <button type="button" onClick={onToggleMute} aria-label={muted ? 'Unmute' : 'Mute'} style={{ background: '#1f2937', color: '#fff', border: 'none', width: 42, height: 42, display: 'grid', placeItems: 'center', borderRadius: '50%', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}>
+          <button type="button" onClick={onToggleMute} aria-label={muted ? 'Unmute' : 'Mute'} style={controlButtonBase}>
             {muted ? (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
+              <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
             ) : (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M19 8a5 5 0 010 8" /><path d="M15 11a2 2 0 010 2" /></svg>
+              <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M19 8a5 5 0 010 8" /><path d="M15 11a2 2 0 010 2" /></svg>
             )}
           </button>
         </div>
         {/* Paired skip controls at bottom-left */}
         {(phase !== 'congrats') && (onPrev || onNext) && (
-          <div style={{ position: 'absolute', bottom: 12, left: 12, display: 'flex', gap: 8 }}>
+          /* Mirror cluster: same bottom & edge offset (16) and same internal gap (12) to create symmetry */
+          <div style={{ position: 'absolute', bottom: 16, left: 16, display: 'flex', gap: 12 }}>
             {onPrev && (
               <button
                 type="button"
@@ -4817,9 +5234,9 @@ function VideoPanel({ videoRef, showBegin, isSpeaking, onBegin, onBeginComprehen
                 aria-label="Previous"
                 title="Previous"
                 disabled={phase === 'discussion'}
-                style={{ background: 'rgba(199,68,46,0.88)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 16, fontWeight: 700, cursor: phase === 'discussion' ? 'not-allowed' : 'pointer', opacity: phase === 'discussion' ? 0.45 : 1, boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}
+                style={{ ...controlButtonBase, cursor: phase === 'discussion' ? 'not-allowed' : 'pointer', opacity: phase === 'discussion' ? 0.4 : 1 }}
               >
-                ←
+                <svg style={{ width: '55%', height: '55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
               </button>
             )}
             {onNext && (
@@ -4829,9 +5246,9 @@ function VideoPanel({ videoRef, showBegin, isSpeaking, onBegin, onBeginComprehen
                 aria-label="Next"
                 title="Next"
                 disabled={phase === 'test'}
-                style={{ background: 'rgba(199,68,46,0.88)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 16, fontWeight: 700, cursor: phase === 'test' ? 'not-allowed' : 'pointer', opacity: phase === 'test' ? 0.45 : 1, boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}
+                style={{ ...controlButtonBase, cursor: phase === 'test' ? 'not-allowed' : 'pointer', opacity: phase === 'test' ? 0.4 : 1 }}
               >
-                →
+                <svg style={{ width: '55%', height: '55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
               </button>
             )}
           </div>
@@ -4877,7 +5294,7 @@ function CurrentAssessmentPrompt({ phase, subPhase }) {
   return prompt ? <span>{prompt}</span> : null;
 }
 
-function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, loading, onSend, showBegin, isSpeaking, phase, subPhase, tipOverride, abortKey, currentCompProblem, needsAudioUnlock }) {
+function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, loading, onSend, showBegin, isSpeaking, phase, subPhase, tipOverride, abortKey, currentCompProblem, needsAudioUnlock, compact = false }) {
   const [focused, setFocused] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -4888,6 +5305,8 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
   const inputRef = useRef(null);
   // Track whether Numpad+ is currently held to avoid repeat triggers
   const hotkeyDownRef = useRef(false);
+  // Track touch-hold lifecycle so we can start on touchstart and stop on touchend without triggering synthetic clicks
+  const touchActiveRef = useRef(false);
 
   // Abort controller for STT fetch
   const sttAbortRef = useRef(null);
@@ -5050,23 +5469,54 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
     return '';
   };
   return (
-  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, width: '100%', maxWidth: 640, marginLeft: 'auto', marginRight: 'auto' }}>
+  <div style={{ display: "flex", alignItems: "center", gap: (typeof compact !== 'undefined' && compact) ? 6 : 8, marginBottom: (typeof compact !== 'undefined' && compact) ? 2 : 12, width: '100%', maxWidth: '100%', marginLeft: 'auto', marginRight: 'auto', boxSizing: 'border-box', paddingLeft: (typeof compact !== 'undefined' && compact) ? 8 : 12, paddingRight: (typeof compact !== 'undefined' && compact) ? 8 : 12 }}>
       <button
         style={{
           background: (sendDisabled || needsAudioUnlock) ? "#4b5563" : '#c7442e',
           color: "#fff",
           borderRadius: 8,
-          padding: "8px 12px",
+          padding: (typeof compact !== 'undefined' && compact) ? "6px 10px" : "8px 12px",
           fontWeight: 600,
           border: "none",
           cursor: (sendDisabled || needsAudioUnlock) ? "not-allowed" : "pointer",
           opacity: (sendDisabled || needsAudioUnlock) ? 0.7 : 1,
           transition: "background 0.2s, opacity 0.2s, box-shadow 0.2s",
           position: 'relative',
-          boxShadow: isRecording ? '0 0 0 4px rgba(199,68,46,0.35), 0 0 12px 4px rgba(199,68,46,0.55)' : '0 2px 6px rgba(0,0,0,0.25)'
+          boxShadow: isRecording ? '0 0 0 4px rgba(199,68,46,0.35), 0 0 12px 4px rgba(199,68,46,0.55)' : '0 2px 6px rgba(0,0,0,0.25)',
+          // Prevent long-press selection/callout on mobile
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none',
+          touchAction: 'manipulation'
         }}
         aria-label={isRecording ? 'Stop recording' : 'Start recording'}
         disabled={sendDisabled || needsAudioUnlock}
+        onContextMenu={(e) => { e.preventDefault(); }}
+        onDragStart={(e) => { e.preventDefault(); }}
+        onTouchStart={(e) => {
+          // Use hold-to-record on touch devices; prevent synthetic click
+          e.preventDefault();
+          if (sendDisabled || needsAudioUnlock) return;
+          touchActiveRef.current = true;
+          if (!isRecording && !uploading) {
+            startRecording();
+          }
+        }}
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          if (!touchActiveRef.current) return;
+          touchActiveRef.current = false;
+          if (isRecording) {
+            stopRecording();
+          }
+        }}
+        onTouchCancel={(e) => {
+          e.preventDefault();
+          touchActiveRef.current = false;
+          if (isRecording) {
+            stopRecording();
+          }
+        }}
         onClick={() => {
           if (sendDisabled || needsAudioUnlock) return;
           if (isRecording) {
@@ -5127,7 +5577,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
           background: (sendDisabled || needsAudioUnlock) ? "#4b5563" : "#c7442e",
           color: "#fff",
           borderRadius: 8,
-          padding: "8px 12px",
+          padding: (typeof compact !== 'undefined' && compact) ? "6px 10px" : "8px 12px",
           fontWeight: 600,
           border: "none",
           cursor: (sendDisabled || needsAudioUnlock) ? "not-allowed" : "pointer",
@@ -5190,9 +5640,13 @@ function DownloadPanel({
         gridTemplateColumns: 'repeat(3, 1fr)',
         gap: 8,
         alignItems: 'stretch',
-        // Nudge the download panel slightly further down from the input area
-        marginTop: 20,
-        marginBottom: 0,
+        marginTop: 8,
+        marginBottom: 4,
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+        paddingLeft: 12,
+        paddingRight: 12,
       }}
     >
       <button
@@ -5266,160 +5720,158 @@ function DownloadPanel({
   );
 }
 
-function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1 }) {
+function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact = false, fullHeight = false, stackedHeight = null }) {
+  const [canScroll, setCanScroll] = useState(false);
+  const [atTop, setAtTop] = useState(true);
+  const [atBottom, setAtBottom] = useState(true);
+
+  // Detect overflow & scroll position
+  const recomputeScrollState = useCallback(() => {
+    if (!boxRef?.current) return;
+    const el = boxRef.current;
+    const overflow = el.scrollHeight > el.clientHeight + 4; // tolerance
+    setCanScroll(overflow);
+    setAtTop(el.scrollTop <= 4);
+    setAtBottom(el.scrollTop >= el.scrollHeight - el.clientHeight - 4);
+  }, [boxRef]);
+
+  useEffect(() => {
+    recomputeScrollState();
+  }, [sentences, stackedHeight, fullHeight, compact, recomputeScrollState]);
+
+  useEffect(() => {
+    if (!boxRef?.current) return;
+    const el = boxRef.current;
+    const handler = () => recomputeScrollState();
+    el.addEventListener('scroll', handler, { passive: true });
+    const resizeObs = new ResizeObserver(handler);
+    resizeObs.observe(el);
+    return () => {
+      el.removeEventListener('scroll', handler);
+      resizeObs.disconnect();
+    };
+  }, [boxRef, recomputeScrollState]);
+
   useEffect(() => {
     if (!boxRef?.current) return;
     const el = boxRef.current.querySelector(`[data-idx="${activeIndex}"]`);
-    if (el) {
-      const container = boxRef.current;
-      const marginTop = 8;
-      const marginBottom = 24; // slightly larger to pre-reveal next line
-      // When an ancestor scales via CSS transform, the visual sizes change but scroll metrics do not.
-      // Adjust thresholds using the provided scaleFactor to decide movement more consistently.
-      const scale = Number.isFinite(scaleFactor) && scaleFactor > 0 ? scaleFactor : 1;
-      const elementTop = el.offsetTop - marginTop;
-      const elementBottom = el.offsetTop + el.offsetHeight + marginBottom;
-      const viewTop = container.scrollTop;
-      const viewBottom = viewTop + container.clientHeight;
-      const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight);
-      const isLast = activeIndex >= (Array.isArray(sentences) ? sentences.length - 1 : -1);
-
-      // Decide if we need to move
-      if (elementTop < viewTop || elementBottom > viewBottom) {
-        // If we're far away (jump threshold), snap instantly to avoid lag
-        const distance = Math.abs(elementTop - viewTop);
-        const jumpThreshold = (container.clientHeight * 0.65) / scale; // be more eager to snap when scaled down
-        let target;
-        if (isLast) {
-          target = maxScroll; // always show last fully
-        } else {
-          // Try to position the element ~1/5 from top for better context
-            const desiredOffset = Math.max(0, elementTop - (container.clientHeight * 0.2) / scale);
-            target = Math.min(maxScroll, desiredOffset);
-        }
-        if (distance > jumpThreshold) {
-          container.scrollTop = target; // instant for large jumps
-        } else {
-          container.scrollTo({ top: target, behavior: 'smooth' });
-        }
-        if (isLast) {
-          // Double-clamp last line to prevent drift
-          requestAnimationFrame(() => {
-            container.scrollTop = maxScroll;
-          });
-        }
+    if (!el) return;
+    const container = boxRef.current;
+    const marginTop = 8;
+    const marginBottom = 24;
+    const scale = Number.isFinite(scaleFactor) && scaleFactor > 0 ? scaleFactor : 1;
+    const elementTop = el.offsetTop - marginTop;
+    const elementBottom = el.offsetTop + el.offsetHeight + marginBottom;
+    const viewTop = container.scrollTop;
+    const viewBottom = viewTop + container.clientHeight;
+    const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight);
+    const isLast = activeIndex >= (Array.isArray(sentences) ? sentences.length - 1 : -1);
+    if (elementTop < viewTop || elementBottom > viewBottom) {
+      const distance = Math.abs(elementTop - viewTop);
+      const jumpThreshold = (container.clientHeight * 0.65) / scale;
+      let target;
+      if (isLast) target = maxScroll; else {
+        const desiredOffset = Math.max(0, elementTop - (container.clientHeight * 0.2) / scale);
+        target = Math.min(maxScroll, desiredOffset);
       }
+      if (distance > jumpThreshold) container.scrollTop = target; else container.scrollTo({ top: target, behavior: 'smooth' });
+      if (isLast) requestAnimationFrame(() => { container.scrollTop = maxScroll; });
     }
-  }, [activeIndex, boxRef, sentences, scaleFactor]);
+  }, [activeIndex, sentences, scaleFactor, boxRef]);
+
+  const panelStyle = {
+    width: '100%',
+    boxSizing: 'border-box',
+    paddingTop: compact ? 6 : 12,
+    paddingRight: 12,
+    paddingBottom: compact ? 6 : 12,
+    paddingLeft: 12,
+  background: '#ffffff',
+  color: '#111111',
+  borderRadius: 14,
+  fontSize: 18,
+  lineHeight: 1.5,
+    maxHeight: fullHeight ? '100%' : (stackedHeight ? stackedHeight : (compact ? '14vh' : '18vh')),
+    height: fullHeight ? '100%' : (stackedHeight ? stackedHeight : 'auto'),
+    overflowY: 'auto',
+    position: 'relative',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.25)'
+  };
 
   return (
-    <div style={{ marginBottom: 0, width: '100%', maxWidth: 640, marginLeft: 'auto', marginRight: 'auto' }}>
-      <div
-        style={{
-          position: 'relative',
-          height: '18vh',
-          border: '1px solid #e5e7eb',
-          borderRadius: 8,
-          background: '#fff',
-          color: '#111827',
-          fontSize: 16,
-          lineHeight: 1.4,
-          marginTop: 0,
-          overflow: 'hidden', // restored; we now prevent clipping via inner padding & spacer
-        }}
-      >
-  <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', flexDirection: 'column', gap: 18, zIndex: 1 }}>
-          <button
-            type="button"
-            onClick={() => boxRef.current?.scrollBy({ top: -140, behavior: 'smooth' })}
-            aria-label="Scroll captions up"
-            style={{
-              background: '#1f2937',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 8,
-              width: 28,
-              height: 28,
-              display: 'grid',
-              placeItems: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            ▲
-          </button>
-          <button
-            type="button"
-            onClick={() => boxRef.current?.scrollBy({ top: 140, behavior: 'smooth' })}
-            aria-label="Scroll captions down"
-            style={{
-              background: '#1f2937',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 8,
-              width: 28,
-              height: 28,
-              display: 'grid',
-              placeItems: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            ▼
-          </button>
-        </div>
-        <div
-          ref={boxRef}
-          className="scrollbar-hidden"
+    <div ref={boxRef} className="scrollbar-hidden" style={panelStyle} aria-live="polite">
+      <div style={{ position: 'absolute', top: 6, right: 6, display: 'flex', flexDirection: 'column', gap: 6, zIndex: 10 }}>
+        <button
+          type="button"
+          aria-label="Scroll up captions"
+          disabled={atTop}
+          onClick={() => { if (boxRef.current) boxRef.current.scrollBy({ top: -Math.max(80, boxRef.current.clientHeight * 0.4), behavior: 'smooth' }); }}
           style={{
-            height: '100%',
-            overflowY: 'auto',
-            padding: '10px 12px 52px 12px', // larger bottom padding for safe zone
-            paddingRight: 44,
-            boxSizing: 'border-box',
+            background: atTop ? '#d1d5db' : '#1f2937',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 6,
+            width: 34,
+            height: 34,
+            fontSize: 18,
+            lineHeight: '34px',
+            cursor: atTop ? 'default' : 'pointer',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.25)',
+            opacity: atTop ? 0.6 : 1,
           }}
-          aria-live="polite"
-        >
-          <div style={{ display:'flex', flexDirection:'column', justifyContent:'flex-start', minHeight:'100%' }}>
-            {(!sentences || sentences.length === 0) && (
-              <div style={{ color: '#6b7280' }}>
-                Captions will appear here.
-              </div>
-            )}
-            {sentences && sentences.length > 0 && (
-              <p style={{ margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-                {sentences.map((s, i) => {
-                  // Support either plain strings or structured objects for styling control
-                  const isObj = s && typeof s === 'object';
-                  const text = isObj ? (s.text ?? '') : String(s ?? '');
-                  const isUser = isObj && s.role === 'user';
-                  const isNewline = !isObj && text === '\n';
-                  if (isNewline) {
-                    // render explicit newline: use a <br/> marker; do not count it for highlighting background
-                    return <span key={`br-${i}`}><br /></span>;
-                  }
-                  return (
-                    <span
-                      key={`${i}-${text.slice(0, 12)}`}
-                      data-idx={i}
-                      style={{
-                        background: i === activeIndex ? 'rgba(199,68,46,0.08)' : 'transparent',
-                        borderRadius: 4,
-                        transition: 'background 160ms ease',
-                        color: isUser ? '#c7442e' : undefined,
-                        fontWeight: isUser ? 600 : undefined,
-                      }}
-                    >
-                      {text}{i < sentences.length - 1 ? ' ' : ''}
-                    </span>
-                  );
-                })}
-              </p>
-            )}
-            {/* Flexible spacer to push content above bottom edge and prevent clipping */}
-            <div style={{ flexGrow:1 }} />
-          </div>
-        </div>
+        >▲</button>
+        <button
+          type="button"
+          aria-label="Scroll down captions"
+          disabled={atBottom}
+          onClick={() => { if (boxRef.current) boxRef.current.scrollBy({ top: Math.max(80, boxRef.current.clientHeight * 0.4), behavior: 'smooth' }); }}
+          style={{
+            background: atBottom ? '#d1d5db' : '#1f2937',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 6,
+            width: 34,
+            height: 34,
+            fontSize: 18,
+            lineHeight: '34px',
+            cursor: atBottom ? 'default' : 'pointer',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.25)',
+            opacity: atBottom ? 0.6 : 1,
+          }}
+        >▼</button>
       </div>
-      
+      {(!sentences || sentences.length === 0) && (
+        <div style={{ color: '#6b7280' }}>Captions will appear here.</div>
+      )}
+      {sentences && sentences.length > 0 && (
+        <p style={{ margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontSize: 18, lineHeight: 1.5, color: '#111111', paddingRight: '5%' }}>
+          {sentences.map((s, i) => {
+            const isObj = s && typeof s === 'object';
+            const text = isObj ? (s.text ?? '') : String(s ?? '');
+            const isUser = isObj && s.role === 'user';
+            const isNewline = !isObj && text === '\n';
+            if (isNewline) return <span key={`br-${i}`}><br /></span>;
+            return (
+              <span
+                key={`${i}-${text.slice(0,12)}`}
+                data-idx={i}
+                style={{
+                  background: i === activeIndex ? 'rgba(199,68,46,0.22)' : 'transparent',
+                  borderRadius: 4,
+                  transition: 'background 140ms ease, box-shadow 140ms ease, color 140ms ease',
+                  color: isUser ? '#c7442e' : undefined,
+                  fontWeight: (isUser || i === activeIndex) ? 600 : undefined,
+                  boxShadow: i === activeIndex ? 'inset 3px 0 0 0 #c7442e, 0 0 0 1px rgba(199,68,46,0.25)' : undefined,
+                  padding: i === activeIndex ? '0 2px 0 4px' : undefined,
+                  scrollMarginTop: 16,
+                }}
+              >
+                {text}{i < sentences.length - 1 ? ' ' : ''}
+              </span>
+            );
+          })}
+        </p>
+      )}
     </div>
   );
 }
@@ -5576,6 +6028,19 @@ function PhaseDetail({
 
   return renderSection();
 }
+
+
+
+
+
+
+// End of PhaseDetail component
+
+
+
+
+
+
 
 
 
