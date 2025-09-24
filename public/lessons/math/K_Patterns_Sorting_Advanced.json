@@ -1,0 +1,68 @@
+{
+  "id": "patterns-sorting-advanced",
+  "title": "Patterns and Sorting",
+  "grade": "K",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {"term": "pattern", "definition": "Things that repeat in the same order again and again"},
+    {"term": "sort", "definition": "To put things into groups that are the same in some way"},
+    {"term": "same", "definition": "Things that are alike or equal"},
+    {"term": "different", "definition": "Things that are not alike"},
+    {"term": "repeat", "definition": "To do something again in the same way"},
+    {"term": "group", "definition": "Things that belong together"}
+  ],
+  "teachingNotes": "Use colored blocks, beads, or shapes for pattern activities. Practice AB, ABB, ABC patterns. Sort by color, size, shape.",
+  "sample": [
+    {"question": "What comes next in this pattern: red, blue, red, blue, ____?", "expectedAny": ["red", "the pattern repeats red, blue"]},
+    {"question": "Sort these shapes: circle, square, circle, triangle, square.", "expectedAny": ["groups by shape type"]},
+    {"question": "Make an ABC pattern with sounds.", "expectedAny": ["clap, stomp, snap, clap, stomp, snap"]},
+    {"question": "Continue this pattern: big, small, big, small, ____", "expectedAny": ["big"]},
+    {"question": "How would you sort colored blocks?", "expectedAny": ["by color", "red together, blue together"]}
+  ],
+  "truefalse": [
+    {"question": "In the pattern circle, square, circle, square, the next shape is circle.", "answer": true, "expectedAny": ["the pattern alternates circle, square"]},
+    {"question": "You can sort things by color.", "answer": true, "expectedAny": ["color is one way to sort"]},
+    {"question": "Patterns never repeat.", "answer": false, "expectedAny": ["patterns repeat"]},
+    {"question": "Big and small can be used for sorting.", "answer": true, "expectedAny": ["size is good for sorting"]},
+    {"question": "ABC patterns have three different parts.", "answer": true, "expectedAny": ["ABC means three elements"]},
+    {"question": "You can only sort by one thing at a time.", "answer": false, "expectedAny": ["can sort by multiple attributes"]},
+    {"question": "Patterns help us predict what comes next.", "answer": true, "expectedAny": ["patterns are predictable"]}
+  ],
+  "multiplechoice": [
+    {"question": "How should you sort these toys: big truck, small car, big ball, small block?", "choices": ["by color", "by size", "by number", "by shape"], "correct": 1, "expectedAny": ["these toys can be sorted by big and small"]},
+    {"question": "What comes next: 1, 2, 1, 2, ____?", "choices": ["3", "1", "2", "4"], "correct": 1, "expectedAny": ["pattern repeats 1, 2"]},
+    {"question": "Which is an AB pattern?", "choices": ["red, red, blue", "red, blue, red, blue", "red, blue, green", "red, red, red"], "correct": 1, "expectedAny": ["AB alternates two things"]},
+    {"question": "How many groups would you make sorting: red car, blue car, red block, blue block?", "choices": ["2", "3", "4", "1"], "correct": 0, "expectedAny": ["2 groups: red things and blue things"]},
+    {"question": "What type of pattern is: A, B, B, A, B, B?", "choices": ["AB", "ABB", "ABC", "ABCD"], "correct": 1, "expectedAny": ["ABB pattern"]},
+    {"question": "Which doesn't belong: circle, square, triangle, red?", "choices": ["circle", "square", "triangle", "red"], "correct": 3, "expectedAny": ["red is a color, others are shapes"]},
+    {"question": "What continues: clap, clap, stomp, clap, clap, ____?", "choices": ["clap", "stomp", "jump", "snap"], "correct": 1, "expectedAny": ["pattern is clap, clap, stomp"]}
+  ],
+  "fillintheblank": [
+    {"question": "In an AB pattern, if A is clap and B is stomp, the pattern goes: clap, _____, clap, stomp.", "expectedAny": ["stomp"]},
+    {"question": "To sort by size, put all the _____ things together.", "expectedAny": ["big", "small", "same size"]},
+    {"question": "If the pattern is triangle, circle, triangle, the next shape is _____.", "expectedAny": ["circle"]},
+    {"question": "When sorting animals, dogs go with _____ and cats go with _____.", "expectedAny": ["dogs", "cats"]},
+    {"question": "An ABC pattern has _____ different parts that repeat.", "expectedAny": ["3", "three"]},
+    {"question": "The pattern red, blue, green, red, blue, _____ continues.", "expectedAny": ["green"]},
+    {"question": "Things that are the _____ can be grouped together.", "expectedAny": ["same", "alike"]}
+  ],
+  "shortanswer": [
+    {"question": "Make a pattern using two colors. What would your pattern be?", "expectedAny": ["red, yellow, red, yellow", "blue, green, blue, green", "any two-color pattern"]},
+    {"question": "How would you sort a box of different buttons?", "expectedAny": ["by color", "by size", "by shape", "by number of holes"]},
+    {"question": "Create an ABB pattern using body movements.", "expectedAny": ["clap, stomp, stomp, clap, stomp, stomp"]},
+    {"question": "What's the difference between AB and ABC patterns?", "expectedAny": ["AB has 2 parts", "ABC has 3 parts", "ABC is longer"]},
+    {"question": "Name three ways you could sort toy cars.", "expectedAny": ["by color, size, type"]},
+    {"question": "Explain what makes something a pattern.", "expectedAny": ["repeats", "same order again", "predictable"]},
+    {"question": "How do patterns help us?", "expectedAny": ["predict what's next", "organize things", "make sense of world"]}
+  ],
+  "wordProblems": [
+    {"question": "You have 6 blocks. You put 4 blocks in the red group and 2 blocks in the blue group. Did you sort all your blocks?", "expectedAny": ["yes", "4 + 2 = 6, so all blocks are sorted"]},
+    {"question": "Sara makes a necklace with this pattern: red bead, blue bead, red bead, blue bead. If she continues the pattern, what color is the 5th bead?", "expectedAny": ["red", "the pattern repeats every 2"]},
+    {"question": "In art class, there are 6 red crayons, 4 blue crayons, and 2 yellow crayons. How many groups would you make if sorting by color?", "expectedAny": ["3 groups", "red, blue, yellow groups"]},
+    {"question": "Tom's pattern is: stomp, clap, stomp, clap. If he does this 4 times, how many stomps will he do?", "expectedAny": ["4 stomps", "2 stomps each time"]},
+    {"question": "The class sorts 12 blocks. 5 are big and 7 are small. Which group has more blocks?", "expectedAny": ["small group", "7 is more than 5"]},
+    {"question": "Emma makes an ABC pattern with shapes. She uses circle, square, triangle. What are the first 6 shapes in her pattern?", "expectedAny": ["circle, square, triangle, circle, square, triangle"]},
+    {"question": "In the toy box, there are 3 toy cars, 3 toy trucks, and 3 toy planes. If we sort by type, how many toys are in each group?", "expectedAny": ["3 in each group", "3 cars, 3 trucks, 3 planes"]}
+  ]
+}

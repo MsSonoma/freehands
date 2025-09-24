@@ -1,0 +1,52 @@
+{
+  "id": "addition-and-subtraction-to-20-beginner",
+  "title": "Addition and Subtraction to 20",
+  "grade": "1st",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {"term": "addition", "definition": "Putting numbers together to make a bigger number"},
+    {"term": "subtraction", "definition": "Taking away numbers to make a smaller number"},
+    {"term": "sum", "definition": "The answer when you add"},
+    {"term": "difference", "definition": "The answer when you subtract"}
+  ],
+  "teachingNotes": "Use manipulatives and number lines. Practice fact families. Connect to real-world situations.",
+  "sample": [
+    {"question": "What is 8 + 5?", "expectedAny": ["13"]},
+    {"question": "What is 7 + 6?", "expectedAny": ["13"]},
+    {"question": "What is 9 - 4?", "expectedAny": ["5"]},
+    {"question": "What is 10 - 3?", "expectedAny": ["7"]},
+    {"question": "What is 6 + 7?", "expectedAny": ["13"]}
+  ],
+  "truefalse": [
+    {"question": "15 - 7 = 8", "answer": true, "expectedAny": ["correct subtraction"]},
+    {"question": "8 + 5 = 12", "answer": false, "expectedAny": ["8 + 5 = 13"]},
+    {"question": "7 + 3 equals 10.", "answer": true, "expectedAny": ["7 + 3 = 10"]},
+    {"question": "10 - 4 equals 7.", "answer": false, "expectedAny": ["10 - 4 = 6"]},
+    {"question": "Adding zero keeps the number the same.", "answer": true, "expectedAny": ["adding 0 doesn't change value"]},
+    {"question": "Subtraction always gives a bigger number.", "answer": false, "expectedAny": ["subtraction makes number smaller or equal"]}
+  ],
+  "multiplechoice": [
+    {"question": "What is 9 + 6?", "choices": ["14", "15", "16", "17"], "correct": 1, "expectedAny": ["9 + 6 = 15"]},
+    {"question": "What is 4 + 7?", "choices": ["11", "10", "12", "13"], "correct": 0, "expectedAny": ["4 + 7 = 11"]},
+    {"question": "What is 10 - 3?", "choices": ["6", "7", "8", "5"], "correct": 1, "expectedAny": ["10 - 3 = 7"]},
+    {"question": "What is 6 + 6?", "choices": ["11", "12", "13", "10"], "correct": 1, "expectedAny": ["6 + 6 = 12"]},
+    {"question": "What is 5 + 5?", "choices": ["9", "10", "11", "8"], "correct": 1, "expectedAny": ["5 + 5 = 10"]}
+  ],
+  "fillintheblank": [
+    {"question": "12 - 4 = _____", "expectedAny": ["8"]},
+    {"question": "7 + _____ = 10", "expectedAny": ["3"]},
+    {"question": "_____ + 5 = 9", "expectedAny": ["4"]},
+    {"question": "10 - _____ = 6", "expectedAny": ["4"]}
+  ],
+  "shortanswer": [
+    {"question": "Show me how to solve 7 + 8.", "expectedAny": ["15", "use counting or make ten strategy"]},
+    {"question": "Explain how to find 10 - 4.", "expectedAny": ["count back from 10 to 6", "subtract 4 gives 6"]},
+    {"question": "How can you check addition with subtraction?", "expectedAny": ["use inverse: a + b = c then c - a = b"]}
+  ],
+  "wordProblems": [
+    {"question": "Sara has 11 stickers. She gives away 3. How many does she have left?", "expectedAny": ["8 stickers", "11 - 3 = 8"]},
+    {"question": "Tom has 7 apples and finds 6 more. How many apples now?", "expectedAny": ["13 apples", "7 + 6 = 13"]},
+    {"question": "There were 14 birds. 5 flew away. How many remain?", "expectedAny": ["9 birds", "14 - 5 = 9"]}
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "id": "9th_Literary_Analysis_Character_Development_Advanced",
+  "title": "Literary Analysis: Character Development and Motivation",
+  "grade": "9th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "character development",
+      "definition": "The process by which characters change and grow throughout a story"
+    },
+    {
+      "term": "motivation",
+      "definition": "The reasons behind a character's actions and decisions"
+    },
+    {
+      "term": "dynamic character",
+      "definition": "A character who undergoes significant internal change"
+    },
+    {
+      "term": "static character",
+      "definition": "A character who remains essentially unchanged"
+    },
+    {
+      "term": "character foil",
+      "definition": "A character who contrasts with another to highlight their qualities"
+    }
+  ],
+  "teachingNotes": "Use complex literary texts to analyze character motivations. Practice writing analytical paragraphs with textual evidence.",
+  "sample": {
+    "question": "What is the process by which characters change throughout a story?",
+    "expectedAny": [
+      "character development",
+      "character growth",
+      "character change",
+      "character evolution"
+    ]
+  },
+  "truefalse": {
+    "question": "A dynamic character undergoes significant internal change.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is a character who contrasts with another called?",
+    "expectedAny": [
+      "character foil",
+      "foil",
+      "contrasting character",
+      "opposing character"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The reasons behind a character's actions are their ________.",
+    "expectedAny": [
+      "motivation",
+      "motives",
+      "driving force",
+      "reasons"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do authors reveal character motivation to readers?",
+    "expectedAny": [
+      "through dialogue and actions",
+      "internal thoughts",
+      "interactions with others",
+      "response to conflict"
+    ]
+  }
+}

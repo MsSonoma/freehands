@@ -1,0 +1,74 @@
+{
+  "id": "2nd_Matter_States_Properties_Advanced",
+  "title": "States of Matter and Properties",
+  "grade": "2nd",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "matter",
+      "definition": "Anything that takes up space and has weight"
+    },
+    {
+      "term": "solid",
+      "definition": "Matter that keeps its shape and takes up the same amount of space"
+    },
+    {
+      "term": "liquid",
+      "definition": "Matter that flows and takes the shape of its container"
+    },
+    {
+      "term": "gas",
+      "definition": "Matter that spreads out to fill all available space"
+    },
+    {
+      "term": "properties",
+      "definition": "Special characteristics that describe what something is like"
+    }
+  ],
+  "teachingNotes": "Use hands-on experiments with ice, water, and steam to demonstrate state changes. Have students observe and compare properties of different materials. Discuss how matter can change from one state to another with heating or cooling.",
+  "sample": [
+    {"question": "Is ice a solid or liquid?", "expectedAny": ["solid"]},
+    {"question": "What happens when ice melts?", "expectedAny": ["becomes liquid water"]},
+    {"question": "Name three things that are liquid.", "expectedAny": ["water", "juice", "milk"]},
+    {"question": "What is steam?", "expectedAny": ["water vapor", "gas form of water"]},
+    {"question": "Can you see air?", "expectedAny": ["no"]},
+    {"question": "What shape is water?", "expectedAny": ["takes container shape"]},
+    {"question": "How does water become ice?", "expectedAny": ["freezing", "get very cold"]}
+  ],
+  "truefalse": [
+    {"question": "Ice is solid water.", "answer": true},
+    {"question": "Liquids take the shape of their container.", "answer": true},
+    {"question": "Air is a gas.", "answer": true},
+    {"question": "Solids can change shape easily.", "answer": false},
+    {"question": "Steam is a gas.", "answer": true},
+    {"question": "You can pour a solid.", "answer": false},
+    {"question": "Gases spread out to fill space.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "Which is a solid?", "choices": ["Water", "Air", "Rock", "Juice"], "correct": 2},
+    {"question": "Liquids can ___", "choices": ["be poured", "keep their shape", "not move", "be invisible"], "correct": 0},
+    {"question": "When water freezes it becomes ___", "choices": ["Gas", "Steam", "Ice", "Air"], "correct": 2},
+    {"question": "Which is a gas?", "choices": ["Ice", "Wood", "Milk", "Air"], "correct": 3},
+    {"question": "Melting changes solid to ___", "choices": ["Gas", "Liquid", "Nothing", "Smaller solid"], "correct": 1},
+    {"question": "Rain is a ___", "choices": ["Solid", "Liquid", "Gas", "None"], "correct": 1},
+    {"question": "Balloons are filled with ___", "choices": ["Solid", "Liquid", "Gas", "Ice"], "correct": 2}
+  ],
+  "fillintheblank": [
+    {"question": "Water is a ___", "expectedAny": ["liquid"]},
+    {"question": "Ice is ___ water", "expectedAny": ["solid", "frozen"]},
+    {"question": "___ is the gas form of water", "expectedAny": ["steam", "vapor"]},
+    {"question": "Solids keep their ___", "expectedAny": ["shape"]},
+    {"question": "We breathe in ___, which is a gas", "expectedAny": ["air", "oxygen"]},
+    {"question": "When ice ___, it becomes water", "expectedAny": ["melts"]},
+    {"question": "Liquids can be ___", "expectedAny": ["poured"]}
+  ],
+  "shortanswer": [
+    {"question": "How are solids and liquids different?", "expectedAny": ["solids keep shape; liquids take container shape"]},
+    {"question": "What happens when you heat water?", "expectedAny": ["boils", "turns to steam"]},
+    {"question": "Name examples of solid, liquid, gas.", "expectedAny": ["rock", "water", "air"]},
+    {"question": "How can water be all three states?", "expectedAny": ["ice when frozen, liquid water, steam when heated"]},
+    {"question": "Why can't you see air?", "expectedAny": ["it's invisible gas"]},
+    {"question": "What makes something a solid?", "expectedAny": ["keeps shape"]},
+    {"question": "How do you know if something is a liquid?", "expectedAny": ["flows", "pours"]}
+  ]
+}

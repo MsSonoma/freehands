@@ -1,0 +1,73 @@
+{
+  "id": "9th_Stoichiometry_Mole_Calculations_Intermediate",
+  "title": "Stoichiometry and Mole Calculations",
+  "grade": "9th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "stoichiometry",
+      "definition": "Calculation of quantities in chemical reactions"
+    },
+    {
+      "term": "mole",
+      "definition": "Unit measuring amount of substance (6.022 × 10²³ particles)"
+    },
+    {
+      "term": "molar mass",
+      "definition": "Mass of one mole of a substance in grams"
+    },
+    {
+      "term": "balanced equation",
+      "definition": "Chemical equation with equal atoms on both sides"
+    },
+    {
+      "term": "limiting reagent",
+      "definition": "Reactant that is completely consumed and limits product formation"
+    }
+  ],
+  "teachingNotes": "Emphasize step-by-step problem solving approach. Practice converting between moles, mass, and particles using dimensional analysis.",
+  "sample": {
+    "question": "What is the calculation of quantities in chemical reactions called?",
+    "expectedAny": [
+      "stoichiometry",
+      "chemical calculations",
+      "reaction calculations",
+      "quantitative chemistry"
+    ]
+  },
+  "truefalse": {
+    "question": "A mole contains 6.022 × 10²³ particles.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the mass of one mole of a substance called?",
+    "expectedAny": [
+      "molar mass",
+      "molecular mass",
+      "formula mass",
+      "atomic mass"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The reactant that limits product formation is the ________ reagent.",
+    "expectedAny": [
+      "limiting",
+      "limiting reactant",
+      "rate-limiting",
+      "constraining"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do you determine the limiting reagent in a reaction?",
+    "expectedAny": [
+      "calculate moles of each reactant",
+      "compare to stoichiometric ratios",
+      "find which produces less product"
+    ]
+  }
+}

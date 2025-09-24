@@ -1,0 +1,74 @@
+{
+  "id": "5th_Government_Branches_Constitution_Advanced",
+  "title": "Government Branches and the Constitution",
+  "grade": "5th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "Constitution",
+      "definition": "The supreme law of the United States that establishes our government"
+    },
+    {
+      "term": "executive branch",
+      "definition": "The part of government led by the President that enforces laws"
+    },
+    {
+      "term": "legislative branch",
+      "definition": "The part of government (Congress) that makes laws"
+    },
+    {
+      "term": "judicial branch",
+      "definition": "The part of government (courts) that interprets laws"
+    },
+    {
+      "term": "checks and balances",
+      "definition": "A system where each branch of government can limit the others' power"
+    }
+  ],
+  "teachingNotes": "Explain how the three branches work together and check each other's power. Use examples of how laws are made, enforced, and interpreted.",
+  "sample": {
+    "question": "Which branch of government is led by the President?",
+    "expectedAny": [
+      "executive branch",
+      "executive",
+      "presidential branch",
+      "enforcement branch"
+    ]
+  },
+  "truefalse": {
+    "question": "The Constitution is the supreme law of the United States.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which branch of government makes laws?",
+    "expectedAny": [
+      "legislative branch",
+      "legislative",
+      "Congress",
+      "lawmaking branch"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The system that prevents any one branch from becoming too powerful is called ________ and ________.",
+    "expectedAny": [
+      "checks and balances",
+      "checks balances",
+      "balance of power",
+      "governmental checks"
+    ]
+  },
+  "shortanswer": {
+    "question": "What does the judicial branch do?",
+    "expectedAny": [
+      "interprets laws",
+      "decides what laws mean",
+      "judges court cases",
+      "explains the Constitution"
+    ]
+  }
+}

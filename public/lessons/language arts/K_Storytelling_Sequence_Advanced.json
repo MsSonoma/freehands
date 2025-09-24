@@ -1,0 +1,78 @@
+{
+  "id": "storytelling-sequence-advanced",
+  "title": "Storytelling and Sequence",
+  "grade": "K",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "story",
+      "definition": "A tale about characters and what happens to them"
+    },
+    {
+      "term": "beginning",
+      "definition": "The start of a story"
+    },
+    {
+      "term": "middle",
+      "definition": "What happens in a story after it starts"
+    },
+    {
+      "term": "end",
+      "definition": "How a story finishes"
+    }
+  ],
+  "teachingNotes": "Use picture books to identify story parts. Practice retelling familiar stories. Create class stories with sequence cards.",
+  "sample": [
+    {"question": "What happens at the beginning of a story?", "expectedAny": ["meet the characters", "learn where it happens"]},
+    {"question": "Tell what happens first, next, and last when you brush your teeth.", "expectedAny": ["first get toothbrush, next put toothpaste, last brush teeth"]},
+    {"question": "What comes after the beginning of a story?", "expectedAny": ["middle"]},
+    {"question": "How do stories usually end?", "expectedAny": ["problem is solved", "characters are safe"]},
+    {"question": "What order do you put on your clothes?", "expectedAny": ["underwear, shirt, pants, shoes"]},
+    {"question": "What is the last part of a story called?", "expectedAny": ["the end"]},
+    {"question": "Show the order of events with three pictures.", "expectedAny": ["student places pictures in order"]}
+  ],
+  "truefalse": [
+    {"question": "Every story has a beginning, middle, and end.", "answer": true, "expectedAny": ["true"]},
+    {"question": "The middle of a story comes before the beginning.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Characters are usually introduced at the beginning.", "answer": true, "expectedAny": ["true"]},
+    {"question": "The end of a story comes first.", "answer": false, "expectedAny": ["false"]},
+    {"question": "You can tell stories without words.", "answer": true, "expectedAny": ["true"]},
+    {"question": "All stories happen in the same order.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Sequence means the order things happen.", "answer": true, "expectedAny": ["true"]}
+  ],
+  "multiplechoice": [
+    {"question": "What comes first in The Three Little Pigs?", "choices": ["wolf blows house down", "pigs build houses", "pigs live happily", "wolf runs away"], "correct": 1, "expectedAny": ["pigs build houses"]},
+    {"question": "Which is the correct order for making a sandwich?", "choices": ["eat, make, get bread", "get bread, make, eat", "make, get bread, eat", "eat, get bread, make"], "correct": 1, "expectedAny": ["get bread, make, eat"]},
+    {"question": "In Goldilocks, what happens first?", "choices": ["she sleeps in bed", "she eats porridge", "she goes in the house", "bears come home"], "correct": 2, "expectedAny": ["she goes in the house"]},
+    {"question": "What part of a story tells how everything works out?", "choices": ["beginning", "middle", "end", "title"], "correct": 2, "expectedAny": ["end"]},
+    {"question": "When you wake up, what comes first?", "choices": ["eat breakfast", "get dressed", "open your eyes", "brush teeth"], "correct": 2, "expectedAny": ["open your eyes"]},
+    {"question": "What do you need to tell a good story?", "choices": ["only pictures", "only words", "beginning, middle, end", "just an ending"], "correct": 2, "expectedAny": ["beginning, middle, end"]}
+  ],
+  "fillintheblank": [
+    {"question": "After the beginning and middle, comes the _____ of the story.", "expectedAny": ["end"]},
+    {"question": "First, next, and _____ show the order of events.", "expectedAny": ["last"]},
+    {"question": "The _____ of a story is where we meet the characters.", "expectedAny": ["beginning"]},
+    {"question": "In the _____ of a story, most action happens.", "expectedAny": ["middle"]},
+    {"question": "When you tell what happened in order, you are telling the _____.", "expectedAny": ["sequence"]},
+    {"question": "_____, middle, and end are the three parts of a story.", "expectedAny": ["Beginning"]},
+    {"question": "The words that help tell order are: first, next, and ___.", "expectedAny": ["last"]}
+  ],
+  "shortanswer": [
+    {"question": "Tell me about your favorite story. What happens in the beginning?", "expectedAny": ["characters introduced", "setting is described"]},
+    {"question": "What happens when you get ready for bed? Tell in order.", "expectedAny": ["brush teeth, put on pajamas, read story, go to sleep"]},
+    {"question": "Describe the middle of your favorite book.", "expectedAny": ["main events", "problems happen"]},
+    {"question": "How do you make a snack? Tell steps.", "expectedAny": ["get bread, add filling, eat"]},
+    {"question": "Why is order important?", "expectedAny": ["so it makes sense"]},
+    {"question": "Can you retell The Three Bears?", "expectedAny": ["beginning, middle, end summary"]},
+    {"question": "Make up a short 3-part story.", "expectedAny": ["three events in order"]}
+  ],
+  "wordProblems": [
+    {"question": "Maria tells a story with 3 parts. If the beginning has 2 events and the middle has 4 events, how many events so far?", "expectedAny": ["6 events"]},
+    {"question": "In a story, 5 characters are introduced in the beginning and 2 more in the middle. How many total?", "expectedAny": ["7 characters"]},
+    {"question": "Tom reads 3 stories. If each has 3 parts, how many story parts did he read?", "expectedAny": ["9 parts"]},
+    {"question": "A picture book has 12 pages. If 4 show beginning and 6 show middle, how many show the end?", "expectedAny": ["2 pages"]},
+    {"question": "Sarah tells 2 stories, each 5 minutes. How long total?", "expectedAny": ["10 minutes"]},
+    {"question": "Sequence cards total 9. If 3 show beginning and 3 show end, how many show middle?", "expectedAny": ["3 cards"]}
+  ]
+}

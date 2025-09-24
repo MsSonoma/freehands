@@ -1,0 +1,179 @@
+{
+  "id": "2nd_Reading_Comprehension_Strategies_Beginner",
+  "title": "Reading Comprehension Strategies",
+  "grade": "2nd",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "comprehension",
+      "definition": "Understanding what you read"
+    },
+    {
+      "term": "main idea",
+      "definition": "The most important part of a story or text"
+    },
+    {
+      "term": "details",
+      "definition": "Small pieces of information that tell more about the main idea"
+    },
+    {
+      "term": "predict",
+      "definition": "To guess what might happen next in a story"
+    },
+    {
+      "term": "summarize",
+      "definition": "To tell the most important parts of a story in your own words"
+    }
+  ],
+  "teachingNotes": "Teach students to ask questions while reading: Who? What? Where? When? Why? Practice identifying the main idea and supporting details. Use picture books to practice prediction and summarizing skills.",
+  "sample": [
+    {
+      "question": "What does comprehension mean?",
+      "expectedAny": ["understanding what you read", "knowing what the story means", "getting the meaning"]
+    },
+    {
+      "question": "What is the main idea of a text?",
+      "expectedAny": ["what the text is mostly about", "main point", "big idea"]
+    },
+    {
+      "question": "What are details?",
+      "expectedAny": ["small pieces of information", "supporting details", "facts that tell more"]
+    },
+    {
+      "question": "What does it mean to predict?",
+      "expectedAny": ["to guess what happens next", "make a guess", "forecast the next part"]
+    },
+    {
+      "question": "What does it mean to summarize?",
+      "expectedAny": ["tell the most important parts", "shortly retell", "say the big ideas"]
+    },
+    {
+      "question": "Name a question word you can ask while reading.",
+      "expectedAny": ["who", "what", "where", "when", "why", "how"]
+    },
+    {
+      "question": "What should you do if a page is confusing?",
+      "expectedAny": ["reread", "slow down", "ask for help", "look for clues in pictures"]
+    }
+  ],
+  "truefalse": [
+    {
+      "question": "The main idea is the most important part of a story.",
+      "expectedAny": ["true", "yes", "t", "correct"]
+    },
+    {
+      "question": "Details are bigger than the main idea.",
+      "expectedAny": ["false", "no", "f", "incorrect"]
+    },
+    {
+      "question": "Predictions are guesses about what might happen next.",
+      "expectedAny": ["true", "yes", "t", "correct"]
+    },
+    {
+      "question": "Summarizing means copying the whole story.",
+      "expectedAny": ["false", "no", "f", "incorrect"]
+    },
+    {
+      "question": "Asking questions can help you understand a text.",
+      "expectedAny": ["true", "yes", "t", "correct"]
+    },
+    {
+      "question": "The pictures can never help you understand a story.",
+      "expectedAny": ["false", "no", "f", "incorrect"]
+    },
+    {
+      "question": "Good readers think about what they already know.",
+      "expectedAny": ["true", "yes", "t", "correct"]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "When you guess what might happen next in a story, you are making a:",
+      "expectedAny": ["prediction", "guess", "forecast", "estimate"]
+    },
+    {
+      "question": "To find the main idea, think about:",
+      "expectedAny": ["what the whole text is mostly about", "big idea", "main point"]
+    },
+    {
+      "question": "Which of these are details?",
+      "expectedAny": ["small facts that support the main idea", "supporting details", "facts that tell more"]
+    },
+    {
+      "question": "What helps you summarize a story?",
+      "expectedAny": ["telling only the most important parts", "retell shortly", "big ideas"]
+    },
+    {
+      "question": "Which strategy helps you understand better?",
+      "expectedAny": ["asking who, what, where, when, why, how", "asking questions", "questioning"]
+    },
+    {
+      "question": "What should you do if you forget what you read?",
+      "expectedAny": ["reread the section", "go back and read again", "read over"]
+    },
+    {
+      "question": "Which clue can help you understand a new word?",
+      "expectedAny": ["picture or sentence around it", "context clues", "nearby words"]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "Small pieces of information that tell more about the main idea are called ________.",
+      "expectedAny": ["details", "supporting details", "facts", "information"]
+    },
+    {
+      "question": "The ________ idea is what the text is mostly about.",
+      "expectedAny": ["main", "big", "central"]
+    },
+    {
+      "question": "When I make a ________, I guess what might happen next.",
+      "expectedAny": ["prediction", "guess"]
+    },
+    {
+      "question": "To ________ a story means to tell the most important parts.",
+      "expectedAny": ["summarize", "retell"]
+    },
+    {
+      "question": "I can look at the ________ to help me understand.",
+      "expectedAny": ["pictures", "illustrations"]
+    },
+    {
+      "question": "Before reading, I can ________ about what the book will be.",
+      "expectedAny": ["predict", "guess"]
+    },
+    {
+      "question": "I ask ________ like who, what, where, when, why, and how.",
+      "expectedAny": ["questions", "question words"]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "What should you do if you don't understand what you're reading?",
+      "expectedAny": ["reread", "ask questions", "think about it", "ask for help", "slow down"]
+    },
+    {
+      "question": "How do pictures help you understand a story?",
+      "expectedAny": ["they give clues", "they show what is happening", "visual help"]
+    },
+    {
+      "question": "What is one way to find the main idea?",
+      "expectedAny": ["think about what the text is mostly about", "big idea", "main point"]
+    },
+    {
+      "question": "Give one example of a detail from a story about a picnic.",
+      "expectedAny": ["who went", "what they ate", "where it was", "when it was"]
+    },
+    {
+      "question": "Why is it helpful to ask questions while reading?",
+      "expectedAny": ["keeps you thinking", "helps you understand", "focuses your mind"]
+    },
+    {
+      "question": "What is something you can do before reading to get ready?",
+      "expectedAny": ["preview the pictures", "look at the cover", "predict"]
+    },
+    {
+      "question": "How would you summarize a short story about a lost dog?",
+      "expectedAny": ["tell who, what, where, when, and how it ended", "main parts only"]
+    }
+  ]
+}

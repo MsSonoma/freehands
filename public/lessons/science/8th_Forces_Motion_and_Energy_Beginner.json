@@ -1,0 +1,73 @@
+{
+  "id": "8th_Forces_Motion_and_Energy_Beginner",
+  "title": "Forces, Motion, and Energy Systems",
+  "grade": "8th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "kinetic energy",
+      "definition": "Energy of motion"
+    },
+    {
+      "term": "potential energy",
+      "definition": "Stored energy due to position or condition"
+    },
+    {
+      "term": "work",
+      "definition": "Force applied over a distance"
+    },
+    {
+      "term": "power",
+      "definition": "The rate at which work is done"
+    },
+    {
+      "term": "mechanical advantage",
+      "definition": "How much a machine multiplies force"
+    }
+  ],
+  "teachingNotes": "Use examples like roller coasters to show energy transformations. Demonstrate simple machines and their advantages.",
+  "sample": {
+    "question": "What is energy of motion called?",
+    "expectedAny": [
+      "kinetic energy",
+      "motion energy",
+      "moving energy",
+      "energy in motion"
+    ]
+  },
+  "truefalse": {
+    "question": "Potential energy is stored energy due to position.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is force applied over a distance?",
+    "expectedAny": [
+      "work",
+      "energy transfer",
+      "mechanical work",
+      "applied force"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The rate at which work is done is called ________.",
+    "expectedAny": [
+      "power",
+      "work rate",
+      "energy rate",
+      "force rate"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does a lever provide mechanical advantage?",
+    "expectedAny": [
+      "multiplies force",
+      "increases applied force",
+      "makes work easier"
+    ]
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "id": "5th_Decimal_Operations_Addition_Subtraction_Beginner",
+  "title": "Decimal Operations: Addition and Subtraction",
+  "grade": "5th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "decimal",
+      "definition": "A number that uses a decimal point to show parts of a whole"
+    },
+    {
+      "term": "decimal point",
+      "definition": "The dot that separates the whole number from the fractional part"
+    },
+    {
+      "term": "tenths",
+      "definition": "The first place to the right of the decimal point"
+    },
+    {
+      "term": "hundredths",
+      "definition": "The second place to the right of the decimal point"
+    },
+    {
+      "term": "place value",
+      "definition": "The value of a digit based on its position in a number"
+    }
+  ],
+  "teachingNotes": "Emphasize aligning decimal points when adding and subtracting. Use place value charts and visual models. Connect decimals to money for real-world applications.",
+  "sample": {
+    "question": "What is 3.45 + 2.37?",
+    "expectedAny": ["5.82", "five and eighty-two hundredths", "5.82 total"]
+  },
+  "truefalse": {
+    "question": "When adding decimals, you must line up the decimal points.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is 7.6 - 3.28?",
+    "expectedAny": ["4.32", "four and thirty-two hundredths", "4.32 difference"]
+  },
+  "fillintheblank": {
+    "question": "In the number 45.67, the digit 6 is in the ________ place.",
+    "expectedAny": ["tenths", "tenths place", "first decimal place", "0.1 place"]
+  },
+  "shortanswer": {
+    "question": "How do you add 2.5 + 1.75?",
+    "expectedAny": ["line up decimal points", "2.50 + 1.75 = 4.25", "align and add", "4.25"]
+  },
+  "wordProblems": {
+    "question": "Sarah bought a book for $12.75 and a pen for $3.49. How much did she spend in total?",
+    "expectedAny": ["$16.24", "16.24", "sixteen dollars and twenty-four cents", "$16.24 total"]
+  }
+}

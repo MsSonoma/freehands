@@ -1,0 +1,53 @@
+{
+  "id": "6th_Integers_Operations_Number_Line_Intermediate",
+  "title": "Integers and Operations on the Number Line",
+  "grade": "6th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "integer",
+      "definition": "A whole number that can be positive, negative, or zero"
+    },
+    {
+      "term": "positive integer",
+      "definition": "A whole number greater than zero"
+    },
+    {
+      "term": "negative integer",
+      "definition": "A whole number less than zero"
+    },
+    {
+      "term": "absolute value",
+      "definition": "The distance a number is from zero on the number line"
+    },
+    {
+      "term": "opposite",
+      "definition": "Two integers that are the same distance from zero but on different sides"
+    }
+  ],
+  "teachingNotes": "Use number lines extensively. Connect integers to real-world situations like temperature and elevation. Practice adding and subtracting with visual models.",
+  "sample": {
+    "question": "What do we call whole numbers that can be positive, negative, or zero?",
+    "expectedAny": ["integers", "integer numbers", "positive and negative numbers", "whole number integers"]
+  },
+  "truefalse": {
+    "question": "The absolute value of -5 is 5.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is the opposite of +7?",
+    "expectedAny": ["-7", "negative 7", "negative seven", "-7 (negative seven)"]
+  },
+  "fillintheblank": {
+    "question": "The distance a number is from zero is called its ________ value.",
+    "expectedAny": ["absolute", "absolute value", "distance", "numerical distance"]
+  },
+  "shortanswer": {
+    "question": "How do you add two negative integers?",
+    "expectedAny": ["add their absolute values, keep negative sign", "add the numbers, result is negative", "combine and stay negative"]
+  },
+  "wordProblems": {
+    "question": "The temperature starts at -3°F and rises 8 degrees. What is the final temperature?",
+    "expectedAny": ["5°F", "5 degrees", "positive 5°F", "-3 + 8 = 5"]
+  }
+}

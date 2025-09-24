@@ -1,0 +1,73 @@
+{
+  "id": "9th_Evolution_Natural_Selection_Evidence_Advanced",
+  "title": "Evolution: Natural Selection and Evidence",
+  "grade": "9th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "natural selection",
+      "definition": "Process where organisms with favorable traits survive and reproduce"
+    },
+    {
+      "term": "adaptation",
+      "definition": "Inherited trait that helps an organism survive in its environment"
+    },
+    {
+      "term": "fossil record",
+      "definition": "Evidence of past life preserved in rocks and sediments"
+    },
+    {
+      "term": "homologous structures",
+      "definition": "Similar structures in different species indicating common ancestry"
+    },
+    {
+      "term": "speciation",
+      "definition": "Formation of new species from existing populations"
+    }
+  ],
+  "teachingNotes": "Present multiple lines of evidence for evolution. Discuss how natural selection leads to adaptation over time.",
+  "sample": {
+    "question": "What is the process where organisms with favorable traits survive and reproduce?",
+    "expectedAny": [
+      "natural selection",
+      "survival of the fittest",
+      "selective pressure",
+      "evolutionary selection"
+    ]
+  },
+  "truefalse": {
+    "question": "Homologous structures indicate common ancestry between species.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What provides evidence of past life in rocks?",
+    "expectedAny": [
+      "fossil record",
+      "fossils",
+      "paleontological evidence",
+      "geological record"
+    ]
+  },
+  "fillintheblank": {
+    "question": "An inherited trait that helps survival is called an ________.",
+    "expectedAny": [
+      "adaptation",
+      "adaptive trait",
+      "beneficial trait",
+      "survival trait"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does the fossil record support evolution?",
+    "expectedAny": [
+      "shows change over time",
+      "demonstrates transitional forms",
+      "reveals extinct species relationships"
+    ]
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "id": "paragraph-structure-writing-beginner",
+  "title": "Paragraph Structure and Organization",
+  "grade": "4th",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "paragraph",
+      "definition": "A group of sentences that are all about the same main idea"
+    },
+    {
+      "term": "topic sentence",
+      "definition": "The sentence that tells the main idea of a paragraph"
+    },
+    {
+      "term": "supporting details",
+      "definition": "Sentences that give more information about the main idea"
+    },
+    {
+      "term": "concluding sentence",
+      "definition": "The last sentence that wraps up the paragraph"
+    }
+  ],
+  "teachingNotes": "Use graphic organizers like hamburger models. Practice identifying parts of paragraphs before writing. Focus on one main idea per paragraph.",
+  "sample": [
+    {"question": "What is the job of a topic sentence?", "expectedAny": ["tells the main idea"]},
+    {"question": "What are supporting details?", "expectedAny": ["sentences that explain the main idea"]},
+    {"question": "What is a concluding sentence?", "expectedAny": ["wraps up the paragraph"]},
+    {"question": "How many main ideas should a paragraph have?", "expectedAny": ["one"]},
+    {"question": "What is a paragraph?", "expectedAny": ["group of sentences about same idea"]},
+    {"question": "Name a transition word.", "expectedAny": ["first", "next", "also", "finally"]},
+    {"question": "Where does the topic sentence usually go?", "expectedAny": ["beginning"]}
+  ],
+  "truefalse": [
+    {"question": "A good paragraph should have only one main idea.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Supporting details are unrelated to the main idea.", "answer": false, "expectedAny": ["false"]},
+    {"question": "A concluding sentence can restate the main idea.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Transitions help ideas flow smoothly.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Paragraphs should always be one sentence long.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Examples can be supporting details.", "answer": true, "expectedAny": ["true"]},
+    {"question": "The topic sentence is always the last sentence.", "answer": false, "expectedAny": ["false"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which sentence would be the best topic sentence for a paragraph about dogs as pets?", "choices": ["I have a dog named Max.", "Dogs make wonderful family pets.", "My dog likes to play fetch.", "Dogs need food and water."], "correct": 1, "expectedAny": ["Dogs make wonderful family pets."]},
+    {"question": "Which is a supporting detail for that topic?", "choices": ["Dogs are animals.", "Dogs can be trained to help people.", "Dogs exist.", "Dogs are in books."], "correct": 1, "expectedAny": ["trained to help people"]},
+    {"question": "Which transition fits next? 'First, I feed my fish. ____ , I clean the tank.'", "choices": ["Finally", "Next", "However", "Because"], "correct": 1, "expectedAny": ["Next"]},
+    {"question": "Which sentence is a conclusion?", "choices": ["Dogs need food.", "In conclusion, dogs can be great friends.", "Dogs bark.", "I like dogs."], "correct": 1, "expectedAny": ["In conclusion..."]},
+    {"question": "Which does NOT belong in a paragraph about brushing teeth?", "choices": ["Use toothpaste", "Brush twice a day", "My dog is brown", "Floss too"], "correct": 2, "expectedAny": ["My dog is brown"]},
+    {"question": "Where is the topic sentence usually found?", "choices": ["beginning", "middle", "end", "random"], "correct": 0, "expectedAny": ["beginning"]},
+    {"question": "Which detail supports the main idea 'Recess is important'?", "choices": ["Kids get exercise", "The sky is blue", "Math is hard", "Pencils are yellow"], "correct": 0, "expectedAny": ["exercise"]}
+  ],
+  "fillintheblank": [
+    {"question": "A paragraph needs a _____ sentence to introduce the main idea and _____ details to explain it.", "expectedAny": ["topic", "supporting"]},
+    {"question": "A ________ sentence wraps up the paragraph.", "expectedAny": ["concluding"]},
+    {"question": "Use ________ to connect ideas.", "expectedAny": ["transitions"]},
+    {"question": "Every paragraph should have one main ________.", "expectedAny": ["idea"]},
+    {"question": "________ details give examples and explanations.", "expectedAny": ["supporting"]},
+    {"question": "A ________ sentence tells the main idea.", "expectedAny": ["topic"]},
+    {"question": "Good paragraphs have ________ and coherence.", "expectedAny": ["unity"]}
+  ],
+  "shortanswer": [
+    {"question": "How do supporting details help make a paragraph better?", "expectedAny": ["examples and explanations"]},
+    {"question": "Write a topic sentence for a paragraph about your favorite game.", "expectedAny": ["varies"]},
+    {"question": "List three transitions you could use in a how-to paragraph.", "expectedAny": ["first", "next", "then", "finally"]},
+    {"question": "Write a concluding sentence for a paragraph about school lunches.", "expectedAny": ["varies"]},
+    {"question": "Give two details that support the topic 'Reading is fun.'", "expectedAny": ["varies"]},
+    {"question": "Explain why unity is important in a paragraph.", "expectedAny": ["focus on one idea"]},
+    {"question": "Revise: 'I like soccer. My team is blue. Apples are tasty.' to improve unity.", "expectedAny": ["remove unrelated idea"]}
+  ]
+}

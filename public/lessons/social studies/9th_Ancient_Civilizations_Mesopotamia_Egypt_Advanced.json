@@ -1,0 +1,73 @@
+{
+  "id": "9th_Ancient_Civilizations_Mesopotamia_Egypt_Advanced",
+  "title": "Ancient Civilizations: Mesopotamia and Egypt",
+  "grade": "9th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "civilization",
+      "definition": "Complex society with cities, government, religion, and social structure"
+    },
+    {
+      "term": "cuneiform",
+      "definition": "Wedge-shaped writing system developed in Mesopotamia"
+    },
+    {
+      "term": "hieroglyphics",
+      "definition": "Egyptian writing system using pictorial symbols"
+    },
+    {
+      "term": "polytheism",
+      "definition": "Belief in multiple gods"
+    },
+    {
+      "term": "code of Hammurabi",
+      "definition": "Ancient Babylonian law code establishing justice principles"
+    }
+  ],
+  "teachingNotes": "Compare and contrast these early civilizations. Analyze their contributions to law, writing, and governance.",
+  "sample": {
+    "question": "What is a complex society with cities, government, and social structure?",
+    "expectedAny": [
+      "civilization",
+      "complex society",
+      "organized society",
+      "advanced culture"
+    ]
+  },
+  "truefalse": {
+    "question": "Cuneiform was the writing system developed in Mesopotamia.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What was the ancient Babylonian law code called?",
+    "expectedAny": [
+      "Code of Hammurabi",
+      "Hammurabi's Code",
+      "Babylonian Code",
+      "Hammurabi Code"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Egyptian writing using pictorial symbols was called ________.",
+    "expectedAny": [
+      "hieroglyphics",
+      "hieroglyphs",
+      "Egyptian writing",
+      "picture writing"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did geography influence early Mesopotamian civilization?",
+    "expectedAny": [
+      "rivers provided water and fertile soil",
+      "flooding created agriculture",
+      "location enabled trade"
+    ]
+  }
+}

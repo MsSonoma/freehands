@@ -1,0 +1,53 @@
+{
+  "id": "9th_Coordinate_Geometry_Distance_Midpoint_Beginner",
+  "title": "Coordinate Geometry: Distance and Midpoint",
+  "grade": "9th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "coordinate plane",
+      "definition": "Two-dimensional plane formed by perpendicular x and y axes"
+    },
+    {
+      "term": "distance formula",
+      "definition": "d = √[(x₂-x₁)² + (y₂-y₁)²] for finding distance between points"
+    },
+    {
+      "term": "midpoint formula",
+      "definition": "((x₁+x₂)/2, (y₁+y₂)/2) for finding center point between two points"
+    },
+    {
+      "term": "ordered pair",
+      "definition": "Point written as (x, y) coordinates"
+    },
+    {
+      "term": "origin",
+      "definition": "Point (0, 0) where axes intersect"
+    }
+  ],
+  "teachingNotes": "Practice plotting points and using formulas. Emphasize the connection to the Pythagorean theorem in distance formula.",
+  "sample": {
+    "question": "What is the two-dimensional plane formed by perpendicular axes called?",
+    "expectedAny": ["coordinate plane", "cartesian plane", "xy-plane", "coordinate system"]
+  },
+  "truefalse": {
+    "question": "The origin is located at point (0, 0).",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What formula finds the center point between two points?",
+    "expectedAny": ["midpoint formula", "midpoint", "center formula", "average formula"]
+  },
+  "fillintheblank": {
+    "question": "A point written as (x, y) is called an ________ pair.",
+    "expectedAny": ["ordered", "coordinate", "point", "xy"]
+  },
+  "shortanswer": {
+    "question": "How is the distance formula related to the Pythagorean theorem?",
+    "expectedAny": ["uses same concept", "calculates hypotenuse", "based on right triangle", "applies a² + b² = c²"]
+  },
+  "wordProblems": {
+    "question": "Find the midpoint between (2, 4) and (8, 10).",
+    "expectedAny": ["(5, 7)", "5, 7", "point (5, 7)", "x=5, y=7"]
+  }
+}

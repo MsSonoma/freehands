@@ -1,0 +1,53 @@
+{
+  "id": "12th_Differential_Calculus_Applications_Intermediate",
+  "title": "Differential Calculus and Applications",
+  "grade": "12th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "chain rule",
+      "definition": "Method for finding derivative of composite functions"
+    },
+    {
+      "term": "product rule",
+      "definition": "Method for finding derivative of product of two functions"
+    },
+    {
+      "term": "quotient rule",
+      "definition": "Method for finding derivative of quotient of two functions"
+    },
+    {
+      "term": "implicit differentiation",
+      "definition": "Technique for finding derivatives when y is not explicitly solved"
+    },
+    {
+      "term": "related rates",
+      "definition": "Problems involving rates of change of related quantities"
+    }
+  ],
+  "teachingNotes": "Practice differentiation rules and techniques. Apply to optimization problems and real-world scenarios.",
+  "sample": {
+    "question": "What method finds the derivative of composite functions?",
+    "expectedAny": ["chain rule", "composite rule", "function composition rule", "nested function rule"]
+  },
+  "truefalse": {
+    "question": "The product rule finds derivatives of products of functions.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What technique works when y is not explicitly solved?",
+    "expectedAny": ["implicit differentiation", "implicit method", "indirect differentiation", "hidden variable method"]
+  },
+  "fillintheblank": {
+    "question": "Problems with rates of change of related quantities are ________ rates.",
+    "expectedAny": ["related", "connected", "linked", "associated"]
+  },
+  "shortanswer": {
+    "question": "When would you use the quotient rule?",
+    "expectedAny": ["dividing functions", "fraction functions", "rational functions", "f(x)/g(x)"]
+  },
+  "wordProblems": {
+    "question": "If f(x) = (2x + 1)³, what is f'(x) using the chain rule?",
+    "expectedAny": ["6(2x + 1)²", "6(2x+1)²", "12x² + 12x + 3", "six times (2x+1) squared"]
+  }
+}

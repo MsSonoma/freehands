@@ -1,0 +1,53 @@
+{
+  "id": "8th_Linear_Functions_and_Graphing_Advanced",
+  "title": "Linear Functions and Coordinate Graphing",
+  "grade": "8th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "linear function",
+      "definition": "A function whose graph is a straight line"
+    },
+    {
+      "term": "slope",
+      "definition": "The steepness of a line, calculated as rise over run"
+    },
+    {
+      "term": "y-intercept",
+      "definition": "The point where a line crosses the y-axis"
+    },
+    {
+      "term": "coordinate plane",
+      "definition": "A two-dimensional plane with x and y axes"
+    },
+    {
+      "term": "rate of change",
+      "definition": "How much one quantity changes in relation to another"
+    }
+  ],
+  "teachingNotes": "Practice graphing lines using slope and y-intercept. Connect to real-world situations involving constant rates.",
+  "sample": {
+    "question": "What is a function whose graph is a straight line?",
+    "expectedAny": ["linear function", "linear equation", "straight line function", "first-degree function"]
+  },
+  "truefalse": {
+    "question": "The slope of a line is calculated as rise over run.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is the point where a line crosses the y-axis?",
+    "expectedAny": ["y-intercept", "vertical intercept", "y-axis intersection", "initial value"]
+  },
+  "fillintheblank": {
+    "question": "The steepness of a line is called its ________.",
+    "expectedAny": ["slope", "gradient", "steepness", "incline"]
+  },
+  "shortanswer": {
+    "question": "What does the equation y = 2x + 3 tell you about the line?",
+    "expectedAny": ["slope is 2, y-intercept is 3", "rises 2 units for each 1 unit right", "steepness 2, starts at 3"]
+  },
+  "wordProblems": {
+    "question": "A line passes through points (0,4) and (2,10). What is the slope?",
+    "expectedAny": ["3", "slope = 3", "(10-4)/(2-0) = 3", "rise 6, run 2"]
+  }
+}

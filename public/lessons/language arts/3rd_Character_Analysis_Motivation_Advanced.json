@@ -1,0 +1,78 @@
+{
+  "id": "character-analysis-motivation-advanced",
+  "title": "Character Analysis and Motivation",
+  "grade": "3rd",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "character",
+      "definition": "A person or animal in a story"
+    },
+    {
+      "term": "motivation",
+      "definition": "The reason why a character does something"
+    },
+    {
+      "term": "character trait",
+      "definition": "A quality that describes what a character is like"
+    },
+    {
+      "term": "evidence",
+      "definition": "Proof from the story that supports what you think"
+    }
+  ],
+  "teachingNotes": "Use character analysis charts. Practice finding evidence in text. Discuss how character actions reveal personality.",
+  "sample": {
+    "question": "If a character shares their lunch with a hungry friend, what character trait does this show?",
+    "expectedAny": [
+      "kindness",
+      "generosity",
+      "caring",
+      "helpfulness"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "You can learn about a character by paying attention to what they say and do.",
+      "answer": true,
+      "expectedAny": [
+        "character actions and dialogue reveal personality"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "What motivates a character who practices piano every day?",
+      "choices": [
+        "they hate music",
+        "they want to improve",
+        "they have nothing else to do",
+        "their piano is broken"
+      ],
+      "correct": 1,
+      "expectedAny": [
+        "daily practice shows desire to get better"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "When you make a claim about a character, you need to find _____ from the story to support your idea.",
+      "expectedAny": [
+        "evidence"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "How can you figure out what motivates a character in a story?",
+      "expectedAny": [
+        "look at their actions",
+        "pay attention to what they say",
+        "notice their goals",
+        "see what problems they try to solve"
+      ]
+    }
+  ]
+}

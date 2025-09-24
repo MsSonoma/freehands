@@ -1,0 +1,74 @@
+{
+  "id": "11th_Civil_Rights_Movement_American_Democracy_Advanced",
+  "title": "Civil Rights Movement and American Democracy",
+  "grade": "11th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "Black Power movement",
+      "definition": "Militant approach emphasizing African American self-determination and pride"
+    },
+    {
+      "term": "de facto segregation",
+      "definition": "Racial separation existing in practice without legal requirement"
+    },
+    {
+      "term": "white backlash",
+      "definition": "Negative reaction by whites to civil rights gains and social changes"
+    },
+    {
+      "term": "intersectionality",
+      "definition": "Recognition that individuals face multiple, overlapping forms of discrimination"
+    },
+    {
+      "term": "systemic racism",
+      "definition": "Institutional patterns and policies that perpetuate racial inequality"
+    }
+  ],
+  "teachingNotes": "Examine complex dynamics within civil rights movement and its evolution. Analyze continuing challenges and contemporary relevance.",
+  "sample": {
+    "question": "What approach emphasized African American self-determination and pride?",
+    "expectedAny": [
+      "Black Power movement",
+      "Black Power",
+      "militant civil rights",
+      "black nationalism"
+    ]
+  },
+  "truefalse": {
+    "question": "De facto segregation exists in practice without legal requirement.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What recognizes multiple, overlapping forms of discrimination?",
+    "expectedAny": [
+      "intersectionality",
+      "multiple discrimination",
+      "overlapping bias",
+      "compound prejudice"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Institutional patterns perpetuating racial inequality constitute ________ racism.",
+    "expectedAny": [
+      "systemic",
+      "institutional",
+      "structural",
+      "endemic"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did white backlash affect civil rights progress?",
+    "expectedAny": [
+      "slowed implementation",
+      "political resistance",
+      "policy reversals",
+      "social tension"
+    ]
+  }
+}

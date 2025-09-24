@@ -1,0 +1,33 @@
+{
+  "id": "place-value-to-100-intermediate",
+  "title": "Place Value to 100",
+  "grade": "1st",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {"term": "place value", "definition": "The value of a digit based on where it sits in a number"},
+    {"term": "tens", "definition": "Groups of 10 ones"},
+    {"term": "ones", "definition": "Single units"},
+    {"term": "digit", "definition": "The symbols 0, 1, 2, 3, 4, 5, 6, 7, 8, 9"}
+  ],
+  "teachingNotes": "Use base-10 blocks, place value charts. Emphasize tens and ones columns. Practice reading and writing numbers.",
+  "sample": {
+    "question": "In the number 47, what digit is in the tens place?",
+    "expectedAny": ["4", "the 4 represents 4 tens"]
+  },
+  "truefalse": [
+    {"question": "The number 83 has 8 tens and 3 ones.", "answer": true, "expectedAny": ["correct place value understanding"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which number has 5 tens and 2 ones?", "choices": ["25", "52", "50", "20"], "correct": 1, "expectedAny": ["52 = 5 tens + 2 ones"]}
+  ],
+  "fillintheblank": [
+    {"question": "The number 36 has _____ tens and _____ ones.", "expectedAny": ["3", "6"]}
+  ],
+  "shortanswer": [
+    {"question": "How do you know that 64 is greater than 46?", "expectedAny": ["compare tens place first"]}
+  ],
+  "wordProblems": [
+    {"question": "A school has 6 boxes of 10 pencils each and 4 single pencils. How many pencils total?", "expectedAny": ["64 pencils"]}
+  ]
+}

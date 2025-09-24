@@ -1,0 +1,59 @@
+{
+  "id": "2nd_Grammar_Punctuation_Basics_Intermediate",
+  "title": "Grammar and Punctuation Basics",
+  "grade": "2nd",
+  "difficulty": "Intermediate",
+  "vocab": [
+    { "term": "noun", "definition": "A word that names a person, place, or thing" },
+    { "term": "verb", "definition": "A word that shows action or tells what someone does" },
+    { "term": "adjective", "definition": "A word that describes a noun" },
+    { "term": "sentence", "definition": "A group of words that tells a complete thought" },
+    { "term": "period", "definition": "A punctuation mark (.) that ends a sentence" }
+  ],
+  "teachingNotes": "Use concrete examples to teach parts of speech. Practice identifying nouns, verbs, and adjectives in simple sentences. Emphasize proper sentence structure with capital letters and ending punctuation.",
+  "sample": [
+    { "question": "What type of word shows action?", "expectedAny": ["verb", "action word", "doing word", "verb word"] },
+    { "question": "What type of word describes a noun?", "expectedAny": ["adjective", "describing word"] },
+    { "question": "What does a noun name?", "expectedAny": ["person", "place", "thing"] },
+    { "question": "What is a sentence?", "expectedAny": ["a group of words that tells a complete thought", "complete thought"] },
+    { "question": "What punctuation mark ends a telling sentence?", "expectedAny": ["period", "."] },
+    { "question": "Which word is the verb in 'Birds fly'?", "expectedAny": ["fly", "flies"] },
+    { "question": "Which word is the noun in 'The dog barked'?", "expectedAny": ["dog"] }
+  ],
+  "truefalse": [
+    { "question": "A noun names a person, place, or thing.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A verb is a describing word.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A sentence must start with a capital letter.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All sentences end with a question mark.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Adjectives tell more about nouns.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "'Run' is a noun.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A period can end a sentence.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which word is an adjective in this sentence: 'The big dog ran fast'?", "expectedAny": ["big", "describing word", "big describes dog"] },
+    { "question": "Which word is the noun in 'The cat sleeps.'?", "expectedAny": ["cat"] },
+    { "question": "Which word is the verb in 'The fish swims fast.'?", "expectedAny": ["swims", "swim"] },
+    { "question": "Which punctuation ends a telling sentence?", "expectedAny": ["period", "."] },
+    { "question": "Which punctuation ends a question?", "expectedAny": ["question mark", "?"] },
+    { "question": "Which sentence is complete?", "expectedAny": ["The dog barks.", "A full thought"] },
+    { "question": "Which word is an adjective?", "expectedAny": ["red", "happy", "tall"] }
+  ],
+  "fillintheblank": [
+    { "question": "Every sentence should end with a ________ or other punctuation mark.", "expectedAny": ["period", ".", "punctuation", "end mark"] },
+    { "question": "A word that shows action is a ________.", "expectedAny": ["verb"] },
+    { "question": "A word that names a person, place, or thing is a ________.", "expectedAny": ["noun"] },
+    { "question": "A word that describes a noun is an ________.", "expectedAny": ["adjective"] },
+    { "question": "A group of words that tells a complete thought is a ________.", "expectedAny": ["sentence"] },
+    { "question": "End a question with a ________ mark.", "expectedAny": ["question"] },
+    { "question": "Start a sentence with a ________ letter.", "expectedAny": ["capital", "uppercase"] }
+  ],
+  "shortanswer": [
+    { "question": "Write a sentence using a noun and a verb.", "expectedAny": ["The cat runs", "Dogs bark", "any complete sentence", "subject and action"] },
+    { "question": "Underline the adjective in: 'The tall tree sways.'", "expectedAny": ["tall"] },
+    { "question": "Circle the noun in: 'Birds sing.'", "expectedAny": ["Birds", "bird"] },
+    { "question": "What punctuation belongs at the end: 'Where is my book'", "expectedAny": ["question mark", "?"] },
+    { "question": "Fix the sentence: 'the dog runs' (add what is missing)", "expectedAny": ["capital letter and period", "The dog runs."] },
+    { "question": "Name one adjective to describe a flower.", "expectedAny": ["red", "pretty", "smelly", "tall"] },
+    { "question": "Write a verb that shows action.", "expectedAny": ["run", "jump", "swim", "read"] }
+  ]
+}

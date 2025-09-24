@@ -1,0 +1,71 @@
+{
+  "id": "sound-making-hearing-beginner",
+  "title": "Making and Hearing Sounds",
+  "grade": "1st",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "sound",
+      "definition": "Something you hear with your ears"
+    },
+    {
+      "term": "loud",
+      "definition": "A sound that is easy to hear because it's strong"
+    },
+    {
+      "term": "soft",
+      "definition": "A sound that is quiet and hard to hear"
+    },
+    {
+      "term": "vibrate",
+      "definition": "To move back and forth very quickly"
+    }
+  ],
+  "teachingNotes": "Use simple instruments and everyday objects. Explore loud vs. soft sounds. Demonstrate vibrations with rubber bands or drums.",
+  "sample": [
+    {"question": "What part of your body do you use to hear sounds?", "expectedAny": ["ears"]},
+    {"question": "Is a whisper loud or soft?", "expectedAny": ["soft"]},
+    {"question": "Name something that makes a loud sound.", "expectedAny": ["drum", "thunder"]},
+    {"question": "Name something that makes a soft sound.", "expectedAny": ["whisper", "leaves"]},
+    {"question": "What happens when you pluck a rubber band?", "expectedAny": ["it vibrates and makes sound"]},
+    {"question": "Do we hear with our eyes or ears?", "expectedAny": ["ears"]},
+    {"question": "What is your favorite sound?", "expectedAny": ["varies"]}
+  ],
+  "truefalse": [
+    {"question": "A whisper is a soft sound.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Banging a drum is quiet.", "answer": false, "expectedAny": ["false"]},
+    {"question": "We hear sounds with our ears.", "answer": true, "expectedAny": ["true"]},
+    {"question": "All sounds are the same loudness.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Vibrations can make sounds.", "answer": true, "expectedAny": ["true"]},
+    {"question": "You can't hear underwater.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Soft sounds are harder to hear.", "answer": true, "expectedAny": ["true"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which would make a loud sound?", "choices": ["tiptoeing", "banging a drum", "whispering", "sleeping"], "correct": 1, "expectedAny": ["banging a drum"]},
+    {"question": "Which is a soft sound?", "choices": ["thunder", "whisper", "jet", "siren"], "correct": 1, "expectedAny": ["whisper"]},
+    {"question": "What vibrates when you talk?", "choices": ["teeth", "vocal cords", "eyes", "nose"], "correct": 1, "expectedAny": ["vocal cords"]},
+    {"question": "What do we use to hear?", "choices": ["eyes", "ears", "hands", "feet"], "correct": 1, "expectedAny": ["ears"]},
+    {"question": "Which is louder?", "choices": ["leaves", "thunder"], "correct": 1, "expectedAny": ["thunder"]},
+    {"question": "Which is quieter?", "choices": ["siren", "whisper"], "correct": 1, "expectedAny": ["whisper"]},
+    {"question": "What happens when you pluck a rubber band?", "choices": ["nothing", "it vibrates", "it glows", "it stops"], "correct": 1, "expectedAny": ["it vibrates"]}
+  ],
+  "fillintheblank": [
+    {"question": "When you pluck a rubber band, it _____ and makes a sound.", "expectedAny": ["vibrates"]},
+    {"question": "We hear with our _____.", "expectedAny": ["ears"]},
+    {"question": "A loud sound can be called _____.", "expectedAny": ["noisy"]},
+    {"question": "A quiet sound can be called _____.", "expectedAny": ["soft"]},
+    {"question": "Sound is made by things that _____.", "expectedAny": ["vibrate"]},
+    {"question": "Covering your ears makes sounds seem _____.", "expectedAny": ["softer", "quieter"]},
+    {"question": "We can hear a bell when it _____.", "expectedAny": ["rings"]}
+  ],
+  "shortanswer": [
+    {"question": "Name three things that make sound.", "expectedAny": ["drums", "voices", "cars", "bells", "music"]},
+    {"question": "How can you make a sound louder?", "expectedAny": ["hit harder", "blow harder"]},
+    {"question": "How can you make a sound softer?", "expectedAny": ["hit gently", "cover ears"]},
+    {"question": "What sounds do you hear at school?", "expectedAny": ["teacher", "students", "bells"]},
+    {"question": "What sounds do you hear at home?", "expectedAny": ["TV", "music", "talking"]},
+    {"question": "Why is it good to protect your ears from very loud sounds?", "expectedAny": ["to keep ears safe"]},
+    {"question": "Draw a picture of something that makes sound.", "expectedAny": ["drawing"]}
+  ]
+}

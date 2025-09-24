@@ -1,0 +1,59 @@
+{
+  "id": "2nd_Literary_Analysis_Character_Feelings_Advanced",
+  "title": "Literary Analysis: Character Feelings",
+  "grade": "2nd",
+  "difficulty": "Advanced",
+  "vocab": [
+    { "term": "feelings", "definition": "Emotions that characters have, like happy, sad, or angry" },
+    { "term": "emotions", "definition": "Strong feelings that affect how someone acts" },
+    { "term": "motivation", "definition": "The reason why a character does something" },
+    { "term": "reaction", "definition": "How a character responds to what happens in the story" },
+    { "term": "clues", "definition": "Hints in the story that help us understand characters" }
+  ],
+  "teachingNotes": "Help students identify character emotions through actions, dialogue, and illustrations. Discuss why characters feel certain ways and how their feelings change throughout the story. Connect to students' own experiences.",
+  "sample": [
+    { "question": "How can you tell how a character is feeling?", "expectedAny": ["what they say and do", "their actions", "story clues", "words and pictures"] },
+    { "question": "What is a character's motivation?", "expectedAny": ["the reason they act", "why they do something"] },
+    { "question": "What is a reaction?", "expectedAny": ["how a character responds", "what they do after something happens"] },
+    { "question": "Name a feeling a character might have.", "expectedAny": ["happy", "sad", "angry", "excited"] },
+    { "question": "What story clues can show feelings?", "expectedAny": ["actions", "dialogue", "pictures"] },
+    { "question": "Can feelings change during a story?", "expectedAny": ["yes", "they can change"] },
+    { "question": "Why is it helpful to know how characters feel?", "expectedAny": ["helps understand the story", "know why they act"] }
+  ],
+  "truefalse": [
+    { "question": "Characters' feelings can change during a story.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "We can never tell feelings from pictures.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A character's words can show how they feel.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Motivation means the same as setting.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Characters all feel the same way all the time.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A reaction shows how a character responds to events.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "We should ignore clues about feelings.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What gives us clues about how a character feels?", "expectedAny": ["their words and actions", "what they do", "story details", "character behavior"] },
+    { "question": "Which face shows 'happy'?", "expectedAny": ["smiling face", "happy expression"] },
+    { "question": "What might a character do if they feel scared?", "expectedAny": ["hide", "shake", "run away"] },
+    { "question": "If a character helps a friend, what feeling might they have?", "expectedAny": ["kindness", "caring"] },
+    { "question": "What is motivation?", "expectedAny": ["the reason a character acts", "why they do something"] },
+    { "question": "Which detail is a reaction?", "expectedAny": ["she cried when the toy broke", "he smiled after winning"] },
+    { "question": "Which clue could be in pictures?", "expectedAny": ["tears", "smiles", "body language"] }
+  ],
+  "fillintheblank": [
+    { "question": "The reason why a character does something is called their ________.", "expectedAny": ["motivation", "reason", "purpose", "why they act"] },
+    { "question": "How a character responds to events is their ________.", "expectedAny": ["reaction"] },
+    { "question": "We use story ________ to learn about feelings.", "expectedAny": ["clues", "details"] },
+    { "question": "A ________ can show feelings without words.", "expectedAny": ["picture", "illustration"] },
+    { "question": "A character who frowns might feel ________.", "expectedAny": ["sad", "angry"] },
+    { "question": "A character who jumps and laughs might be ________.", "expectedAny": ["happy", "excited"] },
+    { "question": "We can read the ________ to find feeling clues.", "expectedAny": ["dialogue", "what they say"] }
+  ],
+  "shortanswer": [
+    { "question": "If a character is smiling and jumping, how might they be feeling?", "expectedAny": ["happy", "excited", "joyful", "glad", "cheerful"] },
+    { "question": "Describe a time a character's feelings changed in a story you read.", "expectedAny": ["from sad to happy", "from scared to brave", "reasonable change"] },
+    { "question": "Give one clue that shows a character is angry.", "expectedAny": ["yelling", "frowning", "crossed arms"] },
+    { "question": "How can knowing a character's motivation help you?", "expectedAny": ["understand why they act", "predict what they might do"] },
+    { "question": "Name a feeling and a matching action.", "expectedAny": ["happy - smile", "sad - cry", "scared - hide"] },
+    { "question": "How can pictures help you figure out feelings?", "expectedAny": ["look at faces", "body language", "what is happening"] },
+    { "question": "What might a character do if they feel nervous on stage?", "expectedAny": ["shake", "speak quietly", "look down"] }
+  ]
+}

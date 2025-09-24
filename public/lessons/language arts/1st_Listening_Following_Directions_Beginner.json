@@ -1,0 +1,76 @@
+{
+  "id": "listening-following-directions-beginner",
+  "title": "Listening and Following Directions",
+  "grade": "1st",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "directions",
+      "definition": "Instructions that tell you what to do"
+    },
+    {
+      "term": "listen",
+      "definition": "To pay careful attention to what you hear"
+    },
+    {
+      "term": "follow",
+      "definition": "To do what the directions say"
+    },
+    {
+      "term": "sequence",
+      "definition": "The order that things should be done"
+    }
+  ],
+  "teachingNotes": "Start with one-step directions, then build to multi-step. Use gestures and visual cues. Practice with classroom routines.",
+  "sample": {
+    "question": "When your teacher gives directions, what should you do first?",
+    "expectedAny": [
+      "listen carefully",
+      "pay attention",
+      "stop and listen"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "Good listeners look at the person talking.",
+      "answer": true,
+      "expectedAny": [
+        "looking shows you are paying attention"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "If directions say 'First draw a circle, then color it red,' what do you do first?",
+      "choices": [
+        "color it red",
+        "draw a circle",
+        "draw a square",
+        "use blue"
+      ],
+      "correct": 1,
+      "expectedAny": [
+        "the directions say to draw a circle first"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "To follow directions well, you need to _____ carefully.",
+      "expectedAny": [
+        "listen"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "What should you do if you don't understand the directions?",
+      "expectedAny": [
+        "ask for help",
+        "raise your hand",
+        "ask the teacher"
+      ]
+    }
+  ]
+}

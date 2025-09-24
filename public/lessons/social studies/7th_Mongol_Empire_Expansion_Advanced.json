@@ -1,0 +1,73 @@
+{
+  "id": "7th_Mongol_Empire_Expansion_Advanced",
+  "title": "The Mongol Empire and Cultural Exchange",
+  "grade": "7th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "Mongol Empire",
+      "definition": "The largest land empire in history, founded by Genghis Khan"
+    },
+    {
+      "term": "Genghis Khan",
+      "definition": "The founder and first ruler of the Mongol Empire"
+    },
+    {
+      "term": "nomad",
+      "definition": "People who move from place to place with their animals"
+    },
+    {
+      "term": "Silk Road",
+      "definition": "Trade routes connecting Asia and Europe"
+    },
+    {
+      "term": "cultural exchange",
+      "definition": "The sharing of ideas, customs, and knowledge between different peoples"
+    }
+  ],
+  "teachingNotes": "Discuss both the destruction and positive effects of Mongol rule. Emphasize how the empire facilitated trade and cultural exchange.",
+  "sample": {
+    "question": "Who founded the Mongol Empire?",
+    "expectedAny": [
+      "Genghis Khan",
+      "Temujin",
+      "Khan",
+      "Mongol leader"
+    ]
+  },
+  "truefalse": {
+    "question": "The Mongol Empire was the largest land empire in history.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What were the Mongols before they built their empire?",
+    "expectedAny": [
+      "nomads",
+      "herders",
+      "nomadic people",
+      "tribal peoples"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The trade routes connecting Asia and Europe were called the ________ Road.",
+    "expectedAny": [
+      "Silk",
+      "trade",
+      "Asian",
+      "commercial"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did the Mongol Empire promote trade?",
+    "expectedAny": [
+      "protected trade routes",
+      "created safe passage",
+      "encouraged commerce across empire"
+    ]
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "id": "11th_Civil_Rights_Movement_American_Democracy_Beginner",
+  "title": "Civil Rights Movement and American Democracy",
+  "grade": "11th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "civil rights",
+      "definition": "Basic rights and freedoms that belong to all citizens"
+    },
+    {
+      "term": "segregation",
+      "definition": "Practice of separating people based on race"
+    },
+    {
+      "term": "nonviolent resistance",
+      "definition": "Peaceful protest method used to challenge injustice"
+    },
+    {
+      "term": "Montgomery Bus Boycott",
+      "definition": "Year-long protest against segregated public transportation"
+    },
+    {
+      "term": "integration",
+      "definition": "Process of bringing together previously separated groups"
+    }
+  ],
+  "teachingNotes": "Focus on key events and figures. Emphasize peaceful nature of civil rights protests and their effectiveness.",
+  "sample": {
+    "question": "What are basic rights and freedoms belonging to all citizens?",
+    "expectedAny": [
+      "civil rights",
+      "constitutional rights",
+      "citizen rights",
+      "basic freedoms"
+    ]
+  },
+  "truefalse": {
+    "question": "The Montgomery Bus Boycott lasted for one year.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What was the peaceful protest method used to challenge injustice?",
+    "expectedAny": [
+      "nonviolent resistance",
+      "peaceful protest",
+      "passive resistance",
+      "civil disobedience"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The process of bringing together separated groups is called ________.",
+    "expectedAny": [
+      "integration",
+      "desegregation",
+      "unification",
+      "combining"
+    ]
+  },
+  "shortanswer": {
+    "question": "Who were key leaders of the Civil Rights Movement?",
+    "expectedAny": [
+      "Martin Luther King Jr.",
+      "Rosa Parks",
+      "Malcolm X",
+      "John Lewis"
+    ]
+  }
+}

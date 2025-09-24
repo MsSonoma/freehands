@@ -1,0 +1,53 @@
+{
+  "id": "11th_Advanced_Functions_Transformations_Intermediate",
+  "title": "Advanced Functions and Transformations",
+  "grade": "11th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "composition of functions",
+      "definition": "Operation where output of one function becomes input of another"
+    },
+    {
+      "term": "inverse function",
+      "definition": "Function that reverses operations of original function"
+    },
+    {
+      "term": "domain restriction",
+      "definition": "Limiting input values to ensure function properties"
+    },
+    {
+      "term": "piecewise function",
+      "definition": "Function defined by different expressions over different intervals"
+    },
+    {
+      "term": "rational function",
+      "definition": "Function expressed as ratio of polynomial functions"
+    }
+  ],
+  "teachingNotes": "Emphasize function relationships and operations. Practice finding inverse functions and their domains.",
+  "sample": {
+    "question": "What operation uses output of one function as input of another?",
+    "expectedAny": ["composition of functions", "function composition", "composite function", "function operation"]
+  },
+  "truefalse": {
+    "question": "An inverse function reverses the operations of the original function.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is a function expressed as a ratio of polynomials?",
+    "expectedAny": ["rational function", "polynomial ratio", "fractional function", "ratio function"]
+  },
+  "fillintheblank": {
+    "question": "A function defined by different expressions over intervals is a ________ function.",
+    "expectedAny": ["piecewise", "segmented", "split", "conditional"]
+  },
+  "shortanswer": {
+    "question": "How do you verify that two functions are inverses?",
+    "expectedAny": ["compose both ways", "f(g(x)) = x", "g(f(x)) = x", "composition equals identity"]
+  },
+  "wordProblems": {
+    "question": "If f(x) = 2x + 1 and g(x) = x², what is (g ∘ f)(3)?",
+    "expectedAny": ["49", "forty-nine", "(2·3+1)² = 7² = 49", "g(f(3)) = g(7) = 49"]
+  }
+}

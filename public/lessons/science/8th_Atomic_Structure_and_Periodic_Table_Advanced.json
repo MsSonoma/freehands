@@ -1,0 +1,73 @@
+{
+  "id": "8th_Atomic_Structure_and_Periodic_Table_Advanced",
+  "title": "Atomic Structure and the Periodic Table",
+  "grade": "8th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "atom",
+      "definition": "The smallest unit of an element that retains its properties"
+    },
+    {
+      "term": "proton",
+      "definition": "A positively charged particle in an atom's nucleus"
+    },
+    {
+      "term": "electron",
+      "definition": "A negatively charged particle that orbits the nucleus"
+    },
+    {
+      "term": "periodic table",
+      "definition": "A chart that organizes elements by their properties"
+    },
+    {
+      "term": "atomic number",
+      "definition": "The number of protons in an atom's nucleus"
+    }
+  ],
+  "teachingNotes": "Use models to show atomic structure. Explain how the periodic table is organized and helps predict element properties.",
+  "sample": {
+    "question": "What is the smallest unit of an element that retains its properties?",
+    "expectedAny": [
+      "atom",
+      "atomic particle",
+      "basic unit",
+      "elemental unit"
+    ]
+  },
+  "truefalse": {
+    "question": "Protons have a positive charge and are found in the nucleus.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What determines an element's identity?",
+    "expectedAny": [
+      "atomic number",
+      "number of protons",
+      "proton count",
+      "nuclear charge"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Negatively charged particles that orbit the nucleus are called ________.",
+    "expectedAny": [
+      "electrons",
+      "electron particles",
+      "negative particles",
+      "orbital particles"
+    ]
+  },
+  "shortanswer": {
+    "question": "How are elements arranged in the periodic table?",
+    "expectedAny": [
+      "by atomic number",
+      "by increasing proton number",
+      "by properties and atomic number"
+    ]
+  }
+}

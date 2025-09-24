@@ -1,0 +1,68 @@
+{
+  "id": "counting-numbers-1-20-beginner",
+  "title": "Counting and Numbers 1-20",
+  "grade": "K",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {"term": "counting", "definition": "Saying numbers in order to find how many"},
+    {"term": "number", "definition": "A symbol that tells us how many, like 1, 2, 3"},
+    {"term": "more", "definition": "A bigger amount or higher number"},
+    {"term": "less", "definition": "A smaller amount or lower number"},
+    {"term": "before", "definition": "Coming earlier in order"},
+    {"term": "after", "definition": "Coming later in order"}
+  ],
+  "teachingNotes": "Use manipulatives for hands-on counting. Practice number recognition with flashcards. Count real objects in classroom.",
+  "sample": [
+    {"question": "What number comes after 5?", "expectedAny": ["6", "six"]},
+    {"question": "Count from 1 to 10.", "expectedAny": ["1, 2, 3, 4, 5, 6, 7, 8, 9, 10"]},
+    {"question": "Show me 7 fingers.", "expectedAny": ["holds up 7 fingers", "demonstrates 7"]},
+    {"question": "What number comes before 15?", "expectedAny": ["14", "fourteen"]},
+    {"question": "Point to the number 12.", "expectedAny": ["identifies 12", "points to twelve"]}
+  ],
+  "truefalse": [
+    {"question": "The number 8 comes before 9.", "answer": true, "expectedAny": ["8 comes before 9 when counting"]},
+    {"question": "20 is bigger than 10.", "answer": true, "expectedAny": ["20 is greater than 10"]},
+    {"question": "13 comes after 15.", "answer": false, "expectedAny": ["13 comes before 15"]},
+    {"question": "You can count past 10.", "answer": true, "expectedAny": ["counting continues past 10"]},
+    {"question": "11 comes right after 10.", "answer": true, "expectedAny": ["11 follows 10"]},
+    {"question": "18 is less than 16.", "answer": false, "expectedAny": ["18 is greater than 16"]},
+    {"question": "There are 20 numbers from 1 to 20.", "answer": true, "expectedAny": ["1 through 20 is 20 numbers"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which number is bigger?", "choices": ["3", "7", "2", "1"], "correct": 1, "expectedAny": ["7 is the biggest number"]},
+    {"question": "What comes after 11?", "choices": ["10", "12", "13", "9"], "correct": 1, "expectedAny": ["12 comes after 11"]},
+    {"question": "Which is the smallest number?", "choices": ["15", "8", "3", "12"], "correct": 2, "expectedAny": ["3 is smallest"]},
+    {"question": "How many tens are in 20?", "choices": ["1", "2", "3", "4"], "correct": 1, "expectedAny": ["2 tens make 20"]},
+    {"question": "What number is between 16 and 18?", "choices": ["15", "17", "19", "20"], "correct": 1, "expectedAny": ["17 is between 16 and 18"]},
+    {"question": "Which number has a 1 in it?", "choices": ["9", "8", "13", "20"], "correct": 2, "expectedAny": ["13 has a 1"]},
+    {"question": "What's the biggest number you can count to?", "choices": ["10", "15", "20", "100"], "correct": 2, "expectedAny": ["20 in this lesson"]}
+  ],
+  "fillintheblank": [
+    {"question": "When counting: 1, 2, 3, 4, _____, 6", "expectedAny": ["5", "five"]},
+    {"question": "10, 11, 12, _____, 14", "expectedAny": ["13", "thirteen"]},
+    {"question": "_____, 17, 18, 19, 20", "expectedAny": ["16", "sixteen"]},
+    {"question": "7, 8, _____, 10, 11", "expectedAny": ["9", "nine"]},
+    {"question": "The number before 20 is _____.", "expectedAny": ["19", "nineteen"]},
+    {"question": "15, _____, 17", "expectedAny": ["16", "sixteen"]},
+    {"question": "After 18 comes _____.", "expectedAny": ["19", "nineteen"]}
+  ],
+  "shortanswer": [
+    {"question": "Count these objects: 🍎🍎🍎🍎. How many apples are there?", "expectedAny": ["4", "four", "4 apples"]},
+    {"question": "Count from 10 to 15.", "expectedAny": ["10, 11, 12, 13, 14, 15"]},
+    {"question": "Count backwards from 5 to 1.", "expectedAny": ["5, 4, 3, 2, 1"]},
+    {"question": "Name three numbers bigger than 15.", "expectedAny": ["16, 17, 18", "any three > 15"]},
+    {"question": "What numbers come between 8 and 12?", "expectedAny": ["9, 10, 11"]},
+    {"question": "Count by 2s: 2, 4, 6...", "expectedAny": ["2, 4, 6, 8, 10"]},
+    {"question": "How many fingers and toes do you have total?", "expectedAny": ["20", "twenty", "10 + 10 = 20"]}
+  ],
+  "wordProblems": [
+    {"question": "Emma has 3 crayons. Mom gives her 2 more crayons. How many crayons does Emma have now?", "expectedAny": ["5 crayons", "3 + 2 = 5"]},
+    {"question": "There are 12 children in class. 3 go to lunch. How many children are still in class?", "expectedAny": ["9 children", "12 - 3 = 9"]},
+    {"question": "Sam counts 8 toys in his room and 6 toys in the living room. How many toys total?", "expectedAny": ["14 toys", "8 + 6 = 14"]},
+    {"question": "A box has 15 stickers. Maya uses 7 stickers. How many stickers are left?", "expectedAny": ["8 stickers", "15 - 7 = 8"]},
+    {"question": "There are 20 cookies. The class eats 5. How many cookies remain?", "expectedAny": ["15 cookies", "20 - 5 = 15"]},
+    {"question": "Jake has 9 marbles. His friend gives him 4 more. How many marbles does Jake have?", "expectedAny": ["13 marbles", "9 + 4 = 13"]},
+    {"question": "18 birds are in a tree. 6 fly away. How many birds are still in the tree?", "expectedAny": ["12 birds", "18 - 6 = 12"]}
+  ]
+}

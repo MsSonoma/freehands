@@ -1,0 +1,74 @@
+{
+  "id": "10th_Sophisticated_Academic_Writing_Argumentation_Beginner",
+  "title": "Sophisticated Academic Writing: Argumentation",
+  "grade": "10th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "thesis statement",
+      "definition": "A clear statement that presents the main argument of an essay"
+    },
+    {
+      "term": "evidence",
+      "definition": "Facts, statistics, examples, or expert opinions that support an argument"
+    },
+    {
+      "term": "counterargument",
+      "definition": "An opposing viewpoint that challenges the main argument"
+    },
+    {
+      "term": "claim",
+      "definition": "A statement that asserts something to be true"
+    },
+    {
+      "term": "logical reasoning",
+      "definition": "Using facts and logic to support conclusions"
+    }
+  ],
+  "teachingNotes": "Focus on constructing clear arguments with supporting evidence. Practice identifying and addressing counterarguments.",
+  "sample": {
+    "question": "What is a clear statement that presents the main argument called?",
+    "expectedAny": [
+      "thesis statement",
+      "main argument",
+      "central claim",
+      "primary thesis"
+    ]
+  },
+  "truefalse": {
+    "question": "Evidence includes facts, statistics, and expert opinions.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is an opposing viewpoint that challenges the main argument?",
+    "expectedAny": [
+      "counterargument",
+      "opposing view",
+      "alternative position",
+      "contrasting claim"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Using facts and logic to support conclusions is called ________ reasoning.",
+    "expectedAny": [
+      "logical",
+      "rational",
+      "sound",
+      "valid"
+    ]
+  },
+  "shortanswer": {
+    "question": "What makes a strong thesis statement?",
+    "expectedAny": [
+      "clear position",
+      "specific claim",
+      "debatable point",
+      "focused argument"
+    ]
+  }
+}

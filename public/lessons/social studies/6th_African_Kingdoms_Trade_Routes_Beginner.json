@@ -1,0 +1,74 @@
+{
+  "id": "6th_African_Kingdoms_Trade_Routes_Beginner",
+  "title": "African Kingdoms and Trans-Saharan Trade Routes",
+  "grade": "6th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "kingdom",
+      "definition": "A country ruled by a king or queen"
+    },
+    {
+      "term": "trade route",
+      "definition": "A path used by merchants to transport goods between different places"
+    },
+    {
+      "term": "Ghana",
+      "definition": "An ancient West African kingdom that controlled gold and salt trade"
+    },
+    {
+      "term": "Mali",
+      "definition": "A West African kingdom famous for its wealth and ruler Mansa Musa"
+    },
+    {
+      "term": "Sahara Desert",
+      "definition": "The large desert in North Africa that trade routes crossed"
+    }
+  ],
+  "teachingNotes": "Use maps to show trade routes across the Sahara. Discuss the importance of gold and salt in trade. Emphasize Africa's rich history and civilizations.",
+  "sample": {
+    "question": "What is a path used by merchants to transport goods called?",
+    "expectedAny": [
+      "trade route",
+      "trading route",
+      "merchant route",
+      "commercial route"
+    ]
+  },
+  "truefalse": {
+    "question": "Ancient African kingdoms became wealthy through trade.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which African kingdom was famous for its ruler Mansa Musa?",
+    "expectedAny": [
+      "Mali",
+      "Kingdom of Mali",
+      "Mali Empire",
+      "West African Mali"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Trade routes crossed the ________ Desert to reach African kingdoms.",
+    "expectedAny": [
+      "Sahara",
+      "Sahara Desert",
+      "African Sahara",
+      "great desert"
+    ]
+  },
+  "shortanswer": {
+    "question": "What two valuable resources did West African kingdoms trade?",
+    "expectedAny": [
+      "gold and salt",
+      "salt and gold",
+      "precious metals and salt",
+      "gold and mineral salt"
+    ]
+  }
+}

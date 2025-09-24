@@ -1,0 +1,74 @@
+{
+  "id": "12th_Comparative_Politics_Global_Systems_Beginner",
+  "title": "Comparative Politics and Global Systems",
+  "grade": "12th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "democracy",
+      "definition": "Government system where power comes from the people"
+    },
+    {
+      "term": "authoritarianism",
+      "definition": "Government system with concentrated power and limited freedoms"
+    },
+    {
+      "term": "federalism",
+      "definition": "Division of power between national and regional governments"
+    },
+    {
+      "term": "parliamentary system",
+      "definition": "Government where executive derives authority from legislature"
+    },
+    {
+      "term": "political culture",
+      "definition": "Shared beliefs and values about government and politics"
+    }
+  ],
+  "teachingNotes": "Compare different government systems worldwide. Use current examples to illustrate political concepts.",
+  "sample": {
+    "question": "What government system derives power from the people?",
+    "expectedAny": [
+      "democracy",
+      "democratic government",
+      "popular sovereignty",
+      "representative government"
+    ]
+  },
+  "truefalse": {
+    "question": "Federalism divides power between national and regional governments.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What system has concentrated power with limited freedoms?",
+    "expectedAny": [
+      "authoritarianism",
+      "dictatorship",
+      "autocracy",
+      "totalitarianism"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A ________ system has executive authority from legislature.",
+    "expectedAny": [
+      "parliamentary",
+      "legislative",
+      "cabinet",
+      "Westminster"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are characteristics of democratic government?",
+    "expectedAny": [
+      "free elections",
+      "civil liberties",
+      "rule of law",
+      "political participation"
+    ]
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "id": "4th_Creative_Writing_Descriptive_Language_Beginner",
+  "title": "Creative Writing with Descriptive Language",
+  "grade": "4th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "descriptive language",
+      "definition": "Words that help readers picture what you are writing about"
+    },
+    {
+      "term": "adjective",
+      "definition": "A word that describes a noun (like big, red, or happy)"
+    },
+    {
+      "term": "sensory details",
+      "definition": "Words that describe what you see, hear, smell, taste, or feel"
+    },
+    {
+      "term": "vivid",
+      "definition": "Clear and detailed, easy to picture in your mind"
+    },
+    {
+      "term": "imagery",
+      "definition": "Words that create pictures in the reader's mind"
+    }
+  ],
+  "teachingNotes": "Encourage students to use their five senses when writing. Practice replacing bland words with more descriptive alternatives. Focus on showing rather than telling in creative writing.",
+  "sample": [
+    {"question": "What is descriptive language?", "expectedAny": ["words that paint pictures", "help readers visualize"]},
+    {"question": "Name a sensory detail for smell.", "expectedAny": ["sweet", "spicy", "fresh", "stinky"]},
+    {"question": "Give an adjective to describe a storm.", "expectedAny": ["loud", "dark", "stormy", "wild"]},
+    {"question": "What is imagery?", "expectedAny": ["words that create pictures", "mental images"]},
+    {"question": "Change 'The dog ran' to be more descriptive.", "expectedAny": ["The small dog sprinted quickly."]},
+    {"question": "Name a vivid verb to replace 'went'.", "expectedAny": ["raced", "hurried", "strolled", "darted"]},
+    {"question": "Which sense helps you describe sounds?", "expectedAny": ["hearing"]}
+  ],
+  "truefalse": [
+    {"question": "Using sensory details makes writing more interesting to read.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Adjectives can make descriptions more vivid.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Imagery only uses the sense of sight.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Strong verbs can replace bland verbs like 'went'.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Descriptive language should never include comparisons.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Sensory details can include taste and smell.", "answer": true, "expectedAny": ["true"]},
+    {"question": "All writing must use descriptive language to be good.", "answer": false, "expectedAny": ["false"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which sentence uses better descriptive language?", "choices": ["The clouds moved.", "The fluffy, white clouds drifted across the bright sky."], "correct": 1, "expectedAny": ["fluffy, white clouds"]},
+    {"question": "Which is a vivid verb?", "choices": ["went", "looked", "strolled", "did"], "correct": 2, "expectedAny": ["strolled"]},
+    {"question": "Which word best describes a delicious cookie?", "choices": ["tasty", "blue", "round", "cold"], "correct": 0, "expectedAny": ["tasty"]},
+    {"question": "Which sense is used in 'the cinnamon scent filled the room'?", "choices": ["sight", "smell", "touch", "taste"], "correct": 1, "expectedAny": ["smell"]},
+    {"question": "Which sentence shows instead of tells?", "choices": ["He was sad.", "Tears rolled down his cheeks as he stared at the floor."], "correct": 1, "expectedAny": ["tears rolled"]},
+    {"question": "Which adjective best fits 'the ____ thunder'?", "choices": ["loud", "tasty", "colorful", "tiny"], "correct": 0, "expectedAny": ["loud"]},
+    {"question": "Which is an example of imagery?", "choices": ["She is a student.", "The crisp leaves crunched under my boots."], "correct": 1, "expectedAny": ["crisp leaves crunched"]}
+  ],
+  "fillintheblank": [
+    {"question": "Words that describe what you see, hear, smell, taste, or feel are called ________ details.", "expectedAny": ["sensory"]},
+    {"question": "Adjectives are words that ________ nouns.", "expectedAny": ["describe", "modify"]},
+    {"question": "Strong verbs can make writing feel more ________.", "expectedAny": ["vivid", "alive"]},
+    {"question": "Use your ________ to add details to your writing.", "expectedAny": ["senses"]},
+    {"question": "Imagery creates ________ in the reader's mind.", "expectedAny": ["pictures", "images"]},
+    {"question": "Replace bland words with more ________ words.", "expectedAny": ["descriptive", "precise"]},
+    {"question": "We can show, not tell, by using ________ details.", "expectedAny": ["sensory", "specific"]}
+  ],
+  "shortanswer": [
+    {"question": "How can you make the sentence 'The dog ran' more descriptive?", "expectedAny": ["The small dog sprinted quickly."]},
+    {"question": "Write a sentence that uses a sensory detail for sound.", "expectedAny": ["e.g., The leaves rustled in the wind."]},
+    {"question": "Describe your favorite food using two senses.", "expectedAny": ["varies"]},
+    {"question": "Rewrite 'The room smelled nice' with specifics.", "expectedAny": ["The room smelled like fresh-baked cookies."]},
+    {"question": "Give three vivid adjectives to describe a forest.", "expectedAny": ["green", "shadowy", "mossy", "quiet"]},
+    {"question": "Change 'He went home' using a vivid verb.", "expectedAny": ["He hurried home.", "He strolled home."]},
+    {"question": "Explain how 'show, don't tell' improves writing.", "expectedAny": ["engages senses", "helps visualize", "more interesting"]}
+  ]
+}

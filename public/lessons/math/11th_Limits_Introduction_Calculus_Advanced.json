@@ -1,0 +1,53 @@
+{
+  "id": "11th_Limits_Introduction_Calculus_Advanced",
+  "title": "Limits and Introduction to Calculus",
+  "grade": "11th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "epsilon-delta definition",
+      "definition": "Rigorous mathematical definition of limit using arbitrary precision"
+    },
+    {
+      "term": "uniform continuity",
+      "definition": "Stronger form of continuity where rate applies globally"
+    },
+    {
+      "term": "oscillating behavior",
+      "definition": "Function that fluctuates without approaching single value"
+    },
+    {
+      "term": "removable discontinuity",
+      "definition": "Gap in function that can be filled by redefining at single point"
+    },
+    {
+      "term": "essential discontinuity",
+      "definition": "Discontinuity that cannot be removed by redefining function"
+    }
+  ],
+  "teachingNotes": "Introduce rigorous limit theory and advanced discontinuity types. Prepare for formal calculus study.",
+  "sample": {
+    "question": "What is the rigorous mathematical definition of limit?",
+    "expectedAny": ["epsilon-delta definition", "ε-δ definition", "formal limit definition", "precise definition"]
+  },
+  "truefalse": {
+    "question": "Uniform continuity is a stronger condition than regular continuity.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What type of discontinuity can be fixed by redefining at one point?",
+    "expectedAny": ["removable discontinuity", "removable gap", "point discontinuity", "hole discontinuity"]
+  },
+  "fillintheblank": {
+    "question": "Function that fluctuates without approaching single value shows ________ behavior.",
+    "expectedAny": ["oscillating", "oscillatory", "fluctuating", "vibrating"]
+  },
+  "shortanswer": {
+    "question": "What distinguishes essential from removable discontinuities?",
+    "expectedAny": ["cannot be removed", "fundamental gap", "limit doesn't exist", "unfixable break"]
+  },
+  "wordProblems": {
+    "question": "For ε = 0.01, what δ makes |f(x) - L| < ε when |x - a| < δ for f(x) = 2x + 1?",
+    "expectedAny": ["δ = 0.005", "δ = ε/2", "0.005", "half epsilon"]
+  }
+}

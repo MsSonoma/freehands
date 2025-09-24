@@ -1,0 +1,73 @@
+{
+  "id": "7th_Advanced_Vocabulary_Context_Advanced",
+  "title": "Advanced Vocabulary and Context Clues",
+  "grade": "7th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "context clues",
+      "definition": "Hints in surrounding text that help determine word meanings"
+    },
+    {
+      "term": "connotation",
+      "definition": "The emotional feeling or association a word suggests"
+    },
+    {
+      "term": "denotation",
+      "definition": "The literal, dictionary definition of a word"
+    },
+    {
+      "term": "etymology",
+      "definition": "The origin and development of a word's meaning"
+    },
+    {
+      "term": "analogy",
+      "definition": "A comparison between two things to show their relationship"
+    }
+  ],
+  "teachingNotes": "Practice using context clues to determine meanings. Discuss how word choice affects tone and meaning in writing.",
+  "sample": {
+    "question": "What are hints in text that help determine word meanings?",
+    "expectedAny": [
+      "context clues",
+      "text clues",
+      "surrounding hints",
+      "contextual hints"
+    ]
+  },
+  "truefalse": {
+    "question": "Connotation refers to a word's emotional feeling or association.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the literal dictionary definition of a word?",
+    "expectedAny": [
+      "denotation",
+      "definition",
+      "literal meaning",
+      "dictionary meaning"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The origin and development of a word is its ________.",
+    "expectedAny": [
+      "etymology",
+      "word history",
+      "origin",
+      "linguistic history"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do connotation and denotation differ?",
+    "expectedAny": [
+      "connotation is emotional, denotation is literal",
+      "feeling vs dictionary meaning",
+      "association vs definition"
+    ]
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "id": "phonics-word-families-beginner",
+  "title": "Phonics and Word Families",
+  "grade": "2nd",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    { "term": "word family", "definition": "Words that have the same ending sound and letters, like cat, bat, hat" },
+    { "term": "rhyme", "definition": "Words that end with the same sound" },
+    { "term": "consonant", "definition": "Letters that are not vowels: b, c, d, f, g, h, j, k, l, m, n, p, q, r, s, t, v, w, x, y, z" },
+    { "term": "vowel", "definition": "The letters a, e, i, o, u (and sometimes y)" }
+  ],
+  "teachingNotes": "Use word family charts and rhyming games. Focus on common patterns like -at, -an, -in, -ot. Practice blending sounds.",
+  "sample": [
+    { "question": "What word family do these words belong to: cat, bat, hat, rat?", "expectedAny": ["-at family", "at word family", "words ending in -at"] },
+    { "question": "What is a rhyme?", "expectedAny": ["words that end with the same sound", "similar ending sounds"] },
+    { "question": "Give two words in the -ot family.", "expectedAny": ["hot", "pot", "dot", "lot"] },
+    { "question": "Are 'sit' and 'fit' in the same family?", "expectedAny": ["yes", "-it family"] },
+    { "question": "Name a vowel.", "expectedAny": ["a", "e", "i", "o", "u"] },
+    { "question": "Name a consonant.", "expectedAny": ["b", "c", "d", "f", "g", "etc."] },
+    { "question": "How can word families help you read new words?", "expectedAny": ["if you know one word, you can read similar words", "patterns help decode"] }
+  ],
+  "truefalse": [
+    { "question": "The words 'big' and 'pig' are in the same word family.", "answer": true, "expectedAny": ["both end in -ig"] },
+    { "question": "'Cat' and 'dog' rhyme.", "answer": false, "expectedAny": ["different endings"] },
+    { "question": "'Sun' and 'fun' are in the same family.", "answer": true, "expectedAny": ["-un family"] },
+    { "question": "Vowels are a, e, i, o, u.", "answer": true, "expectedAny": ["vowel letters"] },
+    { "question": "Word families can help with spelling.", "answer": true, "expectedAny": ["patterns help spelling"] },
+    { "question": "'Hat' and 'ham' rhyme.", "answer": false, "expectedAny": ["different ending sounds"] },
+    { "question": "Consonants are the letters that are not vowels.", "answer": true, "expectedAny": ["non-vowel letters"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which word belongs in the -an word family?", "choices": ["cat", "fan", "dog", "sun"], "correct": 1, "expectedAny": ["fan ends with -an"] },
+    { "question": "Which words rhyme?", "choices": ["cat/dog", "hat/bat", "sun/pig", "box/fox"], "correct": 1, "expectedAny": ["hat/bat rhyme"] },
+    { "question": "Which is a vowel?", "choices": ["b", "c", "a", "t"], "correct": 2, "expectedAny": ["a is a vowel"] },
+    { "question": "Which word is in the -it family?", "choices": ["hit", "hot", "hat", "hut"], "correct": 0, "expectedAny": ["hit ends with -it"] },
+    { "question": "Which pair does not rhyme?", "choices": ["dog/log", "red/bed", "pen/ten", "sun/sit"], "correct": 3, "expectedAny": ["sun/sit do not rhyme"] },
+    { "question": "Which belongs to the -ot family?", "choices": ["cot", "cat", "cut", "cart"], "correct": 0, "expectedAny": ["cot ends with -ot"] },
+    { "question": "Which ending makes a new word: c__t to make 'cat'?", "choices": ["a", "e", "i", "o"], "correct": 0, "expectedAny": ["c-a-t"] }
+  ],
+  "fillintheblank": [
+    { "question": "I can make new words by changing the first letter: c_at, b_at, r_at, h_at.", "expectedAny": ["any consonant", "different beginning sounds"] },
+    { "question": "Words that end with the same sound are called ________.", "expectedAny": ["rhymes"] },
+    { "question": "Cat, bat, and hat are in the ________ family.", "expectedAny": ["-at", "at"] },
+    { "question": "'H__' and 'f__' can make 'hat' and 'fat'.", "expectedAny": ["h", "f"] },
+    { "question": "The letters a, e, i, o, u are called ________.", "expectedAny": ["vowels"] },
+    { "question": "B, c, d, f, and g are examples of ________.", "expectedAny": ["consonants"] },
+    { "question": "'S__n' and 'f__n' rhyme to make 'sun' and 'fun'.", "expectedAny": ["u", "u"] }
+  ],
+  "shortanswer": [
+    { "question": "How can knowing word families help you read new words?", "expectedAny": ["if you know one word, you can read similar words", "patterns help decode"] },
+    { "question": "Name three words that rhyme with 'cat'.", "expectedAny": ["bat", "hat", "rat", "mat"] },
+    { "question": "Name two words in the -og family.", "expectedAny": ["dog", "log", "fog"] },
+    { "question": "Write one word from the -in family.", "expectedAny": ["pin", "win", "tin", "fin"] },
+    { "question": "Which vowel sound is in 'ship'?", "expectedAny": ["short i", "i"] },
+    { "question": "Which consonant begins 'ball'?", "expectedAny": ["b"] },
+    { "question": "Explain how rhyming helps with spelling.", "expectedAny": ["same endings mean same spelling patterns"] }
+  ]
+}

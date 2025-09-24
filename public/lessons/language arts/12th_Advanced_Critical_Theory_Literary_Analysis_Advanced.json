@@ -1,0 +1,74 @@
+{
+  "id": "12th_Advanced_Critical_Theory_Literary_Analysis_Advanced",
+  "title": "Advanced Critical Theory and Literary Analysis",
+  "grade": "12th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "hermeneutics",
+      "definition": "Theory and methodology of interpretation and understanding"
+    },
+    {
+      "term": "semiotics",
+      "definition": "Study of signs and sign systems in communication"
+    },
+    {
+      "term": "discourse analysis",
+      "definition": "Examination of language use within social and political contexts"
+    },
+    {
+      "term": "phenomenology",
+      "definition": "Study of consciousness and experience as they present themselves"
+    },
+    {
+      "term": "new historicism",
+      "definition": "Critical approach examining literature within specific historical contexts"
+    }
+  ],
+  "teachingNotes": "Engage with sophisticated theoretical frameworks. Synthesize multiple critical approaches in complex analysis.",
+  "sample": {
+    "question": "What studies theory and methodology of interpretation?",
+    "expectedAny": [
+      "hermeneutics",
+      "interpretive theory",
+      "understanding methodology",
+      "hermeneutical analysis"
+    ]
+  },
+  "truefalse": {
+    "question": "Semiotics studies signs and sign systems in communication.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What examines language use within social and political contexts?",
+    "expectedAny": [
+      "discourse analysis",
+      "contextual analysis",
+      "social linguistics",
+      "political language study"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Study of consciousness and experience describes ________.",
+    "expectedAny": [
+      "phenomenology",
+      "consciousness studies",
+      "experiential analysis",
+      "subjective experience"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does new historicism differ from traditional historical criticism?",
+    "expectedAny": [
+      "power relations",
+      "cultural context",
+      "non-linear history",
+      "marginalized voices"
+    ]
+  }
+}

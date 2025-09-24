@@ -1,0 +1,82 @@
+{
+  "id": "five-senses-beginner",
+  "title": "Our Five Senses",
+  "grade": "K",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "sight",
+      "definition": "Using your eyes to see things"
+    },
+    {
+      "term": "hearing",
+      "definition": "Using your ears to hear sounds"
+    },
+    {
+      "term": "smell",
+      "definition": "Using your nose to smell things"
+    },
+    {
+      "term": "taste",
+      "definition": "Using your tongue to taste food"
+    },
+    {
+      "term": "touch",
+      "definition": "Using your skin to feel things"
+    }
+  ],
+  "teachingNotes": "Use sensory exploration activities. Taste and smell safely with supervision. Connect senses to body parts. Practice describing sensations.",
+  "sample": [
+    {"question": "Which sense do you use to see a rainbow?", "expectedAny": ["sight", "eyes", "seeing"]},
+    {"question": "What body part do you use to hear?", "expectedAny": ["ears"]},
+    {"question": "How do you know if something smells good?", "expectedAny": ["use your nose", "smell it"]},
+    {"question": "What sense tells you if food tastes sweet?", "expectedAny": ["taste", "tongue"]},
+    {"question": "How can you tell if something is rough or smooth?", "expectedAny": ["touch it", "feel it with hands"]}
+  ],
+  "truefalse": [
+    {"question": "We use our nose to smell.", "answer": true, "expectedAny": ["nose for smelling"]},
+    {"question": "Our ears help us see things.", "answer": false, "expectedAny": ["ears are for hearing, eyes for seeing"]},
+    {"question": "We have five senses.", "answer": true, "expectedAny": ["five senses: sight, hearing, smell, taste, touch"]},
+    {"question": "Your tongue helps you hear sounds.", "answer": false, "expectedAny": ["tongue is for tasting"]},
+    {"question": "Touch lets you feel if things are hot or cold.", "answer": true, "expectedAny": ["touch senses temperature"]},
+    {"question": "You can taste with your eyes.", "answer": false, "expectedAny": ["eyes are for seeing, not tasting"]},
+    {"question": "All five senses help us learn about the world.", "answer": true, "expectedAny": ["senses give us information"]}
+  ],
+  "multiplechoice": [
+    {"question": "What do we use to hear music?", "choices": ["eyes", "ears", "nose", "mouth"], "correct": 1, "expectedAny": ["ears for hearing"]},
+    {"question": "Which sense helps you enjoy the smell of flowers?", "choices": ["sight", "hearing", "smell", "taste"], "correct": 2, "expectedAny": ["smell for flowers"]},
+    {"question": "What body part is used for the sense of sight?", "choices": ["nose", "ears", "eyes", "tongue"], "correct": 2, "expectedAny": ["eyes for seeing"]},
+    {"question": "How do you know if food is salty?", "choices": ["look at it", "smell it", "taste it", "touch it"], "correct": 2, "expectedAny": ["taste tells you flavors"]},
+    {"question": "Which sense tells you if something feels bumpy?", "choices": ["sight", "hearing", "smell", "touch"], "correct": 3, "expectedAny": ["touch feels textures"]},
+    {"question": "What helps you hear a bird singing?", "choices": ["nose", "ears", "mouth", "hands"], "correct": 1, "expectedAny": ["ears hear sounds"]},
+    {"question": "Which sense do you use to see colors?", "choices": ["touch", "smell", "sight", "hearing"], "correct": 2, "expectedAny": ["sight sees colors"]}
+  ],
+  "fillintheblank": [
+    {"question": "We use our _____ to taste food.", "expectedAny": ["tongue", "mouth"]},
+    {"question": "Our _____ help us see things around us.", "expectedAny": ["eyes"]},
+    {"question": "We smell with our _____.", "expectedAny": ["nose"]},
+    {"question": "_____ and _____ help us hear sounds.", "expectedAny": ["ears"]},
+    {"question": "When we _____ something, we learn how it feels.", "expectedAny": ["touch", "feel"]},
+    {"question": "The five senses are sight, hearing, smell, taste, and _____.", "expectedAny": ["touch"]},
+    {"question": "Your _____ can tell you if something tastes good.", "expectedAny": ["tongue", "mouth"]}
+  ],
+  "shortanswer": [
+    {"question": "Name something you can touch that feels soft.", "expectedAny": ["pillow", "stuffed animal", "cotton", "fur"]},
+    {"question": "What sounds do you like to hear?", "expectedAny": ["music", "birds singing", "mom's voice"]},
+    {"question": "Describe something that smells good to you.", "expectedAny": ["cookies", "flowers", "pizza"]},
+    {"question": "What is your favorite thing to look at?", "expectedAny": ["rainbows", "pictures", "family"]},
+    {"question": "Name a food that tastes sweet.", "expectedAny": ["candy", "fruit", "cookies"]},
+    {"question": "How do your senses help you every day?", "expectedAny": ["see where to go", "hear warnings", "taste food"]},
+    {"question": "Which sense would you use to enjoy a garden?", "expectedAny": ["all senses", "see flowers", "smell flowers", "touch leaves"]}
+  ],
+  "wordProblems": [
+    {"question": "Sarah uses 3 senses when she eats an apple: she sees it, tastes it, and feels it. How many senses is she using?", "expectedAny": ["3 senses"]},
+    {"question": "There are 5 senses total. If Tommy is using his eyes and ears, how many more senses could he also use?", "expectedAny": ["3 more senses", "5 - 2 = 3"]},
+    {"question": "In the garden, Maria can see 4 flowers, smell 3 of them, and touch 2 of them. How many flowers did she experience with her senses?", "expectedAny": ["4 flowers total", "she experienced the same flowers with different senses"]},
+    {"question": "Ben tastes 2 different foods and hears 3 different sounds. How many different sensory experiences is that?", "expectedAny": ["5 experiences", "2 + 3 = 5"]},
+    {"question": "If each person has 5 senses and there are 4 children in the group, how many senses do they have altogether?", "expectedAny": ["20 senses", "5 × 4 = 20"]},
+    {"question": "Amy closes her eyes, so she can't use her sight. How many senses can she still use?", "expectedAny": ["4 senses", "5 - 1 = 4"]},
+    {"question": "During snack time, Jake uses 4 of his 5 senses. How many senses is he not using?", "expectedAny": ["1 sense", "5 - 4 = 1"]}
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "id": "10th_Thermodynamics_Heat_Energy_Transfer_Intermediate",
+  "title": "Thermodynamics: Heat and Energy Transfer",
+  "grade": "10th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "thermodynamics",
+      "definition": "Study of heat, temperature, and energy transfer"
+    },
+    {
+      "term": "specific heat",
+      "definition": "Amount of energy needed to raise temperature of 1 gram by 1°C"
+    },
+    {
+      "term": "conduction",
+      "definition": "Heat transfer through direct contact between particles"
+    },
+    {
+      "term": "convection",
+      "definition": "Heat transfer through movement of fluids"
+    },
+    {
+      "term": "radiation",
+      "definition": "Heat transfer through electromagnetic waves"
+    }
+  ],
+  "teachingNotes": "Use calorimetry experiments to measure heat transfer. Demonstrate the three methods of heat transfer with practical examples.",
+  "sample": {
+    "question": "What is the study of heat, temperature, and energy transfer?",
+    "expectedAny": [
+      "thermodynamics",
+      "thermal physics",
+      "heat study",
+      "energy transfer study"
+    ]
+  },
+  "truefalse": {
+    "question": "Heat transfer can occur through conduction, convection, and radiation.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is heat transfer through direct contact called?",
+    "expectedAny": [
+      "conduction",
+      "thermal conduction",
+      "direct transfer",
+      "contact transfer"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Heat transfer through electromagnetic waves is called ________.",
+    "expectedAny": [
+      "radiation",
+      "thermal radiation",
+      "electromagnetic transfer",
+      "radiant heat"
+    ]
+  },
+  "shortanswer": {
+    "question": "Explain why metals feel cold to touch even at room temperature.",
+    "expectedAny": [
+      "metals conduct heat well",
+      "draw heat from your hand",
+      "high thermal conductivity"
+    ]
+  }
+}

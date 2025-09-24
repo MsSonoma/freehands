@@ -1,0 +1,74 @@
+{
+  "id": "10th_Advanced_Research_Methodology_Information_Literacy_Intermediate",
+  "title": "Advanced Research Methodology and Information Literacy",
+  "grade": "10th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "peer review",
+      "definition": "Evaluation of research by experts in the same field"
+    },
+    {
+      "term": "bias",
+      "definition": "Prejudice or unfair preference that affects objectivity"
+    },
+    {
+      "term": "methodology",
+      "definition": "Systematic approach to conducting research"
+    },
+    {
+      "term": "annotation",
+      "definition": "Brief summary and evaluation of a source"
+    },
+    {
+      "term": "database",
+      "definition": "Organized collection of scholarly information"
+    }
+  ],
+  "teachingNotes": "Teach advanced source evaluation criteria and research methodologies. Practice creating annotated bibliographies.",
+  "sample": {
+    "question": "What is evaluation of research by field experts called?",
+    "expectedAny": [
+      "peer review",
+      "expert evaluation",
+      "scholarly review",
+      "academic assessment"
+    ]
+  },
+  "truefalse": {
+    "question": "Bias affects the objectivity of research sources.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is a systematic approach to conducting research?",
+    "expectedAny": [
+      "methodology",
+      "research method",
+      "systematic approach",
+      "research design"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A brief summary and evaluation of a source is an ________.",
+    "expectedAny": [
+      "annotation",
+      "summary evaluation",
+      "source assessment",
+      "critical summary"
+    ]
+  },
+  "shortanswer": {
+    "question": "How can researchers identify potential bias in sources?",
+    "expectedAny": [
+      "check author credentials",
+      "examine funding sources",
+      "analyze language",
+      "compare perspectives"
+    ]
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "id": "6th_Mayan_Aztec_Civilizations_Intermediate",
+  "title": "Mayan and Aztec Civilizations of Mesoamerica",
+  "grade": "6th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "Mesoamerica",
+      "definition": "The region including Mexico and Central America where ancient civilizations developed"
+    },
+    {
+      "term": "Maya",
+      "definition": "An ancient civilization known for astronomy, mathematics, and calendar systems"
+    },
+    {
+      "term": "Aztec",
+      "definition": "An ancient civilization that built a powerful empire in central Mexico"
+    },
+    {
+      "term": "Tenochtitlan",
+      "definition": "The capital city of the Aztec Empire, built on a lake"
+    },
+    {
+      "term": "hieroglyphics",
+      "definition": "A writing system using pictures and symbols, used by Maya"
+    }
+  ],
+  "teachingNotes": "Use maps to show Mesoamerican geography. Compare Mayan and Aztec achievements. Discuss how these civilizations adapted to their environments.",
+  "sample": {
+    "question": "What region includes Mexico and Central America where ancient civilizations developed?",
+    "expectedAny": [
+      "Mesoamerica",
+      "Middle America",
+      "Central Mexico region",
+      "pre-Columbian America"
+    ]
+  },
+  "truefalse": {
+    "question": "The Aztec capital Tenochtitlan was built on a lake.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which civilization was known for astronomy and calendar systems?",
+    "expectedAny": [
+      "Maya",
+      "Mayan civilization",
+      "the Maya",
+      "ancient Maya"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The capital city of the Aztec Empire was called ________.",
+    "expectedAny": [
+      "Tenochtitlan",
+      "Aztec capital",
+      "lake city",
+      "Tenochtitlan city"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are two achievements of the Maya civilization?",
+    "expectedAny": [
+      "astronomy and mathematics",
+      "calendar and writing",
+      "pyramids and hieroglyphics",
+      "science and architecture"
+    ]
+  }
+}

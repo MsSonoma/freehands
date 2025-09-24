@@ -1,0 +1,76 @@
+{
+  "id": "creative-writing-drawing-advanced",
+  "title": "Creative Writing and Drawing",
+  "grade": "1st",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "creative",
+      "definition": "Using your imagination to make something new"
+    },
+    {
+      "term": "illustration",
+      "definition": "A picture that goes with a story"
+    },
+    {
+      "term": "character",
+      "definition": "A person or animal in a story"
+    },
+    {
+      "term": "setting",
+      "definition": "Where and when a story takes place"
+    }
+  ],
+  "teachingNotes": "Encourage invented spelling for creativity. Let students draw first, then write. Share and celebrate student work.",
+  "sample": {
+    "question": "What should you do first when writing a story?",
+    "expectedAny": [
+      "think of an idea",
+      "plan what to write",
+      "draw a picture"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "Pictures can help tell a story.",
+      "answer": true,
+      "expectedAny": [
+        "illustrations help readers understand stories"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "What makes a story interesting?",
+      "choices": [
+        "long words",
+        "exciting events",
+        "no pictures",
+        "short sentences"
+      ],
+      "correct": 1,
+      "expectedAny": [
+        "exciting events make stories fun to read"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "In my story, the main _____ is a brave dog.",
+      "expectedAny": [
+        "character"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "If you wrote a story about a magic pencil, what might happen?",
+      "expectedAny": [
+        "anything drawn comes to life",
+        "writes by itself",
+        "creates magical things"
+      ]
+    }
+  ]
+}

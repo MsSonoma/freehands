@@ -1,0 +1,53 @@
+{
+  "id": "8th_Systems_of_Linear_Equations_Intermediate",
+  "title": "Systems of Linear Equations",
+  "grade": "8th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "system of equations",
+      "definition": "Two or more equations with the same variables"
+    },
+    {
+      "term": "solution",
+      "definition": "The point where two lines intersect"
+    },
+    {
+      "term": "substitution",
+      "definition": "Solving by replacing one variable with an expression"
+    },
+    {
+      "term": "elimination",
+      "definition": "Solving by adding or subtracting equations to eliminate a variable"
+    },
+    {
+      "term": "parallel lines",
+      "definition": "Lines that never intersect and have no solution"
+    }
+  ],
+  "teachingNotes": "Start with graphical solutions, then introduce algebraic methods. Use real-world problems involving two unknowns.",
+  "sample": {
+    "question": "What are two or more equations with the same variables called?",
+    "expectedAny": ["system of equations", "equation system", "simultaneous equations", "linear system"]
+  },
+  "truefalse": {
+    "question": "The solution to a system is where the lines intersect.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What happens when you solve by elimination?",
+    "expectedAny": ["eliminate a variable", "remove one variable", "cancel out a variable", "subtract variables"]
+  },
+  "fillintheblank": {
+    "question": "Lines that never intersect are called ________ lines.",
+    "expectedAny": ["parallel", "non-intersecting", "same slope", "equivalent"]
+  },
+  "shortanswer": {
+    "question": "Solve the system: x + y = 5 and x - y = 1",
+    "expectedAny": ["x = 3, y = 2", "(3, 2)", "x=3, y=2", "3 and 2"]
+  },
+  "wordProblems": {
+    "question": "Two numbers add to 12 and their difference is 4. What are the numbers?",
+    "expectedAny": ["8 and 4", "4 and 8", "x=8, y=4", "eight and four"]
+  }
+}

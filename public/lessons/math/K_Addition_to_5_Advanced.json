@@ -1,0 +1,68 @@
+{
+  "id": "addition-to-5-advanced",
+  "title": "Addition to 5",
+  "grade": "K",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {"term": "add", "definition": "To put together or combine numbers"},
+    {"term": "plus", "definition": "The + sign that means add"},
+    {"term": "equals", "definition": "The = sign that shows the answer"},
+    {"term": "sum", "definition": "The answer when you add numbers together"},
+    {"term": "addend", "definition": "The numbers being added together"},
+    {"term": "total", "definition": "The final amount after adding"}
+  ],
+  "teachingNotes": "Use concrete objects before abstract symbols. Practice with fingers, manipulatives, and number lines. Start with addition stories.",
+  "sample": [
+    {"question": "Show me 2 + 3 using blocks, then write the number sentence.", "expectedAny": ["uses manipulatives correctly", "writes 2 + 3 = 5"]},
+    {"question": "Use your fingers to show 1 + 1.", "expectedAny": ["demonstrates with fingers", "shows 2 fingers"]},
+    {"question": "What is the sum of 4 + 1?", "expectedAny": ["5", "five"]},
+    {"question": "Write the addition sentence for: 🍎🍎 + 🍎 = ?", "expectedAny": ["2 + 1 = 3"]},
+    {"question": "Show me different ways to make 4.", "expectedAny": ["3+1", "2+2", "1+3", "0+4"]}
+  ],
+  "truefalse": [
+    {"question": "2 + 1 equals 3.", "answer": true, "expectedAny": ["correct addition"]},
+    {"question": "0 + 5 equals 6.", "answer": false, "expectedAny": ["0 + 5 = 5"]},
+    {"question": "3 + 2 is the same as 2 + 3.", "answer": true, "expectedAny": ["addition is commutative"]},
+    {"question": "4 + 1 equals 4.", "answer": false, "expectedAny": ["4 + 1 = 5"]},
+    {"question": "You can add zero to any number.", "answer": true, "expectedAny": ["adding zero works"]},
+    {"question": "1 + 1 + 1 equals 3.", "answer": true, "expectedAny": ["three ones make three"]},
+    {"question": "The biggest sum you can make is 5.", "answer": true, "expectedAny": ["in this lesson, 5 is max"]}
+  ],
+  "multiplechoice": [
+    {"question": "What is 1 + 4?", "choices": ["3", "4", "5", "6"], "correct": 2, "expectedAny": ["1 + 4 = 5"]},
+    {"question": "Which equals 3?", "choices": ["1 + 1", "2 + 1", "1 + 3", "0 + 2"], "correct": 1, "expectedAny": ["2 + 1 = 3"]},
+    {"question": "What is 0 + 2?", "choices": ["0", "1", "2", "3"], "correct": 2, "expectedAny": ["0 + 2 = 2"]},
+    {"question": "Which addition makes 5?", "choices": ["2 + 2", "3 + 2", "1 + 3", "2 + 1"], "correct": 1, "expectedAny": ["3 + 2 = 5"]},
+    {"question": "What is 2 + 2?", "choices": ["3", "4", "5", "6"], "correct": 1, "expectedAny": ["2 + 2 = 4"]},
+    {"question": "How many ways can you make 3?", "choices": ["1", "2", "3", "4"], "correct": 3, "expectedAny": ["0+3, 1+2, 2+1, 3+0"]},
+    {"question": "What comes after the = sign?", "choices": ["plus", "sum", "number", "minus"], "correct": 1, "expectedAny": ["sum comes after equals"]}
+  ],
+  "fillintheblank": [
+    {"question": "3 + 2 = _____", "expectedAny": ["5"]},
+    {"question": "1 + _____ = 4", "expectedAny": ["3"]},
+    {"question": "_____ + 1 = 2", "expectedAny": ["1"]},
+    {"question": "4 + 0 = _____", "expectedAny": ["4"]},
+    {"question": "2 + _____ = 5", "expectedAny": ["3"]},
+    {"question": "_____ + 2 = 3", "expectedAny": ["1"]},
+    {"question": "0 + _____ = 1", "expectedAny": ["1"]}
+  ],
+  "shortanswer": [
+    {"question": "Tell an addition story about toys.", "expectedAny": ["story with addition context"]},
+    {"question": "How many different ways can you make the number 4?", "expectedAny": ["0+4, 1+3, 2+2, 3+1, 4+0"]},
+    {"question": "Explain what the + sign means.", "expectedAny": ["means add", "put together", "plus"]},
+    {"question": "Show me 3 + 1 with your fingers.", "expectedAny": ["holds up 4 fingers total"]},
+    {"question": "What's the difference between 2 + 3 and 3 + 2?", "expectedAny": ["same answer", "no difference", "both equal 5"]},
+    {"question": "Tell a story about adding animals.", "expectedAny": ["story with animal addition"]},
+    {"question": "What happens when you add 0 to a number?", "expectedAny": ["stays the same", "no change", "number doesn't change"]}
+  ],
+  "wordProblems": [
+    {"question": "Maria has 2 stickers. Her friend gives her 3 more. How many stickers does Maria have now?", "expectedAny": ["5 stickers", "2 + 3 = 5"]},
+    {"question": "There are 1 red balloon and 2 blue balloons. How many balloons in total?", "expectedAny": ["3 balloons", "1 + 2 = 3"]},
+    {"question": "Tom sees 3 birds in one tree and 1 bird in another tree. How many birds does he see?", "expectedAny": ["4 birds", "3 + 1 = 4"]},
+    {"question": "Sarah has 0 pennies. Dad gives her 4 pennies. How many pennies does Sarah have?", "expectedAny": ["4 pennies", "0 + 4 = 4"]},
+    {"question": "In the garden, there are 2 red flowers and 2 yellow flowers. How many flowers total?", "expectedAny": ["4 flowers", "2 + 2 = 4"]},
+    {"question": "Jake eats 1 cookie, then eats 1 more cookie. How many cookies did Jake eat?", "expectedAny": ["2 cookies", "1 + 1 = 2"]},
+    {"question": "A box has 3 crayons. Mom puts 2 more crayons in the box. How many crayons are in the box now?", "expectedAny": ["5 crayons", "3 + 2 = 5"]}
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "id": "11th_College_Preparatory_Communication_Skills_Beginner",
+  "title": "College Preparatory Communication Skills",
+  "grade": "11th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "academic discourse",
+      "definition": "Formal style of communication used in scholarly settings"
+    },
+    {
+      "term": "thesis statement",
+      "definition": "Clear, specific claim that guides entire academic essay"
+    },
+    {
+      "term": "evidence",
+      "definition": "Facts, examples, or expert opinions supporting arguments"
+    },
+    {
+      "term": "formal register",
+      "definition": "Level of language appropriate for academic and professional contexts"
+    },
+    {
+      "term": "peer review",
+      "definition": "Process of having others evaluate and improve your work"
+    }
+  ],
+  "teachingNotes": "Focus on transition from high school to college-level expectations. Practice academic writing conventions.",
+  "sample": {
+    "question": "What is the formal style of communication used in scholarly settings?",
+    "expectedAny": [
+      "academic discourse",
+      "scholarly communication",
+      "formal academic language",
+      "academic style"
+    ]
+  },
+  "truefalse": {
+    "question": "A thesis statement guides an entire academic essay.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the process of having others evaluate your work?",
+    "expectedAny": [
+      "peer review",
+      "peer evaluation",
+      "collaborative review",
+      "peer assessment"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Language appropriate for academic contexts uses ________ register.",
+    "expectedAny": [
+      "formal",
+      "academic",
+      "professional",
+      "scholarly"
+    ]
+  },
+  "shortanswer": {
+    "question": "What types of evidence strengthen academic arguments?",
+    "expectedAny": [
+      "statistics",
+      "expert quotes",
+      "research studies",
+      "factual examples"
+    ]
+  }
+}

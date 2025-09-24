@@ -1,0 +1,73 @@
+{
+  "id": "7th_Crusades_Religious_Conflicts_Beginner",
+  "title": "The Crusades and Religious Conflicts",
+  "grade": "7th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "Crusades",
+      "definition": "Religious wars between Christians and Muslims for control of holy lands"
+    },
+    {
+      "term": "Holy Land",
+      "definition": "The region around Jerusalem, sacred to Christians, Muslims, and Jews"
+    },
+    {
+      "term": "pilgrimage",
+      "definition": "A religious journey to a sacred place"
+    },
+    {
+      "term": "knight",
+      "definition": "A warrior on horseback who fought in the Crusades"
+    },
+    {
+      "term": "siege",
+      "definition": "Surrounding a city or fortress to capture it"
+    }
+  ],
+  "teachingNotes": "Explain religious motivations for the Crusades. Discuss both positive and negative consequences, including cultural exchange and conflict.",
+  "sample": {
+    "question": "What were the religious wars between Christians and Muslims called?",
+    "expectedAny": [
+      "Crusades",
+      "Holy Wars",
+      "Religious Wars",
+      "Medieval conflicts"
+    ]
+  },
+  "truefalse": {
+    "question": "The Crusades were fought for control of the Holy Land.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What city was at the center of the Holy Land?",
+    "expectedAny": [
+      "Jerusalem",
+      "Bethlehem",
+      "holy city",
+      "sacred city"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A religious journey to a sacred place is called a ________.",
+    "expectedAny": [
+      "pilgrimage",
+      "religious journey",
+      "sacred trip",
+      "holy journey"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why did Christians want to control the Holy Land?",
+    "expectedAny": [
+      "religious significance",
+      "sacred to Christianity",
+      "important holy sites"
+    ]
+  }
+}

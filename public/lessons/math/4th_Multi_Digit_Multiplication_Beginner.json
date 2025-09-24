@@ -1,0 +1,68 @@
+{
+  "id": "multi-digit-multiplication-beginner",
+  "title": "Multi-Digit Multiplication",
+  "grade": "4th",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {"term": "partial product", "definition": "The result of multiplying one part of a number by another number"},
+    {"term": "regroup", "definition": "To trade 10 ones for 1 ten, 10 tens for 1 hundred, etc."},
+    {"term": "standard algorithm", "definition": "The traditional method for solving multiplication problems step by step"},
+    {"term": "area model", "definition": "A visual way to show multiplication using rectangles"}
+  ],
+  "teachingNotes": "Introduce area models before standard algorithm. Use base-10 blocks and grid paper. Connect to real-world contexts like finding areas.",
+  "sample": [
+    {"question": "Use the area model to find 23 × 15.", "expectedAny": ["345", "20×15 + 3×15 = 300 + 45 = 345"]},
+    {"question": "Explain how partial products work for 34 × 12.", "expectedAny": ["30×12 + 4×12", "360 + 48 = 408"]},
+    {"question": "Decompose 56 × 27 into four partial products.", "expectedAny": ["50×20, 50×7, 6×20, 6×7"]},
+    {"question": "Estimate 49 × 21 by rounding.", "expectedAny": ["50×20 ≈ 1000"]},
+    {"question": "What is 300 × 4?", "expectedAny": ["1200"]},
+    {"question": "Why does 0 in the ones place add a zero in the next line of the algorithm?", "expectedAny": ["place value shift", "tens place"]},
+    {"question": "Which is larger: 23×19 or 20×23?", "expectedAny": ["23×19", "437 vs 460?", "actually 20×23 = 460 is larger"]}
+  ],
+  "truefalse": [
+    {"question": "When multiplying 34 × 26, you can break it down using the distributive property.", "answer": true, "expectedAny": ["(30+4)(20+6)"]},
+    {"question": "23 × 10 is the same as 230.", "answer": true, "expectedAny": ["append a zero", "place value shift"]},
+    {"question": "In the standard algorithm, you always add the partial products.", "answer": true, "expectedAny": ["add lines together"]},
+    {"question": "An area model for 12 × 25 uses three rectangles.", "answer": false, "expectedAny": ["two by two parts → four rectangles"]},
+    {"question": "Regrouping is never used in multiplication.", "answer": false, "expectedAny": ["you regroup when digits exceed 9"]},
+    {"question": "42 × 0 equals 0.", "answer": true, "expectedAny": ["zero property of multiplication"]},
+    {"question": "Partial products must be in a specific order to be correct.", "answer": false, "expectedAny": ["any order then sum"]}
+  ],
+  "multiplechoice": [
+    {"question": "What is the first step in solving 47 × 38 using partial products?", "choices": ["Multiply 7 × 8", "Break apart the numbers", "Add all digits", "Estimate the answer"], "correct": 1, "expectedAny": ["decompose numbers"]},
+    {"question": "Which is a correct partial product of 63 × 24?", "choices": ["60×20", "3×40", "60×4 = 640", "3×2 = 8"], "correct": 0, "expectedAny": ["60×20 is valid"]},
+    {"question": "Which estimate is best for 78 × 32?", "choices": ["80×30", "70×40", "80×20", "70×20"], "correct": 0, "expectedAny": ["closest rounding"]},
+    {"question": "What is 25 × 12?", "choices": ["250", "300", "275", "3000"], "correct": 1, "expectedAny": ["25×12 = 300"]},
+    {"question": "Which model shows the distributive property?", "choices": ["Area model", "Number line", "Bar graph", "Pictograph"], "correct": 0, "expectedAny": ["area model"]},
+    {"question": "In 406 × 3, which digit is multiplied by 3 to get 18 tens?", "choices": ["4", "0", "6", "none"], "correct": 2, "expectedAny": ["6 ones gives 18 ones (regroup)"]},
+    {"question": "Which expression matches 34 × 21?", "choices": ["(30+4)(20+1)", "(3+4)(2+1)", "(34+21)", "34+21"], "correct": 0, "expectedAny": ["distributive form"]}
+  ],
+  "fillintheblank": [
+    {"question": "To find 24 × 13, I can multiply 20 × 13 = _____ and 4 × 13 = _____, then add them.", "expectedAny": ["260", "52"]},
+    {"question": "The product of 30 × 14 is _____.", "expectedAny": ["420"]},
+    {"question": "Using partial products, 56 × 12 = 50×12 + 6×12 = _____ + _____.", "expectedAny": ["600", "72"]},
+    {"question": "When multiplying 203 × 4, the hundreds contribution is _____.", "expectedAny": ["800"]},
+    {"question": "An area model for 15 × 19 has rectangles with areas 10×10, 10×9, 5×10, and 5×9. The largest is _____.", "expectedAny": ["100"]},
+    {"question": "Round 47 to the nearest ten: _____.", "expectedAny": ["50"]},
+    {"question": "If 8×7=56, then 80×7=_____ and 800×7=_____ .", "expectedAny": ["560", "5600"]}
+  ],
+  "shortanswer": [
+    {"question": "Explain why the area model helps with multiplication.", "expectedAny": ["breaks large problems into smaller parts", "visualizes distributive property"]},
+    {"question": "Describe how regrouping appears in the standard algorithm for 48 × 7.", "expectedAny": ["carry tens from 56"]},
+    {"question": "How does place value explain the zero in the second line of 34 × 20?", "expectedAny": ["tens place shift"]},
+    {"question": "Give two different ways to compute 25 × 16.", "expectedAny": ["(20+5)(10+6)", "25×8×2"]},
+    {"question": "Why is estimating useful before multiplying large numbers?", "expectedAny": ["check reasonableness"]},
+    {"question": "What properties of multiplication are shown by partial products?", "expectedAny": ["distributive", "commutative", "associative"]},
+    {"question": "When would you prefer an area model over the standard algorithm?", "expectedAny": ["when learning", "visual learners", "explaining thinking"]}
+  ],
+  "wordProblems": [
+    {"question": "A school auditorium has 28 rows with 24 seats in each row. How many seats are there in total?", "expectedAny": ["672", "28 × 24 = 672", "672 seats"]},
+    {"question": "A bakery makes 36 trays of cookies, with 18 cookies on each tray. How many cookies are made?", "expectedAny": ["648"]},
+    {"question": "There are 25 teams in a league and each team plays 14 games. How many games total are played (counting each game once)?", "expectedAny": ["175", "25×14/2?", "If counting team-games: 350", "Assume schedule total per team is 14; total team-games is 350"]},
+    {"question": "A rectangle measures 27 cm by 19 cm. What is its area?", "expectedAny": ["513 cm^2", "513"]},
+    {"question": "A store orders 42 boxes of pencils with 12 pencils per box. How many pencils?", "expectedAny": ["504"]},
+    {"question": "There are 16 classrooms with 28 desks each. How many desks in all?", "expectedAny": ["448"]},
+    {"question": "A farmer plants 34 rows of corn with 25 plants in each row. How many plants?", "expectedAny": ["850"]}
+  ]
+}

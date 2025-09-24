@@ -1,0 +1,53 @@
+{
+  "id": "8th_Statistics_Data_Analysis_Advanced",
+  "title": "Statistics and Data Analysis",
+  "grade": "8th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "scatter plot",
+      "definition": "A graph showing the relationship between two sets of data"
+    },
+    {
+      "term": "correlation",
+      "definition": "A relationship between two variables"
+    },
+    {
+      "term": "line of best fit",
+      "definition": "A line that best represents the trend in scattered data"
+    },
+    {
+      "term": "outlier",
+      "definition": "A data point that is very different from other data points"
+    },
+    {
+      "term": "trend",
+      "definition": "The general direction or pattern in data"
+    }
+  ],
+  "teachingNotes": "Use real data sets to create scatter plots. Discuss how to interpret relationships between variables.",
+  "sample": {
+    "question": "What graph shows the relationship between two sets of data?",
+    "expectedAny": ["scatter plot", "scatterplot", "xy plot", "correlation graph"]
+  },
+  "truefalse": {
+    "question": "An outlier is a data point very different from others.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What represents the trend in scattered data?",
+    "expectedAny": ["line of best fit", "trend line", "regression line", "best fit line"]
+  },
+  "fillintheblank": {
+    "question": "A relationship between two variables is called a ________.",
+    "expectedAny": ["correlation", "relationship", "association", "connection"]
+  },
+  "shortanswer": {
+    "question": "What does a positive correlation mean?",
+    "expectedAny": ["as one variable increases, the other increases", "both variables increase together", "upward trend"]
+  },
+  "wordProblems": {
+    "question": "In a scatter plot of height vs shoe size, if most points trend upward from left to right, what type of correlation is this?",
+    "expectedAny": ["positive correlation", "positive", "direct relationship", "positive association"]
+  }
+}

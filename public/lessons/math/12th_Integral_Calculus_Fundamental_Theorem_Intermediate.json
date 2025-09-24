@@ -1,0 +1,53 @@
+{
+  "id": "12th_Integral_Calculus_Fundamental_Theorem_Intermediate",
+  "title": "Integral Calculus and Fundamental Theorem",
+  "grade": "12th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "substitution method",
+      "definition": "Integration technique using variable substitution to simplify integrals"
+    },
+    {
+      "term": "integration by parts",
+      "definition": "Integration technique based on product rule for derivatives"
+    },
+    {
+      "term": "improper integral",
+      "definition": "Integral with infinite limits or unbounded integrand"
+    },
+    {
+      "term": "average value",
+      "definition": "Mean value of function over given interval using integration"
+    },
+    {
+      "term": "net area",
+      "definition": "Signed area accounting for regions above and below x-axis"
+    }
+  ],
+  "teachingNotes": "Practice integration techniques and applications. Distinguish between area and net area calculations.",
+  "sample": {
+    "question": "What integration technique uses variable substitution?",
+    "expectedAny": ["substitution method", "u-substitution", "variable substitution", "substitution rule"]
+  },
+  "truefalse": {
+    "question": "Integration by parts is based on the product rule.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is an integral with infinite limits called?",
+    "expectedAny": ["improper integral", "infinite integral", "unbounded integral", "limit integral"]
+  },
+  "fillintheblank": {
+    "question": "Signed area accounting for regions above and below axis is ________ area.",
+    "expectedAny": ["net", "signed", "algebraic", "total"]
+  },
+  "shortanswer": {
+    "question": "When would you use integration by parts?",
+    "expectedAny": ["product of functions", "logarithmic functions", "inverse trig functions", "polynomial × exponential"]
+  },
+  "wordProblems": {
+    "question": "Find the average value of f(x) = x² on interval [0, 3].",
+    "expectedAny": ["3", "three", "9/3 = 3", "average value is 3"]
+  }
+}

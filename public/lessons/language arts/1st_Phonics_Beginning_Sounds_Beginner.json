@@ -1,0 +1,79 @@
+{
+  "id": "phonics-beginning-sounds-beginner",
+  "title": "Phonics and Beginning Sounds",
+  "grade": "1st",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "phonics",
+      "definition": "Learning how letters make sounds"
+    },
+    {
+      "term": "beginning sound",
+      "definition": "The first sound you hear in a word"
+    },
+    {
+      "term": "consonant",
+      "definition": "Letters that are not vowels, like b, c, d, f"
+    },
+    {
+      "term": "vowel",
+      "definition": "The letters a, e, i, o, u"
+    }
+  ],
+  "teachingNotes": "Use picture cards and sound games. Practice isolating beginning sounds. Connect sounds to letters students know.",
+  "sample": {
+    "question": "What sound does the letter 'B' make?",
+    "expectedAny": [
+      "/b/",
+      "buh",
+      "like in ball"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "The word 'cat' starts with the /k/ sound.",
+      "answer": true,
+      "expectedAny": [
+        "cat starts with the /k/ sound made by 'c'"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which word starts with the same sound as 'dog'?",
+      "choices": [
+        "cat",
+        "duck",
+        "fish",
+        "bird"
+      ],
+      "correct": 1,
+      "expectedAny": [
+        "duck starts with /d/ like dog"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "The word 'sun' starts with the letter _____.",
+      "expectedAny": [
+        "s",
+        "S"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Name two words that start with the /m/ sound.",
+      "expectedAny": [
+        "mom",
+        "mouse",
+        "milk",
+        "man",
+        "moon"
+      ]
+    }
+  ]
+}

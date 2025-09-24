@@ -1,0 +1,83 @@
+{
+  "id": "4th_Data_Interpretation_Line_Graphs_Intermediate",
+  "title": "Data Interpretation and Line Graphs",
+  "grade": "4th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "line graph",
+      "definition": "A graph that uses lines to show how data changes over time"
+    },
+    {
+      "term": "trend",
+      "definition": "The general direction or pattern that data shows"
+    },
+    {
+      "term": "scale",
+      "definition": "The numbers along the sides of a graph that show the values"
+    },
+    {
+      "term": "interval",
+      "definition": "The equal spaces between numbers on a graph"
+    },
+    {
+      "term": "coordinate",
+      "definition": "A pair of numbers that shows the location of a point on a graph"
+    }
+  ],
+  "teachingNotes": "Teach students how to read and create line graphs. Practice identifying trends and making predictions based on data patterns. Use real-world data like temperature or plant growth.",
+  "sample": [
+    {"question": "What type of graph is best for showing how temperature changes throughout the day?", "expectedAny": ["line graph"]},
+    {"question": "Define 'trend' in the context of graphs.", "expectedAny": ["general direction of data"]},
+    {"question": "What axes are used in a line graph?", "expectedAny": ["x-axis and y-axis"]},
+    {"question": "How do you plot (3,5)?", "expectedAny": ["right 3, up 5"]},
+    {"question": "Why are intervals important on a scale?", "expectedAny": ["consistent spacing for accuracy"]},
+    {"question": "When would a bar graph be better than a line graph?", "expectedAny": ["categorical data"]},
+    {"question": "What does a flat (horizontal) line segment indicate?", "expectedAny": ["no change"]}
+  ],
+  "truefalse": [
+    {"question": "A line graph is useful for showing changes over time.", "answer": true},
+    {"question": "A steeper line indicates a slower rate of change.", "answer": false},
+    {"question": "You must label both axes on a graph.", "answer": true},
+    {"question": "Line graphs are best for categories with no order.", "answer": false},
+    {"question": "Predictions from a trend are always exact.", "answer": false},
+    {"question": "A line going down from left to right shows a decreasing trend.", "answer": true},
+    {"question": "Unequal intervals on the scale can mislead readers.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "If a line on a graph goes up from left to right, what does this show?", "choices": ["decrease", "increase", "no change", "error"], "correct": 1},
+    {"question": "Which axis usually shows time?", "choices": ["x-axis", "y-axis", "z-axis", "none"], "correct": 0},
+    {"question": "Which scale is appropriate for daily temperatures from 50°F to 90°F?", "choices": ["0–20", "0–1000", "40–100", "80–200"], "correct": 2},
+    {"question": "A flat line segment between two points suggests:", "choices": ["increase", "decrease", "no change", "data error"], "correct": 2},
+    {"question": "Which title is best for a line graph showing plant growth?", "choices": ["Plants", "Plant Height Over 4 Weeks", "Green Things", "Height"], "correct": 1},
+    {"question": "Which is a coordinate?", "choices": ["(3, 5)", "3-5", "3/5", "3:5"], "correct": 0},
+    {"question": "If the y-axis shows centimeters, the x-axis most likely shows:", "choices": ["time", "centimeters", "pounds", "colors"], "correct": 0}
+  ],
+  "fillintheblank": [
+    {"question": "The general direction that data shows on a graph is called a ________.", "expectedAny": ["trend"]},
+    {"question": "The numbers along the side of a graph that show values are called the ________.", "expectedAny": ["scale"]},
+    {"question": "On a graph, the horizontal axis is the ________.", "expectedAny": ["x-axis"]},
+    {"question": "On a graph, the vertical axis is the ________.", "expectedAny": ["y-axis"]},
+    {"question": "Points on a graph are written as ordered pairs called ________.", "expectedAny": ["coordinates"]},
+    {"question": "Equally spaced numbers on a graph are called ________.", "expectedAny": ["intervals"]},
+    {"question": "A line moving down from left to right shows a ________ trend.", "expectedAny": ["decreasing"]}
+  ],
+  "shortanswer": [
+    {"question": "How do you find a coordinate on a graph?", "expectedAny": ["go right then up", "x then y"]},
+    {"question": "Why should axes be labeled?", "expectedAny": ["clarity", "interpretation"]},
+    {"question": "How can you estimate a value between two plotted points?", "expectedAny": ["interpolate"]},
+    {"question": "What does a steep slope tell you?", "expectedAny": ["fast change"]},
+    {"question": "Give an example of misleading scaling.", "expectedAny": ["unequal intervals", "truncated axis"]},
+    {"question": "How would you choose a good title?", "expectedAny": ["describe variables and time"]},
+    {"question": "When is a line graph not appropriate?", "expectedAny": ["categorical data"]}
+  ],
+  "wordProblems": [
+    {"question": "A line graph shows plant height over 4 weeks: 2, 4, 6, 8 cm. What is the trend?", "expectedAny": ["increasing 2 cm/week"]},
+    {"question": "The temperature at noon over 5 days was 70, 72, 68, 75, 77°F. What overall trend is shown?", "expectedAny": ["generally increasing"]},
+    {"question": "Traffic counts every hour rose from 120 to 300 cars in 4 hours. What does the slope indicate?", "expectedAny": ["increase over time", "positive rate"]},
+    {"question": "A student's reading minutes per day: 10, 20, 25, 30, 40. Predict day 6 if the trend continues.", "expectedAny": ["about 50"]},
+    {"question": "A line graph of rainfall shows a flat line between months 3 and 4. What does that mean?", "expectedAny": ["no change"]},
+    {"question": "One dataset shows a sharp drop, then a slow rise. Describe it.", "expectedAny": ["decrease then gradual increase"]},
+    {"question": "Choose a reasonable scale for data from 5 to 28.", "expectedAny": ["0–30 by 5s", "5–30"]}
+  ]
+}

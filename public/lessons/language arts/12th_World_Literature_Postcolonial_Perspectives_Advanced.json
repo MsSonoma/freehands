@@ -1,0 +1,74 @@
+{
+  "id": "12th_World_Literature_Postcolonial_Perspectives_Advanced",
+  "title": "World Literature and Postcolonial Perspectives",
+  "grade": "12th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "epistemic violence",
+      "definition": "Suppression of marginalized ways of knowing through dominant discourse"
+    },
+    {
+      "term": "testimonial literature",
+      "definition": "First-person narrative bearing witness to social injustice"
+    },
+    {
+      "term": "creolization",
+      "definition": "Process creating new cultural forms from multiple traditions"
+    },
+    {
+      "term": "ambivalence",
+      "definition": "Simultaneous attraction and repulsion in colonial relationships"
+    },
+    {
+      "term": "decolonizing methodology",
+      "definition": "Research approaches challenging Western academic frameworks"
+    }
+  ],
+  "teachingNotes": "Explore complex theoretical frameworks in postcolonial studies. Connect literature to broader social justice issues.",
+  "sample": {
+    "question": "What describes suppression of marginalized ways of knowing?",
+    "expectedAny": [
+      "epistemic violence",
+      "knowledge colonization",
+      "intellectual oppression",
+      "cognitive imperialism"
+    ]
+  },
+  "truefalse": {
+    "question": "Ambivalence describes only negative feelings toward colonizers.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What describes first-person narrative bearing witness to injustice?",
+    "expectedAny": [
+      "testimonial literature",
+      "witness narrative",
+      "testimony writing",
+      "social justice memoir"
+    ]
+  },
+  "fillintheblank": {
+    "question": "________ methodology challenges Western academic frameworks.",
+    "expectedAny": [
+      "decolonizing",
+      "indigenous",
+      "alternative",
+      "non-Western"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does testimonial literature function as resistance?",
+    "expectedAny": [
+      "reclaiming narrative",
+      "challenging silence",
+      "documenting truth",
+      "empowering voice"
+    ]
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "id": "12th_Advanced_Critical_Theory_Literary_Analysis_Intermediate",
+  "title": "Advanced Critical Theory and Literary Analysis",
+  "grade": "12th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "deconstruction",
+      "definition": "Critical approach revealing contradictions and instability in texts"
+    },
+    {
+      "term": "psychoanalytic criticism",
+      "definition": "Analysis using psychological theories to interpret literature"
+    },
+    {
+      "term": "intertextuality",
+      "definition": "Relationship between texts through references and influences"
+    },
+    {
+      "term": "marxist criticism",
+      "definition": "Analysis examining class struggle and economic forces in literature"
+    },
+    {
+      "term": "binary opposition",
+      "definition": "Contrasting pairs of concepts that structure meaning"
+    }
+  ],
+  "teachingNotes": "Explore complex theoretical approaches. Analyze how different theories reveal different meanings in same text.",
+  "sample": {
+    "question": "What critical approach reveals contradictions in texts?",
+    "expectedAny": [
+      "deconstruction",
+      "deconstructive criticism",
+      "poststructuralism",
+      "textual deconstruction"
+    ]
+  },
+  "truefalse": {
+    "question": "Intertextuality describes relationship between texts through references.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What criticism examines class struggle and economic forces?",
+    "expectedAny": [
+      "marxist criticism",
+      "marxist analysis",
+      "economic criticism",
+      "class-based analysis"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Contrasting pairs structuring meaning are ________ oppositions.",
+    "expectedAny": [
+      "binary",
+      "polar",
+      "opposing",
+      "dualistic"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does psychoanalytic criticism interpret character behavior?",
+    "expectedAny": [
+      "unconscious desires",
+      "psychological motives",
+      "repressed conflicts",
+      "mental processes"
+    ]
+  }
+}

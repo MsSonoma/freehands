@@ -1,0 +1,74 @@
+{
+  "id": "4th_Electricity_Circuits_Energy_Beginner",
+  "title": "Electricity, Circuits, and Energy",
+  "grade": "4th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "electricity",
+      "definition": "A form of energy that can power machines and lights"
+    },
+    {
+      "term": "circuit",
+      "definition": "A complete path that electricity can follow"
+    },
+    {
+      "term": "conductor",
+      "definition": "A material that electricity can flow through easily"
+    },
+    {
+      "term": "insulator",
+      "definition": "A material that electricity cannot flow through easily"
+    },
+    {
+      "term": "battery",
+      "definition": "A device that stores electrical energy"
+    }
+  ],
+  "teachingNotes": "Use simple circuit kits to demonstrate how electricity flows. Test various materials to identify conductors and insulators. Discuss electrical safety and the importance of complete circuits.",
+  "sample": [
+    {"question": "What is needed for electricity to flow in a circuit?", "expectedAny": ["closed circuit", "complete path"]},
+    {"question": "Name one conductor and one insulator.", "expectedAny": ["conductor: metal", "insulator: rubber"]},
+    {"question": "What does a battery do in a circuit?", "expectedAny": ["provides energy", "power source"]},
+    {"question": "What happens if a switch is open?", "expectedAny": ["circuit breaks", "no current flows"]},
+    {"question": "What device lights up in a simple circuit?", "expectedAny": ["bulb", "LED"]},
+    {"question": "What flows through a conductor?", "expectedAny": ["electric current", "electricity"]},
+    {"question": "What connects the parts of a circuit?", "expectedAny": ["wires"]}
+  ],
+  "truefalse": [
+    {"question": "Metal is a good conductor of electricity.", "answer": true},
+    {"question": "Plastic is a good conductor.", "answer": false},
+    {"question": "A switch can open or close a circuit.", "answer": true},
+    {"question": "A complete circuit is called a closed circuit.", "answer": true},
+    {"question": "If a bulb burns out, the circuit is still closed.", "answer": false},
+    {"question": "Batteries store chemical energy.", "answer": true},
+    {"question": "Electricity can flow through air as easily as through copper wire.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "Which material would be the best insulator?", "choices": ["Copper", "Aluminum", "Rubber", "Steel"], "correct": 2},
+    {"question": "Which part provides energy in a simple circuit?", "choices": ["Wire", "Switch", "Battery", "Bulb"], "correct": 2},
+    {"question": "What happens when a switch is closed?", "choices": ["Circuit opens", "Electricity flows", "Bulb breaks", "Nothing"], "correct": 1},
+    {"question": "Which symbol often represents a battery in diagrams?", "choices": ["Zigzag", "Two parallel lines", "Circle", "Triangle"], "correct": 1},
+    {"question": "Which material is a conductor?", "choices": ["Glass", "Rubber", "Wood", "Copper"], "correct": 3},
+    {"question": "What device can control a circuit?", "choices": ["Switch", "Paper", "Sticker", "Crayon"], "correct": 0},
+    {"question": "What do you call a break in a circuit?", "choices": ["Closed", "Open", "Powered", "Insulated"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "A ________ provides the energy to make electricity flow in a circuit.", "expectedAny": ["battery"]},
+    {"question": "Materials that allow electricity to flow are called ________.", "expectedAny": ["conductors"]},
+    {"question": "Materials that block electricity are called ________.", "expectedAny": ["insulators"]},
+    {"question": "A complete circuit is a ________ circuit.", "expectedAny": ["closed"]},
+    {"question": "The flow of electric charge is called electric ________.", "expectedAny": ["current"]},
+    {"question": "Wires are usually made of ________ because it conducts well.", "expectedAny": ["copper"]},
+    {"question": "A device that opens or closes a circuit is a ________.", "expectedAny": ["switch"]}
+  ],
+  "shortanswer": [
+    {"question": "Why won't a light bulb turn on if there's a break in the circuit?", "expectedAny": ["no complete path"]},
+    {"question": "Explain the difference between conductors and insulators.", "expectedAny": ["conductors let current flow", "insulators block it"]},
+    {"question": "How can you add a switch to a simple circuit?", "expectedAny": ["in series with the bulb or battery"]},
+    {"question": "Why are wires coated with plastic?", "expectedAny": ["safety", "insulation"]},
+    {"question": "What happens to the bulb if you reverse the battery in a simple DC circuit?", "expectedAny": ["still lights", "polarity usually doesn't matter for bulbs"]},
+    {"question": "How can you make a series circuit with two bulbs?", "expectedAny": ["connect bulbs one after another"]},
+    {"question": "How can you test if a material is a conductor?", "expectedAny": ["put it in a circuit and see if bulb lights"]}
+  ]
+}

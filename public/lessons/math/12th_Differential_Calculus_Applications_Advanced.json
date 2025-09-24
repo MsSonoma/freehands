@@ -1,0 +1,53 @@
+{
+  "id": "12th_Differential_Calculus_Applications_Advanced",
+  "title": "Differential Calculus and Applications",
+  "grade": "12th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "higher-order derivatives",
+      "definition": "Second, third, and beyond derivatives of functions"
+    },
+    {
+      "term": "concavity",
+      "definition": "Curve property determined by sign of second derivative"
+    },
+    {
+      "term": "inflection point",
+      "definition": "Point where concavity changes from up to down or vice versa"
+    },
+    {
+      "term": "optimization",
+      "definition": "Process of finding maximum or minimum values of functions"
+    },
+    {
+      "term": "L'Hôpital's rule",
+      "definition": "Method for evaluating indeterminate forms using derivatives"
+    }
+  ],
+  "teachingNotes": "Explore advanced applications including curve sketching and optimization. Connect to physics and engineering applications.",
+  "sample": {
+    "question": "What are second, third, and beyond derivatives called?",
+    "expectedAny": ["higher-order derivatives", "second derivatives", "multiple derivatives", "nth derivatives"]
+  },
+  "truefalse": {
+    "question": "Concavity is determined by the sign of the second derivative.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What method evaluates indeterminate forms using derivatives?",
+    "expectedAny": ["L'Hôpital's rule", "L'Hospital's rule", "derivative method", "indeterminate rule"]
+  },
+  "fillintheblank": {
+    "question": "A point where concavity changes is an ________ point.",
+    "expectedAny": ["inflection", "turning", "change", "bend"]
+  },
+  "shortanswer": {
+    "question": "How does the second derivative test help in optimization?",
+    "expectedAny": ["determines max/min", "concavity test", "classifies critical points", "confirms extrema"]
+  },
+  "wordProblems": {
+    "question": "If f(x) = x³ - 6x² + 9x, find all inflection points.",
+    "expectedAny": ["(2, 2)", "x = 2", "inflection at x = 2", "point (2,2)"]
+  }
+}

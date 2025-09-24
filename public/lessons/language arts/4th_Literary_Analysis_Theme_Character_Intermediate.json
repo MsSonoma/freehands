@@ -1,0 +1,74 @@
+{
+  "id": "4th_Literary_Analysis_Theme_Character_Intermediate",
+  "title": "Literary Analysis: Theme and Character Development",
+  "grade": "4th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "theme",
+      "definition": "The main message or lesson that a story teaches"
+    },
+    {
+      "term": "character development",
+      "definition": "How a character changes or grows throughout a story"
+    },
+    {
+      "term": "conflict",
+      "definition": "The main problem or struggle in a story"
+    },
+    {
+      "term": "resolution",
+      "definition": "How the conflict or problem is solved in a story"
+    },
+    {
+      "term": "point of view",
+      "definition": "Who is telling the story (first person, third person)"
+    }
+  ],
+  "teachingNotes": "Help students identify themes in age-appropriate literature. Analyze how characters change from beginning to end of stories. Practice identifying different types of conflicts and their resolutions.",
+  "sample": [
+    {"question": "What is the difference between a story's theme and its plot?", "expectedAny": ["theme is the message; plot is events"]},
+    {"question": "Give an example of a common theme.", "expectedAny": ["friendship", "perseverance", "kindness", "honesty"]},
+    {"question": "What is character development?", "expectedAny": ["how a character changes or grows"]},
+    {"question": "Name a type of conflict.", "expectedAny": ["character vs. character", "character vs. self", "character vs. nature", "character vs. society"]},
+    {"question": "What is resolution?", "expectedAny": ["how the problem is solved"]},
+    {"question": "What does point of view mean?", "expectedAny": ["who is telling the story"]},
+    {"question": "What clues help you find a theme?", "expectedAny": ["character actions", "lessons learned", "outcomes"]}
+  ],
+  "truefalse": [
+    {"question": "A theme is usually stated directly in the first paragraph of a story.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Characters can change because of events in the story.", "answer": true, "expectedAny": ["true"]},
+    {"question": "The plot is the same as the theme.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Conflicts often help reveal the theme.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Resolutions show how problems are solved.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Point of view never affects how we understand a story.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Readers can infer the theme from the ending.", "answer": true, "expectedAny": ["true"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which of these is an example of character development?", "choices": ["A character stays the same", "A shy character becomes brave", "The setting changes", "The story begins"], "correct": 1, "expectedAny": ["becomes brave"]},
+    {"question": "Which could be a theme?", "choices": ["The boy goes to school", "Never give up", "It rains on Tuesday", "The cat runs"], "correct": 1, "expectedAny": ["Never give up"]},
+    {"question": "Which is an internal conflict?", "choices": ["A storm stops a trip", "Two friends argue", "A character feels guilty", "A wall blocks the path"], "correct": 2, "expectedAny": ["feels guilty"]},
+    {"question": "Which best describes resolution?", "choices": ["Where the story happens", "How the problem is solved", "Who tells the story", "Why the author writes"], "correct": 1, "expectedAny": ["problem solved"]},
+    {"question": "First-person point of view uses:", "choices": ["he/she", "they", "I/me", "you"], "correct": 2, "expectedAny": ["I/me"]},
+    {"question": "Which detail supports a theme of friendship?", "choices": ["Two characters help each other", "A storm begins", "The clock strikes", "The story starts"], "correct": 0, "expectedAny": ["help each other"]},
+    {"question": "Which might reveal theme the most?", "choices": ["The title page", "A character's change", "Page numbers", "The copyright"], "correct": 1, "expectedAny": ["character's change"]}
+  ],
+  "fillintheblank": [
+    {"question": "The main problem that a character faces in a story is called the ________.", "expectedAny": ["conflict"]},
+    {"question": "The lesson or message is the ________.", "expectedAny": ["theme"]},
+    {"question": "How the problem is solved is the ________.", "expectedAny": ["resolution"]},
+    {"question": "A story's events are called the ________.", "expectedAny": ["plot"]},
+    {"question": "Who tells the story is the ________ of view.", "expectedAny": ["point"]},
+    {"question": "A character who changes shows ________ development.", "expectedAny": ["character"]},
+    {"question": "An inside struggle is ________ conflict.", "expectedAny": ["internal"]}
+  ],
+  "shortanswer": [
+    {"question": "How can you identify the theme of a story?", "expectedAny": ["look for lesson learned", "character growth", "message"]},
+    {"question": "Describe how a character changed in a story you read.", "expectedAny": ["varies"]},
+    {"question": "Give text evidence that supports a theme of kindness.", "expectedAny": ["varies"]},
+    {"question": "Explain the conflict and resolution in a favorite story.", "expectedAny": ["varies"]},
+    {"question": "How can point of view affect what we learn?", "expectedAny": ["limited info", "bias", "insight"]},
+    {"question": "State a theme and support it with two details.", "expectedAny": ["varies"]},
+    {"question": "How do character actions reveal theme?", "expectedAny": ["choices and changes show message"]}
+  ]
+}

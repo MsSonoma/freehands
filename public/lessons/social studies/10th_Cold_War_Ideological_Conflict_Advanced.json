@@ -1,0 +1,74 @@
+{
+  "id": "10th_Cold_War_Ideological_Conflict_Advanced",
+  "title": "Cold War: Ideological Conflict and Global Tensions",
+  "grade": "10th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "cold war",
+      "definition": "Period of geopolitical tension between US and Soviet Union (1947-1991)"
+    },
+    {
+      "term": "iron curtain",
+      "definition": "Political and ideological barrier between Western and Eastern Europe"
+    },
+    {
+      "term": "containment",
+      "definition": "US strategy to prevent spread of communism"
+    },
+    {
+      "term": "nuclear deterrence",
+      "definition": "Prevention of war through threat of nuclear retaliation"
+    },
+    {
+      "term": "proxy war",
+      "definition": "Conflict where superpowers support opposing sides without direct confrontation"
+    }
+  ],
+  "teachingNotes": "Analyze the ideological differences and global impact of Cold War tensions. Examine proxy conflicts and their consequences.",
+  "sample": {
+    "question": "What was the period of tension between US and Soviet Union?",
+    "expectedAny": [
+      "Cold War",
+      "Cold War period",
+      "US-Soviet rivalry",
+      "superpower conflict"
+    ]
+  },
+  "truefalse": {
+    "question": "Containment was the US strategy to prevent spread of communism.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What prevented war through threat of nuclear retaliation?",
+    "expectedAny": [
+      "nuclear deterrence",
+      "mutually assured destruction",
+      "nuclear balance",
+      "atomic deterrent"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The barrier between Western and Eastern Europe was called the ________ curtain.",
+    "expectedAny": [
+      "iron",
+      "political",
+      "ideological",
+      "communist"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did the Cold War affect global politics?",
+    "expectedAny": [
+      "created bipolar world",
+      "led to proxy wars",
+      "divided nations",
+      "nuclear arms race"
+    ]
+  }
+}

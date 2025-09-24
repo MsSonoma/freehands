@@ -1,0 +1,78 @@
+{
+  "id": "family-and-community-beginner",
+  "title": "Family and Community",
+  "grade": "K",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "family",
+      "definition": "People who live together and care for each other"
+    },
+    {
+      "term": "community",
+      "definition": "The place where you live and the people around you"
+    },
+    {
+      "term": "neighbor",
+      "definition": "Someone who lives near you"
+    },
+    {
+      "term": "helper",
+      "definition": "Someone who helps others in the community"
+    }
+  ],
+  "teachingNotes": "Discuss different family structures. Identify community helpers and their roles. Practice addresses and community locations.",
+  "sample": [
+    {"question": "Who are some helpers in your community?", "expectedAny": ["police", "firefighters", "teachers", "doctors"]},
+    {"question": "What do families do together?", "expectedAny": ["eat meals", "play", "help each other", "live together"]},
+    {"question": "Where do you live in your community?", "expectedAny": ["house", "apartment", "home", "neighborhood"]},
+    {"question": "Who takes care of you at home?", "expectedAny": ["parents", "family", "mom", "dad", "guardians"]},
+    {"question": "What makes a good neighbor?", "expectedAny": ["helpful", "kind", "friendly", "caring"]}
+  ],
+  "truefalse": [
+    {"question": "Teachers help children learn.", "answer": true, "expectedAny": ["teachers help with learning"]},
+    {"question": "All families are exactly the same.", "answer": false, "expectedAny": ["families are different"]},
+    {"question": "Neighbors live near each other.", "answer": true, "expectedAny": ["neighbors live nearby"]},
+    {"question": "Police officers help keep people safe.", "answer": true, "expectedAny": ["police help with safety"]},
+    {"question": "Communities have no rules.", "answer": false, "expectedAny": ["communities have rules"]},
+    {"question": "Families help take care of each other.", "answer": true, "expectedAny": ["families care for each other"]},
+    {"question": "Only adults can be community helpers.", "answer": false, "expectedAny": ["children can help too"]}
+  ],
+  "multiplechoice": [
+    {"question": "Who helps when there's a fire?", "choices": ["doctor", "firefighter", "teacher", "mailman"], "correct": 1, "expectedAny": ["firefighter helps with fires"]},
+    {"question": "What do families share?", "choices": ["nothing", "love and care", "only toys", "only food"], "correct": 1, "expectedAny": ["families share love and care"]},
+    {"question": "Where do you go to learn?", "choices": ["store", "school", "park", "hospital"], "correct": 1, "expectedAny": ["school is for learning"]},
+    {"question": "Who helps when you're sick?", "choices": ["teacher", "firefighter", "doctor", "mailman"], "correct": 2, "expectedAny": ["doctors help when sick"]},
+    {"question": "What makes a community?", "choices": ["only houses", "people working together", "only stores", "only schools"], "correct": 1, "expectedAny": ["communities are people working together"]},
+    {"question": "Who helps deliver mail?", "choices": ["doctor", "teacher", "mail carrier", "firefighter"], "correct": 2, "expectedAny": ["mail carriers deliver mail"]},
+    {"question": "What do good neighbors do?", "choices": ["ignore each other", "help each other", "never talk", "only argue"], "correct": 1, "expectedAny": ["good neighbors help each other"]}
+  ],
+  "fillintheblank": [
+    {"question": "A _____ delivers mail to your house.", "expectedAny": ["mailman", "mail carrier"]},
+    {"question": "People who live near you are called _____.", "expectedAny": ["neighbors"]},
+    {"question": "A _____ is a group of people who care for each other.", "expectedAny": ["family"]},
+    {"question": "The place where you live is your _____.", "expectedAny": ["community", "neighborhood"]},
+    {"question": "_____ help keep us safe in our community.", "expectedAny": ["Police officers", "Police"]},
+    {"question": "_____ help put out fires.", "expectedAny": ["Firefighters"]},
+    {"question": "Your _____ is your home address.", "expectedAny": ["address"]}
+  ],
+  "shortanswer": [
+    {"question": "Tell me about your family.", "expectedAny": ["describes family members"]},
+    {"question": "How do families help each other?", "expectedAny": ["share chores", "take care of each other", "help with problems"]},
+    {"question": "What places are in your community?", "expectedAny": ["school", "stores", "hospital", "park", "library"]},
+    {"question": "How can you be a good community member?", "expectedAny": ["follow rules", "help others", "be kind", "keep clean"]},
+    {"question": "What jobs do community helpers have?", "expectedAny": ["protect people", "teach", "heal sick", "deliver mail"]},
+    {"question": "How are families different from each other?", "expectedAny": ["different sizes", "different people", "different homes", "different traditions"]},
+    {"question": "Why do we need rules in our community?", "expectedAny": ["stay safe", "be fair", "help everyone", "work together"]}
+  ],
+  "wordProblems": [
+    {"question": "There are 4 people in Sam's family and 3 people in Maya's family. How many people are in both families together?", "expectedAny": ["7 people", "4 + 3 = 7"]},
+    {"question": "The fire station has 5 firefighters working today and 3 more came to help. How many firefighters are there now?", "expectedAny": ["8 firefighters", "5 + 3 = 8"]},
+    {"question": "On Main Street, there are 6 houses and 2 stores. How many buildings are on Main Street?", "expectedAny": ["8 buildings", "6 + 2 = 8"]},
+    {"question": "Emma's family has 2 adults and 3 children. How many family members does Emma have?", "expectedAny": ["5 family members", "2 + 3 = 5"]},
+    {"question": "The mail carrier delivered 10 letters. If 4 were for neighbors on the left and the rest for neighbors on the right, how many went to the right?", "expectedAny": ["6 letters", "10 - 4 = 6"]},
+    {"question": "At the community center, 7 families came for game night. If 2 families left early, how many families stayed?", "expectedAny": ["5 families", "7 - 2 = 5"]},
+    {"question": "The school has 8 teachers and 2 principals. How many adults work at the school?", "expectedAny": ["10 adults", "8 + 2 = 10"]}
+  ]
+}

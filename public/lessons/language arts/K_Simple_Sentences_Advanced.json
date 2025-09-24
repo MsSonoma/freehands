@@ -1,0 +1,80 @@
+{
+  "id": "simple-sentences-advanced",
+  "title": "Simple Sentences",
+  "grade": "K",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "sentence",
+      "definition": "A group of words that tells a complete thought"
+    },
+    {
+      "term": "capital letter",
+      "definition": "A big letter used at the beginning of sentences"
+    },
+    {
+      "term": "period",
+      "definition": "A dot that goes at the end of sentences"
+    },
+    {
+      "term": "complete",
+      "definition": "Having all the parts needed"
+    }
+  ],
+  "teachingNotes": "Start with simple subject-verb sentences. Practice using capital letters and periods. Use picture prompts for sentence creation.",
+  "sample": [
+     {"question": "Make a sentence with the word 'dog'.", "expectedAny": ["The dog runs.", "My dog is big."]},
+     {"question": "Write one sentence about your favorite toy.", "expectedAny": ["I like my car."]},
+     {"question": "Which sentence is correct: 'I like cats' or 'I likes cats'?", "expectedAny": ["I like cats"]},
+     {"question": "Put these words into a sentence: 'the', 'ball', 'blue'", "expectedAny": ["The ball is blue."]},
+     {"question": "Change this to a sentence: 'happy dog'", "expectedAny": ["The dog is happy."]},
+     {"question": "Write a sentence about something you did today.", "expectedAny": ["I played with my friend."]},
+     {"question": "Make a sentence using 'is' and 'big'.", "expectedAny": ["The cat is big."]}
+  ],
+  "truefalse": [
+     {"question": "A sentence needs a capital letter at the start.", "answer": true, "expectedAny": ["true"]},
+     {"question": "Sentences do not need spaces between words.", "answer": false, "expectedAny": ["false"]},
+     {"question": "A sentence can end with a period.", "answer": true, "expectedAny": ["true"]},
+     {"question": "Every sentence needs a question mark.", "answer": false, "expectedAny": ["false"]},
+     {"question": "Sentences tell about people, places, or things.", "answer": true, "expectedAny": ["true"]},
+     {"question": "Sentences need at least one word.", "answer": true, "expectedAny": ["true"]},
+     {"question": "A sentence can have a capital letter in the middle.", "answer": false, "expectedAny": ["false"]}
+  ],
+  "multiplechoice": [
+     {"question": "Which shows a sentence?", "choices": ["run fast", "Run fast.", "runfast."], "correct": 1, "expectedAny": ["Run fast."]},
+     {"question": "Choose the correct sentence.", "choices": ["She like cats.", "She likes cats.", "She liking cats."], "correct": 1, "expectedAny": ["She likes cats."]},
+     {"question": "Which sentence uses a capital letter?", "choices": ["i have a dog.", "I have a dog.", "have a dog."], "correct": 1, "expectedAny": ["I have a dog."]},
+     {"question": "Which ends a sentence properly?", "choices": ["Hello", "Hello.", "Hello!"], "correct": 1, "expectedAny": ["Hello."]},
+     {"question": "Which is not a sentence?", "choices": ["The cat sat.", "Under the tree", "It is red."], "correct": 1, "expectedAny": ["Under the tree"]},
+     {"question": "Which is a question?", "choices": ["She likes cake.", "Do you like cake?", "I like cake."], "correct": 1, "expectedAny": ["Do you like cake?"]},
+     {"question": "Which sentence is punctuated correctly?", "choices": ["we went to the park.", "We went to the park.", "We went to the park"], "correct": 1, "expectedAny": ["We went to the park."]}
+  ],
+  "fillintheblank": [
+     {"question": "_____ is my name.", "expectedAny": ["This", "My"]},
+     {"question": "I see a _____.", "expectedAny": ["cat", "dog", "car"]},
+     {"question": "The sun is _____.", "expectedAny": ["bright", "hot"]},
+     {"question": "We _____ to school.", "expectedAny": ["go", "walk"]},
+     {"question": "She ____ a book.", "expectedAny": ["has", "reads"]},
+     {"question": "I ____ a ball.", "expectedAny": ["have", "see"]},
+     {"question": "It is ____ outside.", "expectedAny": ["sunny", "cold"]}
+  ],
+  "shortanswer": [
+     {"question": "Write a sentence about your family.", "expectedAny": ["My mom is kind."]},
+     {"question": "What do you like to eat? Write one sentence.", "expectedAny": ["I like pizza."]},
+     {"question": "Describe your favorite toy in one sentence.", "expectedAny": ["It is red and small."]},
+     {"question": "Write a sentence about your school.", "expectedAny": ["My school is fun."]},
+     {"question": "Make a sentence about the weather.", "expectedAny": ["It is sunny."]},
+     {"question": "Write one sentence about a friend.", "expectedAny": ["My friend is nice."]},
+     {"question": "Write a sentence about something you can do.", "expectedAny": ["I can run fast."]}
+  ],
+  "wordProblems": [
+     {"question": "If you have 2 pencils and get 3 more, how many pencils do you have?", "expectedAny": ["5"]},
+     {"question": "There are 4 apples and 2 are eaten. How many left?", "expectedAny": ["2"]},
+     {"question": "Sam has 1 toy and gets 2 more. How many now?", "expectedAny": ["3"]},
+     {"question": "If 3 children sit and 2 stand, how many children?", "expectedAny": ["5"]},
+     {"question": "You see 3 red balloons and 1 blue. How many total?", "expectedAny": ["4"]},
+     {"question": "Liam has 2 stickers and gets 4 more. How many stickers?", "expectedAny": ["6"]},
+     {"question": "If 5 kids bring 1 apple each, how many apples total?", "expectedAny": ["5"]}
+  ]
+}

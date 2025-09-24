@@ -1,0 +1,33 @@
+{
+  "id": "systems-linear-equations-advanced",
+  "title": "Systems of Linear Equations",
+  "grade": "8th",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {"term": "system of equations", "definition": "Two or more equations with the same variables"},
+    {"term": "solution", "definition": "The ordered pair that makes both equations true"},
+    {"term": "substitution method", "definition": "Solving systems by substituting one equation into another"},
+    {"term": "elimination method", "definition": "Solving systems by adding or subtracting equations to eliminate a variable"}
+  ],
+  "teachingNotes": "Use graphing and algebraic methods. Connect to real-world situations with two constraints. Emphasize checking solutions in both equations.",
+  "sample": {
+    "question": "Solve the system: x + y = 8 and x - y = 2",
+    "expectedAny": ["x = 5, y = 3", "(5, 3)", "add equations to eliminate y"]
+  },
+  "truefalse": [
+    {"question": "A system of linear equations can have no solution, one solution, or infinitely many solutions.", "answer": true, "expectedAny": ["lines can be parallel, intersecting, or identical"]}
+  ],
+  "multiplechoice": [
+    {"question": "What does it mean graphically when a system has no solution?", "choices": ["Lines intersect at origin", "Lines are identical", "Lines are parallel", "Lines intersect twice"], "correct": 2, "expectedAny": ["parallel lines never intersect"]}
+  ],
+  "fillintheblank": [
+    {"question": "To use elimination to solve 2x + 3y = 12 and 2x - y = 4, you could subtract the equations to eliminate _____.", "expectedAny": ["x", "2x"]}
+  ],
+  "shortanswer": [
+    {"question": "When would you choose substitution over elimination to solve a system?", "expectedAny": ["when one variable is already isolated", "when coefficients don't line up well for elimination"]}
+  ],
+  "wordProblems": [
+    {"question": "Adult tickets cost $12 and child tickets cost $8. If 50 tickets were sold for $520 total, how many of each type were sold?", "expectedAny": ["30 adult tickets, 20 child tickets", "set up system: a + c = 50, 12a + 8c = 520"]}
+  ]
+}

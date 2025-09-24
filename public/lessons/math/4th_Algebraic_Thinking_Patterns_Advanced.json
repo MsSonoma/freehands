@@ -1,0 +1,83 @@
+{
+  "id": "4th_Algebraic_Thinking_Patterns_Advanced",
+  "title": "Algebraic Thinking and Patterns",
+  "grade": "4th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "pattern",
+      "definition": "A sequence that follows a rule and repeats in a predictable way"
+    },
+    {
+      "term": "rule",
+      "definition": "The instruction that tells you how a pattern works"
+    },
+    {
+      "term": "variable",
+      "definition": "A letter or symbol that represents an unknown number"
+    },
+    {
+      "term": "equation",
+      "definition": "A mathematical statement that shows two expressions are equal"
+    },
+    {
+      "term": "expression",
+      "definition": "A mathematical phrase that contains numbers, variables, and operations"
+    }
+  ],
+  "teachingNotes": "Introduce basic algebraic concepts through patterns and simple equations. Use input/output tables to show relationships. Help students understand that letters can represent unknown numbers.",
+  "sample": [
+    {"question": "What is the rule for this pattern: 5, 10, 15, 20, 25?", "expectedAny": ["add 5", "multiply by 5"]},
+    {"question": "Continue the pattern: 2, 4, 8, 16, ____.", "expectedAny": ["32", "×2 rule"]},
+    {"question": "What is the next number: 9, 7, 5, 3, ____?", "expectedAny": ["1", "subtract 2"]},
+    {"question": "Write an expression for 'three more than a number n'.", "expectedAny": ["n + 3"]},
+    {"question": "Find the unknown: n + 7 = 11.", "expectedAny": ["4"]},
+    {"question": "Make an input-output rule: input × 4 then + 1.", "expectedAny": ["4x + 1"]},
+    {"question": "Is 3n the same as n + n + n?", "expectedAny": ["yes"]}
+  ],
+  "truefalse": [
+    {"question": "In the equation x + 7 = 12, the variable x represents the number 5.", "answer": true},
+    {"question": "A variable must always stand for 1.", "answer": false},
+    {"question": "The expression 2(n + 3) equals 2n + 6.", "answer": true},
+    {"question": "In a pattern, the rule can never involve subtraction.", "answer": false},
+    {"question": "An equation must have an equals sign.", "answer": true},
+    {"question": "If n = 4, then 3n = 7.", "answer": false},
+    {"question": "Variables can represent unknown or changing numbers.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "If the rule is 'multiply by 3', what number comes next after 4, 12, 36?", "choices": ["72", "96", "108", "36"], "correct": 2},
+    {"question": "Which expression means 'five more than twice n'?", "choices": ["2n + 5", "5n + 2", "n + 5 + n", "2 + 5n"], "correct": 0},
+    {"question": "For 4n = 28, what is n?", "choices": ["5", "6", "7", "8"], "correct": 2},
+    {"question": "Which pattern matches +3 each time?", "choices": ["2, 5, 8, 11", "3, 6, 12, 24", "10, 7, 4, 1", "1, 4, 9, 16"], "correct": 0},
+    {"question": "Which is equal to n + n + n + n?", "choices": ["n^4", "n4", "4n", "n + 4"], "correct": 2},
+    {"question": "In the table x: 1,2,3; y: 4,6,8; what is the rule?", "choices": ["y = x + 3", "y = 2x + 2", "y = 3x + 1", "y = x^2"], "correct": 1},
+    {"question": "Which graph represents a constant increase?", "choices": ["curved up", "flat", "straight line up", "zigzag"], "correct": 2}
+  ],
+  "fillintheblank": [
+    {"question": "In the expression 2n + 3, the letter n is called a ________.", "expectedAny": ["variable"]},
+    {"question": "The number in front of a variable, like 4 in 4x, is the ________.", "expectedAny": ["coefficient"]},
+    {"question": "A mathematical sentence with an equals sign is an ________.", "expectedAny": ["equation"]},
+    {"question": "A ________ is a rule for generating a pattern.", "expectedAny": ["function", "rule"]},
+    {"question": "The result of 3 × n is written as ________.", "expectedAny": ["3n"]},
+    {"question": "When you replace a variable with a number, you ________ the expression.", "expectedAny": ["evaluate"]},
+    {"question": "The output of a function depends on the ________.", "expectedAny": ["input"]}
+  ],
+  "shortanswer": [
+    {"question": "What does the equation 4 × n = 20 mean?", "expectedAny": ["n = 5"]},
+    {"question": "Explain the distributive property with 3(n + 2).", "expectedAny": ["3n + 6"]},
+    {"question": "Write a rule for the pattern: 1, 4, 7, 10, ...", "expectedAny": ["add 3"]},
+    {"question": "How can a table help describe a function?", "expectedAny": ["shows input/output pairs"]},
+    {"question": "Create an equation for: the total T is 5 more than twice n.", "expectedAny": ["T = 2n + 5"]},
+    {"question": "Give an example where a variable represents a changing quantity.", "expectedAny": ["time", "temperature"]},
+    {"question": "Why do we use variables?", "expectedAny": ["represent unknowns", "generalize patterns"]}
+  ],
+  "wordProblems": [
+    {"question": "Maria saves $3 each week. Write an expression to show how much she saves in n weeks.", "expectedAny": ["3n"]},
+    {"question": "A taxi charges $2 plus $0.5 per mile. Write a function for cost C with miles m.", "expectedAny": ["C = 2 + 0.5m"]},
+    {"question": "A plant grows 2 cm per week starting at 5 cm. Write an expression for height after w weeks.", "expectedAny": ["5 + 2w"]},
+    {"question": "The pattern starts at 10 and subtracts 3 each time. What is the 5th term?", "expectedAny": ["-2", "10,7,4,1,-2"]},
+    {"question": "Tickets cost $8 each. Write an equation for total T for n tickets.", "expectedAny": ["T = 8n"]},
+    {"question": "If y = 4x + 1 and x = 3, what is y?", "expectedAny": ["13"]},
+    {"question": "A pool fills at 500 L per hour starting empty. Write a rule for amount after h hours.", "expectedAny": ["500h"]}
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "id": "transportation-then-now-beginner",
+  "title": "Transportation Then and Now",
+  "grade": "1st",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "transportation",
+      "definition": "Ways to move people and things from place to place"
+    },
+    {
+      "term": "vehicle",
+      "definition": "Something that carries people or things"
+    },
+    {
+      "term": "invention",
+      "definition": "Something new that someone creates"
+    },
+    {
+      "term": "travel",
+      "definition": "To go from one place to another"
+    }
+  ],
+  "teachingNotes": "Show pictures of old and new transportation. Discuss how people traveled before cars. Compare speed and convenience.",
+  "sample": [
+    {"question": "How do you get to school?", "expectedAny": ["car", "bus", "walk", "bike"]},
+    {"question": "Name a way people travel today.", "expectedAny": ["car", "bus", "train", "airplane"]},
+    {"question": "Name a way people traveled long ago.", "expectedAny": ["horse", "wagon", "walking"]},
+    {"question": "What is something that moves on tracks?", "expectedAny": ["train"]},
+    {"question": "What flies in the sky and carries people?", "expectedAny": ["airplane", "plane"]},
+    {"question": "What do we ride on the road with pedals?", "expectedAny": ["bike", "bicycle"]},
+    {"question": "Which is faster, a horse or a car?", "expectedAny": ["car"]}
+  ],
+  "truefalse": [
+    {"question": "Long ago, people rode in cars to get places.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Airplanes can take people far away quickly.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Bikes have engines that make them go.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Trains can carry many people at once.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Walking is a kind of transportation.", "answer": true, "expectedAny": ["true"]},
+    {"question": "A wagon is a modern invention.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Cars are slower than horses.", "answer": false, "expectedAny": ["false"]}
+  ],
+  "multiplechoice": [
+    {"question": "What did people use for transportation before cars?", "choices": ["airplanes", "horses", "trains only", "bikes"], "correct": 1, "expectedAny": ["horses"]},
+    {"question": "Which is the fastest way to travel far?", "choices": ["walking", "bicycle", "airplane", "wagon"], "correct": 2, "expectedAny": ["airplane"]},
+    {"question": "Which moves on tracks?", "choices": ["car", "train", "bicycle", "bus"], "correct": 1, "expectedAny": ["train"]},
+    {"question": "Which is powered by your legs?", "choices": ["car", "bus", "bicycle", "train"], "correct": 2, "expectedAny": ["bicycle"]},
+    {"question": "Which is used mostly in the sky?", "choices": ["boat", "airplane", "car", "train"], "correct": 1, "expectedAny": ["airplane"]},
+    {"question": "Which can carry many people at once?", "choices": ["bus", "bicycle", "scooter", "wagon"], "correct": 0, "expectedAny": ["bus"]},
+    {"question": "Which is a kind of water transportation?", "choices": ["car", "boat", "plane", "bike"], "correct": 1, "expectedAny": ["boat"]}
+  ],
+  "fillintheblank": [
+    {"question": "A _____ flies through the air to take people far away.", "expectedAny": ["airplane", "plane"]},
+    {"question": "A _____ moves on tracks.", "expectedAny": ["train"]},
+    {"question": "A _____ moves on water.", "expectedAny": ["boat", "ship"]},
+    {"question": "A _____ has two wheels and pedals.", "expectedAny": ["bicycle", "bike"]},
+    {"question": "People used _____ and wagons long ago.", "expectedAny": ["horses"]},
+    {"question": "Today, many people ride a _____ to school.", "expectedAny": ["bus"]},
+    {"question": "We _____ from one place to another.", "expectedAny": ["travel"]}
+  ],
+  "shortanswer": [
+    {"question": "What transportation do you think is fastest?", "expectedAny": ["airplane", "jet", "rocket", "car"]},
+    {"question": "How did people travel long ago?", "expectedAny": ["horses", "wagons", "walking"]},
+    {"question": "How do you travel to visit family?", "expectedAny": ["car", "bus", "plane", "train"]},
+    {"question": "Draw a vehicle from the past and one from today.", "expectedAny": ["drawing"]},
+    {"question": "Why is transportation important?", "expectedAny": ["helps us get places", "moves people and things"]},
+    {"question": "Which transportation is best for short trips?", "expectedAny": ["walking", "bicycle"]},
+    {"question": "Which transportation do you want to try and why?", "expectedAny": ["varies"]}
+  ]
+}

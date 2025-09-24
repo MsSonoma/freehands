@@ -1,0 +1,74 @@
+{
+  "id": "5th_Human_Body_Systems_Interactions_Intermediate",
+  "title": "Human Body Systems and Interactions",
+  "grade": "5th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "organ system",
+      "definition": "A group of organs that work together to perform a specific function"
+    },
+    {
+      "term": "circulatory system",
+      "definition": "The system that moves blood throughout the body"
+    },
+    {
+      "term": "respiratory system",
+      "definition": "The system that helps you breathe and exchange gases"
+    },
+    {
+      "term": "digestive system",
+      "definition": "The system that breaks down food to provide nutrients"
+    },
+    {
+      "term": "nervous system",
+      "definition": "The system that controls and coordinates body activities"
+    }
+  ],
+  "teachingNotes": "Focus on how different body systems work together. Use diagrams to show connections between systems. Discuss how the body maintains itself through system interactions.",
+  "sample": {
+    "question": "How do the circulatory and respiratory systems work together?",
+    "expectedAny": [
+      "blood carries oxygen from lungs",
+      "oxygen transport",
+      "gas exchange",
+      "breathing and circulation"
+    ]
+  },
+  "truefalse": {
+    "question": "The nervous system controls all other body systems.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which system breaks down food into nutrients?",
+    "expectedAny": [
+      "digestive system",
+      "digestive",
+      "stomach and intestines",
+      "food processing system"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The ________ system pumps blood throughout your body.",
+    "expectedAny": [
+      "circulatory",
+      "cardiovascular",
+      "heart",
+      "blood"
+    ]
+  },
+  "shortanswer": {
+    "question": "What happens when you exercise that shows systems working together?",
+    "expectedAny": [
+      "heart beats faster",
+      "breathing increases",
+      "systems speed up",
+      "increased oxygen need"
+    ]
+  }
+}

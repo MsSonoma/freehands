@@ -1,0 +1,74 @@
+{
+  "id": "12th_Biochemistry_Molecular_Biology_Beginner",
+  "title": "Biochemistry and Molecular Biology",
+  "grade": "12th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "enzyme",
+      "definition": "Protein that catalyzes biochemical reactions by lowering activation energy"
+    },
+    {
+      "term": "metabolism",
+      "definition": "Sum of all chemical reactions occurring in living organisms"
+    },
+    {
+      "term": "ATP",
+      "definition": "Adenosine triphosphate, universal energy currency of cells"
+    },
+    {
+      "term": "protein synthesis",
+      "definition": "Process of making proteins from amino acids using genetic information"
+    },
+    {
+      "term": "cellular respiration",
+      "definition": "Process breaking down glucose to produce ATP energy"
+    }
+  ],
+  "teachingNotes": "Focus on fundamental biochemical processes and their importance in life. Connect molecular processes to cellular functions.",
+  "sample": {
+    "question": "What proteins catalyze biochemical reactions?",
+    "expectedAny": [
+      "enzymes",
+      "biological catalysts",
+      "protein catalysts",
+      "enzymatic proteins"
+    ]
+  },
+  "truefalse": {
+    "question": "ATP is the universal energy currency of cells.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the sum of all chemical reactions in organisms?",
+    "expectedAny": [
+      "metabolism",
+      "metabolic processes",
+      "biochemical reactions",
+      "life chemistry"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The process of making proteins from amino acids is protein ________.",
+    "expectedAny": [
+      "synthesis",
+      "production",
+      "construction",
+      "formation"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are the main stages of cellular respiration?",
+    "expectedAny": [
+      "glycolysis",
+      "Krebs cycle",
+      "electron transport",
+      "ATP production"
+    ]
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "id": "9th_Polynomials_Operations_Factoring_Beginner",
+  "title": "Polynomials: Operations and Factoring",
+  "grade": "9th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "polynomial",
+      "definition": "Expression with variables raised to non-negative integer powers"
+    },
+    {
+      "term": "monomial",
+      "definition": "Polynomial with exactly one term"
+    },
+    {
+      "term": "binomial",
+      "definition": "Polynomial with exactly two terms"
+    },
+    {
+      "term": "factoring",
+      "definition": "Writing a polynomial as a product of simpler expressions"
+    },
+    {
+      "term": "greatest common factor",
+      "definition": "Largest factor that divides all terms"
+    }
+  ],
+  "teachingNotes": "Start with simple polynomial operations. Focus on factoring out common factors before more complex methods.",
+  "sample": {
+    "question": "What is an expression with variables raised to non-negative integer powers?",
+    "expectedAny": ["polynomial", "polynomial expression", "algebraic polynomial", "polynomial function"]
+  },
+  "truefalse": {
+    "question": "A binomial has exactly two terms.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is a polynomial with one term called?",
+    "expectedAny": ["monomial", "single term", "one-term polynomial", "unit polynomial"]
+  },
+  "fillintheblank": {
+    "question": "Writing a polynomial as a product is called ________.",
+    "expectedAny": ["factoring", "factorization", "factoring out", "decomposition"]
+  },
+  "shortanswer": {
+    "question": "What is the first step in factoring polynomials?",
+    "expectedAny": ["factor out GCF", "find greatest common factor", "factor out common terms"]
+  },
+  "wordProblems": {
+    "question": "Factor 6x² + 9x. What is the GCF?",
+    "expectedAny": ["3x", "3x(2x + 3)", "three x", "3x is the GCF"]
+  }
+}

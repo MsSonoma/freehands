@@ -1,0 +1,76 @@
+{
+  "id": "grammar-sentence-structure-beginner",
+  "title": "Grammar and Sentence Structure",
+  "grade": "3rd",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "noun",
+      "definition": "A word that names a person, place, thing, or idea"
+    },
+    {
+      "term": "verb",
+      "definition": "A word that shows action or being"
+    },
+    {
+      "term": "adjective",
+      "definition": "A word that describes a noun"
+    },
+    {
+      "term": "complete sentence",
+      "definition": "A group of words that has a subject and verb and expresses a complete thought"
+    }
+  ],
+  "teachingNotes": "Use interactive games to identify parts of speech. Practice building sentences from simple to complex. Use colorful sentence strips.",
+  "sample": {
+    "question": "What part of speech is the word 'run' in the sentence 'I run fast'?",
+    "expectedAny": [
+      "verb",
+      "action word"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "Every complete sentence must have a noun and a verb.",
+      "answer": true,
+      "expectedAny": [
+        "sentences need both a subject (noun) and predicate (verb)"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which word is an adjective in this sentence: 'The big dog ran quickly'?",
+      "choices": [
+        "dog",
+        "big",
+        "ran",
+        "quickly"
+      ],
+      "correct": 1,
+      "expectedAny": [
+        "big describes the dog"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "In the sentence 'The cat sleeps,' the word 'cat' is a _____ and 'sleeps' is a _____.",
+      "expectedAny": [
+        "noun, verb"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "How can you tell if a group of words is a complete sentence?",
+      "expectedAny": [
+        "has a subject and verb",
+        "expresses a complete thought",
+        "makes sense by itself",
+        "tells who did what"
+      ]
+    }
+  ]
+}

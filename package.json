@@ -1,0 +1,41 @@
+{
+  "name": "freehands",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "dev:3001": "cross-env PORT=3001 next dev",
+    "start:3001": "cross-env PORT=3001 next start",
+    "grant:premium": "node scripts/grantPlan.mjs outreach.mssonoma@gmail.com premium",
+    "lessons:balance-mc": "node scripts/balance-mc-answers.mjs",
+    "clean": "node -e \"try{require('fs').rmSync('.next',{recursive:true,force:true});require('fs').rmSync('.next-dev',{recursive:true,force:true});require('fs').rmSync('.turbo',{recursive:true,force:true});console.log('Cleaned build dirs')}catch(e){process.exit(0)}\"",
+    "clean:dev": "npm run clean && npm run dev",
+    "clean:dev:3001": "npm run clean && powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\kill-port-3001.ps1 && set PORT=3001&& npm run dev",
+    "kill:3001": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\kill-port-3001.ps1",
+    "restart:dev:3001": "npm run kill:3001 && npm run dev:3001",
+    "doctor": "node scripts/doctor.mjs"
+  },
+  "dependencies": {
+    "@google-cloud/speech": "^6.7.1",
+    "@google-cloud/text-to-speech": "^6.3.0",
+    "@supabase/supabase-js": "^2.57.4",
+    "jspdf": "^3.0.2",
+    "next": "15.5.2",
+    "node-fetch": "^3.3.2",
+    "stripe": "^16.0.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "@stripe/stripe-js": "^3.2.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.2",
+    "cross-env": "^7.0.3",
+    "tailwindcss": "^4"
+  }
+}

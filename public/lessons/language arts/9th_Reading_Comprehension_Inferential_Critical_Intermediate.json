@@ -1,0 +1,73 @@
+{
+  "id": "9th_Reading_Comprehension_Inferential_Critical_Intermediate",
+  "title": "Reading Comprehension: Inferential and Critical Reading",
+  "grade": "9th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "inference",
+      "definition": "Logical conclusion drawn from textual evidence and reasoning"
+    },
+    {
+      "term": "implicit meaning",
+      "definition": "Meaning that is suggested but not directly stated"
+    },
+    {
+      "term": "critical reading",
+      "definition": "Analyzing and evaluating text for bias, logic, and credibility"
+    },
+    {
+      "term": "textual evidence",
+      "definition": "Specific details from text that support interpretations"
+    },
+    {
+      "term": "author's purpose",
+      "definition": "Writer's intended goal: to inform, persuade, entertain, or explain"
+    }
+  ],
+  "teachingNotes": "Practice making inferences from complex texts. Teach students to support interpretations with specific textual evidence.",
+  "sample": {
+    "question": "What is a logical conclusion drawn from evidence and reasoning?",
+    "expectedAny": [
+      "inference",
+      "logical conclusion",
+      "deduction",
+      "reasoning"
+    ]
+  },
+  "truefalse": {
+    "question": "Implicit meaning is directly stated in the text.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What involves analyzing text for bias and credibility?",
+    "expectedAny": [
+      "critical reading",
+      "analytical reading",
+      "evaluative reading",
+      "critical analysis"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Specific details that support interpretations are ________ evidence.",
+    "expectedAny": [
+      "textual",
+      "text",
+      "written",
+      "literary"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do readers make valid inferences from text?",
+    "expectedAny": [
+      "combine text clues with prior knowledge",
+      "use evidence and reasoning",
+      "connect details logically"
+    ]
+  }
+}

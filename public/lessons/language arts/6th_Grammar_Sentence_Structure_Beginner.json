@@ -1,0 +1,74 @@
+{
+  "id": "6th_Grammar_Sentence_Structure_Beginner",
+  "title": "Grammar: Advanced Sentence Structure and Mechanics",
+  "grade": "6th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "clause",
+      "definition": "A group of words that contains a subject and a predicate"
+    },
+    {
+      "term": "phrase",
+      "definition": "A group of words that works together but lacks a subject or predicate"
+    },
+    {
+      "term": "run-on sentence",
+      "definition": "A sentence that joins two or more complete thoughts without proper punctuation"
+    },
+    {
+      "term": "fragment",
+      "definition": "An incomplete sentence that is missing a subject or predicate"
+    },
+    {
+      "term": "coordinating conjunction",
+      "definition": "Words like 'and,' 'but,' and 'or' that connect equal parts of a sentence"
+    }
+  ],
+  "teachingNotes": "Practice identifying and fixing sentence errors. Use sentence combining activities. Emphasize the difference between phrases and clauses.",
+  "sample": {
+    "question": "What do we call a group of words with a subject and predicate?",
+    "expectedAny": [
+      "clause",
+      "sentence clause",
+      "grammatical clause",
+      "complete clause"
+    ]
+  },
+  "truefalse": {
+    "question": "A phrase contains both a subject and a predicate.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is wrong with this sentence: 'Running through the park.'?",
+    "expectedAny": [
+      "it's a fragment",
+      "missing subject",
+      "incomplete sentence",
+      "needs a complete thought"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Words like 'and,' 'but,' and 'or' are called ________ conjunctions.",
+    "expectedAny": [
+      "coordinating",
+      "coordinate",
+      "connecting",
+      "joining"
+    ]
+  },
+  "shortanswer": {
+    "question": "How can you fix a run-on sentence?",
+    "expectedAny": [
+      "add punctuation",
+      "split into two sentences",
+      "add comma and conjunction",
+      "use semicolon or period"
+    ]
+  }
+}

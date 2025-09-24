@@ -1,0 +1,71 @@
+{
+  "id": "family-then-now-beginner",
+  "title": "Families Then and Now",
+  "grade": "1st",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "then",
+      "definition": "A time in the past, before now"
+    },
+    {
+      "term": "now",
+      "definition": "At this time; today"
+    },
+    {
+      "term": "generation",
+      "definition": "People in a family who are about the same age"
+    },
+    {
+      "term": "ancestor",
+      "definition": "Family members who lived before you were born"
+    }
+  ],
+  "teachingNotes": "Use family photos from different time periods. Compare how families lived long ago vs. today. Discuss family traditions.",
+  "sample": [
+    {"question": "Who are your grandparents?", "expectedAny": ["my mom's parents", "my dad's parents", "older family members"]},
+    {"question": "What does 'then' mean?", "expectedAny": ["in the past", "long ago"]},
+    {"question": "What does 'now' mean?", "expectedAny": ["today", "the present"]},
+    {"question": "Name one thing families do together now.", "expectedAny": ["eat dinner", "play games", "watch TV"]},
+    {"question": "Name one thing families did long ago.", "expectedAny": ["read stories", "play simple games", "farm work"]},
+    {"question": "Who takes care of children in a family?", "expectedAny": ["parents", "grown-ups"]},
+    {"question": "Name a family tradition you have.", "expectedAny": ["varies", "holiday", "birthday"]}
+  ],
+  "truefalse": [
+    {"question": "Your grandparents were children before you were born.", "answer": true, "expectedAny": ["true"]},
+    {"question": "All families look the same.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Families long ago didn't have computers.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Families today can be different sizes.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Children long ago played video games.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Families share love and care.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Only grandparents are part of a family.", "answer": false, "expectedAny": ["false"]}
+  ],
+  "multiplechoice": [
+    {"question": "How did children long ago play differently than today?", "choices": ["they had video games", "they played with simple toys", "they watched TV", "they used computers"], "correct": 1, "expectedAny": ["they played with simple toys"]},
+    {"question": "Families today talk using ___.", "choices": ["letters only", "phones and computers", "smoke signals", "drums"], "correct": 1, "expectedAny": ["phones and computers"]},
+    {"question": "Families long ago cooked on ___", "choices": ["wood stoves", "microwaves", "none", "robots"], "correct": 0, "expectedAny": ["wood stoves"]},
+    {"question": "What do families today use to keep food cold?", "choices": ["ice box", "refrigerator", "nothing", "basket"], "correct": 1, "expectedAny": ["refrigerator"]},
+    {"question": "How did families travel long ago?", "choices": ["cars", "horses and wagons", "planes", "trains only"], "correct": 1, "expectedAny": ["horses and wagons"]},
+    {"question": "Who can be in a family?", "choices": ["only parents", "only kids", "different people", "only grandparents"], "correct": 2, "expectedAny": ["different people"]},
+    {"question": "What is a family tradition?", "choices": ["a chore", "a rule", "something special you do each year", "a holiday only"], "correct": 2, "expectedAny": ["something special you do each year"]}
+  ],
+  "fillintheblank": [
+    {"question": "Long ago, people didn't have cars, so they traveled by _____ or on foot.", "expectedAny": ["horse", "wagon"]},
+    {"question": "Families share love and _____.", "expectedAny": ["care", "kindness"]},
+    {"question": "Today we keep food cold in a _____.", "expectedAny": ["refrigerator"]},
+    {"question": "A family ___ is something you do the same way each year.", "expectedAny": ["tradition"]},
+    {"question": "We talk to faraway family using the _____.", "expectedAny": ["phone", "computer"]},
+    {"question": "People who lived before you in your family are your _____.", "expectedAny": ["ancestors"]},
+    {"question": "People in a family who are about the same age are a _____.", "expectedAny": ["generation"]}
+  ],
+  "shortanswer": [
+    {"question": "What is one way your family is the same as families long ago?", "expectedAny": ["parents take care of children", "families love each other", "families live together"]},
+    {"question": "How is your family different from families long ago?", "expectedAny": ["technology", "transportation", "jobs", "school"]},
+    {"question": "What is one special family tradition you have?", "expectedAny": ["varies"]},
+    {"question": "Draw your family doing something together.", "expectedAny": ["drawing"]},
+    {"question": "What chores do you help with at home?", "expectedAny": ["cleaning", "setting table", "feeding pets"]},
+    {"question": "What do you want to tell your future family about today?", "expectedAny": ["personal reflection"]},
+    {"question": "How do you show love to your family?", "expectedAny": ["be kind", "help out", "say I love you"]}
+  ]
+}

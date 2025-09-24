@@ -1,0 +1,78 @@
+{
+  "id": "living-and-nonliving-intermediate",
+  "title": "Living and Nonliving Things",
+  "grade": "K",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "living",
+      "definition": "Something that grows, moves, and needs food and water"
+    },
+    {
+      "term": "nonliving",
+      "definition": "Something that does not grow or need food and water"
+    },
+    {
+      "term": "grow",
+      "definition": "To get bigger or change over time"
+    },
+    {
+      "term": "breathe",
+      "definition": "To take in air that our bodies need"
+    }
+  ],
+  "teachingNotes": "Use sorting activities with pictures and objects. Observe plants and animals. Discuss what living things need. Compare to nonliving objects.",
+  "sample": [
+    {"question": "Is a flower living or nonliving? How do you know?", "expectedAny": ["living", "grows", "needs water", "changes"]},
+    {"question": "What do all living things need?", "expectedAny": ["food", "water", "air"]},
+    {"question": "Is a toy car living or nonliving?", "expectedAny": ["nonliving", "doesn't grow", "doesn't need food"]},
+    {"question": "How can you tell if something is alive?", "expectedAny": ["it grows", "it moves", "it needs food and water"]},
+    {"question": "Name something that was never alive.", "expectedAny": ["rock", "pencil", "chair", "book"]}
+  ],
+  "truefalse": [
+    {"question": "A rock is a living thing.", "answer": false, "expectedAny": ["rocks don't grow or need food"]},
+    {"question": "All living things need water.", "answer": true, "expectedAny": ["water is needed by all living things"]},
+    {"question": "Plants are living things.", "answer": true, "expectedAny": ["plants grow and need water"]},
+    {"question": "A bicycle can grow bigger.", "answer": false, "expectedAny": ["bicycles are nonliving and don't grow"]},
+    {"question": "Living things can have babies.", "answer": true, "expectedAny": ["reproduction is a sign of life"]},
+    {"question": "Toys need food to survive.", "answer": false, "expectedAny": ["toys are nonliving"]},
+    {"question": "Animals and plants are both living.", "answer": true, "expectedAny": ["both animals and plants are alive"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which one is living?", "choices": ["car", "book", "dog", "chair"], "correct": 2, "expectedAny": ["dog is living"]},
+    {"question": "What do living things do that nonliving things cannot?", "choices": ["sit still", "grow", "be colorful", "be big"], "correct": 1, "expectedAny": ["only living things grow"]},
+    {"question": "Which is NOT living?", "choices": ["tree", "fish", "rock", "bird"], "correct": 2, "expectedAny": ["rock is not living"]},
+    {"question": "What do plants need to live?", "choices": ["toys", "sunlight and water", "cars", "books"], "correct": 1, "expectedAny": ["plants need sunlight and water"]},
+    {"question": "Which animal is living?", "choices": ["stuffed bear", "toy horse", "real cat", "plastic fish"], "correct": 2, "expectedAny": ["real cat is living"]},
+    {"question": "How do you know a person is living?", "choices": ["they breathe", "they wear clothes", "they are tall", "they have hair"], "correct": 0, "expectedAny": ["breathing shows life"]},
+    {"question": "What happens to living things over time?", "choices": ["they stay exactly the same", "they grow and change", "they become toys", "they turn into rocks"], "correct": 1, "expectedAny": ["living things grow and change"]}
+  ],
+  "fillintheblank": [
+    {"question": "Living things need _____ and water to survive.", "expectedAny": ["food", "air"]},
+    {"question": "_____ things can grow and change.", "expectedAny": ["Living"]},
+    {"question": "A _____ is nonliving because it doesn't grow.", "expectedAny": ["rock", "chair", "book"]},
+    {"question": "Plants and animals are both _____.", "expectedAny": ["living"]},
+    {"question": "_____ things do not need food or water.", "expectedAny": ["Nonliving"]},
+    {"question": "All living things can _____ over time.", "expectedAny": ["grow", "change"]},
+    {"question": "Dogs, cats, and birds are all _____ things.", "expectedAny": ["living"]}
+  ],
+  "shortanswer": [
+    {"question": "Name two living things you see outside.", "expectedAny": ["trees", "birds", "dogs", "flowers", "grass"]},
+    {"question": "What are three things that all living things need?", "expectedAny": ["food", "water", "air", "shelter"]},
+    {"question": "How is a real flower different from a plastic flower?", "expectedAny": ["real flower grows", "real flower needs water", "real flower is alive"]},
+    {"question": "List three nonliving things in your classroom.", "expectedAny": ["desk", "chair", "book", "pencil", "clock"]},
+    {"question": "Why do living things need food?", "expectedAny": ["to grow", "to have energy", "to stay alive"]},
+    {"question": "How do baby animals show they are living?", "expectedAny": ["they grow bigger", "they eat", "they move", "they breathe"]},
+    {"question": "What would happen to a plant if it didn't get water?", "expectedAny": ["it would die", "it would stop growing", "it would get sick"]}
+  ],
+  "wordProblems": [
+    {"question": "In the garden, there are 5 living things (plants) and 3 nonliving things (rocks). How many things are there total?", "expectedAny": ["8 things", "5 + 3 = 8"]},
+    {"question": "Emma counts 4 living animals and 6 toy animals. How many animals did she count altogether?", "expectedAny": ["10 animals", "4 + 6 = 10"]},
+    {"question": "There are 10 things on the table. If 7 are living and the rest are nonliving, how many are nonliving?", "expectedAny": ["3 nonliving", "10 - 7 = 3"]},
+    {"question": "A classroom has 12 students (living) and 12 desks (nonliving). How many things that need food are there?", "expectedAny": ["12 students", "only living things need food"]},
+    {"question": "In the park, Jake sees 3 trees, 2 birds, and 4 rocks. How many living things did he see?", "expectedAny": ["5 living things", "3 + 2 = 5"]},
+    {"question": "Sarah sorts 15 pictures. If 9 show living things and 6 show nonliving things, how many living things pictures are there?", "expectedAny": ["9 pictures"]},
+    {"question": "There are 8 flowers (living) in a vase (nonliving). How many things in total, but how many are alive?", "expectedAny": ["9 things total, 8 are alive"]}
+  ]
+}

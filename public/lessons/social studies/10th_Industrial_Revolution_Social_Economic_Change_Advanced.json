@@ -1,0 +1,74 @@
+{
+  "id": "10th_Industrial_Revolution_Social_Economic_Change_Advanced",
+  "title": "Industrial Revolution: Social and Economic Transformation",
+  "grade": "10th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "industrial revolution",
+      "definition": "Period of major industrialization and technological advancement (1760-1840)"
+    },
+    {
+      "term": "factory system",
+      "definition": "Method of manufacturing using machinery and division of labor"
+    },
+    {
+      "term": "urbanization",
+      "definition": "Movement of people from rural areas to cities"
+    },
+    {
+      "term": "capitalism",
+      "definition": "Economic system based on private ownership and free markets"
+    },
+    {
+      "term": "proletariat",
+      "definition": "Working class who sell their labor for wages"
+    }
+  ],
+  "teachingNotes": "Analyze both positive and negative effects of industrialization. Connect to modern economic and social issues.",
+  "sample": {
+    "question": "What was the period of major industrialization from 1760-1840?",
+    "expectedAny": [
+      "Industrial Revolution",
+      "industrial period",
+      "age of industry",
+      "industrial transformation"
+    ]
+  },
+  "truefalse": {
+    "question": "The factory system used machinery and division of labor.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the movement from rural areas to cities called?",
+    "expectedAny": [
+      "urbanization",
+      "city migration",
+      "urban movement",
+      "rural exodus"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The working class who sell their labor are called the ________.",
+    "expectedAny": [
+      "proletariat",
+      "workers",
+      "working class",
+      "laborers"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did the Industrial Revolution change social structures?",
+    "expectedAny": [
+      "created distinct social classes",
+      "separated workers from owners",
+      "changed family structures",
+      "urbanized society"
+    ]
+  }
+}

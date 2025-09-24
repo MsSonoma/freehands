@@ -1,0 +1,74 @@
+{
+  "id": "molecular-biology-genetics-advanced",
+  "title": "Molecular Biology and Advanced Genetics",
+  "grade": "12th",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "DNA replication",
+      "definition": "The process by which DNA makes an exact copy of itself"
+    },
+    {
+      "term": "transcription",
+      "definition": "The process of copying genetic information from DNA to RNA"
+    },
+    {
+      "term": "translation",
+      "definition": "The process of using RNA to build proteins"
+    },
+    {
+      "term": "genetic engineering",
+      "definition": "The deliberate modification of an organism's genetic material"
+    }
+  ],
+  "teachingNotes": "Use molecular models and laboratory simulations. Connect to current biotechnology applications and ethical considerations. Emphasize the central dogma of molecular biology.",
+  "sample": {
+    "question": "What is the central dogma of molecular biology?",
+    "expectedAny": [
+      "DNA → RNA → Protein",
+      "genetic information flows from DNA to RNA to proteins"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "During DNA replication, each new DNA molecule contains one original strand and one new strand.",
+      "answer": true,
+      "expectedAny": [
+        "semiconservative replication model"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which enzyme is primarily responsible for DNA replication?",
+      "choices": [
+        "RNA polymerase",
+        "DNA polymerase",
+        "Ribosome",
+        "tRNA"
+      ],
+      "correct": 1,
+      "expectedAny": [
+        "DNA polymerase synthesizes new DNA strands"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "If a DNA strand has the sequence ATCG, the complementary strand would be _____.",
+      "expectedAny": [
+        "TAGC"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Explain how mutations in DNA can lead to changes in protein structure and function.",
+      "expectedAny": [
+        "DNA changes affect RNA sequence, which affects amino acid sequence in proteins",
+        "altered protein structure can change function"
+      ]
+    }
+  ]
+}

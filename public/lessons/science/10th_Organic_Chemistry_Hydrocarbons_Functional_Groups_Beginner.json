@@ -1,0 +1,74 @@
+{
+  "id": "10th_Organic_Chemistry_Hydrocarbons_Functional_Groups_Beginner",
+  "title": "Organic Chemistry: Hydrocarbons and Functional Groups",
+  "grade": "10th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "organic chemistry",
+      "definition": "Study of carbon-containing compounds and their properties"
+    },
+    {
+      "term": "hydrocarbon",
+      "definition": "Compound containing only carbon and hydrogen atoms"
+    },
+    {
+      "term": "functional group",
+      "definition": "Specific arrangement of atoms that determines chemical properties"
+    },
+    {
+      "term": "alkane",
+      "definition": "Saturated hydrocarbon with single bonds only"
+    },
+    {
+      "term": "isomer",
+      "definition": "Compounds with same molecular formula but different structures"
+    }
+  ],
+  "teachingNotes": "Use molecular models to show 3D structures. Emphasize the role of carbon's bonding capacity in organic diversity.",
+  "sample": {
+    "question": "What is the study of carbon-containing compounds called?",
+    "expectedAny": [
+      "organic chemistry",
+      "carbon chemistry",
+      "study of organic compounds",
+      "carbon-based chemistry"
+    ]
+  },
+  "truefalse": {
+    "question": "Hydrocarbons contain only carbon and hydrogen atoms.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What determines the chemical properties of organic molecules?",
+    "expectedAny": [
+      "functional group",
+      "functional groups",
+      "reactive groups",
+      "chemical groups"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Compounds with the same molecular formula but different structures are called ________.",
+    "expectedAny": [
+      "isomers",
+      "structural isomers",
+      "molecular isomers",
+      "chemical isomers"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why is carbon important in organic chemistry?",
+    "expectedAny": [
+      "forms four bonds",
+      "creates diverse structures",
+      "bonds with many elements",
+      "makes long chains"
+    ]
+  }
+}

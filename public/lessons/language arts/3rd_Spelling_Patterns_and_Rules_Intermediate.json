@@ -1,0 +1,58 @@
+{
+  "id": "3rd_Spelling_Patterns_and_Rules_Intermediate",
+  "title": "Spelling: Patterns and Rules",
+  "grade": "3rd",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {"term": "plural", "definition": "More than one of something."},
+    {"term": "syllable", "definition": "A part of a word that contains a single vowel sound."},
+    {"term": "CVC pattern", "definition": "A word pattern of Consonant-Vowel-Consonant, like 'hop' or 'run'."}
+  ],
+  "teachingNotes": "Focus on common, high-impact spelling rules: plurals (-s, -es, y to i), doubling the consonant (CVC rule), and dropping the silent 'e'. Use word sorts and pattern hunts to make learning interactive.",
+  "sample": [
+    {"question": "How do you make the word 'cat' plural?", "expectedAny": ["Add -s", "cats"]},
+    {"question": "What happens to the final consonant when adding '-ing' to the word 'hop'?", "expectedAny": ["It is doubled."]},
+    {"question": "Spell the plural form of the word 'baby'.", "expectedAny": ["babies"]},
+    {"question": "When spelling a one-syllable word, when do we usually use 'ck' at the end instead of just 'k'?", "expectedAny": ["After a short vowel sound, like in 'duck'."]},
+    {"question": "How do you correctly add the '-ed' suffix to the word 'cry'?", "expectedAny": ["cried"]},
+    {"question": "When adding a suffix like '-ing' or '-ed', when do we double the final consonant of a word?", "expectedAny": ["When it has a CVC pattern with a short vowel."]},
+    {"question": "What is the basic 'i before e' spelling rule?", "expectedAny": ["I before E, except after C."]}
+  ],
+  "truefalse": [
+    {"question": "To make most nouns plural, you just add an '-s' to the end.", "answer": true},
+    {"question": "You should always double the final consonant of a word before adding '-ing'.", "answer": false},
+    {"question": "When a word ends in a consonant followed by 'y', you change the 'y' to an 'i' before adding '-es'.", "answer": true},
+    {"question": "The rule 'i before e, except after c' has some exceptions.", "answer": true},
+    {"question": "When a word ends with a silent 'e', you usually drop the 'e' before adding '-ing'.", "answer": true},
+    {"question": "The CVC (consonant-vowel-consonant) pattern often requires you to double the final consonant before adding a suffix.", "answer": true},
+    {"question": "All plural words are formed by simply adding '-s'.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "What is the correct plural form of 'box'?", "choices": ["boxs", "boxes", "boxies", "box"], "correct": 1},
+    {"question": "How do you correctly spell 'run' + '-ing'?", "choices": ["runing", "running", "runnning", "runeing"], "correct": 1},
+    {"question": "What is the correct plural form of 'city'?", "choices": ["citys", "cities", "cityes", "city"], "correct": 1},
+    {"question": "How do you correctly spell 'bake' + '-ing'?", "choices": ["bakeing", "bakking", "baking", "bakinging"], "correct": 2},
+    {"question": "How do you correctly spell 'happy' + '-er'?", "choices": ["happyer", "happier", "happyier", "happir"], "correct": 1},
+    {"question": "What is the correct plural form of 'leaf'?", "choices": ["leafs", "leaves", "leafes", "leaf"], "correct": 1},
+    {"question": "How do you correctly spell 'big' + '-est'?", "choices": ["bigest", "biggest", "bigiest", "biger"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "The plural of the word 'child' is ___.", "expectedAny": ["children"]},
+    {"question": "To spell 'hope' + '-ing', you drop the 'e' to get ___.", "expectedAny": ["hoping"]},
+    {"question": "The plural of the word 'mouse' is ___.", "expectedAny": ["mice"]},
+    {"question": "To spell 'stop' + '-ed', you double the 'p' to get ___.", "expectedAny": ["stopped"]},
+    {"question": "To spell 'fly' + '-ing', you keep the 'y' to get ___.", "expectedAny": ["flying"]},
+    {"question": "The plural of the word 'tooth' is ___.", "expectedAny": ["teeth"]},
+    {"question": "To spell 'happy' + '-ness', you change the 'y' to 'i' to get ___.", "expectedAny": ["happiness"]}
+  ],
+  "shortanswer": [
+    {"question": "Explain the rule for when to double the final consonant before adding a suffix.", "expectedAny": ["For a short word with a CVC (consonant-vowel-consonant) pattern, you double the last consonant."]},
+    {"question": "What is the rule for changing 'y' to 'i' when adding a suffix?", "expectedAny": ["If a word ends in a consonant and then 'y', change the 'y' to 'i' before adding the suffix (unless the suffix is '-ing')."]},
+    {"question": "List three examples of irregular plurals.", "expectedAny": ["Children, mice, feet, teeth, geese"]},
+    {"question": "What is the 'silent e' rule when adding a suffix that starts with a vowel?", "expectedAny": ["You usually drop the silent 'e' before adding a suffix like '-ing' or '-ed'."]},
+    {"question": "How do you typically make words that end in -f or -fe plural?", "expectedAny": ["You often change the 'f' or 'fe' to 'v' and add '-es' (e.g., leaf becomes leaves)."]},
+    {"question": "Give an example of a word that follows the 'i before e' rule and one that is an exception.", "expectedAny": ["Follows: believe, achieve. Exception: weird, height."]},
+    {"question": "What are some common spelling patterns you have learned?", "expectedAny": ["CVC (hop), CVCe (hope), double letters (look), vowel teams (boat)"]}
+  ]
+}

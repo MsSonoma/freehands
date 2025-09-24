@@ -1,0 +1,74 @@
+{
+  "id": "10th_Sophisticated_Academic_Writing_Argumentation_Intermediate",
+  "title": "Sophisticated Academic Writing: Argumentation",
+  "grade": "10th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "rhetorical appeal",
+      "definition": "Persuasive techniques including ethos, pathos, and logos"
+    },
+    {
+      "term": "concession",
+      "definition": "Acknowledging validity in an opposing argument"
+    },
+    {
+      "term": "refutation",
+      "definition": "Disproving or challenging an opposing argument"
+    },
+    {
+      "term": "syllogism",
+      "definition": "A logical argument with a major premise, minor premise, and conclusion"
+    },
+    {
+      "term": "fallacy",
+      "definition": "An error in reasoning that undermines an argument"
+    }
+  ],
+  "teachingNotes": "Teach sophisticated argumentative techniques and logical structures. Identify and avoid common logical fallacies.",
+  "sample": {
+    "question": "What are ethos, pathos, and logos examples of?",
+    "expectedAny": [
+      "rhetorical appeals",
+      "persuasive techniques",
+      "argumentative strategies",
+      "rhetorical devices"
+    ]
+  },
+  "truefalse": {
+    "question": "A concession acknowledges validity in an opposing argument.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is an error in reasoning that undermines an argument?",
+    "expectedAny": [
+      "fallacy",
+      "logical error",
+      "reasoning flaw",
+      "invalid argument"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A logical argument with major premise, minor premise, and conclusion is a ________.",
+    "expectedAny": [
+      "syllogism",
+      "logical structure",
+      "deductive argument",
+      "formal logic"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does addressing counterarguments strengthen an essay?",
+    "expectedAny": [
+      "shows credibility",
+      "demonstrates fairness",
+      "strengthens position",
+      "builds trust"
+    ]
+  }
+}

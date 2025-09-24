@@ -1,0 +1,71 @@
+{
+  "id": "plants-animals-needs-beginner",
+  "title": "What Plants and Animals Need",
+  "grade": "1st",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "living",
+      "definition": "Something that is alive and can grow"
+    },
+    {
+      "term": "needs",
+      "definition": "Things that living things must have to stay alive"
+    },
+    {
+      "term": "food",
+      "definition": "What animals eat to get energy"
+    },
+    {
+      "term": "water",
+      "definition": "A liquid that all living things need to survive"
+    }
+  ],
+  "teachingNotes": "Use real plants and classroom pets if available. Discuss daily care routines. Connect to students' own needs for food and water.",
+  "sample": [
+    {"question": "What do all living things need to survive?", "expectedAny": ["food", "water", "air", "shelter"]},
+    {"question": "Name one thing plants need to grow.", "expectedAny": ["water", "sunlight", "air", "soil"]},
+    {"question": "What do animals drink to stay alive?", "expectedAny": ["water"]},
+    {"question": "What helps plants make food?", "expectedAny": ["sunlight", "leaves"]},
+    {"question": "What do we breathe that plants and animals also need?", "expectedAny": ["air", "oxygen"]},
+    {"question": "What keeps animals safe and dry?", "expectedAny": ["shelter", "a home", "a den", "a nest"]},
+    {"question": "Why do living things need food?", "expectedAny": ["energy", "to grow", "to stay healthy"]}
+  ],
+  "truefalse": [
+    {"question": "Plants need water to grow.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Animals can live without air.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Shelter helps animals stay safe.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Plants do not need sunlight.", "answer": false, "expectedAny": ["false"]},
+    {"question": "All living things need water.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Food gives living things energy.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Only animals need air, not plants.", "answer": false, "expectedAny": ["false"]}
+  ],
+  "multiplechoice": [
+    {"question": "What do dogs need to stay healthy?", "choices": ["only toys", "food and water", "just sleep", "only air"], "correct": 1, "expectedAny": ["food and water"]},
+    {"question": "Plants get energy from the ___", "choices": ["moon", "sun", "stars", "wind"], "correct": 1, "expectedAny": ["sun"]},
+    {"question": "Which is a shelter for a bird?", "choices": ["pond", "nest", "cave", "hole"], "correct": 1, "expectedAny": ["nest"]},
+    {"question": "What do fish need to breathe?", "choices": ["air from the sky", "sand", "water", "soil"], "correct": 2, "expectedAny": ["water"]},
+    {"question": "Which helps a plant stand up?", "choices": ["roots", "leaves", "flowers", "seeds"], "correct": 0, "expectedAny": ["roots"]},
+    {"question": "Which is NOT a need?", "choices": ["food", "water", "air", "toys"], "correct": 3, "expectedAny": ["toys"]},
+    {"question": "Which gives us air to breathe?", "choices": ["plants", "rocks", "cars", "books"], "correct": 0, "expectedAny": ["plants"]}
+  ],
+  "fillintheblank": [
+    {"question": "Just like you, animals need _____ and water every day.", "expectedAny": ["food"]},
+    {"question": "Plants need sunlight, water, air, and _____.", "expectedAny": ["soil", "nutrients"]},
+    {"question": "A safe place to live is called _____.", "expectedAny": ["shelter", "a habitat"]},
+    {"question": "Food gives living things _____.", "expectedAny": ["energy"]},
+    {"question": "Roots take in water from the _____.", "expectedAny": ["soil", "ground"]},
+    {"question": "We breathe in _____.", "expectedAny": ["air", "oxygen"]},
+    {"question": "Leaves help plants make _____.", "expectedAny": ["food"]}
+  ],
+  "shortanswer": [
+    {"question": "How are your needs similar to a plant's needs?", "expectedAny": ["both need water", "both need air", "both need care"]},
+    {"question": "Name 3 needs that animals have.", "expectedAny": ["food", "water", "air", "shelter"]},
+    {"question": "What happens if a plant doesn't get water?", "expectedAny": ["it wilts", "it dries up", "it can die"]},
+    {"question": "Why do animals look for shelter?", "expectedAny": ["stay safe", "stay dry", "stay warm"]},
+    {"question": "How do people take care of pets' needs?", "expectedAny": ["feed them", "give water", "provide shelter"]},
+    {"question": "Name a place where a plant can get sunlight.", "expectedAny": ["window", "outside", "garden"]},
+    {"question": "Draw a living thing and label its needs.", "expectedAny": ["drawing with labels: food, water, air, shelter"]}
+  ]
+}

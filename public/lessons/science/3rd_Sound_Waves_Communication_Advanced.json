@@ -1,0 +1,61 @@
+{
+  "id": "3rd_Sound_Waves_Communication_Advanced",
+  "title": "Sound Waves and Communication",
+  "grade": "3rd",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    { "term": "sound wave", "definition": "Invisible vibrations that travel through materials and carry sound" },
+    { "term": "pitch", "definition": "How high or low a sound is" },
+    { "term": "volume", "definition": "How loud or soft a sound is" },
+    { "term": "vibration", "definition": "A back-and-forth movement that creates sound" },
+    { "term": "communication", "definition": "Sharing information or messages with others" },
+    { "term": "medium", "definition": "The material (like air or water) that a sound travels through" }
+  ],
+  "teachingNotes": "Use musical instruments and sound experiments. Demonstrate how sound travels through different materials. Connect to animal communication.",
+  "sample": [
+    { "question": "How do sound waves travel from a drum to your ear?", "expectedAny": ["vibrations travel through the air", "sound waves move through air to reach ears"] },
+    { "question": "What happens to pitch when a guitar string is tightened?", "expectedAny": ["pitch gets higher"] },
+    { "question": "What do we call the material sound travels through?", "expectedAny": ["medium"] },
+    { "question": "Name an animal that uses sound to communicate.", "expectedAny": ["bird", "dolphin", "whale", "dog"] },
+    { "question": "What happens to volume when you hit a drum harder?", "expectedAny": ["it gets louder"] },
+    { "question": "Can sound travel through water?", "expectedAny": ["yes"] },
+    { "question": "Does sound travel in a vacuum (empty space)?", "expectedAny": ["no"] }
+  ],
+  "truefalse": [
+    { "question": "Sound needs air or another material to travel through.", "answer": true },
+    { "question": "Tighter strings usually make higher-pitched sounds.", "answer": true },
+    { "question": "Volume and pitch are the same thing.", "answer": false },
+    { "question": "Animals use sound to warn others of danger.", "answer": true },
+    { "question": "Sound cannot travel through water.", "answer": false },
+    { "question": "Whales communicate using sound in the ocean.", "answer": true },
+    { "question": "A louder sound has a smaller vibration.", "answer": false }
+  ],
+  "multiplechoice": [
+    { "question": "Which would make a sound with higher pitch?", "choices": ["Large drum", "Small bell", "Deep voice", "Bass guitar"], "correct": 1 },
+    { "question": "What increases volume?", "choices": ["Gently tapping", "Hitting harder", "Tightening string", "Shortening string"], "correct": 1 },
+    { "question": "Which is a medium for sound?", "choices": ["Air", "Water", "Metal", "All of these"], "correct": 3 },
+    { "question": "Two cans with a string between them can carry sound because the string:", "choices": ["Glows", "Vibrates", "Holds air", "Bends light"], "correct": 1 },
+    { "question": "Which best helps animals communicate over long distances?", "choices": ["Whispering", "High-pitched chirps", "Loud, low sounds", "Silence"], "correct": 2 },
+    { "question": "Which change will likely increase the pitch of a guitar string?", "choices": ["Loosening it", "Tightening it", "Making it thicker", "Making it longer"], "correct": 1 },
+    { "question": "Which is true about sound in space?", "choices": ["It travels faster", "It can’t travel without a medium", "It is louder", "It shines"], "correct": 1 }
+  ],
+  "fillintheblank": [
+    { "question": "When you pluck a guitar string tighter, the _____ of the sound becomes higher.", "expectedAny": ["pitch"] },
+    { "question": "Sound is made by _____.", "expectedAny": ["vibrations"] },
+    { "question": "The loudness of sound is called _____.", "expectedAny": ["volume"] },
+    { "question": "Sound needs a _____ like air or water to travel.", "expectedAny": ["medium"] },
+    { "question": "A dolphin uses sound to _____.", "expectedAny": ["communicate"] },
+    { "question": "A louder sound has a _____ vibration.", "expectedAny": ["bigger", "stronger"] },
+    { "question": "Whales can communicate across long distances in the _____.", "expectedAny": ["ocean", "water"] }
+  ],
+  "shortanswer": [
+    { "question": "How do animals use sound to communicate?", "expectedAny": ["warn of danger", "find mates", "locate family", "mark territory"] },
+    { "question": "Explain why sound cannot travel in a vacuum.", "expectedAny": ["no medium for vibrations to move through"] },
+    { "question": "Describe two ways to make a sound louder.", "expectedAny": ["hit harder", "use more energy", "get closer to the listener"] },
+    { "question": "How does tightening a string change its sound?", "expectedAny": ["higher pitch"] },
+    { "question": "Give an example of a sound used for communication in your life.", "expectedAny": ["school bell", "alarm", "phone ring"] },
+    { "question": "Why can we hear better through some materials than others?", "expectedAny": ["sound travels differently", "some carry vibrations well"] },
+    { "question": "What safety messages might animals send with sound?", "expectedAny": ["danger call", "warning", "territory warning"] }
+  ]
+}

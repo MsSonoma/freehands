@@ -1,0 +1,73 @@
+{
+  "id": "7th_Chemical_vs_Physical_Changes_Intermediate",
+  "title": "Chemical and Physical Changes in Matter",
+  "grade": "7th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "physical change",
+      "definition": "A change in matter that doesn't create a new substance"
+    },
+    {
+      "term": "chemical change",
+      "definition": "A change that creates one or more new substances"
+    },
+    {
+      "term": "chemical reaction",
+      "definition": "A process where substances interact to form new substances"
+    },
+    {
+      "term": "reactant",
+      "definition": "A substance that enters into a chemical reaction"
+    },
+    {
+      "term": "product",
+      "definition": "A substance formed as a result of a chemical reaction"
+    }
+  ],
+  "teachingNotes": "Use demonstrations like melting ice (physical) vs burning paper (chemical). Emphasize that chemical changes are usually irreversible.",
+  "sample": {
+    "question": "What type of change creates one or more new substances?",
+    "expectedAny": [
+      "chemical change",
+      "chemical reaction",
+      "chemical transformation",
+      "chemical process"
+    ]
+  },
+  "truefalse": {
+    "question": "Melting ice is an example of a chemical change.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which is an example of a physical change?",
+    "expectedAny": [
+      "cutting paper",
+      "melting ice",
+      "crushing glass",
+      "mixing sand and water"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A substance that enters into a chemical reaction is called a ________.",
+    "expectedAny": [
+      "reactant",
+      "starting material",
+      "initial substance",
+      "reacting substance"
+    ]
+  },
+  "shortanswer": {
+    "question": "How can you tell if a chemical change has occurred?",
+    "expectedAny": [
+      "new substance formed",
+      "color change, gas produced, temperature change",
+      "evidence of new properties"
+    ]
+  }
+}

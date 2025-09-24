@@ -1,0 +1,74 @@
+{
+  "id": "9th_Acids_Bases_pH_Scale_Intermediate",
+  "title": "Acids, Bases, and the pH Scale",
+  "grade": "9th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "acid",
+      "definition": "Substance that releases hydrogen ions (H+) in solution"
+    },
+    {
+      "term": "base",
+      "definition": "Substance that releases hydroxide ions (OH-) or accepts H+"
+    },
+    {
+      "term": "pH scale",
+      "definition": "Logarithmic scale measuring acidity from 0-14"
+    },
+    {
+      "term": "neutralization",
+      "definition": "Reaction between acid and base to form salt and water"
+    },
+    {
+      "term": "indicator",
+      "definition": "Substance that changes color to show pH level"
+    }
+  ],
+  "teachingNotes": "Use common examples of acids and bases. Demonstrate pH testing with indicators and discuss real-world applications.",
+  "sample": {
+    "question": "What is a substance that releases hydrogen ions in solution?",
+    "expectedAny": [
+      "acid",
+      "acidic substance",
+      "proton donor",
+      "H+ donor"
+    ]
+  },
+  "truefalse": {
+    "question": "The pH scale ranges from 0 to 14.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the reaction between an acid and base called?",
+    "expectedAny": [
+      "neutralization",
+      "acid-base reaction",
+      "neutralization reaction",
+      "salt formation"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A substance that changes color to show pH is called an ________.",
+    "expectedAny": [
+      "indicator",
+      "pH indicator",
+      "color indicator",
+      "chemical indicator"
+    ]
+  },
+  "shortanswer": {
+    "question": "What happens to pH when you add acid to pure water?",
+    "expectedAny": [
+      "pH decreases",
+      "becomes more acidic",
+      "pH goes below 7",
+      "becomes less than 7"
+    ]
+  }
+}

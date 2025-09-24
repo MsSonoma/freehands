@@ -1,0 +1,73 @@
+{
+  "id": "5th_American_Revolution_Causes_Intermediate",
+  "title": "Causes of the American Revolution",
+  "grade": "5th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "taxation without representation",
+      "definition": "Being forced to pay taxes without having a voice in government"
+    },
+    {
+      "term": "Boston Tea Party",
+      "definition": "A protest where colonists dumped British tea into Boston Harbor"
+    },
+    {
+      "term": "revolution",
+      "definition": "A complete change in government, often involving war"
+    },
+    {
+      "term": "independence",
+      "definition": "Freedom from being controlled by another country"
+    },
+    {
+      "term": "Patriots",
+      "definition": "Colonists who wanted independence from Britain"
+    }
+  ],
+  "teachingNotes": "Explain how unfair treatment led to the desire for independence. Connect to concepts of fairness and representation in government.",
+  "sample": {
+    "question": "What famous phrase described the colonists' complaint about British taxes?",
+    "expectedAny": [
+      "taxation without representation",
+      "no taxation without representation",
+      "taxed without representation"
+    ]
+  },
+  "truefalse": {
+    "question": "The Boston Tea Party was a celebration with tea and cake.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What were colonists called who wanted independence from Britain?",
+    "expectedAny": [
+      "Patriots",
+      "American Patriots",
+      "colonial Patriots",
+      "independence supporters"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The colonists were angry because they had to pay ________ but could not vote on them.",
+    "expectedAny": [
+      "taxes",
+      "British taxes",
+      "unfair taxes",
+      "taxation"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why did the colonists dump tea into Boston Harbor?",
+    "expectedAny": [
+      "protest tea tax",
+      "angry about taxes",
+      "Boston Tea Party protest",
+      "protest British control"
+    ]
+  }
+}

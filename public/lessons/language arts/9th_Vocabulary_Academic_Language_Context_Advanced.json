@@ -1,0 +1,73 @@
+{
+  "id": "9th_Vocabulary_Academic_Language_Context_Advanced",
+  "title": "Vocabulary: Academic Language and Context Clues",
+  "grade": "9th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "academic language",
+      "definition": "Formal language used in educational and professional settings"
+    },
+    {
+      "term": "context clues",
+      "definition": "Hints in surrounding text that help determine word meaning"
+    },
+    {
+      "term": "connotation",
+      "definition": "Emotional or cultural associations of a word beyond its literal meaning"
+    },
+    {
+      "term": "denotation",
+      "definition": "Literal, dictionary definition of a word"
+    },
+    {
+      "term": "semantic field",
+      "definition": "Group of words related in meaning within a specific domain"
+    }
+  ],
+  "teachingNotes": "Practice using context clues to determine meanings. Emphasize the difference between connotation and denotation in word choice.",
+  "sample": {
+    "question": "What is formal language used in educational settings?",
+    "expectedAny": [
+      "academic language",
+      "formal language",
+      "scholarly language",
+      "educational language"
+    ]
+  },
+  "truefalse": {
+    "question": "Context clues help determine word meaning from surrounding text.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the literal dictionary definition of a word?",
+    "expectedAny": [
+      "denotation",
+      "literal meaning",
+      "dictionary definition",
+      "explicit meaning"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The emotional associations of a word are its ________.",
+    "expectedAny": [
+      "connotation",
+      "emotional meaning",
+      "implied meaning",
+      "associations"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do context clues help readers understand unfamiliar words?",
+    "expectedAny": [
+      "provide hints about meaning",
+      "show word relationships",
+      "give examples or definitions"
+    ]
+  }
+}

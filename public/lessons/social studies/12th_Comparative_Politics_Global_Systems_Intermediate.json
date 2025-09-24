@@ -1,0 +1,74 @@
+{
+  "id": "12th_Comparative_Politics_Global_Systems_Intermediate",
+  "title": "Comparative Politics and Global Systems",
+  "grade": "12th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "semi-presidential system",
+      "definition": "Government with both president and prime minister sharing executive power"
+    },
+    {
+      "term": "proportional representation",
+      "definition": "Electoral system allocating seats based on vote percentage"
+    },
+    {
+      "term": "political legitimacy",
+      "definition": "Public acceptance of government's right to rule"
+    },
+    {
+      "term": "civil society",
+      "definition": "Organizations and institutions independent of government"
+    },
+    {
+      "term": "democratization",
+      "definition": "Process of transition toward democratic governance"
+    }
+  ],
+  "teachingNotes": "Analyze electoral systems and democratic transitions. Examine role of civil society in politics.",
+  "sample": {
+    "question": "What system has both president and prime minister?",
+    "expectedAny": [
+      "semi-presidential",
+      "dual executive",
+      "mixed system",
+      "French system"
+    ]
+  },
+  "truefalse": {
+    "question": "Proportional representation allocates seats based on vote percentage.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What describes public acceptance of government's right to rule?",
+    "expectedAny": [
+      "political legitimacy",
+      "authority",
+      "mandate",
+      "popular support"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Organizations independent of government form ________ society.",
+    "expectedAny": [
+      "civil",
+      "civic",
+      "voluntary",
+      "non-governmental"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does electoral system affect party representation?",
+    "expectedAny": [
+      "proportional vs majoritarian",
+      "multi-party vs two-party",
+      "coalition building",
+      "minority representation"
+    ]
+  }
+}

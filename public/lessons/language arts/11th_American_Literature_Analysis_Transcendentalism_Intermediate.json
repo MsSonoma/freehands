@@ -1,0 +1,74 @@
+{
+  "id": "11th_American_Literature_Analysis_Transcendentalism_Intermediate",
+  "title": "American Literature Analysis: Transcendentalism and Romanticism",
+  "grade": "11th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "civil disobedience",
+      "definition": "Thoreau's concept of principled resistance to unjust laws"
+    },
+    {
+      "term": "self-reliance",
+      "definition": "Emerson's philosophy of individual independence and authenticity"
+    },
+    {
+      "term": "dark romanticism",
+      "definition": "Literary movement exploring human fallibility and evil"
+    },
+    {
+      "term": "gothic elements",
+      "definition": "Literary techniques creating atmosphere of mystery and horror"
+    },
+    {
+      "term": "moral allegory",
+      "definition": "Story illustrating ethical principles through symbolic characters"
+    }
+  ],
+  "teachingNotes": "Analyze philosophical differences between optimistic transcendentalists and darker romantics. Examine social criticism in literature.",
+  "sample": {
+    "question": "What is Thoreau's concept of principled resistance to unjust laws?",
+    "expectedAny": [
+      "civil disobedience",
+      "principled resistance",
+      "moral resistance",
+      "passive resistance"
+    ]
+  },
+  "truefalse": {
+    "question": "Dark romanticism explored human fallibility and evil.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is Emerson's philosophy of individual independence?",
+    "expectedAny": [
+      "self-reliance",
+      "individual independence",
+      "personal autonomy",
+      "individual authenticity"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Literary techniques creating mystery and horror are ________ elements.",
+    "expectedAny": [
+      "gothic",
+      "horror",
+      "dark",
+      "mysterious"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do transcendentalists and dark romantics differ in worldview?",
+    "expectedAny": [
+      "optimism vs. pessimism",
+      "human goodness vs. evil",
+      "nature positive vs. negative",
+      "hope vs. despair"
+    ]
+  }
+}

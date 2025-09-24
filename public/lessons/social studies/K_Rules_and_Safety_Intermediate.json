@@ -1,0 +1,78 @@
+{
+  "id": "rules-and-safety-intermediate",
+  "title": "Rules and Safety",
+  "grade": "K",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "rule",
+      "definition": "Something we must follow to keep everyone safe and happy"
+    },
+    {
+      "term": "safety",
+      "definition": "Being protected from getting hurt"
+    },
+    {
+      "term": "respect",
+      "definition": "Being kind and caring toward others"
+    },
+    {
+      "term": "responsibility",
+      "definition": "A job or duty that you need to do"
+    }
+  ],
+  "teachingNotes": "Discuss classroom and school rules. Practice safety procedures. Connect rules to keeping everyone safe and happy. Role-play scenarios.",
+  "sample": [
+    {"question": "Why do we have rules in the classroom?", "expectedAny": ["to stay safe", "to be kind", "to learn better"]},
+    {"question": "What should you do when the teacher is talking?", "expectedAny": ["listen", "be quiet", "pay attention"]},
+    {"question": "How do you cross the street safely?", "expectedAny": ["look both ways", "hold an adult's hand", "use crosswalk"]},
+    {"question": "What do you do if you see someone being unsafe?", "expectedAny": ["tell a teacher", "tell an adult", "get help"]},
+    {"question": "Why is it important to follow safety rules?", "expectedAny": ["to not get hurt", "to protect everyone", "to stay safe"]}
+  ],
+  "truefalse": [
+    {"question": "We should always walk in the hallways.", "answer": true, "expectedAny": ["walking keeps everyone safe"]},
+    {"question": "It's okay to push other children.", "answer": false, "expectedAny": ["pushing can hurt people"]},
+    {"question": "Rules help keep everyone safe.", "answer": true, "expectedAny": ["rules are for safety"]},
+    {"question": "You should run with scissors.", "answer": false, "expectedAny": ["running with scissors is dangerous"]},
+    {"question": "Wearing a seatbelt in a car is important.", "answer": true, "expectedAny": ["seatbelts keep us safe"]},
+    {"question": "It's fine to talk when the teacher is reading.", "answer": false, "expectedAny": ["we should listen when teacher reads"]},
+    {"question": "Following rules shows respect for others.", "answer": true, "expectedAny": ["rules show we care about others"]}
+  ],
+  "multiplechoice": [
+    {"question": "What should you do if there's a fire drill?", "choices": ["run and hide", "listen to the teacher", "keep playing", "go to the bathroom"], "correct": 1, "expectedAny": ["listen to teacher during drills"]},
+    {"question": "How should you carry scissors?", "choices": ["by the blade", "pointing up", "pointing down", "throw them"], "correct": 2, "expectedAny": ["carry scissors pointing down"]},
+    {"question": "What do you do when you hear the fire alarm?", "choices": ["hide under desk", "line up quietly", "keep working", "go to sleep"], "correct": 1, "expectedAny": ["line up quietly for fire drill"]},
+    {"question": "Where should you put toys after playing?", "choices": ["on the floor", "in the trash", "away properly", "anywhere"], "correct": 2, "expectedAny": ["put toys away properly"]},
+    {"question": "What should you do if you spill something?", "choices": ["leave it", "tell a teacher", "step over it", "hide it"], "correct": 1, "expectedAny": ["tell teacher about spills"]},
+    {"question": "How do you show respect to classmates?", "choices": ["take their things", "be kind", "ignore them", "push them"], "correct": 1, "expectedAny": ["being kind shows respect"]},
+    {"question": "What is the safe way to get down from playground equipment?", "choices": ["jump off", "climb down carefully", "slide down backwards", "hang and drop"], "correct": 1, "expectedAny": ["climb down carefully from equipment"]}
+  ],
+  "fillintheblank": [
+    {"question": "We raise our _____ to talk in class.", "expectedAny": ["hand"]},
+    {"question": "_____ help keep everyone safe and happy.", "expectedAny": ["Rules"]},
+    {"question": "We should always _____ in the hallways.", "expectedAny": ["walk"]},
+    {"question": "When crossing the street, we should look _____ ways.", "expectedAny": ["both"]},
+    {"question": "We show _____ by following the rules.", "expectedAny": ["respect"]},
+    {"question": "During a fire drill, we should line up _____.", "expectedAny": ["quietly"]},
+    {"question": "It's our _____ to follow classroom rules.", "expectedAny": ["responsibility"]}
+  ],
+  "shortanswer": [
+    {"question": "Name one classroom rule.", "expectedAny": ["various classroom rules"]},
+    {"question": "How do rules help us learn better?", "expectedAny": ["keep class quiet", "help us focus", "create safe environment", "reduce distractions"]},
+    {"question": "What safety rules do you follow at home?", "expectedAny": ["don't touch hot stove", "look both ways", "tell parents where going", "wear helmet"]},
+    {"question": "Why is it important to listen to adults?", "expectedAny": ["they keep us safe", "they know more", "they help us", "they protect us"]},
+    {"question": "What should you do if someone breaks a rule?", "expectedAny": ["tell a teacher", "help them understand", "remind them nicely", "get adult help"]},
+    {"question": "How do playground rules keep everyone safe?", "expectedAny": ["prevent fighting", "take turns", "use equipment properly", "avoid accidents"]},
+    {"question": "What does it mean to be responsible?", "expectedAny": ["do your job", "follow rules", "help others", "take care of things"]}
+  ],
+  "wordProblems": [
+    {"question": "There are 5 safety rules in the classroom and 3 safety rules on the playground. How many safety rules are there total?", "expectedAny": ["8 safety rules", "5 + 3 = 8"]},
+    {"question": "During the fire drill, 12 students lined up quickly and 8 students needed reminders. How many students were in the class?", "expectedAny": ["20 students", "12 + 8 = 20"]},
+    {"question": "Emma followed 6 rules perfectly today, but forgot to follow 2 rules. How many rules were there total?", "expectedAny": ["8 rules", "6 + 2 = 8"]},
+    {"question": "The teacher posted 10 classroom rules. If students learned 7 rules well, how many rules do they still need to practice?", "expectedAny": ["3 rules", "10 - 7 = 3"]},
+    {"question": "At recess, 9 children followed the playground rules and 4 children needed reminders. How many more children followed the rules than needed reminders?", "expectedAny": ["5 more children", "9 - 4 = 5"]},
+    {"question": "The school has 15 safety rules. If the kindergarten class learned 8 of them, how many more safety rules do they need to learn?", "expectedAny": ["7 more rules", "15 - 8 = 7"]},
+    {"question": "During safety week, students practiced 4 rules on Monday and 5 rules on Tuesday. How many rules did they practice altogether?", "expectedAny": ["9 rules", "4 + 5 = 9"]}
+  ]
+}

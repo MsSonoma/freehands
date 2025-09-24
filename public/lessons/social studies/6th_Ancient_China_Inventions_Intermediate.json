@@ -1,0 +1,74 @@
+{
+  "id": "6th_Ancient_China_Inventions_Intermediate",
+  "title": "Ancient China: Inventions and Cultural Achievements",
+  "grade": "6th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "dynasty",
+      "definition": "A series of rulers from the same family"
+    },
+    {
+      "term": "Silk Road",
+      "definition": "Ancient trade routes connecting China to Europe and the Middle East"
+    },
+    {
+      "term": "Great Wall",
+      "definition": "A massive wall built to protect China from northern invaders"
+    },
+    {
+      "term": "Confucius",
+      "definition": "Chinese philosopher who taught about respect, education, and good government"
+    },
+    {
+      "term": "invention",
+      "definition": "Something new that is created or discovered"
+    }
+  ],
+  "teachingNotes": "Emphasize Chinese inventions like paper, gunpowder, and the compass. Discuss how the Silk Road connected different cultures. Show the Great Wall's significance.",
+  "sample": {
+    "question": "What were the ancient trade routes connecting China to Europe called?",
+    "expectedAny": [
+      "Silk Road",
+      "the Silk Road",
+      "Silk Route",
+      "ancient trade routes"
+    ]
+  },
+  "truefalse": {
+    "question": "Ancient China invented paper, gunpowder, and the compass.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What was built to protect China from northern invaders?",
+    "expectedAny": [
+      "Great Wall",
+      "Great Wall of China",
+      "Chinese wall",
+      "protective wall"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A series of rulers from the same family is called a ________.",
+    "expectedAny": [
+      "dynasty",
+      "ruling dynasty",
+      "family dynasty",
+      "imperial dynasty"
+    ]
+  },
+  "shortanswer": {
+    "question": "What did Confucius teach about how people should live?",
+    "expectedAny": [
+      "respect elders and authority",
+      "education and good government",
+      "proper behavior and relationships",
+      "moral values and respect"
+    ]
+  }
+}

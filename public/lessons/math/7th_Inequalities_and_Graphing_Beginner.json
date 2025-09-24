@@ -1,0 +1,53 @@
+{
+  "id": "7th_Inequalities_and_Graphing_Beginner",
+  "title": "Linear Inequalities and Number Line Graphs",
+  "grade": "7th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "inequality",
+      "definition": "A mathematical statement comparing two expressions"
+    },
+    {
+      "term": "greater than",
+      "definition": "A symbol (>) showing one number is larger than another"
+    },
+    {
+      "term": "less than",
+      "definition": "A symbol (<) showing one number is smaller than another"
+    },
+    {
+      "term": "solution set",
+      "definition": "All values that make an inequality true"
+    },
+    {
+      "term": "graph",
+      "definition": "A visual representation of numbers or data"
+    }
+  ],
+  "teachingNotes": "Use number lines to show solutions. Practice with real-world inequality situations like age limits or temperature ranges.",
+  "sample": {
+    "question": "What is a mathematical statement comparing two expressions?",
+    "expectedAny": ["inequality", "comparison", "mathematical comparison", "relation"]
+  },
+  "truefalse": {
+    "question": "The symbol > means 'greater than'.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "Which inequality means x is at least 5?",
+    "expectedAny": ["x ≥ 5", "x >= 5", "x greater than or equal to 5", "x ≥ 5"]
+  },
+  "fillintheblank": {
+    "question": "All values that make an inequality true form the ________ set.",
+    "expectedAny": ["solution", "answer", "valid", "true"]
+  },
+  "shortanswer": {
+    "question": "Solve: x + 3 > 7",
+    "expectedAny": ["x > 4", "x greater than 4", "x>4", "greater than 4"]
+  },
+  "wordProblems": {
+    "question": "You need at least $20 to buy a game. You have $8. How much more money do you need?",
+    "expectedAny": ["at least $12", "$12 or more", "x ≥ 12", "12 dollars or more"]
+  }
+}

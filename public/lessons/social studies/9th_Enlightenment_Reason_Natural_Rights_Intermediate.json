@@ -1,0 +1,73 @@
+{
+  "id": "9th_Enlightenment_Reason_Natural_Rights_Intermediate",
+  "title": "Enlightenment: Reason and Natural Rights",
+  "grade": "9th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "enlightenment",
+      "definition": "18th century intellectual movement emphasizing reason and science"
+    },
+    {
+      "term": "natural rights",
+      "definition": "Rights believed to be inherent to all humans by nature"
+    },
+    {
+      "term": "social contract",
+      "definition": "Agreement between people and government defining rights and duties"
+    },
+    {
+      "term": "separation of powers",
+      "definition": "Division of government into legislative, executive, and judicial branches"
+    },
+    {
+      "term": "philosophe",
+      "definition": "French Enlightenment thinker who applied reason to social problems"
+    }
+  ],
+  "teachingNotes": "Connect Enlightenment ideas to American and French revolutions. Analyze how these concepts influenced modern democratic government.",
+  "sample": {
+    "question": "What 18th century movement emphasized reason and science?",
+    "expectedAny": [
+      "enlightenment",
+      "age of reason",
+      "intellectual enlightenment",
+      "age of enlightenment"
+    ]
+  },
+  "truefalse": {
+    "question": "Natural rights are believed to be inherent to all humans.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What divides government into three branches?",
+    "expectedAny": [
+      "separation of powers",
+      "checks and balances",
+      "power division",
+      "governmental separation"
+    ]
+  },
+  "fillintheblank": {
+    "question": "An agreement between people and government is a ________ contract.",
+    "expectedAny": [
+      "social",
+      "governmental",
+      "political",
+      "civic"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did Enlightenment ideas influence the American Revolution?",
+    "expectedAny": [
+      "justified resistance to tyranny",
+      "provided natural rights theory",
+      "supported democratic principles"
+    ]
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "id": "11th_Trigonometric_Identities_Applications_Intermediate",
+  "title": "Trigonometric Identities and Applications",
+  "grade": "11th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "sum formula",
+      "definition": "Identity for trigonometric function of sum of two angles"
+    },
+    {
+      "term": "difference formula",
+      "definition": "Identity for trigonometric function of difference of two angles"
+    },
+    {
+      "term": "double angle formula",
+      "definition": "Identity for trigonometric function of twice an angle"
+    },
+    {
+      "term": "half angle formula",
+      "definition": "Identity for trigonometric function of half an angle"
+    },
+    {
+      "term": "product-to-sum formula",
+      "definition": "Identity converting product of trigonometric functions to sum"
+    }
+  ],
+  "teachingNotes": "Practice deriving and applying compound angle formulas. Connect to real-world applications.",
+  "sample": {
+    "question": "What is an identity for trigonometric function of sum of angles?",
+    "expectedAny": ["sum formula", "addition formula", "angle sum identity", "compound angle formula"]
+  },
+  "truefalse": {
+    "question": "Double angle formulas involve trigonometric functions of twice an angle.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What converts products of trig functions to sums?",
+    "expectedAny": ["product-to-sum formula", "product formula", "multiplication identity", "product identity"]
+  },
+  "fillintheblank": {
+    "question": "An identity for trig function of half an angle is a ________ angle formula.",
+    "expectedAny": ["half", "half-angle", "bisection", "semi-angle"]
+  },
+  "shortanswer": {
+    "question": "What is the cosine sum formula?",
+    "expectedAny": ["cos(A + B) = cos A cos B - sin A sin B", "cos(α + β) = cos α cos β - sin α sin β"]
+  },
+  "wordProblems": {
+    "question": "If cos 15° = cos(45° - 30°), what is the exact value using difference formula?",
+    "expectedAny": ["(√6 + √2)/4", "(√6+√2)/4", "quarter root six plus root two", "0.9659"]
+  }
+}

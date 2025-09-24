@@ -1,0 +1,74 @@
+{
+  "id": "11th_Electromagnetic_Waves_Light_Physics_Advanced",
+  "title": "Electromagnetic Waves and Light Physics",
+  "grade": "11th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "Maxwell's equations",
+      "definition": "Four fundamental equations describing electromagnetic field behavior"
+    },
+    {
+      "term": "Poynting vector",
+      "definition": "Vector representing electromagnetic energy flux density"
+    },
+    {
+      "term": "coherence",
+      "definition": "Degree of correlation between electromagnetic wave phases"
+    },
+    {
+      "term": "birefringence",
+      "definition": "Splitting of light into two polarized rays in certain materials"
+    },
+    {
+      "term": "dispersion",
+      "definition": "Frequency-dependent variation in wave propagation speed"
+    }
+  ],
+  "teachingNotes": "Explore advanced electromagnetic theory and applications in modern technology. Connect to quantum mechanics principles.",
+  "sample": {
+    "question": "What four equations describe electromagnetic fields?",
+    "expectedAny": [
+      "Maxwell's equations",
+      "Maxwell equations",
+      "electromagnetic field equations",
+      "fundamental EM equations"
+    ]
+  },
+  "truefalse": {
+    "question": "The Poynting vector represents electromagnetic energy flux.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What causes light to split into polarized rays in certain materials?",
+    "expectedAny": [
+      "birefringence",
+      "double refraction",
+      "optical anisotropy",
+      "polarization splitting"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Frequency-dependent variation in wave speed is called ________.",
+    "expectedAny": [
+      "dispersion",
+      "frequency dispersion",
+      "chromatic dispersion",
+      "wave dispersion"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does coherence affect electromagnetic wave interactions?",
+    "expectedAny": [
+      "enables interference",
+      "creates stable patterns",
+      "maintains phase relationships",
+      "allows wave correlation"
+    ]
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "id": "7th_Scientific_Method_and_Inquiry_Beginner",
+  "title": "Scientific Method and Investigation",
+  "grade": "7th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "hypothesis",
+      "definition": "An educated guess that can be tested"
+    },
+    {
+      "term": "variable",
+      "definition": "A factor that can change in an experiment"
+    },
+    {
+      "term": "control",
+      "definition": "The part of an experiment that stays the same for comparison"
+    },
+    {
+      "term": "data",
+      "definition": "Information collected during an experiment"
+    },
+    {
+      "term": "conclusion",
+      "definition": "What you learn from analyzing experimental results"
+    }
+  ],
+  "teachingNotes": "Walk through each step of the scientific method. Emphasize that science is about asking questions and finding evidence-based answers.",
+  "sample": {
+    "question": "What is an educated guess that can be tested called?",
+    "expectedAny": [
+      "hypothesis",
+      "testable prediction",
+      "scientific guess",
+      "experimental prediction"
+    ]
+  },
+  "truefalse": {
+    "question": "A good hypothesis must be testable.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the first step in the scientific method?",
+    "expectedAny": [
+      "ask a question",
+      "observation",
+      "make an observation",
+      "identify a problem"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Information collected during an experiment is called ________.",
+    "expectedAny": [
+      "data",
+      "experimental data",
+      "results",
+      "observations"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why is it important to have a control in an experiment?",
+    "expectedAny": [
+      "to compare results",
+      "shows what happens without the variable",
+      "provides baseline for comparison"
+    ]
+  }
+}

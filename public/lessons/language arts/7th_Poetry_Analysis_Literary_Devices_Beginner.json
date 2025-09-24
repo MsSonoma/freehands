@@ -1,0 +1,74 @@
+{
+  "id": "7th_Poetry_Analysis_Literary_Devices_Beginner",
+  "title": "Poetry Analysis and Literary Devices",
+  "grade": "7th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "metaphor",
+      "definition": "A comparison between two unlike things without using 'like' or 'as'"
+    },
+    {
+      "term": "simile",
+      "definition": "A comparison using 'like' or 'as'"
+    },
+    {
+      "term": "alliteration",
+      "definition": "The repetition of beginning consonant sounds"
+    },
+    {
+      "term": "rhyme scheme",
+      "definition": "The pattern of rhymes in a poem"
+    },
+    {
+      "term": "stanza",
+      "definition": "A group of lines in a poem"
+    }
+  ],
+  "teachingNotes": "Use examples from age-appropriate poems. Practice identifying literary devices and discussing their effects on meaning and mood.",
+  "sample": {
+    "question": "What is a comparison between unlike things without 'like' or 'as'?",
+    "expectedAny": [
+      "metaphor",
+      "direct comparison",
+      "figurative comparison",
+      "poetic comparison"
+    ]
+  },
+  "truefalse": {
+    "question": "A simile uses 'like' or 'as' to make comparisons.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the repetition of beginning consonant sounds?",
+    "expectedAny": [
+      "alliteration",
+      "consonance",
+      "sound repetition",
+      "repeated sounds"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A group of lines in a poem is called a ________.",
+    "expectedAny": [
+      "stanza",
+      "verse",
+      "paragraph",
+      "section"
+    ]
+  },
+  "shortanswer": {
+    "question": "Identify the literary device: 'The stars danced in the sky.'",
+    "expectedAny": [
+      "personification",
+      "metaphor",
+      "giving human qualities",
+      "stars can't really dance"
+    ]
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "id": "11th_College_Preparatory_Communication_Skills_Advanced",
+  "title": "College Preparatory Communication Skills",
+  "grade": "11th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "discourse community",
+      "definition": "Group sharing common language, goals, and communication practices"
+    },
+    {
+      "term": "metacognition",
+      "definition": "Awareness and understanding of one's own thought processes"
+    },
+    {
+      "term": "genre conventions",
+      "definition": "Established forms and expectations within specific types of writing"
+    },
+    {
+      "term": "intellectual property",
+      "definition": "Legal concept protecting original ideas and creative works"
+    },
+    {
+      "term": "multimodal composition",
+      "definition": "Communication using multiple modes like text, images, and sound"
+    }
+  ],
+  "teachingNotes": "Explore advanced concepts in communication theory. Prepare students for discipline-specific writing expectations.",
+  "sample": {
+    "question": "What is a group sharing common communication practices?",
+    "expectedAny": [
+      "discourse community",
+      "communication community",
+      "academic community",
+      "professional community"
+    ]
+  },
+  "truefalse": {
+    "question": "Metacognition involves awareness of one's own thinking.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What uses multiple modes like text, images, and sound?",
+    "expectedAny": [
+      "multimodal composition",
+      "multimedia communication",
+      "mixed media",
+      "integrated communication"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Established forms within writing types are ________ conventions.",
+    "expectedAny": [
+      "genre",
+      "writing",
+      "formal",
+      "structural"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do discourse communities shape communication expectations?",
+    "expectedAny": [
+      "establish norms",
+      "define standards",
+      "create conventions",
+      "set expectations"
+    ]
+  }
+}

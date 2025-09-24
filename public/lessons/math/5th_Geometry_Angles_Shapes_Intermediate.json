@@ -1,0 +1,53 @@
+{
+  "id": "5th_Geometry_Angles_Shapes_Intermediate",
+  "title": "Geometry: Angles and Polygon Properties",
+  "grade": "5th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "angle",
+      "definition": "The space between two lines that meet at a point, measured in degrees"
+    },
+    {
+      "term": "polygon",
+      "definition": "A closed shape made of straight line segments"
+    },
+    {
+      "term": "vertex",
+      "definition": "The point where two sides of a shape meet (plural: vertices)"
+    },
+    {
+      "term": "parallel lines",
+      "definition": "Lines that never meet and are always the same distance apart"
+    },
+    {
+      "term": "perpendicular lines",
+      "definition": "Lines that meet at right angles (90 degrees)"
+    }
+  ],
+  "teachingNotes": "Practice identifying different types of angles and shapes. Teach properties of common polygons. Use real-world examples to show parallel and perpendicular lines.",
+  "sample": {
+    "question": "How many sides does a pentagon have?",
+    "expectedAny": ["5", "five", "pentagon has 5 sides", "5 sides"]
+  },
+  "truefalse": {
+    "question": "A right angle measures exactly 90 degrees.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "Which shape has exactly 6 sides?",
+    "expectedAny": ["hexagon", "6-sided polygon", "six-sided shape", "hexagon shape"]
+  },
+  "fillintheblank": {
+    "question": "Lines that never meet and stay the same distance apart are called ________ lines.",
+    "expectedAny": ["parallel", "parallel lines", "always parallel", "parallel to each other"]
+  },
+  "shortanswer": {
+    "question": "Name two shapes that have exactly 4 sides.",
+    "expectedAny": ["square and rectangle", "rectangle and square", "rhombus and square", "quadrilaterals"]
+  },
+  "wordProblems": {
+    "question": "A stop sign has 8 equal sides. What type of polygon is a stop sign, and how many vertices does it have?",
+    "expectedAny": ["octagon with 8 vertices", "octagon, 8 vertices", "8-sided polygon with 8 vertices", "regular octagon"]
+  }
+}

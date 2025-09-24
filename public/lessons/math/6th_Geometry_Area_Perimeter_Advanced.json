@@ -1,0 +1,53 @@
+{
+  "id": "6th_Geometry_Area_Perimeter_Advanced",
+  "title": "Geometry: Area and Perimeter of Complex Shapes",
+  "grade": "6th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "area",
+      "definition": "The amount of space inside a two-dimensional shape"
+    },
+    {
+      "term": "perimeter",
+      "definition": "The distance around the outside of a shape"
+    },
+    {
+      "term": "composite figure",
+      "definition": "A shape made up of two or more basic geometric shapes"
+    },
+    {
+      "term": "parallelogram",
+      "definition": "A quadrilateral with opposite sides that are parallel and equal"
+    },
+    {
+      "term": "triangle",
+      "definition": "A polygon with three sides and three angles"
+    }
+  ],
+  "teachingNotes": "Practice breaking complex shapes into simpler ones. Use grid paper for area calculations. Connect to real-world applications like flooring and fencing.",
+  "sample": {
+    "question": "What is the distance around the outside of a shape called?",
+    "expectedAny": ["perimeter", "perimeter measurement", "outer distance", "boundary distance"]
+  },
+  "truefalse": {
+    "question": "The area of a rectangle is length times width.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is a shape made of two or more basic shapes called?",
+    "expectedAny": ["composite figure", "complex shape", "combined shape", "composite shape"]
+  },
+  "fillintheblank": {
+    "question": "The amount of space inside a shape is called its ________.",
+    "expectedAny": ["area", "surface area", "interior area", "enclosed area"]
+  },
+  "shortanswer": {
+    "question": "How do you find the area of a parallelogram?",
+    "expectedAny": ["base times height", "b × h", "multiply base by height", "base × height"]
+  },
+  "wordProblems": {
+    "question": "A rectangular garden is 12 feet long and 8 feet wide. How much fencing is needed to go around it?",
+    "expectedAny": ["40 feet", "40 ft", "2(12+8) = 40", "perimeter = 40 feet"]
+  }
+}

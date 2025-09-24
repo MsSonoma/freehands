@@ -1,0 +1,75 @@
+{
+  "id": "11th_Electromagnetic_Waves_Light_Physics_Beginner",
+  "title": "Electromagnetic Waves and Light Physics",
+  "grade": "11th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "electromagnetic wave",
+      "definition": "Wave consisting of oscillating electric and magnetic fields"
+    },
+    {
+      "term": "frequency",
+      "definition": "Number of wave cycles per second, measured in hertz"
+    },
+    {
+      "term": "wavelength",
+      "definition": "Distance between two consecutive peaks of a wave"
+    },
+    {
+      "term": "electromagnetic spectrum",
+      "definition": "Range of all electromagnetic radiation frequencies"
+    },
+    {
+      "term": "photon",
+      "definition": "Particle of electromagnetic radiation carrying energy"
+    }
+  ],
+  "teachingNotes": "Connect wave properties to everyday examples like radio, microwaves, and visible light. Demonstrate wave-particle duality concepts.",
+  "sample": {
+    "question": "What consists of oscillating electric and magnetic fields?",
+    "expectedAny": [
+      "electromagnetic wave",
+      "EM wave",
+      "light wave",
+      "electromagnetic radiation"
+    ]
+  },
+  "truefalse": {
+    "question": "Frequency is measured in hertz.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is a particle of electromagnetic radiation?",
+    "expectedAny": [
+      "photon",
+      "light particle",
+      "quantum",
+      "energy packet"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The distance between two wave peaks is the ________.",
+    "expectedAny": [
+      "wavelength",
+      "wave length",
+      "peak distance",
+      "cycle length"
+    ]
+  },
+  "shortanswer": {
+    "question": "What types of radiation are in the electromagnetic spectrum?",
+    "expectedAny": [
+      "radio waves",
+      "microwaves",
+      "visible light",
+      "X-rays",
+      "gamma rays"
+    ]
+  }
+}

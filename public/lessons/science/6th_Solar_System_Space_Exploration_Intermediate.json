@@ -1,0 +1,73 @@
+{
+  "id": "6th_Solar_System_Space_Exploration_Intermediate",
+  "title": "Solar System and Space Exploration",
+  "grade": "6th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "solar system",
+      "definition": "The sun and all the objects that orbit around it"
+    },
+    {
+      "term": "planet",
+      "definition": "A large object that orbits the sun and has cleared its orbital path"
+    },
+    {
+      "term": "asteroid",
+      "definition": "A small rocky object that orbits the sun"
+    },
+    {
+      "term": "comet",
+      "definition": "A ball of ice and rock that develops a tail when it comes near the sun"
+    },
+    {
+      "term": "satellite",
+      "definition": "Any object that orbits another object in space"
+    }
+  ],
+  "teachingNotes": "Use scale models to show relative sizes and distances. Discuss recent space missions and discoveries. Compare terrestrial and gas giant planets.",
+  "sample": {
+    "question": "What do we call a ball of ice and rock that develops a tail near the sun?",
+    "expectedAny": [
+      "comet",
+      "icy comet",
+      "space comet",
+      "comet with tail"
+    ]
+  },
+  "truefalse": {
+    "question": "All planets in our solar system are the same size.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the largest planet in our solar system?",
+    "expectedAny": [
+      "Jupiter",
+      "planet Jupiter",
+      "Jupiter the gas giant",
+      "the planet Jupiter"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Any object that orbits another object in space is called a ________.",
+    "expectedAny": [
+      "satellite",
+      "orbital satellite",
+      "space satellite",
+      "orbiting object"
+    ]
+  },
+  "shortanswer": {
+    "question": "What is the difference between an asteroid and a comet?",
+    "expectedAny": [
+      "asteroids are rocky, comets are icy",
+      "comets have tails, asteroids don't",
+      "comets are ice and rock, asteroids are just rock"
+    ]
+  }
+}

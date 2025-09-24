@@ -1,0 +1,74 @@
+{
+  "id": "11th_Nuclear_Physics_Radioactivity_Beginner",
+  "title": "Nuclear Physics and Radioactivity",
+  "grade": "11th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "radioactivity",
+      "definition": "Spontaneous emission of radiation from unstable atomic nuclei"
+    },
+    {
+      "term": "alpha particle",
+      "definition": "Helium nucleus consisting of two protons and two neutrons"
+    },
+    {
+      "term": "beta particle",
+      "definition": "High-energy electron or positron emitted from nucleus"
+    },
+    {
+      "term": "gamma ray",
+      "definition": "High-energy electromagnetic radiation from nuclear transitions"
+    },
+    {
+      "term": "half-life",
+      "definition": "Time required for half of radioactive nuclei to decay"
+    }
+  ],
+  "teachingNotes": "Emphasize safety aspects of radiation. Use decay curves to illustrate half-life concepts.",
+  "sample": {
+    "question": "What is spontaneous emission of radiation from nuclei called?",
+    "expectedAny": [
+      "radioactivity",
+      "radioactive decay",
+      "nuclear decay",
+      "radiation emission"
+    ]
+  },
+  "truefalse": {
+    "question": "Alpha particles consist of two protons and two neutrons.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is high-energy electromagnetic radiation from nuclei?",
+    "expectedAny": [
+      "gamma ray",
+      "gamma radiation",
+      "nuclear radiation",
+      "high-energy photon"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The time for half of radioactive nuclei to decay is the ________.",
+    "expectedAny": [
+      "half-life",
+      "half life",
+      "decay time",
+      "radioactive half-life"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are the three main types of nuclear radiation?",
+    "expectedAny": [
+      "alpha particles",
+      "beta particles",
+      "gamma rays",
+      "nuclear emissions"
+    ]
+  }
+}

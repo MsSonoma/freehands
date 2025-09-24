@@ -1,0 +1,74 @@
+{
+  "id": "9th_Media_Literacy_Digital_Communication_Beginner",
+  "title": "Media Literacy: Digital Communication and Ethics",
+  "grade": "9th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "media literacy",
+      "definition": "Ability to analyze, evaluate, and create media messages"
+    },
+    {
+      "term": "digital footprint",
+      "definition": "Trail of data left by online activities and communications"
+    },
+    {
+      "term": "cyberbullying",
+      "definition": "Using digital technology to harass or intimidate others"
+    },
+    {
+      "term": "information literacy",
+      "definition": "Skills to find, evaluate, and use information effectively"
+    },
+    {
+      "term": "digital citizenship",
+      "definition": "Responsible and ethical use of digital technology"
+    }
+  ],
+  "teachingNotes": "Discuss responsible online behavior and critical evaluation of digital media. Address privacy, security, and ethical considerations.",
+  "sample": {
+    "question": "What is the ability to analyze and evaluate media messages?",
+    "expectedAny": [
+      "media literacy",
+      "digital literacy",
+      "media analysis",
+      "critical media skills"
+    ]
+  },
+  "truefalse": {
+    "question": "A digital footprint is the trail of data left by online activities.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is responsible and ethical use of digital technology?",
+    "expectedAny": [
+      "digital citizenship",
+      "cyber ethics",
+      "online responsibility",
+      "digital responsibility"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Using technology to harass others is called ________.",
+    "expectedAny": [
+      "cyberbullying",
+      "online bullying",
+      "digital harassment",
+      "cyber harassment"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why is it important to think before posting online?",
+    "expectedAny": [
+      "creates permanent digital footprint",
+      "can affect reputation",
+      "may harm others",
+      "content can be shared widely"
+    ]
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "id": "2nd_Simple_Machines_Tools_Intermediate",
+  "title": "Simple Machines and Tools",
+  "grade": "2nd",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "machine",
+      "definition": "A tool that helps make work easier"
+    },
+    {
+      "term": "lever",
+      "definition": "A simple machine that helps lift heavy things using a bar"
+    },
+    {
+      "term": "wheel",
+      "definition": "A round object that rolls to help move things"
+    },
+    {
+      "term": "ramp",
+      "definition": "A slanted surface that helps move things up or down"
+    },
+    {
+      "term": "pulley",
+      "definition": "A wheel with a rope that helps lift things"
+    }
+  ],
+  "teachingNotes": "Show real examples of simple machines around the classroom and school. Let students experiment with toy versions. Discuss how these machines make daily tasks easier and require less force.",
+  "sample": [
+    {"question": "What is a push or pull called?", "expectedAny": ["force"]},
+    {"question": "Name a simple machine you use.", "expectedAny": ["ramp", "lever", "wheel and axle", "pulley", "screw", "wedge"]},
+    {"question": "How does a ramp help?", "expectedAny": ["less force", "gradual slope"]},
+    {"question": "What makes things move?", "expectedAny": ["force"]},
+    {"question": "What is gravity?", "expectedAny": ["force that pulls down"]},
+    {"question": "How do wheels help?", "expectedAny": ["reduce friction", "help roll"]},
+    {"question": "What stops things from moving?", "expectedAny": ["friction"]}
+  ],
+  "truefalse": [
+    {"question": "A force is a push or pull.", "answer": true},
+    {"question": "Gravity pulls things up.", "answer": false},
+    {"question": "Wheels make moving easier.", "answer": true},
+    {"question": "Ramps are simple machines.", "answer": true},
+    {"question": "Everything needs force to move.", "answer": true},
+    {"question": "Friction helps things slide.", "answer": false},
+    {"question": "A seesaw is a lever.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "A push or pull is a ___", "choices": ["Stop", "Force", "Break", "Shape"], "correct": 1},
+    {"question": "Which is a simple machine?", "choices": ["Ramp", "Book", "Pencil", "Paper"], "correct": 0},
+    {"question": "Gravity pulls things ___", "choices": ["Up", "Down", "Sideways", "Nowhere"], "correct": 1},
+    {"question": "Wheels reduce ___", "choices": ["Size", "Color", "Friction", "Weight"], "correct": 2},
+    {"question": "A slide is a type of ___", "choices": ["Lever", "Ramp", "Pulley", "Screw"], "correct": 1},
+    {"question": "Scissors are ___", "choices": ["Not machines", "Levers", "Wheels", "Ramps"], "correct": 1},
+    {"question": "What makes a ball roll downhill?", "choices": ["Wind", "Gravity", "Magic", "Nothing"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "A ___ is a push or pull.", "expectedAny": ["force"]},
+    {"question": "___ pulls everything toward Earth.", "expectedAny": ["gravity"]},
+    {"question": "A ___ makes lifting easier.", "expectedAny": ["lever"]},
+    {"question": "___ makes sliding harder.", "expectedAny": ["friction"]},
+    {"question": "Simple machines make work ___", "expectedAny": ["easier"]},
+    {"question": "A ___ is an inclined plane.", "expectedAny": ["ramp"]},
+    {"question": "___ and axles help things roll.", "expectedAny": ["wheels"]}
+  ],
+  "shortanswer": [
+    {"question": "How do simple machines help us?", "expectedAny": ["make work easier, need less force"]},
+    {"question": "What happens without gravity?", "expectedAny": ["things float away"]},
+    {"question": "Give examples of pushes and pulls.", "expectedAny": ["push door, pull drawer"]},
+    {"question": "How does a ramp help?", "expectedAny": ["go up gradually instead of lift straight up"]},
+    {"question": "What creates friction?", "expectedAny": ["surfaces rubbing together"]},
+    {"question": "Find simple machines at playground.", "expectedAny": ["slide (ramp), seesaw (lever)"]},
+    {"question": "How do wheels make moving easier?", "expectedAny": ["reduce friction, roll"]}
+  ]
+}

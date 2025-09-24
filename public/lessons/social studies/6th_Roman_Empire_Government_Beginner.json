@@ -1,0 +1,74 @@
+{
+  "id": "6th_Roman_Empire_Government_Beginner",
+  "title": "The Roman Empire and Government Systems",
+  "grade": "6th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "empire",
+      "definition": "A large territory with many different peoples under one ruler"
+    },
+    {
+      "term": "republic",
+      "definition": "A government where people elect representatives to make decisions"
+    },
+    {
+      "term": "emperor",
+      "definition": "The supreme ruler of an empire"
+    },
+    {
+      "term": "citizen",
+      "definition": "A person who belongs to a country and has rights and responsibilities"
+    },
+    {
+      "term": "aqueduct",
+      "definition": "A system built by Romans to transport water over long distances"
+    }
+  ],
+  "teachingNotes": "Show maps of Roman expansion. Discuss how Romans influenced law, language, and architecture. Compare Roman republic to modern governments.",
+  "sample": {
+    "question": "What do we call a large territory with many peoples under one ruler?",
+    "expectedAny": [
+      "empire",
+      "large empire",
+      "territorial empire",
+      "ruling empire"
+    ]
+  },
+  "truefalse": {
+    "question": "Rome was first a republic before it became an empire.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What did Romans build to transport water?",
+    "expectedAny": [
+      "aqueducts",
+      "water aqueducts",
+      "Roman aqueducts",
+      "water systems"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A government where people elect representatives is called a ________.",
+    "expectedAny": [
+      "republic",
+      "republican government",
+      "representative government",
+      "elected government"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are two things Romans are known for building or creating?",
+    "expectedAny": [
+      "roads and aqueducts",
+      "buildings and laws",
+      "Colosseum and roads",
+      "architecture and engineering"
+    ]
+  }
+}

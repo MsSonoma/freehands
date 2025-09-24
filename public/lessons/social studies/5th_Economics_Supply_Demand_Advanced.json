@@ -1,0 +1,74 @@
+{
+  "id": "5th_Economics_Supply_Demand_Advanced",
+  "title": "Basic Economics: Supply, Demand, and Trade",
+  "grade": "5th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "economics",
+      "definition": "The study of how people make, buy, and sell goods and services"
+    },
+    {
+      "term": "supply",
+      "definition": "The amount of goods or services available for people to buy"
+    },
+    {
+      "term": "demand",
+      "definition": "How much people want to buy a good or service"
+    },
+    {
+      "term": "trade",
+      "definition": "The exchange of goods and services between people or countries"
+    },
+    {
+      "term": "entrepreneur",
+      "definition": "A person who starts a business and takes risks to make money"
+    }
+  ],
+  "teachingNotes": "Use simple examples like lemonade stands or toy sales. Explain how prices change when there's more or less of something available.",
+  "sample": {
+    "question": "What do we call the amount of goods available for people to buy?",
+    "expectedAny": [
+      "supply",
+      "product supply",
+      "available goods",
+      "goods supply"
+    ]
+  },
+  "truefalse": {
+    "question": "If many people want something but there's not much available, the price usually goes up.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is a person called who starts their own business?",
+    "expectedAny": [
+      "entrepreneur",
+      "business owner",
+      "business starter",
+      "businessperson"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The exchange of goods and services between people is called ________.",
+    "expectedAny": [
+      "trade",
+      "trading",
+      "business trade",
+      "economic trade"
+    ]
+  },
+  "shortanswer": {
+    "question": "What happens to the price of ice cream on a very hot day when the ice cream truck runs low?",
+    "expectedAny": [
+      "price goes up",
+      "becomes more expensive",
+      "costs more",
+      "high demand, low supply raises price"
+    ]
+  }
+}

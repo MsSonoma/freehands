@@ -1,0 +1,78 @@
+{
+  "id": "weather-and-seasons-advanced",
+  "title": "Weather and Seasons",
+  "grade": "K",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "weather",
+      "definition": "What the air outside is like - sunny, rainy, cloudy, or snowy"
+    },
+    {
+      "term": "season",
+      "definition": "A time of year with certain kinds of weather"
+    },
+    {
+      "term": "temperature",
+      "definition": "How hot or cold something is"
+    },
+    {
+      "term": "precipitation",
+      "definition": "Water that falls from the sky like rain or snow"
+    }
+  ],
+  "teachingNotes": "Use weather chart daily. Discuss seasonal clothing and activities. Observe weather changes. Connect to calendar and months.",
+  "sample": [
+    {"question": "What clothes would you wear on a snowy winter day?", "expectedAny": ["warm clothes", "coat", "boots", "winter clothing"]},
+    {"question": "What season has the hottest weather?", "expectedAny": ["summer"]},
+    {"question": "What falls from the sky when it rains?", "expectedAny": ["water", "raindrops"]},
+    {"question": "When do leaves change colors and fall?", "expectedAny": ["fall", "autumn"]},
+    {"question": "What season comes before summer?", "expectedAny": ["spring"]}
+  ],
+  "truefalse": [
+    {"question": "We can have snow in summer.", "answer": false, "expectedAny": ["snow typically in winter"]},
+    {"question": "There are four seasons in a year.", "answer": true, "expectedAny": ["spring, summer, fall, winter"]},
+    {"question": "You need an umbrella when it's sunny.", "answer": false, "expectedAny": ["umbrellas are for rain"]},
+    {"question": "Plants grow better in spring than winter.", "answer": true, "expectedAny": ["spring has good growing weather"]},
+    {"question": "All places have the same weather at the same time.", "answer": false, "expectedAny": ["different places have different weather"]},
+    {"question": "Temperature tells us how hot or cold it is.", "answer": true, "expectedAny": ["temperature measures heat"]},
+    {"question": "Winter is always the coldest season.", "answer": true, "expectedAny": ["winter has the coldest weather"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which season comes after winter?", "choices": ["fall", "summer", "spring", "winter"], "correct": 2, "expectedAny": ["spring after winter"]},
+    {"question": "What do you need when it's raining?", "choices": ["sunglasses", "umbrella", "shorts", "sandals"], "correct": 1, "expectedAny": ["umbrella protects from rain"]},
+    {"question": "When do flowers start to bloom?", "choices": ["winter", "spring", "fall", "never"], "correct": 1, "expectedAny": ["flowers bloom in spring"]},
+    {"question": "What weather is best for building a snowman?", "choices": ["sunny", "rainy", "snowy", "windy"], "correct": 2, "expectedAny": ["need snow to build snowman"]},
+    {"question": "Which season has the shortest days?", "choices": ["spring", "summer", "fall", "winter"], "correct": 3, "expectedAny": ["winter has shortest days"]},
+    {"question": "What should you wear on a hot summer day?", "choices": ["heavy coat", "light clothes", "snow boots", "warm hat"], "correct": 1, "expectedAny": ["light clothes for hot weather"]},
+    {"question": "When do many animals hibernate?", "choices": ["spring", "summer", "fall", "winter"], "correct": 3, "expectedAny": ["animals hibernate in winter"]}
+  ],
+  "fillintheblank": [
+    {"question": "When it's very hot outside, the temperature is _____.", "expectedAny": ["high", "warm", "hot"]},
+    {"question": "The four seasons are spring, summer, fall, and _____.", "expectedAny": ["winter"]},
+    {"question": "When it _____, we use umbrellas.", "expectedAny": ["rains"]},
+    {"question": "_____ is the season when leaves fall from trees.", "expectedAny": ["Fall", "Autumn"]},
+    {"question": "Snow falls when the weather is very _____.", "expectedAny": ["cold"]},
+    {"question": "_____ is the warmest season of the year.", "expectedAny": ["Summer"]},
+    {"question": "We measure how hot or cold it is using _____.", "expectedAny": ["temperature"]}
+  ],
+  "shortanswer": [
+    {"question": "What activities do you like to do in summer?", "expectedAny": ["swimming", "playing outside", "going to beach", "picnics"]},
+    {"question": "How do you know what the weather is like?", "expectedAny": ["look outside", "feel the air", "check thermometer"]},
+    {"question": "What changes do you see in fall?", "expectedAny": ["leaves change color", "leaves fall", "gets cooler"]},
+    {"question": "Why do we wear different clothes in different seasons?", "expectedAny": ["weather changes", "temperature changes", "stay comfortable"]},
+    {"question": "What happens to plants in winter?", "expectedAny": ["stop growing", "some die", "trees lose leaves", "go dormant"]},
+    {"question": "Describe what spring weather is like.", "expectedAny": ["warmer", "flowers bloom", "rain showers", "mild temperatures"]},
+    {"question": "How does weather affect what we do outside?", "expectedAny": ["choose activities", "dress appropriately", "plan indoor/outdoor time"]}
+  ],
+  "wordProblems": [
+    {"question": "There are 4 seasons in a year. If we're in winter now, how many more seasons until winter comes again?", "expectedAny": ["3 seasons", "spring, summer, fall = 3"]},
+    {"question": "This week it rained 3 days and was sunny 4 days. How many days was that total?", "expectedAny": ["7 days", "3 + 4 = 7"]},
+    {"question": "Emily has 5 winter coats and 3 summer shirts. How many pieces of seasonal clothing does she have?", "expectedAny": ["8 pieces", "5 + 3 = 8"]},
+    {"question": "In spring, 6 flowers bloomed. In summer, 4 more flowers bloomed. How many flowers bloomed in total?", "expectedAny": ["10 flowers", "6 + 4 = 10"]},
+    {"question": "The temperature was 30 degrees in the morning and went up 20 degrees by afternoon. What was the afternoon temperature?", "expectedAny": ["50 degrees", "30 + 20 = 50"]},
+    {"question": "There are 12 months in a year. If each season has 3 months, how many seasons fit in a year?", "expectedAny": ["4 seasons", "12 ÷ 3 = 4"]},
+    {"question": "Jake counted 8 rainy days and 5 snowy days this month. How many days had precipitation?", "expectedAny": ["13 days", "8 + 5 = 13"]}
+  ]
+}

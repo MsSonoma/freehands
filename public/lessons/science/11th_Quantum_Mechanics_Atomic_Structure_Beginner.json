@@ -1,0 +1,74 @@
+{
+  "id": "11th_Quantum_Mechanics_Atomic_Structure_Beginner",
+  "title": "Quantum Mechanics and Atomic Structure",
+  "grade": "11th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "quantum",
+      "definition": "Smallest discrete unit of energy or matter"
+    },
+    {
+      "term": "electron shell",
+      "definition": "Energy level where electrons orbit around the nucleus"
+    },
+    {
+      "term": "orbital",
+      "definition": "Region around nucleus where electron is likely to be found"
+    },
+    {
+      "term": "quantum number",
+      "definition": "Number describing properties of atomic orbitals and electrons"
+    },
+    {
+      "term": "energy level",
+      "definition": "Fixed energy state that electrons can occupy in atoms"
+    }
+  ],
+  "teachingNotes": "Use visual models to explain atomic structure. Connect quantum concepts to observable phenomena.",
+  "sample": {
+    "question": "What is the smallest discrete unit of energy called?",
+    "expectedAny": [
+      "quantum",
+      "energy quantum",
+      "discrete unit",
+      "quantum unit"
+    ]
+  },
+  "truefalse": {
+    "question": "Electrons orbit the nucleus in fixed energy levels.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What describes the region where an electron is likely found?",
+    "expectedAny": [
+      "orbital",
+      "electron orbital",
+      "probability region",
+      "electron cloud"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Numbers describing electron properties are called quantum ________.",
+    "expectedAny": [
+      "numbers",
+      "quantum numbers",
+      "descriptors",
+      "identifiers"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are the main types of atomic orbitals?",
+    "expectedAny": [
+      "s orbital",
+      "p orbital",
+      "d orbital",
+      "f orbital"
+    ]
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "id": "2nd_Measurement_Units_Comparison_Intermediate",
+  "title": "Measurement and Unit Comparison",
+  "grade": "2nd",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "measurement",
+      "definition": "Finding out how long, tall, heavy, or big something is"
+    },
+    {
+      "term": "inch",
+      "definition": "A small unit used to measure length"
+    },
+    {
+      "term": "foot",
+      "definition": "A unit of length equal to 12 inches"
+    },
+    {
+      "term": "ruler",
+      "definition": "A tool used to measure length in inches"
+    },
+    {
+      "term": "estimate",
+      "definition": "A good guess about how much or how many"
+    }
+  ],
+  "teachingNotes": "Use rulers and measuring tapes to measure classroom objects. Compare lengths of different items. Practice estimating before measuring. Introduce centimeters as well as inches.",
+  "sample": [
+    {"question": "What tool would you use to measure the length of your desk?", "expectedAny": ["ruler", "measuring tape", "yardstick", "measuring stick"]},
+    {"question": "How many inches are in a foot?", "expectedAny": ["12"]},
+    {"question": "What unit would you use to measure your height?", "expectedAny": ["feet", "inches"]},
+    {"question": "What is a good first step before measuring?", "expectedAny": ["estimate"]},
+    {"question": "What tool measures centimeters?", "expectedAny": ["metric ruler", "meter stick"]},
+    {"question": "Which is longer: 1 foot or 10 inches?", "expectedAny": ["1 foot"]},
+    {"question": "What does estimate mean?", "expectedAny": ["a good guess"]}
+  ],
+  "truefalse": [
+    {"question": "There are 12 inches in one foot.", "answer": true},
+    {"question": "A yard is shorter than a foot.", "answer": false},
+    {"question": "A meter is close to a yard in length.", "answer": true},
+    {"question": "We use rulers to measure weight.", "answer": false},
+    {"question": "Estimating helps us make a good plan before measuring.", "answer": true},
+    {"question": "Centimeters are bigger than meters.", "answer": false},
+    {"question": "A measuring tape can measure longer things than a ruler.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "Which is longer: 2 feet or 20 inches?", "choices": ["2 feet", "20 inches", "same length", "can't tell"], "correct": 0},
+    {"question": "What unit would you use for the length of a book?", "choices": ["Miles", "Inches", "Meters", "Kilograms"], "correct": 1},
+    {"question": "How many feet are in 36 inches?", "choices": ["2", "3", "4", "6"], "correct": 1},
+    {"question": "Which tool is best to measure a whiteboard?", "choices": ["Thermometer", "Ruler", "Tape measure", "Scale"], "correct": 2},
+    {"question": "About how many centimeters are in a meter?", "choices": ["10", "50", "100", "1000"], "correct": 2},
+    {"question": "Which is the best estimate for the length of a pencil?", "choices": ["5 inches", "5 feet", "5 yards", "5 miles"], "correct": 0},
+    {"question": "Which is heavier?", "choices": ["1 kilogram", "500 grams", "same", "can't compare"], "correct": 0}
+  ],
+  "fillintheblank": [
+    {"question": "Before you measure something, you should make an ________.", "expectedAny": ["estimate", "guess", "prediction", "estimation"]},
+    {"question": "There are ________ inches in a foot.", "expectedAny": ["12"]},
+    {"question": "There are ________ feet in a yard.", "expectedAny": ["3"]},
+    {"question": "A meter has ________ centimeters.", "expectedAny": ["100"]},
+    {"question": "Use a ________ to measure long distances in a room.", "expectedAny": ["measuring tape", "tape measure"]},
+    {"question": "We measure weight with a ________.", "expectedAny": ["scale"]},
+    {"question": "We measure temperature with a ________.", "expectedAny": ["thermometer"]}
+  ],
+  "shortanswer": [
+    {"question": "How would you measure the height of your classroom door?", "expectedAny": ["use measuring tape", "use yardstick", "measure in feet", "use long ruler"]},
+    {"question": "Why is estimating helpful before measuring?", "expectedAny": ["to plan and choose the right tool", "to check if the answer makes sense"]},
+    {"question": "When would you use centimeters instead of inches?", "expectedAny": ["for smaller or metric measurements"]},
+    {"question": "How can you compare two lengths?", "expectedAny": ["measure both and subtract", "line them up and see the difference"]},
+    {"question": "What tool would you choose to measure a playground?", "expectedAny": ["measuring tape", "meter wheel"]},
+    {"question": "Explain the relationship between inches and feet.", "expectedAny": ["12 inches in 1 foot"]},
+    {"question": "How do you avoid measurement mistakes?", "expectedAny": ["start at zero", "keep the tool straight"]}
+  ],
+  "wordProblems": [
+    {"question": "A pencil is 6 inches long and a crayon is 4 inches long. How much longer is the pencil?", "expectedAny": ["2 inches", "2 inches longer", "two inches", "two inches longer"]},
+    {"question": "A rope is 3 feet long. How many inches long is it?", "expectedAny": ["36 inches"]},
+    {"question": "Sara measures her book as 20 centimeters. Is that more or less than 1 meter?", "expectedAny": ["less"]},
+    {"question": "Two sticks are 15 inches and 22 inches. How much longer is the longer stick?", "expectedAny": ["7 inches"]},
+    {"question": "A table is 4 feet long. Is that more or less than 36 inches?", "expectedAny": ["more"]},
+    {"question": "A board is 1 yard long. How many feet is that?", "expectedAny": ["3 feet"]},
+    {"question": "Max estimates a door is 7 feet tall and measures 6.5 feet. Was his estimate close?", "expectedAny": ["yes"]}
+  ]
+}

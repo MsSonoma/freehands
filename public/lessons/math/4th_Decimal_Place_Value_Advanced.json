@@ -1,0 +1,68 @@
+{
+  "id": "decimal-place-value-advanced",
+  "title": "Decimal Place Value and Comparison",
+  "grade": "4th",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {"term": "decimal point", "definition": "The dot that separates the whole number part from the fractional part"},
+    {"term": "tenths", "definition": "The first place to the right of the decimal point, representing 1/10"},
+    {"term": "hundredths", "definition": "The second place to the right of the decimal point, representing 1/100"},
+    {"term": "place value", "definition": "The value of a digit based on its position in a number"}
+  ],
+  "teachingNotes": "Use base-10 blocks and place value charts. Connect decimals to fractions and money. Emphasize reading decimals correctly.",
+  "sample": [
+    {"question": "What is the value of the 7 in the decimal 4.376?", "expectedAny": ["7 hundredths", "0.07", "7/100"]},
+    {"question": "Write 0.5 as a fraction in simplest form.", "expectedAny": ["1/2"]},
+    {"question": "Which is larger: 0.62 or 0.6?", "expectedAny": ["0.62", "62 hundredths vs 60 hundredths"]},
+    {"question": "Place 3.09 on a number line between 3.0 and 3.1.", "expectedAny": ["just past 3.0", "at 0.09 of the interval"]},
+    {"question": "Write 2.47 in expanded form.", "expectedAny": ["2 + 0.4 + 0.07"]},
+    {"question": "How many hundredths are in 0.38?", "expectedAny": ["38"]},
+    {"question": "Which digit is in the thousandths place of 5.206?", "expectedAny": ["6"]}
+  ],
+  "truefalse": [
+    {"question": "The decimal 0.50 is greater than 0.5.", "answer": false, "expectedAny": ["they are equal"]},
+    {"question": "0.7 = 0.70.", "answer": true, "expectedAny": ["trailing zeros do not change value"]},
+    {"question": "In 3.405, the 5 is in the hundredths place.", "answer": false, "expectedAny": ["it's in the thousandths place"]},
+    {"question": "Comparing 0.58 and 0.6 is easier if you write 0.6 as 0.60.", "answer": true, "expectedAny": ["same places"]},
+    {"question": "0.09 is greater than 0.1.", "answer": false, "expectedAny": ["9 hundredths < 1 tenth"]},
+    {"question": "The decimal point separates whole numbers from fractional parts.", "answer": true},
+    {"question": "0.305 is the same as 0.35.", "answer": false, "expectedAny": ["305 thousandths ≠ 35 hundredths"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which decimal is largest?", "choices": ["0.8", "0.75", "0.9", "0.85"], "correct": 2, "expectedAny": ["0.9"]},
+    {"question": "Which digit shows the tenths place in 6.48?", "choices": ["6", "4", "8", "64"], "correct": 1, "expectedAny": ["4 is tenths"]},
+    {"question": "Which number is equal to 0.3?", "choices": ["3 hundredths", "3 tenths", "30 thousandths", "0.03"], "correct": 1, "expectedAny": ["three tenths"]},
+    {"question": "Which is smallest?", "choices": ["0.52", "0.5", "0.49", "0.495"], "correct": 3, "expectedAny": ["0.495"]},
+    {"question": "What is 2.07 as a fraction?", "choices": ["207/100", "27/10", "2 7/100", "both A and C"], "correct": 3, "expectedAny": ["2.07 = 2 7/100 = 207/100"]},
+    {"question": "Which pair is equivalent?", "choices": ["0.4 and 4/10", "0.25 and 2/5", "0.75 and 3/5", "0.5 and 3/6"], "correct": 0, "expectedAny": ["4 tenths"]},
+    {"question": "Which is greater: 0.606 or 0.66?", "choices": ["0.606", "0.66", "equal", "cannot compare"], "correct": 1, "expectedAny": ["66 hundredths > 606 thousandths"]}
+  ],
+  "fillintheblank": [
+    {"question": "The decimal 2.47 in expanded form is 2 + _____ + _____.", "expectedAny": ["0.4", "0.07"]},
+    {"question": "Write 0.09 as hundredths: _____.", "expectedAny": ["9/100", "0.09 = 9 hundredths"]},
+    {"question": "In 5.208, the 2 represents _____ tenths.", "expectedAny": ["2"]},
+    {"question": "0.6 is the same as _____ hundredths.", "expectedAny": ["60"]},
+    {"question": "The value of the 3 in 0. thirty? Actually: In 7.35, the 3 is _____.", "expectedAny": ["3 tenths", "0.3"]},
+    {"question": "Write 1.005 as a mixed number: _____ and _____/1000.", "expectedAny": ["1", "5"]},
+    {"question": "0.25 = _____/100.", "expectedAny": ["25"]}
+  ],
+  "shortanswer": [
+    {"question": "Explain how to compare 0.6 and 0.58 using place value.", "expectedAny": ["0.6 = 0.60; 60 hundredths > 58 hundredths"]},
+    {"question": "Why doesn't 0.50 differ from 0.5?", "expectedAny": ["trailing zero doesn't change value"]},
+    {"question": "Describe the meaning of the thousandths place.", "expectedAny": ["one part out of 1000"]},
+    {"question": "Show two ways to represent 0.75.", "expectedAny": ["3/4", "75/100"]},
+    {"question": "How can money help compare decimals?", "expectedAny": ["dollars and cents analogy"]},
+    {"question": "Convert 1.2 to hundredths and compare to 1.18.", "expectedAny": ["1.20 vs 1.18; 120 > 118"]},
+    {"question": "Explain expanded form for 3.406.", "expectedAny": ["3 + 0.4 + 0.006"]}
+  ],
+  "wordProblems": [
+    {"question": "Maria runs 2.75 kilometers and Alex runs 2.8 kilometers. Who ran farther and by how much?", "expectedAny": ["Alex by 0.05 km"]},
+    {"question": "A pencil costs $0.45 and an eraser costs $0.3. Which costs more and by how much?", "expectedAny": ["pencil by $0.15"]},
+    {"question": "A runner recorded lap times: 1.08, 1.1, and 1.05 minutes. Which is fastest?", "expectedAny": ["1.05 minutes"]},
+    {"question": "A bottle holds 0.75 L and another holds 0.7 L. Which holds more?", "expectedAny": ["0.75 L"]},
+    {"question": "Compare 3.09 kg and 3.9 kg. Which is heavier?", "expectedAny": ["3.9 kg"]},
+    {"question": "Which is greater: 0.606 m or 0.66 m?", "expectedAny": ["0.66 m"]},
+    {"question": "A frog jumps 0.18 m, then 0.2 m. How far in total?", "expectedAny": ["0.38 m"]}
+  ]
+}

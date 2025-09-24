@@ -1,0 +1,78 @@
+{
+  "id": "needs-and-wants-advanced",
+  "title": "Needs and Wants",
+  "grade": "K",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "need",
+      "definition": "Something you must have to live and be healthy"
+    },
+    {
+      "term": "want",
+      "definition": "Something you would like to have but don't need"
+    },
+    {
+      "term": "shelter",
+      "definition": "A place to live that keeps you safe"
+    },
+    {
+      "term": "clothing",
+      "definition": "Things you wear to keep your body covered and warm"
+    }
+  ],
+  "teachingNotes": "Use sorting activities with pictures. Discuss basic needs: food, water, shelter, clothing. Compare to wants like toys and treats.",
+  "sample": [
+    {"question": "Is a toy a need or a want? Why?", "expectedAny": ["want", "toys are fun but not needed to live"]},
+    {"question": "What do you need to stay alive?", "expectedAny": ["food", "water", "shelter", "air"]},
+    {"question": "Is candy a need or a want?", "expectedAny": ["want", "candy is nice but not necessary"]},
+    {"question": "Why do we need shelter?", "expectedAny": ["protection", "stay safe", "keep warm", "place to live"]},
+    {"question": "What is the difference between needs and wants?", "expectedAny": ["needs are necessary", "wants are nice to have", "needs for survival"]}
+  ],
+  "truefalse": [
+    {"question": "Food is something we need.", "answer": true, "expectedAny": ["food is necessary for life"]},
+    {"question": "Toys are more important than water.", "answer": false, "expectedAny": ["water is a need, toys are wants"]},
+    {"question": "Everyone has the same wants.", "answer": false, "expectedAny": ["people want different things"]},
+    {"question": "Clothing helps protect our bodies.", "answer": true, "expectedAny": ["clothing protects and covers us"]},
+    {"question": "We can live without air.", "answer": false, "expectedAny": ["air is necessary for breathing"]},
+    {"question": "Ice cream is a basic need.", "answer": false, "expectedAny": ["ice cream is a want, not need"]},
+    {"question": "Shelter keeps us safe from weather.", "answer": true, "expectedAny": ["shelter provides protection"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which is a basic need?", "choices": ["video games", "water", "candy", "toys"], "correct": 1, "expectedAny": ["water is needed for life"]},
+    {"question": "What do we call something we must have to live?", "choices": ["want", "need", "game", "treat"], "correct": 1, "expectedAny": ["needs are things we must have"]},
+    {"question": "Which is a want?", "choices": ["food", "water", "video game", "shelter"], "correct": 2, "expectedAny": ["video games are wants"]},
+    {"question": "What basic need keeps us from getting cold?", "choices": ["toys", "clothing", "games", "candy"], "correct": 1, "expectedAny": ["clothing keeps us warm"]},
+    {"question": "Which do we need every day?", "choices": ["toys", "food", "movies", "games"], "correct": 1, "expectedAny": ["we need food daily"]},
+    {"question": "What provides shelter?", "choices": ["candy", "toys", "house", "games"], "correct": 2, "expectedAny": ["houses provide shelter"]},
+    {"question": "Which is NOT a basic need?", "choices": ["air", "water", "pizza party", "food"], "correct": 2, "expectedAny": ["pizza parties are wants"]}
+  ],
+  "fillintheblank": [
+    {"question": "We need _____ to keep our bodies warm.", "expectedAny": ["clothing", "clothes"]},
+    {"question": "_____ is something you must have to live.", "expectedAny": ["Need", "A need"]},
+    {"question": "_____ is something nice to have but not necessary.", "expectedAny": ["Want", "A want"]},
+    {"question": "We need _____ to drink and stay alive.", "expectedAny": ["water"]},
+    {"question": "A _____ protects us from rain and cold.", "expectedAny": ["house", "home", "shelter"]},
+    {"question": "We need _____ to eat and give us energy.", "expectedAny": ["food"]},
+    {"question": "_____ keeps us breathing.", "expectedAny": ["Air"]}
+  ],
+  "shortanswer": [
+    {"question": "Name something you need and something you want.", "expectedAny": ["identifies need and want"]},
+    {"question": "What happens if we don't get our basic needs?", "expectedAny": ["get sick", "can't survive", "feel bad", "not healthy"]},
+    {"question": "How are needs different from wants?", "expectedAny": ["needs are necessary", "wants are extra", "needs for survival", "wants are nice to have"]},
+    {"question": "What basic needs do all people have?", "expectedAny": ["food", "water", "shelter", "clothing", "air"]},
+    {"question": "Is it okay to want things? Why?", "expectedAny": ["yes, wants are normal", "wants can be fun", "wants motivate us", "balance needs and wants"]},
+    {"question": "How can families decide between needs and wants?", "expectedAny": ["needs come first", "budget for wants", "discuss together", "prioritize needs"]},
+    {"question": "Give an example of something that could be both a need and a want.", "expectedAny": ["food - need basic nutrition, want fancy food", "clothing - need basic clothes, want designer clothes"]}
+  ],
+  "wordProblems": [
+    {"question": "Tommy has $10. He needs lunch for $4 and wants a toy for $8. Does he have enough for both?", "expectedAny": ["no", "only $10 total", "4 + 8 = 12, more than $10"]},
+    {"question": "At the store, Sarah sees 3 things she needs and 5 things she wants. How many things did she see total?", "expectedAny": ["8 things", "3 + 5 = 8"]},
+    {"question": "The family spent $15 on needs and $8 on wants. How much did they spend altogether?", "expectedAny": ["$23", "15 + 8 = 23"]},
+    {"question": "Jake's list has 6 needs and 9 wants. How many more wants than needs does he have?", "expectedAny": ["3 more wants", "9 - 6 = 3"]},
+    {"question": "Mom bought 4 food items (needs) and 2 toys (wants). How many items did she buy total?", "expectedAny": ["6 items", "4 + 2 = 6"]},
+    {"question": "The class sorted 20 pictures. If 12 were needs and the rest were wants, how many were wants?", "expectedAny": ["8 were wants", "20 - 12 = 8"]},
+    {"question": "Emma saved $7 for needs and $3 for wants. How much money did she save total?", "expectedAny": ["$10", "7 + 3 = 10"]}
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "id": "9th_Renaissance_Humanism_Art_Science_Intermediate",
+  "title": "Renaissance: Humanism, Art, and Scientific Revolution",
+  "grade": "9th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "renaissance",
+      "definition": "Period of renewed interest in classical learning and arts (1300-1600)"
+    },
+    {
+      "term": "humanism",
+      "definition": "Intellectual movement emphasizing human potential and achievement"
+    },
+    {
+      "term": "patron",
+      "definition": "Wealthy person who financially supports artists and scholars"
+    },
+    {
+      "term": "scientific method",
+      "definition": "Systematic approach to understanding natural world through observation"
+    },
+    {
+      "term": "printing press",
+      "definition": "Machine that revolutionized book production and spread of ideas"
+    }
+  ],
+  "teachingNotes": "Emphasize the cultural shift from medieval to modern thinking. Discuss key figures like Leonardo da Vinci and their contributions.",
+  "sample": {
+    "question": "What period renewed interest in classical learning and arts?",
+    "expectedAny": [
+      "renaissance",
+      "Renaissance period",
+      "rebirth period",
+      "cultural revival"
+    ]
+  },
+  "truefalse": {
+    "question": "Humanism emphasized human potential and achievement.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What machine revolutionized book production?",
+    "expectedAny": [
+      "printing press",
+      "Gutenberg press",
+      "movable type press",
+      "printing machine"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A wealthy person who supports artists is called a ________.",
+    "expectedAny": [
+      "patron",
+      "sponsor",
+      "benefactor",
+      "supporter"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did the printing press change European society?",
+    "expectedAny": [
+      "spread literacy and ideas",
+      "made books affordable",
+      "accelerated learning and reform"
+    ]
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "id": "my-body-senses-beginner",
+  "title": "My Body and Five Senses",
+  "grade": "K",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "senses",
+      "definition": "Ways our body learns about the world around us"
+    },
+    {
+      "term": "sight",
+      "definition": "Using your eyes to see things"
+    },
+    {
+      "term": "hearing",
+      "definition": "Using your ears to hear sounds"
+    },
+    {
+      "term": "healthy",
+      "definition": "Being strong and feeling good"
+    }
+  ],
+  "teachingNotes": "Use sensory exploration activities. Practice identifying body parts. Discuss healthy habits like brushing teeth and washing hands.",
+  "sample": [
+    {"question": "What do you use to see?", "expectedAny": ["eyes", "my eyes"]},
+    {"question": "How do you keep your teeth healthy?", "expectedAny": ["brush them", "brush teeth"]},
+    {"question": "What body part helps you walk?", "expectedAny": ["legs", "feet"]},
+    {"question": "How do you know if something is loud?", "expectedAny": ["hear it with ears", "use hearing"]},
+    {"question": "What should you do before eating?", "expectedAny": ["wash hands", "clean hands"]}
+  ],
+  "truefalse": [
+    {"question": "You taste with your tongue.", "answer": true, "expectedAny": ["tongues help us taste food"]},
+    {"question": "Your ears help you see colors.", "answer": false, "expectedAny": ["ears are for hearing, eyes see colors"]},
+    {"question": "Washing hands helps keep you healthy.", "answer": true, "expectedAny": ["clean hands prevent germs"]},
+    {"question": "You can smell with your feet.", "answer": false, "expectedAny": ["you smell with your nose"]},
+    {"question": "Your body has five senses.", "answer": true, "expectedAny": ["sight, hearing, smell, taste, touch"]},
+    {"question": "Sleep is important for your body.", "answer": true, "expectedAny": ["sleep helps body rest and grow"]},
+    {"question": "You touch things with your nose.", "answer": false, "expectedAny": ["you touch with hands and skin"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which sense do you use to smell flowers?", "choices": ["eyes", "ears", "nose", "mouth"], "correct": 2, "expectedAny": ["nose is used for smelling"]},
+    {"question": "What helps your body grow strong?", "choices": ["staying dirty", "eating good food", "never sleeping", "sitting all day"], "correct": 1, "expectedAny": ["healthy food helps growth"]},
+    {"question": "Which body part helps you hear?", "choices": ["nose", "ears", "tongue", "hands"], "correct": 1, "expectedAny": ["ears are for hearing"]},
+    {"question": "How often should you brush your teeth?", "choices": ["never", "once a year", "every day", "only when dirty"], "correct": 2, "expectedAny": ["daily brushing keeps teeth healthy"]},
+    {"question": "What do you use to pick up toys?", "choices": ["feet", "ears", "hands", "nose"], "correct": 2, "expectedAny": ["hands pick up objects"]},
+    {"question": "Which sense tells you if something is soft?", "choices": ["sight", "touch", "smell", "hearing"], "correct": 1, "expectedAny": ["touch feels textures"]},
+    {"question": "What should you do when you cough?", "choices": ["cover your mouth", "cough on others", "never cover", "cough loudly"], "correct": 0, "expectedAny": ["cover mouth to stop germs"]}
+  ],
+  "fillintheblank": [
+    {"question": "You use your _____ to hear music.", "expectedAny": ["ears"]},
+    {"question": "_____ your hands before you eat.", "expectedAny": ["Wash", "Clean"]},
+    {"question": "Your _____ help you walk and run.", "expectedAny": ["legs", "feet"]},
+    {"question": "You _____ with your tongue.", "expectedAny": ["taste"]},
+    {"question": "_____ keeps your body healthy and strong.", "expectedAny": ["Exercise", "Sleep", "Food"]},
+    {"question": "You see with your _____.", "expectedAny": ["eyes"]},
+    {"question": "_____ your teeth every day.", "expectedAny": ["Brush"]}
+  ],
+  "shortanswer": [
+    {"question": "Name three things you can do to stay healthy.", "expectedAny": ["brush teeth", "wash hands", "eat good food", "exercise", "sleep"]},
+    {"question": "What are the five senses?", "expectedAny": ["sight, hearing, smell, taste, touch"]},
+    {"question": "How do you take care of your body?", "expectedAny": ["eat healthy", "exercise", "sleep", "wash", "brush teeth"]},
+    {"question": "Which body parts help you learn about the world?", "expectedAny": ["eyes, ears, nose, tongue, hands"]},
+    {"question": "Why is it important to wash your hands?", "expectedAny": ["removes germs", "keeps you healthy", "prevents sickness"]},
+    {"question": "What foods help your body grow?", "expectedAny": ["fruits", "vegetables", "milk", "healthy foods"]},
+    {"question": "How do your senses work together?", "expectedAny": ["they all give information", "help understand things better"]}
+  ],
+  "wordProblems": [
+    {"question": "Emma uses 2 senses to enjoy her snack: she sees it and tastes it. How many senses is she using?", "expectedAny": ["2 senses"]},
+    {"question": "There are 5 senses. If you cover your eyes and ears, how many senses can you still use?", "expectedAny": ["3 senses", "5 - 2 = 3"]},
+    {"question": "Jake brushes his teeth 2 times a day for 7 days. How many times does he brush his teeth in a week?", "expectedAny": ["14 times", "2 × 7 = 14"]},
+    {"question": "In the class, 8 children wash their hands before snack and 2 forget. How many children washed their hands?", "expectedAny": ["8 children"]},
+    {"question": "Sarah counts 10 fingers on her hands. How many fingers are on each hand?", "expectedAny": ["5 fingers", "10 ÷ 2 = 5"]},
+    {"question": "There are 6 children. If each child has 2 eyes, how many eyes are there in total?", "expectedAny": ["12 eyes", "6 × 2 = 12"]},
+    {"question": "Tom eats 3 healthy foods at lunch and 2 healthy foods at dinner. How many healthy foods did he eat?", "expectedAny": ["5 healthy foods", "3 + 2 = 5"]}
+  ]
+}

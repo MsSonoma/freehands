@@ -1,0 +1,74 @@
+{
+  "id": "12th_Economic_Systems_Market_Analysis_Beginner",
+  "title": "Economic Systems and Market Analysis",
+  "grade": "12th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "capitalism",
+      "definition": "Economic system based on private ownership and free markets"
+    },
+    {
+      "term": "socialism",
+      "definition": "Economic system with collective ownership of production means"
+    },
+    {
+      "term": "supply and demand",
+      "definition": "Economic principle determining prices through market forces"
+    },
+    {
+      "term": "market economy",
+      "definition": "Economic system where decisions are made by individual buyers and sellers"
+    },
+    {
+      "term": "gross domestic product",
+      "definition": "Total value of goods and services produced in country"
+    }
+  ],
+  "teachingNotes": "Compare different economic systems and their outcomes. Use real examples to illustrate economic principles.",
+  "sample": {
+    "question": "What economic system is based on private ownership and free markets?",
+    "expectedAny": [
+      "capitalism",
+      "free market economy",
+      "market capitalism",
+      "private enterprise"
+    ]
+  },
+  "truefalse": {
+    "question": "Supply and demand determine prices through market forces.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What measures total value of goods and services produced?",
+    "expectedAny": [
+      "gross domestic product",
+      "GDP",
+      "national output",
+      "economic output"
+    ]
+  },
+  "fillintheblank": {
+    "question": "An economic system with collective ownership is ________.",
+    "expectedAny": [
+      "socialism",
+      "collective economy",
+      "state ownership",
+      "public ownership"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are advantages and disadvantages of capitalism?",
+    "expectedAny": [
+      "efficiency vs. inequality",
+      "innovation vs. instability",
+      "freedom vs. exploitation",
+      "growth vs. environment"
+    ]
+  }
+}

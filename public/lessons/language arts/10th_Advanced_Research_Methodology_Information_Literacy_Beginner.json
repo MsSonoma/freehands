@@ -1,0 +1,74 @@
+{
+  "id": "10th_Advanced_Research_Methodology_Information_Literacy_Beginner",
+  "title": "Advanced Research Methodology and Information Literacy",
+  "grade": "10th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "primary source",
+      "definition": "Original documents or firsthand accounts of events"
+    },
+    {
+      "term": "secondary source",
+      "definition": "Analysis or interpretation of primary sources"
+    },
+    {
+      "term": "credible source",
+      "definition": "Reliable and trustworthy information source"
+    },
+    {
+      "term": "citation",
+      "definition": "Reference that credits the source of information"
+    },
+    {
+      "term": "research question",
+      "definition": "Specific question that guides research investigation"
+    }
+  ],
+  "teachingNotes": "Emphasize importance of source evaluation and proper citation. Practice developing focused research questions.",
+  "sample": {
+    "question": "What are original documents or firsthand accounts called?",
+    "expectedAny": [
+      "primary sources",
+      "original sources",
+      "firsthand sources",
+      "direct sources"
+    ]
+  },
+  "truefalse": {
+    "question": "Secondary sources analyze or interpret primary sources.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What credits the source of information?",
+    "expectedAny": [
+      "citation",
+      "reference",
+      "attribution",
+      "source credit"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A specific question that guides investigation is a ________ question.",
+    "expectedAny": [
+      "research",
+      "investigative",
+      "inquiry",
+      "study"
+    ]
+  },
+  "shortanswer": {
+    "question": "What makes a source credible?",
+    "expectedAny": [
+      "expert author",
+      "peer review",
+      "reliable publisher",
+      "current information"
+    ]
+  }
+}

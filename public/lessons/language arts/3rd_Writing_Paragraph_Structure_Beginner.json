@@ -1,0 +1,58 @@
+{
+  "id": "3rd_Writing_Paragraph_Structure_Beginner",
+  "title": "Writing: Paragraph Structure",
+  "grade": "3rd",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {"term": "paragraph", "definition": "A group of sentences about one main idea."},
+    {"term": "topic sentence", "definition": "The sentence that states the main idea of the paragraph."},
+    {"term": "indent", "definition": "To start the first line of a paragraph further in from the margin."}
+  ],
+  "teachingNotes": "Use the 'hamburger' or 'sandwich' analogy: the top bun is the topic sentence, the fillings are the supporting details, and the bottom bun is the concluding sentence. This visual helps students remember all the necessary parts.",
+  "sample": [
+    {"question": "What are the three main parts of a paragraph?", "expectedAny": ["Topic sentence, supporting details, concluding sentence"]},
+    {"question": "What is the first sentence of a paragraph usually called?", "expectedAny": ["Topic sentence"]},
+    {"question": "What does a topic sentence do?", "expectedAny": ["It tells the main idea of the paragraph."]},
+    {"question": "How many main ideas should a single paragraph have?", "expectedAny": ["one"]},
+    {"question": "What is the job of the supporting sentences in a paragraph?", "expectedAny": ["To give details and explain the main idea."]},
+    {"question": "What is the purpose of a concluding sentence?", "expectedAny": ["To wrap up the paragraph or restate the main idea."]},
+    {"question": "Why do we indent the first line of a paragraph?", "expectedAny": ["To show that a new paragraph is starting."]}
+  ],
+  "truefalse": [
+    {"question": "A paragraph is a group of sentences that are all about one main topic.", "answer": true},
+    {"question": "Every paragraph should have a topic sentence.", "answer": true},
+    {"question": "A single paragraph can be about many different topics at once.", "answer": false},
+    {"question": "The topic sentence is usually the first sentence in a paragraph.", "answer": true},
+    {"question": "Supporting sentences give more details about the topic sentence.", "answer": true},
+    {"question": "A concluding sentence is not a necessary part of a paragraph.", "answer": false},
+    {"question": "Paragraphs should always be indented to show where they begin.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "A topic sentence ___.", "choices": ["ends the paragraph", "states the main idea", "gives a small detail", "asks a question"], "correct": 1},
+    {"question": "Supporting sentences ___ the main idea.", "choices": ["change", "explain and give details about", "ignore", "end"], "correct": 1},
+    {"question": "A well-written paragraph should have ___ main idea(s).", "choices": ["zero", "one", "five", "as many as you want"], "correct": 1},
+    {"question": "The first line of a new paragraph is usually ___.", "choices": ["indented", "centered", "written in bold", "underlined"], "correct": 0},
+    {"question": "A closing or concluding sentence ___.", "choices": ["starts a new topic", "wraps up the main idea", "gives the first detail", "asks a question"], "correct": 1},
+    {"question": "A good paragraph usually contains at least ___ sentences.", "choices": ["1-2", "3-5", "20-30", "50 or more"], "correct": 1},
+    {"question": "Words like 'first,' 'next,' and 'finally' are called transition words and help to ___.", "choices": ["confuse the reader", "connect ideas smoothly", "end the paragraph", "start a book"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "The ___ sentence tells the reader what the paragraph will be about.", "expectedAny": ["topic"]},
+    {"question": "You should ___ the first line of every new paragraph.", "expectedAny": ["indent"]},
+    {"question": "___ sentences provide details, facts, and examples.", "expectedAny": ["Supporting"]},
+    {"question": "A ___ sentence brings the paragraph to a close.", "expectedAny": ["concluding", "closing"]},
+    {"question": "All the sentences in a paragraph should relate to one main ___.", "expectedAny": ["topic", "idea"]},
+    {"question": "Using paragraphs helps to organize our ___.", "expectedAny": ["writing", "thoughts", "ideas"]},
+    {"question": "___ words like 'also' or 'for example' help connect ideas within a paragraph.", "expectedAny": ["Transition"]}
+  ],
+  "shortanswer": [
+    {"question": "What are the qualities of a good topic sentence?", "expectedAny": ["It is clear, states the main idea, and is interesting enough to make someone want to read more."]},
+    {"question": "How do you organize the sentences in a paragraph?", "expectedAny": ["Start with the topic sentence, follow with supporting details, and end with a concluding sentence."]},
+    {"question": "Why is it important to use paragraphs in your writing?", "expectedAny": ["They organize ideas into logical sections and make the text easier for others to read and understand."]},
+    {"question": "About how many sentences should be in a paragraph?", "expectedAny": ["It can vary, but a good paragraph usually has between 3 and 8 sentences."]},
+    {"question": "Give two examples of transition words you could use in a paragraph.", "expectedAny": ["First, next, then, finally, also, however"]},
+    {"question": "How do you know when it's time to start a new paragraph?", "expectedAny": ["When you are ready to write about a new main idea or topic."]},
+    {"question": "Write a strong topic sentence about your favorite animal.", "expectedAny": ["Tigers are fascinating animals because of their strength, speed, and beautiful stripes."]}
+  ]
+}

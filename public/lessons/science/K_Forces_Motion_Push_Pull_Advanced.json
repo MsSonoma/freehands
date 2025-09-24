@@ -1,0 +1,78 @@
+{
+  "id": "forces-motion-push-pull-advanced",
+  "title": "Forces and Motion: Push and Pull",
+  "grade": "K",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "push",
+      "definition": "Using force to move something away from you"
+    },
+    {
+      "term": "pull",
+      "definition": "Using force to move something toward you"
+    },
+    {
+      "term": "force",
+      "definition": "A push or pull that makes things move"
+    },
+    {
+      "term": "motion",
+      "definition": "When something moves from one place to another"
+    }
+  ],
+  "teachingNotes": "Use playground equipment and toys for hands-on exploration. Demonstrate pushing and pulling with various objects. Safety emphasis.",
+  "sample": [
+    {"question": "When you open a door, are you pushing or pulling?", "expectedAny": ["pulling", "you pull the door open"]},
+    {"question": "How do you make a toy car move?", "expectedAny": ["push it", "pull it"]},
+    {"question": "What happens when you push something?", "expectedAny": ["it moves away", "it goes forward"]},
+    {"question": "How do you move a wagon?", "expectedAny": ["pull it", "push it"]},
+    {"question": "What kind of force makes things move?", "expectedAny": ["push", "pull", "force"]}
+  ],
+  "truefalse": [
+    {"question": "You push a swing to make it move.", "answer": true, "expectedAny": ["pushing swings makes them go forward"]},
+    {"question": "Pulling always makes things come toward you.", "answer": true, "expectedAny": ["pulling brings objects closer"]},
+    {"question": "You need force to move heavy things.", "answer": true, "expectedAny": ["heavy objects need more force"]},
+    {"question": "Pushing and pulling are the same thing.", "answer": false, "expectedAny": ["pushing moves away, pulling brings closer"]},
+    {"question": "You can move things without touching them.", "answer": false, "expectedAny": ["you need to touch to push or pull"]},
+    {"question": "Wind can push things.", "answer": true, "expectedAny": ["wind is a natural pushing force"]},
+    {"question": "Only people can create forces.", "answer": false, "expectedAny": ["animals and machines create forces too"]}
+  ],
+  "multiplechoice": [
+    {"question": "What happens when you push a ball?", "choices": ["it stays still", "it moves away", "it gets bigger", "it changes color"], "correct": 1, "expectedAny": ["pushing makes the ball move away from you"]},
+    {"question": "How do you make a sled move?", "choices": ["look at it", "push or pull it", "talk to it", "wait"], "correct": 1, "expectedAny": ["sleds need pushing or pulling to move"]},
+    {"question": "What do you do to close a drawer?", "choices": ["pull", "push", "lift", "drop"], "correct": 1, "expectedAny": ["you push drawers to close them"]},
+    {"question": "Which needs more force to move?", "choices": ["feather", "paper", "heavy box", "balloon"], "correct": 2, "expectedAny": ["heavy objects need more force"]},
+    {"question": "When you pull a rope, what happens?", "choices": ["rope moves toward you", "rope moves away", "rope disappears", "rope gets longer"], "correct": 0, "expectedAny": ["pulling brings rope closer"]},
+    {"question": "What makes a bicycle move?", "choices": ["wind", "pushing pedals", "magic", "watching it"], "correct": 1, "expectedAny": ["pedaling creates force to move bike"]},
+    {"question": "How do you pick up a toy?", "choices": ["push it down", "pull it up", "blow on it", "ignore it"], "correct": 1, "expectedAny": ["you pull upward to lift things"]}
+  ],
+  "fillintheblank": [
+    {"question": "When you _____ a wagon, it moves toward you.", "expectedAny": ["pull"]},
+    {"question": "To make a ball roll away, you _____ it.", "expectedAny": ["push"]},
+    {"question": "_____ and _____ are two kinds of forces.", "expectedAny": ["Push", "pull"]},
+    {"question": "When something moves, it is in _____.", "expectedAny": ["motion"]},
+    {"question": "You need _____ to make things move.", "expectedAny": ["force"]},
+    {"question": "To open most doors, you _____ them.", "expectedAny": ["pull"]},
+    {"question": "Heavy things need more _____ to move them.", "expectedAny": ["force"]}
+  ],
+  "shortanswer": [
+    {"question": "Give an example of something you push and something you pull.", "expectedAny": ["push: door, toy car", "pull: wagon, rope"]},
+    {"question": "How do forces help us in everyday life?", "expectedAny": ["move things", "open doors", "play with toys"]},
+    {"question": "What happens when you push something really hard?", "expectedAny": ["it moves faster", "goes farther", "might fall over"]},
+    {"question": "Why do you think heavy things are harder to move?", "expectedAny": ["they need more force", "weigh more", "harder to push or pull"]},
+    {"question": "Name three things at the playground that you push or pull.", "expectedAny": ["swings", "doors", "wagon", "seesaw"]},
+    {"question": "How can you tell if something is moving?", "expectedAny": ["it changes position", "goes from one place to another"]},
+    {"question": "What would happen if there were no forces?", "expectedAny": ["nothing would move", "things would stay still"]}
+  ],
+  "wordProblems": [
+    {"question": "Sam pushes 3 toy cars and pulls 2 wagons. How many things did he move using force?", "expectedAny": ["5 things", "3 + 2 = 5"]},
+    {"question": "There are 4 swings at the playground. If 2 children push swings and 1 child pulls a swing, how many swings are being moved?", "expectedAny": ["3 swings", "2 + 1 = 3"]},
+    {"question": "Emma uses force to move 6 blocks. If she pushes 4 blocks and pulls the rest, how many blocks did she pull?", "expectedAny": ["2 blocks", "6 - 4 = 2"]},
+    {"question": "In PE class, 5 children push balls and 3 children pull ropes. How many children are using forces?", "expectedAny": ["8 children", "5 + 3 = 8"]},
+    {"question": "Tom pushes a box 2 feet, then pulls it back 1 foot. How far is the box from where it started?", "expectedAny": ["1 foot away", "2 - 1 = 1"]},
+    {"question": "There are 7 doors in the school. If you push 3 doors and pull 4 doors, how many doors did you move?", "expectedAny": ["7 doors", "3 + 4 = 7"]},
+    {"question": "Lisa can push 2 light objects or 1 heavy object at a time. If she pushes 3 times, moving light objects each time, how many light objects did she move?", "expectedAny": ["6 objects", "2 × 3 = 6"]}
+  ]
+}

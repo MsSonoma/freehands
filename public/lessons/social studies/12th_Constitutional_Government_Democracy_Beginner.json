@@ -1,0 +1,74 @@
+{
+  "id": "12th_Constitutional_Government_Democracy_Beginner",
+  "title": "Constitutional Government and Democracy",
+  "grade": "12th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "constitution",
+      "definition": "Supreme law that establishes government structure and limits its power"
+    },
+    {
+      "term": "separation of powers",
+      "definition": "Division of government into legislative, executive, and judicial branches"
+    },
+    {
+      "term": "checks and balances",
+      "definition": "System preventing any branch from becoming too powerful"
+    },
+    {
+      "term": "federalism",
+      "definition": "System dividing power between national and state governments"
+    },
+    {
+      "term": "rule of law",
+      "definition": "Principle that all people and institutions are subject to law"
+    }
+  ],
+  "teachingNotes": "Emphasize foundational principles of American democracy. Connect to current political events and civic responsibilities.",
+  "sample": {
+    "question": "What is the supreme law establishing government structure?",
+    "expectedAny": [
+      "constitution",
+      "constitutional law",
+      "supreme law",
+      "founding document"
+    ]
+  },
+  "truefalse": {
+    "question": "Separation of powers divides government into three branches.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What system prevents branches from becoming too powerful?",
+    "expectedAny": [
+      "checks and balances",
+      "balance system",
+      "power balance",
+      "branch control"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The principle that all are subject to law is ________ of law.",
+    "expectedAny": [
+      "rule",
+      "supremacy",
+      "authority",
+      "governance"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are the three branches of government?",
+    "expectedAny": [
+      "legislative",
+      "executive",
+      "judicial",
+      "Congress, President, Courts"
+    ]
+  }
+}

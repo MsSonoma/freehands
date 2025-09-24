@@ -1,0 +1,53 @@
+{
+  "id": "6th_Algebraic_Expressions_Variables_Beginner",
+  "title": "Introduction to Algebraic Expressions and Variables",
+  "grade": "6th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "algebraic expression",
+      "definition": "A mathematical phrase that contains numbers, variables, and operation symbols"
+    },
+    {
+      "term": "variable",
+      "definition": "A letter or symbol that represents an unknown number"
+    },
+    {
+      "term": "coefficient",
+      "definition": "The number that multiplies a variable in an algebraic expression"
+    },
+    {
+      "term": "term",
+      "definition": "A single number, variable, or product of numbers and variables"
+    },
+    {
+      "term": "evaluate",
+      "definition": "To find the value of an expression by substituting numbers for variables"
+    }
+  ],
+  "teachingNotes": "Start with simple expressions using familiar contexts. Practice translating word phrases into algebraic expressions. Emphasize that variables represent unknown quantities.",
+  "sample": {
+    "question": "What do we call a letter that represents an unknown number?",
+    "expectedAny": ["variable", "unknown variable", "algebraic variable", "letter variable"]
+  },
+  "truefalse": {
+    "question": "In the expression 3x + 5, the coefficient of x is 3.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "How would you write 'a number plus 7' as an algebraic expression?",
+    "expectedAny": ["x + 7", "n + 7", "variable + 7", "any letter + 7"]
+  },
+  "fillintheblank": {
+    "question": "To ________ an expression means to substitute numbers for variables.",
+    "expectedAny": ["evaluate", "solve", "calculate", "substitute"]
+  },
+  "shortanswer": {
+    "question": "What is the value of 2x + 3 when x = 4?",
+    "expectedAny": ["11", "eleven", "2(4) + 3 = 11", "8 + 3 = 11"]
+  },
+  "wordProblems": {
+    "question": "Sarah has some stickers. After buying 12 more, she has x + 12 stickers. If x = 25, how many stickers does she have?",
+    "expectedAny": ["37 stickers", "37", "25 + 12 = 37", "thirty-seven stickers"]
+  }
+}

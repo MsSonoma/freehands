@@ -1,0 +1,74 @@
+{
+  "id": "10th_Ecology_Biodiversity_Conservation_Intermediate",
+  "title": "Ecology: Biodiversity and Conservation Biology",
+  "grade": "10th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "biodiversity",
+      "definition": "The variety of life forms in an ecosystem or on Earth"
+    },
+    {
+      "term": "ecosystem services",
+      "definition": "Benefits that humans derive from healthy ecosystems"
+    },
+    {
+      "term": "keystone species",
+      "definition": "Species that has disproportionately large impact on ecosystem structure"
+    },
+    {
+      "term": "habitat fragmentation",
+      "definition": "Breaking up of large habitats into smaller, isolated patches"
+    },
+    {
+      "term": "conservation biology",
+      "definition": "Scientific study of biodiversity protection and restoration"
+    }
+  ],
+  "teachingNotes": "Connect to current environmental issues. Discuss human impact on biodiversity and conservation strategies.",
+  "sample": {
+    "question": "What is the variety of life forms in an ecosystem called?",
+    "expectedAny": [
+      "biodiversity",
+      "biological diversity",
+      "species diversity",
+      "ecological diversity"
+    ]
+  },
+  "truefalse": {
+    "question": "Keystone species have a large impact on ecosystem structure.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What are benefits that humans derive from healthy ecosystems?",
+    "expectedAny": [
+      "ecosystem services",
+      "ecological services",
+      "environmental benefits",
+      "natural services"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Breaking up large habitats into smaller patches is called habitat ________.",
+    "expectedAny": [
+      "fragmentation",
+      "division",
+      "separation",
+      "breaking"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why is biodiversity important for ecosystem stability?",
+    "expectedAny": [
+      "provides resilience to change",
+      "ensures ecosystem functions",
+      "supports food webs",
+      "maintains balance"
+    ]
+  }
+}

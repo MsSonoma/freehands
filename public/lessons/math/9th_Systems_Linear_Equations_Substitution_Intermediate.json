@@ -1,0 +1,53 @@
+{
+  "id": "9th_Systems_Linear_Equations_Substitution_Intermediate",
+  "title": "Systems of Linear Equations: Substitution Method",
+  "grade": "9th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "system of equations",
+      "definition": "Set of two or more equations with the same variables"
+    },
+    {
+      "term": "substitution method",
+      "definition": "Solving systems by replacing one variable with an expression"
+    },
+    {
+      "term": "solution",
+      "definition": "Ordered pair that satisfies all equations in the system"
+    },
+    {
+      "term": "consistent system",
+      "definition": "System that has at least one solution"
+    },
+    {
+      "term": "inconsistent system",
+      "definition": "System that has no solution"
+    }
+  ],
+  "teachingNotes": "Practice step-by-step substitution process. Emphasize checking solutions in both original equations.",
+  "sample": {
+    "question": "What is a set of equations with the same variables called?",
+    "expectedAny": ["system of equations", "equation system", "simultaneous equations", "linear system"]
+  },
+  "truefalse": {
+    "question": "A consistent system has at least one solution.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What method replaces one variable with an expression?",
+    "expectedAny": ["substitution method", "substitution", "replacement method", "variable replacement"]
+  },
+  "fillintheblank": {
+    "question": "A system with no solution is called ________.",
+    "expectedAny": ["inconsistent", "impossible", "contradictory", "unsolvable"]
+  },
+  "shortanswer": {
+    "question": "How do you check if (2,3) is a solution to a system?",
+    "expectedAny": ["substitute into both equations", "verify both equations are true", "check if both are satisfied"]
+  },
+  "wordProblems": {
+    "question": "Solve: x + y = 7 and x - y = 1. What is x?",
+    "expectedAny": ["4", "x = 4", "four", "x equals 4"]
+  }
+}

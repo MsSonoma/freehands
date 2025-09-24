@@ -1,0 +1,73 @@
+{
+  "id": "7th_Medieval_Europe_Feudalism_Advanced",
+  "title": "Medieval Europe and the Feudal System",
+  "grade": "7th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "feudalism",
+      "definition": "A medieval system where land was exchanged for loyalty and service"
+    },
+    {
+      "term": "manor",
+      "definition": "A large estate with a lord's house and surrounding farmland"
+    },
+    {
+      "term": "serf",
+      "definition": "A peasant who was bound to work on a lord's land"
+    },
+    {
+      "term": "chivalry",
+      "definition": "The code of honor and behavior expected of knights"
+    },
+    {
+      "term": "vassal",
+      "definition": "A person who received land from a lord in exchange for loyalty"
+    }
+  ],
+  "teachingNotes": "Explain the hierarchy of feudal society. Discuss how the system provided protection and organization during uncertain times.",
+  "sample": {
+    "question": "What was the medieval system where land was exchanged for loyalty and service?",
+    "expectedAny": [
+      "feudalism",
+      "feudal system",
+      "manorialism",
+      "medieval system"
+    ]
+  },
+  "truefalse": {
+    "question": "Serfs were free to leave their lord's land whenever they wanted.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Who was at the top of the feudal hierarchy?",
+    "expectedAny": [
+      "king",
+      "monarch",
+      "ruler",
+      "sovereign"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A peasant bound to work on a lord's land was called a ________.",
+    "expectedAny": [
+      "serf",
+      "peasant",
+      "bound worker",
+      "feudal worker"
+    ]
+  },
+  "shortanswer": {
+    "question": "What did knights promise to their lords in exchange for land?",
+    "expectedAny": [
+      "loyalty and military service",
+      "protection and service",
+      "fighting and loyalty"
+    ]
+  }
+}

@@ -1,0 +1,259 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start Next.js dev server",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"dev"
+			],
+			"isBackground": true,
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Build Next.js for sanity",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Kill port 3001",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { try { Stop-Process -Id $_.OwningProcess -Force } catch {} }"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Restart dev on 3001",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { try { Stop-Process -Id $_.OwningProcess -Force } catch {} }; npm run -s dev"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Smoke: POST /api/sonoma",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}\\scripts\\smoke-post-sonoma.ps1"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Clean .next cache",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Remove-Item -Path .next -Recurse -Force -ErrorAction SilentlyContinue"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Smoke: GET /",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}\\scripts\\smoke-get-root.ps1"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Build Next.js for validation (ad-hoc)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build Next.js for sanity",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build Next.js for sanity",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build Next.js for sanity",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build Next.js for validation (ad-hoc)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build Next.js for validation (ad-hoc)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build Next.js for validation (ad-hoc)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build Next.js for validation (ad-hoc)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build Next.js for validation (ad-hoc)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build Next.js for validation (ad-hoc)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build Next.js for validation (ad-hoc)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build Next.js for validation (ad-hoc)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build Next.js for validation (ad-hoc)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Restart Next.js dev on 3001",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { try { Stop-Process -Id $_.OwningProcess -Force } catch {} }; npm run -s dev"
+			],
+			"isBackground": true,
+			"group": "build"
+		},
+		{
+			"label": "Restart Next.js dev on 3001",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { try { Stop-Process -Id $_.OwningProcess -Force } catch {} }; npm run -s dev"
+			],
+			"isBackground": true
+		}
+	]
+}

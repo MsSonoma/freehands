@@ -1,0 +1,68 @@
+{
+  "id": "measurement-time-money-beginner",
+  "title": "Measurement, Time, and Money",
+  "grade": "2nd",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {"term": "inch", "definition": "A unit for measuring length that is about as long as a paperclip"},
+    {"term": "centimeter", "definition": "A metric unit for measuring length that is smaller than an inch"},
+    {"term": "quarter", "definition": "A coin worth 25 cents"},
+    {"term": "half hour", "definition": "30 minutes, halfway around the clock"}
+  ],
+  "teachingNotes": "Use real rulers, clocks, and money. Practice measuring classroom objects. Focus on telling time to the half hour and quarter hour.",
+  "sample": [
+    {"question": "How many inches in a foot?", "expectedAny": ["12"]},
+    {"question": "What time is 30 minutes after 2:00?", "expectedAny": ["2:30"]},
+    {"question": "Which is longer: 3 feet or 1 yard?", "expectedAny": ["same length", "equal"]},
+    {"question": "How many minutes in an hour?", "expectedAny": ["60"]},
+    {"question": "Measure this pencil in centimeters", "expectedAny": ["answers vary", "use ruler"]},
+    {"question": "What time is quarter past 5?", "expectedAny": ["5:15"]},
+    {"question": "How many days in a week?", "expectedAny": ["7"]}
+  ],
+  "truefalse": [
+    {"question": "12 inches = 1 foot", "answer": true},
+    {"question": "60 minutes = 1 hour", "answer": true},
+    {"question": "1 meter = 100 centimeters", "answer": true},
+    {"question": "There are 8 days in a week", "answer": false},
+    {"question": "3 feet = 1 yard", "answer": true},
+    {"question": "Half past 4 means 4:30", "answer": true},
+    {"question": "AM means afternoon", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "3 feet = ___ inches", "choices": ["12", "24", "36", "48"], "correct": 2},
+    {"question": "Quarter to 8 means ___", "choices": ["7:15", "7:45", "8:15", "8:45"], "correct": 1},
+    {"question": "Which is shortest?", "choices": ["Yard", "Foot", "Inch", "Mile"], "correct": 2},
+    {"question": "How many hours in a day?", "choices": ["12", "24", "36", "48"], "correct": 1},
+    {"question": "2 yards = ___ feet", "choices": ["2", "4", "6", "8"], "correct": 2},
+    {"question": "15 minutes = ___ quarter hour", "choices": ["1", "2", "3", "4"], "correct": 0},
+    {"question": "Best unit for pencil length?", "choices": ["Miles", "Yards", "Inches", "Feet"], "correct": 2}
+  ],
+  "fillintheblank": [
+    {"question": "There are ___ inches in a foot", "expectedAny": ["12"]},
+    {"question": "___ minutes equal one hour", "expectedAny": ["60"]},
+    {"question": "7 days equal one ___", "expectedAny": ["week"]},
+    {"question": "___ feet equal one yard", "expectedAny": ["3"]},
+    {"question": "Half an hour is ___ minutes", "expectedAny": ["30"]},
+    {"question": "___ means before noon", "expectedAny": ["AM"]},
+    {"question": "100 centimeters equal 1 ___", "expectedAny": ["meter"]}
+  ],
+  "shortanswer": [
+    {"question": "How do you read 3:45?", "expectedAny": ["three forty-five", "quarter to four"]},
+    {"question": "What tool measures length?", "expectedAny": ["ruler", "tape measure", "meter stick"]},
+    {"question": "Explain AM and PM", "expectedAny": ["AM: midnight-noon; PM: noon-midnight"]},
+    {"question": "How do you measure curved objects?", "expectedAny": ["use string then measure the string"]},
+    {"question": "What's the difference between minute and hour hands?", "expectedAny": ["hour hand shorter, slower"]},
+    {"question": "When would you use feet vs inches?", "expectedAny": ["feet for bigger, inches for smaller"]},
+    {"question": "How do you calculate elapsed time?", "expectedAny": ["count hours then minutes"]}
+  ],
+  "wordProblems": [
+    {"question": "A rope is 24 inches long. How many feet?", "expectedAny": ["2 feet"]},
+    {"question": "School starts at 8:15. Recess is 2 hours later. What time?", "expectedAny": ["10:15"]},
+    {"question": "Tom's desk is 2 feet wide. How many inches?", "expectedAny": ["24 inches"]},
+    {"question": "A movie starts at 1:30 and is 90 minutes long. End time?", "expectedAny": ["3:00"]},
+    {"question": "Sarah is 48 inches tall. How many feet?", "expectedAny": ["4 feet"]},
+    {"question": "Dad leaves at 7:45 AM, drives 45 minutes. Arrival time?", "expectedAny": ["8:30 AM"]},
+    {"question": "A board is 1 yard long. Sue needs 30 inches. Is it enough?", "expectedAny": ["Yes"]}
+  ]
+}

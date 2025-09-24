@@ -1,0 +1,71 @@
+{
+  "id": "school-community-helpers-beginner",
+  "title": "School and Community Helpers",
+  "grade": "1st",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "community",
+      "definition": "A group of people who live and work in the same area"
+    },
+    {
+      "term": "helper",
+      "definition": "Someone who helps others do their job or feel safe"
+    },
+    {
+      "term": "firefighter",
+      "definition": "A person who puts out fires and keeps people safe"
+    },
+    {
+      "term": "teacher",
+      "definition": "A person who helps children learn new things"
+    }
+  ],
+  "teachingNotes": "Discuss different jobs and how they help the community. Invite community helpers to speak to class if possible.",
+  "sample": [
+    {"question": "Who helps you learn at school?", "expectedAny": ["teacher"]},
+    {"question": "Who helps put out fires?", "expectedAny": ["firefighter"]},
+    {"question": "Who helps you when you are sick?", "expectedAny": ["doctor", "nurse"]},
+    {"question": "Who delivers letters to your home?", "expectedAny": ["mail carrier", "postal worker"]},
+    {"question": "Who keeps our community safe?", "expectedAny": ["police officer"]},
+    {"question": "Who helps find books at the library?", "expectedAny": ["librarian"]},
+    {"question": "Who grows food on a farm?", "expectedAny": ["farmer"]}
+  ],
+  "truefalse": [
+    {"question": "Police officers help keep our community safe.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Firefighters only water plants.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Teachers help students learn.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Doctors help sick people feel better.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Mail carriers fix teeth.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Librarians work in libraries.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Farmers work in space.", "answer": false, "expectedAny": ["false"]}
+  ],
+  "multiplechoice": [
+    {"question": "Who would you call if there was a fire?", "choices": ["teacher", "firefighter", "dentist", "librarian"], "correct": 1, "expectedAny": ["firefighter"]},
+    {"question": "Who helps at the hospital?", "choices": ["nurse", "pilot", "builder", "chef"], "correct": 0, "expectedAny": ["nurse"]},
+    {"question": "Who drives a school bus?", "choices": ["bus driver", "doctor", "baker", "farmer"], "correct": 0, "expectedAny": ["bus driver"]},
+    {"question": "Who bakes bread and cakes?", "choices": ["baker", "librarian", "police", "teacher"], "correct": 0, "expectedAny": ["baker"]},
+    {"question": "Who helps animals feel better?", "choices": ["dentist", "veterinarian", "mail carrier", "firefighter"], "correct": 1, "expectedAny": ["veterinarian"]},
+    {"question": "Who fixes teeth?", "choices": ["dentist", "nurse", "chef", "pilot"], "correct": 0, "expectedAny": ["dentist"]},
+    {"question": "Who helps us find books?", "choices": ["librarian", "farmer", "police", "artist"], "correct": 0, "expectedAny": ["librarian"]}
+  ],
+  "fillintheblank": [
+    {"question": "A _____ delivers mail to our homes.", "expectedAny": ["mail carrier", "postal worker"]},
+    {"question": "A person who puts out fires is a _____.", "expectedAny": ["firefighter"]},
+    {"question": "At school, the _____ helps students learn.", "expectedAny": ["teacher"]},
+    {"question": "A _____ takes care of sick people.", "expectedAny": ["doctor", "nurse"]},
+    {"question": "A person who grows food is a _____.", "expectedAny": ["farmer"]},
+    {"question": "A person who fixes teeth is a _____.", "expectedAny": ["dentist"]},
+    {"question": "A person who helps find books is a _____.", "expectedAny": ["librarian"]}
+  ],
+  "shortanswer": [
+    {"question": "How do doctors help our community?", "expectedAny": ["help sick people get better", "keep people healthy"]},
+    {"question": "Name three community helpers you see in your town.", "expectedAny": ["teacher", "police", "firefighter", "mail carrier", "nurse", "librarian", "farmer"]},
+    {"question": "How can you show respect to community helpers?", "expectedAny": ["say thank you", "follow rules", "listen"]},
+    {"question": "Draw your favorite community helper at work.", "expectedAny": ["drawing with tools/setting"]},
+    {"question": "Why are community helpers important?", "expectedAny": ["keep us safe", "help us learn", "care for us"]},
+    {"question": "What tools does a firefighter use?", "expectedAny": ["hose", "helmet", "ladder", "truck"]},
+    {"question": "Where does a librarian work?", "expectedAny": ["library"]}
+  ]
+}

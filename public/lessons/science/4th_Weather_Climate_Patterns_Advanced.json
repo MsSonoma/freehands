@@ -1,0 +1,71 @@
+{
+  "id": "weather-climate-patterns-advanced",
+  "title": "Weather Patterns and Climate",
+  "grade": "4th",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "weather",
+      "definition": "The daily conditions of temperature, precipitation, wind, and humidity"
+    },
+    {
+      "term": "climate",
+      "definition": "The average weather patterns in a place over many years"
+    },
+    {
+      "term": "water cycle",
+      "definition": "The continuous movement of water between Earth's surface and the atmosphere"
+    },
+    {
+      "term": "front",
+      "definition": "The boundary between two different air masses that creates weather changes"
+    }
+  ],
+  "teachingNotes": "Use weather maps and data collection. Create water cycle models. Discuss how geography affects climate patterns.",
+  "sample": [
+    {"question": "What is the difference between weather and climate?", "expectedAny": ["weather is daily conditions", "climate is long-term patterns"]},
+    {"question": "Name two tools meteorologists use to measure weather.", "expectedAny": ["thermometer", "barometer", "anemometer", "rain gauge"]},
+    {"question": "List the four main stages of the water cycle.", "expectedAny": ["evaporation", "condensation", "precipitation", "collection"]},
+    {"question": "What causes wind?", "expectedAny": ["differences in air pressure", "uneven heating of Earth"]},
+    {"question": "How do clouds form?", "expectedAny": ["condensation on dust", "cooling of moist air"]},
+    {"question": "Give one example of precipitation.", "expectedAny": ["rain", "snow", "sleet", "hail"]},
+    {"question": "What is humidity?", "expectedAny": ["amount of water vapor in the air"]}
+  ],
+  "truefalse": [
+    {"question": "The water cycle is powered by energy from the sun.", "answer": true},
+    {"question": "Climate describes average conditions over many years.", "answer": true},
+    {"question": "A front is the boundary between air masses.", "answer": true},
+    {"question": "Wind always blows from low pressure to high pressure.", "answer": false},
+    {"question": "Cumulonimbus clouds can bring thunderstorms.", "answer": true},
+    {"question": "The equator tends to have colder climates than the poles.", "answer": false},
+    {"question": "Condensation turns liquid water into water vapor.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "Which factor most influences a region's climate?", "choices": ["Daily temperature", "Distance from equator", "Yesterday's rainfall", "Today's wind speed"], "correct": 1},
+    {"question": "Which instrument measures air pressure?", "choices": ["Thermometer", "Barometer", "Anemometer", "Rain gauge"], "correct": 1},
+    {"question": "A flat, layered cloud that may bring drizzle is:", "choices": ["Cumulus", "Cirrus", "Stratus", "Cumulonimbus"], "correct": 2},
+    {"question": "What process forms clouds?", "choices": ["Evaporation", "Condensation", "Sublimation", "Deposition"], "correct": 1},
+    {"question": "Which is NOT precipitation?", "choices": ["Hail", "Sleet", "Fog", "Snow"], "correct": 2},
+    {"question": "An anemometer measures:", "choices": ["Humidity", "Temperature", "Wind speed", "Air pressure"], "correct": 2},
+    {"question": "Which best describes climate?", "choices": ["This week's temperature", "Average weather over decades", "Yesterday's snowfall", "Tomorrow's forecast"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "In the water cycle, water vapor in the air cools and changes back to liquid water through _____.", "expectedAny": ["condensation"]},
+    {"question": "Energy from the _____ drives evaporation.", "expectedAny": ["sun"]},
+    {"question": "The amount of water vapor in the air is called _____.", "expectedAny": ["humidity"]},
+    {"question": "A boundary between two air masses is called a _____.", "expectedAny": ["front"]},
+    {"question": "Water that collects in rivers, lakes, and oceans is called _____.", "expectedAny": ["collection"]},
+    {"question": "Thin, wispy high clouds are called _____.", "expectedAny": ["cirrus"]},
+    {"question": "The average weather in a region over many years is called _____.", "expectedAny": ["climate"]}
+  ],
+  "shortanswer": [
+    {"question": "Explain how mountains can affect the weather on either side of them.", "expectedAny": ["rain shadow", "windward vs leeward"]},
+    {"question": "How does uneven heating of Earth's surface create wind?", "expectedAny": ["pressure differences cause air to move"]},
+    {"question": "Describe one way oceans influence climate.", "expectedAny": ["moderate temperatures", "provide moisture"]},
+    {"question": "How do meteorologists use data to make forecasts?", "expectedAny": ["instruments", "satellites", "computer models"]},
+    {"question": "Why is climate different at the equator than at the poles?", "expectedAny": ["angle of sunlight", "solar energy distribution"]},
+    {"question": "What conditions might signal an approaching cold front?", "expectedAny": ["temperature drop", "wind shift", "cloud changes"]},
+    {"question": "How does the water cycle connect weather and climate?", "expectedAny": ["moves water and energy", "drives precipitation patterns"]}
+  ]
+}

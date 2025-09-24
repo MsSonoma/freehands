@@ -1,0 +1,73 @@
+{
+  "id": "8th_Poetry_Analysis_Sound_and_Meaning_Beginner",
+  "title": "Poetry Analysis: Sound Devices and Meaning",
+  "grade": "8th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "sound device",
+      "definition": "Literary techniques that use the sounds of words"
+    },
+    {
+      "term": "assonance",
+      "definition": "The repetition of vowel sounds within words"
+    },
+    {
+      "term": "consonance",
+      "definition": "The repetition of consonant sounds within or at the end of words"
+    },
+    {
+      "term": "onomatopoeia",
+      "definition": "Words that imitate sounds"
+    },
+    {
+      "term": "free verse",
+      "definition": "Poetry that doesn't follow regular rhyme or meter patterns"
+    }
+  ],
+  "teachingNotes": "Read poems aloud to hear sound devices. Analyze how sound contributes to meaning and mood in poetry.",
+  "sample": {
+    "question": "What are literary techniques that use the sounds of words?",
+    "expectedAny": [
+      "sound device",
+      "sound technique",
+      "auditory device",
+      "phonetic technique"
+    ]
+  },
+  "truefalse": {
+    "question": "Onomatopoeia refers to words that imitate sounds.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the repetition of vowel sounds called?",
+    "expectedAny": [
+      "assonance",
+      "vowel repetition",
+      "vowel echo",
+      "internal rhyme"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Poetry without regular rhyme or meter is called ________ verse.",
+    "expectedAny": [
+      "free",
+      "open",
+      "blank",
+      "unstructured"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do sound devices enhance poetry?",
+    "expectedAny": [
+      "create rhythm and mood",
+      "add musical quality",
+      "emphasize meaning"
+    ]
+  }
+}

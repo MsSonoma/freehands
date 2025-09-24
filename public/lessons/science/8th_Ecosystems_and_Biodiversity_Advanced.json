@@ -1,0 +1,73 @@
+{
+  "id": "8th_Ecosystems_and_Biodiversity_Advanced",
+  "title": "Ecosystems, Food Webs, and Biodiversity",
+  "grade": "8th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "ecosystem",
+      "definition": "All living and non-living things in an environment interacting together"
+    },
+    {
+      "term": "food web",
+      "definition": "A complex network showing how energy flows through an ecosystem"
+    },
+    {
+      "term": "biodiversity",
+      "definition": "The variety of life in an ecosystem"
+    },
+    {
+      "term": "keystone species",
+      "definition": "A species that has a large impact on its ecosystem"
+    },
+    {
+      "term": "carrying capacity",
+      "definition": "The maximum population an environment can support"
+    }
+  ],
+  "teachingNotes": "Discuss human impacts on ecosystems. Explain why biodiversity is important for ecosystem stability.",
+  "sample": {
+    "question": "What is all living and non-living things in an environment interacting together?",
+    "expectedAny": [
+      "ecosystem",
+      "ecological system",
+      "environmental system",
+      "biotic community"
+    ]
+  },
+  "truefalse": {
+    "question": "A keystone species has a large impact on its ecosystem.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What shows how energy flows through an ecosystem?",
+    "expectedAny": [
+      "food web",
+      "food chain",
+      "energy flow diagram",
+      "trophic levels"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The variety of life in an ecosystem is called ________.",
+    "expectedAny": [
+      "biodiversity",
+      "biological diversity",
+      "species diversity",
+      "life variety"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why is biodiversity important for ecosystems?",
+    "expectedAny": [
+      "provides stability",
+      "increases ecosystem resilience",
+      "supports food webs"
+    ]
+  }
+}

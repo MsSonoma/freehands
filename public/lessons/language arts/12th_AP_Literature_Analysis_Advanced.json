@@ -1,0 +1,75 @@
+{
+  "id": "ap-literature-analysis-advanced",
+  "title": "Advanced Literary Analysis and Criticism",
+  "grade": "12th",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "literary criticism",
+      "definition": "The analysis, interpretation, and evaluation of literary works"
+    },
+    {
+      "term": "rhetorical device",
+      "definition": "Techniques authors use to convey meaning and persuade readers"
+    },
+    {
+      "term": "allegory",
+      "definition": "A story with symbolic meaning that represents deeper truths or principles"
+    },
+    {
+      "term": "dialectical tension",
+      "definition": "The conflict between opposing ideas or forces in literature"
+    }
+  ],
+  "teachingNotes": "Use complex texts and multiple critical perspectives. Focus on evidence-based analysis and sophisticated argumentation. Prepare for AP-level writing.",
+  "sample": {
+    "question": "How does the use of symbolism in a work contribute to its overall meaning?",
+    "expectedAny": [
+      "symbols add layers of meaning beyond literal interpretation",
+      "create connections between concrete and abstract ideas"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "A single literary work can support multiple valid interpretations.",
+      "answer": true,
+      "expectedAny": [
+        "literature allows for various critical approaches and readings"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which best describes the purpose of a thesis statement in literary analysis?",
+      "choices": [
+        "Summarize the plot",
+        "State a clear, arguable claim",
+        "List literary devices",
+        "Provide background information"
+      ],
+      "correct": 1,
+      "expectedAny": [
+        "thesis presents the central argument to be proven"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "In literary analysis, _____ from the text must support every claim, and _____ explains how that evidence proves the point.",
+      "expectedAny": [
+        "evidence",
+        "analysis"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Explain the difference between summary and analysis in literary writing.",
+      "expectedAny": [
+        "summary retells what happens, analysis explains significance and meaning",
+        "analysis interprets and evaluates rather than just describing"
+      ]
+    }
+  ]
+}

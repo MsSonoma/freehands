@@ -1,0 +1,71 @@
+{
+  "id": "sound-and-vibrations-intermediate",
+  "title": "Sound and Vibrations",
+  "grade": "1st",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "sound",
+      "definition": "Something we hear that is made when objects vibrate"
+    },
+    {
+      "term": "vibration",
+      "definition": "Fast back and forth movement that creates sound"
+    },
+    {
+      "term": "loud",
+      "definition": "A sound with a lot of volume that we can hear from far away"
+    },
+    {
+      "term": "soft",
+      "definition": "A quiet sound with little volume"
+    }
+  ],
+  "teachingNotes": "Use musical instruments and everyday objects. Let students feel vibrations. Explore different volumes and pitches through hands-on activities.",
+  "sample": [
+    {"question": "What causes sound?", "expectedAny": ["vibrations"]},
+    {"question": "How can you make a rubber band make sound?", "expectedAny": ["pluck it", "stretch and release"]},
+    {"question": "What vibrates when you talk?", "expectedAny": ["vocal cords"]},
+    {"question": "Name something that makes a loud sound.", "expectedAny": ["drum", "thunder"]},
+    {"question": "Name something that makes a soft sound.", "expectedAny": ["whisper", "leaves"]},
+    {"question": "Can sound travel through water?", "expectedAny": ["yes"]},
+    {"question": "What happens when sound echoes?", "expectedAny": ["it bounces back"]}
+  ],
+  "truefalse": [
+    {"question": "All sounds are made by vibrations.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Sound can't travel through solids.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Fast vibrations make high sounds.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Slow vibrations make high sounds.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Loud sounds can hurt our ears.", "answer": true, "expectedAny": ["true"]},
+    {"question": "We hear with our ears.", "answer": true, "expectedAny": ["true"]},
+    {"question": "We can see sound waves easily.", "answer": false, "expectedAny": ["false"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which would make the loudest sound?", "choices": ["whispering", "a drum", "tiptoeing", "a feather falling"], "correct": 1, "expectedAny": ["a drum"]},
+    {"question": "High pitch sounds have ___ vibrations.", "choices": ["slow", "none", "fast", "big"], "correct": 2, "expectedAny": ["fast"]},
+    {"question": "Echoes happen when sound ___", "choices": ["stops", "bounces back", "gets quiet", "speeds up"], "correct": 1, "expectedAny": ["bounces back"]},
+    {"question": "What vibrates in a guitar?", "choices": ["wood", "strings", "air", "nothing"], "correct": 1, "expectedAny": ["strings"]},
+    {"question": "Sound travels best through ___", "choices": ["empty space", "air", "water", "solids"], "correct": 3, "expectedAny": ["solids"]},
+    {"question": "Loud sounds have ___ vibrations", "choices": ["small", "none", "big", "slow"], "correct": 2, "expectedAny": ["big"]},
+    {"question": "We hear with our ___", "choices": ["eyes", "nose", "ears", "mouth"], "correct": 2, "expectedAny": ["ears"]}
+  ],
+  "fillintheblank": [
+    {"question": "When you pluck a rubber band, it _____ and makes a _____.", "expectedAny": ["vibrates", "sound"]},
+    {"question": "Fast vibrations make _____ sounds.", "expectedAny": ["high"]},
+    {"question": "Slow vibrations make _____ sounds.", "expectedAny": ["low"]},
+    {"question": "Sound _____ off walls to make echoes.", "expectedAny": ["bounces"]},
+    {"question": "Plucking a string makes it _____.", "expectedAny": ["vibrate"]},
+    {"question": "Your _____ cords make sound when you talk.", "expectedAny": ["vocal"]},
+    {"question": "Bigger vibrations make _____ sounds.", "expectedAny": ["louder"]}
+  ],
+  "shortanswer": [
+    {"question": "How can you make a sound louder or softer?", "expectedAny": ["hit harder/softer", "more/less force"]},
+    {"question": "Why do we see lightning before thunder?", "expectedAny": ["light travels faster than sound"]},
+    {"question": "What materials block sound?", "expectedAny": ["thick walls", "soft materials"]},
+    {"question": "How do instruments make different sounds?", "expectedAny": ["different vibrations, size, material"]},
+    {"question": "Draw how sound waves spread from a bell.", "expectedAny": ["rings moving out"]},
+    {"question": "Why do we have two ears?", "expectedAny": ["find where sound comes from"]},
+    {"question": "How can you make sounds quieter?", "expectedAny": ["cover source", "move away", "use soft materials"]}
+  ]
+}

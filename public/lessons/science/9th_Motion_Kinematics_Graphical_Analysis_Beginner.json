@@ -1,0 +1,73 @@
+{
+  "id": "9th_Motion_Kinematics_Graphical_Analysis_Beginner",
+  "title": "Motion and Kinematics: Graphical Analysis",
+  "grade": "9th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "kinematics",
+      "definition": "The study of motion without considering the forces that cause it"
+    },
+    {
+      "term": "displacement",
+      "definition": "Change in position of an object"
+    },
+    {
+      "term": "velocity",
+      "definition": "Rate of change of displacement with time"
+    },
+    {
+      "term": "acceleration",
+      "definition": "Rate of change of velocity with time"
+    },
+    {
+      "term": "position-time graph",
+      "definition": "Graph showing how position changes over time"
+    }
+  ],
+  "teachingNotes": "Focus on interpreting motion graphs. Practice reading slope and area from position-time and velocity-time graphs.",
+  "sample": {
+    "question": "What is the study of motion without considering forces?",
+    "expectedAny": [
+      "kinematics",
+      "kinematic analysis",
+      "motion study",
+      "descriptive motion"
+    ]
+  },
+  "truefalse": {
+    "question": "Velocity is the rate of change of position with time.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What does the slope of a position-time graph represent?",
+    "expectedAny": [
+      "velocity",
+      "speed",
+      "rate of position change",
+      "displacement rate"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The rate of change of velocity with time is called ________.",
+    "expectedAny": [
+      "acceleration",
+      "change in velocity",
+      "velocity rate",
+      "acceleration rate"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do you find displacement from a velocity-time graph?",
+    "expectedAny": [
+      "calculate area under the curve",
+      "find area between line and time axis",
+      "integrate velocity over time"
+    ]
+  }
+}

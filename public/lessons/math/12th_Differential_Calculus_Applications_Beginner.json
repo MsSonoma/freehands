@@ -1,0 +1,53 @@
+{
+  "id": "12th_Differential_Calculus_Applications_Beginner",
+  "title": "Differential Calculus and Applications",
+  "grade": "12th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "derivative",
+      "definition": "Rate of change of function with respect to its variable"
+    },
+    {
+      "term": "differentiation",
+      "definition": "Process of finding the derivative of a function"
+    },
+    {
+      "term": "tangent line",
+      "definition": "Line that touches curve at exactly one point with same slope"
+    },
+    {
+      "term": "instantaneous rate",
+      "definition": "Rate of change at specific moment or point"
+    },
+    {
+      "term": "critical point",
+      "definition": "Point where derivative is zero or undefined"
+    }
+  ],
+  "teachingNotes": "Focus on geometric interpretation of derivatives. Connect to real-world applications like velocity and optimization.",
+  "sample": {
+    "question": "What measures the rate of change of a function?",
+    "expectedAny": ["derivative", "differentiation", "rate of change", "slope function"]
+  },
+  "truefalse": {
+    "question": "A tangent line touches a curve at exactly one point.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is the rate of change at a specific moment?",
+    "expectedAny": ["instantaneous rate", "instantaneous velocity", "point rate", "moment rate"]
+  },
+  "fillintheblank": {
+    "question": "A point where the derivative is zero is a ________ point.",
+    "expectedAny": ["critical", "stationary", "turning", "extreme"]
+  },
+  "shortanswer": {
+    "question": "What real-world quantities are represented by derivatives?",
+    "expectedAny": ["velocity", "acceleration", "growth rate", "marginal cost"]
+  },
+  "wordProblems": {
+    "question": "If position is s(t) = 3t² + 2t, what is velocity at t = 4 seconds?",
+    "expectedAny": ["26", "26 units/sec", "s'(4) = 6(4) + 2 = 26", "twenty-six"]
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "id": "3rd_Light_Shadows_Reflection_Beginner",
+  "title": "Light, Shadows, and Reflection",
+  "grade": "3rd",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    { "term": "light", "definition": "Energy that lets us see things" },
+    { "term": "shadow", "definition": "A dark area made when light is blocked" },
+    { "term": "reflection", "definition": "When light bounces off something" },
+    { "term": "transparent", "definition": "Something you can see through clearly" },
+    { "term": "opaque", "definition": "A material that does not let light pass through" },
+    { "term": "translucent", "definition": "A material that lets some light through but not clearly" }
+  ],
+  "teachingNotes": "Use flashlights and mirrors for hands-on experiments. Make shadow puppets. Demonstrate reflection with mirrors and shiny objects.",
+  "sample": [
+    { "question": "What happens when you stand in front of a bright light?", "expectedAny": ["you make a shadow", "your body blocks the light"] },
+    { "question": "Name something that reflects light well.", "expectedAny": ["mirror", "shiny metal"] },
+    { "question": "What kind of material is clear glass?", "expectedAny": ["transparent"] },
+    { "question": "What kind of material is a wooden door?", "expectedAny": ["opaque"] },
+    { "question": "What happens to light when it hits a mirror?", "expectedAny": ["it reflects", "it bounces"] },
+    { "question": "What happens to light when it is blocked?", "expectedAny": ["a shadow forms"] },
+    { "question": "Name a translucent material.", "expectedAny": ["wax paper", "frosted glass"] }
+  ],
+  "truefalse": [
+    { "question": "Light can travel through a brick wall.", "answer": false },
+    { "question": "Shadows form when something blocks light.", "answer": true },
+    { "question": "Mirrors absorb light.", "answer": false, "expectedAny": ["mirrors reflect light"] },
+    { "question": "Clear plastic wrap is transparent.", "answer": true },
+    { "question": "Frosted glass is opaque.", "answer": false, "expectedAny": ["translucent"] },
+    { "question": "The Sun is a source of light.", "answer": true },
+    { "question": "You can have a shadow without any light.", "answer": false }
+  ],
+  "multiplechoice": [
+    { "question": "What do you see when you look in a mirror?", "choices": ["Shadow", "Reflection", "Darkness", "Nothing"], "correct": 1 },
+    { "question": "A shadow is made when:", "choices": ["Light bends", "Light is blocked", "Light speeds up", "Light glows"], "correct": 1 },
+    { "question": "Which is transparent?", "choices": ["Wax paper", "Cardboard", "Window glass", "Brick"], "correct": 2 },
+    { "question": "Which best reflects light?", "choices": ["Black cloth", "Mirror", "Paper towel", "Soil"], "correct": 1 },
+    { "question": "Which is opaque?", "choices": ["Air", "Water", "Metal pan", "Frosted glass"], "correct": 2 },
+    { "question": "Which is translucent?", "choices": ["Aluminum foil", "Frosted glass", "Clear glass", "Wood"], "correct": 1 },
+    { "question": "When light bounces off a surface, it is called:", "choices": ["Absorption", "Reflection", "Refraction", "Shadowing"], "correct": 1 }
+  ],
+  "fillintheblank": [
+    { "question": "When light hits your body, it makes a _____ behind you.", "expectedAny": ["shadow"] },
+    { "question": "A mirror shows your _____.", "expectedAny": ["reflection"] },
+    { "question": "A clear window is _____.", "expectedAny": ["transparent"] },
+    { "question": "Wax paper is _____ because it lets some light through.", "expectedAny": ["translucent"] },
+    { "question": "A brick wall is _____ because it blocks light.", "expectedAny": ["opaque"] },
+    { "question": "The Sun is a source of _____.", "expectedAny": ["light"] },
+    { "question": "When light is blocked, a _____ forms.", "expectedAny": ["shadow"] }
+  ],
+  "shortanswer": [
+    { "question": "Why can you see yourself in still water?", "expectedAny": ["water reflects light", "like a mirror"] },
+    { "question": "Describe how to make a shadow bigger or smaller.", "expectedAny": ["move object closer/farther from light", "change light position"] },
+    { "question": "Give an example of a transparent, translucent, and opaque material.", "expectedAny": ["transparent: glass", "translucent: wax paper", "opaque: wood"] },
+    { "question": "Where should you put a flashlight to make a long shadow?", "expectedAny": ["low angle", "near the ground"] },
+    { "question": "What happens to your shadow at noon compared to morning?", "expectedAny": ["shorter at noon"] },
+    { "question": "Why is it dark in your shadow?", "expectedAny": ["light is blocked"] },
+    { "question": "How can shiny objects help brighten a room?", "expectedAny": ["reflect light"] }
+  ]
+}

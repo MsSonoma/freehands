@@ -1,0 +1,77 @@
+{
+  "id": "literary-genres-text-types-advanced",
+  "title": "Literary Genres and Text Types",
+  "grade": "3rd",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "genre",
+      "definition": "A category or type of writing, like fiction, poetry, or biography"
+    },
+    {
+      "term": "fiction",
+      "definition": "Stories that are made up or imagined"
+    },
+    {
+      "term": "nonfiction",
+      "definition": "Writing about real people, places, events, or facts"
+    },
+    {
+      "term": "biography",
+      "definition": "A true story about a real person's life"
+    }
+  ],
+  "teachingNotes": "Compare different types of texts. Create a classroom library organized by genre. Discuss features that help identify genres.",
+  "sample": {
+    "question": "Is a book about dinosaur facts fiction or nonfiction?",
+    "expectedAny": [
+      "nonfiction",
+      "it contains real facts and information"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "A fairy tale is an example of fiction because it tells a made-up story.",
+      "answer": true,
+      "expectedAny": [
+        "fairy tales are imaginary stories"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which genre tells the true story of a famous person's life?",
+      "choices": [
+        "fantasy",
+        "biography",
+        "poetry",
+        "mystery"
+      ],
+      "correct": 1,
+      "expectedAny": [
+        "biographies are about real people's lives"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "A book about how to care for pets would be classified as _____.",
+      "expectedAny": [
+        "nonfiction"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "How can you tell what genre a book is before reading it?",
+      "expectedAny": [
+        "look at the cover",
+        "read the back",
+        "check the title",
+        "see if it says fiction or nonfiction",
+        "look for clues about real vs. imaginary"
+      ]
+    }
+  ]
+}

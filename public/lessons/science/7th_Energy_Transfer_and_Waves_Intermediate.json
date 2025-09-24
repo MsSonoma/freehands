@@ -1,0 +1,73 @@
+{
+  "id": "7th_Energy_Transfer_and_Waves_Intermediate",
+  "title": "Energy Transfer and Wave Properties",
+  "grade": "7th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "energy",
+      "definition": "The ability to do work or cause change"
+    },
+    {
+      "term": "wave",
+      "definition": "A disturbance that transfers energy through matter or space"
+    },
+    {
+      "term": "frequency",
+      "definition": "The number of waves that pass a point in a given time"
+    },
+    {
+      "term": "amplitude",
+      "definition": "The height of a wave, related to its energy"
+    },
+    {
+      "term": "wavelength",
+      "definition": "The distance between two similar points on a wave"
+    }
+  ],
+  "teachingNotes": "Use wave demonstrations with ropes or springs. Connect wave properties to sound and light. Discuss how energy moves without matter moving.",
+  "sample": {
+    "question": "What is the ability to do work or cause change?",
+    "expectedAny": [
+      "energy",
+      "power",
+      "force",
+      "work capacity"
+    ]
+  },
+  "truefalse": {
+    "question": "Waves can transfer energy without transferring matter.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which wave property is related to energy?",
+    "expectedAny": [
+      "amplitude",
+      "wave height",
+      "intensity",
+      "magnitude"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The number of waves passing a point per second is the ________.",
+    "expectedAny": [
+      "frequency",
+      "wave frequency",
+      "rate",
+      "cycles per second"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do sound waves travel through air?",
+    "expectedAny": [
+      "air molecules vibrate back and forth",
+      "compression waves",
+      "pressure changes move through air"
+    ]
+  }
+}

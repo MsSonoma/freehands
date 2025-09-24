@@ -1,0 +1,33 @@
+{
+  "id": "probability-statistics-data-advanced",
+  "title": "Probability and Statistics with Data Analysis",
+  "grade": "9th",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {"term": "probability", "definition": "The likelihood that an event will occur, expressed as a number between 0 and 1"},
+    {"term": "sample space", "definition": "All possible outcomes of a probability experiment"},
+    {"term": "independent events", "definition": "Events where the outcome of one does not affect the outcome of another"},
+    {"term": "standard deviation", "definition": "A measure of how spread out data points are from the mean"}
+  ],
+  "teachingNotes": "Use real data sets and technology. Connect to real-world decision making. Emphasize the difference between theoretical and experimental probability.",
+  "sample": {
+    "question": "If you flip a fair coin twice, what is the probability of getting exactly one head?",
+    "expectedAny": ["1/2 or 0.5", "HT and TH are 2 out of 4 equally likely outcomes"]
+  },
+  "truefalse": [
+    {"question": "Independent events do not affect each other's outcomes.", "answer": true, "expectedAny": ["by definition, independent events don't influence each other"]}
+  ],
+  "multiplechoice": [
+    {"question": "A data set has values: 2, 4, 6, 8, 10. What is the mean?", "choices": ["4", "6", "8", "10"], "correct": 1, "expectedAny": ["(2+4+6+8+10) ÷ 5 = 30 ÷ 5 = 6"]}
+  ],
+  "fillintheblank": [
+    {"question": "If P(A) = 0.3 and P(B) = 0.4, and A and B are independent, then P(A and B) = _____.", "expectedAny": ["0.12"]}
+  ],
+  "shortanswer": [
+    {"question": "Explain why a larger sample size generally gives more accurate probability estimates.", "expectedAny": ["law of large numbers", "reduces effect of random variation", "approaches theoretical probability"]}
+  ],
+  "wordProblems": [
+    {"question": "A quality control inspector finds 3 defective items in a sample of 50. Based on this data, estimate the probability that a randomly selected item is defective.", "expectedAny": ["0.06 or 6%", "3/50 = 0.06"]}
+  ]
+}

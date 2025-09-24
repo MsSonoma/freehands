@@ -1,0 +1,74 @@
+{
+  "id": "10th_Russian_Revolution_Communist_Rise_Beginner",
+  "title": "Russian Revolution and the Rise of Communism",
+  "grade": "10th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "revolution",
+      "definition": "Sudden, radical change in government or social conditions"
+    },
+    {
+      "term": "bolsheviks",
+      "definition": "Russian revolutionary group led by Vladimir Lenin"
+    },
+    {
+      "term": "communism",
+      "definition": "Political system where property is publicly owned and controlled"
+    },
+    {
+      "term": "soviet union",
+      "definition": "Communist state formed after Russian Revolution (1922-1991)"
+    },
+    {
+      "term": "totalitarianism",
+      "definition": "System where government has total control over all aspects of life"
+    }
+  ],
+  "teachingNotes": "Analyze the social and economic conditions that led to revolution. Compare different revolutionary phases and outcomes.",
+  "sample": {
+    "question": "What is sudden, radical change in government called?",
+    "expectedAny": [
+      "revolution",
+      "political revolution",
+      "governmental overthrow",
+      "regime change"
+    ]
+  },
+  "truefalse": {
+    "question": "The Bolsheviks were led by Vladimir Lenin.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What political system has publicly owned property?",
+    "expectedAny": [
+      "communism",
+      "communist system",
+      "socialist system",
+      "collective ownership"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A system with total government control is called ________.",
+    "expectedAny": [
+      "totalitarianism",
+      "totalitarian state",
+      "total control",
+      "authoritarianism"
+    ]
+  },
+  "shortanswer": {
+    "question": "What conditions led to the Russian Revolution?",
+    "expectedAny": [
+      "economic hardship",
+      "military defeats",
+      "social inequality",
+      "war casualties"
+    ]
+  }
+}

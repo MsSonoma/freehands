@@ -1,0 +1,53 @@
+{
+  "id": "10th_Conic_Sections_Circles_Parabolas_Intermediate",
+  "title": "Conic Sections: Circles, Parabolas, and Ellipses",
+  "grade": "10th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "conic section",
+      "definition": "Curve formed by intersecting a cone with a plane"
+    },
+    {
+      "term": "circle",
+      "definition": "Set of points equidistant from a center point"
+    },
+    {
+      "term": "parabola",
+      "definition": "Set of points equidistant from a focus and directrix"
+    },
+    {
+      "term": "ellipse",
+      "definition": "Set of points where sum of distances to two foci is constant"
+    },
+    {
+      "term": "center",
+      "definition": "Fixed point used as reference for conic sections"
+    }
+  ],
+  "teachingNotes": "Use geometric definitions and algebraic equations. Connect to real-world applications like satellite dishes and planetary orbits.",
+  "sample": {
+    "question": "What is a curve formed by intersecting a cone with a plane?",
+    "expectedAny": ["conic section", "conic", "conical section", "cone intersection"]
+  },
+  "truefalse": {
+    "question": "A circle is the set of points equidistant from a center.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What conic section has points equidistant from focus and directrix?",
+    "expectedAny": ["parabola", "parabolic curve", "parabolic section", "quadratic curve"]
+  },
+  "fillintheblank": {
+    "question": "An ellipse is defined by the sum of distances to two ________.",
+    "expectedAny": ["foci", "focal points", "focus points", "centers"]
+  },
+  "shortanswer": {
+    "question": "What is the standard form equation of a circle with center (h,k) and radius r?",
+    "expectedAny": ["(x-h)² + (y-k)² = r²", "circle equation", "distance formula squared"]
+  },
+  "wordProblems": {
+    "question": "Find the center and radius of the circle x² + y² - 6x + 4y = 3.",
+    "expectedAny": ["center (3,-2), radius 4", "complete the square", "(3,-2) and r=4"]
+  }
+}

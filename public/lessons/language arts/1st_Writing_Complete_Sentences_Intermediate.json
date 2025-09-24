@@ -1,0 +1,74 @@
+{
+  "id": "writing-complete-sentences-intermediate",
+  "title": "Writing Complete Sentences",
+  "grade": "1st",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "complete sentence",
+      "definition": "A group of words that tells a whole thought and makes sense"
+    },
+    {
+      "term": "subject",
+      "definition": "Who or what the sentence is about"
+    },
+    {
+      "term": "predicate",
+      "definition": "What the subject does or is"
+    },
+    {
+      "term": "punctuation",
+      "definition": "Marks like periods and question marks that help us read sentences"
+    }
+  ],
+  "teachingNotes": "Start with simple subject-predicate combinations. Use picture prompts and guided practice. Focus on complete thoughts and proper punctuation.",
+  "sample": {
+    "question": "Turn these words into a complete sentence: dog, runs, the",
+    "expectedAny": [
+      "The dog runs.",
+      "complete sentence with subject and predicate"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "A complete sentence needs both a subject and a predicate.",
+      "answer": true,
+      "expectedAny": [
+        "sentences need who/what and what they do"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which is a complete sentence?",
+      "choices": [
+        "The cat",
+        "Runs fast",
+        "The cat runs fast.",
+        "Fast cat"
+      ],
+      "correct": 2,
+      "expectedAny": [
+        "has subject, predicate, and punctuation"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "In the sentence 'Birds fly high,' the subject is _____ and the predicate is _____.",
+      "expectedAny": [
+        "Birds",
+        "fly high"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "What makes a sentence complete?",
+      "expectedAny": [
+        "subject, predicate, complete thought, punctuation"
+      ]
+    }
+  ]
+}

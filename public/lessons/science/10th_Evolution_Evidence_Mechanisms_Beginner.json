@@ -1,0 +1,74 @@
+{
+  "id": "10th_Evolution_Evidence_Mechanisms_Beginner",
+  "title": "Evolution: Evidence and Mechanisms of Change",
+  "grade": "10th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "evolution",
+      "definition": "Change in heritable traits of populations over successive generations"
+    },
+    {
+      "term": "natural selection",
+      "definition": "Mechanism where favorable traits become more common over time"
+    },
+    {
+      "term": "adaptation",
+      "definition": "Inherited characteristic that enhances survival and reproduction"
+    },
+    {
+      "term": "genetic drift",
+      "definition": "Random changes in allele frequencies in small populations"
+    },
+    {
+      "term": "speciation",
+      "definition": "Formation of new species from existing populations"
+    }
+  ],
+  "teachingNotes": "Use comparative anatomy and molecular evidence. Discuss common misconceptions about evolution and natural selection.",
+  "sample": {
+    "question": "What is change in heritable traits over successive generations?",
+    "expectedAny": [
+      "evolution",
+      "evolutionary change",
+      "biological evolution",
+      "species change"
+    ]
+  },
+  "truefalse": {
+    "question": "Natural selection causes favorable traits to become more common.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is an inherited characteristic that enhances survival?",
+    "expectedAny": [
+      "adaptation",
+      "adaptive trait",
+      "survival trait",
+      "beneficial trait"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The formation of new species is called ________.",
+    "expectedAny": [
+      "speciation",
+      "species formation",
+      "evolutionary divergence",
+      "species development"
+    ]
+  },
+  "shortanswer": {
+    "question": "What evidence supports the theory of evolution?",
+    "expectedAny": [
+      "fossil record",
+      "comparative anatomy",
+      "molecular similarities",
+      "biogeography"
+    ]
+  }
+}

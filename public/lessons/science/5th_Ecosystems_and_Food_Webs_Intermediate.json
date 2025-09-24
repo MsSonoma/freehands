@@ -1,0 +1,75 @@
+{
+  "id": "ecosystems-food-webs-intermediate",
+  "title": "Ecosystems and Food Webs",
+  "grade": "5th",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "ecosystem",
+      "definition": "All the living and nonliving things in an environment and how they interact"
+    },
+    {
+      "term": "food web",
+      "definition": "A diagram showing how energy flows through multiple food chains in an ecosystem"
+    },
+    {
+      "term": "producer",
+      "definition": "An organism that makes its own food, usually through photosynthesis"
+    },
+    {
+      "term": "decomposer",
+      "definition": "An organism that breaks down dead plants and animals"
+    }
+  ],
+  "teachingNotes": "Use diagrams to show energy flow. Discuss human impact on ecosystems. Connect to local environments students know.",
+  "sample": {
+    "question": "What would happen to an ecosystem if all the producers disappeared?",
+    "expectedAny": [
+      "ecosystem would collapse",
+      "consumers would have no food source"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "Energy in a food web always flows from producers to consumers to decomposers.",
+      "answer": false,
+      "expectedAny": [
+        "decomposers break down all organism levels"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "In a forest ecosystem, which organism is a primary consumer?",
+      "choices": [
+        "oak tree",
+        "rabbit",
+        "hawk",
+        "mushroom"
+      ],
+      "correct": 1,
+      "expectedAny": [
+        "rabbit eats plants (producers)"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "The _____ level of a food web contains organisms that make their own food.",
+      "expectedAny": [
+        "producer",
+        "first"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Explain why food webs are more realistic than simple food chains.",
+      "expectedAny": [
+        "animals eat multiple food sources",
+        "shows complex relationships"
+      ]
+    }
+  ]
+}

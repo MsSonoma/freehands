@@ -1,0 +1,53 @@
+{
+  "id": "11th_Limits_Introduction_Calculus_Beginner",
+  "title": "Limits and Introduction to Calculus",
+  "grade": "11th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "limit",
+      "definition": "Value that function approaches as input approaches specific value"
+    },
+    {
+      "term": "continuous function",
+      "definition": "Function with no breaks, jumps, or holes in its graph"
+    },
+    {
+      "term": "approaching",
+      "definition": "Getting arbitrarily close to a value without necessarily reaching it"
+    },
+    {
+      "term": "left-hand limit",
+      "definition": "Limit of function as input approaches from negative direction"
+    },
+    {
+      "term": "right-hand limit",
+      "definition": "Limit of function as input approaches from positive direction"
+    }
+  ],
+  "teachingNotes": "Use graphical and numerical approaches to introduce limit concept. Emphasize intuitive understanding.",
+  "sample": {
+    "question": "What value does a function approach as input nears a specific value?",
+    "expectedAny": ["limit", "limiting value", "approached value", "function limit"]
+  },
+  "truefalse": {
+    "question": "A continuous function has no breaks or jumps in its graph.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is the limit from the negative direction called?",
+    "expectedAny": ["left-hand limit", "left limit", "negative approach", "left side limit"]
+  },
+  "fillintheblank": {
+    "question": "Getting arbitrarily close to a value is called ________ that value.",
+    "expectedAny": ["approaching", "nearing", "converging to", "tending toward"]
+  },
+  "shortanswer": {
+    "question": "When does a limit exist at a point?",
+    "expectedAny": ["left and right limits equal", "both one-sided limits exist", "approaches same value", "limit is unique"]
+  },
+  "wordProblems": {
+    "question": "If f(x) = (x² - 4)/(x - 2), what is lim(x→2) f(x)?",
+    "expectedAny": ["4", "four", "x + 2 at x = 2", "limit equals 4"]
+  }
+}

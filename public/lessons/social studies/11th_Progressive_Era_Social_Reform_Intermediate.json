@@ -1,0 +1,74 @@
+{
+  "id": "11th_Progressive_Era_Social_Reform_Intermediate",
+  "title": "Progressive Era and Social Reform",
+  "grade": "11th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "Sixteenth Amendment",
+      "definition": "Constitutional amendment allowing federal income tax"
+    },
+    {
+      "term": "Seventeenth Amendment",
+      "definition": "Constitutional amendment providing for direct election of senators"
+    },
+    {
+      "term": "Eighteenth Amendment",
+      "definition": "Constitutional amendment establishing Prohibition of alcohol"
+    },
+    {
+      "term": "Nineteenth Amendment",
+      "definition": "Constitutional amendment granting women the right to vote"
+    },
+    {
+      "term": "initiative and referendum",
+      "definition": "Democratic reforms allowing citizens to propose and vote on laws"
+    }
+  ],
+  "teachingNotes": "Analyze constitutional changes and democratic reforms. Examine successes and limitations of Progressive achievements.",
+  "sample": {
+    "question": "What amendment allowed federal income tax?",
+    "expectedAny": [
+      "Sixteenth Amendment",
+      "16th Amendment",
+      "income tax amendment",
+      "federal tax amendment"
+    ]
+  },
+  "truefalse": {
+    "question": "The Nineteenth Amendment granted women the right to vote.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What reforms allowed citizens to propose and vote on laws?",
+    "expectedAny": [
+      "initiative and referendum",
+      "direct democracy",
+      "citizen lawmaking",
+      "popular legislation"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The amendment establishing Prohibition was the ________ Amendment.",
+    "expectedAny": [
+      "Eighteenth",
+      "18th",
+      "Prohibition",
+      "alcohol ban"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did Progressive amendments expand democracy?",
+    "expectedAny": [
+      "direct senator election",
+      "women's suffrage",
+      "citizen initiatives",
+      "democratic participation"
+    ]
+  }
+}

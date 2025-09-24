@@ -1,0 +1,73 @@
+{
+  "id": "8th_Speaking_and_Listening_Presentations_Advanced",
+  "title": "Speaking and Listening: Effective Presentations",
+  "grade": "8th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "presentation",
+      "definition": "A formal speech given to an audience"
+    },
+    {
+      "term": "body language",
+      "definition": "Non-verbal communication through gestures and posture"
+    },
+    {
+      "term": "eye contact",
+      "definition": "Looking directly at your audience while speaking"
+    },
+    {
+      "term": "vocal variety",
+      "definition": "Changes in volume, pace, and tone while speaking"
+    },
+    {
+      "term": "audience awareness",
+      "definition": "Understanding and adapting to your listeners' needs"
+    }
+  ],
+  "teachingNotes": "Practice presentation skills with peer feedback. Emphasize the importance of preparation and audience engagement.",
+  "sample": {
+    "question": "What is a formal speech given to an audience?",
+    "expectedAny": [
+      "presentation",
+      "formal speech",
+      "public speaking",
+      "oral presentation"
+    ]
+  },
+  "truefalse": {
+    "question": "Body language includes gestures and posture.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What involves changes in volume, pace, and tone?",
+    "expectedAny": [
+      "vocal variety",
+      "voice modulation",
+      "speech variation",
+      "vocal dynamics"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Looking directly at your audience is called ________ contact.",
+    "expectedAny": [
+      "eye",
+      "visual",
+      "direct",
+      "face"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why is audience awareness important in presentations?",
+    "expectedAny": [
+      "helps connect with listeners",
+      "improves communication",
+      "makes message relevant"
+    ]
+  }
+}

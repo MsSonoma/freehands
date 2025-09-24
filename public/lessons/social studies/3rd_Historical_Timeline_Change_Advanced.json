@@ -1,0 +1,89 @@
+{
+  "id": "3rd_Historical_Timeline_Change_Advanced",
+  "title": "Historical Timeline and Change Over Time",
+  "grade": "3rd",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    { "term": "timeline", "definition": "A line that shows when important events happened in order" },
+    { "term": "chronological", "definition": "Arranged in the order that things happened in time" },
+    { "term": "decade", "definition": "A period of 10 years" },
+    { "term": "century", "definition": "A period of 100 years" },
+    { "term": "historical", "definition": "Related to events that happened in the past" },
+    { "term": "era", "definition": "A long period of time marked by special events or characteristics" }
+  ],
+  "teachingNotes": "Create classroom timeline of students' lives. Use family photos to show change over time. Connect to school and community history.",
+  "sample": [
+    { "question": "What is a timeline?", "expectedAny": ["shows events in order", "organizes history", "displays when things happened"] },
+    { "question": "How many years are in a decade?", "expectedAny": ["10", "ten"] },
+    { "question": "How many years are in a century?", "expectedAny": ["100", "one hundred"] },
+    { "question": "What does chronological mean?", "expectedAny": ["in order", "time order", "sequence"] },
+    { "question": "Name one way transportation has changed.", "expectedAny": ["cars replaced horses", "airplanes invented", "trains", "faster travel"] },
+    { "question": "How have schools changed over time?", "expectedAny": ["computers added", "more diverse", "different teaching methods"] },
+    { "question": "What era are we living in now?", "expectedAny": ["modern era", "digital age", "21st century"] }
+  ],
+  "truefalse": [
+    { "question": "A timeline shows events in the order they happened.", "answer": true },
+    { "question": "One century equals 50 years.", "answer": false },
+    { "question": "Technology has changed how people communicate.", "answer": true },
+    { "question": "All historical events happened before you were born.", "answer": false },
+    { "question": "Change happens quickly in all parts of life.", "answer": false },
+    { "question": "Photographs can show change over time.", "answer": true },
+    { "question": "Historical events only happened long ago.", "answer": false }
+  ],
+  "multiplechoice": [
+    {
+      "question": "How many decades are in one century?",
+      "choices": ["5", "10", "50", "100"],
+      "correct": 1
+    },
+    {
+      "question": "What happened first in American history?",
+      "choices": ["Civil War", "World War II", "Revolutionary War", "Moon Landing"],
+      "correct": 2
+    },
+    {
+      "question": "Which shows change over time?",
+      "choices": ["timeline", "map", "dictionary", "menu"],
+      "correct": 0
+    },
+    {
+      "question": "When did the 20th century end?",
+      "choices": ["1999", "2000", "2001", "1900"],
+      "correct": 1
+    },
+    {
+      "question": "What invention changed communication most?",
+      "choices": ["pencil", "telephone", "paper", "bicycle"],
+      "correct": 1
+    },
+    {
+      "question": "Which is an example of historical change?",
+      "choices": ["same clothes", "no change", "horses to cars", "nothing new"],
+      "correct": 2
+    },
+    {
+      "question": "How do we learn about the past?",
+      "choices": ["photographs", "stories", "artifacts", "all of these"],
+      "correct": 3
+    }
+  ],
+  "fillintheblank": [
+    { "question": "A ___ shows events in the order they happened.", "expectedAny": ["timeline"] },
+    { "question": "Ten years equals one ___.", "expectedAny": ["decade"] },
+    { "question": "One hundred years equals one ___.", "expectedAny": ["century"] },
+    { "question": "Events in ___ order happened in time sequence.", "expectedAny": ["chronological"] },
+    { "question": "We live in the ___ century.", "expectedAny": ["21st", "twenty-first"] },
+    { "question": "___ events happened in the past.", "expectedAny": ["Historical"] },
+    { "question": "Change over time can be shown with ___.", "expectedAny": ["photographs", "timelines", "artifacts"] }
+  ],
+  "shortanswer": [
+    { "question": "How has transportation changed over 100 years?", "expectedAny": ["horses to cars", "invention of airplanes", "faster travel", "more options"] },
+    { "question": "What are three ways to learn about the past?", "expectedAny": ["photographs", "stories", "artifacts", "documents", "museums"] },
+    { "question": "How have homes changed over time?", "expectedAny": ["electricity added", "modern appliances", "different materials", "larger"] },
+    { "question": "Why are timelines important?", "expectedAny": ["organize events", "understand sequence", "see patterns", "learn history"] },
+    { "question": "How has communication changed?", "expectedAny": ["letters to phones", "email", "instant messaging", "internet"] },
+    { "question": "What can old photographs tell us?", "expectedAny": ["how people dressed", "what places looked like", "family history", "changes over time"] },
+    { "question": "How might life change in the future?", "expectedAny": ["new technology", "different transportation", "new inventions", "space travel"] }
+  ]
+}

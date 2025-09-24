@@ -1,0 +1,68 @@
+{
+  "id": "basic-shapes-colors-intermediate",
+  "title": "Basic Shapes and Colors",
+  "grade": "K",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {"term": "circle", "definition": "A round shape with no corners"},
+    {"term": "square", "definition": "A shape with 4 equal sides and 4 corners"},
+    {"term": "triangle", "definition": "A shape with 3 sides and 3 corners"},
+    {"term": "rectangle", "definition": "A shape with 4 sides and 4 corners, but not all sides are equal"},
+    {"term": "corners", "definition": "The pointy parts where two sides of a shape meet"},
+    {"term": "sides", "definition": "The straight lines that make up a shape"}
+  ],
+  "teachingNotes": "Use shape manipulatives and real objects. Go on shape hunts around classroom. Create art with different shapes and colors.",
+  "sample": [
+    {"question": "How many sides does a triangle have?", "expectedAny": ["3", "three", "3 sides"]},
+    {"question": "Point to the circle in this group of shapes.", "expectedAny": ["identifies circle", "points to round shape"]},
+    {"question": "What shape has no corners?", "expectedAny": ["circle", "round shape"]},
+    {"question": "Show me a square using your hands.", "expectedAny": ["makes square shape", "shows 4 sides"]},
+    {"question": "How many corners does a rectangle have?", "expectedAny": ["4", "four", "4 corners"]}
+  ],
+  "truefalse": [
+    {"question": "A circle has corners.", "answer": false, "expectedAny": ["circles are round and have no corners"]},
+    {"question": "A square has 4 sides.", "answer": true, "expectedAny": ["squares have 4 sides"]},
+    {"question": "All rectangles are squares.", "answer": false, "expectedAny": ["not all rectangles are squares"]},
+    {"question": "A triangle has 3 corners.", "answer": true, "expectedAny": ["triangles have 3 corners"]},
+    {"question": "Red and blue are colors.", "answer": true, "expectedAny": ["red and blue are colors"]},
+    {"question": "A circle has sides.", "answer": false, "expectedAny": ["circles don't have straight sides"]},
+    {"question": "Shapes can be different colors.", "answer": true, "expectedAny": ["shapes can be any color"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which shape has 4 equal sides?", "choices": ["circle", "triangle", "square", "oval"], "correct": 2, "expectedAny": ["squares have 4 sides that are all the same length"]},
+    {"question": "What color do you get when you mix red and blue?", "choices": ["green", "purple", "yellow", "orange"], "correct": 1, "expectedAny": ["red and blue make purple"]},
+    {"question": "Which shape has the most sides?", "choices": ["circle", "triangle", "square", "rectangle"], "correct": 2, "expectedAny": ["square and rectangle both have 4"]},
+    {"question": "What shape is a ball?", "choices": ["square", "triangle", "rectangle", "circle"], "correct": 3, "expectedAny": ["ball is round like circle"]},
+    {"question": "How many sides does a circle have?", "choices": ["1", "2", "3", "0"], "correct": 3, "expectedAny": ["circles have no sides"]},
+    {"question": "Which is a primary color?", "choices": ["purple", "green", "red", "orange"], "correct": 2, "expectedAny": ["red is a primary color"]},
+    {"question": "What shape is a window usually?", "choices": ["circle", "triangle", "rectangle", "oval"], "correct": 2, "expectedAny": ["windows are usually rectangles"]}
+  ],
+  "fillintheblank": [
+    {"question": "A _____ is round and has no corners.", "expectedAny": ["circle"]},
+    {"question": "A square has _____ sides.", "expectedAny": ["4", "four"]},
+    {"question": "A _____ has 3 sides and 3 corners.", "expectedAny": ["triangle"]},
+    {"question": "The primary colors are red, blue, and _____.", "expectedAny": ["yellow"]},
+    {"question": "A rectangle has _____ corners.", "expectedAny": ["4", "four"]},
+    {"question": "Red and yellow make _____.", "expectedAny": ["orange"]},
+    {"question": "A _____ has 4 sides but they are not all equal.", "expectedAny": ["rectangle"]}
+  ],
+  "shortanswer": [
+    {"question": "Look around the room. Name something that is shaped like a rectangle.", "expectedAny": ["door", "window", "book", "table", "paper"]},
+    {"question": "Name 3 different colors you can see.", "expectedAny": ["any three colors", "red, blue, green"]},
+    {"question": "What shapes can you find on a house?", "expectedAny": ["square windows", "triangle roof", "rectangle door"]},
+    {"question": "Describe what a circle looks like.", "expectedAny": ["round", "no corners", "like a ball"]},
+    {"question": "How is a square different from a rectangle?", "expectedAny": ["square has equal sides", "rectangle sides not equal"]},
+    {"question": "What shapes do you see in a traffic light?", "expectedAny": ["circles", "round lights"]},
+    {"question": "Name things that are usually red.", "expectedAny": ["apple", "fire truck", "stop sign", "strawberry"]}
+  ],
+  "wordProblems": [
+    {"question": "If you have 2 red circles and 3 blue squares, how many shapes do you have total?", "expectedAny": ["5 shapes", "2 + 3 = 5"]},
+    {"question": "You draw 4 triangles and 2 circles. How many shapes did you draw?", "expectedAny": ["6 shapes", "4 + 2 = 6"]},
+    {"question": "There are 5 red crayons and 3 blue crayons. How many crayons total?", "expectedAny": ["8 crayons", "5 + 3 = 8"]},
+    {"question": "You see 6 square windows. 2 are open. How many are closed?", "expectedAny": ["4 windows", "6 - 2 = 4"]},
+    {"question": "Mom cuts 3 circular cookies and 4 square cookies. How many cookies total?", "expectedAny": ["7 cookies", "3 + 4 = 7"]},
+    {"question": "In a box of shapes, there are 8 triangles. You take out 3. How many triangles are left?", "expectedAny": ["5 triangles", "8 - 3 = 5"]},
+    {"question": "You have 7 blocks. 3 are squares and the rest are circles. How many circles?", "expectedAny": ["4 circles", "7 - 3 = 4"]}
+  ]
+}

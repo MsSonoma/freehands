@@ -1,0 +1,74 @@
+{
+  "id": "6th_Ecosystems_Biodiversity_Intermediate",
+  "title": "Ecosystems and Biodiversity",
+  "grade": "6th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "ecosystem",
+      "definition": "A community of living things and their non-living environment"
+    },
+    {
+      "term": "biodiversity",
+      "definition": "The variety of different species in an ecosystem"
+    },
+    {
+      "term": "habitat",
+      "definition": "The natural environment where an organism lives and meets its needs"
+    },
+    {
+      "term": "predator",
+      "definition": "An animal that hunts and eats other animals"
+    },
+    {
+      "term": "prey",
+      "definition": "An animal that is hunted and eaten by other animals"
+    }
+  ],
+  "teachingNotes": "Use local ecosystem examples. Discuss the importance of biodiversity and how human activities affect ecosystems. Create food webs showing predator-prey relationships.",
+  "sample": {
+    "question": "What is the variety of species in an ecosystem called?",
+    "expectedAny": [
+      "biodiversity",
+      "biological diversity",
+      "species variety",
+      "ecosystem diversity"
+    ]
+  },
+  "truefalse": {
+    "question": "An ecosystem includes both living and non-living things.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What do we call an animal that hunts other animals?",
+    "expectedAny": [
+      "predator",
+      "hunter",
+      "carnivore",
+      "predatory animal"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The natural environment where an organism lives is its ________.",
+    "expectedAny": [
+      "habitat",
+      "natural habitat",
+      "living space",
+      "home environment"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why is biodiversity important for ecosystems?",
+    "expectedAny": [
+      "keeps ecosystem stable",
+      "provides food sources",
+      "maintains balance",
+      "supports all life"
+    ]
+  }
+}

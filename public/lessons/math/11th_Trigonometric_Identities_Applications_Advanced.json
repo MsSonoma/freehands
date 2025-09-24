@@ -1,0 +1,53 @@
+{
+  "id": "11th_Trigonometric_Identities_Applications_Advanced",
+  "title": "Trigonometric Identities and Applications",
+  "grade": "11th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "power reduction formula",
+      "definition": "Identity expressing higher powers of trig functions in terms of first powers"
+    },
+    {
+      "term": "trigonometric substitution",
+      "definition": "Method using trig identities to simplify algebraic expressions"
+    },
+    {
+      "term": "harmonic analysis",
+      "definition": "Decomposing complex waves into simpler trigonometric components"
+    },
+    {
+      "term": "Fourier series",
+      "definition": "Representation of function as infinite sum of trigonometric functions"
+    },
+    {
+      "term": "complex exponential form",
+      "definition": "Expression of trigonometric functions using Euler's formula"
+    }
+  ],
+  "teachingNotes": "Explore advanced applications of trigonometry in calculus and engineering. Introduce Fourier analysis concepts.",
+  "sample": {
+    "question": "What expresses higher powers of trig functions in terms of first powers?",
+    "expectedAny": ["power reduction formula", "power formula", "reduction identity", "power identity"]
+  },
+  "truefalse": {
+    "question": "Fourier series represents functions as sums of trigonometric functions.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What method uses trig identities to simplify algebraic expressions?",
+    "expectedAny": ["trigonometric substitution", "trig substitution", "trigonometric method", "substitution method"]
+  },
+  "fillintheblank": {
+    "question": "Decomposing complex waves into simpler components is ________ analysis.",
+    "expectedAny": ["harmonic", "frequency", "wave", "spectral"]
+  },
+  "shortanswer": {
+    "question": "How does Euler's formula relate trigonometry to complex numbers?",
+    "expectedAny": ["e^(iθ) = cos θ + i sin θ", "exponential form", "complex representation", "Euler's identity"]
+  },
+  "wordProblems": {
+    "question": "Using power reduction, what is cos⁴x in terms of multiple angles?",
+    "expectedAny": ["(3 + 4cos2x + cos4x)/8", "3/8 + cos2x/2 + cos4x/8", "trigonometric polynomial"]
+  }
+}

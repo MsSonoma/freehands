@@ -1,0 +1,73 @@
+{
+  "id": "7th_Argumentative_Writing_Persuasion_Intermediate",
+  "title": "Argumentative Writing and Persuasive Techniques",
+  "grade": "7th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "argument",
+      "definition": "A claim supported by reasons and evidence"
+    },
+    {
+      "term": "evidence",
+      "definition": "Facts, examples, or expert opinions that support a claim"
+    },
+    {
+      "term": "counterargument",
+      "definition": "An opposing viewpoint to your main argument"
+    },
+    {
+      "term": "persuasion",
+      "definition": "Trying to convince someone to agree with your point of view"
+    },
+    {
+      "term": "credible source",
+      "definition": "A reliable and trustworthy source of information"
+    }
+  ],
+  "teachingNotes": "Teach the structure of argumentative essays. Emphasize the importance of using credible evidence and addressing counterarguments.",
+  "sample": {
+    "question": "What is a claim supported by reasons and evidence?",
+    "expectedAny": [
+      "argument",
+      "argumentative claim",
+      "thesis",
+      "position"
+    ]
+  },
+  "truefalse": {
+    "question": "Good arguments should address counterarguments.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What makes a source credible?",
+    "expectedAny": [
+      "reliable and trustworthy",
+      "expert knowledge",
+      "factual accuracy",
+      "authoritative"
+    ]
+  },
+  "fillintheblank": {
+    "question": "An opposing viewpoint is called a ________.",
+    "expectedAny": [
+      "counterargument",
+      "opposing view",
+      "rebuttal",
+      "opposition"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are the three main parts of an argumentative essay?",
+    "expectedAny": [
+      "introduction, body, conclusion",
+      "claim, evidence, counterargument",
+      "thesis, support, conclusion"
+    ]
+  }
+}

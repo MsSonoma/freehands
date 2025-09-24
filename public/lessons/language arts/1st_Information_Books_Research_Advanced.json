@@ -1,0 +1,74 @@
+{
+  "id": "information-books-research-advanced",
+  "title": "Information Books and Research",
+  "grade": "1st",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "information",
+      "definition": "Facts and details about something"
+    },
+    {
+      "term": "nonfiction",
+      "definition": "Books about real things, not made-up stories"
+    },
+    {
+      "term": "research",
+      "definition": "Looking for information about a topic"
+    },
+    {
+      "term": "fact",
+      "definition": "Something that is true"
+    }
+  ],
+  "teachingNotes": "Use simple nonfiction books with lots of pictures. Practice finding specific information. Compare fiction and nonfiction books.",
+  "sample": {
+    "question": "Where would you look to find facts about elephants?",
+    "expectedAny": [
+      "information book",
+      "nonfiction book",
+      "animal book"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "Nonfiction books tell about real things.",
+      "answer": true,
+      "expectedAny": [
+        "nonfiction books contain facts and real information"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which book would help you learn about dinosaurs?",
+      "choices": [
+        "fairy tale book",
+        "dinosaur information book",
+        "poetry book",
+        "made-up story"
+      ],
+      "correct": 1,
+      "expectedAny": [
+        "information books contain facts about topics"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "When you want to learn about something, you do _____.",
+      "expectedAny": [
+        "research"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "What is one fact you learned from an information book?",
+      "expectedAny": [
+        "any factual information from nonfiction books"
+      ]
+    }
+  ]
+}

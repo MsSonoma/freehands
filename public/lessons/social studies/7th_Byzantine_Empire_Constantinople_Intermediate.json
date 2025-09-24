@@ -1,0 +1,73 @@
+{
+  "id": "7th_Byzantine_Empire_Constantinople_Intermediate",
+  "title": "Byzantine Empire and Constantinople",
+  "grade": "7th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "Byzantine Empire",
+      "definition": "The eastern part of the Roman Empire that continued after Rome fell"
+    },
+    {
+      "term": "Constantinople",
+      "definition": "The capital city of the Byzantine Empire"
+    },
+    {
+      "term": "Orthodox Christianity",
+      "definition": "The form of Christianity practiced in the Byzantine Empire"
+    },
+    {
+      "term": "emperor",
+      "definition": "The ruler of the Byzantine Empire"
+    },
+    {
+      "term": "trade center",
+      "definition": "A place where merchants from different regions come to buy and sell"
+    }
+  ],
+  "teachingNotes": "Explain how the Byzantine Empire preserved Roman traditions. Discuss Constantinople's strategic location between Europe and Asia.",
+  "sample": {
+    "question": "What empire was the eastern continuation of Rome?",
+    "expectedAny": [
+      "Byzantine Empire",
+      "Eastern Roman Empire",
+      "Byzantine",
+      "Eastern Empire"
+    ]
+  },
+  "truefalse": {
+    "question": "Constantinople was located at the crossroads between Europe and Asia.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What religion was practiced in the Byzantine Empire?",
+    "expectedAny": [
+      "Orthodox Christianity",
+      "Eastern Orthodox",
+      "Greek Orthodox",
+      "Byzantine Christianity"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The capital of the Byzantine Empire was ________.",
+    "expectedAny": [
+      "Constantinople",
+      "Byzantium",
+      "Istanbul",
+      "the capital"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why was Constantinople's location important for trade?",
+    "expectedAny": [
+      "between Europe and Asia",
+      "connected different continents",
+      "crossroads of trade routes"
+    ]
+  }
+}

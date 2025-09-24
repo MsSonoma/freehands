@@ -1,0 +1,53 @@
+{
+  "id": "10th_Matrix_Operations_Systems_Equations_Beginner",
+  "title": "Matrix Operations and Systems of Equations",
+  "grade": "10th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "matrix",
+      "definition": "Rectangular array of numbers arranged in rows and columns"
+    },
+    {
+      "term": "element",
+      "definition": "Individual number in a matrix"
+    },
+    {
+      "term": "dimension",
+      "definition": "Size of matrix described as rows × columns"
+    },
+    {
+      "term": "matrix addition",
+      "definition": "Operation that adds corresponding elements of matrices"
+    },
+    {
+      "term": "matrix multiplication",
+      "definition": "Operation combining matrices using rows and columns"
+    }
+  ],
+  "teachingNotes": "Start with simple 2×2 matrices. Emphasize that matrices must have compatible dimensions for operations.",
+  "sample": {
+    "question": "What is a rectangular array of numbers in rows and columns?",
+    "expectedAny": ["matrix", "mathematical matrix", "number array", "rectangular array"]
+  },
+  "truefalse": {
+    "question": "Matrix addition requires matrices to have the same dimensions.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What describes the size of a matrix?",
+    "expectedAny": ["dimension", "size", "order", "dimensions"]
+  },
+  "fillintheblank": {
+    "question": "An individual number in a matrix is called an ________.",
+    "expectedAny": ["element", "entry", "component", "term"]
+  },
+  "shortanswer": {
+    "question": "How do you add two matrices?",
+    "expectedAny": ["add corresponding elements", "element-wise addition", "add same position numbers"]
+  },
+  "wordProblems": {
+    "question": "Add matrices A = [2 3; 1 4] and B = [1 2; 3 1]. What is A + B?",
+    "expectedAny": ["[3 5; 4 5]", "matrix with elements 3,5,4,5", "[3 5; 4 5]"]
+  }
+}

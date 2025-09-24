@@ -1,0 +1,73 @@
+{
+  "id": "10th_Molecular_Genetics_Protein_Synthesis_Intermediate",
+  "title": "Molecular Genetics: Protein Synthesis and Gene Expression",
+  "grade": "10th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "gene expression",
+      "definition": "Process by which genetic information is used to synthesize proteins"
+    },
+    {
+      "term": "transcription",
+      "definition": "Process of copying DNA information to make messenger RNA"
+    },
+    {
+      "term": "translation",
+      "definition": "Process of using mRNA to synthesize proteins at ribosomes"
+    },
+    {
+      "term": "codon",
+      "definition": "Three-nucleotide sequence that codes for a specific amino acid"
+    },
+    {
+      "term": "mutation",
+      "definition": "Change in DNA sequence that can affect protein function"
+    }
+  ],
+  "teachingNotes": "Use the genetic code table to practice translation. Emphasize the central dogma: DNA → RNA → Protein.",
+  "sample": {
+    "question": "What is the process by which genetic information is used to synthesize proteins?",
+    "expectedAny": [
+      "gene expression",
+      "protein synthesis",
+      "genetic expression",
+      "gene to protein"
+    ]
+  },
+  "truefalse": {
+    "question": "Transcription occurs in the nucleus and translation occurs at ribosomes.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is a three-nucleotide sequence that codes for an amino acid?",
+    "expectedAny": [
+      "codon",
+      "triplet code",
+      "genetic code unit",
+      "amino acid code"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The process of copying DNA to make RNA is called ________.",
+    "expectedAny": [
+      "transcription",
+      "DNA copying",
+      "RNA synthesis",
+      "genetic transcription"
+    ]
+  },
+  "shortanswer": {
+    "question": "Explain the central dogma of molecular biology.",
+    "expectedAny": [
+      "DNA codes for RNA which codes for proteins",
+      "DNA → RNA → Protein",
+      "genetic information flows from DNA to protein"
+    ]
+  }
+}

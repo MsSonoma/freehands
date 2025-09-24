@@ -1,0 +1,71 @@
+{
+  "id": "animal-groups-babies-advanced",
+  "title": "Animal Groups and Their Babies",
+  "grade": "1st",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "mammal",
+      "definition": "Animals that feed milk to their babies and usually have fur"
+    },
+    {
+      "term": "bird",
+      "definition": "Animals that have feathers, wings, and lay eggs"
+    },
+    {
+      "term": "offspring",
+      "definition": "Baby animals that come from their parents"
+    },
+    {
+      "term": "adult",
+      "definition": "A grown-up animal that can have babies"
+    }
+  ],
+  "teachingNotes": "Use pictures of animal families. Discuss how babies look like their parents. Compare different animal groups and characteristics.",
+  "sample": [
+    {"question": "What do we call baby animals?", "expectedAny": ["offspring", "babies", "young animals"]},
+    {"question": "What is a baby dog called?", "expectedAny": ["puppy"]},
+    {"question": "What is a baby cat called?", "expectedAny": ["kitten"]},
+    {"question": "What group do dogs and cats belong to?", "expectedAny": ["mammals"]},
+    {"question": "What is a baby bird called?", "expectedAny": ["chick"]},
+    {"question": "What covers a bird's body?", "expectedAny": ["feathers"]},
+    {"question": "What do mammal mothers feed their babies?", "expectedAny": ["milk"]}
+  ],
+  "truefalse": [
+    {"question": "All birds have feathers.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Fish breathe with lungs like humans.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Mammals usually have fur or hair.", "answer": true, "expectedAny": ["true"]},
+    {"question": "All animals lay eggs.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Amphibians can live on land and in water.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Baby animals are called offspring.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Birds use feathers to swim underwater.", "answer": false, "expectedAny": ["false"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which animal is a mammal?", "choices": ["eagle", "dog", "fish", "butterfly"], "correct": 1, "expectedAny": ["dog"]},
+    {"question": "Which animal lays eggs?", "choices": ["cat", "bird", "dog", "cow"], "correct": 1, "expectedAny": ["bird"]},
+    {"question": "Which group has gills?", "choices": ["mammals", "birds", "fish", "reptiles"], "correct": 2, "expectedAny": ["fish"]},
+    {"question": "A tadpole grows into a ___", "choices": ["frog", "bird", "puppy", "kitten"], "correct": 0, "expectedAny": ["frog"]},
+    {"question": "Which has scales?", "choices": ["snake", "rabbit", "chick", "kitten"], "correct": 0, "expectedAny": ["snake"]},
+    {"question": "Which animal baby is a calf?", "choices": ["cat", "cow", "dog", "bird"], "correct": 1, "expectedAny": ["cow"]},
+    {"question": "Which animal baby is a foal?", "choices": ["horse", "duck", "fish", "frog"], "correct": 0, "expectedAny": ["horse"]}
+  ],
+  "fillintheblank": [
+    {"question": "A baby cat is called a _____", "expectedAny": ["kitten"]},
+    {"question": "A baby dog is called a _____", "expectedAny": ["puppy"]},
+    {"question": "A baby cow is a _____", "expectedAny": ["calf"]},
+    {"question": "A baby horse is a _____", "expectedAny": ["foal"]},
+    {"question": "Birds have _____ on their bodies.", "expectedAny": ["feathers"]},
+    {"question": "Fish breathe with _____", "expectedAny": ["gills"]},
+    {"question": "Mammals have _____ or hair.", "expectedAny": ["fur"]}
+  ],
+  "shortanswer": [
+    {"question": "How are baby animals similar to their parents?", "expectedAny": ["look alike", "same features"]},
+    {"question": "Name one mammal, one bird, and one fish.", "expectedAny": ["dog, robin, goldfish"]},
+    {"question": "Why do birds build nests?", "expectedAny": ["to keep eggs/babies safe"]},
+    {"question": "How do fish babies live in water?", "expectedAny": ["use gills to breathe"]},
+    {"question": "Draw an animal family (parent and baby).", "expectedAny": ["drawing with labels"]},
+    {"question": "What do mammal moms give their babies to drink?", "expectedAny": ["milk"]},
+    {"question": "How does a tadpole change as it grows?", "expectedAny": ["grows legs, loses tail, becomes frog"]}
+  ]
+}

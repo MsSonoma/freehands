@@ -1,0 +1,74 @@
+{
+  "id": "9th_Research_Skills_Source_Evaluation_Advanced",
+  "title": "Research Skills: Source Evaluation and Citation",
+  "grade": "9th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "primary source",
+      "definition": "Original documents or firsthand accounts from the time period studied"
+    },
+    {
+      "term": "secondary source",
+      "definition": "Analysis or interpretation of primary sources by later scholars"
+    },
+    {
+      "term": "citation",
+      "definition": "Formal reference giving credit to sources used in research"
+    },
+    {
+      "term": "plagiarism",
+      "definition": "Using someone else's work or ideas without proper attribution"
+    },
+    {
+      "term": "bibliography",
+      "definition": "List of sources consulted or referenced in research"
+    }
+  ],
+  "teachingNotes": "Teach students to evaluate source credibility and reliability. Practice proper citation formats and academic integrity principles.",
+  "sample": {
+    "question": "What are original documents from the time period studied?",
+    "expectedAny": [
+      "primary sources",
+      "firsthand accounts",
+      "original documents",
+      "contemporary sources"
+    ]
+  },
+  "truefalse": {
+    "question": "Secondary sources analyze or interpret primary sources.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is using someone's work without proper attribution?",
+    "expectedAny": [
+      "plagiarism",
+      "academic dishonesty",
+      "copying",
+      "stealing ideas"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A formal reference giving credit to sources is a ________.",
+    "expectedAny": [
+      "citation",
+      "reference",
+      "credit",
+      "acknowledgment"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do you evaluate the credibility of a source?",
+    "expectedAny": [
+      "check author credentials",
+      "verify publication date",
+      "examine bias and accuracy",
+      "cross-reference with other sources"
+    ]
+  }
+}

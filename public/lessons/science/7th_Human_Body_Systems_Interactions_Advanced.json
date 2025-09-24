@@ -1,0 +1,73 @@
+{
+  "id": "7th_Human_Body_Systems_Interactions_Advanced",
+  "title": "Human Body Systems and Their Interactions",
+  "grade": "7th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "body system",
+      "definition": "A group of organs that work together to perform specific functions"
+    },
+    {
+      "term": "circulatory system",
+      "definition": "The system that transports blood, nutrients, and oxygen throughout the body"
+    },
+    {
+      "term": "respiratory system",
+      "definition": "The system responsible for breathing and gas exchange"
+    },
+    {
+      "term": "homeostasis",
+      "definition": "The body's ability to maintain stable internal conditions"
+    },
+    {
+      "term": "organ",
+      "definition": "A structure made of different tissues that work together for a specific function"
+    }
+  ],
+  "teachingNotes": "Emphasize how body systems work together and depend on each other. Use diagrams to show system interactions. Discuss how the body maintains homeostasis.",
+  "sample": {
+    "question": "What is the body's ability to maintain stable internal conditions called?",
+    "expectedAny": [
+      "homeostasis",
+      "internal balance",
+      "biological balance",
+      "physiological equilibrium"
+    ]
+  },
+  "truefalse": {
+    "question": "The circulatory and respiratory systems work together to deliver oxygen to cells.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which system is responsible for breaking down food?",
+    "expectedAny": [
+      "digestive system",
+      "digestive",
+      "gastrointestinal system",
+      "alimentary system"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A group of organs that work together is called a body ________.",
+    "expectedAny": [
+      "system",
+      "organ system",
+      "biological system",
+      "physiological system"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do the circulatory and respiratory systems work together?",
+    "expectedAny": [
+      "lungs add oxygen to blood, heart pumps it",
+      "respiratory provides oxygen, circulatory transports it",
+      "gas exchange and circulation"
+    ]
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "id": "life-cycles-plants-animals-intermediate",
+  "title": "Life Cycles of Plants and Animals",
+  "grade": "2nd",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "life cycle",
+      "definition": "The stages a living thing goes through as it grows and changes"
+    },
+    {
+      "term": "seed",
+      "definition": "The part of a plant that can grow into a new plant"
+    },
+    {
+      "term": "tadpole",
+      "definition": "A young frog that lives in water and has a tail"
+    },
+    {
+      "term": "metamorphosis",
+      "definition": "The process of changing from one form to another as an animal grows"
+    }
+  ],
+  "teachingNotes": "Use visual diagrams and real examples when possible. Compare different life cycles. Plant seeds in class to observe growth.",
+  "sample": [
+    {"question": "What do seeds need to grow?", "expectedAny": ["water", "sunlight", "soil", "air"]},
+    {"question": "Name the stages of a butterfly's life.", "expectedAny": ["egg", "caterpillar", "chrysalis", "butterfly"]},
+    {"question": "How do baby animals change as they grow?", "expectedAny": ["they get bigger", "learn new skills"]},
+    {"question": "What comes first: egg or chicken?", "expectedAny": ["egg"]},
+    {"question": "What happens to a tadpole?", "expectedAny": ["grows legs", "becomes a frog"]},
+    {"question": "How do plants make seeds?", "expectedAny": ["flowers make seeds after pollination"]},
+    {"question": "What do all living things need?", "expectedAny": ["food", "water", "air", "shelter"]}
+  ],
+  "truefalse": [
+    {"question": "All plants start from seeds.", "answer": true},
+    {"question": "Butterflies start as caterpillars.", "answer": true},
+    {"question": "Baby frogs are called tadpoles.", "answer": true},
+    {"question": "Plants need water to grow.", "answer": true},
+    {"question": "All animals lay eggs.", "answer": false},
+    {"question": "Seeds can grow without water.", "answer": false},
+    {"question": "Living things grow and change.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "A baby frog is called a ___", "choices": ["Puppy", "Tadpole", "Cub", "Chick"], "correct": 1},
+    {"question": "Seeds need ___ to grow", "choices": ["Only soil", "Water, sun, soil", "Only water", "Nothing"], "correct": 1},
+    {"question": "Caterpillar changes into ___", "choices": ["Bee", "Spider", "Butterfly", "Ant"], "correct": 2},
+    {"question": "Plants grow from ___", "choices": ["Rocks", "Seeds", "Metal", "Plastic"], "correct": 1},
+    {"question": "Egg → ___ → Butterfly", "choices": ["Caterpillar", "Bird", "Fish", "Flower"], "correct": 0},
+    {"question": "Baby plants are called ___", "choices": ["Pups", "Seedlings", "Cubs", "Kits"], "correct": 1},
+    {"question": "Frogs lay eggs in ___", "choices": ["Trees", "Water", "Sky", "Desert"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "A ___ grows into a butterfly", "expectedAny": ["caterpillar"]},
+    {"question": "Plants need water, soil, and ___", "expectedAny": ["sunlight", "sun"]},
+    {"question": "A baby cat is called a ___", "expectedAny": ["kitten"]},
+    {"question": "Seeds grow ___ first", "expectedAny": ["roots"]},
+    {"question": "A ___ is a baby frog", "expectedAny": ["tadpole"]},
+    {"question": "The butterfly life cycle has ___ stages", "expectedAny": ["four", "4"]},
+    {"question": "Plants make their own ___", "expectedAny": ["food"]}
+  ],
+  "shortanswer": [
+    {"question": "What are the stages of a plant's life?", "expectedAny": ["seed", "sprout", "plant", "flower", "makes seeds"]},
+    {"question": "How does a caterpillar become a butterfly?", "expectedAny": ["eats and grows", "makes chrysalis", "changes inside", "emerges"]},
+    {"question": "What do seeds need to grow?", "expectedAny": ["water", "sunlight", "soil", "air", "warmth"]},
+    {"question": "How are baby animals like their parents?", "expectedAny": ["same kind", "similar features", "smaller"]},
+    {"question": "Why do living things have life cycles?", "expectedAny": ["to grow", "reproduce"]},
+    {"question": "What happens if a plant doesn't get water?", "expectedAny": ["wilts", "turns brown", "dies"]},
+    {"question": "Name three animals that hatch from eggs.", "expectedAny": ["birds", "turtles", "frogs", "fish"]}
+  ]
+}

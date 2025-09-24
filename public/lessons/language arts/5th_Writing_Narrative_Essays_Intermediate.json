@@ -1,0 +1,74 @@
+{
+  "id": "5th_Writing_Narrative_Essays_Intermediate",
+  "title": "Writing Narrative Essays and Personal Stories",
+  "grade": "5th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "narrative",
+      "definition": "A story that tells about events in the order they happened"
+    },
+    {
+      "term": "personal narrative",
+      "definition": "A true story about something that happened to the writer"
+    },
+    {
+      "term": "dialogue",
+      "definition": "The exact words characters say in a story, shown with quotation marks"
+    },
+    {
+      "term": "sequence",
+      "definition": "The order in which events happen"
+    },
+    {
+      "term": "transition words",
+      "definition": "Words that help connect ideas and show the order of events"
+    }
+  ],
+  "teachingNotes": "Teach students to use time order and transition words. Practice writing personal experiences with vivid details. Emphasize beginning, middle, and end structure.",
+  "sample": {
+    "question": "What type of writing tells a story in the order events happened?",
+    "expectedAny": [
+      "narrative",
+      "narrative writing",
+      "story writing",
+      "narrative essay"
+    ]
+  },
+  "truefalse": {
+    "question": "Dialogue shows the exact words that characters say.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which words help show the order of events in a story?",
+    "expectedAny": [
+      "transition words",
+      "time words",
+      "sequence words",
+      "connecting words"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A true story about something that happened to you is called a ________ narrative.",
+    "expectedAny": [
+      "personal",
+      "personal narrative",
+      "true",
+      "autobiographical"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are three transition words you could use to show time order?",
+    "expectedAny": [
+      "first, then, finally",
+      "next, after, last",
+      "beginning, middle, end",
+      "initially, later, eventually"
+    ]
+  }
+}

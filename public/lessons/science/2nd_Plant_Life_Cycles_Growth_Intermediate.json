@@ -1,0 +1,74 @@
+{
+  "id": "2nd_Plant_Life_Cycles_Growth_Intermediate",
+  "title": "Plant Life Cycles and Growth",
+  "grade": "2nd",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "life cycle",
+      "definition": "The stages a living thing goes through as it grows and changes"
+    },
+    {
+      "term": "seed",
+      "definition": "The part of a plant that can grow into a new plant"
+    },
+    {
+      "term": "germination",
+      "definition": "When a seed starts to grow into a plant"
+    },
+    {
+      "term": "seedling",
+      "definition": "A young plant that has just started growing from a seed"
+    },
+    {
+      "term": "pollination",
+      "definition": "When pollen moves from one flower to another to help make seeds"
+    }
+  ],
+  "teachingNotes": "Use real plants or pictures to show different stages of plant growth. Plant seeds in class and observe changes over time. Discuss what plants need to grow: water, sunlight, air, and nutrients from soil.",
+  "sample": [
+    {"question": "What do plants need to grow?", "expectedAny": ["water", "sunlight", "air", "soil"]},
+    {"question": "What part of the plant makes food?", "expectedAny": ["leaves"]},
+    {"question": "Why are roots important?", "expectedAny": ["take in water", "hold plant"]},
+    {"question": "How do plants get water?", "expectedAny": ["roots soak water from soil"]},
+    {"question": "What do flowers do?", "expectedAny": ["help make seeds"]},
+    {"question": "Where do plants grow?", "expectedAny": ["many places: gardens, forests, fields"]},
+    {"question": "What happens without sunlight?", "expectedAny": ["can't make food", "plant wilts"]}
+  ],
+  "truefalse": [
+    {"question": "Plants need water to live.", "answer": true},
+    {"question": "Leaves make food for plants.", "answer": true},
+    {"question": "Plants can grow without sunlight.", "answer": false},
+    {"question": "Roots hold plants in place.", "answer": true},
+    {"question": "All plants have flowers.", "answer": false},
+    {"question": "Plants give us oxygen.", "answer": true},
+    {"question": "Seeds contain baby plants.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "Plants make food in their ___", "choices": ["Roots", "Leaves", "Flowers", "Stems"], "correct": 1},
+    {"question": "Roots absorb ___", "choices": ["Sunlight", "Water", "Air", "Leaves"], "correct": 1},
+    {"question": "Plants need ___", "choices": ["Water", "Sunlight", "Air", "All of these"], "correct": 3},
+    {"question": "Flowers help plants ___", "choices": ["Make seeds", "Absorb water", "Make roots", "Hide"], "correct": 0},
+    {"question": "The stem ___", "choices": ["Makes food", "Holds plant up", "Makes seeds", "Absorbs water"], "correct": 1},
+    {"question": "Without water, plants ___", "choices": ["Grow faster", "Wilt", "Get bigger", "Turn greener"], "correct": 1},
+    {"question": "Green plants make ___", "choices": ["Soil", "Rocks", "Oxygen", "Carbon dioxide"], "correct": 2}
+  ],
+  "fillintheblank": [
+    {"question": "Plants need sunlight, air, and ___", "expectedAny": ["water"]},
+    {"question": "___ make food for the plant", "expectedAny": ["Leaves"]},
+    {"question": "___ absorb water from soil", "expectedAny": ["Roots"]},
+    {"question": "The ___ holds the plant up", "expectedAny": ["stem"]},
+    {"question": "___ help make new plants", "expectedAny": ["Seeds", "flowers"]},
+    {"question": "Plants make ___ for us to breathe", "expectedAny": ["oxygen"]},
+    {"question": "Without ___, plants can't make food", "expectedAny": ["sunlight"]}
+  ],
+  "shortanswer": [
+    {"question": "What are the parts of a plant?", "expectedAny": ["roots", "stem", "leaves", "flowers"]},
+    {"question": "How do plants make food?", "expectedAny": ["use sunlight, water, and air in leaves"]},
+    {"question": "Why are plants important?", "expectedAny": ["make oxygen", "food", "homes for animals"]},
+    {"question": "What happens if plants don't get water?", "expectedAny": ["wilt", "turn brown", "die"]},
+    {"question": "How do seeds travel?", "expectedAny": ["wind", "water", "animals", "people"]},
+    {"question": "Compare roots and leaves jobs.", "expectedAny": ["roots absorb water; leaves make food"]},
+    {"question": "Design a perfect place for plants.", "expectedAny": ["sunny spot", "good soil", "water available"]}
+  ]
+}

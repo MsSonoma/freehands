@@ -1,0 +1,74 @@
+{
+  "id": "12th_Constitutional_Government_Democracy_Intermediate",
+  "title": "Constitutional Government and Democracy",
+  "grade": "12th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "judicial review",
+      "definition": "Court power to declare laws unconstitutional"
+    },
+    {
+      "term": "due process",
+      "definition": "Constitutional guarantee of fair legal procedures"
+    },
+    {
+      "term": "equal protection",
+      "definition": "Constitutional requirement for equal treatment under law"
+    },
+    {
+      "term": "civil liberties",
+      "definition": "Individual freedoms protected from government interference"
+    },
+    {
+      "term": "civil rights",
+      "definition": "Legal protections ensuring equal treatment and participation"
+    }
+  ],
+  "teachingNotes": "Analyze constitutional principles through landmark Supreme Court cases. Examine tensions between individual rights and collective security.",
+  "sample": {
+    "question": "What court power declares laws unconstitutional?",
+    "expectedAny": [
+      "judicial review",
+      "constitutional review",
+      "court review",
+      "judicial oversight"
+    ]
+  },
+  "truefalse": {
+    "question": "Due process guarantees fair legal procedures.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What are individual freedoms protected from government interference?",
+    "expectedAny": [
+      "civil liberties",
+      "constitutional freedoms",
+      "individual rights",
+      "personal freedoms"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Constitutional requirement for equal treatment is ________ protection.",
+    "expectedAny": [
+      "equal",
+      "fair",
+      "uniform",
+      "identical"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do civil liberties differ from civil rights?",
+    "expectedAny": [
+      "freedoms vs. protections",
+      "individual vs. group",
+      "negative vs. positive rights",
+      "protection from vs. access to"
+    ]
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "id": "5th_Coordinate_Plane_Graphing_Beginner",
+  "title": "Introduction to Coordinate Plane and Graphing",
+  "grade": "5th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "coordinate plane",
+      "definition": "A flat surface with two perpendicular number lines used to locate points"
+    },
+    {
+      "term": "x-axis",
+      "definition": "The horizontal number line on a coordinate plane"
+    },
+    {
+      "term": "y-axis",
+      "definition": "The vertical number line on a coordinate plane"
+    },
+    {
+      "term": "ordered pair",
+      "definition": "A pair of numbers (x, y) that shows the location of a point on a coordinate plane"
+    },
+    {
+      "term": "origin",
+      "definition": "The point (0, 0) where the x-axis and y-axis meet"
+    }
+  ],
+  "teachingNotes": "Start with simple positive coordinates. Teach that the first number goes right/left and the second number goes up/down. Practice plotting points and reading coordinates.",
+  "sample": {
+    "question": "What ordered pair represents the origin?",
+    "expectedAny": ["(0, 0)", "0, 0", "zero, zero", "origin is (0,0)"]
+  },
+  "truefalse": {
+    "question": "In the ordered pair (3, 5), the 3 tells you to move 3 units to the right.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "Which axis is horizontal?",
+    "expectedAny": ["x-axis", "x axis", "horizontal axis", "the x-axis"]
+  },
+  "fillintheblank": {
+    "question": "To plot the point (4, 2), move 4 units right and ________ units up.",
+    "expectedAny": ["2", "two", "2 units", "two units"]
+  },
+  "shortanswer": {
+    "question": "What are the coordinates of a point that is 3 units right and 1 unit up from the origin?",
+    "expectedAny": ["(3, 1)", "3, 1", "three, one", "(3,1)"]
+  },
+  "wordProblems": {
+    "question": "On a treasure map, the treasure is located at coordinates (5, 4). If you start at the origin, how do you get there?",
+    "expectedAny": ["move 5 right and 4 up", "go 5 units right, 4 units up", "right 5, up 4", "5 right, 4 up"]
+  }
+}

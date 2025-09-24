@@ -1,0 +1,74 @@
+{
+  "id": "10th_Advanced_Literary_Analysis_Character_Development_Beginner",
+  "title": "Advanced Literary Analysis: Character Development",
+  "grade": "10th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "character development",
+      "definition": "How a character changes and grows throughout a story"
+    },
+    {
+      "term": "protagonist",
+      "definition": "The main character in a literary work"
+    },
+    {
+      "term": "antagonist",
+      "definition": "The character or force that opposes the protagonist"
+    },
+    {
+      "term": "character motivation",
+      "definition": "The reasons behind a character's actions and decisions"
+    },
+    {
+      "term": "dynamic character",
+      "definition": "A character who undergoes significant change during the story"
+    }
+  ],
+  "teachingNotes": "Use examples from classic and contemporary literature. Focus on identifying character changes and analyzing their significance.",
+  "sample": {
+    "question": "What do we call how a character changes throughout a story?",
+    "expectedAny": [
+      "character development",
+      "character growth",
+      "character evolution",
+      "character arc"
+    ]
+  },
+  "truefalse": {
+    "question": "A dynamic character undergoes significant change during the story.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the main character in a literary work called?",
+    "expectedAny": [
+      "protagonist",
+      "main character",
+      "hero",
+      "central character"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The reasons behind a character's actions are called character ________.",
+    "expectedAny": [
+      "motivation",
+      "motives",
+      "reasons",
+      "drives"
+    ]
+  },
+  "shortanswer": {
+    "question": "How can authors show character development?",
+    "expectedAny": [
+      "through actions",
+      "dialogue changes",
+      "internal thoughts",
+      "reactions to events"
+    ]
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "id": "2nd_Spelling_Patterns_Word_Families_Intermediate",
+  "title": "Spelling Patterns and Word Families",
+  "grade": "2nd",
+  "difficulty": "Intermediate",
+  "vocab": [
+    { "term": "pattern", "definition": "Letters that repeat in the same way in different words" },
+    { "term": "word family", "definition": "A group of words that end with the same sounds and letters" },
+    { "term": "rhyme", "definition": "Words that end with the same sound" },
+    { "term": "consonant", "definition": "Letters that are not vowels (like b, c, d, f, g)" },
+    { "term": "vowel", "definition": "The letters a, e, i, o, u (and sometimes y)" }
+  ],
+  "teachingNotes": "Focus on common word families like -at, -an, -ing, -ed endings. Use word sorts and pattern activities. Help students recognize spelling patterns to decode new words and improve spelling accuracy.",
+  "sample": [
+    { "question": "What do we call words that end with the same sound?", "expectedAny": ["rhyming words", "rhymes", "word families", "similar sounding"] },
+    { "question": "Give an example of a word family.", "expectedAny": ["-at", "-in", "-og", "-it"] },
+    { "question": "What is a vowel?", "expectedAny": ["a, e, i, o, u", "vowel letters"] },
+    { "question": "What is a consonant?", "expectedAny": ["letters that are not vowels", "non-vowel letters"] },
+    { "question": "Do 'play' and 'day' rhyme?", "expectedAny": ["yes", "same ending sound"] },
+    { "question": "Name two words in the -ed pattern.", "expectedAny": ["played", "jumped", "walked"] },
+    { "question": "Name two words in the -ing pattern.", "expectedAny": ["running", "singing", "jumping"] }
+  ],
+  "truefalse": [
+    { "question": "Words in the same family often have similar spelling patterns.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Rhyming words always have different endings.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The letters a, e, i, o, u are vowels.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Consonants and vowels are the same thing.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Knowing patterns helps with spelling.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "'Dog' and 'fog' rhyme.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "'Cat' and 'cut' rhyme.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which letters are vowels?", "expectedAny": ["a, e, i, o, u", "vowel letters", "a e i o u", "main vowels"] },
+    { "question": "Which words rhyme?", "expectedAny": ["cat/hat", "red/dog", "pen/sun", "ship/shop"] },
+    { "question": "Which word is in the -og family?", "expectedAny": ["dog", "dig", "dug", "dag"] },
+    { "question": "Which pair belongs to the -ing pattern?", "expectedAny": ["run/rang", "sing/sang", "jump/jumping", "play/plays"] },
+    { "question": "Which ending makes 'talk' into past tense?", "expectedAny": ["-ed", "-ing", "-s", "-er"] },
+    { "question": "Which pair does not rhyme?", "expectedAny": ["boat/goat", "car/star", "fish/dish", "moon/spoon"] },
+    { "question": "Which belongs to the -at family?", "expectedAny": ["mat", "met", "mitt", "mutt"] }
+  ],
+  "fillintheblank": [
+    { "question": "Cat, bat, and hat all belong to the ________ word family.", "expectedAny": ["-at", "at", "at family", "at word family"] },
+    { "question": "Words that end with the same sound are called ________ words.", "expectedAny": ["rhyming"] },
+    { "question": "The letters a, e, i, o, u are ________.", "expectedAny": ["vowels"] },
+    { "question": "B, c, d, f, and g are ________.", "expectedAny": ["consonants"] },
+    { "question": "'Turn' becomes 'turning' when we add ________.", "expectedAny": ["-ing"] },
+    { "question": "'Play' becomes 'played' when we add ________.", "expectedAny": ["-ed"] },
+    { "question": "Dog, fog, and log are in the ________ family.", "expectedAny": ["-og"] }
+  ],
+  "shortanswer": [
+    { "question": "Name three words that rhyme with 'king'.", "expectedAny": ["ring, sing, wing", "any three -ing words", "ring sing thing", "words ending in -ing"] },
+    { "question": "List two words that rhyme with 'cake'.", "expectedAny": ["bake", "lake", "make", "rake"] },
+    { "question": "Name two words that use the -ed ending.", "expectedAny": ["jumped", "walked", "played"] },
+    { "question": "Name two words in the -it family.", "expectedAny": ["sit", "fit", "kit"] },
+    { "question": "Write one word in the -un family.", "expectedAny": ["sun", "fun", "run"] },
+    { "question": "Explain how knowing patterns helps with spelling.", "expectedAny": ["you know the ending", "repeatable spelling parts"] },
+    { "question": "Give a pair of words that rhyme.", "expectedAny": ["boat/goat", "fish/dish", "moon/spoon"] }
+  ]
+}

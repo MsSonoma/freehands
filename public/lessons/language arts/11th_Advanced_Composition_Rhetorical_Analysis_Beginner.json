@@ -1,0 +1,74 @@
+{
+  "id": "11th_Advanced_Composition_Rhetorical_Analysis_Beginner",
+  "title": "Advanced Composition: Rhetorical Analysis",
+  "grade": "11th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "rhetoric",
+      "definition": "Art of effective or persuasive speaking and writing"
+    },
+    {
+      "term": "ethos",
+      "definition": "Persuasive appeal based on credibility and character"
+    },
+    {
+      "term": "pathos",
+      "definition": "Persuasive appeal based on emotion and feeling"
+    },
+    {
+      "term": "logos",
+      "definition": "Persuasive appeal based on logic and reasoning"
+    },
+    {
+      "term": "rhetorical triangle",
+      "definition": "Model showing relationship between speaker, audience, and message"
+    }
+  ],
+  "teachingNotes": "Introduce classical rhetorical concepts through contemporary examples. Practice identifying appeals in various texts.",
+  "sample": {
+    "question": "What is the art of effective speaking and writing called?",
+    "expectedAny": [
+      "rhetoric",
+      "rhetorical art",
+      "persuasive communication",
+      "effective discourse"
+    ]
+  },
+  "truefalse": {
+    "question": "Ethos is a persuasive appeal based on credibility.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What appeal is based on emotion and feeling?",
+    "expectedAny": [
+      "pathos",
+      "emotional appeal",
+      "feeling-based",
+      "emotional persuasion"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The model showing speaker, audience, and message relationship is the rhetorical ________.",
+    "expectedAny": [
+      "triangle",
+      "relationship",
+      "model",
+      "framework"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do the three rhetorical appeals work together?",
+    "expectedAny": [
+      "credibility supports logic",
+      "emotion motivates action",
+      "combined persuasion",
+      "balanced approach"
+    ]
+  }
+}

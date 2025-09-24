@@ -1,0 +1,80 @@
+{
+  "id": "narrative-writing-personal-stories-intermediate",
+  "title": "Narrative Writing and Personal Stories",
+  "grade": "3rd",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "narrative",
+      "definition": "A story that tells about events in order"
+    },
+    {
+      "term": "beginning",
+      "definition": "The start of a story that introduces characters and setting"
+    },
+    {
+      "term": "middle",
+      "definition": "The part of a story where the main events happen"
+    },
+    {
+      "term": "ending",
+      "definition": "The conclusion of a story that wraps up the events"
+    }
+  ],
+  "teachingNotes": "Use personal experiences as story starters. Create story maps with beginning, middle, end. Practice using descriptive words.",
+  "sample": {
+    "question": "What should you include in the beginning of a personal story?",
+    "expectedAny": [
+      "who was there",
+      "where it happened",
+      "when it happened",
+      "introduce the main characters"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "A good narrative tells events in the order they happened.",
+      "answer": true,
+      "expectedAny": [
+        "chronological order helps readers follow the story"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which makes a story more interesting to read?",
+      "choices": [
+        "only using simple words",
+        "adding descriptive details",
+        "making it very short",
+        "using no punctuation"
+      ],
+      "correct": 1,
+      "expectedAny": [
+        "descriptive details help readers picture what's happening"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "In the _____ of your story, you should solve the problem or tell how things ended.",
+      "expectedAny": [
+        "ending",
+        "conclusion"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "How can you make your personal stories more exciting for readers?",
+      "expectedAny": [
+        "use descriptive words",
+        "include dialogue",
+        "describe feelings",
+        "add interesting details",
+        "show don't just tell"
+      ]
+    }
+  ]
+}

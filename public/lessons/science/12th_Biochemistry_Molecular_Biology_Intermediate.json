@@ -1,0 +1,74 @@
+{
+  "id": "12th_Biochemistry_Molecular_Biology_Intermediate",
+  "title": "Biochemistry and Molecular Biology",
+  "grade": "12th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "enzyme kinetics",
+      "definition": "Study of rates of enzyme-catalyzed reactions and factors affecting them"
+    },
+    {
+      "term": "allosteric regulation",
+      "definition": "Control of enzyme activity through binding at sites other than active site"
+    },
+    {
+      "term": "signal transduction",
+      "definition": "Process by which cells detect, process, and respond to external stimuli"
+    },
+    {
+      "term": "gene expression",
+      "definition": "Process by which genetic information is used to synthesize functional products"
+    },
+    {
+      "term": "epigenetics",
+      "definition": "Study of heritable changes in gene expression without DNA sequence changes"
+    }
+  ],
+  "teachingNotes": "Examine regulatory mechanisms and complex cellular processes. Discuss how molecular interactions control life functions.",
+  "sample": {
+    "question": "What is the study of enzyme-catalyzed reaction rates?",
+    "expectedAny": [
+      "enzyme kinetics",
+      "enzymatic kinetics",
+      "catalytic kinetics",
+      "reaction kinetics"
+    ]
+  },
+  "truefalse": {
+    "question": "Allosteric regulation controls enzymes through non-active site binding.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What process allows cells to detect and respond to stimuli?",
+    "expectedAny": [
+      "signal transduction",
+      "cellular signaling",
+      "signal processing",
+      "stimulus response"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Heritable changes in gene expression without DNA changes define ________.",
+    "expectedAny": [
+      "epigenetics",
+      "epigenetic inheritance",
+      "non-genetic inheritance",
+      "expression inheritance"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does gene expression control cellular function?",
+    "expectedAny": [
+      "protein production",
+      "enzyme synthesis",
+      "functional regulation",
+      "cellular activity control"
+    ]
+  }
+}

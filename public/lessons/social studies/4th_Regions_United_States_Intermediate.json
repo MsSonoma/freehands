@@ -1,0 +1,71 @@
+{
+  "id": "regions-united-states-intermediate",
+  "title": "Regions of the United States",
+  "grade": "4th",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "region",
+      "definition": "An area with similar characteristics like climate, landforms, or culture"
+    },
+    {
+      "term": "landform",
+      "definition": "Natural features of Earth's surface like mountains, plains, and valleys"
+    },
+    {
+      "term": "natural resource",
+      "definition": "Materials from nature that people use, like water, oil, or forests"
+    },
+    {
+      "term": "economy",
+      "definition": "The way people in a place make, sell, and buy goods and services"
+    }
+  ],
+  "teachingNotes": "Use U.S. maps to identify regions. Compare and contrast different regions' characteristics. Discuss how geography affects how people live.",
+  "sample": [
+    {"question": "Name two characteristics that make the Southwest region unique.", "expectedAny": ["desert climate", "hot temperatures", "Spanish influence"]},
+    {"question": "What region do you live in?", "expectedAny": []},
+    {"question": "Name three major US rivers.", "expectedAny": ["Mississippi", "Missouri", "Colorado", "Ohio"]},
+    {"question": "What are the Great Lakes?", "expectedAny": ["Huron", "Ontario", "Michigan", "Erie", "Superior"]},
+    {"question": "Where is the Grand Canyon?", "expectedAny": ["Arizona", "Southwest"]},
+    {"question": "What landmarks are in Washington, D.C.?", "expectedAny": ["White House", "Capitol", "Washington Monument"]},
+    {"question": "Which region has the Rocky Mountains?", "expectedAny": ["West"]}
+  ],
+  "truefalse": [
+    {"question": "All regions of the United States have the same climate.", "answer": false},
+    {"question": "The Mississippi River is one of the longest US rivers.", "answer": true},
+    {"question": "Alaska has the tallest US mountain.", "answer": true},
+    {"question": "The Great Lakes are all in one state.", "answer": false},
+    {"question": "Each region has different geography.", "answer": true},
+    {"question": "The Statue of Liberty is in New York.", "answer": true},
+    {"question": "All regions have the same climate.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "The Grand Canyon is in the ___ region.", "choices": ["Northeast", "Southeast", "Midwest", "Southwest"], "correct": 3},
+    {"question": "Which region has many dairy farms?", "choices": ["Southwest", "Midwest", "Southeast", "West"], "correct": 1},
+    {"question": "Mount Rushmore is in:", "choices": ["North Dakota", "South Dakota", "Montana", "Wyoming"], "correct": 1},
+    {"question": "The Northeast is known for:", "choices": ["Deserts", "Historical sites", "Ranches", "Only beaches"], "correct": 1},
+    {"question": "Which region includes Alaska?", "choices": ["Northeast", "Southeast", "West", "Midwest"], "correct": 2},
+    {"question": "The Southeast climate is usually:", "choices": ["Cold", "Warm", "Arctic", "Always rainy"], "correct": 1},
+    {"question": "Yellowstone National Park is mostly in:", "choices": ["California", "Wyoming", "Colorado", "Montana"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "The five US regions are Northeast, Southeast, Midwest, Southwest, and ____.", "expectedAny": ["West"]},
+    {"question": "The ____ River is one of the longest in the US.", "expectedAny": ["Missouri", "Mississippi"]},
+    {"question": "The ____ of Liberty welcomes visitors to America.", "expectedAny": ["Statue"]},
+    {"question": "Mount ____ shows four presidents' faces.", "expectedAny": ["Rushmore"]},
+    {"question": "The ____ Lakes are between the US and Canada.", "expectedAny": ["Great"]},
+    {"question": "The ____ Canyon is in Arizona.", "expectedAny": ["Grand"]},
+    {"question": "Niagara ____ is on the US-Canada border.", "expectedAny": ["Falls"]}
+  ],
+  "shortanswer": [
+    {"question": "How do regions differ from each other?", "expectedAny": ["climate", "landforms", "resources", "culture"]},
+    {"question": "What makes your region unique?", "expectedAny": ["features", "landmarks"]},
+    {"question": "How do landmarks represent America?", "expectedAny": ["history", "values", "nature"]},
+    {"question": "Why do people visit national parks?", "expectedAny": ["nature", "recreation", "education"]},
+    {"question": "How does climate affect regional activities?", "expectedAny": ["farming", "skiing", "beaches"]},
+    {"question": "Compare two different regions.", "expectedAny": ["differences in climate and culture"]},
+    {"question": "What landmark would you like to visit and why?", "expectedAny": []}
+  ]
+}

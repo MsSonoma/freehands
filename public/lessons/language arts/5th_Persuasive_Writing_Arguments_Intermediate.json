@@ -1,0 +1,73 @@
+{
+  "id": "5th_Persuasive_Writing_Arguments_Intermediate",
+  "title": "Persuasive Writing and Building Arguments",
+  "grade": "5th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "persuasive writing",
+      "definition": "Writing that tries to convince readers to agree with the author's opinion"
+    },
+    {
+      "term": "argument",
+      "definition": "A reason given to support an opinion or claim"
+    },
+    {
+      "term": "evidence",
+      "definition": "Facts, examples, or details that support an argument"
+    },
+    {
+      "term": "opinion",
+      "definition": "What someone thinks or believes about something"
+    },
+    {
+      "term": "conclusion",
+      "definition": "The ending that restates the main opinion and summarizes the arguments"
+    }
+  ],
+  "teachingNotes": "Start with topics students care about like school policies or favorite activities. Teach the structure: opinion, reasons, evidence, conclusion. Practice distinguishing fact from opinion.",
+  "sample": {
+    "question": "What type of writing tries to convince readers to agree with you?",
+    "expectedAny": [
+      "persuasive writing",
+      "persuasive",
+      "argumentative writing",
+      "convincing writing"
+    ]
+  },
+  "truefalse": {
+    "question": "Evidence should support your arguments in persuasive writing.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What should you include to support your opinion?",
+    "expectedAny": [
+      "evidence",
+      "facts",
+      "examples",
+      "supporting details"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A reason given to support an opinion is called an ________.",
+    "expectedAny": [
+      "argument",
+      "supporting argument",
+      "reason",
+      "supporting reason"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are the main parts of a persuasive essay?",
+    "expectedAny": [
+      "opinion, arguments, evidence, conclusion",
+      "introduction, reasons, examples, ending",
+      "claim, support, evidence, summary"
+    ]
+  }
+}

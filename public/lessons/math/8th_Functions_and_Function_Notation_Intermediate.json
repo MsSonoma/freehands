@@ -1,0 +1,53 @@
+{
+  "id": "8th_Functions_and_Function_Notation_Intermediate",
+  "title": "Functions and Function Notation",
+  "grade": "8th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "function",
+      "definition": "A relationship where each input has exactly one output"
+    },
+    {
+      "term": "input",
+      "definition": "The value that goes into a function"
+    },
+    {
+      "term": "output",
+      "definition": "The value that comes out of a function"
+    },
+    {
+      "term": "function notation",
+      "definition": "A way to write functions using f(x) notation"
+    },
+    {
+      "term": "domain",
+      "definition": "All possible input values for a function"
+    }
+  ],
+  "teachingNotes": "Use input-output tables and machines to explain functions. Practice reading and writing function notation.",
+  "sample": {
+    "question": "What is a relationship where each input has exactly one output?",
+    "expectedAny": ["function", "mathematical function", "input-output relationship", "functional relationship"]
+  },
+  "truefalse": {
+    "question": "In function notation, f(x) means f times x.",
+    "expectedAny": ["false", "no", "f", "incorrect"]
+  },
+  "multiplechoice": {
+    "question": "What are all possible input values called?",
+    "expectedAny": ["domain", "input set", "x-values", "independent values"]
+  },
+  "fillintheblank": {
+    "question": "The value that comes out of a function is the ________.",
+    "expectedAny": ["output", "result", "y-value", "dependent variable"]
+  },
+  "shortanswer": {
+    "question": "If f(x) = 2x + 3, what is f(4)?",
+    "expectedAny": ["11", "f(4) = 11", "2(4) + 3 = 11", "eleven"]
+  },
+  "wordProblems": {
+    "question": "A function charges $5 plus $2 per hour for bike rental. Write this as f(h) where h is hours.",
+    "expectedAny": ["f(h) = 2h + 5", "f(h) = 5 + 2h", "2h + 5", "5 + 2h"]
+  }
+}

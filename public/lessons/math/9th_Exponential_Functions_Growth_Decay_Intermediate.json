@@ -1,0 +1,53 @@
+{
+  "id": "9th_Exponential_Functions_Growth_Decay_Intermediate",
+  "title": "Exponential Functions: Growth and Decay",
+  "grade": "9th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "exponential function",
+      "definition": "Function in the form f(x) = ab^x where b > 0, b ≠ 1"
+    },
+    {
+      "term": "exponential growth",
+      "definition": "Increase following exponential pattern with base > 1"
+    },
+    {
+      "term": "exponential decay",
+      "definition": "Decrease following exponential pattern with 0 < base < 1"
+    },
+    {
+      "term": "initial value",
+      "definition": "Starting amount when x = 0 (parameter a)"
+    },
+    {
+      "term": "growth factor",
+      "definition": "Base of exponential function (parameter b)"
+    }
+  ],
+  "teachingNotes": "Use real-world examples like population growth and radioactive decay. Emphasize the rapid change in exponential functions.",
+  "sample": {
+    "question": "What is a function in the form f(x) = ab^x called?",
+    "expectedAny": ["exponential function", "exponential", "exponential equation", "power function"]
+  },
+  "truefalse": {
+    "question": "Exponential growth occurs when the base is greater than 1.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "In f(x) = ab^x, what does 'a' represent?",
+    "expectedAny": ["initial value", "starting amount", "y-intercept", "beginning value"]
+  },
+  "fillintheblank": {
+    "question": "When 0 < b < 1, the function shows exponential ________.",
+    "expectedAny": ["decay", "decrease", "decline", "reduction"]
+  },
+  "shortanswer": {
+    "question": "How does exponential growth differ from linear growth?",
+    "expectedAny": ["exponential grows faster", "exponential has constant ratio", "linear has constant difference"]
+  },
+  "wordProblems": {
+    "question": "If a population starts at 100 and grows by 20% each year, what is the exponential function?",
+    "expectedAny": ["f(x) = 100(1.2)^x", "100 times 1.2 to the x", "f(x) = 100(1.20)^x", "P = 100(1.2)^t"]
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "id": "8th_Constitution_Structure_Government_Beginner",
+  "title": "Constitution and Structure of Government",
+  "grade": "8th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "Constitution",
+      "definition": "The supreme law of the United States"
+    },
+    {
+      "term": "separation of powers",
+      "definition": "Dividing government power among three branches"
+    },
+    {
+      "term": "checks and balances",
+      "definition": "Each branch of government can limit the others' power"
+    },
+    {
+      "term": "legislative branch",
+      "definition": "The branch that makes laws (Congress)"
+    },
+    {
+      "term": "executive branch",
+      "definition": "The branch that enforces laws (President)"
+    }
+  ],
+  "teachingNotes": "Explain the three branches and their functions. Show how checks and balances prevent any branch from becoming too powerful.",
+  "sample": {
+    "question": "What is the supreme law of the United States?",
+    "expectedAny": [
+      "Constitution",
+      "U.S. Constitution",
+      "supreme law",
+      "founding document"
+    ]
+  },
+  "truefalse": {
+    "question": "The Constitution divides government power among three branches.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which branch makes laws?",
+    "expectedAny": [
+      "legislative branch",
+      "Congress",
+      "legislative",
+      "law-making branch"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Each branch limiting the others' power is called ________ and balances.",
+    "expectedAny": [
+      "checks",
+      "checking",
+      "control",
+      "limiting"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are the three branches of government?",
+    "expectedAny": [
+      "legislative, executive, judicial",
+      "Congress, President, Courts",
+      "law-making, enforcing, interpreting"
+    ]
+  }
+}

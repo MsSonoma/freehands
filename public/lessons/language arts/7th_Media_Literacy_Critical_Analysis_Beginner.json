@@ -1,0 +1,73 @@
+{
+  "id": "7th_Media_Literacy_Critical_Analysis_Beginner",
+  "title": "Media Literacy and Critical Analysis",
+  "grade": "7th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "media literacy",
+      "definition": "The ability to analyze and evaluate media messages"
+    },
+    {
+      "term": "bias",
+      "definition": "A prejudice or unfair preference for one side"
+    },
+    {
+      "term": "propaganda",
+      "definition": "Information designed to influence people's opinions"
+    },
+    {
+      "term": "target audience",
+      "definition": "The specific group a media message is intended for"
+    },
+    {
+      "term": "credibility",
+      "definition": "How trustworthy and reliable a source is"
+    }
+  ],
+  "teachingNotes": "Use current examples from advertisements, news, and social media. Teach students to question what they see and hear in media.",
+  "sample": {
+    "question": "What is the ability to analyze and evaluate media messages?",
+    "expectedAny": [
+      "media literacy",
+      "critical thinking",
+      "media analysis",
+      "information literacy"
+    ]
+  },
+  "truefalse": {
+    "question": "All media messages are created for specific audiences.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is information designed to influence opinions?",
+    "expectedAny": [
+      "propaganda",
+      "persuasive media",
+      "biased information",
+      "influential messaging"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A prejudice or unfair preference is called ________.",
+    "expectedAny": [
+      "bias",
+      "prejudice",
+      "unfairness",
+      "one-sidedness"
+    ]
+  },
+  "shortanswer": {
+    "question": "What questions should you ask when evaluating media?",
+    "expectedAny": [
+      "who made it, why, who is the audience",
+      "purpose, author, accuracy",
+      "source, bias, target audience"
+    ]
+  }
+}

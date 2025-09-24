@@ -1,0 +1,53 @@
+{
+  "id": "10th_Rational_Functions_Asymptotes_Discontinuities_Intermediate",
+  "title": "Rational Functions: Asymptotes and Discontinuities",
+  "grade": "10th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "rational function",
+      "definition": "Function that is the ratio of two polynomial functions"
+    },
+    {
+      "term": "vertical asymptote",
+      "definition": "Vertical line that the graph approaches but never touches"
+    },
+    {
+      "term": "horizontal asymptote",
+      "definition": "Horizontal line that the graph approaches as x approaches infinity"
+    },
+    {
+      "term": "discontinuity",
+      "definition": "Point where a function is not continuous or defined"
+    },
+    {
+      "term": "domain restriction",
+      "definition": "Values of x for which the function is undefined"
+    }
+  ],
+  "teachingNotes": "Practice finding asymptotes and holes in rational functions. Emphasize the behavior near discontinuities.",
+  "sample": {
+    "question": "What is a function that is the ratio of two polynomials?",
+    "expectedAny": ["rational function", "ratio function", "fractional function", "quotient function"]
+  },
+  "truefalse": {
+    "question": "A vertical asymptote occurs where the denominator equals zero.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is a point where a function is not continuous called?",
+    "expectedAny": ["discontinuity", "break", "gap", "undefined point"]
+  },
+  "fillintheblank": {
+    "question": "A horizontal line that the graph approaches as x approaches infinity is a ________ asymptote.",
+    "expectedAny": ["horizontal", "flat", "level", "x-axis"]
+  },
+  "shortanswer": {
+    "question": "How do you find the vertical asymptotes of a rational function?",
+    "expectedAny": ["set denominator equal to zero", "find zeros of denominator", "where denominator is undefined"]
+  },
+  "wordProblems": {
+    "question": "For f(x) = (x+1)/(x-3), what is the vertical asymptote?",
+    "expectedAny": ["x = 3", "vertical line x = 3", "at x equals 3", "x = 3"]
+  }
+}

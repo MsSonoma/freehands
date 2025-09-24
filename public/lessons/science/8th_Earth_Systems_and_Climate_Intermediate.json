@@ -1,0 +1,73 @@
+{
+  "id": "8th_Earth_Systems_and_Climate_Intermediate",
+  "title": "Earth Systems and Climate Change",
+  "grade": "8th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "atmosphere",
+      "definition": "The layer of gases surrounding Earth"
+    },
+    {
+      "term": "greenhouse effect",
+      "definition": "The warming of Earth due to trapped heat from greenhouse gases"
+    },
+    {
+      "term": "carbon cycle",
+      "definition": "The movement of carbon through Earth's systems"
+    },
+    {
+      "term": "climate",
+      "definition": "Long-term weather patterns in a region"
+    },
+    {
+      "term": "fossil fuels",
+      "definition": "Coal, oil, and natural gas formed from ancient organisms"
+    }
+  ],
+  "teachingNotes": "Explain how human activities affect Earth systems. Discuss evidence for climate change and its causes.",
+  "sample": {
+    "question": "What is the layer of gases surrounding Earth?",
+    "expectedAny": [
+      "atmosphere",
+      "air layer",
+      "gas envelope",
+      "atmospheric layer"
+    ]
+  },
+  "truefalse": {
+    "question": "The greenhouse effect helps keep Earth warm enough for life.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What are coal, oil, and natural gas examples of?",
+    "expectedAny": [
+      "fossil fuels",
+      "carbon fuels",
+      "ancient fuels",
+      "non-renewable energy"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Long-term weather patterns in a region are called ________.",
+    "expectedAny": [
+      "climate",
+      "weather patterns",
+      "atmospheric conditions",
+      "regional weather"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do fossil fuels contribute to climate change?",
+    "expectedAny": [
+      "release carbon dioxide",
+      "add greenhouse gases",
+      "increase atmospheric CO2"
+    ]
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "id": "2nd_Economics_Goods_and_Services_Advanced",
+  "title": "Economics: Goods and Services",
+  "grade": "2nd",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {"term": "goods", "definition": "Things people make or grow that can be bought and sold"},
+    {"term": "services", "definition": "Work that people do to help others"},
+    {"term": "producer", "definition": "Someone who makes or grows goods"},
+    {"term": "consumer", "definition": "Someone who buys and uses goods and services"}
+  ],
+  "teachingNotes": "Use real-world examples from students' lives. Discuss local businesses and what they provide. Connect to community helpers and their services.",
+  "sample": [
+    {"question": "What is the difference between goods and services?", "expectedAny": ["goods are objects; services are actions"]},
+    {"question": "Give two examples of goods.", "expectedAny": ["toys", "books", "food"]},
+    {"question": "Give two examples of services.", "expectedAny": ["haircut", "teaching", "doctor visit"]},
+    {"question": "Who is a producer?", "expectedAny": ["someone who makes or grows goods"]},
+    {"question": "Who is a consumer?", "expectedAny": ["someone who buys and uses goods and services"]},
+    {"question": "What does trade mean?", "expectedAny": ["to exchange"]},
+    {"question": "Name a service you used recently.", "expectedAny": ["haircut", "bus ride", "restaurant"]}
+  ],
+  "truefalse": [
+    {"question": "A haircut is an example of a service.", "answer": true},
+    {"question": "Milk is goods.", "answer": true},
+    {"question": "A consumer makes goods.", "answer": false},
+    {"question": "Producers create goods.", "answer": true},
+    {"question": "Trade means to exchange.", "answer": true},
+    {"question": "Services are things you can touch.", "answer": false},
+    {"question": "A book is a service.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "Which is an example of goods?", "choices": ["Teaching", "Toys", "Cleaning", "Singing"], "correct": 1},
+    {"question": "Which is a service?", "choices": ["Book", "Chair", "Doctor visit", "Ball"], "correct": 2},
+    {"question": "Who buys and uses goods?", "choices": ["Producer", "Consumer", "Leader", "Mayor"], "correct": 1},
+    {"question": "Who makes or grows goods?", "choices": ["Producer", "Consumer", "Helper", "Buyer"], "correct": 0},
+    {"question": "Which shows trade?", "choices": ["Swapping toys", "Watching TV", "Sitting", "Sleeping"], "correct": 0},
+    {"question": "Which is NOT a service?", "choices": ["Haircut", "Painting a house", "Bread", "Tutoring"], "correct": 2},
+    {"question": "Which could be goods at a store?", "choices": ["Shoes", "Apples", "Pencils", "All of these"], "correct": 3}
+  ],
+  "fillintheblank": [
+    {"question": "When you buy bread at the store, the bread is _____ and you are the _____.", "expectedAny": ["goods", "consumer"]},
+    {"question": "A person who buys things is a ________.", "expectedAny": ["consumer"]},
+    {"question": "A person who makes things is a ________.", "expectedAny": ["producer"]},
+    {"question": "Services are ________ people do to help others.", "expectedAny": ["work", "jobs"]},
+    {"question": "Goods are ________ you can buy and touch.", "expectedAny": ["things", "objects"]},
+    {"question": "To trade means to ________.", "expectedAny": ["exchange"]},
+    {"question": "A ________ sells goods to consumers.", "expectedAny": ["store", "shop"]}
+  ],
+  "shortanswer": [
+    {"question": "How are producers and consumers connected?", "expectedAny": ["producers make things that consumers buy"]},
+    {"question": "Give an example of trading goods or services.", "expectedAny": ["money for food", "toy for toy", "work for pay"]},
+    {"question": "Name two services your family uses.", "expectedAny": ["haircut", "doctor", "bus", "restaurant"]},
+    {"question": "What goods do you use at school?", "expectedAny": ["pencils", "books", "paper"]},
+    {"question": "Why do people trade?", "expectedAny": ["to get what they need or want"]},
+    {"question": "What is one job that provides a service?", "expectedAny": ["teacher", "doctor", "firefighter"]},
+    {"question": "What is one good you bought recently?", "expectedAny": ["student answer"]}
+  ]
+}

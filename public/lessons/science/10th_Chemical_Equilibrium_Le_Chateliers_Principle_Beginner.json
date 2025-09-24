@@ -1,0 +1,73 @@
+{
+  "id": "10th_Chemical_Equilibrium_Le_Chateliers_Principle_Beginner",
+  "title": "Chemical Equilibrium and Le Chatelier's Principle",
+  "grade": "10th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "chemical equilibrium",
+      "definition": "State where forward and reverse reaction rates are equal"
+    },
+    {
+      "term": "le chateliers principle",
+      "definition": "If stress is applied to equilibrium, system shifts to relieve stress"
+    },
+    {
+      "term": "equilibrium constant",
+      "definition": "Ratio of product concentrations to reactant concentrations at equilibrium"
+    },
+    {
+      "term": "dynamic equilibrium",
+      "definition": "Equilibrium where molecules continue reacting but concentrations stay constant"
+    },
+    {
+      "term": "stress",
+      "definition": "Change in conditions that disturbs chemical equilibrium"
+    }
+  ],
+  "teachingNotes": "Use analogies like a crowded room to explain equilibrium shifts. Practice predicting effects of concentration, temperature, and pressure changes.",
+  "sample": {
+    "question": "What is the state where forward and reverse reaction rates are equal?",
+    "expectedAny": [
+      "chemical equilibrium",
+      "equilibrium",
+      "dynamic equilibrium",
+      "reaction equilibrium"
+    ]
+  },
+  "truefalse": {
+    "question": "At equilibrium, the concentrations of reactants and products remain constant.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What principle predicts how equilibrium responds to stress?",
+    "expectedAny": [
+      "Le Chatelier's principle",
+      "Le Chatelier principle",
+      "equilibrium principle",
+      "stress response principle"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A change in conditions that disturbs equilibrium is called ________.",
+    "expectedAny": [
+      "stress",
+      "disturbance",
+      "perturbation",
+      "disruption"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does increasing temperature affect an endothermic reaction at equilibrium?",
+    "expectedAny": [
+      "shifts equilibrium forward",
+      "favors product formation",
+      "equilibrium moves right"
+    ]
+  }
+}

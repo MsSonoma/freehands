@@ -1,0 +1,68 @@
+{
+  "id": "addition-subtraction-within-100-intermediate",
+  "title": "Addition and Subtraction within 100",
+  "grade": "2nd",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {"term": "regroup", "definition": "To trade 10 ones for 1 ten or 1 ten for 10 ones when adding or subtracting"},
+    {"term": "sum", "definition": "The answer when you add numbers together"},
+    {"term": "difference", "definition": "The answer when you subtract one number from another"},
+    {"term": "strategy", "definition": "A plan or method for solving math problems"}
+  ],
+  "teachingNotes": "Use place value blocks and number lines. Teach multiple strategies including mental math, standard algorithm, and number line jumps.",
+  "sample": [
+    {"question": "What is 25 + 14?", "expectedAny": ["39"]},
+    {"question": "What is 67 - 23?", "expectedAny": ["44"]},
+    {"question": "Find 45 + 32", "expectedAny": ["77"]},
+    {"question": "Calculate 80 - 35", "expectedAny": ["45"]},
+    {"question": "What is 18 + 26?", "expectedAny": ["44"]},
+    {"question": "Solve 72 - 41", "expectedAny": ["31"]},
+    {"question": "Add 33 + 29", "expectedAny": ["62"]}
+  ],
+  "truefalse": [
+    {"question": "35 + 20 = 55", "answer": true},
+    {"question": "64 - 30 = 34", "answer": true},
+    {"question": "42 + 18 = 50", "answer": false},
+    {"question": "75 - 25 = 50", "answer": true},
+    {"question": "28 + 28 = 56", "answer": true},
+    {"question": "90 - 45 = 35", "answer": false},
+    {"question": "15 + 15 + 15 = 45", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "23 + 19 = ?", "choices": ["41", "42", "43", "44"], "correct": 1},
+    {"question": "56 - 28 = ?", "choices": ["26", "27", "28", "29"], "correct": 2},
+    {"question": "37 + 24 = ?", "choices": ["59", "60", "61", "62"], "correct": 2},
+    {"question": "83 - 47 = ?", "choices": ["34", "35", "36", "37"], "correct": 2},
+    {"question": "48 + 35 = ?", "choices": ["81", "82", "83", "84"], "correct": 2},
+    {"question": "71 - 29 = ?", "choices": ["40", "41", "42", "43"], "correct": 2},
+    {"question": "26 + 26 = ?", "choices": ["50", "51", "52", "53"], "correct": 2}
+  ],
+  "fillintheblank": [
+    {"question": "34 + 25 = ___", "expectedAny": ["59"]},
+    {"question": "68 - 32 = ___", "expectedAny": ["36"]},
+    {"question": "45 + 45 = ___", "expectedAny": ["90"]},
+    {"question": "77 - 38 = ___", "expectedAny": ["39"]},
+    {"question": "29 + 31 = ___", "expectedAny": ["60"]},
+    {"question": "84 - 46 = ___", "expectedAny": ["38"]},
+    {"question": "17 + 28 = ___", "expectedAny": ["45"]}
+  ],
+  "shortanswer": [
+    {"question": "How do you add 47 + 26?", "expectedAny": ["Add ones 7+6=13, carry 1; tens 4+2+1=7; 73"]},
+    {"question": "Explain how to subtract 62 - 38", "expectedAny": ["regroup: 12-8=4, 5-3=2; 24"]},
+    {"question": "What strategy helps add 38 + 25?", "expectedAny": ["round then adjust: 40+25=65; 65-2=63"]},
+    {"question": "How can you check subtraction?", "expectedAny": ["add the answer to the subtrahend"]},
+    {"question": "What is regrouping?", "expectedAny": ["trading 10 ones for 1 ten"]},
+    {"question": "Show two ways to solve 45 + 28", "expectedAny": ["standard algorithm", "decompose to tens and ones"]},
+    {"question": "Why is place value important?", "expectedAny": ["line up tens and ones correctly"]}
+  ],
+  "wordProblems": [
+    {"question": "Maria has 34 stickers. She gets 28 more. How many total?", "expectedAny": ["62"]},
+    {"question": "There were 75 birds. 39 flew away. How many stayed?", "expectedAny": ["36"]},
+    {"question": "Tom collected 46 shells. Jane collected 37. How many together?", "expectedAny": ["83"]},
+    {"question": "A book has 82 pages. Sam read 45. How many left?", "expectedAny": ["37"]},
+    {"question": "Lisa saved $28 in January and $35 in February. Total savings?", "expectedAny": ["63"]},
+    {"question": "There were 91 apples. 54 were sold. How many remain?", "expectedAny": ["37"]},
+    {"question": "Jack has 26 marbles. He buys 2 bags of 19 each. How many now?", "expectedAny": ["64"]}
+  ]
+}

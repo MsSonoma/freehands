@@ -1,0 +1,74 @@
+{
+  "id": "10th_Globalization_Modern_World_Economy_Beginner",
+  "title": "Globalization and the Modern World Economy",
+  "grade": "10th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "globalization",
+      "definition": "Process of increased interconnectedness between countries and peoples"
+    },
+    {
+      "term": "multinational corporation",
+      "definition": "Company that operates in multiple countries"
+    },
+    {
+      "term": "free trade",
+      "definition": "International commerce with minimal government restrictions"
+    },
+    {
+      "term": "cultural exchange",
+      "definition": "Sharing of ideas, customs, and practices between cultures"
+    },
+    {
+      "term": "interdependence",
+      "definition": "Mutual reliance between countries or regions"
+    }
+  ],
+  "teachingNotes": "Discuss both benefits and challenges of globalization. Connect to students' daily experiences with global products and culture.",
+  "sample": {
+    "question": "What is increased interconnectedness between countries called?",
+    "expectedAny": [
+      "globalization",
+      "global integration",
+      "worldwide connection",
+      "international interdependence"
+    ]
+  },
+  "truefalse": {
+    "question": "A multinational corporation operates in multiple countries.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is international commerce with minimal restrictions?",
+    "expectedAny": [
+      "free trade",
+      "open trade",
+      "unrestricted commerce",
+      "liberal trade"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Mutual reliance between countries is called ________.",
+    "expectedAny": [
+      "interdependence",
+      "mutual dependence",
+      "economic dependence",
+      "global dependence"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are positive effects of globalization?",
+    "expectedAny": [
+      "increased trade",
+      "cultural exchange",
+      "technological spread",
+      "economic growth"
+    ]
+  }
+}

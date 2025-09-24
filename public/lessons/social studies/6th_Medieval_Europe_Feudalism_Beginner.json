@@ -1,0 +1,74 @@
+{
+  "id": "6th_Medieval_Europe_Feudalism_Beginner",
+  "title": "Medieval Europe and the Feudal System",
+  "grade": "6th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "medieval",
+      "definition": "The time period in European history also known as the Middle Ages"
+    },
+    {
+      "term": "feudalism",
+      "definition": "A system where people received land in exchange for loyalty and service"
+    },
+    {
+      "term": "knight",
+      "definition": "A warrior who served a lord in exchange for land"
+    },
+    {
+      "term": "castle",
+      "definition": "A fortified building where nobles lived and defended their land"
+    },
+    {
+      "term": "serf",
+      "definition": "A farmer who was bound to work on a lord's land"
+    }
+  ],
+  "teachingNotes": "Use images of castles and knights. Explain the feudal pyramid structure. Discuss how this system provided order during uncertain times.",
+  "sample": {
+    "question": "What is another name for the medieval time period?",
+    "expectedAny": [
+      "Middle Ages",
+      "the Middle Ages",
+      "Dark Ages",
+      "medieval period"
+    ]
+  },
+  "truefalse": {
+    "question": "Knights served lords in exchange for land.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What was the system where people received land for loyalty called?",
+    "expectedAny": [
+      "feudalism",
+      "feudal system",
+      "medieval system",
+      "land for service"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A fortified building where nobles lived was called a ________.",
+    "expectedAny": [
+      "castle",
+      "medieval castle",
+      "fortified castle",
+      "stone castle"
+    ]
+  },
+  "shortanswer": {
+    "question": "How was a serf's life different from a knight's life?",
+    "expectedAny": [
+      "serfs farmed, knights fought",
+      "serfs were bound to land, knights were free",
+      "serfs worked for lords, knights served lords",
+      "different social classes"
+    ]
+  }
+}

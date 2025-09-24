@@ -1,0 +1,53 @@
+{
+  "id": "5th_Problem_Solving_Multi_Step_Advanced",
+  "title": "Multi-Step Problem Solving Strategies",
+  "grade": "5th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "multi-step problem",
+      "definition": "A word problem that requires more than one operation to solve"
+    },
+    {
+      "term": "strategy",
+      "definition": "A planned method or approach to solve a problem"
+    },
+    {
+      "term": "operation",
+      "definition": "A mathematical process like addition, subtraction, multiplication, or division"
+    },
+    {
+      "term": "reasonable answer",
+      "definition": "A solution that makes sense given the context of the problem"
+    },
+    {
+      "term": "estimate",
+      "definition": "To find an approximate answer to check if your exact answer is reasonable"
+    }
+  ],
+  "teachingNotes": "Teach the problem-solving process: read carefully, identify what you know and need to find, plan your steps, solve, and check your answer. Practice breaking complex problems into smaller parts.",
+  "sample": {
+    "question": "What should you do first when solving a word problem?",
+    "expectedAny": ["read carefully", "understand the problem", "read the problem", "identify what you know"]
+  },
+  "truefalse": {
+    "question": "You should always estimate your answer to check if it's reasonable.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "Which strategy helps break down complex problems?",
+    "expectedAny": ["work backwards", "make smaller steps", "identify steps needed", "break into parts"]
+  },
+  "fillintheblank": {
+    "question": "After solving a problem, you should always ________ your answer to see if it makes sense.",
+    "expectedAny": ["check", "verify", "review", "examine"]
+  },
+  "shortanswer": {
+    "question": "List the steps you would use to solve a multi-step word problem.",
+    "expectedAny": ["read, plan, solve, check", "understand, plan, calculate, verify", "read carefully, identify steps, solve, check answer"]
+  },
+  "wordProblems": {
+    "question": "A school has 24 classrooms with 28 students each. If 156 students are absent today, how many students are present?",
+    "expectedAny": ["516 students", "516", "672 - 156 = 516", "five hundred sixteen"]
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "id": "7th_Algebraic_Expressions_and_Variables_Advanced",
+  "title": "Algebraic Expressions and Variables",
+  "grade": "7th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "algebraic expression",
+      "definition": "A mathematical phrase that contains numbers, variables, and operations"
+    },
+    {
+      "term": "variable",
+      "definition": "A letter or symbol that represents an unknown number"
+    },
+    {
+      "term": "coefficient",
+      "definition": "The number that multiplies a variable"
+    },
+    {
+      "term": "like terms",
+      "definition": "Terms that have the same variable raised to the same power"
+    },
+    {
+      "term": "simplify",
+      "definition": "To combine like terms and reduce an expression to its simplest form"
+    }
+  ],
+  "teachingNotes": "Start with simple expressions and build complexity. Show how variables represent unknown quantities. Practice combining like terms.",
+  "sample": {
+    "question": "What is a letter or symbol that represents an unknown number?",
+    "expectedAny": ["variable", "unknown", "letter variable", "algebraic variable"]
+  },
+  "truefalse": {
+    "question": "In the expression 3x + 5, the coefficient of x is 3.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "Which terms are like terms?",
+    "expectedAny": ["2x and 5x", "3y and 7y", "4a and 9a", "same variable terms"]
+  },
+  "fillintheblank": {
+    "question": "To combine like terms means to ________ an expression.",
+    "expectedAny": ["simplify", "reduce", "combine", "condense"]
+  },
+  "shortanswer": {
+    "question": "Simplify the expression: 4x + 2x + 3",
+    "expectedAny": ["6x + 3", "6x+3", "3 + 6x", "3+6x"]
+  },
+  "wordProblems": {
+    "question": "Sarah has x apples. She buys 3 more apples and then gives away 2 apples. Write an expression for how many apples she has.",
+    "expectedAny": ["x + 3 - 2", "x + 1", "x+1", "(x+3)-2"]
+  }
+}

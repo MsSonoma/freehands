@@ -1,0 +1,73 @@
+{
+  "id": "8th_American_Revolution_Causes_Intermediate",
+  "title": "Causes of the American Revolution",
+  "grade": "8th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "taxation without representation",
+      "definition": "Being taxed by a government without having a voice in that government"
+    },
+    {
+      "term": "boycott",
+      "definition": "Refusing to buy goods as a form of protest"
+    },
+    {
+      "term": "Stamp Act",
+      "definition": "A British law requiring colonists to pay taxes on printed materials"
+    },
+    {
+      "term": "Boston Tea Party",
+      "definition": "A protest where colonists dumped British tea into Boston Harbor"
+    },
+    {
+      "term": "Intolerable Acts",
+      "definition": "Harsh laws passed by Britain to punish Massachusetts"
+    }
+  ],
+  "teachingNotes": "Trace the escalating conflict between Britain and the colonies. Explain how economic and political grievances led to revolution.",
+  "sample": {
+    "question": "What meant being taxed without having a voice in government?",
+    "expectedAny": [
+      "taxation without representation",
+      "no representation",
+      "taxation without voice",
+      "unfair taxation"
+    ]
+  },
+  "truefalse": {
+    "question": "The Boston Tea Party was a protest against British tea taxes.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What was refusing to buy goods called?",
+    "expectedAny": [
+      "boycott",
+      "protest",
+      "economic protest",
+      "trade protest"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The ________ Act required colonists to pay taxes on printed materials.",
+    "expectedAny": [
+      "Stamp",
+      "printing",
+      "paper",
+      "document"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why did colonists oppose British taxation?",
+    "expectedAny": [
+      "no representation in Parliament",
+      "couldn't vote on taxes",
+      "taxation without representation"
+    ]
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "id": "my-family-community-beginner",
+  "title": "My Family and Community",
+  "grade": "K",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "family",
+      "definition": "People who live together and care for each other"
+    },
+    {
+      "term": "community",
+      "definition": "The place where you live with your neighbors"
+    },
+    {
+      "term": "neighbor",
+      "definition": "Someone who lives near you"
+    },
+    {
+      "term": "home",
+      "definition": "The place where you live with your family"
+    }
+  ],
+  "teachingNotes": "Share family photos and discuss different family structures. Create classroom community. Talk about helping family and neighbors.",
+  "sample": [
+    {"question": "Who is in your family?", "expectedAny": ["mom", "dad", "sister", "brother", "grandma", "grandpa", "parents"]},
+    {"question": "What does your family do together?", "expectedAny": ["eat meals", "play games", "watch movies", "go places"]},
+    {"question": "Where do you live?", "expectedAny": ["house", "apartment", "home", "with family"]},
+    {"question": "Who are your neighbors?", "expectedAny": ["people nearby", "people next door", "people in community"]},
+    {"question": "How does your family take care of you?", "expectedAny": ["give food", "keep safe", "provide shelter", "show love"]}
+  ],
+  "truefalse": [
+    {"question": "Families can have different numbers of people.", "answer": true, "expectedAny": ["families come in many sizes"]},
+    {"question": "All families look exactly the same.", "answer": false, "expectedAny": ["families are different"]},
+    {"question": "Communities have many families living together.", "answer": true, "expectedAny": ["communities are made of families"]},
+    {"question": "Only big families are real families.", "answer": false, "expectedAny": ["families can be any size"]},
+    {"question": "Neighbors should help each other.", "answer": true, "expectedAny": ["neighbors help neighbors"]},
+    {"question": "Families only include people who look the same.", "answer": false, "expectedAny": ["families can look different"]},
+    {"question": "Your community includes your school.", "answer": true, "expectedAny": ["schools are part of communities"]}
+  ],
+  "multiplechoice": [
+    {"question": "What is a good way to help your family?", "choices": ["make a mess", "put away toys", "be loud", "run away"], "correct": 1, "expectedAny": ["putting away toys helps the family"]},
+    {"question": "What makes people part of a family?", "choices": ["they look the same", "they care for each other", "they live far apart", "they never talk"], "correct": 1, "expectedAny": ["families care for each other"]},
+    {"question": "How can you help in your community?", "choices": ["litter everywhere", "be kind to others", "ignore people", "make noise"], "correct": 1, "expectedAny": ["being kind helps community"]},
+    {"question": "Where might you see your neighbors?", "choices": ["only at night", "at the store", "never", "in other countries"], "correct": 1, "expectedAny": ["neighbors shop at local stores"]},
+    {"question": "What do families share?", "choices": ["nothing", "love and home", "only money", "only food"], "correct": 1, "expectedAny": ["families share love and home"]},
+    {"question": "Who can be in a family?", "choices": ["only children", "only adults", "people who care for each other", "only pets"], "correct": 2, "expectedAny": ["families are people who care for each other"]},
+    {"question": "What is special about your home?", "choices": ["nothing", "it's where your family lives", "it's always big", "it's always small"], "correct": 1, "expectedAny": ["home is where family lives"]}
+  ],
+  "fillintheblank": [
+    {"question": "Your _____ is the place where you live.", "expectedAny": ["home", "house"]},
+    {"question": "People who live near you are called _____.", "expectedAny": ["neighbors"]},
+    {"question": "A _____ is made up of people who care for each other.", "expectedAny": ["family"]},
+    {"question": "Your _____ includes your home, school, and neighbors.", "expectedAny": ["community"]},
+    {"question": "_____ help make communities friendly places.", "expectedAny": ["Neighbors", "People"]},
+    {"question": "Every family lives in a _____.", "expectedAny": ["home", "house", "place"]},
+    {"question": "_____ are people in your family who love you.", "expectedAny": ["Parents", "Family members"]}
+  ],
+  "shortanswer": [
+    {"question": "How can you be a good neighbor?", "expectedAny": ["be kind", "help others", "be quiet", "share", "be friendly"]},
+    {"question": "What makes your family special?", "expectedAny": ["they love me", "they care for me", "we do things together", "they help me"]},
+    {"question": "How do families help each other?", "expectedAny": ["share chores", "take care when sick", "help with problems", "show love"]},
+    {"question": "What are some places in your community?", "expectedAny": ["school", "park", "store", "library", "post office"]},
+    {"question": "How is your family the same as other families? How is it different?", "expectedAny": ["same: love each other; different: size, traditions", "all care, but unique in their own way"]},
+    {"question": "What would you tell someone about your community?", "expectedAny": ["friendly people", "nice places", "good neighbors", "safe place"]},
+    {"question": "How do communities help families?", "expectedAny": ["provide services", "schools for children", "stores for shopping", "safe places to live"]}
+  ],
+  "wordProblems": [
+    {"question": "Maria's family has 2 parents and 3 children. How many people are in Maria's family?", "expectedAny": ["5 people", "2 + 3 = 5"]},
+    {"question": "In Jake's neighborhood, there are 8 houses on his street. If 3 houses have children, how many houses don't have children?", "expectedAny": ["5 houses", "8 - 3 = 5"]},
+    {"question": "At the community picnic, there were 12 families. If 4 families left early, how many families stayed?", "expectedAny": ["8 families", "12 - 4 = 8"]},
+    {"question": "Emma's family invited 6 neighbors for dinner. If 2 more neighbors came later, how many neighbors came total?", "expectedAny": ["8 neighbors", "6 + 2 = 8"]},
+    {"question": "There are 15 children in the community playground. If 7 children went home, how many children are still playing?", "expectedAny": ["8 children", "15 - 7 = 8"]},
+    {"question": "Sam's apartment building has 9 families. If his family and 2 other families have pets, how many families have pets?", "expectedAny": ["3 families", "1 + 2 = 3"]},
+    {"question": "The community garden has 20 plots. If 13 plots have vegetables and the rest have flowers, how many have flowers?", "expectedAny": ["7 plots", "20 - 13 = 7"]}
+  ]
+}

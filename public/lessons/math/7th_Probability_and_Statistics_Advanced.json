@@ -1,0 +1,53 @@
+{
+  "id": "7th_Probability_and_Statistics_Advanced",
+  "title": "Probability and Data Analysis",
+  "grade": "7th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "probability",
+      "definition": "The likelihood that an event will occur"
+    },
+    {
+      "term": "outcome",
+      "definition": "A possible result of an experiment"
+    },
+    {
+      "term": "sample space",
+      "definition": "All possible outcomes of an experiment"
+    },
+    {
+      "term": "compound event",
+      "definition": "An event made up of two or more simple events"
+    },
+    {
+      "term": "independent events",
+      "definition": "Events where one outcome doesn't affect the other"
+    }
+  ],
+  "teachingNotes": "Use dice, coins, and cards for examples. Connect probability to fractions and percents. Discuss real-world applications.",
+  "sample": {
+    "question": "What is the likelihood that an event will occur?",
+    "expectedAny": ["probability", "chance", "likelihood", "odds"]
+  },
+  "truefalse": {
+    "question": "The probability of any event is between 0 and 1.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is the probability of rolling a 3 on a six-sided die?",
+    "expectedAny": ["1/6", "one sixth", "1 out of 6", "0.167"]
+  },
+  "fillintheblank": {
+    "question": "All possible outcomes of an experiment make up the ________ space.",
+    "expectedAny": ["sample", "outcome", "event", "possibility"]
+  },
+  "shortanswer": {
+    "question": "If you flip two coins, what is the probability of getting two heads?",
+    "expectedAny": ["1/4", "0.25", "25%", "one fourth"]
+  },
+  "wordProblems": {
+    "question": "A bag has 3 red marbles and 7 blue marbles. What is the probability of drawing a red marble?",
+    "expectedAny": ["3/10", "0.3", "30%", "3 out of 10"]
+  }
+}

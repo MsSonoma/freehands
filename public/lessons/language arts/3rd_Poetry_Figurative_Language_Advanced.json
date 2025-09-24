@@ -1,0 +1,76 @@
+{
+  "id": "poetry-figurative-language-advanced",
+  "title": "Poetry and Figurative Language",
+  "grade": "3rd",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "poetry",
+      "definition": "Writing that uses rhythm, rhyme, and special language to express feelings or ideas"
+    },
+    {
+      "term": "simile",
+      "definition": "A comparison using 'like' or 'as' (The snow is like a blanket)"
+    },
+    {
+      "term": "metaphor",
+      "definition": "A comparison that says one thing is another (The sun is a golden ball)"
+    },
+    {
+      "term": "alliteration",
+      "definition": "Words that start with the same sound (Sally sells seashells)"
+    }
+  ],
+  "teachingNotes": "Read various poems aloud. Practice identifying rhyme patterns. Have students create their own simple poems with figurative language.",
+  "sample": {
+    "question": "Is 'The wind whispered through the trees' a simile or metaphor?",
+    "expectedAny": [
+      "metaphor",
+      "it says the wind whispered without using like or as"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "A simile always uses the words 'like' or 'as' to make a comparison.",
+      "answer": true,
+      "expectedAny": [
+        "similes require like or as to make comparisons"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which is an example of alliteration?",
+      "choices": [
+        "red roses",
+        "busy bees buzzing",
+        "tall tree",
+        "happy child"
+      ],
+      "correct": 1,
+      "expectedAny": [
+        "busy bees buzzing repeats the 'b' sound"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "'Her smile is as bright as the sun' is an example of a _____.",
+      "expectedAny": [
+        "simile"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Why do poets use figurative language like similes and metaphors?",
+      "expectedAny": [
+        "make writing more interesting",
+        "help readers picture things",
+        "express feelings better",
+        "create vivid images"
+      ]
+    }
+  ]
+}

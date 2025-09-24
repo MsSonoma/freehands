@@ -1,0 +1,73 @@
+{
+  "id": "7th_Research_Skills_Digital_Literacy_Advanced",
+  "title": "Research Skills and Digital Information Literacy",
+  "grade": "7th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "primary source",
+      "definition": "An original document or firsthand account from the time period studied"
+    },
+    {
+      "term": "secondary source",
+      "definition": "A source that analyzes or interprets primary sources"
+    },
+    {
+      "term": "plagiarism",
+      "definition": "Using someone else's words or ideas without giving credit"
+    },
+    {
+      "term": "citation",
+      "definition": "Giving credit to sources used in research"
+    },
+    {
+      "term": "digital literacy",
+      "definition": "The ability to effectively use digital technologies and evaluate online information"
+    }
+  ],
+  "teachingNotes": "Emphasize the importance of evaluating sources for credibility. Teach proper citation formats and how to avoid plagiarism.",
+  "sample": {
+    "question": "What is an original document from the time period being studied?",
+    "expectedAny": [
+      "primary source",
+      "firsthand account",
+      "original document",
+      "contemporary source"
+    ]
+  },
+  "truefalse": {
+    "question": "Secondary sources analyze or interpret primary sources.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is using someone's ideas without giving credit?",
+    "expectedAny": [
+      "plagiarism",
+      "stealing ideas",
+      "academic dishonesty",
+      "copying"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Giving credit to sources is called ________.",
+    "expectedAny": [
+      "citation",
+      "citing",
+      "attribution",
+      "crediting"
+    ]
+  },
+  "shortanswer": {
+    "question": "How can you evaluate if an online source is credible?",
+    "expectedAny": [
+      "check author, publication date, website domain",
+      "look for expert authors and reliable sites",
+      "verify accuracy and authority"
+    ]
+  }
+}

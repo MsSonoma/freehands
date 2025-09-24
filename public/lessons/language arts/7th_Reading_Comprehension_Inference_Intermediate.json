@@ -1,0 +1,73 @@
+{
+  "id": "7th_Reading_Comprehension_Inference_Intermediate",
+  "title": "Reading Comprehension and Making Inferences",
+  "grade": "7th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "inference",
+      "definition": "A logical conclusion based on evidence and reasoning"
+    },
+    {
+      "term": "implicit",
+      "definition": "Information that is suggested but not directly stated"
+    },
+    {
+      "term": "explicit",
+      "definition": "Information that is clearly and directly stated"
+    },
+    {
+      "term": "text structure",
+      "definition": "How information in a text is organized"
+    },
+    {
+      "term": "main idea",
+      "definition": "The most important point or central message of a text"
+    }
+  ],
+  "teachingNotes": "Practice distinguishing between explicit and implicit information. Teach students to support inferences with textual evidence.",
+  "sample": {
+    "question": "What is a logical conclusion based on evidence and reasoning?",
+    "expectedAny": [
+      "inference",
+      "conclusion",
+      "deduction",
+      "logical guess"
+    ]
+  },
+  "truefalse": {
+    "question": "Explicit information is directly stated in the text.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What type of information is suggested but not directly stated?",
+    "expectedAny": [
+      "implicit",
+      "implied",
+      "inferred",
+      "suggested"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The most important point of a text is the ________ idea.",
+    "expectedAny": [
+      "main",
+      "central",
+      "primary",
+      "key"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do you make a good inference while reading?",
+    "expectedAny": [
+      "use text evidence and prior knowledge",
+      "combine clues with reasoning",
+      "evidence plus logical thinking"
+    ]
+  }
+}

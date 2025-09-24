@@ -1,0 +1,80 @@
+{
+  "id": "writing-drawing-expression-intermediate",
+  "title": "Writing and Drawing for Expression",
+  "grade": "K",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "writing",
+      "definition": "Making letters and words on paper"
+    },
+    {
+      "term": "drawing",
+      "definition": "Making pictures with crayons, pencils, or markers"
+    },
+    {
+      "term": "express",
+      "definition": "To show or tell about your thoughts and feelings"
+    },
+    {
+      "term": "idea",
+      "definition": "A thought in your mind"
+    }
+  ],
+  "teachingNotes": "Encourage invented spelling and drawing to communicate. Provide various writing materials. Celebrate all attempts at communication.",
+  "sample": [
+    {"question": "Draw a picture of your family and tell what you drew.", "expectedAny": ["names family members and describes drawing"]},
+    {"question": "Write one sentence about your favorite animal.", "expectedAny": ["I like dogs."]},
+    {"question": "Label the parts of your drawing.", "expectedAny": ["head, body, legs"]},
+    {"question": "Draw a weather picture and describe it.", "expectedAny": ["sunny, rainy descriptions"]},
+    {"question": "Make a simple card for a friend.", "expectedAny": ["card with drawing and message"]},
+    {"question": "Draw something that makes you happy.", "expectedAny": ["child describes and draws"]},
+    {"question": "Write a short caption for your drawing.", "expectedAny": ["My cat, My family"]}
+  ],
+  "truefalse": [
+    {"question": "Drawing pictures can tell a story.", "answer": true, "expectedAny": ["pictures can communicate ideas and stories"]},
+    {"question": "You have to spell every word perfectly when you write.", "answer": false, "expectedAny": ["kindergarteners can use invented spelling"]},
+    {"question": "Writing and drawing both help you express ideas.", "answer": true, "expectedAny": ["both are ways to communicate thoughts"]},
+    {"question": "Only adults can write real words.", "answer": false, "expectedAny": ["children can write words too"]},
+    {"question": "Pictures and words can work together.", "answer": true, "expectedAny": ["illustrations and text complement each other"]},
+    {"question": "You should never make mistakes when writing.", "answer": false, "expectedAny": ["mistakes help us learn"]},
+    {"question": "Drawing is only for fun, not for learning.", "answer": false, "expectedAny": ["drawing helps with learning and expression"]}
+  ],
+  "multiplechoice": [
+    {"question": "What is a good way to share your ideas?", "choices": ["keep them secret", "write or draw them", "forget them", "hide them"], "correct": 1, "expectedAny": ["writing and drawing help share ideas"]},
+    {"question": "What should you do first when you want to write?", "choices": ["draw a picture", "think of an idea", "find paper", "get a pencil"], "correct": 1, "expectedAny": ["thinking of ideas comes first"]},
+    {"question": "If you don't know how to spell a word, what can you do?", "choices": ["give up", "try your best", "ask someone else to write it", "don't use the word"], "correct": 1, "expectedAny": ["invented spelling is encouraged"]},
+    {"question": "What makes writing special?", "choices": ["perfect spelling", "sharing your thoughts", "using big words", "neat handwriting"], "correct": 1, "expectedAny": ["expressing thoughts is what matters most"]},
+    {"question": "When you draw a picture of your family, what are you doing?", "choices": ["wasting time", "expressing ideas", "making a mess", "copying someone"], "correct": 1, "expectedAny": ["showing ideas about family"]},
+    {"question": "What can help you remember a story you want to tell?", "choices": ["forget about it", "draw pictures first", "wait until later", "ask someone else"], "correct": 1, "expectedAny": ["drawing helps organize thoughts"]},
+    {"question": "Why might someone add words to their drawing?", "choices": ["to make it prettier", "to explain more", "to use up space", "to show off"], "correct": 1, "expectedAny": ["words add information to pictures"]}
+  ],
+  "fillintheblank": [
+    {"question": "When you _____ a picture, you can show others what you're thinking.", "expectedAny": ["draw", "make"]},
+    {"question": "_____ and drawing are both ways to express ideas.", "expectedAny": ["Writing"]},
+    {"question": "You can use a _____ to make letters and words.", "expectedAny": ["pencil", "crayon", "marker"]},
+    {"question": "When you have an _____, you can write or draw about it.", "expectedAny": ["idea"]},
+    {"question": "Pictures and _____ can work together to tell a story.", "expectedAny": ["words"]},
+    {"question": "To _____ means to show your thoughts and feelings.", "expectedAny": ["express"]},
+    {"question": "_____ spelling means trying your best to write words.", "expectedAny": ["Invented"]}
+  ],
+  "shortanswer": [
+    {"question": "What would you like to write or draw about?", "expectedAny": ["family", "pets", "toys", "friends", "adventures"]},
+    {"question": "How do pictures help tell stories?", "expectedAny": ["show what happened", "give details", "help people understand"]},
+    {"question": "Why is it okay to make mistakes when you're learning to write?", "expectedAny": ["mistakes help us learn", "practice makes better", "trying is important"]},
+    {"question": "What are some different ways to express your ideas?", "expectedAny": ["drawing", "writing", "talking", "acting out"]},
+    {"question": "Describe a picture you would like to draw.", "expectedAny": ["varies by student interest"]},
+    {"question": "How can writing and drawing help you remember things?", "expectedAny": ["pictures show details", "words help remember", "creating helps memory"]},
+    {"question": "What would you tell a friend who says they can't write yet?", "expectedAny": ["try your best", "use invented spelling", "drawing counts too", "practice helps"]}
+  ],
+  "wordProblems": [
+    {"question": "Emma draws 3 pictures of her family and writes 2 stories about her pet. How many creative works did she make?", "expectedAny": ["5 works", "3 + 2 = 5"]},
+    {"question": "In art class, 8 children draw pictures and 5 children write stories. How many children are expressing ideas?", "expectedAny": ["13 children", "8 + 5 = 13"]},
+    {"question": "Jake uses 4 crayons for his drawing and 1 pencil for writing. How many tools did he use?", "expectedAny": ["5 tools", "4 + 1 = 5"]},
+    {"question": "A book has 6 pages with pictures and 4 pages with just words. How many pages total?", "expectedAny": ["10 pages", "6 + 4 = 10"]},
+    {"question": "Maria writes her name 7 times to practice. If each time uses 5 letters, how many letters did she write?", "expectedAny": ["35 letters", "7 × 5 = 35"]},
+    {"question": "There are 12 students in class. If 9 students finish their drawings, how many still need to finish?", "expectedAny": ["3 students", "12 - 9 = 3"]},
+    {"question": "Sam makes 2 drawings on Monday and 3 drawings on Tuesday. How many drawings did he make in total?", "expectedAny": ["5 drawings", "2 + 3 = 5"]}
+  ]
+}

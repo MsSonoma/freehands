@@ -1,0 +1,53 @@
+{
+  "id": "6th_Fractions_Decimals_Percents_Beginner",
+  "title": "Fractions, Decimals, and Percents",
+  "grade": "6th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "percent",
+      "definition": "A ratio that compares a number to 100"
+    },
+    {
+      "term": "decimal",
+      "definition": "A number expressed using a decimal point to show parts of a whole"
+    },
+    {
+      "term": "equivalent",
+      "definition": "Having the same value but written in different forms"
+    },
+    {
+      "term": "benchmark fraction",
+      "definition": "Common fractions like 1/2, 1/4, and 3/4 used for comparison"
+    },
+    {
+      "term": "conversion",
+      "definition": "Changing a number from one form to another while keeping the same value"
+    }
+  ],
+  "teachingNotes": "Use visual models like hundred grids and number lines. Practice converting between the three forms. Emphasize real-world applications like sales and statistics.",
+  "sample": {
+    "question": "What do we call a ratio that compares a number to 100?",
+    "expectedAny": ["percent", "percentage", "percent ratio", "per hundred"]
+  },
+  "truefalse": {
+    "question": "0.5, 1/2, and 50% all represent the same value.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is 3/4 as a percent?",
+    "expectedAny": ["75%", "75 percent", "seventy-five percent", "75"]
+  },
+  "fillintheblank": {
+    "question": "Numbers that have the same value but are written differently are called ________.",
+    "expectedAny": ["equivalent", "equal", "equivalent forms", "same value"]
+  },
+  "shortanswer": {
+    "question": "Convert 0.25 to a fraction and a percent.",
+    "expectedAny": ["1/4 and 25%", "25/100 and 25%", "one-fourth and 25 percent", "1/4, 25%"]
+  },
+  "wordProblems": {
+    "question": "If 15 out of 20 students passed a test, what percent of students passed?",
+    "expectedAny": ["75%", "75 percent", "15/20 = 75%", "seventy-five percent"]
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "id": "8th_Chemical_Reactions_and_Equations_Intermediate",
+  "title": "Chemical Reactions and Balancing Equations",
+  "grade": "8th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "chemical equation",
+      "definition": "A representation of a chemical reaction using symbols and formulas"
+    },
+    {
+      "term": "reactant",
+      "definition": "A substance that enters into a chemical reaction"
+    },
+    {
+      "term": "product",
+      "definition": "A substance produced in a chemical reaction"
+    },
+    {
+      "term": "coefficient",
+      "definition": "A number placed before a formula to balance an equation"
+    },
+    {
+      "term": "conservation of mass",
+      "definition": "Mass is neither created nor destroyed in chemical reactions"
+    }
+  ],
+  "teachingNotes": "Practice writing and balancing simple equations. Emphasize that atoms are rearranged but not created or destroyed.",
+  "sample": {
+    "question": "What represents a chemical reaction using symbols and formulas?",
+    "expectedAny": [
+      "chemical equation",
+      "reaction equation",
+      "formula equation",
+      "balanced equation"
+    ]
+  },
+  "truefalse": {
+    "question": "In a balanced equation, the number of atoms on each side must be equal.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is placed before a formula to balance an equation?",
+    "expectedAny": [
+      "coefficient",
+      "number",
+      "balancing number",
+      "multiplier"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The law of ________ of mass states that mass is neither created nor destroyed.",
+    "expectedAny": [
+      "conservation",
+      "preservation",
+      "maintaining",
+      "keeping"
+    ]
+  },
+  "shortanswer": {
+    "question": "What happens to atoms during a chemical reaction?",
+    "expectedAny": [
+      "they are rearranged",
+      "rearranged into new compounds",
+      "reorganized but not destroyed"
+    ]
+  }
+}

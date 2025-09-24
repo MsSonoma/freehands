@@ -1,0 +1,73 @@
+{
+  "id": "8th_Vocabulary_Etymology_Word_Relationships_Advanced",
+  "title": "Etymology and Advanced Word Relationships",
+  "grade": "8th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "etymology",
+      "definition": "The origin and history of words"
+    },
+    {
+      "term": "root word",
+      "definition": "The basic part of a word that carries the main meaning"
+    },
+    {
+      "term": "affix",
+      "definition": "A prefix or suffix added to a root word"
+    },
+    {
+      "term": "cognate",
+      "definition": "Words in different languages that share a common origin"
+    },
+    {
+      "term": "semantic field",
+      "definition": "A group of words related in meaning"
+    }
+  ],
+  "teachingNotes": "Explore how understanding word origins helps with meaning and spelling. Connect English words to Latin and Greek roots.",
+  "sample": {
+    "question": "What is the origin and history of words called?",
+    "expectedAny": [
+      "etymology",
+      "word history",
+      "word origin",
+      "linguistic history"
+    ]
+  },
+  "truefalse": {
+    "question": "Understanding etymology can help with spelling and meaning.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the basic part of a word that carries the main meaning?",
+    "expectedAny": [
+      "root word",
+      "root",
+      "base word",
+      "stem"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A prefix or suffix added to a root word is called an ________.",
+    "expectedAny": [
+      "affix",
+      "addition",
+      "attachment",
+      "modification"
+    ]
+  },
+  "shortanswer": {
+    "question": "How can knowing that 'bio' means life help you understand new words?",
+    "expectedAny": [
+      "biology, biography relate to life",
+      "helps decode meaning",
+      "provides meaning clues"
+    ]
+  }
+}

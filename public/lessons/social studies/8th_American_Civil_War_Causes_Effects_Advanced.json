@@ -1,0 +1,78 @@
+{
+  "id": "american-civil-war-causes-effects-advanced",
+  "title": "American Civil War: Causes and Effects",
+  "grade": "8th",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "secession",
+      "definition": "The act of withdrawing from a political union, especially a state leaving the United States"
+    },
+    {
+      "term": "abolition",
+      "definition": "The movement to end slavery"
+    },
+    {
+      "term": "Emancipation Proclamation",
+      "definition": "Lincoln's declaration that freed slaves in rebellious states"
+    },
+    {
+      "term": "Reconstruction",
+      "definition": "The period after the Civil War when the South was rebuilt and rejoined the Union"
+    }
+  ],
+  "teachingNotes": "Use primary source documents and maps. Discuss multiple perspectives and complex causes. Connect to ongoing struggles for civil rights and equality.",
+  "sample": {
+    "question": "What was the main issue that divided the North and South before the Civil War?",
+    "expectedAny": [
+      "slavery",
+      "disagreements about slavery",
+      "whether slavery should expand"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "The Civil War was fought only over economic differences between North and South.",
+      "answer": false,
+      "expectedAny": [
+        "slavery was the central moral and political issue"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "What did the Emancipation Proclamation do?",
+      "choices": [
+        "Ended the war",
+        "Freed all slaves immediately",
+        "Freed slaves in rebellious states",
+        "Created new states"
+      ],
+      "correct": 2,
+      "expectedAny": [
+        "freed slaves in Confederate states as war measure"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "The war began in _____ and ended in _____, lasting about _____ years.",
+      "expectedAny": [
+        "1861",
+        "1865",
+        "4"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Why was the Civil War considered a 'total war'?",
+      "expectedAny": [
+        "affected entire populations, not just armies",
+        "targeted civilian infrastructure",
+        "mobilized entire societies"
+      ]
+    }
+  ]
+}

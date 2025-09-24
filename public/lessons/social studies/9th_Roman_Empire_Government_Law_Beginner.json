@@ -1,0 +1,73 @@
+{
+  "id": "9th_Roman_Empire_Government_Law_Beginner",
+  "title": "Roman Empire: Government and Legal System",
+  "grade": "9th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "republic",
+      "definition": "Government where power rests with citizens and elected representatives"
+    },
+    {
+      "term": "senate",
+      "definition": "Assembly of nobles that advised Roman magistrates"
+    },
+    {
+      "term": "consul",
+      "definition": "Chief executive officer of the Roman Republic"
+    },
+    {
+      "term": "Roman law",
+      "definition": "Legal system that influenced modern legal codes"
+    },
+    {
+      "term": "citizenship",
+      "definition": "Legal status granting rights and responsibilities"
+    }
+  ],
+  "teachingNotes": "Focus on Roman contributions to government and law. Compare Roman republic to modern democratic systems.",
+  "sample": {
+    "question": "What is a government where power rests with citizens and representatives?",
+    "expectedAny": [
+      "republic",
+      "republican government",
+      "representative government",
+      "constitutional republic"
+    ]
+  },
+  "truefalse": {
+    "question": "The consul was the chief executive officer of the Roman Republic.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What assembly advised Roman magistrates?",
+    "expectedAny": [
+      "senate",
+      "Roman Senate",
+      "senatorial assembly",
+      "noble assembly"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Legal status granting rights and responsibilities is called ________.",
+    "expectedAny": [
+      "citizenship",
+      "civic status",
+      "legal status",
+      "citizen rights"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did Roman law influence modern legal systems?",
+    "expectedAny": [
+      "provided foundation for legal codes",
+      "established legal principles",
+      "influenced court procedures"
+    ]
+  }
+}

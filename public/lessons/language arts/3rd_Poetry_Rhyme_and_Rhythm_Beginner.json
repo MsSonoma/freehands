@@ -1,0 +1,58 @@
+{
+  "id": "3rd_Poetry_Rhyme_and_Rhythm_Beginner",
+  "title": "Poetry: Rhyme and Rhythm",
+  "grade": "3rd",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {"term": "rhyme", "definition": "When two or more words have the same ending sound."},
+    {"term": "rhythm", "definition": "The beat or pattern of sounds in a poem."},
+    {"term": "stanza", "definition": "A group of lines in a poem, similar to a paragraph."}
+  ],
+  "teachingNotes": "Make it physical! Have students clap out syllables to feel the rhythm. Use simple AABB poems to introduce rhyme scheme and have them highlight rhyming words in different colors.",
+  "sample": [
+    {"question": "Which two words rhyme in this group: cat, bat, dog?", "expectedAny": ["cat, bat"]},
+    {"question": "How many syllables are in the word 'butterfly'?", "expectedAny": ["3"]},
+    {"question": "What is the rhythm of a poem?", "expectedAny": ["The beat or pattern of sounds."]},
+    {"question": "Look at a four-line poem. Is the rhyming pattern AABB or ABAB?", "expectedAny": ["AABB or ABAB"]},
+    {"question": "What is one way poetry is different from a regular story?", "expectedAny": ["It uses line breaks", "It often rhymes"]},
+    {"question": "Clap the syllables in the word 'elephant'.", "expectedAny": ["3 claps"]},
+    {"question": "Create a word that rhymes with 'day'.", "expectedAny": ["play", "say", "way"]}
+  ],
+  "truefalse": [
+    {"question": "All poems must rhyme.", "answer": false},
+    {"question": "Rhythm is the beat you can feel in a poem.", "answer": true},
+    {"question": "Syllables are the individual letters in a word.", "answer": false},
+    {"question": "Poetry is written in lines and stanzas.", "answer": true},
+    {"question": "Rhyming words have the same sound at the end.", "answer": true},
+    {"question": "Poems are always very long.", "answer": false},
+    {"question": "Poetry can be used to tell a story.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "Which of these words rhymes with 'night'?", "choices": ["dark", "light", "day", "moon"], "correct": 1},
+    {"question": "The word 'butterfly' has ___ syllables.", "choices": ["one", "two", "three", "four"], "correct": 2},
+    {"question": "A poem with an ABAB rhyme scheme means that ___.", "choices": ["all the lines rhyme", "the first and third lines rhyme, and the second and fourth lines rhyme", "no lines rhyme", "every word is repeated"], "correct": 1},
+    {"question": "A stanza in a poem is like a ___ in a story.", "choices": ["word", "rhyme", "paragraph", "title"], "correct": 2},
+    {"question": "Which of these words rhymes with 'tree'?", "choices": ["leaf", "branch", "free", "grow"], "correct": 2},
+    {"question": "Repetition in a poem is when ___.", "choices": ["words rhyme", "words or phrases are used over and over", "the poem stops", "you count the syllables"], "correct": 1},
+    {"question": "A haiku is a type of poem that has a total of ___ syllables.", "choices": ["10", "14", "17", "20"], "correct": 2}
+  ],
+  "fillintheblank": [
+    {"question": "Words that rhyme have the ___ sound at the end.", "expectedAny": ["same"]},
+    {"question": "The ___ is the beat of a poem.", "expectedAny": ["rhythm"]},
+    {"question": "A group of lines in a poem is called a ___.", "expectedAny": ["stanza", "verse"]},
+    {"question": "Breaking words into their sound parts is counting ___.", "expectedAny": ["syllables"]},
+    {"question": "Poets often use ___ language to create pictures in the reader's mind.", "expectedAny": ["descriptive", "figurative"]},
+    {"question": "___ is when a poet uses the same words or sounds more than once.", "expectedAny": ["Repetition"]},
+    {"question": "A rhyme ___ is the pattern of rhymes at the end of each line.", "expectedAny": ["scheme"]}
+  ],
+  "shortanswer": [
+    {"question": "What makes two words rhyme?", "expectedAny": ["They have the same ending sound."]},
+    {"question": "How can you count the number of syllables in a word?", "expectedAny": ["You can clap the parts of the word or feel how many times your chin drops."]},
+    {"question": "Why might a poet use repetition in a poem?", "expectedAny": ["To create rhythm or to emphasize an important idea."]},
+    {"question": "What is 'free verse' poetry?", "expectedAny": ["It is poetry that does not have a regular rhyme scheme or rhythm."]},
+    {"question": "Create two lines of poetry that rhyme.", "expectedAny": ["The sun is bright, / It fills the world with light."]},
+    {"question": "In what ways is a poem different from a regular story?", "expectedAny": ["It is written in lines and stanzas, it often focuses more on rhythm and sound, and it uses language in a more condensed way."]},
+    {"question": "Write a simple four-line poem with an AABB rhyme scheme.", "expectedAny": ["I have a little cat, / She loves to chase a rat. / She is so much fun, / And plays till day is done."]}
+  ]
+}

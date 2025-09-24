@@ -1,0 +1,74 @@
+{
+  "id": "5th_Civil_War_Causes_Effects_Beginner",
+  "title": "The Civil War: Causes and Effects",
+  "grade": "5th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "Civil War",
+      "definition": "A war between people of the same country, fought in America from 1861-1865"
+    },
+    {
+      "term": "slavery",
+      "definition": "The practice of owning people as property and forcing them to work"
+    },
+    {
+      "term": "Union",
+      "definition": "The northern states that stayed united during the Civil War"
+    },
+    {
+      "term": "Confederacy",
+      "definition": "The southern states that separated from the Union"
+    },
+    {
+      "term": "Abraham Lincoln",
+      "definition": "The 16th President who led the country during the Civil War"
+    }
+  ],
+  "teachingNotes": "Focus on the main cause (disagreement over slavery) and the outcome (slavery ended, country reunited). Keep explanations age-appropriate.",
+  "sample": {
+    "question": "Who was the President during the Civil War?",
+    "expectedAny": [
+      "Abraham Lincoln",
+      "Lincoln",
+      "President Lincoln",
+      "Abe Lincoln"
+    ]
+  },
+  "truefalse": {
+    "question": "The Civil War was fought between the North and the South.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What was the main disagreement that led to the Civil War?",
+    "expectedAny": [
+      "slavery",
+      "about slavery",
+      "whether slavery should continue",
+      "slavery issue"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The northern states were called the ________ during the Civil War.",
+    "expectedAny": [
+      "Union",
+      "United States",
+      "Union states",
+      "Northern Union"
+    ]
+  },
+  "shortanswer": {
+    "question": "What happened to slavery after the Civil War ended?",
+    "expectedAny": [
+      "it ended",
+      "slavery was abolished",
+      "slaves were freed",
+      "slavery became illegal"
+    ]
+  }
+}

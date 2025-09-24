@@ -1,0 +1,53 @@
+{
+  "id": "10th_Sequences_Series_Arithmetic_Geometric_Beginner",
+  "title": "Sequences and Series: Arithmetic and Geometric",
+  "grade": "10th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "sequence",
+      "definition": "Ordered list of numbers following a specific pattern"
+    },
+    {
+      "term": "arithmetic sequence",
+      "definition": "Sequence where consecutive terms have a common difference"
+    },
+    {
+      "term": "geometric sequence",
+      "definition": "Sequence where consecutive terms have a common ratio"
+    },
+    {
+      "term": "series",
+      "definition": "Sum of the terms in a sequence"
+    },
+    {
+      "term": "common difference",
+      "definition": "Constant value added to each term in an arithmetic sequence"
+    }
+  ],
+  "teachingNotes": "Start with simple patterns and progress to formulas. Practice identifying sequence types and finding specific terms.",
+  "sample": {
+    "question": "What is an ordered list of numbers following a pattern?",
+    "expectedAny": ["sequence", "number sequence", "ordered list", "mathematical sequence"]
+  },
+  "truefalse": {
+    "question": "In an arithmetic sequence, consecutive terms have a common difference.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is the sum of terms in a sequence called?",
+    "expectedAny": ["series", "sum", "total", "sequence sum"]
+  },
+  "fillintheblank": {
+    "question": "In a geometric sequence, consecutive terms have a common ________.",
+    "expectedAny": ["ratio", "multiplier", "factor", "quotient"]
+  },
+  "shortanswer": {
+    "question": "What is the formula for the nth term of an arithmetic sequence?",
+    "expectedAny": ["aₙ = a₁ + (n-1)d", "a + (n-1)d", "first term plus (n-1) times difference"]
+  },
+  "wordProblems": {
+    "question": "In the arithmetic sequence 3, 7, 11, 15, ..., what is the 10th term?",
+    "expectedAny": ["39", "a₁₀ = 3 + (10-1)×4 = 39", "thirty-nine", "39"]
+  }
+}

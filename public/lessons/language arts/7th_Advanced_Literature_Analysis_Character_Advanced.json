@@ -1,0 +1,73 @@
+{
+  "id": "7th_Advanced_Literature_Analysis_Character_Advanced",
+  "title": "Advanced Character Analysis and Literary Themes",
+  "grade": "7th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "character development",
+      "definition": "How a character changes throughout a story"
+    },
+    {
+      "term": "internal conflict",
+      "definition": "A struggle within a character's mind or heart"
+    },
+    {
+      "term": "external conflict",
+      "definition": "A struggle between a character and outside forces"
+    },
+    {
+      "term": "theme",
+      "definition": "The central message or meaning of a literary work"
+    },
+    {
+      "term": "symbolism",
+      "definition": "Using objects or actions to represent deeper meanings"
+    }
+  ],
+  "teachingNotes": "Focus on complex character analysis. Help students identify how authors develop themes through character actions and conflicts.",
+  "sample": {
+    "question": "What is how a character changes throughout a story called?",
+    "expectedAny": [
+      "character development",
+      "character growth",
+      "character arc",
+      "character change"
+    ]
+  },
+  "truefalse": {
+    "question": "Internal conflict happens inside a character's mind.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the central message of a literary work?",
+    "expectedAny": [
+      "theme",
+      "main idea",
+      "central message",
+      "moral"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Using objects to represent deeper meanings is called ________.",
+    "expectedAny": [
+      "symbolism",
+      "symbolic representation",
+      "metaphor",
+      "symbolic meaning"
+    ]
+  },
+  "shortanswer": {
+    "question": "How can an author show character development?",
+    "expectedAny": [
+      "through actions and dialogue",
+      "showing character changes",
+      "character growth over time"
+    ]
+  }
+}

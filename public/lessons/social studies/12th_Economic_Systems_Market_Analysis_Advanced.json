@@ -1,0 +1,74 @@
+{
+  "id": "12th_Economic_Systems_Market_Analysis_Advanced",
+  "title": "Economic Systems and Market Analysis",
+  "grade": "12th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "behavioral economics",
+      "definition": "Study of psychological factors in economic decision-making"
+    },
+    {
+      "term": "game theory",
+      "definition": "Mathematical framework for analyzing strategic interactions"
+    },
+    {
+      "term": "pareto efficiency",
+      "definition": "Allocation where no improvement can benefit one without harming another"
+    },
+    {
+      "term": "asymmetric information",
+      "definition": "Situation where parties have unequal access to relevant information"
+    },
+    {
+      "term": "creative destruction",
+      "definition": "Process where innovation destroys old industries while creating new ones"
+    }
+  ],
+  "teachingNotes": "Explore advanced economic theories and behavioral insights. Connect microeconomic principles to macroeconomic outcomes.",
+  "sample": {
+    "question": "What studies psychological factors in economic decisions?",
+    "expectedAny": [
+      "behavioral economics",
+      "psychological economics",
+      "cognitive economics",
+      "decision science"
+    ]
+  },
+  "truefalse": {
+    "question": "Pareto efficiency means everyone receives equal benefits.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What framework analyzes strategic interactions?",
+    "expectedAny": [
+      "game theory",
+      "strategic analysis",
+      "decision theory",
+      "interactive modeling"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Innovation that destroys old industries is called ________ destruction.",
+    "expectedAny": [
+      "creative",
+      "innovative",
+      "transformative",
+      "disruptive"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does asymmetric information lead to market inefficiency?",
+    "expectedAny": [
+      "adverse selection",
+      "moral hazard",
+      "information gaps",
+      "market distortions"
+    ]
+  }
+}

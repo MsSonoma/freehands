@@ -1,0 +1,78 @@
+{
+  "id": "rhyming-word-play-advanced",
+  "title": "Rhyming and Word Play",
+  "grade": "K",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "rhyme",
+      "definition": "Words that end with the same sound, like cat and hat"
+    },
+    {
+      "term": "word",
+      "definition": "A group of sounds or letters that means something"
+    },
+    {
+      "term": "sound",
+      "definition": "What you hear when someone speaks"
+    },
+    {
+      "term": "poem",
+      "definition": "Words that often rhyme and have a rhythm"
+    }
+  ],
+  "teachingNotes": "Use nursery rhymes and simple poems. Practice clapping syllables. Create class rhymes and word families.",
+  "sample": [
+    {"question": "What word rhymes with 'cat'?", "expectedAny": ["hat", "bat", "mat", "rat", "sat"]},
+    {"question": "Complete this rhyme: 'I like to play every _____'", "expectedAny": ["day"]},
+    {"question": "What rhymes with 'moon' in the sky?", "expectedAny": ["spoon", "tune", "soon"]},
+    {"question": "Make up a word that sounds like 'king'.", "expectedAny": ["ring", "sing", "wing", "thing"]},
+    {"question": "What word can rhyme with 'house'?", "expectedAny": ["mouse", "spouse"]}
+  ],
+  "truefalse": [
+    {"question": "The words 'dog' and 'log' rhyme.", "answer": true, "expectedAny": ["dog and log both end with -og sound"]},
+    {"question": "Silly and funny rhyme perfectly.", "answer": false, "expectedAny": ["silly and funny don't end with the same sound"]},
+    {"question": "You can make up new rhyming words.", "answer": true, "expectedAny": ["we can create words that rhyme"]},
+    {"question": "Snake and cake rhyme.", "answer": true, "expectedAny": ["both end in -ake"]},
+    {"question": "Word play is fun with rhymes.", "answer": true, "expectedAny": ["rhyming makes language playful"]},
+    {"question": "Every word has a perfect rhyme.", "answer": false, "expectedAny": ["some words don't have good rhymes"]},
+    {"question": "Poems always have to rhyme.", "answer": false, "expectedAny": ["some poems don't rhyme"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which word rhymes with 'book'?", "choices": ["cake", "look", "ball", "tree"], "correct": 1, "expectedAny": ["look rhymes with book"]},
+    {"question": "Complete the nursery rhyme: 'Mary, Mary, quite contrary, how does your garden _____?'", "choices": ["grow", "flow", "show", "know"], "correct": 0, "expectedAny": ["grow completes the rhyme"]},
+    {"question": "What rhymes with 'rain'?", "choices": ["sun", "train", "cloud", "wind"], "correct": 1, "expectedAny": ["train rhymes with rain"]},
+    {"question": "In 'Twinkle, twinkle, little star', what rhymes with 'are'?", "choices": ["you", "high", "far", "sky"], "correct": 2, "expectedAny": ["far rhymes with star and are"]},
+    {"question": "Which makes the best rhyme with 'bee'?", "choices": ["bug", "tree", "fly", "ant"], "correct": 1, "expectedAny": ["tree rhymes with bee"]},
+    {"question": "What word family does 'cat', 'bat', 'hat' belong to?", "choices": ["-og", "-at", "-un", "-ig"], "correct": 1, "expectedAny": ["-at word family"]},
+    {"question": "Which word rhymes with 'light'?", "choices": ["dark", "bright", "lamp", "sun"], "correct": 1, "expectedAny": ["bright rhymes with light"]}
+  ],
+  "fillintheblank": [
+    {"question": "Hickory dickory dock, the mouse ran up the _____.", "expectedAny": ["clock"]},
+    {"question": "Roses are red, violets are _____.", "expectedAny": ["blue"]},
+    {"question": "Jack and Jill went up the _____.", "expectedAny": ["hill"]},
+    {"question": "Humpty Dumpty sat on a _____.", "expectedAny": ["wall"]},
+    {"question": "I can hop like a bunny, I can buzz like a _____.", "expectedAny": ["bee"]},
+    {"question": "The cat in the _____ is very silly.", "expectedAny": ["hat"]},
+    {"question": "Row, row, row your boat gently down the _____.", "expectedAny": ["stream"]}
+  ],
+  "shortanswer": [
+    {"question": "Can you make up two words that rhyme?", "expectedAny": ["any two rhyming words", "bee-tree", "sun-fun", "car-star"]},
+    {"question": "What's your favorite nursery rhyme and why?", "expectedAny": ["varies by student preference"]},
+    {"question": "Create a silly sentence using words that rhyme.", "expectedAny": ["The cat wore a hat", "I see a bee in the tree"]},
+    {"question": "Name three words that rhyme with 'play'.", "expectedAny": ["day, say, way", "may, bay, hay"]},
+    {"question": "How do rhymes make stories more fun?", "expectedAny": ["they sound nice", "easy to remember", "fun to say"]},
+    {"question": "What rhyming words can you find in your favorite song?", "expectedAny": ["varies by song choice"]},
+    {"question": "Make up a short poem with two rhyming lines.", "expectedAny": ["simple two-line rhyming poems"]}
+  ],
+  "wordProblems": [
+    {"question": "In 'Jack and Jill', there are 2 rhyming words: 'hill' and 'Jill'. If you add 2 more words that rhyme with them, how many rhyming words do you have?", "expectedAny": ["4 words", "2 + 2 = 4"]},
+    {"question": "Anna makes up 5 rhyming pairs. How many words did she create in total?", "expectedAny": ["10 words", "5 pairs = 10 words"]},
+    {"question": "A poem has 6 lines. If every 2 lines rhyme, how many rhyming pairs are there?", "expectedAny": ["3 pairs", "6 ÷ 2 = 3"]},
+    {"question": "In word family '-at', you know cat, bat, hat. If you learn 3 more -at words, how many -at words will you know?", "expectedAny": ["6 words", "3 + 3 = 6"]},
+    {"question": "Danny recites 4 nursery rhymes. If each rhyme has 2 rhyming words, how many rhyming words did he say?", "expectedAny": ["8 words", "4 × 2 = 8"]},
+    {"question": "There are 8 children in circle time. If 5 children can make up rhymes, how many children still need practice?", "expectedAny": ["3 children", "8 - 5 = 3"]},
+    {"question": "Kate knows 7 words that rhyme with 'sun'. If she teaches 3 of them to her friend, how many does she still know?", "expectedAny": ["7 words", "she still knows all of them"]}
+  ]
+}

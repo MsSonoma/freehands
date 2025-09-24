@@ -1,0 +1,53 @@
+{
+  "id": "11th_Advanced_Functions_Transformations_Advanced",
+  "title": "Advanced Functions and Transformations",
+  "grade": "11th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "bijective function",
+      "definition": "Function that is both one-to-one and onto"
+    },
+    {
+      "term": "asymptotic behavior",
+      "definition": "Function behavior as input approaches specific values or infinity"
+    },
+    {
+      "term": "discontinuity",
+      "definition": "Point where function is not continuous or well-defined"
+    },
+    {
+      "term": "modular arithmetic",
+      "definition": "Arithmetic system with finite number of elements using remainder operation"
+    },
+    {
+      "term": "functional equation",
+      "definition": "Equation involving unknown function and its values at different points"
+    }
+  ],
+  "teachingNotes": "Explore advanced function properties and theoretical concepts. Analyze complex function behaviors and relationships.",
+  "sample": {
+    "question": "What is a function that is both one-to-one and onto?",
+    "expectedAny": ["bijective function", "bijection", "one-to-one correspondence", "invertible function"]
+  },
+  "truefalse": {
+    "question": "Asymptotic behavior describes function limits at infinity.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What involves an unknown function at different points?",
+    "expectedAny": ["functional equation", "function equation", "differential relation", "function identity"]
+  },
+  "fillintheblank": {
+    "question": "A point where function is not continuous is a ________.",
+    "expectedAny": ["discontinuity", "break", "gap", "interruption"]
+  },
+  "shortanswer": {
+    "question": "What properties must a function have to be bijective?",
+    "expectedAny": ["injective and surjective", "one-to-one and onto", "invertible", "perfect mapping"]
+  },
+  "wordProblems": {
+    "question": "If f(x+y) = f(x)·f(y) and f(1) = 2, what is f(3)?",
+    "expectedAny": ["8", "eight", "2³ = 8", "f(3) = f(1+1+1) = f(1)³ = 8"]
+  }
+}

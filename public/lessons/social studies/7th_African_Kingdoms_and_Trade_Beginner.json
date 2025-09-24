@@ -1,0 +1,73 @@
+{
+  "id": "7th_African_Kingdoms_and_Trade_Beginner",
+  "title": "Medieval African Kingdoms and Trade Networks",
+  "grade": "7th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "Mali",
+      "definition": "A wealthy West African kingdom known for gold and salt trade"
+    },
+    {
+      "term": "Mansa Musa",
+      "definition": "A famous ruler of Mali known for his wealth and pilgrimage"
+    },
+    {
+      "term": "trans-Saharan trade",
+      "definition": "Trade routes across the Sahara Desert"
+    },
+    {
+      "term": "Timbuktu",
+      "definition": "An important trading city and center of learning in Africa"
+    },
+    {
+      "term": "caravan",
+      "definition": "A group of traders traveling together for safety"
+    }
+  ],
+  "teachingNotes": "Emphasize the wealth and sophistication of African kingdoms. Discuss how trade connected Africa to the wider world.",
+  "sample": {
+    "question": "What was a wealthy West African kingdom known for gold trade?",
+    "expectedAny": [
+      "Mali",
+      "Ghana",
+      "Songhai",
+      "West African kingdom"
+    ]
+  },
+  "truefalse": {
+    "question": "Mansa Musa was one of the richest rulers in history.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What city was an important center of learning in Africa?",
+    "expectedAny": [
+      "Timbuktu",
+      "Gao",
+      "Djenne",
+      "trading city"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A group of traders traveling together was called a ________.",
+    "expectedAny": [
+      "caravan",
+      "trade group",
+      "merchant group",
+      "trading party"
+    ]
+  },
+  "shortanswer": {
+    "question": "What two valuable resources made West African kingdoms wealthy?",
+    "expectedAny": [
+      "gold and salt",
+      "salt and gold",
+      "precious metals and salt"
+    ]
+  }
+}

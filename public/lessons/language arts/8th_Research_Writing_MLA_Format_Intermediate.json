@@ -1,0 +1,73 @@
+{
+  "id": "8th_Research_Writing_MLA_Format_Intermediate",
+  "title": "Research Writing and MLA Documentation",
+  "grade": "8th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "MLA format",
+      "definition": "Modern Language Association style for documenting sources"
+    },
+    {
+      "term": "in-text citation",
+      "definition": "A brief reference to a source within the text"
+    },
+    {
+      "term": "Works Cited",
+      "definition": "A list of all sources used in a research paper"
+    },
+    {
+      "term": "paraphrase",
+      "definition": "Restating someone's ideas in your own words"
+    },
+    {
+      "term": "thesis statement",
+      "definition": "A sentence that states the main argument of a research paper"
+    }
+  ],
+  "teachingNotes": "Practice proper citation format. Emphasize the importance of avoiding plagiarism through correct documentation.",
+  "sample": {
+    "question": "What is the Modern Language Association style for documenting sources?",
+    "expectedAny": [
+      "MLA format",
+      "MLA style",
+      "Modern Language Association format",
+      "academic citation style"
+    ]
+  },
+  "truefalse": {
+    "question": "Works Cited is a list of all sources used in a research paper.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is restating someone's ideas in your own words?",
+    "expectedAny": [
+      "paraphrase",
+      "paraphrasing",
+      "restating",
+      "rewording"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A brief reference to a source within text is an ________ citation.",
+    "expectedAny": [
+      "in-text",
+      "internal",
+      "parenthetical",
+      "embedded"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are the key components of a strong thesis statement?",
+    "expectedAny": [
+      "clear argument, specific claim, debatable position",
+      "main argument and support",
+      "position and evidence"
+    ]
+  }
+}

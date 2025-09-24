@@ -1,0 +1,73 @@
+{
+  "id": "5th_Westward_Expansion_Oregon_Trail_Advanced",
+  "title": "Westward Expansion and the Oregon Trail",
+  "grade": "5th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "westward expansion",
+      "definition": "The movement of Americans from the eastern states to western territories"
+    },
+    {
+      "term": "Oregon Trail",
+      "definition": "A 2,000-mile route used by pioneers traveling west to Oregon"
+    },
+    {
+      "term": "pioneer",
+      "definition": "A person who travels to unsettled areas to live"
+    },
+    {
+      "term": "manifest destiny",
+      "definition": "The belief that Americans had the right to expand across the continent"
+    },
+    {
+      "term": "covered wagon",
+      "definition": "A wagon with a canvas top used by pioneers traveling west"
+    }
+  ],
+  "teachingNotes": "Discuss the challenges of pioneer life and the impact on Native Americans. Emphasize the determination and hardships of westward travelers.",
+  "sample": {
+    "question": "What was the main route pioneers used to travel to Oregon?",
+    "expectedAny": [
+      "Oregon Trail",
+      "the Oregon Trail",
+      "Oregon pioneer trail",
+      "western trail to Oregon"
+    ]
+  },
+  "truefalse": {
+    "question": "The Oregon Trail was about 2,000 miles long.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What belief encouraged Americans to expand westward?",
+    "expectedAny": [
+      "manifest destiny",
+      "Manifest Destiny",
+      "destiny to expand",
+      "right to expand west"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Pioneers traveled west in ________ wagons covered with canvas.",
+    "expectedAny": [
+      "covered",
+      "covered wagons",
+      "canvas-covered",
+      "wagon trains"
+    ]
+  },
+  "shortanswer": {
+    "question": "What were three challenges pioneers faced on the Oregon Trail?",
+    "expectedAny": [
+      "disease, weather, river crossings",
+      "illness, harsh weather, dangerous rivers",
+      "sickness, storms, difficult terrain"
+    ]
+  }
+}

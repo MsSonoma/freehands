@@ -1,0 +1,74 @@
+{
+  "id": "5th_US_Geography_Regions_Intermediate",
+  "title": "United States Geography and Regions",
+  "grade": "5th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "region",
+      "definition": "An area of land with similar characteristics like climate or geography"
+    },
+    {
+      "term": "geography",
+      "definition": "The study of Earth's surface, including land, water, and climate"
+    },
+    {
+      "term": "climate",
+      "definition": "The usual weather patterns in an area over a long time"
+    },
+    {
+      "term": "natural resources",
+      "definition": "Materials found in nature that people use, like water, oil, or trees"
+    },
+    {
+      "term": "Great Plains",
+      "definition": "A large, flat area in the central United States good for farming"
+    }
+  ],
+  "teachingNotes": "Use maps to show the five major US regions. Discuss how geography affects how people live and work in different areas.",
+  "sample": {
+    "question": "What do we call a large area with similar land features and climate?",
+    "expectedAny": [
+      "region",
+      "geographic region",
+      "geographical area",
+      "regional area"
+    ]
+  },
+  "truefalse": {
+    "question": "The Great Plains region is known for its flat land good for farming.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which region of the US has many mountains and forests?",
+    "expectedAny": [
+      "West",
+      "Western region",
+      "Mountain West",
+      "Rocky Mountain region"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The usual weather patterns in an area over time are called the ________.",
+    "expectedAny": [
+      "climate",
+      "regional climate",
+      "weather climate",
+      "climate patterns"
+    ]
+  },
+  "shortanswer": {
+    "question": "Name two natural resources that might be found in different US regions.",
+    "expectedAny": [
+      "oil and trees",
+      "water and coal",
+      "farmland and minerals",
+      "forests and rivers"
+    ]
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "id": "9th_Cell_Biology_Organelles_Structure_Advanced",
+  "title": "Cell Biology: Organelle Structure and Function",
+  "grade": "9th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "organelle",
+      "definition": "Specialized structures within cells that perform specific functions"
+    },
+    {
+      "term": "mitochondria",
+      "definition": "Organelles that produce ATP energy for cellular processes"
+    },
+    {
+      "term": "endoplasmic reticulum",
+      "definition": "Network of membranes for protein and lipid synthesis"
+    },
+    {
+      "term": "ribosome",
+      "definition": "Cellular structures that synthesize proteins"
+    },
+    {
+      "term": "cytoplasm",
+      "definition": "Gel-like substance that fills the cell and contains organelles"
+    }
+  ],
+  "teachingNotes": "Emphasize the relationship between organelle structure and function. Use diagrams to show how organelles work together in cellular processes.",
+  "sample": {
+    "question": "What are specialized structures within cells that perform specific functions?",
+    "expectedAny": [
+      "organelles",
+      "cellular organelles",
+      "cell structures",
+      "subcellular structures"
+    ]
+  },
+  "truefalse": {
+    "question": "Mitochondria are known as the powerhouses of the cell.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which organelle is responsible for protein synthesis?",
+    "expectedAny": [
+      "ribosome",
+      "ribosomes",
+      "ribosomal structures",
+      "protein factories"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The ________ is a network of membranes for protein and lipid synthesis.",
+    "expectedAny": [
+      "endoplasmic reticulum",
+      "ER",
+      "endoplasmic reticuli",
+      "membrane network"
+    ]
+  },
+  "shortanswer": {
+    "question": "Explain how mitochondria structure relates to its function in energy production.",
+    "expectedAny": [
+      "folded inner membranes increase surface area",
+      "cristae provide space for ATP synthesis",
+      "double membrane creates compartments"
+    ]
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "id": "4th_Government_Levels_Democracy_Advanced",
+  "title": "Government Levels and Democracy",
+  "grade": "4th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "democracy",
+      "definition": "A system of government where people vote to choose their leaders"
+    },
+    {
+      "term": "federal government",
+      "definition": "The national government that makes laws for the whole country"
+    },
+    {
+      "term": "state government",
+      "definition": "The government that makes laws for just one state"
+    },
+    {
+      "term": "local government",
+      "definition": "The government that makes laws for cities and towns"
+    },
+    {
+      "term": "representative",
+      "definition": "Someone chosen to speak and act for a group of people"
+    }
+  ],
+  "teachingNotes": "Explain the three levels of government and their different responsibilities. Discuss how democratic elections work and why voting is important. Compare roles of different government officials.",
+  "sample": [
+    {"question": "What are the three levels of government in the United States?", "expectedAny": ["federal", "state", "local"]},
+    {"question": "Who leads the executive branch at the federal level?", "expectedAny": ["President"]},
+    {"question": "Who leads a state government?", "expectedAny": ["Governor"]},
+    {"question": "Who leads a city government?", "expectedAny": ["Mayor"]},
+    {"question": "What does the legislative branch do?", "expectedAny": ["makes laws"]},
+    {"question": "What does the judicial branch do?", "expectedAny": ["interprets laws"]},
+    {"question": "Why are elections important?", "expectedAny": ["people choose leaders"]}
+  ],
+  "truefalse": [
+    {"question": "In a democracy, people vote to choose their leaders.", "answer": true},
+    {"question": "Local governments handle national defense.", "answer": false},
+    {"question": "States have their own laws and leaders.", "answer": true},
+    {"question": "The federal government handles issues for the whole country.", "answer": true},
+    {"question": "Only the President makes laws.", "answer": false},
+    {"question": "City councils are part of local government.", "answer": true},
+    {"question": "Voting is one way citizens participate in democracy.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "Which level of government would decide about building a new school in your town?", "choices": ["Federal", "State", "Local", "International"], "correct": 2},
+    {"question": "Who makes laws for the whole country?", "choices": ["City council", "State legislature", "Congress", "School board"], "correct": 2},
+    {"question": "Who leads a state government?", "choices": ["President", "Mayor", "Governor", "Chief Justice"], "correct": 2},
+    {"question": "Who leads a city?", "choices": ["Senator", "Mayor", "Governor", "Representative"], "correct": 1},
+    {"question": "Which branch interprets laws?", "choices": ["Legislative", "Executive", "Judicial", "Military"], "correct": 2},
+    {"question": "Which level of government issues driver's licenses?", "choices": ["Federal", "State", "Local", "International"], "correct": 1},
+    {"question": "Which level manages national parks?", "choices": ["Federal", "State", "Local", "County"], "correct": 0}
+  ],
+  "fillintheblank": [
+    {"question": "Someone chosen to speak for a group of people is a ____.", "expectedAny": ["representative"]},
+    {"question": "The ____ government makes laws for the whole country.", "expectedAny": ["federal"]},
+    {"question": "A city is run by a ____.", "expectedAny": ["mayor"]},
+    {"question": "A state is led by a ____.", "expectedAny": ["governor"]},
+    {"question": "People ____ to choose leaders in a democracy.", "expectedAny": ["vote"]},
+    {"question": "Courts are part of the ____ branch.", "expectedAny": ["judicial"]},
+    {"question": "Congress is part of the ____ branch.", "expectedAny": ["legislative"]}
+  ],
+  "shortanswer": [
+    {"question": "Why is voting important in a democracy?", "expectedAny": ["people choose leaders", "voice in government"]},
+    {"question": "Give an example of a federal responsibility.", "expectedAny": ["national defense", "printing money"]},
+    {"question": "Give an example of a state responsibility.", "expectedAny": ["driver's licenses", "state roads"]},
+    {"question": "Give an example of a local responsibility.", "expectedAny": ["trash collection", "local schools"]},
+    {"question": "How do the three levels of government work together?", "expectedAny": ["share powers", "different responsibilities"]},
+    {"question": "How can citizens influence government decisions?", "expectedAny": ["vote", "contact officials", "attend meetings"]},
+    {"question": "Why is having different levels of government helpful?", "expectedAny": ["handle local and national needs"]}
+  ]
+}

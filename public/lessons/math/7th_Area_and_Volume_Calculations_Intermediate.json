@@ -1,0 +1,53 @@
+{
+  "id": "7th_Area_and_Volume_Calculations_Intermediate",
+  "title": "Area and Volume of 2D and 3D Shapes",
+  "grade": "7th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "area",
+      "definition": "The amount of space inside a 2D shape"
+    },
+    {
+      "term": "volume",
+      "definition": "The amount of space inside a 3D shape"
+    },
+    {
+      "term": "surface area",
+      "definition": "The total area of all faces of a 3D shape"
+    },
+    {
+      "term": "circumference",
+      "definition": "The distance around a circle"
+    },
+    {
+      "term": "radius",
+      "definition": "The distance from the center of a circle to its edge"
+    }
+  ],
+  "teachingNotes": "Use real objects to demonstrate 3D concepts. Practice with rectangles, triangles, circles, and rectangular prisms.",
+  "sample": {
+    "question": "What is the amount of space inside a 2D shape?",
+    "expectedAny": ["area", "surface area", "2D space", "flat space"]
+  },
+  "truefalse": {
+    "question": "Volume is measured in cubic units.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is the area of a rectangle with length 6 and width 4?",
+    "expectedAny": ["24", "24 square units", "6 × 4 = 24", "twenty-four"]
+  },
+  "fillintheblank": {
+    "question": "The distance around a circle is its ________.",
+    "expectedAny": ["circumference", "perimeter", "boundary", "edge"]
+  },
+  "shortanswer": {
+    "question": "Find the volume of a rectangular prism: length 5, width 3, height 2.",
+    "expectedAny": ["30", "30 cubic units", "5 × 3 × 2 = 30", "thirty"]
+  },
+  "wordProblems": {
+    "question": "A circular garden has a radius of 4 meters. What is its area? (Use π ≈ 3.14)",
+    "expectedAny": ["50.24 square meters", "about 50 square meters", "π × 4² ≈ 50.24", "50.24 m²"]
+  }
+}

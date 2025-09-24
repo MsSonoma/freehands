@@ -1,0 +1,53 @@
+{
+  "id": "7th_Geometric_Constructions_and_Scale_Beginner",
+  "title": "Geometric Constructions and Scale Drawings",
+  "grade": "7th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "scale",
+      "definition": "The ratio between measurements in a drawing and actual measurements"
+    },
+    {
+      "term": "scale factor",
+      "definition": "The number used to multiply dimensions in scaling"
+    },
+    {
+      "term": "construction",
+      "definition": "Drawing geometric figures using only a compass and straightedge"
+    },
+    {
+      "term": "angle bisector",
+      "definition": "A line that divides an angle into two equal parts"
+    },
+    {
+      "term": "perpendicular",
+      "definition": "Lines that meet at a 90-degree angle"
+    }
+  ],
+  "teachingNotes": "Practice using compass and straightedge. Show real applications of scale drawings like maps and blueprints.",
+  "sample": {
+    "question": "What is the ratio between measurements in a drawing and actual measurements?",
+    "expectedAny": ["scale", "scale ratio", "proportion", "drawing ratio"]
+  },
+  "truefalse": {
+    "question": "A scale of 1:10 means the drawing is smaller than the actual object.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What tool is needed for geometric constructions?",
+    "expectedAny": ["compass", "compass and straightedge", "ruler and compass", "geometric tools"]
+  },
+  "fillintheblank": {
+    "question": "Lines that meet at 90 degrees are ________.",
+    "expectedAny": ["perpendicular", "right angles", "90 degree", "square"]
+  },
+  "shortanswer": {
+    "question": "If a scale is 1 inch = 5 feet, how long is a 3-inch line in real life?",
+    "expectedAny": ["15 feet", "15 ft", "3 × 5 = 15 feet", "fifteen feet"]
+  },
+  "wordProblems": {
+    "question": "A room is 12 feet by 15 feet. On a scale drawing where 1 inch = 3 feet, what are the drawing dimensions?",
+    "expectedAny": ["4 inches by 5 inches", "4×5 inches", "12÷3 by 15÷3", "4 in × 5 in"]
+  }
+}

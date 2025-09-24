@@ -1,0 +1,72 @@
+{
+  "id": "10th_Cellular_Respiration_Photosynthesis_Advanced",
+  "title": "Cellular Respiration and Photosynthesis: Energy Flow",
+  "grade": "10th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "cellular respiration",
+      "definition": "The process by which cells break down glucose to release energy in the form of ATP"
+    },
+    {
+      "term": "photosynthesis",
+      "definition": "The process by which plants convert light energy into chemical energy stored in glucose"
+    },
+    {
+      "term": "ATP",
+      "definition": "Adenosine triphosphate, the energy currency of cells"
+    },
+    {
+      "term": "chloroplast",
+      "definition": "The organelle in plant cells where photosynthesis occurs"
+    },
+    {
+      "term": "mitochondria",
+      "definition": "The organelle where cellular respiration occurs in eukaryotic cells"
+    }
+  ],
+  "teachingNotes": "Use molecular models and diagrams. Emphasize the complementary nature of these processes. Connect to energy flow in ecosystems.",
+  "sample": {
+    "question": "What is the process by which cells break down glucose to release ATP?",
+    "expectedAny": [
+      "cellular respiration",
+      "respiration",
+      "glucose breakdown",
+      "metabolic respiration"
+    ]
+  },
+  "truefalse": {
+    "question": "Photosynthesis and cellular respiration are opposite processes.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Where does photosynthesis occur in plant cells?",
+    "expectedAny": [
+      "chloroplast",
+      "chloroplasts",
+      "in chloroplasts",
+      "chloroplast organelles"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The energy currency of cells is called ________.",
+    "expectedAny": [
+      "ATP",
+      "adenosine triphosphate",
+      "cellular energy",
+      "energy molecule"
+    ]
+  },
+  "shortanswer": {
+    "question": "Write the balanced equation for cellular respiration.",
+    "expectedAny": [
+      "C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + ATP",
+      "glucose plus oxygen yields carbon dioxide and water and energy"
+    ]
+  }
+}

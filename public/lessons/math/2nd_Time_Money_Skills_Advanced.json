@@ -1,0 +1,83 @@
+{
+  "id": "2nd_Time_Money_Skills_Advanced",
+  "title": "Time and Money Skills",
+  "grade": "2nd",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "clock",
+      "definition": "A tool that shows what time it is"
+    },
+    {
+      "term": "hour hand",
+      "definition": "The short hand on a clock that shows the hour"
+    },
+    {
+      "term": "minute hand",
+      "definition": "The long hand on a clock that shows the minutes"
+    },
+    {
+      "term": "quarter",
+      "definition": "A coin worth 25 cents"
+    },
+    {
+      "term": "dollar",
+      "definition": "Paper money worth 100 cents"
+    }
+  ],
+  "teachingNotes": "Use analog clocks to practice telling time to the hour, half-hour, and quarter-hour. Count money using real or play coins. Connect time concepts to daily activities and schedules.",
+  "sample": [
+    {"question": "If the hour hand is on 3 and the minute hand is on 6, what time is it?", "expectedAny": ["3:30", "three thirty", "half past three", "thirty minutes past three"]},
+    {"question": "What coin is worth 25 cents?", "expectedAny": ["quarter"]},
+    {"question": "How many minutes are in one hour?", "expectedAny": ["60"]},
+    {"question": "What coin is worth 10 cents?", "expectedAny": ["dime"]},
+    {"question": "What does the short hand on a clock show?", "expectedAny": ["hour", "hours"]},
+    {"question": "What does the long hand on a clock show?", "expectedAny": ["minutes"]},
+    {"question": "If it's quarter past 4, what time is it?", "expectedAny": ["4:15"]}
+  ],
+  "truefalse": [
+    {"question": "Two quarters equal 50 cents.", "answer": true},
+    {"question": "A nickel is worth 10 cents.", "answer": false},
+    {"question": "Half past 6 means 6:30.", "answer": true},
+    {"question": "There are 100 minutes in an hour.", "answer": false},
+    {"question": "Four quarters equal a dollar.", "answer": true},
+    {"question": "Quarter to 5 means 4:45.", "answer": true},
+    {"question": "A dollar is 50 cents.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "How many minutes are in one hour?", "choices": ["30", "45", "60", "90"], "correct": 2},
+    {"question": "Which shows 75 cents?", "choices": ["3 dimes + 3 nickels", "3 quarters", "2 quarters + 1 dime", "1 dollar - 25 cents"], "correct": 1},
+    {"question": "Quarter past 7 is:", "choices": ["7:15", "7:30", "7:45", "7:00"], "correct": 0},
+    {"question": "Quarter to 9 is:", "choices": ["8:15", "8:30", "8:45", "9:15"], "correct": 2},
+    {"question": "Which is worth more?", "choices": ["5 nickels", "2 quarters", "8 dimes", "1 dollar"], "correct": 3},
+    {"question": "Half past 2 means:", "choices": ["2:15", "2:30", "2:45", "3:00"], "correct": 1},
+    {"question": "Which makes $1.00?", "choices": ["2 quarters + 5 dimes", "10 dimes", "4 quarters", "20 nickels"], "correct": 2}
+  ],
+  "fillintheblank": [
+    {"question": "Four quarters equal one ________.", "expectedAny": ["dollar", "$1", "100 cents", "one dollar"]},
+    {"question": "A dime is worth ________ cents.", "expectedAny": ["10"]},
+    {"question": "A nickel is worth ________ cents.", "expectedAny": ["5"]},
+    {"question": "Quarter past 3 is ________.", "expectedAny": ["3:15"]},
+    {"question": "Half past 9 is ________.", "expectedAny": ["9:30"]},
+    {"question": "Quarter to 6 is ________.", "expectedAny": ["5:45"]},
+    {"question": "There are ________ minutes in an hour.", "expectedAny": ["60"]}
+  ],
+  "shortanswer": [
+    {"question": "What time will it be 30 minutes after 2:00?", "expectedAny": ["2:30", "two thirty", "half past two", "thirty minutes later"]},
+    {"question": "How can you count 8 dimes quickly?", "expectedAny": ["count by 10s to 80 cents"]},
+    {"question": "Explain how to find the value of 3 quarters and 1 dime.", "expectedAny": ["25+25+25+10 = 85 cents"]},
+    {"question": "How do you read 4:45 on an analog clock?", "expectedAny": ["quarter to five"]},
+    {"question": "If you have 2 quarters, 1 nickel, and 3 pennies, how much is that?", "expectedAny": ["58 cents"]},
+    {"question": "How would you make one dollar using only dimes?", "expectedAny": ["10 dimes"]},
+    {"question": "What is elapsed time from 1:10 to 1:40?", "expectedAny": ["30 minutes"]}
+  ],
+  "wordProblems": [
+    {"question": "Tommy has 3 quarters and 2 dimes. How much money does he have?", "expectedAny": ["95 cents", "95¢", "$0.95", "ninety-five cents"]},
+    {"question": "The bus leaves at 7:25 AM and arrives at 7:55 AM. How long is the ride?", "expectedAny": ["30 minutes"]},
+    {"question": "Mia has 2 quarters, 1 nickel, and 4 pennies. How much money?", "expectedAny": ["59 cents"]},
+    {"question": "A show starts at 3:15 and ends at 4:00. What is the elapsed time?", "expectedAny": ["45 minutes"]},
+    {"question": "Which coins make 65 cents?", "expectedAny": ["2 quarters + 1 dime + 1 nickel", "6 dimes + 1 nickel", "13 nickels"]},
+    {"question": "School starts at 8:10. Lunch is at 11:25. How much time passes?", "expectedAny": ["3 hours 15 minutes"]},
+    {"question": "You have 1 dollar and spend 35 cents. How much is left?", "expectedAny": ["65 cents"]}
+  ]
+}

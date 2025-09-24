@@ -1,0 +1,78 @@
+{
+  "id": "materials-properties-intermediate",
+  "title": "Materials and Their Properties",
+  "grade": "K",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "material",
+      "definition": "What something is made of, like wood, metal, or plastic"
+    },
+    {
+      "term": "hard",
+      "definition": "Something that doesn't bend or break easily"
+    },
+    {
+      "term": "soft",
+      "definition": "Something that feels gentle and squishy"
+    },
+    {
+      "term": "rough",
+      "definition": "Something that feels bumpy or scratchy"
+    }
+  ],
+  "teachingNotes": "Provide texture boxes with different materials. Let children touch and describe various objects. Sort items by properties.",
+  "sample": [
+    {"question": "Is a rock hard or soft?", "expectedAny": ["hard", "rocks are hard"]},
+    {"question": "What does cotton feel like?", "expectedAny": ["soft", "fluffy", "smooth"]},
+    {"question": "How does sandpaper feel?", "expectedAny": ["rough", "scratchy", "bumpy"]},
+    {"question": "What material is a pencil made of?", "expectedAny": ["wood", "wood and graphite"]},
+    {"question": "Is glass smooth or rough?", "expectedAny": ["smooth"]}
+  ],
+  "truefalse": [
+    {"question": "A pillow is soft.", "answer": true, "expectedAny": ["pillows are made to be soft and comfortable"]},
+    {"question": "All materials feel the same.", "answer": false, "expectedAny": ["different materials have different textures"]},
+    {"question": "Metal is usually hard.", "answer": true, "expectedAny": ["metal is a hard material"]},
+    {"question": "Water is a solid material.", "answer": false, "expectedAny": ["water is liquid, not solid"]},
+    {"question": "You can tell what something is made of by touching it.", "answer": true, "expectedAny": ["touch helps identify materials"]},
+    {"question": "Paper is harder than rock.", "answer": false, "expectedAny": ["rock is much harder than paper"]},
+    {"question": "Different materials are good for different jobs.", "answer": true, "expectedAny": ["materials have different uses based on properties"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which material would be best for making a spoon?", "choices": ["paper", "metal", "cotton", "feathers"], "correct": 1, "expectedAny": ["metal is hard and strong for utensils"]},
+    {"question": "What would you use to make a soft blanket?", "choices": ["rocks", "metal", "fabric", "wood"], "correct": 2, "expectedAny": ["fabric is soft for blankets"]},
+    {"question": "Which feels the roughest?", "choices": ["silk", "tree bark", "glass", "plastic"], "correct": 1, "expectedAny": ["tree bark has rough texture"]},
+    {"question": "What material is glass?", "choices": ["soft", "hard", "fuzzy", "stretchy"], "correct": 1, "expectedAny": ["glass is hard and smooth"]},
+    {"question": "Which would be best for building a house?", "choices": ["paper", "wood", "cotton", "water"], "correct": 1, "expectedAny": ["wood is strong for building"]},
+    {"question": "What makes rubber special?", "choices": ["it's hard", "it's stretchy", "it's rough", "it's cold"], "correct": 1, "expectedAny": ["rubber stretches and bounces"]},
+    {"question": "Which material can you see through?", "choices": ["wood", "metal", "glass", "fabric"], "correct": 2, "expectedAny": ["glass is transparent"]}
+  ],
+  "fillintheblank": [
+    {"question": "Sandpaper feels _____ when you touch it.", "expectedAny": ["rough", "scratchy", "bumpy"]},
+    {"question": "A _____ ball is soft and squishy.", "expectedAny": ["foam", "rubber"]},
+    {"question": "Windows are made of _____ so you can see through them.", "expectedAny": ["glass"]},
+    {"question": "_____ is a hard material used to build things.", "expectedAny": ["Wood", "Metal", "Stone"]},
+    {"question": "Feathers feel very _____ and light.", "expectedAny": ["soft", "fluffy"]},
+    {"question": "Ice feels _____ and smooth.", "expectedAny": ["cold", "hard"]},
+    {"question": "Different _____ have different textures.", "expectedAny": ["materials"]}
+  ],
+  "shortanswer": [
+    {"question": "Name something that is smooth and something that is rough.", "expectedAny": ["smooth: glass, table", "rough: sandpaper, tree bark"]},
+    {"question": "What materials would you use to make a toy?", "expectedAny": ["plastic", "wood", "fabric", "soft materials"]},
+    {"question": "How can you tell the difference between materials?", "expectedAny": ["touch them", "look at them", "feel texture"]},
+    {"question": "Why do we use different materials for different things?", "expectedAny": ["different properties", "some are stronger", "some are softer"]},
+    {"question": "What material would be good for making a cup? Why?", "expectedAny": ["plastic or glass", "hard materials", "won't break easily"]},
+    {"question": "Describe three ways materials can feel different.", "expectedAny": ["rough or smooth", "hard or soft", "bumpy or flat"]},
+    {"question": "What happens when you mix different materials together?", "expectedAny": ["make new things", "combine properties", "create something useful"]}
+  ],
+  "wordProblems": [
+    {"question": "Emma has 3 hard toys and 4 soft toys. How many toys does she have in total?", "expectedAny": ["7 toys", "3 + 4 = 7"]},
+    {"question": "In the material box, there are 5 smooth objects and 3 rough objects. How many objects are there altogether?", "expectedAny": ["8 objects", "5 + 3 = 8"]},
+    {"question": "Tom sorts 10 items by material. If 6 are made of plastic and the rest are wood, how many are wood?", "expectedAny": ["4 wood items", "10 - 6 = 4"]},
+    {"question": "Sarah finds 2 materials that are hard and 5 materials that are soft. How many more soft materials did she find?", "expectedAny": ["3 more soft", "5 - 2 = 3"]},
+    {"question": "There are 8 children. If each child touches 3 different materials, how many material touches is that?", "expectedAny": ["24 touches", "8 × 3 = 24"]},
+    {"question": "A building uses 4 different materials: wood, metal, glass, and stone. If they used 2 more types, how many materials would that be?", "expectedAny": ["6 materials", "4 + 2 = 6"]},
+    {"question": "In craft time, Jake uses 3 pieces of paper and 2 pieces of fabric. How many pieces of material did he use?", "expectedAny": ["5 pieces", "3 + 2 = 5"]}
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "id": "6th_Ratios_Proportions_Applications_Advanced",
+  "title": "Ratios, Proportions, and Real-World Applications",
+  "grade": "6th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "ratio",
+      "definition": "A comparison of two quantities using division"
+    },
+    {
+      "term": "proportion",
+      "definition": "An equation stating that two ratios are equal"
+    },
+    {
+      "term": "rate",
+      "definition": "A ratio that compares quantities with different units"
+    },
+    {
+      "term": "unit rate",
+      "definition": "A rate with a denominator of 1"
+    },
+    {
+      "term": "cross multiplication",
+      "definition": "A method for solving proportions by multiplying diagonally across the equal sign"
+    }
+  ],
+  "teachingNotes": "Use real-world examples like recipes, maps, and unit prices. Practice setting up and solving proportions. Emphasize the relationship between ratios and fractions.",
+  "sample": {
+    "question": "What is a comparison of two quantities using division?",
+    "expectedAny": ["ratio", "mathematical ratio", "numerical ratio", "comparison ratio"]
+  },
+  "truefalse": {
+    "question": "A proportion is an equation that states two ratios are equal.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "If a car travels 120 miles in 3 hours, what is the unit rate?",
+    "expectedAny": ["40 miles per hour", "40 mph", "40 miles/hour", "40 mi/hr"]
+  },
+  "fillintheblank": {
+    "question": "A rate with a denominator of 1 is called a ________ rate.",
+    "expectedAny": ["unit", "unit rate", "single unit", "one unit"]
+  },
+  "shortanswer": {
+    "question": "How do you solve a proportion using cross multiplication?",
+    "expectedAny": ["multiply diagonally across", "cross multiply then divide", "multiply opposite corners", "multiply across the equal sign"]
+  },
+  "wordProblems": {
+    "question": "If 3 pounds of apples cost $4.50, how much would 8 pounds of apples cost?",
+    "expectedAny": ["$12.00", "$12", "twelve dollars", "3:4.50 = 8:12"]
+  }
+}

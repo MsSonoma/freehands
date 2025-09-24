@@ -1,0 +1,74 @@
+{
+  "id": "8th_Media_Literacy_Digital_Analysis_Intermediate",
+  "title": "Media Literacy: Analyzing Digital Sources",
+  "grade": "8th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "media literacy",
+      "definition": "The ability to analyze and evaluate media messages"
+    },
+    {
+      "term": "digital source",
+      "definition": "Information found online or in electronic format"
+    },
+    {
+      "term": "credibility",
+      "definition": "The quality of being trusted and believed"
+    },
+    {
+      "term": "bias",
+      "definition": "Prejudice for or against something in an unfair way"
+    },
+    {
+      "term": "fact-checking",
+      "definition": "Verifying the accuracy of information"
+    }
+  ],
+  "teachingNotes": "Teach students to critically evaluate online sources. Practice identifying bias and checking facts from multiple sources.",
+  "sample": {
+    "question": "What is the ability to analyze and evaluate media messages?",
+    "expectedAny": [
+      "media literacy",
+      "critical media analysis",
+      "media evaluation",
+      "digital literacy"
+    ]
+  },
+  "truefalse": {
+    "question": "All information found online is equally credible.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What means prejudice in an unfair way?",
+    "expectedAny": [
+      "bias",
+      "prejudice",
+      "unfair opinion",
+      "slanted view"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Verifying the accuracy of information is called ________-checking.",
+    "expectedAny": [
+      "fact",
+      "truth",
+      "accuracy",
+      "source"
+    ]
+  },
+  "shortanswer": {
+    "question": "How can you determine if a digital source is credible?",
+    "expectedAny": [
+      "check the author",
+      "verify with other sources",
+      "look for publication date",
+      "check domain"
+    ]
+  }
+}

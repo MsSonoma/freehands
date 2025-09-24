@@ -1,0 +1,74 @@
+{
+  "id": "11th_American_Literature_Analysis_Transcendentalism_Beginner",
+  "title": "American Literature Analysis: Transcendentalism and Romanticism",
+  "grade": "11th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "transcendentalism",
+      "definition": "American philosophical movement emphasizing intuition and individual conscience"
+    },
+    {
+      "term": "romanticism",
+      "definition": "Literary movement emphasizing emotion, nature, and individual experience"
+    },
+    {
+      "term": "allegory",
+      "definition": "Story with symbolic meaning representing deeper truths"
+    },
+    {
+      "term": "symbolism",
+      "definition": "Use of objects or actions to represent ideas or concepts"
+    },
+    {
+      "term": "theme",
+      "definition": "Central message or meaning of literary work"
+    }
+  ],
+  "teachingNotes": "Focus on key American authors like Emerson, Thoreau, and Hawthorne. Connect philosophical ideas to literary techniques.",
+  "sample": {
+    "question": "What movement emphasized intuition and individual conscience?",
+    "expectedAny": [
+      "transcendentalism",
+      "transcendentalist movement",
+      "American transcendentalism",
+      "intuitive philosophy"
+    ]
+  },
+  "truefalse": {
+    "question": "Romanticism emphasized emotion and individual experience.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is a story with symbolic meaning representing deeper truths?",
+    "expectedAny": [
+      "allegory",
+      "symbolic story",
+      "metaphorical tale",
+      "symbolic narrative"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The central message of a literary work is its ________.",
+    "expectedAny": [
+      "theme",
+      "central idea",
+      "main message",
+      "core meaning"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are key characteristics of transcendentalist writing?",
+    "expectedAny": [
+      "nature focus",
+      "individualism",
+      "spiritual insight",
+      "self-reliance"
+    ]
+  }
+}

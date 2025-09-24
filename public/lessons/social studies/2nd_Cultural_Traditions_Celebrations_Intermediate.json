@@ -1,0 +1,74 @@
+{
+  "id": "2nd_Cultural_Traditions_Celebrations_Intermediate",
+  "title": "Cultural Traditions and Celebrations",
+  "grade": "2nd",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "culture",
+      "definition": "The way a group of people lives, including their customs and beliefs"
+    },
+    {
+      "term": "tradition",
+      "definition": "Something that is passed down from older people to younger people"
+    },
+    {
+      "term": "celebration",
+      "definition": "A special time when people come together to honor something important"
+    },
+    {
+      "term": "custom",
+      "definition": "A special way of doing things that people in a group share"
+    },
+    {
+      "term": "heritage",
+      "definition": "The traditions and customs passed down from your family"
+    }
+  ],
+  "teachingNotes": "Explore different cultural celebrations and traditions represented in the classroom. Discuss how families celebrate holidays differently. Emphasize respect for all cultures and traditions.",
+  "sample": [
+    {"question": "What is a tradition?", "expectedAny": ["passed down custom", "family practice", "something repeated", "inherited custom"]},
+    {"question": "Name a celebration your family has.", "expectedAny": ["birthday", "holiday", "religious celebration", "cultural festival"]},
+    {"question": "What is culture?", "expectedAny": ["the way a group lives", "customs and beliefs"]},
+    {"question": "Give an example of a custom.", "expectedAny": ["special food", "special clothing", "songs", "dance"]},
+    {"question": "Why is it important to respect other cultures?", "expectedAny": ["everyone is different", "kindness", "inclusion"]},
+    {"question": "What is heritage?", "expectedAny": ["traditions passed down from family"]},
+    {"question": "How do families celebrate differently?", "expectedAny": ["different foods", "different activities", "different days"]}
+  ],
+  "truefalse": [
+    {"question": "All families celebrate holidays in exactly the same way.", "answer": false},
+    {"question": "Trying new foods can teach us about culture.", "answer": true},
+    {"question": "Traditions can change over time.", "answer": true},
+    {"question": "Respect means making fun of others' customs.", "answer": false},
+    {"question": "Heritage is what families pass down.", "answer": true},
+    {"question": "Only adults have traditions.", "answer": false},
+    {"question": "Music and dance can be part of culture.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "Which is an example of a cultural tradition?", "choices": ["Brushing teeth", "Holiday celebration", "Doing homework", "Taking a test"], "correct": 1},
+    {"question": "What is culture?", "choices": ["A single meal", "A way a group lives", "A place", "A person"], "correct": 1},
+    {"question": "Which shows respect for another culture?", "choices": ["Laughing at it", "Ignoring it", "Learning about it kindly", "Saying it's wrong"], "correct": 2},
+    {"question": "What is heritage?", "choices": ["A holiday", "A game", "What families pass down", "A map"], "correct": 2},
+    {"question": "Which could be a custom?", "choices": ["Special clothes", "School bus", "Soccer ball", "Pencil"], "correct": 0},
+    {"question": "Families celebrate in...", "choices": ["the same way", "many different ways", "only one way", "no ways"], "correct": 1},
+    {"question": "Which might be part of a celebration?", "choices": ["Music", "Food", "Dancing", "All of these"], "correct": 3}
+  ],
+  "fillintheblank": [
+    {"question": "The way a group of people lives is called their ________.", "expectedAny": ["culture", "way of life", "customs"]},
+    {"question": "A ________ is something passed down through time.", "expectedAny": ["tradition"]},
+    {"question": "A special way of doing things is a ________.", "expectedAny": ["custom"]},
+    {"question": "When people come together to honor something, it is a ________.", "expectedAny": ["celebration"]},
+    {"question": "Your family's ________ includes traditions and stories.", "expectedAny": ["heritage"]},
+    {"question": "We should show ________ for all cultures.", "expectedAny": ["respect"]},
+    {"question": "Trying new foods can teach us about ________.", "expectedAny": ["culture"]}
+  ],
+  "shortanswer": [
+    {"question": "How does your family celebrate a special day?", "expectedAny": ["special food", "family gathering", "traditions"]},
+    {"question": "Name one tradition you would like to learn about and why.", "expectedAny": ["student choice with reason"]},
+    {"question": "Describe a celebration you know. What makes it special?", "expectedAny": ["food", "music", "customs", "family"]},
+    {"question": "How can you show respect for someone's tradition?", "expectedAny": ["listen", "be kind", "ask questions politely"]},
+    {"question": "What is one thing that different cultures might share?", "expectedAny": ["celebrations", "food", "music"]},
+    {"question": "Why do families keep traditions?", "expectedAny": ["remember history", "feel connected", "have fun together"]},
+    {"question": "What could be a new class tradition?", "expectedAny": ["weekly activity", "special greeting", "sharing time"]}
+  ]
+}

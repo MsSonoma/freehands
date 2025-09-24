@@ -1,0 +1,53 @@
+{
+  "id": "8th_Volume_and_Surface_Area_3D_Intermediate",
+  "title": "Volume and Surface Area of 3D Shapes",
+  "grade": "8th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "volume",
+      "definition": "The amount of space inside a 3D shape"
+    },
+    {
+      "term": "surface area",
+      "definition": "The total area of all faces of a 3D shape"
+    },
+    {
+      "term": "cylinder",
+      "definition": "A 3D shape with circular bases and curved sides"
+    },
+    {
+      "term": "cone",
+      "definition": "A 3D shape with a circular base and a pointed top"
+    },
+    {
+      "term": "sphere",
+      "definition": "A perfectly round 3D shape"
+    }
+  ],
+  "teachingNotes": "Use real objects to demonstrate 3D shapes. Connect formulas to practical applications like packaging and construction.",
+  "sample": {
+    "question": "What is the amount of space inside a 3D shape?",
+    "expectedAny": ["volume", "capacity", "3D space", "cubic space"]
+  },
+  "truefalse": {
+    "question": "Surface area is measured in square units.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "Which shape has a circular base and curved sides?",
+    "expectedAny": ["cylinder", "cylindrical shape", "tube shape", "circular prism"]
+  },
+  "fillintheblank": {
+    "question": "A perfectly round 3D shape is called a ________.",
+    "expectedAny": ["sphere", "ball", "globe", "spherical shape"]
+  },
+  "shortanswer": {
+    "question": "What formula is used to find the volume of a rectangular prism?",
+    "expectedAny": ["V = l × w × h", "length × width × height", "base area × height", "lwh"]
+  },
+  "wordProblems": {
+    "question": "A cylindrical can has a radius of 3 cm and height of 10 cm. What is its volume? (Use V = πr²h and π ≈ 3.14)",
+    "expectedAny": ["282.6 cm³", "about 283 cubic cm", "π × 9 × 10 ≈ 283", "282.6"]
+  }
+}

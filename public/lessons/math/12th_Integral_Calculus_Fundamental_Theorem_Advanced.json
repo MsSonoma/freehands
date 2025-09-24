@@ -1,0 +1,53 @@
+{
+  "id": "12th_Integral_Calculus_Fundamental_Theorem_Advanced",
+  "title": "Integral Calculus and Fundamental Theorem",
+  "grade": "12th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "partial fractions",
+      "definition": "Method decomposing rational functions into simpler fractions for integration"
+    },
+    {
+      "term": "trigonometric substitution",
+      "definition": "Integration technique using trigonometric identities for certain forms"
+    },
+    {
+      "term": "convergence",
+      "definition": "Property of improper integrals that have finite values"
+    },
+    {
+      "term": "divergence",
+      "definition": "Property of improper integrals that approach infinity"
+    },
+    {
+      "term": "parametric integration",
+      "definition": "Integration involving parametrically defined curves"
+    }
+  ],
+  "teachingNotes": "Explore advanced integration techniques and theoretical concepts. Discuss applications in physics and engineering.",
+  "sample": {
+    "question": "What method decomposes rational functions for integration?",
+    "expectedAny": ["partial fractions", "fraction decomposition", "rational decomposition", "partial fraction decomposition"]
+  },
+  "truefalse": {
+    "question": "Convergence means improper integrals have finite values.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What technique uses trigonometric identities for integration?",
+    "expectedAny": ["trigonometric substitution", "trig substitution", "trigonometric method", "trig integration"]
+  },
+  "fillintheblank": {
+    "question": "Integration involving parametrically defined curves is ________ integration.",
+    "expectedAny": ["parametric", "parameter", "parametrized", "curve"]
+  },
+  "shortanswer": {
+    "question": "How do you determine convergence of improper integrals?",
+    "expectedAny": ["evaluate limits", "comparison test", "limit comparison", "integral test"]
+  },
+  "wordProblems": {
+    "question": "Does ∫[1,∞] 1/x² dx converge or diverge, and what is its value?",
+    "expectedAny": ["converges to 1", "converges, value = 1", "finite, equals 1", "convergent integral = 1"]
+  }
+}

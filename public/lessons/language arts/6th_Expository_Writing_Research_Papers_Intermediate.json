@@ -1,0 +1,74 @@
+{
+  "id": "6th_Expository_Writing_Research_Papers_Intermediate",
+  "title": "Expository Writing and Research Papers",
+  "grade": "6th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "expository writing",
+      "definition": "Writing that explains, informs, or describes a topic using facts"
+    },
+    {
+      "term": "thesis statement",
+      "definition": "A sentence that clearly states the main idea of an essay"
+    },
+    {
+      "term": "supporting evidence",
+      "definition": "Facts, examples, or details that prove or explain the main idea"
+    },
+    {
+      "term": "topic sentence",
+      "definition": "The first sentence of a paragraph that states the main idea"
+    },
+    {
+      "term": "conclusion",
+      "definition": "The final paragraph that summarizes main points and restates the thesis"
+    }
+  ],
+  "teachingNotes": "Teach the five-paragraph essay structure. Practice writing clear thesis statements. Emphasize using reliable sources and citing evidence properly.",
+  "sample": {
+    "question": "What type of writing explains or informs using facts?",
+    "expectedAny": [
+      "expository writing",
+      "informative writing",
+      "explanatory writing",
+      "factual writing"
+    ]
+  },
+  "truefalse": {
+    "question": "A thesis statement tells the reader the main idea of the essay.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What should the first sentence of a body paragraph contain?",
+    "expectedAny": [
+      "topic sentence",
+      "main idea",
+      "paragraph topic",
+      "controlling idea"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Facts and examples that prove your main idea are called ________ evidence.",
+    "expectedAny": [
+      "supporting",
+      "supporting evidence",
+      "backup",
+      "proof"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are the three main parts of an expository essay?",
+    "expectedAny": [
+      "introduction, body, conclusion",
+      "intro, body paragraphs, conclusion",
+      "beginning, middle, end",
+      "opening, support, closing"
+    ]
+  }
+}

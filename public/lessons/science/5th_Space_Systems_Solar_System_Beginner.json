@@ -1,0 +1,74 @@
+{
+  "id": "5th_Space_Systems_Solar_System_Beginner",
+  "title": "Space Systems and the Solar System",
+  "grade": "5th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "solar system",
+      "definition": "The sun and all the objects that orbit around it"
+    },
+    {
+      "term": "planet",
+      "definition": "A large object that orbits the sun and has cleared its orbital path"
+    },
+    {
+      "term": "orbit",
+      "definition": "The path an object takes as it moves around another object in space"
+    },
+    {
+      "term": "gravity",
+      "definition": "The force that pulls objects toward each other"
+    },
+    {
+      "term": "asteroid",
+      "definition": "A rocky object that orbits the sun but is smaller than a planet"
+    }
+  ],
+  "teachingNotes": "Use models and diagrams to show the relative sizes and distances of planets. Discuss the role of gravity in keeping planets in orbit. Compare different types of objects in our solar system.",
+  "sample": {
+    "question": "What keeps the planets orbiting around the sun?",
+    "expectedAny": [
+      "gravity",
+      "gravitational force",
+      "the sun's gravity",
+      "gravitational pull"
+    ]
+  },
+  "truefalse": {
+    "question": "The sun is the largest object in our solar system.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which planet is closest to the sun?",
+    "expectedAny": [
+      "Mercury",
+      "first planet",
+      "innermost planet",
+      "closest planet"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The path that a planet takes around the sun is called its ________.",
+    "expectedAny": [
+      "orbit",
+      "orbital path",
+      "trajectory",
+      "revolution"
+    ]
+  },
+  "shortanswer": {
+    "question": "How are asteroids different from planets?",
+    "expectedAny": [
+      "much smaller",
+      "haven't cleared orbital path",
+      "rocky debris",
+      "minor objects"
+    ]
+  }
+}

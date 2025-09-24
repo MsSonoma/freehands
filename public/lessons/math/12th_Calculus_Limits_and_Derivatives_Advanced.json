@@ -1,0 +1,33 @@
+{
+  "id": "calculus-limits-derivatives-advanced",
+  "title": "Introduction to Calculus: Limits and Derivatives",
+  "grade": "12th",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {"term": "limit", "definition": "The value that a function approaches as the input approaches a particular value"},
+    {"term": "derivative", "definition": "The rate of change of a function at a specific point"},
+    {"term": "continuity", "definition": "A function is continuous if it has no breaks, holes, or jumps"},
+    {"term": "instantaneous rate", "definition": "The rate of change at a specific moment in time"}
+  ],
+  "teachingNotes": "Use graphing calculators and dynamic software. Connect to physics applications like velocity and acceleration. Emphasize conceptual understanding before algorithmic procedures.",
+  "sample": {
+    "question": "What does the derivative of a position function represent?",
+    "expectedAny": ["velocity", "rate of change of position", "instantaneous speed and direction"]
+  },
+  "truefalse": [
+    {"question": "The derivative of a constant function is always zero.", "answer": true, "expectedAny": ["constants have no rate of change"]}
+  ],
+  "multiplechoice": [
+    {"question": "If f(x) = x², what is f'(x)?", "choices": ["x", "2x", "x²", "2"], "correct": 1, "expectedAny": ["power rule: derivative of x² is 2x"]}
+  ],
+  "fillintheblank": [
+    {"question": "The limit of (x² - 4)/(x - 2) as x approaches 2 is _____.", "expectedAny": ["4"]}
+  ],
+  "shortanswer": [
+    {"question": "Explain the relationship between the average rate of change and the instantaneous rate of change.", "expectedAny": ["instantaneous rate is the limit of average rates over smaller intervals", "derivative is the limit of difference quotients"]}
+  ],
+  "wordProblems": [
+    {"question": "A ball is thrown upward with height function h(t) = -16t² + 64t + 5. Find the velocity function and determine when the ball reaches its maximum height.", "expectedAny": ["v(t) = -32t + 64, maximum at t = 2 seconds", "derivative gives velocity, set equal to zero"]}
+  ]
+}

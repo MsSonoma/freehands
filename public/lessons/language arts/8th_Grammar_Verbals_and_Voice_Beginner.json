@@ -1,0 +1,74 @@
+{
+  "id": "8th_Grammar_Verbals_and_Voice_Beginner",
+  "title": "Advanced Grammar: Verbals and Voice",
+  "grade": "8th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "verbal",
+      "definition": "A verb form that functions as another part of speech"
+    },
+    {
+      "term": "gerund",
+      "definition": "A verb form ending in -ing that functions as a noun"
+    },
+    {
+      "term": "participle",
+      "definition": "A verb form that functions as an adjective"
+    },
+    {
+      "term": "active voice",
+      "definition": "When the subject performs the action"
+    },
+    {
+      "term": "passive voice",
+      "definition": "When the subject receives the action"
+    }
+  ],
+  "teachingNotes": "Practice identifying verbals in sentences. Show how active voice creates stronger, clearer writing than passive voice.",
+  "sample": {
+    "question": "What is a verb form that functions as another part of speech?",
+    "expectedAny": [
+      "verbal",
+      "verb form",
+      "verbal phrase",
+      "non-finite verb"
+    ]
+  },
+  "truefalse": {
+    "question": "A gerund is a verb form ending in -ing that acts as a noun.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "When the subject performs the action, what voice is used?",
+    "expectedAny": [
+      "active voice",
+      "active",
+      "subject-verb",
+      "direct action"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A verb form that functions as an adjective is a ________.",
+    "expectedAny": [
+      "participle",
+      "participial",
+      "verbal adjective",
+      "descriptive verbal"
+    ]
+  },
+  "shortanswer": {
+    "question": "Identify the gerund in this sentence: 'Swimming is my favorite activity.'",
+    "expectedAny": [
+      "Swimming",
+      "swimming",
+      "the word swimming",
+      "swimming (subject)"
+    ]
+  }
+}

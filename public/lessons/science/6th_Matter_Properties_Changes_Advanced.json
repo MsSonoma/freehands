@@ -1,0 +1,73 @@
+{
+  "id": "6th_Matter_Properties_Changes_Advanced",
+  "title": "Properties and Changes of Matter",
+  "grade": "6th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "physical property",
+      "definition": "A characteristic of matter that can be observed without changing its identity"
+    },
+    {
+      "term": "chemical property",
+      "definition": "A characteristic that describes how matter behaves during a chemical reaction"
+    },
+    {
+      "term": "physical change",
+      "definition": "A change in matter that doesn't create a new substance"
+    },
+    {
+      "term": "chemical change",
+      "definition": "A change that creates one or more new substances with different properties"
+    },
+    {
+      "term": "density",
+      "definition": "The amount of mass in a given volume of matter"
+    }
+  ],
+  "teachingNotes": "Demonstrate physical and chemical changes with safe experiments. Emphasize that chemical changes create new substances while physical changes don't.",
+  "sample": {
+    "question": "What type of change creates a completely new substance?",
+    "expectedAny": [
+      "chemical change",
+      "chemical reaction",
+      "chemical transformation",
+      "chemical process"
+    ]
+  },
+  "truefalse": {
+    "question": "Melting ice is an example of a physical change.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which is a chemical property of matter?",
+    "expectedAny": [
+      "flammability",
+      "ability to rust",
+      "reactivity",
+      "ability to burn"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The amount of mass in a given volume is called ________.",
+    "expectedAny": [
+      "density",
+      "mass density",
+      "material density",
+      "density measurement"
+    ]
+  },
+  "shortanswer": {
+    "question": "Give an example of a physical change and explain why it's physical.",
+    "expectedAny": [
+      "melting - same substance, different state",
+      "cutting paper - same material",
+      "dissolving sugar - no new substance"
+    ]
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "id": "geometry-2d-3d-shapes-intermediate",
+  "title": "Geometry: 2D and 3D Shapes",
+  "grade": "1st",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {"term": "2D shape", "definition": "A flat shape like a circle or square"},
+    {"term": "3D shape", "definition": "A solid shape that takes up space like a ball or cube"},
+    {"term": "face", "definition": "The flat side of a 3D shape"},
+    {"term": "edge", "definition": "Where two faces of a 3D shape meet"}
+  ],
+  "teachingNotes": "Use real objects and shape manipulatives. Compare 2D shapes to faces of 3D shapes. Go on shape hunts in classroom.",
+  "sample": [
+    {"question": "Is a ball a 2D shape or a 3D shape?", "expectedAny": ["3D shape", "3D", "solid shape"]},
+    {"question": "Is a flat shape a 2D or 3D shape?", "expectedAny": ["2D"]},
+    {"question": "Which has faces: cube or circle?", "expectedAny": ["cube"]},
+    {"question": "Does a cylinder roll like a wheel?", "expectedAny": ["Yes"]},
+    {"question": "Is a triangle flat or solid?", "expectedAny": ["flat", "2D"]}
+  ],
+  "truefalse": [
+    {"question": "A cube has 6 faces.", "answer": true, "expectedAny": ["true"]},
+    {"question": "A square has three sides.", "answer": false, "expectedAny": ["false"]},
+    {"question": "A circle has corners.", "answer": false, "expectedAny": ["false"]},
+    {"question": "A cone is a 3D shape.", "answer": true, "expectedAny": ["true"]},
+    {"question": "A rectangle and a square both have 4 sides.", "answer": true, "expectedAny": ["true"]},
+    {"question": "A sphere has edges.", "answer": false, "expectedAny": ["false"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which is a 3D shape?", "choices": ["circle", "square", "cube", "triangle"], "correct": 2, "expectedAny": ["cube"]},
+    {"question": "Which has 3 sides?", "choices": ["square", "triangle", "circle", "rectangle"], "correct": 1, "expectedAny": ["triangle"]},
+    {"question": "Which shape can roll?", "choices": ["cube", "cylinder", "square", "triangle"], "correct": 1, "expectedAny": ["cylinder"]},
+    {"question": "Which has no corners?", "choices": ["circle", "square", "triangle", "rectangle"], "correct": 0, "expectedAny": ["circle"]},
+    {"question": "Which has 4 equal sides?", "choices": ["rectangle", "oval", "square", "triangle"], "correct": 2, "expectedAny": ["square"]},
+    {"question": "Which is a face of a cube?", "choices": ["circle", "square", "triangle", "sphere"], "correct": 1, "expectedAny": ["square"]}
+  ],
+  "fillintheblank": [
+    {"question": "A _____ is a 3D shape that looks like a box.", "expectedAny": ["cube", "rectangular prism"]},
+    {"question": "A triangle has ___ sides.", "expectedAny": ["3"]},
+    {"question": "A square has ___ corners.", "expectedAny": ["4"]},
+    {"question": "A circle has ___ corners.", "expectedAny": ["0", "none"]},
+    {"question": "A cylinder can ___ (roll/stack).", "expectedAny": ["roll", "stack depending on orientation"]},
+    {"question": "A cone often looks like an ice cream ___ .", "expectedAny": ["cone"]}
+  ],
+  "shortanswer": [
+    {"question": "Name something in your classroom that is shaped like a cylinder.", "expectedAny": ["can, cup, pencil holder"]},
+    {"question": "How can you tell if an object is 3D?", "expectedAny": ["it has depth and you can hold it"]},
+    {"question": "Give an example of a 2D shape from a book.", "expectedAny": ["circle, square, triangle"]},
+    {"question": "Why doesn't a circle have corners?", "expectedAny": ["it is curved all around"]},
+    {"question": "What is a face on a 3D shape?", "expectedAny": ["a flat side"]},
+    {"question": "How many faces does a cube have?", "expectedAny": ["6"]}
+  ],
+  "wordProblems": [
+    {"question": "Sam has 2 boxes (cubes) and 3 balls (spheres). How many solid objects does he have?", "expectedAny": ["5"]},
+    {"question": "If Jenna finds 4 flat triangle cards and 2 flat circle cards, how many flat cards does she have in total?", "expectedAny": ["6"]},
+    {"question": "A tower uses 5 cylindrical cans. If 2 are removed, how many remain?", "expectedAny": ["3"]},
+    {"question": "There are 3 cubes and each cube has 6 faces. How many faces are there in total (not counting overlaps)?", "expectedAny": ["18", "3 x 6 = 18"]},
+    {"question": "Liam sorts shapes: 7 squares, 5 circles, and 3 triangles. How many shapes have corners?", "expectedAny": ["10", "7 + 3 = 10"]},
+    {"question": "Maya groups 8 shapes into flat and solid; 3 are solid. How many are flat?", "expectedAny": ["5"]}
+  ]
+}

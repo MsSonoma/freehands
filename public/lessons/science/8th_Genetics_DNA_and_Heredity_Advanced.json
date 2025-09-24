@@ -1,0 +1,73 @@
+{
+  "id": "8th_Genetics_DNA_and_Heredity_Advanced",
+  "title": "DNA, Genetics, and Inheritance Patterns",
+  "grade": "8th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "DNA",
+      "definition": "The molecule that carries genetic information"
+    },
+    {
+      "term": "gene",
+      "definition": "A segment of DNA that codes for a specific trait"
+    },
+    {
+      "term": "allele",
+      "definition": "Different versions of the same gene"
+    },
+    {
+      "term": "dominant",
+      "definition": "An allele that is expressed when present"
+    },
+    {
+      "term": "recessive",
+      "definition": "An allele that is only expressed when two copies are present"
+    }
+  ],
+  "teachingNotes": "Use Punnett squares to show inheritance patterns. Explain how DNA contains instructions for traits.",
+  "sample": {
+    "question": "What molecule carries genetic information?",
+    "expectedAny": [
+      "DNA",
+      "deoxyribonucleic acid",
+      "genetic material",
+      "hereditary material"
+    ]
+  },
+  "truefalse": {
+    "question": "A dominant allele is expressed when only one copy is present.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What are different versions of the same gene called?",
+    "expectedAny": [
+      "alleles",
+      "gene variants",
+      "genetic alternatives",
+      "gene forms"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A segment of DNA that codes for a trait is called a ________.",
+    "expectedAny": [
+      "gene",
+      "genetic unit",
+      "DNA segment",
+      "hereditary unit"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why do offspring resemble their parents?",
+    "expectedAny": [
+      "inherit DNA from parents",
+      "get genes from both parents",
+      "genetic inheritance"
+    ]
+  }
+}

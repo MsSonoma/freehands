@@ -1,0 +1,74 @@
+{
+  "id": "12th_Relativity_Cosmology_Modern_Physics_Intermediate",
+  "title": "Relativity, Cosmology, and Modern Physics",
+  "grade": "12th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "time dilation",
+      "definition": "Slowing of time due to high velocity or strong gravitational fields"
+    },
+    {
+      "term": "length contraction",
+      "definition": "Shortening of objects in direction of motion at relativistic speeds"
+    },
+    {
+      "term": "cosmic microwave background",
+      "definition": "Radiation remaining from early universe, evidence for Big Bang"
+    },
+    {
+      "term": "dark energy",
+      "definition": "Mysterious force causing accelerated expansion of universe"
+    },
+    {
+      "term": "gravitational waves",
+      "definition": "Ripples in spacetime caused by accelerating massive objects"
+    }
+  ],
+  "teachingNotes": "Explore relativistic effects and cosmological observations. Discuss recent discoveries in gravitational wave astronomy.",
+  "sample": {
+    "question": "What is the slowing of time due to high velocity?",
+    "expectedAny": [
+      "time dilation",
+      "temporal dilation",
+      "relativistic time",
+      "time stretching"
+    ]
+  },
+  "truefalse": {
+    "question": "Gravitational waves are ripples in spacetime.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What radiation remains from the early universe?",
+    "expectedAny": [
+      "cosmic microwave background",
+      "CMB",
+      "background radiation",
+      "relic radiation"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The mysterious force causing universe expansion is dark ________.",
+    "expectedAny": [
+      "energy",
+      "force",
+      "power",
+      "acceleration"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do gravitational waves provide new astronomical information?",
+    "expectedAny": [
+      "detect black hole mergers",
+      "observe invisible events",
+      "study spacetime",
+      "complement light observations"
+    ]
+  }
+}

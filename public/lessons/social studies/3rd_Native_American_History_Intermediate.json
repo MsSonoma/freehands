@@ -1,0 +1,89 @@
+{
+  "id": "3rd_Native_American_History_Intermediate",
+  "title": "Native American History and Culture",
+  "grade": "3rd",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    { "term": "Native American", "definition": "The first people who lived in America before other people came from other countries" },
+    { "term": "tribe", "definition": "A group of Native American people who lived together and shared the same culture" },
+    { "term": "reservation", "definition": "Land set aside for Native American tribes to live on" },
+    { "term": "heritage", "definition": "Traditions and culture passed down from your ancestors" },
+    { "term": "ancestors", "definition": "Family members who lived long ago" },
+    { "term": "sacred", "definition": "Something that is very special and important to a group's beliefs" }
+  ],
+  "teachingNotes": "Use respectful, accurate information about diverse tribes. Avoid stereotypes. Focus on contributions and continuing culture.",
+  "sample": [
+    { "question": "Who were the first people to live in America?", "expectedAny": ["Native Americans", "Indigenous people", "First Americans"] },
+    { "question": "What is a tribe?", "expectedAny": ["group of people", "Native American community", "people with shared culture"] },
+    { "question": "Name one thing Native Americans taught early settlers.", "expectedAny": ["growing corn", "fishing", "hunting", "surviving winters"] },
+    { "question": "What does heritage mean?", "expectedAny": ["traditions from ancestors", "culture passed down", "family history"] },
+    { "question": "Do Native Americans still live in America today?", "expectedAny": ["yes", "they still live here", "many tribes exist"] },
+    { "question": "What is a reservation?", "expectedAny": ["land for tribes", "Native American territory", "special land set aside"] },
+    { "question": "How do we show respect for Native American culture?", "expectedAny": ["learn accurately", "avoid stereotypes", "honor contributions"] }
+  ],
+  "truefalse": [
+    { "question": "All Native American tribes had exactly the same culture.", "answer": false },
+    { "question": "Native Americans were the first people to live in America.", "answer": true },
+    { "question": "Native Americans only lived in teepees.", "answer": false },
+    { "question": "Many Native American tribes still exist today.", "answer": true },
+    { "question": "Native Americans taught settlers how to grow corn.", "answer": true },
+    { "question": "All Native Americans moved to other countries.", "answer": false },
+    { "question": "Different tribes had different languages.", "answer": true }
+  ],
+  "multiplechoice": [
+    {
+      "question": "What did many Native American tribes teach early settlers?",
+      "choices": ["how to build ships", "how to grow corn", "how to make steel", "how to write books"],
+      "correct": 1
+    },
+    {
+      "question": "How long have Native Americans lived in America?",
+      "choices": ["100 years", "500 years", "thousands of years", "50 years"],
+      "correct": 2
+    },
+    {
+      "question": "What makes each Native American tribe unique?",
+      "choices": ["same language", "different cultures", "identical homes", "same food"],
+      "correct": 1
+    },
+    {
+      "question": "Which is true about Native Americans today?",
+      "choices": ["none exist", "only in museums", "still live here", "all the same"],
+      "correct": 2
+    },
+    {
+      "question": "What did Native Americans use from nature?",
+      "choices": ["everything they needed", "only rocks", "just water", "nothing useful"],
+      "correct": 0
+    },
+    {
+      "question": "How should we learn about Native Americans?",
+      "choices": ["only from movies", "accurate information", "made-up stories", "old myths"],
+      "correct": 1
+    },
+    {
+      "question": "What is a powwow?",
+      "choices": ["a type of food", "a cultural gathering", "a type of house", "a game"],
+      "correct": 1
+    }
+  ],
+  "fillintheblank": [
+    { "question": "___ Americans were the first people to live in America.", "expectedAny": ["Native"] },
+    { "question": "A ___ is a group of Native Americans with shared culture.", "expectedAny": ["tribe"] },
+    { "question": "Native Americans lived here for ___ of years.", "expectedAny": ["thousands"] },
+    { "question": "___ is land set aside for Native American tribes.", "expectedAny": ["Reservation"] },
+    { "question": "Native Americans taught settlers to grow ___.", "expectedAny": ["corn"] },
+    { "question": "Different tribes had different ___ and customs.", "expectedAny": ["languages"] },
+    { "question": "___ traditions are passed down through families.", "expectedAny": ["Cultural", "Sacred"] }
+  ],
+  "shortanswer": [
+    { "question": "How do Native Americans today keep their culture alive?", "expectedAny": ["teach languages", "practice ceremonies", "make traditional art", "tell stories"] },
+    { "question": "What contributions did Native Americans make?", "expectedAny": ["agriculture", "medicine", "environmental knowledge", "food crops"] },
+    { "question": "Why is it important to learn accurate information?", "expectedAny": ["respect culture", "avoid stereotypes", "understand history", "honor people"] },
+    { "question": "How were different tribes different from each other?", "expectedAny": ["different languages", "various homes", "different foods", "unique customs"] },
+    { "question": "What can we learn from Native American culture?", "expectedAny": ["respect for nature", "community values", "traditional knowledge", "sustainability"] },
+    { "question": "How did geography affect Native American tribes?", "expectedAny": ["different climates", "available resources", "housing styles", "food sources"] },
+    { "question": "What challenges have Native Americans faced?", "expectedAny": ["loss of land", "cultural preservation", "keeping traditions", "maintaining identity"] }
+  ]
+}

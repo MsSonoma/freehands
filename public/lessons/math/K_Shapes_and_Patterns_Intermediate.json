@@ -1,0 +1,66 @@
+{
+  "id": "shapes-and-patterns-intermediate",
+  "title": "Shapes and Patterns",
+  "grade": "K",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {"term": "circle", "definition": "A round shape with no corners"},
+    {"term": "square", "definition": "A shape with 4 equal sides and 4 corners"},
+    {"term": "triangle", "definition": "A shape with 3 sides and 3 corners"},
+    {"term": "pattern", "definition": "Things that repeat in the same order"}
+  ],
+  "teachingNotes": "Use shape manipulatives and real objects. Create patterns with colors, shapes, sounds. Practice identifying shapes in environment.",
+  "sample": [
+    {"question": "What comes next in this pattern: circle, square, circle, square, _____?", "expectedAny": ["circle", "continues pattern correctly"]},
+    {"question": "Name the shapes you see: △ □ ○", "expectedAny": ["triangle, square, circle"]},
+    {"question": "How many sides does a triangle have?", "expectedAny": ["3", "three"]},
+    {"question": "What shape has no corners?", "expectedAny": ["circle"]},
+    {"question": "Show me a shape with 4 equal sides.", "expectedAny": ["square"]}
+  ],
+  "truefalse": [
+    {"question": "A triangle has 3 sides.", "answer": true, "expectedAny": ["triangles have 3 sides"]},
+    {"question": "A circle has corners.", "answer": false, "expectedAny": ["circles are round with no corners"]},
+    {"question": "A square has 4 equal sides.", "answer": true, "expectedAny": ["squares have 4 equal sides"]},
+    {"question": "All rectangles are squares.", "answer": false, "expectedAny": ["not all rectangles are squares"]},
+    {"question": "Patterns repeat in the same order.", "answer": true, "expectedAny": ["patterns follow repeating order"]},
+    {"question": "A triangle has 4 corners.", "answer": false, "expectedAny": ["triangles have 3 corners"]},
+    {"question": "You can make patterns with colors.", "answer": true, "expectedAny": ["colors can make patterns"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which shape is round?", "choices": ["square", "triangle", "circle", "rectangle"], "correct": 2, "expectedAny": ["circle is round"]},
+    {"question": "How many corners does a square have?", "choices": ["2", "3", "4", "5"], "correct": 2, "expectedAny": ["square has 4 corners"]},
+    {"question": "What comes next: red, blue, red, blue, ____?", "choices": ["green", "red", "yellow", "purple"], "correct": 1, "expectedAny": ["red continues the pattern"]},
+    {"question": "Which shape has 3 sides?", "choices": ["circle", "square", "triangle", "rectangle"], "correct": 2, "expectedAny": ["triangle has 3 sides"]},
+    {"question": "What pattern is this: big, small, big, small?", "choices": ["color pattern", "size pattern", "shape pattern", "sound pattern"], "correct": 1, "expectedAny": ["pattern shows different sizes"]},
+    {"question": "Which shape has the most sides?", "choices": ["circle", "triangle", "square", "pentagon"], "correct": 3, "expectedAny": ["pentagon has 5 sides"]},
+    {"question": "What makes a good pattern?", "choices": ["random things", "repeating order", "only colors", "only shapes"], "correct": 1, "expectedAny": ["patterns need repeating order"]}
+  ],
+  "fillintheblank": [
+    {"question": "A square has _____ corners.", "expectedAny": ["4", "four"]},
+    {"question": "A _____ is round with no corners.", "expectedAny": ["circle"]},
+    {"question": "A triangle has _____ sides.", "expectedAny": ["3", "three"]},
+    {"question": "In the pattern ABC, ABC, the next group would be _____.", "expectedAny": ["ABC"]},
+    {"question": "Red, blue, red, blue - this is a _____ pattern.", "expectedAny": ["color", "AB"]},
+    {"question": "A _____ has 4 equal sides and 4 corners.", "expectedAny": ["square"]},
+    {"question": "Circle, square, triangle - these are all _____.", "expectedAny": ["shapes"]}
+  ],
+  "shortanswer": [
+    {"question": "Name two shapes you see in the classroom.", "expectedAny": ["various shape names", "clock is circle", "window is rectangle"]},
+    {"question": "How can you make a pattern with toys?", "expectedAny": ["put them in repeating order", "use different colors", "arrange by size"]},
+    {"question": "What's the difference between a circle and a square?", "expectedAny": ["circle is round, square has corners", "circle has no sides, square has 4"]},
+    {"question": "Describe a pattern you can make with blocks.", "expectedAny": ["red, blue, red, blue", "big, small, big, small"]},
+    {"question": "Where do you see triangles in real life?", "expectedAny": ["pizza slice", "roof of house", "mountain"]},
+    {"question": "How do you know if something is a pattern?", "expectedAny": ["it repeats", "same order over and over"]},
+    {"question": "What shapes can you find at home?", "expectedAny": ["plates are circles", "windows are rectangles", "doors are rectangles"]}
+  ],
+  "wordProblems": [
+    {"question": "You make a pattern with red, blue, red, blue blocks. What color comes next?", "expectedAny": ["red"]},
+    {"question": "Emma has 3 triangles and 2 circles. How many shapes does she have in total?", "expectedAny": ["5 shapes", "3 + 2 = 5"]},
+    {"question": "In the pattern △□○△□○, what shape comes next?", "expectedAny": ["triangle", "△"]},
+    {"question": "Tom draws 4 squares. How many corners did he draw in total?", "expectedAny": ["16 corners", "4 × 4 = 16"]},
+    {"question": "A fence has this pattern: tall post, short post, tall post, short post. What comes next?", "expectedAny": ["tall post"]},
+    {"question": "Sarah counts shapes: 2 circles, 3 squares, 1 triangle. How many shapes is that?", "expectedAny": ["6 shapes", "2 + 3 + 1 = 6"]},
+    {"question": "If you have 5 pattern blocks and use 2 to start a pattern, how many are left?", "expectedAny": ["3 blocks", "5 - 2 = 3"]}
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "id": "american-revolution-causes-advanced",
+  "title": "Causes and Effects of American Revolution",
+  "grade": "4th",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "revolution",
+      "definition": "A complete change in government, often involving fighting"
+    },
+    {
+      "term": "taxation without representation",
+      "definition": "Being forced to pay taxes without having a say in government"
+    },
+    {
+      "term": "independence",
+      "definition": "Freedom from being controlled by another country"
+    },
+    {
+      "term": "patriot",
+      "definition": "Someone who supported American independence from Britain"
+    }
+  ],
+  "teachingNotes": "Use timeline activities and cause-and-effect charts. Discuss concepts of fairness and representation. Connect to modern democratic principles.",
+  "sample": [
+    {"question": "What did 'taxation without representation' mean to colonists?", "expectedAny": ["no voice in Parliament", "taxes without consent"]},
+    {"question": "Name one British law the colonists opposed.", "expectedAny": ["Stamp Act", "Tea Act", "Townshend Acts", "Intolerable Acts"]},
+    {"question": "What happened at the Boston Tea Party?", "expectedAny": ["dumped tea into harbor"]},
+    {"question": "Who led the Continental Army?", "expectedAny": ["George Washington"]},
+    {"question": "What document declared independence?", "expectedAny": ["Declaration of Independence"]},
+    {"question": "What year was independence declared?", "expectedAny": ["1776"]},
+    {"question": "Why did colonists think British taxes were unfair?", "expectedAny": ["no representation", "no consent"]}
+  ],
+  "truefalse": [
+    {"question": "The Boston Tea Party protested British taxes on tea.", "answer": true},
+    {"question": "All colonists immediately wanted independence.", "answer": false},
+    {"question": "The Intolerable Acts punished Boston after the Tea Party.", "answer": true},
+    {"question": "George III was king of Britain during the Revolution.", "answer": true},
+    {"question": "The Declaration of Independence was signed in Philadelphia.", "answer": true},
+    {"question": "The colonists had representatives in Parliament.", "answer": false},
+    {"question": "The war ended with the Treaty of Paris.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "Which was a major cause of the American Revolution?", "choices": ["Too much freedom", "British taxes and laws", "Bad weather", "No land"], "correct": 1},
+    {"question": "What did the Stamp Act tax?", "choices": ["Tea", "Printed materials", "Sugar", "Stamps only"], "correct": 1},
+    {"question": "Which event came first?", "choices": ["Declaration of Independence", "Boston Tea Party", "Treaty of Paris", "Yorktown"], "correct": 1},
+    {"question": "Who wrote the Declaration of Independence?", "choices": ["George Washington", "Thomas Jefferson", "Benjamin Franklin", "John Adams"], "correct": 1},
+    {"question": "'No taxation without representation' means:", "choices": ["No taxes ever", "Taxes only by local assemblies", "No taxes without a vote/voice", "Tax Britain"], "correct": 2},
+    {"question": "Which act closed Boston Harbor?", "choices": ["Stamp Act", "Townshend Acts", "Intolerable Acts", "Sugar Act"], "correct": 2},
+    {"question": "Where did Washington's army spend a harsh winter?", "choices": ["Boston", "Valley Forge", "New York", "Philadelphia"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "The Declaration of Independence, written in ____, declared freedom from ____.", "expectedAny": ["1776", "Britain"]},
+    {"question": "Colonists protested the ____ Act by refusing to buy tea.", "expectedAny": ["Tea"]},
+    {"question": "The first shots were fired at ____ and ____.", "expectedAny": ["Lexington", "Concord"]},
+    {"question": "A person who supported independence was called a ____.", "expectedAny": ["Patriot"]},
+    {"question": "The British government is called ____.", "expectedAny": ["Parliament"]},
+    {"question": "Punitive laws after the Tea Party were called the ____ Acts.", "expectedAny": ["Intolerable"]},
+    {"question": "The war officially ended with the Treaty of ____.", "expectedAny": ["Paris"]}
+  ],
+  "shortanswer": [
+    {"question": "How did the Stamp Act anger colonists?", "expectedAny": ["taxed printed items", "no representation"]},
+    {"question": "Why did colonists dump tea in Boston Harbor?", "expectedAny": ["protest Tea Act"]},
+    {"question": "How did the Intolerable Acts unite the colonies?", "expectedAny": ["colonies supported Boston", "First Continental Congress"]},
+    {"question": "What ideas are in the Declaration of Independence?", "expectedAny": ["natural rights", "self-government"]},
+    {"question": "How did geography affect the war?", "expectedAny": ["colonists knew the land", "long British supply lines"]},
+    {"question": "What were Loyalists and Patriots?", "expectedAny": ["loyal to Britain vs for independence"]},
+    {"question": "What roles did different groups play?", "expectedAny": ["women", "African Americans", "Native Americans"]}
+  ]
+}

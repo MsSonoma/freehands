@@ -1,0 +1,78 @@
+{
+  "id": "maps-locations-intermediate",
+  "title": "Maps and Locations",
+  "grade": "K",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "map",
+      "definition": "A picture that shows where places are"
+    },
+    {
+      "term": "location",
+      "definition": "Where something is; a place"
+    },
+    {
+      "term": "near",
+      "definition": "Close to something"
+    },
+    {
+      "term": "far",
+      "definition": "A long way from something"
+    }
+  ],
+  "teachingNotes": "Use simple classroom and school maps. Practice directional vocabulary. Create maps of familiar places like playground.",
+  "sample": [
+    {"question": "What can a map show you?", "expectedAny": ["where places are", "how to get somewhere", "locations", "directions"]},
+    {"question": "What direction do you go to get to the cafeteria from your classroom?", "expectedAny": ["down the hall", "left", "right", "follow the signs"]},
+    {"question": "Where would you look to find your house?", "expectedAny": ["on a map", "in your neighborhood"]},
+    {"question": "How can you tell if something is far away on a map?", "expectedAny": ["it looks small", "it's far from where you are"]},
+    {"question": "What would a map of your school show?", "expectedAny": ["classrooms", "hallways", "playground", "cafeteria"]}
+  ],
+  "truefalse": [
+    {"question": "A map can help you find your way.", "answer": true, "expectedAny": ["maps show directions and locations"]},
+    {"question": "All maps show the same places.", "answer": false, "expectedAny": ["different maps show different places"]},
+    {"question": "You can use maps to find new places.", "answer": true, "expectedAny": ["maps help locate new places"]},
+    {"question": "Maps only show big places like cities.", "answer": false, "expectedAny": ["maps can show small places too"]},
+    {"question": "Near means the same as far.", "answer": false, "expectedAny": ["near and far are opposites"]},
+    {"question": "Maps can show where your school is.", "answer": true, "expectedAny": ["maps show school locations"]},
+    {"question": "You need special powers to read a map.", "answer": false, "expectedAny": ["anyone can learn to read maps"]}
+  ],
+  "multiplechoice": [
+    {"question": "Where would you find your house on a map?", "choices": ["in the ocean", "in your neighborhood", "at school", "in the sky"], "correct": 1, "expectedAny": ["houses are in neighborhoods"]},
+    {"question": "What does 'near' mean?", "choices": ["far away", "close by", "very big", "very small"], "correct": 1, "expectedAny": ["near means close by"]},
+    {"question": "Which would be farthest from your school?", "choices": ["your classroom", "the playground", "another state", "the cafeteria"], "correct": 2, "expectedAny": ["another state is farthest"]},
+    {"question": "What might you see on a map of your town?", "choices": ["your toys", "your pets", "streets and buildings", "your dinner"], "correct": 2, "expectedAny": ["town maps show streets and buildings"]},
+    {"question": "How do maps help people?", "choices": ["tell time", "find places", "cook food", "sleep better"], "correct": 1, "expectedAny": ["maps help find places"]},
+    {"question": "What shows direction on a map?", "choices": ["colors", "compass rose", "pictures", "numbers"], "correct": 1, "expectedAny": ["compass rose shows direction"]},
+    {"question": "Which is closer to your classroom?", "choices": ["the hallway", "another country", "the moon", "the ocean"], "correct": 0, "expectedAny": ["hallway is closest to classroom"]}
+  ],
+  "fillintheblank": [
+    {"question": "The library is _____ to the school because you can walk there quickly.", "expectedAny": ["near", "close"]},
+    {"question": "A _____ shows where places are located.", "expectedAny": ["map"]},
+    {"question": "Something that is _____ away takes a long time to reach.", "expectedAny": ["far"]},
+    {"question": "Your _____ is where you live.", "expectedAny": ["home", "house", "address"]},
+    {"question": "To find north, south, east, and west on a map, look for the _____ rose.", "expectedAny": ["compass"]},
+    {"question": "The _____ is usually near your classroom in the school.", "expectedAny": ["hallway", "bathroom", "library"]},
+    {"question": "Maps help us understand different _____.", "expectedAny": ["locations", "places"]}
+  ],
+  "shortanswer": [
+    {"question": "How would you tell someone how to get from your classroom to the playground?", "expectedAny": ["go out the door", "walk down the hall", "go outside", "follow the path"]},
+    {"question": "What places are near your home?", "expectedAny": ["neighbors' houses", "park", "store", "school"]},
+    {"question": "How is your bedroom location different from the kitchen location in your house?", "expectedAny": ["different rooms", "bedroom upstairs", "kitchen downstairs", "separate places"]},
+    {"question": "What would you put on a map of your playground?", "expectedAny": ["swings", "slides", "sandbox", "trees", "benches"]},
+    {"question": "How do you know if two places are near each other?", "expectedAny": ["close together", "short walk", "can see both", "easy to travel between"]},
+    {"question": "Why might someone need to use a map?", "expectedAny": ["find new places", "not get lost", "learn about area", "plan trips"]},
+    {"question": "What's the difference between near and far?", "expectedAny": ["near is close", "far is away", "near takes less time", "far takes more time"]}
+  ],
+  "wordProblems": [
+    {"question": "On the school map, there are 4 classrooms on the first floor and 6 classrooms on the second floor. How many classrooms total?", "expectedAny": ["10 classrooms", "4 + 6 = 10"]},
+    {"question": "Emma's house is 3 blocks from school and her friend's house is 5 blocks from school. How many more blocks away is her friend's house?", "expectedAny": ["2 more blocks", "5 - 3 = 2"]},
+    {"question": "The map shows 8 parks in the town. If 3 parks are near the school, how many parks are far from the school?", "expectedAny": ["5 parks", "8 - 3 = 5"]},
+    {"question": "There are 12 streets on the neighborhood map. If 7 streets run north-south and the rest run east-west, how many run east-west?", "expectedAny": ["5 streets", "12 - 7 = 5"]},
+    {"question": "The treasure map shows 9 landmarks. Pirates found 4 landmarks yesterday. How many landmarks do they still need to find?", "expectedAny": ["5 landmarks", "9 - 4 = 5"]},
+    {"question": "Jake counted 6 buildings near his house and 9 buildings far from his house. How many buildings did he count total?", "expectedAny": ["15 buildings", "6 + 9 = 15"]},
+    {"question": "The city map shows 14 bus stops. If 8 bus stops are in the northern part of the city, how many are in the southern part?", "expectedAny": ["6 bus stops", "14 - 8 = 6"]}
+  ]
+}

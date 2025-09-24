@@ -1,0 +1,74 @@
+{
+  "id": "10th_Advanced_Research_Methodology_Information_Literacy_Advanced",
+  "title": "Advanced Research Methodology and Information Literacy",
+  "grade": "10th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "meta-analysis",
+      "definition": "Statistical analysis combining results from multiple studies"
+    },
+    {
+      "term": "empirical evidence",
+      "definition": "Information obtained through observation and experimentation"
+    },
+    {
+      "term": "epistemological framework",
+      "definition": "Theory about how knowledge is acquired and validated"
+    },
+    {
+      "term": "triangulation",
+      "definition": "Using multiple sources or methods to verify findings"
+    },
+    {
+      "term": "systematic review",
+      "definition": "Comprehensive, methodical examination of all relevant studies"
+    }
+  ],
+  "teachingNotes": "Explore sophisticated research methodologies and evaluation techniques. Discuss philosophical foundations of knowledge.",
+  "sample": {
+    "question": "What combines statistical results from multiple studies?",
+    "expectedAny": [
+      "meta-analysis",
+      "statistical synthesis",
+      "quantitative review",
+      "combined analysis"
+    ]
+  },
+  "truefalse": {
+    "question": "Empirical evidence is obtained through observation and experimentation.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What uses multiple sources to verify findings?",
+    "expectedAny": [
+      "triangulation",
+      "cross-verification",
+      "multiple validation",
+      "source convergence"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A theory about how knowledge is acquired is an epistemological ________.",
+    "expectedAny": [
+      "framework",
+      "theory",
+      "model",
+      "approach"
+    ]
+  },
+  "shortanswer": {
+    "question": "What distinguishes systematic reviews from regular literature reviews?",
+    "expectedAny": [
+      "comprehensive methodology",
+      "exhaustive search",
+      "strict criteria",
+      "replicable process"
+    ]
+  }
+}

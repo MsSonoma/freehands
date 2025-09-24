@@ -1,0 +1,53 @@
+{
+  "id": "11th_Trigonometric_Identities_Applications_Beginner",
+  "title": "Trigonometric Identities and Applications",
+  "grade": "11th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "trigonometric identity",
+      "definition": "Equation involving trigonometric functions that is true for all valid values"
+    },
+    {
+      "term": "Pythagorean identity",
+      "definition": "Identity stating sin²θ + cos²θ = 1"
+    },
+    {
+      "term": "reciprocal identity",
+      "definition": "Identity relating trigonometric functions to their reciprocals"
+    },
+    {
+      "term": "cofunctions",
+      "definition": "Trigonometric functions that are equal for complementary angles"
+    },
+    {
+      "term": "reference angle",
+      "definition": "Acute angle between terminal side and x-axis"
+    }
+  ],
+  "teachingNotes": "Start with fundamental identities and build to more complex ones. Use unit circle for verification.",
+  "sample": {
+    "question": "What is an equation with trigonometric functions true for all valid values?",
+    "expectedAny": ["trigonometric identity", "trig identity", "trigonometric equation", "identity equation"]
+  },
+  "truefalse": {
+    "question": "The Pythagorean identity states sin²θ + cos²θ = 1.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What relates trigonometric functions to their reciprocals?",
+    "expectedAny": ["reciprocal identity", "reciprocal relationship", "inverse trig identity", "reciprocal equation"]
+  },
+  "fillintheblank": {
+    "question": "The acute angle between terminal side and x-axis is the ________ angle.",
+    "expectedAny": ["reference", "acute reference", "standard", "base"]
+  },
+  "shortanswer": {
+    "question": "What are the three Pythagorean identities?",
+    "expectedAny": ["sin²θ + cos²θ = 1", "1 + tan²θ = sec²θ", "1 + cot²θ = csc²θ"]
+  },
+  "wordProblems": {
+    "question": "If sin θ = 3/5 and θ is in quadrant I, what is cos θ?",
+    "expectedAny": ["4/5", "0.8", "four-fifths", "cos θ = 4/5"]
+  }
+}

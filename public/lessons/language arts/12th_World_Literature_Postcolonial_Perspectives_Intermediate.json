@@ -1,0 +1,74 @@
+{
+  "id": "12th_World_Literature_Postcolonial_Perspectives_Intermediate",
+  "title": "World Literature and Postcolonial Perspectives",
+  "grade": "12th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "hybridity",
+      "definition": "Cultural mixing resulting from colonial encounter"
+    },
+    {
+      "term": "subaltern",
+      "definition": "Marginalized groups lacking voice in dominant discourse"
+    },
+    {
+      "term": "orientalism",
+      "definition": "Western representation of Eastern cultures as exotic other"
+    },
+    {
+      "term": "mimicry",
+      "definition": "Colonial subject's imperfect imitation of colonizer's culture"
+    },
+    {
+      "term": "narrative voice",
+      "definition": "Perspective and authority from which story is told"
+    }
+  ],
+  "teachingNotes": "Analyze power structures in postcolonial texts. Examine narrative techniques and cultural representation.",
+  "sample": {
+    "question": "What describes cultural mixing from colonial encounter?",
+    "expectedAny": [
+      "hybridity",
+      "cultural fusion",
+      "mixed identity",
+      "creolization"
+    ]
+  },
+  "truefalse": {
+    "question": "Subaltern refers to marginalized groups lacking voice in dominant discourse.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What describes Western representation of East as exotic other?",
+    "expectedAny": [
+      "orientalism",
+      "exoticism",
+      "othering",
+      "cultural stereotyping"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Colonial subject's imperfect imitation is called ________.",
+    "expectedAny": [
+      "mimicry",
+      "imitation",
+      "copying",
+      "emulation"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does narrative voice challenge colonial authority?",
+    "expectedAny": [
+      "alternative perspective",
+      "marginalized viewpoint",
+      "counter-narrative",
+      "subaltern speaking"
+    ]
+  }
+}

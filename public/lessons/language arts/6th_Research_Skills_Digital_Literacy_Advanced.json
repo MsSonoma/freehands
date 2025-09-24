@@ -1,0 +1,73 @@
+{
+  "id": "6th_Research_Skills_Digital_Literacy_Advanced",
+  "title": "Research Skills and Digital Literacy",
+  "grade": "6th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "digital literacy",
+      "definition": "The ability to effectively find, evaluate, and use information from digital sources"
+    },
+    {
+      "term": "credible source",
+      "definition": "A reliable and trustworthy source of information"
+    },
+    {
+      "term": "bibliography",
+      "definition": "A list of sources used in research, properly formatted"
+    },
+    {
+      "term": "primary source",
+      "definition": "Original materials from the time period or event being studied"
+    },
+    {
+      "term": "secondary source",
+      "definition": "Materials that analyze or interpret primary sources"
+    }
+  ],
+  "teachingNotes": "Teach students to evaluate website credibility. Practice proper citation formats. Distinguish between primary and secondary sources with clear examples.",
+  "sample": {
+    "question": "What is the ability to effectively find and evaluate digital information called?",
+    "expectedAny": [
+      "digital literacy",
+      "information literacy",
+      "digital skills",
+      "online research skills"
+    ]
+  },
+  "truefalse": {
+    "question": "A primary source is an original material from the time period being studied.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which would be a primary source for studying the Civil War?",
+    "expectedAny": [
+      "soldier's diary",
+      "letter from battlefield",
+      "newspaper from 1863",
+      "original documents"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A list of sources used in research is called a ________.",
+    "expectedAny": [
+      "bibliography",
+      "works cited",
+      "reference list",
+      "source list"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are three things to check when evaluating a website's credibility?",
+    "expectedAny": [
+      "author, date, domain",
+      "who wrote it, when, what type of site",
+      "credibility of author, recency, purpose"
+    ]
+  }
+}

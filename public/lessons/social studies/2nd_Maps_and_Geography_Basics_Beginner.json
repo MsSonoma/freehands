@@ -1,0 +1,71 @@
+{
+  "id": "2nd_Maps_and_Geography_Basics_Beginner",
+  "title": "Maps and Geography Basics",
+  "grade": "2nd",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "map",
+      "definition": "A drawing that shows what places look like from above"
+    },
+    {
+      "term": "compass rose",
+      "definition": "A symbol on a map that shows the directions north, south, east, and west"
+    },
+    {
+      "term": "continent",
+      "definition": "A very large area of land on Earth"
+    },
+    {
+      "term": "ocean",
+      "definition": "A very large body of salt water"
+    }
+  ],
+  "teachingNotes": "Use classroom maps and globes. Practice using cardinal directions. Connect to students' own neighborhoods and school location.",
+  "sample": [
+    {"question": "What tool on a map helps you find directions?", "expectedAny": ["compass rose"]},
+    {"question": "Name one of the four main directions.", "expectedAny": ["north", "south", "east", "west"]},
+    {"question": "What is a continent?", "expectedAny": ["a very large area of land"]},
+    {"question": "What is an ocean?", "expectedAny": ["a large body of salt water"]},
+    {"question": "What do maps show?", "expectedAny": ["where places are", "locations"]},
+    {"question": "What is a map key?", "expectedAny": ["legend that explains symbols"]},
+    {"question": "Why is a compass important?", "expectedAny": ["shows direction"]}
+  ],
+  "truefalse": [
+    {"question": "There are 7 continents on Earth.", "answer": true},
+    {"question": "The ocean is smaller than a lake.", "answer": false},
+    {"question": "A compass rose shows north, south, east, and west.", "answer": true},
+    {"question": "A map shows places from a side view.", "answer": false},
+    {"question": "A globe is a round model of Earth.", "answer": true},
+    {"question": "The map key explains symbols.", "answer": true},
+    {"question": "East and west are the same direction.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "If you are facing north and turn right, which direction are you now facing?", "choices": ["South", "East", "West", "North"], "correct": 1},
+    {"question": "Which shows the whole Earth?", "choices": ["Map", "Globe", "Ruler", "Compass Rose"], "correct": 1},
+    {"question": "What does a map key tell you?", "choices": ["Time", "Distance", "What symbols mean", "Weather"], "correct": 2},
+    {"question": "Which is a continent?", "choices": ["Pacific", "Europe", "Nile", "Sahara"], "correct": 1},
+    {"question": "Which is an ocean?", "choices": ["Asia", "Arctic", "Amazon", "Everest"], "correct": 1},
+    {"question": "Which tool shows directions?", "choices": ["Compass rose", "Ruler", "Scale", "Pencil"], "correct": 0},
+    {"question": "Which is NOT a cardinal direction?", "choices": ["North", "Up", "East", "South"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "The four main directions are north, south, _____, and _____.", "expectedAny": ["east", "west"]},
+    {"question": "A drawing that shows places from above is a ___.", "expectedAny": ["map"]},
+    {"question": "A very large area of land is a ________.", "expectedAny": ["continent"]},
+    {"question": "A very large body of salt water is an ________.", "expectedAny": ["ocean"]},
+    {"question": "A ________ shows directions on a map.", "expectedAny": ["compass rose"]},
+    {"question": "The map ________ explains symbols.", "expectedAny": ["key", "legend"]},
+    {"question": "A round model of Earth is a ________.", "expectedAny": ["globe"]}
+  ],
+  "shortanswer": [
+    {"question": "Why do we use maps instead of just looking around us?", "expectedAny": ["show large areas", "help find places"]},
+    {"question": "Name two continents.", "expectedAny": ["any two of the seven"]},
+    {"question": "How can a compass help you?", "expectedAny": ["shows direction", "helps navigate"]},
+    {"question": "Describe one difference between a map and a globe.", "expectedAny": ["map is flat, globe is round"]},
+    {"question": "What symbols might you put on a map of your classroom?", "expectedAny": ["desk", "door", "window"]},
+    {"question": "How would you explain a map key to a friend?", "expectedAny": ["explains symbols"]},
+    {"question": "Give directions from the front door to the office using cardinal directions.", "expectedAny": ["student uses N/S/E/W or left/right"]}
+  ]
+}

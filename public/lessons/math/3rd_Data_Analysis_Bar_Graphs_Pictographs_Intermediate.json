@@ -1,0 +1,67 @@
+{
+	"id": "3rd_Data_Analysis_Bar_Graphs_Pictographs_Intermediate",
+	"title": "Data Analysis: Bar Graphs and Pictographs",
+	"grade": "3rd",
+	"difficulty": "Intermediate",
+	"featured": false,
+	"vocab": [
+		{"term": "bar graph", "definition": "A chart with bars showing quantities"},
+		{"term": "pictograph", "definition": "A chart using pictures or symbols to represent data"},
+		{"term": "scale", "definition": "The value represented by each unit on a graph"}
+	],
+	"teachingNotes": "Practice reading and comparing values. Include scales of 1, 2, or 5. Discuss titles, labels, and keys.",
+	"sample": [
+		{"question": "A bar shows 7 apples and another shows 5 oranges. How many fruits total?", "expectedAny": ["12"]},
+		{"question": "If each picture equals 2 votes and there are 6 pictures, how many votes?", "expectedAny": ["12"]},
+		{"question": "Which bar is taller: 9 cats or 11 dogs?", "expectedAny": ["dogs"]},
+		{"question": "If bars show 4, 8, 6, what's the highest value?", "expectedAny": ["8"]},
+		{"question": "A key says each symbol = 5. 7 symbols represent ___", "expectedAny": ["35"]},
+		{"question": "If red = 10 and blue = 6, how many more red than blue?", "expectedAny": ["4"]},
+		{"question": "Two bars: 3 and 9. Difference?", "expectedAny": ["6"]}
+	],
+	"truefalse": [
+		{"question": "A title and labels help explain a graph.", "answer": true},
+		{"question": "In a pictograph, the key shows what each picture means.", "answer": true},
+		{"question": "The tallest bar always means the smallest number.", "answer": false},
+		{"question": "If the scale is 2, each bar unit counts as 2.", "answer": true},
+		{"question": "Bar graphs and pictographs show exactly the same data format.", "answer": false},
+		{"question": "You cannot compare two bars on the same graph.", "answer": false},
+		{"question": "A key is not important in a pictograph.", "answer": false}
+	],
+	"multiplechoice": [
+		{"question": "Scale is 2. A bar reaches 7 units. Value?", "choices": ["7", "12", "14", "21"], "correct": 2},
+		{"question": "Each picture = 5. 4 pictures show:", "choices": ["10", "15", "20", "25"], "correct": 2},
+		{"question": "Bars: A=6, B=9, C=4. Which is greatest?", "choices": ["A", "B", "C", "A and C"], "correct": 1},
+		{"question": "If A=8 and B=3, how many more is A than B?", "choices": ["3", "4", "5", "6"], "correct": 2},
+		{"question": "Scale is 5. Bar at 6 units equals:", "choices": ["11", "25", "30", "35"], "correct": 2},
+		{"question": "Which detail is NOT needed on a graph?", "choices": ["title", "key", "labels", "barcode"], "correct": 3},
+		{"question": "If bars show 12 and 15, total is:", "choices": ["23", "25", "27", "30"], "correct": 2}
+	],
+	"fillintheblank": [
+		{"question": "Scale is 5. A bar at 9 units means ___", "expectedAny": ["45"]},
+		{"question": "Each picture = 2. 11 pictures show ___", "expectedAny": ["22"]},
+		{"question": "Bars 13 and 7 differ by ___", "expectedAny": ["6"]},
+		{"question": "If three bars are 4, 5, 6, the total is ___", "expectedAny": ["15"]},
+		{"question": "A bar decreases from 10 to 7. Change is ___", "expectedAny": ["3"]},
+		{"question": "Scale is 2. Half-unit picture equals ___", "expectedAny": ["1"]},
+		{"question": "Two bars of 8 and 12 average ___", "expectedAny": ["10"]}
+	],
+	"shortanswer": [
+		{"question": "Describe how to read a bar graph.", "expectedAny": ["check title, labels, scale, then bar heights"]},
+		{"question": "Why is a key important in pictographs?", "expectedAny": ["shows value of each picture"]},
+		{"question": "Create a bar graph topic and three categories.", "expectedAny": ["student-generated"]},
+		{"question": "How can you compare two bars?", "expectedAny": ["subtract to find the difference"]},
+		{"question": "When might you choose a bar graph over a pictograph?", "expectedAny": ["when numbers are large or comparisons needed"]},
+		{"question": "What questions can you answer from a graph?", "expectedAny": ["most, least, total, difference"]},
+		{"question": "Explain scale of 5 using an example.", "expectedAny": ["each unit equals 5 items"]}
+	],
+	"wordProblems": [
+		{"question": "Class votes: Cats=12, Dogs=15, Fish=9. How many more dogs than fish?", "expectedAny": ["6"]},
+		{"question": "If each picture = 2 books and there are 13 pictures, how many books?", "expectedAny": ["26"]},
+		{"question": "Bar graph shows A=8, B=11, C=6. Total?", "expectedAny": ["25"]},
+		{"question": "Pictograph key: 5. Category shows 7 pictures. Value?", "expectedAny": ["35"]},
+		{"question": "Which category is least if bars are 10, 4, 7, 9?", "expectedAny": ["4"]},
+		{"question": "How many more is 14 than 9?", "expectedAny": ["5"]},
+		{"question": "Two classes read 18 and 22 books. Average per class?", "expectedAny": ["20"]}
+	]
+}

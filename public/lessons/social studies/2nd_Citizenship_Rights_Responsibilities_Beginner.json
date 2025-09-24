@@ -1,0 +1,74 @@
+{
+  "id": "2nd_Citizenship_Rights_Responsibilities_Beginner",
+  "title": "Citizenship Rights and Responsibilities",
+  "grade": "2nd",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "citizen",
+      "definition": "A person who belongs to a country or community"
+    },
+    {
+      "term": "rights",
+      "definition": "Things that people are allowed to do or have"
+    },
+    {
+      "term": "responsibilities",
+      "definition": "Things that people should do to help their community"
+    },
+    {
+      "term": "rules",
+      "definition": "Instructions about what people should and should not do"
+    },
+    {
+      "term": "respect",
+      "definition": "Treating others with kindness and care"
+    }
+  ],
+  "teachingNotes": "Connect citizenship to classroom and school rules. Discuss student rights and responsibilities in simple terms. Use examples of helping behaviors and following rules as good citizenship.",
+  "sample": [
+    {"question": "What does it mean to be a good citizen?", "expectedAny": ["follow rules", "help others", "be respectful", "do your part", "be kind"]},
+    {"question": "Name one way to show respect at school.", "expectedAny": ["listen", "use kind words", "take turns", "share"]},
+    {"question": "What is a responsibility you have at home?", "expectedAny": ["clean room", "help set the table", "feed a pet", "homework"]},
+    {"question": "What is a right you have at school?", "expectedAny": ["to learn", "to be safe", "to be treated fairly"]},
+    {"question": "Why do we have rules?", "expectedAny": ["keep us safe", "help us learn", "prevent problems"]},
+    {"question": "Who is a citizen?", "expectedAny": ["a person in a community", "member of a country"]},
+    {"question": "What does responsibility mean?", "expectedAny": ["something you should do", "a job or duty"]}
+  ],
+  "truefalse": [
+    {"question": "Citizens have both rights and responsibilities.", "answer": true},
+    {"question": "Being respectful is part of good citizenship.", "answer": true},
+    {"question": "Rules are made to make life harder.", "answer": false},
+    {"question": "Helping others is a responsibility.", "answer": true},
+    {"question": "Only adults can be citizens.", "answer": false},
+    {"question": "A right at school is to be safe.", "answer": true},
+    {"question": "Responsibilities are things we should not do.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "Which is an example of being responsible?", "choices": ["Leaving a mess", "Cleaning up after yourself", "Interrupting others", "Breaking rules"], "correct": 1},
+    {"question": "Which shows respect?", "choices": ["Listening when others talk", "Pushing in line", "Shouting", "Taking others' things"], "correct": 0},
+    {"question": "Which is a right at school?", "choices": ["To be safe", "To hurt others", "To skip work", "To ignore rules"], "correct": 0},
+    {"question": "Which is a responsibility at home?", "choices": ["Help with chores", "Break toys", "Yell at family", "Ignore pets"], "correct": 0},
+    {"question": "Who is a citizen?", "choices": ["A person who lives in a community", "Only the mayor", "Only teachers", "Only police"], "correct": 0},
+    {"question": "Why do communities have rules?", "choices": ["For safety and fairness", "To confuse people", "For no reason", "To make things harder"], "correct": 0},
+    {"question": "Which action is not responsible?", "choices": ["Doing homework", "Helping a friend", "Littering", "Sharing"], "correct": 2}
+  ],
+  "fillintheblank": [
+    {"question": "When we treat others with kindness, we show ________.", "expectedAny": ["respect", "caring", "kindness"]},
+    {"question": "A job or duty you should do is a ____________.", "expectedAny": ["responsibility", "duty", "job"]},
+    {"question": "A person who belongs to a country is a __________.", "expectedAny": ["citizen"]},
+    {"question": "Rules help keep people ________.", "expectedAny": ["safe"]},
+    {"question": "A right at school is the right to ________.", "expectedAny": ["learn", "be safe"]},
+    {"question": "We should always ________ to others when they speak.", "expectedAny": ["listen"]},
+    {"question": "Picking up trash shows you are being ________.", "expectedAny": ["responsible", "helpful"]}
+  ],
+  "shortanswer": [
+    {"question": "Name one right you have at school.", "expectedAny": ["learn", "be safe", "be treated fairly", "get help", "use materials"]},
+    {"question": "Name one responsibility you have in class.", "expectedAny": ["raise hand", "follow rules", "finish work", "be kind"]},
+    {"question": "Why is it important to follow rules?", "expectedAny": ["safety", "fairness", "helps everyone learn"]},
+    {"question": "How can you help your community?", "expectedAny": ["pick up litter", "help neighbors", "donate", "volunteer with family"]},
+    {"question": "What should you do if you see someone being unkind?", "expectedAny": ["tell an adult", "help the person", "use kind words"]},
+    {"question": "What is a responsibility you enjoy?", "expectedAny": ["feed pet", "help cook", "clean room"]},
+    {"question": "How do you show respect to teachers?", "expectedAny": ["listen", "follow directions", "use kind words"]}
+  ]
+}

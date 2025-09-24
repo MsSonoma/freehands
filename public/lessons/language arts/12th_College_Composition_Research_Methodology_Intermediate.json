@@ -1,0 +1,74 @@
+{
+  "id": "12th_College_Composition_Research_Methodology_Intermediate",
+  "title": "College Composition and Research Methodology",
+  "grade": "12th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "rhetoric",
+      "definition": "Art of effective speaking and writing to persuade audience"
+    },
+    {
+      "term": "ethos",
+      "definition": "Appeal to credibility and character of speaker or writer"
+    },
+    {
+      "term": "logos",
+      "definition": "Appeal to logic and reason through evidence and argument"
+    },
+    {
+      "term": "pathos",
+      "definition": "Appeal to emotions and values of audience"
+    },
+    {
+      "term": "scholarly discourse",
+      "definition": "Academic conversation and debate within specific field"
+    }
+  ],
+  "teachingNotes": "Develop sophisticated argumentative strategies. Practice engaging with academic discourse communities.",
+  "sample": {
+    "question": "What describes art of effective persuasive communication?",
+    "expectedAny": [
+      "rhetoric",
+      "rhetorical art",
+      "persuasive communication",
+      "oratory"
+    ]
+  },
+  "truefalse": {
+    "question": "Ethos appeals to credibility and character of communicator.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What appeal uses logic and reason through evidence?",
+    "expectedAny": [
+      "logos",
+      "logical appeal",
+      "rational argument",
+      "evidence-based reasoning"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Appeals to emotions and values represent ________.",
+    "expectedAny": [
+      "pathos",
+      "emotional appeal",
+      "value-based argument",
+      "affective persuasion"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do the three rhetorical appeals work together?",
+    "expectedAny": [
+      "balanced persuasion",
+      "complementary strategies",
+      "holistic argument",
+      "multi-faceted appeal"
+    ]
+  }
+}

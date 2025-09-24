@@ -1,0 +1,73 @@
+{
+  "id": "8th_Literary_Analysis_Theme_Characterization_Advanced",
+  "title": "Advanced Literary Analysis: Theme and Characterization",
+  "grade": "8th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "theme",
+      "definition": "The central message or universal truth in a literary work"
+    },
+    {
+      "term": "characterization",
+      "definition": "The methods an author uses to develop characters"
+    },
+    {
+      "term": "dynamic character",
+      "definition": "A character who changes throughout the story"
+    },
+    {
+      "term": "static character",
+      "definition": "A character who remains the same throughout the story"
+    },
+    {
+      "term": "universal theme",
+      "definition": "A theme that applies to all people across cultures and time periods"
+    }
+  ],
+  "teachingNotes": "Analyze complex texts for multiple themes. Compare how different authors develop similar themes through characterization.",
+  "sample": {
+    "question": "What is the central message or universal truth in a literary work?",
+    "expectedAny": [
+      "theme",
+      "central message",
+      "main idea",
+      "universal truth"
+    ]
+  },
+  "truefalse": {
+    "question": "A dynamic character changes throughout the story.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What are the methods an author uses to develop characters?",
+    "expectedAny": [
+      "characterization",
+      "character development",
+      "character methods",
+      "character techniques"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A character who remains the same throughout is called ________.",
+    "expectedAny": [
+      "static character",
+      "static",
+      "unchanging character",
+      "flat character"
+    ]
+  },
+  "shortanswer": {
+    "question": "How can authors reveal character traits indirectly?",
+    "expectedAny": [
+      "through actions, dialogue, thoughts",
+      "show don't tell",
+      "character behavior and speech"
+    ]
+  }
+}

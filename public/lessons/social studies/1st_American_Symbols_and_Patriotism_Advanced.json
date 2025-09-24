@@ -1,0 +1,71 @@
+{
+  "id": "american-symbols-patriotism-advanced",
+  "title": "American Symbols and Patriotism",
+  "grade": "1st",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "symbol",
+      "definition": "Something that stands for or represents something else"
+    },
+    {
+      "term": "flag",
+      "definition": "A piece of cloth with colors and designs that represents a country"
+    },
+    {
+      "term": "patriotism",
+      "definition": "Love for and loyalty to your country"
+    },
+    {
+      "term": "respect",
+      "definition": "Showing that you think something is important and valuable"
+    }
+  ],
+  "teachingNotes": "Show pictures of American symbols and discuss their meanings. Practice proper flag etiquette. Connect to classroom and school community respect.",
+  "sample": [
+    {"question": "What does the American flag represent?", "expectedAny": ["our country", "United States"]},
+    {"question": "Name one American symbol.", "expectedAny": ["flag", "bald eagle", "Statue of Liberty", "Liberty Bell"]},
+    {"question": "What does patriotism mean?", "expectedAny": ["love for your country"]},
+    {"question": "How do we show respect to the flag?", "expectedAny": ["stand", "be quiet", "hand over heart"]},
+    {"question": "Where do we see American symbols?", "expectedAny": ["schools", "parks", "government buildings"]},
+    {"question": "What colors are on the flag?", "expectedAny": ["red", "white", "blue"]},
+    {"question": "What bird is a symbol of America?", "expectedAny": ["bald eagle"]}
+  ],
+  "truefalse": [
+    {"question": "The bald eagle is a symbol of America.", "answer": true, "expectedAny": ["true"]},
+    {"question": "The American flag is green and yellow.", "answer": false, "expectedAny": ["false"]},
+    {"question": "We show respect by standing during the Pledge.", "answer": true, "expectedAny": ["true"]},
+    {"question": "The Statue of Liberty is in New York.", "answer": true, "expectedAny": ["true"]},
+    {"question": "The Liberty Bell is a symbol of freedom.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Patriotism means hating other countries.", "answer": false, "expectedAny": ["false"]},
+    {"question": "American symbols can be seen in schools.", "answer": true, "expectedAny": ["true"]}
+  ],
+  "multiplechoice": [
+    {"question": "How should you act during the Pledge of Allegiance?", "choices": ["sit down", "stand and be respectful", "talk to friends", "look around"], "correct": 1, "expectedAny": ["stand respectfully"]},
+    {"question": "What colors are on the flag?", "choices": ["red/white/blue", "green/yellow", "black/white", "purple/orange"], "correct": 0, "expectedAny": ["red/white/blue"]},
+    {"question": "Which is a U.S. symbol?", "choices": ["Statue of Liberty", "Eiffel Tower", "Big Ben", "Tower Bridge"], "correct": 0, "expectedAny": ["Statue of Liberty"]},
+    {"question": "What bird is the national symbol?", "choices": ["robin", "bald eagle", "owl", "turkey"], "correct": 1, "expectedAny": ["bald eagle"]},
+    {"question": "Where is the Liberty Bell?", "choices": ["New York", "Philadelphia", "Washington, D.C.", "Boston"], "correct": 1, "expectedAny": ["Philadelphia"]},
+    {"question": "What do we do on Independence Day?", "choices": ["eat candy", "celebrate America", "go to school", "sleep early"], "correct": 1, "expectedAny": ["celebrate America"]},
+    {"question": "Patriotism means ___", "choices": ["love for your country", "being mean", "not caring", "being loud"], "correct": 0, "expectedAny": ["love for your country"]}
+  ],
+  "fillintheblank": [
+    {"question": "The _____ is red, white, and blue.", "expectedAny": ["flag"]},
+    {"question": "The bald _____ is our national bird.", "expectedAny": ["eagle"]},
+    {"question": "The Liberty _____ is a symbol of freedom.", "expectedAny": ["Bell"]},
+    {"question": "The Statue of _____ stands in New York.", "expectedAny": ["Liberty"]},
+    {"question": "We show _____ for the flag.", "expectedAny": ["respect"]},
+    {"question": "The colors of the flag are _____, _____, and _____.", "expectedAny": ["red", "white", "blue"]},
+    {"question": "The flag has stars and _____.", "expectedAny": ["stripes"]}
+  ],
+  "shortanswer": [
+    {"question": "Why do we show respect for American symbols?", "expectedAny": ["they represent our country", "show love for America"]},
+    {"question": "How can you show respect during the Pledge?", "expectedAny": ["stand", "be quiet", "hand over heart"]},
+    {"question": "Draw one American symbol and label it.", "expectedAny": ["drawing with label"]},
+    {"question": "What does the Statue of Liberty mean to you?", "expectedAny": ["freedom", "welcoming"]},
+    {"question": "Why do we have national symbols?", "expectedAny": ["represent our country", "help us remember values"]},
+    {"question": "Where have you seen the American flag?", "expectedAny": ["school", "home", "parks"]},
+    {"question": "What happens on Independence Day?", "expectedAny": ["fireworks", "parades", "celebrations"]}
+  ]
+}

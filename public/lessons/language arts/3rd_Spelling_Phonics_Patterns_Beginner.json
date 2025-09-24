@@ -1,0 +1,78 @@
+{
+  "id": "spelling-phonics-patterns-beginner",
+  "title": "Spelling and Phonics Patterns",
+  "grade": "3rd",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "phonics",
+      "definition": "The relationship between letters and the sounds they make"
+    },
+    {
+      "term": "pattern",
+      "definition": "A repeated way that letters work together to make sounds"
+    },
+    {
+      "term": "syllable",
+      "definition": "A part of a word that has one vowel sound"
+    },
+    {
+      "term": "silent letter",
+      "definition": "A letter in a word that you don't say when speaking"
+    }
+  ],
+  "teachingNotes": "Use word families and common spelling patterns. Practice clapping syllables. Create word walls with pattern examples.",
+  "sample": {
+    "question": "How many syllables are in the word 'elephant'?",
+    "expectedAny": [
+      "3",
+      "three",
+      "el-e-phant"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "Words that rhyme often have the same spelling pattern at the end.",
+      "answer": true,
+      "expectedAny": [
+        "rhyming words often share ending patterns like -ight, -ay, -ack"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which word follows the same pattern as 'night'?",
+      "choices": [
+        "now",
+        "light",
+        "name",
+        "net"
+      ],
+      "correct": 1,
+      "expectedAny": [
+        "light has the same -ight pattern as night"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "In the word 'knee,' the letter 'k' is _____ because you don't say it.",
+      "expectedAny": [
+        "silent"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "What are some strategies for spelling words you don't know?",
+      "expectedAny": [
+        "sound it out",
+        "look for patterns",
+        "break into syllables",
+        "think of similar words",
+        "use spelling rules"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "id": "7th_Earth_Layers_and_Plate_Tectonics_Advanced",
+  "title": "Earth's Structure and Plate Tectonics",
+  "grade": "7th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "plate tectonics",
+      "definition": "The theory that Earth's crust is made of moving plates"
+    },
+    {
+      "term": "mantle",
+      "definition": "The hot, dense layer of rock beneath Earth's crust"
+    },
+    {
+      "term": "convergent boundary",
+      "definition": "Where two tectonic plates move toward each other"
+    },
+    {
+      "term": "divergent boundary",
+      "definition": "Where two tectonic plates move away from each other"
+    },
+    {
+      "term": "earthquake",
+      "definition": "Shaking of the ground caused by sudden movement of tectonic plates"
+    }
+  ],
+  "teachingNotes": "Use cross-section diagrams of Earth. Explain how plate movement causes earthquakes and volcanoes. Connect to real-world examples.",
+  "sample": {
+    "question": "What theory explains how Earth's crust is made of moving plates?",
+    "expectedAny": [
+      "plate tectonics",
+      "tectonic theory",
+      "continental drift",
+      "plate tectonic theory"
+    ]
+  },
+  "truefalse": {
+    "question": "Earth's crust is broken into several large pieces called plates.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What happens at a convergent boundary?",
+    "expectedAny": [
+      "plates move together",
+      "plates collide",
+      "plates converge",
+      "plates push toward each other"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The hot, dense layer beneath Earth's crust is the ________.",
+    "expectedAny": [
+      "mantle",
+      "upper mantle",
+      "asthenosphere",
+      "hot rock layer"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do earthquakes relate to plate tectonics?",
+    "expectedAny": [
+      "plates suddenly move and shake ground",
+      "plate movement causes ground shaking",
+      "tectonic activity creates earthquakes"
+    ]
+  }
+}

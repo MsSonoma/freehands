@@ -1,0 +1,74 @@
+{
+  "id": "10th_Decolonization_Independence_Movements_Intermediate",
+  "title": "Decolonization and Independence Movements",
+  "grade": "10th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "decolonization",
+      "definition": "Process of colonies gaining independence from imperial powers"
+    },
+    {
+      "term": "independence movement",
+      "definition": "Political campaign seeking freedom from colonial rule"
+    },
+    {
+      "term": "nationalism",
+      "definition": "Strong identification with and pride in one's nation"
+    },
+    {
+      "term": "partition",
+      "definition": "Division of a territory into separate political units"
+    },
+    {
+      "term": "non violent resistance",
+      "definition": "Method of protest that avoids physical violence"
+    }
+  ],
+  "teachingNotes": "Examine various paths to independence and their outcomes. Compare different colonial experiences and independence strategies.",
+  "sample": {
+    "question": "What is the process of colonies gaining independence?",
+    "expectedAny": [
+      "decolonization",
+      "independence process",
+      "colonial liberation",
+      "freedom movement"
+    ]
+  },
+  "truefalse": {
+    "question": "Nationalism involves strong identification with one's nation.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is protest that avoids physical violence?",
+    "expectedAny": [
+      "non-violent resistance",
+      "peaceful protest",
+      "passive resistance",
+      "civil disobedience"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Division of territory into separate units is called ________.",
+    "expectedAny": [
+      "partition",
+      "division",
+      "separation",
+      "splitting"
+    ]
+  },
+  "shortanswer": {
+    "question": "What factors contributed to decolonization after WWII?",
+    "expectedAny": [
+      "weakened colonial powers",
+      "nationalist movements",
+      "international pressure",
+      "economic costs"
+    ]
+  }
+}

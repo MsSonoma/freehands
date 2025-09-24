@@ -1,0 +1,73 @@
+{
+  "id": "8th_Declaration_of_Independence_Beginner",
+  "title": "Declaration of Independence and Revolutionary War",
+  "grade": "8th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "Declaration of Independence",
+      "definition": "The document declaring American independence from Britain"
+    },
+    {
+      "term": "natural rights",
+      "definition": "Rights that all people are born with"
+    },
+    {
+      "term": "unalienable rights",
+      "definition": "Rights that cannot be taken away"
+    },
+    {
+      "term": "Continental Congress",
+      "definition": "The governing body of the American colonies"
+    },
+    {
+      "term": "revolution",
+      "definition": "A complete change in government or way of life"
+    }
+  ],
+  "teachingNotes": "Focus on key ideas in the Declaration. Explain how revolutionary ideals influenced American government.",
+  "sample": {
+    "question": "What document declared American independence from Britain?",
+    "expectedAny": [
+      "Declaration of Independence",
+      "independence declaration",
+      "founding document",
+      "1776 declaration"
+    ]
+  },
+  "truefalse": {
+    "question": "The Declaration states that all people have natural rights.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What are rights that cannot be taken away?",
+    "expectedAny": [
+      "unalienable rights",
+      "natural rights",
+      "inherent rights",
+      "God-given rights"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The governing body of the colonies was the ________ Congress.",
+    "expectedAny": [
+      "Continental",
+      "colonial",
+      "American",
+      "revolutionary"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are the three unalienable rights mentioned in the Declaration?",
+    "expectedAny": [
+      "life, liberty, pursuit of happiness",
+      "life liberty happiness",
+      "basic human rights"
+    ]
+  }
+}

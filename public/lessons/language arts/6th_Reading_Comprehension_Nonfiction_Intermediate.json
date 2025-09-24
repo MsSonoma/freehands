@@ -1,0 +1,73 @@
+{
+  "id": "6th_Reading_Comprehension_Nonfiction_Intermediate",
+  "title": "Reading Comprehension: Analyzing Nonfiction Texts",
+  "grade": "6th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "main idea",
+      "definition": "The most important point or central message of a text"
+    },
+    {
+      "term": "supporting details",
+      "definition": "Facts, examples, or explanations that support the main idea"
+    },
+    {
+      "term": "inference",
+      "definition": "A conclusion reached using evidence and reasoning"
+    },
+    {
+      "term": "author's purpose",
+      "definition": "The reason why an author wrote a text: to inform, persuade, or entertain"
+    },
+    {
+      "term": "text structure",
+      "definition": "How information is organized in a text, such as cause-and-effect or compare-contrast"
+    }
+  ],
+  "teachingNotes": "Use current events and science articles. Practice identifying different text structures. Teach students to distinguish between facts and opinions in nonfiction.",
+  "sample": {
+    "question": "What is the most important point of a text called?",
+    "expectedAny": [
+      "main idea",
+      "central idea",
+      "key point",
+      "primary message"
+    ]
+  },
+  "truefalse": {
+    "question": "An inference is a conclusion you reach using evidence and reasoning.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "If an author writes to convince you of something, what is their purpose?",
+    "expectedAny": [
+      "to persuade",
+      "persuade",
+      "convince",
+      "persuasion"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Facts and examples that support the main idea are called ________ details.",
+    "expectedAny": [
+      "supporting",
+      "support",
+      "backup",
+      "evidence"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are three common ways authors organize nonfiction texts?",
+    "expectedAny": [
+      "cause-effect, compare-contrast, sequence",
+      "chronological, problem-solution, description",
+      "time order, categories, main idea-details"
+    ]
+  }
+}

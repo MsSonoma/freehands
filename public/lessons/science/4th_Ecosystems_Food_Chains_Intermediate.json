@@ -1,0 +1,74 @@
+{
+  "id": "4th_Ecosystems_Food_Chains_Intermediate",
+  "title": "Ecosystems and Food Chains",
+  "grade": "4th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "ecosystem",
+      "definition": "All the living and non-living things in an environment that interact with each other"
+    },
+    {
+      "term": "food chain",
+      "definition": "The path that energy and nutrients follow as organisms eat other organisms"
+    },
+    {
+      "term": "producer",
+      "definition": "An organism that makes its own food, usually plants"
+    },
+    {
+      "term": "consumer",
+      "definition": "An organism that gets energy by eating other organisms"
+    },
+    {
+      "term": "decomposer",
+      "definition": "An organism that breaks down dead plants and animals"
+    }
+  ],
+  "teachingNotes": "Use diagrams and real examples to show food chains. Discuss the flow of energy from sun to producers to consumers. Explore local ecosystems and identify the roles of different organisms.",
+  "sample": [
+    {"question": "What role do producers play in a food chain?", "expectedAny": ["make their own food", "start the chain"]},
+    {"question": "Define consumer.", "expectedAny": ["gets energy by eating others"]},
+    {"question": "What do decomposers do?", "expectedAny": ["break down dead organisms"]},
+    {"question": "What is a food chain?", "expectedAny": ["path of energy", "who eats whom"]},
+    {"question": "Where does energy in most food chains come from?", "expectedAny": ["the sun"]},
+    {"question": "What is a herbivore?", "expectedAny": ["plant eater", "primary consumer"]},
+    {"question": "What is a food web?", "expectedAny": ["connected food chains"]}
+  ],
+  "truefalse": [
+    {"question": "Decomposers are important because they recycle nutrients back into the soil.", "answer": true},
+    {"question": "Energy flows both ways in a food chain.", "answer": false},
+    {"question": "Producers use sunlight to make food.", "answer": true},
+    {"question": "Carnivores eat only plants.", "answer": false},
+    {"question": "Omnivores eat both plants and animals.", "answer": true},
+    {"question": "Removing a species can affect an entire ecosystem.", "answer": true},
+    {"question": "Food webs are simpler than food chains.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "In a food chain, what comes after the producer?", "choices": ["Primary consumer", "Secondary consumer", "Decomposer", "Sun"], "correct": 0},
+    {"question": "Which is a decomposer?", "choices": ["Grass", "Rabbit", "Mushroom", "Hawk"], "correct": 2},
+    {"question": "What do herbivores eat?", "choices": ["Animals", "Plants", "Bacteria", "Rocks"], "correct": 1},
+    {"question": "Which term describes an animal that eats both plants and animals?", "choices": ["Herbivore", "Carnivore", "Omnivore", "Producer"], "correct": 2},
+    {"question": "Energy for most food chains comes from:", "choices": ["Water", "Soil", "Sun", "Air"], "correct": 2},
+    {"question": "Which shows many feeding relationships?", "choices": ["Food chain", "Food web", "Food string", "Energy loop"], "correct": 1},
+    {"question": "A hawk that eats a snake that ate a mouse is a:", "choices": ["Producer", "Primary consumer", "Secondary consumer", "Tertiary consumer"], "correct": 3}
+  ],
+  "fillintheblank": [
+    {"question": "All the living and non-living things that interact in an environment make up an ________.", "expectedAny": ["ecosystem"]},
+    {"question": "Animals that eat only plants are called ________.", "expectedAny": ["herbivores"]},
+    {"question": "Animals that eat only other animals are called ________.", "expectedAny": ["carnivores"]},
+    {"question": "Organisms that make their own food are called ________.", "expectedAny": ["producers"]},
+    {"question": "Organisms that break down dead matter are ________.", "expectedAny": ["decomposers"]},
+    {"question": "A series of who-eats-whom is a food ________.", "expectedAny": ["chain"]},
+    {"question": "A network of many feeding paths is a food ________.", "expectedAny": ["web"]}
+  ],
+  "shortanswer": [
+    {"question": "What would happen to a food chain if all the producers disappeared?", "expectedAny": ["collapse", "no energy source"]},
+    {"question": "Why are decomposers important?", "expectedAny": ["recycle nutrients"]},
+    {"question": "Give an example of a simple food chain with 4 organisms.", "expectedAny": ["sun→grass→rabbit→hawk"]},
+    {"question": "How can pollution affect a food web?", "expectedAny": ["toxins build up", "harm organisms"]},
+    {"question": "What is biodiversity and why does it matter?", "expectedAny": ["variety of life", "stability"]},
+    {"question": "How do plants and animals depend on each other?", "expectedAny": ["food", "oxygen/CO2"]},
+    {"question": "How can humans protect ecosystems?", "expectedAny": ["reduce pollution", "protect habitats"]}
+  ]
+}

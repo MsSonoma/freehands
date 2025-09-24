@@ -1,0 +1,74 @@
+{
+  "id": "6th_Ancient_Greece_Democracy_Intermediate",
+  "title": "Ancient Greece and the Birth of Democracy",
+  "grade": "6th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "democracy",
+      "definition": "A government where people have the power to make decisions through voting"
+    },
+    {
+      "term": "city-state",
+      "definition": "An independent city with its own government and surrounding territory"
+    },
+    {
+      "term": "Athens",
+      "definition": "The Greek city-state that developed the first democracy"
+    },
+    {
+      "term": "Sparta",
+      "definition": "The Greek city-state known for its powerful military"
+    },
+    {
+      "term": "philosophy",
+      "definition": "The study of wisdom, knowledge, and the meaning of life"
+    }
+  ],
+  "teachingNotes": "Compare Athens and Sparta to show different types of government. Discuss Greek contributions to modern democracy and learning. Use maps to show Greek geography.",
+  "sample": {
+    "question": "What type of government gives people power through voting?",
+    "expectedAny": [
+      "democracy",
+      "democratic government",
+      "people's government",
+      "rule by people"
+    ]
+  },
+  "truefalse": {
+    "question": "Athens developed the first democracy in the ancient world.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which Greek city-state was known for its strong military?",
+    "expectedAny": [
+      "Sparta",
+      "city-state of Sparta",
+      "Spartan city-state",
+      "military Sparta"
+    ]
+  },
+  "fillintheblank": {
+    "question": "An independent city with its own government is called a ________.",
+    "expectedAny": [
+      "city-state",
+      "city state",
+      "independent city",
+      "Greek city-state"
+    ]
+  },
+  "shortanswer": {
+    "question": "How was Athenian democracy different from modern democracy?",
+    "expectedAny": [
+      "only male citizens could vote",
+      "women and slaves couldn't participate",
+      "limited to certain people",
+      "not all people included"
+    ]
+  }
+}

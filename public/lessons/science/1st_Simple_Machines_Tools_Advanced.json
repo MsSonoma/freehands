@@ -1,0 +1,71 @@
+{
+  "id": "simple-machines-tools-advanced",
+  "title": "Simple Machines and Tools",
+  "grade": "1st",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "tool",
+      "definition": "Something that helps you do work more easily"
+    },
+    {
+      "term": "machine",
+      "definition": "A tool that makes work easier"
+    },
+    {
+      "term": "wheel",
+      "definition": "A round object that can roll"
+    },
+    {
+      "term": "ramp",
+      "definition": "A slanted surface that helps move things up or down"
+    }
+  ],
+  "teachingNotes": "Show real tools like scissors, bottle openers, wheeled toys. Demonstrate how ramps make lifting easier. Safety focus.",
+  "sample": [
+    {"question": "What simple machine helps lift heavy things with less effort?", "expectedAny": ["lever"]},
+    {"question": "What simple machine is a slanted surface?", "expectedAny": ["inclined plane", "ramp"]},
+    {"question": "What changes the direction of a pull with a rope and wheel?", "expectedAny": ["pulley"]},
+    {"question": "What simple machine is used on a jar lid?", "expectedAny": ["screw"]},
+    {"question": "What simple machine is a sharp tool like an axe?", "expectedAny": ["wedge"]},
+    {"question": "What two parts make up a wheelbarrow's helper for moving?", "expectedAny": ["wheel and axle"]},
+    {"question": "Name a tool that uses a lever.", "expectedAny": ["scissors", "crowbar", "seesaw"]}
+  ],
+  "truefalse": [
+    {"question": "A ramp is an inclined plane.", "answer": true, "expectedAny": ["true"]},
+    {"question": "A lever can help lift with less effort.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Pulleys can change the direction of a force.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Wheels and axles make it harder to move things.", "answer": false, "expectedAny": ["false"]},
+    {"question": "A screw is a kind of inclined plane.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Wedges can split or cut materials.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Simple machines always make things heavier.", "answer": false, "expectedAny": ["false"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which tool is a lever?", "choices": ["hammer", "crowbar", "rope", "wheel"], "correct": 1, "expectedAny": ["crowbar"]},
+    {"question": "Which is a wheel and axle?", "choices": ["doorknob", "pencil", "box", "brick"], "correct": 0, "expectedAny": ["doorknob"]},
+    {"question": "Which simple machine is on a flagpole?", "choices": ["wedge", "pulley", "lever", "screw"], "correct": 1, "expectedAny": ["pulley"]},
+    {"question": "Which helps move a box up a truck?", "choices": ["ramp", "scissors", "knife", "rope"], "correct": 0, "expectedAny": ["ramp"]},
+    {"question": "Which is a screw?", "choices": ["jar lid", "knife", "axe", "ramp"], "correct": 0, "expectedAny": ["jar lid"]},
+    {"question": "Which is a wedge?", "choices": ["axe", "wheel", "pulley", "rope"], "correct": 0, "expectedAny": ["axe"]},
+    {"question": "Which simple machine is a doorstop?", "choices": ["wedge", "pulley", "lever", "screw"], "correct": 0, "expectedAny": ["wedge"]}
+  ],
+  "fillintheblank": [
+    {"question": "A slanted surface is called an _____ _____.", "expectedAny": ["inclined plane"]},
+    {"question": "A _____ helps lift or pry using a fulcrum.", "expectedAny": ["lever"]},
+    {"question": "A wheel and _____ helps roll heavy objects.", "expectedAny": ["axle"]},
+    {"question": "A _____ changes the direction of a pull.", "expectedAny": ["pulley"]},
+    {"question": "A jar lid works like a _____.", "expectedAny": ["screw"]},
+    {"question": "A knife blade is a _____.", "expectedAny": ["wedge"]},
+    {"question": "A seesaw is an example of a _____.", "expectedAny": ["lever"]}
+  ],
+  "shortanswer": [
+    {"question": "How does a ramp make it easier to move a load?", "expectedAny": ["less force over longer distance", "easier than lifting straight up"]},
+    {"question": "Describe a tool that uses a lever.", "expectedAny": ["scissors", "crowbar", "pliers"]},
+    {"question": "Why do we use wheels?", "expectedAny": ["reduce friction", "roll heavy objects easily"]},
+    {"question": "How does a pulley help lift a bucket from a well?", "expectedAny": ["changes direction of force", "easier to pull down than lift up"]},
+    {"question": "Where do you see screws at home?", "expectedAny": ["jar lids", "screws in wood", "bottle caps"]},
+    {"question": "Draw a lever and label fulcrum, effort, and load.", "expectedAny": ["labeled drawing"]},
+    {"question": "Which simple machine would you use to split wood?", "expectedAny": ["wedge"]}
+  ]
+}

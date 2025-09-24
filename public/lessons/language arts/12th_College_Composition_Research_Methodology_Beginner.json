@@ -1,0 +1,74 @@
+{
+  "id": "12th_College_Composition_Research_Methodology_Beginner",
+  "title": "College Composition and Research Methodology",
+  "grade": "12th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "thesis statement",
+      "definition": "Clear statement presenting main argument of academic paper"
+    },
+    {
+      "term": "primary source",
+      "definition": "Original document or firsthand evidence about topic"
+    },
+    {
+      "term": "secondary source",
+      "definition": "Analysis or interpretation of primary sources by scholars"
+    },
+    {
+      "term": "citation",
+      "definition": "Reference to source of information used in academic work"
+    },
+    {
+      "term": "plagiarism",
+      "definition": "Using someone else's work without proper attribution"
+    }
+  ],
+  "teachingNotes": "Teach academic writing conventions and research skills. Emphasize ethical use of sources.",
+  "sample": {
+    "question": "What presents main argument of academic paper?",
+    "expectedAny": [
+      "thesis statement",
+      "central argument",
+      "main claim",
+      "argumentative thesis"
+    ]
+  },
+  "truefalse": {
+    "question": "Primary sources provide original or firsthand evidence.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What describes using someone else's work without attribution?",
+    "expectedAny": [
+      "plagiarism",
+      "academic dishonesty",
+      "intellectual theft",
+      "unauthorized use"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Scholarly analysis of primary sources creates ________ sources.",
+    "expectedAny": [
+      "secondary",
+      "derivative",
+      "interpretive",
+      "analytical"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why is proper citation important in academic writing?",
+    "expectedAny": [
+      "avoid plagiarism",
+      "credit sources",
+      "support arguments",
+      "enable verification"
+    ]
+  }
+}

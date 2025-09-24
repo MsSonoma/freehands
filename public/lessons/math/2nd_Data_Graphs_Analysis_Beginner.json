@@ -1,0 +1,83 @@
+{
+  "id": "2nd_Data_Graphs_Analysis_Beginner",
+  "title": "Data Collection and Graphs",
+  "grade": "2nd",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "data",
+      "definition": "Information that we collect and organize"
+    },
+    {
+      "term": "graph",
+      "definition": "A picture that shows information in an organized way"
+    },
+    {
+      "term": "bar graph",
+      "definition": "A graph that uses bars of different lengths to show data"
+    },
+    {
+      "term": "tally",
+      "definition": "A way to count by making marks"
+    },
+    {
+      "term": "survey",
+      "definition": "Asking people questions to collect information"
+    }
+  ],
+  "teachingNotes": "Start with simple surveys about student preferences. Show how to organize data using tally marks and create basic bar graphs. Practice reading and interpreting simple graphs together.",
+  "sample": [
+    {"question": "What does a bar graph show us?", "expectedAny": ["information", "data", "organized information", "numbers in picture form"]},
+    {"question": "What tool shows counts as groups of five?", "expectedAny": ["tally marks", "tallies"]},
+    {"question": "What do we call asking people questions to collect information?", "expectedAny": ["survey"]},
+    {"question": "What part of a bar graph tells what each bar means?", "expectedAny": ["labels", "axis labels"]},
+    {"question": "If a bar is taller, does it mean more or less?", "expectedAny": ["more"]},
+    {"question": "What is data?", "expectedAny": ["information we collect", "information"]},
+    {"question": "What shows information in picture form?", "expectedAny": ["graph", "bar graph", "chart"]}
+  ],
+  "truefalse": [
+    {"question": "Tally marks help us count things.", "answer": true},
+    {"question": "A shorter bar on a graph means a bigger number.", "answer": false},
+    {"question": "Labels help us know what the bars stand for.", "answer": true},
+    {"question": "Surveys are used to collect data from people.", "answer": true},
+    {"question": "All bars on a graph must be the same height.", "answer": false},
+    {"question": "We can compare groups by looking at the heights of the bars.", "answer": true},
+    {"question": "Tally marks are made in groups of 4.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "If you want to know your classmates' favorite colors, what should you do?", "choices": ["Guess", "Take a survey", "Roll a die", "Choose randomly"], "correct": 1},
+    {"question": "Which graph is best for showing how many pets each student has?", "choices": ["Bar graph", "Line graph", "Pie chart", "Map"], "correct": 0},
+    {"question": "A tally of ||||/ || means how many?", "choices": ["4", "5", "6", "7"], "correct": 2},
+    {"question": "The tallest bar shows the group with the ___ number.", "choices": ["smallest", "same", "largest", "unknown"], "correct": 2},
+    {"question": "What do we call each category name at the bottom of a bar graph?", "choices": ["Title", "Label", "Key", "Picture"], "correct": 1},
+    {"question": "A key (legend) tells us ___", "choices": ["how tall students are", "what symbols mean", "how to add numbers", "the graph's title"], "correct": 1},
+    {"question": "If one bar shows 8 and another shows 5, the difference is ___", "choices": ["2", "3", "4", "5"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "We use ________ to show information in a picture form.", "expectedAny": ["graphs", "charts", "bar graphs", "pictures"]},
+    {"question": "Counting marks like ||||/ are called ________.", "expectedAny": ["tally marks", "tallies"]},
+    {"question": "When a bar is taller, it means there are ________ items.", "expectedAny": ["more"]},
+    {"question": "A set of questions to collect data is a ________.", "expectedAny": ["survey"]},
+    {"question": "The words under each bar are called ________.", "expectedAny": ["labels"]},
+    {"question": "A picture that shows data is called a ________.", "expectedAny": ["graph", "chart"]},
+    {"question": "We can find how many more by finding the ________.", "expectedAny": ["difference"]}
+  ],
+  "shortanswer": [
+    {"question": "How do you make tally marks to count to 7?", "expectedAny": ["5 marks crossed plus 2", "||||  ||", "group of 5 plus 2", "seven marks"]},
+    {"question": "How would you collect data about favorite fruits in class?", "expectedAny": ["make a survey and ask each student"]},
+    {"question": "How can you tell which bar shows the most on a bar graph?", "expectedAny": ["it's the tallest bar"]},
+    {"question": "If two bars are the same height, what does that mean?", "expectedAny": ["same number in both groups"]},
+    {"question": "What should a good graph title tell you?", "expectedAny": ["what the data is about"]},
+    {"question": "How can you find how many more one category has than another?", "expectedAny": ["subtract the smaller from the larger", "find the difference"]},
+    {"question": "Why should bars in a bar graph be the same width?", "expectedAny": ["so we compare fairly"]}
+  ],
+  "wordProblems": [
+    {"question": "A bar graph shows 9 dogs and 6 cats as favorite pets. How many more picked dogs?", "expectedAny": ["3"]},
+    {"question": "Tally marks show ||||/ ||| for apples. How many apples?", "expectedAny": ["8"]},
+    {"question": "On a graph, 7 students like soccer and 4 like basketball. Total students?", "expectedAny": ["11"]},
+    {"question": "The recess graph shows 5 swings, 5 slides, and 2 hopscotch. Which is most?", "expectedAny": ["swings or slides"]},
+    {"question": "A snack chart shows 10 crackers, 3 grapes, and 6 carrots. How many more crackers than grapes?", "expectedAny": ["7"]},
+    {"question": "A survey shows 4 buses and 8 cars for travel to school. How many in all?", "expectedAny": ["12"]},
+    {"question": "The book graph shows 6 fiction and 6 nonfiction. How many more fiction than nonfiction?", "expectedAny": ["0", "none", "same"]}
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "id": "12th_Advanced_Critical_Theory_Literary_Analysis_Beginner",
+  "title": "Advanced Critical Theory and Literary Analysis",
+  "grade": "12th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "literary theory",
+      "definition": "Framework for understanding and interpreting literature"
+    },
+    {
+      "term": "feminism",
+      "definition": "Critical approach examining gender roles and women's experiences"
+    },
+    {
+      "term": "symbolism",
+      "definition": "Use of objects or actions to represent deeper meanings"
+    },
+    {
+      "term": "theme",
+      "definition": "Central message or main idea in literary work"
+    },
+    {
+      "term": "close reading",
+      "definition": "Careful analysis of text focusing on specific details"
+    }
+  ],
+  "teachingNotes": "Introduce various critical approaches to literature. Practice applying theoretical frameworks to texts.",
+  "sample": {
+    "question": "What provides framework for understanding literature?",
+    "expectedAny": [
+      "literary theory",
+      "critical theory",
+      "analytical framework",
+      "interpretive approach"
+    ]
+  },
+  "truefalse": {
+    "question": "Feminism examines gender roles and women's experiences in literature.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What describes careful analysis focusing on specific details?",
+    "expectedAny": [
+      "close reading",
+      "textual analysis",
+      "detailed examination",
+      "micro-analysis"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Objects representing deeper meanings demonstrate ________.",
+    "expectedAny": [
+      "symbolism",
+      "symbolic meaning",
+      "metaphor",
+      "representation"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does feminist criticism analyze literature?",
+    "expectedAny": [
+      "gender representation",
+      "women's voices",
+      "patriarchal structures",
+      "female experience"
+    ]
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "id": "5th_Scientific_Inquiry_Controlled_Experiments_Intermediate",
+  "title": "Scientific Inquiry and Controlled Experiments",
+  "grade": "5th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "controlled experiment",
+      "definition": "A test where only one variable is changed at a time"
+    },
+    {
+      "term": "independent variable",
+      "definition": "The factor that is changed in an experiment"
+    },
+    {
+      "term": "dependent variable",
+      "definition": "The factor that is measured in an experiment"
+    },
+    {
+      "term": "control group",
+      "definition": "The group in an experiment that doesn't receive the treatment"
+    },
+    {
+      "term": "data analysis",
+      "definition": "Examining and interpreting the results of an experiment"
+    }
+  ],
+  "teachingNotes": "Guide students through designing fair tests. Emphasize the importance of controlling variables and collecting reliable data. Practice identifying variables in different experimental scenarios.",
+  "sample": {
+    "question": "Why is it important to control variables in an experiment?",
+    "expectedAny": [
+      "to get accurate results",
+      "fair testing",
+      "isolate cause and effect",
+      "valid conclusions"
+    ]
+  },
+  "truefalse": {
+    "question": "In a controlled experiment, you should change as many variables as possible.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "In an experiment testing plant growth with different fertilizers, what is the independent variable?",
+    "expectedAny": [
+      "type of fertilizer",
+      "fertilizer",
+      "what you change",
+      "treatment variable"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The group that doesn't receive the experimental treatment is called the ________ group.",
+    "expectedAny": [
+      "control",
+      "control group",
+      "comparison",
+      "standard"
+    ]
+  },
+  "shortanswer": {
+    "question": "What should you do after collecting data from an experiment?",
+    "expectedAny": [
+      "analyze the results",
+      "look for patterns",
+      "draw conclusions",
+      "interpret data"
+    ]
+  }
+}

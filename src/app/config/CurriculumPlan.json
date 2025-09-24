@@ -1,0 +1,9 @@
+{
+  "days": [
+    { "track_name": "Math Basics", "subject": "Multiplication", "grade": 3, "difficulty": "Easy" },
+    { "track_name": "Reading Comprehension", "subject": "Reading", "grade": 3, "difficulty": "Easy" },
+    { "track_name": "Writing Prompts", "subject": "Writing", "grade": 3, "difficulty": "Easy" },
+    { "track_name": "Science Explorers", "subject": "Science", "grade": 3, "difficulty": "Easy" },
+    { "track_name": "Social Studies Adventures", "subject": "Social Studies", "grade": 3, "difficulty": "Easy" }
+  ]
+}

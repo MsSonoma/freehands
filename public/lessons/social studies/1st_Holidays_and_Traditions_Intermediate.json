@@ -1,0 +1,71 @@
+{
+  "id": "holidays-traditions-intermediate",
+  "title": "Holidays and Traditions",
+  "grade": "1st",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "holiday",
+      "definition": "A special day when people celebrate something important"
+    },
+    {
+      "term": "tradition",
+      "definition": "Something families or groups do the same way year after year"
+    },
+    {
+      "term": "celebrate",
+      "definition": "To do special things to show something is important"
+    },
+    {
+      "term": "custom",
+      "definition": "A way of doing things that has been passed down over time"
+    }
+  ],
+  "teachingNotes": "Discuss various cultural celebrations and family traditions. Focus on respect for diversity and what makes celebrations special. Use calendar activities.",
+  "sample": [
+    {"question": "What is a tradition?", "expectedAny": ["something families do the same way each year", "passed down"]},
+    {"question": "Name a holiday your family celebrates.", "expectedAny": ["varies"]},
+    {"question": "What is something special your family does on holidays?", "expectedAny": ["varies", "eat together", "visit family"]},
+    {"question": "What do people do to celebrate?", "expectedAny": ["have parties", "eat special foods", "decorations"]},
+    {"question": "Can different families have different traditions?", "expectedAny": ["yes"]},
+    {"question": "What month is your birthday in?", "expectedAny": ["varies"]},
+    {"question": "What makes a holiday special to you?", "expectedAny": ["varies"]}
+  ],
+  "truefalse": [
+    {"question": "Different families can have different traditions.", "answer": true, "expectedAny": ["true"]},
+    {"question": "All people celebrate the same holidays.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Traditions can be about food, music, or games.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Holidays are always on the same day for everyone.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Family traditions can change over time.", "answer": true, "expectedAny": ["true"]},
+    {"question": "We should respect other people's traditions.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Celebrations are never fun.", "answer": false, "expectedAny": ["false"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which is an example of a tradition?", "choices": ["eating breakfast", "family birthday celebrations", "going to school", "brushing teeth"], "correct": 1, "expectedAny": ["family birthday celebrations"]},
+    {"question": "When do many people celebrate New Year's Day?", "choices": ["January", "March", "July", "October"], "correct": 0, "expectedAny": ["January"]},
+    {"question": "Families often eat special ___ on holidays.", "choices": ["foods", "shoes", "toys", "rocks"], "correct": 0, "expectedAny": ["foods"]},
+    {"question": "A tradition is something you do ___", "choices": ["once", "the same way each year", "never", "only at school"], "correct": 1, "expectedAny": ["same way each year"]},
+    {"question": "Which is a winter holiday for some families?", "choices": ["Halloween", "Valentine's Day", "Hanukkah", "Earth Day"], "correct": 2, "expectedAny": ["Hanukkah"]},
+    {"question": "Which is a spring holiday?", "choices": ["Easter", "Thanksgiving", "Independence Day", "New Year's Day"], "correct": 0, "expectedAny": ["Easter"]},
+    {"question": "Which is a fall holiday?", "choices": ["Thanksgiving", "Valentine's Day", "New Year's Day", "Earth Day"], "correct": 0, "expectedAny": ["Thanksgiving"]}
+  ],
+  "fillintheblank": [
+    {"question": "During holidays, families often _____ together and follow their _____.", "expectedAny": ["celebrate", "traditions"]},
+    {"question": "We show _____ for other people's traditions.", "expectedAny": ["respect"]},
+    {"question": "Families may light _____ or sing _____.", "expectedAny": ["candles", "songs"]},
+    {"question": "A birthday is a special _____.", "expectedAny": ["celebration", "holiday"]},
+    {"question": "Some holidays happen in the month of _____.", "expectedAny": ["varies"]},
+    {"question": "A family _____ might be a meal you always eat.", "expectedAny": ["tradition"]},
+    {"question": "People wear special _____ for some holidays.", "expectedAny": ["clothes", "costumes"]}
+  ],
+  "shortanswer": [
+    {"question": "Why are traditions important to families?", "expectedAny": ["bring families together", "remember important things", "create memories"]},
+    {"question": "Describe a tradition your family has.", "expectedAny": ["varies"]},
+    {"question": "How can we respect other people's holidays?", "expectedAny": ["listen", "learn", "be kind"]},
+    {"question": "Draw a picture of a holiday you celebrate.", "expectedAny": ["drawing"]},
+    {"question": "What is your favorite part of celebrations?", "expectedAny": ["varies"]},
+    {"question": "How do traditions make you feel?", "expectedAny": ["happy", "connected", "special"]},
+    {"question": "What tradition would you start for your class?", "expectedAny": ["varies"]}
+  ]
+}

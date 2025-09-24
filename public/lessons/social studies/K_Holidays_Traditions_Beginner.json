@@ -1,0 +1,78 @@
+{
+  "id": "holidays-traditions-beginner",
+  "title": "Holidays and Traditions",
+  "grade": "K",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "holiday",
+      "definition": "A special day when people celebrate something important"
+    },
+    {
+      "term": "tradition",
+      "definition": "Something special that families do year after year"
+    },
+    {
+      "term": "celebrate",
+      "definition": "To do fun things on a special day"
+    },
+    {
+      "term": "special",
+      "definition": "Different from other days; important and meaningful"
+    }
+  ],
+  "teachingNotes": "Discuss various cultural holidays respectfully. Share family traditions. Create classroom celebrations for learning.",
+  "sample": [
+    {"question": "What do people do on their birthday?", "expectedAny": ["have a party", "eat cake", "get presents", "celebrate"]},
+    {"question": "What holiday comes in December?", "expectedAny": ["Christmas", "Hanukkah", "Kwanzaa"]},
+    {"question": "What do families do on Thanksgiving?", "expectedAny": ["eat together", "give thanks", "have dinner"]},
+    {"question": "How do people celebrate New Year?", "expectedAny": ["party", "fireworks", "count down", "make noise"]},
+    {"question": "What special foods do families eat on holidays?", "expectedAny": ["cake", "turkey", "special meals", "cookies"]}
+  ],
+  "truefalse": [
+    {"question": "Different families celebrate different holidays.", "answer": true, "expectedAny": ["families have different traditions and holidays"]},
+    {"question": "All holidays are on the same day every year.", "answer": false, "expectedAny": ["some holidays change dates"]},
+    {"question": "Traditions help families remember special things.", "answer": true, "expectedAny": ["traditions keep memories alive"]},
+    {"question": "Only adults can start new traditions.", "answer": false, "expectedAny": ["children can start traditions too"]},
+    {"question": "Holidays are always about having fun.", "answer": true, "expectedAny": ["holidays are for celebrating and fun"]},
+    {"question": "Every family celebrates holidays the same way.", "answer": false, "expectedAny": ["families celebrate differently"]},
+    {"question": "Special days help bring people together.", "answer": true, "expectedAny": ["holidays bring families together"]}
+  ],
+  "multiplechoice": [
+    {"question": "What makes a day a holiday?", "choices": ["it's sunny", "it's special", "it's Monday", "it's cold"], "correct": 1, "expectedAny": ["holidays are special days"]},
+    {"question": "What do many people do on Valentine's Day?", "choices": ["trick or treat", "give cards", "light candles", "eat turkey"], "correct": 1, "expectedAny": ["Valentine's Day is for giving cards and love"]},
+    {"question": "When do people usually give thanks?", "choices": ["Halloween", "Valentine's Day", "Thanksgiving", "New Year"], "correct": 2, "expectedAny": ["Thanksgiving is for giving thanks"]},
+    {"question": "What do children often do on Halloween?", "choices": ["plant flowers", "trick or treat", "light fireworks", "make snow angels"], "correct": 1, "expectedAny": ["Halloween is for trick or treating"]},
+    {"question": "What helps families remember their traditions?", "choices": ["forgetting", "sharing stories", "being alone", "staying quiet"], "correct": 1, "expectedAny": ["sharing stories keeps traditions alive"]},
+    {"question": "When do people often make resolutions?", "choices": ["Halloween", "Thanksgiving", "New Year", "Valentine's Day"], "correct": 2, "expectedAny": ["New Year is for making resolutions"]},
+    {"question": "What do traditions help us do?", "choices": ["forget things", "remember special times", "feel sad", "be alone"], "correct": 1, "expectedAny": ["traditions help remember special times"]}
+  ],
+  "fillintheblank": [
+    {"question": "On Halloween, many children wear _____.", "expectedAny": ["costumes", "masks", "dress up clothes"]},
+    {"question": "Families often eat _____ on Thanksgiving.", "expectedAny": ["turkey", "special food", "big dinner"]},
+    {"question": "A _____ is something special families do every year.", "expectedAny": ["tradition"]},
+    {"question": "People light _____ on birthday cakes.", "expectedAny": ["candles"]},
+    {"question": "Many people give _____ on holidays.", "expectedAny": ["gifts", "presents"]},
+    {"question": "On _____, people often wear green.", "expectedAny": ["St. Patrick's Day"]},
+    {"question": "_____ is a holiday when people give thanks.", "expectedAny": ["Thanksgiving"]}
+  ],
+  "shortanswer": [
+    {"question": "What is your favorite holiday? What makes it special?", "expectedAny": ["Christmas - presents", "birthday - cake", "Halloween - costumes", "any holiday with reason"]},
+    {"question": "How does your family celebrate birthdays?", "expectedAny": ["cake and presents", "party", "special dinner", "sing songs"]},
+    {"question": "What traditions does your family have?", "expectedAny": ["holiday meals", "special activities", "family gatherings", "cultural practices"]},
+    {"question": "How do holidays bring people together?", "expectedAny": ["family visits", "sharing meals", "celebrating together", "making memories"]},
+    {"question": "What new tradition would you like to start?", "expectedAny": ["family game night", "special outings", "holiday activities", "creative celebrations"]},
+    {"question": "Why are holidays important?", "expectedAny": ["bring joy", "make memories", "celebrate special things", "spend time together"]},
+    {"question": "How do different families celebrate the same holiday?", "expectedAny": ["different foods", "different activities", "different customs", "personal traditions"]}
+  ],
+  "wordProblems": [
+    {"question": "Maria's family celebrates 4 holidays in winter and 3 holidays in summer. How many holidays do they celebrate total?", "expectedAny": ["7 holidays", "4 + 3 = 7"]},
+    {"question": "For his birthday party, Jake invited 8 friends. If 2 friends couldn't come, how many friends came to the party?", "expectedAny": ["6 friends", "8 - 2 = 6"]},
+    {"question": "On Halloween, Emma got 12 pieces of candy from trick-or-treating. She ate 5 pieces. How many pieces does she have left?", "expectedAny": ["7 pieces", "12 - 5 = 7"]},
+    {"question": "The class is making 15 Valentine's cards. They finished 9 cards yesterday. How many more cards do they need to make?", "expectedAny": ["6 cards", "15 - 9 = 6"]},
+    {"question": "Thanksgiving dinner has 6 adults and 4 children. How many people are at dinner?", "expectedAny": ["10 people", "6 + 4 = 10"]},
+    {"question": "For the New Year party, there are 20 balloons. If 5 balloons pop, how many balloons are left?", "expectedAny": ["15 balloons", "20 - 5 = 15"]},
+    {"question": "Sarah made 8 holiday cookies on Monday and 7 more on Tuesday. How many cookies did she make total?", "expectedAny": ["15 cookies", "8 + 7 = 15"]}
+  ]
+}

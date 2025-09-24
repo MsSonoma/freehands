@@ -1,0 +1,75 @@
+{
+  "id": "4th_Cultural_Diversity_Immigration_Advanced",
+  "title": "Cultural Diversity and Immigration",
+  "grade": "4th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "immigration",
+      "definition": "Moving from one country to live permanently in another country"
+    },
+    {
+      "term": "diversity",
+      "definition": "Having many different types of people, cultures, or ideas"
+    },
+    {
+      "term": "culture",
+      "definition": "The beliefs, customs, and way of life of a group of people"
+    },
+    {
+      "term": "heritage",
+      "definition": "Traditions and culture passed down from previous generations"
+    },
+    {
+      "term": "melting pot",
+      "definition": "A place where many different cultures blend together"
+    }
+  ],
+  "teachingNotes": "Discuss how people from different countries have contributed to American culture. Explore various cultural traditions, foods, and celebrations. Emphasize respect for diversity and the strength it brings to communities.",
+  "sample": [
+    {"question": "Why is America often called a 'melting pot'?", "expectedAny": ["many cultures blend together", "people from many countries"]},
+    {"question": "What is immigration?", "expectedAny": ["moving to a new country to live"]},
+    {"question": "What is cultural diversity?", "expectedAny": ["many cultures in one place"]},
+    {"question": "Name one way immigrants contribute to communities.", "expectedAny": ["skills", "businesses", "ideas", "arts"]},
+    {"question": "What is heritage?", "expectedAny": ["traditions passed down"]},
+    {"question": "Name a US place linked to immigration history.", "expectedAny": ["Ellis Island", "Angel Island"]},
+    {"question": "Why is respecting different cultures important?", "expectedAny": ["builds understanding", "stronger communities"]}
+  ],
+  "truefalse": [
+    {"question": "Cultural diversity can strengthen communities.", "answer": true},
+    {"question": "All Americans have the same cultural background.", "answer": false},
+    {"question": "Immigrants bring new ideas and traditions.", "answer": true},
+    {"question": "Ellis Island was an immigration station.", "answer": true},
+    {"question": "Immigration has stopped in modern times.", "answer": false},
+    {"question": "Diversity means everyone is exactly the same.", "answer": false},
+    {"question": "The Statue of Liberty welcomed many immigrants.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "Ellis Island is near which city?", "choices": ["Los Angeles", "New York", "Miami", "Seattle"], "correct": 1},
+    {"question": "People immigrate for which reasons?", "choices": ["Jobs", "Freedom", "Safety", "All of these"], "correct": 3},
+    {"question": "Angel Island is on which coast?", "choices": ["East", "West", "North", "South"], "correct": 1},
+    {"question": "A person who moves to a new country is an:", "choices": ["Tourist", "Immigrant", "Visitor", "Explorer"], "correct": 1},
+    {"question": "Cultural diversity means:", "choices": ["Same culture", "Many cultures", "No culture", "One culture"], "correct": 1},
+    {"question": "Which food came from immigrant cultures?", "choices": ["Pizza", "Tacos", "Egg rolls", "All of these"], "correct": 3},
+    {"question": "The motto 'E Pluribus Unum' means:", "choices": ["In God We Trust", "Out of many, one", "Liberty for all", "United we stand"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "People who move to a new country are ____.", "expectedAny": ["immigrants"]},
+    {"question": "Ellis Island is near the ____ of Liberty.", "expectedAny": ["Statue"]},
+    {"question": "____ Island was the West Coast immigration station.", "expectedAny": ["Angel"]},
+    {"question": "America is called a ____ pot of cultures.", "expectedAny": ["melting"]},
+    {"question": "Immigrants sometimes faced ____.", "expectedAny": ["challenges", "discrimination"]},
+    {"question": "____ diversity means many different cultures.", "expectedAny": ["Cultural"]},
+    {"question": "Immigrants have brought new ____, foods, and ideas.", "expectedAny": ["traditions", "customs"]}
+  ],
+  "shortanswer": [
+    {"question": "Why is America called a melting pot?", "expectedAny": ["many cultures blend together"]},
+    {"question": "What do immigrants bring to America?", "expectedAny": ["culture", "skills", "languages"]},
+    {"question": "What challenges do immigrants face?", "expectedAny": ["language", "discrimination", "finding work"]},
+    {"question": "How has immigration shaped America?", "expectedAny": ["diverse culture", "economic growth"]},
+    {"question": "What can we learn from different cultures?", "expectedAny": ["new perspectives", "traditions"]},
+    {"question": "Why do people leave their home countries?", "expectedAny": ["safety", "opportunity"]},
+    {"question": "How can communities welcome new immigrants?", "expectedAny": ["be inclusive", "help with language"]}
+  ]
+
+}

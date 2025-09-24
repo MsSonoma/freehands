@@ -1,0 +1,73 @@
+{
+  "id": "10th_World_War_One_Causes_Consequences_Intermediate",
+  "title": "World War I: Causes, Conduct, and Consequences",
+  "grade": "10th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "imperialism",
+      "definition": "Policy of extending a country's power through colonization or military force"
+    },
+    {
+      "term": "alliance system",
+      "definition": "Network of agreements between countries for mutual defense"
+    },
+    {
+      "term": "trench warfare",
+      "definition": "Type of combat in which armies fight from trenches facing each other"
+    },
+    {
+      "term": "total war",
+      "definition": "Conflict involving complete mobilization of society's resources"
+    },
+    {
+      "term": "treaty of versailles",
+      "definition": "Peace treaty ending WWI that imposed harsh terms on Germany"
+    }
+  ],
+  "teachingNotes": "Examine multiple causes of the war and analyze the peace settlement's long-term effects on Europe.",
+  "sample": {
+    "question": "What is the policy of extending power through colonization or force?",
+    "expectedAny": [
+      "imperialism",
+      "imperial policy",
+      "empire building",
+      "colonial expansion"
+    ]
+  },
+  "truefalse": {
+    "question": "The alliance system created networks of mutual defense agreements.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What peace treaty ended World War I?",
+    "expectedAny": [
+      "Treaty of Versailles",
+      "Versailles Treaty",
+      "Paris Peace Treaty",
+      "WWI peace treaty"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Combat from trenches facing each other is called ________ warfare.",
+    "expectedAny": [
+      "trench",
+      "positional",
+      "static",
+      "defensive"
+    ]
+  },
+  "shortanswer": {
+    "question": "What were the main causes of World War I?",
+    "expectedAny": [
+      "imperialism, alliance system, nationalism, assassination",
+      "MAIN factors",
+      "political tensions and alliances"
+    ]
+  }
+}

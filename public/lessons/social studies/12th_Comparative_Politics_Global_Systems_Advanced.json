@@ -1,0 +1,74 @@
+{
+  "id": "12th_Comparative_Politics_Global_Systems_Advanced",
+  "title": "Comparative Politics and Global Systems",
+  "grade": "12th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "institutional design",
+      "definition": "Strategic creation of political structures and rules"
+    },
+    {
+      "term": "path dependence",
+      "definition": "How historical choices constrain future political options"
+    },
+    {
+      "term": "democratic consolidation",
+      "definition": "Process where democracy becomes the only acceptable political system"
+    },
+    {
+      "term": "veto players",
+      "definition": "Actors whose agreement is required for policy change"
+    },
+    {
+      "term": "competitive authoritarianism",
+      "definition": "System with elections but uneven playing field favoring incumbents"
+    }
+  ],
+  "teachingNotes": "Examine institutional effects on political outcomes. Analyze democratic quality and authoritarian resilience.",
+  "sample": {
+    "question": "What describes strategic creation of political structures?",
+    "expectedAny": [
+      "institutional design",
+      "constitutional engineering",
+      "political architecture",
+      "system design"
+    ]
+  },
+  "truefalse": {
+    "question": "Path dependence means historical choices don't affect future options.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What describes actors whose agreement is required for policy change?",
+    "expectedAny": [
+      "veto players",
+      "veto points",
+      "blocking actors",
+      "policy gatekeepers"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Elections with uneven playing field characterize ________ authoritarianism.",
+    "expectedAny": [
+      "competitive",
+      "electoral",
+      "hybrid",
+      "illiberal"
+    ]
+  },
+  "shortanswer": {
+    "question": "How do veto players affect policy stability and change?",
+    "expectedAny": [
+      "increase stability",
+      "reduce change",
+      "consensus requirements",
+      "gridlock potential"
+    ]
+  }
+}

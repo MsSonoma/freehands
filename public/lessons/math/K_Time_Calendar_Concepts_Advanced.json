@@ -1,0 +1,66 @@
+{
+  "id": "time-calendar-concepts-advanced",
+  "title": "Time and Calendar Concepts",
+  "grade": "K",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {"term": "day", "definition": "One time when the sun comes up and goes down"},
+    {"term": "week", "definition": "Seven days in a row"},
+    {"term": "month", "definition": "About 4 weeks or 30 days"},
+    {"term": "year", "definition": "12 months or about 365 days"}
+  ],
+  "teachingNotes": "Use classroom calendar daily. Discuss daily routines and sequence of events. Practice days of the week song.",
+  "sample": [
+    {"question": "What day comes after Monday?", "expectedAny": ["Tuesday", "tuesday"]},
+    {"question": "Name the days of the week in order.", "expectedAny": ["Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday"]},
+    {"question": "What do you do in the morning?", "expectedAny": ["wake up", "eat breakfast", "get ready"]},
+    {"question": "How many days are in a week?", "expectedAny": ["7", "seven"]},
+    {"question": "What month comes after January?", "expectedAny": ["February", "february"]}
+  ],
+  "truefalse": [
+    {"question": "There are 7 days in a week.", "answer": true, "expectedAny": ["a week has exactly 7 days"]},
+    {"question": "Saturday and Sunday are weekend days.", "answer": true, "expectedAny": ["weekend is Saturday and Sunday"]},
+    {"question": "January comes after December.", "answer": false, "expectedAny": ["December comes after January"]},
+    {"question": "There are 12 months in a year.", "answer": true, "expectedAny": ["a year has 12 months"]},
+    {"question": "Morning comes before afternoon.", "answer": true, "expectedAny": ["morning is first, then afternoon"]},
+    {"question": "Night time is when we usually sleep.", "answer": true, "expectedAny": ["we sleep at night"]},
+    {"question": "There are 8 days in a week.", "answer": false, "expectedAny": ["there are 7 days in a week"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which takes longer?", "choices": ["1 day", "1 week", "1 hour", "1 minute"], "correct": 1, "expectedAny": ["a week is 7 days, which is longer than 1 day"]},
+    {"question": "What comes after Friday?", "choices": ["Thursday", "Saturday", "Sunday", "Monday"], "correct": 1, "expectedAny": ["Saturday comes after Friday"]},
+    {"question": "How many months are in a year?", "choices": ["10", "11", "12", "13"], "correct": 2, "expectedAny": ["12 months in a year"]},
+    {"question": "Which month is first?", "choices": ["December", "January", "February", "March"], "correct": 1, "expectedAny": ["January is the first month"]},
+    {"question": "When do most people eat lunch?", "choices": ["morning", "afternoon", "evening", "night"], "correct": 1, "expectedAny": ["lunch is usually in afternoon"]},
+    {"question": "What season comes after winter?", "choices": ["summer", "fall", "spring", "winter"], "correct": 2, "expectedAny": ["spring comes after winter"]},
+    {"question": "Which is the shortest time?", "choices": ["hour", "day", "week", "minute"], "correct": 3, "expectedAny": ["minute is shortest time"]}
+  ],
+  "fillintheblank": [
+    {"question": "Monday, Tuesday, Wednesday, _____, Friday", "expectedAny": ["Thursday", "thursday"]},
+    {"question": "There are _____ days in a week.", "expectedAny": ["7", "seven"]},
+    {"question": "December, _____, February", "expectedAny": ["January", "january"]},
+    {"question": "Morning, afternoon, evening, _____", "expectedAny": ["night", "nighttime"]},
+    {"question": "Spring, summer, _____, winter", "expectedAny": ["fall", "autumn"]},
+    {"question": "There are _____ months in a year.", "expectedAny": ["12", "twelve"]},
+    {"question": "_____ and Sunday are the weekend.", "expectedAny": ["Saturday", "saturday"]}
+  ],
+  "shortanswer": [
+    {"question": "What do you do in the morning before you come to school?", "expectedAny": ["eat breakfast", "brush teeth", "get dressed", "wake up"]},
+    {"question": "Name three things you do at night.", "expectedAny": ["sleep", "brush teeth", "read stories", "go to bed"]},
+    {"question": "What activities do you do on weekends?", "expectedAny": ["play", "family time", "no school", "fun activities"]},
+    {"question": "Name the four seasons.", "expectedAny": ["spring, summer, fall, winter"]},
+    {"question": "What happens during your bedtime routine?", "expectedAny": ["brush teeth", "put on pajamas", "read story"]},
+    {"question": "How do you know it's morning?", "expectedAny": ["sun comes up", "wake up", "eat breakfast"]},
+    {"question": "What makes today different from yesterday?", "expectedAny": ["different day", "new day", "yesterday is past"]}
+  ],
+  "wordProblems": [
+    {"question": "If today is Wednesday and your birthday is in 2 days, what day is your birthday?", "expectedAny": ["Friday", "Wednesday + 2 days = Friday"]},
+    {"question": "School is 5 days a week. If you go to school Monday through Friday, how many days is that?", "expectedAny": ["5 days", "Monday to Friday is 5 days"]},
+    {"question": "There are 12 months in a year. If we've had 3 months, how many months are left?", "expectedAny": ["9 months", "12 - 3 = 9"]},
+    {"question": "If Saturday is day 6 of the week, what number day is Monday?", "expectedAny": ["1", "Monday is day 1"]},
+    {"question": "Emma goes to dance class every Tuesday. How many times does she go in 3 weeks?", "expectedAny": ["3 times", "once per week for 3 weeks"]},
+    {"question": "There are 7 days in a week. How many days are in 2 weeks?", "expectedAny": ["14 days", "7 + 7 = 14"]},
+    {"question": "If today is the 15th day of the month and there are 30 days in the month, how many days are left?", "expectedAny": ["15 days", "30 - 15 = 15"]}
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "id": "10th_Sophisticated_Academic_Writing_Argumentation_Advanced",
+  "title": "Sophisticated Academic Writing: Argumentation",
+  "grade": "10th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "dialectical reasoning",
+      "definition": "Examining opposing ideas to reach a deeper understanding"
+    },
+    {
+      "term": "synthesis",
+      "definition": "Combining different ideas or arguments to create a new understanding"
+    },
+    {
+      "term": "epistemological stance",
+      "definition": "One's position on how knowledge is acquired and validated"
+    },
+    {
+      "term": "rhetorical situation",
+      "definition": "The context, audience, and purpose that shape communication"
+    },
+    {
+      "term": "warrant",
+      "definition": "The underlying assumption that connects evidence to a claim"
+    }
+  ],
+  "teachingNotes": "Explore sophisticated argumentative structures and philosophical foundations of reasoning. Analyze complex rhetorical situations.",
+  "sample": {
+    "question": "What is examining opposing ideas to reach deeper understanding called?",
+    "expectedAny": [
+      "dialectical reasoning",
+      "dialectical thinking",
+      "thesis-antithesis synthesis",
+      "oppositional analysis"
+    ]
+  },
+  "truefalse": {
+    "question": "A warrant is the underlying assumption connecting evidence to a claim.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What combines different ideas to create new understanding?",
+    "expectedAny": [
+      "synthesis",
+      "integration",
+      "fusion",
+      "combination"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The context, audience, and purpose that shape communication form the rhetorical ________.",
+    "expectedAny": [
+      "situation",
+      "context",
+      "framework",
+      "environment"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does understanding epistemology improve argumentation?",
+    "expectedAny": [
+      "clarifies assumptions",
+      "examines knowledge sources",
+      "strengthens reasoning",
+      "improves validity"
+    ]
+  }
+}

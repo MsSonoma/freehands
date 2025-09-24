@@ -1,0 +1,74 @@
+{
+  "id": "6th_Poetry_Figurative_Language_Beginner",
+  "title": "Poetry and Advanced Figurative Language",
+  "grade": "6th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "figurative language",
+      "definition": "Language that uses words in creative ways to create vivid images and meanings"
+    },
+    {
+      "term": "personification",
+      "definition": "Giving human qualities to non-human things"
+    },
+    {
+      "term": "hyperbole",
+      "definition": "An extreme exaggeration used for emphasis or effect"
+    },
+    {
+      "term": "onomatopoeia",
+      "definition": "Words that imitate the sounds they represent"
+    },
+    {
+      "term": "rhythm",
+      "definition": "The pattern of stressed and unstressed syllables in poetry"
+    }
+  ],
+  "teachingNotes": "Read poems aloud to emphasize rhythm and sound. Practice identifying different types of figurative language. Encourage students to write their own poems using these devices.",
+  "sample": {
+    "question": "What do we call giving human qualities to non-human things?",
+    "expectedAny": [
+      "personification",
+      "human characteristics",
+      "humanizing",
+      "giving human traits"
+    ]
+  },
+  "truefalse": {
+    "question": "'The thunder roared angrily' is an example of personification.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What type of figurative language is 'I'm so hungry I could eat a horse'?",
+    "expectedAny": [
+      "hyperbole",
+      "exaggeration",
+      "overstatement",
+      "extreme exaggeration"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Words that imitate sounds they represent are called ________.",
+    "expectedAny": [
+      "onomatopoeia",
+      "sound words",
+      "imitative words",
+      "sound effects"
+    ]
+  },
+  "shortanswer": {
+    "question": "Give an example of onomatopoeia.",
+    "expectedAny": [
+      "buzz, crash, bang",
+      "meow, woof, hiss",
+      "pop, sizzle, splash",
+      "any sound-imitating word"
+    ]
+  }
+}

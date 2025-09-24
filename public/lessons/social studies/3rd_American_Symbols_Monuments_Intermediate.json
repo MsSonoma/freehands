@@ -1,0 +1,89 @@
+{
+  "id": "3rd_American_Symbols_Monuments_Intermediate",
+  "title": "American Symbols and Monuments",
+  "grade": "3rd",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    { "term": "symbol", "definition": "Something that stands for or represents something else" },
+    { "term": "monument", "definition": "A building or statue built to remember important people or events" },
+    { "term": "patriotism", "definition": "Love and support for your country" },
+    { "term": "liberty", "definition": "Freedom to make your own choices" },
+    { "term": "democracy", "definition": "A government where people have a say in decisions" },
+    { "term": "heritage", "definition": "Traditions and culture passed down from the past" }
+  ],
+  "teachingNotes": "Show pictures of national symbols. Discuss what they represent. Connect to Pledge of Allegiance and national anthem.",
+  "sample": [
+    { "question": "What does the American flag represent?", "expectedAny": ["freedom", "United States", "50 states and 13 colonies"] },
+    { "question": "Where is the Statue of Liberty located?", "expectedAny": ["New York", "Liberty Island", "New York Harbor"] },
+    { "question": "What do the stars on the flag represent?", "expectedAny": ["50 states", "the states", "each state"] },
+    { "question": "What is our national bird?", "expectedAny": ["bald eagle", "eagle"] },
+    { "question": "What does the Liberty Bell symbolize?", "expectedAny": ["freedom", "independence", "liberty"] },
+    { "question": "How many stripes are on the American flag?", "expectedAny": ["13", "thirteen"] },
+    { "question": "What monument honors Abraham Lincoln?", "expectedAny": ["Lincoln Memorial", "Lincoln Monument"] }
+  ],
+  "truefalse": [
+    { "question": "The bald eagle is America's national bird.", "answer": true },
+    { "question": "The Statue of Liberty was a gift from France.", "answer": true },
+    { "question": "There are 50 stripes on the American flag.", "answer": false },
+    { "question": "The White House is where the President lives.", "answer": true },
+    { "question": "Mount Rushmore shows faces of four presidents.", "answer": true },
+    { "question": "The Liberty Bell has a crack in it.", "answer": true },
+    { "question": "The flag's red stripes represent the ocean.", "answer": false }
+  ],
+  "multiplechoice": [
+    {
+      "question": "What do the flag's 13 stripes represent?",
+      "choices": ["13 presidents", "13 original colonies", "13 states today", "13 years of war"],
+      "correct": 1
+    },
+    {
+      "question": "The Statue of Liberty holds a torch and a ___.",
+      "choices": ["sword", "flag", "book", "bell"],
+      "correct": 2
+    },
+    {
+      "question": "Which monument is in Washington, D.C.?",
+      "choices": ["Golden Gate Bridge", "Washington Monument", "Mount Rushmore", "Space Needle"],
+      "correct": 1
+    },
+    {
+      "question": "The Great Seal of the United States appears on ___.",
+      "choices": ["the flag", "money", "the White House", "school books"],
+      "correct": 1
+    },
+    {
+      "question": "What color are the stars on the American flag?",
+      "choices": ["red", "blue", "white", "gold"],
+      "correct": 2
+    },
+    {
+      "question": "The National Anthem is called ___.",
+      "choices": ["America the Beautiful", "The Star-Spangled Banner", "God Bless America", "This Land Is Your Land"],
+      "correct": 1
+    },
+    {
+      "question": "Uncle Sam is a symbol of ___.",
+      "choices": ["the military", "farmers", "the United States", "Native Americans"],
+      "correct": 2
+    }
+  ],
+  "fillintheblank": [
+    { "question": "The American flag is also called 'Old ___'.", "expectedAny": ["Glory"] },
+    { "question": "The ___ of Liberty stands in New York Harbor.", "expectedAny": ["Statue"] },
+    { "question": "Our national anthem was written by Francis Scott ___.", "expectedAny": ["Key"] },
+    { "question": "The ___ House is the President's home.", "expectedAny": ["White"] },
+    { "question": "Mount ___ has four presidents' faces carved in rock.", "expectedAny": ["Rushmore"] },
+    { "question": "The Liberty ___ is in Philadelphia.", "expectedAny": ["Bell"] },
+    { "question": "The flag has 50 ___ for the 50 states.", "expectedAny": ["stars"] }
+  ],
+  "shortanswer": [
+    { "question": "Why is the bald eagle a good symbol for America?", "expectedAny": ["strong", "free", "soars high", "powerful", "independent"] },
+    { "question": "What does 'E Pluribus Unum' mean?", "expectedAny": ["Out of many, one", "one from many", "united"] },
+    { "question": "Name two places where you see American symbols.", "expectedAny": ["money", "schools", "government buildings", "stamps"] },
+    { "question": "Why do we have monuments?", "expectedAny": ["remember", "honor", "celebrate history", "teach"] },
+    { "question": "What happens to the flag at night?", "expectedAny": ["taken down", "lit up", "illuminated if not lowered"] },
+    { "question": "What do the colors of the flag represent?", "expectedAny": ["red-courage", "white-purity", "blue-justice"] },
+    { "question": "Why is the Pledge of Allegiance important?", "expectedAny": ["shows loyalty", "unity", "patriotism", "respect"] }
+  ]
+}

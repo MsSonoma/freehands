@@ -1,0 +1,74 @@
+{
+  "id": "9th_Reformation_Religious_Wars_Political_Change_Advanced",
+  "title": "Reformation: Religious Wars and Political Change",
+  "grade": "9th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "reformation",
+      "definition": "16th century religious movement that split Western Christianity"
+    },
+    {
+      "term": "protestant",
+      "definition": "Christian who broke away from Catholic Church authority"
+    },
+    {
+      "term": "counter-reformation",
+      "definition": "Catholic Church's response to Protestant challenges"
+    },
+    {
+      "term": "indulgence",
+      "definition": "Payment to reduce punishment for sin, criticized by reformers"
+    },
+    {
+      "term": "religious tolerance",
+      "definition": "Acceptance of different religious beliefs and practices"
+    }
+  ],
+  "teachingNotes": "Analyze causes and consequences of religious reform. Discuss how religious conflict shaped European politics and society.",
+  "sample": {
+    "question": "What 16th century movement split Western Christianity?",
+    "expectedAny": [
+      "reformation",
+      "Protestant Reformation",
+      "religious reformation",
+      "church reform"
+    ]
+  },
+  "truefalse": {
+    "question": "Protestants broke away from Catholic Church authority.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What was the Catholic Church's response to Protestant challenges?",
+    "expectedAny": [
+      "Counter-Reformation",
+      "Catholic reform",
+      "church response",
+      "Catholic counter-attack"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Payment to reduce punishment for sin was called an ________.",
+    "expectedAny": [
+      "indulgence",
+      "payment",
+      "church payment",
+      "sin payment"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did the Reformation lead to religious wars?",
+    "expectedAny": [
+      "created competing religious claims",
+      "divided Europe religiously",
+      "challenged political authority",
+      "sparked conflicts over faith"
+    ]
+  }
+}

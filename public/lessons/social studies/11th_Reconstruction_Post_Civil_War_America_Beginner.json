@@ -1,0 +1,74 @@
+{
+  "id": "11th_Reconstruction_Post_Civil_War_America_Beginner",
+  "title": "Reconstruction and Post-Civil War America",
+  "grade": "11th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "Reconstruction",
+      "definition": "Period after Civil War when Southern states were rebuilt and readmitted"
+    },
+    {
+      "term": "Freedmen's Bureau",
+      "definition": "Government agency that helped former slaves after Civil War"
+    },
+    {
+      "term": "Jim Crow laws",
+      "definition": "State laws that enforced racial segregation in the South"
+    },
+    {
+      "term": "sharecropping",
+      "definition": "System where farmers worked land in exchange for share of crops"
+    },
+    {
+      "term": "carpetbagger",
+      "definition": "Northerner who moved to South during Reconstruction"
+    }
+  ],
+  "teachingNotes": "Focus on economic and social changes after Civil War. Discuss both progress and setbacks for African Americans.",
+  "sample": {
+    "question": "What was the period of rebuilding after the Civil War called?",
+    "expectedAny": [
+      "Reconstruction",
+      "Reconstruction Era",
+      "Post-Civil War Reconstruction",
+      "rebuilding period"
+    ]
+  },
+  "truefalse": {
+    "question": "The Freedmen's Bureau helped former slaves after the Civil War.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What laws enforced racial segregation in the South?",
+    "expectedAny": [
+      "Jim Crow laws",
+      "segregation laws",
+      "racial laws",
+      "discrimination statutes"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The farming system where workers received a share of crops was ________.",
+    "expectedAny": [
+      "sharecropping",
+      "crop sharing",
+      "tenant farming",
+      "share tenancy"
+    ]
+  },
+  "shortanswer": {
+    "question": "What were the main goals of Reconstruction?",
+    "expectedAny": [
+      "rebuild South",
+      "integrate freed slaves",
+      "reunify nation",
+      "restore economy"
+    ]
+  }
+}

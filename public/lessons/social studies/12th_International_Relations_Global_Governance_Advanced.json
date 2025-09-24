@@ -1,0 +1,74 @@
+{
+  "id": "12th_International_Relations_Global_Governance_Advanced",
+  "title": "International Relations and Global Governance",
+  "grade": "12th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "neorealism",
+      "definition": "Theory emphasizing anarchic international system and power competition"
+    },
+    {
+      "term": "liberal institutionalism",
+      "definition": "Theory highlighting cooperation through international institutions"
+    },
+    {
+      "term": "complex interdependence",
+      "definition": "Multiple channels of connection creating mutual vulnerability"
+    },
+    {
+      "term": "hegemonic stability",
+      "definition": "Theory that dominant power provides stability to international system"
+    },
+    {
+      "term": "responsibility to protect",
+      "definition": "Principle that sovereignty includes duty to protect populations"
+    }
+  ],
+  "teachingNotes": "Explore competing theories of international relations. Analyze contemporary challenges to global governance.",
+  "sample": {
+    "question": "What theory emphasizes anarchic system and power competition?",
+    "expectedAny": [
+      "neorealism",
+      "structural realism",
+      "defensive realism",
+      "power politics"
+    ]
+  },
+  "truefalse": {
+    "question": "Liberal institutionalism highlights cooperation through international institutions.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What describes multiple channels creating mutual vulnerability?",
+    "expectedAny": [
+      "complex interdependence",
+      "interconnectedness",
+      "mutual dependence",
+      "global integration"
+    ]
+  },
+  "fillintheblank": {
+    "question": "________ stability theory says dominant power provides international stability.",
+    "expectedAny": [
+      "hegemonic",
+      "hegemon",
+      "leadership",
+      "dominant"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does responsibility to protect challenge traditional sovereignty?",
+    "expectedAny": [
+      "conditional sovereignty",
+      "human protection duty",
+      "intervention justification",
+      "humanitarian obligation"
+    ]
+  }
+}

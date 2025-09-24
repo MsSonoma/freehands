@@ -1,0 +1,61 @@
+{
+  "id": "3rd_Magnetism_Magnetic_Materials_Advanced",
+  "title": "Magnetism and Magnetic Materials",
+  "grade": "3rd",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    { "term": "magnetism", "definition": "An invisible force that can pull certain metals toward a magnet" },
+    { "term": "magnetic", "definition": "Materials that are attracted to magnets, like iron and steel" },
+    { "term": "poles", "definition": "The two ends of a magnet where the force is strongest" },
+    { "term": "attract", "definition": "When magnets pull things toward them" },
+    { "term": "repel", "definition": "When magnets push away from each other" },
+    { "term": "magnetic field", "definition": "The area around a magnet where magnetic force can be felt" }
+  ],
+  "teachingNotes": "Use various magnets and materials for hands-on testing. Demonstrate magnetic fields with iron filings. Connect to everyday uses of magnets.",
+  "sample": [
+    { "question": "What happens when you bring two north poles of magnets together?", "expectedAny": ["they push apart", "repel"] },
+    { "question": "Name a metal that is magnetic.", "expectedAny": ["iron", "steel", "nickel", "cobalt"] },
+    { "question": "Where is a magnet's force strongest?", "expectedAny": ["at the poles", "at the ends"] },
+    { "question": "What do opposite poles do?", "expectedAny": ["attract"] },
+    { "question": "Give an example of a household use of magnets.", "expectedAny": ["fridge magnet", "cabinet latch"] },
+    { "question": "How can you show a magnetic field?", "expectedAny": ["iron filings line up", "use a compass"] },
+    { "question": "Are aluminum cans magnetic?", "expectedAny": ["no"] }
+  ],
+  "truefalse": [
+    { "question": "All metals are attracted to magnets.", "answer": false },
+    { "question": "Like poles repel each other.", "answer": true },
+    { "question": "Paper clips are often magnetic because they contain steel.", "answer": true },
+    { "question": "A magnet can attract through thin paper.", "answer": true },
+    { "question": "A magnet can make wood magnetic forever.", "answer": false },
+    { "question": "Opposite poles attract.", "answer": true },
+    { "question": "Magnets only work when touching an object.", "answer": false }
+  ],
+  "multiplechoice": [
+    { "question": "Which material would be attracted to a magnet?", "choices": ["Plastic spoon", "Paper clip", "Wooden block", "Glass marble"], "correct": 1 },
+    { "question": "Which pair will repel?", "choices": ["North–South", "South–North", "North–North", "South–North"], "correct": 2 },
+    { "question": "Which tool can show a magnetic field?", "choices": ["Ruler", "Compass", "Thermometer", "Measuring cup"], "correct": 1 },
+    { "question": "Which is NOT magnetic?", "choices": ["Iron nail", "Steel screw", "Copper wire", "Cobalt piece"], "correct": 2 },
+    { "question": "Where is a magnet strongest?", "choices": ["In the middle", "At the poles", "Far away", "Under it"], "correct": 1 },
+    { "question": "Which everyday item uses a magnet?", "choices": ["Sponge", "Refrigerator door latch", "Pencil", "Paper"] , "correct": 1 },
+    { "question": "What happens if you cut a bar magnet in half?", "choices": ["Lose magnetism", "Become two smaller magnets", "Only one end works", "Explodes"], "correct": 1 }
+  ],
+  "fillintheblank": [
+    { "question": "Opposite poles of magnets _____ each other, while same poles _____ each other.", "expectedAny": ["attract", "repel"] },
+    { "question": "The area around a magnet with force is called a magnetic _____.", "expectedAny": ["field"] },
+    { "question": "A magnet's force is strongest at the _____.", "expectedAny": ["poles", "ends"] },
+    { "question": "A paper clip is often made of _____, so it is magnetic.", "expectedAny": ["steel"] },
+    { "question": "When a magnet pulls an object, it is called _____.", "expectedAny": ["attraction", "attracting"] },
+    { "question": "When a magnet pushes an object away, it is called _____.", "expectedAny": ["repulsion", "repelling"] },
+    { "question": "A _____ can show the direction of a magnetic field.", "expectedAny": ["compass"] }
+  ],
+  "shortanswer": [
+    { "question": "How can you test if an object is magnetic?", "expectedAny": ["bring a magnet near and see if it attracts"] },
+    { "question": "Why are some metals magnetic and others are not?", "expectedAny": ["depends on material", "iron, steel, nickel, cobalt are magnetic"] },
+    { "question": "Describe what iron filings look like around a magnet.", "expectedAny": ["line up", "show field lines", "bunch near poles"] },
+    { "question": "Explain why two north poles repel each other.", "expectedAny": ["like poles repel"] },
+    { "question": "Name two uses of magnets at home or school.", "expectedAny": ["fridge magnet", "whiteboard magnet", "latch"] },
+    { "question": "Will a magnet attract a coin? Why or why not?", "expectedAny": ["depends on metal", "many coins are not magnetic"] },
+    { "question": "How can a compass help find direction using magnetism?", "expectedAny": ["aligns with Earth's magnetic field"] }
+  ]
+}

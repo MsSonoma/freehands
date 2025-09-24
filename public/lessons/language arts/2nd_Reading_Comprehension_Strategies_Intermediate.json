@@ -1,0 +1,59 @@
+{
+  "id": "reading-comprehension-strategies-intermediate",
+  "title": "Reading Comprehension Strategies",
+  "grade": "2nd",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    { "term": "main idea", "definition": "The most important point or message in a story or text" },
+    { "term": "details", "definition": "Small pieces of information that tell more about the main idea" },
+    { "term": "predict", "definition": "To guess what might happen next in a story" },
+    { "term": "character", "definition": "A person or animal in a story" }
+  ],
+  "teachingNotes": "Use picture books and short texts. Model thinking aloud while reading. Practice asking questions before, during, and after reading.",
+  "sample": [
+    { "question": "What should you do before you start reading a new book?", "expectedAny": ["look at the cover and pictures", "predict what it might be about", "think about what you already know"] },
+    { "question": "What is the main idea?", "expectedAny": ["what the story is mostly about", "big idea"] },
+    { "question": "What are details?", "expectedAny": ["small pieces of information", "facts that tell more"] },
+    { "question": "What does it mean to predict?", "expectedAny": ["guess what happens next"] },
+    { "question": "Name one question word you can ask.", "expectedAny": ["who", "what", "where", "when", "why", "how"] },
+    { "question": "How can pictures help you understand?", "expectedAny": ["give clues", "show what is happening"] },
+    { "question": "What should you do if you forget what you read?", "expectedAny": ["reread", "go back and read again"] }
+  ],
+  "truefalse": [
+    { "question": "Good readers ask questions while they read.", "answer": true, "expectedAny": ["questioning helps understanding"] },
+    { "question": "The main idea is a small detail.", "answer": false, "expectedAny": ["main idea is the big idea"] },
+    { "question": "Predictions are guesses about what might happen next.", "answer": true, "expectedAny": ["true"] },
+    { "question": "Pictures can give clues about the story.", "answer": true, "expectedAny": ["pictures help"] },
+    { "question": "Details are the same as the main idea.", "answer": false, "expectedAny": ["different"] },
+    { "question": "Asking 'why' can help you understand reasons in a story.", "answer": true, "expectedAny": ["question words help"] },
+    { "question": "You should never reread a page.", "answer": false, "expectedAny": ["rereading can help"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which is the best way to find the main idea of a story?", "choices": ["Count the pages", "Look at the pictures only", "Think about what the story is mostly about", "Read only the first sentence"], "correct": 2, "expectedAny": ["main idea is what the whole story is about"] },
+    { "question": "Which is a detail?", "choices": ["The story is about a brave girl.", "She climbs the tall tree to save the cat.", "It's about bravery.", "It's mostly about courage."], "correct": 1, "expectedAny": ["small piece of information"] },
+    { "question": "Which word is a character?", "choices": ["park", "dog", "morning", "brave"], "correct": 1, "expectedAny": ["dog is a character"] },
+    { "question": "Which strategy can help you understand?", "choices": ["ask questions", "skip pages", "read only titles", "close the book"], "correct": 0, "expectedAny": ["ask questions"] },
+    { "question": "Which clue can help figure out a new word?", "choices": ["the sentence around it", "ignore it", "guess randomly", "stop reading"], "correct": 0, "expectedAny": ["context clues"] },
+    { "question": "Which question word asks about a place?", "choices": ["who", "where", "when", "why"], "correct": 1, "expectedAny": ["where"] },
+    { "question": "Which should you do if you are confused?", "choices": ["read faster", "reread", "turn to the end", "skip everything"], "correct": 1, "expectedAny": ["reread helps"] }
+  ],
+  "fillintheblank": [
+    { "question": "When I read about a dog who saves a child, the _____ is the dog and the main idea is about _____.", "expectedAny": ["character", "saving someone"] },
+    { "question": "Small pieces of information are called ________.", "expectedAny": ["details"] },
+    { "question": "The ________ idea is what the text is mostly about.", "expectedAny": ["main"] },
+    { "question": "When I make a ________, I guess what might happen next.", "expectedAny": ["prediction"] },
+    { "question": "I can look at the ________ to help me understand.", "expectedAny": ["pictures"] },
+    { "question": "I ask ________ like who, what, where, when, why, and how.", "expectedAny": ["questions"] },
+    { "question": "I can ________ a page if I forget what I read.", "expectedAny": ["reread"] }
+  ],
+  "shortanswer": [
+    { "question": "How can making predictions help you understand what you read?", "expectedAny": ["keeps you thinking about the story", "helps you pay attention"] },
+    { "question": "What is one way to find the main idea?", "expectedAny": ["think about what the story is mostly about", "big idea"] },
+    { "question": "Why is it helpful to ask questions while reading?", "expectedAny": ["helps you understand", "keeps you focused"] },
+    { "question": "How do pictures help you understand a story?", "expectedAny": ["give clues", "show what is happening"] },
+    { "question": "Give an example of a detail from a story about a birthday.", "expectedAny": ["who came", "what cake", "where it was"] },
+    { "question": "What should you do if a page is confusing?", "expectedAny": ["reread", "ask for help", "slow down"] },
+    { "question": "How would you summarize a short story about a team that wins a game?", "expectedAny": ["tell main parts only", "who, what, where, when, how it ended"] }
+  ]
+}

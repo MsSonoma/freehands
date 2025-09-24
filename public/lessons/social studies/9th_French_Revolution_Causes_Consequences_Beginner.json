@@ -1,0 +1,74 @@
+{
+  "id": "9th_French_Revolution_Causes_Consequences_Beginner",
+  "title": "French Revolution: Causes and Consequences",
+  "grade": "9th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "french revolution",
+      "definition": "Political upheaval in France (1789-1799) that overthrew monarchy"
+    },
+    {
+      "term": "estates system",
+      "definition": "French social hierarchy dividing society into three classes"
+    },
+    {
+      "term": "declaration of rights",
+      "definition": "Document asserting fundamental human rights and freedoms"
+    },
+    {
+      "term": "reign of terror",
+      "definition": "Period of violence during French Revolution with mass executions"
+    },
+    {
+      "term": "nationalism",
+      "definition": "Strong identification with and devotion to one's nation"
+    }
+  ],
+  "teachingNotes": "Analyze economic and social causes of revolution. Discuss how revolutionary ideas spread across Europe and influenced other movements.",
+  "sample": {
+    "question": "What political upheaval overthrew the French monarchy?",
+    "expectedAny": [
+      "French Revolution",
+      "revolution in France",
+      "French political revolution",
+      "overthrow of monarchy"
+    ]
+  },
+  "truefalse": {
+    "question": "The Estates System divided French society into three classes.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What was the period of mass executions called?",
+    "expectedAny": [
+      "Reign of Terror",
+      "Terror",
+      "revolutionary terror",
+      "period of violence"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Strong devotion to one's nation is called ________.",
+    "expectedAny": [
+      "nationalism",
+      "patriotism",
+      "national pride",
+      "national identity"
+    ]
+  },
+  "shortanswer": {
+    "question": "What were the main causes of the French Revolution?",
+    "expectedAny": [
+      "financial crisis",
+      "social inequality",
+      "political grievances",
+      "Enlightenment ideas"
+    ]
+  }
+}

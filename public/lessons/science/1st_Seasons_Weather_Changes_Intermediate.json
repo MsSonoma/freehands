@@ -1,0 +1,75 @@
+{
+  "id": "seasons-weather-changes-intermediate",
+  "title": "Seasons and Weather Changes",
+  "grade": "1st",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "seasons",
+      "definition": "The four different times of year: spring, summer, fall, and winter"
+    },
+    {
+      "term": "temperature",
+      "definition": "How hot or cold something is"
+    },
+    {
+      "term": "clothing",
+      "definition": "What we wear to stay comfortable in different weather"
+    },
+    {
+      "term": "activity",
+      "definition": "Something fun to do"
+    }
+  ],
+  "teachingNotes": "Use weather charts and seasonal pictures. Discuss appropriate clothing for each season. Connect to local weather patterns.",
+  "sample": {
+    "question": "What season comes after winter?",
+    "expectedAny": [
+      "spring",
+      "springtime"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "You wear a heavy coat in summer.",
+      "answer": false,
+      "expectedAny": [
+        "summer is hot, so you wear light clothes"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which activity is best for a snowy winter day?",
+      "choices": [
+        "swimming",
+        "building a snowman",
+        "planting flowers",
+        "having a picnic"
+      ],
+      "correct": 1,
+      "expectedAny": [
+        "snow is perfect for building snowmen"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "In _____, leaves change colors and fall from trees.",
+      "expectedAny": [
+        "fall",
+        "autumn"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {"question": "How do you dress differently in winter compared to summer?", "expectedAny": ["coats/hats vs shorts/t-shirts"]},
+    {"question": "What happens to trees in fall?", "expectedAny": ["leaves change color and fall"]},
+    {"question": "Why do we have seasons?", "expectedAny": ["Earth tilts and orbits the sun"]},
+    {"question": "What are signs that spring is coming?", "expectedAny": ["warmer weather", "flowers bloom"]},
+    {"question": "How does weather affect what we do?", "expectedAny": ["clothes and activities change"]},
+    {"question": "Draw a picture for each season.", "expectedAny": ["four drawings labeled"]},
+    {"question": "What should you wear on a rainy day and why?", "expectedAny": ["raincoat/boots to stay dry"]}
+  ]
+}

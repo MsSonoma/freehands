@@ -1,0 +1,73 @@
+{
+  "id": "9th_Chemical_Bonding_Molecular_Structure_Intermediate",
+  "title": "Chemical Bonding and Molecular Structure",
+  "grade": "9th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "ionic bond",
+      "definition": "Chemical bond formed by transfer of electrons between atoms"
+    },
+    {
+      "term": "covalent bond",
+      "definition": "Chemical bond formed by sharing electrons between atoms"
+    },
+    {
+      "term": "electronegativity",
+      "definition": "Measure of an atom's ability to attract electrons"
+    },
+    {
+      "term": "polar molecule",
+      "definition": "Molecule with unequal distribution of electric charge"
+    },
+    {
+      "term": "valence electrons",
+      "definition": "Electrons in the outermost shell of an atom"
+    }
+  ],
+  "teachingNotes": "Use Lewis structures and molecular models to visualize bonding. Emphasize how bonding affects molecular properties.",
+  "sample": {
+    "question": "What is a chemical bond formed by sharing electrons called?",
+    "expectedAny": [
+      "covalent bond",
+      "covalent bonding",
+      "electron sharing bond",
+      "molecular bond"
+    ]
+  },
+  "truefalse": {
+    "question": "Ionic bonds form when electrons are transferred between atoms.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What determines an atom's ability to attract electrons?",
+    "expectedAny": [
+      "electronegativity",
+      "electron affinity",
+      "nuclear charge",
+      "atomic attraction"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Electrons in the outermost shell are called ________ electrons.",
+    "expectedAny": [
+      "valence",
+      "outer shell",
+      "bonding",
+      "peripheral"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does electronegativity difference determine bond type?",
+    "expectedAny": [
+      "large difference creates ionic bonds",
+      "small difference creates covalent bonds",
+      "determines electron sharing"
+    ]
+  }
+}

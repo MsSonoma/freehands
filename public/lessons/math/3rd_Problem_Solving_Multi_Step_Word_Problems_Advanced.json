@@ -1,0 +1,67 @@
+{
+	"id": "3rd_Problem_Solving_Multi_Step_Word_Problems_Advanced",
+	"title": "Problem Solving: Multi‑Step Word Problems",
+	"grade": "3rd",
+	"difficulty": "Advanced",
+	"featured": false,
+	"vocab": [
+		{"term": "multi-step", "definition": "Requires more than one operation"},
+		{"term": "operation", "definition": "Addition, subtraction, multiplication, or division"},
+		{"term": "estimate", "definition": "A close guess of the actual value"}
+	],
+	"teachingNotes": "Encourage RUCSAC/UPSC problem strategies: read, understand, choose operations, solve, and check.",
+	"sample": [
+		{"question": "Sara has 3 boxes with 6 pencils each. She gives away 5. How many left?", "expectedAny": ["13"]},
+		{"question": "A farmer has 24 eggs. He packs them into cartons of 6 and bakes 2 eggs. How many eggs in cartons?", "expectedAny": ["22"]},
+		{"question": "Tom reads 15 pages Mon and twice as many Tue. Then 10 more Wed. Total?", "expectedAny": ["55"]},
+		{"question": "Class makes 4 rows of 7 chairs and removes 5 chairs. How many chairs remain?", "expectedAny": ["23"]},
+		{"question": "Liam runs 3 km each day for 5 days, then skips a day, then 2 km. Total?", "expectedAny": ["17"]},
+		{"question": "Bag has 30 marbles. 1/3 are red. You give 4 red away. Red left?", "expectedAny": ["6"]},
+		{"question": "A bakery makes 5 trays of 8 cookies and sells 23. Cookies left?", "expectedAny": ["17"]}
+	],
+	"truefalse": [
+		{"question": "Multi-step problems can require different operations.", "answer": true},
+		{"question": "Estimating can help check if an answer is reasonable.", "answer": true},
+		{"question": "You should ignore extra information in a problem.", "answer": false},
+		{"question": "Drawing a diagram can help solve word problems.", "answer": true},
+		{"question": "Order doesn't matter when solving multi-step problems.", "answer": false},
+		{"question": "Always multiply first in any problem.", "answer": false},
+		{"question": "Checking your answer is part of problem solving.", "answer": true}
+	],
+	"multiplechoice": [
+		{"question": "A class has 7 groups of 4 students. 5 students are absent. How many present?", "choices": ["23", "24", "25", "28"], "correct": 0},
+		{"question": "You buy 3 packs of 6 markers and give 7 away. How many left?", "choices": ["11", "12", "13", "14"], "correct": 2},
+		{"question": "There are 5 boxes with 9 crayons each. 8 crayons break. How many unbroken?", "choices": ["37", "41", "45", "52"], "correct": 1},
+		{"question": "A book has 120 pages. You read 25 each day for 3 days. Pages left?", "choices": ["35", "40", "45", "55"], "correct": 0},
+		{"question": "Tickets are $4. You buy 3 and get $5 off total. Cost?", "choices": ["$7", "$9", "$12", "$17"], "correct": 1},
+		{"question": "There are 6 rows of 8 chairs. 13 are taken away. How many remain?", "choices": ["35", "36", "37", "48"], "correct": 2},
+		{"question": "A baker makes 3 batches of 12 muffins and sells 28. How many left?", "choices": ["6", "7", "8", "9"], "correct": 3}
+	],
+	"fillintheblank": [
+		{"question": "4 packs of 5 pens is ___ pens; give away 7 → ___ left", "expectedAny": ["20, 13", "20 and 13", "13"]},
+		{"question": "7 boxes of 3 toys is ___; add 5 more → ___ total", "expectedAny": ["21, 26", "26"]},
+		{"question": "A string is 30 cm. You cut it into 4 equal parts. Each is ___ cm with ___ cm leftover", "expectedAny": ["7, 2", "7 cm, 2 cm"]},
+		{"question": "Farm has 36 eggs. Put in cartons of 12. Full cartons: ___; eggs left: ___", "expectedAny": ["3, 0", "3 and 0"]},
+		{"question": "You save $2 each day for 6 days, then spend $7. Balance: $___", "expectedAny": ["5"]},
+		{"question": "A class grows 4 rows of 6 plants and 2 don't sprout. Plants grown: ___", "expectedAny": ["22"]},
+		{"question": "A 24-pack of water is shared equally by 5 friends. Each gets ___ with ___ left over", "expectedAny": ["4, 4", "4 each, 4 left"]}
+	],
+	"shortanswer": [
+		{"question": "Explain your plan for a two-step problem.", "expectedAny": ["choose operations, justify order, and check"]},
+		{"question": "When is it helpful to draw a bar model?", "expectedAny": ["to visualize parts and totals"]},
+		{"question": "How can estimation help before solving?", "expectedAny": ["predict the ballpark answer"]},
+		{"question": "Describe a time you had to adjust your plan after reading again.", "expectedAny": ["self-reflection"]},
+		{"question": "List clue words for addition/subtraction.", "expectedAny": ["total, sum, more; difference, left, fewer"]},
+		{"question": "What do you do after solving?", "expectedAny": ["check with inverse operation"]},
+		{"question": "Create a multi-step word problem.", "expectedAny": ["student-generated"]}
+	],
+	"wordProblems": [
+		{"question": "A bus seats 8 per row with 5 rows. 7 seats are empty. How many students are on the bus?", "expectedAny": ["33"]},
+		{"question": "Maya buys 3 packs of 9 stickers and gives 11 to friends. How many stickers remain?", "expectedAny": ["16"]},
+		{"question": "A class collects 48 cans on Monday and half as many on Tuesday. They donate 30. How many cans left?", "expectedAny": ["42"]},
+		{"question": "There are 6 shelves with 7 books each. 2 more shelves are added with the same number. Then 9 books are borrowed. How many remain?", "expectedAny": ["47"]},
+		{"question": "A game awards 5 points per goal. You score 7 goals but lose 8 points in penalties. Final points?", "expectedAny": ["27"]},
+		{"question": "A 36-piece puzzle is shared by 3 friends equally. Then 4 pieces are lost. How many pieces does each friend have now?", "expectedAny": ["8"]},
+		{"question": "A baker has 4 trays of 10 cupcakes and bakes 12 more. If 31 are sold, how many are left?", "expectedAny": ["21"]}
+	]
+}

@@ -1,0 +1,53 @@
+{
+  "id": "5th_Pre_Algebra_Variables_Advanced",
+  "title": "Introduction to Variables and Pre-Algebra",
+  "grade": "5th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "variable",
+      "definition": "A letter or symbol that represents an unknown number in a mathematical expression"
+    },
+    {
+      "term": "expression",
+      "definition": "A mathematical phrase that contains numbers, variables, and operation symbols"
+    },
+    {
+      "term": "equation",
+      "definition": "A mathematical statement showing that two expressions are equal"
+    },
+    {
+      "term": "solve",
+      "definition": "To find the value of a variable that makes an equation true"
+    },
+    {
+      "term": "substitute",
+      "definition": "To replace a variable with a specific number to evaluate an expression"
+    }
+  ],
+  "teachingNotes": "Introduce variables as placeholders for unknown numbers. Start with simple one-step equations. Practice substituting values and checking solutions.",
+  "sample": {
+    "question": "If x = 5, what is the value of x + 3?",
+    "expectedAny": ["8", "eight", "5 + 3 = 8", "x + 3 = 8"]
+  },
+  "truefalse": {
+    "question": "In the equation x + 4 = 9, the value of x is 5.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What does the variable represent in the expression 2n + 1?",
+    "expectedAny": ["unknown number", "any number", "a value", "number we don't know"]
+  },
+  "fillintheblank": {
+    "question": "In the equation y - 3 = 7, the value of y is ________.",
+    "expectedAny": ["10", "ten", "y = 10", "10 is the answer"]
+  },
+  "shortanswer": {
+    "question": "Solve for n: n + 6 = 11",
+    "expectedAny": ["n = 5", "5", "five", "n equals 5"]
+  },
+  "wordProblems": {
+    "question": "Maria has some stickers. After giving away 8 stickers, she has 15 left. Write an equation to find how many stickers she started with.",
+    "expectedAny": ["s - 8 = 15", "x - 8 = 15", "n - 8 = 15", "stickers - 8 = 15"]
+  }
+}

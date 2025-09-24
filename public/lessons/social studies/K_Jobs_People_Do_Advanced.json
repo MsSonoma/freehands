@@ -1,0 +1,78 @@
+{
+  "id": "jobs-people-do-advanced",
+  "title": "Jobs People Do",
+  "grade": "K",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "job",
+      "definition": "Work that people do to help others and earn money"
+    },
+    {
+      "term": "doctor",
+      "definition": "A person who helps sick people get better"
+    },
+    {
+      "term": "teacher",
+      "definition": "A person who helps children learn"
+    },
+    {
+      "term": "helper",
+      "definition": "Someone who does things to make life better for others"
+    }
+  ],
+  "teachingNotes": "Invite community workers to visit. Use dramatic play area for job role-playing. Discuss how jobs help the community.",
+  "sample": [
+    {"question": "What does a firefighter do?", "expectedAny": ["puts out fires", "helps people", "keeps people safe", "saves people"]},
+    {"question": "Where does a teacher work?", "expectedAny": ["school", "classroom"]},
+    {"question": "What does a doctor use to listen to your heart?", "expectedAny": ["stethoscope"]},
+    {"question": "Who helps you check out books at the library?", "expectedAny": ["librarian"]},
+    {"question": "What does a baker make?", "expectedAny": ["bread", "cakes", "cookies", "food"]}
+  ],
+  "truefalse": [
+    {"question": "A mail carrier brings letters to your house.", "answer": true, "expectedAny": ["mail carriers deliver mail to homes"]},
+    {"question": "All jobs are done indoors.", "answer": false, "expectedAny": ["some jobs are outdoors"]},
+    {"question": "Police officers help keep people safe.", "answer": true, "expectedAny": ["police help with safety"]},
+    {"question": "Only men can have jobs.", "answer": false, "expectedAny": ["both men and women have jobs"]},
+    {"question": "Jobs help make our community work.", "answer": true, "expectedAny": ["jobs help communities function"]},
+    {"question": "A mechanic fixes broken cars.", "answer": true, "expectedAny": ["mechanics repair vehicles"]},
+    {"question": "All jobs require the same tools.", "answer": false, "expectedAny": ["different jobs use different tools"]}
+  ],
+  "multiplechoice": [
+    {"question": "Who would you call if you were sick?", "choices": ["firefighter", "doctor", "baker", "librarian"], "correct": 1, "expectedAny": ["doctors help sick people"]},
+    {"question": "Who builds houses?", "choices": ["teacher", "doctor", "construction worker", "chef"], "correct": 2, "expectedAny": ["construction workers build houses"]},
+    {"question": "What does a chef do?", "choices": ["fix cars", "cook food", "teach children", "deliver mail"], "correct": 1, "expectedAny": ["chefs cook food"]},
+    {"question": "Who helps you when you're lost?", "choices": ["police officer", "baker", "artist", "musician"], "correct": 0, "expectedAny": ["police officers help when lost"]},
+    {"question": "Where does a pilot work?", "choices": ["hospital", "school", "airplane", "store"], "correct": 2, "expectedAny": ["pilots work in airplanes"]},
+    {"question": "What does a veterinarian do?", "choices": ["help sick animals", "grow plants", "build things", "teach music"], "correct": 0, "expectedAny": ["veterinarians help sick animals"]},
+    {"question": "Who cuts hair?", "choices": ["farmer", "barber", "dentist", "librarian"], "correct": 1, "expectedAny": ["barbers cut hair"]}
+  ],
+  "fillintheblank": [
+    {"question": "A _____ grows food for people to eat.", "expectedAny": ["farmer"]},
+    {"question": "A _____ fixes teeth.", "expectedAny": ["dentist"]},
+    {"question": "A _____ paints pictures and makes art.", "expectedAny": ["artist"]},
+    {"question": "A _____ drives a bus.", "expectedAny": ["bus driver"]},
+    {"question": "A _____ takes care of sick animals.", "expectedAny": ["veterinarian", "vet"]},
+    {"question": "A _____ serves food at restaurants.", "expectedAny": ["waiter", "waitress", "server"]},
+    {"question": "A _____ plays music for people to enjoy.", "expectedAny": ["musician"]}
+  ],
+  "shortanswer": [
+    {"question": "What job would you like to have when you grow up? Why?", "expectedAny": ["any job with reasonable explanation", "teacher to help kids", "doctor to help sick people"]},
+    {"question": "How do jobs help our community?", "expectedAny": ["provide services", "help people", "make life better", "meet needs"]},
+    {"question": "What tools does a firefighter use?", "expectedAny": ["hose", "ladder", "fire truck", "helmet"]},
+    {"question": "How do teachers help children?", "expectedAny": ["teach them", "help them learn", "show them new things"]},
+    {"question": "What would happen if we didn't have jobs?", "expectedAny": ["no one to help", "community wouldn't work", "no services"]},
+    {"question": "How do farmers help everyone?", "expectedAny": ["grow food", "feed people", "provide what we need to eat"]},
+    {"question": "What makes a job important?", "expectedAny": ["helps others", "provides service", "makes community better", "meets people's needs"]}
+  ],
+  "wordProblems": [
+    {"question": "Dr. Smith saw 8 patients in the morning and 5 patients in the afternoon. How many patients did she see total?", "expectedAny": ["13 patients", "8 + 5 = 13"]},
+    {"question": "The firefighter rescued 3 cats from trees and 2 cats from buildings. How many cats did he rescue?", "expectedAny": ["5 cats", "3 + 2 = 5"]},
+    {"question": "The baker made 15 loaves of bread. She sold 9 loaves. How many loaves does she have left?", "expectedAny": ["6 loaves", "15 - 9 = 6"]},
+    {"question": "The mail carrier had 20 letters to deliver. After delivering 12 letters, how many letters does he still need to deliver?", "expectedAny": ["8 letters", "20 - 12 = 8"]},
+    {"question": "The teacher has 25 students in her class. If 3 students are absent today, how many students are in class?", "expectedAny": ["22 students", "25 - 3 = 22"]},
+    {"question": "The construction worker used 7 boards yesterday and 6 boards today. How many boards did he use in total?", "expectedAny": ["13 boards", "7 + 6 = 13"]},
+    {"question": "The farmer has 18 chickens. If 4 chickens laid eggs today, how many chickens didn't lay eggs?", "expectedAny": ["14 chickens", "18 - 4 = 14"]}
+  ]
+}

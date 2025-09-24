@@ -1,0 +1,74 @@
+{
+  "id": "12th_International_Relations_Global_Governance_Beginner",
+  "title": "International Relations and Global Governance",
+  "grade": "12th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "sovereignty",
+      "definition": "Supreme authority of state over its territory and people"
+    },
+    {
+      "term": "diplomacy",
+      "definition": "Practice of conducting international relations through negotiation"
+    },
+    {
+      "term": "United Nations",
+      "definition": "International organization promoting peace and cooperation"
+    },
+    {
+      "term": "globalization",
+      "definition": "Process of increasing worldwide economic and cultural integration"
+    },
+    {
+      "term": "human rights",
+      "definition": "Fundamental rights and freedoms belonging to all people"
+    }
+  ],
+  "teachingNotes": "Introduce international system and global challenges. Use current events to illustrate concepts.",
+  "sample": {
+    "question": "What describes supreme authority of state over territory?",
+    "expectedAny": [
+      "sovereignty",
+      "state authority",
+      "territorial control",
+      "national independence"
+    ]
+  },
+  "truefalse": {
+    "question": "Diplomacy involves conducting international relations through negotiation.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What organization promotes international peace and cooperation?",
+    "expectedAny": [
+      "United Nations",
+      "UN",
+      "world organization",
+      "international body"
+    ]
+  },
+  "fillintheblank": {
+    "question": "________ is increasing worldwide economic and cultural integration.",
+    "expectedAny": [
+      "globalization",
+      "global integration",
+      "worldwide connection",
+      "international interdependence"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are main purposes of United Nations?",
+    "expectedAny": [
+      "maintain peace",
+      "promote cooperation",
+      "protect rights",
+      "solve problems"
+    ]
+  }
+}

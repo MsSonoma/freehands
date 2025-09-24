@@ -1,0 +1,53 @@
+{
+  "id": "12th_Integral_Calculus_Fundamental_Theorem_Beginner",
+  "title": "Integral Calculus and Fundamental Theorem",
+  "grade": "12th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "integral",
+      "definition": "Mathematical operation that finds area under curves"
+    },
+    {
+      "term": "antiderivative",
+      "definition": "Function whose derivative gives the original function"
+    },
+    {
+      "term": "definite integral",
+      "definition": "Integral with specific upper and lower limits"
+    },
+    {
+      "term": "indefinite integral",
+      "definition": "Integral without specific limits, includes constant of integration"
+    },
+    {
+      "term": "Fundamental Theorem of Calculus",
+      "definition": "Theorem connecting differentiation and integration"
+    }
+  ],
+  "teachingNotes": "Emphasize geometric interpretation as area under curves. Connect to real applications like distance and accumulation.",
+  "sample": {
+    "question": "What mathematical operation finds area under curves?",
+    "expectedAny": ["integral", "integration", "antiderivative", "area calculation"]
+  },
+  "truefalse": {
+    "question": "An antiderivative is a function whose derivative gives the original function.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What connects differentiation and integration?",
+    "expectedAny": ["Fundamental Theorem of Calculus", "FTC", "calculus theorem", "integration theorem"]
+  },
+  "fillintheblank": {
+    "question": "An integral without specific limits is an ________ integral.",
+    "expectedAny": ["indefinite", "unlimited", "general", "unbounded"]
+  },
+  "shortanswer": {
+    "question": "What real-world quantities can integrals calculate?",
+    "expectedAny": ["area", "distance", "volume", "total accumulation"]
+  },
+  "wordProblems": {
+    "question": "If velocity is v(t) = 3t² + 2, what is displacement from t = 0 to t = 2?",
+    "expectedAny": ["12", "12 units", "∫[0,2](3t² + 2)dt = 12", "twelve"]
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "id": "10th_World_War_Two_Global_Conflict_Beginner",
+  "title": "World War II: Global Conflict and Allied Victory",
+  "grade": "10th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "world war two",
+      "definition": "Global conflict from 1939-1945 between Axis and Allied powers"
+    },
+    {
+      "term": "axis powers",
+      "definition": "Alliance of Germany, Italy, and Japan during WWII"
+    },
+    {
+      "term": "allied powers",
+      "definition": "Alliance including Britain, Soviet Union, and United States"
+    },
+    {
+      "term": "holocaust",
+      "definition": "Systematic persecution and murder of Jews by Nazi Germany"
+    },
+    {
+      "term": "d day",
+      "definition": "Allied invasion of Nazi-occupied France on June 6, 1944"
+    }
+  ],
+  "teachingNotes": "Emphasize the global scope of the conflict and its humanitarian consequences. Discuss the importance of Allied cooperation.",
+  "sample": {
+    "question": "What was the global conflict from 1939-1945?",
+    "expectedAny": [
+      "World War II",
+      "Second World War",
+      "WWII",
+      "World War Two"
+    ]
+  },
+  "truefalse": {
+    "question": "The Axis powers included Germany, Italy, and Japan.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What was the Allied invasion of France called?",
+    "expectedAny": [
+      "D-Day",
+      "Operation Overlord",
+      "Normandy invasion",
+      "June 6 invasion"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The systematic persecution of Jews was called the ________.",
+    "expectedAny": [
+      "Holocaust",
+      "Shoah",
+      "Jewish persecution",
+      "genocide"
+    ]
+  },
+  "shortanswer": {
+    "question": "What factors led to Allied victory in WWII?",
+    "expectedAny": [
+      "industrial capacity",
+      "cooperation",
+      "two-front war",
+      "technological advantage"
+    ]
+  }
+}

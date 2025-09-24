@@ -1,0 +1,74 @@
+{
+  "id": "4th_Earth_Processes_Weathering_Erosion_Intermediate",
+  "title": "Earth Processes: Weathering and Erosion",
+  "grade": "4th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "weathering",
+      "definition": "The process of breaking down rocks into smaller pieces"
+    },
+    {
+      "term": "erosion",
+      "definition": "The process of moving weathered rock and soil from one place to another"
+    },
+    {
+      "term": "deposition",
+      "definition": "The process of dropping off sediment in a new location"
+    },
+    {
+      "term": "sediment",
+      "definition": "Small pieces of rock, sand, and soil that have been moved by water or wind"
+    },
+    {
+      "term": "landform",
+      "definition": "A natural feature of Earth's surface, like mountains, valleys, or rivers"
+    }
+  ],
+  "teachingNotes": "Use models and demonstrations to show how weathering and erosion shape the landscape. Show examples of different landforms and discuss how they were formed over time.",
+  "sample": [
+    {"question": "What is the difference between weathering and erosion?", "expectedAny": ["weathering breaks down", "erosion moves"]},
+    {"question": "Name one cause of weathering.", "expectedAny": ["water", "wind", "temperature changes", "ice"]},
+    {"question": "What is deposition?", "expectedAny": ["dropping off sediment in a new place"]},
+    {"question": "Give an example of a landform created by erosion.", "expectedAny": ["canyon", "valley", "river channel"]},
+    {"question": "How can plants slow erosion?", "expectedAny": ["roots hold soil"]},
+    {"question": "What is sediment?", "expectedAny": ["small pieces of rock and soil"]},
+    {"question": "Which process builds up new land?", "expectedAny": ["deposition"]}
+  ],
+  "truefalse": [
+    {"question": "Erosion can create new landforms over time.", "answer": true},
+    {"question": "Weathering and erosion are exactly the same process.", "answer": false},
+    {"question": "Deposition adds sediment to new places.", "answer": true},
+    {"question": "Fast-moving water can carry larger particles than slow water.", "answer": true},
+    {"question": "Wind cannot cause erosion.", "answer": false},
+    {"question": "Waves can erode coastlines.", "answer": true},
+    {"question": "Rocks never break down naturally.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "What can cause weathering of rocks?", "choices": ["Water and wind", "Temperature changes", "Plant roots", "All of the above"], "correct": 3},
+    {"question": "When a river slows down, what happens to the sediment it carries?", "choices": ["It dissolves", "It is deposited", "It grows", "It disappears"], "correct": 1},
+    {"question": "Which landform is most likely formed by river erosion?", "choices": ["Volcano", "Canyon", "Sand dune", "Glacier"], "correct": 1},
+    {"question": "What process drops sediment in a delta?", "choices": ["Weathering", "Erosion", "Deposition", "Melting"], "correct": 2},
+    {"question": "Ice wedging is a type of:", "choices": ["Chemical weathering", "Physical weathering", "Erosion", "Deposition"], "correct": 1},
+    {"question": "Which slows down erosion on hillsides?", "choices": ["Removing plants", "Planting grass", "Steeper slope", "More water flow"], "correct": 1},
+    {"question": "Which is carried farthest by wind?", "choices": ["Pebbles", "Sand", "Silt", "Boulders"], "correct": 2}
+  ],
+  "fillintheblank": [
+    {"question": "When a river carries sediment downstream, this is an example of ________.", "expectedAny": ["erosion"]},
+    {"question": "The process of breaking down rock is called ________.", "expectedAny": ["weathering"]},
+    {"question": "Dropping sediment in a new place is called ________.", "expectedAny": ["deposition"]},
+    {"question": "Small pieces of rock and soil are called ________.", "expectedAny": ["sediment"]},
+    {"question": "Roots help prevent soil ________.", "expectedAny": ["erosion"]},
+    {"question": "Waves eroding a cliff is an example of coastal ________.", "expectedAny": ["erosion"]},
+    {"question": "A deep valley carved by a river is called a ________.", "expectedAny": ["canyon"]}
+  ],
+  "shortanswer": [
+    {"question": "How do rivers create valleys?", "expectedAny": ["erosion cuts downward"]},
+    {"question": "Explain how wind can cause erosion.", "expectedAny": ["blows away small particles"]},
+    {"question": "How do glaciers shape the land?", "expectedAny": ["scrape and carry rock", "carve U-shaped valleys"]},
+    {"question": "Why does deposition happen when water slows down?", "expectedAny": ["less energy to carry sediment"]},
+    {"question": "Give a way humans can reduce erosion.", "expectedAny": ["plant trees", "build terraces"]},
+    {"question": "Describe one example of chemical weathering.", "expectedAny": ["acid rain dissolving rock"]},
+    {"question": "How can you tell if erosion is happening?", "expectedAny": ["soil loss", "muddy water"]}
+  ]
+}

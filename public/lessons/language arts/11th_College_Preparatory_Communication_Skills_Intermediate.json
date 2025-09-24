@@ -1,0 +1,74 @@
+{
+  "id": "11th_College_Preparatory_Communication_Skills_Intermediate",
+  "title": "College Preparatory Communication Skills",
+  "grade": "11th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "synthesis",
+      "definition": "Combining multiple sources to create new understanding"
+    },
+    {
+      "term": "annotation",
+      "definition": "Critical notes and summaries of source materials"
+    },
+    {
+      "term": "plagiarism",
+      "definition": "Using others' ideas or words without proper attribution"
+    },
+    {
+      "term": "citation style",
+      "definition": "Standardized format for crediting sources in academic writing"
+    },
+    {
+      "term": "scholarly source",
+      "definition": "Peer-reviewed academic publication with expert credibility"
+    }
+  ],
+  "teachingNotes": "Emphasize research skills and academic integrity. Practice multiple citation formats and source evaluation.",
+  "sample": {
+    "question": "What is combining multiple sources to create new understanding?",
+    "expectedAny": [
+      "synthesis",
+      "source synthesis",
+      "integrative analysis",
+      "combined understanding"
+    ]
+  },
+  "truefalse": {
+    "question": "Plagiarism involves using others' ideas without proper attribution.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is a peer-reviewed academic publication?",
+    "expectedAny": [
+      "scholarly source",
+      "academic source",
+      "peer-reviewed source",
+      "expert publication"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Critical notes and summaries of sources are called ________.",
+    "expectedAny": [
+      "annotations",
+      "source notes",
+      "critical summaries",
+      "research notes"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why is proper citation important in academic writing?",
+    "expectedAny": [
+      "avoids plagiarism",
+      "gives credit",
+      "enables verification",
+      "shows credibility"
+    ]
+  }
+}

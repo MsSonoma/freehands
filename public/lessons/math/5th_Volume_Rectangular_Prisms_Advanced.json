@@ -1,0 +1,53 @@
+{
+  "id": "5th_Volume_Rectangular_Prisms_Advanced",
+  "title": "Volume of Rectangular Prisms",
+  "grade": "5th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "volume",
+      "definition": "The amount of space inside a three-dimensional object"
+    },
+    {
+      "term": "rectangular prism",
+      "definition": "A 3D shape with six rectangular faces where opposite faces are parallel and equal"
+    },
+    {
+      "term": "cubic units",
+      "definition": "Units used to measure volume, such as cubic inches or cubic feet"
+    },
+    {
+      "term": "dimensions",
+      "definition": "The measurements of length, width, and height of a shape"
+    },
+    {
+      "term": "formula",
+      "definition": "A mathematical rule expressed as symbols that shows how to calculate something"
+    }
+  ],
+  "teachingNotes": "Teach the formula Volume = length × width × height. Practice with real-world examples like boxes and containers. Emphasize using cubic units for volume measurements.",
+  "sample": {
+    "question": "Find the volume of a box that is 4 inches long, 3 inches wide, and 2 inches tall.",
+    "expectedAny": ["24 cubic inches", "24 in³", "24", "twenty-four cubic inches"]
+  },
+  "truefalse": {
+    "question": "A cube with sides of 3 feet has a volume of 27 cubic feet.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is the volume of a rectangular prism with length 5 cm, width 2 cm, and height 4 cm?",
+    "expectedAny": ["40 cubic cm", "40 cm³", "40", "forty cubic centimeters"]
+  },
+  "fillintheblank": {
+    "question": "The formula for finding the volume of a rectangular prism is V = l × w × ________.",
+    "expectedAny": ["h", "height", "h (height)", "the height"]
+  },
+  "shortanswer": {
+    "question": "A storage container measures 8 feet by 6 feet by 5 feet. What is its volume?",
+    "expectedAny": ["240 cubic feet", "240 ft³", "240", "two hundred forty cubic feet"]
+  },
+  "wordProblems": {
+    "question": "Sarah's fish tank is 20 inches long, 10 inches wide, and 12 inches high. How many cubic inches of water can it hold?",
+    "expectedAny": ["2400 cubic inches", "2400 in³", "2400", "two thousand four hundred cubic inches"]
+  }
+}

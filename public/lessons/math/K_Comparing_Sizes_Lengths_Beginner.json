@@ -1,0 +1,68 @@
+{
+  "id": "comparing-sizes-lengths-beginner",
+  "title": "Comparing Sizes and Lengths",
+  "grade": "K",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {"term": "big", "definition": "Large in size"},
+    {"term": "small", "definition": "Little in size"},
+    {"term": "long", "definition": "Having a lot of length from one end to the other"},
+    {"term": "short", "definition": "Having a little length from one end to the other"},
+    {"term": "tall", "definition": "Having a lot of height"},
+    {"term": "wide", "definition": "Having a lot of width from side to side"}
+  ],
+  "teachingNotes": "Use real objects of different sizes. Practice comparing classroom items. Use vocabulary: bigger, smaller, longer, shorter.",
+  "sample": [
+    {"question": "Which is bigger: an elephant or a mouse?", "expectedAny": ["elephant", "elephants are bigger than mice"]},
+    {"question": "Point to the longer pencil.", "expectedAny": ["identifies longer object", "compares lengths"]},
+    {"question": "Show me something small in the room.", "expectedAny": ["points to small object", "demonstrates size concept"]},
+    {"question": "Which is taller: you or the table?", "expectedAny": ["compares heights", "identifies taller object"]},
+    {"question": "Find the shortest book.", "expectedAny": ["identifies shortest item", "compares sizes"]}
+  ],
+  "truefalse": [
+    {"question": "A pencil is longer than a paperclip.", "answer": true, "expectedAny": ["pencils are longer than paperclips"]},
+    {"question": "An ant is bigger than a dog.", "answer": false, "expectedAny": ["dogs are bigger than ants"]},
+    {"question": "Trees are taller than flowers.", "answer": true, "expectedAny": ["trees are usually taller"]},
+    {"question": "A bus is shorter than a bike.", "answer": false, "expectedAny": ["buses are longer than bikes"]},
+    {"question": "Your thumb is smaller than your hand.", "answer": true, "expectedAny": ["thumbs are part of hands, smaller"]},
+    {"question": "A ladder is wider than it is tall.", "answer": false, "expectedAny": ["ladders are taller than wide"]},
+    {"question": "Baby animals are smaller than parent animals.", "answer": true, "expectedAny": ["babies are smaller than adults"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which is the smallest?", "choices": ["house", "car", "bicycle", "button"], "correct": 3, "expectedAny": ["button is smallest of these objects"]},
+    {"question": "Which is longest?", "choices": ["spoon", "fork", "knife", "plate"], "correct": 2, "expectedAny": ["knife is usually longest"]},
+    {"question": "Which animal is biggest?", "choices": ["cat", "horse", "mouse", "rabbit"], "correct": 1, "expectedAny": ["horse is biggest of these animals"]},
+    {"question": "Which is shortest?", "choices": ["tree", "grass", "bush", "flower"], "correct": 1, "expectedAny": ["grass is shortest"]},
+    {"question": "Which is wider?", "choices": ["door", "window", "book", "pencil"], "correct": 0, "expectedAny": ["door is widest"]},
+    {"question": "Which is the tallest?", "choices": ["chair", "table", "door", "book"], "correct": 2, "expectedAny": ["door is tallest"]},
+    {"question": "Which is smaller than your hand?", "choices": ["book", "pencil", "desk", "chair"], "correct": 1, "expectedAny": ["pencil is smaller than hand"]}
+  ],
+  "fillintheblank": [
+    {"question": "A giraffe has a _____ neck.", "expectedAny": ["long", "very long"]},
+    {"question": "A mouse is _____ than an elephant.", "expectedAny": ["smaller", "littler"]},
+    {"question": "A school bus is _____ than a car.", "expectedAny": ["longer", "bigger"]},
+    {"question": "Your pinky finger is _____ than your thumb.", "expectedAny": ["smaller", "shorter", "thinner"]},
+    {"question": "A basketball is _____ than a tennis ball.", "expectedAny": ["bigger", "larger"]},
+    {"question": "A skyscraper is very _____.", "expectedAny": ["tall", "high", "big"]},
+    {"question": "A snake is _____ and thin.", "expectedAny": ["long", "very long"]}
+  ],
+  "shortanswer": [
+    {"question": "Name something that is shorter than you.", "expectedAny": ["chair", "table", "dog", "cat", "book"]},
+    {"question": "What is the biggest thing you can see right now?", "expectedAny": ["room", "building", "tree", "any large object"]},
+    {"question": "Name two things that are about the same size.", "expectedAny": ["two books", "two chairs", "two apples"]},
+    {"question": "What is longer: your arm or your leg?", "expectedAny": ["leg", "legs are longer", "depends on person"]},
+    {"question": "Find something wider than it is tall.", "expectedAny": ["table", "book lying flat", "paper"]},
+    {"question": "Name the smallest thing in your backpack.", "expectedAny": ["eraser", "paperclip", "coin", "small item"]},
+    {"question": "What's the difference between big and tall?", "expectedAny": ["big is overall size", "tall is height", "different directions"]}
+  ],
+  "wordProblems": [
+    {"question": "Tom has a short rope and a long rope. If the short rope is 2 feet and the long rope is 5 feet, which rope is longer?", "expectedAny": ["long rope", "5 feet is longer than 2 feet"]},
+    {"question": "Sarah has 3 pencils. One is 4 inches, one is 6 inches, and one is 5 inches. Which pencil is shortest?", "expectedAny": ["4 inch pencil", "the 4 inch one"]},
+    {"question": "In the garden, the sunflower is 8 feet tall and the daisy is 2 feet tall. How much taller is the sunflower?", "expectedAny": ["6 feet taller", "8 - 2 = 6"]},
+    {"question": "Mom buys a big pizza and a small pizza. The big pizza feeds 8 people and the small feeds 4. How many more people does the big pizza feed?", "expectedAny": ["4 more people", "8 - 4 = 4"]},
+    {"question": "Jake has 5 toy cars. 2 are big and 3 are small. Are there more big cars or small cars?", "expectedAny": ["more small cars", "3 is more than 2"]},
+    {"question": "A baby elephant weighs 200 pounds and an adult elephant weighs 8000 pounds. Which weighs more?", "expectedAny": ["adult elephant", "8000 is more than 200"]},
+    {"question": "You have 4 sticks. Two are 3 inches long and two are 7 inches long. If you line up all the short sticks, how long is the line?", "expectedAny": ["6 inches", "3 + 3 = 6"]}
+  ]
+}

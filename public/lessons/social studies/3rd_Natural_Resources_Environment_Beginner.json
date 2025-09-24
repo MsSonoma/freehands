@@ -1,0 +1,89 @@
+{
+  "id": "3rd_Natural_Resources_Environment_Beginner",
+  "title": "Natural Resources and Environment",
+  "grade": "3rd",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    { "term": "natural resource", "definition": "Something from nature that people use, like water, trees, or rocks" },
+    { "term": "environment", "definition": "All the living and non-living things around us" },
+    { "term": "renewable", "definition": "A resource that can be replaced naturally, like trees that can grow back" },
+    { "term": "conservation", "definition": "Using resources carefully so they don't run out" },
+    { "term": "pollution", "definition": "Harmful things that make the air, water, or land dirty" },
+    { "term": "recycling", "definition": "Using old materials to make new things instead of throwing them away" }
+  ],
+  "teachingNotes": "Use examples from students' daily lives. Practice conservation activities like recycling. Discuss local natural resources.",
+  "sample": [
+    { "question": "What is a natural resource?", "expectedAny": ["something from nature we use", "water, trees, rocks", "nature's gifts"] },
+    { "question": "Name three natural resources.", "expectedAny": ["water, trees, rocks", "air, soil, oil", "forests, rivers, minerals"] },
+    { "question": "What does conservation mean?", "expectedAny": ["using resources carefully", "not wasting", "saving for later"] },
+    { "question": "How can we save water?", "expectedAny": ["shorter showers", "turn off taps", "fix leaks", "don't waste"] },
+    { "question": "What is recycling?", "expectedAny": ["making new from old", "reusing materials", "not throwing away"] },
+    { "question": "Why do we need to protect the environment?", "expectedAny": ["for animals", "clean air and water", "future generations"] },
+    { "question": "What natural resource do we use to make paper?", "expectedAny": ["trees", "wood", "forests"] }
+  ],
+  "truefalse": [
+    { "question": "Water is a natural resource that all living things need.", "answer": true },
+    { "question": "We should waste natural resources because there are plenty.", "answer": false },
+    { "question": "Trees are a renewable resource because they can grow back.", "answer": true },
+    { "question": "Pollution helps the environment.", "answer": false },
+    { "question": "Recycling helps save natural resources.", "answer": true },
+    { "question": "The environment includes only living things.", "answer": false },
+    { "question": "Conservation means using resources carefully.", "answer": true }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which is the best way to conserve water?",
+      "choices": ["leave faucet running", "take shorter showers", "water plants all day", "fill bathtub completely"],
+      "correct": 1
+    },
+    {
+      "question": "What makes trees a renewable resource?",
+      "choices": ["they never die", "they can grow back", "they're everywhere", "they don't matter"],
+      "correct": 1
+    },
+    {
+      "question": "Which is NOT a natural resource?",
+      "choices": ["water", "plastic toys", "trees", "rocks"],
+      "correct": 1
+    },
+    {
+      "question": "What is pollution?",
+      "choices": ["clean air", "dirty water", "fresh food", "new plants"],
+      "correct": 1
+    },
+    {
+      "question": "How can kids help the environment?",
+      "choices": ["litter everywhere", "waste water", "recycle paper", "cut down trees"],
+      "correct": 2
+    },
+    {
+      "question": "What do we get from forests?",
+      "choices": ["only animals", "wood and paper", "nothing useful", "just dirt"],
+      "correct": 1
+    },
+    {
+      "question": "Why should we turn off lights?",
+      "choices": ["it's dark", "save energy", "lights are bad", "no reason"],
+      "correct": 1
+    }
+  ],
+  "fillintheblank": [
+    { "question": "We can help save trees by ___ paper instead of throwing it away.", "expectedAny": ["recycling"] },
+    { "question": "___ resources can be replaced naturally.", "expectedAny": ["Renewable"] },
+    { "question": "All living and non-living things around us make up the ___.", "expectedAny": ["environment"] },
+    { "question": "___ means using resources carefully.", "expectedAny": ["Conservation"] },
+    { "question": "Harmful things that make the environment dirty are called ___.", "expectedAny": ["pollution"] },
+    { "question": "___ from nature are called natural resources.", "expectedAny": ["Things"] },
+    { "question": "We can ___ energy by turning off lights.", "expectedAny": ["save", "conserve"] }
+  ],
+  "shortanswer": [
+    { "question": "Why is it important to take care of our environment?", "expectedAny": ["clean air and water", "protect animals", "save resources", "healthy place to live"] },
+    { "question": "What are three ways to conserve natural resources?", "expectedAny": ["recycle", "use less water", "turn off lights", "reuse items"] },
+    { "question": "How does pollution hurt the environment?", "expectedAny": ["makes air dirty", "hurts animals", "pollutes water", "kills plants"] },
+    { "question": "What natural resources do you use every day?", "expectedAny": ["water", "air", "food from soil", "wood products"] },
+    { "question": "How can your family help the environment?", "expectedAny": ["recycle", "use less water", "walk more", "plant trees"] },
+    { "question": "What would happen if we ran out of trees?", "expectedAny": ["no paper", "less oxygen", "animals lose homes", "no wood"] },
+    { "question": "How does recycling help natural resources?", "expectedAny": ["uses old materials", "saves trees", "reduces waste", "makes new from old"] }
+  ]
+}

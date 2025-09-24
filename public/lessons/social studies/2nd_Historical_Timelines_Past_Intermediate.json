@@ -1,0 +1,59 @@
+{
+  "id": "2nd_Historical_Timelines_Past_Intermediate",
+  "title": "Historical Timelines and the Past",
+  "grade": "2nd",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {"term": "timeline", "definition": "A line that shows when things happened in order"},
+    {"term": "past", "definition": "Things that happened before now"},
+    {"term": "present", "definition": "What is happening right now"},
+    {"term": "future", "definition": "Things that will happen later"},
+    {"term": "history", "definition": "The study of things that happened in the past"}
+  ],
+  "teachingNotes": "Create personal timelines of students' lives from birth to present. Use pictures to show how things have changed over time. Compare past and present versions of common objects like phones, cars, and clothes.",
+  "sample": [
+    {"question": "What shows events in the order they happened?", "expectedAny": ["timeline", "time line", "chronological order", "sequence of events"]},
+    {"question": "What does 'past' mean?", "expectedAny": ["things that happened before now"]},
+    {"question": "What is a 'present' event?", "expectedAny": ["something happening now"]},
+    {"question": "What is a 'future' event?", "expectedAny": ["something that has not happened yet"]},
+    {"question": "Name one thing that changed from the past to today.", "expectedAny": ["technology", "transportation", "clothes"]},
+    {"question": "Why do people make timelines?", "expectedAny": ["to organize events", "to see order clearly"]},
+    {"question": "Give an example of a personal timeline event.", "expectedAny": ["birth", "first day of school"]}
+  ],
+  "truefalse": [
+    {"question": "The past means things that are happening right now.", "answer": false},
+    {"question": "A timeline helps us see events in order.", "answer": true},
+    {"question": "Your birthday is part of your personal timeline.", "answer": true},
+    {"question": "The future happened already.", "answer": false},
+    {"question": "We can compare the past and present to see change.", "answer": true},
+    {"question": "All timelines look the same.", "answer": false},
+    {"question": "Pictures can be added to a timeline.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "If you were born in 2015 and started school in 2020, which happened first?", "choices": ["Starting school", "Birth (2015)", "They happened together", "Neither"], "correct": 1},
+    {"question": "Which tool shows events in order?", "choices": ["Map", "Timeline", "Ruler", "Calendar"], "correct": 1},
+    {"question": "Which is an example of the past?", "choices": ["Tomorrow", "Right now", "Last year", "Next week"], "correct": 2},
+    {"question": "Which belongs on a personal timeline?", "choices": ["Favorite color", "Birthdays and school years", "Favorite game", "Lunch"], "correct": 1},
+    {"question": "What comes after the past?", "choices": ["Future", "Present", "Past again", "None"], "correct": 1},
+    {"question": "Which shows change over time?", "choices": ["Timeline comparing old and new", "Random list", "Single photo", "None"], "correct": 0},
+    {"question": "Which event is in the future?", "choices": ["Yesterday's game", "Next month trip", "Last year party", "This morning"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "Things that happened before today are called the ________.", "expectedAny": ["past", "history"]},
+    {"question": "A line that shows events in order is a ________.", "expectedAny": ["timeline"]},
+    {"question": "The time happening now is the ________.", "expectedAny": ["present"]},
+    {"question": "The time that has not happened yet is the ________.", "expectedAny": ["future"]},
+    {"question": "We put events in ________ order on a timeline.", "expectedAny": ["chronological", "time"]},
+    {"question": "A personal ________ can include your birthday.", "expectedAny": ["timeline"]},
+    {"question": "Old and new pictures help show ________ over time.", "expectedAny": ["change"]}
+  ],
+  "shortanswer": [
+    {"question": "How have cars changed from the past to today?", "expectedAny": ["more modern", "new technology", "safer", "faster"]},
+    {"question": "Name two events you could put on your own timeline.", "expectedAny": ["birth", "first day of school", "moving", "starting a sport"]},
+    {"question": "Why is it helpful to see events in order?", "expectedAny": ["makes sense of stories", "see cause and effect"]},
+    {"question": "How have phones changed from past to present?", "expectedAny": ["bigger to smaller to smartphones", "touchscreens"]},
+    {"question": "What is one way families can record their history?", "expectedAny": ["photos", "journals", "timelines"]},
+    {"question": "What could you add to a class timeline this year?", "expectedAny": ["field trip", "school events"]},
+    {"question": "What did people use for light in the past vs now?", "expectedAny": ["candles/lamps vs electricity"]}
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "id": "subtraction-facts-to-10-intermediate",
+  "title": "Subtraction Facts to 10",
+  "grade": "1st",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {"term": "subtract", "definition": "To take away or remove some from a group"},
+    {"term": "difference", "definition": "The answer when you subtract one number from another"},
+    {"term": "minus", "definition": "The word and sign (-) that means subtract"},
+    {"term": "take away", "definition": "Another way to say subtract"}
+  ],
+  "teachingNotes": "Use crossing out and manipulatives. Connect to real-life situations like eating cookies or losing toys. Practice fact families.",
+  "sample": {
+    "question": "What is 8 - 3?",
+    "expectedAny": ["5", "five"]
+  },
+  "truefalse": [
+    {"question": "10 - 4 equals 6.", "answer": true, "expectedAny": ["10 take away 4 leaves 6"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which subtraction problem equals 3?", "choices": ["7 - 4", "6 - 2", "8 - 3", "9 - 6"], "correct": 0, "expectedAny": ["7 - 4 = 3"]}
+  ],
+  "fillintheblank": [
+    {"question": "9 - _____ = 4", "expectedAny": ["5", "five"]}
+  ],
+  "shortanswer": [
+    {"question": "If you know that 3 + 4 = 7, what subtraction facts can you make?", "expectedAny": ["7 - 3 = 4", "7 - 4 = 3"]}
+  ],
+  "wordProblems": [
+    {"question": "There were 9 birds in a tree. 5 birds flew away. How many birds are still in the tree?", "expectedAny": ["4 birds", "9 - 5 = 4"]}
+  ]
+}

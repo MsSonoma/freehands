@@ -1,0 +1,74 @@
+{
+  "id": "6th_Islamic_Golden_Age_Achievements_Advanced",
+  "title": "Islamic Golden Age and Scientific Achievements",
+  "grade": "6th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "Islamic Golden Age",
+      "definition": "A period of great learning and achievement in the Islamic world from 8th-13th centuries"
+    },
+    {
+      "term": "mosque",
+      "definition": "A building where Muslims gather for worship and prayer"
+    },
+    {
+      "term": "caliph",
+      "definition": "The political and religious leader of the Islamic community"
+    },
+    {
+      "term": "algebra",
+      "definition": "A branch of mathematics developed by Islamic scholars"
+    },
+    {
+      "term": "House of Wisdom",
+      "definition": "A famous library and research center in Baghdad during the Islamic Golden Age"
+    }
+  ],
+  "teachingNotes": "Emphasize Islamic contributions to science, mathematics, and medicine. Discuss how Islamic scholars preserved Greek and Roman knowledge. Show the geographic spread of Islamic civilization.",
+  "sample": {
+    "question": "What period of great Islamic learning lasted from the 8th-13th centuries?",
+    "expectedAny": [
+      "Islamic Golden Age",
+      "Golden Age of Islam",
+      "Islamic renaissance",
+      "Islamic scholarly period"
+    ]
+  },
+  "truefalse": {
+    "question": "Islamic scholars developed the branch of mathematics called algebra.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What was the famous library and research center in Baghdad called?",
+    "expectedAny": [
+      "House of Wisdom",
+      "Baghdad library",
+      "Wisdom House",
+      "Islamic library"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The political and religious leader of the Islamic community was called a ________.",
+    "expectedAny": [
+      "caliph",
+      "Islamic caliph",
+      "religious caliph",
+      "Muslim caliph"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are two contributions Islamic scholars made to learning?",
+    "expectedAny": [
+      "algebra and medicine",
+      "preserving Greek texts and astronomy",
+      "mathematics and science",
+      "medicine and philosophy"
+    ]
+  }
+}

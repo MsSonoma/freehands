@@ -1,0 +1,74 @@
+{
+  "id": "6th_Cell_Structure_Function_Intermediate",
+  "title": "Cell Structure and Function",
+  "grade": "6th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "cell",
+      "definition": "The basic unit of life that makes up all living things"
+    },
+    {
+      "term": "nucleus",
+      "definition": "The control center of a cell that contains DNA"
+    },
+    {
+      "term": "cytoplasm",
+      "definition": "The jelly-like substance inside a cell where chemical reactions occur"
+    },
+    {
+      "term": "cell membrane",
+      "definition": "The thin barrier that controls what enters and leaves a cell"
+    },
+    {
+      "term": "organelle",
+      "definition": "A specialized structure inside a cell that performs specific functions"
+    }
+  ],
+  "teachingNotes": "Use microscope images and cell diagrams. Compare plant and animal cells. Emphasize that cells are the building blocks of all life.",
+  "sample": {
+    "question": "What is the basic unit of life?",
+    "expectedAny": [
+      "cell",
+      "the cell",
+      "cells",
+      "basic cell"
+    ]
+  },
+  "truefalse": {
+    "question": "The nucleus controls what the cell does.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What controls what enters and leaves a cell?",
+    "expectedAny": [
+      "cell membrane",
+      "membrane",
+      "cell wall",
+      "cellular membrane"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The jelly-like substance inside a cell is called ________.",
+    "expectedAny": [
+      "cytoplasm",
+      "cell cytoplasm",
+      "cellular cytoplasm",
+      "cytoplasmic material"
+    ]
+  },
+  "shortanswer": {
+    "question": "What is the difference between plant and animal cells?",
+    "expectedAny": [
+      "plant cells have cell walls",
+      "plants have chloroplasts",
+      "plant cells have larger vacuoles",
+      "cell wall and chloroplasts"
+    ]
+  }
+}

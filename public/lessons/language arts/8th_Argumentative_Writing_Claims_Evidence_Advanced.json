@@ -1,0 +1,73 @@
+{
+  "id": "8th_Argumentative_Writing_Claims_Evidence_Advanced",
+  "title": "Argumentative Writing: Claims and Evidence",
+  "grade": "8th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "argumentative writing",
+      "definition": "Writing that presents a position and supports it with evidence"
+    },
+    {
+      "term": "claim",
+      "definition": "A statement that can be supported or refuted"
+    },
+    {
+      "term": "evidence",
+      "definition": "Facts, statistics, or examples that support a claim"
+    },
+    {
+      "term": "counterargument",
+      "definition": "An opposing viewpoint to your main argument"
+    },
+    {
+      "term": "rebuttal",
+      "definition": "A response that disproves a counterargument"
+    }
+  ],
+  "teachingNotes": "Teach the structure of argumentative essays. Emphasize the importance of addressing counterarguments and providing strong evidence.",
+  "sample": {
+    "question": "What is writing that presents a position and supports it with evidence?",
+    "expectedAny": [
+      "argumentative writing",
+      "persuasive writing",
+      "argument essay",
+      "position paper"
+    ]
+  },
+  "truefalse": {
+    "question": "A claim is a statement that can be supported or refuted.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What are facts, statistics, or examples that support a claim?",
+    "expectedAny": [
+      "evidence",
+      "support",
+      "proof",
+      "backing"
+    ]
+  },
+  "fillintheblank": {
+    "question": "An opposing viewpoint to your main argument is a ________.",
+    "expectedAny": [
+      "counterargument",
+      "opposing view",
+      "contradiction",
+      "alternative"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why should you address counterarguments in argumentative writing?",
+    "expectedAny": [
+      "shows understanding of other views",
+      "strengthens your argument",
+      "demonstrates thorough thinking"
+    ]
+  }
+}

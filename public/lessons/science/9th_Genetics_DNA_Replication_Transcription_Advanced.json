@@ -1,0 +1,73 @@
+{
+  "id": "9th_Genetics_DNA_Replication_Transcription_Advanced",
+  "title": "Genetics: DNA Replication and Transcription",
+  "grade": "9th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "DNA replication",
+      "definition": "Process by which DNA makes an identical copy of itself"
+    },
+    {
+      "term": "transcription",
+      "definition": "Process of copying DNA information to make RNA"
+    },
+    {
+      "term": "DNA polymerase",
+      "definition": "Enzyme that synthesizes new DNA strands"
+    },
+    {
+      "term": "RNA polymerase",
+      "definition": "Enzyme that synthesizes RNA from DNA template"
+    },
+    {
+      "term": "template strand",
+      "definition": "DNA strand that serves as a pattern for synthesis"
+    }
+  ],
+  "teachingNotes": "Emphasize the molecular mechanisms of DNA replication and transcription. Use diagrams to show enzyme functions and base pairing rules.",
+  "sample": {
+    "question": "What is the process by which DNA makes an identical copy of itself?",
+    "expectedAny": [
+      "DNA replication",
+      "replication",
+      "DNA copying",
+      "DNA duplication"
+    ]
+  },
+  "truefalse": {
+    "question": "Transcription is the process of copying DNA to make RNA.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which enzyme synthesizes new DNA strands during replication?",
+    "expectedAny": [
+      "DNA polymerase",
+      "polymerase",
+      "DNA synthesis enzyme",
+      "replication enzyme"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The DNA strand that serves as a pattern for synthesis is the ________ strand.",
+    "expectedAny": [
+      "template",
+      "parent",
+      "original",
+      "pattern"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why is DNA replication called semiconservative?",
+    "expectedAny": [
+      "each new DNA has one old and one new strand",
+      "half the original DNA is conserved",
+      "preserves one original strand"
+    ]
+  }
+}

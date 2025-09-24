@@ -1,0 +1,73 @@
+{
+  "id": "9th_Medieval_Europe_Feudalism_Christianity_Advanced",
+  "title": "Medieval Europe: Feudalism and Christianity",
+  "grade": "9th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "feudalism",
+      "definition": "Social system based on land ownership and personal loyalty"
+    },
+    {
+      "term": "manor",
+      "definition": "Self-sufficient estate including lord's residence and peasant villages"
+    },
+    {
+      "term": "chivalry",
+      "definition": "Code of conduct for knights emphasizing honor and courtesy"
+    },
+    {
+      "term": "crusades",
+      "definition": "Religious wars between Christians and Muslims for Holy Land"
+    },
+    {
+      "term": "guild",
+      "definition": "Association of craftsmen or merchants in medieval towns"
+    }
+  ],
+  "teachingNotes": "Analyze the social hierarchy of feudalism. Discuss the role of the Catholic Church in medieval society and politics.",
+  "sample": {
+    "question": "What was the social system based on land ownership and loyalty?",
+    "expectedAny": [
+      "feudalism",
+      "feudal system",
+      "manorialism",
+      "medieval hierarchy"
+    ]
+  },
+  "truefalse": {
+    "question": "Chivalry was a code of conduct for knights.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What were the religious wars for the Holy Land called?",
+    "expectedAny": [
+      "crusades",
+      "holy wars",
+      "Christian wars",
+      "religious crusades"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A self-sufficient estate with lord's residence and villages was a ________.",
+    "expectedAny": [
+      "manor",
+      "manorial estate",
+      "feudal estate",
+      "medieval estate"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did the Catholic Church influence medieval European society?",
+    "expectedAny": [
+      "provided education and healthcare",
+      "unified culture and law",
+      "controlled politics and economics"
+    ]
+  }
+}

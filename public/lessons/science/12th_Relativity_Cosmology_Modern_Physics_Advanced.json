@@ -1,0 +1,74 @@
+{
+  "id": "12th_Relativity_Cosmology_Modern_Physics_Advanced",
+  "title": "Relativity, Cosmology, and Modern Physics",
+  "grade": "12th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "spacetime curvature",
+      "definition": "Geometric warping of four-dimensional spacetime by mass and energy"
+    },
+    {
+      "term": "cosmic inflation",
+      "definition": "Rapid exponential expansion of universe in first fraction of second"
+    },
+    {
+      "term": "multiverse theory",
+      "definition": "Hypothesis that our universe is one of many possible universes"
+    },
+    {
+      "term": "Hawking radiation",
+      "definition": "Theoretical radiation predicted to be emitted by black holes"
+    },
+    {
+      "term": "quantum gravity",
+      "definition": "Theoretical framework attempting to unify quantum mechanics and general relativity"
+    }
+  ],
+  "teachingNotes": "Explore frontiers of theoretical physics and cosmology. Discuss ongoing research and unsolved problems in physics.",
+  "sample": {
+    "question": "What is the geometric warping of spacetime by mass?",
+    "expectedAny": [
+      "spacetime curvature",
+      "gravitational curvature",
+      "geometric warping",
+      "spacetime distortion"
+    ]
+  },
+  "truefalse": {
+    "question": "Hawking radiation is theoretically emitted by black holes.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What framework attempts to unify quantum mechanics and relativity?",
+    "expectedAny": [
+      "quantum gravity",
+      "quantum relativity",
+      "unified field theory",
+      "quantum spacetime"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Rapid exponential expansion of early universe is called cosmic ________.",
+    "expectedAny": [
+      "inflation",
+      "expansion",
+      "growth",
+      "stretching"
+    ]
+  },
+  "shortanswer": {
+    "question": "What challenges face development of quantum gravity theory?",
+    "expectedAny": [
+      "incompatible frameworks",
+      "mathematical complexity",
+      "experimental difficulty",
+      "theoretical barriers"
+    ]
+  }
+}

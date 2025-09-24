@@ -1,0 +1,73 @@
+{
+  "id": "10th_Wave_Optics_Electromagnetic_Spectrum_Advanced",
+  "title": "Wave Optics and Electromagnetic Spectrum",
+  "grade": "10th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "electromagnetic spectrum",
+      "definition": "Full range of electromagnetic radiation from radio waves to gamma rays"
+    },
+    {
+      "term": "wavelength",
+      "definition": "Distance between two consecutive peaks or troughs of a wave"
+    },
+    {
+      "term": "frequency",
+      "definition": "Number of wave cycles that pass a point per second"
+    },
+    {
+      "term": "refraction",
+      "definition": "Bending of light when it passes from one medium to another"
+    },
+    {
+      "term": "interference",
+      "definition": "Interaction between waves that can result in constructive or destructive patterns"
+    }
+  ],
+  "teachingNotes": "Use prisms and diffraction gratings to demonstrate wave properties. Connect to applications in technology and medicine.",
+  "sample": {
+    "question": "What is the full range of electromagnetic radiation called?",
+    "expectedAny": [
+      "electromagnetic spectrum",
+      "EM spectrum",
+      "radiation spectrum",
+      "electromagnetic range"
+    ]
+  },
+  "truefalse": {
+    "question": "All electromagnetic waves travel at the speed of light in a vacuum.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the bending of light when passing between media?",
+    "expectedAny": [
+      "refraction",
+      "light bending",
+      "optical refraction",
+      "medium bending"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The distance between two wave peaks is the ________.",
+    "expectedAny": [
+      "wavelength",
+      "wave length",
+      "peak distance",
+      "cycle length"
+    ]
+  },
+  "shortanswer": {
+    "question": "How are wavelength and frequency related for electromagnetic waves?",
+    "expectedAny": [
+      "inversely related",
+      "as one increases, other decreases",
+      "product equals speed of light"
+    ]
+  }
+}

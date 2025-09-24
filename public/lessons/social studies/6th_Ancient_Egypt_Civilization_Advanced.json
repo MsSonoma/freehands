@@ -1,0 +1,74 @@
+{
+  "id": "6th_Ancient_Egypt_Civilization_Advanced",
+  "title": "Ancient Egypt: Civilization Along the Nile",
+  "grade": "6th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "civilization",
+      "definition": "An advanced culture with cities, government, art, religion, and writing systems"
+    },
+    {
+      "term": "pharaoh",
+      "definition": "The king of ancient Egypt, considered a god by the people"
+    },
+    {
+      "term": "hieroglyphics",
+      "definition": "The writing system of ancient Egypt using pictures and symbols"
+    },
+    {
+      "term": "pyramid",
+      "definition": "A large stone tomb built for Egyptian pharaohs"
+    },
+    {
+      "term": "Nile River",
+      "definition": "The river that provided water and fertile soil for ancient Egyptian civilization"
+    }
+  ],
+  "teachingNotes": "Use maps to show the Nile River's importance. Discuss how geography influenced Egyptian culture. Compare Egyptian achievements to other ancient civilizations.",
+  "sample": {
+    "question": "What river was essential to ancient Egyptian civilization?",
+    "expectedAny": [
+      "Nile River",
+      "the Nile",
+      "Nile",
+      "river Nile"
+    ]
+  },
+  "truefalse": {
+    "question": "Ancient Egyptians believed their pharaoh was a god.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What was the writing system of ancient Egypt called?",
+    "expectedAny": [
+      "hieroglyphics",
+      "hieroglyphs",
+      "Egyptian writing",
+      "picture writing"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Large stone tombs built for pharaohs were called ________.",
+    "expectedAny": [
+      "pyramids",
+      "pyramid tombs",
+      "Egyptian pyramids",
+      "stone pyramids"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did the Nile River help Egyptian civilization develop?",
+    "expectedAny": [
+      "provided water and fertile soil",
+      "flooding left rich soil",
+      "transportation and farming",
+      "water for crops and trade"
+    ]
+  }
+}

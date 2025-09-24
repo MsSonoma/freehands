@@ -1,0 +1,74 @@
+{
+  "id": "2nd_Weather_Patterns_Observation_Beginner",
+  "title": "Weather Patterns and Observation",
+  "grade": "2nd",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "weather",
+      "definition": "What the air outside is like at a certain time and place"
+    },
+    {
+      "term": "temperature",
+      "definition": "How hot or cold something is"
+    },
+    {
+      "term": "precipitation",
+      "definition": "Water that falls from the sky like rain, snow, or sleet"
+    },
+    {
+      "term": "wind",
+      "definition": "Moving air that we can feel"
+    },
+    {
+      "term": "clouds",
+      "definition": "White or gray masses of water drops in the sky"
+    }
+  ],
+  "teachingNotes": "Introduce basic weather concepts through daily observation. Have students look outside and describe what they see. Use simple weather instruments like thermometers. Practice identifying different types of weather conditions.",
+  "sample": [
+    {"question": "What causes rain?", "expectedAny": ["clouds release water drops", "water cycle", "condensed water falls"]},
+    {"question": "Why do we have seasons?", "expectedAny": ["Earth's tilt and orbit around the sun"]},
+    {"question": "What do clouds tell us?", "expectedAny": ["they can show weather is changing", "rain or fair weather"]},
+    {"question": "How do we measure temperature?", "expectedAny": ["thermometer"]},
+    {"question": "What happens in winter?", "expectedAny": ["colder weather", "shorter days"]},
+    {"question": "Why is it hot in summer?", "expectedAny": ["more direct sunlight"]},
+    {"question": "What creates wind?", "expectedAny": ["moving air from warm and cool air mixing"]}
+  ],
+  "truefalse": [
+    {"question": "Weather changes every day.", "answer": true},
+    {"question": "It's cold in summer.", "answer": false},
+    {"question": "Clouds can help predict weather.", "answer": true},
+    {"question": "Rain comes from clouds.", "answer": true},
+    {"question": "Temperature is the same everywhere.", "answer": false},
+    {"question": "Wind is moving air.", "answer": true},
+    {"question": "Seasons are the same worldwide.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "Which tool helps us measure temperature?", "choices": ["Ruler", "Scale", "Thermometer", "Clock"], "correct": 2},
+    {"question": "Dark clouds usually mean ___", "choices": ["Sunny", "Rain", "Hot", "Dry"], "correct": 1},
+    {"question": "We measure wind with a ___", "choices": ["Thermometer", "Anemometer", "Barometer", "Rain gauge"], "correct": 1},
+    {"question": "Snow happens when it's ___", "choices": ["Hot", "Cold", "Windy", "Dry"], "correct": 1},
+    {"question": "Spring is when plants ___", "choices": ["Die", "Sleep", "Start growing", "Stop"], "correct": 2},
+    {"question": "A meteorologist studies ___", "choices": ["Rocks", "Weather", "Animals", "Stars"], "correct": 1},
+    {"question": "A rainbow appears when ___ and ___ mix", "choices": ["Snow and wind", "Sun and rain", "Hot and cold", "Day and night"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "The four seasons are spring, summer, fall, and ___", "expectedAny": ["winter"]},
+    {"question": "A ___ measures temperature", "expectedAny": ["thermometer"]},
+    {"question": "Water falling from clouds is called ___", "expectedAny": ["rain", "precipitation"]},
+    {"question": "In winter, days are ___", "expectedAny": ["shorter"]},
+    {"question": "___ is frozen rain", "expectedAny": ["snow", "hail"]},
+    {"question": "Weather ___ tell us about coming weather", "expectedAny": ["patterns", "forecasts"]},
+    {"question": "The ___ warms the Earth", "expectedAny": ["sun"]}
+  ],
+  "shortanswer": [
+    {"question": "How do seasons affect plants?", "expectedAny": ["spring grow, summer bloom, fall prepare, winter rest"]},
+    {"question": "What should you wear in rain vs snow?", "expectedAny": ["raincoat vs warm coat, boots, hat"]},
+    {"question": "How can you predict weather?", "expectedAny": ["look at clouds, feel wind, check temperature"]},
+    {"question": "Why do birds fly south?", "expectedAny": ["escape cold, find food"]},
+    {"question": "What makes a rainbow?", "expectedAny": ["sunlight through raindrops"]},
+    {"question": "How does weather affect activities?", "expectedAny": ["rain cancels outdoor plans; snow allows sledding"]},
+    {"question": "Describe a sunny day.", "expectedAny": ["bright, warm, few clouds"]}
+  ]
+}

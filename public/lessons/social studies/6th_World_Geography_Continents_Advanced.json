@@ -1,0 +1,73 @@
+{
+  "id": "6th_World_Geography_Continents_Advanced",
+  "title": "World Geography: Continents and Physical Features",
+  "grade": "6th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "continent",
+      "definition": "One of the seven large landmasses on Earth"
+    },
+    {
+      "term": "hemisphere",
+      "definition": "Half of the Earth, divided by the equator or prime meridian"
+    },
+    {
+      "term": "latitude",
+      "definition": "Lines that measure distance north and south of the equator"
+    },
+    {
+      "term": "longitude",
+      "definition": "Lines that measure distance east and west of the prime meridian"
+    },
+    {
+      "term": "topography",
+      "definition": "The physical features of land, including mountains, rivers, and plains"
+    }
+  ],
+  "teachingNotes": "Use world maps and globes extensively. Practice using latitude and longitude coordinates. Discuss how geography affects climate and culture.",
+  "sample": {
+    "question": "How many continents are there on Earth?",
+    "expectedAny": [
+      "seven",
+      "7",
+      "seven continents",
+      "7 continents"
+    ]
+  },
+  "truefalse": {
+    "question": "The equator divides Earth into northern and southern hemispheres.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which lines measure distance east and west?",
+    "expectedAny": [
+      "longitude",
+      "longitude lines",
+      "meridian lines",
+      "east-west lines"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The physical features of land are called ________.",
+    "expectedAny": [
+      "topography",
+      "physical geography",
+      "landforms",
+      "terrain"
+    ]
+  },
+  "shortanswer": {
+    "question": "Name the seven continents.",
+    "expectedAny": [
+      "Asia, Africa, North America, South America, Antarctica, Europe, Australia",
+      "all seven continents listed",
+      "Asia, Africa, Americas, Europe, Australia, Antarctica"
+    ]
+  }
+}

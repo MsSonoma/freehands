@@ -1,0 +1,78 @@
+{
+  "id": "weather-seasons-patterns-advanced",
+  "title": "Weather and Seasons Patterns",
+  "grade": "K",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "weather",
+      "definition": "What it's like outside - sunny, rainy, cloudy, or snowy"
+    },
+    {
+      "term": "season",
+      "definition": "Different times of year when weather changes"
+    },
+    {
+      "term": "temperature",
+      "definition": "How hot or cold it is"
+    },
+    {
+      "term": "pattern",
+      "definition": "Something that happens the same way over and over"
+    }
+  ],
+  "teachingNotes": "Use weather chart for daily observations. Discuss clothing for different weather. Create seasonal books with pictures.",
+  "sample": [
+    {"question": "What season comes after winter?", "expectedAny": ["spring", "springtime"]},
+    {"question": "What do you see in the sky when it's sunny?", "expectedAny": ["sun", "sunshine", "bright light"]},
+    {"question": "What happens when clouds get very dark?", "expectedAny": ["rain", "storm", "thunder"]},
+    {"question": "Which season has the longest days?", "expectedAny": ["summer"]},
+    {"question": "What do animals do in winter to stay warm?", "expectedAny": ["hibernate", "sleep", "find shelter"]}
+  ],
+  "truefalse": [
+    {"question": "It snows in summer.", "answer": false, "expectedAny": ["snow happens in winter, not summer"]},
+    {"question": "Weather patterns repeat every year.", "answer": true, "expectedAny": ["seasons repeat in patterns"]},
+    {"question": "All days have the same temperature.", "answer": false, "expectedAny": ["temperature changes daily"]},
+    {"question": "Spring comes before summer.", "answer": true, "expectedAny": ["spring then summer pattern"]},
+    {"question": "We can predict tomorrow's weather perfectly.", "answer": false, "expectedAny": ["weather can be unpredictable"]},
+    {"question": "Rainbows appear after rain and sunshine.", "answer": true, "expectedAny": ["rainbows need rain and sun"]},
+    {"question": "Every place on Earth has the same seasons.", "answer": false, "expectedAny": ["different places have different seasons"]}
+  ],
+  "multiplechoice": [
+    {"question": "What should you wear on a rainy day?", "choices": ["shorts", "raincoat", "swimsuit", "sandals"], "correct": 1, "expectedAny": ["raincoats keep you dry in the rain"]},
+    {"question": "Which weather pattern repeats every year?", "choices": ["storms", "seasons", "rainbows", "wind"], "correct": 1, "expectedAny": ["seasons repeat yearly"]},
+    {"question": "What happens to daylight in winter?", "choices": ["gets longer", "gets shorter", "stays same", "disappears"], "correct": 1, "expectedAny": ["daylight shorter in winter"]},
+    {"question": "When do we usually see snow?", "choices": ["spring", "summer", "fall", "winter"], "correct": 3, "expectedAny": ["snow comes in winter"]},
+    {"question": "What causes temperature to change?", "choices": ["wind", "seasons", "clothes", "houses"], "correct": 1, "expectedAny": ["seasons change temperature"]},
+    {"question": "Which season has flowers blooming?", "choices": ["winter", "spring", "summer", "fall"], "correct": 1, "expectedAny": ["flowers bloom in spring"]},
+    {"question": "What weather tool measures temperature?", "choices": ["ruler", "clock", "thermometer", "scale"], "correct": 2, "expectedAny": ["thermometer measures temperature"]}
+  ],
+  "fillintheblank": [
+    {"question": "In winter, the weather is usually _____.", "expectedAny": ["cold", "snowy", "chilly"]},
+    {"question": "The _____ shines bright on sunny days.", "expectedAny": ["sun"]},
+    {"question": "Weather _____ help us know what weather to expect.", "expectedAny": ["patterns"]},
+    {"question": "In _____, leaves fall from trees.", "expectedAny": ["fall", "autumn"]},
+    {"question": "When it's hot outside, we say the _____ is high.", "expectedAny": ["temperature"]},
+    {"question": "_____ falls from clouds when it's cold enough.", "expectedAny": ["Snow"]},
+    {"question": "We see _____ in the sky before it rains.", "expectedAny": ["clouds"]}
+  ],
+  "shortanswer": [
+    {"question": "How does the weather change from summer to fall?", "expectedAny": ["gets cooler", "leaves change colors", "less hot", "becomes cold"]},
+    {"question": "What weather patterns do you notice in your town?", "expectedAny": ["seasons change", "rain patterns", "temperature changes"]},
+    {"question": "How do you prepare for different weather?", "expectedAny": ["change clothes", "use umbrella", "stay inside"]},
+    {"question": "What signs tell you a season is changing?", "expectedAny": ["temperature changes", "daylight changes", "plants change"]},
+    {"question": "How do animals prepare for winter weather?", "expectedAny": ["grow thick fur", "hibernate", "migrate", "store food"]},
+    {"question": "What weather safety rules should we follow?", "expectedAny": ["stay inside during storms", "dress for weather", "don't go out in severe weather"]},
+    {"question": "How do weather patterns help farmers?", "expectedAny": ["know when to plant", "predict growing seasons", "plan for crops"]}
+  ],
+  "wordProblems": [
+    {"question": "This week had 3 sunny days, 2 rainy days, and 2 cloudy days. How many days was that total?", "expectedAny": ["7 days", "3 + 2 + 2 = 7"]},
+    {"question": "Spring has 3 months, summer has 3 months, fall has 3 months, and winter has 3 months. How many months in a year?", "expectedAny": ["12 months", "3 + 3 + 3 + 3 = 12"]},
+    {"question": "The temperature was 40 degrees in the morning and rose 15 degrees by noon. What was the noon temperature?", "expectedAny": ["55 degrees", "40 + 15 = 55"]},
+    {"question": "Sarah counted 8 snowy days and 4 icy days this winter. How many cold weather days was that?", "expectedAny": ["12 days", "8 + 4 = 12"]},
+    {"question": "There are 4 seasons. If each season lasts 3 months, how many months are in one season cycle?", "expectedAny": ["12 months", "4 × 3 = 12"]},
+    {"question": "Tom recorded the weather for 10 days. 6 were sunny and the rest were cloudy. How many cloudy days?", "expectedAny": ["4 days", "10 - 6 = 4"]},
+    {"question": "In spring, 5 flowers bloomed in week 1 and 7 flowers bloomed in week 2. How many flowers bloomed total?", "expectedAny": ["12 flowers", "5 + 7 = 12"]}
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "id": "11th_Advanced_Composition_Rhetorical_Analysis_Advanced",
+  "title": "Advanced Composition: Rhetorical Analysis",
+  "grade": "11th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "epistemic rhetoric",
+      "definition": "Rhetoric that generates knowledge rather than just transmitting it"
+    },
+    {
+      "term": "exigence",
+      "definition": "Urgent problem or situation that demands rhetorical response"
+    },
+    {
+      "term": "kairos",
+      "definition": "Strategic use of timing and context in rhetorical situations"
+    },
+    {
+      "term": "enthymeme",
+      "definition": "Rhetorical syllogism with implied rather than stated premises"
+    },
+    {
+      "term": "rhetorical ecology",
+      "definition": "Network of relationships among rhetoric, audience, and environment"
+    }
+  ],
+  "teachingNotes": "Explore sophisticated rhetorical theory and analysis. Examine how context shapes meaning and effectiveness.",
+  "sample": {
+    "question": "What is rhetoric that generates rather than transmits knowledge?",
+    "expectedAny": [
+      "epistemic rhetoric",
+      "knowledge-generating rhetoric",
+      "epistemic discourse",
+      "generative rhetoric"
+    ]
+  },
+  "truefalse": {
+    "question": "Kairos involves strategic use of timing in rhetoric.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is a rhetorical syllogism with implied premises?",
+    "expectedAny": [
+      "enthymeme",
+      "rhetorical argument",
+      "implied syllogism",
+      "assumed reasoning"
+    ]
+  },
+  "fillintheblank": {
+    "question": "An urgent situation demanding rhetorical response is an ________.",
+    "expectedAny": [
+      "exigence",
+      "exigency",
+      "urgent situation",
+      "rhetorical emergency"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does rhetorical ecology expand traditional analysis?",
+    "expectedAny": [
+      "includes environment",
+      "network approach",
+      "contextual factors",
+      "systemic view"
+    ]
+  }
+}

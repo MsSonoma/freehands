@@ -1,0 +1,74 @@
+{
+  "id": "11th_Electromagnetic_Waves_Light_Physics_Intermediate",
+  "title": "Electromagnetic Waves and Light Physics",
+  "grade": "11th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "wave-particle duality",
+      "definition": "Property of matter and energy exhibiting both wave and particle characteristics"
+    },
+    {
+      "term": "interference",
+      "definition": "Combination of waves resulting in reinforcement or cancellation"
+    },
+    {
+      "term": "diffraction",
+      "definition": "Bending of waves around obstacles or through openings"
+    },
+    {
+      "term": "polarization",
+      "definition": "Orientation of electromagnetic wave oscillations in specific directions"
+    },
+    {
+      "term": "Doppler effect",
+      "definition": "Change in wave frequency due to relative motion between source and observer"
+    }
+  ],
+  "teachingNotes": "Demonstrate wave phenomena through experiments. Discuss applications in technology and astronomy.",
+  "sample": {
+    "question": "What property shows both wave and particle characteristics?",
+    "expectedAny": [
+      "wave-particle duality",
+      "dual nature",
+      "wave-particle property",
+      "quantum duality"
+    ]
+  },
+  "truefalse": {
+    "question": "Diffraction involves waves bending around obstacles.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What causes frequency changes due to relative motion?",
+    "expectedAny": [
+      "Doppler effect",
+      "frequency shift",
+      "motion effect",
+      "relative motion phenomenon"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The orientation of electromagnetic oscillations is called ________.",
+    "expectedAny": [
+      "polarization",
+      "wave orientation",
+      "oscillation direction",
+      "field alignment"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does interference create wave patterns?",
+    "expectedAny": [
+      "constructive interference",
+      "destructive interference",
+      "wave combination",
+      "amplitude changes"
+    ]
+  }
+}

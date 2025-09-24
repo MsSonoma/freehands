@@ -1,0 +1,74 @@
+{
+  "id": "11th_Quantum_Mechanics_Atomic_Structure_Intermediate",
+  "title": "Quantum Mechanics and Atomic Structure",
+  "grade": "11th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "Heisenberg uncertainty principle",
+      "definition": "Principle stating position and momentum cannot be precisely known simultaneously"
+    },
+    {
+      "term": "Schrödinger equation",
+      "definition": "Mathematical equation describing quantum mechanical wave functions"
+    },
+    {
+      "term": "electron configuration",
+      "definition": "Distribution of electrons among atomic orbitals"
+    },
+    {
+      "term": "spin quantum number",
+      "definition": "Quantum number describing intrinsic angular momentum of particles"
+    },
+    {
+      "term": "Pauli exclusion principle",
+      "definition": "Principle that no two electrons can have identical quantum states"
+    }
+  ],
+  "teachingNotes": "Introduce fundamental quantum principles and their implications. Practice electron configuration notation.",
+  "sample": {
+    "question": "What principle states position and momentum cannot be known precisely together?",
+    "expectedAny": [
+      "Heisenberg uncertainty principle",
+      "uncertainty principle",
+      "Heisenberg principle",
+      "quantum uncertainty"
+    ]
+  },
+  "truefalse": {
+    "question": "The Pauli exclusion principle prevents electrons from having identical quantum states.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What describes the distribution of electrons among orbitals?",
+    "expectedAny": [
+      "electron configuration",
+      "electronic configuration",
+      "electron arrangement",
+      "orbital filling"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The quantum number describing particle spin is the ________ quantum number.",
+    "expectedAny": [
+      "spin",
+      "magnetic spin",
+      "intrinsic",
+      "angular momentum"
+    ]
+  },
+  "shortanswer": {
+    "question": "What does the Schrödinger equation describe?",
+    "expectedAny": [
+      "wave functions",
+      "quantum states",
+      "probability distributions",
+      "quantum behavior"
+    ]
+  }
+}

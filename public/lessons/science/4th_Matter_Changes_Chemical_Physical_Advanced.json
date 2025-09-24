@@ -1,0 +1,74 @@
+{
+  "id": "4th_Matter_Changes_Chemical_Physical_Advanced",
+  "title": "Matter Changes: Chemical and Physical",
+  "grade": "4th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "physical change",
+      "definition": "A change that affects the form of a substance but not its identity"
+    },
+    {
+      "term": "chemical change",
+      "definition": "A change that creates a new substance with different properties"
+    },
+    {
+      "term": "properties",
+      "definition": "Characteristics that describe matter, like color, texture, or hardness"
+    },
+    {
+      "term": "reversible",
+      "definition": "A change that can be undone to get back the original substance"
+    },
+    {
+      "term": "irreversible",
+      "definition": "A change that cannot be undone"
+    }
+  ],
+  "teachingNotes": "Demonstrate physical changes like melting ice and chemical changes like burning paper. Have students observe and classify different types of changes. Emphasize the difference between changes in form versus changes in identity.",
+  "sample": [
+    {"question": "What is the difference between a physical and chemical change?", "expectedAny": ["physical changes form", "chemical changes identity"]},
+    {"question": "Is melting butter a physical or chemical change?", "expectedAny": ["physical"]},
+    {"question": "Is rusting iron a physical or chemical change?", "expectedAny": ["chemical"]},
+    {"question": "Is dissolving sugar in water physical or chemical?", "expectedAny": ["physical"]},
+    {"question": "Is burning a candle a physical or chemical change?", "expectedAny": ["both", "wax melting physical", "burning flame chemical"]},
+    {"question": "Is cutting paper a physical or chemical change?", "expectedAny": ["physical"]},
+    {"question": "What signs show a chemical change?", "expectedAny": ["gas", "color change", "new odor", "temperature change", "precipitate"]}
+  ],
+  "truefalse": [
+    {"question": "Burning wood is an example of a physical change.", "answer": false},
+    {"question": "A chemical change creates a new substance.", "answer": true},
+    {"question": "Freezing water is reversible.", "answer": true},
+    {"question": "Cooking an egg is a chemical change.", "answer": true},
+    {"question": "Tearing paper changes the identity of the paper.", "answer": false},
+    {"question": "Rusting is a chemical change.", "answer": true},
+    {"question": "Evaporation is a chemical change.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "Which of these is a chemical change?", "choices": ["Melting ice", "Boiling water", "Rusting metal", "Breaking glass"], "correct": 2},
+    {"question": "Which is a sign of a chemical change?", "choices": ["Change in size", "Color change", "Change in shape", "Dissolving"], "correct": 1},
+    {"question": "Which change is reversible?", "choices": ["Burning paper", "Baking bread", "Freezing water", "Rusting iron"], "correct": 2},
+    {"question": "Which produces a new substance?", "choices": ["Melting", "Boiling", "Condensing", "Cooking"], "correct": 3},
+    {"question": "Which is NOT a chemical change?", "choices": ["Tarnishing silver", "Cutting wood", "Cooking an egg", "Rusting"], "correct": 1},
+    {"question": "What do we call a solid forming from two liquids?", "choices": ["Evaporation", "Precipitate", "Condensation", "Sublimation"], "correct": 1},
+    {"question": "Which best describes a physical change?", "choices": ["New substance", "Same substance, new form", "Cannot be reversed", "Produces gas"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "Melting ice is a ________ change because the water can be frozen again.", "expectedAny": ["physical"]},
+    {"question": "A change that creates a new substance is a ________ change.", "expectedAny": ["chemical"]},
+    {"question": "Evidence of a chemical change includes a change in ________.", "expectedAny": ["color", "temperature", "smell"]},
+    {"question": "A solid that forms from a solution is called a ________.", "expectedAny": ["precipitate"]},
+    {"question": "A ________ change affects form but not identity.", "expectedAny": ["physical"]},
+    {"question": "Burning fuel releases heat and light ________.", "expectedAny": ["energy"]},
+    {"question": "Dissolving sugar in water is usually a ________ change.", "expectedAny": ["physical"]}
+  ],
+  "shortanswer": [
+    {"question": "Give an example of a physical change and explain why it's physical.", "expectedAny": ["ice melting - same substance"]},
+    {"question": "Give an example of a chemical change and the evidence.", "expectedAny": ["rusting - color change", "gas bubbles in vinegar and baking soda"]},
+    {"question": "Explain why cutting an apple is physical but browning is chemical.", "expectedAny": ["cutting changes size; browning forms new substances"]},
+    {"question": "Describe how heat can cause both physical and chemical changes.", "expectedAny": ["melting vs burning"]},
+    {"question": "Why are some changes reversible while others are not?", "expectedAny": ["no new substance vs new substance"]},
+    {"question": "Is dissolving always physical? Explain.", "expectedAny": ["usually physical; sometimes chemical reactions occur"]},
+    {"question": "How can you tell if a change created a new substance?", "expectedAny": ["new properties", "cannot reverse by simple means"]}
+  ]
+}

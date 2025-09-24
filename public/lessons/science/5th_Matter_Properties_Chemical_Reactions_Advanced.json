@@ -1,0 +1,74 @@
+{
+  "id": "5th_Matter_Properties_Chemical_Reactions_Advanced",
+  "title": "Matter Properties and Chemical Reactions",
+  "grade": "5th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "chemical reaction",
+      "definition": "A process where substances combine or break apart to form new substances"
+    },
+    {
+      "term": "reactant",
+      "definition": "A substance that enters into a chemical reaction"
+    },
+    {
+      "term": "product",
+      "definition": "A substance that is formed as a result of a chemical reaction"
+    },
+    {
+      "term": "catalyst",
+      "definition": "A substance that speeds up a chemical reaction without being consumed"
+    },
+    {
+      "term": "conservation of mass",
+      "definition": "Matter cannot be created or destroyed in a chemical reaction"
+    }
+  ],
+  "teachingNotes": "Demonstrate safe chemical reactions like baking soda and vinegar. Discuss how atoms rearrange during reactions. Emphasize that mass is conserved even when new substances form.",
+  "sample": {
+    "question": "What happens to atoms during a chemical reaction?",
+    "expectedAny": [
+      "they rearrange",
+      "form new combinations",
+      "bond differently",
+      "reorganize"
+    ]
+  },
+  "truefalse": {
+    "question": "In a chemical reaction, the total mass of reactants equals the total mass of products.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is a catalyst?",
+    "expectedAny": [
+      "speeds up reactions",
+      "helps reactions occur",
+      "reaction accelerator",
+      "chemical helper"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The substances you start with in a chemical reaction are called ________.",
+    "expectedAny": [
+      "reactants",
+      "starting materials",
+      "inputs",
+      "initial substances"
+    ]
+  },
+  "shortanswer": {
+    "question": "How can you tell if a chemical reaction has occurred?",
+    "expectedAny": [
+      "new substance formed",
+      "color change",
+      "gas produced",
+      "temperature change"
+    ]
+  }
+}

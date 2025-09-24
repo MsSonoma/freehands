@@ -1,0 +1,53 @@
+{
+  "id": "10th_Logarithms_Exponential_Equations_Beginner",
+  "title": "Logarithms and Exponential Equations",
+  "grade": "10th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "logarithm",
+      "definition": "The power to which a base must be raised to get a given number"
+    },
+    {
+      "term": "common logarithm",
+      "definition": "Logarithm with base 10, written as log"
+    },
+    {
+      "term": "natural logarithm",
+      "definition": "Logarithm with base e, written as ln"
+    },
+    {
+      "term": "exponential equation",
+      "definition": "Equation where the variable appears in an exponent"
+    },
+    {
+      "term": "logarithmic equation",
+      "definition": "Equation involving logarithms of variable expressions"
+    }
+  ],
+  "teachingNotes": "Emphasize that logarithms and exponentials are inverse operations. Practice converting between exponential and logarithmic forms.",
+  "sample": {
+    "question": "What is the power to which a base must be raised to get a given number?",
+    "expectedAny": ["logarithm", "log", "logarithmic function", "log function"]
+  },
+  "truefalse": {
+    "question": "Logarithms and exponentials are inverse operations.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is a logarithm with base 10 called?",
+    "expectedAny": ["common logarithm", "log base 10", "decimal logarithm", "standard logarithm"]
+  },
+  "fillintheblank": {
+    "question": "The logarithm with base e is called the ________ logarithm.",
+    "expectedAny": ["natural", "ln", "Napierian", "e-based"]
+  },
+  "shortanswer": {
+    "question": "How do you solve the equation 2^x = 8?",
+    "expectedAny": ["take log of both sides", "x = 3", "2^3 = 8", "use logarithms"]
+  },
+  "wordProblems": {
+    "question": "If log₂(x) = 4, what is the value of x?",
+    "expectedAny": ["16", "x = 16", "2^4 = 16", "sixteen"]
+  }
+}

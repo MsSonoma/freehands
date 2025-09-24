@@ -1,0 +1,80 @@
+{
+  "id": "listening-speaking-skills-beginner",
+  "title": "Listening and Speaking Skills",
+  "grade": "K",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "listen",
+      "definition": "To pay attention to sounds and words with your ears"
+    },
+    {
+      "term": "speak",
+      "definition": "To use your voice to say words"
+    },
+    {
+      "term": "voice",
+      "definition": "The sound you make when you talk"
+    },
+    {
+      "term": "quiet",
+      "definition": "Making no noise or very little noise"
+    }
+  ],
+  "teachingNotes": "Practice turn-taking in conversations. Use listening games and following directions activities. Encourage clear speech.",
+  "sample": [
+    {"question": "What should you do when someone else is talking?", "expectedAny": ["listen", "be quiet"]},
+    {"question": "How do you ask to speak in class?", "expectedAny": ["raise your hand"]},
+    {"question": "What voice do you use in the library?", "expectedAny": ["quiet voice", "whisper"]},
+    {"question": "Show me how to be a good listener.", "expectedAny": ["look at speaker", "sit still"]},
+    {"question": "When is it your turn to talk?", "expectedAny": ["after raising hand", "when teacher calls on you"]},
+    {"question": "What polite words can you use?", "expectedAny": ["please, thank you, excuse me"]},
+    {"question": "How do you greet a friend?", "expectedAny": ["hello, hi, good morning"]}
+  ],
+  "truefalse": [
+    {"question": "Good listeners look at the person who is talking.", "answer": true, "expectedAny": ["true"]},
+    {"question": "It's okay to talk when someone else is talking.", "answer": false, "expectedAny": ["false"]},
+    {"question": "You should raise your hand to ask a question.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Shouting is the best way to talk in class.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Good speakers talk clearly.", "answer": true, "expectedAny": ["true"]},
+    {"question": "You can interrupt someone anytime.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Listening means using your ears.", "answer": true, "expectedAny": ["true"]}
+  ],
+  "multiplechoice": [
+    {"question": "What voice should you use inside the classroom?", "choices": ["loud voice", "inside voice", "shouting voice", "no voice"], "correct": 1, "expectedAny": ["inside voice"]},
+    {"question": "How do you show you want to speak?", "choices": ["shout out", "raise your hand", "stand up", "clap hands"], "correct": 1, "expectedAny": ["raise your hand"]},
+    {"question": "What should you do while listening to a story?", "choices": ["talk to friends", "look at the book", "make noise", "run around"], "correct": 1, "expectedAny": ["look at the book"]},
+    {"question": "Good listeners...", "choices": ["talk loudly", "interrupt", "pay attention", "look away"], "correct": 2, "expectedAny": ["pay attention"]},
+    {"question": "When should you use a whisper voice?", "choices": ["at recess", "in the library", "at lunch", "never"], "correct": 1, "expectedAny": ["in the library"]},
+    {"question": "What helps you understand what someone is saying?", "choices": ["looking away", "listening carefully", "making noise", "talking back"], "correct": 1, "expectedAny": ["listening carefully"]},
+    {"question": "How do you take turns talking?", "choices": ["talk at same time", "shout louder", "wait your turn", "never talk"], "correct": 2, "expectedAny": ["wait your turn"]}
+  ],
+  "fillintheblank": [
+    {"question": "When you want to talk, you should raise your _____.", "expectedAny": ["hand"]},
+    {"question": "Good listeners use their _____ to hear.", "expectedAny": ["ears"]},
+    {"question": "In the classroom, we use our _____ voice.", "expectedAny": ["inside", "quiet"]},
+    {"question": "When someone is talking, I should _____.", "expectedAny": ["listen"]},
+    {"question": "To speak clearly, I need to open my _____.", "expectedAny": ["mouth"]},
+    {"question": "During story time, I should _____ to the teacher.", "expectedAny": ["listen"]},
+    {"question": "Good speakers talk _____ so others can understand.", "expectedAny": ["clearly"]}
+  ],
+  "shortanswer": [
+    {"question": "How can you be a good listener?", "expectedAny": ["be quiet", "look at speaker", "pay attention"]},
+    {"question": "What are some quiet activities you can do?", "expectedAny": ["read books", "draw pictures"]},
+    {"question": "Why is it important to take turns talking?", "expectedAny": ["so everyone gets heard", "it's polite"]},
+    {"question": "When might you need to use a loud voice?", "expectedAny": ["outside at recess", "in emergency"]},
+    {"question": "How do you show respect when others are speaking?", "expectedAny": ["listen quietly", "look at them"]},
+    {"question": "What should you do if you don't understand something?", "expectedAny": ["raise your hand", "ask a question"]},
+    {"question": "Describe your inside voice.", "expectedAny": ["quiet", "soft"]}
+  ],
+  "wordProblems": [
+    {"question": "In circle time, 5 children want to share. If each child talks for 1 minute, how long will sharing take?", "expectedAny": ["5 minutes"]},
+    {"question": "The teacher asks 3 questions. If you raise your hand each time, how many times did you raise your hand?", "expectedAny": ["3 times"]},
+    {"question": "During story time, 8 children are listening and 2 are talking. How many are being good listeners?", "expectedAny": ["8 children"]},
+    {"question": "There are 4 rules for good listening. If you follow 3 of them, how many more do you need to follow?", "expectedAny": ["1 more rule"]},
+    {"question": "In library time, 6 children use whisper voices and 2 use loud voices. How many are following library rules?", "expectedAny": ["6 children"]},
+    {"question": "If you speak for 2 minutes and listen for 8 minutes, how many total minutes is that?", "expectedAny": ["10 minutes"]},
+    {"question": "There are 10 children in group. If 7 raise their hands to speak, how many did not raise hands?", "expectedAny": ["3 children"]}
+  ]
+}

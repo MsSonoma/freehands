@@ -1,0 +1,74 @@
+{
+  "id": "6th_Plate_Tectonics_Earth_Structure_Advanced",
+  "title": "Plate Tectonics and Earth's Structure",
+  "grade": "6th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "plate tectonics",
+      "definition": "The theory that Earth's outer shell is made of moving pieces called plates"
+    },
+    {
+      "term": "continental drift",
+      "definition": "The slow movement of continents across Earth's surface over millions of years"
+    },
+    {
+      "term": "earthquake",
+      "definition": "Sudden shaking of the ground caused by movement of tectonic plates"
+    },
+    {
+      "term": "volcano",
+      "definition": "An opening in Earth's crust where molten rock can erupt to the surface"
+    },
+    {
+      "term": "mantle",
+      "definition": "The thick layer of hot rock beneath Earth's crust"
+    }
+  ],
+  "teachingNotes": "Use maps showing plate boundaries and real examples of earthquakes and volcanoes. Discuss evidence for continental drift including fossils and rock formations.",
+  "sample": {
+    "question": "What is the theory that explains how continents move over time?",
+    "expectedAny": [
+      "plate tectonics",
+      "continental drift",
+      "tectonic plate theory",
+      "plate tectonic theory"
+    ]
+  },
+  "truefalse": {
+    "question": "Earth's outer shell is made of moving pieces called tectonic plates.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Where do most earthquakes occur?",
+    "expectedAny": [
+      "plate boundaries",
+      "where plates meet",
+      "along tectonic plates",
+      "plate edges"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The thick layer of hot rock beneath Earth's crust is called the ________.",
+    "expectedAny": [
+      "mantle",
+      "Earth's mantle",
+      "mantle layer",
+      "hot mantle"
+    ]
+  },
+  "shortanswer": {
+    "question": "What evidence supports the theory of continental drift?",
+    "expectedAny": [
+      "matching fossils on different continents",
+      "similar rock formations",
+      "puzzle-like continent shapes",
+      "fossil evidence"
+    ]
+  }
+}

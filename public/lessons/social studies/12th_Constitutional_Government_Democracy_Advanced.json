@@ -1,0 +1,74 @@
+{
+  "id": "12th_Constitutional_Government_Democracy_Advanced",
+  "title": "Constitutional Government and Democracy",
+  "grade": "12th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "originalism",
+      "definition": "Constitutional interpretation based on original meaning at time of ratification"
+    },
+    {
+      "term": "living constitution",
+      "definition": "Constitutional interpretation that adapts to contemporary circumstances"
+    },
+    {
+      "term": "strict scrutiny",
+      "definition": "Highest standard of judicial review for constitutional challenges"
+    },
+    {
+      "term": "incorporation doctrine",
+      "definition": "Legal principle applying Bill of Rights to state governments"
+    },
+    {
+      "term": "constitutional convention",
+      "definition": "Theoretical method for comprehensive constitutional revision"
+    }
+  ],
+  "teachingNotes": "Explore constitutional interpretation theories and contemporary legal debates. Analyze evolving nature of constitutional law.",
+  "sample": {
+    "question": "What interpretation bases meaning on original ratification context?",
+    "expectedAny": [
+      "originalism",
+      "original intent",
+      "textualism",
+      "original meaning"
+    ]
+  },
+  "truefalse": {
+    "question": "Living constitution interpretation adapts to contemporary circumstances.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the highest standard of judicial review?",
+    "expectedAny": [
+      "strict scrutiny",
+      "highest scrutiny",
+      "rigorous review",
+      "maximum scrutiny"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The principle applying Bill of Rights to states is ________ doctrine.",
+    "expectedAny": [
+      "incorporation",
+      "application",
+      "extension",
+      "binding"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are criticisms of originalism vs. living constitution approaches?",
+    "expectedAny": [
+      "rigid vs. subjective",
+      "historical vs. contemporary",
+      "fixed vs. flexible",
+      "backward vs. activist"
+    ]
+  }
+}

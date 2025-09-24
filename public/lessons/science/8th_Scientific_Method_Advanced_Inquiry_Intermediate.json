@@ -1,0 +1,73 @@
+{
+  "id": "8th_Scientific_Method_Advanced_Inquiry_Intermediate",
+  "title": "Advanced Scientific Inquiry and Data Analysis",
+  "grade": "8th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "independent variable",
+      "definition": "The factor that is changed in an experiment"
+    },
+    {
+      "term": "dependent variable",
+      "definition": "The factor that is measured in an experiment"
+    },
+    {
+      "term": "controlled variable",
+      "definition": "Factors kept the same to ensure a fair test"
+    },
+    {
+      "term": "correlation",
+      "definition": "A relationship between two variables"
+    },
+    {
+      "term": "peer review",
+      "definition": "Scientists checking each other's work for accuracy"
+    }
+  ],
+  "teachingNotes": "Practice designing controlled experiments. Emphasize the difference between correlation and causation.",
+  "sample": {
+    "question": "What is the factor that is changed in an experiment?",
+    "expectedAny": [
+      "independent variable",
+      "manipulated variable",
+      "test variable",
+      "experimental variable"
+    ]
+  },
+  "truefalse": {
+    "question": "Peer review helps ensure scientific accuracy.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is measured in an experiment?",
+    "expectedAny": [
+      "dependent variable",
+      "response variable",
+      "outcome variable",
+      "measured variable"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A relationship between two variables is called a ________.",
+    "expectedAny": [
+      "correlation",
+      "relationship",
+      "connection",
+      "association"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why are controlled variables important in experiments?",
+    "expectedAny": [
+      "ensure fair test",
+      "eliminate other factors",
+      "isolate the variable being tested"
+    ]
+  }
+}

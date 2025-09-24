@@ -1,0 +1,53 @@
+{
+  "id": "12th_Series_Sequences_Mathematical_Analysis_Intermediate",
+  "title": "Series, Sequences, and Mathematical Analysis",
+  "grade": "12th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "infinite series",
+      "definition": "Series with unlimited number of terms"
+    },
+    {
+      "term": "partial sum",
+      "definition": "Sum of first n terms in a series"
+    },
+    {
+      "term": "ratio test",
+      "definition": "Method for determining series convergence using ratios of consecutive terms"
+    },
+    {
+      "term": "root test",
+      "definition": "Method for determining convergence using nth roots of terms"
+    },
+    {
+      "term": "alternating series",
+      "definition": "Series with terms that alternate in sign"
+    }
+  ],
+  "teachingNotes": "Introduce convergence tests and their applications. Practice determining convergence for various series types.",
+  "sample": {
+    "question": "What is a series with unlimited number of terms?",
+    "expectedAny": ["infinite series", "endless series", "unlimited series", "infinite sum"]
+  },
+  "truefalse": {
+    "question": "A partial sum includes the first n terms of a series.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What method uses ratios of consecutive terms for convergence?",
+    "expectedAny": ["ratio test", "ratio convergence test", "consecutive ratio test", "term ratio test"]
+  },
+  "fillintheblank": {
+    "question": "A series with terms alternating in sign is an ________ series.",
+    "expectedAny": ["alternating", "alternating sign", "sign-changing", "positive-negative"]
+  },
+  "shortanswer": {
+    "question": "When does a geometric series converge?",
+    "expectedAny": ["when |r| < 1", "ratio less than 1", "common ratio magnitude < 1", "absolute ratio < 1"]
+  },
+  "wordProblems": {
+    "question": "Does the series Σ(1/n²) converge using the ratio test?",
+    "expectedAny": ["inconclusive", "ratio test fails", "need other test", "p-series converges"]
+  }
+}

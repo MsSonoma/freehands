@@ -1,0 +1,53 @@
+{
+  "id": "5th_Data_Analysis_Line_Graphs_Intermediate",
+  "title": "Data Analysis and Line Graphs",
+  "grade": "5th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "line graph",
+      "definition": "A graph that uses points connected by lines to show how data changes over time"
+    },
+    {
+      "term": "data",
+      "definition": "Information collected through observation, surveys, or experiments"
+    },
+    {
+      "term": "trend",
+      "definition": "A pattern showing whether data is increasing, decreasing, or staying the same"
+    },
+    {
+      "term": "scale",
+      "definition": "The numbers marked on the axes of a graph to measure the data"
+    },
+    {
+      "term": "interpret",
+      "definition": "To explain what information or patterns a graph shows"
+    }
+  ],
+  "teachingNotes": "Practice reading line graphs showing changes over time. Teach students to identify increasing and decreasing trends. Emphasize the importance of reading titles and labels.",
+  "sample": {
+    "question": "What type of graph is best for showing temperature changes throughout a day?",
+    "expectedAny": ["line graph", "line chart", "graph with lines", "time graph"]
+  },
+  "truefalse": {
+    "question": "A line graph can show how data changes over time.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "If a line on a graph slopes upward from left to right, what does this show?",
+    "expectedAny": ["increasing", "going up", "rising", "data is increasing"]
+  },
+  "fillintheblank": {
+    "question": "To understand a graph, you should first read the ________ and labels.",
+    "expectedAny": ["title", "heading", "graph title", "main title"]
+  },
+  "shortanswer": {
+    "question": "Look at a line graph showing plant height over 6 weeks. If the line goes up steadily, what does this tell you?",
+    "expectedAny": ["plant is growing", "height is increasing", "plant gets taller", "steady growth"]
+  },
+  "wordProblems": {
+    "question": "A line graph shows school enrollment from 2019 to 2023: 2019=200, 2020=250, 2021=300, 2022=280, 2023=320. What is the overall trend?",
+    "expectedAny": ["increasing", "going up", "growth", "enrollment is rising"]
+  }
+}

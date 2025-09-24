@@ -1,0 +1,83 @@
+{
+  "id": "4th_Fractions_Decimals_Equivalence_Intermediate",
+  "title": "Fractions, Decimals, and Equivalence",
+  "grade": "4th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "fraction",
+      "definition": "A number that represents part of a whole"
+    },
+    {
+      "term": "decimal",
+      "definition": "A number that uses a decimal point to show parts of a whole"
+    },
+    {
+      "term": "equivalent",
+      "definition": "Having the same value even though they look different"
+    },
+    {
+      "term": "numerator",
+      "definition": "The top number in a fraction that shows how many parts you have"
+    },
+    {
+      "term": "denominator",
+      "definition": "The bottom number in a fraction that shows how many equal parts in the whole"
+    }
+  ],
+  "teachingNotes": "Use visual models like fraction bars and decimal grids to help students understand the relationship between fractions and decimals. Practice finding equivalent fractions and converting between forms.",
+  "sample": [
+    {"question": "What decimal is equivalent to the fraction 3/4?", "expectedAny": ["0.75"]},
+    {"question": "Write 2/5 as a decimal.", "expectedAny": ["0.4"]},
+    {"question": "Is 0.25 equal to 1/4?", "expectedAny": ["yes"]},
+    {"question": "Name two fractions equivalent to 1/2.", "expectedAny": ["2/4", "50/100"]},
+    {"question": "Write 0.6 as a fraction in simplest form.", "expectedAny": ["3/5"]},
+    {"question": "Which is larger: 0.8 or 3/4?", "expectedAny": ["0.8"]},
+    {"question": "Place 0.3 and 1/4 on a number line from 0 to 1. Which is to the right?", "expectedAny": ["0.3"]}
+  ],
+  "truefalse": [
+    {"question": "The fractions 2/4 and 1/2 are equivalent.", "answer": true},
+    {"question": "0.5 equals 5/100.", "answer": false},
+    {"question": "0.25 equals 25/100.", "answer": true},
+    {"question": "To make equivalent fractions, multiply numerator and denominator by the same number.", "answer": true},
+    {"question": "0.3 equals 3/10.", "answer": true},
+    {"question": "0.75 equals 7/10.", "answer": false},
+    {"question": "3/8 is less than 0.4.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "Which fraction is equivalent to 0.5?", "choices": ["1/2", "1/4", "3/5", "2/3"], "correct": 0},
+    {"question": "Which decimal equals 3/4?", "choices": ["0.34", "0.3", "0.75", "0.57"], "correct": 2},
+    {"question": "Which is greater?", "choices": ["0.6", "3/5", "equal", "cannot tell"], "correct": 2},
+    {"question": "Which pair is equivalent?", "choices": ["2/3 and 4/9", "1/2 and 3/6", "3/4 and 6/9", "2/5 and 3/10"], "correct": 1},
+    {"question": "Which is smallest?", "choices": ["0.4", "0.25", "1/3", "0.2"], "correct": 3},
+    {"question": "Which decimal equals 2/5?", "choices": ["0.25", "0.2", "0.4", "0.5"], "correct": 2},
+    {"question": "Which fraction equals 0.2?", "choices": ["1/5", "2/5", "1/2", "5/10"], "correct": 0}
+  ],
+  "fillintheblank": [
+    {"question": "In the fraction 5/8, the number 8 is called the ________.", "expectedAny": ["denominator"]},
+    {"question": "In the fraction 5/8, the number 5 is the ________.", "expectedAny": ["numerator"]},
+    {"question": "Write 0.75 as a fraction: _____.", "expectedAny": ["3/4"]},
+    {"question": "Write 0.2 as a fraction: _____.", "expectedAny": ["1/5"]},
+    {"question": "0.6 equals _____/10.", "expectedAny": ["6"]},
+    {"question": "An equivalent fraction for 2/3 is _____/9.", "expectedAny": ["6"]},
+    {"question": "0.05 equals _____/100.", "expectedAny": ["5"]}
+  ],
+  "shortanswer": [
+    {"question": "How do you find an equivalent fraction for 2/3?", "expectedAny": ["multiply by same number"]},
+    {"question": "Explain how to convert 3/4 to a decimal.", "expectedAny": ["75/100 = 0.75"]},
+    {"question": "Use a number line to compare 0.3 and 1/4.", "expectedAny": ["0.3 to the right"]},
+    {"question": "What does 'simplest form' mean for fractions?", "expectedAny": ["lowest terms"]},
+    {"question": "Give two equivalent forms of 0.5.", "expectedAny": ["1/2", "50/100"]},
+    {"question": "Why do trailing zeros not change a decimal's value?", "expectedAny": ["place value"]},
+    {"question": "How can hundred grids help compare decimals?", "expectedAny": ["visual area"]}
+  ],
+  "wordProblems": [
+    {"question": "Sarah ate 3/8 of a pizza and Jake ate 0.25 of the same pizza. Who ate more?", "expectedAny": ["Sarah"]},
+    {"question": "A recipe needs 1/2 cup sugar. You have a 1/4 cup measure. How many scoops?", "expectedAny": ["2"]},
+    {"question": "Which is more: 0.6 of a liter or 3/5 of a liter?", "expectedAny": ["equal"]},
+    {"question": "You read 0.4 of a book and your friend read 2/5. Who read more?", "expectedAny": ["equal"]},
+    {"question": "Shade an area showing 0.75 of a grid. What fraction is shaded?", "expectedAny": ["3/4"]},
+    {"question": "Compare 0.2 and 1/4. Which is greater?", "expectedAny": ["1/4"]},
+    {"question": "Is 0.125 equal to 1/8?", "expectedAny": ["yes"]}
+  ]
+}

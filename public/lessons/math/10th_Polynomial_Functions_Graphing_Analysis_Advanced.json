@@ -1,0 +1,53 @@
+{
+  "id": "10th_Polynomial_Functions_Graphing_Analysis_Advanced",
+  "title": "Polynomial Functions: Graphing and Analysis",
+  "grade": "10th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "polynomial function",
+      "definition": "Function consisting of variables and coefficients with non-negative integer exponents"
+    },
+    {
+      "term": "degree",
+      "definition": "Highest power of the variable in a polynomial"
+    },
+    {
+      "term": "leading coefficient",
+      "definition": "Coefficient of the term with the highest degree"
+    },
+    {
+      "term": "end behavior",
+      "definition": "How function values behave as x approaches positive or negative infinity"
+    },
+    {
+      "term": "turning point",
+      "definition": "Point where a function changes from increasing to decreasing or vice versa"
+    }
+  ],
+  "teachingNotes": "Use graphing technology to explore polynomial behavior. Emphasize the relationship between degree and number of turning points.",
+  "sample": {
+    "question": "What is a function with variables and coefficients using non-negative integer exponents?",
+    "expectedAny": ["polynomial function", "polynomial", "polynomial equation", "algebraic polynomial"]
+  },
+  "truefalse": {
+    "question": "The degree of a polynomial is the highest power of the variable.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What determines the end behavior of a polynomial?",
+    "expectedAny": ["degree and leading coefficient", "highest term", "leading term", "dominant term"]
+  },
+  "fillintheblank": {
+    "question": "A point where a function changes from increasing to decreasing is a ________ point.",
+    "expectedAny": ["turning", "critical", "maximum or minimum", "vertex"]
+  },
+  "shortanswer": {
+    "question": "How many turning points can a polynomial of degree n have at most?",
+    "expectedAny": ["n - 1", "one less than the degree", "degree minus one", "n-1"]
+  },
+  "wordProblems": {
+    "question": "If f(x) = 2x³ - 5x² + 3x - 1, what is the degree and leading coefficient?",
+    "expectedAny": ["degree 3, leading coefficient 2", "3rd degree, coefficient 2", "cubic with leading 2"]
+  }
+}

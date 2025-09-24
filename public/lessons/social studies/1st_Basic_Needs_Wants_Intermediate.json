@@ -1,0 +1,71 @@
+{
+  "id": "basic-needs-wants-intermediate",
+  "title": "Basic Needs and Wants",
+  "grade": "1st",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "need",
+      "definition": "Something you must have to live and be healthy"
+    },
+    {
+      "term": "want",
+      "definition": "Something you would like to have but don't need"
+    },
+    {
+      "term": "shelter",
+      "definition": "A place to live that keeps you safe and warm"
+    },
+    {
+      "term": "choice",
+      "definition": "Deciding between different things"
+    }
+  ],
+  "teachingNotes": "Use pictures and sorting activities. Discuss family decisions about spending money. Connect to students' experiences.",
+  "sample": [
+    {"question": "Is food a need or a want?", "expectedAny": ["need"]},
+    {"question": "Is water a need or a want?", "expectedAny": ["need"]},
+    {"question": "Is a toy a need or a want?", "expectedAny": ["want"]},
+    {"question": "Is a warm coat a need or a want?", "expectedAny": ["need"]},
+    {"question": "Is ice cream a need or a want?", "expectedAny": ["want"]},
+    {"question": "Is a house (shelter) a need or a want?", "expectedAny": ["need"]},
+    {"question": "Is a bike a need or a want?", "expectedAny": ["want"]}
+  ],
+  "truefalse": [
+    {"question": "Everyone needs a place to live.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Candy is a basic need.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Clean water is a need.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Toys are wants, not needs.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Clothing helps keep us safe and warm.", "answer": true, "expectedAny": ["true"]},
+    {"question": "You can buy everything you want all the time.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Food is a need for everyone.", "answer": true, "expectedAny": ["true"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which is a want?", "choices": ["water", "food", "toy", "clothing"], "correct": 2, "expectedAny": ["toy"]},
+    {"question": "Which is a need?", "choices": ["video games", "water", "candy", "stickers"], "correct": 1, "expectedAny": ["water"]},
+    {"question": "Which is NOT a basic need?", "choices": ["shelter", "food", "phone", "water"], "correct": 2, "expectedAny": ["phone"]},
+    {"question": "Families make choices because ___", "choices": ["they have limited money", "they can buy everything", "they don't like shopping", "stores are closed"], "correct": 0, "expectedAny": ["limited money"]},
+    {"question": "What should a family buy first?", "choices": ["toys", "candy", "food", "stickers"], "correct": 2, "expectedAny": ["food"]},
+    {"question": "A warm coat in winter is a ___", "choices": ["want", "need", "toy", "dessert"], "correct": 1, "expectedAny": ["need"]},
+    {"question": "Which pair are both needs?", "choices": ["food and water", "toys and candy", "stickers and games", "phone and TV"], "correct": 0, "expectedAny": ["food and water"]}
+  ],
+  "fillintheblank": [
+    {"question": "Water, food, clothing, and _____ are basic needs.", "expectedAny": ["shelter", "home"]},
+    {"question": "A _____ is something you would like to have.", "expectedAny": ["want"]},
+    {"question": "A _____ is something you must have to live.", "expectedAny": ["need"]},
+    {"question": "Families make _____ because they can't buy everything.", "expectedAny": ["choices"]},
+    {"question": "Healthy food helps your _____ grow strong.", "expectedAny": ["body"]},
+    {"question": "Clean _____ is important to drink.", "expectedAny": ["water"]},
+    {"question": "We wear _____ to stay warm.", "expectedAny": ["clothes", "clothing"]}
+  ],
+  "shortanswer": [
+    {"question": "Why do families have to make choices about what to buy?", "expectedAny": ["can't buy everything", "money is limited", "choose what's important"]},
+    {"question": "What is one thing you need every day?", "expectedAny": ["water", "food"]},
+    {"question": "What is something you want but don't need?", "expectedAny": ["toy", "candy", "game"]},
+    {"question": "How can you help your family with choices?", "expectedAny": ["be patient", "help make a list"]},
+    {"question": "Why is shelter important?", "expectedAny": ["keeps you safe", "keeps you warm"]},
+    {"question": "Give one example of a need and one of a want.", "expectedAny": ["need: food", "want: toy"]},
+    {"question": "How do you feel when your needs are met?", "expectedAny": ["safe", "healthy", "happy"]}
+  ]
+}

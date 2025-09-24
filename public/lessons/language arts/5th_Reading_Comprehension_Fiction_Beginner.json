@@ -1,0 +1,74 @@
+{
+  "id": "5th_Reading_Comprehension_Fiction_Beginner",
+  "title": "Reading Comprehension: Fiction Stories",
+  "grade": "5th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "fiction",
+      "definition": "Stories that are made up or imagined, not real"
+    },
+    {
+      "term": "character",
+      "definition": "A person or animal in a story"
+    },
+    {
+      "term": "setting",
+      "definition": "When and where a story takes place"
+    },
+    {
+      "term": "plot",
+      "definition": "The sequence of events that happen in a story"
+    },
+    {
+      "term": "main idea",
+      "definition": "The most important point or message of a story"
+    }
+  ],
+  "teachingNotes": "Practice identifying story elements. Use graphic organizers to help students track characters, setting, and plot. Encourage students to make predictions while reading.",
+  "sample": {
+    "question": "What do we call stories that are made up or imagined?",
+    "expectedAny": [
+      "fiction",
+      "fictional stories",
+      "made-up stories",
+      "imaginary stories"
+    ]
+  },
+  "truefalse": {
+    "question": "The setting tells us when and where a story happens.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the sequence of events in a story called?",
+    "expectedAny": [
+      "plot",
+      "story plot",
+      "sequence of events",
+      "story events"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The most important point or message of a story is the ________ idea.",
+    "expectedAny": [
+      "main",
+      "central",
+      "primary",
+      "key"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are the three main parts of any story?",
+    "expectedAny": [
+      "beginning, middle, end",
+      "start, middle, finish",
+      "introduction, body, conclusion",
+      "opening, development, ending"
+    ]
+  }
+}

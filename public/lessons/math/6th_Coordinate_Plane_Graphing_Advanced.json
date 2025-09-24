@@ -1,0 +1,53 @@
+{
+  "id": "6th_Coordinate_Plane_Graphing_Advanced",
+  "title": "Coordinate Plane and Graphing Relationships",
+  "grade": "6th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "coordinate plane",
+      "definition": "A flat surface formed by two perpendicular number lines"
+    },
+    {
+      "term": "quadrant",
+      "definition": "One of the four sections of the coordinate plane"
+    },
+    {
+      "term": "origin",
+      "definition": "The point (0, 0) where the x-axis and y-axis intersect"
+    },
+    {
+      "term": "ordered pair",
+      "definition": "A pair of numbers (x, y) that locates a point on the coordinate plane"
+    },
+    {
+      "term": "linear relationship",
+      "definition": "A relationship between two variables that forms a straight line when graphed"
+    }
+  ],
+  "teachingNotes": "Practice plotting points in all four quadrants. Introduce simple linear relationships and patterns. Use real-world data for graphing activities.",
+  "sample": {
+    "question": "What do we call the point (0, 0) on the coordinate plane?",
+    "expectedAny": ["origin", "the origin", "center point", "intersection point"]
+  },
+  "truefalse": {
+    "question": "The coordinate plane has four quadrants.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "In which quadrant is the point (-3, 2)?",
+    "expectedAny": ["Quadrant II", "second quadrant", "upper left", "Quadrant 2"]
+  },
+  "fillintheblank": {
+    "question": "A relationship that forms a straight line when graphed is called a ________ relationship.",
+    "expectedAny": ["linear", "straight line", "direct", "proportional"]
+  },
+  "shortanswer": {
+    "question": "What are the signs of x and y coordinates in Quadrant III?",
+    "expectedAny": ["both negative", "x negative, y negative", "(-,-)","negative x and y"]
+  },
+  "wordProblems": {
+    "question": "A point moves from (2, 3) to (5, 3). How many units did it move and in which direction?",
+    "expectedAny": ["3 units right", "3 units to the right", "moved 3 units horizontally", "3 units in positive x direction"]
+  }
+}

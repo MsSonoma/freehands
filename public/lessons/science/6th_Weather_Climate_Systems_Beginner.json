@@ -1,0 +1,73 @@
+{
+  "id": "6th_Weather_Climate_Systems_Beginner",
+  "title": "Weather and Climate Systems",
+  "grade": "6th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "weather",
+      "definition": "The day-to-day conditions of the atmosphere including temperature and precipitation"
+    },
+    {
+      "term": "climate",
+      "definition": "The average weather patterns in a place over many years"
+    },
+    {
+      "term": "atmosphere",
+      "definition": "The layer of gases that surrounds Earth"
+    },
+    {
+      "term": "precipitation",
+      "definition": "Water that falls from clouds as rain, snow, sleet, or hail"
+    },
+    {
+      "term": "air pressure",
+      "definition": "The weight of air pressing down on Earth's surface"
+    }
+  ],
+  "teachingNotes": "Distinguish between weather and climate. Use local examples and weather maps. Discuss how the sun drives weather patterns.",
+  "sample": {
+    "question": "What is the difference between weather and climate?",
+    "expectedAny": [
+      "weather is daily, climate is long-term",
+      "weather changes daily, climate is average",
+      "weather is short-term, climate is patterns"
+    ]
+  },
+  "truefalse": {
+    "question": "Climate is the average weather over many years.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What drives most weather patterns on Earth?",
+    "expectedAny": [
+      "the sun",
+      "solar energy",
+      "sunlight",
+      "sun's heat"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The layer of gases around Earth is called the ________.",
+    "expectedAny": [
+      "atmosphere",
+      "atmospheric layer",
+      "air layer",
+      "Earth's atmosphere"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are three types of precipitation?",
+    "expectedAny": [
+      "rain, snow, hail",
+      "rain, sleet, snow",
+      "snow, rain, sleet",
+      "hail, rain, snow"
+    ]
+  }
+}

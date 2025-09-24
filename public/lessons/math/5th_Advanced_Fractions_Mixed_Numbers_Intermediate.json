@@ -1,0 +1,53 @@
+{
+  "id": "5th_Advanced_Fractions_Mixed_Numbers_Intermediate",
+  "title": "Advanced Fractions and Mixed Numbers",
+  "grade": "5th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "mixed number",
+      "definition": "A number that has both a whole number and a fraction part"
+    },
+    {
+      "term": "improper fraction",
+      "definition": "A fraction where the numerator is greater than or equal to the denominator"
+    },
+    {
+      "term": "equivalent fractions",
+      "definition": "Fractions that represent the same value but have different numerators and denominators"
+    },
+    {
+      "term": "common denominator",
+      "definition": "The same denominator used when adding or subtracting fractions"
+    },
+    {
+      "term": "simplest form",
+      "definition": "A fraction where the numerator and denominator have no common factors other than 1"
+    }
+  ],
+  "teachingNotes": "Practice converting between mixed numbers and improper fractions. Teach finding common denominators for addition and subtraction. Emphasize simplifying answers to lowest terms.",
+  "sample": {
+    "question": "Convert 2 3/4 to an improper fraction.",
+    "expectedAny": ["11/4", "eleven fourths", "11 over 4", "11/4 total"]
+  },
+  "truefalse": {
+    "question": "The fractions 2/3 and 4/6 are equivalent.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is 1/3 + 1/6?",
+    "expectedAny": ["1/2", "3/6", "one half", "0.5"]
+  },
+  "fillintheblank": {
+    "question": "To add fractions with different denominators, you need to find a ________.",
+    "expectedAny": ["common denominator", "same denominator", "equivalent denominator", "shared bottom number"]
+  },
+  "shortanswer": {
+    "question": "How do you convert 13/4 to a mixed number?",
+    "expectedAny": ["3 1/4", "divide 13 by 4", "3 and 1/4", "three and one fourth"]
+  },
+  "wordProblems": {
+    "question": "Tom ate 1 1/2 pizzas and Jerry ate 2 3/4 pizzas. How much pizza did they eat together?",
+    "expectedAny": ["4 1/4", "4.25", "four and one fourth", "17/4 pizzas"]
+  }
+}

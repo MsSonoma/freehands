@@ -1,0 +1,33 @@
+{
+  "id": "polynomial-functions-operations-advanced",
+  "title": "Polynomial Functions and Operations",
+  "grade": "11th",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {"term": "polynomial", "definition": "An expression consisting of variables and coefficients with non-negative integer exponents"},
+    {"term": "degree", "definition": "The highest power of the variable in a polynomial"},
+    {"term": "leading coefficient", "definition": "The coefficient of the term with the highest degree"},
+    {"term": "end behavior", "definition": "How a function behaves as x approaches positive or negative infinity"}
+  ],
+  "teachingNotes": "Use graphing technology to explore polynomial behavior. Connect to real-world modeling situations. Emphasize relationship between degree and graph shape.",
+  "sample": {
+    "question": "What is the degree and leading coefficient of f(x) = -3x⁴ + 2x² - 7x + 1?",
+    "expectedAny": ["degree 4, leading coefficient -3", "highest power is 4, coefficient is -3"]
+  },
+  "truefalse": [
+    {"question": "A polynomial of degree n can have at most n real zeros.", "answer": true, "expectedAny": ["fundamental theorem of algebra limits number of zeros"]}
+  ],
+  "multiplechoice": [
+    {"question": "What is the end behavior of f(x) = -2x³ + 5x - 1?", "choices": ["Both ends go up", "Both ends go down", "Left up, right down", "Left down, right up"], "correct": 2, "expectedAny": ["negative leading coefficient with odd degree"]}
+  ],
+  "fillintheblank": [
+    {"question": "When multiplying (x + 3)(x² - 2x + 4), the degree of the resulting polynomial is _____.", "expectedAny": ["3"]}
+  ],
+  "shortanswer": [
+    {"question": "Explain how the leading coefficient affects the end behavior of a polynomial function.", "expectedAny": ["determines if ends go up or down", "positive leads to up for even degree, negative leads to down"]}
+  ],
+  "wordProblems": [
+    {"question": "A company's profit function is P(x) = -0.5x³ + 12x² - 50x + 200, where x is thousands of units sold. What is the maximum degree of this profit function, and what does this suggest about long-term behavior?", "expectedAny": ["degree 3, negative leading coefficient means profit eventually decreases", "cubic with negative lead coefficient"]}
+  ]
+}

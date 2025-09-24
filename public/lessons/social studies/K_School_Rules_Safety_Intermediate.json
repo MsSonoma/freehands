@@ -1,0 +1,78 @@
+{
+  "id": "school-rules-safety-intermediate",
+  "title": "School Rules and Safety",
+  "grade": "K",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "rule",
+      "definition": "Something we agree to do to keep everyone safe and happy"
+    },
+    {
+      "term": "safety",
+      "definition": "Being careful so no one gets hurt"
+    },
+    {
+      "term": "respect",
+      "definition": "Being kind and caring toward others"
+    },
+    {
+      "term": "responsibility",
+      "definition": "A job you need to do"
+    }
+  ],
+  "teachingNotes": "Create classroom rules together. Practice emergency procedures. Role-play respectful behavior. Discuss consequences.",
+  "sample": [
+    {"question": "Why do we have rules at school?", "expectedAny": ["to keep safe", "to be kind", "to help everyone learn", "so no one gets hurt"]},
+    {"question": "What should you do when you arrive at school?", "expectedAny": ["hang up backpack", "sit in your seat", "get ready to learn", "say good morning"]},
+    {"question": "How do you show respect to your teacher?", "expectedAny": ["listen", "follow directions", "raise your hand", "be polite"]},
+    {"question": "What do you do if you need help?", "expectedAny": ["raise your hand", "ask the teacher", "wait your turn"]},
+    {"question": "How should you treat school property?", "expectedAny": ["take care of it", "be gentle", "don't break things", "clean up"]}
+  ],
+  "truefalse": [
+    {"question": "It's important to walk in the hallways.", "answer": true, "expectedAny": ["walking keeps everyone safe in hallways"]},
+    {"question": "You can take other people's things without asking.", "answer": false, "expectedAny": ["always ask before taking things"]},
+    {"question": "Raising your hand helps the teacher know you want to talk.", "answer": true, "expectedAny": ["hand raising shows you want to speak"]},
+    {"question": "It's okay to push others in line.", "answer": false, "expectedAny": ["pushing others is not safe"]},
+    {"question": "Following school rules helps everyone learn better.", "answer": true, "expectedAny": ["rules create good learning environment"]},
+    {"question": "You should run down the stairs.", "answer": false, "expectedAny": ["running on stairs is dangerous"]},
+    {"question": "Being kind to others is a school rule.", "answer": true, "expectedAny": ["kindness is important at school"]}
+  ],
+  "multiplechoice": [
+    {"question": "What should you do when the fire alarm rings?", "choices": ["hide under desk", "run fast", "listen to teacher", "keep playing"], "correct": 2, "expectedAny": ["listen to teacher during emergencies"]},
+    {"question": "How should you walk in the hallway?", "choices": ["run quickly", "skip loudly", "walk quietly", "crawl slowly"], "correct": 2, "expectedAny": ["walk quietly in hallways"]},
+    {"question": "What do you do if you finish your work early?", "choices": ["talk loudly", "bother others", "read a book", "run around"], "correct": 2, "expectedAny": ["read quietly when finished early"]},
+    {"question": "Where do you put your backpack?", "choices": ["on the floor", "in your cubby", "on someone's desk", "in the trash"], "correct": 1, "expectedAny": ["backpacks go in cubbies"]},
+    {"question": "How do you get the teacher's attention?", "choices": ["yell loudly", "raise your hand", "tap someone", "stand on chair"], "correct": 1, "expectedAny": ["raise hand to get attention"]},
+    {"question": "What should you do if you see someone being unsafe?", "choices": ["ignore it", "laugh", "tell a teacher", "do the same thing"], "correct": 2, "expectedAny": ["tell teacher about unsafe behavior"]},
+    {"question": "How do you show respect during story time?", "choices": ["talk to friends", "listen quietly", "play with toys", "take a nap"], "correct": 1, "expectedAny": ["listen quietly during story time"]}
+  ],
+  "fillintheblank": [
+    {"question": "When someone is talking, you should _____ and listen.", "expectedAny": ["wait", "be quiet", "stop"]},
+    {"question": "We should always _____ in the hallways.", "expectedAny": ["walk"]},
+    {"question": "Before speaking, you should raise your _____.", "expectedAny": ["hand"]},
+    {"question": "It's important to be _____ to everyone at school.", "expectedAny": ["kind", "nice", "respectful"]},
+    {"question": "When we line up, we should keep our _____ to ourselves.", "expectedAny": ["hands"]},
+    {"question": "At lunch, we should _____ up our area when finished.", "expectedAny": ["clean"]},
+    {"question": "During fire drills, we should line up _____.", "expectedAny": ["quietly", "calmly"]}
+  ],
+  "shortanswer": [
+    {"question": "What is one rule that helps keep our classroom safe?", "expectedAny": ["walk don't run", "keep hands to yourself", "sit in your chair", "use inside voice"]},
+    {"question": "How do school rules help us learn?", "expectedAny": ["keep us focused", "prevent distractions", "create safe space", "help us listen"]},
+    {"question": "What should you do if you don't understand a rule?", "expectedAny": ["ask the teacher", "ask for help", "raise your hand", "ask questions"]},
+    {"question": "How can you be a good friend at school?", "expectedAny": ["be kind", "share", "help others", "include everyone", "be respectful"]},
+    {"question": "What are some ways to show respect at school?", "expectedAny": ["listen to teacher", "be kind to others", "follow rules", "take care of things"]},
+    {"question": "Why is it important to clean up after yourself?", "expectedAny": ["keeps school clean", "shows respect", "helps everyone", "takes care of things"]},
+    {"question": "How do you handle disagreements with classmates?", "expectedAny": ["talk it out", "get teacher help", "use words", "be calm", "compromise"]}
+  ],
+  "wordProblems": [
+    {"question": "There are 8 classroom rules and 6 hallway rules. How many school rules is that total?", "expectedAny": ["14 rules", "8 + 6 = 14"]},
+    {"question": "In the cafeteria, 15 students followed the rules and 3 students needed reminders. How many students were in the cafeteria?", "expectedAny": ["18 students", "15 + 3 = 18"]},
+    {"question": "During the fire drill, the class lined up in 3 minutes. If they practiced 7 more times, how many fire drills did they do total?", "expectedAny": ["8 fire drills", "1 + 7 = 8"]},
+    {"question": "The teacher gave out 12 behavior stickers. If 5 students got 2 stickers each, how many stickers did other students get?", "expectedAny": ["2 stickers", "12 - 10 = 2"]},
+    {"question": "There are 20 students in class. If 13 students remembered to raise their hands and the rest forgot, how many forgot?", "expectedAny": ["7 students", "20 - 13 = 7"]},
+    {"question": "During cleanup time, 9 students put away books and 6 students put away toys. How many students helped clean up?", "expectedAny": ["15 students", "9 + 6 = 15"]},
+    {"question": "The school has 25 safety rules. If kindergarten learned 10 rules this week, how many more do they need to learn?", "expectedAny": ["15 more rules", "25 - 10 = 15"]}
+  ]
+}

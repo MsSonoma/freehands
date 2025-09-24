@@ -1,0 +1,71 @@
+{
+  "id": "plants-animals-habitats-beginner",
+  "title": "Plants and Animals in Their Habitats",
+  "grade": "1st",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "habitat",
+      "definition": "The place where an animal or plant lives"
+    },
+    {
+      "term": "shelter",
+      "definition": "A safe place where animals can hide or rest"
+    },
+    {
+      "term": "forest",
+      "definition": "A place with many trees where animals live"
+    },
+    {
+      "term": "pond",
+      "definition": "A small body of water where water animals live"
+    }
+  ],
+  "teachingNotes": "Use pictures of different habitats. Discuss how animals get food, water, and shelter. Connect to students' own homes.",
+  "sample": [
+    {"question": "What do all animals need to survive?", "expectedAny": ["food", "water", "shelter", "air"]},
+    {"question": "What is a habitat?", "expectedAny": ["an animal's home", "place where it lives"]},
+    {"question": "Name a water habitat.", "expectedAny": ["pond", "lake", "ocean"]},
+    {"question": "Name a land habitat.", "expectedAny": ["forest", "desert", "grassland"]},
+    {"question": "Why do animals need shelter?", "expectedAny": ["stay safe", "stay dry", "stay warm"]},
+    {"question": "Where would you find a whale?", "expectedAny": ["ocean", "sea"]},
+    {"question": "Where would you find a deer?", "expectedAny": ["forest"]}
+  ],
+  "truefalse": [
+    {"question": "Fish live in water habitats.", "answer": true, "expectedAny": ["true"]},
+    {"question": "All animals can live anywhere.", "answer": false, "expectedAny": ["false"]},
+    {"question": "A desert can be a habitat.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Birds build nests for shelter.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Whales live in forests.", "answer": false, "expectedAny": ["false"]},
+    {"question": "A pond is a water habitat.", "answer": true, "expectedAny": ["true"]},
+    {"question": "All animals eat the same food.", "answer": false, "expectedAny": ["false"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which animal would you find in a forest habitat?", "choices": ["fish", "deer", "whale", "shark"], "correct": 1, "expectedAny": ["deer"]},
+    {"question": "Which habitat is best for a duck?", "choices": ["desert", "ocean", "pond", "forest"], "correct": 2, "expectedAny": ["pond"]},
+    {"question": "Where do camels live?", "choices": ["forest", "desert", "ocean", "arctic"], "correct": 1, "expectedAny": ["desert"]},
+    {"question": "What do animals need from a habitat?", "choices": ["toys", "food, water, shelter", "music", "nothing"], "correct": 1, "expectedAny": ["food, water, shelter"]},
+    {"question": "Which is a water habitat?", "choices": ["tundra", "grassland", "lake", "city"], "correct": 2, "expectedAny": ["lake"]},
+    {"question": "Where would a polar bear live?", "choices": ["rainforest", "arctic", "desert", "city"], "correct": 1, "expectedAny": ["arctic"]},
+    {"question": "What is a nest used for?", "choices": ["playing", "sleeping only", "shelter and babies", "nothing"], "correct": 2, "expectedAny": ["shelter and babies"]}
+  ],
+  "fillintheblank": [
+    {"question": "A _____ is the place where an animal lives.", "expectedAny": ["habitat"]},
+    {"question": "A beaver builds a _____ in a river.", "expectedAny": ["dam", "lodge"]},
+    {"question": "A bird builds a _____ in a tree.", "expectedAny": ["nest"]},
+    {"question": "A desert is very _____.", "expectedAny": ["dry", "hot"]},
+    {"question": "Fish use _____ to breathe in water.", "expectedAny": ["gills"]},
+    {"question": "A rabbit might hide in a _____.", "expectedAny": ["burrow", "hole"]},
+    {"question": "Plants and animals need clean _____.", "expectedAny": ["water", "air"]}
+  ],
+  "shortanswer": [
+    {"question": "Why do birds build nests?", "expectedAny": ["for shelter", "to protect babies"]},
+    {"question": "Describe a pond habitat.", "expectedAny": ["water", "plants", "fish", "frogs"]},
+    {"question": "How does a cactus live in the desert?", "expectedAny": ["stores water", "spines protect it"]},
+    {"question": "Why can't a fish live in a tree?", "expectedAny": ["needs water", "gills"]},
+    {"question": "Name one way people can help animal habitats.", "expectedAny": ["don't litter", "plant trees", "keep water clean"]},
+    {"question": "Draw an animal in its habitat and label it.", "expectedAny": ["drawing with labels"]},
+    {"question": "What might you see in a forest habitat?", "expectedAny": ["trees", "deer", "birds", "squirrels"]}
+  ]
+}

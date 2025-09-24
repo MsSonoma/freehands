@@ -1,0 +1,74 @@
+{
+  "id": "10th_Advanced_Literary_Analysis_Character_Development_Advanced",
+  "title": "Advanced Literary Analysis: Character Development",
+  "grade": "10th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "characterization",
+      "definition": "The methods an author uses to develop and reveal character traits"
+    },
+    {
+      "term": "indirect characterization",
+      "definition": "Revealing character through actions, dialogue, and other characters' reactions"
+    },
+    {
+      "term": "direct characterization",
+      "definition": "Explicitly stating character traits through narration"
+    },
+    {
+      "term": "psychological realism",
+      "definition": "Literary technique that emphasizes characters' internal mental states"
+    },
+    {
+      "term": "character agency",
+      "definition": "A character's ability to make independent choices that drive the plot"
+    }
+  ],
+  "teachingNotes": "Evaluate sophisticated characterization techniques. Analyze how character development serves thematic purposes in complex literature.",
+  "sample": {
+    "question": "What are the methods an author uses to develop character traits called?",
+    "expectedAny": [
+      "characterization",
+      "character development methods",
+      "character creation techniques",
+      "character portrayal"
+    ]
+  },
+  "truefalse": {
+    "question": "Indirect characterization explicitly states character traits through narration.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What technique emphasizes characters' internal mental states?",
+    "expectedAny": [
+      "psychological realism",
+      "internal focus",
+      "mental realism",
+      "psychological depth"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A character's ability to make independent choices is called character ________.",
+    "expectedAny": [
+      "agency",
+      "autonomy",
+      "independence",
+      "self-determination"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does character development serve thematic purposes?",
+    "expectedAny": [
+      "reinforces themes",
+      "embodies conflicts",
+      "represents ideas",
+      "demonstrates change"
+    ]
+  }
+}

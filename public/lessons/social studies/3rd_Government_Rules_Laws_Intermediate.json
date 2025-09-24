@@ -1,0 +1,89 @@
+{
+  "id": "3rd_Government_Rules_Laws_Intermediate",
+  "title": "Government, Rules, and Laws",
+  "grade": "3rd",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    { "term": "government", "definition": "People who make and enforce laws for a community" },
+    { "term": "mayor", "definition": "The elected leader of a city or town" },
+    { "term": "citizen", "definition": "A person who belongs to a community or country" },
+    { "term": "vote", "definition": "To choose a leader or decide on an issue" },
+    { "term": "democracy", "definition": "A government where people vote for their leaders" },
+    { "term": "constitution", "definition": "A written plan for how government should work" }
+  ],
+  "teachingNotes": "Connect to school rules and class rules. Discuss voting in simple terms. Use examples from local government when possible.",
+  "sample": [
+    { "question": "What is the difference between a rule and a law?", "expectedAny": ["laws are official", "laws have consequences", "rules are for specific places"] },
+    { "question": "Who makes laws in our country?", "expectedAny": ["Congress", "government", "elected officials"] },
+    { "question": "What is voting?", "expectedAny": ["choosing", "picking leaders", "making decisions"] },
+    { "question": "Why do we need rules?", "expectedAny": ["safety", "fairness", "order", "protect people"] },
+    { "question": "What is a citizen?", "expectedAny": ["member of community", "person who belongs", "has rights and responsibilities"] },
+    { "question": "Who is the leader of the United States?", "expectedAny": ["president", "President"] },
+    { "question": "What does a mayor do?", "expectedAny": ["leads city", "makes decisions", "helps community"] }
+  ],
+  "truefalse": [
+    { "question": "Children can vote in elections.", "answer": false },
+    { "question": "Rules help keep everyone safe.", "answer": true },
+    { "question": "The President lives in the White House.", "answer": true },
+    { "question": "Only adults have rights.", "answer": false },
+    { "question": "Laws are the same in every country.", "answer": false },
+    { "question": "Citizens have responsibilities.", "answer": true },
+    { "question": "Everyone must follow laws.", "answer": true }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Who leads a city?",
+      "choices": ["Governor", "Mayor", "President", "Judge"],
+      "correct": 1
+    },
+    {
+      "question": "What age can people vote?",
+      "choices": ["16", "17", "18", "21"],
+      "correct": 2
+    },
+    {
+      "question": "What is the highest law in our country?",
+      "choices": ["Bill of Rights", "Constitution", "Declaration", "Amendment"],
+      "correct": 1
+    },
+    {
+      "question": "Who enforces laws?",
+      "choices": ["Teachers", "Police", "Doctors", "Firefighters"],
+      "correct": 1
+    },
+    {
+      "question": "How long is a President's term?",
+      "choices": ["2 years", "4 years", "6 years", "8 years"],
+      "correct": 1
+    },
+    {
+      "question": "What is a democracy?",
+      "choices": ["no rules", "one leader decides", "people vote", "no government"],
+      "correct": 2
+    },
+    {
+      "question": "Who can become President?",
+      "choices": ["any citizen", "born in America", "35 years old", "all of these"],
+      "correct": 3
+    }
+  ],
+  "fillintheblank": [
+    { "question": "People who are 18 or older can ___.", "expectedAny": ["vote"] },
+    { "question": "The ___ is the leader of our country.", "expectedAny": ["President"] },
+    { "question": "Citizens have rights and ___.", "expectedAny": ["responsibilities"] },
+    { "question": "___ help keep our community safe and fair.", "expectedAny": ["Laws", "Rules"] },
+    { "question": "We live in a ___ where people vote.", "expectedAny": ["democracy"] },
+    { "question": "The ___ is our country's highest law.", "expectedAny": ["Constitution"] },
+    { "question": "___ enforce laws in our community.", "expectedAny": ["Police"] }
+  ],
+  "shortanswer": [
+    { "question": "What are three rights that citizens have?", "expectedAny": ["freedom of speech", "vote", "fair trial", "practice religion"] },
+    { "question": "How do people choose their leaders?", "expectedAny": ["voting", "elections", "democratic process"] },
+    { "question": "What responsibilities do citizens have?", "expectedAny": ["follow laws", "vote", "help community", "pay taxes"] },
+    { "question": "Why is the Constitution important?", "expectedAny": ["sets up government", "protects rights", "highest law"] },
+    { "question": "What would happen without laws?", "expectedAny": ["chaos", "unfairness", "no order", "people could be hurt"] },
+    { "question": "How can kids be good citizens?", "expectedAny": ["follow rules", "help others", "be respectful", "learn about government"] },
+    { "question": "What is the difference between local and national government?", "expectedAny": ["local serves city", "national serves whole country", "different responsibilities"] }
+  ]
+}

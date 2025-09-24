@@ -1,0 +1,73 @@
+{
+  "id": "9th_Classical_Greece_Democracy_Philosophy_Intermediate",
+  "title": "Classical Greece: Democracy and Philosophy",
+  "grade": "9th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "democracy",
+      "definition": "Government by the people, especially rule of the majority"
+    },
+    {
+      "term": "city-state",
+      "definition": "Independent political unit consisting of a city and surrounding territory"
+    },
+    {
+      "term": "philosophy",
+      "definition": "Love of wisdom; systematic study of fundamental questions"
+    },
+    {
+      "term": "Socratic method",
+      "definition": "Teaching through questioning to stimulate critical thinking"
+    },
+    {
+      "term": "golden age",
+      "definition": "Period of great cultural and intellectual achievement"
+    }
+  ],
+  "teachingNotes": "Emphasize Greek contributions to democracy and philosophy. Discuss the influence on modern government and thought.",
+  "sample": {
+    "question": "What is government by the people called?",
+    "expectedAny": [
+      "democracy",
+      "democratic government",
+      "rule by people",
+      "popular government"
+    ]
+  },
+  "truefalse": {
+    "question": "A city-state is an independent political unit with a city and surrounding territory.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What teaching method uses questioning to stimulate thinking?",
+    "expectedAny": [
+      "Socratic method",
+      "Socratic questioning",
+      "Socrates method",
+      "questioning method"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The systematic study of fundamental questions is called ________.",
+    "expectedAny": [
+      "philosophy",
+      "philosophical study",
+      "wisdom study",
+      "critical thinking"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did Athenian democracy differ from modern democracy?",
+    "expectedAny": [
+      "only male citizens could vote",
+      "excluded women and slaves",
+      "direct rather than representative"
+    ]
+  }
+}

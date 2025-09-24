@@ -1,0 +1,59 @@
+{
+  "id": "2nd_Research_Skills_Information_Beginner",
+  "title": "Research Skills and Information",
+  "grade": "2nd",
+  "difficulty": "Beginner",
+  "vocab": [
+    { "term": "research", "definition": "Looking for information to learn about a topic" },
+    { "term": "source", "definition": "A place where you can find information, like a book or website" },
+    { "term": "fact", "definition": "Something that is true and can be proven" },
+    { "term": "question", "definition": "Something you ask when you want to learn more" },
+    { "term": "topic", "definition": "The subject you are learning about" }
+  ],
+  "teachingNotes": "Introduce basic research skills using picture books and simple websites. Teach students to ask good questions and look for answers. Practice finding facts about familiar topics like animals or community helpers.",
+  "sample": [
+    { "question": "What is research?", "expectedAny": ["looking for information", "finding facts", "learning about topics", "gathering information"] },
+    { "question": "What is a source?", "expectedAny": ["place to find information", "book or website", "where information comes from"] },
+    { "question": "Give an example of a source.", "expectedAny": ["book", "website", "encyclopedia", "magazine"] },
+    { "question": "What is a fact?", "expectedAny": ["something true", "provable information"] },
+    { "question": "What do you ask when you want to learn more?", "expectedAny": ["a question", "ask a question"] },
+    { "question": "What is a topic?", "expectedAny": ["what you are learning about", "subject"] },
+    { "question": "Name one thing you might research.", "expectedAny": ["an animal", "a place", "a person", "a job"] }
+  ],
+  "truefalse": [
+    { "question": "A fact is something that is true and can be proven.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A made-up story is the best source for research facts.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "You can find information in books and on websites.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "You should not ask questions when doing research.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A library is a place with many sources.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Facts and opinions are the same thing.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Pictures can be sources of information.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "Where can you find information for research?", "expectedAny": ["books and websites", "sources", "library", "information places"] },
+    { "question": "Which is a question word you can ask?", "expectedAny": ["who", "what", "where", "when", "why", "how"] },
+    { "question": "Which of these is a fact?", "expectedAny": ["the sun is a star", "true statement", "provable fact"] },
+    { "question": "Which would be a good topic to research?", "expectedAny": ["dogs", "rainforests", "the moon", "community helpers"] },
+    { "question": "When you look in a book for information, the book is a:", "expectedAny": ["source", "place to find information"] },
+    { "question": "Which tool helps you find books in a library?", "expectedAny": ["librarian or catalog", "library catalog"] },
+    { "question": "If a website ends in .edu, it is usually from a:", "expectedAny": ["school or education site", "college or university"] }
+  ],
+  "fillintheblank": [
+    { "question": "When you want to learn about something, you ask a ________.", "expectedAny": ["question", "inquiry", "query", "research question"] },
+    { "question": "A place where you can find information is called a ________.", "expectedAny": ["source"] },
+    { "question": "Something that can be proven true is a ________.", "expectedAny": ["fact"] },
+    { "question": "The ________ is the subject you are learning about.", "expectedAny": ["topic", "subject"] },
+    { "question": "You can find information at the ________.", "expectedAny": ["library"] },
+    { "question": "A book or website can be a ________ of information.", "expectedAny": ["source"] },
+    { "question": "When researching, first think of a good ________ to ask.", "expectedAny": ["question"] }
+  ],
+  "shortanswer": [
+    { "question": "What question would you ask to research dogs?", "expectedAny": ["What do dogs eat?", "Where do dogs live?", "How big are dogs?", "any dog question"] },
+    { "question": "Name two places you could look to find facts about rainforests.", "expectedAny": ["books", "websites", "encyclopedia", "library"] },
+    { "question": "What is one way to tell if information is a fact?", "expectedAny": ["it can be proven", "you can check it in another source"] },
+    { "question": "Give an example of a good research topic.", "expectedAny": ["animals", "planets", "community helpers", "weather"] },
+    { "question": "Why is it helpful to write down your questions first?", "expectedAny": ["keeps you focused", "helps you know what to look for"] },
+    { "question": "How can pictures help you learn information?", "expectedAny": ["show facts", "give clues", "visual information"] },
+    { "question": "What should you do if you find two sources that disagree?", "expectedAny": ["ask a teacher", "look for more sources", "check another book"] }
+  ]
+}

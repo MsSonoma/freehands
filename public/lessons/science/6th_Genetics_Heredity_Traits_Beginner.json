@@ -1,0 +1,72 @@
+{
+  "id": "6th_Genetics_Heredity_Traits_Beginner",
+  "title": "Genetics, Heredity, and Inherited Traits",
+  "grade": "6th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "heredity",
+      "definition": "The passing of traits from parents to their offspring"
+    },
+    {
+      "term": "trait",
+      "definition": "A characteristic that can be passed from parent to offspring"
+    },
+    {
+      "term": "gene",
+      "definition": "The basic unit of heredity that determines traits"
+    },
+    {
+      "term": "inherited trait",
+      "definition": "A characteristic passed from parents to offspring through genes"
+    },
+    {
+      "term": "acquired trait",
+      "definition": "A characteristic gained during an organism's lifetime, not inherited"
+    }
+  ],
+  "teachingNotes": "Use family photos to show inherited traits. Distinguish between inherited and acquired traits with clear examples. Keep genetics concepts age-appropriate.",
+  "sample": {
+    "question": "What is the passing of traits from parents to offspring called?",
+    "expectedAny": [
+      "heredity",
+      "inheritance",
+      "genetic inheritance",
+      "trait inheritance"
+    ]
+  },
+  "truefalse": {
+    "question": "Eye color is an example of an inherited trait.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which is an acquired trait?",
+    "expectedAny": [
+      "learning to ride a bike",
+      "getting a scar",
+      "learning language",
+      "muscle strength from exercise"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The basic unit of heredity that determines traits is called a ________.",
+    "expectedAny": [
+      "gene",
+      "genetic unit",
+      "heredity unit",
+      "genetic factor"
+    ]
+  },
+  "shortanswer": {
+    "question": "Give two examples of inherited traits and two examples of acquired traits.",
+    "expectedAny": [
+      "inherited: eye color, height; acquired: scars, learned skills",
+      "inherited: hair color, blood type; acquired: language, calluses"
+    ]
+  }
+}

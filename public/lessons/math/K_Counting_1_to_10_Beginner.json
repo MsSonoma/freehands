@@ -1,0 +1,68 @@
+{
+  "id": "counting-1-to-10-beginner",
+  "title": "Counting 1 to 10",
+  "grade": "K",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {"term": "number", "definition": "A symbol that tells us how many things we have"},
+    {"term": "count", "definition": "To say numbers in order to find out how many"},
+    {"term": "more", "definition": "A bigger amount"},
+    {"term": "less", "definition": "A smaller amount"},
+    {"term": "zero", "definition": "The number that means nothing or none"},
+    {"term": "ten", "definition": "The number that comes after nine"}
+  ],
+  "teachingNotes": "Use manipulatives, fingers, and visual aids. Practice counting objects daily. Connect numbers to quantities. Use songs and movement.",
+  "sample": [
+    {"question": "Count the apples in the picture and tell me the number.", "expectedAny": ["counts objects correctly", "identifies numeral", "shows one-to-one correspondence"]},
+    {"question": "Point to the number 7 on the number line.", "expectedAny": ["correctly identifies 7", "points to seven"]},
+    {"question": "Show me 4 fingers.", "expectedAny": ["holds up 4 fingers", "demonstrates 4"]},
+    {"question": "Count these blocks and tell me how many.", "expectedAny": ["counts correctly", "gives correct total"]},
+    {"question": "What number comes before 6?", "expectedAny": ["5", "five"]}
+  ],
+  "truefalse": [
+    {"question": "The number 5 comes after 4.", "answer": true, "expectedAny": ["correct number sequence"]},
+    {"question": "8 is bigger than 3.", "answer": true, "expectedAny": ["understands greater than"]},
+    {"question": "2 comes before 1.", "answer": false, "expectedAny": ["knows correct sequence"]},
+    {"question": "There are 10 numbers from 1 to 10.", "answer": true, "expectedAny": ["counts 1-10"]},
+    {"question": "Zero means the same as nothing.", "answer": true, "expectedAny": ["understands zero"]},
+    {"question": "9 comes after 10.", "answer": false, "expectedAny": ["knows 9 before 10"]},
+    {"question": "You use numbers to count things.", "answer": true, "expectedAny": ["understands counting purpose"]}
+  ],
+  "multiplechoice": [
+    {"question": "How many fingers are on one hand?", "choices": ["3", "4", "5", "6"], "correct": 2, "expectedAny": ["5 fingers on one hand"]},
+    {"question": "What number comes after 7?", "choices": ["6", "8", "9", "10"], "correct": 1, "expectedAny": ["8 comes after 7"]},
+    {"question": "Which is the biggest number?", "choices": ["2", "5", "3", "1"], "correct": 1, "expectedAny": ["5 is biggest"]},
+    {"question": "How many eyes do you have?", "choices": ["1", "2", "3", "4"], "correct": 1, "expectedAny": ["2 eyes"]},
+    {"question": "What number looks like this: 4?", "choices": ["three", "four", "five", "six"], "correct": 1, "expectedAny": ["recognizes 4"]},
+    {"question": "Which number is smallest?", "choices": ["7", "2", "9", "5"], "correct": 1, "expectedAny": ["2 is smallest"]},
+    {"question": "How many wheels does a tricycle have?", "choices": ["2", "3", "4", "5"], "correct": 1, "expectedAny": ["3 wheels"]}
+  ],
+  "fillintheblank": [
+    {"question": "After 3 comes _____.", "expectedAny": ["4", "four"]},
+    {"question": "Before 8 comes _____.", "expectedAny": ["7", "seven"]},
+    {"question": "1, 2, 3, _____, 5", "expectedAny": ["4", "four"]},
+    {"question": "6, 7, _____, 9, 10", "expectedAny": ["8", "eight"]},
+    {"question": "_____ comes before 1.", "expectedAny": ["0", "zero"]},
+    {"question": "2, _____, 4, 5", "expectedAny": ["3", "three"]},
+    {"question": "The number after 9 is _____.", "expectedAny": ["10", "ten"]}
+  ],
+  "shortanswer": [
+    {"question": "Count to 5 out loud.", "expectedAny": ["1, 2, 3, 4, 5"]},
+    {"question": "Count backwards from 5 to 1.", "expectedAny": ["5, 4, 3, 2, 1"]},
+    {"question": "Count to 10 using your fingers.", "expectedAny": ["counts with fingers", "uses all 10 fingers"]},
+    {"question": "Tell me three numbers that are bigger than 5.", "expectedAny": ["6, 7, 8", "any three numbers > 5"]},
+    {"question": "What numbers come between 3 and 7?", "expectedAny": ["4, 5, 6"]},
+    {"question": "Count by saying every other number: 2, 4, 6...", "expectedAny": ["2, 4, 6, 8, 10"]},
+    {"question": "Name a number that is less than 4.", "expectedAny": ["1", "2", "3", "any number < 4"]}
+  ],
+  "wordProblems": [
+    {"question": "If you have 3 toys and get 2 more, how many do you have?", "expectedAny": ["5 toys", "3 + 2 = 5"]},
+    {"question": "There are 4 birds in a tree. 1 flies away. How many are left?", "expectedAny": ["3 birds", "4 - 1 = 3"]},
+    {"question": "You see 6 balloons. 2 pop. How many balloons are still there?", "expectedAny": ["4 balloons", "6 - 2 = 4"]},
+    {"question": "Mom gives you 5 stickers. Dad gives you 3 more. How many stickers do you have?", "expectedAny": ["8 stickers", "5 + 3 = 8"]},
+    {"question": "There are 7 cookies. You eat 2. How many cookies are left?", "expectedAny": ["5 cookies", "7 - 2 = 5"]},
+    {"question": "You have 2 red blocks and 6 blue blocks. How many blocks in total?", "expectedAny": ["8 blocks", "2 + 6 = 8"]},
+    {"question": "10 crayons are in the box. You take out 4. How many are still in the box?", "expectedAny": ["6 crayons", "10 - 4 = 6"]}
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "id": "7th_Cells_and_Cell_Theory_Intermediate",
+  "title": "Cell Theory and Microscopic Life",
+  "grade": "7th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "cell theory",
+      "definition": "The scientific theory that all living things are made of cells"
+    },
+    {
+      "term": "unicellular",
+      "definition": "An organism made of only one cell"
+    },
+    {
+      "term": "multicellular",
+      "definition": "An organism made of many cells"
+    },
+    {
+      "term": "organelle",
+      "definition": "A specialized structure within a cell that performs specific functions"
+    },
+    {
+      "term": "microscope",
+      "definition": "An instrument used to see objects too small for the naked eye"
+    }
+  ],
+  "teachingNotes": "Review the three parts of cell theory. Compare unicellular and multicellular organisms. Discuss how microscopes help us study cells.",
+  "sample": {
+    "question": "What scientific theory states that all living things are made of cells?",
+    "expectedAny": [
+      "cell theory",
+      "cellular theory",
+      "theory of cells",
+      "cell principle"
+    ]
+  },
+  "truefalse": {
+    "question": "All living things are made of at least one cell.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which organism is unicellular?",
+    "expectedAny": [
+      "bacteria",
+      "amoeba",
+      "paramecium",
+      "yeast"
+    ]
+  },
+  "fillintheblank": {
+    "question": "An organism made of many cells is called ________.",
+    "expectedAny": [
+      "multicellular",
+      "multi-cellular",
+      "many-celled",
+      "complex organism"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are the three main parts of cell theory?",
+    "expectedAny": [
+      "all living things are cells, cells are basic unit, cells come from cells",
+      "made of cells, basic unit of life, come from existing cells"
+    ]
+  }
+}

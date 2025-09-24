@@ -1,0 +1,53 @@
+{
+  "id": "5th_Patterns_Number_Sequences_Beginner",
+  "title": "Patterns and Number Sequences",
+  "grade": "5th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "pattern",
+      "definition": "A repeating or predictable arrangement of numbers, shapes, or objects"
+    },
+    {
+      "term": "sequence",
+      "definition": "A list of numbers that follow a specific order or rule"
+    },
+    {
+      "term": "rule",
+      "definition": "The mathematical instruction that describes how a pattern continues"
+    },
+    {
+      "term": "term",
+      "definition": "Each number or item in a sequence"
+    },
+    {
+      "term": "arithmetic sequence",
+      "definition": "A sequence where the same number is added each time to get the next term"
+    }
+  ],
+  "teachingNotes": "Start with simple addition and subtraction patterns. Help students identify the rule and continue patterns. Practice with both increasing and decreasing sequences.",
+  "sample": {
+    "question": "What comes next in the pattern: 2, 4, 6, 8, ___?",
+    "expectedAny": ["10", "ten", "next is 10", "pattern continues with 10"]
+  },
+  "truefalse": {
+    "question": "In the sequence 5, 10, 15, 20, the rule is 'add 5'.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is the rule for the pattern: 3, 7, 11, 15?",
+    "expectedAny": ["add 4", "plus 4", "+4", "increase by 4"]
+  },
+  "fillintheblank": {
+    "question": "Complete the pattern: 20, 18, 16, 14, ________.",
+    "expectedAny": ["12", "twelve", "next is 12", "12 comes next"]
+  },
+  "shortanswer": {
+    "question": "What is the 6th term in the sequence: 1, 4, 7, 10, 13, ___?",
+    "expectedAny": ["16", "sixteen", "1 + 15 = 16", "the 6th term is 16"]
+  },
+  "wordProblems": {
+    "question": "A library adds 5 new books each week. If they start with 25 books, how many books will they have after 4 weeks?",
+    "expectedAny": ["45", "45 books", "forty-five", "25 + 20 = 45"]
+  }
+}

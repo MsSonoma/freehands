@@ -1,0 +1,53 @@
+{
+  "id": "12th_Series_Sequences_Mathematical_Analysis_Advanced",
+  "title": "Series, Sequences, and Mathematical Analysis",
+  "grade": "12th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "power series",
+      "definition": "Infinite series in powers of variable around center point"
+    },
+    {
+      "term": "Taylor series",
+      "definition": "Power series representation of function using derivatives at point"
+    },
+    {
+      "term": "Maclaurin series",
+      "definition": "Taylor series expanded around x = 0"
+    },
+    {
+      "term": "radius of convergence",
+      "definition": "Distance from center where power series converges"
+    },
+    {
+      "term": "absolute convergence",
+      "definition": "Series convergence when series of absolute values converges"
+    }
+  ],
+  "teachingNotes": "Explore power series and function approximation. Connect to applications in physics and engineering.",
+  "sample": {
+    "question": "What is an infinite series in powers of a variable?",
+    "expectedAny": ["power series", "polynomial series", "variable power series", "infinite polynomial"]
+  },
+  "truefalse": {
+    "question": "A Maclaurin series is a Taylor series expanded around x = 0.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What represents functions using derivatives at a point?",
+    "expectedAny": ["Taylor series", "Taylor expansion", "derivative series", "function series"]
+  },
+  "fillintheblank": {
+    "question": "The distance where power series converges is the ________ of convergence.",
+    "expectedAny": ["radius", "range", "interval", "distance"]
+  },
+  "shortanswer": {
+    "question": "How do Taylor series approximate functions?",
+    "expectedAny": ["polynomial approximation", "derivative information", "local behavior", "infinite polynomial"]
+  },
+  "wordProblems": {
+    "question": "What is the Maclaurin series for e^x up to x³ term?",
+    "expectedAny": ["1 + x + x²/2 + x³/6", "1 + x + x²/2! + x³/3!", "polynomial approximation", "first four terms"]
+  }
+}

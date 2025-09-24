@@ -1,0 +1,73 @@
+{
+  "id": "5th_Speaking_Listening_Presentations_Advanced",
+  "title": "Speaking, Listening, and Presentation Skills",
+  "grade": "5th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "presentation",
+      "definition": "A formal talk given to share information with an audience"
+    },
+    {
+      "term": "audience",
+      "definition": "The people who listen to or watch a presentation"
+    },
+    {
+      "term": "eye contact",
+      "definition": "Looking directly at people while speaking to connect with them"
+    },
+    {
+      "term": "active listening",
+      "definition": "Paying full attention and responding thoughtfully to what someone says"
+    },
+    {
+      "term": "visual aids",
+      "definition": "Pictures, charts, or objects used to help explain ideas in a presentation"
+    }
+  ],
+  "teachingNotes": "Practice presentation skills with low-stakes topics. Teach active listening strategies and respectful audience behavior. Emphasize clear speaking and organization.",
+  "sample": {
+    "question": "What do we call paying full attention to what someone is saying?",
+    "expectedAny": [
+      "active listening",
+      "good listening",
+      "attentive listening",
+      "focused listening"
+    ]
+  },
+  "truefalse": {
+    "question": "Eye contact helps you connect with your audience during a presentation.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What are pictures or charts used in presentations called?",
+    "expectedAny": [
+      "visual aids",
+      "visual helpers",
+      "presentation aids",
+      "visual tools"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The people who listen to your presentation are called your ________.",
+    "expectedAny": [
+      "audience",
+      "listeners",
+      "viewers",
+      "attendees"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are three important things to remember when giving a presentation?",
+    "expectedAny": [
+      "speak clearly, make eye contact, organize ideas",
+      "loud voice, look at audience, stay organized",
+      "clear speech, good posture, visual aids"
+    ]
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "id": "12th_Relativity_Cosmology_Modern_Physics_Beginner",
+  "title": "Relativity, Cosmology, and Modern Physics",
+  "grade": "12th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "special relativity",
+      "definition": "Einstein's theory describing space and time at high speeds"
+    },
+    {
+      "term": "general relativity",
+      "definition": "Einstein's theory describing gravity as curvature of spacetime"
+    },
+    {
+      "term": "Big Bang theory",
+      "definition": "Scientific model explaining origin and evolution of universe"
+    },
+    {
+      "term": "dark matter",
+      "definition": "Invisible matter that doesn't emit light but has gravitational effects"
+    },
+    {
+      "term": "black hole",
+      "definition": "Region of spacetime where gravity prevents escape of light"
+    }
+  ],
+  "teachingNotes": "Introduce modern physics concepts through observable phenomena. Use analogies to help students understand abstract concepts.",
+  "sample": {
+    "question": "What theory describes space and time at high speeds?",
+    "expectedAny": [
+      "special relativity",
+      "Einstein's special relativity",
+      "relativistic theory",
+      "time dilation theory"
+    ]
+  },
+  "truefalse": {
+    "question": "General relativity describes gravity as curvature of spacetime.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What scientific model explains the origin of the universe?",
+    "expectedAny": [
+      "Big Bang theory",
+      "Big Bang model",
+      "cosmic origin theory",
+      "universe origin model"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A region where gravity prevents light escape is a ________ hole.",
+    "expectedAny": [
+      "black",
+      "gravitational",
+      "dark",
+      "collapsed"
+    ]
+  },
+  "shortanswer": {
+    "question": "What evidence supports the Big Bang theory?",
+    "expectedAny": [
+      "cosmic microwave background",
+      "redshift",
+      "element abundance",
+      "universe expansion"
+    ]
+  }
+}

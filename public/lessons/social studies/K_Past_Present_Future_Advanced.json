@@ -1,0 +1,78 @@
+{
+  "id": "past-present-future-advanced",
+  "title": "Past, Present, and Future",
+  "grade": "K",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "past",
+      "definition": "Something that already happened before now"
+    },
+    {
+      "term": "present",
+      "definition": "What is happening right now"
+    },
+    {
+      "term": "future",
+      "definition": "Something that will happen later"
+    },
+    {
+      "term": "change",
+      "definition": "When something becomes different"
+    }
+  ],
+  "teachingNotes": "Use timeline of student's day. Show pictures of how things looked long ago vs. now. Discuss personal growth and changes.",
+  "sample": [
+    {"question": "When you were a baby, were you bigger or smaller than you are now?", "expectedAny": ["smaller", "babies are smaller than kids"]},
+    {"question": "What did you do yesterday?", "expectedAny": ["went to school", "played", "ate breakfast", "past activities"]},
+    {"question": "What are you doing right now?", "expectedAny": ["learning", "listening", "sitting", "present activities"]},
+    {"question": "What will you do tomorrow?", "expectedAny": ["go to school", "play", "eat meals", "future activities"]},
+    {"question": "How were toys different in the past?", "expectedAny": ["made of wood", "simpler", "different materials", "no electronics"]}
+  ],
+  "truefalse": [
+    {"question": "Yesterday is in the past.", "answer": true, "expectedAny": ["yesterday already happened"]},
+    {"question": "Tomorrow is happening right now.", "answer": false, "expectedAny": ["tomorrow is in the future"]},
+    {"question": "Things change over time.", "answer": true, "expectedAny": ["change happens with time"]},
+    {"question": "The past is the same as the future.", "answer": false, "expectedAny": ["past and future are different times"]},
+    {"question": "You are bigger now than when you were a baby.", "answer": true, "expectedAny": ["people grow bigger over time"]},
+    {"question": "Cars existed 200 years ago.", "answer": false, "expectedAny": ["cars are a modern invention"]},
+    {"question": "The present is happening right now.", "answer": true, "expectedAny": ["present means current time"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which word describes what you are doing right now?", "choices": ["past", "present", "future", "never"], "correct": 1, "expectedAny": ["present is what's happening now"]},
+    {"question": "When did dinosaurs live?", "choices": ["today", "in the past", "tomorrow", "in the future"], "correct": 1, "expectedAny": ["dinosaurs lived long ago"]},
+    {"question": "What will happen after today?", "choices": ["yesterday", "last week", "tomorrow", "last year"], "correct": 2, "expectedAny": ["tomorrow comes after today"]},
+    {"question": "How did people travel long ago before cars?", "choices": ["airplane", "horse", "spaceship", "bicycle"], "correct": 1, "expectedAny": ["horses were used for travel in the past"]},
+    {"question": "What describes something that already happened?", "choices": ["future", "present", "past", "maybe"], "correct": 2, "expectedAny": ["past describes what already happened"]},
+    {"question": "Which shows time order correctly?", "choices": ["future, past, present", "past, present, future", "present, future, past", "future, present, past"], "correct": 1, "expectedAny": ["time goes past, present, future"]},
+    {"question": "What might happen in the future?", "choices": ["dinosaurs come back", "flying cars", "yesterday happens again", "the past changes"], "correct": 1, "expectedAny": ["flying cars might be invented"]}
+  ],
+  "fillintheblank": [
+    {"question": "Tomorrow is in the _____.", "expectedAny": ["future"]},
+    {"question": "Something that already happened is in the _____.", "expectedAny": ["past"]},
+    {"question": "What is happening right now is the _____.", "expectedAny": ["present"]},
+    {"question": "When you were little, that was in the _____.", "expectedAny": ["past"]},
+    {"question": "Next week will happen in the _____.", "expectedAny": ["future"]},
+    {"question": "Long ago, people lived in the _____.", "expectedAny": ["past"]},
+    {"question": "Things _____ over time.", "expectedAny": ["change"]}
+  ],
+  "shortanswer": [
+    {"question": "How have you changed since you were a baby?", "expectedAny": ["got bigger", "learned to walk", "learned to talk", "can do more things"]},
+    {"question": "What is something your grandparents did that is different from what you do?", "expectedAny": ["no computers", "different games", "different transportation", "different technology"]},
+    {"question": "What do you want to do when you grow up?", "expectedAny": ["job aspirations", "future goals", "learn new things", "help people"]},
+    {"question": "How are schools different now than in the past?", "expectedAny": ["have computers", "different books", "modern technology", "new tools for learning"]},
+    {"question": "What do you think houses will look like in the future?", "expectedAny": ["robots", "different materials", "smart technology", "creative predictions"]},
+    {"question": "How do we learn about the past?", "expectedAny": ["old pictures", "stories from grandparents", "museums", "books about history"]},
+    {"question": "What changes do you see from morning to night?", "expectedAny": ["sun sets", "gets dark", "different activities", "time passes"]}
+  ],
+  "wordProblems": [
+    {"question": "Grandma was born 60 years ago. Mom was born 30 years ago. How many years older is Grandma than Mom?", "expectedAny": ["30 years older", "60 - 30 = 30"]},
+    {"question": "This week, Emma read 4 books about the past and 3 books about the future. How many books did she read total?", "expectedAny": ["7 books", "4 + 3 = 7"]},
+    {"question": "In the past, there were 2 horses for travel. Now there are 8 cars on the street. How many more vehicles are there now?", "expectedAny": ["6 more vehicles", "8 - 2 = 6"]},
+    {"question": "Yesterday, Tom collected 5 old coins. Today he collected 3 more old coins. How many old coins does he have total?", "expectedAny": ["8 old coins", "5 + 3 = 8"]},
+    {"question": "In the future, Sarah wants to visit 10 places. She has already visited 4 places in the past. How many more places does she want to visit?", "expectedAny": ["6 more places", "10 - 4 = 6"]},
+    {"question": "The museum has 12 pictures of the past and 7 pictures of the present. How many pictures do they have altogether?", "expectedAny": ["19 pictures", "12 + 7 = 19"]},
+    {"question": "Long ago, there were 15 trees in the park. Now there are only 9 trees. How many trees are gone?", "expectedAny": ["6 trees gone", "15 - 9 = 6"]}
+  ]
+}

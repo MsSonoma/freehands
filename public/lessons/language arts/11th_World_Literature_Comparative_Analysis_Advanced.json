@@ -1,0 +1,77 @@
+{
+  "id": "world-literature-comparative-analysis-advanced",
+  "title": "World Literature and Comparative Analysis",
+  "grade": "11th",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "comparative literature",
+      "definition": "The study of literature across different cultures, languages, and time periods"
+    },
+    {
+      "term": "cultural context",
+      "definition": "The social, historical, and political circumstances that influence a literary work"
+    },
+    {
+      "term": "universal themes",
+      "definition": "Ideas and concerns that appear across different cultures and time periods"
+    },
+    {
+      "term": "literary tradition",
+      "definition": "The body of written works and conventions passed down within a culture"
+    }
+  ],
+  "teachingNotes": "Use texts from diverse cultures and time periods. Emphasize both cultural specificity and universal human experiences. Develop skills in cross-cultural analysis and interpretation.",
+  "sample": {
+    "question": "What makes a theme 'universal' in literature?",
+    "expectedAny": [
+      "appears across different cultures and time periods",
+      "addresses fundamental human experiences",
+      "transcends cultural boundaries"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "Understanding cultural context is essential for interpreting world literature.",
+      "answer": true,
+      "expectedAny": [
+        "cultural background influences meaning and interpretation"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which is an example of a universal theme in world literature?",
+      "choices": [
+        "American democracy",
+        "Medieval feudalism",
+        "Love and loss",
+        "Industrial revolution"
+      ],
+      "correct": 2,
+      "expectedAny": [
+        "love and loss appear in literature worldwide"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "When comparing literature from different cultures, we examine both the _____ context and _____ themes.",
+      "expectedAny": [
+        "cultural",
+        "universal"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "How can reading world literature expand our understanding of human experience?",
+      "expectedAny": [
+        "exposes us to different perspectives",
+        "shows common humanity across cultures",
+        "challenges our assumptions"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "id": "research-information-writing-intermediate",
+  "title": "Research and Information Writing",
+  "grade": "3rd",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "research",
+      "definition": "Looking for information about a topic from different sources"
+    },
+    {
+      "term": "fact",
+      "definition": "Information that is true and can be proven"
+    },
+    {
+      "term": "opinion",
+      "definition": "What someone thinks or believes about something"
+    },
+    {
+      "term": "source",
+      "definition": "A place where you get information, like a book or website"
+    }
+  ],
+  "teachingNotes": "Practice using age-appropriate reference materials. Teach difference between fact and opinion. Model note-taking strategies.",
+  "sample": {
+    "question": "Is 'Dogs are the best pets' a fact or an opinion?",
+    "expectedAny": [
+      "opinion",
+      "it's what someone believes, not provable"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "When doing research, you should use more than one source of information.",
+      "answer": true,
+      "expectedAny": [
+        "multiple sources help verify information and provide different perspectives"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which is the best source for finding facts about animals?",
+      "choices": [
+        "a story book",
+        "an encyclopedia",
+        "a comic book",
+        "a diary"
+      ],
+      "correct": 1,
+      "expectedAny": [
+        "encyclopedias contain factual information"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "When you write about information you researched, you should organize your _____ before you start writing.",
+      "expectedAny": [
+        "facts",
+        "notes",
+        "information"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "What steps should you follow when researching a topic?",
+      "expectedAny": [
+        "choose a topic",
+        "find reliable sources",
+        "take notes",
+        "organize information",
+        "write about what you learned"
+      ]
+    }
+  ]
+}

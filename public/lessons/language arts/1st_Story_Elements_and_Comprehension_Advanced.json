@@ -1,0 +1,74 @@
+{
+  "id": "story-elements-comprehension-advanced",
+  "title": "Story Elements and Reading Comprehension",
+  "grade": "1st",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "character",
+      "definition": "The people or animals in a story"
+    },
+    {
+      "term": "setting",
+      "definition": "Where and when a story takes place"
+    },
+    {
+      "term": "problem",
+      "definition": "The trouble or challenge that happens in a story"
+    },
+    {
+      "term": "solution",
+      "definition": "How the problem gets fixed or solved in the story"
+    }
+  ],
+  "teachingNotes": "Use picture books with clear story elements. Practice retelling stories using story maps. Focus on identifying key story components.",
+  "sample": {
+    "question": "What are the main parts of every story?",
+    "expectedAny": [
+      "characters, setting, problem, solution",
+      "who, where, what happens"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "Every story has characters and a setting.",
+      "answer": true,
+      "expectedAny": [
+        "all stories need who and where"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "In the story of Goldilocks, who is the main character?",
+      "choices": [
+        "the bears",
+        "Goldilocks",
+        "the house",
+        "the chairs"
+      ],
+      "correct": 1,
+      "expectedAny": [
+        "Goldilocks is who the story is about"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "In Little Red Riding Hood, the _____ is the forest, and the _____ is the wolf.",
+      "expectedAny": [
+        "setting",
+        "problem"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Why is it important to understand story elements?",
+      "expectedAny": [
+        "helps us understand and remember stories better"
+      ]
+    }
+  ]
+}

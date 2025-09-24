@@ -1,0 +1,74 @@
+{
+  "id": "5th_Poetry_Analysis_Literary_Devices_Intermediate",
+  "title": "Poetry Analysis and Literary Devices",
+  "grade": "5th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "poetry",
+      "definition": "A type of writing that uses rhythm, rhyme, and imagery to express feelings"
+    },
+    {
+      "term": "metaphor",
+      "definition": "A comparison that says one thing is another thing"
+    },
+    {
+      "term": "simile",
+      "definition": "A comparison using 'like' or 'as'"
+    },
+    {
+      "term": "alliteration",
+      "definition": "The repetition of the same beginning sound in words"
+    },
+    {
+      "term": "imagery",
+      "definition": "Words that help you picture something in your mind"
+    }
+  ],
+  "teachingNotes": "Start with simple poems and clear examples of literary devices. Help students identify feelings and images in poetry. Practice writing simple poems using these devices.",
+  "sample": {
+    "question": "What literary device compares two things using 'like' or 'as'?",
+    "expectedAny": [
+      "simile",
+      "comparison with like or as",
+      "simile comparison",
+      "like/as comparison"
+    ]
+  },
+  "truefalse": {
+    "question": "'The cat's eyes were stars' is an example of a metaphor.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the repetition of beginning sounds called?",
+    "expectedAny": [
+      "alliteration",
+      "repeated sounds",
+      "sound repetition",
+      "beginning sound repetition"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Words that help you picture something in your mind are called ________.",
+    "expectedAny": [
+      "imagery",
+      "descriptive words",
+      "visual words",
+      "picture words"
+    ]
+  },
+  "shortanswer": {
+    "question": "Give an example of alliteration using words that start with 'b'.",
+    "expectedAny": [
+      "big brown bear",
+      "beautiful bright butterfly",
+      "bouncing blue ball",
+      "busy buzzing bees"
+    ]
+  }
+}

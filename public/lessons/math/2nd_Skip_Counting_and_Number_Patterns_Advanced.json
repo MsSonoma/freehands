@@ -1,0 +1,68 @@
+{
+  "id": "skip-counting-patterns-advanced",
+  "title": "Skip Counting and Number Patterns",
+  "grade": "2nd",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {"term": "skip counting", "definition": "Counting by numbers other than 1, like counting by 2s, 5s, or 10s"},
+    {"term": "pattern", "definition": "Something that repeats in a predictable way"},
+    {"term": "sequence", "definition": "Numbers or objects arranged in a specific order"},
+    {"term": "even number", "definition": "Numbers that can be divided evenly by 2"}
+  ],
+  "teachingNotes": "Use hundreds charts and manipulatives. Practice with money (counting by 5s and 10s). Connect to multiplication readiness.",
+  "sample": [
+    {"question": "Continue this pattern: 5, 10, 15, 20, ___", "expectedAny": ["25", "counting by 5s, next is 25"]},
+    {"question": "Skip count by 10s starting at 40: 40, 50, 60, ___", "expectedAny": ["70"]},
+    {"question": "Continue: 2, 4, 6, 8, ___", "expectedAny": ["10"]},
+    {"question": "What number comes next: 35, 30, 25, ___ (counting back by 5s)", "expectedAny": ["20"]},
+    {"question": "What do we call a pattern that repeats?", "expectedAny": ["pattern"]},
+    {"question": "Even numbers end in which digits?", "expectedAny": ["0,2,4,6,8"]},
+    {"question": "Skip count by 5s from 5 to 30.", "expectedAny": ["5,10,15,20,25,30"]}
+  ],
+  "truefalse": [
+    {"question": "When you skip count by 2s, you only land on even numbers.", "answer": true},
+    {"question": "Counting by 5s helps count nickels.", "answer": true},
+    {"question": "Skip counting by 10s from 10 goes 10, 15, 20, 25.", "answer": false},
+    {"question": "Patterns can go forward or backward.", "answer": true},
+    {"question": "Odd numbers end in 0, 2, 4, 6, or 8.", "answer": false},
+    {"question": "Skip counting is faster than counting by ones.", "answer": true},
+    {"question": "Counting by 3s from 3 gives only even numbers.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "Which number would you say when skip counting by 10s from 20?", "choices": ["21", "25", "30", "35"], "correct": 2},
+    {"question": "What comes next: 7, 14, 21, ___?", "choices": ["27", "28", "29", "30"], "correct": 1},
+    {"question": "Continue: 9, 12, 15, ___", "choices": ["16", "17", "18", "19"], "correct": 2},
+    {"question": "Counting back by 10s from 70: 70, 60, 50, ___", "choices": ["30", "40", "60", "80"], "correct": 1},
+    {"question": "Which list shows counting by 5s?", "choices": ["2,4,6,8", "5,10,15,20", "3,6,9,12", "1,2,3,4"], "correct": 1},
+    {"question": "Even numbers end in ___", "choices": ["1,3,5,7,9", "0,2,4,6,8", "2,3,5,7", "only 0"], "correct": 1},
+    {"question": "Which pattern is correct?", "choices": ["10, 15, 25, 35", "10, 20, 30, 40", "5, 11, 17, 23", "2, 5, 9, 14"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "Skip counting by 2s: 2, 4, 6, _____, 10, _____, 14", "expectedAny": ["8", "12"]},
+    {"question": "Counting by 10s from 30: 30, 40, 50, _____", "expectedAny": ["60"]},
+    {"question": "Counting by 5s from 15: 15, 20, 25, _____", "expectedAny": ["30"]},
+    {"question": "Counting back by 2s: 14, 12, 10, _____", "expectedAny": ["8"]},
+    {"question": "Counting by 3s from 3: 3, 6, 9, _____", "expectedAny": ["12"]},
+    {"question": "Even numbers end in _____", "expectedAny": ["0,2,4,6,8"]},
+    {"question": "Odd numbers end in _____", "expectedAny": ["1,3,5,7,9"]}
+  ],
+  "shortanswer": [
+    {"question": "How does skip counting by 5s help when counting money?", "expectedAny": ["nickels are worth 5 cents each", "helps count groups of 5 cents"]},
+    {"question": "Explain how you would find the next number in 4, 8, 12, ___.", "expectedAny": ["add 4 each time"]},
+    {"question": "How can skip counting help with multiplication later?", "expectedAny": ["it is repeated addition"]},
+    {"question": "What strategy helps when skip counting backward?", "expectedAny": ["subtract the same amount each time"]},
+    {"question": "Why is a hundreds chart useful for patterns?", "expectedAny": ["you can see jumps clearly"]},
+    {"question": "How can you check if a pattern is correct?", "expectedAny": ["apply the same rule to each step"]},
+    {"question": "Give an example of a pattern in nature.", "expectedAny": ["zebra stripes", "flower petals"]}
+  ],
+  "wordProblems": [
+    {"question": "Maria has 6 pairs of socks. If she skip counts by 2s to find the total number of socks, what numbers will she say?", "expectedAny": ["2, 4, 6, 8, 10, 12", "6 pairs = 12 socks total"]},
+    {"question": "Liam counts by 10s starting at 10. What is the 6th number he says?", "expectedAny": ["60"]},
+    {"question": "Sofia puts stickers in rows of 5. If she has 7 rows, how many stickers in all?", "expectedAny": ["35"]},
+    {"question": "Counting back by 5s from 40, what are the next three numbers?", "expectedAny": ["35, 30, 25"]},
+    {"question": "A clock shows minutes in groups of 5. Starting at 0, what numbers will you say to reach 30?", "expectedAny": ["0,5,10,15,20,25,30"]},
+    {"question": "Noah jumps on a number line by 3s starting at 0. What number will he land on after 5 jumps?", "expectedAny": ["15"]},
+    {"question": "Maya groups 18 beads into sets of 2. How many sets does she make?", "expectedAny": ["9"]}
+  ]
+}

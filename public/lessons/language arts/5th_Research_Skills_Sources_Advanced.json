@@ -1,0 +1,73 @@
+{
+  "id": "5th_Research_Skills_Sources_Advanced",
+  "title": "Research Skills and Evaluating Sources",
+  "grade": "5th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "research",
+      "definition": "The careful study of a subject to discover facts and information"
+    },
+    {
+      "term": "source",
+      "definition": "A place where information comes from, like books, websites, or interviews"
+    },
+    {
+      "term": "reliable source",
+      "definition": "A source that provides accurate, trustworthy information"
+    },
+    {
+      "term": "citation",
+      "definition": "Information about where you found facts, giving credit to the source"
+    },
+    {
+      "term": "plagiarism",
+      "definition": "Using someone else's words or ideas without giving them credit"
+    }
+  ],
+  "teachingNotes": "Teach students to evaluate website credibility and distinguish between fact and opinion. Practice paraphrasing and citing sources appropriately for their grade level.",
+  "sample": {
+    "question": "What do we call a source that provides accurate, trustworthy information?",
+    "expectedAny": [
+      "reliable source",
+      "trustworthy source",
+      "credible source",
+      "good source"
+    ]
+  },
+  "truefalse": {
+    "question": "It's okay to use someone else's exact words without saying where you found them.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What should you always do when you use information from a source?",
+    "expectedAny": [
+      "cite the source",
+      "give credit",
+      "show where it came from",
+      "include citation"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Using someone else's words without giving credit is called ________.",
+    "expectedAny": [
+      "plagiarism",
+      "stealing ideas",
+      "copying",
+      "not giving credit"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are two questions you should ask to determine if a source is reliable?",
+    "expectedAny": [
+      "Who wrote it? When was it written?",
+      "Is the author an expert? Is it recent?",
+      "Who published it? Is it factual?"
+    ]
+  }
+}

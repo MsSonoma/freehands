@@ -1,0 +1,83 @@
+{
+  "id": "4th_Measurement_Conversions_Units_Advanced",
+  "title": "Measurement Conversions and Units",
+  "grade": "4th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "conversion",
+      "definition": "Changing from one unit of measurement to another"
+    },
+    {
+      "term": "customary units",
+      "definition": "The measurement system used in the United States (inches, feet, pounds)"
+    },
+    {
+      "term": "metric units",
+      "definition": "The measurement system based on tens (centimeters, meters, grams)"
+    },
+    {
+      "term": "capacity",
+      "definition": "How much liquid a container can hold"
+    },
+    {
+      "term": "mass",
+      "definition": "The amount of matter in an object"
+    }
+  ],
+  "teachingNotes": "Teach common conversions within the same system (12 inches = 1 foot, 1000 grams = 1 kilogram). Use real-world examples and hands-on measuring activities. Compare customary and metric systems.",
+  "sample": [
+    {"question": "How many inches are in 3 feet?", "expectedAny": ["36"]},
+    {"question": "How many centimeters are in 2 meters?", "expectedAny": ["200 cm"]},
+    {"question": "Which is greater: 1 kilogram or 800 grams?", "expectedAny": ["1 kilogram"]},
+    {"question": "Convert 4 liters to milliliters.", "expectedAny": ["4000 mL"]},
+    {"question": "How many feet are in 2 yards?", "expectedAny": ["6"]},
+    {"question": "Which unit would you use to measure a paperclip's mass?", "expectedAny": ["grams"]},
+    {"question": "Which unit would you use to measure a swimming pool's capacity?", "expectedAny": ["liters", "gallons"]}
+  ],
+  "truefalse": [
+    {"question": "There are 1000 milliliters in 1 liter.", "answer": true},
+    {"question": "There are 16 ounces in 1 pound.", "answer": true},
+    {"question": "A meter is longer than a yard.", "answer": true},
+    {"question": "There are 10 centimeters in a meter.", "answer": false},
+    {"question": "A milliliter is larger than a liter.", "answer": false},
+    {"question": "A kilometer is shorter than a meter.", "answer": false},
+    {"question": "Mass and weight are always the same thing.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "Which is the best unit to measure the length of a pencil?", "choices": ["kilometers", "centimeters", "meters", "miles"], "correct": 1},
+    {"question": "How many ounces are in 3 pounds?", "choices": ["16", "32", "48", "64"], "correct": 2},
+    {"question": "How many grams are in 2 kilograms?", "choices": ["20", "200", "2000", "20,000"], "correct": 2},
+    {"question": "Which is closest to the mass of a textbook?", "choices": ["1 gram", "1 kilogram", "1 milligram", "1 liter"], "correct": 1},
+    {"question": "Convert 5 feet to inches.", "choices": ["50", "60", "70", "80"], "correct": 1},
+    {"question": "Which unit measures capacity?", "choices": ["grams", "liters", "meters", "degrees"], "correct": 1},
+    {"question": "Which is larger?", "choices": ["500 mL", "0.5 L", "equal", "cannot tell"], "correct": 2}
+  ],
+  "fillintheblank": [
+    {"question": "To convert 5 pounds to ounces, you multiply by 16 to get ________ ounces.", "expectedAny": ["80"]},
+    {"question": "1 meter = _____ centimeters.", "expectedAny": ["100"]},
+    {"question": "1 liter = _____ milliliters.", "expectedAny": ["1000"]},
+    {"question": "There are _____ inches in 1 foot.", "expectedAny": ["12"]},
+    {"question": "There are _____ feet in 1 yard.", "expectedAny": ["3"]},
+    {"question": "To convert 3 km to meters, multiply by _____.", "expectedAny": ["1000"]},
+    {"question": "A small paperclip has a mass of about _____ grams.", "expectedAny": ["1"]}
+  ],
+  "shortanswer": [
+    {"question": "Why would you use meters instead of centimeters to measure a football field?", "expectedAny": ["bigger unit, fewer numbers"]},
+    {"question": "Explain how to convert feet to inches.", "expectedAny": ["multiply by 12"]},
+    {"question": "When is it better to use liters vs milliliters?", "expectedAny": ["large vs small amounts"]},
+    {"question": "Why are metric conversions easier than customary?", "expectedAny": ["base 10"]},
+    {"question": "Give a real-world example of capacity.", "expectedAny": ["bottle volume"]},
+    {"question": "Give a real-world example of mass.", "expectedAny": ["object weight"]},
+    {"question": "Describe converting yards to feet to inches.", "expectedAny": ["×3 then ×12"]}
+  ],
+  "wordProblems": [
+    {"question": "A recipe calls for 2 cups of flour, but you only have a 1/4 cup. How many scoops do you need?", "expectedAny": ["8"]},
+    {"question": "You ran 3 kilometers. How many meters did you run?", "expectedAny": ["3000 m"]},
+    {"question": "A rope is 8 feet long. How many inches is that?", "expectedAny": ["96 in"]},
+    {"question": "A bottle holds 1.5 liters. How many milliliters is that?", "expectedAny": ["1500 mL"]},
+    {"question": "You weigh 35 kilograms. About how many grams is that?", "expectedAny": ["35000 g"]},
+    {"question": "Convert 2 yards to inches.", "expectedAny": ["72 in"]},
+    {"question": "A tank holds 12,000 mL of water. How many liters is that?", "expectedAny": ["12 L"]}
+  ]
+}

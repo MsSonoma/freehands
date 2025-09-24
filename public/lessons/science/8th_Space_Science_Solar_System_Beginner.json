@@ -1,0 +1,73 @@
+{
+  "id": "8th_Space_Science_Solar_System_Beginner",
+  "title": "Space Science and Our Solar System",
+  "grade": "8th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "solar system",
+      "definition": "The sun and all objects that orbit around it"
+    },
+    {
+      "term": "gravity",
+      "definition": "The force that attracts objects toward each other"
+    },
+    {
+      "term": "orbit",
+      "definition": "The path an object takes around another object in space"
+    },
+    {
+      "term": "asteroid",
+      "definition": "A rocky object that orbits the sun"
+    },
+    {
+      "term": "light-year",
+      "definition": "The distance light travels in one year"
+    }
+  ],
+  "teachingNotes": "Use scale models to show distances in space. Discuss how gravity keeps planets in orbit around the sun.",
+  "sample": {
+    "question": "What is the sun and all objects that orbit around it?",
+    "expectedAny": [
+      "solar system",
+      "our solar system",
+      "planetary system",
+      "sun's system"
+    ]
+  },
+  "truefalse": {
+    "question": "Gravity keeps planets in orbit around the sun.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is a rocky object that orbits the sun?",
+    "expectedAny": [
+      "asteroid",
+      "space rock",
+      "minor planet",
+      "rocky body"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The path an object takes around another object in space is called an ________.",
+    "expectedAny": [
+      "orbit",
+      "orbital path",
+      "revolution",
+      "circular path"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why do planets stay in orbit instead of flying off into space?",
+    "expectedAny": [
+      "gravity pulls them toward the sun",
+      "gravitational force",
+      "sun's gravity holds them"
+    ]
+  }
+}

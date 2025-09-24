@@ -1,0 +1,73 @@
+{
+  "id": "10th_Newton_Laws_Forces_Motion_Advanced",
+  "title": "Newton's Laws: Forces and Motion Analysis",
+  "grade": "10th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "newtons first law",
+      "definition": "An object at rest stays at rest, an object in motion stays in motion unless acted upon by a force"
+    },
+    {
+      "term": "newtons second law",
+      "definition": "The acceleration of an object is directly proportional to net force and inversely proportional to mass"
+    },
+    {
+      "term": "newtons third law",
+      "definition": "For every action force, there is an equal and opposite reaction force"
+    },
+    {
+      "term": "net force",
+      "definition": "The vector sum of all forces acting on an object"
+    },
+    {
+      "term": "inertia",
+      "definition": "The tendency of an object to resist changes in its motion"
+    }
+  ],
+  "teachingNotes": "Use free body diagrams to analyze forces. Practice applying F = ma to solve complex motion problems.",
+  "sample": {
+    "question": "What states that an object in motion stays in motion unless acted upon by a force?",
+    "expectedAny": [
+      "Newton's first law",
+      "law of inertia",
+      "first law of motion",
+      "inertia law"
+    ]
+  },
+  "truefalse": {
+    "question": "Newton's second law states that F = ma.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the vector sum of all forces acting on an object?",
+    "expectedAny": [
+      "net force",
+      "resultant force",
+      "total force",
+      "combined force"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The tendency of an object to resist changes in motion is called ________.",
+    "expectedAny": [
+      "inertia",
+      "resistance to change",
+      "momentum tendency",
+      "motion resistance"
+    ]
+  },
+  "shortanswer": {
+    "question": "Explain Newton's third law with an example.",
+    "expectedAny": [
+      "action-reaction pairs",
+      "walking pushes ground, ground pushes back",
+      "forces occur in pairs"
+    ]
+  }
+}

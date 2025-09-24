@@ -1,0 +1,53 @@
+{
+  "id": "7th_Rational_Numbers_and_Operations_Intermediate",
+  "title": "Rational Numbers: Fractions, Decimals, and Percents",
+  "grade": "7th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "rational number",
+      "definition": "A number that can be written as a fraction"
+    },
+    {
+      "term": "terminating decimal",
+      "definition": "A decimal that ends"
+    },
+    {
+      "term": "repeating decimal",
+      "definition": "A decimal with digits that repeat forever"
+    },
+    {
+      "term": "percent",
+      "definition": "A ratio that compares a number to 100"
+    },
+    {
+      "term": "equivalent",
+      "definition": "Having the same value but different forms"
+    }
+  ],
+  "teachingNotes": "Show connections between fractions, decimals, and percents. Practice converting between forms. Use visual models when possible.",
+  "sample": {
+    "question": "What is a number that can be written as a fraction?",
+    "expectedAny": ["rational number", "fraction", "rational", "fractional number"]
+  },
+  "truefalse": {
+    "question": "0.5 and 1/2 are equivalent.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is 3/4 as a percent?",
+    "expectedAny": ["75%", "75 percent", "seventy-five percent", "0.75 = 75%"]
+  },
+  "fillintheblank": {
+    "question": "A decimal that ends is called a ________ decimal.",
+    "expectedAny": ["terminating", "ending", "finite", "terminal"]
+  },
+  "shortanswer": {
+    "question": "Convert 0.25 to a fraction in simplest form.",
+    "expectedAny": ["1/4", "one fourth", "25/100 = 1/4", "¼"]
+  },
+  "wordProblems": {
+    "question": "In a class of 20 students, 15 passed the test. What percent passed?",
+    "expectedAny": ["75%", "75 percent", "15/20 = 0.75 = 75%", "seventy-five percent"]
+  }
+}

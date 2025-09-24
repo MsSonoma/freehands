@@ -1,0 +1,53 @@
+{
+  "id": "10th_Probability_Statistics_Data_Analysis_Advanced",
+  "title": "Probability and Statistics: Data Analysis and Inference",
+  "grade": "10th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "probability",
+      "definition": "Measure of likelihood that an event will occur"
+    },
+    {
+      "term": "sample space",
+      "definition": "Set of all possible outcomes of an experiment"
+    },
+    {
+      "term": "independent events",
+      "definition": "Events where the outcome of one does not affect the other"
+    },
+    {
+      "term": "conditional probability",
+      "definition": "Probability of an event given that another event has occurred"
+    },
+    {
+      "term": "normal distribution",
+      "definition": "Bell-shaped probability distribution symmetric about the mean"
+    }
+  ],
+  "teachingNotes": "Use real data sets for analysis. Emphasize the difference between correlation and causation in statistical interpretation.",
+  "sample": {
+    "question": "What is a measure of likelihood that an event will occur?",
+    "expectedAny": ["probability", "chance", "likelihood", "odds"]
+  },
+  "truefalse": {
+    "question": "Independent events do not affect each other's outcomes.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is the set of all possible outcomes called?",
+    "expectedAny": ["sample space", "outcome space", "event space", "possibility set"]
+  },
+  "fillintheblank": {
+    "question": "A bell-shaped probability distribution is called ________ distribution.",
+    "expectedAny": ["normal", "Gaussian", "bell curve", "standard"]
+  },
+  "shortanswer": {
+    "question": "What is the probability of getting heads when flipping a fair coin?",
+    "expectedAny": ["1/2", "0.5", "50%", "one half"]
+  },
+  "wordProblems": {
+    "question": "If P(A) = 0.3 and P(B) = 0.4, and A and B are independent, what is P(A and B)?",
+    "expectedAny": ["0.12", "0.3 × 0.4 = 0.12", "12%", "0.12"]
+  }
+}

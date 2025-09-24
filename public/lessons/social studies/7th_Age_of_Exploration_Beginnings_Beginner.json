@@ -1,0 +1,73 @@
+{
+  "id": "7th_Age_of_Exploration_Beginnings_Beginner",
+  "title": "Age of Exploration and European Expansion",
+  "grade": "7th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "exploration",
+      "definition": "The act of traveling to discover new places"
+    },
+    {
+      "term": "navigation",
+      "definition": "The science of planning and following a route"
+    },
+    {
+      "term": "compass",
+      "definition": "An instrument that shows direction using magnetism"
+    },
+    {
+      "term": "colonization",
+      "definition": "Establishing settlements in new territories"
+    },
+    {
+      "term": "trade route",
+      "definition": "A path followed by merchants to buy and sell goods"
+    }
+  ],
+  "teachingNotes": "Explain motivations for exploration: gold, God, and glory. Discuss technological advances that made ocean travel possible.",
+  "sample": {
+    "question": "What is the act of traveling to discover new places?",
+    "expectedAny": [
+      "exploration",
+      "discovery",
+      "expedition",
+      "voyage"
+    ]
+  },
+  "truefalse": {
+    "question": "Europeans explored to find new trade routes to Asia.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What instrument helped sailors determine direction?",
+    "expectedAny": [
+      "compass",
+      "magnetic compass",
+      "navigation compass",
+      "directional tool"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Establishing settlements in new territories is called ________.",
+    "expectedAny": [
+      "colonization",
+      "settlement",
+      "establishing colonies",
+      "founding settlements"
+    ]
+  },
+  "shortanswer": {
+    "question": "What were the three main motivations for European exploration?",
+    "expectedAny": [
+      "gold, God, and glory",
+      "wealth, religion, fame",
+      "riches, Christianity, honor"
+    ]
+  }
+}

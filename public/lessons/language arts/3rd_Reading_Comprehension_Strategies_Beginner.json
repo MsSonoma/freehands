@@ -1,0 +1,79 @@
+{
+  "id": "reading-comprehension-strategies-beginner",
+  "title": "Reading Comprehension Strategies",
+  "grade": "3rd",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "comprehension",
+      "definition": "Understanding what you read"
+    },
+    {
+      "term": "main idea",
+      "definition": "The most important point in a story or paragraph"
+    },
+    {
+      "term": "detail",
+      "definition": "Small pieces of information that support the main idea"
+    },
+    {
+      "term": "prediction",
+      "definition": "A guess about what might happen next in a story"
+    }
+  ],
+  "teachingNotes": "Use simple stories and picture books. Practice asking 'who, what, when, where, why' questions. Model thinking aloud while reading.",
+  "sample": {
+    "question": "What should you do if you don't understand a word while reading?",
+    "expectedAny": [
+      "look for clues in the sentence",
+      "ask for help",
+      "look it up",
+      "try to sound it out"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "Good readers think about what they're reading as they read.",
+      "answer": true,
+      "expectedAny": [
+        "active reading involves thinking about the text"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "What is the main idea of a story about a dog who saves a cat from a tree?",
+      "choices": [
+        "dogs like cats",
+        "trees are tall",
+        "a dog helps a cat",
+        "cats climb trees"
+      ],
+      "correct": 2,
+      "expectedAny": [
+        "the main action is the dog helping the cat"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "Before you read a story, you can look at the pictures to make a _____ about what might happen.",
+      "expectedAny": [
+        "prediction"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "What are three things you can do to better understand what you read?",
+      "expectedAny": [
+        "read slowly",
+        "ask questions",
+        "look at pictures",
+        "reread parts",
+        "think about the story"
+      ]
+    }
+  ]
+}

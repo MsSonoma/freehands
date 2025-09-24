@@ -1,0 +1,75 @@
+{
+  "id": "poetry-rhythm-rhyme-intermediate",
+  "title": "Poetry, Rhythm, and Rhyme",
+  "grade": "1st",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "poetry",
+      "definition": "Writing that often rhymes and has a special rhythm"
+    },
+    {
+      "term": "rhythm",
+      "definition": "A pattern of beats, like in music"
+    },
+    {
+      "term": "rhyme",
+      "definition": "Words that end with the same sound"
+    },
+    {
+      "term": "verse",
+      "definition": "A group of lines in a poem"
+    }
+  ],
+  "teachingNotes": "Use familiar nursery rhymes and chants. Clap rhythms and emphasize rhyming words. Encourage students to create simple poems.",
+  "sample": {
+    "question": "What word rhymes with 'tree'?",
+    "expectedAny": [
+      "bee",
+      "see",
+      "me",
+      "free"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "Poems always have to rhyme.",
+      "answer": false,
+      "expectedAny": [
+        "some poems rhyme, but not all poems have to"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which words rhyme?",
+      "choices": [
+        "cat and dog",
+        "sun and fun",
+        "big and small",
+        "red and blue"
+      ],
+      "correct": 1,
+      "expectedAny": [
+        "sun and fun both end with -un sound"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "Roses are red, violets are blue, sugar is sweet, and so are _____.",
+      "expectedAny": [
+        "you"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Make up two lines that rhyme about your favorite animal.",
+      "expectedAny": [
+        "any two rhyming lines about animals"
+      ]
+    }
+  ]
+}

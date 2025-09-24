@@ -1,0 +1,53 @@
+{
+  "id": "9th_Quadratic_Equations_Factoring_Solving_Advanced",
+  "title": "Quadratic Equations: Factoring and Solving",
+  "grade": "9th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "quadratic equation",
+      "definition": "Equation in the form ax² + bx + c = 0"
+    },
+    {
+      "term": "standard form",
+      "definition": "Quadratic written as ax² + bx + c = 0"
+    },
+    {
+      "term": "zero product property",
+      "definition": "If ab = 0, then a = 0 or b = 0"
+    },
+    {
+      "term": "quadratic formula",
+      "definition": "x = (-b ± √(b² - 4ac)) / (2a)"
+    },
+    {
+      "term": "discriminant",
+      "definition": "Expression b² - 4ac that determines number of solutions"
+    }
+  ],
+  "teachingNotes": "Teach multiple solving methods: factoring, quadratic formula, and completing the square. Emphasize when to use each method.",
+  "sample": {
+    "question": "What is an equation in the form ax² + bx + c = 0?",
+    "expectedAny": ["quadratic equation", "second degree equation", "quadratic", "parabolic equation"]
+  },
+  "truefalse": {
+    "question": "The zero product property states that if ab = 0, then a = 0 or b = 0.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What determines the number of solutions in a quadratic?",
+    "expectedAny": ["discriminant", "b² - 4ac", "discriminant value", "under the radical"]
+  },
+  "fillintheblank": {
+    "question": "The quadratic formula is x = (-b ± √(b² - 4ac)) / ________.",
+    "expectedAny": ["2a", "(2a)", "two a", "2 times a"]
+  },
+  "shortanswer": {
+    "question": "When is factoring the best method to solve a quadratic?",
+    "expectedAny": ["when it factors easily", "when factors are integers", "when trinomial is factorable"]
+  },
+  "wordProblems": {
+    "question": "Solve x² - 5x + 6 = 0 by factoring. What are the solutions?",
+    "expectedAny": ["x = 2, 3", "2 and 3", "x = 2 or x = 3", "solutions are 2, 3"]
+  }
+}

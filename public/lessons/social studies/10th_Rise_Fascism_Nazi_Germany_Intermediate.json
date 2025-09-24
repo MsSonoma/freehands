@@ -1,0 +1,74 @@
+{
+  "id": "10th_Rise_Fascism_Nazi_Germany_Intermediate",
+  "title": "Rise of Fascism and Nazi Germany",
+  "grade": "10th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "fascism",
+      "definition": "Authoritarian political ideology emphasizing nationalism and dictatorial power"
+    },
+    {
+      "term": "nazi party",
+      "definition": "German fascist political party led by Adolf Hitler"
+    },
+    {
+      "term": "propaganda",
+      "definition": "Information used to promote political cause or viewpoint"
+    },
+    {
+      "term": "totalitarian state",
+      "definition": "Government that seeks total control over all aspects of life"
+    },
+    {
+      "term": "appeasement",
+      "definition": "Policy of making concessions to avoid conflict"
+    }
+  ],
+  "teachingNotes": "Analyze conditions that allowed fascism to rise. Examine propaganda techniques and their effectiveness.",
+  "sample": {
+    "question": "What is authoritarian ideology emphasizing nationalism and dictatorial power?",
+    "expectedAny": [
+      "fascism",
+      "fascist ideology",
+      "authoritarian nationalism",
+      "dictatorial system"
+    ]
+  },
+  "truefalse": {
+    "question": "Propaganda is information used to promote a political cause.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What policy involves making concessions to avoid conflict?",
+    "expectedAny": [
+      "appeasement",
+      "conciliation",
+      "accommodation",
+      "peaceful resolution"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A government seeking total control over life is a ________ state.",
+    "expectedAny": [
+      "totalitarian",
+      "total control",
+      "authoritarian",
+      "dictatorial"
+    ]
+  },
+  "shortanswer": {
+    "question": "What conditions allowed fascism to rise in Germany?",
+    "expectedAny": [
+      "economic hardship",
+      "political instability",
+      "national humiliation",
+      "weak democracy"
+    ]
+  }
+}

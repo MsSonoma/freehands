@@ -1,0 +1,73 @@
+{
+  "id": "8th_Waves_Sound_and_Light_Beginner",
+  "title": "Wave Properties: Sound and Light",
+  "grade": "8th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "electromagnetic spectrum",
+      "definition": "The range of all electromagnetic waves"
+    },
+    {
+      "term": "reflection",
+      "definition": "When waves bounce off a surface"
+    },
+    {
+      "term": "refraction",
+      "definition": "The bending of waves when they enter a new medium"
+    },
+    {
+      "term": "absorption",
+      "definition": "When materials take in wave energy"
+    },
+    {
+      "term": "vibration",
+      "definition": "Rapid back-and-forth motion that creates waves"
+    }
+  ],
+  "teachingNotes": "Use demonstrations with mirrors, prisms, and musical instruments. Show how waves behave with different materials.",
+  "sample": {
+    "question": "What is the range of all electromagnetic waves called?",
+    "expectedAny": [
+      "electromagnetic spectrum",
+      "EM spectrum",
+      "light spectrum",
+      "wave spectrum"
+    ]
+  },
+  "truefalse": {
+    "question": "Light waves can travel through empty space.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What happens when light bounces off a surface?",
+    "expectedAny": [
+      "reflection",
+      "bouncing",
+      "mirroring",
+      "reflected light"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The bending of waves when entering a new medium is called ________.",
+    "expectedAny": [
+      "refraction",
+      "bending",
+      "wave bending",
+      "light bending"
+    ]
+  },
+  "shortanswer": {
+    "question": "How are sound waves different from light waves?",
+    "expectedAny": [
+      "sound needs matter, light doesn't",
+      "sound is mechanical, light is electromagnetic",
+      "sound needs medium"
+    ]
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "id": "4th_Multiplying_with_Zeros_Beginner",
+  "title": "Multiplying with Zeros",
+  "grade": "4th",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {"term": "zero property", "definition": "Any number multiplied by zero equals zero"},
+    {"term": "placeholder zero", "definition": "A zero that holds a place value position but doesn't change the digit value"},
+    {"term": "trailing zero", "definition": "A zero at the end of a number that affects the place value"},
+    {"term": "leading zero", "definition": "A zero at the beginning that doesn't change the number's value"},
+    {"term": "identity property", "definition": "Any number multiplied by one equals that same number"},
+    {"term": "place value", "definition": "The value of a digit based on its position in a number"}
+  ],
+  "teachingNotes": "Start with concrete examples using manipulatives. Emphasize zero property vs placeholder zeros. Connect to skip counting and patterns. Use real-world contexts like empty groups.",
+  "sample": [
+    {"question": "What is 7 × 0?", "expectedAny": ["0", "zero"]},
+    {"question": "What is 0 × 15?", "expectedAny": ["0", "zero"]},
+    {"question": "What happens when you multiply any number by zero?", "expectedAny": ["you get zero", "the answer is always zero"]},
+    {"question": "What is 30 × 4?", "expectedAny": ["120"]},
+    {"question": "What is 6 × 20?", "expectedAny": ["120"]},
+    {"question": "How is 5 × 100 different from 5 × 0?", "expectedAny": ["5 × 100 = 500, but 5 × 0 = 0", "very different"]},
+    {"question": "What pattern do you see in 4 × 10, 4 × 100, 4 × 1000?", "expectedAny": ["adding zeros", "40, 400, 4000", "place value shifts"]}
+  ],
+  "truefalse": [
+    {"question": "Any number times zero equals zero.", "answer": true},
+    {"question": "Zero times any number equals that number.", "answer": false},
+    {"question": "5 × 20 is the same as 5 × 2 × 10.", "answer": true},
+    {"question": "When multiplying by 10, you add one zero to the end.", "answer": true},
+    {"question": "0 × 0 = 1.", "answer": false},
+    {"question": "Multiplying by 100 adds two zeros to the end.", "answer": true},
+    {"question": "The zero in 205 × 3 means the answer will be zero.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "What is 8 × 0?", "choices": ["8", "0", "80", "1"], "correct": 1},
+    {"question": "What is 0 × 47?", "choices": ["47", "0", "470", "74"], "correct": 1},
+    {"question": "What is 6 × 30?", "choices": ["30", "6", "180", "36"], "correct": 2},
+    {"question": "Which shows the zero property of multiplication?", "choices": ["5 × 1 = 5", "9 × 0 = 0", "4 × 10 = 40", "2 × 3 = 6"], "correct": 1},
+    {"question": "What is 7 × 1000?", "choices": ["7", "70", "700", "7000"], "correct": 3},
+    {"question": "Which is equal to 4 × 50?", "choices": ["4 × 5 × 10", "4 × 0 × 50", "4 + 50", "50 - 4"], "correct": 0},
+    {"question": "What happens to 25 when you multiply it by 0?", "choices": ["stays 25", "becomes 0", "becomes 250", "becomes 1"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "Any number multiplied by zero equals _____.", "expectedAny": ["0", "zero"]},
+    {"question": "6 × 0 = _____.", "expectedAny": ["0"]},
+    {"question": "0 × 284 = _____.", "expectedAny": ["0"]},
+    {"question": "When you multiply 8 × 10, you get _____.", "expectedAny": ["80"]},
+    {"question": "3 × 100 = _____.", "expectedAny": ["300"]},
+    {"question": "To multiply by 10, add _____ zero(s) to the end.", "expectedAny": ["one", "1"]},
+    {"question": "_____ × 0 = 0 for any number.", "expectedAny": ["any number", "anything"]}
+  ],
+  "shortanswer": [
+    {"question": "Explain why any number times zero equals zero.", "expectedAny": ["zero groups of something", "no groups", "nothing times anything is nothing"]},
+    {"question": "How is multiplying by 10 different from multiplying by 0?", "expectedAny": ["10 makes numbers bigger", "0 makes everything zero", "10 shifts place value"]},
+    {"question": "What pattern do you notice when multiplying by 10, 100, 1000?", "expectedAny": ["add zeros", "shift digits left", "place value increases"]},
+    {"question": "Give a real-world example of multiplying by zero.", "expectedAny": ["0 bags of cookies", "no groups", "empty containers"]},
+    {"question": "How can you use the zero property to solve 156 × 0 quickly?", "expectedAny": ["it's automatically 0", "don't need to calculate", "zero property"]},
+    {"question": "What's the difference between 5 × 20 and 5 × 0?", "expectedAny": ["5 × 20 = 100, 5 × 0 = 0", "very different answers"]},
+    {"question": "Why doesn't the zero in 304 make 304 × 2 equal zero?", "expectedAny": ["it's a placeholder", "not multiplying by zero", "zero is in tens place"]}
+  ],
+  "wordProblems": [
+    {"question": "Sarah has 0 bags of marbles. Each bag contains 12 marbles. How many marbles does she have?", "expectedAny": ["0", "zero marbles"]},
+    {"question": "A factory produces 0 cars per day for 30 days. How many cars are produced in total?", "expectedAny": ["0", "zero cars"]},
+    {"question": "There are 8 classrooms with 0 students in each. How many students are there total?", "expectedAny": ["0", "zero students"]},
+    {"question": "A store sells notebooks in packs of 10. If they sell 40 packs, how many notebooks is that?", "expectedAny": ["400", "400 notebooks"]},
+    {"question": "A baker makes 0 dozen cookies. How many individual cookies is that?", "expectedAny": ["0", "zero cookies"]},
+    {"question": "Each box holds 20 crayons. If there are 6 boxes, how many crayons in total?", "expectedAny": ["120", "120 crayons"]},
+    {"question": "A parking lot has 5 rows with 0 cars in each row. How many cars are parked?", "expectedAny": ["0", "zero cars"]}
+  ]
+}

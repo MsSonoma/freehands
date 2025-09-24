@@ -1,0 +1,73 @@
+{
+  "id": "8th_Westward_Expansion_Manifest_Destiny_Beginner",
+  "title": "Westward Expansion and Manifest Destiny",
+  "grade": "8th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "Manifest Destiny",
+      "definition": "The belief that America was meant to expand across the continent"
+    },
+    {
+      "term": "frontier",
+      "definition": "The edge of settled territory"
+    },
+    {
+      "term": "pioneer",
+      "definition": "A person who settles in a new territory"
+    },
+    {
+      "term": "Oregon Trail",
+      "definition": "A route used by settlers traveling west"
+    },
+    {
+      "term": "Gold Rush",
+      "definition": "A rapid movement of people to areas where gold was discovered"
+    }
+  ],
+  "teachingNotes": "Explain motivations for westward movement. Discuss impact on Native Americans and Mexican territories.",
+  "sample": {
+    "question": "What was the belief that America should expand across the continent?",
+    "expectedAny": [
+      "Manifest Destiny",
+      "westward expansion belief",
+      "continental expansion",
+      "destiny belief"
+    ]
+  },
+  "truefalse": {
+    "question": "The Oregon Trail was a route used by settlers traveling west.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is a person who settles in new territory called?",
+    "expectedAny": [
+      "pioneer",
+      "settler",
+      "frontiersman",
+      "colonist"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The edge of settled territory is called the ________.",
+    "expectedAny": [
+      "frontier",
+      "boundary",
+      "edge",
+      "border"
+    ]
+  },
+  "shortanswer": {
+    "question": "What motivated people to move west?",
+    "expectedAny": [
+      "land, gold, opportunity",
+      "better life, resources",
+      "economic opportunities"
+    ]
+  }
+}

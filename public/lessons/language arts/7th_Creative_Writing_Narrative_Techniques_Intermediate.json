@@ -1,0 +1,73 @@
+{
+  "id": "7th_Creative_Writing_Narrative_Techniques_Intermediate",
+  "title": "Creative Writing and Narrative Techniques",
+  "grade": "7th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "narrative voice",
+      "definition": "The perspective from which a story is told"
+    },
+    {
+      "term": "point of view",
+      "definition": "The position from which a story is narrated"
+    },
+    {
+      "term": "dialogue",
+      "definition": "Conversation between characters in a story"
+    },
+    {
+      "term": "setting",
+      "definition": "The time and place where a story occurs"
+    },
+    {
+      "term": "plot structure",
+      "definition": "The organized sequence of events in a story"
+    }
+  ],
+  "teachingNotes": "Practice writing from different points of view. Emphasize the importance of realistic dialogue and vivid setting descriptions.",
+  "sample": {
+    "question": "What is the perspective from which a story is told?",
+    "expectedAny": [
+      "narrative voice",
+      "point of view",
+      "narrator perspective",
+      "storytelling voice"
+    ]
+  },
+  "truefalse": {
+    "question": "Dialogue is conversation between characters.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What includes both time and place in a story?",
+    "expectedAny": [
+      "setting",
+      "backdrop",
+      "story location",
+      "time and place"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The organized sequence of events in a story is the ________ structure.",
+    "expectedAny": [
+      "plot",
+      "story",
+      "narrative",
+      "event"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are the main parts of plot structure?",
+    "expectedAny": [
+      "exposition, rising action, climax, falling action, resolution",
+      "beginning, middle, end",
+      "setup, conflict, resolution"
+    ]
+  }
+}

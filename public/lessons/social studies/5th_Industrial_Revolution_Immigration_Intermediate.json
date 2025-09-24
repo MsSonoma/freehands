@@ -1,0 +1,74 @@
+{
+  "id": "5th_Industrial_Revolution_Immigration_Intermediate",
+  "title": "Industrial Revolution and Immigration",
+  "grade": "5th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "Industrial Revolution",
+      "definition": "A time when machines began doing work that people used to do by hand"
+    },
+    {
+      "term": "immigration",
+      "definition": "Moving from one country to live permanently in another country"
+    },
+    {
+      "term": "factory",
+      "definition": "A building where workers use machines to make goods"
+    },
+    {
+      "term": "Ellis Island",
+      "definition": "An island near New York where immigrants were processed entering America"
+    },
+    {
+      "term": "urbanization",
+      "definition": "The growth of cities as people move from farms to urban areas"
+    }
+  ],
+  "teachingNotes": "Connect how new machines changed work and brought people to cities. Discuss why people immigrated and their contributions to America.",
+  "sample": {
+    "question": "What do we call the time when machines began replacing hand work?",
+    "expectedAny": [
+      "Industrial Revolution",
+      "the Industrial Revolution",
+      "machine age",
+      "industrial period"
+    ]
+  },
+  "truefalse": {
+    "question": "Ellis Island was where many immigrants first arrived in America.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What happened to cities during the Industrial Revolution?",
+    "expectedAny": [
+      "they grew larger",
+      "urbanization occurred",
+      "people moved to cities",
+      "cities expanded"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Moving from one country to live in another is called ________.",
+    "expectedAny": [
+      "immigration",
+      "immigrating",
+      "moving to America",
+      "coming to America"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why did many people move from farms to cities during the Industrial Revolution?",
+    "expectedAny": [
+      "factory jobs",
+      "work in factories",
+      "better opportunities",
+      "industrial jobs available"
+    ]
+  }
+}

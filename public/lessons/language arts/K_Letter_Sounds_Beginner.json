@@ -1,0 +1,81 @@
+{
+  "id": "letter-sounds-beginner",
+  "title": "Letter Sounds",
+  "grade": "K",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "letter",
+      "definition": "A symbol that stands for a sound"
+    },
+    {
+      "term": "sound",
+      "definition": "What you hear when someone speaks a letter"
+    },
+    {
+      "term": "alphabet",
+      "definition": "All 26 letters from A to Z"
+    },
+    {
+      "term": "vowel",
+      "definition": "The letters A, E, I, O, U that make special sounds"
+    }
+  ],
+  "teachingNotes": "Practice letter recognition and phonics daily. Use songs, games, and movement. Connect letters to familiar words and names.",
+  "sample": [
+    {"question": "What sound does the letter 'B' make?", "expectedAny": ["/b/", "buh", "like in ball"]},
+    {"question": "Show the sound 'T' makes.", "expectedAny": ["/t/", "tuh"]},
+    {"question": "Which letter makes the /s/ sound?", "expectedAny": ["S"]},
+    {"question": "Say the sound for letter 'M'.", "expectedAny": ["/m/"]},
+    {"question": "What sound does 'F' make?", "expectedAny": ["/f/"]},
+    {"question": "Which letter makes the /r/ sound?", "expectedAny": ["R"]},
+    {"question": "Point to the letter that makes the /k/ sound.", "expectedAny": ["K"]
+    }
+  ],
+  "truefalse": [
+    {"question": "The letter 'A' is a vowel.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Every letter makes the same sound.", "answer": false, "expectedAny": ["false"]},
+    {"question": "The letter 'B' makes a /b/ sound.", "answer": true, "expectedAny": ["true"]},
+    {"question": "There are 10 vowels in the alphabet.", "answer": false, "expectedAny": ["false"]},
+    {"question": "You use your mouth to make letter sounds.", "answer": true, "expectedAny": ["true"]},
+    {"question": "All letters are vowels.", "answer": false, "expectedAny": ["false"]},
+    {"question": "The letter 'P' makes a /p/ sound.", "answer": true, "expectedAny": ["true"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which letter makes the /m/ sound?", "choices": ["N", "M", "W", "H"], "correct": 1, "expectedAny": ["M"]},
+    {"question": "What sound does 'D' make?", "choices": ["/b/", "/d/", "/p/", "/t/"], "correct": 1, "expectedAny": ["/d/"]},
+    {"question": "Which of these is a vowel?", "choices": ["B", "C", "E", "F"], "correct": 2, "expectedAny": ["E"]},
+    {"question": "What letter makes the /r/ sound?", "choices": ["L", "R", "W", "Y"], "correct": 1, "expectedAny": ["R"]},
+    {"question": "Which sound is made by 'K'?", "choices": ["/s/", "/t/", "/k/", "/n/"], "correct": 2, "expectedAny": ["/k/"]},
+    {"question": "What vowel sound is in 'cat'?", "choices": ["/a/", "/e/", "/i/", "/o/"], "correct": 0, "expectedAny": ["/a/"]},
+    {"question": "Which letter makes the /h/ sound?", "choices": ["G", "H", "J", "K"], "correct": 1, "expectedAny": ["H"]}
+  ],
+  "fillintheblank": [
+    {"question": "The word 'cat' starts with the letter _____.", "expectedAny": ["C"]},
+    {"question": "The sound /b/ is made by the letter _____.", "expectedAny": ["B"]},
+    {"question": "Dog starts with the _____ sound.", "expectedAny": ["/d/"]},
+    {"question": "The five vowels are A, E, I, O, and _____.", "expectedAny": ["U"]},
+    {"question": "Sun begins with the _____ sound.", "expectedAny": ["/s/"]},
+    {"question": "The letter that makes /l/ is _____.", "expectedAny": ["L"]},
+    {"question": "Mom starts with the _____ sound.", "expectedAny": ["/m/"]}
+  ],
+  "shortanswer": [
+    {"question": "Say the sound that 'S' makes.", "expectedAny": ["/s/"]},
+    {"question": "What sounds do the vowels make?", "expectedAny": ["/a/, /e/, /i/, /o/, /u/"]},
+    {"question": "Name three letters that are not vowels.", "expectedAny": ["B, C, D"]},
+    {"question": "What sound do you hear first in 'fish'?", "expectedAny": ["/f/"]},
+    {"question": "Tell me the sound each letter makes: P, T, N", "expectedAny": ["/p/, /t/, /n/"]},
+    {"question": "What letters make sounds like animals?", "expectedAny": ["S sounds like snake", "B sounds like bee"]},
+    {"question": "Which sound is at the beginning of 'zipper'?", "expectedAny": ["/z/"]}
+  ],
+  "wordProblems": [
+    {"question": "Maya knows the sounds for 8 letters. If there are 26 letters total, how many sounds does she still need to learn?", "expectedAny": ["18 sounds"]},
+    {"question": "In the word 'jump', which sound comes first?", "expectedAny": ["/j/"]},
+    {"question": "There are 5 vowels. If you know 3 vowel sounds, how many more do you need to learn?", "expectedAny": ["2 vowels"]},
+    {"question": "Ben can say 4 letter sounds in one minute. How many sounds is that?", "expectedAny": ["4 sounds"]},
+    {"question": "If each letter has a sound and you practice 5 letters, how many sounds did you practice?", "expectedAny": ["5 sounds"]},
+    {"question": "The word 'cat' has 3 sounds: /c/ /a/ /t/. How many sounds is that?", "expectedAny": ["3 sounds"]},
+    {"question": "Lisa knows all 5 vowel sounds plus 10 other letter sounds. How many sounds does she know total?", "expectedAny": ["15 sounds"]}
+  ]
+}

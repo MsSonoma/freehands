@@ -1,0 +1,73 @@
+{
+  "id": "5th_Non_Fiction_Text_Features_Beginner",
+  "title": "Non-Fiction Text Features and Organization",
+  "grade": "5th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "non-fiction",
+      "definition": "Writing that gives facts and information about real things"
+    },
+    {
+      "term": "text features",
+      "definition": "Parts of a text like headings, captions, and charts that help organize information"
+    },
+    {
+      "term": "heading",
+      "definition": "A title that tells what a section of text is about"
+    },
+    {
+      "term": "caption",
+      "definition": "Text that explains what is shown in a picture or diagram"
+    },
+    {
+      "term": "table of contents",
+      "definition": "A list at the beginning of a book showing what topics are covered"
+    }
+  ],
+  "teachingNotes": "Use real examples of textbooks and non-fiction books. Practice using text features to find information quickly. Emphasize how these features help readers understand organization.",
+  "sample": {
+    "question": "What type of writing gives facts about real things?",
+    "expectedAny": [
+      "non-fiction",
+      "nonfiction",
+      "factual writing",
+      "informational text"
+    ]
+  },
+  "truefalse": {
+    "question": "A caption explains what is shown in a picture.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What text feature would you use to quickly find a specific chapter?",
+    "expectedAny": [
+      "table of contents",
+      "contents page",
+      "chapter list",
+      "book contents"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A title that tells what a section is about is called a ________.",
+    "expectedAny": [
+      "heading",
+      "section title",
+      "subtitle",
+      "section heading"
+    ]
+  },
+  "shortanswer": {
+    "question": "Name three text features that help organize information in non-fiction books.",
+    "expectedAny": [
+      "headings, captions, table of contents",
+      "titles, pictures, charts",
+      "index, glossary, headings"
+    ]
+  }
+}

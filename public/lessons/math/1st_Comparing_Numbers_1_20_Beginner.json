@@ -1,0 +1,63 @@
+{
+  "id": "comparing-numbers-1-20-beginner",
+  "title": "Comparing Numbers 1-20",
+  "grade": "1st",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {"term": "compare", "definition": "To look at two things to see which is bigger or smaller"},
+    {"term": "greater than", "definition": "Bigger than; more than"},
+    {"term": "less than", "definition": "Smaller than; fewer than"},
+    {"term": "equal", "definition": "The same amount"}
+  ],
+  "teachingNotes": "Use number lines and counting objects. Practice with concrete comparisons before abstract numbers. Use > and < symbols gradually.",
+  "sample": [
+    {"question": "Circle the bigger number: 45 or 54", "expectedAny": ["54"]},
+    {"question": "Which is smaller: 72 or 27?", "expectedAny": ["27"]},
+    {"question": "Put <, >, or = : 35 ___ 35", "expectedAny": ["="]},
+    {"question": "Order from smallest to largest: 18, 81, 28", "expectedAny": ["18, 28, 81"]},
+    {"question": "Circle the largest: 99, 89, 98", "expectedAny": ["99"]},
+    {"question": "Which number is between 40 and 50: 39, 45, 51?", "expectedAny": ["45"]},
+    {"question": "Put <, >, or = : 67 ___ 76", "expectedAny": ["<", ">", "depending on order"]}
+  ],
+  "truefalse": [
+    {"question": "45 is greater than 54.", "answer": false, "expectedAny": ["45 is less than 54"]},
+    {"question": "100 is the biggest two-digit number.", "answer": false, "expectedAny": ["100 is three-digit"]},
+    {"question": "23 is less than 32.", "answer": true, "expectedAny": ["23 < 32"]},
+    {"question": "All numbers in the 40s are bigger than numbers in the 30s.", "answer": true, "expectedAny": ["40s > 30s"]},
+    {"question": "50 equals 50.", "answer": true, "expectedAny": ["equal numbers"]},
+    {"question": "89 is smaller than 98.", "answer": true, "expectedAny": ["89 < 98"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which number is the smallest?", "choices": ["34", "43", "24", "42"], "correct": 2, "expectedAny": ["24"]},
+    {"question": "Which shows the correct order from smallest to largest?", "choices": ["15, 51, 25", "15, 25, 51", "25, 15, 51", "51, 25, 15"], "correct": 1, "expectedAny": ["15, 25, 51"]},
+    {"question": "Which number is greater than 55?", "choices": ["45", "54", "56", "35"], "correct": 2, "expectedAny": ["56"]},
+    {"question": "What number comes right after 79?", "choices": ["78", "80", "81", "70"], "correct": 1, "expectedAny": ["80"]},
+    {"question": "Which comparison is correct?", "choices": ["34 > 43", "67 < 66", "78 > 77", "90 < 89"], "correct": 2, "expectedAny": ["78 > 77"]},
+    {"question": "Which number is between 60 and 70?", "choices": ["59", "65", "70", "71"], "correct": 1, "expectedAny": ["65"]}
+  ],
+  "fillintheblank": [
+    {"question": "34 is ___ than 43.", "expectedAny": ["less", "smaller"]},
+    {"question": "The number that comes after 89 is ___.", "expectedAny": ["90"]},
+    {"question": "75 is ___ than 57.", "expectedAny": ["greater", "bigger"]},
+    {"question": "The number between 48 and 50 is ___.", "expectedAny": ["49"]},
+    {"question": "100 is ___ than 99.", "expectedAny": ["greater", "bigger"]},
+    {"question": "The smallest number with 5 in the tens place is ___.", "expectedAny": ["50"]}
+  ],
+  "shortanswer": [
+    {"question": "How do you know that 72 is bigger than 27?", "expectedAny": ["7 tens is more than 2 tens"]},
+    {"question": "What strategy do you use to compare 45 and 54?", "expectedAny": ["look at tens first"]},
+    {"question": "Why is 100 special?", "expectedAny": ["first three-digit number"]},
+    {"question": "Explain why all numbers in the 80s are bigger than numbers in the 70s.", "expectedAny": ["8 tens > 7 tens"]},
+    {"question": "How can you quickly tell which is bigger: 91 or 19?", "expectedAny": ["compare tens digit"]},
+    {"question": "What patterns do you see when counting by 10s?", "expectedAny": ["tens digit increases, ones stay same"]}
+  ],
+  "wordProblems": [
+    {"question": "Team A scored 45 points. Team B scored 54 points. Which team won?", "expectedAny": ["Team B"]},
+    {"question": "Sara has 67 stickers. Tom has 76 stickers. Who has more stickers?", "expectedAny": ["Tom"]},
+    {"question": "A red jar has 38 marbles. A blue jar has 29 marbles. Which jar has fewer marbles?", "expectedAny": ["blue jar"]},
+    {"question": "Jake is 89 inches tall. Emma is 98 inches tall. Who is taller?", "expectedAny": ["Emma"]},
+    {"question": "Book A has 34 pages. Book B has 43 pages. Which book is longer?", "expectedAny": ["Book B"]},
+    {"question": "Mom drove 72 miles. Dad drove 27 miles. Who drove farther?", "expectedAny": ["Mom"]}
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "id": "earth-materials-rocks-soil-advanced",
+  "title": "Earth Materials: Rocks and Soil",
+  "grade": "2nd",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "rock",
+      "definition": "Hard material that comes from the earth and is made of minerals"
+    },
+    {
+      "term": "soil",
+      "definition": "The loose material on Earth's surface where plants grow"
+    },
+    {
+      "term": "mineral",
+      "definition": "Natural substances found in rocks"
+    },
+    {
+      "term": "erosion",
+      "definition": "When wind and water wear away rocks and soil"
+    }
+  ],
+  "teachingNotes": "Use rock and soil samples if available. Discuss how rocks break down to form soil over time. Connect to plant growth and habitats.",
+  "sample": [
+    {"question": "What are rocks made of?", "expectedAny": ["minerals"]},
+    {"question": "How is soil different from dirt?", "expectedAny": ["soil has nutrients and living things"]},
+    {"question": "Where does water come from?", "expectedAny": ["rain", "rivers", "lakes"]},
+    {"question": "What lives in soil?", "expectedAny": ["worms", "bugs", "roots", "microbes"]},
+    {"question": "How are rocks different?", "expectedAny": ["size", "color", "texture"]},
+    {"question": "Why is soil important?", "expectedAny": ["plants grow in it"]},
+    {"question": "What happens to water in the sun?", "expectedAny": ["evaporates"]}
+  ],
+  "truefalse": [
+    {"question": "Rocks can be different colors.", "answer": true},
+    {"question": "All rocks are the same size.", "answer": false},
+    {"question": "Soil helps plants grow.", "answer": true},
+    {"question": "Water can be solid, liquid, or gas.", "answer": true},
+    {"question": "Sand is a type of soil.", "answer": true},
+    {"question": "Rocks are alive.", "answer": false},
+    {"question": "Clean water is important for life.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "Soil is made from ___", "choices": ["Only water", "Broken rocks and dead plants", "Only air", "Metal"], "correct": 1},
+    {"question": "Which is hardest?", "choices": ["Soil", "Water", "Rock", "Air"], "correct": 2},
+    {"question": "Plants grow best in ___", "choices": ["Rocks", "Water only", "Soil", "Air only"], "correct": 2},
+    {"question": "Water turns to ___ when heated", "choices": ["Ice", "Steam", "Rock", "Soil"], "correct": 1},
+    {"question": "Rocks can be ___", "choices": ["Smooth", "Rough", "Big or small", "All of these"], "correct": 3},
+    {"question": "Which holds water best?", "choices": ["Rock", "Sand", "Clay", "Air"], "correct": 2},
+    {"question": "We find fossils in ___", "choices": ["Water", "Air", "Rocks", "Clouds"], "correct": 2}
+  ],
+  "fillintheblank": [
+    {"question": "Plants grow in ___", "expectedAny": ["soil"]},
+    {"question": "___ are hard materials from Earth", "expectedAny": ["Rocks"]},
+    {"question": "Water ___ when it gets hot", "expectedAny": ["evaporates"]},
+    {"question": "Soil has ___ that help plants", "expectedAny": ["nutrients"]},
+    {"question": "Some rocks are ___ and some are rough", "expectedAny": ["smooth"]},
+    {"question": "___ is frozen water", "expectedAny": ["Ice"]},
+    {"question": "Earthworms live in ___", "expectedAny": ["soil"]}
+  ],
+  "shortanswer": [
+    {"question": "How is soil made?", "expectedAny": ["rocks break down; dead plants decay; mix over time"]},
+    {"question": "Why do we need water?", "expectedAny": ["drinking", "plants", "cleaning"]},
+    {"question": "How can you sort rocks?", "expectedAny": ["size", "color", "texture", "weight"]},
+    {"question": "What's the water cycle?", "expectedAny": ["evaporation, condensation, precipitation"]},
+    {"question": "Why is soil important?", "expectedAny": ["plants grow in it"]},
+    {"question": "Describe different types of rocks.", "expectedAny": ["smooth/rough", "big/small", "different colors"]},
+    {"question": "How do we keep water clean?", "expectedAny": ["don't pollute", "filter it"]}
+  ]
+}

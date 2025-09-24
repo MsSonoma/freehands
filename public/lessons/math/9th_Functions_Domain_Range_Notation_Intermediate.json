@@ -1,0 +1,53 @@
+{
+  "id": "9th_Functions_Domain_Range_Notation_Intermediate",
+  "title": "Functions: Domain, Range, and Notation",
+  "grade": "9th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "function",
+      "definition": "Relation where each input has exactly one output"
+    },
+    {
+      "term": "domain",
+      "definition": "Set of all possible input values (x-values)"
+    },
+    {
+      "term": "range",
+      "definition": "Set of all possible output values (y-values)"
+    },
+    {
+      "term": "function notation",
+      "definition": "Writing functions as f(x) instead of y"
+    },
+    {
+      "term": "vertical line test",
+      "definition": "Method to determine if a graph represents a function"
+    }
+  ],
+  "teachingNotes": "Emphasize the definition of function and use various representations. Practice reading function notation and finding domain/range.",
+  "sample": {
+    "question": "What is a relation where each input has exactly one output?",
+    "expectedAny": ["function", "mathematical function", "functional relation", "one-to-one relation"]
+  },
+  "truefalse": {
+    "question": "The domain is the set of all possible input values.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What test determines if a graph represents a function?",
+    "expectedAny": ["vertical line test", "vertical test", "line test", "function test"]
+  },
+  "fillintheblank": {
+    "question": "The set of all possible output values is called the ________.",
+    "expectedAny": ["range", "output set", "y-values", "codomain"]
+  },
+  "shortanswer": {
+    "question": "What does f(3) = 7 mean?",
+    "expectedAny": ["when input is 3, output is 7", "function value at 3 is 7", "f of 3 equals 7"]
+  },
+  "wordProblems": {
+    "question": "If f(x) = 2x + 1, find f(4).",
+    "expectedAny": ["9", "f(4) = 9", "2(4) + 1 = 9", "nine"]
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "id": "12th_World_Literature_Postcolonial_Perspectives_Beginner",
+  "title": "World Literature and Postcolonial Perspectives",
+  "grade": "12th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "postcolonialism",
+      "definition": "Literary movement examining effects of colonialism on cultures"
+    },
+    {
+      "term": "cultural identity",
+      "definition": "Sense of belonging to particular cultural group"
+    },
+    {
+      "term": "diaspora",
+      "definition": "Dispersion of people from their original homeland"
+    },
+    {
+      "term": "magical realism",
+      "definition": "Literary style blending realistic narrative with fantastical elements"
+    },
+    {
+      "term": "oral tradition",
+      "definition": "Cultural knowledge transmitted through spoken word across generations"
+    }
+  ],
+  "teachingNotes": "Explore diverse voices in world literature. Connect historical context to literary themes.",
+  "sample": {
+    "question": "What literary movement examines effects of colonialism?",
+    "expectedAny": [
+      "postcolonialism",
+      "postcolonial literature",
+      "decolonizing literature",
+      "anti-colonial writing"
+    ]
+  },
+  "truefalse": {
+    "question": "Magical realism blends realistic narrative with fantastical elements.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What describes dispersion of people from homeland?",
+    "expectedAny": [
+      "diaspora",
+      "migration",
+      "displacement",
+      "scattered community"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Knowledge transmitted through spoken word is ________ tradition.",
+    "expectedAny": [
+      "oral",
+      "spoken",
+      "verbal",
+      "storytelling"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does postcolonial literature address cultural identity?",
+    "expectedAny": [
+      "reclaiming voice",
+      "challenging stereotypes",
+      "exploring heritage",
+      "resisting oppression"
+    ]
+  }
+}

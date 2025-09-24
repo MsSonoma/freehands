@@ -1,0 +1,53 @@
+{
+  "id": "11th_Advanced_Functions_Transformations_Beginner",
+  "title": "Advanced Functions and Transformations",
+  "grade": "11th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "function transformation",
+      "definition": "Change in function position, shape, or orientation on coordinate plane"
+    },
+    {
+      "term": "vertical shift",
+      "definition": "Moving function graph up or down by adding constant"
+    },
+    {
+      "term": "horizontal shift",
+      "definition": "Moving function graph left or right by changing input value"
+    },
+    {
+      "term": "reflection",
+      "definition": "Flipping function graph across axis or line"
+    },
+    {
+      "term": "stretch",
+      "definition": "Expanding function graph vertically or horizontally"
+    }
+  ],
+  "teachingNotes": "Use graphing technology to visualize transformations. Connect algebraic changes to graphical effects.",
+  "sample": {
+    "question": "What changes function position or shape on coordinate plane?",
+    "expectedAny": ["function transformation", "transformation", "function change", "graph transformation"]
+  },
+  "truefalse": {
+    "question": "A vertical shift moves the graph up or down.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What flips a function graph across an axis?",
+    "expectedAny": ["reflection", "flip", "mirror", "axis reflection"]
+  },
+  "fillintheblank": {
+    "question": "Expanding a function graph is called a ________.",
+    "expectedAny": ["stretch", "expansion", "dilation", "scaling"]
+  },
+  "shortanswer": {
+    "question": "How does f(x) + 3 transform the graph of f(x)?",
+    "expectedAny": ["shifts up 3 units", "vertical shift up", "moves up 3", "upward translation"]
+  },
+  "wordProblems": {
+    "question": "If f(x) = x² and g(x) = 2f(x-1) + 3, describe all transformations from f to g.",
+    "expectedAny": ["right 1, stretch by 2, up 3", "horizontal shift right 1, vertical stretch 2, vertical shift up 3"]
+  }
+}

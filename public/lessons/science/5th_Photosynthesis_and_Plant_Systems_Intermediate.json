@@ -1,0 +1,76 @@
+{
+  "id": "photosynthesis-plant-systems-intermediate",
+  "title": "Photosynthesis and Plant Systems",
+  "grade": "5th",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "photosynthesis",
+      "definition": "The process plants use to make food from sunlight, water, and carbon dioxide"
+    },
+    {
+      "term": "chlorophyll",
+      "definition": "The green substance in plants that captures sunlight for photosynthesis"
+    },
+    {
+      "term": "stomata",
+      "definition": "Tiny openings in leaves that allow gases to enter and exit"
+    },
+    {
+      "term": "glucose",
+      "definition": "A type of sugar that plants make during photosynthesis"
+    }
+  ],
+  "teachingNotes": "Use leaf investigations and experiments with light conditions. Connect to human dependence on plants for food and oxygen. Demonstrate with aquatic plants producing oxygen bubbles.",
+  "sample": {
+    "question": "What do plants need for photosynthesis?",
+    "expectedAny": [
+      "sunlight, water, carbon dioxide",
+      "light, CO₂, H₂O"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "Plants produce oxygen as a byproduct of photosynthesis.",
+      "answer": true,
+      "expectedAny": [
+        "oxygen is released during photosynthesis"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Where in the plant does photosynthesis mainly occur?",
+      "choices": [
+        "roots",
+        "stem",
+        "leaves",
+        "flowers"
+      ],
+      "correct": 2,
+      "expectedAny": [
+        "leaves contain chloroplasts for photosynthesis"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "During photosynthesis, plants take in _____ and release _____.",
+      "expectedAny": [
+        "carbon dioxide",
+        "oxygen"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Explain why plants are important for other living things.",
+      "expectedAny": [
+        "produce oxygen we breathe",
+        "provide food directly or indirectly",
+        "base of food chains"
+      ]
+    }
+  ]
+}

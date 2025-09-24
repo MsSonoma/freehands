@@ -1,0 +1,79 @@
+{
+  "id": "vocabulary-context-clues-intermediate",
+  "title": "Vocabulary and Context Clues",
+  "grade": "3rd",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "vocabulary",
+      "definition": "All the words you know and understand"
+    },
+    {
+      "term": "context clues",
+      "definition": "Words or sentences around an unknown word that help you figure out its meaning"
+    },
+    {
+      "term": "definition",
+      "definition": "The meaning of a word"
+    },
+    {
+      "term": "synonym",
+      "definition": "A word that means the same or almost the same as another word"
+    }
+  ],
+  "teachingNotes": "Practice using context clues in real texts. Create vocabulary journals. Use graphic organizers for new words.",
+  "sample": {
+    "question": "In the sentence 'The enormous elephant was much bigger than the tiny mouse,' what does 'enormous' mean?",
+    "expectedAny": [
+      "very big",
+      "huge",
+      "large",
+      "giant"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "Context clues can help you understand words you've never seen before.",
+      "answer": true,
+      "expectedAny": [
+        "surrounding words provide hints about unknown word meanings"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which are synonyms?",
+      "choices": [
+        "big and small",
+        "happy and glad",
+        "hot and cold",
+        "fast and slow"
+      ],
+      "correct": 1,
+      "expectedAny": [
+        "happy and glad mean the same thing"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "When you come to a word you don't know, look at the other words around it for _____ _____.",
+      "expectedAny": [
+        "context clues"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "What are different ways to learn the meaning of new words?",
+      "expectedAny": [
+        "use context clues",
+        "look in dictionary",
+        "ask someone",
+        "break word into parts",
+        "look at pictures"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "id": "2nd_Earth_Materials_Rocks_Advanced",
+  "title": "Earth Materials and Rock Formation",
+  "grade": "2nd",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "minerals",
+      "definition": "Natural materials found in the Earth that make up rocks"
+    },
+    {
+      "term": "rock",
+      "definition": "Hard material made up of one or more minerals"
+    },
+    {
+      "term": "soil",
+      "definition": "The loose top layer of Earth where plants grow"
+    },
+    {
+      "term": "erosion",
+      "definition": "When wind, water, or ice wears away rocks and soil"
+    },
+    {
+      "term": "sediment",
+      "definition": "Small pieces of rock, sand, and dirt that settle in layers"
+    }
+  ],
+  "teachingNotes": "Bring in rock samples for students to observe and compare. Discuss how rocks are formed and changed over time. Show examples of erosion and sediment formation through simple demonstrations with sand and water.",
+  "sample": [
+    {"question": "What are rocks made of?", "expectedAny": ["minerals"]},
+    {"question": "Name a cause of erosion.", "expectedAny": ["wind", "water", "ice"]},
+    {"question": "What is sediment?", "expectedAny": ["small pieces of rock, sand, dirt"]},
+    {"question": "Where do plants grow best?", "expectedAny": ["soil"]},
+    {"question": "Name one way rocks can change.", "expectedAny": ["weathering", "erosion"]},
+    {"question": "Are all rocks the same?", "expectedAny": ["no"]},
+    {"question": "What covers the top of the Earth where plants grow?", "expectedAny": ["soil"]}
+  ],
+  "truefalse": [
+    {"question": "All rocks are made of the same materials.", "answer": false},
+    {"question": "Erosion can be caused by water.", "answer": true},
+    {"question": "Sediment is larger than boulders.", "answer": false},
+    {"question": "Soil is important for plants.", "answer": true},
+    {"question": "Rocks and soil never change.", "answer": false},
+    {"question": "Wind can move sand.", "answer": true},
+    {"question": "Minerals are found in rocks.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "What do we call the small pieces that break off from rocks?", "choices": ["Boulders", "Pebbles", "Sediment", "Clay"], "correct": 2},
+    {"question": "Which can cause erosion?", "choices": ["Only wind", "Only water", "Both wind and water", "Neither"], "correct": 2},
+    {"question": "Plants grow in ___", "choices": ["Rocks", "Air", "Soil", "Metal"], "correct": 2},
+    {"question": "Which holds water best?", "choices": ["Sand", "Clay", "Gravel", "Air"], "correct": 1},
+    {"question": "Rocks can be ___", "choices": ["Smooth", "Rough", "Big or small", "All of these"], "correct": 3},
+    {"question": "Water turns to ___ when heated", "choices": ["Ice", "Steam", "Rock", "Soil"], "correct": 1},
+    {"question": "Soil is made from ___", "choices": ["Only water", "Broken rocks and dead plants", "Only air", "Metal"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "Plants grow in ___", "expectedAny": ["soil"]},
+    {"question": "___ are hard materials from Earth", "expectedAny": ["Rocks"]},
+    {"question": "Water ___ when it gets hot", "expectedAny": ["evaporates"]},
+    {"question": "Soil has ___ that help plants", "expectedAny": ["nutrients"]},
+    {"question": "Some rocks are ___ and some are rough", "expectedAny": ["smooth"]},
+    {"question": "___ is frozen water", "expectedAny": ["Ice"]},
+    {"question": "Earthworms live in ___", "expectedAny": ["soil"]}
+  ],
+  "shortanswer": [
+    {"question": "How is soil made?", "expectedAny": ["rocks break down; dead plants decay"]},
+    {"question": "Why do we need water?", "expectedAny": ["drinking", "plants", "cleaning"]},
+    {"question": "How can you sort rocks?", "expectedAny": ["size", "color", "texture"]},
+    {"question": "What's erosion?", "expectedAny": ["wearing away by wind and water"]},
+    {"question": "Why is soil important?", "expectedAny": ["plants grow in it"]},
+    {"question": "Describe different types of rocks.", "expectedAny": ["smooth/rough", "different colors"]},
+    {"question": "How do we keep water clean?", "expectedAny": ["don't pollute"]}
+  ]
+}

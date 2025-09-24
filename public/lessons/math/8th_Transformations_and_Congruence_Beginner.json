@@ -1,0 +1,53 @@
+{
+  "id": "8th_Transformations_and_Congruence_Beginner",
+  "title": "Geometric Transformations and Congruence",
+  "grade": "8th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "transformation",
+      "definition": "Moving a shape to a new position"
+    },
+    {
+      "term": "translation",
+      "definition": "Sliding a shape without rotating or flipping it"
+    },
+    {
+      "term": "rotation",
+      "definition": "Turning a shape around a fixed point"
+    },
+    {
+      "term": "reflection",
+      "definition": "Flipping a shape over a line"
+    },
+    {
+      "term": "congruent",
+      "definition": "Shapes that are the same size and shape"
+    }
+  ],
+  "teachingNotes": "Use coordinate grids to practice transformations. Show how transformations preserve shape and size.",
+  "sample": {
+    "question": "What is moving a shape to a new position called?",
+    "expectedAny": ["transformation", "geometric transformation", "shape movement", "position change"]
+  },
+  "truefalse": {
+    "question": "Congruent shapes have the same size and shape.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What transformation slides a shape without rotating it?",
+    "expectedAny": ["translation", "slide", "shift", "moving"]
+  },
+  "fillintheblank": {
+    "question": "Flipping a shape over a line is called a ________.",
+    "expectedAny": ["reflection", "flip", "mirror", "reflection transformation"]
+  },
+  "shortanswer": {
+    "question": "What happens to the size of a shape during transformations?",
+    "expectedAny": ["stays the same", "doesn't change", "remains constant", "size preserved"]
+  },
+  "wordProblems": {
+    "question": "A triangle at (1,2), (3,2), (2,4) is translated 3 units right and 2 units up. What are the new coordinates of (1,2)?",
+    "expectedAny": ["(4,4)", "4,4", "(1+3, 2+2) = (4,4)", "four comma four"]
+  }
+}

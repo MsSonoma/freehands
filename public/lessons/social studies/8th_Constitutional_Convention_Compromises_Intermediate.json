@@ -1,0 +1,73 @@
+{
+  "id": "8th_Constitutional_Convention_Compromises_Intermediate",
+  "title": "Constitutional Convention and Great Compromises",
+  "grade": "8th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "Great Compromise",
+      "definition": "The agreement that created a two-house legislature"
+    },
+    {
+      "term": "Virginia Plan",
+      "definition": "A plan for representation based on state population"
+    },
+    {
+      "term": "New Jersey Plan",
+      "definition": "A plan for equal representation for all states"
+    },
+    {
+      "term": "Three-Fifths Compromise",
+      "definition": "The agreement to count enslaved people as 3/5 of a person for representation"
+    },
+    {
+      "term": "federalism",
+      "definition": "A system where power is shared between national and state governments"
+    }
+  ],
+  "teachingNotes": "Explain the major compromises and why they were necessary. Discuss how the Constitution balanced different interests.",
+  "sample": {
+    "question": "What created a two-house legislature?",
+    "expectedAny": [
+      "Great Compromise",
+      "Connecticut Compromise",
+      "legislative compromise",
+      "bicameral compromise"
+    ]
+  },
+  "truefalse": {
+    "question": "The Virginia Plan favored states with larger populations.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What plan wanted equal representation for all states?",
+    "expectedAny": [
+      "New Jersey Plan",
+      "small state plan",
+      "equal representation plan",
+      "unicameral plan"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A system sharing power between national and state governments is ________.",
+    "expectedAny": [
+      "federalism",
+      "federal system",
+      "shared power",
+      "dual government"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did the Great Compromise solve the representation problem?",
+    "expectedAny": [
+      "House based on population, Senate equal",
+      "combined both plans",
+      "bicameral legislature"
+    ]
+  }
+}

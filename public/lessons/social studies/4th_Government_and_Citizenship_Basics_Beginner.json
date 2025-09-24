@@ -1,0 +1,71 @@
+{
+  "id": "government-citizenship-basics-beginner",
+  "title": "Government and Citizenship Basics",
+  "grade": "4th",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "government",
+      "definition": "The group of people who make laws and run a country, state, or city"
+    },
+    {
+      "term": "citizen",
+      "definition": "A person who belongs to a country and has rights and responsibilities"
+    },
+    {
+      "term": "democracy",
+      "definition": "A type of government where people vote to choose their leaders"
+    },
+    {
+      "term": "law",
+      "definition": "A rule that everyone in a community must follow"
+    }
+  ],
+  "teachingNotes": "Connect to school rules and classroom government. Discuss voting and decision-making. Use examples from local government.",
+  "sample": [
+    {"question": "What is one responsibility of being a good citizen?", "expectedAny": ["follow laws", "vote", "help community", "be informed"]},
+    {"question": "What is a law?", "expectedAny": ["a rule everyone must follow"]},
+    {"question": "Who leads your city or town?", "expectedAny": ["mayor"]},
+    {"question": "What is voting?", "expectedAny": ["choosing leaders", "making decisions"]},
+    {"question": "Name one right citizens have.", "expectedAny": ["free speech", "vote"]},
+    {"question": "Name one way to help your community.", "expectedAny": ["volunteer", "clean up", "donate"]},
+    {"question": "What is government?", "expectedAny": ["group that makes and enforces laws"]}
+  ],
+  "truefalse": [
+    {"question": "In a democracy, people vote to choose their leaders.", "answer": true},
+    {"question": "Citizens should follow laws to keep communities safe.", "answer": true},
+    {"question": "Only adults can be good citizens.", "answer": false},
+    {"question": "The mayor leads local government.", "answer": true},
+    {"question": "Citizens have rights but no responsibilities.", "answer": false},
+    {"question": "Serving on a jury is a civic duty.", "answer": true},
+    {"question": "Voting is one way citizens participate.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "Which is an example of local government?", "choices": ["President", "City mayor", "State governor", "U.S. Senator"], "correct": 1},
+    {"question": "Which right is protected by the First Amendment?", "choices": ["Free speech", "Free parking", "Free lunch", "Free travel"], "correct": 0},
+    {"question": "Who makes laws for the whole country?", "choices": ["City council", "State legislature", "Congress", "School board"], "correct": 2},
+    {"question": "What is a responsibility of citizens?", "choices": ["Ignore laws", "Pay taxes", "Break rules", "Skip voting"], "correct": 1},
+    {"question": "Which is a civic duty?", "choices": ["Watching TV", "Jury service", "Sleeping", "Playing games"], "correct": 1},
+    {"question": "Who leads the executive branch of the U.S.?", "choices": ["Chief Justice", "President", "Speaker", "Governor"], "correct": 1},
+    {"question": "Who represents you in local government?", "choices": ["City council", "Queen", "Ambassador", "General"], "correct": 0}
+  ],
+  "fillintheblank": [
+    {"question": "Citizens have both ____ and ____ in their country.", "expectedAny": ["rights", "responsibilities"]},
+    {"question": "The leader of a city is often called the ____.", "expectedAny": ["mayor"]},
+    {"question": "People ____ to choose leaders in a democracy.", "expectedAny": ["vote"]},
+    {"question": "A ____ is a rule everyone must follow.", "expectedAny": ["law"]},
+    {"question": "The U.S. ____ protects many rights.", "expectedAny": ["Constitution"]},
+    {"question": "Paying ____ helps provide public services.", "expectedAny": ["taxes"]},
+    {"question": "Serving on a ____ is a civic duty.", "expectedAny": ["jury"]}
+  ],
+  "shortanswer": [
+    {"question": "Why do we need laws in our community?", "expectedAny": ["safety", "fairness"]},
+    {"question": "How can kids be good citizens?", "expectedAny": ["follow rules", "help others"]},
+    {"question": "Why is voting important?", "expectedAny": ["choose leaders", "voice in government"]},
+    {"question": "Name a public service taxes help pay for.", "expectedAny": ["schools", "roads", "police", "firefighters"]},
+    {"question": "How can you make your community better?", "expectedAny": ["volunteer", "recycle", "join projects"]},
+    {"question": "What is the difference between a right and a responsibility?", "expectedAny": ["what you are allowed vs what you should do"]},
+    {"question": "Who can you contact to share a community concern?", "expectedAny": ["city council", "mayor"]}
+  ]
+}

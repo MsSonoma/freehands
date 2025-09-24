@@ -1,0 +1,10 @@
+{
+  "teacher": "Ms. Sonoma",
+  "student": "Emma",
+  "grade": 4,
+  "timezone": "America/New_York",
+  "targets": { "discussion": 3, "exercise": 5, "worksheet": 15, "test": 10 },
+  "setting": "Magic Treehouse",
+  "prize_ritual": "Sticker song",
+  "curriculum_start": "2025-09-01"
+}

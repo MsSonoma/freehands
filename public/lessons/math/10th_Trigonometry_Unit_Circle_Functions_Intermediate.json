@@ -1,0 +1,53 @@
+{
+  "id": "10th_Trigonometry_Unit_Circle_Functions_Intermediate",
+  "title": "Trigonometry: Unit Circle and Trigonometric Functions",
+  "grade": "10th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "unit circle",
+      "definition": "Circle with radius 1 centered at the origin"
+    },
+    {
+      "term": "sine function",
+      "definition": "Trigonometric function representing y-coordinate on unit circle"
+    },
+    {
+      "term": "cosine function",
+      "definition": "Trigonometric function representing x-coordinate on unit circle"
+    },
+    {
+      "term": "tangent function",
+      "definition": "Trigonometric function equal to sine divided by cosine"
+    },
+    {
+      "term": "radian",
+      "definition": "Unit of angle measurement where 2π radians equals 360°"
+    }
+  ],
+  "teachingNotes": "Emphasize the relationship between the unit circle and trigonometric functions. Practice converting between degrees and radians.",
+  "sample": {
+    "question": "What is a circle with radius 1 centered at the origin?",
+    "expectedAny": ["unit circle", "standard circle", "trigonometric circle", "reference circle"]
+  },
+  "truefalse": {
+    "question": "The sine function represents the y-coordinate on the unit circle.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What equals sine divided by cosine?",
+    "expectedAny": ["tangent", "tangent function", "tan", "tan function"]
+  },
+  "fillintheblank": {
+    "question": "The unit of angle measurement where 2π equals 360° is called a ________.",
+    "expectedAny": ["radian", "rad", "radian measure", "circular measure"]
+  },
+  "shortanswer": {
+    "question": "What are the coordinates of the point on the unit circle at angle π/2?",
+    "expectedAny": ["(0, 1)", "x = 0, y = 1", "zero comma one", "coordinates (0,1)"]
+  },
+  "wordProblems": {
+    "question": "Convert 45° to radians.",
+    "expectedAny": ["π/4", "π/4 radians", "pi over 4", "45° × π/180° = π/4"]
+  }
+}

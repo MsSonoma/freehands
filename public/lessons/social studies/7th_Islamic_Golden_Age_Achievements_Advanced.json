@@ -1,0 +1,73 @@
+{
+  "id": "7th_Islamic_Golden_Age_Achievements_Advanced",
+  "title": "Islamic Golden Age and Scientific Achievements",
+  "grade": "7th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "Islamic Golden Age",
+      "definition": "A period of great learning and achievement in the Islamic world"
+    },
+    {
+      "term": "Baghdad",
+      "definition": "The capital city that became a center of Islamic learning"
+    },
+    {
+      "term": "House of Wisdom",
+      "definition": "A famous library and research center in Baghdad"
+    },
+    {
+      "term": "algebra",
+      "definition": "A branch of mathematics developed by Islamic scholars"
+    },
+    {
+      "term": "preservation",
+      "definition": "The act of keeping knowledge and texts safe for the future"
+    }
+  ],
+  "teachingNotes": "Emphasize how Islamic scholars preserved and expanded upon Greek and Roman knowledge. Discuss contributions to math, science, and medicine.",
+  "sample": {
+    "question": "What was the period of great learning in the Islamic world called?",
+    "expectedAny": [
+      "Islamic Golden Age",
+      "Golden Age of Islam",
+      "Islamic Renaissance",
+      "Islamic flowering"
+    ]
+  },
+  "truefalse": {
+    "question": "Islamic scholars made important contributions to mathematics and science.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which city became a major center of Islamic learning?",
+    "expectedAny": [
+      "Baghdad",
+      "Damascus",
+      "Cordoba",
+      "Cairo"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The famous library in Baghdad was called the House of ________.",
+    "expectedAny": [
+      "Wisdom",
+      "Learning",
+      "Knowledge",
+      "Study"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did Islamic scholars help preserve ancient knowledge?",
+    "expectedAny": [
+      "translated Greek and Roman texts",
+      "copied and studied ancient works",
+      "preserved classical learning"
+    ]
+  }
+}

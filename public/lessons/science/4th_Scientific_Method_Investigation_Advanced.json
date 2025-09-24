@@ -1,0 +1,74 @@
+{
+  "id": "4th_Scientific_Method_Investigation_Advanced",
+  "title": "Scientific Method and Investigation",
+  "grade": "4th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "hypothesis",
+      "definition": "An educated guess about what will happen in an experiment"
+    },
+    {
+      "term": "variable",
+      "definition": "Something that can change in an experiment"
+    },
+    {
+      "term": "observation",
+      "definition": "Using your senses to gather information"
+    },
+    {
+      "term": "conclusion",
+      "definition": "What you learn from the results of an experiment"
+    },
+    {
+      "term": "data",
+      "definition": "Information collected during an experiment"
+    }
+  ],
+  "teachingNotes": "Guide students through designing and conducting simple experiments. Emphasize the importance of fair testing and controlling variables. Practice making predictions and drawing conclusions from data.",
+  "sample": [
+    {"question": "What are the main steps of the scientific method?", "expectedAny": ["question", "hypothesis", "experiment", "conclusion"]},
+    {"question": "What is a variable?", "expectedAny": ["something that can change"]},
+    {"question": "Name one way to collect data.", "expectedAny": ["measure", "count", "observe"]},
+    {"question": "What is a hypothesis?", "expectedAny": ["educated guess"]},
+    {"question": "Why do scientists repeat experiments?", "expectedAny": ["check results", "reliability"]},
+    {"question": "What is a conclusion?", "expectedAny": ["what you learn from results"]},
+    {"question": "What should you do if your results don't match your hypothesis?", "expectedAny": ["analyze", "learn", "revise hypothesis"]}
+  ],
+  "truefalse": [
+    {"question": "A hypothesis must always be proven correct.", "answer": false},
+    {"question": "Scientists use data to support conclusions.", "answer": true},
+    {"question": "Changing many variables at once makes a fair test.", "answer": false},
+    {"question": "Observations can be made with tools and senses.", "answer": true},
+    {"question": "Repeating experiments helps confirm results.", "answer": true},
+    {"question": "A conclusion is a guess before the experiment.", "answer": false},
+    {"question": "Graphs can help display data.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "What should you do first when starting a scientific investigation?", "choices": ["Ask a question", "Write a conclusion", "Make a graph", "Do nothing"], "correct": 0},
+    {"question": "What is a testable hypothesis?", "choices": ["A wild guess", "A statement you can test", "A picture", "A rule"], "correct": 1},
+    {"question": "Which is an independent variable?", "choices": ["The thing you change", "The thing you measure", "Your conclusion", "Your title"], "correct": 0},
+    {"question": "Which is a dependent variable?", "choices": ["The thing you change", "The thing you measure", "Your conclusion", "Your materials"], "correct": 1},
+    {"question": "Why use a control in an experiment?", "choices": ["To make it harder", "To compare results", "To add variables", "To skip steps"], "correct": 1},
+    {"question": "What tool helps organize data?", "choices": ["Poem", "Song", "Table", "Dance"], "correct": 2},
+    {"question": "Which graph is best for change over time?", "choices": ["Pie chart", "Line graph", "Bar graph", "Picture graph"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "An educated guess about what will happen in an experiment is called a ________.", "expectedAny": ["hypothesis"]},
+    {"question": "The thing you change in an experiment is the ________ variable.", "expectedAny": ["independent"]},
+    {"question": "The thing you measure is the ________ variable.", "expectedAny": ["dependent"]},
+    {"question": "Information collected during an experiment is called ________.", "expectedAny": ["data"]},
+    {"question": "A fair test changes only ________ variable at a time.", "expectedAny": ["one"]},
+    {"question": "A written summary of what you learned is the ________.", "expectedAny": ["conclusion"]},
+    {"question": "Using your senses to gather information is called ________.", "expectedAny": ["observation"]}
+  ],
+  "shortanswer": [
+    {"question": "Why is it important to change only one variable at a time in an experiment?", "expectedAny": ["fair test", "know what caused change"]},
+    {"question": "How can graphs help you understand data?", "expectedAny": ["see patterns"]},
+    {"question": "Give an example of a testable hypothesis.", "expectedAny": ["If plants get more light, then they grow taller"]},
+    {"question": "Why should scientists share methods and results?", "expectedAny": ["repeatable", "verify"]},
+    {"question": "What should you do if results are unexpected?", "expectedAny": ["check procedure", "repeat experiment"]},
+    {"question": "What is the purpose of a control group?", "expectedAny": ["comparison"]},
+    {"question": "How do you choose which graph to use?", "expectedAny": ["based on data type", "line for time", "bar for categories"]}
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "id": "pushes-pulls-motion-advanced",
+  "title": "Pushes, Pulls, and Motion",
+  "grade": "1st",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "force",
+      "definition": "A push or pull that can make objects move or change direction"
+    },
+    {
+      "term": "motion",
+      "definition": "When an object changes position or moves from one place to another"
+    },
+    {
+      "term": "direction",
+      "definition": "The way something moves: up, down, left, right, forward, or backward"
+    },
+    {
+      "term": "speed",
+      "definition": "How fast or slow something moves"
+    }
+  ],
+  "teachingNotes": "Use playground equipment and classroom demonstrations. Let students experiment with different forces and observe motion changes. Connect to everyday experiences.",
+  "sample": [
+    {"question": "What happens when you push a ball harder?", "expectedAny": ["it moves faster", "goes farther"]},
+    {"question": "What happens when you pull a wagon?", "expectedAny": ["it moves toward you"]},
+    {"question": "Name one way to change an object's speed.", "expectedAny": ["push harder/softer"]},
+    {"question": "Name one way to change an object's direction.", "expectedAny": ["push from a different side"]},
+    {"question": "What force slows things down on the ground?", "expectedAny": ["friction"]},
+    {"question": "What makes a swing move?", "expectedAny": ["force"]},
+    {"question": "What force pulls things down?", "expectedAny": ["gravity"]}
+  ],
+  "truefalse": [
+    {"question": "Both pushes and pulls are types of forces.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Force can change how fast something moves.", "answer": true, "expectedAny": ["true"]},
+    {"question": "You don't need force to start motion.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Friction can slow things down.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Gravity pulls objects up.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Pushing and pulling are the same thing.", "answer": false, "expectedAny": ["false"]},
+    {"question": "A harder push makes a toy car go faster.", "answer": true, "expectedAny": ["true"]}
+  ],
+  "multiplechoice": [
+    {"question": "To make a swing move, you need to apply what?", "choices": ["heat", "force", "color", "sound"], "correct": 1, "expectedAny": ["force"]},
+    {"question": "What happens if you push a cart gently?", "choices": ["goes fast", "goes slow", "flies", "stops"], "correct": 1, "expectedAny": ["goes slow"]},
+    {"question": "What force pulls things down?", "choices": ["friction", "gravity", "color", "heat"], "correct": 1, "expectedAny": ["gravity"]},
+    {"question": "Which makes more motion?", "choices": ["small push", "big push", "no push", "tiny push"], "correct": 1, "expectedAny": ["big push"]},
+    {"question": "Which way will a ball go if you push it from the left?", "choices": ["left", "right", "up", "down"], "correct": 1, "expectedAny": ["right"]},
+    {"question": "Which one slows a sled?", "choices": ["ice", "snow", "sand", "oil"], "correct": 2, "expectedAny": ["sand"]},
+    {"question": "What tool helps measure how far something moved?", "choices": ["ruler", "clock", "thermometer", "scale"], "correct": 0, "expectedAny": ["ruler"]}
+  ],
+  "fillintheblank": [
+    {"question": "When you _____ a door, it opens away from you.", "expectedAny": ["push"]},
+    {"question": "When you _____ a door, it opens toward you.", "expectedAny": ["pull"]},
+    {"question": "A harder push makes an object go _____.", "expectedAny": ["faster"]},
+    {"question": "A softer push makes an object go _____.", "expectedAny": ["slower"]},
+    {"question": "_____ can slow moving things down.", "expectedAny": ["Friction"]},
+    {"question": "_____ pulls things toward the ground.", "expectedAny": ["Gravity"]},
+    {"question": "We can change an object's _____ with a push or pull.", "expectedAny": ["direction", "speed"]}
+  ],
+  "shortanswer": [
+    {"question": "Describe two ways you can change how a toy car moves.", "expectedAny": ["push harder/softer", "push different direction"]},
+    {"question": "How does friction change motion?", "expectedAny": ["slows things down"]},
+    {"question": "How can you make a ball go farther?", "expectedAny": ["push or kick harder"]},
+    {"question": "How can you make a swing stop?", "expectedAny": ["stop pushing", "use feet to slow"]},
+    {"question": "Why do we use wheels on carts?", "expectedAny": ["reduce friction", "easier to move"]},
+    {"question": "Draw arrows to show the direction of a push and a pull.", "expectedAny": ["drawing with arrows"]},
+    {"question": "What happens if two people push a box from opposite sides with the same force?", "expectedAny": ["it might not move"]}
+  ]
+}

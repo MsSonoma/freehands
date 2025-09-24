@@ -1,0 +1,53 @@
+{
+  "id": "12th_Series_Sequences_Mathematical_Analysis_Beginner",
+  "title": "Series, Sequences, and Mathematical Analysis",
+  "grade": "12th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "sequence",
+      "definition": "Ordered list of numbers following specific pattern"
+    },
+    {
+      "term": "series",
+      "definition": "Sum of terms in a sequence"
+    },
+    {
+      "term": "arithmetic series",
+      "definition": "Series where consecutive terms have constant difference"
+    },
+    {
+      "term": "geometric series",
+      "definition": "Series where consecutive terms have constant ratio"
+    },
+    {
+      "term": "convergence",
+      "definition": "Property where series approaches finite sum"
+    }
+  ],
+  "teachingNotes": "Start with familiar arithmetic and geometric progressions. Build understanding of infinite series through examples.",
+  "sample": {
+    "question": "What is an ordered list of numbers following a pattern?",
+    "expectedAny": ["sequence", "number sequence", "ordered sequence", "mathematical sequence"]
+  },
+  "truefalse": {
+    "question": "A series is the sum of terms in a sequence.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What series has consecutive terms with constant ratio?",
+    "expectedAny": ["geometric series", "geometric progression", "exponential series", "ratio series"]
+  },
+  "fillintheblank": {
+    "question": "When a series approaches a finite sum, it shows ________.",
+    "expectedAny": ["convergence", "convergent behavior", "finite limit", "bounded sum"]
+  },
+  "shortanswer": {
+    "question": "What is the difference between arithmetic and geometric series?",
+    "expectedAny": ["constant difference vs. ratio", "addition vs. multiplication", "linear vs. exponential", "difference vs. ratio"]
+  },
+  "wordProblems": {
+    "question": "What is the sum of geometric series 2 + 6 + 18 + 54 + 162?",
+    "expectedAny": ["242", "242", "2(3⁵-1)/(3-1) = 242", "two hundred forty-two"]
+  }
+}

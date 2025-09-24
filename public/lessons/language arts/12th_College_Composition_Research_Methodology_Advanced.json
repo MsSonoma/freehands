@@ -1,0 +1,74 @@
+{
+  "id": "12th_College_Composition_Research_Methodology_Advanced",
+  "title": "College Composition and Research Methodology",
+  "grade": "12th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "epistemology",
+      "definition": "Study of nature and grounds of knowledge and justified belief"
+    },
+    {
+      "term": "methodology",
+      "definition": "System of methods and principles for conducting research"
+    },
+    {
+      "term": "meta-analysis",
+      "definition": "Statistical analysis combining results of multiple scientific studies"
+    },
+    {
+      "term": "paradigm",
+      "definition": "Fundamental model or framework for understanding phenomena"
+    },
+    {
+      "term": "interdisciplinary",
+      "definition": "Combining insights and methods from multiple academic fields"
+    }
+  ],
+  "teachingNotes": "Explore advanced research methodologies and knowledge construction. Develop sophisticated analytical writing.",
+  "sample": {
+    "question": "What studies nature and grounds of knowledge?",
+    "expectedAny": [
+      "epistemology",
+      "theory of knowledge",
+      "knowledge study",
+      "cognitive philosophy"
+    ]
+  },
+  "truefalse": {
+    "question": "Meta-analysis combines results of multiple scientific studies.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What describes fundamental model for understanding phenomena?",
+    "expectedAny": [
+      "paradigm",
+      "framework",
+      "theoretical model",
+      "conceptual structure"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Research combining multiple academic fields is ________.",
+    "expectedAny": [
+      "interdisciplinary",
+      "multidisciplinary",
+      "cross-disciplinary",
+      "transdisciplinary"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does epistemology influence research methodology?",
+    "expectedAny": [
+      "knowledge assumptions",
+      "truth criteria",
+      "validity standards",
+      "evidence evaluation"
+    ]
+  }
+}

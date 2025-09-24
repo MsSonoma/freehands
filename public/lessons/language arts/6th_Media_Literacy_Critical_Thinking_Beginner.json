@@ -1,0 +1,73 @@
+{
+  "id": "6th_Media_Literacy_Critical_Thinking_Beginner",
+  "title": "Media Literacy and Critical Thinking",
+  "grade": "6th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "media literacy",
+      "definition": "The ability to analyze, evaluate, and understand different types of media"
+    },
+    {
+      "term": "bias",
+      "definition": "A preference or prejudice that influences how information is presented"
+    },
+    {
+      "term": "propaganda",
+      "definition": "Information designed to promote a particular point of view or cause"
+    },
+    {
+      "term": "fact",
+      "definition": "Information that can be proven true"
+    },
+    {
+      "term": "opinion",
+      "definition": "A personal belief or judgment that cannot be proven true or false"
+    }
+  ],
+  "teachingNotes": "Use current examples from advertisements, news, and social media. Practice distinguishing facts from opinions. Discuss how media can influence thinking and behavior.",
+  "sample": {
+    "question": "What is the ability to analyze and evaluate different types of media called?",
+    "expectedAny": [
+      "media literacy",
+      "critical media skills",
+      "media analysis",
+      "digital literacy"
+    ]
+  },
+  "truefalse": {
+    "question": "A fact is something that can be proven true.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is information designed to promote a particular viewpoint called?",
+    "expectedAny": [
+      "propaganda",
+      "biased information",
+      "persuasive media",
+      "promotional content"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A preference that influences how information is presented is called ________.",
+    "expectedAny": [
+      "bias",
+      "prejudice",
+      "slant",
+      "perspective"
+    ]
+  },
+  "shortanswer": {
+    "question": "How can you tell the difference between a fact and an opinion?",
+    "expectedAny": [
+      "facts can be proven, opinions are beliefs",
+      "facts have evidence, opinions are personal",
+      "facts are verifiable, opinions are subjective"
+    ]
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "id": "8th_Rational_and_Irrational_Numbers_Beginner",
+  "title": "Rational and Irrational Numbers",
+  "grade": "8th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "rational number",
+      "definition": "A number that can be written as a fraction of two integers"
+    },
+    {
+      "term": "irrational number",
+      "definition": "A number that cannot be written as a simple fraction"
+    },
+    {
+      "term": "real number",
+      "definition": "All rational and irrational numbers together"
+    },
+    {
+      "term": "perfect square",
+      "definition": "A number whose square root is a whole number"
+    },
+    {
+      "term": "approximation",
+      "definition": "A value that is close to the exact value"
+    }
+  ],
+  "teachingNotes": "Use examples like π and √2 to show irrational numbers. Practice estimating square roots of non-perfect squares.",
+  "sample": {
+    "question": "What is a number that can be written as a fraction of two integers?",
+    "expectedAny": ["rational number", "fraction", "ratio", "fractional number"]
+  },
+  "truefalse": {
+    "question": "The square root of 2 is an irrational number.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "Which is an example of an irrational number?",
+    "expectedAny": ["π", "pi", "√2", "square root of 2"]
+  },
+  "fillintheblank": {
+    "question": "All rational and irrational numbers together are called ________ numbers.",
+    "expectedAny": ["real", "real number system", "all", "complete"]
+  },
+  "shortanswer": {
+    "question": "Is 0.25 rational or irrational? Explain.",
+    "expectedAny": ["rational, equals 1/4", "rational because it's a fraction", "rational, can be written as fraction"]
+  },
+  "wordProblems": {
+    "question": "Estimate √50 to the nearest whole number by finding perfect squares near 50.",
+    "expectedAny": ["7", "seven", "between 7 and 8, closer to 7", "about 7"]
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "id": "7th_Evolution_and_Natural_Selection_Advanced",
+  "title": "Evolution by Natural Selection",
+  "grade": "7th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "evolution",
+      "definition": "The gradual change in species over time"
+    },
+    {
+      "term": "natural selection",
+      "definition": "The process where organisms with favorable traits survive and reproduce"
+    },
+    {
+      "term": "adaptation",
+      "definition": "A trait that helps an organism survive in its environment"
+    },
+    {
+      "term": "species",
+      "definition": "A group of organisms that can reproduce and have fertile offspring"
+    },
+    {
+      "term": "fossil",
+      "definition": "Preserved remains or traces of ancient organisms"
+    }
+  ],
+  "teachingNotes": "Use examples like finch beaks or peppered moths. Explain how environmental changes can drive evolution. Discuss fossil evidence.",
+  "sample": {
+    "question": "What is the gradual change in species over time called?",
+    "expectedAny": [
+      "evolution",
+      "evolutionary change",
+      "species change",
+      "biological evolution"
+    ]
+  },
+  "truefalse": {
+    "question": "Natural selection causes organisms with helpful traits to survive better.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What provides evidence for evolution?",
+    "expectedAny": [
+      "fossils",
+      "fossil record",
+      "comparative anatomy",
+      "DNA similarities"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A trait that helps an organism survive is called an ________.",
+    "expectedAny": [
+      "adaptation",
+      "adaptive trait",
+      "favorable trait",
+      "survival trait"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does natural selection lead to evolution?",
+    "expectedAny": [
+      "favorable traits passed to offspring",
+      "helpful traits become more common",
+      "survival advantage leads to reproduction"
+    ]
+  }
+}

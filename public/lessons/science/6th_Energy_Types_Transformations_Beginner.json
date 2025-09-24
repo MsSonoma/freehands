@@ -1,0 +1,74 @@
+{
+  "id": "6th_Energy_Types_Transformations_Beginner",
+  "title": "Types of Energy and Energy Transformations",
+  "grade": "6th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "energy",
+      "definition": "The ability to do work or cause change"
+    },
+    {
+      "term": "kinetic energy",
+      "definition": "The energy of motion"
+    },
+    {
+      "term": "potential energy",
+      "definition": "Stored energy based on position or condition"
+    },
+    {
+      "term": "thermal energy",
+      "definition": "Energy from the movement of particles in matter, felt as heat"
+    },
+    {
+      "term": "energy transformation",
+      "definition": "The change of energy from one form to another"
+    }
+  ],
+  "teachingNotes": "Use everyday examples like riding a bike, batteries, and hot objects. Demonstrate energy transformations with simple activities.",
+  "sample": {
+    "question": "What is the energy of motion called?",
+    "expectedAny": [
+      "kinetic energy",
+      "kinetic",
+      "motion energy",
+      "moving energy"
+    ]
+  },
+  "truefalse": {
+    "question": "A book sitting on a high shelf has potential energy.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What type of energy do you feel as heat?",
+    "expectedAny": [
+      "thermal energy",
+      "heat energy",
+      "thermal",
+      "temperature energy"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The change of energy from one form to another is called energy ________.",
+    "expectedAny": [
+      "transformation",
+      "conversion",
+      "change",
+      "transfer"
+    ]
+  },
+  "shortanswer": {
+    "question": "Give an example of potential energy being transformed to kinetic energy.",
+    "expectedAny": [
+      "ball rolling down hill",
+      "dropping a book",
+      "swinging on swing",
+      "water flowing downhill"
+    ]
+  }
+}

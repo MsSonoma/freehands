@@ -1,0 +1,73 @@
+{
+  "id": "8th_Bill_of_Rights_Freedoms_Advanced",
+  "title": "Bill of Rights and Individual Freedoms",
+  "grade": "8th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "Bill of Rights",
+      "definition": "The first ten amendments to the Constitution protecting individual rights"
+    },
+    {
+      "term": "amendment",
+      "definition": "A change or addition to the Constitution"
+    },
+    {
+      "term": "freedom of speech",
+      "definition": "The right to express opinions without government interference"
+    },
+    {
+      "term": "due process",
+      "definition": "The right to fair treatment under the law"
+    },
+    {
+      "term": "individual rights",
+      "definition": "Rights that belong to each person"
+    }
+  ],
+  "teachingNotes": "Focus on key freedoms in the First Amendment. Discuss how the Bill of Rights protects minority rights.",
+  "sample": {
+    "question": "What are the first ten amendments called?",
+    "expectedAny": [
+      "Bill of Rights",
+      "first ten amendments",
+      "individual rights",
+      "constitutional rights"
+    ]
+  },
+  "truefalse": {
+    "question": "The Bill of Rights protects individual freedoms from government interference.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the right to fair treatment under the law?",
+    "expectedAny": [
+      "due process",
+      "fair trial",
+      "legal protection",
+      "procedural rights"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A change or addition to the Constitution is called an ________.",
+    "expectedAny": [
+      "amendment",
+      "change",
+      "addition",
+      "modification"
+    ]
+  },
+  "shortanswer": {
+    "question": "What five freedoms does the First Amendment protect?",
+    "expectedAny": [
+      "speech, religion, press, assembly, petition",
+      "expression, worship, media, gathering, complaint",
+      "basic freedoms"
+    ]
+  }
+}

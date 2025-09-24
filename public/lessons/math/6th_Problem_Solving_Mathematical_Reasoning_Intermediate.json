@@ -1,0 +1,53 @@
+{
+  "id": "6th_Problem_Solving_Mathematical_Reasoning_Intermediate",
+  "title": "Problem Solving and Mathematical Reasoning",
+  "grade": "6th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "mathematical reasoning",
+      "definition": "Using logical thinking to analyze and solve mathematical problems"
+    },
+    {
+      "term": "strategy",
+      "definition": "A planned approach or method for solving a problem"
+    },
+    {
+      "term": "conjecture",
+      "definition": "An educated guess about a mathematical pattern or relationship"
+    },
+    {
+      "term": "proof",
+      "definition": "A logical argument that shows why a mathematical statement is true"
+    },
+    {
+      "term": "counterexample",
+      "definition": "An example that shows a statement or conjecture is false"
+    }
+  ],
+  "teachingNotes": "Emphasize multiple solution strategies. Encourage students to explain their reasoning. Practice identifying patterns and making mathematical arguments.",
+  "sample": {
+    "question": "What do we call using logical thinking to solve math problems?",
+    "expectedAny": ["mathematical reasoning", "logical reasoning", "mathematical thinking", "problem-solving reasoning"]
+  },
+  "truefalse": {
+    "question": "There is only one correct way to solve any math problem.",
+    "expectedAny": ["false", "no", "f", "incorrect"]
+  },
+  "multiplechoice": {
+    "question": "What is an educated guess about a mathematical pattern called?",
+    "expectedAny": ["conjecture", "hypothesis", "mathematical guess", "pattern prediction"]
+  },
+  "fillintheblank": {
+    "question": "An example that proves a statement is false is called a ________.",
+    "expectedAny": ["counterexample", "counter example", "contradicting example", "opposing example"]
+  },
+  "shortanswer": {
+    "question": "What are three good problem-solving strategies?",
+    "expectedAny": ["guess and check, draw a picture, work backwards", "make a table, look for patterns, solve simpler problem", "organize data, use logic, try different approaches"]
+  },
+  "wordProblems": {
+    "question": "Sarah notices that 1+3=4, 4+5=9, 9+7=16. She conjectures that the sum is always a perfect square. Find a counterexample.",
+    "expectedAny": ["16+9=25, but next would be 25+11=36", "the pattern breaks", "not all consecutive sums are perfect squares", "check: does the pattern continue?"]
+  }
+}

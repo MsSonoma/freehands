@@ -1,0 +1,74 @@
+{
+  "id": "5th_Earth_Science_Water_Cycle_Systems_Beginner",
+  "title": "Earth Science: Water Cycle and Systems",
+  "grade": "5th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "water cycle",
+      "definition": "The continuous movement of water through the environment"
+    },
+    {
+      "term": "evaporation",
+      "definition": "When liquid water changes into water vapor due to heat"
+    },
+    {
+      "term": "condensation",
+      "definition": "When water vapor cools and changes back into liquid water"
+    },
+    {
+      "term": "precipitation",
+      "definition": "Water that falls from clouds as rain, snow, sleet, or hail"
+    },
+    {
+      "term": "groundwater",
+      "definition": "Water that soaks into the ground and is stored underground"
+    }
+  ],
+  "teachingNotes": "Use diagrams and hands-on models to demonstrate the water cycle. Connect the water cycle to weather patterns and emphasize its importance for all life on Earth.",
+  "sample": {
+    "question": "What drives the water cycle?",
+    "expectedAny": [
+      "the sun",
+      "solar energy",
+      "heat from sun",
+      "sun's energy"
+    ]
+  },
+  "truefalse": {
+    "question": "The water cycle only happens over oceans.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What happens during evaporation?",
+    "expectedAny": [
+      "liquid becomes vapor",
+      "water turns to gas",
+      "heating changes state",
+      "vaporization"
+    ]
+  },
+  "fillintheblank": {
+    "question": "When water vapor in the air cools down, it goes through ________.",
+    "expectedAny": [
+      "condensation",
+      "cooling",
+      "cloud formation",
+      "vapor to liquid"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does water get back to the oceans after it falls as rain?",
+    "expectedAny": [
+      "rivers and streams",
+      "surface runoff",
+      "flows downhill",
+      "drainage systems"
+    ]
+  }
+}

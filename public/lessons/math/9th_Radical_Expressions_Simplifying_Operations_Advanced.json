@@ -1,0 +1,53 @@
+{
+  "id": "9th_Radical_Expressions_Simplifying_Operations_Advanced",
+  "title": "Radical Expressions: Simplifying and Operations",
+  "grade": "9th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "radical expression",
+      "definition": "Expression containing a radical symbol (√)"
+    },
+    {
+      "term": "radicand",
+      "definition": "Number or expression under the radical symbol"
+    },
+    {
+      "term": "perfect square",
+      "definition": "Number whose square root is a whole number"
+    },
+    {
+      "term": "rationalize",
+      "definition": "Eliminate radicals from the denominator of a fraction"
+    },
+    {
+      "term": "like radicals",
+      "definition": "Radical expressions with the same radicand and index"
+    }
+  ],
+  "teachingNotes": "Focus on simplifying radicals by factoring perfect squares. Practice rationalizing denominators and combining like radicals.",
+  "sample": {
+    "question": "What is an expression containing a radical symbol called?",
+    "expectedAny": ["radical expression", "radical", "square root expression", "root expression"]
+  },
+  "truefalse": {
+    "question": "The number under the radical symbol is called the radicand.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What means eliminating radicals from the denominator?",
+    "expectedAny": ["rationalize", "rationalizing", "rational form", "denominator clearing"]
+  },
+  "fillintheblank": {
+    "question": "A number whose square root is whole is a ________ square.",
+    "expectedAny": ["perfect", "complete", "exact", "whole"]
+  },
+  "shortanswer": {
+    "question": "How do you simplify √72?",
+    "expectedAny": ["6√2", "√36 × √2", "factor out perfect squares", "6 times square root 2"]
+  },
+  "wordProblems": {
+    "question": "Simplify 3√8 + 2√18. What is the result?",
+    "expectedAny": ["12√2", "3(2√2) + 2(3√2) = 12√2", "twelve square root 2", "12√2"]
+  }
+}

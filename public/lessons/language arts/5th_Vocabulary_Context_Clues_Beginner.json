@@ -1,0 +1,74 @@
+{
+  "id": "5th_Vocabulary_Context_Clues_Beginner",
+  "title": "Vocabulary: Using Context Clues",
+  "grade": "5th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "context clues",
+      "definition": "Hints in the text that help you understand the meaning of unknown words"
+    },
+    {
+      "term": "definition clue",
+      "definition": "When the meaning of a word is directly explained in the sentence"
+    },
+    {
+      "term": "example clue",
+      "definition": "When examples help you understand what a word means"
+    },
+    {
+      "term": "synonym",
+      "definition": "A word that means the same or almost the same as another word"
+    },
+    {
+      "term": "antonym",
+      "definition": "A word that means the opposite of another word"
+    }
+  ],
+  "teachingNotes": "Practice with sentences that have clear context clues. Teach students to look before and after unknown words for hints. Use graphic organizers to identify clue types.",
+  "sample": {
+    "question": "What are hints in the text that help you understand unknown words?",
+    "expectedAny": [
+      "context clues",
+      "text clues",
+      "word clues",
+      "reading clues"
+    ]
+  },
+  "truefalse": {
+    "question": "Context clues are always found in the same sentence as the unknown word.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What type of context clue gives examples to help explain a word?",
+    "expectedAny": [
+      "example clue",
+      "examples",
+      "example context clue",
+      "example hint"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A word that means the opposite of another word is called an ________.",
+    "expectedAny": [
+      "antonym",
+      "opposite",
+      "opposite word",
+      "contrasting word"
+    ]
+  },
+  "shortanswer": {
+    "question": "In the sentence 'The ancient ruins were very old and crumbling,' what does 'ancient' probably mean?",
+    "expectedAny": [
+      "very old",
+      "old",
+      "from long ago",
+      "not new"
+    ]
+  }
+}

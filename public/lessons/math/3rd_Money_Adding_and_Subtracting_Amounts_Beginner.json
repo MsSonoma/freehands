@@ -1,0 +1,67 @@
+{
+	"id": "3rd_Money_Adding_and_Subtracting_Amounts_Beginner",
+	"title": "Money: Adding and Subtracting Amounts",
+	"grade": "3rd",
+	"difficulty": "Beginner",
+	"featured": false,
+	"vocab": [
+		{"term": "cents", "definition": "100 cents = 1 dollar"},
+		{"term": "dollar", "definition": "United States basic unit of money"},
+		{"term": "change", "definition": "Money returned when you pay more than the cost"}
+	],
+	"teachingNotes": "Use coin models and decimal notation. Align cents with place value.",
+	"sample": [
+		{"question": "Add $1.25 + $0.75", "expectedAny": ["$2.00", "2.00", "2"]},
+		{"question": "Subtract $5.00 − $3.45", "expectedAny": ["$1.55", "1.55"]},
+		{"question": "How many cents in $3.20?", "expectedAny": ["320"]},
+		{"question": "What two coins make 30 cents?", "expectedAny": ["quarter and nickel", "25 and 5"]},
+		{"question": "Add 85¢ + 40¢", "expectedAny": ["125 cents", "$1.25", "1.25"]},
+		{"question": "$2.50 − 75¢", "expectedAny": ["$1.75", "1.75"]},
+		{"question": "3 quarters equal ___ cents", "expectedAny": ["75"]}
+	],
+	"truefalse": [
+		{"question": "Four quarters equal one dollar.", "answer": true},
+		{"question": "A dime is 5 cents.", "answer": false},
+		{"question": "$0.60 + $0.50 = $1.10.", "answer": true},
+		{"question": "$1.00 − $0.40 = $0.50.", "answer": false},
+		{"question": "A nickel is worth more than a dime.", "answer": false},
+		{"question": "100 cents make a dollar.", "answer": true},
+		{"question": "$2.05 is the same as 205 cents.", "answer": true}
+	],
+	"multiplechoice": [
+		{"question": "$3.25 + $1.75 = ?", "choices": ["$4.75", "$5.00", "$5.25", "$5.50"], "correct": 1},
+		{"question": "$10.00 − $6.85 = ?", "choices": ["$3.05", "$3.15", "$3.25", "$3.35"], "correct": 1},
+		{"question": "Coins to make 65¢:", "choices": ["2 quarters + dime + nickel", "quarter + 4 dimes", "6 dimes + nickel", "13 nickels"], "correct": 0},
+		{"question": "$4.50 + $2.60:", "choices": ["$6.10", "$6.90", "$7.00", "$7.10"], "correct": 3},
+		{"question": "$7.00 − $3.45:", "choices": ["$3.55", "$3.45", "$3.65", "$4.55"], "correct": 0},
+		{"question": "$0.99 + $0.01:", "choices": ["$0.99", "$1.00", "$1.01", "$1.10"], "correct": 1},
+		{"question": "Best way to add money:", "choices": ["Ignore decimals", "Line up decimal points", "Add dollars only", "Estimate only"], "correct": 1}
+	],
+	"fillintheblank": [
+		{"question": "$1.20 + $0.85 = ___", "expectedAny": ["$2.05", "2.05"]},
+		{"question": "$5.00 − $2.75 = ___", "expectedAny": ["$2.25", "2.25"]},
+		{"question": "45¢ + 55¢ = ___ cents", "expectedAny": ["100"]},
+		{"question": "$3.10 + $0.90 = ___", "expectedAny": ["$4.00", "4.00"]},
+		{"question": "$8.00 − $0.99 = ___", "expectedAny": ["$7.01", "7.01"]},
+		{"question": "200 cents = $___", "expectedAny": ["2", "2.00"]},
+		{"question": "$6.50 − $1.75 = $___", "expectedAny": ["4.75", "$4.75"]}
+	],
+	"shortanswer": [
+		{"question": "Explain how to add money amounts.", "expectedAny": ["line up decimals, add cents then dollars"]},
+		{"question": "How do you make change for $1 with 3 coins?", "expectedAny": ["2 quarters + 1 half-dollar or other combos"]},
+		{"question": "Why is place value important with money?", "expectedAny": ["dollars and cents align with ones and hundredths"]},
+		{"question": "Estimate $3.98 + $4.03.", "expectedAny": ["about $8.00"]},
+		{"question": "Create two ways to make 50¢.", "expectedAny": ["5 dimes; 2 quarters; 10 nickels; etc."]},
+		{"question": "When would you subtract money?", "expectedAny": ["finding change, comparing costs"]},
+		{"question": "Name coins to make $1.35.", "expectedAny": ["1 dollar, 1 quarter, 1 dime"]}
+	],
+	"wordProblems": [
+		{"question": "A toy costs $4.75. You have $10. How much change?", "expectedAny": ["$5.25", "5.25"]},
+		{"question": "Two items cost $3.40 and $2.85. Total?", "expectedAny": ["$6.25", "6.25"]},
+		{"question": "You have $5.00. You buy gum for $1.35 and a snack for $2.50. Money left?", "expectedAny": ["$1.15", "1.15"]},
+		{"question": "Sticker packs cost $0.99 each. Buy 3. Cost?", "expectedAny": ["$2.97", "2.97"]},
+		{"question": "A book is $7.20. You pay with $10. Change?", "expectedAny": ["$2.80", "2.80"]},
+		{"question": "Three toys cost $2.50, $3.25, $1.75. Total?", "expectedAny": ["$7.50", "7.50"]},
+		{"question": "You saved $12.40. You spend $4.65. How much left?", "expectedAny": ["$7.75", "7.75"]}
+	]
+}

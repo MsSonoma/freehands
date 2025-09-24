@@ -1,0 +1,53 @@
+{
+  "id": "9th_Inequalities_Linear_Compound_Graphing_Beginner",
+  "title": "Inequalities: Linear and Compound with Graphing",
+  "grade": "9th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "inequality",
+      "definition": "Mathematical statement comparing expressions using <, >, ≤, or ≥"
+    },
+    {
+      "term": "compound inequality",
+      "definition": "Two inequalities connected by 'and' or 'or'"
+    },
+    {
+      "term": "solution set",
+      "definition": "All values that make an inequality true"
+    },
+    {
+      "term": "boundary line",
+      "definition": "Line that separates regions in inequality graphing"
+    },
+    {
+      "term": "test point",
+      "definition": "Point used to determine which region satisfies the inequality"
+    }
+  ],
+  "teachingNotes": "Practice solving and graphing inequalities. Emphasize when to reverse the inequality sign and shading regions on graphs.",
+  "sample": {
+    "question": "What is a mathematical statement comparing expressions using inequality symbols?",
+    "expectedAny": ["inequality", "inequality statement", "comparison statement", "relational statement"]
+  },
+  "truefalse": {
+    "question": "When multiplying by a negative number, reverse the inequality sign.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What are two inequalities connected by 'and' or 'or'?",
+    "expectedAny": ["compound inequality", "compound inequalities", "combined inequality", "double inequality"]
+  },
+  "fillintheblank": {
+    "question": "All values that make an inequality true form the ________ set.",
+    "expectedAny": ["solution", "answer", "truth", "valid"]
+  },
+  "shortanswer": {
+    "question": "How do you test which region to shade when graphing inequalities?",
+    "expectedAny": ["use a test point", "substitute a point", "check which side works", "try a coordinate"]
+  },
+  "wordProblems": {
+    "question": "Solve 2x + 3 > 7. What is the solution?",
+    "expectedAny": ["x > 2", "x greater than 2", "x > 2", "greater than 2"]
+  }
+}

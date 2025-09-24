@@ -1,0 +1,74 @@
+{
+  "id": "5th_Colonial_America_Settlement_Beginner",
+  "title": "Colonial America and Early Settlement",
+  "grade": "5th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "colony",
+      "definition": "A settlement in a new land that is controlled by another country"
+    },
+    {
+      "term": "Pilgrims",
+      "definition": "Religious settlers who came to America on the Mayflower in 1620"
+    },
+    {
+      "term": "Jamestown",
+      "definition": "The first permanent English settlement in America, founded in 1607"
+    },
+    {
+      "term": "Mayflower Compact",
+      "definition": "An agreement made by the Pilgrims to govern themselves fairly"
+    },
+    {
+      "term": "colonist",
+      "definition": "A person who lives in a colony"
+    }
+  ],
+  "teachingNotes": "Focus on the reasons people came to America and the challenges they faced. Emphasize the importance of cooperation in early settlements.",
+  "sample": {
+    "question": "What was the first permanent English settlement in America?",
+    "expectedAny": [
+      "Jamestown",
+      "Jamestown Virginia",
+      "Jamestown settlement",
+      "Virginia colony"
+    ]
+  },
+  "truefalse": {
+    "question": "The Pilgrims came to America seeking religious freedom.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What ship brought the Pilgrims to America?",
+    "expectedAny": [
+      "Mayflower",
+      "the Mayflower",
+      "Mayflower ship",
+      "Pilgrim ship Mayflower"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The ________ was an agreement made by the Pilgrims to govern themselves.",
+    "expectedAny": [
+      "Mayflower Compact",
+      "compact",
+      "Mayflower agreement",
+      "Pilgrim compact"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why did many people come to the American colonies?",
+    "expectedAny": [
+      "religious freedom",
+      "better life",
+      "escape persecution",
+      "new opportunities"
+    ]
+  }
+}

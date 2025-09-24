@@ -1,0 +1,56 @@
+{
+  "id": "geometry-shapes-sorting-advanced",
+  "title": "Geometry and Shape Sorting",
+  "grade": "1st",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {"term": "geometry", "definition": "The study of shapes and their properties"},
+    {"term": "vertices", "definition": "The corner points where lines meet in a shape"},
+    {"term": "sides", "definition": "The straight lines that form the edges of a shape"},
+    {"term": "attributes", "definition": "The characteristics or properties that describe a shape"}
+  ],
+  "teachingNotes": "Use real objects and shape manipulatives. Focus on identifying and sorting by multiple attributes. Practice describing shapes using mathematical language.",
+  "sample": [
+    {"question": "How many vertices does a triangle have?", "expectedAny": ["3 vertices", "3 corner points"]},
+    {"question": "Does a circle have vertices?", "expectedAny": ["No", "none"]},
+    {"question": "Which shape has four equal sides?", "expectedAny": ["square"]},
+    {"question": "Is a rectangle always a square?", "expectedAny": ["No"]},
+    {"question": "Which shape would roll: cube, cylinder, or square?", "expectedAny": ["cylinder"]}
+  ],
+  "truefalse": [
+    {"question": "A rectangle has 4 sides and 4 vertices.", "answer": true, "expectedAny": ["true"]},
+    {"question": "All triangles have the same size.", "answer": false, "expectedAny": ["false"]},
+    {"question": "A circle has vertices.", "answer": false, "expectedAny": ["false"]},
+    {"question": "A square is a rectangle with equal sides.", "answer": true, "expectedAny": ["true"]},
+    {"question": "A pentagon has 5 sides.", "answer": true, "expectedAny": ["true"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which shape has no corners?", "choices": ["triangle", "square", "circle", "rectangle"], "correct": 2, "expectedAny": ["circle"]},
+    {"question": "How many sides does a pentagon have?", "choices": ["4", "5", "6", "3"], "correct": 1, "expectedAny": ["5"]},
+    {"question": "Which shape has 4 vertices?", "choices": ["triangle", "circle", "square", "hexagon"], "correct": 2, "expectedAny": ["square"]},
+    {"question": "Which set shows shapes with vertices?", "choices": [["circle, oval"], ["triangle, square"], ["sphere, cube"], ["cylinder, cone"]], "correct": 1, "expectedAny": ["triangle, square"]},
+    {"question": "Which shape can be used to sort by number of sides: triangle, square, circle?", "choices": ["Yes", "No", "Sometimes", "Never"], "correct": 0, "expectedAny": ["Yes"]}
+  ],
+  "fillintheblank": [
+    {"question": "A square has _____ equal sides and _____ vertices.", "expectedAny": ["4", "4"]},
+    {"question": "A triangle has ___ sides.", "expectedAny": ["3"]},
+    {"question": "A hexagon has ___ sides.", "expectedAny": ["6"]},
+    {"question": "A circle has ___ vertices.", "expectedAny": ["0", "none"]},
+    {"question": "A rectangle has ___ pairs of equal sides.", "expectedAny": ["2"]}
+  ],
+  "shortanswer": [
+    {"question": "How is a square different from a rectangle?", "expectedAny": ["square has all equal sides", "rectangle has opposite sides equal"]},
+    {"question": "Describe one way to sort shapes.", "expectedAny": ["by number of sides, by size, by curved vs straight edges"]},
+    {"question": "Why might we sort shapes?", "expectedAny": ["to find patterns, to group similar objects"]},
+    {"question": "Name two shapes with vertices.", "expectedAny": ["triangle, square, rectangle"]},
+    {"question": "What tool can help you draw straight sides?", "expectedAny": ["ruler"]}
+  ],
+  "wordProblems": [
+    {"question": "Emma draws 2 triangles, 3 squares, and 1 circle. How many shapes with vertices did she draw?", "expectedAny": ["5 shapes"]},
+    {"question": "Liam sorts 10 shapes into circles and polygons. If 4 are circles, how many are polygons?", "expectedAny": ["6"]},
+    {"question": "A box has 8 triangular stickers and 5 square stickers. How many stickers have vertices?", "expectedAny": ["13"]},
+    {"question": "If you add 3 pentagons to 2 hexagons, how many shapes have more than four sides?", "expectedAny": ["5"]},
+    {"question": "A set has 7 shapes and 2 are circles. How many have vertices?", "expectedAny": ["5"]}
+  ]
+}

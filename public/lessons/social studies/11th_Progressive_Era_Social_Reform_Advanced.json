@@ -1,0 +1,74 @@
+{
+  "id": "11th_Progressive_Era_Social_Reform_Advanced",
+  "title": "Progressive Era and Social Reform",
+  "grade": "11th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "Social Gospel movement",
+      "definition": "Christian reform movement applying religious principles to social problems"
+    },
+    {
+      "term": "municipal socialism",
+      "definition": "City-level government ownership of public services and utilities"
+    },
+    {
+      "term": "efficiency movement",
+      "definition": "Progressive effort to apply scientific management to government"
+    },
+    {
+      "term": "New Nationalism",
+      "definition": "Theodore Roosevelt's progressive platform emphasizing federal regulation"
+    },
+    {
+      "term": "Wisconsin Idea",
+      "definition": "Model of university-government cooperation in progressive reform"
+    }
+  ],
+  "teachingNotes": "Examine intellectual foundations and diverse strands of Progressivism. Analyze tensions between efficiency and democracy.",
+  "sample": {
+    "question": "What movement applied religious principles to social problems?",
+    "expectedAny": [
+      "Social Gospel movement",
+      "Social Gospel",
+      "Christian reform",
+      "religious progressivism"
+    ]
+  },
+  "truefalse": {
+    "question": "The Wisconsin Idea involved university-government cooperation in reform.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What was Theodore Roosevelt's progressive platform called?",
+    "expectedAny": [
+      "New Nationalism",
+      "Roosevelt's platform",
+      "Progressive nationalism",
+      "federal regulation platform"
+    ]
+  },
+  "fillintheblank": {
+    "question": "City-level government ownership of services was called municipal ________.",
+    "expectedAny": [
+      "socialism",
+      "ownership",
+      "control",
+      "enterprise"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did efficiency movement conflict with democratic ideals?",
+    "expectedAny": [
+      "expert rule vs. popular control",
+      "technocracy vs. democracy",
+      "efficiency vs. participation",
+      "scientific vs. political"
+    ]
+  }
+}

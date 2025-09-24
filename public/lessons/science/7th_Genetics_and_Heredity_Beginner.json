@@ -1,0 +1,73 @@
+{
+  "id": "7th_Genetics_and_Heredity_Beginner",
+  "title": "Genetics and Inheritance Patterns",
+  "grade": "7th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "genetics",
+      "definition": "The study of how traits are passed from parents to offspring"
+    },
+    {
+      "term": "trait",
+      "definition": "A characteristic that can be inherited"
+    },
+    {
+      "term": "gene",
+      "definition": "A section of DNA that controls a specific trait"
+    },
+    {
+      "term": "heredity",
+      "definition": "The passing of traits from parents to offspring"
+    },
+    {
+      "term": "chromosome",
+      "definition": "A structure that contains many genes"
+    }
+  ],
+  "teachingNotes": "Use family trait examples like eye color or height. Explain that offspring get traits from both parents. Keep genetics simple and observable.",
+  "sample": {
+    "question": "What is the study of how traits are passed from parents to offspring?",
+    "expectedAny": [
+      "genetics",
+      "heredity",
+      "inheritance",
+      "genetic study"
+    ]
+  },
+  "truefalse": {
+    "question": "Children get traits from both their mother and father.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is a characteristic that can be inherited?",
+    "expectedAny": [
+      "trait",
+      "characteristic",
+      "feature",
+      "genetic characteristic"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A section of DNA that controls a specific trait is called a ________.",
+    "expectedAny": [
+      "gene",
+      "genetic unit",
+      "DNA segment",
+      "hereditary unit"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why do children often look like their parents?",
+    "expectedAny": [
+      "they inherit traits",
+      "genes passed from parents",
+      "heredity makes them similar"
+    ]
+  }
+}

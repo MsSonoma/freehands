@@ -1,0 +1,68 @@
+{
+	"id": "3rd_Place_Value_to_Thousands_Beginner",
+	"title": "Place Value to Thousands",
+	"grade": "3rd",
+	"difficulty": "Beginner",
+	"featured": false,
+	"vocab": [
+		{"term": "place value", "definition": "The value of a digit based on its position"},
+		{"term": "thousands", "definition": "A group of one thousand"},
+		{"term": "expanded form", "definition": "Writing a number as a sum of each digit's value"},
+		{"term": "round", "definition": "To change a number to the nearest ten, hundred, etc."}
+	],
+	"teachingNotes": "Use base-10 blocks and place value charts up to 9,999. Practice expanded form and comparisons.",
+	"sample": [
+		{"question": "What digit is in the hundreds place of 3,456?", "expectedAny": ["4"]},
+		{"question": "Write three thousand, two hundred forty-five.", "expectedAny": ["3245", "3,245"]},
+		{"question": "What is the value of 7 in 7,892?", "expectedAny": ["7000", "7,000"]},
+		{"question": "Round 4,567 to the nearest hundred.", "expectedAny": ["4,600"]},
+		{"question": "Which is greater: 3,456 or 3,546?", "expectedAny": ["3,546"]},
+		{"question": "Expand 5,678.", "expectedAny": ["5,000 + 600 + 70 + 8"]},
+		{"question": "What number is 100 more than 2,345?", "expectedAny": ["2,445"]}
+	],
+	"truefalse": [
+		{"question": "In 4,523, the 4 represents 4,000.", "answer": true},
+		{"question": "The thousands place is to the right of hundreds.", "answer": false},
+		{"question": "5,000 + 600 + 70 + 8 = 5,678.", "answer": true},
+		{"question": "In 3,045, there are no hundreds.", "answer": true},
+		{"question": "6,789 is greater than 6,879.", "answer": false},
+		{"question": "The digit 5 in 5,432 equals 5,000.", "answer": true},
+		{"question": "Rounding 3,456 to nearest thousand gives 3,000.", "answer": true}
+	],
+	"multiplechoice": [
+		{"question": "In 6,789, the 7 represents ___", "choices": ["7", "70", "700", "7,000"], "correct": 2},
+		{"question": "4,000 + 300 + 20 + 5 = ?", "choices": ["4,325", "4,235", "4,523", "4,352"], "correct": 0},
+		{"question": "Round 5,678 to nearest thousand:", "choices": ["5,000", "6,000", "5,700", "5,600"], "correct": 1},
+		{"question": "Which is smallest?", "choices": ["2,345", "2,435", "2,354", "2,534"], "correct": 0},
+		{"question": "8 thousands, 0 hundreds, 3 tens, 6 ones = ?", "choices": ["8,036", "8,360", "8,306", "8,063"], "correct": 0},
+		{"question": "What is 1,000 more than 4,567?", "choices": ["5,567", "4,667", "4,577", "3,567"], "correct": 0},
+		{"question": "In 9,203, how many tens?", "choices": ["0", "2", "3", "20"], "correct": 0}
+	],
+	"fillintheblank": [
+		{"question": "The number 7,456 has ___ thousands", "expectedAny": ["7"]},
+		{"question": "6,000 + 400 + 50 + 3 = ___", "expectedAny": ["6453", "6,453"]},
+		{"question": "In 8,932, the 9 is in the ___ place", "expectedAny": ["hundreds"]},
+		{"question": "The value of 5 in 5,678 is ___", "expectedAny": ["5000", "5,000"]},
+		{"question": "___ is 10 less than 4,000", "expectedAny": ["3990", "3,990"]},
+		{"question": "Round 7,456 to the nearest hundred: ___", "expectedAny": ["7,500"]},
+		{"question": "9 thousands, 2 hundreds, 0 tens, 5 ones = ___", "expectedAny": ["9205", "9,205"]}
+	],
+	"shortanswer": [
+		{"question": "How do you write 8,765 in expanded form?", "expectedAny": ["8,000 + 700 + 60 + 5"]},
+		{"question": "What's the difference between place and value?", "expectedAny": ["place is position, value is amount"]},
+		{"question": "How do you compare 4-digit numbers?", "expectedAny": ["compare thousands, then hundreds, tens, ones"]},
+		{"question": "Why is zero important in 4,052?", "expectedAny": ["holds place, shows no hundreds"]},
+		{"question": "What's the largest 4-digit number?", "expectedAny": ["9999", "9,999"]},
+		{"question": "How do you round to nearest thousand?", "expectedAny": ["look at hundreds 0-4 down, 5-9 up"]},
+		{"question": "Write 5 thousands in three ways", "expectedAny": ["5,000", "five thousand", "50 hundreds"]}
+	],
+	"wordProblems": [
+		{"question": "A school has 2,456 students. What digit shows thousands?", "expectedAny": ["2"]},
+		{"question": "Round 3,789 books to the nearest hundred.", "expectedAny": ["3,800"]},
+		{"question": "Which city has more people: 5,643 or 5,346?", "expectedAny": ["5,643"]},
+		{"question": "Write the number: 7 thousands, 0 hundreds, 2 tens, 9 ones", "expectedAny": ["7029", "7,029"]},
+		{"question": "A store sold 4,567 items. Round to nearest thousand.", "expectedAny": ["5,000"]},
+		{"question": "What's 100 more than 6,899?", "expectedAny": ["6,999"]},
+		{"question": "Order from least to greatest: 3,456; 3,546; 3,465", "expectedAny": ["3456 < 3465 < 3546", "3,456; 3,465; 3,546"]}
+	]
+}

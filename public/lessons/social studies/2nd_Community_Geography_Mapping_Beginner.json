@@ -1,0 +1,74 @@
+{
+  "id": "2nd_Community_Geography_Mapping_Beginner",
+  "title": "Community Geography and Mapping",
+  "grade": "2nd",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "map",
+      "definition": "A picture that shows where places are located"
+    },
+    {
+      "term": "community",
+      "definition": "A place where people live, work, and play together"
+    },
+    {
+      "term": "neighborhood",
+      "definition": "The area around where you live"
+    },
+    {
+      "term": "landmark",
+      "definition": "An important building or place that helps people know where they are"
+    },
+    {
+      "term": "directions",
+      "definition": "Ways to tell someone how to get from one place to another"
+    }
+  ],
+  "teachingNotes": "Use simple maps of the school and local community. Practice basic directions (left, right, north, south). Have students draw maps of their classroom or bedroom. Identify local landmarks.",
+  "sample": [
+    {"question": "What do we call the area around where you live?", "expectedAny": ["neighborhood", "community", "local area"]},
+    {"question": "Name a landmark near your home.", "expectedAny": ["school", "park", "library", "store"]},
+    {"question": "What does a compass rose show?", "expectedAny": ["directions", "north south east west", "cardinal directions"]},
+    {"question": "What do we use maps for?", "expectedAny": ["to find places", "to see where things are", "to plan routes"]},
+    {"question": "What is a community?", "expectedAny": ["place where people live, work, and play together"]},
+    {"question": "What is a neighborhood?", "expectedAny": ["area around where you live"]},
+    {"question": "Why are landmarks helpful?", "expectedAny": ["help us know where we are", "help give directions"]}
+  ],
+  "truefalse": [
+    {"question": "A map shows us where different places are located.", "answer": true},
+    {"question": "The compass rose shows time.", "answer": false},
+    {"question": "A neighborhood is part of a community.", "answer": true},
+    {"question": "Landmarks are not useful for directions.", "answer": false},
+    {"question": "A globe is a model of Earth.", "answer": true},
+    {"question": "East is the opposite of west.", "answer": true},
+    {"question": "Maps only show roads, not buildings.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "What is a landmark?", "choices": ["A street sign", "An important place people recognize", "A type of map", "A direction"], "correct": 1},
+    {"question": "Which tool shows directions on a map?", "choices": ["Key", "Scale", "Compass rose", "Legend"], "correct": 2},
+    {"question": "If you go north and then turn right, which direction are you facing?", "choices": ["South", "East", "West", "North"], "correct": 1},
+    {"question": "Which is part of your community?", "choices": ["The moon", "Your school", "Another country", "A different planet"], "correct": 1},
+    {"question": "A map key (legend) tells you what?", "choices": ["How to draw", "What symbols mean", "Where north is", "How far places are"], "correct": 1},
+    {"question": "Which shows the whole Earth?", "choices": ["Map key", "Compass", "Globe", "Landmark"], "correct": 2},
+    {"question": "Which is NOT a cardinal direction?", "choices": ["North", "Up", "East", "West"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "People live, work, and play together in a ________.", "expectedAny": ["community", "neighborhood", "town", "city"]},
+    {"question": "A picture that shows where places are is called a ___.", "expectedAny": ["map"]},
+    {"question": "The directions north, south, east, west are called ________ directions.", "expectedAny": ["cardinal"]},
+    {"question": "A ________ helps people know where they are.", "expectedAny": ["landmark"]},
+    {"question": "The area around where you live is your ________.", "expectedAny": ["neighborhood"]},
+    {"question": "A ________ is a model of the Earth.", "expectedAny": ["globe"]},
+    {"question": "A map ________ tells what symbols mean.", "expectedAny": ["key", "legend"]}
+  ],
+  "shortanswer": [
+    {"question": "Name two landmarks in your community.", "expectedAny": ["school and library", "park and store", "any two local places"]},
+    {"question": "How can a map help you get to a friend's house?", "expectedAny": ["shows route", "shows streets and landmarks"]},
+    {"question": "Describe how to get from your classroom to the library using directions.", "expectedAny": ["left/right or north/south style directions"]},
+    {"question": "What symbols might you put on a map of your room?", "expectedAny": ["bed", "desk", "door", "window"]},
+    {"question": "Why do people use maps instead of just guessing?", "expectedAny": ["to not get lost", "to find fastest way"]},
+    {"question": "What is one difference between a map and a globe?", "expectedAny": ["map is flat, globe is round", "globe shows whole Earth"]},
+    {"question": "Give directions from the door to your desk.", "expectedAny": ["student provides steps with left/right or cardinal directions"]}
+  ]
+}

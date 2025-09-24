@@ -1,0 +1,74 @@
+{
+  "id": "11th_American_Literature_Analysis_Transcendentalism_Advanced",
+  "title": "American Literature Analysis: Transcendentalism and Romanticism",
+  "grade": "11th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "Oversoul",
+      "definition": "Emerson's concept of universal spirit connecting all beings"
+    },
+    {
+      "term": "antinomianism",
+      "definition": "Belief that moral law is unnecessary for those guided by divine grace"
+    },
+    {
+      "term": "psychological realism",
+      "definition": "Literary technique exploring characters' internal mental states"
+    },
+    {
+      "term": "Puritan aesthetic",
+      "definition": "Literary style reflecting Calvinist theology and moral severity"
+    },
+    {
+      "term": "epistemological rebellion",
+      "definition": "Challenge to traditional ways of knowing and understanding truth"
+    }
+  ],
+  "teachingNotes": "Examine philosophical underpinnings and theological implications. Analyze how American literature reflects national identity formation.",
+  "sample": {
+    "question": "What is Emerson's concept of universal spirit connecting all beings?",
+    "expectedAny": [
+      "Oversoul",
+      "universal spirit",
+      "cosmic consciousness",
+      "transcendent unity"
+    ]
+  },
+  "truefalse": {
+    "question": "Psychological realism explores characters' internal mental states.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What challenges traditional ways of knowing truth?",
+    "expectedAny": [
+      "epistemological rebellion",
+      "knowledge challenge",
+      "truth rebellion",
+      "cognitive revolution"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Literary style reflecting Calvinist theology is the ________ aesthetic.",
+    "expectedAny": [
+      "Puritan",
+      "Calvinist",
+      "religious",
+      "theological"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does transcendentalism represent American intellectual independence?",
+    "expectedAny": [
+      "rejection of European authority",
+      "indigenous philosophy",
+      "democratic ideals",
+      "intellectual sovereignty"
+    ]
+  }
+}

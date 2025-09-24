@@ -1,0 +1,68 @@
+{
+  "id": "2nd_Place_Value_Hundreds_Beginner",
+  "title": "Place Value to Hundreds",
+  "grade": "2nd",
+  "difficulty": "Beginner",
+  "vocab": [
+    {"term": "place value", "definition": "The value of a digit based on where it is in a number"},
+    {"term": "ones", "definition": "The rightmost place in a number, worth 1 each"},
+    {"term": "tens", "definition": "The middle place in a three-digit number, worth 10 each"},
+    {"term": "hundreds", "definition": "The leftmost place in a three-digit number, worth 100 each"},
+    {"term": "digit", "definition": "Any of the numbers 0, 1, 2, 3, 4, 5, 6, 7, 8, or 9"}
+  ],
+  "teachingNotes": "Use base-ten blocks or place value charts to show how numbers are built. Start with two-digit numbers and expand to three-digit numbers. Emphasize that the position of a digit determines its value.",
+  "sample": [
+    {"question": "What digit is in the tens place of 347?", "expectedAny": ["4"]},
+    {"question": "Write 4 hundreds, 2 tens, 5 ones as a number", "expectedAny": ["425"]},
+    {"question": "What is the value of 6 in 468?", "expectedAny": ["60"]},
+    {"question": "Expand 582", "expectedAny": ["500+80+2"]},
+    {"question": "Which number: 7 hundreds, 0 tens, 3 ones?", "expectedAny": ["703"]},
+    {"question": "Round 367 to the nearest ten", "expectedAny": ["370"]},
+    {"question": "Compare 425 and 524", "expectedAny": ["524 is greater", "425 < 524"]}
+  ],
+  "truefalse": [
+    {"question": "In 234, the 3 represents 30", "answer": true},
+    {"question": "The hundreds place is to the right of the ones place", "answer": false},
+    {"question": "500 + 40 + 7 = 547", "answer": true},
+    {"question": "In 805, there are no tens", "answer": true},
+    {"question": "456 is greater than 465", "answer": false},
+    {"question": "The digit 9 in 923 equals 900", "answer": true},
+    {"question": "300 is the same as 3 hundreds", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "In 456, the 5 represents ___", "choices": ["5", "50", "500", "5000"], "correct": 1},
+    {"question": "300 + 20 + 8 = ?", "choices": ["328", "238", "382", "823"], "correct": 0},
+    {"question": "Which is greatest?", "choices": ["234", "432", "324", "243"], "correct": 1},
+    {"question": "Round 276 to nearest hundred:", "choices": ["200", "270", "280", "300"], "correct": 3},
+    {"question": "6 hundreds, 4 tens, 9 ones = ?", "choices": ["649", "694", "469", "946"], "correct": 0},
+    {"question": "In 708, how many tens?", "choices": ["0", "7", "8", "70"], "correct": 0},
+    {"question": "Which shows 842 expanded?", "choices": ["8+4+2", "800+40+2", "80+40+2", "800+4+2"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "The number 563 has ___ hundreds", "expectedAny": ["5"]},
+    {"question": "400 + 70 + 2 = ___", "expectedAny": ["472"]},
+    {"question": "In 891, the 9 is in the ___ place", "expectedAny": ["tens"]},
+    {"question": "The value of 3 in 345 is ___", "expectedAny": ["300"]},
+    {"question": "___ is 10 more than 456", "expectedAny": ["466"]},
+    {"question": "Round 444 to the nearest ten: ___", "expectedAny": ["440"]},
+    {"question": "7 hundreds, 2 tens, 0 ones = ___", "expectedAny": ["720"]}
+  ],
+  "shortanswer": [
+    {"question": "How do you write 639 in expanded form?", "expectedAny": ["600 + 30 + 9"]},
+    {"question": "Compare place values in 358 and 835", "expectedAny": ["digits change value by position"]},
+    {"question": "Why is zero important in 405?", "expectedAny": ["shows no tens, holds place"]},
+    {"question": "How do you round to nearest ten?", "expectedAny": ["look at ones: 5+ up, <5 down"]},
+    {"question": "What's the largest 3-digit number?", "expectedAny": ["999"]},
+    {"question": "How do you compare 3-digit numbers?", "expectedAny": ["compare hundreds, then tens, then ones"]},
+    {"question": "Write 5 hundreds in three ways", "expectedAny": ["500", "5 hundreds", "500 ones"]}
+  ],
+  "wordProblems": [
+    {"question": "A school has 346 students. What digit shows how many hundreds?", "expectedAny": ["3"]},
+    {"question": "Tom has 4 boxes of 100 cards, 5 packs of 10, and 7 singles. Total?", "expectedAny": ["457"]},
+    {"question": "Round 678 books to the nearest hundred.", "expectedAny": ["700"]},
+    {"question": "Which is more: 543 marbles or 534 marbles?", "expectedAny": ["543"]},
+    {"question": "Write the number with 6 hundreds, 0 tens, 9 ones", "expectedAny": ["609"]},
+    {"question": "A store sold 285 items Monday, 258 Tuesday. Which day sold more?", "expectedAny": ["Monday"]},
+    {"question": "If you have 764 stickers and round to nearest ten, what's the estimate?", "expectedAny": ["760"]}
+  ]
+}

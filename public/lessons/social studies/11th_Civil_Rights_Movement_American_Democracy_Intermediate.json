@@ -1,0 +1,74 @@
+{
+  "id": "11th_Civil_Rights_Movement_American_Democracy_Intermediate",
+  "title": "Civil Rights Movement and American Democracy",
+  "grade": "11th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "Brown v. Board of Education",
+      "definition": "Supreme Court case that declared school segregation unconstitutional"
+    },
+    {
+      "term": "Civil Rights Act of 1964",
+      "definition": "Federal law prohibiting discrimination in public accommodations and employment"
+    },
+    {
+      "term": "Voting Rights Act of 1965",
+      "definition": "Federal law removing barriers to African American voting"
+    },
+    {
+      "term": "Freedom Riders",
+      "definition": "Interracial activists who tested integration of interstate transportation"
+    },
+    {
+      "term": "massive resistance",
+      "definition": "Southern strategy to oppose federal civil rights enforcement"
+    }
+  ],
+  "teachingNotes": "Analyze major legislation and court cases. Examine both progress and resistance to civil rights advances.",
+  "sample": {
+    "question": "What Supreme Court case declared school segregation unconstitutional?",
+    "expectedAny": [
+      "Brown v. Board of Education",
+      "Brown v. Board",
+      "Brown case",
+      "school desegregation case"
+    ]
+  },
+  "truefalse": {
+    "question": "The Voting Rights Act of 1965 removed barriers to African American voting.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What was the Southern strategy to oppose federal civil rights enforcement?",
+    "expectedAny": [
+      "massive resistance",
+      "Southern resistance",
+      "anti-integration strategy",
+      "federal opposition"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Interracial activists who tested transportation integration were called ________ Riders.",
+    "expectedAny": [
+      "Freedom",
+      "Civil Rights",
+      "Integration",
+      "Bus"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did the Civil Rights Act of 1964 expand equality?",
+    "expectedAny": [
+      "banned public discrimination",
+      "prohibited employment bias",
+      "ended segregation",
+      "expanded access"
+    ]
+  }
+}

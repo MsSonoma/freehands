@@ -1,0 +1,74 @@
+{
+  "id": "11th_Nuclear_Physics_Radioactivity_Advanced",
+  "title": "Nuclear Physics and Radioactivity",
+  "grade": "11th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "nuclear cross section",
+      "definition": "Measure of probability for nuclear reaction to occur"
+    },
+    {
+      "term": "neutron moderation",
+      "definition": "Process of slowing down neutrons to increase reaction probability"
+    },
+    {
+      "term": "decay constant",
+      "definition": "Probability per unit time that nucleus will decay"
+    },
+    {
+      "term": "nuclear transmutation",
+      "definition": "Conversion of one element to another through nuclear reactions"
+    },
+    {
+      "term": "Q-value",
+      "definition": "Energy released or absorbed in nuclear reaction"
+    }
+  ],
+  "teachingNotes": "Explore advanced nuclear reaction theory and calculations. Discuss applications in nuclear medicine and energy.",
+  "sample": {
+    "question": "What measures the probability for nuclear reactions to occur?",
+    "expectedAny": [
+      "nuclear cross section",
+      "reaction cross section",
+      "nuclear probability",
+      "interaction probability"
+    ]
+  },
+  "truefalse": {
+    "question": "Neutron moderation increases nuclear reaction probability.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the conversion of one element to another called?",
+    "expectedAny": [
+      "nuclear transmutation",
+      "transmutation",
+      "elemental conversion",
+      "nuclear transformation"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The probability per unit time for nuclear decay is the decay ________.",
+    "expectedAny": [
+      "constant",
+      "probability",
+      "rate constant",
+      "coefficient"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does the Q-value determine reaction energetics?",
+    "expectedAny": [
+      "positive Q releases energy",
+      "negative Q requires energy",
+      "mass-energy balance",
+      "reaction feasibility"
+    ]
+  }
+}

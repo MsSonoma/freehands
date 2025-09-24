@@ -1,0 +1,73 @@
+{
+  "id": "8th_Reading_Comprehension_Text_Analysis_Intermediate",
+  "title": "Advanced Reading Comprehension and Text Analysis",
+  "grade": "8th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "text structure",
+      "definition": "How information is organized in a text"
+    },
+    {
+      "term": "author's purpose",
+      "definition": "The reason why an author writes a text"
+    },
+    {
+      "term": "tone",
+      "definition": "The author's attitude toward the subject"
+    },
+    {
+      "term": "mood",
+      "definition": "The feeling or atmosphere created by a text"
+    },
+    {
+      "term": "synthesis",
+      "definition": "Combining information from multiple sources"
+    }
+  ],
+  "teachingNotes": "Practice analyzing how text structure supports meaning. Compare how different authors approach similar topics.",
+  "sample": {
+    "question": "What is how information is organized in a text?",
+    "expectedAny": [
+      "text structure",
+      "organizational structure",
+      "information organization",
+      "text organization"
+    ]
+  },
+  "truefalse": {
+    "question": "Author's purpose is the reason why an author writes.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the feeling or atmosphere created by a text?",
+    "expectedAny": [
+      "mood",
+      "atmosphere",
+      "feeling",
+      "emotional tone"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The author's attitude toward the subject is called ________.",
+    "expectedAny": [
+      "tone",
+      "attitude",
+      "perspective",
+      "viewpoint"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does comparing multiple sources improve understanding?",
+    "expectedAny": [
+      "provides different perspectives",
+      "shows bias",
+      "creates complete picture"
+    ]
+  }
+}

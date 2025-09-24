@@ -1,0 +1,53 @@
+{
+  "id": "8th_Pythagorean_Theorem_Applications_Advanced",
+  "title": "Pythagorean Theorem and Real-World Applications",
+  "grade": "8th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "Pythagorean theorem",
+      "definition": "In a right triangle, a² + b² = c²"
+    },
+    {
+      "term": "hypotenuse",
+      "definition": "The longest side of a right triangle, opposite the right angle"
+    },
+    {
+      "term": "legs",
+      "definition": "The two shorter sides of a right triangle"
+    },
+    {
+      "term": "right triangle",
+      "definition": "A triangle with one 90-degree angle"
+    },
+    {
+      "term": "square root",
+      "definition": "A number that when multiplied by itself gives the original number"
+    }
+  ],
+  "teachingNotes": "Use real-world applications like construction and navigation. Practice identifying when to use the theorem.",
+  "sample": {
+    "question": "What theorem states that a² + b² = c² in right triangles?",
+    "expectedAny": ["Pythagorean theorem", "Pythagoras theorem", "right triangle theorem", "a² + b² = c²"]
+  },
+  "truefalse": {
+    "question": "The hypotenuse is always the longest side of a right triangle.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "In a right triangle, what are the two shorter sides called?",
+    "expectedAny": ["legs", "sides", "adjacent sides", "shorter sides"]
+  },
+  "fillintheblank": {
+    "question": "The longest side of a right triangle is the ________.",
+    "expectedAny": ["hypotenuse", "longest side", "opposite side", "c side"]
+  },
+  "shortanswer": {
+    "question": "Find the hypotenuse of a right triangle with legs 3 and 4.",
+    "expectedAny": ["5", "5 units", "√(3² + 4²) = 5", "five"]
+  },
+  "wordProblems": {
+    "question": "A ladder leans against a wall. The ladder is 13 feet long and the bottom is 5 feet from the wall. How high up the wall does the ladder reach?",
+    "expectedAny": ["12 feet", "12", "√(13² - 5²) = 12", "twelve feet"]
+  }
+}

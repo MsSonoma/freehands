@@ -1,0 +1,71 @@
+{
+  "id": "day-night-sky-intermediate",
+  "title": "Day and Night Sky",
+  "grade": "1st",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "sun",
+      "definition": "The bright star that gives us light and heat during the day"
+    },
+    {
+      "term": "moon",
+      "definition": "The object we see in the sky at night that reflects sunlight"
+    },
+    {
+      "term": "stars",
+      "definition": "Tiny points of light we see in the night sky"
+    },
+    {
+      "term": "shadow",
+      "definition": "A dark shape made when something blocks the sun's light"
+    }
+  ],
+  "teachingNotes": "Observe shadows at different times of day. Use flashlight demonstrations. Discuss daily patterns of light and dark.",
+  "sample": [
+    {"question": "When do we see the sun in the sky?", "expectedAny": ["during the day", "daytime"]},
+    {"question": "What do we see in the night sky?", "expectedAny": ["moon", "stars"]},
+    {"question": "What makes a shadow?", "expectedAny": ["something blocks sunlight"]},
+    {"question": "Where does the sun rise?", "expectedAny": ["east"]},
+    {"question": "Where does the sun set?", "expectedAny": ["west"]},
+    {"question": "Is the sun a star or a planet?", "expectedAny": ["star"]},
+    {"question": "Does the moon make its own light?", "expectedAny": ["no", "it reflects sunlight"]}
+  ],
+  "truefalse": [
+    {"question": "The moon comes out at night.", "answer": true, "expectedAny": ["true"]},
+    {"question": "The Earth spins to make day and night.", "answer": true, "expectedAny": ["true"]},
+    {"question": "The sun rises in the west.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Stars are always in the sky, even in the day.", "answer": true, "expectedAny": ["true"]},
+    {"question": "The moon makes its own light.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Shadows can change during the day.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Night happens when our side of Earth faces away from the sun.", "answer": true, "expectedAny": ["true"]}
+  ],
+  "multiplechoice": [
+    {"question": "What causes day and night?", "choices": ["sun moving", "Earth spinning", "moon spinning", "stars moving"], "correct": 1, "expectedAny": ["Earth spinning"]},
+    {"question": "Why can't we see stars in the day?", "choices": ["they hide", "sun is bright", "no stars then", "clouds cover them"], "correct": 1, "expectedAny": ["sun is bright"]},
+    {"question": "The moon gets light from the ___", "choices": ["Earth", "stars", "itself", "sun"], "correct": 3, "expectedAny": ["sun"]},
+    {"question": "Shadows are longest in the ___", "choices": ["morning/evening", "noon", "night", "never"], "correct": 0, "expectedAny": ["morning/evening"]},
+    {"question": "How long is one day and night?", "choices": ["12 hours", "24 hours", "7 days", "30 days"], "correct": 1, "expectedAny": ["24 hours"]},
+    {"question": "At noon the sun is ___", "choices": ["highest", "lowest", "gone", "rising"], "correct": 0, "expectedAny": ["highest"]},
+    {"question": "We see the moon's different shapes called ___", "choices": ["phases", "faces", "slices", "glows"], "correct": 0, "expectedAny": ["phases"]}
+  ],
+  "fillintheblank": [
+    {"question": "During the day we see the _____, and at night we see the _____ and stars.", "expectedAny": ["sun, moon"]},
+    {"question": "The sun rises in the _____", "expectedAny": ["east"]},
+    {"question": "The sun sets in the _____", "expectedAny": ["west"]},
+    {"question": "A dark shape made when light is blocked is a _____", "expectedAny": ["shadow"]},
+    {"question": "The sun is our closest _____", "expectedAny": ["star"]},
+    {"question": "Earth takes _____ hours to spin once.", "expectedAny": ["24"]},
+    {"question": "The moon does not make light. It _____ sunlight.", "expectedAny": ["reflects"]}
+  ],
+  "shortanswer": [
+    {"question": "How does the sky look different at night vs day?", "expectedAny": ["night is dark with stars/moon", "day is bright with sun"]},
+    {"question": "Why do shadows change during the day?", "expectedAny": ["sun moves across the sky"]},
+    {"question": "Draw the sun's path across the sky.", "expectedAny": ["arc east to west"]},
+    {"question": "Why can't we see stars in the day?", "expectedAny": ["sun too bright"]},
+    {"question": "What would happen without the sun?", "expectedAny": ["no light", "no heat"]},
+    {"question": "When is your shadow shortest?", "expectedAny": ["noon"]},
+    {"question": "What are moon phases?", "expectedAny": ["different amounts of the moon lit by the sun"]}
+  ]
+}

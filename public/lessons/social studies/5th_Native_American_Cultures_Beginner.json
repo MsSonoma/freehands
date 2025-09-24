@@ -1,0 +1,74 @@
+{
+  "id": "5th_Native_American_Cultures_Beginner",
+  "title": "Native American Cultures and Traditions",
+  "grade": "5th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "Native Americans",
+      "definition": "The first people to live in North America before Europeans arrived"
+    },
+    {
+      "term": "tribe",
+      "definition": "A group of Native American people who share the same culture and language"
+    },
+    {
+      "term": "culture",
+      "definition": "The way of life, customs, and traditions of a group of people"
+    },
+    {
+      "term": "tradition",
+      "definition": "Customs and beliefs passed down from one generation to the next"
+    },
+    {
+      "term": "reservation",
+      "definition": "Land set aside by the government for Native American tribes"
+    }
+  ],
+  "teachingNotes": "Focus on respect for Native American cultures. Discuss different tribes and their ways of life. Emphasize that Native Americans are still an important part of America today.",
+  "sample": {
+    "question": "Who were the first people to live in North America?",
+    "expectedAny": [
+      "Native Americans",
+      "American Indians",
+      "indigenous people",
+      "first peoples"
+    ]
+  },
+  "truefalse": {
+    "question": "All Native American tribes had the same culture and traditions.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What do we call the customs and beliefs passed down through generations?",
+    "expectedAny": [
+      "traditions",
+      "cultural traditions",
+      "tribal traditions",
+      "customs"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A group of Native Americans who share the same culture is called a ________.",
+    "expectedAny": [
+      "tribe",
+      "tribal group",
+      "Native American tribe",
+      "tribal community"
+    ]
+  },
+  "shortanswer": {
+    "question": "Name two things that might be part of a Native American tribe's culture.",
+    "expectedAny": [
+      "language and art",
+      "ceremonies and stories",
+      "food and clothing",
+      "traditions and beliefs"
+    ]
+  }
+}

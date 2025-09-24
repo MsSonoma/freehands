@@ -1,0 +1,75 @@
+{
+  "id": "reading-simple-sentences-beginner",
+  "title": "Reading Simple Sentences",
+  "grade": "1st",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "sentence",
+      "definition": "A group of words that tells a complete thought"
+    },
+    {
+      "term": "capital letter",
+      "definition": "A big letter used at the beginning of sentences"
+    },
+    {
+      "term": "period",
+      "definition": "A dot that goes at the end of sentences"
+    },
+    {
+      "term": "sight words",
+      "definition": "Words we see often and should know right away"
+    }
+  ],
+  "teachingNotes": "Focus on CVC words, simple sentences, and high-frequency sight words. Practice reading aloud with expression.",
+  "sample": {
+    "question": "What goes at the end of a sentence?",
+    "expectedAny": [
+      "period",
+      "a period (.)"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "Every sentence starts with a capital letter.",
+      "answer": true,
+      "expectedAny": [
+        "sentences begin with capitals"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which is a complete sentence?",
+      "choices": [
+        "The cat",
+        "Runs fast",
+        "The cat runs fast.",
+        "cat runs"
+      ],
+      "correct": 2,
+      "expectedAny": [
+        "complete thought with punctuation"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "The dog _____ in the yard.",
+      "expectedAny": [
+        "runs",
+        "plays",
+        "sits"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "What makes a good sentence?",
+      "expectedAny": [
+        "capital letter, complete thought, period"
+      ]
+    }
+  ]
+}

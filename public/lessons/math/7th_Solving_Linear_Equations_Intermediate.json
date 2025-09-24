@@ -1,0 +1,53 @@
+{
+  "id": "7th_Solving_Linear_Equations_Intermediate",
+  "title": "Solving One-Step and Two-Step Equations",
+  "grade": "7th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "equation",
+      "definition": "A mathematical statement that two expressions are equal"
+    },
+    {
+      "term": "solution",
+      "definition": "The value that makes an equation true"
+    },
+    {
+      "term": "inverse operation",
+      "definition": "Operations that undo each other"
+    },
+    {
+      "term": "isolate",
+      "definition": "To get a variable by itself on one side of an equation"
+    },
+    {
+      "term": "balance",
+      "definition": "To keep an equation equal by doing the same thing to both sides"
+    }
+  ],
+  "teachingNotes": "Emphasize that whatever you do to one side, you must do to the other. Start with one-step equations before moving to two-step.",
+  "sample": {
+    "question": "What is a mathematical statement that two expressions are equal?",
+    "expectedAny": ["equation", "mathematical equation", "equality", "equal statement"]
+  },
+  "truefalse": {
+    "question": "To solve x + 5 = 12, you subtract 5 from both sides.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is the solution to x - 3 = 7?",
+    "expectedAny": ["x = 10", "10", "x=10", "ten"]
+  },
+  "fillintheblank": {
+    "question": "To get a variable by itself on one side is to ________ it.",
+    "expectedAny": ["isolate", "solve for", "separate", "get alone"]
+  },
+  "shortanswer": {
+    "question": "Solve: 2x + 4 = 14",
+    "expectedAny": ["x = 5", "x=5", "5", "five"]
+  },
+  "wordProblems": {
+    "question": "Maria has some stickers. After giving away 8 stickers, she has 15 left. How many stickers did she start with?",
+    "expectedAny": ["23", "23 stickers", "x - 8 = 15, x = 23", "twenty-three"]
+  }
+}

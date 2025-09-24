@@ -1,0 +1,74 @@
+{
+  "id": "5th_Environmental_Interactions_Ecosystems_Advanced",
+  "title": "Environmental Interactions and Ecosystems",
+  "grade": "5th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "ecosystem",
+      "definition": "All living and non-living things in an environment and how they interact"
+    },
+    {
+      "term": "food web",
+      "definition": "A complex network showing how energy flows through multiple food chains"
+    },
+    {
+      "term": "predator",
+      "definition": "An animal that hunts and eats other animals"
+    },
+    {
+      "term": "prey",
+      "definition": "An animal that is hunted and eaten by other animals"
+    },
+    {
+      "term": "adaptation",
+      "definition": "A characteristic that helps an organism survive in its environment"
+    }
+  ],
+  "teachingNotes": "Explore complex relationships in ecosystems. Discuss how changes in one part affect the whole system. Study adaptations that help organisms survive in different environments.",
+  "sample": {
+    "question": "How is a food web different from a food chain?",
+    "expectedAny": [
+      "food web has multiple chains",
+      "more complex connections",
+      "shows all feeding relationships",
+      "interconnected chains"
+    ]
+  },
+  "truefalse": {
+    "question": "If one species disappears from an ecosystem, it can affect many other species.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is an example of an adaptation?",
+    "expectedAny": [
+      "thick fur in cold climates",
+      "camouflage coloring",
+      "sharp claws for hunting",
+      "survival characteristic"
+    ]
+  },
+  "fillintheblank": {
+    "question": "In a predator-prey relationship, the hawk is the ________ and the mouse is the ________.",
+    "expectedAny": [
+      "predator, prey",
+      "hunter, hunted",
+      "predator and prey",
+      "predator/prey"
+    ]
+  },
+  "shortanswer": {
+    "question": "What might happen to an ecosystem if all the predators were removed?",
+    "expectedAny": [
+      "prey overpopulation",
+      "plant damage from overgrazing",
+      "imbalance",
+      "ecosystem disruption"
+    ]
+  }
+}

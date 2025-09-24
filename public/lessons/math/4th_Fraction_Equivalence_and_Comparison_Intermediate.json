@@ -1,0 +1,68 @@
+{
+  "id": "fraction-equivalence-comparison-intermediate",
+  "title": "Fraction Equivalence and Comparison",
+  "grade": "4th",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {"term": "equivalent fractions", "definition": "Fractions that represent the same value but have different numerators and denominators"},
+    {"term": "common denominator", "definition": "The same denominator used in two or more fractions to compare them"},
+    {"term": "benchmark fraction", "definition": "Common fractions like 1/2, 1/4, 3/4 used to estimate and compare"},
+    {"term": "simplify", "definition": "To write a fraction in its simplest form using the smallest possible numbers"}
+  ],
+  "teachingNotes": "Use fraction strips and number lines. Focus on visual models before abstract algorithms. Practice finding equivalent fractions through multiplication and division.",
+  "sample": [
+    {"question": "Name two fractions equivalent to 3/4.", "expectedAny": ["6/8", "9/12"]},
+    {"question": "Show on a number line where 1/2 and 2/4 are.", "expectedAny": ["same point", "equivalent"]},
+    {"question": "Write 5/10 in simplest form.", "expectedAny": ["1/2"]},
+    {"question": "Are 4/6 and 2/3 equivalent? Explain.", "expectedAny": ["divide by 2", "yes, both equal two-thirds"]},
+    {"question": "Find two fractions equivalent to 2/5.", "expectedAny": ["4/10", "6/15"]},
+    {"question": "Which is larger: 3/8 or 1/4?", "expectedAny": ["3/8", "0.375 vs 0.25"]},
+    {"question": "What is a common denominator for 2/3 and 5/6?", "expectedAny": ["6"]}
+  ],
+  "truefalse": [
+    {"question": "To compare fractions with different denominators, you need a common denominator.", "answer": true, "expectedAny": ["rename to like denominators"]},
+    {"question": "Multiplying the numerator and denominator by the same number changes the value of a fraction.", "answer": false, "expectedAny": ["equivalent fraction rule"]},
+    {"question": "3/4 equals 0.75.", "answer": true, "expectedAny": ["75 hundredths"]},
+    {"question": "2/5 is greater than 1/2.", "answer": false, "expectedAny": ["0.4 < 0.5"]},
+    {"question": "Cross-multiplying can help compare fractions with unlike denominators.", "answer": true, "expectedAny": ["compare products"]},
+    {"question": "6/9 simplifies to 3/6.", "answer": false, "expectedAny": ["6/9 = 2/3"]},
+    {"question": "Equivalent fractions name the same point on a number line.", "answer": true, "expectedAny": ["same location"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which fraction is greater than 2/3?", "choices": ["5/9", "3/5", "7/9", "1/2"], "correct": 2, "expectedAny": ["7/9 > 2/3"]},
+    {"question": "Which pair is equivalent?", "choices": ["3/6 and 1/3", "4/8 and 1/2", "2/5 and 4/6", "5/10 and 3/5"], "correct": 1, "expectedAny": ["4/8 = 1/2"]},
+    {"question": "What is 2/3 as a decimal?", "choices": ["0.23", "0.6", "0.66...", "0.3"], "correct": 2, "expectedAny": ["repeating 6"]},
+    {"question": "Which is the least?", "choices": ["3/5", "4/7", "1/2", "5/8"], "correct": 1, "expectedAny": ["4/7 ≈ 0.571, smallest among"]},
+    {"question": "A common denominator for 3/4 and 2/5 is:", "choices": ["9", "10", "15", "20"], "correct": 3, "expectedAny": ["LCM 4 and 5"]},
+    {"question": "Which fraction equals 0.2?", "choices": ["1/2", "1/4", "1/5", "2/5"], "correct": 2, "expectedAny": ["one fifth"]},
+    {"question": "Which is greater: 5/12 or 1/3?", "choices": ["5/12", "1/3", "equal", "cannot compare"], "correct": 0, "expectedAny": ["5/12 = 0.416..., 1/3 ≈ 0.333..."]}
+  ],
+  "fillintheblank": [
+    {"question": "The fraction 8/12 simplified is _____ because both 8 and 12 can be divided by _____.", "expectedAny": ["2/3", "4"]},
+    {"question": "To compare 3/4 and 5/8, find a common denominator of _____.", "expectedAny": ["8"]},
+    {"question": "6/10 is equivalent to _____.", "expectedAny": ["3/5"]},
+    {"question": "A benchmark fraction close to 5/8 is _____.", "expectedAny": ["1/2"]},
+    {"question": "To simplify 9/12, divide numerator and denominator by _____ to get 3/4.", "expectedAny": ["3"]},
+    {"question": "The top number in a fraction is called the _____.", "expectedAny": ["numerator"]},
+    {"question": "3/4 is the same point as _____/16 on a number line.", "expectedAny": ["12"]}
+  ],
+  "shortanswer": [
+    {"question": "How can you tell if 3/5 and 6/10 are equivalent without a calculator?", "expectedAny": ["multiply 3/5 by 2/2 = 6/10"]},
+    {"question": "Explain how to use cross-multiplication to compare 3/7 and 2/5.", "expectedAny": ["3×5 vs 7×2", "15 vs 14"]},
+    {"question": "Why are 2/4 and 1/2 equivalent?", "expectedAny": ["divide by 2/2"]},
+    {"question": "Describe how to convert 3/4 to a decimal using hundredths.", "expectedAny": ["75/100 = 0.75"]},
+    {"question": "Give an example of two non-equivalent fractions and explain.", "expectedAny": ["2/3 and 3/5"]},
+    {"question": "How can benchmark fractions help compare 5/8 and 3/5?", "expectedAny": ["compare to 1/2 and 1", "relative distances"]},
+    {"question": "What does it mean to simplify a fraction?", "expectedAny": ["lowest terms", "divide by GCF"]}
+  ],
+  "wordProblems": [
+    {"question": "Sarah ate 2/8 of a pizza and Jake ate 1/4 of the same pizza. Who ate more, or did they eat the same amount?", "expectedAny": ["same amount", "2/8 = 1/4"]},
+    {"question": "A recipe uses 3/4 cup of sugar. You have a 1/8 cup scoop. How many scoops do you need?", "expectedAny": ["6"]},
+    {"question": "Liam ran 2/3 mile and Ava ran 3/5 mile. Who ran farther?", "expectedAny": ["Liam", "2/3 > 3/5"]},
+    {"question": "Which is more, 5/8 of a cake or 0.6 of a cake?", "expectedAny": ["equal?", "5/8 = 0.625, so 5/8 is more"]},
+    {"question": "You shade 6/10 of a grid and your friend shades 3/5 of an identical grid. Compare the amounts.", "expectedAny": ["equal", "same amount"]},
+    {"question": "A trail map shows 1/4 mile and 2/8 mile between two points. Are these distances the same?", "expectedAny": ["yes, equivalent"]},
+    {"question": "Which is closer to 1, 7/8 or 5/6?", "expectedAny": ["7/8", "0.875 vs 0.833..."]}
+  ]
+}

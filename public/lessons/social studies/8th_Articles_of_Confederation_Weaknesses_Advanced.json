@@ -1,0 +1,73 @@
+{
+  "id": "8th_Articles_of_Confederation_Weaknesses_Advanced",
+  "title": "Articles of Confederation and Early Government",
+  "grade": "8th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "Articles of Confederation",
+      "definition": "America's first constitution that created a weak central government"
+    },
+    {
+      "term": "confederation",
+      "definition": "A loose alliance of independent states"
+    },
+    {
+      "term": "federal government",
+      "definition": "The central government of a nation"
+    },
+    {
+      "term": "Shays' Rebellion",
+      "definition": "A farmers' revolt that showed the weakness of the Articles"
+    },
+    {
+      "term": "Constitutional Convention",
+      "definition": "The meeting held to revise the Articles of Confederation"
+    }
+  ],
+  "teachingNotes": "Explain why the Articles failed and how this led to the Constitutional Convention. Compare to later constitution.",
+  "sample": {
+    "question": "What was America's first constitution?",
+    "expectedAny": [
+      "Articles of Confederation",
+      "first constitution",
+      "original constitution",
+      "confederation articles"
+    ]
+  },
+  "truefalse": {
+    "question": "The Articles of Confederation created a strong central government.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What event showed the weakness of the Articles?",
+    "expectedAny": [
+      "Shays' Rebellion",
+      "farmers' revolt",
+      "Massachusetts uprising",
+      "debt rebellion"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A loose alliance of independent states is called a ________.",
+    "expectedAny": [
+      "confederation",
+      "alliance",
+      "league",
+      "union"
+    ]
+  },
+  "shortanswer": {
+    "question": "What was the main weakness of the Articles of Confederation?",
+    "expectedAny": [
+      "weak central government",
+      "couldn't tax or enforce laws",
+      "no power to govern effectively"
+    ]
+  }
+}

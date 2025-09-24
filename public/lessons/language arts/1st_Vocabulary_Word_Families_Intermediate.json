@@ -1,0 +1,81 @@
+{
+  "id": "vocabulary-word-families-intermediate",
+  "title": "Vocabulary and Word Families",
+  "grade": "1st",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "word family",
+      "definition": "Words that end with the same letters and sounds"
+    },
+    {
+      "term": "rhyme",
+      "definition": "Words that end with the same sound"
+    },
+    {
+      "term": "vocabulary",
+      "definition": "All the words you know and understand"
+    },
+    {
+      "term": "meaning",
+      "definition": "What a word tells us about"
+    }
+  ],
+  "teachingNotes": "Focus on common word families like -at, -an, -it. Use word wheels and flip books. Connect to spelling patterns.",
+  "sample": {
+    "question": "What word family do 'cat', 'hat', and 'bat' belong to?",
+    "expectedAny": [
+      "-at family",
+      "at family",
+      "words ending in at"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "Words in the same family rhyme with each other.",
+      "answer": true,
+      "expectedAny": [
+        "word family words end with the same sound"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which word belongs in the -an family?",
+      "choices": [
+        "cat",
+        "run",
+        "can",
+        "big"
+      ],
+      "correct": 2,
+      "expectedAny": [
+        "can ends with -an"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "If you know 'sit', you can read 'hit' and '_____'.",
+      "expectedAny": [
+        "bit",
+        "fit",
+        "pit",
+        "wit"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Make three words that belong to the -ig family.",
+      "expectedAny": [
+        "big",
+        "dig",
+        "pig",
+        "fig",
+        "wig"
+      ]
+    }
+  ]
+}

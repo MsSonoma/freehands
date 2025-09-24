@@ -1,0 +1,69 @@
+{
+	"id": "3rd_Multiplication_Facts_to_10x10_Beginner",
+	"title": "Multiplication Facts to 10×10",
+	"grade": "3rd",
+	"difficulty": "Beginner",
+	"featured": false,
+	"vocab": [
+		{"term": "multiply", "definition": "To add the same number again and again"},
+		{"term": "product", "definition": "The answer to a multiplication problem"},
+		{"term": "factor", "definition": "A number being multiplied"},
+		{"term": "times table", "definition": "Facts that show products of numbers"},
+		{"term": "array", "definition": "A set of objects arranged in rows and columns"}
+	],
+	"teachingNotes": "Practice 0–10 facts with skip counting, arrays, and number lines. Emphasize the commutative property (a×b=b×a) and patterns (×0, ×1, ×2, ×5, ×10).",
+	"sample": [
+		{"question": "What is 3 × 4?", "expectedAny": ["12"]},
+		{"question": "What is 5 × 6?", "expectedAny": ["30"]},
+		{"question": "What is 7 × 8?", "expectedAny": ["56"]},
+		{"question": "What is 9 × 2?", "expectedAny": ["18"]},
+		{"question": "What is 4 × 4?", "expectedAny": ["16"]},
+		{"question": "What is 6 × 7?", "expectedAny": ["42"]},
+		{"question": "What is 8 × 3?", "expectedAny": ["24"]}
+	],
+	"truefalse": [
+		{"question": "5 × 3 = 15", "answer": true},
+		{"question": "6 × 4 = 24", "answer": true},
+		{"question": "7 × 7 = 48", "answer": false},
+		{"question": "8 × 5 = 40", "answer": true},
+		{"question": "9 × 9 = 81", "answer": true},
+		{"question": "3 × 8 = 32", "answer": false},
+		{"question": "10 × 6 = 60", "answer": true}
+	],
+	"multiplechoice": [
+		{"question": "4 × 7 = ?", "choices": ["24", "26", "28", "30"], "correct": 2},
+		{"question": "9 × 6 = ?", "choices": ["52", "54", "56", "58"], "correct": 1},
+		{"question": "8 × 8 = ?", "choices": ["62", "64", "66", "68"], "correct": 1},
+		{"question": "5 × 9 = ?", "choices": ["43", "44", "45", "46"], "correct": 2},
+		{"question": "7 × 6 = ?", "choices": ["40", "41", "42", "43"], "correct": 2},
+		{"question": "3 × 9 = ?", "choices": ["25", "26", "27", "28"], "correct": 2},
+		{"question": "10 × 10 = ?", "choices": ["90", "100", "110", "120"], "correct": 1}
+	],
+	"fillintheblank": [
+		{"question": "6 × 8 = ___", "expectedAny": ["48"]},
+		{"question": "7 × 5 = ___", "expectedAny": ["35"]},
+		{"question": "4 × 9 = ___", "expectedAny": ["36"]},
+		{"question": "8 × 7 = ___", "expectedAny": ["56"]},
+		{"question": "5 × 5 = ___", "expectedAny": ["25"]},
+		{"question": "9 × 4 = ___", "expectedAny": ["36"]},
+		{"question": "6 × 6 = ___", "expectedAny": ["36"]}
+	],
+	"shortanswer": [
+		{"question": "What pattern do you see in the 5s times table?", "expectedAny": ["ends in 0 or 5"]},
+		{"question": "How are 3×4 and 4×3 related?", "expectedAny": ["commutative property", "same product"]},
+		{"question": "What's a trick for multiplying by 9?", "expectedAny": ["fingers method", "digits sum to 9"]},
+		{"question": "Why is 10 easy to multiply?", "expectedAny": ["add a zero", "times ten rule"]},
+		{"question": "Name three square numbers up to 10×10.", "expectedAny": ["1", "4", "9", "16", "25", "36", "49", "64", "81", "100"]},
+		{"question": "Use 5×6 to find 6×6.", "expectedAny": ["30+6=36"]},
+		{"question": "What is always true about multiplying even numbers?", "expectedAny": ["product is even"]}
+	],
+	"wordProblems": [
+		{"question": "There are 6 boxes with 7 cookies each. How many cookies total?", "expectedAny": ["42"]},
+		{"question": "A classroom has 5 rows of 8 desks. How many desks?", "expectedAny": ["40"]},
+		{"question": "Each pizza has 8 slices. How many slices in 9 pizzas?", "expectedAny": ["72"]},
+		{"question": "Books come in packs of 4. How many books in 7 packs?", "expectedAny": ["28"]},
+		{"question": "A parking lot has 6 rows with 9 spaces each. Total spaces?", "expectedAny": ["54"]},
+		{"question": "Each child has 10 fingers. How many fingers do 8 children have?", "expectedAny": ["80"]},
+		{"question": "There are 7 days in a week. How many days in 6 weeks?", "expectedAny": ["42"]}
+	]
+}

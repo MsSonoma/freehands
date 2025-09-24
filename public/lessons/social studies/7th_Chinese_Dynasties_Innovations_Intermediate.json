@@ -1,0 +1,73 @@
+{
+  "id": "7th_Chinese_Dynasties_Innovations_Intermediate",
+  "title": "Chinese Dynasties and Technological Innovations",
+  "grade": "7th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "dynasty",
+      "definition": "A series of rulers from the same family"
+    },
+    {
+      "term": "Mandate of Heaven",
+      "definition": "The Chinese belief that rulers had divine approval"
+    },
+    {
+      "term": "innovation",
+      "definition": "A new invention or way of doing things"
+    },
+    {
+      "term": "porcelain",
+      "definition": "Fine pottery developed in China"
+    },
+    {
+      "term": "civil service",
+      "definition": "A system where government jobs are based on merit"
+    }
+  ],
+  "teachingNotes": "Discuss major Chinese inventions like gunpowder, printing, and the compass. Explain how dynasties rose and fell based on the Mandate of Heaven.",
+  "sample": {
+    "question": "What is a series of rulers from the same family called?",
+    "expectedAny": [
+      "dynasty",
+      "royal family",
+      "ruling family",
+      "hereditary rule"
+    ]
+  },
+  "truefalse": {
+    "question": "The Chinese invented gunpowder, printing, and the compass.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What Chinese belief said rulers had divine approval?",
+    "expectedAny": [
+      "Mandate of Heaven",
+      "divine right",
+      "heavenly mandate",
+      "celestial approval"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A new invention or way of doing things is called an ________.",
+    "expectedAny": [
+      "innovation",
+      "invention",
+      "advancement",
+      "development"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did the civil service system improve Chinese government?",
+    "expectedAny": [
+      "jobs based on merit not family",
+      "qualified people in government",
+      "reduced corruption"
+    ]
+  }
+}

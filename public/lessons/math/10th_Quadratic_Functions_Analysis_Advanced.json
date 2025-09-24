@@ -1,0 +1,53 @@
+{
+  "id": "10th_Quadratic_Functions_Analysis_Advanced",
+  "title": "Quadratic Functions: Analysis and Applications",
+  "grade": "10th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "quadratic function",
+      "definition": "A function of the form f(x) = ax² + bx + c where a ≠ 0"
+    },
+    {
+      "term": "vertex",
+      "definition": "The highest or lowest point on a parabola"
+    },
+    {
+      "term": "discriminant",
+      "definition": "The expression b² - 4ac that determines the nature of the roots"
+    },
+    {
+      "term": "axis of symmetry",
+      "definition": "The vertical line that divides a parabola into two mirror images"
+    },
+    {
+      "term": "parabola",
+      "definition": "The U-shaped graph of a quadratic function"
+    }
+  ],
+  "teachingNotes": "Use graphing technology to explore transformations. Connect to real-world applications like projectile motion and optimization problems.",
+  "sample": {
+    "question": "What is a function of the form f(x) = ax² + bx + c called?",
+    "expectedAny": ["quadratic function", "quadratic", "second degree function", "parabolic function"]
+  },
+  "truefalse": {
+    "question": "If the discriminant is negative, the parabola has no x-intercepts.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What determines the nature of the roots in a quadratic equation?",
+    "expectedAny": ["discriminant", "b² - 4ac", "discriminant value", "b squared minus 4ac"]
+  },
+  "fillintheblank": {
+    "question": "The highest or lowest point on a parabola is called the ________.",
+    "expectedAny": ["vertex", "turning point", "extremum", "maximum or minimum"]
+  },
+  "shortanswer": {
+    "question": "How do you find the vertex of f(x) = 2x² - 8x + 3?",
+    "expectedAny": ["use x = -b/2a, then substitute", "x = 8/4 = 2, f(2) = -5", "vertex is (2, -5)"]
+  },
+  "wordProblems": {
+    "question": "A ball's height is h(t) = -16t² + 48t + 6. Find the maximum height.",
+    "expectedAny": ["42 feet", "vertex at t = 1.5, h = 42", "maximum is 42 feet", "42"]
+  }
+}

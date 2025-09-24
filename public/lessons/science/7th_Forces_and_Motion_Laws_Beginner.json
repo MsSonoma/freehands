@@ -1,0 +1,74 @@
+{
+  "id": "7th_Forces_and_Motion_Laws_Beginner",
+  "title": "Newton's Laws of Motion",
+  "grade": "7th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "force",
+      "definition": "A push or pull that can change an object's motion"
+    },
+    {
+      "term": "motion",
+      "definition": "The change in position of an object over time"
+    },
+    {
+      "term": "inertia",
+      "definition": "An object's tendency to resist changes in motion"
+    },
+    {
+      "term": "acceleration",
+      "definition": "The rate at which an object's velocity changes"
+    },
+    {
+      "term": "friction",
+      "definition": "A force that opposes motion between surfaces"
+    }
+  ],
+  "teachingNotes": "Use everyday examples to explain Newton's laws. Demonstrate with simple experiments like rolling balls or pushing objects.",
+  "sample": {
+    "question": "What is a push or pull that can change an object's motion?",
+    "expectedAny": [
+      "force",
+      "applied force",
+      "external force",
+      "push or pull"
+    ]
+  },
+  "truefalse": {
+    "question": "An object at rest will stay at rest unless a force acts on it.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which force opposes motion?",
+    "expectedAny": [
+      "friction",
+      "frictional force",
+      "resistance",
+      "drag"
+    ]
+  },
+  "fillintheblank": {
+    "question": "An object's tendency to resist changes in motion is called ________.",
+    "expectedAny": [
+      "inertia",
+      "resistance to change",
+      "tendency to resist",
+      "momentum"
+    ]
+  },
+  "shortanswer": {
+    "question": "What happens when you push harder on an object?",
+    "expectedAny": [
+      "it accelerates more",
+      "moves faster",
+      "increases acceleration",
+      "changes motion more"
+    ]
+  }
+}

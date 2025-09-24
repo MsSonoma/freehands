@@ -1,0 +1,74 @@
+{
+  "id": "11th_Progressive_Era_Social_Reform_Beginner",
+  "title": "Progressive Era and Social Reform",
+  "grade": "11th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "Progressive Era",
+      "definition": "Period of social and political reform in early 1900s America"
+    },
+    {
+      "term": "muckraker",
+      "definition": "Journalist who exposed corruption and social problems"
+    },
+    {
+      "term": "trust busting",
+      "definition": "Government action to break up large business monopolies"
+    },
+    {
+      "term": "settlement house",
+      "definition": "Community center providing services to urban poor and immigrants"
+    },
+    {
+      "term": "suffrage",
+      "definition": "Right to vote in political elections"
+    }
+  ],
+  "teachingNotes": "Focus on major reforms and key figures. Connect Progressive ideals to modern social movements.",
+  "sample": {
+    "question": "What was the period of social reform in early 1900s called?",
+    "expectedAny": [
+      "Progressive Era",
+      "Progressive Period",
+      "Age of Reform",
+      "Progressive Movement"
+    ]
+  },
+  "truefalse": {
+    "question": "Muckrakers were journalists who exposed social problems.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What provided services to urban poor and immigrants?",
+    "expectedAny": [
+      "settlement house",
+      "community center",
+      "social house",
+      "immigrant center"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Government action to break up monopolies was called trust ________.",
+    "expectedAny": [
+      "busting",
+      "breaking",
+      "dissolution",
+      "destruction"
+    ]
+  },
+  "shortanswer": {
+    "question": "What were main goals of Progressive reformers?",
+    "expectedAny": [
+      "reduce corruption",
+      "help poor",
+      "regulate business",
+      "expand democracy"
+    ]
+  }
+}

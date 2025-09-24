@@ -1,0 +1,53 @@
+{
+  "id": "6th_Statistics_Data_Analysis_Intermediate",
+  "title": "Statistics and Data Analysis",
+  "grade": "6th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "statistics",
+      "definition": "The collection, organization, and analysis of numerical data"
+    },
+    {
+      "term": "mean",
+      "definition": "The average of a set of numbers, found by adding all values and dividing by the count"
+    },
+    {
+      "term": "median",
+      "definition": "The middle number in a set of data when arranged in order"
+    },
+    {
+      "term": "mode",
+      "definition": "The number that appears most often in a set of data"
+    },
+    {
+      "term": "range",
+      "definition": "The difference between the highest and lowest values in a data set"
+    }
+  ],
+  "teachingNotes": "Use real data sets that students can relate to. Practice creating different types of graphs. Discuss when each measure of central tendency is most useful.",
+  "sample": {
+    "question": "What is the middle number in an ordered set of data called?",
+    "expectedAny": ["median", "middle value", "central value", "middle number"]
+  },
+  "truefalse": {
+    "question": "The mean is found by adding all values and dividing by the number of values.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is the mode of this data set: 3, 5, 7, 5, 9, 5, 2?",
+    "expectedAny": ["5", "five", "the number 5", "5 appears most"]
+  },
+  "fillintheblank": {
+    "question": "The difference between the highest and lowest values is the ________.",
+    "expectedAny": ["range", "data range", "value range", "spread"]
+  },
+  "shortanswer": {
+    "question": "Find the mean of these test scores: 85, 92, 78, 95, 90.",
+    "expectedAny": ["88", "88 points", "(85+92+78+95+90)÷5 = 88", "average is 88"]
+  },
+  "wordProblems": {
+    "question": "A basketball player scored these points in 5 games: 12, 18, 15, 21, 14. What is the range of his scores?",
+    "expectedAny": ["9 points", "9", "21-12=9", "range is 9"]
+  }
+}

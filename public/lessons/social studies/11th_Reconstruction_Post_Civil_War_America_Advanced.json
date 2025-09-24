@@ -1,0 +1,74 @@
+{
+  "id": "11th_Reconstruction_Post_Civil_War_America_Advanced",
+  "title": "Reconstruction and Post-Civil War America",
+  "grade": "11th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "Black Codes",
+      "definition": "Southern laws designed to restrict freedom and rights of African Americans"
+    },
+    {
+      "term": "Redeemers",
+      "definition": "Southern Democrats who regained political control after Reconstruction"
+    },
+    {
+      "term": "disenfranchisement",
+      "definition": "Systematic denial of voting rights through legal and extralegal means"
+    },
+    {
+      "term": "Plessy v. Ferguson",
+      "definition": "Supreme Court case establishing 'separate but equal' doctrine"
+    },
+    {
+      "term": "Lost Cause mythology",
+      "definition": "Romanticized narrative of Confederacy that justified white supremacy"
+    }
+  ],
+  "teachingNotes": "Examine complex political and social dynamics of Reconstruction failure. Analyze historiographical debates and long-term consequences.",
+  "sample": {
+    "question": "What were Southern laws designed to restrict African American freedom?",
+    "expectedAny": [
+      "Black Codes",
+      "restrictive laws",
+      "discriminatory statutes",
+      "racial codes"
+    ]
+  },
+  "truefalse": {
+    "question": "Plessy v. Ferguson established the 'separate but equal' doctrine.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is systematic denial of voting rights called?",
+    "expectedAny": [
+      "disenfranchisement",
+      "voter suppression",
+      "electoral exclusion",
+      "political disenfranchisement"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Southern Democrats who regained control were called ________.",
+    "expectedAny": [
+      "Redeemers",
+      "Democratic Redeemers",
+      "Conservative Democrats",
+      "Bourbon Democrats"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did Lost Cause mythology affect American memory?",
+    "expectedAny": [
+      "romanticized slavery",
+      "justified segregation",
+      "minimized Confederate guilt",
+      "shaped historical narrative"
+    ]
+  }
+}

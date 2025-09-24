@@ -1,0 +1,73 @@
+{
+  "id": "9th_Poetry_Analysis_Figurative_Language_Beginner",
+  "title": "Poetry Analysis: Figurative Language and Imagery",
+  "grade": "9th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "figurative language",
+      "definition": "Language that uses figures of speech for effect, not literal meaning"
+    },
+    {
+      "term": "metaphor",
+      "definition": "Direct comparison between two unlike things without using 'like' or 'as'"
+    },
+    {
+      "term": "simile",
+      "definition": "Comparison using 'like' or 'as' to connect two unlike things"
+    },
+    {
+      "term": "imagery",
+      "definition": "Vivid descriptive language that appeals to the senses"
+    },
+    {
+      "term": "personification",
+      "definition": "Giving human characteristics to non-human things"
+    }
+  ],
+  "teachingNotes": "Use accessible poems to identify figurative language. Practice explaining how literary devices contribute to meaning and mood.",
+  "sample": {
+    "question": "What is language that uses figures of speech for effect?",
+    "expectedAny": [
+      "figurative language",
+      "non-literal language",
+      "literary language",
+      "poetic language"
+    ]
+  },
+  "truefalse": {
+    "question": "A simile uses 'like' or 'as' to make comparisons.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What gives human characteristics to non-human things?",
+    "expectedAny": [
+      "personification",
+      "humanization",
+      "anthropomorphism",
+      "human qualities"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Vivid descriptive language that appeals to senses is called ________.",
+    "expectedAny": [
+      "imagery",
+      "sensory language",
+      "descriptive language",
+      "vivid description"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does figurative language enhance poetry?",
+    "expectedAny": [
+      "creates vivid images",
+      "adds emotional impact",
+      "makes abstract concepts concrete"
+    ]
+  }
+}

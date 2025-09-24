@@ -1,0 +1,74 @@
+{
+  "id": "9th_Age_Exploration_Colonization_Trade_Beginner",
+  "title": "Age of Exploration: Colonization and Global Trade",
+  "grade": "9th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "exploration",
+      "definition": "Period of European overseas expansion and discovery (1400s-1600s)"
+    },
+    {
+      "term": "colonization",
+      "definition": "Establishing settlements and political control over distant territories"
+    },
+    {
+      "term": "mercantilism",
+      "definition": "Economic theory that national wealth depends on accumulating gold and favorable trade"
+    },
+    {
+      "term": "conquistador",
+      "definition": "Spanish explorer and conqueror in the Americas"
+    },
+    {
+      "term": "columbian exchange",
+      "definition": "Transfer of plants, animals, and diseases between Old and New Worlds"
+    }
+  ],
+  "teachingNotes": "Discuss motivations for exploration and consequences for indigenous peoples. Analyze the global impact of European expansion.",
+  "sample": {
+    "question": "What was the period of European overseas expansion called?",
+    "expectedAny": [
+      "age of exploration",
+      "exploration period",
+      "age of discovery",
+      "overseas expansion"
+    ]
+  },
+  "truefalse": {
+    "question": "Mercantilism believed national wealth depended on accumulating gold.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What were Spanish explorers in the Americas called?",
+    "expectedAny": [
+      "conquistadors",
+      "conquistadores",
+      "Spanish conquerors",
+      "Spanish explorers"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The transfer of plants and animals between worlds was the ________ exchange.",
+    "expectedAny": [
+      "Columbian",
+      "Columbus",
+      "trans-Atlantic",
+      "intercontinental"
+    ]
+  },
+  "shortanswer": {
+    "question": "What motivated European exploration in the 1400s-1500s?",
+    "expectedAny": [
+      "desire for spices and gold",
+      "spread Christianity",
+      "find new trade routes",
+      "competition between nations"
+    ]
+  }
+}

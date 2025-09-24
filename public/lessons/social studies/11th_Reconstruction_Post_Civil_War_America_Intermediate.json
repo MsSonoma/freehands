@@ -1,0 +1,74 @@
+{
+  "id": "11th_Reconstruction_Post_Civil_War_America_Intermediate",
+  "title": "Reconstruction and Post-Civil War America",
+  "grade": "11th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "Radical Reconstruction",
+      "definition": "Congressional plan for strict control and transformation of the South"
+    },
+    {
+      "term": "Fifteenth Amendment",
+      "definition": "Constitutional amendment prohibiting denial of voting rights based on race"
+    },
+    {
+      "term": "Compromise of 1877",
+      "definition": "Agreement that ended Reconstruction in exchange for electoral victory"
+    },
+    {
+      "term": "Ku Klux Klan",
+      "definition": "White supremacist organization that terrorized African Americans"
+    },
+    {
+      "term": "scalawag",
+      "definition": "Southern white who supported Republican Reconstruction policies"
+    }
+  ],
+  "teachingNotes": "Analyze competing Reconstruction plans and their consequences. Examine resistance to change and long-term effects.",
+  "sample": {
+    "question": "What was the Congressional plan for strict Southern control?",
+    "expectedAny": [
+      "Radical Reconstruction",
+      "Congressional Reconstruction",
+      "Radical Republican plan",
+      "strict Reconstruction"
+    ]
+  },
+  "truefalse": {
+    "question": "The Fifteenth Amendment prohibited denial of voting rights based on race.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What agreement ended Reconstruction?",
+    "expectedAny": [
+      "Compromise of 1877",
+      "1877 Compromise",
+      "Electoral Compromise",
+      "Hayes Compromise"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Southern whites who supported Republican policies were called ________.",
+    "expectedAny": [
+      "scalawags",
+      "Republican sympathizers",
+      "Southern Republicans",
+      "collaborators"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did the Compromise of 1877 affect African Americans?",
+    "expectedAny": [
+      "ended federal protection",
+      "allowed segregation",
+      "withdrew troops",
+      "reversed progress"
+    ]
+  }
+}

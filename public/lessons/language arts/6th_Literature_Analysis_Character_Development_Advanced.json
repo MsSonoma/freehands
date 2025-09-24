@@ -1,0 +1,74 @@
+{
+  "id": "6th_Literature_Analysis_Character_Development_Advanced",
+  "title": "Literature Analysis: Character Development and Motivation",
+  "grade": "6th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "character development",
+      "definition": "How a character changes and grows throughout a story"
+    },
+    {
+      "term": "motivation",
+      "definition": "The reason why a character acts or behaves in a certain way"
+    },
+    {
+      "term": "protagonist",
+      "definition": "The main character in a story"
+    },
+    {
+      "term": "antagonist",
+      "definition": "The character or force that opposes the main character"
+    },
+    {
+      "term": "character trait",
+      "definition": "A quality or characteristic that describes a character's personality"
+    }
+  ],
+  "teachingNotes": "Use character maps and graphic organizers. Analyze how characters change from beginning to end. Discuss internal vs. external conflicts that drive character development.",
+  "sample": {
+    "question": "What do we call the main character in a story?",
+    "expectedAny": [
+      "protagonist",
+      "main character",
+      "hero",
+      "central character"
+    ]
+  },
+  "truefalse": {
+    "question": "Character development shows how a character changes throughout a story.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the character or force that opposes the main character?",
+    "expectedAny": [
+      "antagonist",
+      "villain",
+      "opposing character",
+      "conflict creator"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The reason why a character acts a certain way is their ________.",
+    "expectedAny": [
+      "motivation",
+      "motive",
+      "driving force",
+      "reason"
+    ]
+  },
+  "shortanswer": {
+    "question": "How can you tell if a character has developed during a story?",
+    "expectedAny": [
+      "compare beginning to end",
+      "character changes attitudes or actions",
+      "learns lessons or grows",
+      "overcomes challenges differently"
+    ]
+  }
+}

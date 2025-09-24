@@ -1,0 +1,63 @@
+{
+  "id": "addition-facts-to-10-beginner",
+  "title": "Addition Facts to 10",
+  "grade": "1st",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {"term": "add", "definition": "To put numbers together to find the total"},
+    {"term": "sum", "definition": "The answer when you add numbers together"},
+    {"term": "plus", "definition": "The word and sign (+) that means add"},
+    {"term": "equal", "definition": "The same amount; shown with the = sign"}
+  ],
+  "teachingNotes": "Use manipulatives like counting bears or blocks. Practice with fingers and number lines. Focus on combinations that make 10.",
+  "sample": [
+    {"question": "What is 3 + 2?", "expectedAny": ["5", "five"]},
+    {"question": "What is 1 + 4?", "expectedAny": ["5"]},
+    {"question": "What is 5 + 0?", "expectedAny": ["5"]},
+    {"question": "What is 2 + 6?", "expectedAny": ["8"]},
+    {"question": "What is 4 + 4?", "expectedAny": ["8"]},
+    {"question": "What is 3 + 5?", "expectedAny": ["8"]},
+    {"question": "What is 7 + 1?", "expectedAny": ["8"]}
+  ],
+  "truefalse": [
+    {"question": "3 + 3 equals 6.", "answer": true, "expectedAny": ["3 + 3 = 6"]},
+    {"question": "4 + 2 equals 7.", "answer": false, "expectedAny": ["4 + 2 = 6"]},
+    {"question": "5 + 0 equals 5.", "answer": true, "expectedAny": ["adding zero keeps number same"]},
+    {"question": "2 + 2 equals 5.", "answer": false, "expectedAny": ["2 + 2 = 4"]},
+    {"question": "6 + 1 equals 7.", "answer": true, "expectedAny": ["6 + 1 = 7"]},
+    {"question": "4 + 5 equals 9.", "answer": true, "expectedAny": ["4 + 5 = 9"]}
+  ],
+  "multiplechoice": [
+    {"question": "What is 3 + 4?", "choices": ["5", "6", "7", "8"], "correct": 2, "expectedAny": ["3 + 4 = 7"]},
+    {"question": "What is 2 + 3?", "choices": ["4", "5", "6", "7"], "correct": 1, "expectedAny": ["2 + 3 = 5"]},
+    {"question": "What is 5 + 2?", "choices": ["6", "7", "8", "9"], "correct": 1, "expectedAny": ["5 + 2 = 7"]},
+    {"question": "What is 1 + 8?", "choices": ["7", "8", "9", "10"], "correct": 2, "expectedAny": ["1 + 8 = 9"]},
+    {"question": "What is 6 + 3?", "choices": ["8", "9", "10", "11"], "correct": 1, "expectedAny": ["6 + 3 = 9"]},
+    {"question": "What is 4 + 0?", "choices": ["0", "3", "4", "5"], "correct": 2, "expectedAny": ["4 + 0 = 4"]}
+  ],
+  "fillintheblank": [
+    {"question": "2 + ___ = 5", "expectedAny": ["3"]},
+    {"question": "4 + ___ = 8", "expectedAny": ["4"]},
+    {"question": "___ + 3 = 7", "expectedAny": ["4"]},
+    {"question": "5 + ___ = 10", "expectedAny": ["5"]},
+    {"question": "___ + 1 = 6", "expectedAny": ["5"]},
+    {"question": "3 + ___ = 9", "expectedAny": ["6"]}
+  ],
+  "shortanswer": [
+    {"question": "Draw 3 circles and 2 more circles. How many in all?", "expectedAny": ["5"]},
+    {"question": "Show how to count 4 + 3 on your fingers.", "expectedAny": ["4 + 3 = 7"]},
+    {"question": "Why does 5 + 0 equal 5?", "expectedAny": ["adding zero doesn't change the number"]},
+    {"question": "What happens when you add 1 to any number?", "expectedAny": ["you get the next number"]},
+    {"question": "Draw a picture to show 2 + 4.", "expectedAny": ["6"]},
+    {"question": "How can you use counting to solve 6 + 2?", "expectedAny": ["count on: 7, 8"]}
+  ],
+  "wordProblems": [
+    {"question": "Tom has 3 apples. Mom gives him 2 more apples. How many apples does Tom have now?", "expectedAny": ["5 apples"]},
+    {"question": "There are 4 birds in a tree. Then 3 more birds come. How many birds in all?", "expectedAny": ["7 birds"]},
+    {"question": "Sarah has 5 crayons. She finds 4 more crayons. How many crayons does she have?", "expectedAny": ["9 crayons"]},
+    {"question": "A dog has 6 toys. He gets 1 more toy. How many toys does the dog have?", "expectedAny": ["7 toys"]},
+    {"question": "There are 2 red balls and 6 blue balls. How many balls altogether?", "expectedAny": ["8 balls"]},
+    {"question": "Jack ate 3 cookies before lunch and 4 cookies after lunch. How many cookies did Jack eat?", "expectedAny": ["7 cookies"]}
+  ]
+}

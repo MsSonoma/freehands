@@ -1,0 +1,76 @@
+{
+  "id": "9th_Grammar_Complex_Sentences_Clauses_Beginner",
+  "title": "Grammar: Complex Sentences and Clauses",
+  "grade": "9th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "complex sentence",
+      "definition": "Sentence with one independent clause and at least one dependent clause"
+    },
+    {
+      "term": "independent clause",
+      "definition": "Group of words that can stand alone as a complete sentence"
+    },
+    {
+      "term": "dependent clause",
+      "definition": "Group of words that cannot stand alone as a sentence"
+    },
+    {
+      "term": "subordinating conjunction",
+      "definition": "Word that connects dependent clause to independent clause"
+    },
+    {
+      "term": "relative pronoun",
+      "definition": "Pronoun that introduces relative clauses (who, which, that)"
+    }
+  ],
+  "teachingNotes": "Practice identifying and creating complex sentences. Focus on proper punctuation with dependent clauses.",
+  "sample": {
+    "question": "What is a sentence with one independent and one dependent clause?",
+    "expectedAny": [
+      "complex sentence",
+      "complex",
+      "compound-complex sentence",
+      "multi-clause sentence"
+    ]
+  },
+  "truefalse": {
+    "question": "An independent clause can stand alone as a complete sentence.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What connects a dependent clause to an independent clause?",
+    "expectedAny": [
+      "subordinating conjunction",
+      "subordinator",
+      "dependent connector",
+      "clause connector"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A group of words that cannot stand alone is a ________ clause.",
+    "expectedAny": [
+      "dependent",
+      "subordinate",
+      "incomplete",
+      "non-independent"
+    ]
+  },
+  "shortanswer": {
+    "question": "Give an example of a subordinating conjunction.",
+    "expectedAny": [
+      "because",
+      "although",
+      "when",
+      "if",
+      "since",
+      "while"
+    ]
+  }
+}

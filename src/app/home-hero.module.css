@@ -1,0 +1,72 @@
+.homeHero {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 36px 12px 0; /* more top whitespace, equal left/right padding */
+  display: grid;
+  gap: 24px;
+  align-items: center;
+  justify-items: center;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 900px) {
+  .homeHero {
+    grid-template-columns: 1fr; /* keep stacked on desktop for exact horizontal centering */
+    gap: 28px;
+    padding: 56px 12px 0; /* more top whitespace, equal left/right padding */
+  }
+}
+
+.heroVisual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.heroImg {
+  width: clamp(160px, 28vw, 340px);
+  height: auto;
+  border-radius: 0; /* remove rounded edge */
+  box-shadow: none; /* remove shadow */
+  display: block;
+}
+
+.heroCopy {
+  text-align: center; /* keep centered on all sizes */
+}
+.heroTitle {
+  margin: 0;
+  font-size: clamp(36px, 6vw, 64px);
+  line-height: 1.1;
+  letter-spacing: 0.2px;
+}
+.heroSub {
+  margin: 10px 0 12px;
+  color: #555;
+  font-size: clamp(16px, 2.2vw, 22px);
+}
+.ctaRow {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+@media (min-width: 900px) {
+  .ctaRow { justify-content: center; }
+}
+.cta {
+  padding: 14px 18px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-block;
+}
+.ctaSecondary {
+  border: 1px solid #ddd;
+  color: inherit;
+  background: #fff;
+}
+.ctaPrimary {
+  border: 1px solid #111;
+  background: #111;
+  color: #fff;
+}

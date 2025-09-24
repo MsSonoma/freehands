@@ -1,0 +1,73 @@
+{
+  "id": "5th_Grammar_Complex_Sentences_Advanced",
+  "title": "Grammar: Complex Sentences and Clauses",
+  "grade": "5th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "complex sentence",
+      "definition": "A sentence with one independent clause and one or more dependent clauses"
+    },
+    {
+      "term": "independent clause",
+      "definition": "A group of words that can stand alone as a complete sentence"
+    },
+    {
+      "term": "dependent clause",
+      "definition": "A group of words that cannot stand alone and needs an independent clause"
+    },
+    {
+      "term": "subordinating conjunction",
+      "definition": "Words like 'because,' 'when,' or 'if' that connect dependent clauses"
+    },
+    {
+      "term": "compound sentence",
+      "definition": "A sentence with two or more independent clauses joined by a conjunction"
+    }
+  ],
+  "teachingNotes": "Start with identifying simple vs. complex sentences. Practice using subordinating conjunctions. Show how clauses work together to create more sophisticated writing.",
+  "sample": {
+    "question": "What type of sentence has one independent clause and one dependent clause?",
+    "expectedAny": [
+      "complex sentence",
+      "complex",
+      "sentence with dependent clause",
+      "advanced sentence"
+    ]
+  },
+  "truefalse": {
+    "question": "A dependent clause can stand alone as a complete sentence.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which word is a subordinating conjunction?",
+    "expectedAny": [
+      "because",
+      "when",
+      "if",
+      "although"
+    ]
+  },
+  "fillintheblank": {
+    "question": "An ________ clause can stand alone as a complete sentence.",
+    "expectedAny": [
+      "independent",
+      "main",
+      "independent clause",
+      "complete"
+    ]
+  },
+  "shortanswer": {
+    "question": "Combine these into a complex sentence: 'It was raining.' 'We stayed inside.'",
+    "expectedAny": [
+      "Because it was raining, we stayed inside",
+      "We stayed inside because it was raining",
+      "When it was raining, we stayed inside"
+    ]
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "id": "2nd_Animal_Habitats_Needs_Beginner",
+  "title": "Animal Habitats and Basic Needs",
+  "grade": "2nd",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "habitat",
+      "definition": "The place where an animal lives and finds everything it needs"
+    },
+    {
+      "term": "food",
+      "definition": "What animals eat to get energy and grow"
+    },
+    {
+      "term": "shelter",
+      "definition": "A safe place where animals can rest and hide"
+    },
+    {
+      "term": "water",
+      "definition": "What all living things need to drink to stay alive"
+    },
+    {
+      "term": "adapt",
+      "definition": "How animals change or learn to live in their environment"
+    }
+  ],
+  "teachingNotes": "Use pictures or videos to show different animal habitats. Discuss what animals need to survive: food, water, shelter, and space. Compare how different animals meet these needs in different environments.",
+  "sample": [
+    {"question": "Where do fish live?", "expectedAny": ["water", "ocean", "river", "lake"]},
+    {"question": "What animals live in the forest?", "expectedAny": ["bears", "deer", "birds"]},
+    {"question": "What is a habitat?", "expectedAny": ["an animal's home", "place to live"]},
+    {"question": "Where do polar bears live?", "expectedAny": ["Arctic", "cold places", "ice"]},
+    {"question": "What do desert animals need?", "expectedAny": ["little water", "shade"]},
+    {"question": "What lives in the ocean?", "expectedAny": ["fish", "whales", "sharks"]},
+    {"question": "Where do birds make nests?", "expectedAny": ["trees", "bushes"]}
+  ],
+  "truefalse": [
+    {"question": "A habitat is an animal's home.", "answer": true},
+    {"question": "Fish can live in the desert.", "answer": false},
+    {"question": "Bears live in forests.", "answer": true},
+    {"question": "All animals live in the same place.", "answer": false},
+    {"question": "Plants are part of habitats.", "answer": true},
+    {"question": "Penguins live where it's cold.", "answer": true},
+    {"question": "Every animal needs shelter.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "Fish live in ___", "choices": ["Trees", "Water", "Desert", "Sky"], "correct": 1},
+    {"question": "Cactus grows in the ___", "choices": ["Ocean", "Arctic", "Desert", "Pond"], "correct": 2},
+    {"question": "Monkeys live in ___", "choices": ["Ocean", "Desert", "Arctic", "Jungle"], "correct": 3},
+    {"question": "A habitat provides ___", "choices": ["Food and shelter", "Only food", "Only water", "Nothing"], "correct": 0},
+    {"question": "Polar bears live in ___", "choices": ["Desert", "Arctic", "Jungle", "Ocean"], "correct": 1},
+    {"question": "Birds build nests in ___", "choices": ["Water", "Underground", "Trees", "Ice"], "correct": 2},
+    {"question": "Whales live in ___", "choices": ["Forest", "Desert", "Ocean", "Mountain"], "correct": 2}
+  ],
+  "fillintheblank": [
+    {"question": "A ___ is where an animal lives.", "expectedAny": ["habitat"]},
+    {"question": "Desert animals need little ___", "expectedAny": ["water"]},
+    {"question": "Forest animals live among ___", "expectedAny": ["trees"]},
+    {"question": "Ocean animals can ___", "expectedAny": ["swim"]},
+    {"question": "Arctic animals have thick ___", "expectedAny": ["fur", "blubber"]},
+    {"question": "___ live in ponds.", "expectedAny": ["frogs", "fish"]},
+    {"question": "Animals need food, water, and ___", "expectedAny": ["shelter"]}
+  ],
+  "shortanswer": [
+    {"question": "What makes a good habitat?", "expectedAny": ["food, water, shelter, right temperature"]},
+    {"question": "How do desert animals survive?", "expectedAny": ["store water", "active at night"]},
+    {"question": "Name three ocean animals.", "expectedAny": ["fish", "whale", "shark", "dolphin", "octopus"]},
+    {"question": "Why can't a polar bear live in the desert?", "expectedAny": ["too hot", "no ice", "wrong food"]},
+    {"question": "What would you find in a forest?", "expectedAny": ["trees", "birds", "squirrels"]},
+    {"question": "How do animals use their habitat?", "expectedAny": ["find food", "make homes", "hide from danger"]},
+    {"question": "Design a habitat for a rabbit.", "expectedAny": ["grass", "burrow", "water source"]}
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "id": "matter-states-properties-beginner",
+  "title": "States of Matter and Properties",
+  "grade": "2nd",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "solid",
+      "definition": "Matter that has a definite shape and takes up a definite amount of space"
+    },
+    {
+      "term": "liquid",
+      "definition": "Matter that takes the shape of its container but has a definite volume"
+    },
+    {
+      "term": "gas",
+      "definition": "Matter that spreads out to fill its container completely"
+    },
+    {
+      "term": "property",
+      "definition": "A characteristic that describes how something looks, feels, or acts"
+    }
+  ],
+  "teachingNotes": "Use hands-on experiments with ice, water, and steam. Let students observe and compare different materials and their properties.",
+  "sample": [
+    {"question": "Name the three main states of matter", "expectedAny": ["solid", "liquid", "gas"]},
+    {"question": "Is a rock a solid or liquid?", "expectedAny": ["solid"]},
+    {"question": "Is milk a solid or liquid?", "expectedAny": ["liquid"]},
+    {"question": "What do we call the air around us?", "expectedAny": ["gas", "air"]},
+    {"question": "What happens when water freezes?", "expectedAny": ["becomes ice", "solid"]},
+    {"question": "What happens when ice melts?", "expectedAny": ["becomes water", "liquid"]},
+    {"question": "Can gases take up space?", "expectedAny": ["yes"]}
+  ],
+  "truefalse": [
+    {"question": "Water can be found in all three states of matter.", "answer": true},
+    {"question": "Solids always keep their shape.", "answer": true},
+    {"question": "Liquids can be poured.", "answer": true},
+    {"question": "Gases have a fixed shape.", "answer": false},
+    {"question": "Ice is a liquid.", "answer": false},
+    {"question": "Steam is water in a gas state.", "answer": true},
+    {"question": "You can pick up a gas with your hands.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "Which property best describes a liquid?", "choices": ["Has a definite shape", "Takes the shape of its container", "Spreads out everywhere", "Never changes"], "correct": 1},
+    {"question": "Which is a solid?", "choices": ["Juice", "Air", "Rock", "Steam"], "correct": 2},
+    {"question": "Which is a gas?", "choices": ["Water", "Air", "Milk", "Ice"], "correct": 1},
+    {"question": "What happens when you heat water?", "choices": ["Freezes", "Boils and becomes steam", "Turns to rock", "Disappears"], "correct": 1},
+    {"question": "Which can you pour?", "choices": ["Rock", "Water", "Air", "Wood"], "correct": 1},
+    {"question": "Which fills the whole container?", "choices": ["Solid", "Liquid", "Gas", "None"], "correct": 2},
+    {"question": "Which state of matter keeps its shape?", "choices": ["Solid", "Liquid", "Gas", "Steam"], "correct": 0}
+  ],
+  "fillintheblank": [
+    {"question": "When you heat ice, it melts and becomes a _____", "expectedAny": ["liquid", "water"]},
+    {"question": "When you cool water, it becomes _____", "expectedAny": ["ice", "solid"]},
+    {"question": "A rock is a _____", "expectedAny": ["solid"]},
+    {"question": "Milk is a _____", "expectedAny": ["liquid"]},
+    {"question": "Air around us is a _____", "expectedAny": ["gas"]},
+    {"question": "Liquids can be _____", "expectedAny": ["poured"]},
+    {"question": "Gases can _____ to fill the space", "expectedAny": ["spread out"]}
+  ],
+  "shortanswer": [
+    {"question": "How can you tell the difference between a solid and a liquid?", "expectedAny": ["solids keep shape, liquids flow"]},
+    {"question": "Give an example of each state of matter.", "expectedAny": ["solid: rock", "liquid: water", "gas: air"]},
+    {"question": "Why does a liquid take the shape of its container?", "expectedAny": ["it flows and doesn't keep its own shape"]},
+    {"question": "What happens to water on a hot day?", "expectedAny": ["evaporates into gas"]},
+    {"question": "How can you change water back from gas to liquid?", "expectedAny": ["cool it", "condense it"]},
+    {"question": "What tools could you use to observe changes?", "expectedAny": ["thermometer", "clear container"]},
+    {"question": "Describe a solid you use every day.", "expectedAny": ["pencil", "book", "chair"]}
+  ]
+}

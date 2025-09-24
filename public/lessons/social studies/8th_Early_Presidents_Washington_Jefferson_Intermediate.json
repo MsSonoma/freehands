@@ -1,0 +1,73 @@
+{
+  "id": "8th_Early_Presidents_Washington_Jefferson_Intermediate",
+  "title": "Early Presidents: Washington and Jefferson",
+  "grade": "8th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "precedent",
+      "definition": "An example that becomes a standard for others to follow"
+    },
+    {
+      "term": "cabinet",
+      "definition": "A group of advisors to the president"
+    },
+    {
+      "term": "political party",
+      "definition": "A group of people with similar political beliefs"
+    },
+    {
+      "term": "Louisiana Purchase",
+      "definition": "The 1803 purchase of territory from France that doubled the nation's size"
+    },
+    {
+      "term": "neutrality",
+      "definition": "Not taking sides in conflicts between other nations"
+    }
+  ],
+  "teachingNotes": "Explain how Washington and Jefferson established important precedents. Discuss early political divisions and westward expansion.",
+  "sample": {
+    "question": "What is an example that becomes a standard for others to follow?",
+    "expectedAny": [
+      "precedent",
+      "example",
+      "standard",
+      "model"
+    ]
+  },
+  "truefalse": {
+    "question": "The Louisiana Purchase doubled the size of the United States.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is a group of presidential advisors called?",
+    "expectedAny": [
+      "cabinet",
+      "advisory group",
+      "presidential advisors",
+      "executive council"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Not taking sides in conflicts between other nations is called ________.",
+    "expectedAny": [
+      "neutrality",
+      "neutral policy",
+      "non-involvement",
+      "staying neutral"
+    ]
+  },
+  "shortanswer": {
+    "question": "What important precedents did George Washington establish?",
+    "expectedAny": [
+      "two-term limit, cabinet system, farewell address",
+      "presidential traditions",
+      "executive precedents"
+    ]
+  }
+}

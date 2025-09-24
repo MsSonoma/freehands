@@ -1,0 +1,74 @@
+{
+  "id": "11th_Nuclear_Physics_Radioactivity_Intermediate",
+  "title": "Nuclear Physics and Radioactivity",
+  "grade": "11th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "nuclear fission",
+      "definition": "Splitting of heavy atomic nuclei into lighter fragments"
+    },
+    {
+      "term": "nuclear fusion",
+      "definition": "Combining of light atomic nuclei to form heavier nuclei"
+    },
+    {
+      "term": "binding energy",
+      "definition": "Energy required to separate nucleus into individual nucleons"
+    },
+    {
+      "term": "mass defect",
+      "definition": "Difference between sum of nucleon masses and actual nuclear mass"
+    },
+    {
+      "term": "critical mass",
+      "definition": "Minimum amount of fissile material needed for sustained reaction"
+    }
+  ],
+  "teachingNotes": "Explain Einstein's mass-energy equivalence in nuclear processes. Discuss applications in energy production.",
+  "sample": {
+    "question": "What is the splitting of heavy nuclei called?",
+    "expectedAny": [
+      "nuclear fission",
+      "fission",
+      "nuclear splitting",
+      "atom splitting"
+    ]
+  },
+  "truefalse": {
+    "question": "Nuclear fusion combines light nuclei to form heavier ones.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the difference between nucleon masses and actual nuclear mass?",
+    "expectedAny": [
+      "mass defect",
+      "nuclear mass defect",
+      "binding mass",
+      "mass difference"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The minimum amount of fissile material for sustained reaction is ________ mass.",
+    "expectedAny": [
+      "critical",
+      "minimum critical",
+      "threshold",
+      "reaction critical"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does binding energy relate to nuclear stability?",
+    "expectedAny": [
+      "higher binding energy",
+      "more stable nucleus",
+      "energy per nucleon",
+      "stability correlation"
+    ]
+  }
+}

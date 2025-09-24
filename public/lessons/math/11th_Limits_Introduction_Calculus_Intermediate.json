@@ -1,0 +1,53 @@
+{
+  "id": "11th_Limits_Introduction_Calculus_Intermediate",
+  "title": "Limits and Introduction to Calculus",
+  "grade": "11th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "indeterminate form",
+      "definition": "Expression like 0/0 or ∞/∞ that requires special evaluation techniques"
+    },
+    {
+      "term": "L'Hôpital's rule",
+      "definition": "Method for evaluating limits of indeterminate forms using derivatives"
+    },
+    {
+      "term": "squeeze theorem",
+      "definition": "Method for finding limits by trapping function between two others"
+    },
+    {
+      "term": "infinite limit",
+      "definition": "Function values that grow without bound as input approaches value"
+    },
+    {
+      "term": "limit at infinity",
+      "definition": "Behavior of function as input approaches positive or negative infinity"
+    }
+  ],
+  "teachingNotes": "Introduce limit evaluation techniques and special cases. Practice with rational functions and trigonometric limits.",
+  "sample": {
+    "question": "What is an expression like 0/0 that requires special evaluation?",
+    "expectedAny": ["indeterminate form", "undefined form", "special case", "ambiguous expression"]
+  },
+  "truefalse": {
+    "question": "L'Hôpital's rule uses derivatives to evaluate certain limits.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What method traps a function between two others to find limits?",
+    "expectedAny": ["squeeze theorem", "sandwich theorem", "pinching theorem", "compression theorem"]
+  },
+  "fillintheblank": {
+    "question": "Function behavior as input approaches infinity is a limit at ________.",
+    "expectedAny": ["infinity", "infinite", "∞", "unbounded"]
+  },
+  "shortanswer": {
+    "question": "What are common indeterminate forms?",
+    "expectedAny": ["0/0", "∞/∞", "0·∞", "∞ - ∞", "1^∞"]
+  },
+  "wordProblems": {
+    "question": "What is lim(x→∞) (3x² + 2x)/(x² - 1)?",
+    "expectedAny": ["3", "three", "highest degree coefficient ratio", "3/1 = 3"]
+  }
+}

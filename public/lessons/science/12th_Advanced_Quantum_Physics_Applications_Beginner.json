@@ -1,0 +1,74 @@
+{
+  "id": "12th_Advanced_Quantum_Physics_Applications_Beginner",
+  "title": "Advanced Quantum Physics and Applications",
+  "grade": "12th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "quantum tunneling",
+      "definition": "Phenomenon where particles pass through energy barriers"
+    },
+    {
+      "term": "quantum computing",
+      "definition": "Computing using quantum mechanical phenomena for information processing"
+    },
+    {
+      "term": "superposition",
+      "definition": "Quantum state existing in multiple states simultaneously"
+    },
+    {
+      "term": "qubit",
+      "definition": "Basic unit of quantum information, quantum analog of classical bit"
+    },
+    {
+      "term": "wave function",
+      "definition": "Mathematical description of quantum state of particle or system"
+    }
+  ],
+  "teachingNotes": "Connect quantum concepts to modern technology applications. Emphasize practical implications of quantum mechanics.",
+  "sample": {
+    "question": "What phenomenon allows particles to pass through energy barriers?",
+    "expectedAny": [
+      "quantum tunneling",
+      "tunneling effect",
+      "barrier penetration",
+      "quantum barrier crossing"
+    ]
+  },
+  "truefalse": {
+    "question": "A qubit is the basic unit of quantum information.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What uses quantum phenomena for information processing?",
+    "expectedAny": [
+      "quantum computing",
+      "quantum computer",
+      "quantum information processing",
+      "quantum technology"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A quantum state existing in multiple states simultaneously is called ________.",
+    "expectedAny": [
+      "superposition",
+      "quantum superposition",
+      "multiple states",
+      "simultaneous states"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are potential applications of quantum computing?",
+    "expectedAny": [
+      "cryptography",
+      "drug discovery",
+      "optimization",
+      "artificial intelligence"
+    ]
+  }
+}

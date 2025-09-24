@@ -1,0 +1,74 @@
+{
+  "id": "12th_Advanced_Quantum_Physics_Applications_Intermediate",
+  "title": "Advanced Quantum Physics and Applications",
+  "grade": "12th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "quantum entanglement",
+      "definition": "Phenomenon where particles remain correlated regardless of separation distance"
+    },
+    {
+      "term": "Bell's theorem",
+      "definition": "Proof that quantum mechanics cannot be explained by local hidden variables"
+    },
+    {
+      "term": "quantum decoherence",
+      "definition": "Process by which quantum systems lose their quantum behavior"
+    },
+    {
+      "term": "quantum cryptography",
+      "definition": "Secure communication method using quantum mechanical properties"
+    },
+    {
+      "term": "Many Worlds interpretation",
+      "definition": "Theory that all possible quantum states exist in parallel universes"
+    }
+  ],
+  "teachingNotes": "Explore philosophical implications of quantum mechanics. Discuss current research and technological developments.",
+  "sample": {
+    "question": "What phenomenon involves particles remaining correlated over distance?",
+    "expectedAny": [
+      "quantum entanglement",
+      "entanglement",
+      "quantum correlation",
+      "spooky action"
+    ]
+  },
+  "truefalse": {
+    "question": "Bell's theorem proves quantum mechanics cannot be explained by local hidden variables.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What secure communication method uses quantum properties?",
+    "expectedAny": [
+      "quantum cryptography",
+      "quantum encryption",
+      "quantum security",
+      "quantum communication"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The process by which quantum systems lose quantum behavior is quantum ________.",
+    "expectedAny": [
+      "decoherence",
+      "collapse",
+      "degradation",
+      "loss"
+    ]
+  },
+  "shortanswer": {
+    "question": "What does the Many Worlds interpretation suggest?",
+    "expectedAny": [
+      "parallel universes",
+      "multiple realities",
+      "branching timelines",
+      "infinite worlds"
+    ]
+  }
+}

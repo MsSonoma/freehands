@@ -1,0 +1,74 @@
+{
+  "id": "4th_Reading_Strategies_Comprehension_Intermediate",
+  "title": "Reading Strategies and Comprehension",
+  "grade": "4th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "comprehension",
+      "definition": "Understanding what you read"
+    },
+    {
+      "term": "inference",
+      "definition": "A conclusion you reach based on evidence and reasoning"
+    },
+    {
+      "term": "context clues",
+      "definition": "Hints in the text that help you understand unknown words"
+    },
+    {
+      "term": "summarize",
+      "definition": "To retell the main points in your own words"
+    },
+    {
+      "term": "visualize",
+      "definition": "To create pictures in your mind while reading"
+    }
+  ],
+  "teachingNotes": "Teach active reading strategies like questioning, predicting, and connecting to prior knowledge. Practice using context clues to determine word meanings. Focus on making inferences from text evidence.",
+  "sample": [
+    {"question": "What should you do if you don't understand what you're reading?", "expectedAny": ["reread", "context clues", "ask questions", "slow down"]},
+    {"question": "What does it mean to make a prediction?", "expectedAny": ["guess what will happen next using clues"]},
+    {"question": "What is a summary?", "expectedAny": ["retell main points in own words"]},
+    {"question": "What are context clues?", "expectedAny": ["hints around a word to help find meaning"]},
+    {"question": "What is an inference?", "expectedAny": ["conclusion from evidence and reasoning"]},
+    {"question": "Name one way to visualize while reading.", "expectedAny": ["picture scenes", "imagine setting"]},
+    {"question": "What is a text connection?", "expectedAny": ["text-to-self", "text-to-text", "text-to-world"]}
+  ],
+  "truefalse": [
+    {"question": "Good readers make pictures in their minds while they read.", "answer": true, "expectedAny": ["true"]},
+    {"question": "You should never reread a text.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Predictions should be based on clues.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Summaries include every detail.", "answer": false, "expectedAny": ["false"]},
+    {"question": "Context clues help with unknown words.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Inferences use text evidence and background knowledge.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Visualizing can improve comprehension.", "answer": true, "expectedAny": ["true"]}
+  ],
+  "multiplechoice": [
+    {"question": "Which best describes context clues?", "choices": ["Pictures only", "Hints around a word", "Dictionary entries", "Headings"], "correct": 1, "expectedAny": ["hints around a word"]},
+    {"question": "A good summary includes:", "choices": ["every detail", "main ideas only", "opinions", "quotes only"], "correct": 1, "expectedAny": ["main ideas only"]},
+    {"question": "Which is an inference?", "choices": ["The boy cries; he is sad", "The boy is a boy", "The boy has shoes", "The boy is tall"], "correct": 0, "expectedAny": ["he is sad"]},
+    {"question": "To predict, you should:", "choices": ["guess randomly", "use clues and what you know", "ask a friend", "read the end first"], "correct": 1, "expectedAny": ["use clues"]},
+    {"question": "Visualizing helps by:", "choices": ["making pictures in your mind", "making you read faster only", "changing the text", "adding new characters"], "correct": 0, "expectedAny": ["pictures in your mind"]},
+    {"question": "Which is a text-to-self connection?", "choices": ["This reminds me of my trip", "This is like another book", "This connects to a news story", "This is a definition"], "correct": 0, "expectedAny": ["my trip"]},
+    {"question": "Which strategy helps with tough words?", "choices": ["skip and forget", "use context clues", "close eyes", "turn off lights"], "correct": 1, "expectedAny": ["context clues"]}
+  ],
+  "fillintheblank": [
+    {"question": "When you reach a conclusion based on evidence in the text, you are making an ________.", "expectedAny": ["inference"]},
+    {"question": "To ________ means to retell the main ideas.", "expectedAny": ["summarize"]},
+    {"question": "To ________ is to guess what will happen using clues.", "expectedAny": ["predict"]},
+    {"question": "Use ________ clues to find meanings of unknown words.", "expectedAny": ["context"]},
+    {"question": "Good readers ask ________ while reading.", "expectedAny": ["questions"]},
+    {"question": "We ________ pictures in our minds to understand better.", "expectedAny": ["visualize"]},
+    {"question": "Use text ________ to support your answers.", "expectedAny": ["evidence"]}
+  ],
+  "shortanswer": [
+    {"question": "How does visualizing help you understand what you read?", "expectedAny": ["mental pictures", "remember details"]},
+    {"question": "Write a one-sentence summary of a paragraph you read.", "expectedAny": ["varies"]},
+    {"question": "Make a prediction about what happens next and explain why.", "expectedAny": ["varies"]},
+    {"question": "Explain an inference you made and the clues you used.", "expectedAny": ["varies"]},
+    {"question": "List two context clue types you used today.", "expectedAny": ["definition", "synonym", "antonym", "example"]},
+    {"question": "Describe a text-to-self or text-to-world connection.", "expectedAny": ["varies"]},
+    {"question": "Find a sentence with an unknown word and explain how you figured it out.", "expectedAny": ["varies"]}
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "id": "3rd_Economics_Goods_Services_Advanced",
+  "title": "Economics: Goods and Services",
+  "grade": "3rd",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    { "term": "economics", "definition": "The study of how people make, spend, and use money and resources" },
+    { "term": "goods", "definition": "Things that people make or grow to sell" },
+    { "term": "services", "definition": "Work that people do to help others" },
+    { "term": "consumer", "definition": "A person who buys and uses goods and services" },
+    { "term": "producer", "definition": "A person who makes goods or provides services" },
+    { "term": "trade", "definition": "Exchanging goods or services with others" }
+  ],
+  "teachingNotes": "Use examples from students' daily lives. Set up classroom store for practice. Discuss wants vs. needs and making choices.",
+  "sample": [
+    { "question": "What is the difference between goods and services?", "expectedAny": ["goods are things, services are actions", "goods you can touch"] },
+    { "question": "Give an example of a good.", "expectedAny": ["toy", "food", "clothes", "book", "pencil"] },
+    { "question": "Give an example of a service.", "expectedAny": ["haircut", "teaching", "cleaning", "repair"] },
+    { "question": "What is a consumer?", "expectedAny": ["someone who buys", "person who uses goods/services"] },
+    { "question": "What is a producer?", "expectedAny": ["someone who makes", "person who provides goods/services"] },
+    { "question": "Why do people trade?", "expectedAny": ["get what they need", "exchange", "both benefit"] },
+    { "question": "What is bartering?", "expectedAny": ["trading without money", "exchanging goods for goods"] }
+  ],
+  "truefalse": [
+    { "question": "A bicycle is a good.", "answer": true },
+    { "question": "A haircut is a service.", "answer": true },
+    { "question": "Everyone is only a consumer.", "answer": false },
+    { "question": "Money makes trading easier.", "answer": true },
+    { "question": "Producers make goods or provide services.", "answer": true },
+    { "question": "Services can be stored for later.", "answer": false },
+    { "question": "People can be both producers and consumers.", "answer": true }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which is a service?",
+      "choices": ["apple", "shoe", "car wash", "computer"],
+      "correct": 2
+    },
+    {
+      "question": "A baker is a ___.",
+      "choices": ["consumer only", "producer only", "both producer and consumer", "neither"],
+      "correct": 2
+    },
+    {
+      "question": "What do consumers do?",
+      "choices": ["only make things", "buy and use things", "only sell things", "only save money"],
+      "correct": 1
+    },
+    {
+      "question": "Which is NOT a good?",
+      "choices": ["pizza", "teaching", "basketball", "jacket"],
+      "correct": 1
+    },
+    {
+      "question": "Why is money useful?",
+      "choices": ["it's pretty", "easier than bartering", "it's heavy", "it's made of paper"],
+      "correct": 1
+    },
+    {
+      "question": "A dentist provides a ___.",
+      "choices": ["good", "service", "product", "material"],
+      "correct": 1
+    },
+    {
+      "question": "When demand is high and supply is low, prices usually ___.",
+      "choices": ["go down", "stay same", "go up", "disappear"],
+      "correct": 2
+    }
+  ],
+  "fillintheblank": [
+    { "question": "___ are things you can touch and hold.", "expectedAny": ["Goods"] },
+    { "question": "___ are actions people do for others.", "expectedAny": ["Services"] },
+    { "question": "A ___ makes or provides goods and services.", "expectedAny": ["producer"] },
+    { "question": "A ___ buys and uses goods and services.", "expectedAny": ["consumer"] },
+    { "question": "___ is trading without using money.", "expectedAny": ["Bartering"] },
+    { "question": "The ___ is the amount of something available.", "expectedAny": ["supply"] },
+    { "question": "___ is how much people want something.", "expectedAny": ["Demand"] }
+  ],
+  "shortanswer": [
+    { "question": "Why can't you store a service?", "expectedAny": ["it's an action", "happens at a moment", "not physical"] },
+    { "question": "How are you a consumer at school?", "expectedAny": ["use supplies", "eat lunch", "use services like teaching"] },
+    { "question": "How could a kid be a producer?", "expectedAny": ["lemonade stand", "make crafts to sell", "do chores for money"] },
+    { "question": "What happens when many people want the same toy?", "expectedAny": ["price goes up", "harder to find", "high demand"] },
+    { "question": "Why don't we barter as much today?", "expectedAny": ["money is easier", "hard to make equal trades", "convenient"] },
+    { "question": "Name three services in your community.", "expectedAny": ["teaching", "mail delivery", "haircuts", "repairs", "medical"] },
+    { "question": "How do producers and consumers need each other?", "expectedAny": ["producers need buyers", "consumers need products", "interdependent"] }
+  ]
+}

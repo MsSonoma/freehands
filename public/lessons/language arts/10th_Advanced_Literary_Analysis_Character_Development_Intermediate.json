@@ -1,0 +1,74 @@
+{
+  "id": "10th_Advanced_Literary_Analysis_Character_Development_Intermediate",
+  "title": "Advanced Literary Analysis: Character Development",
+  "grade": "10th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "character foil",
+      "definition": "A character who contrasts with another to highlight particular qualities"
+    },
+    {
+      "term": "static character",
+      "definition": "A character who remains essentially unchanged throughout the story"
+    },
+    {
+      "term": "round character",
+      "definition": "A complex character with multiple personality traits and motivations"
+    },
+    {
+      "term": "flat character",
+      "definition": "A simple character with only one or two defining traits"
+    },
+    {
+      "term": "character archetype",
+      "definition": "A universal character type that appears across cultures and literature"
+    }
+  ],
+  "teachingNotes": "Compare different character types and their functions. Analyze how authors use foils and archetypes to enhance themes.",
+  "sample": {
+    "question": "What is a character who contrasts with another to highlight qualities?",
+    "expectedAny": [
+      "character foil",
+      "foil character",
+      "contrasting character",
+      "opposing character"
+    ]
+  },
+  "truefalse": {
+    "question": "A round character has complex, multiple personality traits.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What type of character remains essentially unchanged?",
+    "expectedAny": [
+      "static character",
+      "unchanging character",
+      "fixed character",
+      "stable character"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A universal character type that appears across cultures is an ________.",
+    "expectedAny": [
+      "archetype",
+      "archetypal character",
+      "universal character",
+      "character pattern"
+    ]
+  },
+  "shortanswer": {
+    "question": "What is the purpose of using character foils in literature?",
+    "expectedAny": [
+      "highlight contrasts",
+      "emphasize traits",
+      "clarify themes",
+      "create tension"
+    ]
+  }
+}

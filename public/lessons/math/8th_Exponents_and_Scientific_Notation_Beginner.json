@@ -1,0 +1,53 @@
+{
+  "id": "8th_Exponents_and_Scientific_Notation_Beginner",
+  "title": "Exponents and Scientific Notation",
+  "grade": "8th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "exponent",
+      "definition": "A number that shows how many times a base is multiplied by itself"
+    },
+    {
+      "term": "base",
+      "definition": "The number being multiplied in an exponential expression"
+    },
+    {
+      "term": "scientific notation",
+      "definition": "A way to write very large or small numbers using powers of 10"
+    },
+    {
+      "term": "power of 10",
+      "definition": "10 raised to an exponent"
+    },
+    {
+      "term": "standard form",
+      "definition": "The regular way of writing numbers"
+    }
+  ],
+  "teachingNotes": "Start with small exponents and build to larger ones. Show how scientific notation helps with very large and small numbers.",
+  "sample": {
+    "question": "What shows how many times a base is multiplied by itself?",
+    "expectedAny": ["exponent", "power", "index", "superscript number"]
+  },
+  "truefalse": {
+    "question": "In 2³, the base is 2 and the exponent is 3.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is 10³?",
+    "expectedAny": ["1000", "one thousand", "10 × 10 × 10", "1,000"]
+  },
+  "fillintheblank": {
+    "question": "Scientific notation uses powers of ________.",
+    "expectedAny": ["10", "ten", "base 10", "decimal"]
+  },
+  "shortanswer": {
+    "question": "Write 4,500 in scientific notation.",
+    "expectedAny": ["4.5 × 10³", "4.5 × 10^3", "4.5E3", "4.5 times 10 to the 3rd"]
+  },
+  "wordProblems": {
+    "question": "If bacteria double every hour and you start with 2³ bacteria, how many do you have after 2 more doublings?",
+    "expectedAny": ["32", "2⁵", "2^5", "thirty-two"]
+  }
+}

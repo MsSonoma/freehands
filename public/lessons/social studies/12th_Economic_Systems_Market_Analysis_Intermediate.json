@@ -1,0 +1,74 @@
+{
+  "id": "12th_Economic_Systems_Market_Analysis_Intermediate",
+  "title": "Economic Systems and Market Analysis",
+  "grade": "12th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "mixed economy",
+      "definition": "Economic system combining elements of capitalism and socialism"
+    },
+    {
+      "term": "elasticity",
+      "definition": "Measure of responsiveness of quantity demanded to price changes"
+    },
+    {
+      "term": "externalities",
+      "definition": "Costs or benefits affecting third parties not involved in transaction"
+    },
+    {
+      "term": "market failure",
+      "definition": "Situation where free market fails to allocate resources efficiently"
+    },
+    {
+      "term": "monetary policy",
+      "definition": "Central bank actions to control money supply and interest rates"
+    }
+  ],
+  "teachingNotes": "Analyze market mechanisms and government interventions. Discuss economic indicators and policy tools.",
+  "sample": {
+    "question": "What economic system combines capitalism and socialism?",
+    "expectedAny": [
+      "mixed economy",
+      "hybrid economy",
+      "social market economy",
+      "regulated capitalism"
+    ]
+  },
+  "truefalse": {
+    "question": "Externalities affect only the parties directly involved in transactions.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What measures responsiveness of demand to price changes?",
+    "expectedAny": [
+      "elasticity",
+      "price elasticity",
+      "demand elasticity",
+      "elastic coefficient"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Central bank control of money supply is called ________ policy.",
+    "expectedAny": [
+      "monetary",
+      "money",
+      "financial",
+      "banking"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does market failure justify government intervention?",
+    "expectedAny": [
+      "public goods provision",
+      "externality correction",
+      "monopoly regulation",
+      "information asymmetry"
+    ]
+  }
+}

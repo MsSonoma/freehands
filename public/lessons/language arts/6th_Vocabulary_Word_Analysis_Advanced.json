@@ -1,0 +1,74 @@
+{
+  "id": "6th_Vocabulary_Word_Analysis_Advanced",
+  "title": "Vocabulary: Word Analysis and Etymology",
+  "grade": "6th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "etymology",
+      "definition": "The study of the origin and history of words"
+    },
+    {
+      "term": "root word",
+      "definition": "The main part of a word that carries the basic meaning"
+    },
+    {
+      "term": "prefix",
+      "definition": "A word part added to the beginning of a root word"
+    },
+    {
+      "term": "suffix",
+      "definition": "A word part added to the end of a root word"
+    },
+    {
+      "term": "morphology",
+      "definition": "The study of how words are formed from smaller meaningful parts"
+    }
+  ],
+  "teachingNotes": "Practice breaking down complex words into parts. Teach common Greek and Latin roots. Show how understanding word parts helps with meaning and spelling.",
+  "sample": {
+    "question": "What do we call the study of word origins and history?",
+    "expectedAny": [
+      "etymology",
+      "word etymology",
+      "etymological study",
+      "word history"
+    ]
+  },
+  "truefalse": {
+    "question": "A prefix is added to the beginning of a root word.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "In the word 'unhappy,' what is the prefix?",
+    "expectedAny": [
+      "un-",
+      "un",
+      "the prefix un",
+      "un- prefix"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The main part of a word that carries the basic meaning is the ________ word.",
+    "expectedAny": [
+      "root",
+      "base",
+      "core",
+      "main"
+    ]
+  },
+  "shortanswer": {
+    "question": "How can knowing prefixes and suffixes help you understand new words?",
+    "expectedAny": [
+      "break down meaning of parts",
+      "figure out definitions",
+      "understand word families",
+      "decode unfamiliar words"
+    ]
+  }
+}

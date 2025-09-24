@@ -1,0 +1,71 @@
+{
+  "id": "energy-forms-transformations-beginner",
+  "title": "Forms of Energy and Energy Transformations",
+  "grade": "4th",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "energy",
+      "definition": "The ability to cause motion or create change"
+    },
+    {
+      "term": "kinetic energy",
+      "definition": "Energy of motion; energy that moving objects have"
+    },
+    {
+      "term": "potential energy",
+      "definition": "Stored energy that an object has because of its position or condition"
+    },
+    {
+      "term": "energy transformation",
+      "definition": "The process of energy changing from one form to another"
+    }
+  ],
+  "teachingNotes": "Use hands-on demonstrations with balls, springs, and simple machines. Focus on observable examples of energy in action.",
+  "sample": [
+    {"question": "What type of energy does a ball have at the top of a hill?", "expectedAny": ["potential energy"]},
+    {"question": "What energy does a rolling ball have?", "expectedAny": ["kinetic energy"]},
+    {"question": "Name a device that transforms electrical energy into light.", "expectedAny": ["light bulb", "lamp"]},
+    {"question": "What energy does food contain?", "expectedAny": ["chemical energy"]},
+    {"question": "What type of energy comes from the sun?", "expectedAny": ["light", "solar", "radiant"]},
+    {"question": "What energy makes sounds we can hear?", "expectedAny": ["sound energy"]},
+    {"question": "What energy is stored in a stretched spring?", "expectedAny": ["elastic potential energy"]}
+  ],
+  "truefalse": [
+    {"question": "A moving car has kinetic energy.", "answer": true},
+    {"question": "Potential energy is stored energy.", "answer": true},
+    {"question": "Energy can be created from nothing.", "answer": false},
+    {"question": "Friction often turns kinetic energy into heat.", "answer": true},
+    {"question": "A battery stores electrical energy directly.", "answer": false},
+    {"question": "Light is a form of energy.", "answer": true},
+    {"question": "All energy transformations are 100% efficient.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "Which is an example of energy transformation?", "choices": ["Book on a shelf", "Battery powering a flashlight", "Rock on the ground", "Ice in a freezer"], "correct": 1},
+    {"question": "What form of energy does a toaster mainly produce?", "choices": ["Light", "Sound", "Heat", "Electric"], "correct": 2},
+    {"question": "Which object stores chemical energy?", "choices": ["Rubber band", "Battery", "Spinning top", "Solar panel"], "correct": 1},
+    {"question": "When you drop a ball, potential energy changes to:", "choices": ["Light", "Sound", "Kinetic", "Electric"], "correct": 2},
+    {"question": "Solar panels change sunlight into:", "choices": ["Heat", "Electricity", "Sound", "Motion"], "correct": 1},
+    {"question": "Which best describes kinetic energy?", "choices": ["Stored", "Of motion", "From food", "From sun"], "correct": 1},
+    {"question": "A hand-crank flashlight changes:", "choices": ["Light to chemical", "Mechanical to electrical", "Heat to sound", "Sound to light"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "When you stretch a rubber band, you give it _____ energy, and when you let it go, it has _____ energy.", "expectedAny": ["potential", "kinetic"]},
+    {"question": "The ability to cause change or do work is called _____.", "expectedAny": ["energy"]},
+    {"question": "Energy in moving objects is called _____.", "expectedAny": ["kinetic energy"]},
+    {"question": "Stored energy because of position is called _____.", "expectedAny": ["potential energy"]},
+    {"question": "The sun provides _____ energy to Earth.", "expectedAny": ["light", "solar", "radiant"]},
+    {"question": "When energy changes form, it is an energy _____.", "expectedAny": ["transformation"]},
+    {"question": "Friction often produces _____.", "expectedAny": ["heat", "thermal energy"]}
+  ],
+  "shortanswer": [
+    {"question": "Describe what happens to energy when you drop a ball.", "expectedAny": ["potential changes to kinetic"]},
+    {"question": "Give two examples of energy transformations.", "expectedAny": ["battery to light", "food to movement", "electrical to heat"]},
+    {"question": "How does friction affect moving objects' energy?", "expectedAny": ["converts to heat"]},
+    {"question": "How do plants use the sun's energy?", "expectedAny": ["photosynthesis"]},
+    {"question": "Why is energy conservation important?", "expectedAny": ["save resources", "reduce waste"]},
+    {"question": "Explain the difference between kinetic and potential energy.", "expectedAny": ["motion vs stored"]},
+    {"question": "What energy transformations happen in a lamp?", "expectedAny": ["electrical to light and heat"]}
+  ]
+}

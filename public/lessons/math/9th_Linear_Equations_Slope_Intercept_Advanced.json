@@ -1,0 +1,53 @@
+{
+  "id": "9th_Linear_Equations_Slope_Intercept_Advanced",
+  "title": "Linear Equations: Slope-Intercept Form",
+  "grade": "9th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "slope-intercept form",
+      "definition": "Linear equation written as y = mx + b"
+    },
+    {
+      "term": "slope",
+      "definition": "Rate of change or steepness of a line (m)"
+    },
+    {
+      "term": "y-intercept",
+      "definition": "Point where line crosses the y-axis (b)"
+    },
+    {
+      "term": "parallel lines",
+      "definition": "Lines with the same slope that never intersect"
+    },
+    {
+      "term": "perpendicular lines",
+      "definition": "Lines whose slopes are negative reciprocals"
+    }
+  ],
+  "teachingNotes": "Emphasize graphing from slope-intercept form. Practice finding equations of parallel and perpendicular lines.",
+  "sample": {
+    "question": "What is the form y = mx + b called?",
+    "expectedAny": ["slope-intercept form", "slope intercept form", "linear form", "standard linear form"]
+  },
+  "truefalse": {
+    "question": "In y = mx + b, the variable m represents the slope.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What do parallel lines have in common?",
+    "expectedAny": ["same slope", "equal slopes", "identical slope values", "matching slopes"]
+  },
+  "fillintheblank": {
+    "question": "The point where a line crosses the y-axis is the ________-intercept.",
+    "expectedAny": ["y", "vertical", "y-axis", "ordinate"]
+  },
+  "shortanswer": {
+    "question": "How do you find the slope of a line passing through points (2,3) and (4,7)?",
+    "expectedAny": ["(7-3)/(4-2) = 2", "rise over run", "change in y over change in x", "4/2 = 2"]
+  },
+  "wordProblems": {
+    "question": "A line has slope 3 and passes through (1,5). What is its equation in slope-intercept form?",
+    "expectedAny": ["y = 3x + 2", "y = 3x + 2", "3x - y = -2", "y equals 3x plus 2"]
+  }
+}

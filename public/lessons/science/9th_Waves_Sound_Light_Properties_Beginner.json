@@ -1,0 +1,73 @@
+{
+  "id": "9th_Waves_Sound_Light_Properties_Beginner",
+  "title": "Waves: Sound and Light Properties",
+  "grade": "9th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "wave",
+      "definition": "Disturbance that transfers energy through matter or space"
+    },
+    {
+      "term": "frequency",
+      "definition": "Number of wave cycles per second, measured in hertz"
+    },
+    {
+      "term": "wavelength",
+      "definition": "Distance between two corresponding points on a wave"
+    },
+    {
+      "term": "amplitude",
+      "definition": "Maximum displacement of a wave from its rest position"
+    },
+    {
+      "term": "electromagnetic spectrum",
+      "definition": "Range of all electromagnetic waves including visible light"
+    }
+  ],
+  "teachingNotes": "Use demonstrations with sound and light waves. Emphasize the relationship between wave properties and energy transfer.",
+  "sample": {
+    "question": "What is a disturbance that transfers energy through matter or space?",
+    "expectedAny": [
+      "wave",
+      "energy wave",
+      "wave motion",
+      "wave disturbance"
+    ]
+  },
+  "truefalse": {
+    "question": "Frequency is measured in hertz (Hz).",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the distance between two corresponding points on a wave?",
+    "expectedAny": [
+      "wavelength",
+      "wave distance",
+      "cycle length",
+      "wave span"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The maximum displacement of a wave from rest position is its ________.",
+    "expectedAny": [
+      "amplitude",
+      "height",
+      "peak",
+      "maximum displacement"
+    ]
+  },
+  "shortanswer": {
+    "question": "How are frequency and wavelength related?",
+    "expectedAny": [
+      "inversely related",
+      "higher frequency means shorter wavelength",
+      "they multiply to give wave speed"
+    ]
+  }
+}

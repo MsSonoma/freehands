@@ -1,0 +1,53 @@
+{
+  "id": "6th_Measurement_Units_Conversions_Beginner",
+  "title": "Measurement and Unit Conversions",
+  "grade": "6th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "measurement",
+      "definition": "The process of finding the size, length, or amount of something"
+    },
+    {
+      "term": "unit conversion",
+      "definition": "Changing from one unit of measurement to another"
+    },
+    {
+      "term": "metric system",
+      "definition": "A system of measurement based on powers of 10"
+    },
+    {
+      "term": "customary system",
+      "definition": "The measurement system commonly used in the United States"
+    },
+    {
+      "term": "precision",
+      "definition": "How exact or detailed a measurement is"
+    }
+  ],
+  "teachingNotes": "Practice with both metric and customary units. Use real-world examples and measuring tools. Emphasize the importance of including units in answers.",
+  "sample": {
+    "question": "What measurement system is based on powers of 10?",
+    "expectedAny": ["metric system", "metric", "decimal system", "international system"]
+  },
+  "truefalse": {
+    "question": "There are 12 inches in 1 foot.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "How many centimeters are in 1 meter?",
+    "expectedAny": ["100", "100 centimeters", "one hundred", "100 cm"]
+  },
+  "fillintheblank": {
+    "question": "Changing from one unit of measurement to another is called unit ________.",
+    "expectedAny": ["conversion", "converting", "transformation", "change"]
+  },
+  "shortanswer": {
+    "question": "Convert 5 feet to inches.",
+    "expectedAny": ["60 inches", "60 in", "5 × 12 = 60", "sixty inches"]
+  },
+  "wordProblems": {
+    "question": "A recipe calls for 2.5 liters of water. How many milliliters is this?",
+    "expectedAny": ["2500 milliliters", "2500 mL", "2.5 × 1000 = 2500", "2500"]
+  }
+}

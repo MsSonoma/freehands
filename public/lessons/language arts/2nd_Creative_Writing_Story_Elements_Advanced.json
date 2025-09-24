@@ -1,0 +1,59 @@
+{
+  "id": "2nd_Creative_Writing_Story_Elements_Advanced",
+  "title": "Creative Writing and Story Elements",
+  "grade": "2nd",
+  "difficulty": "Advanced",
+  "vocab": [
+    { "term": "character", "definition": "A person or animal in a story" },
+    { "term": "setting", "definition": "Where and when a story takes place" },
+    { "term": "plot", "definition": "What happens in a story from beginning to end" },
+    { "term": "beginning", "definition": "The start of a story that introduces characters and setting" },
+    { "term": "ending", "definition": "The last part of a story that tells how things turn out" }
+  ],
+  "teachingNotes": "Guide students through writing simple stories with clear beginning, middle, and end. Focus on creating interesting characters and settings. Encourage use of descriptive words and proper story structure.",
+  "sample": [
+    { "question": "What are the main parts of a story?", "expectedAny": ["beginning, middle, end", "characters, setting, plot", "story elements", "story parts"] },
+    { "question": "What does the setting tell us?", "expectedAny": ["where and when a story happens", "place and time"] },
+    { "question": "What do we call the people or animals in a story?", "expectedAny": ["characters", "story people"] },
+    { "question": "What is the plot?", "expectedAny": ["what happens in a story", "events"] },
+    { "question": "Name one thing a beginning should do.", "expectedAny": ["introduce characters", "set the scene"] },
+    { "question": "What should happen in the middle of a story?", "expectedAny": ["the problem or main events", "action"] },
+    { "question": "What does the ending tell us?", "expectedAny": ["how things turn out", "how the problem is solved"] }
+  ],
+  "truefalse": [
+    { "question": "The setting tells us where and when a story happens.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Characters are always people, never animals.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Stories should have a beginning, middle, and end.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The plot is the same as the setting.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A problem in the story makes it interesting.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The ending should not solve the problem.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Descriptive words can make a story better.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "What do we call the people or animals in a story?", "expectedAny": ["characters", "story people", "main figures", "story beings"] },
+    { "question": "Which part of the story introduces characters and setting?", "expectedAny": ["beginning", "start"] },
+    { "question": "Which part usually has the problem and main events?", "expectedAny": ["middle", "the middle"] },
+    { "question": "Which part of the story tells how things turn out?", "expectedAny": ["ending", "conclusion"] },
+    { "question": "What is another word for the events of a story?", "expectedAny": ["plot", "story line"] },
+    { "question": "Which detail could be a setting?", "expectedAny": ["in a forest in winter", "at school in the morning"] },
+    { "question": "Which helps readers imagine the story better?", "expectedAny": ["descriptive words", "details"] }
+  ],
+  "fillintheblank": [
+    { "question": "The ________ of a story tells what happens from beginning to end.", "expectedAny": ["plot", "story line", "events", "what happens"] },
+    { "question": "The ________ tells us where and when a story happens.", "expectedAny": ["setting", "place and time"] },
+    { "question": "A person or animal in a story is a ________.", "expectedAny": ["character"] },
+    { "question": "The beginning should ________ the characters and setting.", "expectedAny": ["introduce", "present"] },
+    { "question": "The ________ is where the main events happen.", "expectedAny": ["middle"] },
+    { "question": "The ending should ________ the problem.", "expectedAny": ["solve", "fix"] },
+    { "question": "Good writers use ________ words to help readers imagine.", "expectedAny": ["descriptive", "detail"] }
+  ],
+  "shortanswer": [
+    { "question": "What makes a good story beginning?", "expectedAny": ["introduces characters", "sets the scene", "grabs attention", "tells who and where"] },
+    { "question": "Describe a setting for a story about a lost puppy.", "expectedAny": ["in a busy park", "on a rainy street", "at a shelter"] },
+    { "question": "Name a problem a character might have in the middle of a story.", "expectedAny": ["lost toy", "missing map", "stuck in a tree"] },
+    { "question": "How could that problem be solved in the end?", "expectedAny": ["find help", "use clues", "work together"] },
+    { "question": "Give one example of a descriptive word for a forest.", "expectedAny": ["dark", "quiet", "mossy", "tall trees"] },
+    { "question": "What is one way to make characters interesting?", "expectedAny": ["give them goals", "show how they feel", "use dialogue"] },
+    { "question": "Write one sentence that could be the beginning of a story.", "expectedAny": ["any reasonable story start", "introduces character or setting"] }
+  ]
+}

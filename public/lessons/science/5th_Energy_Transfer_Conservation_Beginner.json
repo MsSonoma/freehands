@@ -1,0 +1,73 @@
+{
+  "id": "5th_Energy_Transfer_Conservation_Beginner",
+  "title": "Energy Transfer and Conservation",
+  "grade": "5th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "energy",
+      "definition": "The ability to cause change or do work"
+    },
+    {
+      "term": "kinetic energy",
+      "definition": "Energy that moving objects have"
+    },
+    {
+      "term": "potential energy",
+      "definition": "Stored energy that has the potential to cause motion"
+    },
+    {
+      "term": "energy transfer",
+      "definition": "When energy moves from one object to another"
+    },
+    {
+      "term": "conservation of energy",
+      "definition": "Energy cannot be created or destroyed, only changed from one form to another"
+    }
+  ],
+  "teachingNotes": "Use hands-on demonstrations with pendulums, rolling balls, and rubber bands to show energy transfer. Discuss how energy changes form but is never lost.",
+  "sample": {
+    "question": "What is the difference between kinetic and potential energy?",
+    "expectedAny": [
+      "kinetic is moving, potential is stored",
+      "kinetic is motion, potential is position",
+      "active vs stored energy"
+    ]
+  },
+  "truefalse": {
+    "question": "Energy can be created and destroyed.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "A ball sitting at the top of a hill has what type of energy?",
+    "expectedAny": [
+      "potential energy",
+      "stored energy",
+      "gravitational potential",
+      "potential"
+    ]
+  },
+  "fillintheblank": {
+    "question": "When a ball rolls down a hill, potential energy changes to ________ energy.",
+    "expectedAny": [
+      "kinetic",
+      "motion",
+      "movement",
+      "moving"
+    ]
+  },
+  "shortanswer": {
+    "question": "Give an example of energy transfer you see every day.",
+    "expectedAny": [
+      "food to body energy",
+      "battery to flashlight",
+      "sun to plants",
+      "electrical to light"
+    ]
+  }
+}

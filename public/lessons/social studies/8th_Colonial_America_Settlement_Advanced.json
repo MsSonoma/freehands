@@ -1,0 +1,73 @@
+{
+  "id": "8th_Colonial_America_Settlement_Advanced",
+  "title": "Colonial America and Early Settlement",
+  "grade": "8th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "colony",
+      "definition": "A settlement controlled by a distant country"
+    },
+    {
+      "term": "charter",
+      "definition": "A document giving permission to establish a colony"
+    },
+    {
+      "term": "proprietary colony",
+      "definition": "A colony owned and governed by an individual"
+    },
+    {
+      "term": "indentured servant",
+      "definition": "A person who worked for a period to pay for passage to America"
+    },
+    {
+      "term": "mercantilism",
+      "definition": "An economic system where colonies provide raw materials to the mother country"
+    }
+  ],
+  "teachingNotes": "Compare different types of colonies and their purposes. Discuss how geography influenced colonial development.",
+  "sample": {
+    "question": "What is a settlement controlled by a distant country?",
+    "expectedAny": [
+      "colony",
+      "colonial settlement",
+      "overseas territory",
+      "dependent territory"
+    ]
+  },
+  "truefalse": {
+    "question": "Indentured servants worked for a period to pay for their passage to America.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What economic system required colonies to provide raw materials?",
+    "expectedAny": [
+      "mercantilism",
+      "colonial economy",
+      "mercantilist system",
+      "trade system"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A document giving permission to establish a colony is called a ________.",
+    "expectedAny": [
+      "charter",
+      "colonial charter",
+      "permission document",
+      "founding document"
+    ]
+  },
+  "shortanswer": {
+    "question": "Why did different colonies develop different economies?",
+    "expectedAny": [
+      "geography and climate differences",
+      "natural resources varied",
+      "environmental factors"
+    ]
+  }
+}

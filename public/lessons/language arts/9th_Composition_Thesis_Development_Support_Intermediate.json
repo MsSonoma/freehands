@@ -1,0 +1,74 @@
+{
+  "id": "9th_Composition_Thesis_Development_Support_Intermediate",
+  "title": "Composition: Thesis Development and Support",
+  "grade": "9th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "thesis statement",
+      "definition": "Central argument or main claim of an essay"
+    },
+    {
+      "term": "supporting evidence",
+      "definition": "Facts, examples, or reasoning that backs up the thesis"
+    },
+    {
+      "term": "topic sentence",
+      "definition": "Sentence that introduces the main idea of a paragraph"
+    },
+    {
+      "term": "coherence",
+      "definition": "Logical connection and flow between ideas"
+    },
+    {
+      "term": "conclusion",
+      "definition": "Final paragraph that reinforces the thesis and provides closure"
+    }
+  ],
+  "teachingNotes": "Practice writing clear, arguable thesis statements. Emphasize the importance of evidence and logical organization in essays.",
+  "sample": {
+    "question": "What is the central argument or main claim of an essay?",
+    "expectedAny": [
+      "thesis statement",
+      "thesis",
+      "main argument",
+      "central claim"
+    ]
+  },
+  "truefalse": {
+    "question": "Supporting evidence backs up the thesis statement.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What introduces the main idea of a paragraph?",
+    "expectedAny": [
+      "topic sentence",
+      "opening sentence",
+      "main sentence",
+      "introductory sentence"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Logical connection between ideas is called ________.",
+    "expectedAny": [
+      "coherence",
+      "flow",
+      "unity",
+      "logical connection"
+    ]
+  },
+  "shortanswer": {
+    "question": "What makes a thesis statement effective?",
+    "expectedAny": [
+      "clear and arguable",
+      "specific and focused",
+      "supportable with evidence",
+      "debatable position"
+    ]
+  }
+}

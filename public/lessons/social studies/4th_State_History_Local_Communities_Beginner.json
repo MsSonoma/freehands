@@ -1,0 +1,74 @@
+{
+  "id": "4th_State_History_Local_Communities_Beginner",
+  "title": "State History and Local Communities",
+  "grade": "4th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "state",
+      "definition": "One of the 50 areas that make up the United States"
+    },
+    {
+      "term": "founder",
+      "definition": "A person who helped start or establish a community"
+    },
+    {
+      "term": "settlement",
+      "definition": "A place where people decide to live and build a community"
+    },
+    {
+      "term": "timeline",
+      "definition": "A way to show when important events happened in order"
+    },
+    {
+      "term": "local history",
+      "definition": "The story of what happened in your town or area"
+    }
+  ],
+  "teachingNotes": "Focus on the student's own state and local community. Research when the area was first settled, who the important founders were, and major events in local history. Create timelines of local development.",
+  "sample": [
+    {"question": "What state do you live in?", "expectedAny": []},
+    {"question": "What is your state capital?", "expectedAny": []},
+    {"question": "Name three major cities in your state.", "expectedAny": []},
+    {"question": "What states border your state?", "expectedAny": []},
+    {"question": "What is your state bird or flower?", "expectedAny": []},
+    {"question": "When did your state become a state?", "expectedAny": []},
+    {"question": "Name one important event from your local community's history.", "expectedAny": []}
+  ],
+  "truefalse": [
+    {"question": "Every state has a capital city.", "answer": true},
+    {"question": "States can change their borders anytime they want.", "answer": false},
+    {"question": "Each state has its own flag and symbols.", "answer": true},
+    {"question": "All states became states at the same time.", "answer": false},
+    {"question": "The governor leads the state government.", "answer": true},
+    {"question": "Local communities have unique histories.", "answer": true},
+    {"question": "States do not need to follow federal laws.", "answer": false}
+  ],
+  "multiplechoice": [
+    {"question": "How many states are in the USA?", "choices": ["48", "50", "52", "51"], "correct": 1},
+    {"question": "States are divided into ___?", "choices": ["Countries", "Counties", "Nations", "Continents"], "correct": 1},
+    {"question": "The leader of a state is the ___?", "choices": ["President", "Mayor", "Governor", "Sheriff"], "correct": 2},
+    {"question": "Which map shows state boundaries?", "choices": ["Physical map", "Political map", "Weather map", "Resource map"], "correct": 1},
+    {"question": "Which is largest?", "choices": ["City", "County", "State", "Neighborhood"], "correct": 2},
+    {"question": "State government usually meets in the ___?", "choices": ["Courthouse", "City hall", "State capitol", "Library"], "correct": 2},
+    {"question": "Which best describes natural resources?", "choices": ["Made in factories", "From nature", "Only in cities", "Only on maps"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "The United States has ___ states.", "expectedAny": ["50", "fifty"]},
+    {"question": "Your state's leader is called the ___.", "expectedAny": ["governor"]},
+    {"question": "The ___ is where the state government meets.", "expectedAny": ["capitol", "capital"]},
+    {"question": "States are divided into smaller areas called ___.", "expectedAny": ["counties"]},
+    {"question": "A ___ shows a state's official symbols.", "expectedAny": ["flag", "seal"]},
+    {"question": "Natural features like mountains and rivers are called ___.", "expectedAny": ["landforms", "geography"]},
+    {"question": "Each state has its own special ___ and traditions.", "expectedAny": ["symbols", "customs"]}
+  ],
+  "shortanswer": [
+    {"question": "Describe your state's location in the US.", "expectedAny": ["region", "neighboring states"]},
+    {"question": "What makes your state unique?", "expectedAny": ["history", "culture", "resources", "landmarks"]},
+    {"question": "How does geography affect how people live in your state?", "expectedAny": ["climate affects crops", "landforms affect travel"]},
+    {"question": "Why do states have capitals?", "expectedAny": ["government center"]},
+    {"question": "What are your state's major industries?", "expectedAny": ["agriculture", "technology", "tourism", "manufacturing"]},
+    {"question": "How has your local community changed over time?", "expectedAny": ["population", "transportation", "buildings"]},
+    {"question": "What would you show a visitor to your state?", "expectedAny": ["landmarks", "parks", "historical sites"]}
+  ]
+}

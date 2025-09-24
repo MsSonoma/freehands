@@ -1,0 +1,74 @@
+{
+  "id": "11th_Advanced_Composition_Rhetorical_Analysis_Intermediate",
+  "title": "Advanced Composition: Rhetorical Analysis",
+  "grade": "11th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "rhetorical strategy",
+      "definition": "Deliberate technique used to achieve persuasive effect"
+    },
+    {
+      "term": "tone",
+      "definition": "Author's attitude toward subject or audience"
+    },
+    {
+      "term": "diction",
+      "definition": "Author's choice of words and style of expression"
+    },
+    {
+      "term": "syntax",
+      "definition": "Arrangement of words and phrases to create sentences"
+    },
+    {
+      "term": "rhetorical device",
+      "definition": "Literary technique used to enhance persuasive effect"
+    }
+  ],
+  "teachingNotes": "Analyze how authors use language choices strategically. Practice close reading of rhetorical techniques in speeches and essays.",
+  "sample": {
+    "question": "What is a deliberate technique used to achieve persuasive effect?",
+    "expectedAny": [
+      "rhetorical strategy",
+      "persuasive technique",
+      "rhetorical method",
+      "persuasive strategy"
+    ]
+  },
+  "truefalse": {
+    "question": "Diction refers to an author's choice of words.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the arrangement of words to create sentences?",
+    "expectedAny": [
+      "syntax",
+      "sentence structure",
+      "word arrangement",
+      "grammatical structure"
+    ]
+  },
+  "fillintheblank": {
+    "question": "An author's attitude toward subject or audience is called ________.",
+    "expectedAny": [
+      "tone",
+      "attitude",
+      "voice",
+      "perspective"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does syntax affect rhetorical impact?",
+    "expectedAny": [
+      "creates rhythm",
+      "emphasizes ideas",
+      "controls pace",
+      "affects clarity"
+    ]
+  }
+}

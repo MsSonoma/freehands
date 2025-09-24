@@ -1,0 +1,83 @@
+{
+  "id": "2nd_Two_Digit_Addition_Subtraction_Intermediate",
+  "title": "Two-Digit Addition and Subtraction",
+  "grade": "2nd",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "addition",
+      "definition": "Putting numbers together to find the total amount"
+    },
+    {
+      "term": "subtraction",
+      "definition": "Taking away one number from another"
+    },
+    {
+      "term": "regrouping",
+      "definition": "Trading 10 ones for 1 ten, or 1 ten for 10 ones"
+    },
+    {
+      "term": "sum",
+      "definition": "The answer when you add numbers together"
+    },
+    {
+      "term": "difference",
+      "definition": "The answer when you subtract one number from another"
+    }
+  ],
+  "teachingNotes": "Teach addition and subtraction with regrouping using manipulatives. Show step-by-step process: add/subtract ones first, then tens. Use real-world problems to make math meaningful.",
+  "sample": [
+    {"question": "What is 47 + 38?", "expectedAny": ["85", "eighty-five", "85 total"]},
+    {"question": "Solve: 63 - 28", "expectedAny": ["35"]},
+    {"question": "What is 56 + 19?", "expectedAny": ["75"]},
+    {"question": "What is 70 - 32?", "expectedAny": ["38"]},
+    {"question": "Solve: 44 + 27", "expectedAny": ["71"]},
+    {"question": "Solve: 91 - 56", "expectedAny": ["35"]},
+    {"question": "What is 38 + 24?", "expectedAny": ["62"]}
+  ],
+  "truefalse": [
+    {"question": "When you add 29 + 15, you need to regroup.", "answer": true},
+    {"question": "When subtracting 52 - 29, you may need to regroup.", "answer": true},
+    {"question": "You always add the tens first when adding two-digit numbers.", "answer": false},
+    {"question": "54 - 27 requires regrouping.", "answer": true},
+    {"question": "36 + 24 does not require regrouping in the ones place.", "answer": true},
+    {"question": "70 - 8 equals 62.", "answer": true},
+    {"question": "Regrouping means trading 10 ones for 1 ten.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is 63 - 28?", "choices": ["31", "33", "35", "37"], "correct": 2},
+    {"question": "What is 48 + 26?", "choices": ["64", "72", "74", "76"], "correct": 1},
+    {"question": "What is 90 - 47?", "choices": ["33", "41", "43", "47"], "correct": 1},
+    {"question": "Which problem needs regrouping?", "choices": ["24 + 15", "32 + 17", "41 + 26", "53 + 18"], "correct": 3},
+    {"question": "What is 27 + 58?", "choices": ["75", "83", "85", "87"], "correct": 1},
+    {"question": "What is 64 - 29?", "choices": ["33", "35", "37", "39"], "correct": 2},
+    {"question": "What is 38 + 47?", "choices": ["75", "83", "85", "87"], "correct": 3}
+  ],
+  "fillintheblank": [
+    {"question": "To solve 54 + 29, first add the ________, then add the tens.", "expectedAny": ["ones", "ones place", "units", "right column"]},
+    {"question": "Regrouping means trading 10 ________ for 1 ten.", "expectedAny": ["ones"]},
+    {"question": "When subtracting, if the top ones are smaller than the bottom ones, you should ________.", "expectedAny": ["regroup", "borrow"]},
+    {"question": "The answer to an addition problem is the ________.", "expectedAny": ["sum"]},
+    {"question": "The answer to a subtraction problem is the ________.", "expectedAny": ["difference"]},
+    {"question": "In 73, 7 represents the number of ________.", "expectedAny": ["tens"]},
+    {"question": "In 73, 3 represents the number of ________.", "expectedAny": ["ones"]}
+  ],
+  "shortanswer": [
+    {"question": "Explain how to solve 72 - 45.", "expectedAny": ["subtract ones then tens", "regroup if needed", "take away 45", "step by step"]},
+    {"question": "Explain why 38 + 27 requires regrouping.", "expectedAny": ["8+7=15 so make 1 ten and 5 ones"]},
+    {"question": "Show how to solve 54 - 26.", "expectedAny": ["regroup 1 ten to ones, then subtract"]},
+    {"question": "How can a number line help with 45 + 28?", "expectedAny": ["jump 20 then 8", "break apart into tens and ones"]},
+    {"question": "What strategy helps with 69 - 32?", "expectedAny": ["subtract ones then tens; regroup if needed"]},
+    {"question": "How can base-ten blocks show 73 - 48?", "expectedAny": ["trade a ten for 10 ones and subtract"]},
+    {"question": "Explain why 70 - 35 = 35 without regrouping.", "expectedAny": ["0 ones minus 5 needs regrouping but tens subtraction shows 7 tens - 3 tens = 4 tens then subtract ones"]}
+  ],
+  "wordProblems": [
+    {"question": "There are 46 students in second grade and 38 students in first grade. How many students are there in total?", "expectedAny": ["84", "84 students", "eighty-four", "eighty-four students"]},
+    {"question": "A store had 75 apples and sold 28. How many apples are left?", "expectedAny": ["47"]},
+    {"question": "You read 36 pages on Monday and 27 pages on Tuesday. How many pages in all?", "expectedAny": ["63"]},
+    {"question": "There are 58 stickers. You give away 19. How many remain?", "expectedAny": ["39"]},
+    {"question": "A class collected 42 cans and another class collected 39. How many cans in total?", "expectedAny": ["81"]},
+    {"question": "You have 67 marbles and find 25 more. How many now?", "expectedAny": ["92"]},
+    {"question": "There are 90 birds in two trees. If 44 fly away, how many are left?", "expectedAny": ["46"]}
+  ]
+}

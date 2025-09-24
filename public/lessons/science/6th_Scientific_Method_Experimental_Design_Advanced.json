@@ -1,0 +1,73 @@
+{
+  "id": "6th_Scientific_Method_Experimental_Design_Advanced",
+  "title": "Scientific Method and Experimental Design",
+  "grade": "6th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "hypothesis",
+      "definition": "An educated guess that can be tested through experiments"
+    },
+    {
+      "term": "variable",
+      "definition": "A factor that can change in an experiment"
+    },
+    {
+      "term": "control group",
+      "definition": "The group in an experiment that doesn't receive the treatment being tested"
+    },
+    {
+      "term": "data",
+      "definition": "Information collected during an experiment"
+    },
+    {
+      "term": "conclusion",
+      "definition": "A statement that explains what was learned from the experiment"
+    }
+  ],
+  "teachingNotes": "Emphasize the importance of fair testing and controlling variables. Practice writing hypotheses in 'if-then' format. Discuss peer review in science.",
+  "sample": {
+    "question": "What is an educated guess that can be tested called?",
+    "expectedAny": [
+      "hypothesis",
+      "scientific hypothesis",
+      "testable prediction",
+      "educated guess"
+    ]
+  },
+  "truefalse": {
+    "question": "A good experiment should only test one variable at a time.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is the group that doesn't receive treatment in an experiment?",
+    "expectedAny": [
+      "control group",
+      "control",
+      "comparison group",
+      "baseline group"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Information collected during an experiment is called ________.",
+    "expectedAny": [
+      "data",
+      "experimental data",
+      "research data",
+      "scientific data"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are the main steps of the scientific method?",
+    "expectedAny": [
+      "question, hypothesis, experiment, analyze, conclude",
+      "observe, question, test, analyze, conclude",
+      "ask, predict, test, record, explain"
+    ]
+  }
+}

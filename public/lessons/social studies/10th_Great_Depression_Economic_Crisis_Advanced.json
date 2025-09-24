@@ -1,0 +1,74 @@
+{
+  "id": "10th_Great_Depression_Economic_Crisis_Advanced",
+  "title": "Great Depression: Global Economic Crisis and Response",
+  "grade": "10th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "great depression",
+      "definition": "Severe worldwide economic downturn from 1929 to late 1930s"
+    },
+    {
+      "term": "stock market crash",
+      "definition": "Sudden dramatic decline in stock market values"
+    },
+    {
+      "term": "new deal",
+      "definition": "Series of programs to combat the Great Depression in the US"
+    },
+    {
+      "term": "unemployment",
+      "definition": "Condition of being without work despite seeking employment"
+    },
+    {
+      "term": "keynesian economics",
+      "definition": "Economic theory advocating government intervention during recessions"
+    }
+  ],
+  "teachingNotes": "Analyze the global nature of the crisis and various governmental responses. Connect to modern economic policies.",
+  "sample": {
+    "question": "What was the severe worldwide economic downturn of the 1930s?",
+    "expectedAny": [
+      "Great Depression",
+      "economic depression",
+      "1930s depression",
+      "global depression"
+    ]
+  },
+  "truefalse": {
+    "question": "The New Deal was a series of programs to combat the Great Depression.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What economic theory advocates government intervention during recessions?",
+    "expectedAny": [
+      "Keynesian economics",
+      "Keynesian theory",
+      "interventionist economics",
+      "demand-side economics"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Being without work despite seeking employment is called ________.",
+    "expectedAny": [
+      "unemployment",
+      "joblessness",
+      "economic displacement",
+      "work scarcity"
+    ]
+  },
+  "shortanswer": {
+    "question": "What caused the Great Depression?",
+    "expectedAny": [
+      "stock market crash",
+      "overproduction",
+      "banking failures",
+      "reduced consumer spending"
+    ]
+  }
+}

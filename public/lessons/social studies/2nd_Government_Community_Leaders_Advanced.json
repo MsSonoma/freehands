@@ -1,0 +1,74 @@
+{
+  "id": "2nd_Government_Community_Leaders_Advanced",
+  "title": "Government and Community Leaders",
+  "grade": "2nd",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "government",
+      "definition": "The group of people who make rules for a community or country"
+    },
+    {
+      "term": "leader",
+      "definition": "A person who helps guide and make decisions for a group"
+    },
+    {
+      "term": "mayor",
+      "definition": "The leader of a city or town"
+    },
+    {
+      "term": "vote",
+      "definition": "To choose someone or something by marking a choice"
+    },
+    {
+      "term": "law",
+      "definition": "An important rule that everyone in a place must follow"
+    }
+  ],
+  "teachingNotes": "Introduce basic concepts of local government. Discuss the role of community leaders like mayors, police officers, and firefighters. Practice voting through classroom elections for simple decisions.",
+  "sample": [
+    {"question": "Who makes the rules for our community?", "expectedAny": ["government", "leaders", "mayor", "elected officials"]},
+    {"question": "What does a mayor do?", "expectedAny": ["leads a city or town", "helps make decisions"]},
+    {"question": "What is voting?", "expectedAny": ["choosing leaders", "making a choice in an election"]},
+    {"question": "Name a community leader besides the mayor.", "expectedAny": ["police chief", "fire chief", "school principal"]},
+    {"question": "What is a law?", "expectedAny": ["an important rule everyone must follow"]},
+    {"question": "Why do we have laws?", "expectedAny": ["keep people safe", "keep order", "fairness"]},
+    {"question": "Who can vote in community elections?", "expectedAny": ["adult citizens"]}
+  ],
+  "truefalse": [
+    {"question": "A mayor is the leader of a city or town.", "answer": true},
+    {"question": "Only the mayor makes all the rules.", "answer": false},
+    {"question": "People vote to choose leaders.", "answer": true},
+    {"question": "Laws are suggestions, not rules.", "answer": false},
+    {"question": "Community leaders help solve problems.", "answer": true},
+    {"question": "Children vote in official elections.", "answer": false},
+    {"question": "Police officers and firefighters serve the community.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "How do people choose their leaders?", "choices": ["By guessing", "By voting", "By drawing", "By playing"], "correct": 1},
+    {"question": "Who leads a city?", "choices": ["Teacher", "Mayor", "Coach", "Driver"], "correct": 1},
+    {"question": "Why do communities have laws?", "choices": ["To make life harder", "To keep people safe and fair", "For fun", "No reason"], "correct": 1},
+    {"question": "Which is a community leader?", "choices": ["School principal", "Student", "Pet", "Robot"], "correct": 0},
+    {"question": "What is an election?", "choices": ["A party", "A game", "A time to choose leaders", "A holiday"], "correct": 2},
+    {"question": "Who can vote in most elections?", "choices": ["Adult citizens", "All kids", "Only teachers", "Only mayors"], "correct": 0},
+    {"question": "Who makes laws in a community?", "choices": ["City council and leaders", "Only one person", "No one", "Students"], "correct": 0}
+  ],
+  "fillintheblank": [
+    {"question": "An important rule that everyone must follow is called a ________.", "expectedAny": ["law", "rule"]},
+    {"question": "People ________ to choose leaders.", "expectedAny": ["vote"]},
+    {"question": "A ________ leads a city or town.", "expectedAny": ["mayor"]},
+    {"question": "A group that helps make local laws is the city ________.", "expectedAny": ["council"]},
+    {"question": "Leaders help ________ problems in the community.", "expectedAny": ["solve"]},
+    {"question": "Laws help keep people ________.", "expectedAny": ["safe"]},
+    {"question": "The person who leads a school is the ________.", "expectedAny": ["principal"]}
+  ],
+  "shortanswer": [
+    {"question": "Why do communities need leaders?", "expectedAny": ["make decisions", "solve problems", "help people", "keep order"]},
+    {"question": "Name one way leaders help the community.", "expectedAny": ["make rules", "keep people safe", "fix roads", "support schools"]},
+    {"question": "How does voting help a community?", "expectedAny": ["people choose leaders", "everyone has a voice"]},
+    {"question": "What should a good leader be like?", "expectedAny": ["fair", "kind", "listens", "responsible"]},
+    {"question": "Who are some leaders at your school?", "expectedAny": ["principal", "teachers", "student council (if any)"]},
+    {"question": "Give an example of a law that keeps people safe.", "expectedAny": ["stop at red lights", "no running in hallways"]},
+    {"question": "What would you change if you were class leader?", "expectedAny": ["student choice with reason"]}
+  ]
+}

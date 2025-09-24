@@ -1,0 +1,69 @@
+{
+	"id": "3rd_Division_Introduction_and_Facts_Intermediate",
+	"title": "Division: Introduction and Facts",
+	"grade": "3rd",
+	"difficulty": "Intermediate",
+	"featured": false,
+	"vocab": [
+		{"term": "divide", "definition": "To split into equal groups"},
+		{"term": "quotient", "definition": "The answer to a division problem"},
+		{"term": "dividend", "definition": "The number being divided"},
+		{"term": "divisor", "definition": "The number you divide by"},
+		{"term": "remainder", "definition": "What is left over when division is not exact"}
+	],
+	"teachingNotes": "Connect division to multiplication as inverse operations. Use equal sharing and grouping. Practice facts up to 100.",
+	"sample": [
+		{"question": "What is 24 ÷ 6?", "expectedAny": ["4"]},
+		{"question": "What is 35 ÷ 5?", "expectedAny": ["7"]},
+		{"question": "What is 48 ÷ 8?", "expectedAny": ["6"]},
+		{"question": "What is 63 ÷ 9?", "expectedAny": ["7"]},
+		{"question": "What is 32 ÷ 4?", "expectedAny": ["8"]},
+		{"question": "What is 45 ÷ 5?", "expectedAny": ["9"]},
+		{"question": "What is 72 ÷ 8?", "expectedAny": ["9"]}
+	],
+	"truefalse": [
+		{"question": "Division is the opposite of multiplication.", "answer": true},
+		{"question": "20 ÷ 4 = 5", "answer": true},
+		{"question": "36 ÷ 6 = 5", "answer": false},
+		{"question": "Division means sharing equally.", "answer": true},
+		{"question": "81 ÷ 9 = 9", "answer": true},
+		{"question": "42 ÷ 7 = 8", "answer": false},
+		{"question": "100 ÷ 10 = 10", "answer": true}
+	],
+	"multiplechoice": [
+		{"question": "28 ÷ 7 = ?", "choices": ["3", "4", "5", "6"], "correct": 1},
+		{"question": "54 ÷ 6 = ?", "choices": ["7", "8", "9", "10"], "correct": 2},
+		{"question": "40 ÷ 5 = ?", "choices": ["6", "7", "8", "9"], "correct": 2},
+		{"question": "49 ÷ 7 = ?", "choices": ["5", "6", "7", "8"], "correct": 2},
+		{"question": "64 ÷ 8 = ?", "choices": ["6", "7", "8", "9"], "correct": 2},
+		{"question": "27 ÷ 3 = ?", "choices": ["7", "8", "9", "10"], "correct": 2},
+		{"question": "56 ÷ 8 = ?", "choices": ["5", "6", "7", "8"], "correct": 2}
+	],
+	"fillintheblank": [
+		{"question": "30 ÷ 6 = ___", "expectedAny": ["5"]},
+		{"question": "42 ÷ 6 = ___", "expectedAny": ["7"]},
+		{"question": "18 ÷ 3 = ___", "expectedAny": ["6"]},
+		{"question": "25 ÷ 5 = ___", "expectedAny": ["5"]},
+		{"question": "36 ÷ 4 = ___", "expectedAny": ["9"]},
+		{"question": "21 ÷ 7 = ___", "expectedAny": ["3"]},
+		{"question": "45 ÷ 9 = ___", "expectedAny": ["5"]}
+	],
+	"shortanswer": [
+		{"question": "How is division related to multiplication?", "expectedAny": ["inverse operations", "undo each other"]},
+		{"question": "What does 'divide equally' mean?", "expectedAny": ["same amount in each group"]},
+		{"question": "How can you check division?", "expectedAny": ["multiply quotient by divisor"]},
+		{"question": "What is a remainder?", "expectedAny": ["left over when not exact"]},
+		{"question": "Give an example of division in real life.", "expectedAny": ["sharing pizza", "dealing cards"]},
+		{"question": "What happens when you divide by 1?", "expectedAny": ["same number"]},
+		{"question": "What is 0 divided by 5?", "expectedAny": ["0"]}
+	],
+	"wordProblems": [
+		{"question": "24 cookies shared equally among 4 kids. How many each?", "expectedAny": ["6"]},
+		{"question": "48 pencils divided into boxes of 6. How many boxes?", "expectedAny": ["8"]},
+		{"question": "35 students in groups of 5. How many groups?", "expectedAny": ["7"]},
+		{"question": "72 apples in baskets of 9. How many baskets?", "expectedAny": ["8"]},
+		{"question": "$63 divided equally among 7 people. How much each?", "expectedAny": ["9", "$9"]},
+		{"question": "54 cards dealt to 6 players. How many cards each?", "expectedAny": ["9"]},
+		{"question": "80 minutes divided into 10 equal parts. How long each part?", "expectedAny": ["8", "8 minutes"]}
+	]
+}

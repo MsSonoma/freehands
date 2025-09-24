@@ -1,0 +1,74 @@
+{
+  "id": "11th_Quantum_Mechanics_Atomic_Structure_Advanced",
+  "title": "Quantum Mechanics and Atomic Structure",
+  "grade": "11th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "wave function collapse",
+      "definition": "Reduction of quantum superposition to definite state upon measurement"
+    },
+    {
+      "term": "quantum superposition",
+      "definition": "Principle that particles exist in multiple states simultaneously"
+    },
+    {
+      "term": "quantum entanglement",
+      "definition": "Phenomenon where particles remain correlated regardless of distance"
+    },
+    {
+      "term": "Hamiltonian operator",
+      "definition": "Mathematical operator representing total energy in quantum systems"
+    },
+    {
+      "term": "eigenvalue",
+      "definition": "Specific measurable value of quantum mechanical observable"
+    }
+  ],
+  "teachingNotes": "Explore advanced quantum concepts and their philosophical implications. Discuss applications in quantum technology.",
+  "sample": {
+    "question": "What happens when quantum superposition reduces to a definite state?",
+    "expectedAny": [
+      "wave function collapse",
+      "quantum collapse",
+      "state reduction",
+      "measurement collapse"
+    ]
+  },
+  "truefalse": {
+    "question": "Quantum entanglement allows particles to remain correlated over any distance.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What represents total energy in quantum systems?",
+    "expectedAny": [
+      "Hamiltonian operator",
+      "energy operator",
+      "total energy operator",
+      "quantum Hamiltonian"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Particles existing in multiple states simultaneously demonstrates quantum ________.",
+    "expectedAny": [
+      "superposition",
+      "superposition principle",
+      "multiple states",
+      "quantum superposition"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are the implications of quantum entanglement for information transfer?",
+    "expectedAny": [
+      "instantaneous correlation",
+      "quantum communication",
+      "non-local effects",
+      "quantum information"
+    ]
+  }
+}

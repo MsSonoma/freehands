@@ -1,0 +1,73 @@
+{
+  "id": "7th_Renaissance_Art_and_Ideas_Intermediate",
+  "title": "The Renaissance: Art, Science, and Humanism",
+  "grade": "7th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "Renaissance",
+      "definition": "A period of renewed interest in art, learning, and culture"
+    },
+    {
+      "term": "humanism",
+      "definition": "A focus on human potential and achievement"
+    },
+    {
+      "term": "patron",
+      "definition": "A wealthy person who supports artists and scholars"
+    },
+    {
+      "term": "perspective",
+      "definition": "An art technique that creates the illusion of depth"
+    },
+    {
+      "term": "Florence",
+      "definition": "An Italian city-state that was a center of Renaissance culture"
+    }
+  ],
+  "teachingNotes": "Show examples of Renaissance art. Explain how new ideas about learning and human capability emerged. Connect to modern concepts.",
+  "sample": {
+    "question": "What was the period of renewed interest in art, learning, and culture called?",
+    "expectedAny": [
+      "Renaissance",
+      "rebirth",
+      "cultural revival",
+      "artistic revival"
+    ]
+  },
+  "truefalse": {
+    "question": "Renaissance artists developed new techniques like perspective to make art more realistic.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which city was a major center of Renaissance culture?",
+    "expectedAny": [
+      "Florence",
+      "Venice",
+      "Rome",
+      "Italian city-states"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A wealthy person who supports artists is called a ________.",
+    "expectedAny": [
+      "patron",
+      "sponsor",
+      "supporter",
+      "benefactor"
+    ]
+  },
+  "shortanswer": {
+    "question": "How did humanism change the way people thought about themselves?",
+    "expectedAny": [
+      "focused on human potential",
+      "emphasized individual achievement",
+      "valued human capabilities"
+    ]
+  }
+}

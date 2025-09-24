@@ -1,0 +1,53 @@
+{
+  "id": "7th_Proportional_Relationships_and_Ratios_Beginner",
+  "title": "Proportional Relationships and Unit Rates",
+  "grade": "7th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "proportion",
+      "definition": "Two ratios that are equal to each other"
+    },
+    {
+      "term": "ratio",
+      "definition": "A comparison of two quantities"
+    },
+    {
+      "term": "unit rate",
+      "definition": "A rate with a denominator of 1"
+    },
+    {
+      "term": "constant of proportionality",
+      "definition": "The constant ratio in a proportional relationship"
+    },
+    {
+      "term": "cross multiply",
+      "definition": "A method to solve proportions by multiplying diagonally"
+    }
+  ],
+  "teachingNotes": "Use real-world examples like recipes or speed. Show how to find unit rates by dividing. Practice setting up proportions.",
+  "sample": {
+    "question": "What is a comparison of two quantities called?",
+    "expectedAny": ["ratio", "comparison", "relationship", "proportion"]
+  },
+  "truefalse": {
+    "question": "A unit rate has a denominator of 1.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "If 3 apples cost $2, what is the unit rate?",
+    "expectedAny": ["$2/3 per apple", "$0.67 per apple", "67 cents per apple", "$2÷3 per apple"]
+  },
+  "fillintheblank": {
+    "question": "Two ratios that are equal form a ________.",
+    "expectedAny": ["proportion", "proportional relationship", "equal ratios", "equivalent ratios"]
+  },
+  "shortanswer": {
+    "question": "If 4 pencils cost $3, how much do 8 pencils cost?",
+    "expectedAny": ["$6", "6 dollars", "$6.00", "six dollars"]
+  },
+  "wordProblems": {
+    "question": "A car travels 120 miles in 3 hours. At this rate, how far will it travel in 5 hours?",
+    "expectedAny": ["200 miles", "200", "two hundred miles", "120÷3×5=200"]
+  }
+}

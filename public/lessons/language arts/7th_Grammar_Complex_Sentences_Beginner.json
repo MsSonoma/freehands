@@ -1,0 +1,73 @@
+{
+  "id": "7th_Grammar_Complex_Sentences_Beginner",
+  "title": "Complex Sentences and Clause Structure",
+  "grade": "7th",
+  "difficulty": "Beginner",
+  "vocab": [
+    {
+      "term": "complex sentence",
+      "definition": "A sentence with one independent clause and one or more dependent clauses"
+    },
+    {
+      "term": "independent clause",
+      "definition": "A group of words that can stand alone as a complete sentence"
+    },
+    {
+      "term": "dependent clause",
+      "definition": "A group of words that cannot stand alone as a sentence"
+    },
+    {
+      "term": "subordinating conjunction",
+      "definition": "A word that connects a dependent clause to an independent clause"
+    },
+    {
+      "term": "fragment",
+      "definition": "An incomplete sentence missing a subject or predicate"
+    }
+  ],
+  "teachingNotes": "Practice identifying independent and dependent clauses. Show how subordinating conjunctions create complex sentences.",
+  "sample": {
+    "question": "What is a sentence with one independent and one dependent clause?",
+    "expectedAny": [
+      "complex sentence",
+      "complex",
+      "sentence with clauses",
+      "multi-clause sentence"
+    ]
+  },
+  "truefalse": {
+    "question": "A dependent clause can stand alone as a complete sentence.",
+    "expectedAny": [
+      "false",
+      "no",
+      "f",
+      "incorrect"
+    ]
+  },
+  "multiplechoice": {
+    "question": "Which is a subordinating conjunction?",
+    "expectedAny": [
+      "because",
+      "although",
+      "when",
+      "since"
+    ]
+  },
+  "fillintheblank": {
+    "question": "An incomplete sentence is called a ________.",
+    "expectedAny": [
+      "fragment",
+      "sentence fragment",
+      "incomplete sentence",
+      "partial sentence"
+    ]
+  },
+  "shortanswer": {
+    "question": "Combine these clauses with a subordinating conjunction: 'I studied hard' and 'I passed the test.'",
+    "expectedAny": [
+      "Because I studied hard, I passed the test",
+      "I passed the test because I studied hard",
+      "Since I studied hard, I passed the test"
+    ]
+  }
+}

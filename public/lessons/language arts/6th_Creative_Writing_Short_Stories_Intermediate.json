@@ -1,0 +1,73 @@
+{
+  "id": "6th_Creative_Writing_Short_Stories_Intermediate",
+  "title": "Creative Writing: Short Stories and Narrative Techniques",
+  "grade": "6th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "narrative technique",
+      "definition": "Methods writers use to tell their stories effectively"
+    },
+    {
+      "term": "point of view",
+      "definition": "The perspective from which a story is told"
+    },
+    {
+      "term": "first person",
+      "definition": "A story told using 'I' and 'me' by a character in the story"
+    },
+    {
+      "term": "third person",
+      "definition": "A story told using 'he,' 'she,' and 'they' by a narrator outside the story"
+    },
+    {
+      "term": "conflict",
+      "definition": "The problem or struggle that drives a story forward"
+    }
+  ],
+  "teachingNotes": "Practice writing in different points of view. Discuss different types of conflict (internal vs. external). Encourage creative story ideas while maintaining good structure.",
+  "sample": {
+    "question": "What do we call the perspective from which a story is told?",
+    "expectedAny": [
+      "point of view",
+      "narrative perspective",
+      "story perspective",
+      "narrator viewpoint"
+    ]
+  },
+  "truefalse": {
+    "question": "A first-person story uses 'I' and 'me' to tell the story.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What drives a story forward and creates interest?",
+    "expectedAny": [
+      "conflict",
+      "problem",
+      "struggle",
+      "tension"
+    ]
+  },
+  "fillintheblank": {
+    "question": "A story told using 'he,' 'she,' and 'they' is written in ________ person.",
+    "expectedAny": [
+      "third",
+      "third person",
+      "3rd",
+      "third-person"
+    ]
+  },
+  "shortanswer": {
+    "question": "What is the difference between internal and external conflict?",
+    "expectedAny": [
+      "internal is within character, external is outside",
+      "internal is mental/emotional, external is physical",
+      "internal struggles vs. outside forces"
+    ]
+  }
+}

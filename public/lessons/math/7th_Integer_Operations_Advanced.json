@@ -1,0 +1,53 @@
+{
+  "id": "7th_Integer_Operations_Advanced",
+  "title": "Operations with Positive and Negative Integers",
+  "grade": "7th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "integer",
+      "definition": "Positive and negative whole numbers, including zero"
+    },
+    {
+      "term": "absolute value",
+      "definition": "The distance a number is from zero on a number line"
+    },
+    {
+      "term": "opposite",
+      "definition": "Two numbers that are the same distance from zero but on different sides"
+    },
+    {
+      "term": "additive inverse",
+      "definition": "The opposite of a number that makes the sum equal zero"
+    },
+    {
+      "term": "number line",
+      "definition": "A line showing numbers in order with equal spacing"
+    }
+  ],
+  "teachingNotes": "Use number line models and real-world contexts like temperature or debt. Emphasize rules for adding and subtracting integers.",
+  "sample": {
+    "question": "What are positive and negative whole numbers called?",
+    "expectedAny": ["integers", "whole numbers", "positive and negative numbers", "signed numbers"]
+  },
+  "truefalse": {
+    "question": "The absolute value of -5 is 5.",
+    "expectedAny": ["true", "yes", "t", "correct"]
+  },
+  "multiplechoice": {
+    "question": "What is -3 + (-7)?",
+    "expectedAny": ["-10", "negative ten", "-10", "negative 10"]
+  },
+  "fillintheblank": {
+    "question": "The distance a number is from zero is its ________ value.",
+    "expectedAny": ["absolute", "distance", "magnitude", "numerical"]
+  },
+  "shortanswer": {
+    "question": "Calculate: 8 - (-4)",
+    "expectedAny": ["12", "twelve", "8 + 4 = 12", "positive 12"]
+  },
+  "wordProblems": {
+    "question": "The temperature starts at -2°F and drops 5 degrees. What is the final temperature?",
+    "expectedAny": ["-7°F", "-7 degrees", "negative 7", "-7°"]
+  }
+}

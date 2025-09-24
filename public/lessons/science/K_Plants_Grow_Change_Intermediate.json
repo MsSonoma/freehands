@@ -1,0 +1,78 @@
+{
+  "id": "plants-grow-change-intermediate",
+  "title": "How Plants Grow and Change",
+  "grade": "K",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "seed",
+      "definition": "A tiny part of a plant that can grow into a new plant"
+    },
+    {
+      "term": "roots",
+      "definition": "The parts of a plant that grow underground and drink water"
+    },
+    {
+      "term": "stem",
+      "definition": "The part of a plant that holds it up"
+    },
+    {
+      "term": "sunlight",
+      "definition": "Light from the sun that helps plants grow"
+    }
+  ],
+  "teachingNotes": "Plant seeds in cups and observe growth. Use sequence cards showing plant growth stages. Discuss what plants need.",
+  "sample": [
+    {"question": "What do plants need to grow?", "expectedAny": ["water", "sunlight", "soil", "air"]},
+    {"question": "What comes from a seed?", "expectedAny": ["a plant", "roots and stem"]},
+    {"question": "What part of the plant drinks water?", "expectedAny": ["roots"]},
+    {"question": "Where do most plants grow?", "expectedAny": ["in soil", "in the ground"]},
+    {"question": "What helps plants make food?", "expectedAny": ["sunlight", "sun"]}
+  ],
+  "truefalse": [
+    {"question": "Plants need water to grow.", "answer": true, "expectedAny": ["all plants need water to survive"]},
+    {"question": "Seeds can grow in the dark.", "answer": false, "expectedAny": ["plants need sunlight to grow well"]},
+    {"question": "All plants start as seeds.", "answer": false, "expectedAny": ["some plants grow from other parts"]},
+    {"question": "Roots grow underground.", "answer": true, "expectedAny": ["roots grow down into the soil"]},
+    {"question": "Plants can live without sunlight.", "answer": false, "expectedAny": ["plants need sunlight to make food"]},
+    {"question": "A stem helps hold the plant up.", "answer": true, "expectedAny": ["stems support the plant"]},
+    {"question": "Plants grow and change over time.", "answer": true, "expectedAny": ["plants are living things that grow"]}
+  ],
+  "multiplechoice": [
+    {"question": "What grows first when a seed starts to grow?", "choices": ["flowers", "roots", "leaves", "fruit"], "correct": 1, "expectedAny": ["roots grow first to get water"]},
+    {"question": "What do roots do for a plant?", "choices": ["make flowers", "get water", "make seeds", "give shade"], "correct": 1, "expectedAny": ["roots absorb water from soil"]},
+    {"question": "What do plants use sunlight for?", "choices": ["to sleep", "to make food", "to hide", "to move"], "correct": 1, "expectedAny": ["sunlight helps plants make food"]},
+    {"question": "Where do you plant a seed?", "choices": ["in water", "in soil", "in air", "in rocks"], "correct": 1, "expectedAny": ["seeds grow best in soil"]},
+    {"question": "What comes after a seed sprouts?", "choices": ["it dies", "small plant grows", "it becomes a tree immediately", "nothing happens"], "correct": 1, "expectedAny": ["sprouted seeds become small plants"]},
+    {"question": "Which part of a plant reaches toward the sun?", "choices": ["roots", "leaves and stem", "seeds", "soil"], "correct": 1, "expectedAny": ["plants grow toward sunlight"]},
+    {"question": "What happens if you don't water a plant?", "choices": ["it grows faster", "it gets bigger", "it may die", "it changes color only"], "correct": 2, "expectedAny": ["plants need water to survive"]}
+  ],
+  "fillintheblank": [
+    {"question": "A plant's _____ help it get water from the ground.", "expectedAny": ["roots"]},
+    {"question": "Plants need _____ from the sun to grow.", "expectedAny": ["sunlight", "light"]},
+    {"question": "A tiny _____ can grow into a big plant.", "expectedAny": ["seed"]},
+    {"question": "The _____ holds the plant up straight.", "expectedAny": ["stem"]},
+    {"question": "Plants make their own _____ using sunlight.", "expectedAny": ["food"]},
+    {"question": "When a seed starts to grow, we say it _____.", "expectedAny": ["sprouts", "grows"]},
+    {"question": "_____ grow down into the soil.", "expectedAny": ["Roots"]}
+  ],
+  "shortanswer": [
+    {"question": "What happens to a seed when you plant it in soil and give it water?", "expectedAny": ["it grows", "it becomes a plant", "roots and shoots grow"]},
+    {"question": "Name the parts of a plant and what they do.", "expectedAny": ["roots get water", "stem holds up", "leaves make food"]},
+    {"question": "Why do plants need sunlight?", "expectedAny": ["to make food", "to grow", "to be healthy"]},
+    {"question": "What would happen if a plant didn't get any water?", "expectedAny": ["it would die", "it would wilt", "it couldn't grow"]},
+    {"question": "How do plants change as they grow?", "expectedAny": ["get bigger", "grow more leaves", "may get flowers"]},
+    {"question": "What can you do to help a plant grow well?", "expectedAny": ["water it", "put it in sunlight", "plant it in good soil"]},
+    {"question": "Describe how a sunflower grows from seed to big plant.", "expectedAny": ["seed sprouts", "roots grow down", "stem grows up", "leaves appear", "gets taller"]}
+  ],
+  "wordProblems": [
+    {"question": "Maria plants 3 seeds. If 2 seeds sprout and grow, how many plants does she have?", "expectedAny": ["2 plants"]},
+    {"question": "A plant starts with 2 leaves. After a week, it has 3 more leaves. How many leaves does it have now?", "expectedAny": ["5 leaves", "2 + 3 = 5"]},
+    {"question": "Tom's bean plant grows 2 inches this week and 3 inches next week. How much did it grow in total?", "expectedAny": ["5 inches", "2 + 3 = 5"]},
+    {"question": "There are 8 seeds in a packet. If Emma plants 5 of them, how many seeds are left?", "expectedAny": ["3 seeds", "8 - 5 = 3"]},
+    {"question": "A sunflower is 4 feet tall. If it grows 2 more feet, how tall will it be?", "expectedAny": ["6 feet", "4 + 2 = 6"]},
+    {"question": "In the garden, there are 6 small plants and 4 big plants. How many plants are there altogether?", "expectedAny": ["10 plants", "6 + 4 = 10"]},
+    {"question": "Jake waters his plants 2 times a day for 5 days. How many times did he water them?", "expectedAny": ["10 times", "2 × 5 = 10"]}
+  ]
+}

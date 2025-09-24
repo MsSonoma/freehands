@@ -1,0 +1,74 @@
+{
+  "id": "12th_Advanced_Quantum_Physics_Applications_Advanced",
+  "title": "Advanced Quantum Physics and Applications",
+  "grade": "12th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "quantum field theory",
+      "definition": "Theoretical framework combining quantum mechanics with special relativity"
+    },
+    {
+      "term": "virtual particles",
+      "definition": "Temporary quantum fluctuations that mediate fundamental forces"
+    },
+    {
+      "term": "Heisenberg uncertainty principle",
+      "definition": "Fundamental limit on simultaneous measurement of complementary properties"
+    },
+    {
+      "term": "quantum vacuum",
+      "definition": "Lowest energy state of quantum field with zero-point fluctuations"
+    },
+    {
+      "term": "quantum annealing",
+      "definition": "Optimization technique using quantum fluctuations to find global minima"
+    }
+  ],
+  "teachingNotes": "Explore cutting-edge quantum physics concepts and their mathematical foundations. Connect to current research frontiers.",
+  "sample": {
+    "question": "What framework combines quantum mechanics with special relativity?",
+    "expectedAny": [
+      "quantum field theory",
+      "QFT",
+      "relativistic quantum mechanics",
+      "quantum relativistic theory"
+    ]
+  },
+  "truefalse": {
+    "question": "Virtual particles are temporary quantum fluctuations mediating forces.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What optimization technique uses quantum fluctuations?",
+    "expectedAny": [
+      "quantum annealing",
+      "quantum optimization",
+      "quantum search",
+      "quantum algorithm"
+    ]
+  },
+  "fillintheblank": {
+    "question": "The lowest energy state of quantum field is the quantum ________.",
+    "expectedAny": [
+      "vacuum",
+      "ground state",
+      "zero state",
+      "minimum energy"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does quantum field theory explain fundamental forces?",
+    "expectedAny": [
+      "virtual particle exchange",
+      "field interactions",
+      "quantum fluctuations",
+      "force mediators"
+    ]
+  }
+}

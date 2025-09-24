@@ -1,0 +1,76 @@
+{
+  "id": "chemistry-atoms-molecules-advanced",
+  "title": "Chemistry: Atoms and Molecules",
+  "grade": "8th",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "atom",
+      "definition": "The smallest unit of an element that retains the element's properties"
+    },
+    {
+      "term": "molecule",
+      "definition": "Two or more atoms bonded together"
+    },
+    {
+      "term": "chemical bond",
+      "definition": "The force that holds atoms together in compounds"
+    },
+    {
+      "term": "periodic table",
+      "definition": "A chart that organizes elements by their atomic number and properties"
+    }
+  ],
+  "teachingNotes": "Use molecular models and periodic table exploration. Demonstrate simple chemical reactions. Connect to atomic theory and conservation of mass.",
+  "sample": {
+    "question": "What is the difference between an atom and a molecule?",
+    "expectedAny": [
+      "atom is single element unit, molecule is multiple atoms bonded",
+      "atoms are building blocks, molecules are compounds"
+    ]
+  },
+  "truefalse": [
+    {
+      "question": "All molecules contain atoms from different elements.",
+      "answer": false,
+      "expectedAny": [
+        "molecules can be made of same element, like O₂"
+      ]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "How many atoms are in one molecule of water (H₂O)?",
+      "choices": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "correct": 2,
+      "expectedAny": [
+        "2 hydrogen atoms + 1 oxygen atom = 3 total"
+      ]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "In the compound CO₂, there is _____ carbon atom and _____ oxygen atoms.",
+      "expectedAny": [
+        "1",
+        "2"
+      ]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Explain why the periodic table is organized the way it is.",
+      "expectedAny": [
+        "elements arranged by atomic number",
+        "elements with similar properties are grouped together",
+        "shows patterns in chemical behavior"
+      ]
+    }
+  ]
+}

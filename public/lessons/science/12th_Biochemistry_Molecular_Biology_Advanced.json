@@ -1,0 +1,74 @@
+{
+  "id": "12th_Biochemistry_Molecular_Biology_Advanced",
+  "title": "Biochemistry and Molecular Biology",
+  "grade": "12th",
+  "difficulty": "Advanced",
+  "vocab": [
+    {
+      "term": "proteomics",
+      "definition": "Large-scale study of protein structure, function, and interactions"
+    },
+    {
+      "term": "metabolomics",
+      "definition": "Comprehensive analysis of small molecules in biological systems"
+    },
+    {
+      "term": "CRISPR-Cas9",
+      "definition": "Gene editing technology allowing precise DNA sequence modifications"
+    },
+    {
+      "term": "systems biology",
+      "definition": "Integrative approach studying complex biological systems as whole networks"
+    },
+    {
+      "term": "synthetic biology",
+      "definition": "Engineering biological systems by designing and constructing new biological parts"
+    }
+  ],
+  "teachingNotes": "Explore cutting-edge biotechnology and systems-level approaches. Discuss ethical implications of genetic engineering.",
+  "sample": {
+    "question": "What is the large-scale study of protein interactions?",
+    "expectedAny": [
+      "proteomics",
+      "protein analysis",
+      "protein systems study",
+      "proteomic analysis"
+    ]
+  },
+  "truefalse": {
+    "question": "CRISPR-Cas9 allows precise DNA sequence modifications.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What approach studies biological systems as whole networks?",
+    "expectedAny": [
+      "systems biology",
+      "integrative biology",
+      "network biology",
+      "holistic biology"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Engineering biological systems by designing new parts is ________ biology.",
+    "expectedAny": [
+      "synthetic",
+      "engineered",
+      "designed",
+      "artificial"
+    ]
+  },
+  "shortanswer": {
+    "question": "What are potential applications of synthetic biology?",
+    "expectedAny": [
+      "biofuels",
+      "medicine production",
+      "environmental cleanup",
+      "biotechnology"
+    ]
+  }
+}

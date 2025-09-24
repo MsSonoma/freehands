@@ -1,0 +1,58 @@
+{
+  "id": "3rd_Grammar_Subject_Verb_Agreement_Beginner",
+  "title": "Grammar: Subject-Verb Agreement",
+  "grade": "3rd",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {"term": "subject", "definition": "Who or what the sentence is about."},
+    {"term": "verb", "definition": "An action or state of being."},
+    {"term": "agreement", "definition": "When the subject and verb match in number (singular or plural)."}
+  ],
+  "teachingNotes": "Focus on the basic rule: singular subjects get verbs ending in -s (He runs), while plural subjects do not (They run). Use simple, clear examples to build a strong foundation.",
+  "sample": [
+    {"question": "Choose the correct verb: The dog (run/runs) fast.", "expectedAny": ["runs"]},
+    {"question": "Choose the correct verb: The children (play/plays) outside.", "expectedAny": ["play"]},
+    {"question": "Is this sentence correct? 'She walk to school.'", "expectedAny": ["no"]},
+    {"question": "Choose the correct verb: They (is/are) happy.", "expectedAny": ["are"]},
+    {"question": "Fix this sentence: 'The birds flies south.'", "expectedAny": ["fly"]},
+    {"question": "Choose the correct verb: Everyone (want/wants) pizza.", "expectedAny": ["wants"]},
+    {"question": "Is this sentence correct? 'We goes to the park.'", "expectedAny": ["no"]}
+  ],
+  "truefalse": [
+    {"question": "A singular subject needs a singular verb.", "answer": true},
+    {"question": "The verb must agree with the subject in number.", "answer": true},
+    {"question": "'They' is a singular pronoun.", "answer": false},
+    {"question": "In the sentence 'The cat sleeps,' the subject and verb agree.", "answer": true},
+    {"question": "The sentence 'The children plays' is correct.", "answer": false},
+    {"question": "The phrase 'He are' is correct grammar.", "answer": false},
+    {"question": "Plural subjects usually take verbs that do not end in 's'.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "The baby ___ all night.", "choices": ["cry", "cries", "crying", "cried"], "correct": 1},
+    {"question": "My friends ___ soccer in the park.", "choices": ["plays", "playing", "play", "played"], "correct": 2},
+    {"question": "She ___ her homework after school.", "choices": ["do", "does", "doing", "done"], "correct": 1},
+    {"question": "The flowers in the garden ___ beautiful.", "choices": ["is", "are", "am", "be"], "correct": 1},
+    {"question": "Everyone in the class ___ to win the game.", "choices": ["want", "wants", "wanting", "wanted"], "correct": 1},
+    {"question": "The team ___ ready for the match.", "choices": ["are", "is", "am", "be"], "correct": 1},
+    {"question": "They ___ very fast to catch the bus.", "choices": ["runs", "run", "running", "ran"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "The cat ___ on the mat.", "expectedAny": ["sits"]},
+    {"question": "My brothers ___ basketball on weekends.", "expectedAny": ["play"]},
+    {"question": "She ___ to school every day.", "expectedAny": ["walks"]},
+    {"question": "The students ___ their books quietly.", "expectedAny": ["read"]},
+    {"question": "It ___ raining outside right now.", "expectedAny": ["is"]},
+    {"question": "We ___ going to the store later.", "expectedAny": ["are"]},
+    {"question": "The teacher ___ the lesson clearly.", "expectedAny": ["explains"]}
+  ],
+  "shortanswer": [
+    {"question": "Why is it important for subjects and verbs to agree?", "expectedAny": ["It makes sentences grammatically correct and easy to understand."]},
+    {"question": "How can you tell if a subject is singular or plural?", "expectedAny": ["A singular subject refers to one person or thing, while a plural subject refers to more than one."]},
+    {"question": "Give an example of a sentence with correct subject-verb agreement.", "expectedAny": ["The dog barks.", "The dogs bark."]},
+    {"question": "What usually happens to a verb when its subject is a singular noun or 'he,' 'she,' or 'it'?", "expectedAny": ["An -s or -es is added to the end of the verb."]},
+    {"question": "Correct the error in this sentence: 'The boys runs fast.'", "expectedAny": ["The boys run fast."]},
+    {"question": "When should you use the verb 'is' versus 'are'?", "expectedAny": ["Use 'is' for singular subjects and 'are' for plural subjects."]},
+    {"question": "Write a sentence using a plural subject and a verb that agrees with it.", "expectedAny": ["The birds sing in the morning."]}
+  ]
+}

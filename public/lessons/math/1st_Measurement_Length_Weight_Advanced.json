@@ -1,0 +1,56 @@
+{
+  "id": "measurement-length-weight-advanced",
+  "title": "Measurement: Length and Weight",
+  "grade": "1st",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {"term": "length", "definition": "How long something is from one end to the other"},
+    {"term": "weight", "definition": "How heavy something is"},
+    {"term": "measure", "definition": "To find out how big, long, or heavy something is"},
+    {"term": "unit", "definition": "A standard amount used for measuring, like inches or pounds"}
+  ],
+  "teachingNotes": "Use non-standard units like paperclips or blocks first. Compare objects directly before using tools. Practice with classroom objects.",
+  "sample": [
+    {"question": "Which is longer: your pencil or your desk?", "expectedAny": ["desk"]},
+    {"question": "Which is heavier: a rock or a feather?", "expectedAny": ["rock"]},
+    {"question": "Would you measure a book with a ruler?", "expectedAny": ["Yes"]},
+    {"question": "Is mass the same as weight in everyday talk?", "expectedAny": ["often used interchangeably"]},
+    {"question": "Would you use cups to measure weight?", "expectedAny": ["No"]}
+  ],
+  "truefalse": [
+    {"question": "A feather weighs more than a book.", "answer": false, "expectedAny": ["false"]},
+    {"question": "We can use paperclips to measure length.", "answer": true, "expectedAny": ["true"]},
+    {"question": "A ruler measures length, not weight.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Two small books could weigh more than one big book.", "answer": true, "expectedAny": ["true"]},
+    {"question": "Measuring with blocks is a standard unit.", "answer": false, "expectedAny": ["false"]}
+  ],
+  "multiplechoice": [
+    {"question": "What would you use to measure how long your foot is?", "choices": ["a scale", "a ruler", "a cup", "a clock"], "correct": 1, "expectedAny": ["ruler"]},
+    {"question": "Which is a good non-standard unit?", "choices": ["paperclip", "meter", "kilogram", "liter"], "correct": 0, "expectedAny": ["paperclip"]},
+    {"question": "Which is heavier?", "choices": ["feather", "rock", "bubble" ,"leaf"], "correct": 1, "expectedAny": ["rock"]},
+    {"question": "Which would you not use to measure weight?", "choices": ["scale", "balance", "ruler", "spring scale"], "correct": 2, "expectedAny": ["ruler"]},
+    {"question": "If one pencil is 8 paperclips long and another is 5, how much longer is the first?", "choices": ["3", "13", "5", "8"], "correct": 0, "expectedAny": ["3"]}
+  ],
+  "fillintheblank": [
+    {"question": "If you line up 5 paperclips end to end, your crayon might be _____ paperclips long.", "expectedAny": ["5", "about 5"]},
+    {"question": "A book might be ___ than a pencil.", "expectedAny": ["longer"]},
+    {"question": "A rock is usually ___ than a feather.", "expectedAny": ["heavier"]},
+    {"question": "We measure length with a ___.", "expectedAny": ["ruler", "tape measure"]},
+    {"question": "Weight tells us how ___ something is.", "expectedAny": ["heavy"]}
+  ],
+  "shortanswer": [
+    {"question": "How could you find out which of two books is heavier without using a scale?", "expectedAny": ["hold one in each hand", "compare by lifting them"]},
+    {"question": "Why might you use paperclips to measure instead of a ruler?", "expectedAny": ["if a ruler isn't available, to estimate"]},
+    {"question": "Describe how you would measure the length of a table using blocks.", "expectedAny": ["line blocks end to end and count them"]},
+    {"question": "What does it mean if one object is heavier than another?", "expectedAny": ["it has more weight"]},
+    {"question": "Give an example of something very light.", "expectedAny": ["feather, tissue"]}
+  ],
+  "wordProblems": [
+    {"question": "Tom's pencil is 6 blocks long and Amy's pencil is 4 blocks long. How much longer is Tom's pencil?", "expectedAny": ["2 blocks longer", "2"]},
+    {"question": "Sara lines up 7 paperclips to measure a crayon. Ben uses 3 paperclips for his crayon. How many more paperclips did Sara use?", "expectedAny": ["4 paperclips", "4"]},
+    {"question": "A rock weighs more than a leaf. If the rock is 3 units heavier, and the leaf is 1 unit, how heavy is the rock?", "expectedAny": ["4 units"]},
+    {"question": "Liam measures a stick with 9 blocks and breaks it into two pieces of 4 and 5. How many blocks in total?", "expectedAny": ["9"]},
+    {"question": "A book is 12 paperclips long. A pencil is 4 paperclips long. How many paperclips longer is the book than the pencil?", "expectedAny": ["8"]}
+  ]
+}

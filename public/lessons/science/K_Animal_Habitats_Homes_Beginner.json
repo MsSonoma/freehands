@@ -1,0 +1,78 @@
+{
+  "id": "animal-habitats-homes-beginner",
+  "title": "Animal Habitats and Homes",
+  "grade": "K",
+  "difficulty": "Beginner",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "habitat",
+      "definition": "The place where an animal lives and finds food"
+    },
+    {
+      "term": "nest",
+      "definition": "A home that birds build for their babies"
+    },
+    {
+      "term": "den",
+      "definition": "A cozy home where some animals sleep"
+    },
+    {
+      "term": "ocean",
+      "definition": "A very big body of salty water where fish live"
+    }
+  ],
+  "teachingNotes": "Use picture books about animals and their homes. Create habitat dioramas. Match animals to their homes activity.",
+  "sample": [
+    {"question": "Where do fish live?", "expectedAny": ["water", "ocean", "pond", "lake"]},
+    {"question": "What do birds build to live in?", "expectedAny": ["nests"]},
+    {"question": "Where would you find a lion?", "expectedAny": ["jungle", "Africa", "savanna"]},
+    {"question": "What is a bear's home called?", "expectedAny": ["den", "cave"]},
+    {"question": "Where do pets like dogs and cats live?", "expectedAny": ["houses", "homes", "with families"]}
+  ],
+  "truefalse": [
+    {"question": "Birds build nests in trees.", "answer": true, "expectedAny": ["many birds make nests in trees"]},
+    {"question": "Fish can live on land.", "answer": false, "expectedAny": ["fish need water to breathe"]},
+    {"question": "All animals live in the same place.", "answer": false, "expectedAny": ["different animals have different homes"]},
+    {"question": "Bees live in hives.", "answer": true, "expectedAny": ["hives are bee homes"]},
+    {"question": "Polar bears live in hot places.", "answer": false, "expectedAny": ["polar bears live in cold, icy places"]},
+    {"question": "Animals need homes to be safe.", "answer": true, "expectedAny": ["homes protect animals"]},
+    {"question": "A habitat gives animals food and shelter.", "answer": true, "expectedAny": ["habitats provide what animals need"]}
+  ],
+  "multiplechoice": [
+    {"question": "Where would you find a bear's den?", "choices": ["in the ocean", "in a forest", "in the sky", "in a car"], "correct": 1, "expectedAny": ["bears live in forests"]},
+    {"question": "Which animal lives in water?", "choices": ["dog", "cat", "fish", "bird"], "correct": 2, "expectedAny": ["fish live in water"]},
+    {"question": "Where do bees make their home?", "choices": ["hive", "nest", "den", "burrow"], "correct": 0, "expectedAny": ["bees live in hives"]},
+    {"question": "What kind of home does a bird make?", "choices": ["burrow", "nest", "hive", "den"], "correct": 1, "expectedAny": ["birds make nests"]},
+    {"question": "Where would you find a penguin?", "choices": ["desert", "jungle", "cold places", "hot places"], "correct": 2, "expectedAny": ["penguins live in cold places"]},
+    {"question": "Which animal lives underground?", "choices": ["fish", "bird", "rabbit", "whale"], "correct": 2, "expectedAny": ["rabbits live in burrows underground"]},
+    {"question": "Where do farm animals live?", "choices": ["ocean", "farm", "forest", "desert"], "correct": 1, "expectedAny": ["farm animals live on farms"]}
+  ],
+  "fillintheblank": [
+    {"question": "A rabbit lives in a hole called a _____.", "expectedAny": ["burrow", "hole"]},
+    {"question": "Birds build _____ to live in.", "expectedAny": ["nests"]},
+    {"question": "Fish live in the _____.", "expectedAny": ["water", "ocean"]},
+    {"question": "Bees live in a _____.", "expectedAny": ["hive"]},
+    {"question": "A bear's home is called a _____.", "expectedAny": ["den"]},
+    {"question": "Dogs and cats live in _____ with people.", "expectedAny": ["houses", "homes"]},
+    {"question": "A _____ is where an animal finds food and shelter.", "expectedAny": ["habitat"]}
+  ],
+  "shortanswer": [
+    {"question": "Name two animals and where they live.", "expectedAny": ["fish in water", "birds in nests", "dogs in houses", "cats in homes"]},
+    {"question": "Why do animals need homes?", "expectedAny": ["to be safe", "to stay warm", "to raise babies", "protection"]},
+    {"question": "What makes a good habitat for an animal?", "expectedAny": ["food", "water", "shelter", "safety"]},
+    {"question": "Where do you live and what animals might live near you?", "expectedAny": ["varies by location", "birds, squirrels, dogs, cats"]},
+    {"question": "How are animal homes different from people homes?", "expectedAny": ["animals build with natural materials", "different shapes and sizes"]},
+    {"question": "What animals live in cold places?", "expectedAny": ["penguins", "polar bears", "seals"]},
+    {"question": "Name three different types of animal homes.", "expectedAny": ["nest", "den", "hive", "burrow", "cave"]}
+  ],
+  "wordProblems": [
+    {"question": "In the forest, there are 3 bears and each bear has 1 den. How many dens are there?", "expectedAny": ["3 dens"]},
+    {"question": "A tree has 4 bird nests. If 2 more birds build nests in the tree, how many nests are there now?", "expectedAny": ["6 nests", "4 + 2 = 6"]},
+    {"question": "At the pond, Sam sees 5 fish and 3 frogs. How many water animals did he see?", "expectedAny": ["8 animals", "5 + 3 = 8"]},
+    {"question": "There are 7 animals at the zoo. If 4 live in water and 3 live on land, how many different habitats are there?", "expectedAny": ["2 habitats", "water and land"]},
+    {"question": "Emma counts 6 rabbit burrows in the field. If each burrow has 2 rabbits, how many rabbits are there?", "expectedAny": ["12 rabbits", "6 × 2 = 12"]},
+    {"question": "In the garden, there are 8 bees in 2 hives. How many bees are in each hive if they're split equally?", "expectedAny": ["4 bees", "8 ÷ 2 = 4"]},
+    {"question": "A farm has 5 different animal homes: 1 barn, 1 coop, 1 pen, 1 stable, and 1 hutch. How many homes is that?", "expectedAny": ["5 homes"]}
+  ]
+}

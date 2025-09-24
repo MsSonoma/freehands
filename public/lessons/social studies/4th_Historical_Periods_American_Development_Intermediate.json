@@ -1,0 +1,74 @@
+{
+  "id": "4th_Historical_Periods_American_Development_Intermediate",
+  "title": "Historical Periods in American Development",
+  "grade": "4th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "colony",
+      "definition": "A settlement controlled by another country"
+    },
+    {
+      "term": "independence",
+      "definition": "Freedom from being controlled by another country"
+    },
+    {
+      "term": "expansion",
+      "definition": "Growing larger by adding new territory"
+    },
+    {
+      "term": "pioneer",
+      "definition": "A person who moves to a new area to settle there"
+    },
+    {
+      "term": "industrial revolution",
+      "definition": "The time when machines began to do work that people used to do by hand"
+    }
+  ],
+  "teachingNotes": "Cover major periods: Colonial times, Independence, Westward Expansion, and Industrial Revolution. Use timelines and maps to show how America grew and changed. Connect to local history when possible.",
+  "sample": [
+    {"question": "What major change happened during the Industrial Revolution?", "expectedAny": ["machines replaced hand work", "factories"]},
+    {"question": "What were the 13 original colonies part of before independence?", "expectedAny": ["British Empire"]},
+    {"question": "What does independence mean?", "expectedAny": ["freedom from control"]},
+    {"question": "Who were pioneers?", "expectedAny": ["people who moved west to settle new land"]},
+    {"question": "What is a colony?", "expectedAny": ["settlement controlled by another country"]},
+    {"question": "What is westward expansion?", "expectedAny": ["moving west to add new territory"]},
+    {"question": "Name one new technology from the Industrial Revolution.", "expectedAny": ["steam engine", "telegraph", "railroads"]}
+  ],
+  "truefalse": [
+    {"question": "The 13 original colonies were controlled by Great Britain.", "answer": true},
+    {"question": "The Industrial Revolution increased factory work.", "answer": true},
+    {"question": "Westward expansion made the country smaller.", "answer": false},
+    {"question": "Pioneers traveled the Oregon Trail.", "answer": true},
+    {"question": "The transcontinental railroad helped connect the East and West.", "answer": true},
+    {"question": "Independence means being ruled by another country.", "answer": false},
+    {"question": "New inventions changed how people lived and worked.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "What do we call people who moved west to settle new territories?", "choices": ["Colonists", "Pioneers", "Immigrants", "Soldiers"], "correct": 1},
+    {"question": "Which transportation changed travel in the 1800s?", "choices": ["Horse carriage", "Steam locomotive", "Spaceship", "Airplane"], "correct": 1},
+    {"question": "Which period came first?", "choices": ["Industrial Revolution", "Colonial period", "Westward expansion", "Civil War"], "correct": 1},
+    {"question": "What does independence mean?", "choices": ["Freedom from control", "More taxes", "New colony", "New city"], "correct": 0},
+    {"question": "A colony is:", "choices": ["A free country", "A settlement controlled by another country", "A new invention", "A railroad"], "correct": 1},
+    {"question": "What helped people move west more easily?", "choices": ["Deserts", "Mountains", "Railroads", "Floods"], "correct": 2},
+    {"question": "What was a major effect of the Industrial Revolution?", "choices": ["Less technology", "More factories and machines", "Fewer cities", "No change"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "When America gained ____ from Britain, it became its own country.", "expectedAny": ["independence"]},
+    {"question": "People who moved west to settle new land were called ____.", "expectedAny": ["pioneers"]},
+    {"question": "The time when machines began to replace hand work is called the ____ Revolution.", "expectedAny": ["Industrial"]},
+    {"question": "A settlement controlled by another country is a ____.", "expectedAny": ["colony"]},
+    {"question": "The ____ Trail was a route used by pioneers.", "expectedAny": ["Oregon"]},
+    {"question": "The ____ railroad connected the East and West.", "expectedAny": ["transcontinental"]},
+    {"question": "New inventions changed how people ____ and ____.", "expectedAny": ["lived", "worked"]}
+  ],
+  "shortanswer": [
+    {"question": "How did westward expansion change America?", "expectedAny": ["made country bigger", "added states"]},
+    {"question": "How did the Industrial Revolution change work?", "expectedAny": ["factories", "machines", "urbanization"]},
+    {"question": "Why did colonists want independence?", "expectedAny": ["freedom", "self-rule", "taxes"]},
+    {"question": "How did railroads affect travel and trade?", "expectedAny": ["faster", "cheaper", "connected regions"]},
+    {"question": "What challenges did pioneers face?", "expectedAny": ["weather", "terrain", "limited supplies"]},
+    {"question": "How did new inventions change daily life?", "expectedAny": ["communication", "transportation"]},
+    {"question": "Give one example of how your local area changed over time.", "expectedAny": ["more people", "new buildings"]}
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "id": "9th_Speaking_Listening_Debate_Discussion_Intermediate",
+  "title": "Speaking and Listening: Debate and Class Discussion",
+  "grade": "9th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "debate",
+      "definition": "Formal discussion where opposing sides argue different positions"
+    },
+    {
+      "term": "rebuttal",
+      "definition": "Response that challenges or refutes an opponent's argument"
+    },
+    {
+      "term": "evidence",
+      "definition": "Facts, statistics, or examples that support a position"
+    },
+    {
+      "term": "active listening",
+      "definition": "Fully concentrating on and engaging with the speaker"
+    },
+    {
+      "term": "ethos",
+      "definition": "Appeal to credibility and trustworthiness of the speaker"
+    }
+  ],
+  "teachingNotes": "Practice formal debate structure and respectful disagreement. Emphasize listening skills and constructive response techniques.",
+  "sample": {
+    "question": "What is a formal discussion with opposing sides arguing positions?",
+    "expectedAny": [
+      "debate",
+      "formal debate",
+      "argumentative discussion",
+      "structured argument"
+    ]
+  },
+  "truefalse": {
+    "question": "Active listening involves fully concentrating on the speaker.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What is a response that challenges an opponent's argument?",
+    "expectedAny": [
+      "rebuttal",
+      "counterargument",
+      "refutation",
+      "challenge"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Appeal to credibility and trustworthiness is called ________.",
+    "expectedAny": [
+      "ethos",
+      "credibility appeal",
+      "authority",
+      "trustworthiness"
+    ]
+  },
+  "shortanswer": {
+    "question": "What makes evidence effective in a debate?",
+    "expectedAny": [
+      "relevant and credible",
+      "specific and current",
+      "from reliable sources",
+      "supports the argument clearly"
+    ]
+  }
+}

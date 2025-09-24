@@ -1,0 +1,74 @@
+{
+  "id": "12th_International_Relations_Global_Governance_Intermediate",
+  "title": "International Relations and Global Governance",
+  "grade": "12th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    {
+      "term": "balance of power",
+      "definition": "Distribution of power among states preventing dominance by any one"
+    },
+    {
+      "term": "multilateralism",
+      "definition": "Cooperation among three or more states on common issues"
+    },
+    {
+      "term": "soft power",
+      "definition": "Ability to influence through attraction rather than coercion"
+    },
+    {
+      "term": "international law",
+      "definition": "Rules governing relations between sovereign states"
+    },
+    {
+      "term": "collective security",
+      "definition": "System where aggression against one is treated as aggression against all"
+    }
+  ],
+  "teachingNotes": "Analyze power dynamics and international institutions. Examine challenges to global governance.",
+  "sample": {
+    "question": "What prevents dominance by distributing power among states?",
+    "expectedAny": [
+      "balance of power",
+      "power equilibrium",
+      "strategic balance",
+      "power distribution"
+    ]
+  },
+  "truefalse": {
+    "question": "Soft power influences through attraction rather than coercion.",
+    "expectedAny": [
+      "true",
+      "yes",
+      "t",
+      "correct"
+    ]
+  },
+  "multiplechoice": {
+    "question": "What describes cooperation among three or more states?",
+    "expectedAny": [
+      "multilateralism",
+      "multilateral cooperation",
+      "multinational approach",
+      "collective action"
+    ]
+  },
+  "fillintheblank": {
+    "question": "Rules governing relations between states form ________ law.",
+    "expectedAny": [
+      "international",
+      "global",
+      "world",
+      "transnational"
+    ]
+  },
+  "shortanswer": {
+    "question": "How does collective security system work?",
+    "expectedAny": [
+      "shared defense",
+      "mutual protection",
+      "aggression response",
+      "common security"
+    ]
+  }
+}
