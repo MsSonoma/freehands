@@ -4820,6 +4820,13 @@ function VideoPanel({ videoRef, showBegin, isSpeaking, onBegin, onBeginComprehen
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
             )}
           </button>
+          <button type="button" onClick={onToggleMute} aria-label={muted ? 'Unmute' : 'Mute'} style={{ background: '#1f2937', color: '#fff', border: 'none', width: 42, height: 42, display: 'grid', placeItems: 'center', borderRadius: '50%', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}>
+            {muted ? (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
+            ) : (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M19 8a5 5 0 010 8" /><path d="M15 11a2 2 0 010 2" /></svg>
+            )}
+          </button>
         </div>
         {/* Paired skip controls at bottom-left */}
         {(phase !== 'congrats') && (onPrev || onNext) && (
@@ -5105,40 +5112,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
           </svg>
         )}
       </button>
-      {/* iOS-only: quick test sound to diagnose device mute vs. app playback */}
-      {(() => {
-        try {
-          const ua = (typeof navigator !== 'undefined' ? navigator.userAgent || '' : '').toLowerCase();
-          const isIOS = /iphone|ipad|ipod/.test(ua) || (typeof navigator !== 'undefined' && navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-          if (!isIOS) return null;
-        } catch { return null; }
-        const onTestSound = () => {
-          try {
-            const ctx = ensureAudioContext();
-            if (!ctx) return;
-            const osc = ctx.createOscillator();
-            const g = ctx.createGain();
-            g.gain.value = 0.15; // audible chirp
-            osc.frequency.value = 880; // A5
-            osc.connect(g).connect(webAudioGainRef.current || ctx.destination);
-            try { if (ctx.state === 'suspended') ctx.resume(); } catch {}
-            const now = ctx.currentTime;
-            try { osc.start(now); } catch {}
-            try { osc.stop(now + 0.18); } catch {}
-          } catch {}
-        };
-        return (
-          <button
-            type="button"
-            onClick={onTestSound}
-            aria-label="Test sound"
-            title="Test sound"
-            style={{ background: '#374151', color: '#fff', border: 'none', width: 42, height: 42, display: 'grid', placeItems: 'center', borderRadius: '50%', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15 8a7 7 0 010 8"/></svg>
-          </button>
-        );
-      })()}
+      {/* Removed iOS-only test sound button to simplify controls */}
       <input
         ref={inputRef}
             title={isRecording ? 'Release Numpad + to stop' : 'Hold Numpad + to talk'}
