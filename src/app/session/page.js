@@ -2586,10 +2586,10 @@ function SessionPageInner() {
     }
   }
 
-  // Disable sending when the UI is not ready or during Comprehension locks
+  // Disable sending when the UI is not ready or while Ms. Sonoma is speaking
   const comprehensionAwaitingBegin = (phase === 'comprehension' && subPhase === 'comprehension-start' && !currentCompProblem);
-  const comprehensionSpeakingLock = (phase === 'comprehension' && isSpeaking);
-  const sendDisabled = (!canSend || loading || comprehensionAwaitingBegin || comprehensionSpeakingLock);
+  const speakingLock = !!isSpeaking; // lock input anytime she is speaking
+  const sendDisabled = (!canSend || loading || comprehensionAwaitingBegin || speakingLock);
   // Transient placeholder override for the input field (non-intrusive and time-limited)
   const [tipOverride, setTipOverride] = useState(null);
   const tipTimerRef = useRef(null);
