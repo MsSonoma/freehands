@@ -246,62 +246,52 @@ function LearnerRow({ item, saving, saved, onSave, onDelete }){
 	const [worksheet, setWorksheet] = useState(String(item.worksheet ?? item.targets?.worksheet ?? 3));
 	const [test, setTest] = useState(String(item.test ?? item.targets?.test ?? 3));
 
-	return (
-		<div style={{ border:'1px solid #eee', borderRadius:12, padding:12, background:'#fff', display:'grid', gap:10, minWidth:0 }}>
-			{/* Top row: Name, Grade, and action buttons (buttons span columns 3-6) */}
-			<div style={{ display:'grid', gridTemplateColumns:'minmax(0, 2fr) repeat(5, minmax(0, 1fr))', gap:14, alignItems:'start', padding:'0 12px', minWidth:0 }}>
-				<div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-					<div style={{ fontSize:12, color:'#666' }}>Name</div>
-					<input aria-label="Name" title="Name" value={name} onChange={(e)=>setName(e.target.value)} placeholder="Name" style={{ padding:'8px 10px', border:'1px solid #ddd', borderRadius:8, width:'100%', minWidth:0 }} />
-				</div>
-				{/* Grade moved to the dial group below — removed from top row */}
-				<div style={{ gridColumn: '3 / span 4', display:'flex', gap:8, justifyContent:'flex-end', alignItems:'center', marginTop:16 }}>
-					<button onClick={()=>onSave({ name, grade, targets:{ comprehension, exercise, worksheet, test } })} disabled={saving} style={{ width:140, padding:'8px 12px', border:'1px solid #ddd', borderRadius:8, background:'#fff', color:'#0b1220', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>{saving ? 'Saving…' : 'Save'}
-						<span aria-hidden style={{ fontSize:16, lineHeight:1 }}>💾</span>
-					</button>
-					{saved && (
-						<div style={{ padding:'8px 12px', background:'#d4f8d4', color:'#2d5a2d', borderRadius:8, fontSize:14, fontWeight:500 }}>
-							Saved
-						</div>
-					)}
-					<button onClick={onDelete} disabled={saving} style={{ width:140, padding:'8px 12px', border:'1px solid #ddd', borderRadius:8, background:'#fff', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-						<span>Delete</span>
-						<span aria-hidden style={{ fontSize:16, lineHeight:1 }}>🗑️</span>
-					</button>
-				</div>
-			</div>
+    // Responsive redesign: remove fixed 616px dial grid and allow wrapping on small screens.
+    // Use flex for top row and auto-fit grid for dials.
+    const actionBtnStyle = { padding:'8px 12px', border:'1px solid #ddd', borderRadius:8, background:'#fff', display:'flex', alignItems:'center', justifyContent:'center', gap:8, width:140 };
+    return (
+      <div style={{ border:'1px solid #eee', borderRadius:12, padding:12, background:'#fff', display:'grid', gap:14, minWidth:0 }}>
+        {/* Top section: name + actions; wraps naturally */}
+        <div style={{ display:'flex', flexWrap:'wrap', gap:12, alignItems:'flex-start', padding:'0 4px' }}>
+          <div style={{ display:'flex', flexDirection:'column', gap:6, flex:'1 1 220px', minWidth:160 }}>
+            <div style={{ fontSize:12, color:'#666' }}>Name</div>
+            <input aria-label="Name" title="Name" value={name} onChange={(e)=>setName(e.target.value)} placeholder="Name" style={{ padding:'8px 10px', border:'1px solid #ddd', borderRadius:8, width:'100%', minWidth:0 }} />
+          </div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'flex-end', alignItems:'center', flex:'1 1 320px' }}>
+            <button onClick={()=>onSave({ name, grade, targets:{ comprehension, exercise, worksheet, test } })} disabled={saving} style={{ ...actionBtnStyle, color:'#0b1220' }}>{saving ? 'Saving…' : 'Save'}<span aria-hidden style={{ fontSize:16, lineHeight:1 }}>💾</span></button>
+            {saved && (
+              <div style={{ padding:'8px 12px', background:'#d4f8d4', color:'#2d5a2d', borderRadius:8, fontSize:14, fontWeight:500 }}>Saved</div>
+            )}
+            <button onClick={onDelete} disabled={saving} style={actionBtnStyle}>
+              <span>Delete</span>
+              <span aria-hidden style={{ fontSize:16, lineHeight:1 }}>🗑️</span>
+            </button>
+          </div>
+        </div>
 
-			{/* Bottom row: centered group of target dials */}
-			<div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12, alignItems: 'center' }}>
-						<div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-								<div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 104px)', gap: 24, alignItems: 'start', justifyItems: 'center', width: 104 * 5 + 24 * 4, maxWidth: '100%' }}>
-									<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-										<div style={{ fontSize: 12, color: '#666' }}>Grade</div>
-										<Dial value={grade} onChange={e => setGrade(e.target.value)} options={GRADES} ariaLabel="Grade" title="Grade" />
-									</div>
-
-									<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-										<div style={{ fontSize: 12, color: '#666' }}>Comprehension</div>
-										<Dial value={comprehension} onChange={e => setComprehension(e.target.value)} options={TARGETS} ariaLabel="Comprehension" />
-									</div>
-
-									<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-										<div style={{ fontSize: 12, color: '#666' }}>Exercise</div>
-										<Dial value={exercise} onChange={e => setExercise(e.target.value)} options={TARGETS} ariaLabel="Exercise" />
-									</div>
-
-									<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-										<div style={{ fontSize: 12, color: '#666' }}>Worksheet</div>
-										<Dial value={worksheet} onChange={e => setWorksheet(e.target.value)} options={TARGETS} ariaLabel="Worksheet" />
-									</div>
-
-									<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-										<div style={{ fontSize: 12, color: '#666' }}>Test</div>
-										<Dial value={test} onChange={e => setTest(e.target.value)} options={TARGETS} ariaLabel="Test" />
-									</div>
-								</div>
-							</div>
-						</div>
-		</div>
-	);
+        {/* Dial grid: auto-fit columns that shrink and wrap below ~560px */}
+        <div style={{ display:'grid', gap:16, gridTemplateColumns:'repeat(auto-fit, minmax(88px, 1fr))', justifyItems:'center', alignItems:'start', width:'100%' }}>
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
+            <div style={{ fontSize:12, color:'#666' }}>Grade</div>
+            <Dial value={grade} onChange={e => setGrade(e.target.value)} options={GRADES} ariaLabel="Grade" title="Grade" />
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
+            <div style={{ fontSize:12, color:'#666' }}>Comprehension</div>
+            <Dial value={comprehension} onChange={e => setComprehension(e.target.value)} options={TARGETS} ariaLabel="Comprehension" />
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
+            <div style={{ fontSize:12, color:'#666' }}>Exercise</div>
+            <Dial value={exercise} onChange={e => setExercise(e.target.value)} options={TARGETS} ariaLabel="Exercise" />
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
+            <div style={{ fontSize:12, color:'#666' }}>Worksheet</div>
+            <Dial value={worksheet} onChange={e => setWorksheet(e.target.value)} options={TARGETS} ariaLabel="Worksheet" />
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
+            <div style={{ fontSize:12, color:'#666' }}>Test</div>
+            <Dial value={test} onChange={e => setTest(e.target.value)} options={TARGETS} ariaLabel="Test" />
+          </div>
+        </div>
+      </div>
+    );
 }
