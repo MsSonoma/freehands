@@ -4754,7 +4754,7 @@ function SessionPageInner() {
       {/* Sticky cluster: title + timeline + video + captions stick under the header without moving into it */}
   <div style={{ position: 'sticky', top: (isMobileLandscape ? 52 : 64), zIndex: 25, background: '#ffffff' }}>
         <div style={{ width: '100%', boxSizing: 'border-box', padding: '0 0 6px', minWidth: 0 }}>
-  <div className="portrait-title-spacer" style={!isMobileLandscape ? { paddingTop: '5%', paddingBottom: '5%' } : undefined}>
+  <div className="portrait-title-spacer" style={!isMobileLandscape ? { paddingTop: '2%', paddingBottom: '2%' } : undefined}>
     {!isMobileLandscape && (
       <h1 style={{ textAlign: "center", marginTop: 0, marginBottom: 8 }}>
         {(lessonData && (lessonData.title || lessonData.lessonTitle)) || manifestInfo.title}
