@@ -4754,13 +4754,30 @@ function SessionPageInner() {
       {/* Sticky cluster: title + timeline + video + captions stick under the header without moving into it */}
   <div style={{ position: 'sticky', top: (isMobileLandscape ? 52 : 64), zIndex: 25, background: '#ffffff' }}>
         <div style={{ width: '100%', boxSizing: 'border-box', padding: '0 0 6px', minWidth: 0 }}>
-  <div className="portrait-title-spacer" style={!isMobileLandscape ? { paddingTop: '2%', paddingBottom: '2%' } : undefined}>
-    {!isMobileLandscape && (
-      <h1 style={{ textAlign: "center", marginTop: 0, marginBottom: 8 }}>
-        {(lessonData && (lessonData.title || lessonData.lessonTitle)) || manifestInfo.title}
-      </h1>
-    )}
-  </div>
+  {(() => {
+    // Dynamic portrait title padding:
+    // - Mobile landscape: no spacer wrapper style applied (handled elsewhere)
+    // - Portrait < 800px width: retain proportional breathing room (2% each side of title area)
+    // - Portrait >= 800px width: collapse to a near-zero fixed padding for tighter layout
+    let spacerStyle = undefined;
+    if (!isMobileLandscape) {
+      const vw = (typeof window !== 'undefined') ? window.innerWidth : null;
+      if (vw != null && vw >= 800) {
+        spacerStyle = { paddingTop: 4, paddingBottom: 4 };
+      } else {
+        spacerStyle = { paddingTop: '2%', paddingBottom: '2%' };
+      }
+    }
+    return (
+      <div className="portrait-title-spacer" style={spacerStyle}>
+        {!isMobileLandscape && (
+          <h1 style={{ textAlign: "center", marginTop: 0, marginBottom: 8 }}>
+            {(lessonData && (lessonData.title || lessonData.lessonTitle)) || manifestInfo.title}
+          </h1>
+        )}
+      </div>
+    );
+  })()}
   {/** Clickable timeline jump logic */}
   {(() => {
     const handleJumpPhase = (target) => {
