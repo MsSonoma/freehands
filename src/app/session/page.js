@@ -469,7 +469,8 @@ function SessionPageInner() {
   const [captionIndex, setCaptionIndex] = useState(0);
   const captionBoxRef = useRef(null);
   // UI base width used for simple maxWidth centering (no scaling of the container)
-  const baseWidth = 1000;
+  // Global max width for primary session content band (reduced from 1000 to 900 per request)
+  const baseWidth = 900;
   // Side-by-side layout refs (mobile landscape) for equal height sync
   const videoColRef = useRef(null);
   const captionColRef = useRef(null);
