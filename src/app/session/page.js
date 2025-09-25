@@ -387,9 +387,13 @@ function SessionPageInner() {
   const [downloadError, setDownloadError] = useState("");
   // Generated assessment sets persisted for session (worksheet & test)
   const [generatedWorksheet, setGeneratedWorksheet] = useState(null);
+  // Preserve original full worksheet source objects (with answer metadata) used to derive generatedWorksheet
+  const [worksheetSourceFull, setWorksheetSourceFull] = useState(null);
   // Mirror for immediate, synchronous reads between renders to avoid stale state in rapid turns
   const worksheetIndexRef = useRef(0);
   const [generatedTest, setGeneratedTest] = useState(null);
+  // Preserve original full test source objects
+  const [testSourceFull, setTestSourceFull] = useState(null);
   // Ephemeral (reset on refresh) pre-generated sets for comprehension and exercise
   const [generatedComprehension, setGeneratedComprehension] = useState(null);
   const [generatedExercise, setGeneratedExercise] = useState(null);
@@ -612,6 +616,8 @@ function SessionPageInner() {
   const [userPaused, setUserPaused] = useState(false); // user-level pause covering video + TTS
   // iOS/Safari audio unlock (when autoplay is blocked)
   const [needsAudioUnlock, setNeedsAudioUnlock] = useState(false);
+  // Tracks whether the user has explicitly unlocked audio via a gesture (prevents re‑prompting)
+  const audioUnlockedRef = useRef(false);
   const lastAudioBase64Ref = useRef(null);
   const lastSentencesRef = useRef([]);
   const lastStartIndexRef = useRef(0);
@@ -1310,6 +1316,8 @@ function SessionPageInner() {
       } catch {}
 
       setNeedsAudioUnlock(false);
+  // Mark audio as explicitly unlocked so we do not force the prompt again
+  audioUnlockedRef.current = true;
 
       const b64 = lastAudioBase64Ref.current;
       const sents = Array.isArray(lastSentencesRef.current) ? lastSentencesRef.current : [];
@@ -2401,6 +2409,301 @@ function SessionPageInner() {
     createPdfForItems(source.map((q, i) => ({ ...q, number: i + 1 })), "test", previewWin);
   };
 
+  // Download combined answer key (worksheet + test) in a single PDF
+  const handleDownloadAnswers = async () => {
+    const ok = await ensurePinAllowed('download');
+    if (!ok) return;
+    const previewWin = typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null;
+    try { showTipOverride('Tip: If nothing opens, allow pop-ups for this site.'); } catch {}
+    setDownloadError("");
+    // Ensure we have generated sets or fallback to existing lesson arrays
+    let ws = generatedWorksheet;
+    let ts = generatedTest;
+    if ((!ws || !ws.length || !ts || !ts.length) && lessonData) {
+      // Attempt minimal synchronous generation ONLY if arrays empty and lessonData present (reuse logic lightly)
+      try {
+        if ((!ws || !ws.length) && (Array.isArray(lessonData.worksheet) && lessonData.worksheet.length)) {
+          ws = lessonData.worksheet.slice(0, WORKSHEET_TARGET || 20).map((q, i) => ({ ...q, number: i + 1 }));
+        }
+        if ((!ts || !ts.length) && (Array.isArray(lessonData.test) && lessonData.test.length)) {
+          ts = lessonData.test.slice(0, TEST_TARGET || 20).map((q, i) => ({ ...q, number: i + 1 }));
+        }
+      } catch {}
+    }
+    // If still nothing to show, surface error
+    if ((!ws || !ws.length) && (!ts || !ts.length)) {
+      setDownloadError('No worksheet or test content available for answers.');
+      return;
+    }
+    const itemsWorksheet = Array.isArray(ws) ? ws.map((q, i) => ({ ...q, number: q.number || (i + 1) })) : [];
+    const itemsTest = Array.isArray(ts) ? ts.map((q, i) => ({ ...q, number: q.number || (i + 1) })) : [];
+
+    // Build PDF with both sections using same jsPDF instance
+    try {
+      const doc = new jsPDF();
+      const lessonTitle = (lessonData?.title || manifestInfo.title || 'Lesson').trim();
+      let y = 14;
+      doc.setFontSize(18);
+      doc.text(`${lessonTitle} Answer Key`, 14, y);
+      y += 10;
+      const normalFont = () => { try { doc.setFontSize(12); } catch {} };
+      normalFont();
+
+      const renderAnswerLine = (label, num, prompt, answer) => {
+        const wrapWidth = 180;
+        const header = `${label} ${num}. ${prompt}`.trim();
+        const headerLines = doc.splitTextToSize(header, wrapWidth);
+        headerLines.forEach(line => {
+          if (y > 280) { doc.addPage(); y = 14; normalFont(); }
+          doc.text(line, 14, y); y += 6;
+        });
+        const ansLines = doc.splitTextToSize(`Answer: ${answer}`, wrapWidth);
+        ansLines.forEach(line => {
+          if (y > 280) { doc.addPage(); y = 14; normalFont(); }
+          doc.text(line, 20, y); y += 6;
+        });
+        y += 2;
+      };
+
+      const extractAnswer = (q) => {
+        try {
+          if (!q) return '—';
+          // Possible fields: answer, expected, correct, key, solution; MC: correct option; TF: boolean; FIB may have blanks array; short answer might have expected
+          if (Array.isArray(q.answers)) return q.answers.join(', ');
+          if (Array.isArray(q.expected)) return q.expected.join(', ');
+          if (Array.isArray(q.answer)) return q.answer.join(', ');
+          const direct = q.expected || q.answer || q.solution || q.correct || q.key;
+          if (typeof direct === 'string' && direct.trim()) return direct.trim();
+          if (typeof direct === 'number') return String(direct);
+          if (typeof q === 'object') {
+            // Multiple choice pattern: maybe options + correct index or value
+            if (Array.isArray(q.choices) && (Number.isFinite(q.correctIndex) || typeof q.correctIndex === 'number')) {
+              const idx = q.correctIndex;
+              if (idx >= 0 && idx < q.choices.length) return q.choices[idx];
+            }
+            if (Array.isArray(q.choices) && typeof q.correct === 'string') {
+              // correct holds the exact matching choice text
+              return q.correct;
+            }
+            if (typeof q.isTrue === 'boolean') return q.isTrue ? 'True' : 'False';
+            if (typeof q.trueFalse === 'boolean') return q.trueFalse ? 'True' : 'False';
+          }
+          return '—';
+        } catch { return '—'; }
+      };
+
+      if (itemsWorksheet.length) {
+        doc.setFontSize(16); doc.text('Worksheet Answers', 14, y); y += 8; normalFont();
+        itemsWorksheet.forEach(q => {
+          const prompt = (q.prompt || q.question || q.text || '').toString().trim();
+          renderAnswerLine('W', q.number, prompt, extractAnswer(q));
+        });
+        y += 4;
+      }
+      if (itemsTest.length) {
+        if (y > 250) { doc.addPage(); y = 14; }
+        doc.setFontSize(16); doc.text('Test Answers', 14, y); y += 8; normalFont();
+        itemsTest.forEach(q => {
+          const prompt = (q.prompt || q.question || q.text || '').toString().trim();
+          renderAnswerLine('T', q.number, prompt, extractAnswer(q));
+        });
+      }
+
+      const fileBase = (lessonTitle || 'lesson').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0,60) || 'lesson';
+      const fileName = `${fileBase}-answers.pdf`;
+      if (previewWin) {
+        try {
+          const blob = doc.output('blob');
+          const blobUrl = URL.createObjectURL(blob);
+          const html = `<!doctype html><html><head><meta charset=\"utf-8\"><title>${fileName}</title><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><style>html,body{height:100%;margin:0}body{display:flex;flex-direction:column;background:#fafafa;font:14px system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#111}header{padding:8px 12px;border-bottom:1px solid #ddd;display:flex;gap:8px;align-items:center;background:#fff}header .sp{flex:1}button,a.button{cursor:pointer;font:13px system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:6px 10px;border:1px solid #ccc;border-radius:6px;background:#fff;color:#111;text-decoration:none;display:inline-flex;align-items:center;gap:4px}button:hover,a.button:hover{background:#f3f3f3}iframe,object,embed{flex:1;border:0;width:100%;background:#fff}</style></head><body><header><div>${fileName}</div><div class=\"sp\"></div><button onclick=\"printPdf()\" title=\"Print (Ctrl+P)\">Print</button><a class=\"button\" href='${blobUrl}' download='${fileName}'>Download</a></header><iframe id=\"pdfFrame\" src='${blobUrl}' title='${fileName}'></iframe><script>function printPdf(){try{var f=document.getElementById('pdfFrame'); if(f&&f.contentWindow){f.contentWindow.focus();f.contentWindow.print();}else{window.print();}}catch(e){window.print();}}window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='p'){e.preventDefault();printPdf();}});</script></body></html>`;
+          previewWin.document.open();
+          previewWin.document.write(html);
+          previewWin.document.close();
+          try { previewWin.addEventListener('beforeunload', () => URL.revokeObjectURL(blobUrl)); } catch {}
+        } catch { doc.save(fileName); }
+      } else { doc.save(fileName); }
+    } catch (e) {
+      console.warn('[Session] Failed to build answers PDF', e);
+      setDownloadError('Failed to generate answers PDF.');
+    }
+  };
+
+  // Download worksheet + test answer key forced into a single page (shrink font / switch to two columns as needed)
+  const handleDownloadWorksheetTestCombined = async () => {
+    const ok = await ensurePinAllowed('download');
+    if (!ok) return;
+    const previewWin = typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null;
+    try { showTipOverride('Tip: If nothing opens, allow pop-ups for this site.'); } catch {}
+    setDownloadError('');
+  // Use existing generated cached sets only (do not attempt regeneration here)
+  const ws = Array.isArray(worksheetSourceFull) ? worksheetSourceFull : (Array.isArray(generatedWorksheet) ? generatedWorksheet : []);
+  const ts = Array.isArray(testSourceFull) ? testSourceFull : (Array.isArray(generatedTest) ? generatedTest : []);
+  if (!ws.length && !ts.length) { setDownloadError('No worksheet or test content available. Refresh first.'); return; }
+    try {
+      const doc = new jsPDF();
+      const lessonTitle = (lessonData?.title || manifestInfo.title || 'Lesson').trim();
+      // Try single column scaling first, then two-column fallback to stay on one page.
+  const MAX_SIZE = 18; // start large; shrink until content fits
+  const MIN_SIZE = 5;
+  const LINE_GAP = 1.6;
+  const LEFT = 8;
+  const TOP = 18;
+  const BOTTOM_LIMIT = 285; // mm bottom cut
+  const PAGE_WIDTH = 210; // A4 width
+  const PAGE_INNER_WIDTH = PAGE_WIDTH - (LEFT * 2);
+      // Canonical answer derivation mirroring judging logic precedence.
+      const buildCanonicalAnswer = (q, debug = false) => {
+        if (!q || typeof q !== 'object') return '—';
+        const usedKeys = new Set();
+        const parts = [];
+        const push = (key, val) => {
+          if (val == null) return;
+          if (Array.isArray(val)) { val.forEach(v => push(key, v)); return; }
+          const s = String(val).trim();
+          if (!s) return;
+          parts.push(s);
+          if (key) usedKeys.add(key);
+        };
+
+        // Primary single-value style fields (first non-empty wins ordering prominence)
+        const primaryOrder = ['expected','answer','expectedAnswer','expectedOutput','solution','key','correct'];
+        for (const k of primaryOrder) { if (q[k] != null) push(k, q[k]); }
+
+        // Acceptable / any-of variants
+        if (Array.isArray(q.expectedAny) && q.expectedAny.length) push('expectedAny', q.expectedAny);
+        if (Array.isArray(q.acceptableAnswers) && q.acceptableAnswers.length) push('acceptableAnswers', q.acceptableAnswers);
+        if (Array.isArray(q.acceptable) && q.acceptable.length) push('acceptable', q.acceptable);
+        if (Array.isArray(q.answers) && q.answers.length) push('answers', q.answers);
+
+        // Multiple choice (derive letter + text if possible)
+        if (Array.isArray(q.choices)) {
+          // Determine correct via correctIndex or by matching expected among choices
+          let idx = Number.isFinite(q.correctIndex) ? q.correctIndex : -1;
+          if (idx < 0 && (q.expected || q.answer)) {
+            const target = String(q.expected || q.answer).trim().toLowerCase();
+            idx = q.choices.findIndex(c => String(c).trim().toLowerCase() === target);
+          }
+            if (idx >= 0 && idx < q.choices.length) {
+              const letter = String.fromCharCode(65 + idx);
+              const choiceText = String(q.choices[idx]).trim();
+              push('mc', `${letter}) ${choiceText}`);
+            }
+        }
+
+        // Boolean / True-False
+        if (typeof q.isTrue === 'boolean') push('isTrue', q.isTrue ? 'True' : 'False');
+        if (typeof q.trueFalse === 'boolean') push('trueFalse', q.trueFalse ? 'True' : 'False');
+
+        // Numeric range style (min/max or expectedMin/expectedMax)
+        const min = q.min ?? q.expectedMin;
+        const max = q.max ?? q.expectedMax;
+        if (Number.isFinite(min) && Number.isFinite(max)) {
+          if (min === max) push('range', String(min)); else push('range', `${min}–${max}`);
+        } else if (Number.isFinite(min)) { push('min', min); }
+        if (Number.isFinite(max) && !Number.isFinite(min)) push('max', max);
+
+        // Keywords / terms for short-answer (indicate requirement summary if no direct expected)
+        if (Array.isArray(q.terms) && q.terms.length) push('terms', `terms: ${q.terms.join(', ')}`);
+        if (Array.isArray(q.keywords) && q.keywords.length) push('keywords', `keywords: ${q.keywords.join(', ')}`);
+        if (Number.isInteger(q.minKeywords) && q.minKeywords > 0) push('minKeywords', `min keywords: ${q.minKeywords}`);
+
+        // Explanation (short only)
+        if (typeof q.explanation === 'string') {
+          const exp = q.explanation.trim();
+          if (exp && exp.length <= 120) push('explanation', exp);
+        }
+
+        // Deduplicate preserving earliest occurrence precedence
+        const seen = new Set();
+        const ordered = [];
+        for (const p of parts) { if (!seen.has(p)) { seen.add(p); ordered.push(p); } }
+        if (!ordered.length) return '(no answer data)';
+        const answer = ordered.join(' / ');
+        if (debug && process.env.NODE_ENV !== 'production') {
+          return `${answer}  [${Array.from(usedKeys).join(',')}]`;
+        }
+        return answer;
+      };
+      // Single column layout: Worksheet section then Test section under separate headings.
+      const debugAnswers = false; // toggle for dev
+      const worksheetItems = ws.map((q,i)=>({ prefix:'W', num:(q.number || i+1), ans: buildCanonicalAnswer(q, debugAnswers) }));
+      const testItems = ts.map((q,i)=>({ prefix:'T', num:(q.number || i+1), ans: buildCanonicalAnswer(q, debugAnswers) }));
+      const buildLine = (it) => `${it.prefix}${it.num}. ${it.ans}`;
+
+      const measureTotalHeight = (size) => {
+        doc.setFontSize(size);
+        const lineHeight = size * 0.352778;
+        let y = TOP;
+        // Title (scaled same as content now)
+        y += lineHeight; // lesson title line
+        // Worksheet heading + items
+        if (worksheetItems.length) {
+          y += lineHeight; // heading
+          for (const it of worksheetItems) {
+            const lines = doc.splitTextToSize(buildLine(it), PAGE_INNER_WIDTH);
+            const blockHeight = lines.length * lineHeight + LINE_GAP;
+            if (y + blockHeight > BOTTOM_LIMIT) return false;
+            y += blockHeight;
+          }
+        }
+        // Spacer + Test heading (no rule now)
+        if (testItems.length) {
+          y += lineHeight * 0.8; // spacer between sections
+          y += lineHeight; // Test heading
+          for (const it of testItems) {
+            const lines = doc.splitTextToSize(buildLine(it), PAGE_INNER_WIDTH);
+            const blockHeight = lines.length * lineHeight + LINE_GAP;
+            if (y + blockHeight > BOTTOM_LIMIT) return false;
+            y += blockHeight;
+          }
+        }
+        return true;
+      };
+
+      let chosenFont = MAX_SIZE;
+      for (let size = MAX_SIZE; size >= MIN_SIZE; size -= 1) {
+        if (measureTotalHeight(size)) { chosenFont = size; break; }
+        chosenFont = size; // fallback to smallest if none fit earlier
+      }
+
+      // Render single column
+      doc.setFontSize(chosenFont);
+      const lineHeight = chosenFont * 0.352778;
+      let y = TOP;
+      // Title scaled with content
+      doc.text(`${lessonTitle} Answer Key`, LEFT, y);
+      y += lineHeight;
+      const renderSection = (title, items, { spacerTop=false, ruleTop=false } = {}) => {
+        if (!items.length) return;
+        if (spacerTop) y += lineHeight * 0.8; // a bit more space between sections
+        doc.text(title, LEFT, y);
+        y += lineHeight;
+        for (const it of items) {
+          const lines = doc.splitTextToSize(buildLine(it), PAGE_INNER_WIDTH);
+          for (const ln of lines) { doc.text(ln, LEFT, y); y += lineHeight; }
+          y += LINE_GAP;
+          if (y > BOTTOM_LIMIT) break;
+        }
+      };
+      renderSection('Worksheet', worksheetItems);
+      renderSection('Test', testItems, { spacerTop:true });
+
+      const fileBase = (lessonTitle || 'lesson').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0,60) || 'lesson';
+  const fileName = `${fileBase}-answers.pdf`;
+      if (previewWin) {
+        try {
+          const blob = doc.output('blob');
+          const url = URL.createObjectURL(blob);
+          previewWin.location.href = url;
+          setTimeout(() => { try { URL.revokeObjectURL(url); } catch {} }, 10000);
+        } catch { doc.save(fileName); }
+      } else { doc.save(fileName); }
+    } catch (e) {
+      console.warn('[Session] Failed combined worksheet/test PDF', e);
+      setDownloadError('Failed to generate combined worksheet/test PDF.');
+    }
+  };
+
   // Re-generate fresh randomized worksheet and test sets and reset session progress
   const handleRefreshWorksheetAndTest = useCallback(async () => {
     // Clear persisted sets for this lesson
@@ -2505,16 +2808,19 @@ function SessionPageInner() {
   useEffect(() => {
     const onWs = () => { try { handleDownloadWorksheet(); } catch {} };
     const onTest = () => { try { handleDownloadTest(); } catch {} };
+    const onCombined = () => { try { handleDownloadWorksheetTestCombined(); } catch {} };
     const onRefresh = () => { try { handleRefreshWorksheetAndTest(); } catch {} };
     window.addEventListener('ms:print:worksheet', onWs);
     window.addEventListener('ms:print:test', onTest);
+    window.addEventListener('ms:print:combined', onCombined);
     window.addEventListener('ms:print:refresh', onRefresh);
     return () => {
       window.removeEventListener('ms:print:worksheet', onWs);
       window.removeEventListener('ms:print:test', onTest);
+      window.removeEventListener('ms:print:combined', onCombined);
       window.removeEventListener('ms:print:refresh', onRefresh);
     };
-  }, [handleDownloadWorksheet, handleDownloadTest, handleRefreshWorksheetAndTest]);
+  }, [handleDownloadWorksheet, handleDownloadTest, handleDownloadWorksheetTestCombined, handleRefreshWorksheetAndTest]);
 
   // Enable downloads when generated sets exist; for non-math also allow when categories/legacy arrays are present
   const hasNonMathCats = subjectParam !== 'math' && Boolean(
@@ -2536,6 +2842,9 @@ function SessionPageInner() {
     (generatedTest && generatedTest.length) ||
     hasNonMathCats ||
     hasLegacyNonMath
+  );
+  const canDownloadAnswers = Boolean(
+    canDownloadWorksheet || canDownloadTest
   );
 
   // PDF generator (worksheet/test). For worksheet: add header bar "<Title> Worksheet 20 __________" with name line.
@@ -2847,33 +3156,20 @@ function SessionPageInner() {
   // Preview-first: strictly open in the provided preview window/tab with inline viewer; no auto-download
       const fileName = `${manifestInfo.file || 'lesson'}-${label}.pdf`;
       try {
-  const blob = doc.output('blob');
+        const blob = doc.output('blob');
         const blobUrl = URL.createObjectURL(blob);
-        const html = `<!doctype html><html><head><meta charset="utf-8"><title>${fileName}</title>
-<meta name="viewport" content="width=device-width, initial-scale=1"> 
-<style>html,body{height:100%;margin:0}body{display:flex;flex-direction:column}header{padding:8px 12px;border-bottom:1px solid #ddd;font:14px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;color:#111;background:#fafafa;display:flex;gap:8px;align-items:center}header .sp{flex:1}iframe{flex:1;border:0;width:100%}a.button{display:inline-block;padding:6px 10px;border:1px solid #ccc;border-radius:6px;text-decoration:none;color:#111;background:#fff}a.button:hover{background:#f3f3f3}</style>
-</head><body>
-<header>
-  <div>${fileName}</div>
-  <div class="sp"></div>
-  <a class="button" href="${blobUrl}" download="${fileName}">Download</a>
-</header>
-<iframe src="${blobUrl}" title="${fileName}"></iframe>
-</body></html>`;
-  const win = previewWin && previewWin.document ? previewWin : null;
+        const html = `<!doctype html><html><head><meta charset=\"utf-8\"><title>${fileName}</title><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><style>html,body{height:100%;margin:0}body{display:flex;flex-direction:column;background:#fafafa;font:14px system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#111}header{padding:8px 12px;border-bottom:1px solid #ddd;display:flex;gap:8px;align-items:center;background:#fff}header .sp{flex:1}button,a.button{cursor:pointer;font:13px system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:6px 10px;border:1px solid #ccc;border-radius:6px;background:#fff;color:#111;text-decoration:none;display:inline-flex;align-items:center;gap:4px}button:hover,a.button:hover{background:#f3f3f3}iframe,object,embed{flex:1;border:0;width:100%;background:#fff}</style></head><body><header><div>${fileName}</div><div class=\"sp\"></div><button onclick=\"printPdf()\" title=\"Print (Ctrl+P)\">Print</button><a class=\"button\" href='${blobUrl}' download='${fileName}'>Download</a></header><iframe id=\"pdfFrame\" src='${blobUrl}' title='${fileName}'></iframe><script>function printPdf(){try{var f=document.getElementById('pdfFrame'); if(f&&f.contentWindow){f.contentWindow.focus();f.contentWindow.print();}else{window.print();}}catch(e){window.print();}}window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='p'){e.preventDefault();printPdf();}});</script></body></html>`;
+        const win = previewWin && previewWin.document ? previewWin : null;
         if (win && win.document) {
           win.document.open();
           win.document.write(html);
           win.document.close();
-          // Revoke URL when tab unloads
           try { win.addEventListener('beforeunload', () => URL.revokeObjectURL(blobUrl)); } catch {}
         } else {
-          // Do not auto-download; surface a friendly tip instead
           setDownloadError('Preview blocked. Please allow pop-ups for this site to view the PDF.');
           try { showTipOverride('Tip: Allow pop-ups to preview PDFs.'); } catch {}
         }
       } catch (e) {
-        // Do not auto-download; show error
         setDownloadError('Failed to generate or preview the PDF.');
       }
     } catch (e) {
@@ -3031,11 +3327,13 @@ function SessionPageInner() {
       const tOk = Array.isArray(stored.test) && stored.test.length === TEST_TARGET;
       if (wOk && !generatedWorksheet) {
         setGeneratedWorksheet(stored.worksheet);
+        setWorksheetSourceFull(stored.worksheet);
   setCurrentWorksheetIndex(0);
   worksheetIndexRef.current = 0;
       }
       if (tOk && !generatedTest) {
         setGeneratedTest(stored.test);
+        setTestSourceFull(stored.test);
       }
       if ((wOk || !stored.worksheet) && (tOk || !stored.test)) return;
       // Mismatch: drop cache and continue to regenerate below
@@ -3083,13 +3381,14 @@ function SessionPageInner() {
         gW = buildMathSet(WORKSHEET_TARGET, false);
         if (gW && gW.length) {
           setGeneratedWorksheet(gW);
+          setWorksheetSourceFull(gW);
           setCurrentWorksheetIndex(0);
           worksheetIndexRef.current = 0;
         }
       }
       if (!gT) {
         gT = buildMathSet(TEST_TARGET, true);
-        if (gT && gT.length) setGeneratedTest(gT);
+        if (gT && gT.length) { setGeneratedTest(gT); setTestSourceFull(gT); }
       }
     } else {
       // Build from category arrays if present; cap short answers to 30%
@@ -3113,11 +3412,13 @@ function SessionPageInner() {
         if (fromCatsW) {
           gW = fromCatsW;
           setGeneratedWorksheet(gW);
+          setWorksheetSourceFull(gW);
           setCurrentWorksheetIndex(0);
           worksheetIndexRef.current = 0;
         } else if (Array.isArray(lessonData.worksheet) && lessonData.worksheet.length) {
           gW = shuffle2(lessonData.worksheet).slice(0, WORKSHEET_TARGET);
           setGeneratedWorksheet(gW);
+          setWorksheetSourceFull(gW);
           setCurrentWorksheetIndex(0);
           worksheetIndexRef.current = 0;
         }
@@ -3126,9 +3427,11 @@ function SessionPageInner() {
         if (fromCatsT) {
           gT = fromCatsT;
           setGeneratedTest(gT);
+          setTestSourceFull(gT);
         } else if (Array.isArray(lessonData.test) && lessonData.test.length) {
           gT = shuffle2(lessonData.test).slice(0, TEST_TARGET);
           setGeneratedTest(gT);
+          setTestSourceFull(gT);
         }
       }
     }
@@ -3146,6 +3449,10 @@ function SessionPageInner() {
     setPhase("discussion");
     setPhaseGuardSent({});
     ensureBaseSessionSetup();
+    // If starting while muted and audio has never been explicitly unlocked, force the unlock prompt
+    if (mutedRef.current && !audioUnlockedRef.current) {
+      try { setNeedsAudioUnlock(true); } catch {}
+    }
     // Build ephemeral provided question sets for comprehension and exercise
     try {
       const pool = buildQAPool();
@@ -3213,6 +3520,10 @@ function SessionPageInner() {
     if (!generatedWorksheet) {
       ensureBaseSessionSetup();
     }
+    // Force unlock prompt if beginning while muted and not yet unlocked
+    if (mutedRef.current && !audioUnlockedRef.current) {
+      try { setNeedsAudioUnlock(true); } catch {}
+    }
     if (!generatedWorksheet || !generatedWorksheet.length) {
       // Nothing to run
       setSubPhase('worksheet-empty');
@@ -3262,6 +3573,10 @@ function SessionPageInner() {
   };
 
   const beginTestPhase = async () => {
+    // Force audio unlock prompt if starting test while muted and never unlocked
+    if (mutedRef.current && !audioUnlockedRef.current) {
+      try { setNeedsAudioUnlock(true); } catch {}
+    }
     if (!generatedTest || !generatedTest.length) {
       // Ensure assessments exist if user arrived here via skip or regeneration lag
       ensureBaseSessionSetup();
@@ -3368,6 +3683,9 @@ function SessionPageInner() {
   const beginComprehensionPhase = async () => {
     // Ensure session scaffolding exists
     ensureBaseSessionSetup();
+    if (mutedRef.current && !audioUnlockedRef.current) {
+      try { setNeedsAudioUnlock(true); } catch {}
+    }
     // Only act in comprehension phase
     if (phase !== 'comprehension') return;
     if (subPhase !== 'comprehension-start') setSubPhase('comprehension-start');
@@ -3913,6 +4231,9 @@ function SessionPageInner() {
     try { exerciseAwaitingLockRef.current = false; } catch {}
     // Ensure pools/assessments exist if we arrived here via skip before setup
     ensureBaseSessionSetup();
+    if (mutedRef.current && !audioUnlockedRef.current) {
+      try { setNeedsAudioUnlock(true); } catch {}
+    }
     // Choose first exercise problem from ephemeral pre-generated array; fallback to deck/pools
     let first = null;
     if (Array.isArray(generatedExercise) && currentExIndex < generatedExercise.length) {
@@ -4741,6 +5062,29 @@ function SessionPageInner() {
     );
   };
 
+  // Stable SSR-safe portrait spacer style: avoid referencing window during render to prevent hydration mismatch.
+  const [portraitSpacerStyle, setPortraitSpacerStyle] = useState(
+    isMobileLandscape ? undefined : { paddingTop: '2%', paddingBottom: '2%' }
+  );
+  useEffect(() => {
+    if (isMobileLandscape) return; // no spacer adjustments in mobile landscape
+    const compute = () => {
+      try {
+        const vw = window.innerWidth;
+        if (vw >= 800) {
+          setPortraitSpacerStyle({ paddingTop: 4, paddingBottom: 4 });
+        } else {
+          setPortraitSpacerStyle({ paddingTop: '2%', paddingBottom: '2%' });
+        }
+      } catch {
+        // ignore
+      }
+    };
+    compute();
+    window.addEventListener('resize', compute);
+    return () => window.removeEventListener('resize', compute);
+  }, [isMobileLandscape]);
+
   return (
     <div style={{ width: '100%', height: '100svh', overflow: 'hidden' }}>
   {/* Bounding wrapper: regular flow; inner container handles centering via margin auto */}
@@ -4754,30 +5098,15 @@ function SessionPageInner() {
       {/* Sticky cluster: title + timeline + video + captions stick under the header without moving into it */}
   <div style={{ position: 'sticky', top: (isMobileLandscape ? 52 : 64), zIndex: 25, background: '#ffffff' }}>
         <div style={{ width: '100%', boxSizing: 'border-box', padding: '0 0 6px', minWidth: 0 }}>
-  {(() => {
-    // Dynamic portrait title padding:
-    // - Mobile landscape: no spacer wrapper style applied (handled elsewhere)
-    // - Portrait < 800px width: retain proportional breathing room (2% each side of title area)
-    // - Portrait >= 800px width: collapse to a near-zero fixed padding for tighter layout
-    let spacerStyle = undefined;
-    if (!isMobileLandscape) {
-      const vw = (typeof window !== 'undefined') ? window.innerWidth : null;
-      if (vw != null && vw >= 800) {
-        spacerStyle = { paddingTop: 4, paddingBottom: 4 };
-      } else {
-        spacerStyle = { paddingTop: '2%', paddingBottom: '2%' };
-      }
-    }
-    return (
-      <div className="portrait-title-spacer" style={spacerStyle}>
+  {(() => (
+      <div className="portrait-title-spacer" style={!isMobileLandscape ? portraitSpacerStyle : undefined}>
         {!isMobileLandscape && (
           <h1 style={{ textAlign: "center", marginTop: 0, marginBottom: 8 }}>
             {(lessonData && (lessonData.title || lessonData.lessonTitle)) || manifestInfo.title}
           </h1>
         )}
       </div>
-    );
-  })()}
+    ))()}
   {/** Clickable timeline jump logic */}
   {(() => {
     const handleJumpPhase = (target) => {

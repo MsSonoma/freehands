@@ -369,6 +369,13 @@ export default function HeaderBar() {
 									</button>
 									<button
 										type="button"
+										style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', background:'transparent', border:'none', cursor:'pointer', fontWeight:600, color:'#111', borderTop:'1px solid #f3f4f6' }}
+										onClick={() => { try { window.dispatchEvent(new Event('ms:print:combined')); } catch {}; setPrintMenuOpen(false); }}
+									>
+										answers
+									</button>
+									<button
+										type="button"
 										style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', background:'transparent', border:'none', cursor:'pointer', fontWeight:700, color:'#c7442e', borderTop:'1px solid #f3f4f6' }}
 										onClick={() => { try { window.dispatchEvent(new Event('ms:print:refresh')); } catch {}; setPrintMenuOpen(false); }}
 									>
