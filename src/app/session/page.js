@@ -475,11 +475,11 @@ function SessionPageInner() {
   // UI base width used for simple maxWidth centering (no scaling of the container)
   // Global max width for primary session content band (reduced from 1000 to 900 per request)
   const baseWidth = 900;
-  // Side-by-side layout refs (mobile landscape) for equal height sync
+  // Side-by-side layout refs (wide aspect) for equal height sync
   const videoColRef = useRef(null);
   const captionColRef = useRef(null);
   const [sideBySideHeight, setSideBySideHeight] = useState(null);
-  // Mobile landscape detector: small viewport height with landscape orientation (declared before any effect uses it)
+  // Wide-aspect detector: enable side-by-side when viewport is sufficiently wide vs tall
   const [isMobileLandscape, setIsMobileLandscape] = useState(false);
   // When captions are stacked below the video (not mobile landscape), we size them to ~60% of the video panel height
   const [stackedCaptionHeight, setStackedCaptionHeight] = useState(null);
@@ -511,15 +511,15 @@ function SessionPageInner() {
       }
     };
   }, [isMobileLandscape]);
+  // Rule: captions float to the right of the video when width/height >= 1.5 (i.e., width >= 150% of height).
+  // This replaces the previous 700px threshold rule.
   useEffect(() => {
     const check = () => {
       try {
         const w = window.innerWidth;
         const h = window.innerHeight;
-        const isLandscape = w > h;
-        // New rule: side-by-side only below 700px smallest dimension
-        const withinSideBySideRange = Math.min(w, h) < 700;
-        setIsMobileLandscape(withinSideBySideRange && isLandscape);
+        const wideAspect = h > 0 && (w / h) >= 1.5;
+        setIsMobileLandscape(!!wideAspect);
       } catch {}
     };
     check();
@@ -528,7 +528,7 @@ function SessionPageInner() {
     return () => { window.removeEventListener('resize', check); window.removeEventListener('orientationchange', check); };
   }, []);
 
-  // Measure to size stacked caption panel. Rule: if viewport height < 700px, match video height exactly; otherwise square (height ≈ width).
+  // Measure to size stacked caption panel. When not side-by-side, size captions relative to width and viewport height.
   useEffect(() => {
     if (isMobileLandscape) { setStackedCaptionHeight(null); return; }
     const measureTarget = videoColRef.current; // video defines canonical height
@@ -541,16 +541,13 @@ function SessionPageInner() {
         const videoH = vRect.height;
         const w = wRect.width;
         const vh = window.innerHeight;
-        if (vh < 700) {
-          if (Number.isFinite(videoH) && videoH > 0) {
-            setStackedCaptionHeight(Math.round(videoH));
-          }
-        } else {
-          if (Number.isFinite(w) && w > 0) {
-            const vhCap = vh * 0.85;
-            const target = Math.max(260, Math.min(Math.round(w), Math.round(vhCap)));
-            setStackedCaptionHeight(target);
-          }
+        // Prefer a square-ish box, but cap by viewport height to avoid overflow
+        if (Number.isFinite(w) && w > 0) {
+          const vhCap = vh * 0.85;
+          const target = Math.max(260, Math.min(Math.round(w), Math.round(vhCap)));
+          setStackedCaptionHeight(target);
+        } else if (Number.isFinite(videoH) && videoH > 0) {
+          setStackedCaptionHeight(Math.round(videoH));
         }
       } catch {}
     };
@@ -614,6 +611,8 @@ function SessionPageInner() {
   // Mirror latest mute state for async callbacks (prevents stale closures)
   const mutedRef = useRef(false);
   const [userPaused, setUserPaused] = useState(false); // user-level pause covering video + TTS
+  // Record user play/pause intents that occur while the app is loading; apply after load finishes
+  const [playbackIntent, setPlaybackIntent] = useState(null); // 'play' | 'pause' | null
   // iOS/Safari audio unlock (when autoplay is blocked)
   const [needsAudioUnlock, setNeedsAudioUnlock] = useState(false);
   // Tracks whether the user has explicitly unlocked audio via a gesture (prevents re‑prompting)
@@ -1385,10 +1384,51 @@ function SessionPageInner() {
     }
   }, [muted]);
 
+  // When loading finishes, apply any deferred playback intent
+  useEffect(() => {
+    if (!loading && playbackIntent) {
+      const intent = playbackIntent;
+      // Clear first to avoid re-entry loops
+      setPlaybackIntent(null);
+      if (intent === 'pause') {
+        try { if (audioRef.current) audioRef.current.pause(); } catch {}
+        try { if (videoRef.current) videoRef.current.pause(); } catch {}
+        clearCaptionTimers();
+        setIsSpeaking(false);
+        // Ensure UI state reflects paused
+        try { setUserPaused(true); } catch {}
+      } else if (intent === 'play') {
+        const a = audioRef.current;
+        if (a) {
+          try {
+            a.play();
+            setIsSpeaking(true);
+            const startAt = captionIndex;
+            const batchEnd = captionBatchEndRef.current || captionSentencesRef.current.length;
+            const slice = (captionSentencesRef.current || []).slice(startAt, batchEnd);
+            if (slice.length) {
+              try { scheduleCaptionsForAudio(a, slice, startAt); } catch {}
+            }
+          } catch {}
+        }
+        if (videoRef.current) {
+          try { videoRef.current.play(); } catch {}
+        }
+        try { setUserPaused(false); } catch {}
+      }
+    }
+  }, [loading, playbackIntent, captionIndex, scheduleCaptionsForAudio]);
+
   // Play/pause handler affecting both audio + video
   const togglePlayPause = () => {
     setUserPaused((prev) => {
       const next = !prev;
+      // If we are currently loading, defer actual media control to avoid DOMExceptions
+      // and race conditions. We still flip the UI state immediately so the button reflects intent.
+      if (loading) {
+        setPlaybackIntent(next ? 'pause' : 'play');
+        return next;
+      }
       if (next) {
         // Pausing
         if (audioRef.current) {
@@ -1443,6 +1483,8 @@ function SessionPageInner() {
     if (videoRef.current) {
       try { videoRef.current.pause(); } catch {}
     }
+    // Clear any deferred playback intent so it does not apply after abort
+    try { setPlaybackIntent(null); } catch {}
     // Clear captions and indices
     try {
       clearCaptionTimers();
