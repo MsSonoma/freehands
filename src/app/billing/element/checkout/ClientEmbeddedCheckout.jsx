@@ -17,6 +17,7 @@ export default function ClientEmbeddedCheckout() {
   const elementsRef = useRef(null);
   const paymentElRef = useRef(null);
   const mountRef = useRef(null);
+  const lastSecretRef = useRef(null);
 
   // Sync state if URL changes via browser nav
   useEffect(() => {
@@ -90,12 +91,15 @@ export default function ClientEmbeddedCheckout() {
     })();
   }, [selectedTier]);
 
-  // Mount Payment Element
+  // Mount Payment Element (guarded to avoid StrictMode double-mount noise in dev)
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         if (!clientSecret || !mountRef.current) return;
+        // If we already mounted for this clientSecret, skip
+        if (lastSecretRef.current === clientSecret && paymentElRef.current) return;
+
         if (!stripeRef.current) {
           const pk = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
           if (!pk) throw new Error('Publishable key missing');
@@ -104,8 +108,14 @@ export default function ClientEmbeddedCheckout() {
           if (cancelled) return;
           stripeRef.current = stripe;
         }
-        // reset elements and mount with site-matching appearance (black accents)
-        elementsRef.current = null;
+        // If remounting due to a new clientSecret, clean up existing element first
+        if (paymentElRef.current && lastSecretRef.current && lastSecretRef.current !== clientSecret) {
+          try { paymentElRef.current.unmount(); } catch {}
+          paymentElRef.current = null;
+          elementsRef.current = null;
+        }
+
+        // mount with site-matching appearance (black accents)
         const appearance = {
           theme: 'stripe',
           variables: {
@@ -128,23 +138,27 @@ export default function ClientEmbeddedCheckout() {
             '.Input': { color: '#111111', borderColor: '#e5e7eb' },
             '.Input:focus': { borderColor: '#000000', boxShadow: '0 0 0 1px #000000' },
             '.Block': { backgroundColor: '#ffffff' },
-            '.AccordionItem--selected': { borderColor: '#000000', color: '#000000' },
-            '.AccordionTrigger': { color: '#111111' },
-            '.PickerItem--selected': { color: '#000000', borderColor: '#000000' },
-            '.Radio': { borderColor: '#000000' },
+            '.AccordionItem--selected': { borderColor: '#000000', color: '#000000' }
+            // Removed unsupported selectors like .AccordionTrigger and .Radio
           },
         };
-        elementsRef.current = stripeRef.current.elements({ clientSecret, appearance });
-        try { paymentElRef.current?.unmount(); } catch {}
+        elementsRef.current = elementsRef.current || stripeRef.current.elements({ clientSecret, appearance });
         paymentElRef.current = elementsRef.current.create('payment', { layout: 'tabs' });
         paymentElRef.current.mount(mountRef.current);
+        lastSecretRef.current = clientSecret;
       } catch (e) {
         if (!cancelled) setError(e?.message || 'Unable to initialize payment form');
       }
     })();
     return () => {
       cancelled = true;
-      try { paymentElRef.current?.unmount(); } catch {}
+      // In dev, React StrictMode double-invokes effects; avoid spamming unmount/mount cycles
+      if (process.env.NODE_ENV === 'production') {
+        try { paymentElRef.current?.unmount(); } catch {}
+        paymentElRef.current = null;
+        elementsRef.current = null;
+        lastSecretRef.current = null;
+      }
     };
   }, [clientSecret]);
 
