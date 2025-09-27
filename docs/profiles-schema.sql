@@ -9,6 +9,12 @@ create table if not exists public.profiles (
   plan_tier text not null default 'free' check (plan_tier in ('free','basic','plus','premium')),
   stripe_customer_id text,
   timezone text,
+  -- Store a hashed facilitator PIN (bcrypt). Do NOT store plaintext.
+  facilitator_pin_hash text,
+  -- Store facilitator PIN gating preferences (JSON text). Example: {"downloads":true,"facilitatorKey":true,"skipTimeline":true,"changeLearner":true,"refresh":true}
+  facilitator_pin_prefs jsonb,
+  -- Store facilitator-configurable hotkeys (JSON). Example: {"beginSend":"Enter","micHold":"NumpadAdd","skipLeft":"ArrowLeft","skipRight":"ArrowRight","muteToggle":"NumpadMultiply","playPauseToggle":""}
+  facilitator_hotkeys jsonb,
   updated_at timestamptz default now()
 );
 

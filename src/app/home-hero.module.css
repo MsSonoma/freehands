@@ -2,7 +2,7 @@
   width: 100%;
   max-width: 1100px;
   margin: 0 auto;
-  padding: 36px 0 0; /* remove left/right padding, keep top spacing */
+  padding: 15vh 0 0; /* top spacing = 15% of viewport height */
   display: grid;
   gap: 24px;
   align-items: center;
@@ -13,14 +13,14 @@
   .homeHero {
     grid-template-columns: 1fr; /* keep stacked on desktop for exact horizontal centering */
     gap: 28px;
-    padding: 56px 0 0; /* remove left/right padding, keep top spacing */
+    padding: 15vh 0 0; /* keep 15vh top spacing on wider screens */
   }
 }
 
 .heroVisual {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  /* Use block layout for simpler control; center with text-align on parent */
+  display: block;
+  text-align: center;
 }
 .heroImg {
   width: clamp(160px, 28vw, 340px);
@@ -45,10 +45,14 @@
   font-size: clamp(16px, 2.2vw, 22px);
 }
 .ctaRow {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
+  /* Remove flex to simplify spacing; center the group via margin auto and text-align */
+  display: block;
+  text-align: center;
+  gap: 12px; /* preserved for when using inline-block children */
+  /* Center the button group and constrain its width so the two CTAs appear centered as a pair */
+  width: auto; /* allow max-width + margin auto to center the group */
+  max-width: 520px; /* two buttons of ~260px each at desktop */
+  margin: 0 auto;
 }
 @media (min-width: 900px) {
   .ctaRow { justify-content: center; }
@@ -58,7 +62,23 @@
   border-radius: 12px;
   text-decoration: none;
   font-weight: 600;
+  /* Use inline-block so buttons can sit side-by-side or wrap naturally */
   display: inline-block;
+  vertical-align: middle;
+  margin: 6px; /* spacing between inline-block buttons */
+  min-width: 160px;
+  max-width: 320px;
+  box-sizing: border-box;
+}
+
+/* When there is wrapping (narrow screens), force each CTA to span the full row so they remain consistent */
+.ctaRow .cta {
+  /* On wider screens, make both roughly equal by relying on min/max widths */
+  display: inline-block;
+}
+@media (max-width: 599px) {
+  .ctaRow { width: 100%; text-align: center; }
+  .ctaRow .cta { display: block; width: 100%; box-sizing: border-box; margin: 8px 0; }
 }
 .ctaSecondary {
   border: 1px solid #ddd;
@@ -69,4 +89,50 @@
   border: 1px solid #111;
   background: #111;
   color: #fff;
+}
+
+/* Landscape: place logo left of the bundled copy/buttons without changing stacking inside the copy block */
+@media (orientation: landscape) {
+  .homeHero {
+    /* two columns: logo (30% width) + content (fills remaining) */
+    grid-template-columns: 30% 1fr;
+    align-items: center;
+    /* center the two-column group on the page */
+    justify-items: center;
+    justify-content: center;
+    gap: 20px; /* horizontal gap between logo and copy */
+    /* leave 15% white space on the left side of the page */
+    margin-left: 15%;
+    /* avoid the hero overflowing the viewport when shifted; allow the grid to shrink slightly */
+    max-width: calc(100% - 15% - 40px);
+  }
+
+  .heroVisual {
+    display: block;
+    text-align: left; /* align the logo within its column */
+    width: auto;
+    margin: 0; /* remove any centering margins */
+    /* push the logo to the right edge of its column so it sits next to the copy column */
+    justify-self: end;
+  }
+
+  .heroImg {
+    /* slightly smaller footprint in landscape so the copy has room */
+    width: 100%;
+    max-width: none;
+    height: auto;
+  }
+
+  .heroCopy {
+    text-align: left; /* keep copy and CTAs grouped and left-aligned */
+    /* align the copy to the left of its column so the logo and copy sit close together */
+    justify-self: start;
+  }
+
+  .ctaRow {
+    /* keep the CTA group bundled and aligned to the copy's left edge */
+    text-align: left;
+    max-width: none; /* allow the copy column to size naturally */
+    margin: 0; /* align with title's left edge */
+  }
 }

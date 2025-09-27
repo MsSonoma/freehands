@@ -1,0 +1,59 @@
+{
+  "id": "4th_Entrepreneurs_in_History_Intermediate",
+  "title": "Entrepreneurs in History",
+  "grade": "4th",
+  "difficulty": "Intermediate",
+  "vocab": [
+    { "term": "entrepreneur", "definition": "A person who starts a business and takes risks to make it grow" },
+    { "term": "innovation", "definition": "A new idea or way of doing something that solves a problem" },
+    { "term": "market", "definition": "A place or group where people buy and sell goods or services" },
+    { "term": "profit", "definition": "Money earned after paying all costs" },
+    { "term": "risk", "definition": "The chance of losing something when making a choice" }
+  ],
+  "teachingNotes": "Introduce what entrepreneurs do and why they matter. Highlight innovation, solving problems, and creating jobs. Use kid-friendly examples from U.S. history like Benjamin Franklin (printing), Madam C. J. Walker (hair care), and Thomas Edison (inventions and companies). Emphasize simple economics terms: market, cost, price, profit, and risk.",
+  "sample": [
+    { "question": "What is an entrepreneur?", "expectedAny": ["person who starts a business", "business starter"] },
+    { "question": "What is innovation?", "expectedAny": ["new idea", "new way of doing something"] },
+    { "question": "What does profit mean?", "expectedAny": ["money left after costs", "money after expenses"] },
+    { "question": "What is a market?", "expectedAny": ["place where people buy and sell", "buyers and sellers"] },
+    { "question": "What does risk mean?", "expectedAny": ["chance of losing something"] },
+    { "question": "Name one famous American entrepreneur.", "expectedAny": ["madam c. j. walker", "thomas edison", "benjamin franklin"] },
+    { "question": "Give one reason entrepreneurs help communities.", "expectedAny": ["jobs", "new products", "solve problems"] }
+  ],
+  "truefalse": [
+    { "question": "Entrepreneurs can create jobs in a community.", "answer": true },
+    { "question": "Profit is the same as revenue before paying costs.", "answer": false },
+    { "question": "Innovation means trying a new idea or method.", "answer": true },
+    { "question": "All risks are bad and should always be avoided.", "answer": false },
+    { "question": "Madam C. J. Walker built a hair care business and trained agents.", "answer": true },
+    { "question": "Edison only invented things and never ran companies.", "answer": false },
+    { "question": "Markets are where buyers and sellers meet.", "answer": true }
+  ],
+  "multiplechoice": [
+    { "question": "Which best describes an entrepreneur?", "choices": ["A person who buys only", "A person who starts and grows a business", "A person who writes laws", "A person who grades papers"], "correct": 1 },
+    { "question": "What is profit?", "choices": ["All the money from sales", "Money left after paying costs", "Money borrowed from a bank", "Money given to charity"], "correct": 1 },
+    { "question": "Which is an example of innovation?", "choices": ["Doing the same thing", "A new idea that solves a problem", "Raising prices only", "Closing a shop"], "correct": 1 },
+    { "question": "Who is known for building a hair care business and training sales agents?", "choices": ["Benjamin Franklin", "Madam C. J. Walker", "Thomas Edison", "George Washington"], "correct": 1 },
+    { "question": "Which step might an entrepreneur take first?", "choices": ["Ignore all costs", "Find a problem to solve", "Close the store", "Avoid customers"], "correct": 1 },
+    { "question": "Which place is a market?", "choices": ["A park with no shops", "A grocery store where people buy and sell", "An empty field", "A quiet library"], "correct": 1 },
+    { "question": "Which best shows a risk?", "choices": ["Trying a new product that may not sell", "Counting money exactly", "Posting a sign", "Sweeping the floor"], "correct": 0 }
+  ],
+  "fillintheblank": [
+    { "question": "An ________ starts a business and takes risks.", "expectedAny": ["entrepreneur"] },
+    { "question": "A new idea that solves a problem is an ________.", "expectedAny": ["innovation"] },
+    { "question": "Money left after costs is called ________.", "expectedAny": ["profit"] },
+    { "question": "A group of buyers and sellers is a ________.", "expectedAny": ["market"] },
+    { "question": "Every business choice has some ________.", "expectedAny": ["risk"] },
+    { "question": "Madam C. J. Walker trained many sales ________.", "expectedAny": ["agents", "associates", "people", "salespeople", "workers"] },
+    { "question": "Thomas Edison started companies to make and sell his ________.", "expectedAny": ["inventions", "invented products"] }
+  ],
+  "shortanswer": [
+    { "question": "How do entrepreneurs help communities?", "expectedAny": ["create jobs", "new products", "solve problems"] },
+    { "question": "Why is innovation important in business?", "expectedAny": ["solve problems", "stay competitive", "help customers"] },
+    { "question": "Give one example of a risk an entrepreneur might take.", "expectedAny": ["new product", "spend savings", "borrow money"] },
+    { "question": "How did Madam C. J. Walker grow her business?", "expectedAny": ["trained agents", "sold hair care", "built a network"] },
+    { "question": "Name a way Thomas Edison used business to share inventions.", "expectedAny": ["started companies", "built factories", "sold products"] },
+    { "question": "How could a school market work?", "expectedAny": ["students sell items", "buyers and sellers meet"] },
+    { "question": "What would you need to plan before starting a small stand?", "expectedAny": ["costs", "price", "customers"] }
+  ]
+}

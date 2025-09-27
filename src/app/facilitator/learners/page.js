@@ -89,7 +89,7 @@ export default function LearnersPage() {
 				<h1 style={{ marginTop:0, marginBottom:0 }}>Learners</h1>
 				<div style={{ display:'flex', alignItems:'center', gap:12 }}>
 					{Number.isFinite(maxLearners) && (
-						<span style={{ color:'#666', fontSize:13 }}>Plan: {planTier} • {items.length} / {maxLearners} learners</span>
+						<span style={{ color:'#666', fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)' }}>Plan: {planTier} • {items.length} / {maxLearners} learners</span>
 					)}
 					<Link
 						href={items.length >= maxLearners ? '/facilitator/plan' : '/facilitator/learners/add'}
@@ -249,46 +249,49 @@ function LearnerRow({ item, saving, saved, onSave, onDelete }){
     // Responsive redesign: remove fixed 616px dial grid and allow wrapping on small screens.
     // Use flex for top row and auto-fit grid for dials.
     const actionBtnStyle = { padding:'8px 12px', border:'1px solid #ddd', borderRadius:8, background:'#fff', display:'flex', alignItems:'center', justifyContent:'center', gap:8, width:140 };
-    return (
+		return (
       <div style={{ border:'1px solid #eee', borderRadius:12, padding:12, background:'#fff', display:'grid', gap:14, minWidth:0 }}>
         {/* Top section: name + actions; wraps naturally */}
         <div style={{ display:'flex', flexWrap:'wrap', gap:12, alignItems:'flex-start', padding:'0 4px' }}>
           <div style={{ display:'flex', flexDirection:'column', gap:6, flex:'1 1 220px', minWidth:160 }}>
-            <div style={{ fontSize:12, color:'#666' }}>Name</div>
+			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Name</div>
             <input aria-label="Name" title="Name" value={name} onChange={(e)=>setName(e.target.value)} placeholder="Name" style={{ padding:'8px 10px', border:'1px solid #ddd', borderRadius:8, width:'100%', minWidth:0 }} />
           </div>
-          <div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'flex-end', alignItems:'center', flex:'1 1 320px' }}>
+					<div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'flex-end', alignItems:'center', flex:'1 1 320px' }}>
             <button onClick={()=>onSave({ name, grade, targets:{ comprehension, exercise, worksheet, test } })} disabled={saving} style={{ ...actionBtnStyle, color:'#0b1220' }}>{saving ? 'Saving…' : 'Save'}<span aria-hidden style={{ fontSize:16, lineHeight:1 }}>💾</span></button>
             {saved && (
-              <div style={{ padding:'8px 12px', background:'#d4f8d4', color:'#2d5a2d', borderRadius:8, fontSize:14, fontWeight:500 }}>Saved</div>
+			  <div style={{ padding:'8px 12px', background:'#d4f8d4', color:'#2d5a2d', borderRadius:8, fontSize:'clamp(0.9rem, 1.6vw, 1rem)', fontWeight:500 }}>Saved</div>
             )}
             <button onClick={onDelete} disabled={saving} style={actionBtnStyle}>
               <span>Delete</span>
-              <span aria-hidden style={{ fontSize:16, lineHeight:1 }}>🗑️</span>
+			  <span aria-hidden style={{ fontSize:'clamp(1rem, 1.8vw, 1.125rem)', lineHeight:1 }}>🗑️</span>
             </button>
+						{item?.id && (
+							<Link href={`/facilitator/learners/${item.id}/transcripts`} style={{ padding:'8px 12px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff', textDecoration:'none' }}>Transcripts</Link>
+						)}
           </div>
         </div>
 
         {/* Dial grid: auto-fit columns that shrink and wrap below ~560px */}
         <div style={{ display:'grid', gap:16, gridTemplateColumns:'repeat(auto-fit, minmax(88px, 1fr))', justifyItems:'center', alignItems:'start', width:'100%' }}>
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
-            <div style={{ fontSize:12, color:'#666' }}>Grade</div>
+			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Grade</div>
             <Dial value={grade} onChange={e => setGrade(e.target.value)} options={GRADES} ariaLabel="Grade" title="Grade" />
           </div>
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
-            <div style={{ fontSize:12, color:'#666' }}>Comprehension</div>
+			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Comprehension</div>
             <Dial value={comprehension} onChange={e => setComprehension(e.target.value)} options={TARGETS} ariaLabel="Comprehension" />
           </div>
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
-            <div style={{ fontSize:12, color:'#666' }}>Exercise</div>
+			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Exercise</div>
             <Dial value={exercise} onChange={e => setExercise(e.target.value)} options={TARGETS} ariaLabel="Exercise" />
           </div>
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
-            <div style={{ fontSize:12, color:'#666' }}>Worksheet</div>
+			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Worksheet</div>
             <Dial value={worksheet} onChange={e => setWorksheet(e.target.value)} options={TARGETS} ariaLabel="Worksheet" />
           </div>
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
-            <div style={{ fontSize:12, color:'#666' }}>Test</div>
+			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Test</div>
             <Dial value={test} onChange={e => setTest(e.target.value)} options={TARGETS} ariaLabel="Test" />
           </div>
         </div>

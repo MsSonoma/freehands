@@ -16,7 +16,9 @@ export async function GET(request) {
     const parts = url.pathname.split('/');
     const subject = decodeURIComponent(parts[parts.length - 1] || '').toLowerCase();
     if (!subject) return NextResponse.json({ error: 'Subject required' }, { status: 400 });
-    const lessonsDir = path.join(process.cwd(), 'public', 'lessons', subject);
+    // Map special virtual subject "facilitator" to the on-disk folder "Facilitator Lessons"
+    const subjectFolder = subject === 'facilitator' ? 'Facilitator Lessons' : subject;
+    const lessonsDir = path.join(process.cwd(), 'public', 'lessons', subjectFolder);
     if (!fs.existsSync(lessonsDir)) return NextResponse.json([]); // no lessons yet
     const entries = fs.readdirSync(lessonsDir).filter(f => f.toLowerCase().endsWith('.json'));
     const results = [];

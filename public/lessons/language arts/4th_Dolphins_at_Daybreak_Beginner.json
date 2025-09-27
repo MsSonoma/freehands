@@ -1,0 +1,63 @@
+{
+  "id": "4th_Dolphins_at_Daybreak_Beginner",
+  "title": "Dolphins at Daybreak",
+  "grade": "4th",
+  "difficulty": "Beginner",
+  "blurb": "Test your comprehension of Magic Tree House #9: Dolphins at Daybreak. Questions focus on understanding the story, characters, and key events to show proof of reading.",
+  "vocab": [
+    { "term": "marine biologist", "definition": "A scientist who studies ocean life and sea creatures" },
+    { "term": "dolphin", "definition": "A smart sea mammal that breathes air and lives in groups" },
+    { "term": "submarine", "definition": "A boat that can travel underwater" },
+    { "term": "reef", "definition": "An underwater area with coral and many sea creatures" },
+    { "term": "current", "definition": "Moving water in the ocean that flows in one direction" },
+    { "term": "rescue", "definition": "To save someone or something from danger" },
+    { "term": "research", "definition": "Careful study to learn new facts about something" },
+    { "term": "communicate", "definition": "To share ideas or feelings with others" }
+  ],
+  "teachingNotes": "This lesson tests reading comprehension of Magic Tree House #9: Dolphins at Daybreak. Students should have read the book before attempting these questions. Focus on story recall, character understanding, and plot sequence. Encourage students to refer back to the book if needed. Key themes include ocean life, friendship, helping others, and learning about marine science.",
+  "sample": [
+    { "question": "Who are the main characters in this story?", "expectedAny": ["jack and annie", "annie and jack"] },
+    { "question": "What kind of tree house do Jack and Annie use?", "expectedAny": ["magic tree house", "time traveling tree house"] },
+    { "question": "Where does the magic tree house take Jack and Annie?", "expectedAny": ["coral reef", "ocean", "underwater"] },
+    { "question": "What sea animal helps Jack and Annie?", "expectedAny": ["dolphins", "dolphin"] },
+    { "question": "Who is the person they meet underwater?", "expectedAny": ["henry", "marine biologist"] },
+    { "question": "What does Henry study?", "expectedAny": ["ocean life", "sea creatures", "dolphins"] },
+    { "question": "How do Jack and Annie breathe underwater?", "expectedAny": ["magic", "tree house magic", "book magic"] }
+  ],
+  "truefalse": [
+    { "question": "Jack and Annie travel to a coral reef.", "answer": true, "expectedAny": ["true"] },
+    { "question": "The dolphins in the story are mean and dangerous.", "answer": false, "expectedAny": ["false"] },
+    { "question": "Henry is a marine biologist who studies ocean life.", "answer": true, "expectedAny": ["true"] },
+    { "question": "Jack and Annie use scuba gear to breathe underwater.", "answer": false, "expectedAny": ["false"] },
+    { "question": "The magic tree house can take them to different places and times.", "answer": true, "expectedAny": ["true"] },
+    { "question": "Jack always forgets to bring his notebook.", "answer": false, "expectedAny": ["false"] },
+    { "question": "The dolphins communicate with Jack and Annie.", "answer": true, "expectedAny": ["true"] }
+  ],
+  "multiplechoice": [
+    { "question": "What does Jack always carry with him?", "choices": ["A camera", "A notebook", "A compass", "A flashlight"], "correct": 1, "expectedAny": ["notebook"] },
+    { "question": "What kind of scientist is Henry?", "choices": ["Plant scientist", "Marine biologist", "Rock scientist", "Animal doctor"], "correct": 1, "expectedAny": ["marine biologist"] },
+    { "question": "How do the dolphins help Jack and Annie?", "choices": ["They give them food", "They show them the way", "They teach them to swim", "They sing songs"], "correct": 1, "expectedAny": ["show them the way"] },
+    { "question": "What is special about the tree house?", "choices": ["It's very tall", "It's made of gold", "It's magic", "It has no doors"], "correct": 2, "expectedAny": ["it's magic"] },
+    { "question": "Where do Jack and Annie live?", "choices": ["By the ocean", "In Frog Creek", "On a farm", "In the city"], "correct": 1, "expectedAny": ["frog creek"] },
+    { "question": "What do the dolphins use to communicate?", "choices": ["Singing", "Dancing", "Clicking and whistling", "Sign language"], "correct": 2, "expectedAny": ["clicking and whistling"] },
+    { "question": "Why does Henry study dolphins?", "choices": ["To catch them", "To learn about them", "To train them", "To sell them"], "correct": 1, "expectedAny": ["to learn about them"] }
+  ],
+  "fillintheblank": [
+    { "question": "Jack always brings his ________ to write down important things.", "expectedAny": ["notebook"] },
+    { "question": "________ are smart sea animals that can communicate with sounds.", "expectedAny": ["dolphins"] },
+    { "question": "Henry is a marine ________ who studies ocean life.", "expectedAny": ["biologist"] },
+    { "question": "The magic ________ house takes Jack and Annie on adventures.", "expectedAny": ["tree"] },
+    { "question": "Jack and Annie travel to a colorful ________ reef under the ocean.", "expectedAny": ["coral"] },
+    { "question": "The dolphins help Jack and Annie by showing them the ________ to go.", "expectedAny": ["way", "direction"] },
+    { "question": "Jack and Annie can breathe underwater because of the tree house ________.", "expectedAny": ["magic"] }
+  ],
+  "shortanswer": [
+    { "question": "Why do you think the dolphins wanted to help Jack and Annie?", "expectedAny": ["dolphins are friendly", "they are kind animals", "they wanted to help", "dolphins are smart and helpful"] },
+    { "question": "What did Jack and Annie learn about dolphins in this story?", "expectedAny": ["dolphins are smart", "dolphins communicate", "dolphins help others", "dolphins live in groups"] },
+    { "question": "How is Henry's job as a marine biologist important?", "expectedAny": ["he studies ocean life", "he learns about sea animals", "he helps protect dolphins", "he teaches others about the ocean"] },
+    { "question": "What would you do if you could visit a coral reef like Jack and Annie?", "expectedAny": ["explore", "look at fish", "study sea life", "swim with dolphins", "take pictures"] },
+    { "question": "Why do you think Jack writes things down in his notebook?", "expectedAny": ["to remember", "to keep track", "to learn", "to not forget important things"] },
+    { "question": "What makes this Magic Tree House adventure different from staying on land?", "expectedAny": ["underwater", "can breathe underwater", "see sea animals", "different world", "ocean adventure"] },
+    { "question": "How do you think Jack and Annie felt when they first saw the dolphins?", "expectedAny": ["excited", "amazed", "happy", "surprised", "wonder"] }
+  ]
+}

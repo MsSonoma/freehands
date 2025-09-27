@@ -31,8 +31,8 @@ export default function Home() {
           <h1 className={styles.heroTitle}>Ms. Sonoma</h1>
           <p className={styles.heroSub}>Guided learning with a caring Educator.</p>
           <div className={styles.ctaRow}>
-            <a href="/learn" className={`${styles.cta} ${styles.ctaSecondary}`}>Learning Portal</a>
-            <a href="/facilitator" className={`${styles.cta} ${styles.ctaPrimary}`}>Facilitator Portal</a>
+            <a href="/learn" className={`${styles.cta} ${styles.ctaSecondary}`}>Learn</a>
+            <a href="/facilitator" className={`${styles.cta} ${styles.ctaPrimary}`}>Facilitator</a>
           </div>
         </div>
       </div>

@@ -93,7 +93,7 @@ export default function LearnerSelector({ onSelect, compact = false }) {
         >
           <div style={{ fontWeight:600 }}>{l.name}</div>
           {l.grade != null && (
-            <div style={{ color:'#6b7280', fontSize:12 }}>Grade {l.grade}</div>
+            <div style={{ color:'#6b7280', fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)' }}>Grade {l.grade}</div>
           )}
         </button>
       ))}

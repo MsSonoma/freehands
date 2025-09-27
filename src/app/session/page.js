@@ -4,11 +4,14 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useRef, useEffect, useMemo, useCallback, Suspense } from "react";
 import { ensurePinAllowed } from "../lib/pinGate";
+import { getHotkeysLocal, fetchHotkeysServer, DEFAULT_HOTKEYS, isTextEntryTarget } from "../lib/hotkeys";
 import { useRouter, useSearchParams } from "next/navigation";
 import { jsPDF } from "jspdf";
 import { loadRuntimeVariables } from "../lib/runtimeVariables";
 import { getSupabaseClient } from "../lib/supabaseClient";
+import { appendTranscriptSegment } from "../lib/transcriptsClient";
 import { getLearner } from "@/app/facilitator/learners/clientApi";
+import { pickNextJoke, renderJoke } from "../lib/jokes";
 import { getStoredAssessments, saveAssessments, clearAssessments } from './assessment/assessmentStore';
 import { upsertMedal } from '@/app/lib/medalsClient';
 
@@ -291,6 +294,55 @@ function splitIntoSentences(text) {
   return sentences.length ? sentences : [text.trim()];
 }
 
+// Post-split fix-up: merge multiple-choice label fragments so options stay inline.
+// Example input fragments from splitting: ["A.", "7, B.", "70, C.", "700, D.", "7000"]
+// Output: ["A. 7,   B. 70,   C. 700,   D. 7000"]
+function mergeMcChoiceFragments(sentences) {
+  try {
+    if (!Array.isArray(sentences) || !sentences.length) return sentences;
+    const out = [];
+    // A segment that ends with ", X." where X is a single letter is a strong indicator of MC chain
+    const chainEndRe = /,\s*[A-Z]\.$/;
+    for (let i = 0; i < sentences.length; i++) {
+      const cur = sentences[i];
+      if (/^[A-Z]\.$/.test(cur) && i + 1 < sentences.length) {
+        // Start of an MC chain like "A."
+        let combined = cur + ' ' + sentences[i + 1];
+        let k = i + 2;
+        // Keep appending until we hit a fragment that does not end with ", X."
+        while (k < sentences.length) {
+          combined += ' ' + sentences[k];
+          if (!chainEndRe.test(sentences[k])) {
+            break;
+          }
+          k++;
+        }
+        // Standardize spacing between options: use a comma followed by three spaces before next label
+        combined = combined.replace(/,\s+(?=\(?[A-Z]\)?[.:)\-]\s)/g, ',   ');
+        out.push(combined);
+        i = k; // skip consumed fragments
+      } else {
+        out.push(cur);
+      }
+    }
+    return out;
+  } catch {
+    return sentences;
+  }
+}
+
+// Ensure the letter label and its choice stay together in captions and displays by inserting NBSP after labels.
+// Patterns covered: "A.", "(B)", "C:", "D)", "E -" etc., when followed by spaces and text
+function enforceNbspAfterMcLabels(text) {
+  try {
+    if (!text) return text;
+    // Replace a normal breaking space after a label with NBSP, but do not duplicate if already NBSP
+    return String(text).replace(/\b\(?([A-Z])\)?\s*[\.:\)\-]\s+(?!\u00A0)/g, (m) => m.replace(/\s+$/, '') + '\u00A0');
+  } catch {
+    return text;
+  }
+}
+
 function countWords(text) {
   if (!text) {
     return 0;
@@ -301,6 +353,20 @@ function countWords(text) {
 function SessionPageInner() {
   const router = useRouter();
   const params = useSearchParams();
+  // Hotkeys: initialize with local defaults; later fetch server override
+  const [hotkeys, setHotkeys] = useState(() => getHotkeysLocal());
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetchHotkeysServer();
+        if (res?.ok && res.hotkeys && !cancelled) {
+          setHotkeys({ ...DEFAULT_HOTKEYS, ...res.hotkeys });
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true };
+  }, []);
   
   const subjectParam = params.get("subject") || "math";
   let difficultyParam = params.get("difficulty") || "beginner";
@@ -311,13 +377,16 @@ function SessionPageInner() {
 
   // Per-question judging spec (no global grading logic). The caller decides the mode per item.
   // mode: 'exact' (compare against an explicit acceptable set) or 'short-answer' (keywords + min)
-  const buildPerQuestionJudgingSpec = useCallback(({
+  const buildPerQuestionJudgingSpec = useCallback(({      
     mode = 'exact',
     learnerAnswer = '',
     expectedAnswer = '',
     acceptableAnswers = [],
     keywords = [],
     minKeywords = null,
+    tf = false, // True/False item
+    mc = false, // Multiple choice item
+    sa = false, // Short answer item
   }) => {
     const data = [
       `EXPECTED: ${expectedAnswer}`,
@@ -329,8 +398,14 @@ function SessionPageInner() {
 
     const normalize = '- Normalize by lowercasing, trimming, collapsing spaces, removing punctuation, and mapping number words zero–twenty to digits.';
     const exactRule = '- Mark CORRECT if and only if the normalized learner answer equals any normalized item in ACCEPTABLE.';
-    const shortRule = '- For this short answer item, mark CORRECT when the learner answer contains at least MIN distinct keywords as whole words (case-insensitive). Do not accept answers that are not covered by that rule.';
-    const modeRule = mode === 'short-answer' ? shortRule : exactRule;
+    // Choose deterministic leniency by declared question type
+    const modeRule = tf ? tf_leniency : (mc ? mc_leniency : (sa || mode === 'short-answer' ? sa_leniency : exactRule));
+    // Dev-only trace of which leniency was selected (does not alter prompts)
+    try {
+      const sel = tf ? 'tf' : (mc ? 'mc' : (sa || mode === 'short-answer' ? 'sa' : 'exact'));
+      console.debug('[LeniencySelection]', sel, { mode });
+    } catch {}
+
     const output = [
       'OUTPUT:',
       '- Start with exactly "Correct!" OR "Not quite right."',
@@ -370,6 +445,7 @@ function SessionPageInner() {
   }, [reloadTargetsForCurrentLearner]);
 
   const [showBegin, setShowBegin] = useState(true);
+  const sessionStartRef = useRef(null); // timestamp for current in-app session segment
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [phase, setPhase] = useState("discussion");
   const [subPhase, setSubPhase] = useState("greeting");
@@ -399,26 +475,78 @@ function SessionPageInner() {
   const [generatedExercise, setGeneratedExercise] = useState(null);
   const [currentCompIndex, setCurrentCompIndex] = useState(0);
   const [currentExIndex, setCurrentExIndex] = useState(0);
-  // Dynamic max height for video in mobile landscape (computed from viewport)
+  // Dynamic target height for video in landscape (computed from viewport)
   const [videoMaxHeight, setVideoMaxHeight] = useState(null);
+  // Dynamic video column width in landscape (percent of row width)
+  // Maps viewport height 600 -> 50% down to height 400 -> 30% (clamped)
+  const [videoColPercent, setVideoColPercent] = useState(50);
+  // Ultra-short screen handling: when viewport height <= 500px, relocate overlay controls to footer
+  const [isShortHeight, setIsShortHeight] = useState(false);
+  // Extra-tight landscape handling: when viewport height <= 450px in landscape, remove timeline vertical padding
+  const [isVeryShortLandscape, setIsVeryShortLandscape] = useState(false);
   useEffect(() => {
     const calcVideoHeight = () => {
       try {
         const w = window.innerWidth; const h = window.innerHeight;
-        const isLandscape = w > h; const isMobile = Math.min(w, h) <= 820;
-        if (!(isLandscape && isMobile)) { setVideoMaxHeight(null); return; }
-        // Estimate header + timeline + padding footprint (compact header 52 + ~72 timeline/padding)
-        const reserved = 52 + 72;
-        const usable = Math.max(180, h - reserved);
-        // Let video occupy at most 48% of viewport height, but not exceed usable
-        const target = Math.min(usable, Math.round(h * 0.48));
+        // Track short height regardless of orientation
+        setIsShortHeight(h <= 500);
+        // Extra-tight landscape flag
+        setIsVeryShortLandscape((w > h) && (h <= 450));
+        const isLandscape = w > h;
+        if (!isLandscape) { setVideoMaxHeight(null); setVideoColPercent(50); return; }
+        // Smooth ramp: 40% at 375px height -> 70% at 600px height (linear),
+        // clamped to [0.40, 0.70]. Applies to all landscape viewports.
+        const hMin = 375;
+        const hMax = 600;
+        let frac;
+        if (h <= hMin) {
+          frac = 0.40;
+        } else if (h >= hMax) {
+          frac = 0.70;
+        } else {
+          const t = (h - hMin) / (hMax - hMin);
+          frac = 0.40 + t * (0.70 - 0.40);
+        }
+        const target = Math.round(h * frac);
         setVideoMaxHeight(target);
+
+        // Compute landscape video column width percent: 30% at 500px -> 50% at 700px
+        const hwMin = 500;
+        const hwMax = 700;
+        let pct;
+        if (h <= hwMin) {
+          pct = 30;
+        } else if (h >= hwMax) {
+          pct = 50;
+        } else {
+          const t2 = (h - hwMin) / (hwMax - hwMin);
+          pct = 30 + t2 * (50 - 30);
+        }
+        // Keep a small precision to reduce jitter; clamp defensively
+        pct = Math.max(30, Math.min(50, Math.round(pct * 100) / 100));
+        setVideoColPercent(pct);
       } catch { setVideoMaxHeight(null); }
     };
     calcVideoHeight();
     window.addEventListener('resize', calcVideoHeight);
     window.addEventListener('orientationchange', calcVideoHeight);
-    return () => { window.removeEventListener('resize', calcVideoHeight); window.removeEventListener('orientationchange', calcVideoHeight); };
+    // On mobile browsers, the URL bar show/hide changes the visual viewport height
+    // without always emitting a classic resize. Listen to visualViewport if present.
+    let vv = null;
+    try { vv = window.visualViewport || null; } catch { vv = null; }
+    const handleVV = () => calcVideoHeight();
+    if (vv) {
+      try { vv.addEventListener('resize', handleVV); } catch {}
+      try { vv.addEventListener('scroll', handleVV); } catch {}
+    }
+    return () => {
+      window.removeEventListener('resize', calcVideoHeight);
+      window.removeEventListener('orientationchange', calcVideoHeight);
+      if (vv) {
+        try { vv.removeEventListener('resize', handleVV); } catch {}
+        try { vv.removeEventListener('scroll', handleVV); } catch {}
+      }
+    };
   }, []);
 
   // (moved below state declarations that reference it)
@@ -430,7 +558,7 @@ function SessionPageInner() {
       const p = override?.param ?? lessonParam;
       const base = (d && d.id) || (m && m.file) || p || '';
       // Bind to learner + target counts so caches reflect per-learner configuration
-      const learnerId = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
+  const learnerId = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
       const suffix = `:L:${learnerId}:W${WORKSHEET_TARGET}:T${TEST_TARGET}`;
       return `${base}${suffix}`;
     } catch { return lessonParam || ''; }
@@ -442,20 +570,40 @@ function SessionPageInner() {
   const [currentCompProblem, setCurrentCompProblem] = useState(null); // problem currently asked in comprehension awaiting learner answer
   const [currentExerciseProblem, setCurrentExerciseProblem] = useState(null); // problem currently asked in exercise awaiting learner answer
 
-  // When starting comprehension, keep input disabled until Ms. Sonoma finishes asking the first question
+  // Comprehension input gating
+  // - While in comprehension-start (pre-first-question), keep input disabled.
+  // - After the first question is set (comprehension-active), enable input only once TTS finishes the prompt.
   useEffect(() => {
     if (phase !== 'comprehension') return;
-    // During comprehension-start, keep input locked until the first question has been asked (currentCompProblem set)
-    // and Ms. Sonoma has finished speaking it (isSpeaking false).
-    const awaitingFirst = (subPhase === 'comprehension-start' && !currentCompProblem);
-    if (awaitingFirst) {
+    if (subPhase === 'comprehension-start') {
       if (canSend) setCanSend(false);
       return;
     }
-    if (subPhase === 'comprehension-start' && currentCompProblem && !isSpeaking) {
-      if (!canSend) setCanSend(true);
+    if (subPhase === 'comprehension-active') {
+      if (currentCompProblem && !isSpeaking && !canSend) setCanSend(true);
+      return;
     }
   }, [phase, subPhase, currentCompProblem, isSpeaking, canSend]);
+
+  // Persist comprehension/exercise pools whenever they are initialized or change length (e.g., after consuming an item)
+  useEffect(() => {
+    const storageKey = getAssessmentStorageKey();
+    if (!storageKey) return;
+    const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
+    // Debounce saves lightly to avoid tight loops
+    const t = setTimeout(() => {
+      try {
+        const payload = {
+          worksheet: generatedWorksheet || [],
+          test: generatedTest || [],
+          comprehension: Array.isArray(compPool) ? compPool : [],
+          exercise: Array.isArray(exercisePool) ? exercisePool : [],
+        };
+        saveAssessments(storageKey, payload, { learnerId: lid });
+      } catch {}
+    }, 150);
+    return () => clearTimeout(t);
+  }, [compPool?.length, exercisePool?.length]);
   const [exerciseSkippedAwaitBegin, setExerciseSkippedAwaitBegin] = useState(false); // flag: exercise reached via skip and needs explicit begin
   const [worksheetSkippedAwaitBegin, setWorksheetSkippedAwaitBegin] = useState(false); // flag: worksheet reached via skip and needs enriched intro
   // Comprehension awaiting-begin lock to ignore late replies during skip/transition
@@ -472,9 +620,9 @@ function SessionPageInner() {
   const [captionSentences, setCaptionSentences] = useState([]);
   const [captionIndex, setCaptionIndex] = useState(0);
   const captionBoxRef = useRef(null);
-  // UI base width used for simple maxWidth centering (no scaling of the container)
-  // Global max width for primary session content band (reduced from 1000 to 900 per request)
-  const baseWidth = 900;
+  // No native-size clamp: always use computed target height in landscape
+  const videoEffectiveHeight = (videoMaxHeight && Number.isFinite(videoMaxHeight)) ? videoMaxHeight : null;
+  // Full-bleed layout for session; no global max-width container here.
   // Side-by-side layout refs (wide aspect) for equal height sync
   const videoColRef = useRef(null);
   const captionColRef = useRef(null);
@@ -491,7 +639,10 @@ function SessionPageInner() {
     const measure = () => {
       try {
         const h = v.getBoundingClientRect().height;
-        if (Number.isFinite(h) && h > 0) setSideBySideHeight(h);
+        if (Number.isFinite(h) && h > 0) {
+          const next = Math.round(h);
+          setSideBySideHeight((prev) => (prev !== next ? next : prev));
+        }
       } catch {}
     };
     measure();
@@ -510,15 +661,15 @@ function SessionPageInner() {
         window.removeEventListener('orientationchange', measure);
       }
     };
-  }, [isMobileLandscape]);
-  // Rule: captions float to the right of the video when width/height >= 1.5 (i.e., width >= 150% of height).
+  }, [isMobileLandscape, videoMaxHeight]);
+  // Rule: captions float to the right of the video when width/height >= 1.0 (true landscape: width >= height).
   // This replaces the previous 700px threshold rule.
   useEffect(() => {
     const check = () => {
       try {
         const w = window.innerWidth;
         const h = window.innerHeight;
-        const wideAspect = h > 0 && (w / h) >= 1.5;
+  const wideAspect = h > 0 && (w / h) >= 1.0;
         setIsMobileLandscape(!!wideAspect);
       } catch {}
     };
@@ -528,51 +679,6 @@ function SessionPageInner() {
     return () => { window.removeEventListener('resize', check); window.removeEventListener('orientationchange', check); };
   }, []);
 
-  // Measure to size stacked caption panel. When not side-by-side, size captions relative to width and viewport height.
-  useEffect(() => {
-    if (isMobileLandscape) { setStackedCaptionHeight(null); return; }
-    const measureTarget = videoColRef.current; // video defines canonical height
-    const widthTarget = captionColRef.current || videoColRef.current;
-    if (!measureTarget || !widthTarget) return;
-    const measure = () => {
-      try {
-        const vRect = measureTarget.getBoundingClientRect();
-        const wRect = widthTarget.getBoundingClientRect();
-        const videoH = vRect.height;
-        const w = wRect.width;
-        const vh = window.innerHeight;
-        // Prefer a square-ish box, but cap by viewport height to avoid overflow
-        if (Number.isFinite(w) && w > 0) {
-          const vhCap = vh * 0.85;
-          const target = Math.max(260, Math.min(Math.round(w), Math.round(vhCap)));
-          setStackedCaptionHeight(target);
-        } else if (Number.isFinite(videoH) && videoH > 0) {
-          setStackedCaptionHeight(Math.round(videoH));
-        }
-      } catch {}
-    };
-    measure();
-    let ro;
-    if (typeof ResizeObserver !== 'undefined') {
-      ro = new ResizeObserver(() => measure());
-      try { ro.observe(measureTarget); } catch {}
-      if (widthTarget && widthTarget !== measureTarget) { try { ro.observe(widthTarget); } catch {} }
-    } else if (typeof window !== 'undefined') {
-      window.addEventListener('resize', measure);
-      window.addEventListener('orientationchange', measure);
-    }
-    return () => {
-      try { ro && ro.disconnect(); } catch {}
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('resize', measure);
-        window.removeEventListener('orientationchange', measure);
-      }
-    };
-  }, [isMobileLandscape]);
-
-  // (moved lower originally) placeholder: title dispatch effect defined after manifestInfo/effectiveLessonTitle
-  // Fixed scale factor to avoid any auto-shrinking behavior
-  const snappedScale = 1;
   // Measure the fixed footer height to reserve exact space and avoid blank scroll area
   const footerRef = useRef(null);
   const [footerHeight, setFooterHeight] = useState(0);
@@ -598,11 +704,71 @@ function SessionPageInner() {
       if (typeof window !== 'undefined') window.removeEventListener('resize', measure);
     };
   }, []);
+
+  // Measure to size stacked caption panel. When not side-by-side, cap captions to visible viewport minus footer and current top offset.
+  useEffect(() => {
+    if (isMobileLandscape) { setStackedCaptionHeight(null); return; }
+    const measureTarget = videoColRef.current; // video defines canonical reflow triggers
+    const widthTarget = captionColRef.current || videoColRef.current;
+    const topTarget = captionColRef.current || widthTarget || measureTarget;
+    if (!measureTarget || !widthTarget || !topTarget) return;
+    const measure = () => {
+      try {
+        const vRect = measureTarget.getBoundingClientRect();
+        const wRect = widthTarget.getBoundingClientRect();
+        const tRect = topTarget.getBoundingClientRect();
+        const videoH = vRect.height;
+        const w = wRect.width;
+        const vh = window.innerHeight;
+        const colTop = Math.max(0, tRect.top);
+        // Keep a small gap above the footer to avoid visual collision
+        const footerGap = 8;
+        const available = Math.max(220, Math.floor(vh - footerHeight - footerGap - colTop));
+        // Prefer not to exceed column width to keep a square-ish feel
+        if (Number.isFinite(w) && w > 0) {
+          const target = Math.max(220, Math.min(Math.round(w), available));
+          setStackedCaptionHeight(target);
+        } else if (Number.isFinite(videoH) && videoH > 0) {
+          const target = Math.max(220, Math.min(Math.round(videoH), available));
+          setStackedCaptionHeight(target);
+        }
+      } catch {}
+    };
+    measure();
+    let ro;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => measure());
+      try { ro.observe(measureTarget); } catch {}
+      if (widthTarget && widthTarget !== measureTarget) { try { ro.observe(widthTarget); } catch {} }
+      if (captionColRef.current) { try { ro.observe(captionColRef.current); } catch {} }
+    } else if (typeof window !== 'undefined') {
+      window.addEventListener('resize', measure);
+      window.addEventListener('orientationchange', measure);
+    }
+    return () => {
+      try { ro && ro.disconnect(); } catch {}
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('resize', measure);
+        window.removeEventListener('orientationchange', measure);
+      }
+    };
+  }, [isMobileLandscape, footerHeight]);
+
+  // (moved lower originally) placeholder: title dispatch effect defined after manifestInfo/effectiveLessonTitle
+  // Fixed scale factor to avoid any auto-shrinking behavior
+  const snappedScale = 1;
+  // (footer height measurement moved above stacked caption sizing effect)
   // Media & caption refs (restored after refactor removal)
   const videoRef = useRef(null); // controls lesson video playback synchrony with TTS
   const audioRef = useRef(null); // active Audio element for synthesized speech
   const captionTimersRef = useRef([]); // active timers advancing captionIndex
   const captionSentencesRef = useRef([]); // accumulated caption sentences for full transcript persistence
+  // Track re-joins: begin timestamp when the user hits Begin
+  useEffect(() => {
+    if (showBegin === false && !sessionStartRef.current) {
+      sessionStartRef.current = new Date().toISOString();
+    }
+  }, [showBegin]);
   // Track current caption batch boundaries for accurate resume scheduling
   const captionBatchStartRef = useRef(0);
   const captionBatchEndRef = useRef(0);
@@ -613,8 +779,6 @@ function SessionPageInner() {
   const [userPaused, setUserPaused] = useState(false); // user-level pause covering video + TTS
   // Record user play/pause intents that occur while the app is loading; apply after load finishes
   const [playbackIntent, setPlaybackIntent] = useState(null); // 'play' | 'pause' | null
-  // iOS/Safari audio unlock (when autoplay is blocked)
-  const [needsAudioUnlock, setNeedsAudioUnlock] = useState(false);
   // Tracks whether the user has explicitly unlocked audio via a gesture (prevents re‑prompting)
   const audioUnlockedRef = useRef(false);
   const lastAudioBase64Ref = useRef(null);
@@ -623,8 +787,6 @@ function SessionPageInner() {
   // Test phase state
   const [testActiveIndex, setTestActiveIndex] = useState(0); // index of current test question during active test taking
   const [testUserAnswers, setTestUserAnswers] = useState([]); // collected user answers
-  const [testReviewIndex, setTestReviewIndex] = useState(0); // index during review/grading cycle
-  const [testReviewing, setTestReviewing] = useState(false); // whether Ms. Sonoma is reviewing answers
   const [skipPendingLessonLoad, setSkipPendingLessonLoad] = useState(false); // flag when skip pressed before lesson data ready
   // Test review correctness tracking (restored)
   const [usedTestCuePhrases, setUsedTestCuePhrases] = useState([]); // unique cue phrases detected so far in test review
@@ -633,6 +795,12 @@ function SessionPageInner() {
   // Model-validated correctness tracking during test review
   // Concise bounded-leniency guidance (applies only to open-ended judging, not TF/MC)
   const JUDGING_LENIENCY_OPEN_ENDED = 'Judge open-ended answers with bounded leniency: ignore fillers and politeness, be case-insensitive, ignore punctuation, and collapse spaces. Map number words zero–twenty to digits and allow simple forms like "one hundred twenty". Accept simple plural/tense changes in acceptable phrases but require all core keywords from an acceptable variant. If multiple different numbers appear, treat as incorrect. Do not apply this leniency to true/false or multiple choice.';
+
+  // Deterministic non-test leniency clauses
+  const tf_leniency = 'True/False leniency (tf_leniency): Accept a single-letter T or F (case-insensitive) only when the reply is one letter. Accept a single-token yes/no mapped to true/false. Also accept if a whole token equals true/false and it matches the correct boolean.';
+  const mc_leniency = 'Multiple choice leniency (mc_leniency): Accept the choice letter label (A, B, C, D), case-insensitive, that matches the correct choice. Or accept full normalized equality to the correct choice text. If key_terms are provided for the correct choice, accept when all key terms appear (order-free; whole tokens).';
+  const sa_leniency = 'Short answer leniency (sa_leniency): Accept when the normalized reply contains the canonical correct answer as whole tokens; or accept when it meets min_required matches of key_terms where each term may match itself or any listed direct_synonyms. Only listed direct synonyms count. Ignore fillers and politeness; be case-insensitive; ignore punctuation; collapse spaces; map number words zero to twenty to digits.';
+  const sa_leniency_3 = 'Short answer third-try leniency (sa_leniency_3): Same as short answer leniency. When non_advance_count is 2 or more, the hint in feedback must include the exact correct answer once before re-asking.';
 
   const isOpenEndedTestItem = (q) => {
     const t = String(q?.type || '').toLowerCase();
@@ -731,8 +899,8 @@ function SessionPageInner() {
     if (typeof window === 'undefined') return;
     try {
       const pageTitle = ((lessonData && (lessonData.title || lessonData.lessonTitle)) || manifestInfo.title || effectiveLessonTitle || '').toString();
-      const detail = isMobileLandscape ? pageTitle : '';
-      window.dispatchEvent(new CustomEvent('ms:session:title', { detail }));
+      // Always dispatch the title so HeaderBar can show it in both landscape and portrait
+      window.dispatchEvent(new CustomEvent('ms:session:title', { detail: pageTitle }));
     } catch {}
   }, [isMobileLandscape, lessonData, manifestInfo.title, effectiveLessonTitle]);
   // Shared constants
@@ -741,10 +909,11 @@ function SessionPageInner() {
   const { WORKSHEET_CUE_VARIANTS } = require('./constants/worksheetCues.js');
 
   const subjectSegment = (subjectParam || "math").toLowerCase();
+  const subjectFolderSegment = subjectSegment === 'facilitator' ? 'Facilitator Lessons' : subjectSegment;
   // Preserve original casing of the lesson filename; only normalize subject segment
   const lessonFilename = manifestInfo.file || "";
   const lessonFilePath = lessonFilename
-    ? `/lessons/${encodeURIComponent(subjectSegment)}/${encodeURIComponent(lessonFilename)}`
+    ? `/lessons/${encodeURIComponent(subjectFolderSegment)}/${encodeURIComponent(lessonFilename)}`
     : "";
 
   // Build a normalized QA pool for comprehension/exercise
@@ -780,16 +949,16 @@ function SessionPageInner() {
     const isMath = (subjectParam === 'math');
 
     // Prepare Samples
-    const samplesRaw = arrify(lessonData?.sample).map(normalize);
+  const samplesRaw = arrify(lessonData?.sample).map(q => ({ ...normalize(q), questionType: 'sa' }));
     const samplesForPhase = isMath
       ? samplesRaw // allow Short Answer in Math comprehension/exercise
       : samplesRaw.filter((q) => !isShortAnswer(q)); // exclude SA for non-Math
 
     // Prepare categories (accept single object or array)
-    const tf = arrify(lessonData?.truefalse).map(q => ({ ...q, sourceType: 'tf' })).map(normalize);
-    const mc = arrify(lessonData?.multiplechoice).map(q => ({ ...q, sourceType: 'mc' })).map(normalize);
-    const fib = arrify(lessonData?.fillintheblank).map(q => ({ ...q, sourceType: 'fib' })).map(normalize);
-    const sa = arrify(lessonData?.shortanswer).map(q => ({ ...q, sourceType: 'short' })).map(normalize);
+  const tf = arrify(lessonData?.truefalse).map(q => ({ ...q, sourceType: 'tf', questionType: 'tf' })).map(normalize);
+  const mc = arrify(lessonData?.multiplechoice).map(q => ({ ...q, sourceType: 'mc', questionType: 'mc' })).map(normalize);
+  const fib = arrify(lessonData?.fillintheblank).map(q => ({ ...q, sourceType: 'fib', questionType: 'sa' })).map(normalize);
+  const sa = arrify(lessonData?.shortanswer).map(q => ({ ...q, sourceType: 'short', questionType: 'sa' })).map(normalize);
 
     // Exclude invalid MC entries that have no options/choices (would behave like short answer)
     const mcValid = mc.filter(q => {
@@ -800,12 +969,18 @@ function SessionPageInner() {
     if (isMath) {
       // Math: Mix Samples with TF/MC/FIB/SA
       const pool = [...samplesForPhase, ...tf, ...mcValid, ...fib, ...sa];
+      // Log unique questionTypes for dev validation
+      try { console.debug('[PoolTagging] Comp/Ex pool types:', Array.from(new Set(pool.map(x => x?.questionType || 'sa')))); } catch {}
       return shuffle(pool);
     }
 
     // Non-Math: Prefer Samples (no SA). If none, fall back to TF/MC/FIB only.
-    if (samplesForPhase.length) return shuffle(samplesForPhase);
+    if (samplesForPhase.length) {
+      try { console.debug('[PoolTagging] Comp/Ex pool types (samples only):', Array.from(new Set(samplesForPhase.map(x => x?.questionType || 'sa')))); } catch {}
+      return shuffle(samplesForPhase);
+    }
     const catPool = [...tf, ...mcValid, ...fib];
+    try { console.debug('[PoolTagging] Comp/Ex pool types (cats):', Array.from(new Set(catPool.map(x => x?.questionType || 'sa')))); } catch {}
     return shuffle(catPool);
   }, [lessonData]);
 
@@ -838,22 +1013,31 @@ function SessionPageInner() {
           // Initialize non-repeating decks for samples and word problems
           initSampleDeck(data);
           initWordDeck(data);
-          // Initialize comprehension/exercise pools (math uses sample + wordProblems)
-          const initialPool = buildQAPool();
-          if (initialPool.length) {
-            setCompPool(initialPool);
-            setExercisePool(initialPool);
-            setCurrentCompProblem(null);
-            setCurrentExerciseProblem(null);
-          }
           // Attempt to restore persisted assessments for this lesson (id preferred, fallback to filename), invalidate if content changed
           if (!cancelled) {
             const storageKey = getAssessmentStorageKey({ data, manifest: manifestInfo, param: lessonParam });
-            const stored = storageKey ? getStoredAssessments(storageKey) : null;
+            const currentLearnerId = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
+            const stored = storageKey ? (await getStoredAssessments(storageKey, { learnerId: currentLearnerId })) : null;
             // For math, do not derive mismatch from test content because tests are generated from samples
             const currentFirstTest = subjectParam === 'math' ? null : (Array.isArray(data.test) && data.test.length ? data.test[0].prompt : null);
             const storedFirstTest = subjectParam === 'math' ? null : (stored && Array.isArray(stored.test) && stored.test.length ? stored.test[0].prompt : null);
             const contentMismatch = subjectParam === 'math' ? false : (storedFirstTest && currentFirstTest && storedFirstTest !== currentFirstTest);
+            // Initialize comprehension/exercise pools (prefer persisted; else build fresh)
+            if (stored && Array.isArray(stored.comprehension) && stored.comprehension.length) {
+              setCompPool(stored.comprehension);
+            } else {
+              const initialPool = buildQAPool();
+              if (initialPool.length) setCompPool(initialPool);
+            }
+            if (stored && Array.isArray(stored.exercise) && stored.exercise.length) {
+              setExercisePool(stored.exercise);
+            } else {
+              const initialPool = buildQAPool();
+              if (initialPool.length) setExercisePool(initialPool);
+            }
+            setCurrentCompProblem(null);
+            setCurrentExerciseProblem(null);
+
             if (stored && stored.worksheet && stored.test && !contentMismatch) {
               const wOk = Array.isArray(stored.worksheet) && stored.worksheet.length === WORKSHEET_TARGET;
               const tOk = Array.isArray(stored.test) && stored.test.length === TEST_TARGET;
@@ -863,14 +1047,12 @@ function SessionPageInner() {
                 setCurrentWorksheetIndex(0);
                 worksheetIndexRef.current = 0;
               } else {
-                // Invalidate stale cache with wrong counts
-                try { if (storageKey) clearAssessments(storageKey); } catch {}
+                // Counts changed since save; ignore stored arrays and regenerate fresh below without clearing persisted sets
                 setGeneratedWorksheet(null);
                 setGeneratedTest(null);
               }
             } else {
-              // Content changed or nothing stored: discard stale sets so a fresh randomization occurs at session begin
-              try { if (contentMismatch && storageKey) { clearAssessments(storageKey); } } catch {}
+              // Content changed or nothing stored: ignore previous arrays and regenerate without clearing persisted sets
               setGeneratedWorksheet(null);
               setGeneratedTest(null);
               setCurrentWorksheetIndex(0);
@@ -888,17 +1070,17 @@ function SessionPageInner() {
                 return copy;
               };
               // Select a blended set (for math): ~70% from samples/categories and ~30% from word problems
-              const selectMixed = (samples = [], wpArr = [], target = 0, isTest = false) => {
+                const selectMixed = (samples = [], wpArr = [], target = 0, isTest = false) => {
                 const wpAvail = Array.isArray(wpArr) ? wpArr : [];
                 const baseAvail = Array.isArray(samples) ? samples : [];
                 const desiredWp = Math.round(target * 0.3);
                 const wpCount = Math.min(Math.max(0, desiredWp), wpAvail.length);
                 const baseCount = Math.max(0, target - wpCount);
-                const wpSel = shuffle(wpAvail).slice(0, wpCount).map(q => {
-                  const core = isTest ? ({ ...q, expected: q.expected ?? q.answer }) : q;
-                  return { ...core, sourceType: 'word' };
-                });
-                const baseSel = shuffle(baseAvail).slice(0, baseCount).map(q => ({ ...q, sourceType: 'sample' }));
+                  const wpSel = shuffle(wpAvail).slice(0, wpCount).map(q => {
+                    const core = isTest ? ({ ...q, expected: q.expected ?? q.answer }) : q;
+                    return { ...core, sourceType: 'word', questionType: 'sa' };
+                  });
+                  const baseSel = shuffle(baseAvail).slice(0, baseCount).map(q => ({ ...q, sourceType: 'sample', questionType: 'sa' }));
                 return shuffle([...wpSel, ...baseSel]);
               };
               let gW = [];
@@ -907,20 +1089,20 @@ function SessionPageInner() {
                 const samples = reserveSamples(WORKSHEET_TARGET + TEST_TARGET);
                 const words = reserveWords(WORKSHEET_TARGET + TEST_TARGET);
                 // Include category pools in addition to samples
-                const tf = Array.isArray(data.truefalse) ? data.truefalse.map(q => ({ ...q, sourceType: 'tf' })) : [];
-                const mc = Array.isArray(data.multiplechoice) ? data.multiplechoice.map(q => ({ ...q, sourceType: 'mc' })) : [];
-                const fib = Array.isArray(data.fillintheblank) ? data.fillintheblank.map(q => ({ ...q, sourceType: 'fib' })) : [];
-                const sa = Array.isArray(data.shortanswer) ? data.shortanswer.map(q => ({ ...q, sourceType: 'short' })) : [];
+                const tf = Array.isArray(data.truefalse) ? data.truefalse.map(q => ({ ...q, sourceType: 'tf', questionType: 'tf' })) : [];
+                const mc = Array.isArray(data.multiplechoice) ? data.multiplechoice.map(q => ({ ...q, sourceType: 'mc', questionType: 'mc' })) : [];
+                const fib = Array.isArray(data.fillintheblank) ? data.fillintheblank.map(q => ({ ...q, sourceType: 'fib', questionType: 'sa' })) : [];
+                const sa = Array.isArray(data.shortanswer) ? data.shortanswer.map(q => ({ ...q, sourceType: 'short', questionType: 'sa' })) : [];
                 const cats = [...tf, ...mc, ...fib, ...sa];
                 if ((samples && samples.length) || (words && words.length) || cats.length) {
                   const takeMixed = (target, isTest) => {
                     const desiredWp = Math.round(target * 0.3);
-                    const wpSel = (words || []).slice(0, desiredWp).map(q => ({ ...(isTest ? ({ ...q, expected: q.expected ?? q.answer }) : q), sourceType: 'word' }));
+                    const wpSel = (words || []).slice(0, desiredWp).map(q => ({ ...(isTest ? ({ ...q, expected: q.expected ?? q.answer }) : q), sourceType: 'word', questionType: 'sa' }));
                     // Cap SA/FIB to 10% each in the remainder from samples+categories
                     const remainder = Math.max(0, target - wpSel.length);
                     const cap = Math.max(0, Math.floor(target * 0.10));
                     const fromBase = [
-                      ...((samples || []).map(q => ({ ...q, sourceType: 'sample' }))),
+                      ...((samples || []).map(q => ({ ...q, sourceType: 'sample', questionType: 'sa' })) ),
                       ...cats
                     ];
                     const saArr = fromBase.filter(q => /short\s*answer|shortanswer/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'short');
@@ -931,7 +1113,9 @@ function SessionPageInner() {
                     const remaining = Math.max(0, remainder - saPick.length - fibPick.length);
                     const otherPick = shuffleArr(others).slice(0, remaining);
                     const baseSel = shuffleArr([...saPick, ...fibPick, ...otherPick]);
-                    return shuffleArr([...wpSel, ...baseSel]);
+                    const mixed = shuffleArr([...wpSel, ...baseSel]);
+                    try { console.debug('[PoolTagging] Mixed select types:', Array.from(new Set(mixed.map(x => x?.questionType || 'sa')))); } catch {}
+                    return mixed;
                   };
                   gW = takeMixed(WORKSHEET_TARGET, false);
                   gT = takeMixed(TEST_TARGET, true);
@@ -941,10 +1125,10 @@ function SessionPageInner() {
               } else {
                 // Non-math: build from category arrays when available; cap Short Answer and Fill-in-the-Blank at 10% each
                 const buildFromCategories = (target = 0) => {
-                  const tf = Array.isArray(data.truefalse) ? data.truefalse.map(q => ({ ...q, sourceType: 'tf' })) : [];
-                  const mc = Array.isArray(data.multiplechoice) ? data.multiplechoice.map(q => ({ ...q, sourceType: 'mc' })) : [];
-                  const fib = Array.isArray(data.fillintheblank) ? data.fillintheblank.map(q => ({ ...q, sourceType: 'fib' })) : [];
-                  const sa = Array.isArray(data.shortanswer) ? data.shortanswer.map(q => ({ ...q, sourceType: 'short' })) : [];
+                  const tf = Array.isArray(data.truefalse) ? data.truefalse.map(q => ({ ...q, sourceType: 'tf', questionType: 'tf' })) : [];
+                  const mc = Array.isArray(data.multiplechoice) ? data.multiplechoice.map(q => ({ ...q, sourceType: 'mc', questionType: 'mc' })) : [];
+                  const fib = Array.isArray(data.fillintheblank) ? data.fillintheblank.map(q => ({ ...q, sourceType: 'fib', questionType: 'sa' })) : [];
+                  const sa = Array.isArray(data.shortanswer) ? data.shortanswer.map(q => ({ ...q, sourceType: 'short', questionType: 'sa' })) : [];
                   const anyCats = tf.length || mc.length || fib.length || sa.length;
                   if (!anyCats) return null;
                   const cap = Math.max(0, Math.floor(target * 0.10));
@@ -953,7 +1137,9 @@ function SessionPageInner() {
                   const others = shuffle([...tf, ...mc]);
                   const remaining = Math.max(0, target - saPick.length - fibPick.length);
                   const otherPick = others.slice(0, remaining);
-                  return shuffle([...saPick, ...fibPick, ...otherPick]);
+                  const built = shuffle([...saPick, ...fibPick, ...otherPick]);
+                  try { console.debug('[PoolTagging] Non-math category types:', Array.from(new Set(built.map(x => x?.questionType || 'sa')))); } catch {}
+                  return built;
                 };
                 const fromCatsW = buildFromCategories(WORKSHEET_TARGET);
                 const fromCatsT = buildFromCategories(TEST_TARGET);
@@ -961,19 +1147,22 @@ function SessionPageInner() {
                   gW = fromCatsW;
                   setGeneratedWorksheet(gW);
                 } else if (Array.isArray(data.worksheet) && data.worksheet.length) {
-                  gW = shuffle(data.worksheet).slice(0, WORKSHEET_TARGET);
+                  gW = shuffle(data.worksheet).slice(0, WORKSHEET_TARGET).map(q => ({ ...q, questionType: (q?.questionType) ? q.questionType : 'sa' }));
                   setGeneratedWorksheet(gW);
                 }
                 if (fromCatsT) {
                   gT = fromCatsT;
                   setGeneratedTest(gT);
                 } else if (Array.isArray(data.test) && data.test.length) {
-                  gT = shuffle(data.test).slice(0, TEST_TARGET);
+                  gT = shuffle(data.test).slice(0, TEST_TARGET).map(q => ({ ...q, questionType: (q?.questionType) ? q.questionType : 'sa' }));
                   setGeneratedTest(gT);
                 }
               }
               if (storageKey) {
-                try { saveAssessments(storageKey, { worksheet: gW, test: gT }); } catch {}
+                try {
+                  const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
+                  await saveAssessments(storageKey, { worksheet: gW, test: gT, comprehension: compPool || [], exercise: exercisePool || [] }, { learnerId: lid });
+                } catch {}
               }
             }
           }
@@ -1187,8 +1376,7 @@ function SessionPageInner() {
               if (videoRef.current && !userPaused) {
                 try { videoRef.current.pause(); } catch {}
               }
-              // Show unlock UI prompt so user can enable audio on iOS/Safari
-              try { setNeedsAudioUnlock(true); } catch {}
+              // No standalone unlock UI; Begin flow handles permissions
               cleanup();
             });
           }
@@ -1314,9 +1502,8 @@ function SessionPageInner() {
         }
       } catch {}
 
-      setNeedsAudioUnlock(false);
-  // Mark audio as explicitly unlocked so we do not force the prompt again
-  audioUnlockedRef.current = true;
+    // Mark audio as explicitly unlocked so we do not force the prompt again
+    audioUnlockedRef.current = true;
 
       const b64 = lastAudioBase64Ref.current;
       const sents = Array.isArray(lastSentencesRef.current) ? lastSentencesRef.current : [];
@@ -1368,6 +1555,30 @@ function SessionPageInner() {
       console.warn('[Session] Audio unlock attempt failed', e);
     }
   }, [scheduleCaptionsForAudio]);
+
+  // Request audio and mic permissions during a user gesture (Begin click).
+  // - Resumes/creates AudioContext and marks audio as unlocked.
+  // - Requests microphone access once, then immediately stops tracks.
+  // This should be invoked synchronously inside Begin handlers before any awaits.
+  const requestAudioAndMicPermissions = useCallback(() => {
+    try { unlockAudioPlayback(); } catch {}
+    try {
+      const nav = (typeof navigator !== 'undefined') ? navigator : null;
+      if (nav && nav.mediaDevices && typeof nav.mediaDevices.getUserMedia === 'function') {
+        nav.mediaDevices.getUserMedia({ audio: true })
+          .then((stream) => {
+            try { stream.getTracks().forEach(t => { try { t.stop(); } catch {} }); } catch {}
+          })
+          .catch((err) => {
+            try {
+              console.info('[Session] Mic permission request failed or denied', err?.name || err);
+              // Surface a brief, non-blocking tip so users know typing still works
+              try { showTipOverride('Mic access denied. You can still type answers.', 5000); } catch {}
+            } catch {}
+          });
+      }
+    } catch {}
+  }, [unlockAudioPlayback]);
 
   // React to mute toggle on current audio and keep a ref for async use
   useEffect(() => {
@@ -1633,11 +1844,16 @@ function SessionPageInner() {
           // No worksheet/test mention in discussion
           replyText = replyText.replace(/\b(worksheet|test|exam|quiz)\b/gi, "").replace(/\s{2,}/g, " ").trim();
         } else if (stepKey === "unified-discussion") {
-          // Unified opening: keep the content intact; only remove banned words and cleanup spacing
-          replyText = replyText
-            .replace(/\b(exercise|worksheet|test|exam|quiz|answer key)\b/gi, "")
-            .replace(/\s{2,}/g, " ")
+          // Unified opening: keep paragraph/blank-line pacing intact for jokes.
+          // Remove banned words, normalize spaces within lines, and collapse 3+ newlines to exactly 2.
+          let cleaned = replyText.replace(/\b(exercise|worksheet|test|exam|quiz|answer key)\b/gi, "");
+          cleaned = cleaned
+            .split("\n")
+            .map((line) => line.replace(/[ \t]{2,}/g, " ").replace(/\s+$/g, ""))
+            .join("\n")
+            .replace(/\n{3,}/g, "\n\n")
             .trim();
+          replyText = cleaned;
         } else if (stepKey === "teaching-unified" || stepKey === "teaching-unified-repeat") {
           // Unified teaching (initial or repeat): strip banned words, allow only the single gate question, normalize others to periods
           const gateQ = "Would you like me to go over that again?";
@@ -1771,10 +1987,14 @@ function SessionPageInner() {
     setError("");
 
   // Prepare captions from the full reply (append to keep full transcript)
-      let newSentences = splitIntoSentences(replyText);
+  let newSentences = splitIntoSentences(replyText);
+  // Merge MC fragments like "A." + "7, B." + ... into a single inline sentence for captions
+  newSentences = mergeMcChoiceFragments(newSentences);
+  // After merging, enforce NBSP after MC labels so letter-choice pairs don't break across lines in the captions UI
+  newSentences = newSentences.map((s) => enforceNbspAfterMcLabels(s));
       // Safety: if splitting lost substantial content (edge punctuation cases), fall back to a single full-text line
       const normalizedOriginal = replyText.replace(/\s+/g, " ").trim();
-      const normalizedJoined = newSentences.join(" ").replace(/\s+/g, " ").trim();
+  const normalizedJoined = newSentences.join(" ").replace(/\s+/g, " ").trim();
       if (normalizedJoined.length < Math.floor(0.9 * normalizedOriginal.length)) {
         newSentences = [normalizedOriginal];
       }
@@ -1887,6 +2107,42 @@ function SessionPageInner() {
     return { primary: String(ans), synonyms: [] };
   };
 
+  // Build a combined expected bundle line: primary, optional any, optional acceptable
+  // String format (ASCII; single line):
+  // primary=<value>; any=[v1, v2]; acceptable=[a1, a2]
+  // Fallbacks: primary_final = first non-empty of [primary, any[0], acceptable[0]]
+  // Omit any segment if empty; omit acceptable only if truly empty.
+  const composeExpectedBundle = ({ primary, any, acceptable } = {}) => {
+    const arrify = (v) => Array.isArray(v) ? v : (v == null ? [] : [v]);
+    const toStr = (v) => {
+      if (v == null) return '';
+      const s = String(v).trim();
+      return s;
+    };
+    const uniq = (list) => {
+      const out = [];
+      const seen = new Set();
+      for (const v of list) {
+        const s = toStr(v);
+        if (!s) continue;
+        if (!seen.has(s)) { seen.add(s); out.push(s); }
+      }
+      return out;
+    };
+    const primaryStr = toStr(primary);
+    const anyList = uniq(arrify(any));
+    const acceptableListBase = uniq(arrify(acceptable));
+    // Determine primary_final
+    const primaryFinal = primaryStr || (anyList.length ? anyList[0] : '') || (acceptableListBase.length ? acceptableListBase[0] : '');
+    // Build acceptable list including primaryFinal (when truthy), then dedupe
+    const acceptableList = uniq([primaryFinal, ...acceptableListBase]);
+    const parts = [];
+    parts.push('primary=' + (primaryFinal ?? ''));
+    if (anyList.length) parts.push('any=[' + anyList.join(', ') + ']');
+    if (acceptableList.length) parts.push('acceptable=[' + acceptableList.join(', ') + ']');
+    return parts.join('; ');
+  };
+
   // Format multiple-choice options for speech (e.g., "A) ..., B) ..., C) ...")
   const formatMcOptions = (item) => {
     try {
@@ -1902,9 +2158,11 @@ function SessionPageInner() {
         // Strip ANY leading letter label like "A)", "(B)", "C.", "D:", "E -" regardless of which letter it is
         const anyLabel = /^\s*\(?[A-Z]\)?\s*[\.\:\)\-]\s*/i;
         const cleaned = raw.replace(anyLabel, '').trim();
-        return `${label}. ${cleaned}`;
+        // Use NBSP between label and option text to prevent wrapping between them
+        return `${label}.\u00A0${cleaned}`;
       });
-      return parts.join(' ');
+  // Use three spaces after commas to improve readability in the captions line
+  return parts.join(',   ');
     } catch {
       return '';
     }
@@ -1947,12 +2205,37 @@ function SessionPageInner() {
       return false;
     } catch { return false; }
   };
+
+  // Basic multiple-choice detection: has options/choices array with 2+ items and not TF
+  const isMultipleChoice = (item) => {
+    try {
+      const opts = Array.isArray(item?.options)
+        ? item.options.filter(Boolean)
+        : (Array.isArray(item?.choices) ? item.choices.filter(Boolean) : []);
+      if (!opts || opts.length < 2) return false;
+      return !isTrueFalse(item);
+    } catch { return false; }
+  };
+
+  // Lightweight validators for inline MC ask
+  const hasInlineMcChoices = (s) => {
+    try {
+      const t = String(s || '');
+      // Expect at least A. and B. present on the same line as the question mark
+      const line = t.split(/\n/).pop();
+      return /\bA\s*\./.test(line) && /\bB\s*\./.test(line);
+    } catch { return false; }
+  };
+  const countQuestionMarks = (s) => {
+    try { return (String(s || '').match(/\?/g) || []).length; } catch { return 0; }
+  };
   const formatQuestionForSpeech = useCallback((item) => {
     if (!item) return '';
     const tfPrefix = isTrueFalse(item) ? 'True/False: ' : '';
     const mc = formatMcOptions(item);
     const base = String(item.prompt || item.question || '').trim();
-    return mc ? `${tfPrefix}${base} ${mc}` : `${tfPrefix}${base}`;
+    // Put MC options on a new line; keep them comma-separated
+    return mc ? `${tfPrefix}${base}\n${mc}` : `${tfPrefix}${base}`;
   }, []);
 
   // Helper: get the display text of an MC option by its letter (A, B, C, ...)
@@ -1975,12 +2258,45 @@ function SessionPageInner() {
   // Ensure displayed/asked question ends with a question mark
   const ensureQuestionMark = (s) => {
     try {
-      const t = String(s || '').trim();
-      if (!t) return t;
-      if (t.endsWith('?')) return t;
-      return t.replace(/[.!]+$/, '') + '?';
+      const raw = String(s || '');
+      if (!raw) return raw;
+      const parts = raw.split('\n');
+      if (!parts.length) return raw;
+      const q = parts[0].trim();
+      const withQM = q.endsWith('?') ? q : q.replace(/[.!]+$/, '') + '?';
+      return [withQM, ...parts.slice(1)].join('\n');
     } catch {
       return s;
+    }
+  };
+
+  // Ensure a single terminal question mark at the very end of the line (one line only)
+  const ensureSingleTerminalQuestionMark = (s) => {
+    try {
+      const raw = String(s || '');
+      if (!raw) return raw;
+      // Strip trailing punctuation and whitespace, then append exactly one '?'
+      const withoutTrail = raw.replace(/\s*[?.!]+$/, '').trimEnd();
+      return `${withoutTrail}?`;
+    } catch {
+      return s;
+    }
+  };
+
+  // Build a single-line ask string; for MC, include lettered choices inline on the same line
+  const formatQuestionForInlineAsk = (item) => {
+    if (!item) return '';
+    try {
+      const tfPrefix = isTrueFalse(item) ? 'True/False: ' : '';
+      const baseRaw = String(item.prompt || item.question || '').trim();
+      // Remove any trailing sentence punctuation from the stem; we'll add the final '?' at the very end later
+      const base = baseRaw.replace(/\s*[?.!]+$/, '');
+      const mcLine = formatMcOptions(item); // already single-line like "A.\u00A0foo,   B.\u00A0bar"
+      const line = mcLine ? `${tfPrefix}${base} ${mcLine}` : `${tfPrefix}${base}`;
+      // Avoid collapsing non-breaking spaces; only trim ends
+      return line.trim();
+    } catch {
+      return '';
     }
   };
 
@@ -2165,13 +2481,22 @@ function SessionPageInner() {
     setCanSend(false);
   const learnerName = (typeof window !== 'undefined' ? (localStorage.getItem('learner_name') || '') : '').trim();
   const lessonTitleExact = (effectiveLessonTitle && typeof effectiveLessonTitle === 'string' && effectiveLessonTitle.trim()) ? effectiveLessonTitle.trim() : 'the lesson';
+    // Pick and render a pre-curated, spaced joke for this subject.
+    // We instruct Ms. Sonoma to say these exact lines verbatim (no quotes) after the opener.
+    const safeSubject = (subjectParam || '').trim() || 'math';
+    const jokeObj = pickNextJoke(safeSubject);
+    const jokeText = renderJoke(jokeObj) || '';
     const instruction = [
       "Unified opening: In one response do all of the following in order:",
       learnerName
         ? `1) Greeting: begin with a hello that says the learner's name exactly as: "${learnerName}" and name the lesson exactly as: "${lessonTitleExact}" (1–2 sentences, no question).`
         : `1) Greeting: say hello and name the lesson exactly as: "${lessonTitleExact}" (1–2 sentences, no question).`,
       "2) Encouragement: one short, positive sentence (no question).",
-      "3) Joke: start with either 'Wanna hear a joke?' or 'Let's start with a joke.' then tell one short kid-friendly joke related to the subject (total up to 2 sentences).",
+      // Joke: fixed opener, then verbatim joke lines we provide (no quotes, no additions)
+      jokeText
+        ? `3) Joke: begin with exactly "Wanna hear a joke?" OR "Let's start with a joke." Then immediately say the following lines VERBATIM with blank-line pacing and WITHOUT quotes or extra words:
+${jokeText}`
+        : "3) Joke: begin with exactly 'Wanna hear a joke?' or 'Let's start with a joke.' Then tell one very short, kid-friendly subject joke.",
       "4) Silly question: ask one playful question before teaching, exactly one sentence ending with a question mark. THIS MUST BE THE FINAL SENTENCE of your entire response. Do NOT add anything after this question. End immediately after the silly question."
     ].join(" ");
     const result = await callMsSonoma(instruction, "", {
@@ -2361,7 +2686,7 @@ function SessionPageInner() {
         setGeneratedWorksheet(source);
         const key = getAssessmentStorageKey();
         if (key) {
-          try { saveAssessments(key, { worksheet: source, test: generatedTest || [] }); } catch {}
+          try { const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none'; saveAssessments(key, { worksheet: source, test: generatedTest || [], comprehension: compPool || [], exercise: exercisePool || [] }, { learnerId: lid }); } catch {}
         }
       }
     }
@@ -2369,7 +2694,7 @@ function SessionPageInner() {
       setDownloadError("Worksheet content is unavailable for this lesson.");
       return;
     }
-    createPdfForItems(source.map((q, i) => ({ ...q, number: i + 1 })), "worksheet", previewWin);
+    await createPdfForItems(source.map((q, i) => ({ ...q, number: i + 1 })), "worksheet", previewWin);
   };
 
   const handleDownloadTest = async () => {
@@ -2440,7 +2765,7 @@ function SessionPageInner() {
         setGeneratedTest(source);
         const key = getAssessmentStorageKey();
         if (key) {
-          try { saveAssessments(key, { worksheet: generatedWorksheet || [], test: source }); } catch {}
+          try { const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none'; saveAssessments(key, { worksheet: generatedWorksheet || [], test: source, comprehension: compPool || [], exercise: exercisePool || [] }, { learnerId: lid }); } catch {}
         }
       }
     }
@@ -2448,7 +2773,7 @@ function SessionPageInner() {
       setDownloadError("Test content is unavailable for this lesson.");
       return;
     }
-    createPdfForItems(source.map((q, i) => ({ ...q, number: i + 1 })), "test", previewWin);
+    await createPdfForItems(source.map((q, i) => ({ ...q, number: i + 1 })), "test", previewWin);
   };
 
   // Download combined answer key (worksheet + test) in a single PDF
@@ -2485,8 +2810,8 @@ function SessionPageInner() {
       const doc = new jsPDF();
       const lessonTitle = (lessonData?.title || manifestInfo.title || 'Lesson').trim();
       let y = 14;
-      doc.setFontSize(18);
-      doc.text(`${lessonTitle} Answer Key`, 14, y);
+  doc.setFontSize(18);
+  doc.text(`${lessonTitle} Facilitator Key`, 14, y);
       y += 10;
       const normalFont = () => { try { doc.setFontSize(12); } catch {} };
       normalFont();
@@ -2518,14 +2843,39 @@ function SessionPageInner() {
           if (typeof direct === 'string' && direct.trim()) return direct.trim();
           if (typeof direct === 'number') return String(direct);
           if (typeof q === 'object') {
-            // Multiple choice pattern: maybe options + correct index or value
-            if (Array.isArray(q.choices) && (Number.isFinite(q.correctIndex) || typeof q.correctIndex === 'number')) {
-              const idx = q.correctIndex;
-              if (idx >= 0 && idx < q.choices.length) return q.choices[idx];
+            // Multiple choice pattern: convert numeric index to letter + choice text (like buildCanonicalAnswer)
+            if (Array.isArray(q.choices)) {
+              // Determine correct via correctIndex or by matching expected among choices
+              let idx = Number.isFinite(q.correctIndex) ? q.correctIndex : -1;
+              if (idx < 0 && (q.expected || q.answer)) {
+                const target = String(q.expected || q.answer).trim().toLowerCase();
+                idx = q.choices.findIndex(c => String(c).trim().toLowerCase() === target);
+              }
+              if (idx >= 0 && idx < q.choices.length) {
+                const letter = String.fromCharCode(65 + idx); // A, B, C, D...
+                const choiceText = String(q.choices[idx]).trim();
+                return `${letter}) ${choiceText}`;
+              }
             }
-            if (Array.isArray(q.choices) && typeof q.correct === 'string') {
-              // correct holds the exact matching choice text
-              return q.correct;
+            if (Array.isArray(q.choices) && (typeof q.correct === 'string' || typeof q.correct === 'number')) {
+              // correct holds either the exact matching choice text or an index
+              if (typeof q.correct === 'number') {
+                const idx = q.correct;
+                if (idx >= 0 && idx < q.choices.length) {
+                  const letter = String.fromCharCode(65 + idx);
+                  const choiceText = String(q.choices[idx]).trim();
+                  return `${letter}) ${choiceText}`;
+                }
+              } else {
+                // correct is a string - try to find its letter
+                const target = q.correct.trim().toLowerCase();
+                const idx = q.choices.findIndex(c => String(c).trim().toLowerCase() === target);
+                if (idx >= 0) {
+                  const letter = String.fromCharCode(65 + idx);
+                  return `${letter}) ${q.correct}`;
+                }
+                return q.correct;
+              }
             }
             if (typeof q.isTrue === 'boolean') return q.isTrue ? 'True' : 'False';
             if (typeof q.trueFalse === 'boolean') return q.trueFalse ? 'True' : 'False';
@@ -2551,28 +2901,22 @@ function SessionPageInner() {
         });
       }
 
-      const fileBase = (lessonTitle || 'lesson').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0,60) || 'lesson';
-      const fileName = `${fileBase}-answers.pdf`;
-      if (previewWin) {
-        try {
-          const blob = doc.output('blob');
-          const blobUrl = URL.createObjectURL(blob);
-          const html = `<!doctype html><html><head><meta charset=\"utf-8\"><title>${fileName}</title><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><style>html,body{height:100%;margin:0}body{display:flex;flex-direction:column;background:#fafafa;font:14px system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#111}header{padding:8px 12px;border-bottom:1px solid #ddd;display:flex;gap:8px;align-items:center;background:#fff}header .sp{flex:1}button,a.button{cursor:pointer;font:13px system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:6px 10px;border:1px solid #ccc;border-radius:6px;background:#fff;color:#111;text-decoration:none;display:inline-flex;align-items:center;gap:4px}button:hover,a.button:hover{background:#f3f3f3}iframe,object,embed{flex:1;border:0;width:100%;background:#fff}</style></head><body><header><div>${fileName}</div><div class=\"sp\"></div><button onclick=\"printPdf()\" title=\"Print (Ctrl+P)\">Print</button><a class=\"button\" href='${blobUrl}' download='${fileName}'>Download</a></header><iframe id=\"pdfFrame\" src='${blobUrl}' title='${fileName}'></iframe><script>function printPdf(){try{var f=document.getElementById('pdfFrame'); if(f&&f.contentWindow){f.contentWindow.focus();f.contentWindow.print();}else{window.print();}}catch(e){window.print();}}window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='p'){e.preventDefault();printPdf();}});</script></body></html>`;
-          previewWin.document.open();
-          previewWin.document.write(html);
-          previewWin.document.close();
-          try { previewWin.addEventListener('beforeunload', () => URL.revokeObjectURL(blobUrl)); } catch {}
-        } catch { doc.save(fileName); }
-      } else { doc.save(fileName); }
+  // Filename: use the lesson ID (filename without .json) to ensure stable, predictable naming
+  const lessonIdForName = String(manifestInfo?.file || lessonParam || 'lesson').replace(/\.json$/i, '');
+  const fileName = `${lessonIdForName}-key.pdf`;
+      try {
+        const blob = doc.output('blob');
+        await shareOrPreviewPdf(blob, fileName, previewWin);
+      } catch { doc.save(fileName); }
     } catch (e) {
       console.warn('[Session] Failed to build answers PDF', e);
       setDownloadError('Failed to generate answers PDF.');
     }
   };
 
-  // Download worksheet + test answer key forced into a single page (shrink font / switch to two columns as needed)
+  // Download Facilitator Key (Lesson Notes, Vocab, Worksheet Q&A, Test Q&A) forced into one page when possible
   const handleDownloadWorksheetTestCombined = async () => {
-    const ok = await ensurePinAllowed('download');
+    const ok = await ensurePinAllowed('facilitator-key');
     if (!ok) return;
     const previewWin = typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null;
     try { showTipOverride('Tip: If nothing opens, allow pop-ups for this site.'); } catch {}
@@ -2584,15 +2928,15 @@ function SessionPageInner() {
     try {
       const doc = new jsPDF();
       const lessonTitle = (lessonData?.title || manifestInfo.title || 'Lesson').trim();
-      // Try single column scaling first, then two-column fallback to stay on one page.
-  const MAX_SIZE = 18; // start large; shrink until content fits
-  const MIN_SIZE = 5;
-  const LINE_GAP = 1.6;
-  const LEFT = 8;
-  const TOP = 18;
-  const BOTTOM_LIMIT = 285; // mm bottom cut
-  const PAGE_WIDTH = 210; // A4 width
-  const PAGE_INNER_WIDTH = PAGE_WIDTH - (LEFT * 2);
+      // Single page constraints; scale down font and, if needed, use two-column fallback for Q&A sections.
+      const MAX_SIZE = 12; // start modest to improve fit
+      const MIN_SIZE = 5;
+      const LINE_GAP = 1.0;
+      const LEFT = 8;
+      const TOP = 14;
+      const BOTTOM_LIMIT = 285; // mm bottom cut
+      const PAGE_WIDTH = 210; // A4 width
+      const PAGE_INNER_WIDTH = PAGE_WIDTH - (LEFT * 2);
       // Canonical answer derivation mirroring judging logic precedence.
       const buildCanonicalAnswer = (q, debug = false) => {
         if (!q || typeof q !== 'object') return '—';
@@ -2619,8 +2963,11 @@ function SessionPageInner() {
 
         // Multiple choice (derive letter + text if possible)
         if (Array.isArray(q.choices)) {
-          // Determine correct via correctIndex or by matching expected among choices
+          // Determine correct via correctIndex, correct, or by matching expected among choices
           let idx = Number.isFinite(q.correctIndex) ? q.correctIndex : -1;
+          if (idx < 0 && Number.isFinite(q.correct)) {
+            idx = q.correct;
+          }
           if (idx < 0 && (q.expected || q.answer)) {
             const target = String(q.expected || q.answer).trim().toLowerCase();
             idx = q.choices.findIndex(c => String(c).trim().toLowerCase() === target);
@@ -2666,23 +3013,69 @@ function SessionPageInner() {
         }
         return answer;
       };
-      // Single column layout: Worksheet section then Test section under separate headings.
+      // Build content: Notes, Vocab, then Worksheet/Test Q&A with prompt and answer on the same line.
       const debugAnswers = false; // toggle for dev
-      const worksheetItems = ws.map((q,i)=>({ prefix:'W', num:(q.number || i+1), ans: buildCanonicalAnswer(q, debugAnswers) }));
-      const testItems = ts.map((q,i)=>({ prefix:'T', num:(q.number || i+1), ans: buildCanonicalAnswer(q, debugAnswers) }));
-      const buildLine = (it) => `${it.prefix}${it.num}. ${it.ans}`;
+      const notes = String(lessonData?.teachingNotes || lessonData?.teacherNotes || lessonData?.notes || '')
+        .replace(/\s+/g, ' ').trim();
+      const vocabArr = Array.isArray(lessonData?.vocab) ? lessonData.vocab : [];
+      const vocabItems = vocabArr.map(v => {
+        if (v && typeof v === 'object') {
+          const term = String(v.term || v.word || '').trim();
+          const def = String(v.definition || '').trim();
+          return term && def ? `${term}: ${def}` : term || def || '';
+        }
+        return String(v || '').trim();
+      }).filter(Boolean);
 
-      const measureTotalHeight = (size) => {
+      // Build worksheet/test lines with prompt — answer (compact)
+      const worksheetItems = ws.map((q,i)=>({
+        prefix:'W',
+        num:(q.number || i+1),
+        prompt: String(q.prompt || q.question || q.text || '').trim(),
+        ans: buildCanonicalAnswer(q, debugAnswers)
+      }));
+      const testItems = ts.map((q,i)=>({
+        prefix:'T',
+        num:(q.number || i+1),
+        prompt: String(q.prompt || q.question || q.text || '').trim(),
+        ans: buildCanonicalAnswer(q, debugAnswers)
+      }));
+      const buildQALine = (it) => {
+        const p = it.prompt || '';
+        const a = it.ans || '';
+        // Use em dash separator; keep tight spacing
+        return `${it.prefix}${it.num}. ${p} — ${a}`.replace(/\s+/g,' ').trim();
+      };
+
+      const measureTotalHeightSingle = (size) => {
         doc.setFontSize(size);
         const lineHeight = size * 0.352778;
         let y = TOP;
-        // Title (scaled same as content now)
-        y += lineHeight; // lesson title line
+        // Title
+        y += lineHeight;
+        // Lesson Notes
+        if (notes) {
+          y += lineHeight; // heading
+          const lines = doc.splitTextToSize(notes, PAGE_INNER_WIDTH);
+          const block = lines.length * lineHeight + LINE_GAP;
+          if (y + block > BOTTOM_LIMIT) return false;
+          y += block;
+        }
+        // Vocab
+        if (vocabItems.length) {
+          y += lineHeight; // heading
+          for (const vi of vocabItems) {
+            const lines = doc.splitTextToSize(vi, PAGE_INNER_WIDTH);
+            const block = lines.length * lineHeight + LINE_GAP * 0.8;
+            if (y + block > BOTTOM_LIMIT) return false;
+            y += block;
+          }
+        }
         // Worksheet heading + items
         if (worksheetItems.length) {
           y += lineHeight; // heading
           for (const it of worksheetItems) {
-            const lines = doc.splitTextToSize(buildLine(it), PAGE_INNER_WIDTH);
+            const lines = doc.splitTextToSize(buildQALine(it), PAGE_INNER_WIDTH);
             const blockHeight = lines.length * lineHeight + LINE_GAP;
             if (y + blockHeight > BOTTOM_LIMIT) return false;
             y += blockHeight;
@@ -2693,7 +3086,7 @@ function SessionPageInner() {
           y += lineHeight * 0.8; // spacer between sections
           y += lineHeight; // Test heading
           for (const it of testItems) {
-            const lines = doc.splitTextToSize(buildLine(it), PAGE_INNER_WIDTH);
+            const lines = doc.splitTextToSize(buildQALine(it), PAGE_INNER_WIDTH);
             const blockHeight = lines.length * lineHeight + LINE_GAP;
             if (y + blockHeight > BOTTOM_LIMIT) return false;
             y += blockHeight;
@@ -2702,44 +3095,120 @@ function SessionPageInner() {
         return true;
       };
 
+      // Try single-column fit first
       let chosenFont = MAX_SIZE;
+      let useTwoCols = false;
       for (let size = MAX_SIZE; size >= MIN_SIZE; size -= 1) {
-        if (measureTotalHeight(size)) { chosenFont = size; break; }
-        chosenFont = size; // fallback to smallest if none fit earlier
+        if (measureTotalHeightSingle(size)) { chosenFont = size; break; }
+        if (size === MIN_SIZE) { useTwoCols = true; chosenFont = size; }
       }
 
-      // Render single column
-      doc.setFontSize(chosenFont);
       const lineHeight = chosenFont * 0.352778;
       let y = TOP;
-      // Title scaled with content
-      doc.text(`${lessonTitle} Answer Key`, LEFT, y);
+      doc.setFontSize(chosenFont);
+  // Title
+  try { doc.setFont(undefined, 'bold'); } catch {}
+  doc.text(`${lessonTitle} Facilitator Key`, LEFT, y);
+  try { doc.setFont(undefined, 'normal'); } catch {}
       y += lineHeight;
-      const renderSection = (title, items, { spacerTop=false, ruleTop=false } = {}) => {
-        if (!items.length) return;
-        if (spacerTop) y += lineHeight * 0.8; // a bit more space between sections
-        doc.text(title, LEFT, y);
-        y += lineHeight;
-        for (const it of items) {
-          const lines = doc.splitTextToSize(buildLine(it), PAGE_INNER_WIDTH);
-          for (const ln of lines) { doc.text(ln, LEFT, y); y += lineHeight; }
-          y += LINE_GAP;
-          if (y > BOTTOM_LIMIT) break;
-        }
-      };
-      renderSection('Worksheet', worksheetItems);
-      renderSection('Test', testItems, { spacerTop:true });
 
-      const fileBase = (lessonTitle || 'lesson').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0,60) || 'lesson';
-  const fileName = `${fileBase}-answers.pdf`;
-      if (previewWin) {
-        try {
-          const blob = doc.output('blob');
-          const url = URL.createObjectURL(blob);
-          previewWin.location.href = url;
-          setTimeout(() => { try { URL.revokeObjectURL(url); } catch {} }, 10000);
-        } catch { doc.save(fileName); }
-      } else { doc.save(fileName); }
+      // Render Notes
+      const renderParagraph = (heading, text) => {
+        if (!text) return;
+        try { doc.setFont(undefined, 'bold'); } catch {}
+        doc.text(heading, LEFT, y); y += lineHeight;
+        try { doc.setFont(undefined, 'normal'); } catch {}
+        const lines = doc.splitTextToSize(text, PAGE_INNER_WIDTH);
+        for (const ln of lines) { doc.text(ln, LEFT, y); y += lineHeight; }
+        y += LINE_GAP;
+      };
+      renderParagraph('Lesson Notes', notes);
+
+      // Render Vocab list (compact)
+      if (vocabItems.length) {
+        try { doc.setFont(undefined, 'bold'); } catch {}
+        doc.text('Vocab', LEFT, y); y += lineHeight;
+        try { doc.setFont(undefined, 'normal'); } catch {}
+        for (const vi of vocabItems) {
+          const lines = doc.splitTextToSize(vi, PAGE_INNER_WIDTH);
+          for (const ln of lines) { doc.text(ln, LEFT, y); y += lineHeight; }
+          y += LINE_GAP * 0.8;
+        }
+      }
+
+      if (!useTwoCols) {
+        // Single column Q&A
+        const renderQASection = (title, items, { spacerTop=false } = {}) => {
+          if (!items.length) return;
+          if (spacerTop) y += lineHeight * 0.6;
+          try { doc.setFont(undefined, 'bold'); } catch {}
+          doc.text(title, LEFT, y); y += lineHeight;
+          try { doc.setFont(undefined, 'normal'); } catch {}
+          for (const it of items) {
+            const lines = doc.splitTextToSize(buildQALine(it), PAGE_INNER_WIDTH);
+            for (const ln of lines) { doc.text(ln, LEFT, y); y += lineHeight; if (y > BOTTOM_LIMIT) break; }
+            y += LINE_GAP;
+            if (y > BOTTOM_LIMIT) break;
+          }
+        };
+        renderQASection('Worksheet', worksheetItems);
+        renderQASection('Test', testItems, { spacerTop:true });
+      } else {
+        // Two-column fallback for Q&A only; keep Notes and Vocab full-width at top
+        const GUTTER = 6;
+        const colWidth = (PAGE_INNER_WIDTH - GUTTER) / 2;
+        const startY = y;
+        const renderCol = (xLeft, items, title) => {
+          let yCol = startY;
+          doc.text(title, xLeft, yCol); yCol += lineHeight;
+          for (const it of items) {
+            const lines = doc.splitTextToSize(buildQALine(it), colWidth);
+            for (const ln of lines) { doc.text(ln, xLeft, yCol); yCol += lineHeight; if (yCol > BOTTOM_LIMIT) return yCol; }
+            yCol += LINE_GAP;
+            if (yCol > BOTTOM_LIMIT) return yCol;
+          }
+          return yCol;
+        };
+        // Split worksheet and test into a single list and then divide roughly in half for columns
+        const combined = [
+          ... (worksheetItems.length ? [{ type:'heading', title:'Worksheet' }] : []),
+          ...worksheetItems.map(it=>({ type:'item', it })),
+          ... (testItems.length ? [{ type:'heading', title:'Test' }] : []),
+          ...testItems.map(it=>({ type:'item', it }))
+        ];
+        // Build strings per entry to estimate halves by count (not height-perfect but adequate)
+        const linesAll = combined.map(entry => entry.type === 'heading' ? `# ${entry.title}` : buildQALine(entry.it));
+        const mid = Math.ceil(linesAll.length / 2);
+        const leftEntries = combined.slice(0, mid);
+        const rightEntries = combined.slice(mid);
+        // Rendering with headings preserved
+        const renderEntries = (xLeft, entries) => {
+          let yCol = startY;
+          let section = '';
+          for (const e of entries) {
+            if (e.type === 'heading') { section = e.title; try { doc.setFont(undefined, 'bold'); } catch {}; doc.text(section, xLeft, yCol); yCol += lineHeight; try { doc.setFont(undefined, 'normal'); } catch {}; continue; }
+            const txt = buildQALine(e.it);
+            const lines = doc.splitTextToSize(txt, colWidth);
+            for (const ln of lines) { doc.text(ln, xLeft, yCol); yCol += lineHeight; if (yCol > BOTTOM_LIMIT) return yCol; }
+            yCol += LINE_GAP;
+            if (yCol > BOTTOM_LIMIT) return yCol;
+          }
+          return yCol;
+        };
+        const xLeft = LEFT;
+        const xRight = LEFT + colWidth + GUTTER;
+        const yEndLeft = renderEntries(xLeft, leftEntries);
+        const yEndRight = renderEntries(xRight, rightEntries);
+        y = Math.max(yEndLeft, yEndRight);
+      }
+
+  // Filename: use the lesson ID (filename without .json) to ensure stable, predictable naming
+  const lessonIdForName = String(manifestInfo?.file || lessonParam || 'lesson').replace(/\.json$/i, '');
+  const fileName = `${lessonIdForName}-key.pdf`;
+      try {
+        const blob = doc.output('blob');
+        await shareOrPreviewPdf(blob, fileName, previewWin);
+      } catch { doc.save(fileName); }
     } catch (e) {
       console.warn('[Session] Failed combined worksheet/test PDF', e);
       setDownloadError('Failed to generate combined worksheet/test PDF.');
@@ -2748,9 +3217,11 @@ function SessionPageInner() {
 
   // Re-generate fresh randomized worksheet and test sets and reset session progress
   const handleRefreshWorksheetAndTest = useCallback(async () => {
+    const ok = await ensurePinAllowed('refresh');
+    if (!ok) return;
     // Clear persisted sets for this lesson
     const key = getAssessmentStorageKey();
-    if (key) { try { clearAssessments(key); } catch { /* ignore */ } }
+  if (key) { try { const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none'; await clearAssessments(key, { learnerId: lid }); } catch { /* ignore */ } }
     // Reset current worksheet/test state
     setGeneratedWorksheet(null);
     setGeneratedTest(null);
@@ -2842,7 +3313,7 @@ function SessionPageInner() {
           if (Array.isArray(data.test) && data.test.length) setGeneratedTest(ensureExactCount(shuffle(data.test).slice(0, TEST_TARGET), TEST_TARGET, [shuffle(data.test)]));
         }
       }
-      if (storageKey) { try { saveAssessments(storageKey, { worksheet: gW, test: gT }); } catch {} }
+  if (storageKey) { try { const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none'; await saveAssessments(storageKey, { worksheet: gW, test: gT, comprehension: compPool || [], exercise: exercisePool || [] }, { learnerId: lid }); } catch {} }
     } catch {}
   }, [lessonData, lessonParam, manifestInfo, subjectParam]);
 
@@ -2891,7 +3362,45 @@ function SessionPageInner() {
 
   // PDF generator (worksheet/test). For worksheet: add header bar "<Title> Worksheet 20 __________" with name line.
   // Dynamically choose largest font size that fits on a single page for worksheet content; tests retain multi-page flow.
-  function createPdfForItems(items = [], label = 'worksheet', previewWin = null) {
+  // Mobile-friendly share/preview helper: tries OS share sheet first, then native viewer, then download
+  async function shareOrPreviewPdf(blob, fileName = 'document.pdf', previewWin = null) {
+    // 1) Web Share Level 2 (files) => opens OS sheet with Print on mobile
+    try {
+      const supportsFile = typeof File !== 'undefined';
+      const file = supportsFile ? new File([blob], fileName, { type: 'application/pdf' }) : null;
+      if (file && navigator?.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: fileName });
+        return;
+      }
+    } catch { /* fall through */ }
+
+    // 2) Browser native PDF viewer (new tab if available, else same tab)
+    try {
+      const url = URL.createObjectURL(blob);
+      const win = previewWin && previewWin.document ? previewWin : null;
+      if (win) {
+        try { win.addEventListener('beforeunload', () => URL.revokeObjectURL(url)); } catch {}
+        win.location.href = url;
+      } else {
+        try { showTipOverride('Tip: Allow pop-ups to preview PDFs. Opening here instead...', 6000); } catch {}
+        window.location.href = url;
+        setTimeout(() => { try { URL.revokeObjectURL(url); } catch {} }, 10000);
+      }
+      return;
+    } catch { /* fall through */ }
+
+    // 3) Last resort: force download
+    try {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { try { URL.revokeObjectURL(url); } catch {} document.body.removeChild(a); }, 10000);
+    } catch { /* noop */ }
+  }
+
+  async function createPdfForItems(items = [], label = 'worksheet', previewWin = null) {
     try {
       const doc = new jsPDF();
       const lessonTitle = (lessonData?.title || manifestInfo.title || 'Lesson').trim();
@@ -2962,7 +3471,8 @@ function SessionPageInner() {
             const raw = String(o ?? '').trim();
             const cleaned = raw.replace(anyLabel, '').trim();
             const lbl = labels[i] || '';
-            return `${lbl}. ${cleaned}`;
+            // NBSP between label and text prevents line breaks between them in PDF split
+            return `${lbl}.\u00A0${cleaned}`;
           });
           choicesLine = parts.join('   ');
         }
@@ -3195,22 +3705,13 @@ function SessionPageInner() {
           });
         }
       }
-  // Preview-first: strictly open in the provided preview window/tab with inline viewer; no auto-download
-      const fileName = `${manifestInfo.file || 'lesson'}-${label}.pdf`;
+  // Preview-first: open directly in the browser's native PDF viewer (no custom toolbar/header)
+  const base = (lessonData?.title || manifestInfo.title || manifestInfo.file || 'lesson');
+  const safe = String(base).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0,60) || 'lesson';
+  const fileName = `${safe}-${label}.pdf`;
       try {
         const blob = doc.output('blob');
-        const blobUrl = URL.createObjectURL(blob);
-        const html = `<!doctype html><html><head><meta charset=\"utf-8\"><title>${fileName}</title><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><style>html,body{height:100%;margin:0}body{display:flex;flex-direction:column;background:#fafafa;font:14px system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#111}header{padding:8px 12px;border-bottom:1px solid #ddd;display:flex;gap:8px;align-items:center;background:#fff}header .sp{flex:1}button,a.button{cursor:pointer;font:13px system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:6px 10px;border:1px solid #ccc;border-radius:6px;background:#fff;color:#111;text-decoration:none;display:inline-flex;align-items:center;gap:4px}button:hover,a.button:hover{background:#f3f3f3}iframe,object,embed{flex:1;border:0;width:100%;background:#fff}</style></head><body><header><div>${fileName}</div><div class=\"sp\"></div><button onclick=\"printPdf()\" title=\"Print (Ctrl+P)\">Print</button><a class=\"button\" href='${blobUrl}' download='${fileName}'>Download</a></header><iframe id=\"pdfFrame\" src='${blobUrl}' title='${fileName}'></iframe><script>function printPdf(){try{var f=document.getElementById('pdfFrame'); if(f&&f.contentWindow){f.contentWindow.focus();f.contentWindow.print();}else{window.print();}}catch(e){window.print();}}window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='p'){e.preventDefault();printPdf();}});</script></body></html>`;
-        const win = previewWin && previewWin.document ? previewWin : null;
-        if (win && win.document) {
-          win.document.open();
-          win.document.write(html);
-          win.document.close();
-          try { win.addEventListener('beforeunload', () => URL.revokeObjectURL(blobUrl)); } catch {}
-        } else {
-          setDownloadError('Preview blocked. Please allow pop-ups for this site to view the PDF.');
-          try { showTipOverride('Tip: Allow pop-ups to preview PDFs.'); } catch {}
-        }
+        await shareOrPreviewPdf(blob, fileName, previewWin);
       } catch (e) {
         setDownloadError('Failed to generate or preview the PDF.');
       }
@@ -3221,7 +3722,7 @@ function SessionPageInner() {
   }
 
   // Disable sending when the UI is not ready or while Ms. Sonoma is speaking
-  const comprehensionAwaitingBegin = (phase === 'comprehension' && subPhase === 'comprehension-start' && !currentCompProblem);
+  const comprehensionAwaitingBegin = (phase === 'comprehension' && subPhase === 'comprehension-start');
   const speakingLock = !!isSpeaking; // lock input anytime she is speaking
   const sendDisabled = (!canSend || loading || comprehensionAwaitingBegin || speakingLock);
   // Transient placeholder override for the input field (non-intrusive and time-limited)
@@ -3341,7 +3842,7 @@ function SessionPageInner() {
     } catch {}
   }, [phase, subPhase]);
 
-  const ensureBaseSessionSetup = useCallback(() => {
+  const ensureBaseSessionSetup = useCallback(async () => {
     if (!lessonData) return;
     // Always ensure QA pools at least once (idempotent refill if empty)
     if (!compPool.length) {
@@ -3355,7 +3856,8 @@ function SessionPageInner() {
     if (generatedWorksheet && generatedTest) return;
   // Try stored assessments first when id is available
   const storedKey = getAssessmentStorageKey();
-  const stored = storedKey ? getStoredAssessments(storedKey) : null;
+  const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
+  const stored = storedKey ? await getStoredAssessments(storedKey, { learnerId: lid }) : null;
     const shuffle = (arr) => {
       const copy = [...arr];
       for (let i = copy.length - 1; i > 0; i -= 1) {
@@ -3377,9 +3879,7 @@ function SessionPageInner() {
         setGeneratedTest(stored.test);
         setTestSourceFull(stored.test);
       }
-      if ((wOk || !stored.worksheet) && (tOk || !stored.test)) return;
-      // Mismatch: drop cache and continue to regenerate below
-      try { if (storedKey) clearAssessments(storedKey); } catch {}
+      // If either array has wrong count, ignore it and regenerate without clearing persisted sets
     }
     // Generate missing assessments individually (do not require both to be absent)
     let gW = generatedWorksheet;
@@ -3480,21 +3980,22 @@ function SessionPageInner() {
     if (gW || gT) {
       if (lessonData.id) {
   const key = getAssessmentStorageKey();
-  if (key) { try { saveAssessments(key, { worksheet: gW || [], test: gT || [] }); } catch {} }
+  if (key) { try { const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none'; saveAssessments(key, { worksheet: gW || [], test: gT || [], comprehension: compPool || [], exercise: exercisePool || [] }, { learnerId: lid }); } catch {} }
       }
     }
   }, [lessonData, generatedWorksheet, generatedTest, compPool.length]);
 
   const beginSession = async () => {
+    // End any prior API/audio/mic activity before starting fresh
+    try { abortAllActivity(); } catch {}
+    // Ensure audio and mic permissions are handled as part of Begin
+    try { requestAudioAndMicPermissions(); } catch {}
     await ensureRuntimeTargets(true); // Force fresh reload of targets
     setShowBegin(false);
     setPhase("discussion");
     setPhaseGuardSent({});
     ensureBaseSessionSetup();
-    // If starting while muted and audio has never been explicitly unlocked, force the unlock prompt
-    if (mutedRef.current && !audioUnlockedRef.current) {
-      try { setNeedsAudioUnlock(true); } catch {}
-    }
+    // No standalone unlock prompt: Begin handles permissions
     // Build ephemeral provided question sets for comprehension and exercise
     try {
       const pool = buildQAPool();
@@ -3558,14 +4059,15 @@ function SessionPageInner() {
   }, [getTeachingNotes]);
 
   const beginWorksheetPhase = () => {
+    // End any prior API/audio/mic activity before starting fresh
+    try { abortAllActivity(); } catch {}
+    // Ensure audio/mic unlocked via Begin
+    try { requestAudioAndMicPermissions(); } catch {}
     // Ensure assessments exist if user arrived here via skip before they were generated
     if (!generatedWorksheet) {
       ensureBaseSessionSetup();
     }
-    // Force unlock prompt if beginning while muted and not yet unlocked
-    if (mutedRef.current && !audioUnlockedRef.current) {
-      try { setNeedsAudioUnlock(true); } catch {}
-    }
+    // No standalone unlock prompt: Begin handles permissions
     if (!generatedWorksheet || !generatedWorksheet.length) {
       // Nothing to run
       setSubPhase('worksheet-empty');
@@ -3615,10 +4117,10 @@ function SessionPageInner() {
   };
 
   const beginTestPhase = async () => {
-    // Force audio unlock prompt if starting test while muted and never unlocked
-    if (mutedRef.current && !audioUnlockedRef.current) {
-      try { setNeedsAudioUnlock(true); } catch {}
-    }
+    // End any prior API/audio/mic activity before starting fresh
+    try { abortAllActivity(); } catch {}
+    // Ensure audio/mic unlocked via Begin
+    try { requestAudioAndMicPermissions(); } catch {}
     if (!generatedTest || !generatedTest.length) {
       // Ensure assessments exist if user arrived here via skip or regeneration lag
       ensureBaseSessionSetup();
@@ -3662,7 +4164,7 @@ function SessionPageInner() {
           setGeneratedTest(built);
           try {
             const key = getAssessmentStorageKey();
-            if (key) saveAssessments(key, { worksheet: generatedWorksheet || [], test: built });
+            if (key) { const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none'; saveAssessments(key, { worksheet: generatedWorksheet || [], test: built, comprehension: compPool || [], exercise: exercisePool || [] }, { learnerId: lid }); }
           } catch {}
         } else {
           setSubPhase('test-empty');
@@ -3705,32 +4207,40 @@ function SessionPageInner() {
                   if (!isNaN(lt)) TEST_TARGET = lt;
                 }
     setTestCorrectCount(0);
-  // Prepare first question visual (include numbering prefix "1.") and inline choices/TF label
-  const firstItem = generatedTest[0];
-  const firstBody = formatQuestionForSpeech(firstItem);
-  const firstDisplay = `1. ${firstBody}`;
-  captionSentencesRef.current = [firstDisplay];
-  worksheetIndexRef.current = 0;
-  setCaptionSentences([firstDisplay]);
-    setCaptionIndex(0);
+    // Do not manually append the first question to captions; rely on Ms. Sonoma's spoken reply to populate transcript
+    const firstItem = generatedTest[0];
+  const firstBody = formatQuestionForInlineAsk(firstItem);
     setTestActiveIndex(0);
     setSubPhase('test-active');
     setCanSend(true);
     try { showTipOverride('Starting test…', 3000); } catch {}
 
-    // Do not trigger TTS here; just show the first question in the overlay with captions and proceed silently.
+  // Speak a short test intro and then ask the FIRST test question aloud (captions will come from this reply)
+    try {
+      const firstWithOptions = ensureSingleTerminalQuestionMark(firstBody);
+      const introInstruction = [
+        'Test start: Output exactly two sentences:',
+        '(1) Announce that we are beginning the test now in a friendly, encouraging way (one sentence).',
+        '(2) Ask the FIRST test question exactly as provided below ON ONE LINE. If it is multiple-choice, include the lettered choices inline on the same line after the stem. Use exactly one question mark total and place it at the very end of the line. No extra sentences.',
+        'Do not add labels; do not say any bracketed tokens aloud.',
+        `FIRST_TEST_QUESTION: ${firstWithOptions}`
+      ].join(' ');
+      callMsSonoma(introInstruction, '', { phase: 'test', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, step: 'test-start' }, { fastReturn: true }).catch(() => {});
+    } catch {}
   };
 
   // Begin Comprehension manually when arriving at comprehension-start (e.g., via skip)
   const beginComprehensionPhase = async () => {
+    // End any prior API/audio/mic activity before starting fresh
+    try { abortAllActivity(); } catch {}
+    // Ensure audio/mic unlocked via Begin
+    try { requestAudioAndMicPermissions(); } catch {}
     // Ensure session scaffolding exists
     ensureBaseSessionSetup();
-    if (mutedRef.current && !audioUnlockedRef.current) {
-      try { setNeedsAudioUnlock(true); } catch {}
-    }
+    // No standalone unlock prompt
     // Only act in comprehension phase
     if (phase !== 'comprehension') return;
-    if (subPhase !== 'comprehension-start') setSubPhase('comprehension-start');
+  if (subPhase !== 'comprehension-start' && subPhase !== 'comprehension-active') setSubPhase('comprehension-start');
     try { console.log('[Session] Begin Comprehension clicked', { phase, subPhase, currentCompIndex, compPoolLen: Array.isArray(compPool) ? compPool.length : 0 }); } catch {}
   setCanSend(false);
     // Try to pick a first comprehension problem in the same priority order used elsewhere
@@ -3778,7 +4288,7 @@ function SessionPageInner() {
         }
       } catch {}
     }
-    if (firstComp) {
+  if (firstComp) {
       try { console.log('[Session] Selected first comprehension item', { firstComp }); } catch {}
       setCurrentCompProblem(firstComp);
       const formatted = formatQuestionForSpeech(firstComp);
@@ -3793,6 +4303,7 @@ function SessionPageInner() {
       } finally {
         // Keep input disabled until Ms. Sonoma finishes speaking the first question
         // A dedicated effect will flip canSend to true when isSpeaking becomes false
+        setSubPhase('comprehension-active');
         setCanSend(false);
       }
     } else {
@@ -3801,6 +4312,8 @@ function SessionPageInner() {
       setCanSend(true);
     }
   };
+
+  
 
   // ------------------------------
   // Automatic Test Review Sequence
@@ -3850,227 +4363,6 @@ function SessionPageInner() {
     }
   };
 
-  const performTestReviewItem = async (idx) => {
-    if (!generatedTest || !generatedTest.length) return;
-    if (idx >= generatedTest.length) {
-      await finalizeTestAndFarewell();
-      return;
-    }
-    setTestReviewIndex(idx);
-    setSubPhase('test-review');
-    setCanSend(false);
-  const q = generatedTest[idx];
-    const learnerAnsRaw = (testUserAnswers[idx] || '').trim();
-    const learnerAnsForDisplay = learnerAnsRaw || 'blank';
-  const { primary: expectedPrimary, synonyms: expectedSyns } = expandExpectedAnswer(q.expected || q.answer);
-  const anyOfT = expectedAnyList(q);
-  let acceptable = anyOfT && anyOfT.length ? Array.from(new Set(anyOfT.map(String))) : [expectedPrimary, ...expectedSyns];
-  const letterT = letterForAnswer(q, acceptable);
-  if (letterT) {
-    const optTextT = getOptionTextForLetter(q, letterT);
-    acceptable = Array.from(new Set([
-      ...acceptable,
-      letterT,
-      letterT.toLowerCase(),
-      ...(optTextT ? [optTextT] : [])
-    ]));
-  }
-  const isLast = idx === generatedTest.length - 1;
-  // Frontend picks one unused cue phrase and embeds it verbatim; do not send the list.
-  const unusedCuePhrases = CORRECT_TEST_CUE_PHRASES.filter(p => !usedTestCuePhrases.includes(p));
-  const chosenCue = (unusedCuePhrases.length ? unusedCuePhrases : CORRECT_TEST_CUE_PHRASES)[Math.floor(Math.random() * (unusedCuePhrases.length ? unusedCuePhrases.length : CORRECT_TEST_CUE_PHRASES.length))];
-    // Safe prompt/expected fallbacks to avoid sending undefined
-    const promptForReview = (q.prompt || q.question || '').trim() || 'Prompt missing';
-    const expectedForReview = (expectedPrimary || '').toString().trim() || 'Expected missing';
-    const instructionParts = [
-      'Test review item structured output only.',
-      `ACCEPTABLE_ANSWERS: [${acceptable.join(', ')}]`,
-      Array.isArray(q.keywords) && q.keywords.length ? `KEYWORDS: [${q.keywords.join(', ')}]` : null,
-      Number.isInteger(q.minKeywords) ? `MIN: ${q.minKeywords}` : null,
-      `Question number: ${idx + 1}`,
-      `Question: ${promptForReview}`,
-      `Expected: ${expectedForReview}`,
-      `Learner answered: ${learnerAnsForDisplay}`,
-      isOpenEndedTestItem(q) ? JUDGING_LENIENCY_OPEN_ENDED : null,
-      'Produce exactly FIVE conversational sentences (no numbering):',
-      `(a) Start with: "Question ${idx + 1},"`,
-      '(b) Second sentence: the question text verbatim.',
-      `(c) Third: "The expected answer was ${expectedPrimary}."`,
-      `(d) Fourth: "Your answer was ${learnerAnsForDisplay}."`,
-  `(e) Fifth: If incorrect give one short gentle correction with the right answer. If correct, say, "${chosenCue}"`,
-      isLast ? 'Do NOT add any more sentences after the fifth.' : 'After those five sentences output exactly one more sentence: "Next question." Only if not final.'
-    ];
-    const result = await callMsSonoma(
-      instructionParts.join(' '),
-      '',
-  { phase: 'test', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, step: 'test-review-item', index: idx },
-      { fastReturn: true } // fastReturn: allow ticker to update immediately while audio plays
-    );
-    if (result.success) {
-      // Detect cue phrase for correctness (model-validated)
-      const replyText = result.data && result.data.reply ? result.data.reply : '';
-      if (replyText) {
-        const replyLower = replyText.toLowerCase();
-        // Count a correct answer if ANY allowed cue phrase appears in the reply.
-        // Do not require cross-question uniqueness; we only care about presence per item.
-        let matchedCue = null;
-        for (const phrase of CORRECT_TEST_CUE_PHRASES) {
-          if (replyLower.includes(phrase.toLowerCase())) { matchedCue = phrase; break; }
-        }
-        if (matchedCue) {
-          setUsedTestCuePhrases(prev => [...prev, matchedCue]);
-          setTestCorrectCount(prev => prev + 1);
-          console.log('[TestReview] Matched cue phrase:', matchedCue, 'Updated correct count.');
-        } else {
-          console.log('[TestReview] No cue phrase matched in reply:', replyText);
-        }
-      }
-      if (isLast) {
-        // Defer final summary until after last audio finishes so closing lines don't overlap
-        const total = generatedTest.length;
-        const correct = testCorrectCount; // already incremented if matched
-        const percent = Math.round((correct / Math.max(1, total)) * 100);
-        const interval = setInterval(() => {
-          const playing = audioRef.current && !audioRef.current.paused;
-          if (!playing) {
-            clearInterval(interval);
-            finalizeTestAndFarewell({ correctCount: correct, total, percent });
-          }
-        }, 350);
-      } else {
-        // Chain next review item AFTER current audio finishes to avoid overlapping voices
-        const interval = setInterval(() => {
-          const playing = audioRef.current && !audioRef.current.paused;
-          if (!playing) {
-            clearInterval(interval);
-            performTestReviewItem(idx + 1);
-          }
-        }, 300);
-      }
-    } else {
-      // On failure allow manual retry by enabling send (edge case)
-      setCanSend(true);
-    }
-  };
-
-  // Single-call full test review (original mode) – ticker updates only after full review finishes
-  const performFullTestReview = async (answersOverride) => {
-    if (!generatedTest || !generatedTest.length) return;
-    setSubPhase('test-review');
-    setCanSend(false);
-    const answers = answersOverride || testUserAnswers;
-  const questionBlocks = generatedTest.map((q, i) => {
-      const { primary: expectedPrimary, synonyms: expectedSyns } = expandExpectedAnswer(q.expected || q.answer);
-      const anyOf = expectedAnyList(q);
-      let acceptable = anyOf && anyOf.length
-        ? Array.from(new Set(anyOf.map(String)))
-        : [expectedPrimary, ...expectedSyns];
-      const letter = letterForAnswer(q, acceptable);
-      if (letter) {
-        const optText = getOptionTextForLetter(q, letter);
-        acceptable = Array.from(new Set([
-          ...acceptable,
-          letter,
-          letter.toLowerCase(),
-          ...(optText ? [optText] : [])
-        ]));
-      }
-  const learnerAnsRaw = (answers[i] || '').trim() || 'blank';
-  // Choose a per-question cue phrase on the frontend (avoid sending lists; keep uniqueness best-effort)
-  const prior = new Set();
-  try { usedTestCuePhrases.forEach(p => prior.add(p)); } catch {}
-  const candidates = CORRECT_TEST_CUE_PHRASES.filter(p => !prior.has(p));
-  const cueForThis = (candidates.length ? candidates : CORRECT_TEST_CUE_PHRASES)[Math.floor(Math.random() * (candidates.length ? candidates.length : CORRECT_TEST_CUE_PHRASES.length))];
-      const promptForReview = (q.prompt || q.question || '').trim() || 'Prompt missing';
-      const expectedForReview = (expectedPrimary || '').toString().trim() || 'Expected missing';
-      const lines = [
-        `QUESTION_${i + 1}_PROMPT: ${promptForReview}`,
-        `QUESTION_${i + 1}_EXPECTED: ${expectedForReview}`,
-  `QUESTION_${i + 1}_ACCEPTABLE: [${acceptable.join(', ')}]`,
-        `QUESTION_${i + 1}_LEARNER: ${learnerAnsRaw}`,
-        `QUESTION_${i + 1}_CUE: ${cueForThis}`
-      ];
-      if (Array.isArray(q.keywords) && q.keywords.length) {
-        lines.push(`QUESTION_${i + 1}_KEYWORDS: [${q.keywords.join(', ')}]`);
-      }
-      if (Number.isInteger(q.minKeywords)) {
-        lines.push(`QUESTION_${i + 1}_MIN: ${q.minKeywords}`);
-      }
-      return lines.join('\n');
-    }).join('\n\n');
-    const reviewInstruction = [
-      'You are given all test questions with expected answers, acceptable variants, and learner answers.',
-      'For each question in order, produce exactly five short natural sentences (no numbering, no bullets, no markdown).',
-      'Sentence 1: exactly "Question N." (replace N).',
-      'Sentence 2: the question text verbatim.',
-      'Sentence 3: "The expected answer was X."',
-      'Sentence 4: "Your answer was Y."',
-      'Sentence 5: If incorrect give one short gentle correction with the right answer. If correct, say the provided cue phrase for this question exactly as written in the question data.',
-      // Bounded leniency: only for open-ended items (the model should apply this where applicable)
-      JUDGING_LENIENCY_OPEN_ENDED,
-      'After the fifth sentence output "Next question." only when not the final question.',
-      'For the final question do NOT add "Next question." and do NOT give any overall score or summary.',
-      'Do NOT output any aggregate score, percent, total correct count, or closing remarks. Stop immediately after the last required sentence.',
-      'Question data follows. Do NOT echo metadata keys.'
-    ].join(' ');
-    const result = await callMsSonoma(
-      reviewInstruction + '\n\n' + questionBlocks,
-      '',
-  { phase: 'test', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, step: 'test-full-review' }
-    );
-    if (result.success) {
-      const replyText = result.data?.reply || '';
-      // Strategy: Split by "Question N." boundaries to isolate blocks. We only allow ONE cue phrase per block.
-      // This prevents accidental double counting if model erroneously appends more than one cue phrase.
-      const total = generatedTest.length;
-      const blockRegex = /Question\s+(\d+)\./gi;
-      const indices = [];
-      let m;
-      while ((m = blockRegex.exec(replyText)) !== null) {
-        indices.push({ q: parseInt(m[1], 10), index: m.index });
-      }
-      // Push end sentinel
-      indices.sort((a,b)=>a.index-b.index);
-      const blocks = [];
-      for (let i = 0; i < indices.length; i++) {
-        const start = indices[i].index;
-        const end = (i + 1 < indices.length) ? indices[i+1].index : replyText.length;
-        const qNumber = indices[i].q;
-        if (qNumber >= 1 && qNumber <= total) {
-          blocks.push({ q: qNumber, text: replyText.slice(start, end) });
-        }
-      }
-      // Count correctness per block if ANY allowed cue phrase appears in that block (case-insensitive).
-      // We do not enforce uniqueness across different questions; duplicates are acceptable.
-      let correct = 0;
-      const found = [];
-      for (const block of blocks) {
-        const lowerBlock = block.text.toLowerCase();
-        let chosen = null;
-        for (const phrase of CORRECT_TEST_CUE_PHRASES) {
-          if (lowerBlock.includes(phrase.toLowerCase())) { chosen = phrase; break; }
-        }
-        if (chosen) { correct++; found.push(chosen); }
-      }
-      setUsedTestCuePhrases(found);
-      setTestCorrectCount(Math.min(correct, total));
-      const percent = Math.round((correct / Math.max(1, total)) * 100);
-      // We want ticker to appear right after audio finishes, before final summary.
-      const interval = setInterval(() => {
-        const playing = audioRef.current && !audioRef.current.paused;
-        if (!playing) {
-          clearInterval(interval);
-          // Mark a completed review subPhase so UI can show percent immediately.
-          setTestFinalPercent(percent);
-          setSubPhase('test-review-finished');
-          // Trigger final summary AFTER a short defer so percent overlay is visible first frame.
-          setTimeout(() => finalizeTestAndFarewell({ correctCount: correct, total, percent }), 150);
-        }
-      }, 350);
-    } else {
-      setCanSend(true);
-    }
-  };
 
   // TEMP development helper: skip forward through major phases
   const skipForwardPhase = async () => {
@@ -4269,13 +4561,15 @@ function SessionPageInner() {
   // Begin Exercise manually when awaiting begin (either skipped or auto-transitioned)
   const beginSkippedExercise = () => {
     if (phase !== 'exercise' || subPhase !== 'exercise-awaiting-begin') return;
+    // End any prior API/audio/mic activity before starting fresh
+    try { abortAllActivity(); } catch {}
+    // Ensure audio/mic unlocked via Begin
+    try { requestAudioAndMicPermissions(); } catch {}
     // Clear any temporary awaiting lock now that the user is explicitly starting
     try { exerciseAwaitingLockRef.current = false; } catch {}
     // Ensure pools/assessments exist if we arrived here via skip before setup
     ensureBaseSessionSetup();
-    if (mutedRef.current && !audioUnlockedRef.current) {
-      try { setNeedsAudioUnlock(true); } catch {}
-    }
+    // No standalone unlock prompt
     // Choose first exercise problem from ephemeral pre-generated array; fallback to deck/pools
     let first = null;
     if (Array.isArray(generatedExercise) && currentExIndex < generatedExercise.length) {
@@ -4493,6 +4787,7 @@ function SessionPageInner() {
               await callMsSonoma(intro, '', { phase: 'comprehension', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, step: 'comprehension-start-ask-first' }, { fastReturn: true });
             } finally {
               // Keep disabled until TTS completes the first question
+              setSubPhase('comprehension-active');
               setCanSend(false);
             }
             setLearnerInput('');
@@ -4514,8 +4809,15 @@ function SessionPageInner() {
         let nextProblem = null;
         if (!nearTarget && !atTarget) {
           if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
-            let idx = currentCompIndex;
-            while (idx < generatedComprehension.length && isShortAnswerItem(generatedComprehension[idx])) idx += 1;
+            // Avoid choosing the same question as the current one; skip short-answer items
+            const isSameAsCurrent = (q) => {
+              try {
+                const qText = (q?.question ?? formatQuestionForSpeech(q)).trim();
+                return qText === currCompDisplay;
+              } catch { return false; }
+            };
+            let idx = currentCompIndex; // points to the next unseen item by design
+            while (idx < generatedComprehension.length && (isShortAnswerItem(generatedComprehension[idx]) || isSameAsCurrent(generatedComprehension[idx]))) idx += 1;
             if (idx < generatedComprehension.length) {
               nextProblem = generatedComprehension[idx];
               setCurrentCompIndex(idx + 1);
@@ -4525,14 +4827,29 @@ function SessionPageInner() {
             let tries = 0;
             while (tries < 5) {
               const s = drawSampleUnique();
-              if (s && !isShortAnswerItem(s)) { nextProblem = s; break; }
+              // Skip short-answer and any item that matches the current question
+              const isSame = (() => { try { const t = (s?.question ?? formatQuestionForSpeech(s)).trim(); return t === currCompDisplay; } catch { return false; } })();
+              if (s && !isShortAnswerItem(s) && !isSame) { nextProblem = s; break; }
               tries += 1;
             }
           }
           if (!nextProblem && compPool.length) {
+            // Prefer the first non-short-answer item that is not the same as the current question
             const [head, ...rest] = compPool;
-            nextProblem = isShortAnswerItem(head) ? null : head;
-            setCompPool(rest);
+            const headSame = (() => { try { const t = (head?.question ?? formatQuestionForSpeech(head)).trim(); return t === currCompDisplay; } catch { return false; } })();
+            if (head && !isShortAnswerItem(head) && !headSame) {
+              nextProblem = head;
+              setCompPool(rest);
+            } else {
+              const altIndex = rest.findIndex(q => q && !isShortAnswerItem(q) && (() => { try { const t = (q?.question ?? formatQuestionForSpeech(q)).trim(); return t !== currCompDisplay; } catch { return true; } })());
+              if (altIndex >= 0) {
+                nextProblem = rest[altIndex];
+                setCompPool(rest.slice(altIndex + 1));
+              } else {
+                // Drop the head to avoid stalling the pool; no nextProblem found here
+                setCompPool(rest);
+              }
+            }
           }
         }
 
@@ -4557,7 +4874,8 @@ function SessionPageInner() {
 
         // Per-question judging spec (choose mode based on presence of keywords/min)
         let finalAcceptableC;
-        const isShort = (Array.isArray(problemForThisTurn.keywords) && Number.isInteger(problemForThisTurn.minKeywords));
+  const isShort = (Array.isArray(problemForThisTurn.keywords) && Number.isInteger(problemForThisTurn.minKeywords));
+  const hasChoicesC = (Array.isArray(problemForThisTurn?.choices) && problemForThisTurn.choices.length) || (Array.isArray(problemForThisTurn?.options) && problemForThisTurn.options.length);
         if (isShort) {
           finalAcceptableC = [];
         } else {
@@ -4572,7 +4890,14 @@ function SessionPageInner() {
           acceptableAnswers: isShort ? [] : finalAcceptableC,
           keywords: isShort ? (problemForThisTurn.keywords || []) : [],
           minKeywords: isShort ? (problemForThisTurn.minKeywords ?? null) : null,
+          tf: problemForThisTurn?.questionType === 'tf',
+          mc: problemForThisTurn?.questionType === 'mc',
+          sa: (problemForThisTurn?.questionType || 'sa') === 'sa',
         });
+
+        // Format the next question early so we can embed it directly when needed
+        const hasNext = !!(nextProblem && !nearTarget && !atTarget);
+        const formattedNext = hasNext ? formatQuestionForSpeech(nextProblem) : null;
 
         const judgementInstructionLines = atTarget ? [
           'Comprehension judging (FINAL question):',
@@ -4606,15 +4931,12 @@ function SessionPageInner() {
           '1) Use the grading instruction above to determine if the answer is correct or incorrect.',
           '2) Start your response with EITHER "Correct!" OR "Not quite right."',
           `3) If CORRECT: Say "Correct!" then say: "${progressPhrase}"`,
-          '4) If CORRECT: After the progress phrase, ask the next question.',
-          `5) If INCORRECT: Start with "Not quite right." Then give ONE short non-revealing hint (do NOT say the answer). Then repeat this exact question: "${currCompDisplay}"`
+          // Embed the next question directly so we don't need a trailing NEXT_COMPREHENSION_QUESTION line
+          (hasNext ? `Then repeat this exact question: "${formattedNext}"` : `Then repeat this exact question: "${currCompDisplay}"`),
+          `5) If INCORRECT: Start with "Not quite right." Then give ONE short non-revealing hint (do NOT say the answer).`
         ];
 
-        // Provide structured section for model clarity
-        if (nextProblem && !nearTarget && !atTarget) {
-          const formattedNext = formatQuestionForSpeech(nextProblem);
-          judgementInstructionLines.push(`NEXT_COMPREHENSION_QUESTION: ${formattedNext}`);
-        }
+        // We no longer append NEXT_COMPREHENSION_QUESTION because it is embedded above when applicable.
 
         const comprehensionInstruction = judgementInstructionLines.join(' ');
         const result = await callMsSonoma(
@@ -4678,7 +5000,18 @@ function SessionPageInner() {
       // Build judgement instruction similar to exercise but with distinct cueing & no progress phrase
   const { primary: expectedPrimaryW, synonyms: expectedSynsW } = expandExpectedAnswer(qObj.answer || qObj.expected);
   const anyOfW = expectedAnyList(qObj);
-  const acceptableW = anyOfW && anyOfW.length ? Array.from(new Set(anyOfW.map(String))) : [expectedPrimaryW, ...expectedSynsW];
+  let acceptableW = anyOfW && anyOfW.length ? Array.from(new Set(anyOfW.map(String))) : [expectedPrimaryW, ...expectedSynsW];
+  // For MC items, also accept the single-letter selection and the option text
+  const letterW = letterForAnswer(qObj, acceptableW);
+  if (letterW) {
+    const optTextW = getOptionTextForLetter(qObj, letterW);
+    acceptableW = Array.from(new Set([
+      ...acceptableW,
+      letterW,
+      letterW.toLowerCase(),
+      ...(optTextW ? [optTextW] : []),
+    ]));
+  }
   const expectedDisplayW = acceptableW.length > 1 ? `${expectedPrimaryW} (also accept: ${acceptableW.filter(v=>v!==expectedPrimaryW).join(', ')})` : expectedPrimaryW;
       // Choose the next SEQUENTIAL question (no dedup skipping)
       const nextIndex = idx + 1;
@@ -4692,6 +5025,7 @@ function SessionPageInner() {
   const currDisplay = formatQuestionForSpeech(qObj);
       
       const isShortW = (Array.isArray(qObj.keywords) && Number.isInteger(qObj.minKeywords));
+      const hasChoicesW = (Array.isArray(qObj?.choices) && qObj.choices.length) || (Array.isArray(qObj?.options) && qObj.options.length);
       const rubricInstructionW = buildPerQuestionJudgingSpec({
         mode: isShortW ? 'short-answer' : 'exact',
         learnerAnswer: trimmed,
@@ -4699,6 +5033,9 @@ function SessionPageInner() {
         acceptableAnswers: isShortW ? [] : acceptableW,
         keywords: isShortW ? (qObj.keywords || []) : [],
         minKeywords: isShortW ? (qObj.minKeywords ?? null) : null,
+        tf: qObj?.questionType === 'tf',
+        mc: qObj?.questionType === 'mc',
+        sa: (qObj?.questionType || 'sa') === 'sa',
       });
 
       // Local correctness check to advance immediately without waiting for model cue
@@ -4804,9 +5141,13 @@ function SessionPageInner() {
         if (!isFinal && nextCueDetected) {
           if (hasDistinctNext) {
             const nextBody = formatQuestionForSpeech(generatedWorksheet[nextIndex]);
-            captionSentencesRef.current = [`${nextIndex + 1}. ${nextBody}`];
-            setCaptionSentences([`${nextIndex + 1}. ${nextBody}`]);
-            setCaptionIndex(0);
+            // Append next worksheet question to the transcript instead of replacing it
+            {
+              const line = `${nextIndex + 1}. ${nextBody}`;
+              captionSentencesRef.current = [...captionSentencesRef.current, line];
+              setCaptionSentences(captionSentencesRef.current.slice());
+              setCaptionIndex(Math.max(0, captionSentencesRef.current.length - 1));
+            }
             setLearnerInput('');
             setCanSend(false);
             worksheetIndexRef.current = nextIndex;
@@ -4826,46 +5167,150 @@ function SessionPageInner() {
     }
 
     if (phase === 'test') {
-      // Two sub-phases: test-active (silent collection) and test-review (Ms. Sonoma grading)
+      // Immediate per-question judging: no retries, auto-advance, cumulative scoring
       if (subPhase === 'test-active') {
-        if (!generatedTest || !generatedTest.length) {
-          setLearnerInput('');
-          return;
-        }
-        const nextAnswers = [...testUserAnswers];
-        nextAnswers[testActiveIndex] = trimmed;
-        setTestUserAnswers(nextAnswers);
-        const nextIndex = testActiveIndex + 1;
-        if (nextIndex < generatedTest.length) {
-          // Advance to next question: update caption to that prompt with numbering
-          setTestActiveIndex(nextIndex);
-          // Build next caption line with inline choices and TF label
-          const nextItem = generatedTest[nextIndex];
-          const body = formatQuestionForSpeech(nextItem);
-          const display = `${nextIndex + 1}. ${body}`;
-          captionSentencesRef.current = [display];
-          setCaptionSentences([display]);
-          setCaptionIndex(0);
-          setLearnerInput('');
-          return;
-        }
-        // Completed all answers -> initiate review intro
-        setSubPhase('test-review-intro');
+        if (!generatedTest || !generatedTest.length) { setLearnerInput(''); return; }
         setCanSend(false);
-        const reviewIntroInstruction = [
-          'Test complete: Congratulate them for finishing the test (1 short sentence).',
-          'Then tell them you will review answers together now (1 short sentence).',
-          'Do not start grading yet; stop after inviting the review.'
-        ].join(' ');
-  const res = await callMsSonoma(reviewIntroInstruction, '', { phase: 'test', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, step: 'test-review-intro' });
-        if (res.success) {
-          setTestReviewing(true);
-          // Kick off single-call full test review with latest answers to avoid race where last answer not yet committed
-          performFullTestReview(nextAnswers);
-        } else {
-          setCanSend(true);
+        const totalLimit = Math.min(TEST_TARGET || generatedTest.length, generatedTest.length);
+        const idx = testActiveIndex;
+        const qObj = generatedTest[idx];
+        // Append learner reply to the transcript (styled as user in CaptionPanel)
+        try {
+          const replyItem = { text: trimmed, role: 'user' };
+          captionSentencesRef.current = [...captionSentencesRef.current, replyItem];
+          setCaptionSentences(captionSentencesRef.current.slice());
+          setCaptionIndex(Math.max(0, captionSentencesRef.current.length - 1));
+        } catch {}
+        // Persist learner answer
+        const answersNow = [...testUserAnswers];
+        answersNow[idx] = trimmed;
+        setTestUserAnswers(answersNow);
+
+        // Build expected/acceptable (mirror worksheet/exercise logic)
+        const { primary: expectedPrimaryT, synonyms: expectedSynsT } = expandExpectedAnswer(qObj.answer || qObj.expected);
+        const anyOfT = expectedAnyList(qObj);
+        let acceptableT = anyOfT && anyOfT.length ? Array.from(new Set(anyOfT.map(String))) : [expectedPrimaryT, ...expectedSynsT];
+        const letterT = letterForAnswer(qObj, acceptableT);
+        if (letterT) {
+          const optTextT = getOptionTextForLetter(qObj, letterT);
+          acceptableT = Array.from(new Set([
+            ...acceptableT,
+            letterT,
+            letterT.toLowerCase(),
+            ...(optTextT ? [optTextT] : [])
+          ]));
         }
+        const isShortT = (Array.isArray(qObj.keywords) && Number.isInteger(qObj.minKeywords));
+        const rubricInstructionT = buildPerQuestionJudgingSpec({
+          mode: isShortT ? 'short-answer' : 'exact',
+          learnerAnswer: trimmed,
+          expectedAnswer: expectedPrimaryT,
+          acceptableAnswers: isShortT ? [] : acceptableT,
+          keywords: isShortT ? (qObj.keywords || []) : [],
+          minKeywords: isShortT ? (qObj.minKeywords ?? null) : null,
+          tf: qObj?.questionType === 'tf',
+          mc: qObj?.questionType === 'mc',
+          sa: (qObj?.questionType || 'sa') === 'sa',
+        });
+
+        // Choose a cue phrase for correct answers; enforce exact usage
+        const unused = CORRECT_TEST_CUE_PHRASES.filter(p => !usedTestCuePhrases.includes(p));
+        const chosenCue = (unused.length ? unused : CORRECT_TEST_CUE_PHRASES)[Math.floor(Math.random() * (unused.length ? unused.length : CORRECT_TEST_CUE_PHRASES.length))];
+
+        const isFinal = (idx + 1) >= totalLimit;
+    const promptForDisplay = formatQuestionForInlineAsk(qObj);
+  const nextIdx = idx + 1;
+  const nextQForSpeech = !isFinal ? ensureSingleTerminalQuestionMark(formatQuestionForInlineAsk(generatedTest[nextIdx])) : '';
+        const instruction = [
+          'Test judging (per-question, immediate):',
+          `Question number: ${idx + 1} of ${totalLimit}.`,
+          `Question asked: "${promptForDisplay}"`,
+          rubricInstructionT,
+          'Decide correctness using the rubric above.',
+          `If CORRECT: Say one short praise sentence and append EXACTLY this cue phrase at the very end: "${chosenCue}". End that sentence with a period.`,
+          `If INCORRECT: Say one short gentle correction including the right answer: "${expectedPrimaryT}"`,
+          isFinal
+            ? 'Your reply must contain exactly ONE sentence total: provide only the feedback sentence (praise if correct or gentle correction with the right answer) and end it with a period. Do not ask another question.'
+            : [
+                'Your reply must contain exactly TWO sentences total: (1) the feedback sentence (praise if correct or gentle correction with the right answer) ending with a period; (2) the NEXT question as your final sentence ON ONE LINE. If it is multiple-choice, include the lettered choices inline on the same line after the stem. Use exactly one question mark total and place it at the very end of that line.',
+                `NEXT_QUESTION: ${nextQForSpeech}`
+              ].join(' '),
+        ].join(' ');
+
+        let judgedCorrect = false;
+        try {
+          const result = await callMsSonoma(instruction, '', { phase: 'test', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, step: 'test-judge-item', index: idx }, { fastReturn: true });
+          if (result && result.success) {
+            const replyText = result.data?.reply || '';
+            if (replyText) {
+              // Correct when the exact chosen cue phrase appears (case-insensitive match)
+              if (replyText.toLowerCase().includes(chosenCue.toLowerCase())) {
+                judgedCorrect = true;
+                setUsedTestCuePhrases(prev => [...prev, chosenCue]);
+                setTestCorrectCount(prev => prev + 1);
+              }
+              // Validation guard: if a NEXT question is expected and it's MC, ensure inline choices and a single '?'
+              if (!isFinal) {
+                try {
+                  const nextObj = generatedTest[nextIdx];
+                  if (isMultipleChoice(nextObj)) {
+                    const qm = countQuestionMarks(replyText);
+                    const inlineOK = hasInlineMcChoices(replyText);
+                    if (qm !== 1 || !inlineOK) {
+                      console.warn('[Session][Test] NEXT question formatting issue', { inlineOK, qmarks: qm, reply: replyText });
+                    }
+                  }
+                } catch {}
+              }
+            }
+          } else {
+            // Fallback local check when model call fails
+            try {
+              const normAns = (s) => normalizeAnswer(String(s ?? ''));
+              if (!isShortT) {
+                judgedCorrect = acceptableT.map(a => normAns(a)).includes(normAns(trimmed));
+              } else {
+                const kws = Array.isArray(qObj.keywords) ? qObj.keywords.filter(Boolean).map(String) : [];
+                const min = Number.isInteger(qObj.minKeywords) ? qObj.minKeywords : 1;
+                const learnerN = ` ${normAns(trimmed)} `;
+                const hits = new Set();
+                for (const kw of kws) {
+                  const kn = normAns(kw); if (!kn) continue;
+                  const re = new RegExp(`(^|\\s)${kn}(?=\\s|$)`);
+                  if (re.test(learnerN)) hits.add(kn);
+                }
+                judgedCorrect = hits.size >= min;
+              }
+              if (judgedCorrect) setTestCorrectCount(prev => prev + 1);
+            } catch {}
+          }
+        } catch {
+          // On unexpected error, best-effort local judgement already applied above when possible
+        }
+
         setLearnerInput('');
+
+        // Decide next step: advance or finish
+        const nextIndex = idx + 1;
+        if (nextIndex < totalLimit) {
+          // Advance to next question; captions already contain the next question from Ms. Sonoma's reply
+          setTestActiveIndex(nextIndex);
+          setCanSend(true);
+          return;
+        }
+
+  // Finalize after last item – wait for any audio to finish to avoid overlap
+  const total = totalLimit;
+  // State updates are async; include the current turn's judgement explicitly to avoid off-by-one
+  const correct = testCorrectCount + (judgedCorrect ? 1 : 0);
+  const percent = Math.round((correct / Math.max(1, total)) * 100);
+        const interval = setInterval(() => {
+          const playing = audioRef.current && !audioRef.current.paused;
+          if (!playing) {
+            clearInterval(interval);
+            finalizeTestAndFarewell({ correctCount: correct, total, percent });
+          }
+        }, 300);
         return;
       }
       setLearnerInput('');
@@ -4936,7 +5381,8 @@ function SessionPageInner() {
   const currExDisplay = formatQuestionForSpeech(currentExerciseProblem);
   
         // Per-question judging spec
-        const isShortEx = (Array.isArray(currentExerciseProblem.keywords) && Number.isInteger(currentExerciseProblem.minKeywords));
+  const isShortEx = (Array.isArray(currentExerciseProblem.keywords) && Number.isInteger(currentExerciseProblem.minKeywords));
+  const hasChoicesE = (Array.isArray(currentExerciseProblem?.choices) && currentExerciseProblem.choices.length) || (Array.isArray(currentExerciseProblem?.options) && currentExerciseProblem.options.length);
         const finalAcceptableE = isShortEx
           ? []
           : (() => {
@@ -4951,6 +5397,9 @@ function SessionPageInner() {
           acceptableAnswers: isShortEx ? [] : finalAcceptableE,
           keywords: isShortEx ? (currentExerciseProblem.keywords || []) : [],
           minKeywords: isShortEx ? (currentExerciseProblem.minKeywords ?? null) : null,
+          tf: currentExerciseProblem?.questionType === 'tf',
+          mc: currentExerciseProblem?.questionType === 'mc',
+          sa: (currentExerciseProblem?.questionType || 'sa') === 'sa',
         });
         
         const judgementLines = atTarget ? [
@@ -5054,6 +5503,85 @@ function SessionPageInner() {
     setLearnerInput('');
   };
 
+  // Begin hotkey control for Begin overlays. When a Begin button is visible, the configured Begin/Send key triggers it.
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      const code = e.code || e.key;
+      const target = e.target;
+      if (isTextEntryTarget(target)) return;
+      const beginCode = hotkeys?.beginSend || DEFAULT_HOTKEYS.beginSend;
+      if (!beginCode || code !== beginCode) return;
+      try {
+        // Initial Begin is always allowed to start even if loading flags are set pre-session
+        if (showBegin && phase === 'discussion') {
+          e.preventDefault();
+          beginSession();
+          return;
+        }
+        // For later begins, avoid firing while loading/speaking to prevent overlap
+        if (loading || isSpeaking) return;
+        if (phase === 'comprehension' && subPhase === 'comprehension-start') {
+          e.preventDefault();
+          beginComprehensionPhase();
+          return;
+        }
+        if (phase === 'exercise' && subPhase === 'exercise-awaiting-begin') {
+          e.preventDefault();
+          beginSkippedExercise();
+          return;
+        }
+        if (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin') {
+          e.preventDefault();
+          beginWorksheetPhase();
+          return;
+        }
+        if (phase === 'test' && subPhase === 'test-awaiting-begin') {
+          e.preventDefault();
+          beginTestPhase();
+          return;
+        }
+      } catch {}
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showBegin, phase, subPhase, loading, isSpeaking, beginSession, beginComprehensionPhase, beginSkippedExercise, beginWorksheetPhase, beginTestPhase, hotkeys]);
+
+  // Global hotkeys for skip left/right, mute toggle, and play/pause toggle
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      const code = e.code || e.key;
+      const target = e.target;
+      if (isTextEntryTarget(target)) return; // don't steal keys while typing in inputs/textareas
+      if (!hotkeys) return;
+
+      const { skipLeft, skipRight, muteToggle, playPauseToggle } = { ...DEFAULT_HOTKEYS, ...hotkeys };
+
+      if (skipLeft && code === skipLeft) {
+        e.preventDefault();
+        // Boundaries handled in function; PIN gating applied inside
+        skipBackwardPhase?.();
+        return;
+      }
+      if (skipRight && code === skipRight) {
+        e.preventDefault();
+        skipForwardPhase?.();
+        return;
+      }
+      if (muteToggle && code === muteToggle) {
+        e.preventDefault();
+        toggleMute?.();
+        return;
+      }
+      if (playPauseToggle && code === playPauseToggle) {
+        e.preventDefault();
+        togglePlayPause?.();
+        return;
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [hotkeys, skipBackwardPhase, skipForwardPhase, toggleMute, togglePlayPause]);
+
   const renderDiscussionControls = () => {
     if (subPhase === "awaiting-learner") {
       return (
@@ -5104,28 +5632,7 @@ function SessionPageInner() {
     );
   };
 
-  // Stable SSR-safe portrait spacer style: avoid referencing window during render to prevent hydration mismatch.
-  const [portraitSpacerStyle, setPortraitSpacerStyle] = useState(
-    isMobileLandscape ? undefined : { paddingTop: '2%', paddingBottom: '2%' }
-  );
-  useEffect(() => {
-    if (isMobileLandscape) return; // no spacer adjustments in mobile landscape
-    const compute = () => {
-      try {
-        const vw = window.innerWidth;
-        if (vw >= 800) {
-          setPortraitSpacerStyle({ paddingTop: 4, paddingBottom: 4 });
-        } else {
-          setPortraitSpacerStyle({ paddingTop: '2%', paddingBottom: '2%' });
-        }
-      } catch {
-        // ignore
-      }
-    };
-    compute();
-    window.addEventListener('resize', compute);
-    return () => window.removeEventListener('resize', compute);
-  }, [isMobileLandscape]);
+  // No portrait spacer: timeline should sit directly under the header in portrait mode.
 
   return (
     <div style={{ width: '100%', height: '100svh', overflow: 'hidden' }}>
@@ -5134,24 +5641,17 @@ function SessionPageInner() {
     {/* Scroll area sized to the viewport; disable scrolling to keep top cluster fixed */}
   <div style={{ height: '100%', overflowY: 'hidden', WebkitOverflowScrolling: 'touch', overscrollBehaviorY: 'contain' }}>
     {/* Width-matched wrapper: center by actual scaled width */}
-  <div style={{ width: '100%', maxWidth: baseWidth, position: 'relative', margin: '0 auto', boxSizing: 'border-box', paddingBottom: footerHeight }}>
-    {/* Content wrapper (no transform scaling) */}
-    <div style={{ width: '100%' }}>
+  <div style={{ width: '100%', position: 'relative', boxSizing: 'border-box', paddingBottom: footerHeight }}>
+  {/* Content wrapper (no transform scaling). Add small horizontal gutters in landscape. */}
+  <div style={ isMobileLandscape ? { width: '100%', paddingLeft: 8, paddingRight: 8, boxSizing: 'border-box' } : { width: '100%' } }>
       {/* Sticky cluster: title + timeline + video + captions stick under the header without moving into it */}
   <div style={{ position: 'sticky', top: (isMobileLandscape ? 52 : 64), zIndex: 25, background: '#ffffff' }}>
-        <div style={{ width: '100%', boxSizing: 'border-box', padding: '0 0 6px', minWidth: 0 }}>
-  {(() => (
-      <div className="portrait-title-spacer" style={!isMobileLandscape ? portraitSpacerStyle : undefined}>
-        {!isMobileLandscape && (
-          <h1 style={{ textAlign: "center", marginTop: 0, marginBottom: 8 }}>
-            {(lessonData && (lessonData.title || lessonData.lessonTitle)) || manifestInfo.title}
-          </h1>
-        )}
-      </div>
-    ))()}
+    <div style={{ width: '100%', boxSizing: 'border-box', padding: (isMobileLandscape ? '0 0 6px' : 0), minWidth: 0 }}>
   {/** Clickable timeline jump logic */}
   {(() => {
-    const handleJumpPhase = (target) => {
+    const handleJumpPhase = async (target) => {
+      const ok = await ensurePinAllowed('timeline');
+      if (!ok) return;
       // Jump directly to a major phase emulating skip button side-effects
       // This centralizes transitional resets so timeline navigation = skip navigation.
       try { abortAllActivity(); } catch {}
@@ -5235,17 +5735,36 @@ function SessionPageInner() {
     };
     return (
       <div style={{ position: 'relative', zIndex: 9999 }}>
-        <Timeline timelinePhases={timelinePhases} timelineHighlight={timelineHighlight} compact={isMobileLandscape} onJumpPhase={handleJumpPhase} />
+        {/* Timeline is constrained to a 600px max width */}
+        <div
+          style={{
+            width: isMobileLandscape ? '100%' : '92%',
+            maxWidth: 600,
+            margin: '0 auto',
+            // When page height is very short in landscape, remove timeline vertical padding entirely.
+            // Otherwise, when short-height+landscape, apply small padding (2px) to avoid clipping.
+            paddingTop: isVeryShortLandscape ? 0 : ((isShortHeight && isMobileLandscape) ? 2 : undefined),
+            paddingBottom: isVeryShortLandscape ? 0 : ((isShortHeight && isMobileLandscape) ? 2 : undefined),
+          }}
+        >
+          <Timeline
+            timelinePhases={timelinePhases}
+            timelineHighlight={timelineHighlight}
+            compact={isMobileLandscape}
+            onJumpPhase={handleJumpPhase}
+          />
+        </div>
       </div>
     );
   })()}
 
   {/* Video + captions: stack normally; side-by-side on mobile landscape */}
-  <div style={isMobileLandscape ? { display:'flex', alignItems:'stretch', width:'100%', paddingBottom:4 } : {}}>
-    <div ref={videoColRef} style={isMobileLandscape ? { flex:'0 0 50%', display:'flex', flexDirection:'column', minWidth:0 } : {}}>
+  <div style={isMobileLandscape ? { display:'flex', alignItems:'stretch', width:'100%', paddingBottom:4, '--msSideBySideH': (videoEffectiveHeight ? `${videoEffectiveHeight}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto')) } : {}}>
+    <div ref={videoColRef} style={isMobileLandscape ? { flex:`0 0 ${videoColPercent}%`, display:'flex', flexDirection:'column', minWidth:0, minHeight:0, height: 'var(--msSideBySideH)' } : {}}>
       <VideoPanel
         isMobileLandscape={isMobileLandscape}
-        videoMaxHeight={videoMaxHeight}
+        isShortHeight={isShortHeight}
+  videoMaxHeight={videoEffectiveHeight || videoMaxHeight}
         videoRef={videoRef}
         showBegin={showBegin}
         isSpeaking={isSpeaking}
@@ -5256,25 +5775,43 @@ function SessionPageInner() {
         onBeginSkippedExercise={beginSkippedExercise}
         onPrev={skipBackwardPhase}
         onNext={skipForwardPhase}
-        phase={phase}
         subPhase={subPhase}
-        ticker={ticker}
         testCorrectCount={testCorrectCount}
         testFinalPercent={testFinalPercent}
         lessonParam={lessonParam}
         muted={muted}
+        
         userPaused={userPaused}
         onToggleMute={toggleMute}
         onTogglePlayPause={togglePlayPause}
         loading={loading}
         exerciseSkippedAwaitBegin={exerciseSkippedAwaitBegin}
         skipPendingLessonLoad={skipPendingLessonLoad}
-        currentCompProblem={currentCompProblem}
-        needsAudioUnlock={needsAudioUnlock}
-        onUnlockAudio={unlockAudioPlayback}
-        onCompleteLesson={() => {
+  currentCompProblem={currentCompProblem}
+        onCompleteLesson={async () => {
           const key = getAssessmentStorageKey();
-          if (key) { try { clearAssessments(key); } catch { /* ignore */ } }
+          if (key) { try { const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none'; clearAssessments(key, { learnerId: lid }); } catch { /* ignore */ } }
+          // Persist transcript segment (append-only) to Supabase Storage
+          try {
+            const learnerId = (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null) || null;
+            const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || null;
+            const lessonId = String(lessonParam || '').replace(/\.json$/i, '');
+            const startedAt = sessionStartRef.current || new Date().toISOString();
+            const completedAt = new Date().toISOString();
+            const lines = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current
+              .filter((ln) => ln && typeof ln.text === 'string' && ln.text.trim().length > 0)
+              .map((ln) => ({ role: ln.role || 'assistant', text: ln.text })) : [];
+            if (learnerId && learnerId !== 'demo' && lines.length > 0) {
+              await appendTranscriptSegment({
+                learnerId,
+                learnerName,
+                lessonId,
+                lessonTitle: effectiveLessonTitle,
+                segment: { startedAt, completedAt, lines },
+              });
+            }
+          } catch (e) { console.warn('[Session] transcript append failed', e); }
+          sessionStartRef.current = null;
           setShowBegin(true);
           setPhase('discussion');
           setSubPhase('greeting');
@@ -5289,14 +5826,14 @@ function SessionPageInner() {
         }}
       />
     </div>
-  <div ref={captionColRef} style={isMobileLandscape ? { flex:'0 0 50%', minWidth:0, display:'flex', height: sideBySideHeight ? sideBySideHeight : 'auto' } : (stackedCaptionHeight ? { maxHeight: stackedCaptionHeight, height: stackedCaptionHeight, overflowY:'hidden', marginTop:8 } : {})}>
+  <div ref={captionColRef} style={isMobileLandscape ? { flex:`0 0 ${Math.max(0, 100 - videoColPercent)}%`, minWidth:0, minHeight:0, display:'flex', flexDirection:'column', overflow:'hidden', height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)', '--msSideBySideH': (videoEffectiveHeight ? `${videoEffectiveHeight}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto')) } : (stackedCaptionHeight ? { maxHeight: stackedCaptionHeight, height: stackedCaptionHeight, overflowY:'hidden', marginTop:8, paddingLeft: '4%', paddingRight: '4%' } : { paddingLeft: '4%', paddingRight: '4%' })}>
       <CaptionPanel
         sentences={captionSentences}
         activeIndex={captionIndex}
         boxRef={captionBoxRef}
         scaleFactor={snappedScale}
         compact={isMobileLandscape}
-        fullHeight={isMobileLandscape && !!sideBySideHeight}
+        fullHeight={isMobileLandscape && !!(sideBySideHeight || videoMaxHeight)}
         stackedHeight={(!isMobileLandscape && stackedCaptionHeight) ? stackedCaptionHeight : null}
       />
     </div>
@@ -5312,7 +5849,291 @@ function SessionPageInner() {
 
       {/* Fixed footer with input controls (downloads removed) */}
       <div ref={footerRef} style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 999, background: '#ffffff', borderTop: '1px solid #e5e7eb', boxShadow: '0 -4px 20px rgba(0,0,0,0.06)' }}>
-        <div style={{ margin: '0 auto', width: '100%', maxWidth: baseWidth, boxSizing: 'border-box', padding: isMobileLandscape ? '6px 0 calc(6px + env(safe-area-inset-bottom, 0px))' : '10px 0 calc(10px + env(safe-area-inset-bottom, 0px))' }}>
+      {/* Footer padding: default 4px, reduce to 2px when short-height AND landscape. Add horizontal inset when controls are relocated to footer. */}
+      <div style={{ margin: '0 auto', width: '100%', boxSizing: 'border-box', padding: (isShortHeight && isMobileLandscape) ? '2px 16px calc(2px + env(safe-area-inset-bottom, 0px))' : '4px 12px calc(4px + env(safe-area-inset-bottom, 0px))' }}>
+          {/* When the screen height is very short, relocate video overlay controls into the footer. If a Begin row is present, controls join that row. */}
+          {(() => {
+            try {
+              if (!isShortHeight) return null;
+              const needBeginDiscussion = (showBegin && phase === 'discussion');
+              const needBeginComp = (phase === 'comprehension' && subPhase === 'comprehension-start');
+              const needBeginExercise = (phase === 'exercise' && subPhase === 'exercise-awaiting-begin');
+              const needBeginWorksheet = (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin');
+              const needBeginTest = (phase === 'test' && subPhase === 'test-awaiting-begin');
+              const anyBegin = needBeginDiscussion || needBeginComp || needBeginExercise || needBeginWorksheet || needBeginTest;
+              if (anyBegin) return null; // controls will render within the Begin row below
+              // Make footer controls slightly smaller when the viewport is short in landscape so the footer takes less vertical space
+              const btnSize = (isShortHeight && isMobileLandscape) ? 32 : 36;
+              const btnBase = { background:'#1f2937', color:'#fff', border:'none', width:btnSize, height:btnSize, display:'grid', placeItems:'center', borderRadius:'50%', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.2)' };
+              const canPrev = typeof skipBackwardPhase === 'function' && phase !== 'discussion';
+              const canNext = typeof skipForwardPhase === 'function' && phase !== 'test';
+              // Determine if a quick-answer cluster should appear (TF/MC) and render it in the middle of this row
+              let qa = null;
+              try {
+                if (!sendDisabled) {
+                  let active = null;
+                  if (phase === 'comprehension') {
+                    active = currentCompProblem || null;
+                  } else if (phase === 'exercise') {
+                    active = currentExerciseProblem || null;
+                  } else if (phase === 'worksheet' && subPhase === 'worksheet-active') {
+                    const idx = (typeof worksheetIndexRef !== 'undefined' && worksheetIndexRef && typeof worksheetIndexRef.current === 'number')
+                      ? (worksheetIndexRef.current ?? 0)
+                      : (typeof currentWorksheetIndex === 'number' ? currentWorksheetIndex : 0);
+                    const list = Array.isArray(generatedWorksheet) ? generatedWorksheet : [];
+                    active = list[idx] || null;
+                  } else if (phase === 'test' && subPhase === 'test-active') {
+                    const list = Array.isArray(generatedTest) ? generatedTest : [];
+                    const idx = (typeof testActiveIndex === 'number' ? testActiveIndex : 0);
+                    active = list[idx] || null;
+                  }
+                  if (active) {
+                    const qType = active.questionType || null;
+                    const choiceCount = Array.isArray(active.choices) && active.choices.length
+                      ? active.choices.length
+                      : (Array.isArray(active.options) ? active.options.length : 0);
+                    const qaWrap = { display:'flex', alignItems:'center', justifyContent:'center', gap:8, flex:1, flexWrap:'wrap', padding:'0 8px' };
+                    const qaBtn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight: (isShortHeight && isMobileLandscape) ? 32 : 36, minWidth:48, fontWeight:700, border:'none', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.18)' };
+                    if (qType === 'tf') {
+                      qa = (
+                        <div style={qaWrap} aria-label="Quick answer: true or false">
+                          <button type="button" style={qaBtn} onClick={() => handleSend('true')}>True</button>
+                          <button type="button" style={qaBtn} onClick={() => handleSend('false')}>False</button>
+                        </div>
+                      );
+                    } else {
+                      const isMC = (qType === 'mc') || ((choiceCount || 0) >= 2);
+                      if (isMC) {
+                        const count = Math.min(4, Math.max(2, choiceCount || 4));
+                        const letters = ['A','B','C','D'].slice(0, count);
+                        qa = (
+                          <div style={qaWrap} aria-label="Quick answer: multiple choice">
+                            {letters.map((L) => (
+                              <button key={L} type="button" style={qaBtn} onClick={() => handleSend(L)}>{L}</button>
+                            ))}
+                          </div>
+                        );
+                      }
+                    }
+                  }
+                }
+              } catch {}
+              // Move playback/mute to the left, prev/next (skip) to the right, and inset both pairs symmetrically.
+              const pairInset = (isShortHeight && isMobileLandscape) ? 64 : 24;
+              return (
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, paddingTop:2, paddingBottom:2, paddingLeft: pairInset, paddingRight: pairInset, marginBottom:2 }}>
+                  {/* Left: Previous + Next (skip) */}
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <button type="button" aria-label="Previous" title="Previous" onClick={canPrev ? skipBackwardPhase : undefined} disabled={!canPrev} style={{ ...btnBase, opacity: canPrev ? 1 : 0.4, cursor: canPrev ? 'pointer' : 'not-allowed' }}>
+                      <svg style={{ width:'55%', height:'55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+                    </button>
+                    <button type="button" aria-label="Next" title="Next" onClick={canNext ? skipForwardPhase : undefined} disabled={!canNext} style={{ ...btnBase, opacity: canNext ? 1 : 0.4, cursor: canNext ? 'pointer' : 'not-allowed' }}>
+                      <svg style={{ width:'55%', height:'55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+                    </button>
+                  </div>
+                  {/* Middle: Quick answers if available */}
+                  {qa}
+                  {/* Right: Play/Pause + Mute */}
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <button type="button" aria-label={userPaused ? 'Play' : 'Pause'} title={userPaused ? 'Play' : 'Pause'} onClick={togglePlayPause} style={btnBase}>
+                      {userPaused ? (
+                        <svg style={{ width:'55%', height:'55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 5v14l11-7z" /></svg>
+                      ) : (
+                        <svg style={{ width:'55%', height:'55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
+                      )}
+                    </button>
+                    <button type="button" aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'} onClick={toggleMute} style={btnBase}>
+                      {muted ? (
+                        <svg style={{ width:'60%', height:'60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
+                      ) : (
+                        <svg style={{ width:'60%', height:'60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M19 8a5 5 0 010 8" /><path d="M15 11a2 2 0 010 2" /></svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            } catch {}
+            return null;
+          })()}
+          {/* Redundant Begin CTA row (appears above quick answers) */}
+          {(() => {
+            try {
+              const needBeginDiscussion = (showBegin && phase === 'discussion');
+              const needBeginComp = (phase === 'comprehension' && subPhase === 'comprehension-start');
+              const needBeginExercise = (phase === 'exercise' && subPhase === 'exercise-awaiting-begin');
+              const needBeginWorksheet = (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin');
+              const needBeginTest = (phase === 'test' && subPhase === 'test-awaiting-begin');
+              if (!(needBeginDiscussion || needBeginComp || needBeginExercise || needBeginWorksheet || needBeginTest)) return null;
+              const ctaStyle = { background:'#c7442e', color:'#fff', borderRadius:10, padding:'10px 18px', fontWeight:800, fontSize:'clamp(1rem, 2.6vw, 1.125rem)', border:'none', boxShadow:'0 2px 12px rgba(199,68,46,0.28)', cursor:'pointer' };
+              if (isShortHeight) {
+                // Single row: play/mute left, begin center, skip right — inset both pairs symmetrically
+                const btnBase = { background:'#1f2937', color:'#fff', border:'none', width:36, height:36, display:'grid', placeItems:'center', borderRadius:'50%', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.2)' };
+                const canPrev = typeof skipBackwardPhase === 'function' && phase !== 'discussion';
+                const canNext = typeof skipForwardPhase === 'function' && phase !== 'test';
+                const pairInset = (isShortHeight && isMobileLandscape) ? 64 : 24;
+                return (
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, paddingTop:2, paddingBottom:2, paddingLeft: pairInset, paddingRight: pairInset, marginBottom:2 }}>
+                      {/* Left: Skip (Previous + Next) */}
+                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                        <button type="button" aria-label="Previous" title="Previous" onClick={canPrev ? skipBackwardPhase : undefined} disabled={!canPrev} style={{ ...btnBase, opacity: canPrev ? 1 : 0.4, cursor: canPrev ? 'pointer' : 'not-allowed' }}>
+                          <svg style={{ width:'55%', height:'55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+                        </button>
+                        <button type="button" aria-label="Next" title="Next" onClick={canNext ? skipForwardPhase : undefined} disabled={!canNext} style={{ ...btnBase, opacity: canNext ? 1 : 0.4, cursor: canNext ? 'pointer' : 'not-allowed' }}>
+                          <svg style={{ width:'55%', height:'55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+                        </button>
+                      </div>
+                      {/* Middle: Begin CTA(s) */}
+                      <div style={{ display:'flex', alignItems:'center', gap:12, flex:1, justifyContent:'center' }}>
+                      {needBeginDiscussion && (
+                        <button type="button" style={ctaStyle} onClick={beginSession}>Begin</button>
+                      )}
+                      {needBeginComp && (
+                        <button type="button" style={ctaStyle} onClick={beginComprehensionPhase}>Begin Comprehension</button>
+                      )}
+                      {needBeginExercise && (
+                        <button type="button" style={ctaStyle} onClick={beginSkippedExercise}>Begin Exercise</button>
+                      )}
+                      {needBeginWorksheet && (
+                        <button type="button" style={ctaStyle} onClick={beginWorksheetPhase}>Begin Worksheet</button>
+                      )}
+                      {needBeginTest && (
+                        <button type="button" style={ctaStyle} onClick={beginTestPhase}>Begin Test</button>
+                      )}
+                    </div>
+                    {/* Right: Play/Pause + Mute */}
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <button type="button" aria-label={userPaused ? 'Play' : 'Pause'} title={'Press Begin first'} disabled style={{ ...btnBase, opacity: 0.4, cursor:'not-allowed' }}>
+                        {userPaused ? (
+                          <svg style={{ width:'55%', height:'55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 5v14l11-7z" /></svg>
+                        ) : (
+                          <svg style={{ width:'55%', height:'55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
+                        )}
+                      </button>
+                      <button type="button" aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'} onClick={toggleMute} style={btnBase}>
+                        {muted ? (
+                          <svg style={{ width:'60%', height:'60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
+                        ) : (
+                          <svg style={{ width:'60%', height:'60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M19 8a5 5 0 010 8" /><path d="M15 11a2 2 0 010 2" /></svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+              // Default (not short height): center-only Begin row
+              const rowStyle = { display:'flex', alignItems:'center', justifyContent:'center', gap:12, paddingLeft:12, paddingRight:12, marginBottom:4 };
+              return (
+                <div style={rowStyle}>
+                  {needBeginDiscussion && (
+                    <button type="button" style={ctaStyle} onClick={beginSession}>Begin</button>
+                  )}
+                  {needBeginComp && (
+                    <button type="button" style={ctaStyle} onClick={beginComprehensionPhase}>Begin Comprehension</button>
+                  )}
+                  {needBeginExercise && (
+                    <button type="button" style={ctaStyle} onClick={beginSkippedExercise}>Begin Exercise</button>
+                  )}
+                  {needBeginWorksheet && (
+                    <button type="button" style={ctaStyle} onClick={beginWorksheetPhase}>Begin Worksheet</button>
+                  )}
+                  {needBeginTest && (
+                    <button type="button" style={ctaStyle} onClick={beginTestPhase}>Begin Test</button>
+                  )}
+                </div>
+              );
+            } catch {}
+            return null;
+          })()}
+
+          {/* Quick-answer buttons row (appears above input when a TF/MC item is active).
+              Suppressed on short-height when controls are already in this row. */}
+          {(() => {
+            try {
+              if (sendDisabled) return null; // respect gating
+              if (isShortHeight) {
+                // When short, quick answers render inline with the controls row above.
+                // Also skip if a Begin row is present (no active question yet).
+                const needBeginDiscussion = (showBegin && phase === 'discussion');
+                const needBeginComp = (phase === 'comprehension' && subPhase === 'comprehension-start');
+                const needBeginExercise = (phase === 'exercise' && subPhase === 'exercise-awaiting-begin');
+                const needBeginWorksheet = (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin');
+                const needBeginTest = (phase === 'test' && subPhase === 'test-awaiting-begin');
+                const anyBegin = needBeginDiscussion || needBeginComp || needBeginExercise || needBeginWorksheet || needBeginTest;
+                if (!anyBegin) return null;
+              }
+              // Determine the currently active question across phases
+              let active = null;
+              if (phase === 'comprehension') {
+                active = currentCompProblem || null;
+              } else if (phase === 'exercise') {
+                active = currentExerciseProblem || null;
+              } else if (phase === 'worksheet' && subPhase === 'worksheet-active') {
+                const idx = (typeof worksheetIndexRef !== 'undefined' && worksheetIndexRef && typeof worksheetIndexRef.current === 'number')
+                  ? (worksheetIndexRef.current ?? 0)
+                  : (typeof currentWorksheetIndex === 'number' ? currentWorksheetIndex : 0);
+                const list = Array.isArray(generatedWorksheet) ? generatedWorksheet : [];
+                active = list[idx] || null;
+              } else if (phase === 'test' && subPhase === 'test-active') {
+                const list = Array.isArray(generatedTest) ? generatedTest : [];
+                const idx = (typeof testActiveIndex === 'number' ? testActiveIndex : 0);
+                active = list[idx] || null;
+              }
+              if (!active) return null;
+
+              const qType = active.questionType || null;
+              const choiceCount = Array.isArray(active.choices) && active.choices.length
+                ? active.choices.length
+                : (Array.isArray(active.options) ? active.options.length : 0);
+
+              const containerStyle = {
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+                gap: 8,
+                // Align with video gutters in portrait
+                paddingLeft: isMobileLandscape ? 12 : '4%',
+                paddingRight: isMobileLandscape ? 12 : '4%',
+                marginBottom: 6,
+              };
+              const btnBase = {
+                background: '#1f2937',
+                color: '#fff',
+                borderRadius: 8,
+                padding: '8px 12px',
+                minHeight: 40,
+                minWidth: 56,
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.18)'
+              };
+
+              if (qType === 'tf') {
+                return (
+                  <div style={containerStyle} aria-label="Quick answer: true or false">
+                    <button type="button" style={btnBase} onClick={() => handleSend('true')}>True</button>
+                    <button type="button" style={btnBase} onClick={() => handleSend('false')}>False</button>
+                  </div>
+                );
+              }
+
+              // Treat as multiple choice if tagged 'mc' or has discrete options/choices
+              const isMC = (qType === 'mc') || (choiceCount >= 2);
+              if (isMC) {
+                const count = Math.min(4, Math.max(2, choiceCount || 4));
+                const letters = ['A','B','C','D'].slice(0, count);
+                return (
+                  <div style={containerStyle} aria-label="Quick answer: multiple choice">
+                    {letters.map((L) => (
+                      <button key={L} type="button" style={btnBase} onClick={() => handleSend(L)}>{L}</button>
+                    ))}
+                  </div>
+                );
+              }
+            } catch {}
+            return null;
+          })()}
           <InputPanel
             learnerInput={learnerInput}
             setLearnerInput={setLearnerInput}
@@ -5320,7 +6141,6 @@ function SessionPageInner() {
             canSend={canSend}
             loading={loading}
             abortKey={abortKey}
-            needsAudioUnlock={needsAudioUnlock}
             showBegin={showBegin}
             isSpeaking={isSpeaking}
             phase={phase}
@@ -5329,6 +6149,7 @@ function SessionPageInner() {
             tipOverride={tipOverride}
             onSend={handleSend}
             compact={isMobileLandscape}
+            hotkeys={hotkeys}
           />
         </div>
       </div>
@@ -5362,16 +6183,16 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
   const columns = Array.isArray(timelinePhases) && timelinePhases.length > 0 ? timelinePhases.length : 5;
   const gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
   const containerRef = useRef(null);
-  const [labelFontSize, setLabelFontSize] = useState(16);
+  const [labelFontSize, setLabelFontSize] = useState('1rem');
 
   // Compute a shared font size so the longest label fits within a single column
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
-    const BASE = 16; // px
-    const MIN = 12;  // px - keep readable on small screens
-    const MAX = 16;  // px - do not upscale above base
+  const BASE = 16; // px for measurement
+  const MIN = 12;  // px - keep readable on small screens
+  const MAX = 20;  // px - permit larger labels on wider screens
     const PADDING_X = 18 * 2 + 4; // left+right padding plus a little slack for borders
 
     const labels = (Array.isArray(timelinePhases) ? timelinePhases : []).map(k => String(phaseLabels[k] || ''));
@@ -5379,7 +6200,7 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
 
     const compute = () => {
       const totalWidth = el.clientWidth || 0;
-      if (totalWidth <= 0) { setLabelFontSize(BASE); return; }
+  if (totalWidth <= 0) { setLabelFontSize('1rem'); return; }
       const colWidth = totalWidth / columns;
       const available = Math.max(0, colWidth - PADDING_X);
 
@@ -5403,10 +6224,13 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
       }
       document.body.removeChild(meas);
 
-      if (maxLabelWidth <= 0 || available <= 0) { setLabelFontSize(BASE); return; }
+  if (maxLabelWidth <= 0 || available <= 0) { setLabelFontSize('1rem'); return; }
       const scale = Math.min(1, available / maxLabelWidth);
-      const next = Math.max(MIN, Math.min(MAX, Math.floor(BASE * scale)));
-      setLabelFontSize(next);
+  const next = Math.max(MIN, Math.min(MAX, Math.floor(BASE * scale)));
+  // Map px -> rem using current root font-size for consistent scaling
+  const rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  const nextRem = Math.max(0.5, next / rootPx);
+  setLabelFontSize(`${nextRem}rem`);
     };
 
     // Initial compute + observe container size changes
@@ -5423,7 +6247,7 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
   }, [timelinePhases, columns]);
 
   return (
-  <div ref={containerRef} style={{ display: "grid", gridTemplateColumns, gap: 6, marginBottom: compact ? 4 : 8, width: '100%', minWidth: 0, position: 'relative', zIndex: 9999, padding: 4, boxSizing: 'border-box' }}>
+  <div ref={containerRef} style={{ display: "grid", gridTemplateColumns, gap: 'clamp(0.25rem, 0.8vw, 0.5rem)', marginBottom: compact ? 'clamp(0.125rem, 0.6vw, 0.25rem)' : 'clamp(0.25rem, 1vw, 0.625rem)', width: '100%', minWidth: 0, position: 'relative', zIndex: 9999, padding: 'clamp(0.125rem, 0.6vw, 0.375rem)', boxSizing: 'border-box' }}>
       {timelinePhases.map((phaseKey) => (
         <div
           key={phaseKey}
@@ -5435,7 +6259,7 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
             justifyContent: 'center',
             textAlign: 'center',
             boxSizing: 'border-box',
-            padding: compact ? "4px 10px" : "8px 18px",
+            padding: compact ? 'clamp(3px, 0.6vw, 6px) clamp(8px, 1.4vw, 12px)' : 'clamp(6px, 1vw, 10px) clamp(14px, 2vw, 18px)',
             borderRadius: 12,
             background: timelineHighlight === phaseKey ? "#c7442e" : "#e5e7eb",
             color: timelineHighlight === phaseKey ? "#fff" : "#374151",
@@ -5461,9 +6285,10 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
   );
 }
 
-function VideoPanel({ isMobileLandscape, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, onPrev, onNext, phase, subPhase, ticker, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, onTogglePlayPause, loading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, needsAudioUnlock, onUnlockAudio }) {
+function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, onPrev, onNext, phase, subPhase, ticker, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, onTogglePlayPause, loading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson }) {
   // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
-  const containerMaxWidth = isMobileLandscape ? 'clamp(300px, 52vw, 520px)' : 1000;
+  // Remove horizontal clamp: let the video occupy the full available width of its column
+  const containerMaxWidth = 'none';
   const dynamicHeightStyle = (isMobileLandscape && videoMaxHeight) ? { maxHeight: videoMaxHeight, height: videoMaxHeight, minHeight: 0 } : {};
   // Responsive control sizing: derive a target size from container width via CSS clamp.
   // We'll expose a CSS variable --ctrlSize and reuse for skip + play/pause/mute for symmetry.
@@ -5494,16 +6319,41 @@ function VideoPanel({ isMobileLandscape, videoMaxHeight, videoRef, showBegin, is
     (phase === 'discussion' && showBegin) ||
     (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin') ||
     (phase === 'test' && subPhase === 'test-awaiting-begin') ||
-    (phase === 'comprehension' && subPhase === 'comprehension-start' && !currentCompProblem) ||
+  (phase === 'comprehension' && subPhase === 'comprehension-start') ||
     (phase === 'exercise' && subPhase === 'exercise-awaiting-begin')
   );
   // Portrait refinement: instead of padding the outer wrapper, shrink the video width a bit so
   // the empty space on each side is symmetrical and the video remains visually centered.
   // We choose a slight shrink (e.g. 92%) to create subtle gutters. Landscape keeps full width.
-  const outerWrapperStyle = { position: 'relative', margin: '0 auto', maxWidth: containerMaxWidth, width: '100%' };
+  const outerWrapperStyle = { position: 'relative', margin: '0 auto', width: '100%' };
+
+  // In portrait, interpolate height from 25svh at 1:1 to 35svh at 2:1 (height:width), clamped outside that range.
+  const [portraitSvH, setPortraitSvH] = useState(35);
+  useEffect(() => {
+    const computePortraitHeight = () => {
+      try {
+        const w = Math.max(1, window.innerWidth || 1);
+        const h = Math.max(1, window.innerHeight || 1);
+        const ratio = h / w; // 1 => square; 2 => twice as tall as wide
+        const t = Math.min(1, Math.max(0, (ratio - 1) / (2 - 1))); // 0..1 over [1,2]
+  const svh = 35 - (10 * t); // 35..25
+        setPortraitSvH(svh);
+      } catch {}
+    };
+    if (!isMobileLandscape) {
+      computePortraitHeight();
+      window.addEventListener('resize', computePortraitHeight);
+      window.addEventListener('orientationchange', computePortraitHeight);
+      return () => {
+        window.removeEventListener('resize', computePortraitHeight);
+        window.removeEventListener('orientationchange', computePortraitHeight);
+      };
+    }
+  }, [isMobileLandscape]);
+
   const innerVideoWrapperStyle = isMobileLandscape
     ? { position: 'relative', overflow: 'hidden', aspectRatio: '16 / 7.2', minHeight: 200, width: '100%', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', background: '#000', '--ctrlSize': 'clamp(34px, 6.2vw, 52px)', ...dynamicHeightStyle }
-    : { position: 'relative', overflow: 'hidden', aspectRatio: '16 / 7.2', minHeight: 200, width: '92%', margin: '0 auto', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', background: '#000', '--ctrlSize': 'clamp(34px, 6.2vw, 52px)', ...dynamicHeightStyle };
+    : { position: 'relative', overflow: 'hidden', height: `${portraitSvH}svh`, width: '92%', margin: '0 auto', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', background: '#000', '--ctrlSize': 'clamp(34px, 6.2vw, 52px)' };
   return (
     <div style={outerWrapperStyle}>
       <div style={innerVideoWrapperStyle}>
@@ -5527,64 +6377,56 @@ function VideoPanel({ isMobileLandscape, videoMaxHeight, videoRef, showBegin, is
         />
         {phase === 'test' && subPhase === 'test-active' && (
           <div style={{ position: 'absolute', inset: 0, background: '#000', color: '#fff', borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', textAlign: 'center' }}>
-            <div style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.3, maxWidth: 1000 }}>
+            <div style={{ fontSize: 'clamp(1.25rem, 3.2vw, 1.625rem)', fontWeight: 600, lineHeight: 1.3, maxWidth: 1000 }}>
               <span />
             </div>
           </div>
         )}
         {(phase === 'comprehension' || phase === 'exercise') && (
-          <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(17,24,39,0.78)', color: '#fff', padding: '6px 10px', borderRadius: 8, fontSize: 14, fontWeight: 600, letterSpacing: 0.3, boxShadow: '0 2px 6px rgba(0,0,0,0.25)' }}>
+          <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(17,24,39,0.78)', color: '#fff', padding: '6px 10px', borderRadius: 8, fontSize: 'clamp(0.85rem, 1.6vw, 1rem)', fontWeight: 600, letterSpacing: 0.3, boxShadow: '0 2px 6px rgba(0,0,0,0.25)' }}>
             {ticker} correct
           </div>
         )}
         {(phase === 'worksheet' && subPhase === 'worksheet-active') || (phase === 'test' && subPhase === 'test-active') ? (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 32px', pointerEvents: 'none', textAlign: 'center' }}>
-            <div style={{ fontSize: 'clamp(28px, 4.2vw, 52px)', fontWeight: 800, lineHeight: 1.18, color: '#ffffff', textShadow: '0 0 4px rgba(0,0,0,0.9), 0 2px 6px rgba(0,0,0,0.85), 0 4px 22px rgba(0,0,0,0.65)', letterSpacing: 0.5, fontFamily: 'Inter, system-ui, sans-serif', width: '100%' }}>
+            <div style={{ fontSize: 'clamp(1.75rem, 4.2vw, 3.25rem)', fontWeight: 800, lineHeight: 1.18, color: '#ffffff', textShadow: '0 0 4px rgba(0,0,0,0.9), 0 2px 6px rgba(0,0,0,0.85), 0 4px 22px rgba(0,0,0,0.65)', letterSpacing: 0.5, fontFamily: 'Inter, system-ui, sans-serif', width: '100%' }}>
               <CurrentAssessmentPrompt phase={phase} subPhase={subPhase} />
             </div>
           </div>
         ) : null}
-        {((phase === 'congrats') || (phase === 'test' && subPhase === 'test-review-finished')) && typeof testFinalPercent === 'number' && (
-          <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(17,24,39,0.85)', color: '#fff', padding: '10px 14px', borderRadius: 10, fontSize: 18, fontWeight: 700, letterSpacing: 0.4, boxShadow: '0 2px 10px rgba(0,0,0,0.4)' }}>Score: {testFinalPercent}%</div>
+        {(phase === 'congrats') && typeof testFinalPercent === 'number' && (
+          <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(17,24,39,0.85)', color: '#fff', padding: '10px 14px', borderRadius: 10, fontSize: 'clamp(1rem, 2vw, 1.25rem)', fontWeight: 700, letterSpacing: 0.4, boxShadow: '0 2px 10px rgba(0,0,0,0.4)' }}>Score: {testFinalPercent}%</div>
         )}
         {phase === 'worksheet' && (
-          <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(17,24,39,0.78)', color: '#fff', padding: '6px 10px', borderRadius: 8, fontSize: 14, fontWeight: 600, letterSpacing: 0.3, boxShadow: '0 2px 6px rgba(0,0,0,0.25)' }}>Number {ticker}</div>
+          <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(17,24,39,0.78)', color: '#fff', padding: '6px 10px', borderRadius: 8, fontSize: 'clamp(0.85rem, 1.6vw, 1rem)', fontWeight: 600, letterSpacing: 0.3, boxShadow: '0 2px 6px rgba(0,0,0,0.25)' }}>Number {ticker}</div>
         )}
         {loading && (
           <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, zIndex: 5, pointerEvents: 'none', background: 'rgba(0,0,0,0.38)', padding: '42px 48px', borderRadius: 160, backdropFilter: 'blur(2px)', boxShadow: '0 6px 28px rgba(0,0,0,0.45)' }}>
             <div className="ms-spinner" role="status" aria-label="Loading" />
-            <div style={{ color: '#fff', fontSize: 16, fontWeight: 600, letterSpacing: 0.5, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>Loading...</div>
+            <div style={{ color: '#fff', fontSize: 'clamp(0.95rem, 1.6vw, 1rem)', fontWeight: 600, letterSpacing: 0.5, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>Loading...</div>
           </div>
         )}
-        {showBegin && phase === 'discussion' && (
-          <button type="button" onClick={onBegin} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '16px 40px', fontWeight: 700, fontSize: 22, border: 'none', boxShadow: '0 2px 16px rgba(199,68,46,0.18)', cursor: 'pointer', zIndex: 6 }}>Begin</button>
+        {(!isShortHeight) && showBegin && phase === 'discussion' && (
+          <button type="button" onClick={onBegin} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '16px 40px', fontWeight: 700, fontSize: 'clamp(1.1rem, 2.6vw, 1.375rem)', border: 'none', boxShadow: '0 2px 16px rgba(199,68,46,0.18)', cursor: 'pointer', zIndex: 200 }}>Begin</button>
         )}
-        {/* iOS/Safari audio unlock prompt */}
-        {needsAudioUnlock && (
-          <button
-            type="button"
-            onClick={onUnlockAudio}
-            style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#1f2937', color: '#fff', borderRadius: 14, padding: '14px 26px', fontWeight: 800, fontSize: 18, border: 'none', boxShadow: '0 2px 14px rgba(0,0,0,0.35)', cursor: 'pointer', zIndex: 7 }}
-          >
-            Tap to enable sound
-          </button>
+        {/* Removed standalone audio unlock overlay; Begin flow now handles permissions */}
+        {(!isShortHeight) && phase === 'congrats' && !loading && (
+          <button type="button" onClick={onCompleteLesson} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '18px 46px', fontWeight: 800, fontSize: 'clamp(1.25rem, 3.2vw, 1.625rem)', letterSpacing: 0.5, border: 'none', boxShadow: '0 4px 20px rgba(199,68,46,0.35)', cursor: 'pointer', zIndex: 4, textShadow: '0 2px 4px rgba(0,0,0,0.35)' }}>Complete Lesson</button>
         )}
-        {phase === 'congrats' && !loading && (
-          <button type="button" onClick={onCompleteLesson} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '18px 46px', fontWeight: 800, fontSize: 26, letterSpacing: 0.5, border: 'none', boxShadow: '0 4px 20px rgba(199,68,46,0.35)', cursor: 'pointer', zIndex: 4, textShadow: '0 2px 4px rgba(0,0,0,0.35)' }}>Complete Lesson</button>
+        {(!isShortHeight) && phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin' && (
+          <button type="button" onClick={onBeginWorksheet} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '16px 40px', fontWeight: 700, fontSize: 'clamp(1.1rem, 2.6vw, 1.375rem)', border: 'none', boxShadow: '0 2px 16px rgba(199,68,46,0.18)', cursor: 'pointer', zIndex: 200 }}>Begin Worksheet</button>
         )}
-        {phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin' && (
-          <button type="button" onClick={onBeginWorksheet} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '16px 40px', fontWeight: 700, fontSize: 22, border: 'none', boxShadow: '0 2px 16px rgba(199,68,46,0.18)', cursor: 'pointer', zIndex: 6 }}>Begin Worksheet</button>
+        {(!isShortHeight) && phase === 'test' && subPhase === 'test-awaiting-begin' && (
+          <button type="button" onClick={onBeginTest} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '16px 40px', fontWeight: 700, fontSize: 'clamp(1.1rem, 2.6vw, 1.375rem)', border: 'none', boxShadow: '0 2px 16px rgba(199,68,46,0.18)', cursor: 'pointer', zIndex: 200 }}>Begin Test</button>
         )}
-        {phase === 'test' && subPhase === 'test-awaiting-begin' && (
-          <button type="button" onClick={onBeginTest} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '16px 40px', fontWeight: 700, fontSize: 22, border: 'none', boxShadow: '0 2px 16px rgba(199,68,46,0.18)', cursor: 'pointer', zIndex: 6 }}>Begin Test</button>
+  {(!isShortHeight) && phase === 'comprehension' && subPhase === 'comprehension-start' && (
+          <button type="button" onClick={onBeginComprehension} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '16px 40px', fontWeight: 700, fontSize: 'clamp(1.1rem, 2.6vw, 1.375rem)', border: 'none', boxShadow: '0 2px 16px rgba(199,68,46,0.18)', cursor: 'pointer', zIndex: 200 }}>Begin Comprehension</button>
         )}
-        {phase === 'comprehension' && subPhase === 'comprehension-start' && !currentCompProblem && (
-          <button type="button" onClick={onBeginComprehension} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '16px 40px', fontWeight: 700, fontSize: 22, border: 'none', boxShadow: '0 2px 16px rgba(199,68,46,0.18)', cursor: 'pointer', zIndex: 6 }}>Begin Comprehension</button>
-        )}
-        {phase === 'exercise' && subPhase === 'exercise-awaiting-begin' && (
-          <button type="button" onClick={onBeginSkippedExercise} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '16px 40px', fontWeight: 700, fontSize: 22, border: 'none', boxShadow: '0 2px 16px rgba(199,68,46,0.18)', cursor: 'pointer', zIndex: 6 }}>Begin Exercise</button>
+        {(!isShortHeight) && phase === 'exercise' && subPhase === 'exercise-awaiting-begin' && (
+          <button type="button" onClick={onBeginSkippedExercise} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '16px 40px', fontWeight: 700, fontSize: 'clamp(1.1rem, 2.6vw, 1.375rem)', border: 'none', boxShadow: '0 2px 16px rgba(199,68,46,0.18)', cursor: 'pointer', zIndex: 200 }}>Begin Exercise</button>
         )}
   {/* Primary control cluster (play/pause + mute) */}
+  {!isShortHeight && (
   <div style={controlClusterStyle}>
           <button
             type="button"
@@ -5612,8 +6454,9 @@ function VideoPanel({ isMobileLandscape, videoMaxHeight, videoRef, showBegin, is
             )}
           </button>
         </div>
+  )}
         {/* Paired skip controls at bottom-left */}
-        {(phase !== 'congrats') && (onPrev || onNext) && (
+        {!isShortHeight && (phase !== 'congrats') && (onPrev || onNext) && (
           /* Mirror cluster: same bottom & edge offset (16) and same internal gap (12) to create symmetry */
           <div style={{ position: 'absolute', bottom: 16, left: 16, display: 'flex', gap: 12 }}>
             {onPrev && (
@@ -5643,7 +6486,7 @@ function VideoPanel({ isMobileLandscape, videoMaxHeight, videoRef, showBegin, is
           </div>
         )}
         {skipPendingLessonLoad && (
-          <div style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(31,41,55,0.85)', color: '#fff', padding: '6px 12px', borderRadius: 8, fontSize: 13, fontWeight: 600, letterSpacing: 0.4, boxShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>Loading lesson… skip will apply</div>
+          <div style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(31,41,55,0.85)', color: '#fff', padding: '6px 12px', borderRadius: 8, fontSize: 'clamp(0.75rem, 1.4vw, 0.9rem)', fontWeight: 600, letterSpacing: 0.4, boxShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>Loading lesson… skip will apply</div>
         )}
       </div>
     </div>
@@ -5683,7 +6526,7 @@ function CurrentAssessmentPrompt({ phase, subPhase }) {
   return prompt ? <span>{prompt}</span> : null;
 }
 
-function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, loading, onSend, showBegin, isSpeaking, phase, subPhase, tipOverride, abortKey, currentCompProblem, needsAudioUnlock, compact = false }) {
+function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, loading, onSend, showBegin, isSpeaking, phase, subPhase, tipOverride, abortKey, currentCompProblem, compact = false, hotkeys }) {
   const [focused, setFocused] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -5773,10 +6616,12 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
     setIsRecording(false);
   }, []);
 
-  // Global hotkey: Hold Numpad Plus to record (keydown starts, keyup stops)
+  // Global hotkey: Hold configured key (default NumpadPlus) to record (keydown starts, keyup stops)
   useEffect(() => {
     const onKeyDown = (e) => {
-      if (e.code !== 'NumpadAdd') return;
+      const code = e.code || e.key;
+      const micCode = (hotkeys?.micHold || DEFAULT_HOTKEYS.micHold);
+      if (!micCode || code !== micCode) return;
       // Prevent text input of '+' when we handle it
       e.preventDefault();
       if (hotkeyDownRef.current) return; // ignore auto-repeat
@@ -5786,7 +6631,9 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
       }
     };
     const onKeyUp = (e) => {
-      if (e.code !== 'NumpadAdd') return;
+      const code = e.code || e.key;
+      const micCode = (hotkeys?.micHold || DEFAULT_HOTKEYS.micHold);
+      if (!micCode || code !== micCode) return;
       e.preventDefault();
       hotkeyDownRef.current = false;
       if (isRecording) {
@@ -5799,7 +6646,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [isRecording, uploading, sendDisabled, startRecording, stopRecording]);
+  }, [isRecording, uploading, sendDisabled, startRecording, stopRecording, hotkeys]);
 
   useEffect(() => () => {
     try { mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive' && mediaRecorderRef.current.stop(); } catch {}
@@ -5828,19 +6675,41 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
     if (isRecording) stopRecording();
     onSend();
   }, [isRecording, stopRecording, onSend]);
-  // Auto-focus when the field becomes available for input
+  // Auto-focus when the field becomes actionable (enabled and allowed to send)
+  // Add a tiny retry window to avoid races right after TTS ends or layout settles
   useEffect(() => {
-    if (canSend && inputRef.current) {
+    const el = inputRef.current;
+    if (!el) return;
+    if (sendDisabled || !canSend) return;
+    let rafId = null;
+    let t0 = null;
+    let t1 = null;
+    const doFocus = () => {
       try {
-        inputRef.current.focus();
-        // Move cursor to end (in case residual text restored in future flows)
-        const len = inputRef.current.value.length;
-        inputRef.current.setSelectionRange(len, len);
+        el.focus({ preventScroll: true });
+        const len = el.value.length;
+        el.setSelectionRange(len, len);
       } catch {/* ignore focus errors */}
-    }
-  }, [canSend]);
+    };
+    // Initial microtask/next-tick
+    t0 = setTimeout(() => {
+      if (document.activeElement !== el) doFocus();
+    }, 0);
+    // After a frame, try again if something stole focus
+    rafId = requestAnimationFrame(() => {
+      if (document.activeElement !== el) doFocus();
+    });
+    // One last short retry
+    t1 = setTimeout(() => {
+      if (document.activeElement !== el) doFocus();
+    }, 120);
+    return () => {
+      if (t0) clearTimeout(t0);
+      if (t1) clearTimeout(t1);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [sendDisabled, canSend]);
   const computePlaceholder = () => {
-    if (needsAudioUnlock) return 'Press "Tap to enable sound"';
     if (tipOverride) return tipOverride;
     if (showBegin) return 'Press "Begin"';
     if (phase === 'congrats') return 'Press "Complete Lesson"';
@@ -5848,7 +6717,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
     if (isSpeaking) return 'Ms. Sonoma is talking...';
     // During Comprehension: lock input and guide clearly
     if (phase === 'comprehension') {
-      if (subPhase === 'comprehension-start' && !currentCompProblem) return 'Press "Begin Comprehension"';
+  if (subPhase === 'comprehension-start') return 'Press "Begin Comprehension"';
     }
   if (phase === 'exercise' && subPhase === 'exercise-awaiting-begin') return 'Press "Begin Exercise"';
   if (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin') return 'Press "Begin Worksheet"';
@@ -5858,17 +6727,17 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
     return '';
   };
   return (
-  <div style={{ display: "flex", alignItems: "center", gap: (typeof compact !== 'undefined' && compact) ? 6 : 8, marginBottom: (typeof compact !== 'undefined' && compact) ? 2 : 12, width: '100%', maxWidth: '100%', marginLeft: 'auto', marginRight: 'auto', boxSizing: 'border-box', paddingLeft: (typeof compact !== 'undefined' && compact) ? 8 : 12, paddingRight: (typeof compact !== 'undefined' && compact) ? 8 : 12 }}>
+  <div style={{ display: "flex", alignItems: "center", gap: (typeof compact !== 'undefined' && compact) ? 6 : 8, marginBottom: 0, width: '100%', maxWidth: '100%', marginLeft: 'auto', marginRight: 'auto', boxSizing: 'border-box', paddingLeft: (typeof compact !== 'undefined' && compact) ? 8 : (compact ? 12 : '4%'), paddingRight: (typeof compact !== 'undefined' && compact) ? 8 : (compact ? 12 : '4%') }}>
       <button
         style={{
-          background: (sendDisabled || needsAudioUnlock) ? "#4b5563" : '#c7442e',
+          background: (sendDisabled) ? "#4b5563" : '#c7442e',
           color: "#fff",
           borderRadius: 8,
           padding: (typeof compact !== 'undefined' && compact) ? "6px 10px" : "8px 12px",
           fontWeight: 600,
           border: "none",
-          cursor: (sendDisabled || needsAudioUnlock) ? "not-allowed" : "pointer",
-          opacity: (sendDisabled || needsAudioUnlock) ? 0.7 : 1,
+          cursor: (sendDisabled) ? "not-allowed" : "pointer",
+          opacity: (sendDisabled) ? 0.7 : 1,
           transition: "background 0.2s, opacity 0.2s, box-shadow 0.2s",
           position: 'relative',
           boxShadow: isRecording ? '0 0 0 4px rgba(199,68,46,0.35), 0 0 12px 4px rgba(199,68,46,0.55)' : '0 2px 6px rgba(0,0,0,0.25)',
@@ -5879,13 +6748,13 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
           touchAction: 'manipulation'
         }}
         aria-label={isRecording ? 'Stop recording' : 'Start recording'}
-        disabled={sendDisabled || needsAudioUnlock}
+  disabled={sendDisabled}
         onContextMenu={(e) => { e.preventDefault(); }}
         onDragStart={(e) => { e.preventDefault(); }}
         onTouchStart={(e) => {
           // Use hold-to-record on touch devices; prevent synthetic click
           e.preventDefault();
-          if (sendDisabled || needsAudioUnlock) return;
+          if (sendDisabled) return;
           touchActiveRef.current = true;
           if (!isRecording && !uploading) {
             startRecording();
@@ -5907,7 +6776,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
           }
         }}
         onClick={() => {
-          if (sendDisabled || needsAudioUnlock) return;
+          if (sendDisabled) return;
           if (isRecording) {
             stopRecording();
           } else {
@@ -5934,47 +6803,53 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
       {/* Removed iOS-only test sound button to simplify controls */}
       <input
         ref={inputRef}
-            title={isRecording ? 'Release Numpad + to stop' : 'Hold Numpad + to talk'}
+            title={(() => {
+              const micCode = (hotkeys?.micHold || DEFAULT_HOTKEYS.micHold);
+              const label = micCode === 'NumpadAdd' ? 'Numpad +' : micCode || 'Numpad +';
+              return isRecording ? `Release ${label} to stop` : `Hold ${label} to talk`;
+            })()}
         value={learnerInput}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         onChange={(event) => setLearnerInput(event.target.value)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') {
+          const code = e.code || e.key;
+          const beginCode = (hotkeys?.beginSend || DEFAULT_HOTKEYS.beginSend);
+          if (code === beginCode) {
             e.preventDefault();
-            if (!sendDisabled && !needsAudioUnlock) {
+            if (!sendDisabled) {
               handleSend();
             }
           }
         }}
         placeholder={computePlaceholder()}
-        disabled={sendDisabled || needsAudioUnlock}
+  disabled={sendDisabled}
         style={{
           flex: 1,
           padding: "10px",
           borderRadius: 6,
           border: "1px solid #bdbdbd",
-          fontSize: 16,
-          background: (!sendDisabled && !needsAudioUnlock) ? "#fff" : "#f3f4f6",
-          color: (!sendDisabled && !needsAudioUnlock) ? "#111827" : "#9ca3af",
+          fontSize: 'clamp(0.95rem, 1.6vw, 1.05rem)',
+          background: (!sendDisabled) ? "#fff" : "#f3f4f6",
+          color: (!sendDisabled) ? "#111827" : "#9ca3af",
           transition: 'background 0.2s, color 0.2s',
           ...(loading ? { animation: 'flashInputPlaceholder 0.85s ease-in-out infinite' } : {})
         }}
       />
       <button
         style={{
-          background: (sendDisabled || needsAudioUnlock) ? "#4b5563" : "#c7442e",
+          background: (sendDisabled) ? "#4b5563" : "#c7442e",
           color: "#fff",
           borderRadius: 8,
           padding: (typeof compact !== 'undefined' && compact) ? "6px 10px" : "8px 12px",
           fontWeight: 600,
           border: "none",
-          cursor: (sendDisabled || needsAudioUnlock) ? "not-allowed" : "pointer",
-          opacity: (sendDisabled || needsAudioUnlock) ? 0.7 : 1,
+          cursor: (sendDisabled) ? "not-allowed" : "pointer",
+          opacity: (sendDisabled) ? 0.7 : 1,
           transition: "background 0.2s, opacity 0.2s",
         }}
         aria-label="Send response"
-        disabled={sendDisabled || needsAudioUnlock}
+  disabled={sendDisabled}
   onClick={handleSend}
       >
         <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
@@ -6007,9 +6882,9 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
           filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
         }
       `}</style>
-      {errorMsg && (
-  <div style={{ position:'absolute', bottom:-18, left:4, fontSize:11, color:'#c7442e' }}>{errorMsg}</div>
-      )}
+    {errorMsg && (
+  <div style={{ position:'absolute', bottom:-18, left:4, fontSize:'clamp(0.7rem, 1.2vw, 0.8rem)', color:'#c7442e' }}>{errorMsg}</div>
+    )}
     </div>
   );
 }
@@ -6113,8 +6988,13 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
   const [canScroll, setCanScroll] = useState(false);
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(true);
+  // Normalize incoming sentences (strings or { text, role }) to a consistent shape
+  const items = useMemo(() => {
+    if (!Array.isArray(sentences)) return [];
+    return sentences.map((s) => (typeof s === 'string' ? { text: s } : (s && typeof s === 'object' ? s : { text: '' })));
+  }, [sentences]);
 
-  // Detect overflow & scroll position
+  // Detect overflow & scroll position on the scroller (boxRef)
   const recomputeScrollState = useCallback(() => {
     if (!boxRef?.current) return;
     const el = boxRef.current;
@@ -6124,9 +7004,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
     setAtBottom(el.scrollTop >= el.scrollHeight - el.clientHeight - 4);
   }, [boxRef]);
 
-  useEffect(() => {
-    recomputeScrollState();
-  }, [sentences, stackedHeight, fullHeight, compact, recomputeScrollState]);
+  useEffect(() => { recomputeScrollState(); }, [items, stackedHeight, fullHeight, compact, recomputeScrollState]);
 
   useEffect(() => {
     if (!boxRef?.current) return;
@@ -6135,26 +7013,24 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
     el.addEventListener('scroll', handler, { passive: true });
     const resizeObs = new ResizeObserver(handler);
     resizeObs.observe(el);
-    return () => {
-      el.removeEventListener('scroll', handler);
-      resizeObs.disconnect();
-    };
+    return () => { el.removeEventListener('scroll', handler); resizeObs.disconnect(); };
   }, [boxRef, recomputeScrollState]);
 
+  // Auto-center active caption line
   useEffect(() => {
     if (!boxRef?.current) return;
-    const el = boxRef.current.querySelector(`[data-idx="${activeIndex}"]`);
-    if (!el) return;
+    const activeEl = boxRef.current.querySelector(`[data-idx="${activeIndex}"]`);
+    if (!activeEl) return;
     const container = boxRef.current;
     const marginTop = 8;
     const marginBottom = 24;
     const scale = Number.isFinite(scaleFactor) && scaleFactor > 0 ? scaleFactor : 1;
-    const elementTop = el.offsetTop - marginTop;
-    const elementBottom = el.offsetTop + el.offsetHeight + marginBottom;
+    const elementTop = activeEl.offsetTop - marginTop;
+    const elementBottom = activeEl.offsetTop + activeEl.offsetHeight + marginBottom;
     const viewTop = container.scrollTop;
     const viewBottom = viewTop + container.clientHeight;
     const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight);
-    const isLast = activeIndex >= (Array.isArray(sentences) ? sentences.length - 1 : -1);
+    const isLast = activeIndex >= (Array.isArray(items) ? items.length - 1 : -1);
     if (elementTop < viewTop || elementBottom > viewBottom) {
       const distance = Math.abs(elementTop - viewTop);
       const jumpThreshold = (container.clientHeight * 0.65) / scale;
@@ -6166,29 +7042,37 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
       if (distance > jumpThreshold) container.scrollTop = target; else container.scrollTo({ top: target, behavior: 'smooth' });
       if (isLast) requestAnimationFrame(() => { container.scrollTop = maxScroll; });
     }
-  }, [activeIndex, sentences, scaleFactor, boxRef]);
+  }, [activeIndex, items, scaleFactor, boxRef]);
 
-  const panelStyle = {
+  const containerStyle = {
     width: '100%',
     boxSizing: 'border-box',
+    background: '#ffffff',
+    borderRadius: 14,
+    position: 'relative',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+    display: 'flex',
+    flexDirection: 'column',
+    flex: fullHeight ? '1 1 auto' : undefined,
+    maxHeight: fullHeight ? '100%' : (stackedHeight ? stackedHeight : (compact ? '14vh' : '18vh')),
+    height: fullHeight ? '100%' : (stackedHeight ? stackedHeight : 'auto'),
+  };
+
+  const scrollerStyle = {
+    flex: '1 1 auto',
+    height: '100%',
+    overflowY: 'auto',
     paddingTop: compact ? 6 : 12,
     paddingRight: 12,
     paddingBottom: compact ? 6 : 12,
     paddingLeft: 12,
-  background: '#ffffff',
-  color: '#111111',
-  borderRadius: 14,
-  fontSize: 18,
-  lineHeight: 1.5,
-    maxHeight: fullHeight ? '100%' : (stackedHeight ? stackedHeight : (compact ? '14vh' : '18vh')),
-    height: fullHeight ? '100%' : (stackedHeight ? stackedHeight : 'auto'),
-    overflowY: 'auto',
-    position: 'relative',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.25)'
+    color: '#111111',
+    fontSize: 'clamp(1.125rem, 2.4vw, 1.5rem)',
+    lineHeight: 1.5,
   };
 
   return (
-    <div ref={boxRef} className="scrollbar-hidden" style={panelStyle} aria-live="polite">
+    <div data-ms-caption-panel-container style={containerStyle}>
       <div style={{ position: 'absolute', top: 6, right: 6, display: 'flex', flexDirection: 'column', gap: 6, zIndex: 10 }}>
         <button
           type="button"
@@ -6202,7 +7086,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
             borderRadius: 6,
             width: 34,
             height: 34,
-            fontSize: 18,
+            fontSize: 'clamp(1rem, 1.8vw, 1.2rem)',
             lineHeight: '34px',
             cursor: atTop ? 'default' : 'pointer',
             boxShadow: '0 2px 4px rgba(0,0,0,0.25)',
@@ -6221,7 +7105,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
             borderRadius: 6,
             width: 34,
             height: 34,
-            fontSize: 18,
+            fontSize: 'clamp(1rem, 1.8vw, 1.2rem)',
             lineHeight: '34px',
             cursor: atBottom ? 'default' : 'pointer',
             boxShadow: '0 2px 4px rgba(0,0,0,0.25)',
@@ -6229,38 +7113,42 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
           }}
         >▼</button>
       </div>
-      {(!sentences || sentences.length === 0) && (
-        <div style={{ color: '#6b7280' }}>Captions will appear here.</div>
-      )}
-      {sentences && sentences.length > 0 && (
-        <p style={{ margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontSize: 18, lineHeight: 1.5, color: '#111111', paddingRight: '5%' }}>
-          {sentences.map((s, i) => {
-            const isObj = s && typeof s === 'object';
-            const text = isObj ? (s.text ?? '') : String(s ?? '');
-            const isUser = isObj && s.role === 'user';
-            const isNewline = !isObj && text === '\n';
-            if (isNewline) return <span key={`br-${i}`}><br /></span>;
+      <div ref={boxRef} data-ms-caption-panel className="scrollbar-hidden" style={scrollerStyle} aria-live="polite">
+        {Array.isArray(items) && items.length > 0 ? (
+          <>
+          {items.map((s, idx) => {
+            const text = (s && typeof s.text === 'string') ? s.text : '';
+            if (text === '\n') {
+              return <div key={idx} data-idx={idx} style={{ height: 6 }} />;
+            }
+            const isActive = idx === activeIndex;
+            const containerBase = { margin: '6px 0', transition: 'background-color 160ms ease, color 160ms ease' };
+            const activeContainer = isActive ? { background: 'rgba(199,68,46,0.08)', borderRadius: 8, padding: '4px 6px' } : null;
+            const textBase = { whiteSpace: 'pre-line' };
+            const activeText = isActive ? { fontWeight: 700, color: '#111111' } : { fontWeight: 500 };
+            // Style for learner-entered lines
+            const userText = { color: '#c7442e', fontWeight: 600 };
             return (
-              <span
-                key={`${i}-${text.slice(0,12)}`}
-                data-idx={i}
-                style={{
-                  background: i === activeIndex ? 'rgba(199,68,46,0.22)' : 'transparent',
-                  borderRadius: 4,
-                  transition: 'background 140ms ease, box-shadow 140ms ease, color 140ms ease',
-                  color: isUser ? '#c7442e' : undefined,
-                  fontWeight: (isUser || i === activeIndex) ? 600 : undefined,
-                  boxShadow: i === activeIndex ? 'inset 3px 0 0 0 #c7442e, 0 0 0 1px rgba(199,68,46,0.25)' : undefined,
-                  padding: i === activeIndex ? '0 2px 0 4px' : undefined,
-                  scrollMarginTop: 16,
-                }}
-              >
-                {text}{i < sentences.length - 1 ? ' ' : ''}
-              </span>
+              <div key={idx} data-idx={idx} style={{ ...containerBase, ...(activeContainer || {}) }} aria-current={isActive ? 'true' : undefined}>
+                {s.role === 'user' ? (
+                  <div style={{ ...textBase, ...userText }}>{text}</div>
+                ) : (
+                  <div style={{ ...textBase, ...activeText }}>{text}</div>
+                )}
+              </div>
             );
           })}
-        </p>
-      )}
+          {/* Dynamic tail spacer to keep one blank line at the bottom without altering the transcript */}
+          <div aria-hidden data-ms-caption-tail-spacer style={{ height: '1.5em' }} />
+          </>
+        ) : (
+          <>
+            <div style={{ color: '#6b7280' }}>No captions yet.</div>
+            {/* Keep consistent tail spacing even when empty */}
+            <div aria-hidden data-ms-caption-tail-spacer style={{ height: '1.5em' }} />
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -6394,7 +7282,7 @@ function PhaseDetail({
               style={primaryButtonStyle}
               onClick={() => {
                 const key = getAssessmentStorageKey();
-                if (key) { try { clearAssessments(key); } catch {} }
+                if (key) { try { const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none'; clearAssessments(key, { learnerId: lid }); } catch {} }
                 // Reset to allow a fresh session (new randomized sets next time Begin clicked)
                 setShowBegin(true);
                 setPhase('discussion');

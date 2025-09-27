@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import LearnerSelector from './LearnerSelector'
-import FacilitatorPinPrompt from './FacilitatorPinPrompt'
+import { ensurePinAllowed } from '../lib/pinGate'
 
 // Difficulty taxonomy: Normal renamed to Intermediate (backward compat handled in lessons & session pages)
 const DIFFICULTIES = ['Beginner','Intermediate','Advanced']
@@ -32,7 +32,13 @@ export default function LearnPage() {
         {!noLearner && (
           <div style={{ marginTop:4, marginBottom:12 }}>
             <button
-              onClick={()=> setShowPinPrompt(true)}
+              onClick={async ()=> {
+                const ok = await ensurePinAllowed('change-learner');
+                if (!ok) return;
+                // Clear the current learner selection
+                try { localStorage.removeItem('learner_id'); localStorage.removeItem('learner_name'); localStorage.removeItem('learner_grade'); } catch {}
+                setLearner({ id: null, name: '' });
+              }}
               style={{ padding:'6px 10px', border:'1px solid #e5e7eb', borderRadius:8, background:'#fff' }}
             >
               Change Learner
@@ -150,12 +156,7 @@ export default function LearnPage() {
           Continue
         </button>
       </div>
-      {showPinPrompt && (
-        <FacilitatorPinPrompt
-          onCancel={()=> setShowPinPrompt(false)}
-          onSuccess={()=>{ setShowPinPrompt(false); setLearner({ id: null, name: '' }) }}
-        />
-      )}
+      {/* No modal anymore; centralized ensurePinAllowed handles prompting */}
     </main>
   )
 }

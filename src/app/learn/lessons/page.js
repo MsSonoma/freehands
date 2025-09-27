@@ -244,6 +244,11 @@ function LessonsPageInner(){
             q.set('subject','social studies')
             router.push(`/learn/lessons?${q.toString()}`)
           }}>Social Studies</button>
+          <button style={tab(subject==='facilitator')} onClick={()=>{
+            const q = new URLSearchParams(Array.from(params.entries()))
+            q.set('subject','facilitator')
+            router.push(`/learn/lessons?${q.toString()}`)
+          }}>Facilitator</button>
         </div>
         <div style={{ ...row, marginBottom: 16 }}>
           <button style={tab(difficulty==='beginner')} onClick={()=>{
@@ -274,7 +279,11 @@ function LessonsPageInner(){
           </div>
         </div>
 
-        {loading || filterLoading ? (
+        { (subject === 'facilitator' && !featuresForTier(planTier).facilitatorTools) ? (
+          <p style={{ textAlign:'center', color:'#4b5563' }}>
+            Facilitator Lessons are a Premium feature. <a href="/facilitator/plan">View plans</a>.
+          </p>
+        ) : loading || filterLoading ? (
           <p>Loading lessons…</p>
         ) : filteredLessons.length === 0 ? (
           <p style={{ textAlign:'center', color:'#6b7280' }}>

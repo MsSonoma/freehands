@@ -3,20 +3,20 @@ import React from 'react';
 
 export default function LegalFooter({ compact = false, styleOverrides }) {
   const link = (href, label) => (
-    <a href={href} style={{ color: '#111', textDecoration: 'underline' }}>{label}</a>
+    <a href={href} style={{ color: '#111', textDecoration: 'underline', fontSize: 'clamp(12px, 1.4vw, 14px)' }}>{label}</a>
   );
   const baseFooterStyle = {
     borderTop: '1px solid #e5e7eb',
     marginTop: compact ? 4 : 16,
-    padding: compact ? '8px 12px' : '12px 16px',
+    padding: compact ? 'clamp(6px, 1vh, 8px) clamp(10px, 2vw, 12px)' : 'clamp(10px, 2vh, 14px) clamp(12px, 3vw, 16px)',
     background: '#fafafa'
   };
   const footerStyle = { ...baseFooterStyle, ...(styleOverrides || {}) };
   const rowStyle = {
-    maxWidth: 960,
+    maxWidth: 'clamp(640px, 84vw, 1200px)',
     margin: '0 auto',
     display: 'flex',
-    gap: compact ? 12 : 16,
+    gap: compact ? 'clamp(8px, 1.2vw, 12px)' : 'clamp(10px, 1.6vw, 16px)',
     flexWrap: 'wrap'
   };
   return (

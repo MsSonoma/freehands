@@ -61,3 +61,15 @@ Revert strategy:
 - Set SONOMA_PROVIDER=openai to force OpenAI
 - Unset SONOMA_PROMPT_MODE or set to `full` to restore the original, longer prompt
 - Remove ANTHROPIC_API_KEY to disable Anthropic entirely
+
+## Transcript archiving (Supabase)
+
+Learner transcripts are archived to Supabase Storage (append-only ledger + consolidated PDF) when Supabase is configured. To enable:
+
+1) Add env vars in `.env.local` (and in Vercel envs):
+	- NEXT_PUBLIC_SUPABASE_URL
+	- NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+2) Provision Storage and policies by following `docs/transcripts-storage.md`.
+
+When env vars are missing or the user is not logged in, the feature no-ops safely and the rest of the app continues to work.

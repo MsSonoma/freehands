@@ -68,7 +68,6 @@ E) Comprehension ask (one question per call)
 - Content:
   - One clear, single-step question tied to the lesson. Exactly one question; only one "?".
 - Do not include definitions.
- - Evaluation uses a single, runtime-selected leniency rule (see Section 14). The question text itself does not change.
 
 F) Comprehension feedback (use only after a child reply)
 - If correct:
@@ -76,7 +75,6 @@ F) Comprehension feedback (use only after a child reply)
   - Then ask the next simple question (end with a question mark).
 - If not correct:
   - One tiny hint. Re-ask the same question (end with a question mark).
-  - If the active leniency is short-answer third-try and the non-advance count is 2 or more, include the exact correct answer once within the hint before re-asking.
 - Do not include definitions.
 
 G) Closing
@@ -169,35 +167,3 @@ G) Closing
 - Build with templates in code; substitute slots (e.g., {NAME}, {TITLE}) to literals before send.
 - Never let placeholders reach Ms. Sonoma.
 - Normalize quotes to straight ASCII before validation and checks.
-
-14) Leniency modes (runtime-selected) [COPILOT]
-- Exactly one leniency rule applies per evaluation. The front end determines the question type and passes inputs; calls remain stateless.
-
-Inputs per item
-- question_type: tf | mc | sa
-- correct_answer: canonical text for the item (string)
-- non_advance_count: integer (number of consecutive failed attempts)
-- For multiple choice: choices [{ letter: "A"|"B"|..., text: string, key_terms?: string[] }], and optionally correctIndex (number) or correct (letter or text).
-- For short answer: key_terms: string[], direct_synonyms: { term: string[] }, min_required: integer.
-- Normalization: reuse Section 5 pipeline (lowercase, trim, collapse spaces, strip punctuation). Apply yes/no mapping only when the reply is a single token. Match on whole tokens (token boundaries), not substrings.
-
-True/False leniency (tf_leniency)
-- Accept a single-letter T or F (case-insensitive) only when the reply is one letter.
-- Accept a single-token yes/no mapped to true/false.
-- Also accept if a whole token equals true/false and it matches the correct boolean.
-
-Multiple choice leniency (mc_leniency)
-- Accept the choice letter label (A, B, C, …), case-insensitive, that matches the correct choice.
-- Or accept full normalized equality to the correct choice text.
-- If key_terms are provided for the correct choice, accept when all key terms appear (order-free; whole tokens).
-
-Short answer leniency (sa_leniency)
-- Accept when the normalized reply contains the canonical correct_answer as whole tokens; or
-- Accept when it meets min_required matches of key_terms where each term may match itself or any listed direct_synonyms. Only listed direct synonyms count.
-
-Short answer third-try leniency (sa_leniency_3)
-- Same acceptance as short answer leniency.
-- When non_advance_count is 2 or more, the hint in feedback must include the exact correct_answer once before re-asking.
-
-Assessment mapping
-- Exercise, Worksheet, and Test reuse the Comprehension ask/feedback flow and apply the selected leniency in exactly the same way.

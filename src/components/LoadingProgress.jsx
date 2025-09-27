@@ -104,7 +104,7 @@ export default function LoadingProgress({ isLoading, onComplete }) {
 
       <div style={{
         color: '#6b7280',
-        fontSize: '14px',
+        fontSize: 'clamp(0.9rem, 1.6vw, 1rem)',
         fontWeight: '500'
       }}>
         {progress}%

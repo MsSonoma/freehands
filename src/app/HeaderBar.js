@@ -9,13 +9,19 @@ import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
 export default function HeaderBar() {
 	const pathname = usePathname() || '/';
 	const router = useRouter();
-	// Responsive widths so center area keeps space for the back button on small screens
-	const NAV_WIDTH = 'clamp(120px, 28vw, 240px)';
+	// Reserved left/right widths; keep smaller on session so center gets more space
+	const navWidth = useMemo(() => {
+		// On the session page, especially in portrait, reclaim width for the title
+		if (pathname.startsWith('/session')) {
+			return 'clamp(64px, 12vw, 120px)';
+		}
+		return 'clamp(84px, 14vw, 160px)';
+	}, [pathname]);
 	// Let the left padding breathe based on viewport so branding does not get pushed too far right
 	const PAD_LEFT = 'clamp(4px, 1vw, 6px)';
 	const PAD_RIGHT = 'clamp(8px, 3vw, 20px)';
-	// Responsive brand text sizing so it scales down on small screens
-	const BRAND_FONT = 'clamp(18px, 3vw, 22px)';
+	// Responsive brand text sizing in rem/vw (no px)
+	const BRAND_FONT = 'clamp(1.125rem, 3vw, 1.375rem)';
 	const BRAND_MIN = 14; // px, emergency shrink if space is tight
 	const BRAND_MAX = 22; // px, visual cap
 	const BRAND_GAP = 'clamp(6px, 2vw, 10px)';
@@ -28,13 +34,37 @@ export default function HeaderBar() {
 	const [brandFitSize, setBrandFitSize] = useState(null);
 	const [printMenuOpen, setPrintMenuOpen] = useState(false);
 	const printMenuRef = useRef(null);
+	// Mobile menu (hamburger) state and refs
+	const [navOpen, setNavOpen] = useState(false);
+	const [isNarrow, setIsNarrow] = useState(false);
+	const navMenuRef = useRef(null);
+	const navToggleRef = useRef(null);
 
 	const [sessionTitle, setSessionTitle] = useState('');
 	const [isMobileLandscape, setIsMobileLandscape] = useState(false);
-	// Header sizing: default 64px, compact 52px for session mobile landscape
-	const DEFAULT_HEADER_HEIGHT = 64;
-	const COMPACT_HEADER_HEIGHT = 52;
-	const headerHeight = (pathname.startsWith('/session') && isMobileLandscape) ? COMPACT_HEADER_HEIGHT : DEFAULT_HEADER_HEIGHT;
+	const [isSmallWidth, setIsSmallWidth] = useState(false); // <= 600px viewport width/height min
+	const [viewportWidth, setViewportWidth] = useState(1024); // track width explicitly for brand visibility
+	// Only collapse the header into a hamburger on the Session page.
+	const showHamburger = useMemo(() => isSmallWidth && pathname.startsWith('/session'), [isSmallWidth, pathname]);
+	// Header sizing: responsive heights using clamp so it scales by screen size
+	const DEFAULT_HEADER_HEIGHT = 'clamp(56px, 9svh, 72px)';
+	const COMPACT_HEADER_HEIGHT = 'clamp(48px, 8svh, 60px)';
+	const TALL_HEADER_HEIGHT = 'clamp(72px, 12svh, 104px)'; // for stacked brand/title on very small screens
+	const headerHeight = useMemo(() => {
+		if (pathname.startsWith('/session')) {
+			if (isMobileLandscape) return COMPACT_HEADER_HEIGHT;
+			if (isSmallWidth && sessionTitle) return TALL_HEADER_HEIGHT;
+		}
+		return DEFAULT_HEADER_HEIGHT;
+	}, [pathname, isMobileLandscape, isSmallWidth, sessionTitle]);
+
+	// Use video-aligned gutters on Session in portrait
+	const headerPadLeft = useMemo(() => (
+		pathname.startsWith('/session') && !isMobileLandscape ? '4%' : PAD_LEFT
+	), [pathname, isMobileLandscape]);
+	const headerPadRight = useMemo(() => (
+		pathname.startsWith('/session') && !isMobileLandscape ? '4%' : PAD_RIGHT
+	), [pathname, isMobileLandscape]);
 
 	useEffect(() => {
 		function fitBrand() {
@@ -88,6 +118,10 @@ export default function HeaderBar() {
 				const isLandscape = w > h;
 				const isMobile = Math.min(w, h) <= 820;
 				setIsMobileLandscape(isMobile && isLandscape);
+				// Also track narrow width for hamburger visibility (≤600)
+				setIsNarrow(Math.min(w, h) <= 600);
+				setIsSmallWidth(Math.min(w, h) <= 600);
+				setViewportWidth(w);
 			} catch {}
 		};
 		check();
@@ -98,6 +132,11 @@ export default function HeaderBar() {
 			window.removeEventListener('orientationchange', check);
 		};
 	}, []);
+
+	// Close print menu when switching to narrow layout to avoid hidden overlays
+	useEffect(() => {
+		if (isNarrow && printMenuOpen) setPrintMenuOpen(false);
+	}, [isNarrow, printMenuOpen]);
 
 	// Receive the session page title from the session page
 	useEffect(() => {
@@ -126,6 +165,29 @@ export default function HeaderBar() {
 			document.removeEventListener('keydown', onKey);
 		};
 	}, [printMenuOpen]);
+
+	// Close the nav menu on outside click or Escape
+	useEffect(() => {
+		if (!navOpen) return;
+		const onDocDown = (e) => {
+			try {
+				const menuEl = navMenuRef.current;
+				const toggleEl = navToggleRef.current;
+				if (!menuEl || !toggleEl) return;
+				if (!menuEl.contains(e.target) && !toggleEl.contains(e.target)) setNavOpen(false);
+			} catch {}
+		};
+		const onKey = (e) => { if (e.key === 'Escape') setNavOpen(false); };
+		document.addEventListener('mousedown', onDocDown);
+		document.addEventListener('keydown', onKey);
+		return () => {
+			document.removeEventListener('mousedown', onDocDown);
+			document.removeEventListener('keydown', onKey);
+		};
+	}, [navOpen]);
+
+	// Close the nav menu on route change
+	useEffect(() => { setNavOpen(false); }, [pathname]);
 
 	// Facilitator name for header label (falls back to literal 'Facilitator')
 	const [facilitatorName, setFacilitatorName] = useState('');
@@ -239,28 +301,50 @@ export default function HeaderBar() {
 			background: BRAND_ACCENT,
 			border: `1px solid ${BRAND_ACCENT}`,
 			color: '#fff',
-			fontSize: 14,
+			fontSize: 'clamp(0.95rem, 1.4vw, 1.125rem)',
 			fontWeight: 600,
 			letterSpacing: '.25px',
-			padding: '8px 18px',
+			padding: 'clamp(6px, 0.9vw, 8px) clamp(12px, 1.8vw, 18px)',
 			borderRadius: 999,
 			cursor: 'pointer',
 			display: 'inline-flex',
 			alignItems: 'center',
-			gap: 8,
+			gap: 'clamp(6px, 1vw, 8px)',
 			boxShadow: '0 2px 4px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)',
 			transition: 'background .2s, transform .15s, box-shadow .2s, border-color .2s',
 			position: 'relative'
 		};
 
+		// Standardized sizing for all hamburger dropdown items (buttons and links)
+		const MOBILE_MENU_ITEM_STYLE = {
+			display: 'flex',
+			alignItems: 'center',
+			width: '100%',
+			textAlign: 'left',
+			height: 44,
+			padding: '0 16px',
+			fontSize: '14px',
+			lineHeight: '20px',
+			textDecoration: 'none',
+			background: 'transparent',
+			border: 'none',
+			cursor: 'pointer',
+			fontWeight: 600,
+			color: '#111'
+		};
+
+
+		// If we're on the homepage, render no header (the page should be headerless)
+		if (pathname === '/') return null;
+		
 		return (
 			<>
 			<header style={{
 				position:'fixed', top:0, left:0, right:0, zIndex:1000,
 				display:'flex', alignItems:'center',
 				height: headerHeight,
-				paddingLeft: PAD_LEFT,
-				paddingRight: PAD_RIGHT,
+				paddingLeft: headerPadLeft,
+				paddingRight: headerPadRight,
 				background:'rgba(255,255,255,0.85)',
 				backdropFilter:'blur(6px)',
 				WebkitBackdropFilter:'blur(6px)',
@@ -268,7 +352,7 @@ export default function HeaderBar() {
 				boxShadow:'0 4px 12px -2px rgba(0,0,0,0.06)'
 			}}>
 				{/* Left area mirrors right nav width to keep center truly centered */}
-				<div ref={brandContainerRef} style={{ width: NAV_WIDTH, display:'flex', alignItems:'center' }}>
+				<div ref={brandContainerRef} style={{ width: navWidth, display:'flex', alignItems:'center' }}>
 					<Link ref={brandLinkRef} href="/" style={{ display:'inline-flex', alignItems:'center', gap:BRAND_GAP, textDecoration:'none', color:'inherit' }}>
 						<Image
 							ref={brandImgRef}
@@ -290,7 +374,9 @@ export default function HeaderBar() {
 								fontWeight:700,
 								fontSize: brandFitSize ? brandFitSize : BRAND_FONT,
 								lineHeight:1.1,
-								whiteSpace:'nowrap'
+								whiteSpace:'nowrap',
+								// Only hide the brand text when on the Session page at small widths.
+								display: (pathname.startsWith('/session') && viewportWidth < 500) ? 'none' : 'inline'
 							}}
 						>
 							Ms. Sonoma
@@ -300,19 +386,42 @@ export default function HeaderBar() {
 
 				{/* Center area: show lesson title on Session in mobile landscape; else show Back */}
 				<div style={{ flex:1, display:'flex', justifyContent:'center', alignItems:'center', minWidth:0 }}>
-					{(pathname.startsWith('/session') && isMobileLandscape && sessionTitle) ? (
-						<div style={{ display:'flex', alignItems:'center', gap:8, maxWidth:'min(70vw, 700px)', overflow:'hidden' }}>
-							<button
-								onClick={handleBack}
-								aria-label="Go back"
-								style={{ background:'transparent', color:'#111', border:'1px solid #e5e7eb', padding:'6px 10px', borderRadius:999, cursor:'pointer' }}
-							>
-								<span style={{ fontSize:16, lineHeight:1 }}>←</span>
-							</button>
-							<div title={sessionTitle} style={{ fontWeight:800, whiteSpace:'nowrap', textOverflow:'ellipsis', overflow:'hidden' }}>
-								{sessionTitle}
+					{(pathname.startsWith('/session') && sessionTitle) ? (
+						isSmallWidth ? (
+							<div style={{ position:'relative', width:'100%', maxWidth:'min(98vw, 1300px)', height:'100%' }}>
+								<div style={{ position:'absolute', left:0, right:0, top:'50%', transform:'translateY(-50%)', display:'flex', justifyContent:'center', alignItems:'center', padding:'0 4px' }}>
+									<div style={{ display:'inline-flex', alignItems:'center', gap:6, maxWidth:'100%' }}>
+										<button
+											onClick={handleBack}
+											aria-label="Go back"
+											style={{ background:'transparent', color:'#111', border:'1px solid #e5e7eb', padding:'6px 10px', borderRadius:999, cursor:'pointer' }}
+										>
+											<span style={{ fontSize:'clamp(0.95rem, 4vw, 1.1rem)', lineHeight:1 }}>←</span>
+										</button>
+										<div title={sessionTitle} style={{ fontWeight:800, whiteSpace:'nowrap', textOverflow:'ellipsis', overflow:'hidden', textAlign:'left' }}>
+											{sessionTitle}
+										</div>
+									</div>
+								</div>
 							</div>
-						</div>
+						) : (
+								<div style={{ position:'relative', width:'100%', maxWidth:'min(96vw, 1600px)', height:'100%' }}>
+									<div style={{ position:'absolute', left:0, right:0, top:'50%', transform:'translateY(-50%)', display:'flex', justifyContent:'center', alignItems:'center' }}>
+										<div style={{ display:'inline-flex', alignItems:'center', gap:6, maxWidth:'100%' }}>
+											<button
+												onClick={handleBack}
+												aria-label="Go back"
+												style={{ background:'transparent', color:'#111', border:'1px solid #e5e7eb', padding:'6px 10px', borderRadius:999, cursor:'pointer' }}
+											>
+												<span style={{ fontSize:'clamp(0.95rem, 1.4vw, 1.05rem)', lineHeight:1 }}>←</span>
+											</button>
+											<div title={sessionTitle} style={{ fontWeight:800, whiteSpace:'nowrap', textOverflow:'ellipsis', overflow:'hidden' }}>
+												{sessionTitle}
+											</div>
+										</div>
+									</div>
+								</div>
+						)
 					) : backHref && (
 						<button
 							onClick={handleBack}
@@ -323,72 +432,131 @@ export default function HeaderBar() {
 							onMouseDown={(e)=>{ e.currentTarget.style.transform='translateY(1px)'; }}
 							onMouseUp={(e)=>{ e.currentTarget.style.transform='translateY(0)'; }}
 						>
-							<span style={{ fontSize:18, lineHeight:1, transform:'translateY(-1px)' }}>←</span>
+							<span style={{ fontSize:'clamp(1rem, 1.8vw, 1.125rem)', lineHeight:1, transform:'translateY(-1px)' }}>←</span>
 							<span style={{ position:'relative', top:1 }}>Back</span>
 						</button>
 					)}
 				</div>
 
 				{/* Right navigation */}
-				<nav style={{ width: NAV_WIDTH, display:'flex', gap:16, justifyContent:'flex-end', alignItems:'center', position:'relative' }}>
-					{/* Session-only print dropdown to the left of Learn */}
-					{pathname.startsWith('/session') && (
-						<div ref={printMenuRef} style={{ position:'relative', display:'flex', alignItems:'center', gap:8 }}>
+				<nav style={{ width: navWidth, display:'flex', gap:16, justifyContent:'flex-end', alignItems:'center', position:'relative' }}>
+					{showHamburger ? (
+						<>
 							<button
-								aria-label="Print menu"
-								onClick={() => setPrintMenuOpen((v) => !v)}
+								ref={navToggleRef}
+								aria-label={navOpen ? 'Close menu' : 'Open menu'}
+								aria-expanded={navOpen}
+								aria-controls="mobile-nav-menu"
+								onClick={() => setNavOpen(v => !v)}
 								style={{
-									background:'#1f2937', color:'#fff', border:'none', width:36, height:36,
-									display:'inline-flex', alignItems:'center', justifyContent:'center', borderRadius:8, cursor:'pointer',
+									background:'#111827', color:'#fff', border:'none', width:36, height:36,
+									display:'inline-flex', alignItems:'center', justifyContent:'center', borderRadius:10, cursor:'pointer',
 									boxShadow:'0 2px 6px rgba(0,0,0,0.25)'
 								}}
 							>
-								{/* Printer icon */}
-								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-									<path d="M6 9V2h12v7"/>
-									<path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
-									<path d="M6 14h12v8H6z"/>
-									<path d="M18 7H6"/>
-								</svg>
+								{/* Hamburger / Close icon */}
+								{!navOpen ? (
+									<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+										<path d="M3 6h18"/>
+										<path d="M3 12h18"/>
+										<path d="M3 18h18"/>
+									</svg>
+								) : (
+									<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+										<path d="M18 6L6 18"/>
+										<path d="M6 6l12 12"/>
+									</svg>
+								)}
 							</button>
-							{printMenuOpen && (
-								<div style={{ position:'absolute', right:0, top:44, background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, boxShadow:'0 8px 24px rgba(0,0,0,0.12)', minWidth:160, overflow:'hidden', zIndex:1200 }}>
-									<button
-										type="button"
-										style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', background:'transparent', border:'none', cursor:'pointer', fontWeight:600, color:'#111' }}
-										onClick={() => { try { window.dispatchEvent(new Event('ms:print:worksheet')); } catch {}; setPrintMenuOpen(false); }}
-									>
-										worksheet
-									</button>
-									<button
-										type="button"
-										style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', background:'transparent', border:'none', cursor:'pointer', fontWeight:600, color:'#111', borderTop:'1px solid #f3f4f6' }}
-										onClick={() => { try { window.dispatchEvent(new Event('ms:print:test')); } catch {}; setPrintMenuOpen(false); }}
-									>
-										test
-									</button>
-									<button
-										type="button"
-										style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', background:'transparent', border:'none', cursor:'pointer', fontWeight:600, color:'#111', borderTop:'1px solid #f3f4f6' }}
-										onClick={() => { try { window.dispatchEvent(new Event('ms:print:combined')); } catch {}; setPrintMenuOpen(false); }}
-									>
-										answers
-									</button>
-									<button
-										type="button"
-										style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', background:'transparent', border:'none', cursor:'pointer', fontWeight:700, color:'#c7442e', borderTop:'1px solid #f3f4f6' }}
-										onClick={() => { try { window.dispatchEvent(new Event('ms:print:refresh')); } catch {}; setPrintMenuOpen(false); }}
-									>
-										refresh
-									</button>
+							{navOpen && (
+								<div
+									id="mobile-nav-menu"
+									ref={navMenuRef}
+									role="menu"
+									style={{ position:'fixed', right: (pathname.startsWith('/session') && !isMobileLandscape) ? '4%' : 8, top: `calc(${headerHeight} + 8px)`, background:'#fff', border:'1px solid #e5e7eb', borderRadius:12, boxShadow:'0 10px 30px rgba(0,0,0,0.15)', minWidth:200, zIndex:1300, overflow:'hidden' }}
+								>
+									{/* Always available links first so they appear at the top of the hamburger */}
+									<div style={{ display:'flex', flexDirection:'column', borderBottom: pathname.startsWith('/session') ? '1px solid #f3f4f6' : 'none' }}>
+										<Link href="/learn" role="menuitem" onClick={() => setNavOpen(false)} style={MOBILE_MENU_ITEM_STYLE}>Learn</Link>
+										<Link href="/facilitator" role="menuitem" onClick={() => setNavOpen(false)} style={{ ...MOBILE_MENU_ITEM_STYLE, borderTop:'1px solid #f3f4f6' }}>
+											{facilitatorName || 'Facilitator'}
+										</Link>
+									</div>
+
+									{/* Session print actions, if applicable (moved below the Learn/Facilitator links) */}
+									{pathname.startsWith('/session') && (
+										<div style={{ display:'flex', flexDirection:'column', borderTop: '1px solid #f3f4f6' }}>
+											<button type="button" role="menuitem" style={MOBILE_MENU_ITEM_STYLE} onClick={() => { try { window.dispatchEvent(new Event('ms:print:worksheet')); } catch {}; setNavOpen(false); }}>Worksheet</button>
+											<button type="button" role="menuitem" style={{ ...MOBILE_MENU_ITEM_STYLE, borderTop:'1px solid #f3f4f6' }} onClick={() => { try { window.dispatchEvent(new Event('ms:print:test')); } catch {}; setNavOpen(false); }}>Test</button>
+											<button type="button" role="menuitem" style={{ ...MOBILE_MENU_ITEM_STYLE, borderTop:'1px solid #f3f4f6' }} onClick={() => { try { window.dispatchEvent(new Event('ms:print:combined')); } catch {}; setNavOpen(false); }}>Facilitator Key</button>
+											<button type="button" role="menuitem" style={{ ...MOBILE_MENU_ITEM_STYLE, color:'#c7442e', borderTop:'1px solid #f3f4f6' }} onClick={() => { try { window.dispatchEvent(new Event('ms:print:refresh')); } catch {}; setNavOpen(false); }}>Refresh</button>
+										</div>
+									)}
 								</div>
 							)}
-						</div>
+						</>
+					) : (
+						<>
+							{/* Session-only print dropdown to the left of Learn */}
+							{pathname.startsWith('/session') && (
+								<div ref={printMenuRef} style={{ position:'relative', display:'flex', alignItems:'center', gap:8 }}>
+									<button
+										aria-label="Print menu"
+										onClick={() => setPrintMenuOpen((v) => !v)}
+										style={{
+											background:'#1f2937', color:'#fff', border:'none', width:36, height:36,
+											display:'inline-flex', alignItems:'center', justifyContent:'center', borderRadius:8, cursor:'pointer',
+											boxShadow:'0 2px 6px rgba(0,0,0,0.25)'
+										}}
+									>
+										{/* Printer icon */}
+										<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+											<path d="M6 9V2h12v7"/>
+											<path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+											<path d="M6 14h12v8H6z"/>
+											<path d="M18 7H6"/>
+										</svg>
+									</button>
+									{printMenuOpen && (
+										<div style={{ position:'absolute', right:0, top:44, background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, boxShadow:'0 8px 24px rgba(0,0,0,0.12)', minWidth:160, overflow:'hidden', zIndex:1200 }}>
+											<button
+												type="button"
+												style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', background:'transparent', border:'none', cursor:'pointer', fontWeight:600, color:'#111' }}
+												onClick={() => { try { window.dispatchEvent(new Event('ms:print:worksheet')); } catch {}; setPrintMenuOpen(false); }}
+											>
+												Worksheet
+												</button>
+												<button
+												type="button"
+												style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', background:'transparent', border:'none', cursor:'pointer', fontWeight:600, color:'#111', borderTop:'1px solid #f3f4f6' }}
+												onClick={() => { try { window.dispatchEvent(new Event('ms:print:test')); } catch {}; setPrintMenuOpen(false); }}
+											>
+												Test
+												</button>
+												<button
+												type="button"
+												style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', background:'transparent', border:'none', cursor:'pointer', fontWeight:600, color:'#111', borderTop:'1px solid #f3f4f6' }}
+												onClick={() => { try { window.dispatchEvent(new Event('ms:print:combined')); } catch {}; setPrintMenuOpen(false); }}
+											>
+												Facilitator Key
+												</button>
+												<button
+												type="button"
+												style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', background:'transparent', border:'none', cursor:'pointer', fontWeight:700, color:'#c7442e', borderTop:'1px solid #f3f4f6' }}
+												onClick={() => { try { window.dispatchEvent(new Event('ms:print:refresh')); } catch {}; setPrintMenuOpen(false); }}
+											>
+												Refresh
+												</button>
+											</div>
+										)}
+								</div>
+							)}
+							<Link href="/learn" style={{ textDecoration:'none', color:'#111', fontWeight:500 }}>Learn</Link>
+							<Link href="/facilitator" style={{ textDecoration:'none', color:'#111', fontWeight:500 }}>
+								{facilitatorName || 'Facilitator'}
+							</Link>
+						</>
 					)}
-					<Link href="/learn" style={{ textDecoration:'none', color:'#111', fontWeight:500 }}>Learn</Link>
-					<Link href="/facilitator" style={{ textDecoration:'none', color:'#111', fontWeight:500 }}>
-						{facilitatorName || 'Facilitator'}
-					</Link>
 				</nav>
 			</header>
 			{/* Spacer to offset fixed header height so content below is never covered */}

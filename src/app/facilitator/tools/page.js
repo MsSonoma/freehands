@@ -1,11 +1,13 @@
 // Facilitator Tools
 export const metadata = { title: 'Tools | Ms. Sonoma' }
 
-export default function FacilitatorToolsPage() {
+import { Suspense } from 'react'
+import ClientTools from './ClientTools'
+
+export default function FacilitatorToolsPage(){
   return (
-    <main style={{ padding: 24 }}>
-      <h1 style={{ marginTop: 0 }}>Tools</h1>
-      <p style={{ color: '#555' }}>Premium Facilitator Tools coming soon.</p>
-    </main>
+    <Suspense fallback={<main style={{ padding:24 }}><p>Loading…</p></main>}> 
+      <ClientTools />
+    </Suspense>
   )
 }

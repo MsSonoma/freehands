@@ -64,7 +64,9 @@ function addMcBreaks(escaped, breakMs) {
 // Convert plain text to SSML with MC pauses
 function toSsml(text) {
   const safe = escapeForSsml(text)
-  const withBreaks = addMcBreaks(safe, getMcBreakMs())
+  // Insert short breaks for paragraph/blank-line gaps (used to pace jokes and similar beats)
+  const withParagraphBreaks = safe.replace(/(?:\r?\n){2,}/g, ' <break time="700ms"/> ')
+  const withBreaks = addMcBreaks(withParagraphBreaks, getMcBreakMs())
   return `<speak>${withBreaks}</speak>`
 }
 

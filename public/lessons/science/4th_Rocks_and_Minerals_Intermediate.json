@@ -1,0 +1,63 @@
+{
+  "id": "4th_Rocks_and_Minerals_Intermediate",
+  "title": "Rocks & Minerals",
+  "grade": "4th",
+  "difficulty": "Intermediate",
+  "blurb": "Explore the fascinating world of rocks and minerals, learning about their formation, properties, and uses in our daily lives.",
+  "vocab": [
+    { "term": "mineral", "definition": "A natural solid substance made of one or more elements that has a crystal structure" },
+    { "term": "rock", "definition": "A solid made of one or more minerals that forms naturally" },
+    { "term": "igneous", "definition": "Rocks formed when melted rock cools and hardens" },
+    { "term": "sedimentary", "definition": "Rocks formed from layers of sediment pressed together over time" },
+    { "term": "metamorphic", "definition": "Rocks changed by heat and pressure deep underground" },
+    { "term": "crystal", "definition": "A solid with atoms arranged in a regular, repeating pattern" },
+    { "term": "hardness", "definition": "How difficult it is to scratch a mineral" },
+    { "term": "luster", "definition": "How shiny or dull a mineral looks" }
+  ],
+  "teachingNotes": "Start with the difference between rocks and minerals - minerals are the building blocks, rocks are made of minerals. Introduce the three types of rocks using simple examples: igneous (granite, obsidian), sedimentary (sandstone, limestone), metamorphic (marble, slate). Demonstrate mineral properties like hardness using the fingernail test and penny test. Show how crystals form in regular patterns. Connect to real-world uses: building materials, jewelry, technology.",
+  "sample": [
+    { "question": "What is the difference between a rock and a mineral?", "expectedAny": ["minerals are building blocks of rocks", "rocks are made of minerals", "minerals are pure substances, rocks are mixtures"] },
+    { "question": "How do igneous rocks form?", "expectedAny": ["melted rock cools and hardens", "magma or lava cools", "from cooling molten rock"] },
+    { "question": "What are two properties we can use to identify minerals?", "expectedAny": ["hardness and luster", "color and hardness", "luster and crystal shape", "hardness and streak"] },
+    { "question": "Name one example of a sedimentary rock.", "expectedAny": ["sandstone", "limestone", "shale", "coal"] },
+    { "question": "How do metamorphic rocks form?", "expectedAny": ["heat and pressure change rocks", "existing rocks are changed underground", "pressure and heat transform rocks"] },
+    { "question": "What is a crystal?", "expectedAny": ["solid with atoms in regular pattern", "mineral with organized structure", "atoms arranged in repeating pattern"] },
+    { "question": "Why are rocks and minerals important to humans?", "expectedAny": ["building materials", "make tools and jewelry", "used in technology", "construction and industry"] }
+  ],
+  "truefalse": [
+    { "question": "All rocks are made of minerals.", "answer": true },
+    { "question": "Igneous rocks form from layers of sediment.", "answer": false },
+    { "question": "Diamonds are harder than your fingernail.", "answer": true },
+    { "question": "Metamorphic rocks form when rocks melt completely.", "answer": false },
+    { "question": "Quartz is a type of mineral.", "answer": true },
+    { "question": "All minerals have the same hardness.", "answer": false },
+    { "question": "Sedimentary rocks form in layers over long periods of time.", "answer": true }
+  ],
+  "multiplechoice": [
+    { "question": "Which type of rock forms from cooled magma or lava?", "choices": ["Sedimentary", "Igneous", "Metamorphic", "Crystal"], "correct": 1 },
+    { "question": "What property describes how shiny a mineral looks?", "choices": ["Hardness", "Color", "Luster", "Weight"], "correct": 2 },
+    { "question": "Which rock type forms from layers of sediment?", "choices": ["Igneous", "Metamorphic", "Sedimentary", "Volcanic"], "correct": 2 },
+    { "question": "What can change a rock into a metamorphic rock?", "choices": ["Wind and water", "Heat and pressure", "Melting completely", "Breaking into pieces"], "correct": 1 },
+    { "question": "Which is an example of an igneous rock?", "choices": ["Sandstone", "Marble", "Granite", "Limestone"], "correct": 2 },
+    { "question": "What makes minerals different from each other?", "choices": ["They all look the same", "Different atoms and crystal structures", "They are all the same hardness", "They are all metals"], "correct": 1 },
+    { "question": "Which tool can help test if a mineral is harder than a penny?", "choices": ["Magnet", "Scale", "Scratch test", "Microscope"], "correct": 2 }
+  ],
+  "fillintheblank": [
+    { "question": "________ rocks form when melted rock cools and hardens.", "expectedAny": ["igneous"] },
+    { "question": "A ________ is a natural solid made of one or more elements with a crystal structure.", "expectedAny": ["mineral", "rock", "stone"] },
+    { "question": "________ rocks form from layers of sediment pressed together.", "expectedAny": ["sedimentary"] },
+    { "question": "The property that describes how hard it is to scratch a mineral is called ________.", "expectedAny": ["hardness", "density"] },
+    { "question": "________ rocks are changed by heat and pressure deep underground.", "expectedAny": ["metamorphic"] },
+    { "question": "How shiny or dull a mineral looks is called its ________.", "expected": ["luster"], "expectedAny": ["luster", "shine", "sparkle"] },
+    { "question": "A ________ is a solid with atoms arranged in a regular, repeating pattern.", "expectedAny": ["crystal"] }
+  ],
+  "shortanswer": [
+    { "question": "Explain how sedimentary rocks form.", "expectedAny": ["layers of sediment pile up and get pressed together", "sediments settle and harden over time", "particles get compacted into rock layers"] },
+    { "question": "Why do minerals have different colors?", "expectedAny": ["different elements make different colors", "chemical composition affects color", "atoms determine the color"] },
+    { "question": "How can you tell if one mineral is harder than another?", "expectedAny": ["scratch test", "see which one scratches the other", "harder mineral scratches softer one"] },
+    { "question": "Name two ways people use rocks and minerals every day.", "expectedAny": ["building houses and roads", "jewelry and electronics", "tools and construction", "phones and computers"] },
+    { "question": "What happens to create metamorphic rocks?", "expectedAny": ["existing rocks are changed by heat and pressure", "rocks transform deep underground", "heat and pressure alter rock structure"] },
+    { "question": "How are crystals different from other solids?", "expectedAny": ["atoms are arranged in regular patterns", "have organized geometric shapes", "structured atomic arrangement"] },
+    { "question": "Why is it important to study rocks and minerals?", "expectedAny": ["understand Earth's history", "find useful materials", "learn about our planet", "discover resources we need"] }
+  ]
+}

@@ -7,9 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-  "dev:3001": "cross-env PORT=3001 next dev -H 0.0.0.0",
-  "start:3001": "cross-env PORT=3001 next start -H 0.0.0.0",
-  "dev:lan": "cross-env PORT=3001 next dev -p 3001 -H 0.0.0.0",
+    "dev:3001": "cross-env PORT=3001 next dev -H 0.0.0.0",
+    "start:3001": "cross-env PORT=3001 next start -H 0.0.0.0",
+    "dev:lan": "cross-env PORT=3001 next dev -p 3001 -H 0.0.0.0",
     "grant:premium": "node scripts/grantPlan.mjs outreach.mssonoma@gmail.com premium",
     "lessons:balance-mc": "node scripts/balance-mc-answers.mjs",
     "clean": "node -e \"try{require('fs').rmSync('.next',{recursive:true,force:true});require('fs').rmSync('.next-dev',{recursive:true,force:true});require('fs').rmSync('.turbo',{recursive:true,force:true});console.log('Cleaned build dirs')}catch(e){process.exit(0)}\"",
@@ -22,21 +22,21 @@
   "dependencies": {
     "@google-cloud/speech": "^6.7.1",
     "@google-cloud/text-to-speech": "^6.3.0",
+    "@stripe/stripe-js": "^3.2.0",
     "@supabase/supabase-js": "^2.57.4",
+    "bcryptjs": "2.4.3",
     "jspdf": "^3.0.2",
     "next": "15.5.2",
     "node-fetch": "^3.3.2",
-    "stripe": "^16.0.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "@stripe/stripe-js": "^3.2.0"
+    "stripe": "^16.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
-    "eslint": "^9",
-    "eslint-config-next": "15.5.2",
     "cross-env": "^7.0.3",
+    "eslint-config-next": "15.5.2",
     "tailwindcss": "^4"
   }
 }
