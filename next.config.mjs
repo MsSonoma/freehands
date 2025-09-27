@@ -9,16 +9,18 @@ const nextConfig = {
     // Base policy shared by dev/prod
     let base = [
       "default-src 'self'",
-      // Stripe JS and iframes
-      "script-src 'self' https://js.stripe.com",
-  "frame-src https://js.stripe.com https://hooks.stripe.com https://m.stripe.network",
-      // API calls to Stripe
-      "connect-src 'self' https://api.stripe.com https://r.stripe.com",
+      // Stripe JS and iframes. Allow inline scripts on billing routes in prod to support Next inline bootstrapping and Stripe embeds.
+      "script-src 'self' 'unsafe-inline' https://js.stripe.com",
+      // Stripe embeds/iframes
+      "frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.com https://m.stripe.network",
+      // API calls to Stripe (add m.stripe.network used by telemetry)
+      "connect-src 'self' https://api.stripe.com https://r.stripe.com https://m.stripe.network",
       // Images and styles used by Stripe iframes
       "img-src 'self' data: https://*.stripe.com",
-      "style-src 'self' 'unsafe-inline' https://*.stripe.com",
-      // Allow data: fonts and Stripe-hosted fonts inside iframes
-  "font-src 'self' data: https://*.stripe.com https://m.stripe.network https://fonts.gstatic.com",
+      // Include Google Fonts CSS for any fonts used by the app or Stripe iframes
+      "style-src 'self' 'unsafe-inline' https://*.stripe.com https://fonts.googleapis.com",
+      // Allow data: fonts and Stripe/Google-hosted fonts inside iframes
+      "font-src 'self' data: https://*.stripe.com https://m.stripe.network https://fonts.gstatic.com",
       // Sensible hardening
       "object-src 'none'",
       "base-uri 'self'",
@@ -38,7 +40,10 @@ const nextConfig = {
       base.push("worker-src 'self' blob:");
     }
 
-    const csp = base.join('; ');
+  // Permit workers from blob in all envs for Stripe internals
+  base.push("worker-src 'self' blob:");
+
+  const csp = base.join('; ');
 
     return [
       {
