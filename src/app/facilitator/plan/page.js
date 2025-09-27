@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
+import BillingStatusDev from '../BillingStatusDev';
 
 const plans = [
   { name: 'Free', priceLabel: 'Free', priceSub: '', features: ['Access to 1 lesson per day', 'Beginner Lessons', '1 Learner'], highlight: false },
@@ -159,6 +160,7 @@ export default function FacilitatorPlanPage() {
   }, []);
   return (
     <main style={{ padding: 12 }}>
+      <BillingStatusDev />
       <h1 style={{ marginTop: 0, marginBottom: 2 }}>Choose your plan</h1>
       <p style={{ color: '#555', marginTop: 0, marginBottom: 8 }}>Compare features and pick the level that fits your needs.</p>
 

@@ -6,7 +6,8 @@ function getEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const appUrl = process.env.APP_URL || 'http://localhost:3000';
+  // Do not hardcode localhost fallback here; compute from request origin later
+  const appUrl = process.env.APP_URL;
   const prices = {
     basic: process.env.STRIPE_PRICE_BASIC,
     plus: process.env.STRIPE_PRICE_PLUS,
@@ -52,7 +53,7 @@ export async function POST(req) {
     const user = await getUserFromAuthHeader(req);
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { appUrl, prices } = getEnv();
+  const { appUrl, prices } = getEnv();
     const url = new URL(req.url);
     const tier = (url.searchParams.get('tier') || '').toLowerCase();
     if (!['basic', 'plus', 'premium'].includes(tier)) {
@@ -76,8 +77,9 @@ export async function POST(req) {
     const client_secret = pi?.client_secret || null;
     if (!client_secret) return NextResponse.json({ error: 'Missing client_secret' }, { status: 500 });
 
-    // Provide a recommended return URL for 3DS or next actions
-    const return_url = `${appUrl}/billing/return?to=${encodeURIComponent('/facilitator/plan')}`;
+  // Provide a recommended return URL for 3DS or next actions
+  const baseUrl = appUrl || new URL(req.url).origin;
+  const return_url = `${baseUrl}/billing/return?to=${encodeURIComponent('/facilitator/plan')}`;
 
     return NextResponse.json({ client_secret, return_url, subscription_id: subscription.id });
   } catch (err) {

@@ -62,7 +62,7 @@ export async function POST(req) {
     const user = await getUserFromAuthHeader(req);
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { appUrl, prices } = getEnv();
+  const { appUrl, prices } = getEnv();
     const url = new URL(req.url);
     const tier = (url.searchParams.get('tier') || '').toLowerCase();
     if (!['basic','plus','premium'].includes(tier)) {
@@ -74,13 +74,15 @@ export async function POST(req) {
     const { customerId } = await getOrCreateCustomer(user);
 
     const stripe = getStripe();
+    // Prefer explicit APP_URL, otherwise derive from request origin (correct port in dev)
+    const baseUrl = appUrl || new URL(req.url).origin;
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: customerId,
       line_items: [{ price, quantity: 1 }],
       allow_promotion_codes: true,
-  success_url: `${appUrl || 'http://localhost:3000'}/billing/return?to=${encodeURIComponent('/facilitator?checkout=success')}`,
-  cancel_url: `${appUrl || 'http://localhost:3000'}/billing/return?to=${encodeURIComponent('/facilitator/plan?checkout=cancel')}` ,
+      success_url: `${baseUrl}/billing/return?to=${encodeURIComponent('/facilitator?checkout=success')}`,
+      cancel_url: `${baseUrl}/billing/return?to=${encodeURIComponent('/facilitator/plan?checkout=cancel')}` ,
       metadata: { supabase_user_id: user.id, tier },
     });
 
