@@ -37,18 +37,24 @@ export async function POST(request){
   try { body = await request.json() } catch { return NextResponse.json({ error:'Invalid body' }, { status: 400 }) }
   const file = (body?.file || '').toString()
   if (!file || file.includes('..') || file.includes('/') || file.includes('\\')) return NextResponse.json({ error:'Invalid file' }, { status: 400 })
-  const full = path.join(process.cwd(), 'public', 'lessons', 'Facilitator Lessons', file)
+
+  const srcDir = path.join(process.cwd(), 'public', 'lessons', 'Facilitator Lessons')
+  const srcPath = path.join(srcDir, file)
+  if (!fs.existsSync(srcPath)) return NextResponse.json({ error:'Source not found' }, { status: 404 })
+
   try {
-    if (fs.existsSync(full)) fs.unlinkSync(full)
-    // Also remove approved copy under subject folders if exists
-    try {
-      const subjects = ['math','language arts','science','social studies']
-      for (const s of subjects) {
-        const p = path.join(process.cwd(), 'public', 'lessons', s, file)
-        if (fs.existsSync(p)) fs.unlinkSync(p)
-      }
-    } catch {}
-    return NextResponse.json({ ok:true })
+    const raw = fs.readFileSync(srcPath, 'utf8')
+    const js = JSON.parse(raw)
+    const subj = (js.subject || '').toString().toLowerCase()
+    const allowed = new Set(['math','language arts','science','social studies'])
+    if (!allowed.has(subj)) return NextResponse.json({ error:'Unknown or missing subject on lesson' }, { status: 400 })
+    // Destination folder is the subject folder (not Facilitator Lessons)
+    const destDir = path.join(process.cwd(), 'public', 'lessons', subj)
+    fs.mkdirSync(destDir, { recursive: true })
+    // Use original filename to avoid re-mapping links
+    const destPath = path.join(destDir, file)
+    fs.writeFileSync(destPath, JSON.stringify(js, null, 2), 'utf8')
+    return NextResponse.json({ ok:true, subject: subj, file })
   } catch (e) {
     return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })
   }

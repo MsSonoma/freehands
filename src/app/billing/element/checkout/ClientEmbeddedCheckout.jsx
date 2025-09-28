@@ -205,16 +205,23 @@ export default function ClientEmbeddedCheckout() {
                   border: isSelected ? '2px solid #111' : '1px solid #ddd',
                   borderRadius: 12,
                   padding: 12,
+                  paddingTop: 26,
                   background: isSelected ? '#fafafa' : '#fff',
                   transform: isSelected ? 'scale(1.05)' : 'scale(1)',
                   boxShadow: isSelected ? '0 8px 22px rgba(0,0,0,0.08)' : 'none',
                   zIndex: isSelected ? 1 : 0,
                   transition: 'transform .15s ease, box-shadow .15s ease, border-color .15s ease',
-                  position: 'relative'
+                  position: 'relative',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%'
                 }}
                 onMouseEnter={() => p.features?.length && setActiveTooltip(p.id)}
                 onMouseLeave={() => setActiveTooltip(prev => (prev === p.id ? null : prev))}
               >
+                {isSelected ? (
+                  <span style={{ position: 'absolute', top: 6, right: 8, fontSize: 14, color: '#0a7', fontWeight: 700 }}>current</span>
+                ) : null}
                 {p.features?.length ? (
                   <div
                     id={`plan-tooltip-${p.id}`}
@@ -249,11 +256,8 @@ export default function ClientEmbeddedCheckout() {
                     </ul>
                   </div>
                 ) : null}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 22 }}>
                   <strong style={{ fontSize: isSelected ? 18 : 16 }}>{p.label}</strong>
-                  {isSelected ? (
-                    <span style={{ fontSize: 12, color: '#0a7', fontWeight: 600 }}>Selected</span>
-                  ) : null}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 6 }}>
                   <span style={{ fontSize: isSelected ? 24 : 20, fontWeight: 700 }}>{p.priceLabel}</span>
@@ -261,13 +265,13 @@ export default function ClientEmbeddedCheckout() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => changeTier(p.id)}
-                  disabled={isSelected}
+                  onClick={() => { if (isSelected) { setActiveTooltip(null); return; } setActiveTooltip(null); changeTier(p.id); }}
+                  disabled={false}
                   onFocus={() => p.features?.length && setActiveTooltip(p.id)}
                   onBlur={() => setActiveTooltip(prev => (prev === p.id ? null : prev))}
                   aria-describedby={p.features?.length ? `plan-tooltip-${p.id}` : undefined}
                   style={{
-                    marginTop: 10,
+                    marginTop: 'auto',
                     width: '100%',
                     padding: '8px 10px',
                     borderRadius: 8,
@@ -286,14 +290,14 @@ export default function ClientEmbeddedCheckout() {
         </div>
 
         {/* Separator between plan comparison and embed */}
-  <div style={{ width: '100%', height: 1, background: '#e5e7eb', margin: '24px 0' }} />
+  <div style={{ width: '100%', height: 1, background: '#e5e7eb', margin: '40px 0' }} />
 
         {error ? (
           <div style={{ color: '#b00020' }}>{error}</div>
         ) : clientSecret ? (
           <form onSubmit={onSubmit} style={{ width: '100%', position: 'relative', zIndex: 0 }}>
             <div ref={mountRef} style={{ width: '100%', position: 'relative', zIndex: 0 }} />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', marginTop: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', marginTop: 28 }}>
               <div style={{ gridColumn: 1, justifySelf: 'start', color: '#555', fontSize: 12 }}>
                 Powered by Stripe
               </div>
@@ -311,8 +315,8 @@ export default function ClientEmbeddedCheckout() {
                   {submitting ? 'Processing…' : `Subscribe to ${selectedLabel}`}
                 </button>
               </div>
-              <div style={{ gridColumn: 3, justifySelf: 'end' }}>
-                <a href="/facilitator/plan" style={{ color: '#555', textDecoration: 'underline' }}>Cancel and go back</a>
+              <div style={{ gridColumn: 3, justifySelf: 'end', textAlign: 'right' }}>
+                <a href="/facilitator/plan" style={{ color: '#c7442e', textDecoration: 'none', fontSize: 12, lineHeight: 1.2 }}>Cancel and go back</a>
               </div>
             </div>
           </form>

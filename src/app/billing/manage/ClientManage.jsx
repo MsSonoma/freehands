@@ -273,7 +273,7 @@ export default function ClientManage() {
     <div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap' }}>
         <h1 style={{ margin:0 }}>Manage subscription</h1>
-        <a href="/facilitator/plan" style={{ color:'#111' }}>← Back to plans</a>
+        <a href="/facilitator/plan" className="back-link" style={{ color:'#c7442e', textDecoration:'none' }}>← Back to plans</a>
       </div>
 
       <p style={{ marginTop:8, color:'#6b7280', fontSize: 12 }}>
@@ -298,16 +298,23 @@ export default function ClientManage() {
                   border: isSelected ? '2px solid #111' : '1px solid #ddd',
                   borderRadius: 12,
                   padding: 12,
+                  paddingTop: 26,
                   background: isSelected ? '#fafafa' : '#fff',
                   transform: isSelected ? 'scale(1.05)' : 'scale(1)',
                   boxShadow: isSelected ? '0 8px 22px rgba(0,0,0,0.08)' : 'none',
                   zIndex: isSelected ? 1 : 0,
                   transition: 'transform .15s ease, box-shadow .15s ease, border-color .15s ease',
-                  position: 'relative'
+                  position: 'relative',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%'
                 }}
                 onMouseEnter={() => p.features?.length && setActiveTooltip(p.id)}
                 onMouseLeave={() => setActiveTooltip(prev => (prev === p.id ? null : prev))}
               >
+                {isSelected ? (
+                  <span style={{ position: 'absolute', top: 6, right: 8, fontSize: 14, color: '#0a7', fontWeight: 700 }}>current</span>
+                ) : null}
                 {p.features?.length ? (
                   <div
                     id={`plan-tooltip-${p.id}`}
@@ -329,7 +336,7 @@ export default function ClientManage() {
                     </ul>
                   </div>
                 ) : null}
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', minHeight: 22 }}>
                   <strong style={{ fontSize: isSelected ? 18 : 16 }}>{p.label}</strong>
                   {p.id === tier ? (
                     <span style={{ fontSize: 12, color: '#0a7', fontWeight: 600 }}>Current</span>
@@ -341,19 +348,24 @@ export default function ClientManage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setSelectedTier(p.id)}
-                  disabled={isSelected}
+                  onClick={() => {
+                    if (p.id === tier) return; // current plan, no-op
+                    if (isSelected) { setActiveTooltip(null); return; }
+                    setActiveTooltip(null);
+                    setSelectedTier(p.id);
+                  }}
+                  disabled={p.id === tier}
                   onFocus={() => p.features?.length && setActiveTooltip(p.id)}
                   onBlur={() => setActiveTooltip(prev => (prev === p.id ? null : prev))}
                   aria-describedby={p.features?.length ? `plan-tooltip-${p.id}` : undefined}
                   style={{
-                    marginTop: 10, width: '100%', padding: '8px 10px', borderRadius: 8,
-                    border: isSelected ? '1px solid #000' : '1px solid #c7442e',
-                    background: isSelected ? '#fff' : '#c7442e', color: isSelected ? '#111' : '#fff',
-                    fontWeight: 600, cursor: isSelected ? 'default' : 'pointer'
+                    marginTop: 'auto', width: '100%', padding: '8px 10px', borderRadius: 8,
+                    border: (p.id === tier || isSelected) ? '1px solid #000' : '1px solid #c7442e',
+                    background: (p.id === tier || isSelected) ? '#fff' : '#c7442e', color: (p.id === tier || isSelected) ? '#111' : '#fff',
+                    fontWeight: 600, cursor: (p.id === tier) ? 'default' : 'pointer'
                   }}
                 >
-                  {isSelected ? (p.id !== tier ? 'Selected' : 'Current') : `Choose ${p.label}`}
+                  {p.id === tier ? 'Current' : (isSelected ? 'Selected' : `Choose ${p.label}`)}
                 </button>
               </div>
             );
@@ -428,6 +440,13 @@ export default function ClientManage() {
       </div>
 
       {/* Immediate-cancel survey removed; only end-of-period cancel supported here. */}
+      <style>{`
+        .back-link:focus-visible { outline: 2px solid #c7442e; outline-offset: 2px; }
+        @media (max-width: 480px) {
+          /* Ensure header row reserves space for status badge on small screens */
+          [role="tooltip"] { pointer-events: none; }
+        }
+      `}</style>
     </div>
   );
 }

@@ -15,7 +15,10 @@ export async function GET(){
       try {
         const raw = fs.readFileSync(path.join(dir, file), 'utf8')
         const js = JSON.parse(raw)
-        out.push({ file, title: js.title || file, grade: js.grade || null, difficulty: (js.difficulty || '').toLowerCase() })
+        const subj = (js.subject || '').toString().toLowerCase()
+        const approvedPath = subj ? path.join(process.cwd(), 'public', 'lessons', subj, file) : null
+        const approved = approvedPath ? fs.existsSync(approvedPath) : false
+        out.push({ file, title: js.title || file, grade: js.grade || null, difficulty: (js.difficulty || '').toLowerCase(), subject: subj || null, approved })
       } catch {}
     }
     return NextResponse.json(out)

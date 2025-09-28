@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
-import BillingStatusDev from '../BillingStatusDev';
+// BillingStatusDev removed per request
 
 const plans = [
   { name: 'Free', priceLabel: 'Free', priceSub: '', features: ['Access to 1 lesson per day', 'Beginner Lessons', '1 Learner'], highlight: false },
@@ -160,7 +160,7 @@ export default function FacilitatorPlanPage() {
   }, []);
   return (
     <main style={{ padding: 12 }}>
-      <BillingStatusDev />
+  {/* Dev billing status banner removed */}
       <h1 style={{ marginTop: 0, marginBottom: 2 }}>Choose your plan</h1>
       <p style={{ color: '#555', marginTop: 0, marginBottom: 8 }}>Compare features and pick the level that fits your needs.</p>
 
@@ -177,6 +177,7 @@ export default function FacilitatorPlanPage() {
                 border: (isSelected || isCurrent) ? '2px solid #111' : '1px solid #ddd',
                 borderRadius: 12,
                 padding: 8,
+                paddingTop: 22,
                 background: isSelected ? '#fafafa' : '#fff',
                 transform: isSelected ? 'scale(1.05)' : 'scale(1)',
                 boxShadow: isSelected ? '0 8px 22px rgba(0,0,0,0.08)' : 'none',
@@ -188,12 +189,14 @@ export default function FacilitatorPlanPage() {
                 position: 'relative',
               }}
             >
+              {isSelected ? (
+                <span style={{ position: 'absolute', top: 6, right: 8, fontSize: 14, color: '#0a7', fontWeight: 700 }}>
+                  current
+                </span>
+              ) : null}
               <header style={{ marginBottom: 4 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 22 }}>
                   <h2 style={{ margin: 0, fontSize: isSelected ? 18 : 16 }}>{plan.name}</h2>
-                  {isSelected ? (
-                    <span style={{ fontSize: 12, color: '#0a7', fontWeight: 600 }}>Selected</span>
-                  ) : null}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 2 }}>
                   <span style={{ fontSize: isSelected ? 24 : 20, fontWeight: 700 }}>{plan.priceLabel}</span>
@@ -234,7 +237,7 @@ export default function FacilitatorPlanPage() {
         })}
       </section>
 
-      <div style={{ marginTop: 24 }}>
+      <div style={{ marginTop: 40 }}>
         <button
           type="button"
           onClick={() => openPortal(setPortalLoading)}

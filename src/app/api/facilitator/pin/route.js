@@ -60,7 +60,10 @@ export async function GET(req) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const svc = createClient(url, service, { auth: { persistSession: false } });
     const { data, error } = await svc.from('profiles').select('facilitator_pin_hash, facilitator_pin_prefs').eq('id', user.id).maybeSingle();
-    if (error) return NextResponse.json({ error: error.message || 'Failed to read' }, { status: 500 });
+    // If column/table missing or RLS blocks, return safe defaults so UI can fall back to local storage
+    if (error) {
+      return NextResponse.json({ ok: true, hasPin: false, prefs: null });
+    }
     const hasPin = Boolean(data?.facilitator_pin_hash);
     // Default prefs when unset
     const prefs = data?.facilitator_pin_prefs || null;

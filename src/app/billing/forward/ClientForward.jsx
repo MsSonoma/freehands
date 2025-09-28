@@ -89,7 +89,7 @@ export default function ClientForward() {
         {error ? (
           <div style={{ marginTop: 16, color: '#b00020' }}>
             <p style={{ margin: 0 }}>{error}</p>
-            <button style={{ marginTop: 12, padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8 }} onClick={() => {
+            <button style={{ marginTop: 12, padding: '8px 12px', border: '1px solid #c7442e', background:'#c7442e', color:'#fff', borderRadius: 8 }} onClick={() => {
               const url = new URL(to, window.location.origin);
               url.searchParams.set('rts', Date.now().toString());
               window.location.replace(url.toString());

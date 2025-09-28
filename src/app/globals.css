@@ -82,3 +82,20 @@ html.ms-fullscreen-locked, body.ms-fullscreen-locked {
     padding-bottom: 12px;
   }
 }
+
+/* Mobile portrait: center Learners name field */
+@media (orientation: portrait) and (max-width: 640px) {
+  .ms-learner-name-block {
+    align-items: center !important; /* parent is a flex column */
+    text-align: center;
+  }
+  .ms-learner-name-input {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto; /* center the box itself */
+  }
+  .ms-learner-name-label {
+    width: 100%;
+    text-align: center;
+  }
+}

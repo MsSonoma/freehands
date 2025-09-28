@@ -35,7 +35,11 @@ export async function GET(req) {
       .select('facilitator_hotkeys')
       .eq('id', user.id)
       .maybeSingle();
-    if (error) return NextResponse.json({ error: error.message || 'Failed to read' }, { status: 500 });
+    // If the column/table is missing or RLS blocks, return defaults rather than 500
+    if (error) {
+      const hotkeys = { ...DEFAULT_HOTKEYS };
+      return NextResponse.json({ ok: true, hotkeys });
+    }
     const stored = (data && typeof data.facilitator_hotkeys === 'object') ? data.facilitator_hotkeys : null;
     const hotkeys = { ...DEFAULT_HOTKEYS, ...(stored || {}) };
     return NextResponse.json({ ok: true, hotkeys });

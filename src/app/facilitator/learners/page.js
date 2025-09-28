@@ -14,6 +14,8 @@ export default function LearnersPage() {
     const [errorMsg, setErrorMsg] = useState('');
     const [planTier, setPlanTier] = useState('free');
     const [maxLearners, setMaxLearners] = useState(Infinity);
+	// Shared current learner selection (same variable used on Learn page)
+	const [selectedLearnerId, setSelectedLearnerId] = useState(null);
 
 	useEffect(() => {
 		let mounted = true;
@@ -49,6 +51,60 @@ export default function LearnersPage() {
 		})();
 		return () => { mounted = false; };
 	}, []);
+
+	// Initialize current selection from localStorage to keep in sync with Learn page
+	useEffect(() => {
+		if (typeof window === 'undefined') return;
+		const id = localStorage.getItem('learner_id') || null;
+		setSelectedLearnerId(id);
+	}, []);
+
+	// Ensure selection remains valid when items change (e.g., after delete)
+	useEffect(() => {
+		if (!items?.length) return;
+		if (!selectedLearnerId) return;
+		if (!items.some(x => String(x.id) === String(selectedLearnerId))) {
+			// Clear selection if the learner no longer exists
+			if (typeof window !== 'undefined') localStorage.removeItem('learner_id');
+			setSelectedLearnerId(null);
+		}
+	}, [items, selectedLearnerId]);
+
+	const handleSelectLearner = (learner, checked) => {
+		// Only one may be selected at a time and mirror Learn page behavior
+		if (typeof window === 'undefined') return;
+		try {
+			if (checked) {
+				const previousId = localStorage.getItem('learner_id');
+				// Persist current learner id/name/grade
+				localStorage.setItem('learner_id', String(learner.id));
+				if (learner.name != null) localStorage.setItem('learner_name', learner.name);
+				if (learner.grade != null) localStorage.setItem('learner_grade', String(learner.grade));
+
+				// Clear any global target overrides so learner-specific targets are used
+				localStorage.removeItem('target_comprehension');
+				localStorage.removeItem('target_exercise');
+				localStorage.removeItem('target_worksheet');
+				localStorage.removeItem('target_test');
+
+				// Also clear any learner-specific overrides for the previous learner to avoid leakage
+				if (previousId && previousId !== String(learner.id)) {
+					localStorage.removeItem(`target_comprehension_${previousId}`);
+					localStorage.removeItem(`target_exercise_${previousId}`);
+					localStorage.removeItem(`target_worksheet_${previousId}`);
+					localStorage.removeItem(`target_test_${previousId}`);
+				}
+
+				setSelectedLearnerId(String(learner.id));
+			} else {
+				// Allow deselect to clear current learner completely
+				localStorage.removeItem('learner_id');
+				localStorage.removeItem('learner_name');
+				localStorage.removeItem('learner_grade');
+				setSelectedLearnerId(null);
+			}
+		} catch {}
+	};
 
 	const handleDelete = async (id) => {
 			if (!confirm('Delete this learner?')) return;
@@ -126,7 +182,16 @@ export default function LearnersPage() {
 				<div style={{ marginTop:16, display:'grid', gap:12, minWidth: 0 }}>
 					{/* Header labels removed — labels are shown per-row */}
 					{items.map((it, idx) => (
-						<LearnerRow key={it.id || idx} item={it} saving={savingId===it.id} saved={savedId===it.id} onSave={(u)=>handleInlineSave(idx,u)} onDelete={()=>handleDelete(it.id)} />
+						<LearnerRow
+                            key={it.id || idx}
+                            item={it}
+                            saving={savingId===it.id}
+                            saved={savedId===it.id}
+                            selected={String(selectedLearnerId) === String(it.id)}
+							onToggleSelected={(checked)=>handleSelectLearner(it, checked)}
+                            onSave={(u)=>handleInlineSave(idx,u)}
+                            onDelete={()=>handleDelete(it.id)}
+                        />
 					))}
 				</div>
 			)}
@@ -189,7 +254,7 @@ function Dial({ value, onChange, options, ariaLabel, title }){
 	};
 
 	// Design system styles (compact, darker primary button, accessible focus)
-	const containerStyle = { display:'flex', alignItems:'center', gap:8, justifyContent:'space-between', padding:'6px 8px', border:'1px solid #e6e6e6', borderRadius:8, userSelect:'none', background:'#fff', width:'100%', maxWidth:100 };
+	const containerStyle = { display:'flex', alignItems:'center', gap:8, justifyContent:'space-between', padding:'6px 8px', border:'1px solid #e6e6e6', borderRadius:8, userSelect:'none', background:'#fff', width:'100%', maxWidth:100, minHeight:42 };
 	const btnStyle = { padding:'6px 8px', border:'1px solid #ddd', borderRadius:6, background:'#fff', cursor:'pointer', flex:'0 0 auto', color:'#0b1220' };
 	const valueStyle = { flex: '1 1 auto', textAlign:'center', fontWeight:700, color:'#0b1220' };
 
@@ -238,7 +303,7 @@ const range = (a,b)=>Array.from({length:b-a+1},(_,i)=>String(a+i));
 const GRADES = ['K',...range(1,12)];
 const TARGETS = range(3,20);
 
-function LearnerRow({ item, saving, saved, onSave, onDelete }){
+function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, onDelete }){
 	const [name, setName] = useState(item.name || '');
 	const [grade, setGrade] = useState(item.grade || 'K');
 	const [comprehension, setComprehension] = useState(String(item.comprehension ?? item.targets?.comprehension ?? 3));
@@ -253,9 +318,30 @@ function LearnerRow({ item, saving, saved, onSave, onDelete }){
       <div style={{ border:'1px solid #eee', borderRadius:12, padding:12, background:'#fff', display:'grid', gap:14, minWidth:0 }}>
         {/* Top section: name + actions; wraps naturally */}
         <div style={{ display:'flex', flexWrap:'wrap', gap:12, alignItems:'flex-start', padding:'0 4px' }}>
-          <div style={{ display:'flex', flexDirection:'column', gap:6, flex:'1 1 220px', minWidth:160 }}>
-			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Name</div>
-            <input aria-label="Name" title="Name" value={name} onChange={(e)=>setName(e.target.value)} placeholder="Name" style={{ padding:'8px 10px', border:'1px solid #ddd', borderRadius:8, width:'100%', minWidth:0 }} />
+					  <div className="ms-learner-name-block" style={{ display:'flex', flexDirection:'column', gap:6, flex:'0 0 50vw', width:'50vw', maxWidth:'50vw', minWidth:160 }}>
+						<div className="ms-learner-name-label" style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Name</div>
+						<div style={{ display:'flex', alignItems:'center', gap:10, width:'100%' }}>
+							<input
+								className="ms-learner-name-input"
+								aria-label="Name"
+								title="Name"
+								value={name}
+								onChange={(e)=>setName(e.target.value)}
+								placeholder="Name"
+								style={{ padding:'8px 10px', border:'1px solid #ddd', borderRadius:8, flex:'1 1 auto', width:'auto', minWidth:0 }}
+							/>
+							{/* Selection checkbox to the right of the name field */}
+							<label title="Set as current learner" style={{ display:'flex', alignItems:'center', gap:6, cursor:'pointer', whiteSpace:'nowrap' }}>
+								<input
+									type="checkbox"
+									aria-label="Set as current learner"
+									checked={!!selected}
+									onChange={(e)=>onToggleSelected && onToggleSelected(e.target.checked)}
+									style={{ width:18, height:18, accentColor:'#c7442e' }}
+								/>
+								<span style={{ fontSize:'clamp(0.75rem, 1.3vw, 0.9rem)', color:'#333' }}>Current</span>
+							</label>
+						</div>
           </div>
 					<div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'flex-end', alignItems:'center', flex:'1 1 320px' }}>
             <button onClick={()=>onSave({ name, grade, targets:{ comprehension, exercise, worksheet, test } })} disabled={saving} style={{ ...actionBtnStyle, color:'#0b1220' }}>{saving ? 'Saving…' : 'Save'}<span aria-hidden style={{ fontSize:16, lineHeight:1 }}>💾</span></button>
@@ -266,35 +352,53 @@ function LearnerRow({ item, saving, saved, onSave, onDelete }){
               <span>Delete</span>
 			  <span aria-hidden style={{ fontSize:'clamp(1rem, 1.8vw, 1.125rem)', lineHeight:1 }}>🗑️</span>
             </button>
-						{item?.id && (
-							<Link href={`/facilitator/learners/${item.id}/transcripts`} style={{ padding:'8px 12px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff', textDecoration:'none' }}>Transcripts</Link>
-						)}
           </div>
         </div>
 
-        {/* Dial grid: auto-fit columns that shrink and wrap below ~560px */}
-        <div style={{ display:'grid', gap:16, gridTemplateColumns:'repeat(auto-fit, minmax(88px, 1fr))', justifyItems:'center', alignItems:'start', width:'100%' }}>
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
+									{/* Tile grid: variable dials + transcripts tile with identical sizing/spacing */}
+									<div style={{ display:'grid', gap:16, gridTemplateColumns:'repeat(auto-fit, minmax(88px, 1fr))', justifyItems:'center', alignItems:'start', width:'100%' }}>
+									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
 			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Grade</div>
             <Dial value={grade} onChange={e => setGrade(e.target.value)} options={GRADES} ariaLabel="Grade" title="Grade" />
-          </div>
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
+									</div>
+									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
 			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Comprehension</div>
             <Dial value={comprehension} onChange={e => setComprehension(e.target.value)} options={TARGETS} ariaLabel="Comprehension" />
-          </div>
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
+									</div>
+									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
 			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Exercise</div>
             <Dial value={exercise} onChange={e => setExercise(e.target.value)} options={TARGETS} ariaLabel="Exercise" />
-          </div>
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
+									</div>
+									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
 			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Worksheet</div>
             <Dial value={worksheet} onChange={e => setWorksheet(e.target.value)} options={TARGETS} ariaLabel="Worksheet" />
-          </div>
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
+									</div>
+									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
 			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Test</div>
             <Dial value={test} onChange={e => setTest(e.target.value)} options={TARGETS} ariaLabel="Test" />
-          </div>
-        </div>
+									</div>
+
+											{/* Transcripts as a matching tile */}
+											{item?.id && (
+																<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
+													<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Transcripts</div>
+													<Link
+														href={`/facilitator/learners/${item.id}/transcripts`}
+														style={{
+																			display:'flex', alignItems:'center', justifyContent:'center',
+																			width:'100%', maxWidth:100, minHeight:42,
+																			padding:'6px 8px',
+																			border:'1px solid #e6e6e6', borderRadius:8,
+																			background:'#fff', color:'#0b1220', textDecoration:'none',
+																			whiteSpace:'nowrap'
+														}}
+													>
+														Open
+													</Link>
+												</div>
+											)}
       </div>
+								{/* Close outer card container */}
+								</div>
     );
 }

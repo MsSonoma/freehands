@@ -1,0 +1,216 @@
+{
+  "id": "LA-4-ADV-001",
+  "title": "The Importance of Courage",
+  "grade": "4th",
+  "difficulty": "Advanced",
+  "blurb": "The importance of courage through the lens of character development.",
+  "vocab": [
+    {
+      "term": "Courage",
+      "definition": "The ability to do something that frightens you."
+    },
+    {
+      "term": "Character",
+      "definition": "A person in a story, movie, or play."
+    },
+    {
+      "term": "Development",
+      "definition": "The process of growing or improving."
+    },
+    {
+      "term": "Storytelling",
+      "definition": "The activity of telling or writing stories."
+    },
+    {
+      "term": "Bravery",
+      "definition": "Courageous behavior or character."
+    }
+  ],
+  "teachingNotes": "The life skill of courage told through the conduit of storytelling.",
+  "sample": [
+    {
+      "Q": "What is courage?",
+      "A": "Courage is the ability to do something that frightens you."
+    },
+    {
+      "Q": "Why is courage important in stories?",
+      "A": "Courage is important in stories because it helps characters face challenges and grow."
+    },
+    {
+      "Q": "How can a character show courage?",
+      "A": "A character can show courage by standing up for what is right, even when it's hard."
+    },
+    {
+      "Q": "Give an example of a courageous act.",
+      "A": "An example of a courageous act is helping someone in need even if you're scared."
+    },
+    {
+      "Q": "What is character development?",
+      "A": "Character development is how a character changes and grows throughout a story."
+    },
+    {
+      "Q": "How does courage affect character development?",
+      "A": "Courage affects character development by helping characters overcome fears and become stronger."
+    },
+    {
+      "Q": "Can you name a story where a character shows courage?",
+      "A": "In the story of 'The Lion, the Witch and the Wardrobe,' Aslan shows courage by facing the White Witch."
+    }
+  ],
+  "truefalse": [
+    {
+      "Q": "Courage means never being afraid.",
+      "A": false
+    },
+    {
+      "Q": "Bravery and courage are the same thing.",
+      "A": true
+    },
+    {
+      "Q": "A character can grow without courage.",
+      "A": false
+    },
+    {
+      "Q": "Courage is only for heroes in stories.",
+      "A": false
+    },
+    {
+      "Q": "Courage is a life skill.",
+      "A": true
+    },
+    {
+      "Q": "Every character in a story shows courage.",
+      "A": false
+    },
+    {
+      "Q": "Courage can help solve problems.",
+      "A": true
+    }
+  ],
+  "multiplechoice": [
+    {
+      "Q": "What is a key element of character development?",
+      "choices": [
+        "Courage",
+        "Height",
+        "Age"
+      ],
+      "A": "Courage"
+    },
+    {
+      "Q": "Who might need courage?",
+      "choices": [
+        "A firefighter",
+        "A student",
+        "Both"
+      ],
+      "A": "Both"
+    },
+    {
+      "Q": "What can courage help a character in a story do?",
+      "choices": [
+        "Give up",
+        "Overcome fear",
+        "Stop trying"
+      ],
+      "A": "Overcome fear"
+    },
+    {
+      "Q": "In stories, courage is often shown when characters:",
+      "choices": [
+        "Run away",
+        "Face challenges",
+        "Ignore problems"
+      ],
+      "A": "Face challenges"
+    },
+    {
+      "Q": "Which word is closest in meaning to courage?",
+      "choices": [
+        "Fear",
+        "Bravery",
+        "Sadness"
+      ],
+      "A": "Bravery"
+    },
+    {
+      "Q": "What can happen to a character who shows courage?",
+      "choices": [
+        "They stay the same",
+        "They grow",
+        "They disappear"
+      ],
+      "A": "They grow"
+    },
+    {
+      "Q": "Courage in a story helps to:",
+      "choices": [
+        "Create conflict",
+        "Solve problems",
+        "Make characters boring"
+      ],
+      "A": "Solve problems"
+    }
+  ],
+  "fillintheblank": [
+    {
+      "Q": "Courage helps characters to ______ their fears.",
+      "A": "overcome"
+    },
+    {
+      "Q": "A person in a story is called a ______.",
+      "A": "character"
+    },
+    {
+      "Q": "________ is the ability to do something that scares you.",
+      "A": "Courage"
+    },
+    {
+      "Q": "Character ________ is how a character changes in a story.",
+      "A": "development"
+    },
+    {
+      "Q": "________ is another word for bravery.",
+      "A": "Courage"
+    },
+    {
+      "Q": "Through storytelling, we learn about ________.",
+      "A": "courage"
+    },
+    {
+      "Q": "Facing a challenge can help a character ______.",
+      "A": "grow"
+    }
+  ],
+  "shortanswer": [
+    {
+      "Q": "Why do stories often include courageous characters?",
+      "A": "To show how characters can overcome challenges and grow."
+    },
+    {
+      "Q": "What is one way a character might show courage?",
+      "A": "By standing up for someone else in the story."
+    },
+    {
+      "Q": "How does courage help in real life?",
+      "A": "It helps people face their fears and try new things."
+    },
+    {
+      "Q": "Give an example of a courageous character from a story you know.",
+      "A": "Harry Potter shows courage by facing Voldemort."
+    },
+    {
+      "Q": "What might happen if a character lacks courage?",
+      "A": "They might struggle to face challenges or grow."
+    },
+    {
+      "Q": "How can courage change a story's outcome?",
+      "A": "It can lead to a positive resolution or victory."
+    },
+    {
+      "Q": "Why is courage considered a life skill?",
+      "A": "Because it helps people handle difficult situations."
+    }
+  ],
+  "subject": "language arts"
+}

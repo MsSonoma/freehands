@@ -202,19 +202,46 @@ export default function HeaderBar() {
 				const { data: { session } } = await supabase.auth.getSession();
 				const user = session?.user;
 				if (user) {
-					// Use auth metadata only to avoid profile schema 400s
-					const meta = user?.user_metadata || {};
-					const profName = (meta.display_name || meta.full_name || meta.name || '').trim();
-					if (!cancelled && profName) setFacilitatorName(profName);
+					// Prefer profiles.full_name; fallback to auth metadata
+					let name = '';
+					try {
+						const { data: prof } = await supabase
+							.from('profiles')
+							.select('full_name')
+							.eq('id', user.id)
+							.maybeSingle();
+						if (prof && typeof prof.full_name === 'string' && prof.full_name.trim()) {
+							name = prof.full_name.trim();
+						}
+					} catch {}
+					if (!name) {
+						const meta = user?.user_metadata || {};
+						name = (meta.full_name || meta.display_name || meta.name || '').trim();
+					}
+					if (!cancelled && name) setFacilitatorName(name);
 				}
 				// Subscribe to auth changes to keep header in sync
 				const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
 					const u = s?.user;
 					if (!u) { if (!cancelled) setFacilitatorName(''); return; }
-					// Try quick metadata label first
-					const meta = u.user_metadata || {};
-					const metaName = (meta.display_name || meta.full_name || meta.name || '').trim();
-					if (metaName && !cancelled) setFacilitatorName(metaName);
+					(async () => {
+						let name = '';
+						try {
+							const { data: prof } = await supabase
+								.from('profiles')
+								.select('full_name')
+								.eq('id', u.id)
+								.maybeSingle();
+							if (prof && typeof prof.full_name === 'string' && prof.full_name.trim()) {
+								name = prof.full_name.trim();
+							}
+						} catch {}
+						if (!name) {
+							const meta = u.user_metadata || {};
+							name = (meta.full_name || meta.display_name || meta.name || '').trim();
+						}
+						if (!cancelled) setFacilitatorName(name);
+					})();
 				});
 				authSub = sub?.subscription;
 			} catch {}
@@ -223,6 +250,18 @@ export default function HeaderBar() {
 			cancelled = true;
 			try { authSub?.unsubscribe?.(); } catch {}
 		};
+	}, []);
+
+	// React to cross-page profile name updates
+	useEffect(() => {
+		const onNameUpdate = (e) => {
+			try {
+				const detail = e?.detail || {};
+				if (detail?.name) setFacilitatorName(String(detail.name));
+			} catch {}
+		};
+		window.addEventListener('ms:profile:name:updated', onNameUpdate);
+		return () => window.removeEventListener('ms:profile:name:updated', onNameUpdate);
 	}, []);
 
 	// Lock body scroll on the Session page so nothing scrolls under the header
@@ -272,6 +311,9 @@ export default function HeaderBar() {
 
 		// Billing manage page (client-managed billing portal): return to facilitator overview
 		if (pathname.startsWith('/billing/manage')) return '/facilitator';
+
+		// Facilitator Hotkeys page should return to Settings
+		if (pathname.startsWith('/facilitator/hotkeys')) return '/facilitator/settings';
 
 		// Facilitator chain: / -> /facilitator -> /facilitator/(learners|plan|settings|tools)
 		if (

@@ -116,8 +116,8 @@ export async function ensurePinAllowed(action = 'action') {
 		if (!shouldGate) return true;
 		if (unlockedThisSession()) return true;
 
-		// Prompt for PIN; prefer a minimal built-in prompt to avoid bundling a modal here.
-		const input = window.prompt('Enter facilitator PIN');
+		// Prompt for PIN using a minimal masked modal so characters are hidden.
+		const input = await promptForPinMasked({ title: 'Facilitator PIN', message: 'Enter PIN to continue' });
 		if (input == null || input === '') return false;
 
 		// Try server verification; fallback to local
@@ -140,3 +140,109 @@ export async function ensurePinAllowed(action = 'action') {
 
 const pinGateApi = { ensurePinAllowed, setFacilitatorPin, clearFacilitatorPin, getPinPrefsLocal, setPinPrefsLocal };
 export default pinGateApi;
+
+// Lightweight, dependency-free masked PIN modal. Returns Promise<string|null>.
+// - Hides characters via type="password"
+// - Numeric keypad via inputMode="numeric" and pattern
+// - Escape closes; Enter submits
+function promptForPinMasked({ title = 'Enter PIN', message = 'Enter your PIN' } = {}) {
+	if (typeof document === 'undefined') return Promise.resolve(null);
+	return new Promise((resolve) => {
+		let resolved = false;
+		const cleanup = () => {
+			if (resolved) return;
+			resolved = true;
+			try { document.removeEventListener('keydown', onKeyDown, true); } catch {}
+			try { overlay?.remove(); } catch {}
+		};
+
+		const onCancel = () => { if (!resolved) { resolve(null); } cleanup(); };
+		const onSubmit = () => {
+			const val = input?.value?.trim() || '';
+			if (val === '') { err.textContent = 'Please enter your PIN.'; input?.focus(); return; }
+			if (!resolved) { resolve(val); }
+			cleanup();
+		};
+
+		const onKeyDown = (e) => {
+			if (e.key === 'Escape') { e.preventDefault(); onCancel(); }
+			if (e.key === 'Enter') { e.preventDefault(); onSubmit(); }
+		};
+
+		// Elements
+		const overlay = document.createElement('div');
+		overlay.setAttribute('role', 'presentation');
+		overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,0.35);display:grid;place-items:center;';
+
+		const dialog = document.createElement('div');
+		dialog.setAttribute('role', 'dialog');
+		dialog.setAttribute('aria-modal', 'true');
+		dialog.setAttribute('aria-labelledby', 'ms-pin-title');
+		dialog.style.cssText = 'width:100%;max-width:360px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,0.12);';
+
+		const h3 = document.createElement('h3');
+		h3.id = 'ms-pin-title';
+		h3.textContent = title;
+		h3.style.cssText = 'margin:0 0 8px;';
+
+		const label = document.createElement('label');
+		label.style.cssText = 'display:block;margin-bottom:8px;';
+
+		const tip = document.createElement('span');
+		tip.textContent = message;
+		tip.style.cssText = 'display:block;font-size:12px;color:#6b7280;margin-bottom:4px;';
+
+		// Hidden username input to improve autofill heuristics context
+		const hiddenUser = document.createElement('input');
+		hiddenUser.type = 'text';
+		hiddenUser.name = 'username';
+		hiddenUser.autocomplete = 'username';
+		hiddenUser.setAttribute('aria-hidden', 'true');
+		hiddenUser.tabIndex = -1;
+		hiddenUser.style.cssText = 'position:absolute;width:1px;height:1px;padding:0;border:0;clip:rect(0 0 0 0);clip-path:inset(50%);overflow:hidden;white-space:nowrap;';
+
+		const input = document.createElement('input');
+		input.type = 'password';
+		input.inputMode = 'numeric';
+		input.autocomplete = 'one-time-code'; // hint numeric keypad
+		input.name = 'facilitator-pin';
+		input.pattern = '[0-9]*';
+		input.setAttribute('aria-label', 'Facilitator PIN');
+		input.style.cssText = 'width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;';
+
+		const err = document.createElement('div');
+		err.setAttribute('role', 'alert');
+		err.style.cssText = 'min-height:16px;color:#b91c1c;font-size:12px;margin:8px 0;';
+
+		const actions = document.createElement('div');
+		actions.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:8px;';
+
+		const cancel = document.createElement('button');
+		cancel.type = 'button';
+		cancel.textContent = 'Cancel';
+		cancel.style.cssText = 'padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;color:#111;';
+		cancel.addEventListener('click', onCancel);
+
+		const ok = document.createElement('button');
+		ok.type = 'button';
+		ok.textContent = 'Confirm';
+		ok.style.cssText = 'padding:8px 12px;border:1px solid #111;border-radius:8px;background:#111;color:#fff;font-weight:600;';
+		ok.addEventListener('click', onSubmit);
+
+		actions.appendChild(cancel);
+		actions.appendChild(ok);
+
+		label.appendChild(tip);
+		label.appendChild(input);
+		dialog.appendChild(h3);
+		dialog.appendChild(hiddenUser);
+		dialog.appendChild(label);
+		dialog.appendChild(err);
+		dialog.appendChild(actions);
+		overlay.appendChild(dialog);
+		document.body.appendChild(overlay);
+
+		document.addEventListener('keydown', onKeyDown, true);
+		setTimeout(() => { try { input.focus(); } catch {} }, 0);
+	});
+}

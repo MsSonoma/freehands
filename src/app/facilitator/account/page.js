@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState } from 'react'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
+import { setFacilitatorPin, clearFacilitatorPin, getPinPrefsLocal, setPinPrefsLocal } from '@/app/lib/pinGate'
 
 export default function FacilitatorAccountPage() {
   const [loading, setLoading] = useState(true)
@@ -47,14 +48,27 @@ export default function FacilitatorAccountPage() {
         const { data: { session } } = await supabase.auth.getSession()
         if (session?.user) {
           setEmail(session.user.email || '')
-          // Prefer auth user metadata for display name; avoid selecting non-existent columns
-          let data = null
-          try { data = (await supabase.from('profiles').select('plan_tier').eq('id', session.user.id).maybeSingle()).data } catch {}
-          if (!cancelled) {
+          // Load display name from profiles.first, falling back to auth user metadata
+          let loadedName = ''
+          try {
+            const { data: profRow } = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', session.user.id)
+              .maybeSingle()
+            if (profRow && typeof profRow.full_name === 'string' && profRow.full_name.trim()) {
+              loadedName = profRow.full_name.trim()
+            }
+          } catch {
+            // profiles table or column may not exist yet; ignore and fall back
+          }
+          if (!loadedName) {
             const meta = session?.user?.user_metadata || {}
-            const profName = (meta.display_name || meta.full_name || meta.name || '').trim()
-            setFacilitatorName(profName)
-            setServerFacilitatorName(profName)
+            loadedName = (meta.full_name || meta.display_name || meta.name || '').trim()
+          }
+          if (!cancelled) {
+            setFacilitatorName(loadedName)
+            setServerFacilitatorName(loadedName)
             // Marketing opt-in moved to Settings page
             // Connected accounts (Google)
             const identities = Array.isArray(session.user.identities) ? session.user.identities : []
@@ -127,26 +141,40 @@ export default function FacilitatorAccountPage() {
                     const supabase = getSupabaseClient()
                     const { data: { session } } = await supabase.auth.getSession()
                     if (!session?.user) { setNameMessage('Please sign in.'); setSavingName(false); return }
-                    // Try updating several likely columns; ignore missing-column errors
-                    let ok = false
-                    const tryUpdate = async (payload) => {
-                      const { error } = await supabase.from('profiles').update(payload).eq('id', session.user.id)
-                      if (error) return false
-                      return true
+                    // First, try updating profiles.full_name (authoritative in our schema)
+                    let saved = false
+                    try {
+                      const { error: pErr } = await supabase
+                        .from('profiles')
+                        .update({ full_name: facilitatorName })
+                        .eq('id', session.user.id)
+                      if (!pErr) saved = true
+                    } catch {}
+
+                    // If profiles update failed due to schema mismatch, try other common columns
+                    if (!saved) {
+                      const tryUpdate = async (payload) => {
+                        const { error } = await supabase.from('profiles').update(payload).eq('id', session.user.id)
+                        return !error
+                      }
+                      saved = await tryUpdate({ display_name: facilitatorName }) ||
+                              await tryUpdate({ name: facilitatorName })
                     }
-                    ok = await tryUpdate({ full_name: facilitatorName }) ||
-                         await tryUpdate({ display_name: facilitatorName }) ||
-                         await tryUpdate({ name: facilitatorName })
-                    // If profile columns aren't available, fall back to auth user metadata
-                    if (!ok) {
-                      const { error: mdErr } = await supabase.auth.updateUser({ data: { display_name: facilitatorName, full_name: facilitatorName, name: facilitatorName } })
-                      if (mdErr) throw mdErr
-                      ok = true
-                    }
-                    if (ok) {
-                      setServerFacilitatorName(facilitatorName)
-                      setNameMessage('Saved!')
-                    }
+
+                    // Always attempt to keep auth user metadata in sync (best-effort)
+                    try {
+                      await supabase.auth.updateUser({ data: { full_name: facilitatorName, display_name: facilitatorName, name: facilitatorName } })
+                    } catch {}
+
+                    if (!saved) throw new Error('Could not save name')
+
+                    setServerFacilitatorName(facilitatorName)
+                    setNameMessage('Saved!')
+                    try {
+                      if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('ms:profile:name:updated', { detail: { name: facilitatorName } }))
+                      }
+                    } catch {}
                   } catch (e) {
                     setNameMessage(e?.message || 'Failed to save')
                   } finally { setSavingName(false) }
@@ -285,6 +313,15 @@ export default function FacilitatorAccountPage() {
           </div>
         </section>
 
+        {/* Facilitator PIN */}
+        <section style={{ marginTop: 18 }}>
+          <h2 style={{ fontSize: 18, margin: '3px 0' }}>Facilitator PIN</h2>
+          <p style={{ color:'#555', marginTop: 0, fontSize: 14, lineHeight: 1.35 }}>
+            Protect sensitive actions like skipping or downloading. This PIN is saved to your account.
+          </p>
+          <PinManager email={email} />
+        </section>
+
         {/* Connected accounts */}
   <section style={{ marginTop: 18 }}>
           <h2 style={{ fontSize: 18, margin: '3px 0' }}>Connected accounts</h2>
@@ -357,5 +394,243 @@ export default function FacilitatorAccountPage() {
         </section>
       </div>
     </main>
+  )
+}
+
+
+function PinManager({ email }) {
+  const [loading, setLoading] = useState(true)
+  const [hasPin, setHasPin] = useState(false)
+  const [pin, setPin] = useState('')
+  const [pin2, setPin2] = useState('')
+  const [currentPin, setCurrentPin] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [msg, setMsg] = useState('')
+  const [prefs, setPrefs] = useState(() => getPinPrefsLocal())
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        setLoading(true)
+        // Try to call API to see if server-side PIN exists
+        const supabase = getSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+        if (!token) throw new Error('Sign in required')
+        const res = await fetch('/api/facilitator/pin', { headers: { Authorization: `Bearer ${token}` } })
+        const js = await res.json().catch(()=>({}))
+        if (res.ok && js?.ok) {
+          if (!cancelled) {
+            setHasPin(!!js.hasPin)
+            if (js.prefs && typeof js.prefs === 'object') setPrefs(prev => ({ ...prev, ...js.prefs }))
+          }
+        } else {
+          // If API not configured, fall back to local check
+          const stored = typeof window !== 'undefined' ? localStorage.getItem('facilitator_pin') : null
+          if (!cancelled) {
+            setHasPin(!!stored)
+            setPrefs(getPinPrefsLocal())
+          }
+        }
+      } catch (e) {
+        const stored = typeof window !== 'undefined' ? localStorage.getItem('facilitator_pin') : null
+        if (!cancelled) {
+          setHasPin(!!stored)
+          setPrefs(getPinPrefsLocal())
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => { setLoading(false); cancelled = true }
+  }, [])
+
+  const save = async () => {
+    setMsg(''); setSaving(true)
+    try {
+      if (!pin || pin.length < 4 || pin.length > 8 || /\D/.test(pin)) throw new Error('Use a 4–8 digit PIN')
+      if (pin !== pin2) throw new Error('PINs do not match')
+      // Prefer server API when available
+      try {
+        const supabase = getSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+        if (!token) throw new Error('Sign in required')
+        const res = await fetch('/api/facilitator/pin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ pin, currentPin: hasPin ? currentPin : null, prefs })
+        })
+        const js = await res.json().catch(()=>({}))
+        if (!res.ok || !js?.ok) throw new Error(js?.error || 'Failed to save')
+        // Keep local fallback in sync so existing gates work
+        try { setFacilitatorPin(pin) } catch (e) {}
+      } catch (e) {
+        // Fallback to local storage
+        try { setFacilitatorPin(pin) } catch (e2) {}
+        if (hasPin && currentPin && currentPin !== (typeof window !== 'undefined' ? localStorage.getItem('facilitator_pin') : '')) {
+          throw e
+        }
+      }
+      setHasPin(true)
+      setMsg('Saved!')
+      setPin(''); setPin2(''); setCurrentPin('')
+    } catch (e) {
+      setMsg(e?.message || 'Failed to save')
+    } finally { setSaving(false) }
+  }
+
+  const clear = async () => {
+    setMsg(''); setSaving(true)
+    try {
+      // Try server
+      try {
+        const supabase = getSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+        if (!token) throw new Error('Sign in required')
+        const res = await fetch('/api/facilitator/pin', { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+        const js = await res.json().catch(()=>({}))
+        if (!res.ok || !js?.ok) throw new Error(js?.error || 'Failed to clear')
+      } catch (e) {}
+      // Always clear local fallback
+      try { clearFacilitatorPin() } catch (e2) {}
+      setHasPin(false)
+      setMsg('Cleared')
+      setPin(''); setPin2(''); setCurrentPin('')
+    } catch (e) {
+      setMsg(e?.message || 'Failed to clear')
+    } finally { setSaving(false) }
+  }
+
+  const handleSave = async (e) => {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault()
+    setMsg(''); setSaving(true)
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) throw new Error('Sign in required')
+
+      const pinChange = (pin && pin.length) || (pin2 && pin2.length)
+      if (pinChange) {
+        if (!/^\d{4,8}$/.test(pin)) throw new Error('Use a 4–8 digit PIN')
+        if (pin !== pin2) throw new Error('PINs do not match')
+        try {
+          const res = await fetch('/api/facilitator/pin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ pin, currentPin: hasPin ? currentPin : null, prefs })
+          })
+          const js = await res.json().catch(()=>({}))
+          if (!res.ok || !js?.ok) throw new Error(js?.error || 'Failed to save')
+          try { setFacilitatorPin(pin) } catch {}
+          setHasPin(true)
+          setPin(''); setPin2(''); setCurrentPin('')
+          setPinPrefsLocal(prefs)
+          setMsg('Saved')
+        } catch (err) {
+          try { setFacilitatorPin(pin) } catch {}
+          if (hasPin && currentPin) {
+            const localPin = (typeof window !== 'undefined') ? localStorage.getItem('facilitator_pin') : ''
+            if (currentPin !== localPin) throw err
+          }
+          setHasPin(true)
+          setPin(''); setPin2(''); setCurrentPin('')
+          setPinPrefsLocal(prefs)
+          setMsg('Saved')
+        }
+      } else {
+        try {
+          const res = await fetch('/api/facilitator/pin', { method:'PUT', headers: { 'Content-Type':'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ prefs }) })
+          if (!res.ok) { const js = await res.json().catch(()=>({})); throw new Error(js?.error || 'Failed to save') }
+        } catch (e2) {}
+        setPinPrefsLocal(prefs)
+        setMsg('Saved')
+      }
+    } catch (e3) {
+      setMsg(e3?.message || 'Failed to save')
+    } finally { setSaving(false) }
+  }
+
+  if (loading) return <p>Loading…</p>
+
+  return (
+    <form onSubmit={handleSave} style={{ display:'grid', gap:8, alignItems:'start', maxWidth: 520 }}>
+      {/* Hidden username field for accessibility and browser heuristics */}
+      <input
+        type="text"
+        name="username"
+        autoComplete="username"
+        defaultValue={email || ''}
+        aria-hidden="true"
+        tabIndex={-1}
+        style={{ position:'absolute', width:1, height:1, overflow:'hidden', clip:'rect(0 0 0 0)', clipPath:'inset(50%)', whiteSpace:'nowrap', border:0, padding:0, margin:-1 }}
+      />
+      {hasPin && (
+        <div style={{ display:'grid', gap:4 }}>
+          <label style={{ color:'#374151', fontSize:14 }}>Current PIN</label>
+          <input type="password" inputMode="numeric" pattern="[0-9]*" autoComplete="current-password"
+            value={currentPin} onChange={e=>setCurrentPin(e.target.value)}
+            style={{ padding:'6px 10px', border:'1px solid #e5e7eb', borderRadius:8 }} />
+        </div>
+      )}
+      <div style={{ display:'grid', gap:4 }}>
+        <label style={{ color:'#374151', fontSize:14 }}>{hasPin ? 'New PIN' : 'Set PIN'}</label>
+        <input type="password" inputMode="numeric" pattern="[0-9]*" autoComplete="new-password"
+          value={pin} onChange={e=>setPin(e.target.value)}
+          placeholder="4–8 digits"
+          style={{ padding:'6px 10px', border:'1px solid #e5e7eb', borderRadius:8 }} />
+      </div>
+      <div style={{ display:'grid', gap:4 }}>
+        <label style={{ color:'#374151', fontSize:14 }}>Confirm PIN</label>
+        <input type="password" inputMode="numeric" pattern="[0-9]*" autoComplete="new-password"
+          value={pin2} onChange={e=>setPin2(e.target.value)}
+          style={{ padding:'6px 10px', border:'1px solid #e5e7eb', borderRadius:8 }} />
+      </div>
+      {/* Preferences */}
+      <div style={{ marginTop: 2 }}>
+        <h3 style={{ margin: '6px 0 4px', fontSize: 14 }}>Require PIN for:</h3>
+        <div style={{ display:'grid', gap:6 }}>
+          <label style={{ display:'inline-flex', alignItems:'center', gap:6 }}>
+            <input type="checkbox" checked={!!prefs.downloads} onChange={(e)=> setPrefs(p=>({ ...p, downloads: e.target.checked }))} />
+            <span>Print previews and downloads</span>
+          </label>
+          <label style={{ display:'inline-flex', alignItems:'center', gap:6 }}>
+            <input type="checkbox" checked={!!prefs.facilitatorKey} onChange={(e)=> setPrefs(p=>({ ...p, facilitatorKey: e.target.checked }))} />
+            <span>Facilitator Key</span>
+          </label>
+          <label style={{ display:'inline-flex', alignItems:'center', gap:6 }}>
+            <input type="checkbox" checked={!!prefs.refresh} onChange={(e)=> setPrefs(p=>({ ...p, refresh: e.target.checked }))} />
+            <span>Refreshing Worksheet/Test</span>
+          </label>
+          <label style={{ display:'inline-flex', alignItems:'center', gap:6 }}>
+            <input type="checkbox" checked={!!prefs.skipTimeline} onChange={(e)=> setPrefs(p=>({ ...p, skipTimeline: e.target.checked }))} />
+            <span>Skip buttons and timeline jumps</span>
+          </label>
+          <label style={{ display:'inline-flex', alignItems:'center', gap:6 }}>
+            <input type="checkbox" checked={!!prefs.changeLearner} onChange={(e)=> setPrefs(p=>({ ...p, changeLearner: e.target.checked }))} />
+            <span>Changing Learners on Learn page</span>
+          </label>
+        </div>
+        <div style={{ display:'flex', gap:6, marginTop:6, alignItems:'center', flexWrap:'wrap' }}>
+          <button
+            type="submit"
+            disabled={saving}
+            style={{ padding:'6px 12px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff', fontWeight:600 }}
+          >
+            {saving ? 'Saving…' : 'Save PIN and Preferences'}
+          </button>
+          {hasPin && (
+            <button type="button" onClick={clear} disabled={saving}
+              style={{ padding:'6px 12px', border:'1px solid #e5e7eb', borderRadius:8, background:'#fff' }}>
+              Clear PIN
+            </button>
+          )}
+          {msg && <span style={{ color:'#374151' }}>{msg}</span>}
+        </div>
+      </div>
+    </form>
   )
 }

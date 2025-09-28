@@ -79,18 +79,20 @@ export async function POST(request){
   try {
     const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes })
     const lesson = await callModel(prompt)
-    // Normalize core fields
+  // Normalize core fields
     lesson.id = lesson.id || `${grade}_${title}_${difficulty}`.replace(/\s+/g,'_')
     lesson.title = lesson.title || title
     lesson.grade = lesson.grade || grade
     lesson.difficulty = lesson.difficulty || difficulty
+  // Persist subject for downstream approval/publishing
+  lesson.subject = (lesson.subject || subject || '').toString().toLowerCase()
     // Ensure folder exists
     const root = path.join(process.cwd(), 'public', 'lessons', 'Facilitator Lessons')
     fs.mkdirSync(root, { recursive: true })
     const base = safeFileName(`${grade}_${lesson.title}_${difficulty}`)
     const file = `${base}.json`
     const full = path.join(root, file)
-    fs.writeFileSync(full, JSON.stringify(lesson, null, 2), 'utf8')
+  fs.writeFileSync(full, JSON.stringify(lesson, null, 2), 'utf8')
     return NextResponse.json({ ok:true, file, path:`/lessons/${encodeURIComponent('Facilitator Lessons')}/${encodeURIComponent(file)}` })
   } catch (e) {
     return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })
