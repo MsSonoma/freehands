@@ -5208,10 +5208,32 @@ function SessionPageInner() {
   // Disable sending when the UI is not ready or while Ms. Sonoma is speaking
   const comprehensionAwaitingBegin = (phase === 'comprehension' && subPhase === 'comprehension-start');
   const speakingLock = !!isSpeaking; // lock input anytime she is speaking
-  const sendDisabled = (!canSend || loading || comprehensionAwaitingBegin || speakingLock);
+  // Derived gating: when Opening/Go buttons are visible, keep input inactive without mutating canSend
+  const discussionButtonsVisible = (
+    phase === 'discussion' &&
+    subPhase === 'awaiting-learner' &&
+    !isSpeaking &&
+    showOpeningActions &&
+    askState === 'inactive' &&
+    riddleState === 'inactive' &&
+    poemState === 'inactive'
+  );
+  const inQnAForButtons = (
+    (phase === 'comprehension' && subPhase === 'comprehension-active') ||
+    (phase === 'exercise' && subPhase === 'exercise-start') ||
+    (phase === 'worksheet' && subPhase === 'worksheet-active') ||
+    (phase === 'test' && subPhase === 'test-active')
+  );
+  const qnaButtonsVisible = (
+    inQnAForButtons && !isSpeaking && showOpeningActions &&
+    askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive'
+  );
+  const buttonsGating = discussionButtonsVisible || qnaButtonsVisible;
+  const sendDisabled = (!canSend || loading || comprehensionAwaitingBegin || speakingLock || buttonsGating);
   // Transient placeholder override for the input field (non-intrusive and time-limited)
   const [tipOverride, setTipOverride] = useState(null);
   const tipTimerRef = useRef(null);
+  // Note: mutual exclusivity with Opening/Go buttons is handled via sendDisabled (buttonsGating)
   const showTipOverride = useCallback((text, ms = 10000) => {
     try { if (tipTimerRef.current) clearTimeout(tipTimerRef.current); } catch {}
     setTipOverride(String(text || '').trim() || null);
@@ -7520,7 +7542,7 @@ function SessionPageInner() {
                 (phase === 'test' && subPhase === 'test-active')
               );
               const canShow = (
-                inQnA && !isSpeaking && showOpeningActions && askState === 'inactive' && riddleState === 'inactive'
+                inQnA && !isSpeaking && showOpeningActions && askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive'
               );
               if (!canShow) return null;
               const wrap = { display:'flex', alignItems:'center', justifyContent:'center', flexWrap:'wrap', gap:8, padding:'6px 12px' };
