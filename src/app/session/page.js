@@ -652,70 +652,7 @@ function SessionPageInner() {
     await speakFrontend(prompt);
   }, [speakFrontend]);
 
-  // Handler: Start the lesson now
-  // NOTE: defined after startThreeStageTeaching to avoid TDZ; do not add it to deps
-  let handleStartLesson = useMemo(() => {
-    return async () => {
-      // If we are in a Q&A phase intro, this button begins the first question instead of teaching
-      try { setShowOpeningActions(false); } catch {}
-      if (phase === 'comprehension') {
-        const item = currentCompProblem;
-        if (item) {
-          try {
-            setQaAnswersUnlocked(true);
-            const formatted = ensureQuestionMark(formatQuestionForSpeech(item, { layout: 'multiline' }));
-            setCanSend(false);
-            await speakFrontend(formatted, { mcLayout: 'multiline' });
-          } catch {}
-          setCanSend(true);
-          return;
-        }
-      } else if (phase === 'exercise') {
-        const item = currentExerciseProblem;
-        if (item) {
-          try {
-            setQaAnswersUnlocked(true);
-            const formatted = ensureQuestionMark(formatQuestionForSpeech(item, { layout: 'multiline' }));
-            setCanSend(false);
-            await speakFrontend(formatted, { mcLayout: 'multiline' });
-          } catch {}
-          setCanSend(true);
-          return;
-        }
-      } else if (phase === 'worksheet') {
-        const list = Array.isArray(generatedWorksheet) ? generatedWorksheet : [];
-        const idx = 0;
-        const item = list[idx];
-        if (item) {
-          try {
-            setQaAnswersUnlocked(true);
-            const num = (typeof item.number === 'number' && item.number > 0) ? item.number : 1;
-            const formatted = ensureQuestionMark(`${num}. ${formatQuestionForSpeech(item, { layout: 'multiline' })}`);
-            setCanSend(false);
-            await speakFrontend(formatted, { mcLayout: 'multiline' });
-          } catch {}
-          setCanSend(true);
-          return;
-        }
-      } else if (phase === 'test') {
-        const list = Array.isArray(generatedTest) ? generatedTest : [];
-        const idx = 0;
-        const item = list[idx];
-        if (item) {
-          try {
-            setQaAnswersUnlocked(true);
-            const formatted = ensureQuestionMark(`1. ${formatQuestionForSpeech(item, { layout: 'multiline' })}`);
-            setCanSend(false);
-            await speakFrontend(formatted, { mcLayout: 'multiline' });
-          } catch {}
-          setCanSend(true);
-          return;
-        }
-      }
-      // Otherwise, start three-stage teaching as before
-      try { await startThreeStageTeaching(); } catch {}
-    };
-  }, []);
+  // (moved: handleStartLesson defined later, after state declarations to avoid TDZ)
 
   // Ask confirmation handlers (after Ms. Sonoma answered)
   const handleAskConfirmYes = useCallback(() => {
@@ -770,6 +707,7 @@ function SessionPageInner() {
     setShowOpeningActions(true);
     setCanSend(true);
   }, []);
+
 
   // Riddle: judge learner's attempt (local leniency first, then model if needed)
   const judgeRiddleAttempt = useCallback(async (attempt) => {
@@ -827,6 +765,8 @@ function SessionPageInner() {
     setRiddleState('awaiting-solve');
     await speakFrontend('Go ahead and tell me your answer.');
   }, [speakFrontend]);
+
+  // (moved: handleStartLesson is defined after explicit Go handlers to avoid TDZ)
 
   // URL params defined above; referenced throughout
 
@@ -1009,6 +949,154 @@ function SessionPageInner() {
       return;
     }
   }, [phase, subPhase, currentCompProblem, isSpeaking, canSend]);
+
+  // Explicit Go handlers per phase to reliably start the first question
+  const handleGoComprehension = useCallback(async () => {
+    try { setShowOpeningActions(false); } catch {}
+    if (phase !== 'comprehension') return;
+    let item = currentCompProblem;
+    if (!item) {
+      let firstComp = null;
+      if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
+        let idx = currentCompIndex;
+        while (idx < generatedComprehension.length && isShortAnswerItem(generatedComprehension[idx])) idx += 1;
+        if (idx < generatedComprehension.length) { firstComp = generatedComprehension[idx]; setCurrentCompIndex(idx + 1); }
+      }
+      if (!firstComp) {
+        let tries = 0; while (tries < 5) { const s = drawSampleUnique(); if (s && !isShortAnswerItem(s)) { firstComp = s; break; } tries += 1; }
+      }
+      if (!firstComp && compPool.length) {
+        const filtered = compPool.filter(q => !isShortAnswerItem(q));
+        if (filtered.length > 0) { firstComp = filtered[0]; setCompPool(compPool.slice(1)); }
+      }
+      if (!firstComp) {
+        const refilled = buildQAPool();
+        if (Array.isArray(refilled) && refilled.length) { firstComp = refilled[0]; setCompPool(refilled.slice(1)); }
+      }
+      if (!firstComp) {
+        if (Array.isArray(generatedComprehension) && generatedComprehension.length) {
+          firstComp = generatedComprehension[currentCompIndex] || generatedComprehension[0];
+          setCurrentCompIndex((currentCompIndex || 0) + 1);
+        } else if (Array.isArray(compPool) && compPool.length) {
+          firstComp = compPool[0]; setCompPool(compPool.slice(1));
+        }
+      }
+      if (firstComp) { setCurrentCompProblem(firstComp); item = firstComp; setSubPhase('comprehension-active'); }
+    }
+    if (!item) { setShowOpeningActions(true); return; }
+    try {
+      setQaAnswersUnlocked(true);
+      const formatted = ensureQuestionMark(formatQuestionForSpeech(item, { layout: 'multiline' }));
+      setCanSend(false);
+      await speakFrontend(formatted, { mcLayout: 'multiline' });
+    } catch {}
+    setCanSend(true);
+  }, [phase, currentCompProblem, generatedComprehension, currentCompIndex, compPool, speakFrontend]);
+
+  const handleGoExercise = useCallback(async () => {
+    try { setShowOpeningActions(false); } catch {}
+    if (phase !== 'exercise') return;
+    let item = currentExerciseProblem;
+    if (!item) {
+      let first = null;
+      if (Array.isArray(generatedExercise) && currentExIndex < generatedExercise.length) {
+        let idx = currentExIndex;
+        while (idx < generatedExercise.length && isShortAnswerItem(generatedExercise[idx])) idx += 1;
+        if (idx < generatedExercise.length) { first = generatedExercise[idx]; setCurrentExIndex(idx + 1); }
+      }
+      if (!first) { let tries = 0; while (tries < 5) { const s = drawSampleUnique(); if (s && !isShortAnswerItem(s)) { first = s; break; } tries += 1; } }
+      if (!first && exercisePool.length) { const [head, ...rest] = exercisePool; first = isShortAnswerItem(head) ? null : head; setExercisePool(rest); }
+      if (!first) { const refilled = buildQAPool(); if (refilled.length) { const [head, ...rest] = refilled; first = head; setExercisePool(rest); } }
+      if (first) { setCurrentExerciseProblem(first); item = first; setSubPhase('exercise-start'); }
+    }
+    if (!item) { setShowOpeningActions(true); return; }
+    try {
+      setQaAnswersUnlocked(true);
+      const formatted = ensureQuestionMark(formatQuestionForSpeech(item, { layout: 'multiline' }));
+      setCanSend(false);
+      await speakFrontend(formatted, { mcLayout: 'multiline' });
+    } catch {}
+    setCanSend(true);
+  }, [phase, currentExerciseProblem, generatedExercise, currentExIndex, exercisePool, speakFrontend]);
+
+  const handleGoWorksheet = useCallback(async () => {
+    try { setShowOpeningActions(false); } catch {}
+    if (phase !== 'worksheet') return;
+    const list = Array.isArray(generatedWorksheet) ? generatedWorksheet : [];
+    const item = list[0];
+    if (!item) { setShowOpeningActions(true); return; }
+    try {
+      setQaAnswersUnlocked(true);
+      const num = (typeof item.number === 'number' && item.number > 0) ? item.number : 1;
+      const formatted = ensureQuestionMark(`${num}. ${formatQuestionForSpeech(item, { layout: 'multiline' })}`);
+      setCanSend(false);
+      await speakFrontend(formatted, { mcLayout: 'multiline' });
+    } catch {}
+    setCanSend(true);
+  }, [phase, generatedWorksheet, speakFrontend]);
+
+  const handleGoTest = useCallback(async () => {
+    try { setShowOpeningActions(false); } catch {}
+    if (phase !== 'test') return;
+    const list = Array.isArray(generatedTest) ? generatedTest : [];
+    const item = list[0];
+    if (!item) { setShowOpeningActions(true); return; }
+    try {
+      setQaAnswersUnlocked(true);
+      const formatted = ensureQuestionMark(`1. ${formatQuestionForSpeech(item, { layout: 'multiline' })}`);
+      setCanSend(false);
+      await speakFrontend(formatted, { mcLayout: 'multiline' });
+    } catch {}
+    setCanSend(true);
+  }, [phase, generatedTest, speakFrontend]);
+
+  // Handler: Start the lesson now (fallback/generic)
+  const handleStartLesson = useCallback(async () => {
+    try { setShowOpeningActions(false); } catch {}
+    if (phase === 'comprehension' && currentCompProblem) {
+      try {
+        setQaAnswersUnlocked(true);
+        const formatted = ensureQuestionMark(formatQuestionForSpeech(currentCompProblem, { layout: 'multiline' }));
+        setCanSend(false);
+        await speakFrontend(formatted, { mcLayout: 'multiline' });
+      } catch {}
+      setCanSend(true);
+      return;
+    }
+    if (phase === 'exercise' && currentExerciseProblem) {
+      try {
+        setQaAnswersUnlocked(true);
+        const formatted = ensureQuestionMark(formatQuestionForSpeech(currentExerciseProblem, { layout: 'multiline' }));
+        setCanSend(false);
+        await speakFrontend(formatted, { mcLayout: 'multiline' });
+      } catch {}
+      setCanSend(true);
+      return;
+    }
+    if (phase === 'worksheet' && Array.isArray(generatedWorksheet) && generatedWorksheet[0]) {
+      try {
+        setQaAnswersUnlocked(true);
+        const first = generatedWorksheet[0];
+        const num = (typeof first.number === 'number' && first.number > 0) ? first.number : 1;
+        const formatted = ensureQuestionMark(`${num}. ${formatQuestionForSpeech(first, { layout: 'multiline' })}`);
+        setCanSend(false);
+        await speakFrontend(formatted, { mcLayout: 'multiline' });
+      } catch {}
+      setCanSend(true);
+      return;
+    }
+    if (phase === 'test' && Array.isArray(generatedTest) && generatedTest[0]) {
+      try {
+        setQaAnswersUnlocked(true);
+        const formatted = ensureQuestionMark(`1. ${formatQuestionForSpeech(generatedTest[0], { layout: 'multiline' })}`);
+        setCanSend(false);
+        await speakFrontend(formatted, { mcLayout: 'multiline' });
+      } catch {}
+      setCanSend(true);
+      return;
+    }
+    try { await startThreeStageTeaching(); } catch {}
+  }, [phase, currentCompProblem, currentExerciseProblem, generatedWorksheet, generatedTest, speakFrontend]);
 
   // Persist comprehension/exercise pools whenever they are initialized or change length (e.g., after consuming an item)
   useEffect(() => {
@@ -7421,13 +7509,21 @@ function SessionPageInner() {
               const btn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
               const goBtn = { ...btn, background:'#c7442e', boxShadow:'0 2px 12px rgba(199,68,46,0.28)' };
               const disabledBtn = { ...btn, opacity:0.5, cursor:'not-allowed' };
+              // Phase-specific Go: trigger the first question for the active phase
+              const onGo = !lessonData ? undefined : (
+                phase === 'comprehension' ? handleGoComprehension :
+                phase === 'exercise' ? handleGoExercise :
+                phase === 'worksheet' ? handleGoWorksheet :
+                phase === 'test' ? handleGoTest :
+                handleStartLesson
+              );
               return (
                 <div style={wrap} aria-label="Phase opening actions">
                   <button type="button" style={jokeUsedThisGate ? disabledBtn : btn} onClick={jokeUsedThisGate ? undefined : handleTellJoke} disabled={jokeUsedThisGate}> Joke</button>
                   <button type="button" style={btn} onClick={handleAskQuestionStart}>Ask</button>
                   <button type="button" style={riddleUsedThisGate ? disabledBtn : btn} onClick={riddleUsedThisGate ? undefined : handleTellRiddle} disabled={riddleUsedThisGate}>Riddle</button>
                   <button type="button" style={poemUsedThisGate ? disabledBtn : btn} onClick={poemUsedThisGate ? undefined : handlePoemStart} disabled={poemUsedThisGate}>Poem</button>
-                  <button type="button" style={goBtn} onClick={lessonData ? handleStartLesson : undefined} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson…'}>Go</button>
+                  <button type="button" style={goBtn} onClick={onGo} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson…'}>Go</button>
                 </div>
               );
             } catch {}
