@@ -22,7 +22,10 @@ Silly question
 The learner will reply to this question and Ms. Sonoma will respond to the reply playfully and then transition into the teaching
 Teaching
 Ms. Sonoma is sent vocab and lesson notes and she uses them to teach.
-Gated ending: “Would you like me to go over that again?”
+Gate ending (UI-driven):
+The lesson wrap does not include a spoken question. The app renders Yes/No buttons:
+If [Yes]: Ms. Sonoma repeats the teaching, rephrased (no fresh intro tone).
+If [No]: The app plays the cue “Great. Let's move on to comprehension.” via TTS and transitions to comprehension.
 Sonoma-Validated Truth*
 If [yes]: repeat lesson rephrased
 If [no]: triggers comprehension phase

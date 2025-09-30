@@ -11,9 +11,13 @@ import { loadRuntimeVariables } from "../lib/runtimeVariables";
 import { getSupabaseClient } from "../lib/supabaseClient";
 import { appendTranscriptSegment } from "../lib/transcriptsClient";
 import { getLearner } from "@/app/facilitator/learners/clientApi";
+// SpinnerScreen removed here; reverting to in-panel overlay spinner
+import { generateOpening } from "../lib/opening";
 import { pickNextJoke, renderJoke } from "../lib/jokes";
+const { COMPREHENSION_INTROS, EXERCISE_INTROS, WORKSHEET_INTROS, TEST_INTROS } = require('./constants/phaseIntros.js');
+import { pickRandomRiddle } from "../lib/riddles";
 import { getStoredAssessments, saveAssessments, clearAssessments } from './assessment/assessmentStore';
-import { upsertMedal } from '@/app/lib/medalsClient';
+import { upsertMedal, emojiForTier, tierForPercent } from '@/app/lib/medalsClient';
 
 export default function SessionPage(){
   return (
@@ -55,13 +59,14 @@ const KID_FRIENDLY_STYLE = [
  * give kid-friendly one-sentence definitions for each vocab term during the teaching
  * segment only (not during comprehension). It does not mention files or external sources.
  */
-function buildSystemMessage({ lessonTitle = "", teachingNotes = "", vocab = [], gatePhrase = "" } = {}) {
+function buildSystemMessage({ lessonTitle = "", teachingNotes = "", vocab = [], gatePhrase = "", stage = "" } = {}) {
   const scopeSource = teachingNotes && teachingNotes.trim() ? "teachingNotes" : "lessonTitle";
   const scopeText = scopeSource === "teachingNotes" ? teachingNotes.trim() : lessonTitle.trim();
 
-  // Prepare vocab content. Accept [{term,definition}, ...] or ["word", ...].
+  // Prepare vocab content ONLY for the definitions stage. Accept [{term,definition}, ...] or ["word", ...].
   let vocabContent;
-  if (Array.isArray(vocab) && vocab.length > 0) {
+  const includeVocab = (stage === 'definitions');
+  if (includeVocab && Array.isArray(vocab) && vocab.length > 0) {
     const hasDefs = vocab.every(v => v && typeof v === "object" && (v.term || v.word) && v.definition);
     if (hasDefs) {
       vocabContent = "Vocab (each term with provided definition):\n" + vocab.map(v => {
@@ -74,7 +79,7 @@ function buildSystemMessage({ lessonTitle = "", teachingNotes = "", vocab = [], 
       vocabContent = `Vocab list: ${list}.\nInstruction: For each term above, during the TEACHING segment only, give a single short kid-friendly definition (one sentence) and then use the term in your worked examples. Do NOT repeat the definitions during comprehension.`;
     }
   } else {
-    // No vocab provided: omit vocab instructions entirely.
+    // Omit vocab entirely for non-definitions or when none provided
     vocabContent = "";
   }
 
@@ -88,7 +93,7 @@ function buildSystemMessage({ lessonTitle = "", teachingNotes = "", vocab = [], 
 
   const parts = [
     CLEAN_SPEECH_INSTRUCTION,
-    "You are Ms. Sonoma. Follow the defined lesson. Include provided vocab only during the teaching segment.",
+    "Include provided vocab only during the teaching segment.",
     `Lesson background (do not read aloud): ${scopeText}`,
     vocabContent,
     GUARD_INSTRUCTION,
@@ -96,8 +101,7 @@ function buildSystemMessage({ lessonTitle = "", teachingNotes = "", vocab = [], 
     NORMALIZATION_NOTE,
     // compact gate rule
     gatePhraseLine,
-    // brief reminder of teaching structure and where vocab definitions belong
-    "Teaching structure: Intro → Examples → Wrap. During the teaching reply include one-sentence child-friendly definitions for each vocab term and use the terms in examples. End the teaching wrap only with exactly: \"Would you like me to go over that again?\""
+    // Stage-aware: omit rigid teaching-structure text to avoid redundancy
   ];
 
   return parts.filter(Boolean).join("\n\n");
@@ -114,89 +118,69 @@ let TEST_TARGET = 10;
 // Dynamically load per-user targets at runtime (recomputed on each call)
 async function ensureRuntimeTargets(forceReload = false) {
   try {
-    // Always reload from runtime variables first
     const vars = await loadRuntimeVariables();
     const t = vars?.targets || {};
-    // Support both 'comprehension' and legacy 'discussion'
-    COMPREHENSION_TARGET = (t.comprehension ?? t.discussion ?? 3);
-    EXERCISE_TARGET = t.exercise ?? 5;
-    WORKSHEET_TARGET = t.worksheet ?? 15;
-    TEST_TARGET = t.test ?? 10;
+    COMPREHENSION_TARGET = (t.comprehension ?? t.discussion ?? COMPREHENSION_TARGET ?? 3);
+    EXERCISE_TARGET = (t.exercise ?? EXERCISE_TARGET ?? 5);
+    WORKSHEET_TARGET = (t.worksheet ?? WORKSHEET_TARGET ?? 15);
+    TEST_TARGET = (t.test ?? TEST_TARGET ?? 10);
 
-    // Get current learner info (fresh each time)
     const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
     const learnerName = typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null;
-    
+
     if (learnerId && learnerId !== 'demo') {
       try {
-        // Always fetch fresh learner data
         const learner = await getLearner(learnerId);
         if (learner) {
           const n = (v) => (v == null ? undefined : Number(v));
-          // Prefer explicit top-level fields, else fall back to nested targets object if present
           COMPREHENSION_TARGET = n(learner.comprehension ?? learner.targets?.comprehension) ?? COMPREHENSION_TARGET;
           EXERCISE_TARGET = n(learner.exercise ?? learner.targets?.exercise) ?? EXERCISE_TARGET;
           WORKSHEET_TARGET = n(learner.worksheet ?? learner.targets?.worksheet) ?? WORKSHEET_TARGET;
           TEST_TARGET = n(learner.test ?? learner.targets?.test) ?? TEST_TARGET;
-          
-          console.log(`[Session] Loaded targets for learner ${learner.name}:`, {
-            comprehension: COMPREHENSION_TARGET,
-            exercise: EXERCISE_TARGET,
-            worksheet: WORKSHEET_TARGET,
-            test: TEST_TARGET
-          });
         }
-      } catch (error) {
-        console.warn('[Session] Failed to load learner data:', error);
+      } catch (e) {
+        console.warn('[Session] Failed to load learner data:', e);
       }
-    }
-    // Fallback: if id is not usable (demo/missing), try to match by learner_name in local storage list
-    // Use the first match if any learner with that name exists
-    if ((!learnerId || learnerId === 'demo') && learnerName && learnerName !== 'Demo Learner') {
+    } else if (learnerName && learnerName !== 'Demo Learner') {
       try {
         const raw = typeof window !== 'undefined' ? localStorage.getItem('facilitator_learners') : null;
         if (raw) {
-          try {
-            const list = JSON.parse(raw);
-            if (Array.isArray(list)) {
-              const match = list.find(l => l && (l.name === learnerName || l.full_name === learnerName));
-              if (match) {
-                const n = (v) => (v == null ? undefined : Number(v));
-                COMPREHENSION_TARGET = n(match.comprehension ?? match.targets?.comprehension) ?? COMPREHENSION_TARGET;
-                EXERCISE_TARGET = n(match.exercise ?? match.targets?.exercise) ?? EXERCISE_TARGET;
-                WORKSHEET_TARGET = n(match.worksheet ?? match.targets?.worksheet) ?? WORKSHEET_TARGET;
-                TEST_TARGET = n(match.test ?? match.targets?.test) ?? TEST_TARGET;
-              }
+          const list = JSON.parse(raw);
+          if (Array.isArray(list)) {
+            const match = list.find(l => l && (l.name === learnerName || l.full_name === learnerName));
+            if (match) {
+              const n = (v) => (v == null ? undefined : Number(v));
+              COMPREHENSION_TARGET = n(match.comprehension ?? match.targets?.comprehension) ?? COMPREHENSION_TARGET;
+              EXERCISE_TARGET = n(match.exercise ?? match.targets?.exercise) ?? EXERCISE_TARGET;
+              WORKSHEET_TARGET = n(match.worksheet ?? match.targets?.worksheet) ?? WORKSHEET_TARGET;
+              TEST_TARGET = n(match.test ?? match.targets?.test) ?? TEST_TARGET;
             }
-          } catch {/* ignore parse errors */}
+          }
         }
-      } catch {/* ignore fallback errors */}
+      } catch {/* ignore parse errors */}
     }
 
-    // LocalStorage overrides (user-adjustable targets) – learner-specific first
-    try {
-      const currentLearnerId = (learnerId && learnerId !== 'demo') ? learnerId : null;
-      if (currentLearnerId) {
-        const lc = Number(localStorage.getItem(`target_comprehension_${currentLearnerId}`));
-        const le = Number(localStorage.getItem(`target_exercise_${currentLearnerId}`));
-        const lw = Number(localStorage.getItem(`target_worksheet_${currentLearnerId}`));
-        const lt = Number(localStorage.getItem(`target_test_${currentLearnerId}`));
-        if (!Number.isNaN(lc) && lc > 0) COMPREHENSION_TARGET = lc;
-        if (!Number.isNaN(le) && le > 0) EXERCISE_TARGET = le;
-        if (!Number.isNaN(lw) && lw > 0) WORKSHEET_TARGET = lw;
-        if (!Number.isNaN(lt) && lt > 0) TEST_TARGET = lt;
-      } else {
-        // Global overrides for demo / no learner selected
-        const lc = Number(localStorage.getItem('target_comprehension'));
-        const le = Number(localStorage.getItem('target_exercise'));
-        const lw = Number(localStorage.getItem('target_worksheet'));
-        const lt = Number(localStorage.getItem('target_test'));
-        if (!Number.isNaN(lc) && lc > 0) COMPREHENSION_TARGET = lc;
-        if (!Number.isNaN(le) && le > 0) EXERCISE_TARGET = le;
-        if (!Number.isNaN(lw) && lw > 0) WORKSHEET_TARGET = lw;
-        if (!Number.isNaN(lt) && lt > 0) TEST_TARGET = lt;
-      }
-    } catch {/* ignore override read errors */}
+    // Local overrides (per-learner first, then global)
+    const currentId = learnerId && learnerId !== 'demo' ? learnerId : null;
+    if (currentId) {
+      const lc = Number(localStorage.getItem(`target_comprehension_${currentId}`));
+      const le = Number(localStorage.getItem(`target_exercise_${currentId}`));
+      const lw = Number(localStorage.getItem(`target_worksheet_${currentId}`));
+      const lt = Number(localStorage.getItem(`target_test_${currentId}`));
+      if (!Number.isNaN(lc) && lc > 0) COMPREHENSION_TARGET = lc;
+      if (!Number.isNaN(le) && le > 0) EXERCISE_TARGET = le;
+      if (!Number.isNaN(lw) && lw > 0) WORKSHEET_TARGET = lw;
+      if (!Number.isNaN(lt) && lt > 0) TEST_TARGET = lt;
+    } else {
+      const lc = Number(localStorage.getItem('target_comprehension'));
+      const le = Number(localStorage.getItem('target_exercise'));
+      const lw = Number(localStorage.getItem('target_worksheet'));
+      const lt = Number(localStorage.getItem('target_test'));
+      if (!Number.isNaN(lc) && lc > 0) COMPREHENSION_TARGET = lc;
+      if (!Number.isNaN(le) && le > 0) EXERCISE_TARGET = le;
+      if (!Number.isNaN(lw) && lw > 0) WORKSHEET_TARGET = lw;
+      if (!Number.isNaN(lt) && lt > 0) TEST_TARGET = lt;
+    }
   } catch (error) {
     console.error('[Session] Error loading runtime targets:', error);
   }
@@ -222,28 +206,28 @@ const phaseLabels = {
 
 const discussionSteps = [
   {
-    key: "greeting",
+    key: 'greeting',
     instruction: "Greeting: Say the learner's name with a hello phrase and name the lesson. Do not ask any questions and do not invite a response. Keep it to 1–2 sentences max.",
-    next: "encouragement",
-    label: "Next: Encouragement",
+    next: 'encouragement',
+    label: 'Next: Encouragement',
   },
   {
-    key: "encouragement",
-    instruction: "Encourage: Say a positive and reassuring statement. Do not ask any questions and do not invite a response. Keep it to a single sentence.",
-    next: "joke",
-    label: "Next: Joke",
+    key: 'encouragement',
+    instruction: 'Encourage: Say a positive and reassuring statement. Do not ask any questions and do not invite a response. Keep it to a single sentence.',
+    next: 'joke',
+    label: 'Next: Joke',
   },
   {
-    key: "joke",
+    key: 'joke',
     instruction: "Joke: Begin with either 'Wanna hear a joke?' or 'Let's start with a joke.' Then tell one short, kid-friendly joke related to the subject. Keep total to 1–2 sentences.",
-    next: "silly-question",
-    label: "Next: Silly Question",
+    next: 'silly-question',
+    label: 'Next: Silly Question',
   },
   {
-    key: "silly-question",
-    instruction: "Silly question: Ask the learner a playful question before teaching. Only ask the question (one sentence) and end with a question mark. Do not add any sentences or commentary after the question.",
-    next: "awaiting-learner",
-    label: "Wait for learner reply",
+    key: 'silly-question',
+    instruction: 'Silly question: Ask one playful, silly question as the final sentence.',
+    next: 'awaiting-learner',
+    label: 'Wait for learner reply',
   },
 ];
 
@@ -266,7 +250,7 @@ function getTeachingSteps(lessonTitle = "the lesson") {
     {
       key: "teaching-wrap",
       instruction:
-        `Teaching Part 3/3: This lesson is strictly "${lessonTitle}". Summarize the exact steps for the specific lessonTitle (from Session JSON), remind them about any simple tools or notes, and finish by asking exactly "Would you like me to go over that again?" Do not ask them to solve anything. Do not mention the worksheet or test. ${KID_FRIENDLY_STYLE}`,
+        `Teaching Part 3/3: This lesson is strictly "${lessonTitle}". Summarize the exact steps for the specific lessonTitle (from Session JSON), remind them about any simple tools or notes, and close with a concise wrap (no questions). Do not ask them to solve anything. Do not mention the worksheet or test. ${KID_FRIENDLY_STYLE}`,
       next: "awaiting-gate",
       label: "Wait for learner answer",
     },
@@ -283,136 +267,223 @@ function resolveLessonInfo(subject, lesson) {
 }
 
 function splitIntoSentences(text) {
-  if (!text) {
-    return [];
+  if (!text) return [];
+  try {
+    const lines = String(text).split(/\n+/);
+    const out = [];
+    for (const lineRaw of lines) {
+      const line = String(lineRaw).replace(/[\t ]+/g, ' ').trimEnd();
+      if (!line) continue;
+      const parts = line
+        .split(/(?<=[.?!])/)
+        .map((part) => String(part).trim())
+        .filter(Boolean);
+      if (parts.length) out.push(...parts);
+    }
+    return out.length ? out : [String(text).trim()];
+  } catch {
+    return [String(text).trim()];
   }
-  const sentences = text
-    .replace(/\s+/g, " ")
-    .split(/(?<=[.?!])/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-  return sentences.length ? sentences : [text.trim()];
 }
 
 // Post-split fix-up: merge multiple-choice label fragments so options stay inline.
 // Example input fragments from splitting: ["A.", "7, B.", "70, C.", "700, D.", "7000"]
 // Output: ["A. 7,   B. 70,   C. 700,   D. 7000"]
-function mergeMcChoiceFragments(sentences) {
-  try {
-    if (!Array.isArray(sentences) || !sentences.length) return sentences;
-    const out = [];
-    // A segment that ends with ", X." where X is a single letter is a strong indicator of MC chain
-    const chainEndRe = /,\s*[A-Z]\.$/;
-    for (let i = 0; i < sentences.length; i++) {
-      const cur = sentences[i];
-      if (/^[A-Z]\.$/.test(cur) && i + 1 < sentences.length) {
-        // Start of an MC chain like "A."
-        let combined = cur + ' ' + sentences[i + 1];
-        let k = i + 2;
-        // Keep appending until we hit a fragment that does not end with ", X."
-        while (k < sentences.length) {
-          combined += ' ' + sentences[k];
-          if (!chainEndRe.test(sentences[k])) {
-            break;
-          }
-          k++;
-        }
-        // Standardize spacing between options: use a comma followed by three spaces before next label
-        combined = combined.replace(/,\s+(?=\(?[A-Z]\)?[.:)\-]\s)/g, ',   ');
-        out.push(combined);
-        i = k; // skip consumed fragments
-      } else {
-        out.push(cur);
-      }
-    }
-    return out;
-  } catch {
-    return sentences;
-  }
-}
+// (legacy mergeMcChoiceFragments removed; using improved version below)
 
 // Ensure the letter label and its choice stay together in captions and displays by inserting NBSP after labels.
 // Patterns covered: "A.", "(B)", "C:", "D)", "E -" etc., when followed by spaces and text
+function mergeMcChoiceFragments(sentences, layout = 'inline') {
+  if (!Array.isArray(sentences) || !sentences.length) return sentences || [];
+  const out = [];
+  const isLabelToken = (s) => /^\(?[A-Z]\)?\s*[.:)\-]\s*$/.test(String(s || '').trim());
+  const startsWithLabel = (s) => /^\(?[A-Z]\)?\s*[.:)\-]\s+/.test(String(s || ''));
+  const isNumberLine = (s) => /^\d+\.\s*$/.test(String(s || '').trim()); // e.g., "4."
+
+  let i = 0;
+  while (i < sentences.length) {
+    const cur = String(sentences[i] ?? '');
+    const trimmed = cur.trim();
+
+    if (isLabelToken(trimmed) || startsWithLabel(trimmed)) {
+      // 1) Build pairs greedily: A. text, B. text, ... possibly split across tokens
+      const parts = [];
+      // Seed first pair
+      if (startsWithLabel(trimmed) && !isLabelToken(trimmed)) {
+        const m = trimmed.match(/^\(?([A-Z])\)?\s*[.:)\-]\s+(.*)$/);
+        if (m) parts.push(`${m[1]}. ${m[2].trim()}`);
+      } else if (isLabelToken(trimmed)) {
+        const label = trimmed.match(/^\(?([A-Z])\)?/)[1];
+        // Pair with following non-empty token as choice text
+        let j = i + 1;
+        while (j < sentences.length && String(sentences[j]).trim() === '') j++;
+        const choice = j < sentences.length ? String(sentences[j]).trim() : '';
+        if (choice) i = j; // advance to the choice token
+        parts.push(`${label}. ${choice}`.trim());
+      }
+
+      // Continue greedily collecting subsequent label fragments
+      let k = i + 1;
+      while (k < sentences.length) {
+        const nxt = String(sentences[k] ?? '');
+        const ntrim = nxt.trim();
+        if (isLabelToken(ntrim)) {
+          const label = ntrim.match(/^\(?([A-Z])\)?/)[1];
+          let m = k + 1;
+          while (m < sentences.length && String(sentences[m]).trim() === '') m++;
+          const choice = m < sentences.length ? String(sentences[m]).trim() : '';
+          if (choice) k = m;
+          parts.push(`${label}. ${choice}`.trim());
+          k += 1;
+          continue;
+        }
+        if (startsWithLabel(ntrim)) {
+          const m = ntrim.match(/^\(?([A-Z])\)?\s*[.:)\-]\s+(.*)$/);
+          if (m) parts.push(`${m[1]}. ${m[2].trim()}`);
+          k += 1;
+          continue;
+        }
+        break;
+      }
+
+      // 2) Optionally prepend preceding numeric line like "4." for Test phase numbering
+      let prefix = '';
+      if (out.length && isNumberLine(out[out.length - 1])) {
+        prefix = String(out.pop()).trim();
+      }
+
+      // 3) If prior output line is a question/stem, decide how to attach options
+      let head = '';
+      if (out.length) {
+        const prev = String(out[out.length - 1]);
+        if (/[?)]$/.test(prev)) head = String(out.pop());
+      }
+
+      if (layout === 'multiline') {
+        // Keep the question/stem as its own line, then list each option on a new line
+        if (head) {
+          const withPrefix = prefix ? `${prefix} ${head}` : head;
+          out.push(withPrefix.trim());
+        } else if (prefix && parts.length) {
+          // No explicit head; attach prefix to the first option
+          parts[0] = `${prefix} ${parts[0]}`;
+        }
+        for (const p of parts) {
+          out.push(p.trim());
+        }
+        i = k + 1;
+        continue;
+      } else {
+        const inline = parts.join(',   ');
+        let finalLine = head ? `${head}   ${inline}` : inline;
+        if (prefix) finalLine = `${prefix} ${finalLine}`;
+        if (!/[.?!]$/.test(finalLine)) finalLine += '.';
+        out.push(finalLine.trim());
+        i = k + 1;
+        continue;
+      }
+    }
+
+    out.push(sentences[i]);
+    i += 1;
+  }
+  return out;
+}
+
+// Ensure the letter label and its choice stay together visually by replacing the normal space after
+// the label with a non-breaking space. Handles patterns like "A.", "(B)", "C:", "D)".
 function enforceNbspAfterMcLabels(text) {
   try {
-    if (!text) return text;
-    // Replace a normal breaking space after a label with NBSP, but do not duplicate if already NBSP
-    return String(text).replace(/\b\(?([A-Z])\)?\s*[\.:\)\-]\s+(?!\u00A0)/g, (m) => m.replace(/\s+$/, '') + '\u00A0');
+    if (typeof text !== 'string') return text;
+    return text
+      .replace(/\(A\)/g, '(A)') // normalize unexpected variants just in case
+      .replace(/\b\(?([A-D])\)?\s*([.:)\-])\s+(?=\S)/g, (_m, p1, p2) => `${p1}.\u00A0`)
+      .replace(/\b([A-D])\)\s+(?=\S)/g, (_m, p1) => `${p1}).\u00A0`);
+  } catch { return text; }
+}
+
+// Count words in a sentence or sentence-like object. Used for caption pacing.
+// Accepts a string or an object with a `text` field; returns a minimum of 1.
+function countWords(s) {
+  try {
+    const raw = (typeof s === 'string') ? s : (s && typeof s.text === 'string' ? s.text : '');
+    if (!raw) return 1;
+    // Normalize non-breaking spaces and collapse whitespace
+    const norm = String(raw).replace(/\u00A0/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!norm) return 1;
+    // Split on spaces after stripping simple punctuation groups
+    const cleaned = norm.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/[^A-Za-z0-9'+\-]+/g, ' ');
+    const parts = cleaned.trim().split(/\s+/).filter(Boolean);
+    return parts.length || 1;
+  } catch { return 1; }
+}
+
+// Build a concise grading spec string for a single question.
+// Modes:
+//  - exact: accept equality to expected or any acceptable (after normalization)
+//  - short-answer: accept when at least minKeywords keywords appear (order-free)
+// Flags:
+//  - tf: enable true/false leniency (T/F and yes/no mapping)
+//  - mc: enable multiple-choice leniency (choice letter or full text)
+//  - sa: hint that the question type is short-answer (informational)
+function buildPerQuestionJudgingSpec({
+  mode = 'exact',
+  learnerAnswer = '',
+  expectedAnswer = '',
+  acceptableAnswers = [],
+  keywords = [],
+  minKeywords = null,
+  tf = false,
+  mc = false,
+  sa = false,
+} = {}) {
+  try {
+    const normalizeRule = 'Normalize by lowercasing, trimming, collapsing spaces, removing punctuation, and mapping number words zero–twenty to digits.';
+    const base = [
+      'Grading instruction:',
+      normalizeRule,
+      `Mode: ${mode}`,
+    ];
+
+    // True/False leniency
+    if (tf) {
+      base.push('True/False leniency: accept single-letter T/F; accept yes/no mapped to true/false; also accept canonical true/false tokens.');
+    }
+    // Multiple-choice leniency
+    if (mc) {
+      base.push('Multiple-choice leniency: accept the choice letter (A, B, C, …) or the full normalized choice text.');
+    }
+
+    if (mode === 'short-answer') {
+      const minK = Number.isInteger(minKeywords) ? minKeywords : (Array.isArray(keywords) && keywords.length ? 1 : 0);
+      base.push(`Short-answer acceptance: answer is correct when it contains at least ${minK} required keyword(s) from: ${Array.isArray(keywords) ? keywords.join(', ') : ''}.`);
+      base.push('Judge on content only; ignore politeness or filler. Do not reveal the correct answer.');
+    } else {
+      const list = Array.isArray(acceptableAnswers) && acceptableAnswers.length ? acceptableAnswers.join(', ') : expectedAnswer;
+      base.push(`Exact acceptance: correct if normalized answer equals expected or any acceptable variant. Expected: ${expectedAnswer}. Acceptable variants: ${list}.`);
+      base.push('Do not reveal the correct answer in feedback.');
+    }
+
+    return base.filter(Boolean).join(' ');
   } catch {
-    return text;
+    return 'Grading instruction: Use normalization; accept expected answer or listed acceptable variants; for short-answer, require the specified keyword count.';
   }
 }
-
-function countWords(text) {
-  if (!text) {
-    return 0;
-  }
-  return text.trim().split(/\s+/).filter(Boolean).length;
-}
-
-function SessionPageInner() {
-  const router = useRouter();
-  const params = useSearchParams();
-  // Hotkeys: initialize with local defaults; later fetch server override
-  const [hotkeys, setHotkeys] = useState(() => getHotkeysLocal());
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetchHotkeysServer();
-        if (res?.ok && res.hotkeys && !cancelled) {
-          setHotkeys({ ...DEFAULT_HOTKEYS, ...res.hotkeys });
-        }
-      } catch {}
-    })();
-    return () => { cancelled = true };
-  }, []);
   
-  const subjectParam = params.get("subject") || "math";
-  let difficultyParam = params.get("difficulty") || "beginner";
-  // Backward compatibility: rename 'normal' difficulty to 'intermediate'
-  if (difficultyParam.toLowerCase() === 'normal') difficultyParam = 'intermediate';
-  // Default to a lesson file that exists in public/lessons/math to avoid 404s on first load
-  const lessonParam = params.get("lesson") || "3rd_Multiplication_Facts_to_10x10_Beginner.json";
+function SessionPageInner() {
+  // URL params defined earlier; reuse here without redeclaration
 
-  // Per-question judging spec (no global grading logic). The caller decides the mode per item.
-  // mode: 'exact' (compare against an explicit acceptable set) or 'short-answer' (keywords + min)
-  const buildPerQuestionJudgingSpec = useCallback(({      
-    mode = 'exact',
-    learnerAnswer = '',
-    expectedAnswer = '',
-    acceptableAnswers = [],
-    keywords = [],
-    minKeywords = null,
-    tf = false, // True/False item
-    mc = false, // Multiple choice item
-    sa = false, // Short answer item
-  }) => {
-    const data = [
-      `EXPECTED: ${expectedAnswer}`,
-      (Array.isArray(acceptableAnswers) && acceptableAnswers.length) ? `ACCEPTABLE: [${acceptableAnswers.join(', ')}]` : null,
-      (mode === 'short-answer' && Array.isArray(keywords) && keywords.length) ? `KEYWORDS: [${keywords.join(', ')}]` : null,
-      (mode === 'short-answer' && Number.isInteger(minKeywords) && minKeywords > 0) ? `MIN: ${minKeywords}` : null,
-      `LEARNER_ANSWER: "${learnerAnswer}"`
-    ].filter(Boolean).join(' ');
-
-    const normalize = '- Normalize by lowercasing, trimming, collapsing spaces, removing punctuation, and mapping number words zero–twenty to digits.';
-    const exactRule = '- Mark CORRECT if and only if the normalized learner answer equals any normalized item in ACCEPTABLE.';
-    // Choose deterministic leniency by declared question type
-    const modeRule = tf ? tf_leniency : (mc ? mc_leniency : (sa || mode === 'short-answer' ? sa_leniency : exactRule));
-    // Dev-only trace of which leniency was selected (does not alter prompts)
-    try {
-      const sel = tf ? 'tf' : (mc ? 'mc' : (sa || mode === 'short-answer' ? 'sa' : 'exact'));
-      console.debug('[LeniencySelection]', sel, { mode });
-    } catch {}
-
-    const output = [
-      'OUTPUT:',
-      '- Start with exactly "Correct!" OR "Not quite right."',
-      '- If incorrect: give ONE short non-revealing hint. Do NOT reveal the answer. '
-    ].join(' ');
-    return `${data} ${normalize} ${modeRule} ${output}`;
-  }, []);
+  // Core session state that many effects/handlers depend on must be initialized first
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [phase, setPhase] = useState("discussion");
+  const [subPhase, setSubPhase] = useState("greeting");
+  
+  // URL params: subject/lesson/difficulty with safe defaults used throughout this component
+  // Kept near the top so any effects/handlers can safely reference them without TDZ issues
+  const searchParams = useSearchParams();
+  const subjectParam = (searchParams?.get('subject') || 'math').toLowerCase();
+  const lessonParam = searchParams?.get('lesson') || '';
+  const difficultyParam = (searchParams?.get('difficulty') || 'beginner').toLowerCase();
   
   // Force target reload when learner changes
   const reloadTargetsForCurrentLearner = useCallback(async () => {
@@ -431,6 +502,334 @@ function SessionPageInner() {
     reloadTargetsForCurrentLearner();
   }, [reloadTargetsForCurrentLearner]);
 
+  // Discussion: post-Opening action buttons state
+  const [showOpeningActions, setShowOpeningActions] = useState(false);
+  // Gate quick-answer buttons until the learner presses "Start the lesson" for the first item in each Q&A phase
+  const [qaAnswersUnlocked, setQaAnswersUnlocked] = useState(false);
+  const [jokeUsedThisGate, setJokeUsedThisGate] = useState(false);
+  const [riddleUsedThisGate, setRiddleUsedThisGate] = useState(false);
+  const [poemUsedThisGate, setPoemUsedThisGate] = useState(false);
+  // Ad-hoc Q&A flow state
+  // askState: 'inactive' | 'awaiting-input' | 'awaiting-confirmation'
+  const [askState, setAskState] = useState('inactive');
+  const [askOriginalQuestion, setAskOriginalQuestion] = useState('');
+  // Riddle state (hoisted before handlers to avoid TDZ in dependencies)
+  const [riddleState, setRiddleState] = useState('inactive'); // 'inactive' | 'presented' | 'awaiting-solve'
+  const [currentRiddle, setCurrentRiddle] = useState(null); // { id, text, answer }
+  // Poem state
+  // poemState: 'inactive' | 'awaiting-topic' | 'awaiting-ok'
+  const [poemState, setPoemState] = useState('inactive');
+
+  // Reset opening actions visibility on begin and on major phase changes
+  useEffect(() => {
+    if (phase === 'discussion' && subPhase === 'unified-discussion') {
+      setShowOpeningActions(false);
+      setJokeUsedThisGate(false);
+      setRiddleUsedThisGate(false);
+      setPoemUsedThisGate(false);
+    }
+  }, [phase, subPhase]);
+
+  // After Opening finishes speaking and we are awaiting-learner, show action buttons
+  // Only when not in Ask, Riddle, or Poem flows
+  useEffect(() => {
+    if (
+      !isSpeaking &&
+      phase === 'discussion' &&
+      subPhase === 'awaiting-learner' &&
+      askState === 'inactive' &&
+      riddleState === 'inactive' &&
+      poemState === 'inactive'
+    ) {
+      setShowOpeningActions(true);
+    }
+  }, [isSpeaking, phase, subPhase, askState, riddleState, poemState]);
+
+  // If Ask, Riddle, or Poem becomes active, immediately hide Opening actions
+  useEffect(() => {
+    if (askState !== 'inactive' || riddleState !== 'inactive' || poemState !== 'inactive') {
+      try { setShowOpeningActions(false); } catch {}
+    }
+  }, [askState, riddleState, poemState]);
+
+  // Handler: Tell me a joke (once per gate)
+  const handleTellJoke = useCallback(async () => {
+    if (jokeUsedThisGate) return;
+    try { setShowOpeningActions(false); } catch {}
+    try {
+      const subjectKey = (subjectParam || 'math');
+      const jokeObj = pickNextJoke(subjectKey);
+      const text = renderJoke(jokeObj) || '';
+      if (!text) { setShowOpeningActions(true); setJokeUsedThisGate(true); return; }
+      // Append to captions first; schedule indices
+      let sentences = splitIntoSentences(text);
+      sentences = mergeMcChoiceFragments(sentences).map((s) => enforceNbspAfterMcLabels(s));
+      const prevLen = captionSentencesRef.current?.length || 0;
+      const nextAll = [...(captionSentencesRef.current || []), ...sentences];
+      captionSentencesRef.current = nextAll;
+      setCaptionSentences(nextAll);
+      setCaptionIndex(prevLen);
+      // Synthesize and play via unified path
+      let dec = false;
+      try {
+        setTtsLoadingCount((c) => c + 1);
+        let res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
+        if (!res.ok) {
+          try { await fetch('/api/tts', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(() => {}); } catch {}
+          res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
+        }
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          let b64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
+          if (b64) b64 = normalizeBase64Audio(b64);
+          if (b64) {
+            if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
+            setIsSpeaking(true);
+            try { await playAudioFromBase64(b64, sentences, prevLen); } catch {}
+          } else {
+            // No audio: approximate timing for captions
+            if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
+            try { if (typeof scheduleCaptionsForDuration === 'function') scheduleCaptionsForDuration(2.5, sentences, prevLen); } catch {}
+          }
+        }
+      } finally {
+        if (!dec) setTtsLoadingCount((c) => Math.max(0, c - 1));
+      }
+    } catch {}
+    setJokeUsedThisGate(true);
+    // Reveal remaining actions after joke completes or schedules
+    setTimeout(() => setShowOpeningActions(true), 400);
+  }, [jokeUsedThisGate, subjectParam]);
+
+  // Helper: speak arbitrary frontend text via unified captions + TTS
+  const speakFrontend = useCallback(async (text, opts = {}) => {
+    try {
+      const mcLayout = opts && typeof opts === 'object' ? (opts.mcLayout || 'inline') : 'inline';
+      let sentences = splitIntoSentences(text);
+      sentences = mergeMcChoiceFragments(sentences, mcLayout).map((s) => enforceNbspAfterMcLabels(s));
+      const prevLen = captionSentencesRef.current?.length || 0;
+      const nextAll = [...(captionSentencesRef.current || []), ...sentences];
+      captionSentencesRef.current = nextAll;
+      setCaptionSentences(nextAll);
+      setCaptionIndex(prevLen);
+  let dec = false;
+  try {
+    setTtsLoadingCount((c) => c + 1);
+    let res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
+      if (!res.ok) {
+        try { await fetch('/api/tts', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(() => {}); } catch {}
+        res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
+      }
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        let b64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
+        if (b64) b64 = normalizeBase64Audio(b64);
+        if (b64) {
+          if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
+          setIsSpeaking(true);
+          try { await playAudioFromBase64(b64, sentences, prevLen); } finally { setIsSpeaking(false); }
+        } else {
+          if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
+          try { if (typeof scheduleCaptionsForDuration === 'function') scheduleCaptionsForDuration(2.0, sentences, prevLen); } catch {}
+        }
+      }
+  } catch {}
+  finally { if (!dec) setTtsLoadingCount((c) => Math.max(0, c - 1)); }
+  } catch {}
+  }, []);
+
+  // Handler: Ask a question (entry)
+  const handleAskQuestionStart = useCallback(async () => {
+    try { setShowOpeningActions(false); } catch {}
+    const learnerName = (typeof window !== 'undefined' ? (localStorage.getItem('learner_name') || '') : '').trim();
+    const name = learnerName || 'friend';
+    // Frontend prompt and transcript
+    const prompt = `Yes, ${name} did you have a question?`;
+    // Enable input/mic for the facilitator immediately; speaking lock will block until prompt finishes
+    setCanSend(true);
+    setAskOriginalQuestion('');
+    setAskState('awaiting-input');
+    await speakFrontend(prompt);
+  }, [speakFrontend]);
+
+  // Handler: Start the lesson now
+  // NOTE: defined after startThreeStageTeaching to avoid TDZ; do not add it to deps
+  let handleStartLesson = useMemo(() => {
+    return async () => {
+      // If we are in a Q&A phase intro, this button begins the first question instead of teaching
+      try { setShowOpeningActions(false); } catch {}
+      if (phase === 'comprehension') {
+        const item = currentCompProblem;
+        if (item) {
+          try {
+            setQaAnswersUnlocked(true);
+            const formatted = ensureQuestionMark(formatQuestionForSpeech(item, { layout: 'multiline' }));
+            setCanSend(false);
+            await speakFrontend(formatted, { mcLayout: 'multiline' });
+          } catch {}
+          setCanSend(true);
+          return;
+        }
+      } else if (phase === 'exercise') {
+        const item = currentExerciseProblem;
+        if (item) {
+          try {
+            setQaAnswersUnlocked(true);
+            const formatted = ensureQuestionMark(formatQuestionForSpeech(item, { layout: 'multiline' }));
+            setCanSend(false);
+            await speakFrontend(formatted, { mcLayout: 'multiline' });
+          } catch {}
+          setCanSend(true);
+          return;
+        }
+      } else if (phase === 'worksheet') {
+        const list = Array.isArray(generatedWorksheet) ? generatedWorksheet : [];
+        const idx = 0;
+        const item = list[idx];
+        if (item) {
+          try {
+            setQaAnswersUnlocked(true);
+            const num = (typeof item.number === 'number' && item.number > 0) ? item.number : 1;
+            const formatted = ensureQuestionMark(`${num}. ${formatQuestionForSpeech(item, { layout: 'multiline' })}`);
+            setCanSend(false);
+            await speakFrontend(formatted, { mcLayout: 'multiline' });
+          } catch {}
+          setCanSend(true);
+          return;
+        }
+      } else if (phase === 'test') {
+        const list = Array.isArray(generatedTest) ? generatedTest : [];
+        const idx = 0;
+        const item = list[idx];
+        if (item) {
+          try {
+            setQaAnswersUnlocked(true);
+            const formatted = ensureQuestionMark(`1. ${formatQuestionForSpeech(item, { layout: 'multiline' })}`);
+            setCanSend(false);
+            await speakFrontend(formatted, { mcLayout: 'multiline' });
+          } catch {}
+          setCanSend(true);
+          return;
+        }
+      }
+      // Otherwise, start three-stage teaching as before
+      try { await startThreeStageTeaching(); } catch {}
+    };
+  }, []);
+
+  // Ask confirmation handlers (after Ms. Sonoma answered)
+  const handleAskConfirmYes = useCallback(() => {
+    // Return to unused-buttons state: hide confirmation, show normal opening actions, allow input again
+    setAskState('inactive');
+    setAskOriginalQuestion('');
+    setShowOpeningActions(true);
+    setCanSend(true);
+  }, []);
+
+  const handleAskConfirmNo = useCallback(async () => {
+    // Encourage re-asking with the original question populated
+    try { await speakFrontend('Try asking again a little bit differently.'); } catch {}
+    setAskState('awaiting-input');
+    // Pre-populate the input for editing
+    setLearnerInput(askOriginalQuestion || '');
+    setCanSend(true);
+  }, [askOriginalQuestion, speakFrontend]);
+
+  const handleAskAnother = useCallback(() => {
+    // Clear input and return to ask-entry state
+    setLearnerInput('');
+    setAskOriginalQuestion('');
+    setAskState('awaiting-input');
+    setCanSend(true);
+  }, []);
+
+  // Riddle: start and present one via TTS/captions
+  const handleTellRiddle = useCallback(async () => {
+    try { setShowOpeningActions(false); } catch {}
+    try { setRiddleUsedThisGate(true); } catch {}
+    const pick = pickRandomRiddle();
+    setCurrentRiddle(pick);
+    setRiddleState('presented');
+    await speakFrontend(`Here is a riddle. ${pick.text}`);
+    setCanSend(true);
+    setRiddleState('awaiting-solve');
+  }, [speakFrontend]);
+
+  // Poem: start flow – ask for topic via frontend TTS and enable input
+  const handlePoemStart = useCallback(async () => {
+    try { setShowOpeningActions(false); } catch {}
+    try { setPoemUsedThisGate(true); } catch {}
+    setPoemState('awaiting-topic');
+    setCanSend(true);
+    await speakFrontend('What would you like the poem to be about?');
+  }, [speakFrontend]);
+
+  // Poem: after reading, show Ok; pressing Ok returns to options
+  const handlePoemOk = useCallback(() => {
+    setPoemState('inactive');
+    setShowOpeningActions(true);
+    setCanSend(true);
+  }, []);
+
+  // Riddle: judge learner's attempt (local leniency first, then model if needed)
+  const judgeRiddleAttempt = useCallback(async (attempt) => {
+    if (!currentRiddle) return { ok: false, text: '' };
+
+    // Local lenient acceptance using unified normalization
+    try {
+      const acceptable = expandRiddleAcceptables(currentRiddle.answer);
+      const okLocal = isAnswerCorrectLocal(attempt, acceptable, { type: 'short-answer' });
+      if (okLocal) {
+        return { ok: true, text: 'Correct. Nice solving.' };
+      }
+    } catch {}
+
+    // Fall back to model judging with bounded-leniency guidance
+    const instruction = [
+      'You are Ms. Sonoma. Judge if the learner solved the riddle correctly.',
+      `Riddle: "${currentRiddle.text}".`,
+      `Correct answer: "${currentRiddle.answer}".`,
+      `Learner attempt: "${attempt}".`,
+      JUDGING_LENIENCY_OPEN_ENDED,
+      'Reply in one short friendly line: say Correct with brief praise if they got it, or say Not correct with a tiny encouragement to try again. Do not reveal the answer.'
+    ].join(' ');
+    const result = await callMsSonoma(
+      instruction,
+      '',
+      { phase: 'discussion', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, step: 'riddle-judge' },
+      { fastReturn: true }
+    ).catch(() => null);
+    return result || { ok: false, text: '' };
+  }, [currentRiddle, subjectParam, difficultyParam, lessonParam]);
+
+  // Riddle: ask for a hint
+  const requestRiddleHint = useCallback(async () => {
+    if (!currentRiddle) return;
+    const instruction = `You are Ms. Sonoma. Give a tiny hint (one short sentence) for this riddle without revealing the answer. Riddle: "${currentRiddle.text}". Correct answer: "${currentRiddle.answer}". Keep it playful and encouraging.`;
+    const result = await callMsSonoma(instruction, '', { phase: 'discussion', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, step: 'riddle-hint' }, { fastReturn: true }).catch(() => null);
+    const line = (result && result.text) ? result.text : 'Here is a small hint.';
+    await speakFrontend(line);
+    setRiddleState('awaiting-solve');
+  }, [currentRiddle, subjectParam, difficultyParam, lessonParam, speakFrontend]);
+
+  // Riddle: reveal the answer and return to options
+  const revealRiddleAnswer = useCallback(async () => {
+    if (!currentRiddle) return;
+    await speakFrontend(`The answer is: ${currentRiddle.answer}. Nice thinking. Let us jump back to our options.`);
+    setCurrentRiddle(null);
+    setRiddleState('inactive');
+    setShowOpeningActions(true);
+  }, [currentRiddle, speakFrontend]);
+
+  // Riddle: Solve button handler – puts focus back on input/mic
+  const handleRiddleSolve = useCallback(async () => {
+    setCanSend(true);
+    setRiddleState('awaiting-solve');
+    await speakFrontend('Go ahead and tell me your answer.');
+  }, [speakFrontend]);
+
+  // URL params defined above; referenced throughout
+
   // Monitor learner changes and reload targets
   useEffect(() => {
     const handleStorageChange = (e) => {
@@ -446,11 +845,12 @@ function SessionPageInner() {
 
   const [showBegin, setShowBegin] = useState(true);
   const sessionStartRef = useRef(null); // timestamp for current in-app session segment
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [phase, setPhase] = useState("discussion");
-  const [subPhase, setSubPhase] = useState("greeting");
+  // isSpeaking/phase/subPhase defined earlier; do not redeclare here
   const [transcript, setTranscript] = useState("");
   const [loading, setLoading] = useState(false);
+  // TTS overlay: track TTS fetch activity separately; overlay shows when either API or TTS is loading
+  const [ttsLoadingCount, setTtsLoadingCount] = useState(0);
+  const overlayLoading = loading || (ttsLoadingCount > 0);
   const [error, setError] = useState("");
   const [canSend, setCanSend] = useState(false);
   const [learnerInput, setLearnerInput] = useState("");
@@ -475,6 +875,31 @@ function SessionPageInner() {
   const [generatedExercise, setGeneratedExercise] = useState(null);
   const [currentCompIndex, setCurrentCompIndex] = useState(0);
   const [currentExIndex, setCurrentExIndex] = useState(0);
+  // Facilitator-configurable hotkeys (local-first, then server when available)
+  const [hotkeys, setHotkeys] = useState(() => getHotkeysLocal());
+  useEffect(() => {
+    // Refresh from local storage on mount and when updated in another tab/window
+    try {
+      setHotkeys(getHotkeysLocal());
+    } catch {}
+    const onStorage = (e) => {
+      try {
+        if (e?.key === 'facilitator_hotkeys') {
+          setHotkeys(getHotkeysLocal());
+        }
+      } catch {}
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetchHotkeysServer();
+        if (res?.ok && res.hotkeys) setHotkeys(res.hotkeys);
+      } catch {}
+    })();
+  }, []);
   // Dynamic target height for video in landscape (computed from viewport)
   const [videoMaxHeight, setVideoMaxHeight] = useState(null);
   // Dynamic video column width in landscape (percent of row width)
@@ -774,19 +1199,29 @@ function SessionPageInner() {
   const captionBatchEndRef = useRef(0);
   // Playback controls
   const [muted, setMuted] = useState(false);
+  const isSpeakingRef = useRef(false);
+  useEffect(() => { isSpeakingRef.current = isSpeaking; }, [isSpeaking]);
   // Mirror latest mute state for async callbacks (prevents stale closures)
   const mutedRef = useRef(false);
   const [userPaused, setUserPaused] = useState(false); // user-level pause covering video + TTS
+  // When true, the next play attempt ignores userPaused gating (used for Opening begin)
+  const forceNextPlaybackRef = useRef(false);
   // Record user play/pause intents that occur while the app is loading; apply after load finishes
   const [playbackIntent, setPlaybackIntent] = useState(null); // 'play' | 'pause' | null
   // Tracks whether the user has explicitly unlocked audio via a gesture (prevents re‑prompting)
   const audioUnlockedRef = useRef(false);
   const lastAudioBase64Ref = useRef(null);
+  // Prefer HTMLAudio for the very first TTS playback (Opening) to satisfy stricter autoplay policies.
+  // We reset this after the first attempt so subsequent replies can use WebAudio-first as usual.
+  const preferHtmlAudioOnceRef = useRef(false);
+  // Prevent multiple recovery attempts for the Opening playback
+  const openingReattemptedRef = useRef(false);
   const lastSentencesRef = useRef([]);
   const lastStartIndexRef = useRef(0);
   // Test phase state
   const [testActiveIndex, setTestActiveIndex] = useState(0); // index of current test question during active test taking
   const [testUserAnswers, setTestUserAnswers] = useState([]); // collected user answers
+  const [testCorrectByIndex, setTestCorrectByIndex] = useState([]); // boolean per question
   const [skipPendingLessonLoad, setSkipPendingLessonLoad] = useState(false); // flag when skip pressed before lesson data ready
   // Test review correctness tracking (restored)
   const [usedTestCuePhrases, setUsedTestCuePhrases] = useState([]); // unique cue phrases detected so far in test review
@@ -850,7 +1285,14 @@ function SessionPageInner() {
   const ALLOWED_Q_TYPES_NOTE = "Question type constraint: Only use Multiple Choice (include four choices labeled 'A.', 'B.', 'C.', 'D.'), True/False, or Fill in the Blank (use _____). Do NOT use short answer or any open-ended question types in the Comprehension or Exercise phases.";
 
   // Helper to use any provided expectedAny list from lesson JSON
-  const expectedAnyList = (q) => Array.isArray(q?.expectedAny) ? q.expectedAny.filter(Boolean) : null;
+  const expectedAnyList = (q) => {
+    try {
+      const a = Array.isArray(q?.expectedAny) ? q.expectedAny.filter(Boolean) : [];
+      const b = Array.isArray(q?.acceptable) ? q.acceptable.filter(Boolean) : [];
+      const merged = [...a, ...b];
+      return merged.length ? merged : null;
+    } catch { return null; }
+  };
 
   // Encouragement snippets used around progress/count cues in comprehension, exercise, worksheet.
   // Keep short, single sentences (no trailing spaces). Safe for insertion before or after count cue.
@@ -865,6 +1307,21 @@ function SessionPageInner() {
   'Flex that brain',
     'Terrific progress',
     'Staying sharp'
+  ], []);
+
+  // Organic single-sentence celebrations for correct comprehension answers (no rigid cue wording).
+  // Keep them short, warm, and domain-agnostic; avoid trailing punctuation beyond a period.
+  const CELEBRATE_CORRECT = useMemo(() => [
+    'Yes, great thinking',
+    'That is right',
+    'Nice work',
+    'You nailed it',
+    'Correct and confident',
+    'Solid answer',
+    'Exactly right',
+    'Way to go',
+    'Spot on',
+    'You got it'
   ], []);
 
   // Helper to build a randomized pattern specification we inject into model instructions.
@@ -915,6 +1372,43 @@ function SessionPageInner() {
   const lessonFilePath = lessonFilename
     ? `/lessons/${encodeURIComponent(subjectFolderSegment)}/${encodeURIComponent(lessonFilename)}`
     : "";
+
+  // Ensure lesson JSON is loaded before we try to extract vocab for Definitions
+  const ensureLessonDataReady = useCallback(async () => {
+    try {
+      // If already loaded with a vocab field, use it
+      if (lessonData && (Array.isArray(lessonData.vocab) || lessonData.vocab)) {
+        return lessonData;
+      }
+      // If we know where to load it from, fetch on-demand
+      if (lessonFilePath) {
+        const res = await fetch(lessonFilePath);
+        if (res.ok) {
+          const data = await res.json();
+          try { setLessonData(data); } catch {}
+          try { console.info('[LessonLoad] Loaded lesson via', lessonFilePath); } catch {}
+          return data;
+        }
+        // Fallback: try common subject folders to locate the lesson file if subjectParam is missing/mismatched
+        const candidatesBase = ['math', 'language arts', 'science', 'social studies', 'Facilitator Lessons'];
+        const preferred = subjectFolderSegment;
+        const ordered = [preferred, ...candidatesBase.filter(s => s !== preferred)];
+        for (const folder of ordered) {
+          const altPath = `/lessons/${encodeURIComponent(folder)}/${encodeURIComponent(lessonFilename)}`;
+          try {
+            const r = await fetch(altPath);
+            if (r.ok) {
+              const data = await r.json();
+              try { setLessonData(data); } catch {}
+              try { console.info('[LessonLoad] Loaded lesson via fallback', altPath); } catch {}
+              return data;
+            }
+          } catch {}
+        }
+      }
+    } catch {}
+    return lessonData;
+  }, [lessonData, lessonFilePath]);
 
   // Build a normalized QA pool for comprehension/exercise
   // - Math: use a broad pool that includes Samples + category groups (TF/MC/FIB/Short Answer)
@@ -1290,26 +1784,29 @@ function SessionPageInner() {
     }
 
     try {
-      // Stash last audio payload in case we need to retry after an iOS unlock
-      lastAudioBase64Ref.current = audioBase64 || null;
+      // Normalize and stash last audio payload in case we need to retry after an iOS unlock
+      const normalizedB64 = normalizeBase64Audio(audioBase64 || '');
+      lastAudioBase64Ref.current = normalizedB64 || null;
       lastSentencesRef.current = Array.isArray(batchSentences) ? batchSentences : [];
       lastStartIndexRef.current = Number.isFinite(startIndex) ? startIndex : 0;
-      const binaryString = atob(audioBase64);
-      const len = binaryString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i += 1) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
 
-      // If we're on iOS and the WebAudio context is already unlocked, prefer WebAudio path directly
-      try {
-        const ua = (typeof navigator !== 'undefined' ? navigator.userAgent || '' : '').toLowerCase();
-        const isIOS = /iphone|ipad|ipod/.test(ua) || (typeof navigator !== 'undefined' && navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        if (isIOS && audioCtxRef.current && audioCtxRef.current.state !== 'suspended') {
-          await playViaWebAudio(audioBase64, batchSentences || [], startIndex);
-          return;
-        }
-      } catch {/* fall back to HTMLAudio below */}
+      // If this is the very first playback after Begin (Opening), prefer HTMLAudio once.
+      // Many browsers grant more permissive autoplay to HTMLMediaElement after a user gesture.
+      const useHtmlFirst = !!preferHtmlAudioOnceRef.current;
+      if (!useHtmlFirst) {
+        // Prefer WebAudio path when the AudioContext is ready (more resilient to autoplay policies),
+        // not only on iOS. We'll attempt it whenever a context exists; ensureAudioContext may resume if suspended.
+        try {
+          const ctx = ensureAudioContext();
+          if (ctx) {
+            try { console.info('[Session] playAudioFromBase64: using WebAudio path for playback'); } catch {}
+            await playViaWebAudio(normalizedB64, batchSentences || [], startIndex);
+            // First playback completed via WebAudio; clear the one-time preference if it was set accidentally
+            if (preferHtmlAudioOnceRef.current) preferHtmlAudioOnceRef.current = false;
+            return;
+          }
+        } catch {/* fall back to HTMLAudio below */}
+      }
 
       if (audioRef.current) {
         try {
@@ -1321,7 +1818,10 @@ function SessionPageInner() {
         audioRef.current = null;
       }
 
-      const blob = new Blob([bytes.buffer], { type: "audio/mpeg" });
+  // HTMLAudio fallback path
+  try { console.info('[Session] playAudioFromBase64: using HTMLAudio path for playback'); } catch {}
+  const arrBuf = base64ToArrayBuffer(normalizedB64);
+  const blob = new Blob([arrBuf], { type: "audio/mpeg" });
       const url = URL.createObjectURL(blob);
 
       await new Promise((resolve) => {
@@ -1330,8 +1830,11 @@ function SessionPageInner() {
   // Apply latest mute state immediately
   audio.muted = Boolean(mutedRef.current);
   audio.volume = mutedRef.current ? 0 : 1;
-  if (!userPaused) {
-    scheduleCaptionsForAudio(audio, batchSentences || [], startIndex);
+  {
+    const allowAuto = (!userPaused || forceNextPlaybackRef.current);
+    if (allowAuto) {
+      scheduleCaptionsForAudio(audio, batchSentences || [], startIndex);
+    }
   }
         // Track current caption batch boundaries for pause/resume behavior
         try {
@@ -1347,6 +1850,9 @@ function SessionPageInner() {
           resolve();
         };
 
+        audio.onplay = () => {
+          try { setIsSpeaking(true); } catch {}
+        };
         audio.onended = () => {
           try {
             setIsSpeaking(false);
@@ -1359,28 +1865,56 @@ function SessionPageInner() {
         };
         audio.onerror = () => {
           try { setIsSpeaking(false); } catch {}
-          cleanup();
+          // Try WebAudio fallback if available
+          (async () => {
+            try {
+              await playViaWebAudio(normalizedB64, batchSentences || [], startIndex);
+            } catch {
+              /* final fallback: no audio */
+            } finally {
+              cleanup();
+            }
+          })();
         };
 
-        if (!userPaused) {
-          const playPromise = audio.play();
-          // Try to play the video to keep visuals in sync with speech
-          if (videoRef.current) {
-            try { videoRef.current.play().catch(() => {}); } catch {}
+        {
+          let playPromise;
+          const allowAuto = (!userPaused || forceNextPlaybackRef.current);
+          try { console.info('[Session] HTMLAudio: allowAuto=', allowAuto, 'muted=', !!mutedRef.current, 'userPaused=', !!userPaused, 'forceNext=', !!forceNextPlaybackRef.current); } catch {}
+          if (allowAuto) {
+            playPromise = audio.play();
+            // Try to play the video to keep visuals in sync with speech
+            if (videoRef.current) {
+              try { videoRef.current.play().catch(() => {}); } catch {}
+            }
+            // Reset the force flag after first autoplay attempt
+            try { if (forceNextPlaybackRef.current) forceNextPlaybackRef.current = false; } catch {}
+            // Clear the first-playback HTMLAudio preference after attempting
+            if (preferHtmlAudioOnceRef.current) preferHtmlAudioOnceRef.current = false;
           }
           if (playPromise && playPromise.catch) {
             playPromise.catch((err) => {
-              console.warn('[Session] Audio autoplay blocked or failed.', err);
+              console.warn('[Session] Audio autoplay blocked or failed. Falling back to WebAudio.', err);
               try { setIsSpeaking(false); } catch {}
               // If audio cannot start, pause the background video to avoid a perpetual "speaking" feel
-              if (videoRef.current && !userPaused) {
+              if (videoRef.current && (!userPaused || forceNextPlaybackRef.current)) {
                 try { videoRef.current.pause(); } catch {}
               }
-              // No standalone unlock UI; Begin flow handles permissions
-              cleanup();
+              // Attempt WebAudio fallback using the same payload
+              (async () => {
+                try {
+                  try { console.info('[Session] HTMLAudio failed; retrying via WebAudio'); } catch {}
+                  await playViaWebAudio(normalizedB64, batchSentences || [], startIndex);
+                } catch {
+                  /* give up silently */
+                } finally {
+                  cleanup();
+                }
+              })();
             });
           }
-        } else {
+        }
+        if (userPaused && !forceNextPlaybackRef.current) {
           // User paused: do not auto play; ensure speaking state is false
           setIsSpeaking(false);
         }
@@ -1399,6 +1933,9 @@ function SessionPageInner() {
   const audioCtxRef = useRef(null);
   const webAudioGainRef = useRef(null);
   const webAudioSourceRef = useRef(null);
+  const webAudioBufferRef = useRef(null);
+  const webAudioStartedAtRef = useRef(0);
+  const webAudioPausedAtRef = useRef(0);
 
   const ensureAudioContext = () => {
     const Ctx = (typeof window !== 'undefined') && (window.AudioContext || window.webkitAudioContext);
@@ -1435,8 +1972,62 @@ function SessionPageInner() {
     }
   };
 
+  // Generate a tiny silent WAV data URL to reliably unlock HTMLMedia playback on user gesture
+  const makeSilentWavDataUrl = (durationMs = 60, sampleRate = 8000) => {
+    try {
+      const numSamples = Math.max(1, Math.floor(sampleRate * (durationMs / 1000)));
+      const blockAlign = 2; // mono, 16-bit
+      const byteRate = sampleRate * blockAlign;
+      const dataSize = numSamples * blockAlign;
+      const buffer = new ArrayBuffer(44 + dataSize);
+      const view = new DataView(buffer);
+      const writeStr = (offset, str) => { for (let i = 0; i < str.length; i += 1) view.setUint8(offset + i, str.charCodeAt(i)); };
+      // RIFF header
+      writeStr(0, 'RIFF');
+      view.setUint32(4, 36 + dataSize, true);
+      writeStr(8, 'WAVE');
+      // fmt chunk
+      writeStr(12, 'fmt ');
+      view.setUint32(16, 16, true); // PCM chunk size
+      view.setUint16(20, 1, true);  // PCM format
+      view.setUint16(22, 1, true);  // mono
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, byteRate, true);
+      view.setUint16(32, blockAlign, true);
+      view.setUint16(34, 16, true); // bits per sample
+      // data chunk
+      writeStr(36, 'data');
+      view.setUint32(40, dataSize, true);
+      // samples are already zero (silence)
+      // Convert to base64
+      const bytes = new Uint8Array(buffer);
+      let bin = '';
+      for (let i = 0; i < bytes.length; i += 1) bin += String.fromCharCode(bytes[i]);
+      const b64 = btoa(bin);
+      return `data:audio/wav;base64,${b64}`;
+    } catch {
+      return '';
+    }
+  };
+
+  // Normalize base64 audio: strip data URLs, remove whitespace, convert base64url, and pad
+  const normalizeBase64Audio = (raw) => {
+    if (!raw) return '';
+    let s = String(raw).trim();
+    const m = s.match(/^data:audio\/(?:mpeg|mp3|wav|ogg);base64,(.*)$/i);
+    if (m) s = m[1];
+    s = s.replace(/\s+/g, '');
+    s = s.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = s.length % 4;
+    if (pad === 2) s += '==';
+    else if (pad === 3) s += '=';
+    else if (pad === 1) s += '===';
+    return s;
+  };
+
   const base64ToArrayBuffer = (b64) => {
-    const binaryString = atob(b64);
+    const normalized = normalizeBase64Audio(b64);
+    const binaryString = atob(normalized);
     const len = binaryString.length;
     const bytes = new Uint8Array(len);
     for (let i = 0; i < len; i += 1) bytes[i] = binaryString.charCodeAt(i);
@@ -1448,10 +2039,19 @@ function SessionPageInner() {
     if (!ctx) throw new Error('WebAudio not available');
     stopWebAudioSource();
     try {
-      const arr = base64ToArrayBuffer(b64);
-      const buffer = await ctx.decodeAudioData(arr.slice(0));
-      const src = ctx.createBufferSource();
-      src.buffer = buffer;
+      // Ensure context is running before we decode and start; if it was created while suspended,
+      // resuming here avoids a silent start on some browsers.
+      try {
+        try { console.info('[Session] WebAudio state before resume:', ctx?.state); } catch {}
+        if (ctx.state === 'suspended') { await ctx.resume(); }
+        try { console.info('[Session] WebAudio state after resume:', ctx?.state); } catch {}
+      } catch {}
+    const arr = base64ToArrayBuffer(b64);
+    const buffer = await ctx.decodeAudioData(arr.slice(0));
+    webAudioBufferRef.current = buffer;
+  try { console.info('[Session] WebAudio decode ok; duration(s)=', Number(buffer?.duration || 0).toFixed(2)); } catch {}
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
       try {
         if (!webAudioGainRef.current) {
           const gain = ctx.createGain();
@@ -1459,31 +2059,53 @@ function SessionPageInner() {
           gain.connect(ctx.destination);
           webAudioGainRef.current = gain;
         }
+        // Ensure gain matches current mute state right before we connect/start.
+        try { if (webAudioGainRef.current) { webAudioGainRef.current.gain.value = mutedRef.current ? 0 : 1; } } catch {}
       } catch {}
       src.connect(webAudioGainRef.current || ctx.destination);
-      webAudioSourceRef.current = src;
+  webAudioSourceRef.current = src;
 
-      if (!userPaused) {
-        try { scheduleCaptionsForDuration(buffer.duration, sentences || [], startIndex || 0); } catch {}
-        if (videoRef.current) { try { videoRef.current.play(); } catch {} }
+      {
+        const allowAuto = (!userPaused || forceNextPlaybackRef.current);
+        if (allowAuto) {
+          // Track current caption batch boundaries for pause/resume parity with HTMLAudio path
+          try {
+            const batchLen = (sentences && sentences.length) || 0;
+            captionBatchStartRef.current = startIndex || 0;
+            captionBatchEndRef.current = (startIndex || 0) + batchLen;
+          } catch {}
+          try { scheduleCaptionsForDuration(buffer.duration, sentences || [], startIndex || 0); } catch {}
+          if (videoRef.current) { try { videoRef.current.play(); } catch {} }
+          // Reset the force flag after first autoplay attempt
+          try { if (forceNextPlaybackRef.current) forceNextPlaybackRef.current = false; } catch {}
+        }
       }
       setIsSpeaking(true);
       await new Promise((resolve) => {
         src.onended = () => {
           try {
             setIsSpeaking(false);
-            if (videoRef.current && !userPaused) { try { videoRef.current.pause(); } catch {} }
+            if (videoRef.current && (!userPaused || forceNextPlaybackRef.current)) { try { videoRef.current.pause(); } catch {} }
           } catch {}
           stopWebAudioSource();
+          webAudioStartedAtRef.current = 0;
+          webAudioPausedAtRef.current = 0;
           resolve();
         };
-        try { src.start(0); } catch (e) { console.warn('[Session] WebAudio start failed', e); resolve(); }
+        try {
+          try { console.info('[Session] Starting WebAudio source now at', ctx?.currentTime); } catch {}
+          webAudioStartedAtRef.current = ctx.currentTime;
+          webAudioPausedAtRef.current = 0;
+          src.start(0);
+        } catch (e) { console.warn('[Session] WebAudio start failed', e); resolve(); }
       });
     } catch (e) {
       console.warn('[Session] WebAudio decode/play failed', e);
       throw e;
     }
   };
+
+  // Web Speech API fallback removed per requirement: absolutely no browser Web Speech usage.
 
   // One-time audio unlock flow for iOS: resume/create AudioContext, try HTMLAudio immediately, then fallback to WebAudio
   const unlockAudioPlayback = useCallback(() => {
@@ -1502,10 +2124,25 @@ function SessionPageInner() {
         }
       } catch {}
 
-    // Mark audio as explicitly unlocked so we do not force the prompt again
-    audioUnlockedRef.current = true;
+      // Also unlock HTMLMedia by playing a tiny muted silent WAV once during the gesture
+      try {
+        const url = makeSilentWavDataUrl(80);
+        if (url) {
+          const a = new Audio(url);
+          a.muted = true;
+          a.volume = 0;
+          // Best-effort; do not await
+          const p = a.play();
+          if (p && p.catch) { p.catch(() => {}); }
+          // Stop it shortly after
+          setTimeout(() => { try { a.pause(); } catch {} }, 120);
+        }
+      } catch {}
 
-      const b64 = lastAudioBase64Ref.current;
+    // Mark audio as explicitly unlocked so we do not force the prompt again
+  audioUnlockedRef.current = true;
+
+  const b64 = normalizeBase64Audio(lastAudioBase64Ref.current || '');
       const sents = Array.isArray(lastSentencesRef.current) ? lastSentencesRef.current : [];
       const idx = Number.isFinite(lastStartIndexRef.current) ? lastStartIndexRef.current : 0;
       if (!b64) return;
@@ -1519,11 +2156,15 @@ function SessionPageInner() {
         audioRef.current = audio;
         audio.muted = Boolean(mutedRef.current);
         audio.volume = mutedRef.current ? 0 : 1;
-        if (!userPaused) { try { scheduleCaptionsForAudio(audio, sents, idx); } catch {} }
+        {
+          const allowAuto = (!userPaused || forceNextPlaybackRef.current);
+          if (allowAuto) { try { scheduleCaptionsForAudio(audio, sents, idx); } catch {} }
+        }
+        audio.onplay = () => { try { setIsSpeaking(true); } catch {} };
         audio.onended = () => {
           try {
             setIsSpeaking(false);
-            if (videoRef.current && !userPaused) { try { videoRef.current.pause(); } catch {} }
+            if (videoRef.current && (!userPaused || forceNextPlaybackRef.current)) { try { videoRef.current.pause(); } catch {} }
           } catch {}
           try { URL.revokeObjectURL(url); } catch {}
           audioRef.current = null;
@@ -1534,7 +2175,10 @@ function SessionPageInner() {
           audioRef.current = null;
         };
         setIsSpeaking(true);
-        if (videoRef.current && !userPaused) { try { videoRef.current.play(); } catch {} }
+        {
+          const allowAuto = (!userPaused || forceNextPlaybackRef.current);
+          if (videoRef.current && allowAuto) { try { videoRef.current.play(); } catch {} }
+        }
         const p = audio.play();
         if (p && p.catch) {
           p.catch(async (err) => {
@@ -1645,6 +2289,16 @@ function SessionPageInner() {
         if (audioRef.current) {
           try { audioRef.current.pause(); } catch { /* ignore */ }
         }
+        // Record WebAudio paused position before stopping source
+        try {
+          const ctx = audioCtxRef.current;
+          if (ctx && webAudioBufferRef.current && webAudioSourceRef.current) {
+            const elapsed = Math.max(0, (ctx.currentTime || 0) - (webAudioStartedAtRef.current || 0));
+            webAudioPausedAtRef.current = elapsed;
+          }
+        } catch { /* ignore */ }
+        // Stop any active WebAudio source as well
+        try { stopWebAudioSource(); } catch { /* ignore */ }
         if (videoRef.current) {
           try { videoRef.current.pause(); } catch { /* ignore */ }
         }
@@ -1667,8 +2321,38 @@ function SessionPageInner() {
               }
             } catch {/* ignore scheduling errors */}
           } catch { /* ignore */ }
+        } else if (webAudioBufferRef.current) {
+          // Resume WebAudio from paused offset
+          try {
+            const ctx = ensureAudioContext();
+            if (ctx) {
+              stopWebAudioSource();
+              const src = ctx.createBufferSource();
+              src.buffer = webAudioBufferRef.current;
+              src.connect(webAudioGainRef.current || ctx.destination);
+              webAudioSourceRef.current = src;
+              const offset = Math.max(0, webAudioPausedAtRef.current || 0);
+              src.onended = () => {
+                try { setIsSpeaking(false); } catch {}
+                stopWebAudioSource();
+                webAudioStartedAtRef.current = 0;
+                webAudioPausedAtRef.current = 0;
+              };
+              webAudioStartedAtRef.current = ctx.currentTime - offset;
+              setIsSpeaking(true);
+              src.start(0, offset);
+              // Re-schedule captions for the remainder of the batch using remaining duration heuristic
+              const startAt = captionIndex;
+              const batchEnd = captionBatchEndRef.current || captionSentencesRef.current.length;
+              const slice = (captionSentencesRef.current || []).slice(startAt, batchEnd);
+              if (slice.length) {
+                const remaining = Math.max(0.1, (webAudioBufferRef.current.duration || 0) - offset);
+                scheduleCaptionsForDuration(remaining, slice, startAt);
+              }
+            }
+          } catch { /* ignore */ }
         } else {
-            // No current audio; if future audio arrives while userPaused=false it will auto-play
+          // No current audio; if future audio arrives while userPaused=false it will auto-play
         }
         if (videoRef.current) {
           try { videoRef.current.play(); } catch { /* ignore */ }
@@ -1731,22 +2415,10 @@ function SessionPageInner() {
   const rawPhaseKey = (session?.phase || 'unknown').toString().toLowerCase();
   // Bucket 'teaching' and 'comprehension' with 'discussion' so we have exactly four server sessions.
   const phaseKey = (rawPhaseKey === 'teaching' || rawPhaseKey === 'comprehension') ? 'discussion' : rawPhaseKey;
-      // Build a clean system message WITHOUT any grading rules
-      const systemBase = buildSystemMessage({
-        lessonTitle: session?.lessonTitle || session?.lesson || effectiveLessonTitle,
-        teachingNotes: session?.teachingNotes || '',
-        vocab: session?.vocab || (lessonData?.vocab || []),
-        gatePhrase: session?.gatePhrase || ''
-      });
-
-  // Grading rules go in individual per-question instructions only
-      const systemContent = systemBase;
-      const userContent = `${instructions}`; // keep user instruction short and focused
-      const systemPreview = `${systemContent.slice(0, 200)}… (${systemContent.length} chars)`;
+      // Send only the provided instructions (no system message)
+      const userContent = `${instructions}`;
       console.log("[Session] Calling Ms. Sonoma", {
         phaseKey,
-        usingSystemId: false,
-        systemPreview,
         userInstructionPreview: userContent.slice(0, 200),
         sessionMeta: { step: session?.step, subject: session?.subject, difficulty: session?.difficulty }
       });
@@ -1765,7 +2437,7 @@ function SessionPageInner() {
         return { res, data };
       };
 
-      let { res, data } = await attempt({ system: systemContent, instruction: userContent, innertext, session });
+  let { res, data } = await attempt({ instruction: userContent });
 
       // Dev-only: sometimes the route compiles on first touch and returns 404 briefly.
       // If that happens, pre-warm the route, wait a beat, and retry (forcing full system registration).
@@ -1776,16 +2448,16 @@ function SessionPageInner() {
         // Pre-warm the route (GET) to trigger compilation/registration in dev
         try { await fetch('/api/sonoma', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(()=>{}) } catch {}
         await new Promise(r => setTimeout(r, 900));
-        ({ res, data } = await attempt({ system: systemContent, instruction: userContent, innertext, session }));
+  ({ res, data } = await attempt({ instruction: userContent }));
         // If still 404, wait a bit longer and try one more time
         if (res && res.status === 404) {
           try { await fetch('/api/sonoma', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(()=>{}) } catch {}
           await new Promise(r => setTimeout(r, 1200));
-          ({ res, data } = await attempt({ system: systemContent, instruction: userContent, innertext, session }));
+          ({ res, data } = await attempt({ instruction: userContent }));
         }
       }
 
-      // No server-side session; always send full system
+  // Stateless call: server receives only the instruction text
 
       if (!res.ok) {
         throw new Error(`Request failed with ${res.status}`);
@@ -1855,73 +2527,26 @@ function SessionPageInner() {
             .trim();
           replyText = cleaned;
         } else if (stepKey === "teaching-unified" || stepKey === "teaching-unified-repeat") {
-          // Unified teaching (initial or repeat): strip banned words, allow only the single gate question, normalize others to periods
-          const gateQ = "Would you like me to go over that again?";
+          // Unified teaching (initial or repeat): strip banned words; end statements with periods (no gate question).
           let normalized = replyText
             .replace(/\b(exercise|worksheet|test|exam|quiz|answer key)\b/gi, "")
             .replace(/\s{2,}/g, " ")
             .trim();
-          // Remove extra question marks except gate question
-          const parts = normalized.split(/(?<=[.!?])\s+/).filter(Boolean);
-          const cleaned = parts
-            .map((p) => (new RegExp(gateQ.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i").test(p) ? gateQ : p.replace(/\?/g, ".")))
-            .join(" ")
-            .replace(/\s{2,}/g, " ")
-            .trim();
-          if (!new RegExp(gateQ.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i").test(cleaned)) {
-            replyText = `${cleaned} ${gateQ}`.trim();
-          } else {
-            replyText = cleaned;
-          }
+          // Normalize any stray question marks to periods in teaching
+          replyText = normalized.replace(/\?/g, ".").replace(/\s{2,}/g, " ").trim();
         } else if (stepKey && stepKey.startsWith("teaching")) {
           // Teaching phase hygiene: avoid worksheet/test mentions; questions only allowed in teaching-wrap gate
           replyText = replyText.replace(/\b(exercise|worksheet|test|exam|quiz|answer key)\b/gi, "").replace(/\s{2,}/g, " ").trim();
           if (stepKey === "teaching-wrap") {
-            const gateQ = "Would you like me to go over that again?";
-            // Normalize body punctuation (no extra questions except the gate question)
-            let normalized = replyText.replace(/\?/g, ".").replace(/\s{2,}/g, " ").trim();
-            if (!new RegExp(gateQ.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i").test(normalized)) {
-              normalized = `${normalized} ${gateQ}`.trim();
-            }
-            replyText = normalized;
+            // Normalize body punctuation (no questions; concise wrap)
+            replyText = replyText.replace(/\?/g, ".").replace(/\s{2,}/g, " ").trim();
           } else {
             replyText = replyText.replace(/\?/g, ".");
           }
         } else if (stepKey === 'teaching-gate-response') {
-          const cue = COMPREHENSION_CUE_PHRASE;
-          const gateQ = "Would you like me to go over that again?";
-          const lower = replyText.trim().toLowerCase();
-          const hasCue = lower.includes(cue.toLowerCase());
-          // If proceed path: require exactly cue + one question, no trailing content
-          if (hasCue) {
-            // Strip banned terms and normalize whitespace
-            replyText = replyText.replace(/\b(exercise|worksheet|test|exam|quiz|answer key)\b/gi, "").replace(/\s{2,}/g, " ").trim();
-            // Keep only optional encouragement + exact cue, and nothing after
-            const parts = replyText.split(/(?<=[.!?])\s+/).filter(Boolean);
-            const cueIdx = parts.findIndex(p => p.toLowerCase().includes(cue.toLowerCase()));
-            if (cueIdx !== -1) {
-              const encouragement = cueIdx > 0 ? parts.slice(0, cueIdx).join(" ").replace(/\?+/g, ".").trim() : "";
-              replyText = [encouragement, cue].filter(Boolean).join(" ").trim();
-            } else {
-              replyText = cue; // fallback to just the cue if parsing was odd
-            }
-          } else {
-            // Re-teach or clarifier path: enforce no future-phase terms and allow only the single gate question
-            replyText = replyText.replace(/\b(exercise|worksheet|test|exam|quiz|answer key)\b/gi, "").replace(/\s{2,}/g, " ").trim();
-            // If it looks like a clarifying yes/no question, allow it and stop
-            const isClarifier = /go over it again\?\s*$/i.test(replyText);
-            if (!isClarifier) {
-              // Enforce unified-teaching end gate question
-              let normalized = replyText
-                .replace(/\?/g, ".")
-                .replace(/\s{2,}/g, " ")
-                .trim();
-              if (!new RegExp(gateQ.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i").test(normalized)) {
-                normalized = `${normalized} ${gateQ}`.trim();
-              }
-              replyText = normalized;
-            }
-          }
+          // We no longer want Ms. Sonoma to manage the gate question verbally.
+          // Sanitize by removing future-phase terms and normalizing whitespace.
+          replyText = replyText.replace(/\b(exercise|worksheet|test|exam|quiz|answer key)\b/gi, "").replace(/\s{2,}/g, " ").trim();
         } else if (phaseKey === "comprehension" || stepKey === "comprehension" || stepKey === "comprehension-start" || stepKey === "comprehension-response") {
           // Comprehension: keep text intact; only normalize whitespace
           replyText = replyText.replace(/\s{2,}/g, " ").trim();
@@ -2070,27 +2695,198 @@ function SessionPageInner() {
   };
 
   // ---------------------------------------------
-  // Answer normalization helpers (digits <-> words)
-  // We keep this local (UI-side) because we only need lightweight mapping.
-  // If future lessons expand beyond 0-20 or include fractions, refactor to a shared util.
+  // Answer normalization and judging helpers
+  // We keep this local (UI-side). The aim is to be forgiving:
+  // - case-insensitive; strip punctuation/diacritics; collapse spaces
+  // - normalize number words and ordinals to digits
+  // - remove common fillers/stopwords
+  // - simple stemming for plural/tense variants
   const numberWordMap = useMemo(() => ({
     0: 'zero', 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six', 7: 'seven', 8: 'eight', 9: 'nine',
     10: 'ten', 11: 'eleven', 12: 'twelve', 13: 'thirteen', 14: 'fourteen', 15: 'fifteen', 16: 'sixteen', 17: 'seventeen', 18: 'eighteen', 19: 'nineteen', 20: 'twenty'
   }), []);
 
+  const STOPWORDS = new Set([
+    'a','an','the','to','of','in','on','at','and','or','is','are','am','was','were','be','being','been',
+    'it','its','it\'s','i','im','i\'m','me','my','mine','you','your','yours','we','us','our','ours',
+    'please','thanks','thank','okay','ok','yup','yeah','hey','hi'
+  ]);
+
+  const stripDiacritics = (s) => {
+    try { return s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch { return s; }
+  };
+
+  const simpleStem = (t) => {
+    let w = t;
+    w = w.replace(/'(s|re|ve|d|ll|m)$/i, '');
+    if (/ies$/i.test(w) && w.length > 3) w = w.slice(0, -3) + 'y';
+    else if (/([sxz]|ch|sh)es$/i.test(w) && w.length > 3) w = w.replace(/es$/i, '');
+    else if (/s$/i.test(w) && !/ss$/i.test(w) && w.length > 3) w = w.slice(0, -1);
+    if (/ing$/i.test(w) && w.length > 4) w = w.slice(0, -3);
+    else if (/ed$/i.test(w) && w.length > 3) w = w.replace(/ed$/i, '');
+    return w;
+  };
+
+  const ORDINALS = new Map(Object.entries({
+    'first':'1','second':'2','third':'3','fourth':'4','fifth':'5','sixth':'6','seventh':'7','eighth':'8','ninth':'9','tenth':'10',
+    'eleventh':'11','twelfth':'12','thirteenth':'13','fourteenth':'14','fifteenth':'15','sixteenth':'16','seventeenth':'17','eighteenth':'18','nineteenth':'19','twentieth':'20'
+  }));
+
+  const SMALLS = new Map(Object.entries({
+    zero:0, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9,
+    ten:10, eleven:11, twelve:12, thirteen:13, fourteen:14, fifteen:15, sixteen:16, seventeen:17, eighteen:18, nineteen:19
+  }));
+  const TENS = new Map(Object.entries({
+    twenty:20, thirty:30, forty:40, fifty:50, sixty:60, seventy:70, eighty:80, ninety:90
+  }));
+  const SCALES = new Map(Object.entries({ hundred:100, thousand:1000 }));
+
+  const wordsToNumberFrom = (tokens, start) => {
+    let i = start; let total = 0; let current = 0; let consumed = 0; let matched = false;
+    while (i < tokens.length) {
+      const tk = tokens[i];
+      if (SMALLS.has(tk)) { current += SMALLS.get(tk); matched = true; i += 1; consumed += 1; continue; }
+      if (TENS.has(tk)) {
+        current += TENS.get(tk);
+        // optional unit after tens
+        if (i + 1 < tokens.length && SMALLS.has(tokens[i+1])) { current += SMALLS.get(tokens[i+1]); i += 1; consumed += 1; }
+        matched = true; i += 1; consumed += 1; continue;
+      }
+      if (SCALES.has(tk)) {
+        const scale = SCALES.get(tk);
+        if (current === 0) current = 1;
+        current *= scale;
+        total += current; current = 0;
+        matched = true; i += 1; consumed += 1; continue;
+      }
+      break;
+    }
+    if (!matched) return null;
+    total += current;
+    return { value: total, consumed };
+  };
+
+  const tokenize = (s) => String(s || '').split(/\s+/).filter(Boolean);
+
   const normalizeAnswer = (val) => {
-    if (!val) return '';
-    const trimmed = String(val).trim().toLowerCase();
-    // Direct digit
-    if (/^-?\d+$/.test(trimmed)) return String(parseInt(trimmed, 10));
-    // Word match
-    const directNum = Object.keys(numberWordMap).find(k => numberWordMap[k] === trimmed);
-    if (directNum) return String(parseInt(directNum, 10));
-    // Remove hyphens (e.g., 'twenty-one' future proofing) then retry
-    const deHyphen = trimmed.replace(/-/g, ' ');
-    const maybe = Object.keys(numberWordMap).find(k => numberWordMap[k] === deHyphen);
-    if (maybe) return String(parseInt(maybe, 10));
-    return trimmed; // fallback raw
+    if (val == null) return '';
+    let s = String(val).toLowerCase();
+    s = stripDiacritics(s);
+    // Convert ordinal digits like 1st -> 1
+    s = s.replace(/\b(\d+)(st|nd|rd|th)\b/g, '$1');
+    // Replace punctuation/underscores/hyphens with spaces
+    s = s.replace(/[\-_]/g, ' ');
+    s = s.replace(/[^a-z0-9\s]/g, ' ');
+    s = s.replace(/\s+/g, ' ').trim();
+    // Early return for pure digits
+    if (/^-?\d+$/.test(s)) return String(parseInt(s, 10));
+    // Normalize ordinal words
+    const ord = ORDINALS.get(s);
+    if (ord) return ord;
+    // Tokenize for number-word sequences and stopwords/stemming
+    let toks = tokenize(s);
+    // Map ordinal words to digits at token level
+    toks = toks.map(t => ORDINALS.get(t) || t);
+    // Replace sequences of number words with digits
+    const out = [];
+    for (let i = 0; i < toks.length; ) {
+      const res = wordsToNumberFrom(toks, i);
+      if (res && res.consumed > 0) {
+        out.push(String(res.value));
+        i += res.consumed; continue;
+      }
+      out.push(toks[i]); i += 1;
+    }
+    // Remove stopwords and stem
+    const out2 = out
+      .filter(t => !STOPWORDS.has(t))
+      .map(t => simpleStem(t))
+      .filter(Boolean);
+    return out2.join(' ').trim();
+  };
+
+  // Token helper from normalized text
+  const tokensFromNormalized = (s) => tokenize(normalizeAnswer(s));
+
+  // Tiny Levenshtein for fuzzy token equality (length <= 20)
+  const levenshtein = (a, b) => {
+    if (a === b) return 0;
+    const al = a.length, bl = b.length;
+    if (al === 0) return bl; if (bl === 0) return al;
+    const dp = new Array(bl + 1);
+    for (let j = 0; j <= bl; j++) dp[j] = j;
+    for (let i = 1; i <= al; i++) {
+      let prev = i - 1; dp[0] = i;
+      for (let j = 1; j <= bl; j++) {
+        const tmp = dp[j];
+        dp[j] = Math.min(
+          dp[j] + 1,
+          dp[j - 1] + 1,
+          prev + (a[i - 1] === b[j - 1] ? 0 : 1)
+        );
+        prev = tmp;
+      }
+    }
+    return dp[bl];
+  };
+
+  // Unified local correctness check with leniency
+  const isAnswerCorrectLocal = (learnerRaw, acceptableList, problem) => {
+    const learnerNorm = normalizeAnswer(String(learnerRaw ?? ''));
+    const accNorm = Array.from(new Set((acceptableList || []).map(a => normalizeAnswer(String(a ?? '')))));
+
+    // Accept single MC letter embedded (e.g., "I think b")
+    const letterMatch = learnerNorm.match(/(?:^|\s)([a-d])(?:\s|$)/i);
+    if (letterMatch) {
+      const letter = letterMatch[1].toLowerCase();
+      if (accNorm.includes(letter)) return true;
+    }
+
+    // True/False synonyms mapping when applicable
+    const isTFq = isTrueFalse(problem);
+    if (isTFq) {
+      const TRUE_SYNS = new Set(['true','t','yes','y','correct','right']);
+      const FALSE_SYNS = new Set(['false','f','no','n','incorrect','wrong']);
+      if (accNorm.includes('true') && TRUE_SYNS.has(learnerNorm)) return true;
+      if (accNorm.includes('false') && FALSE_SYNS.has(learnerNorm)) return true;
+    }
+
+    // Exact normalized equality
+    if (accNorm.includes(learnerNorm)) return true;
+
+    // Token-subset acceptance: all core tokens of an acceptable phrase appear in learner tokens (order-free)
+    const learnerTokens = new Set(tokensFromNormalized(learnerNorm));
+    for (const a of accNorm) {
+      if (/^[a-d]$/i.test(a)) continue; // skip bare letters here
+      const aTokens = tokensFromNormalized(a).filter(t => !STOPWORDS.has(t));
+      if (aTokens.length && aTokens.every(t => learnerTokens.has(t))) return true;
+    }
+
+    // Short-answer keyword path for non-MC/TF
+    const hasChoices = isMultipleChoice(problem);
+    if (!hasChoices && !isTFq) {
+      const kws = Array.isArray(problem?.keywords) ? problem.keywords.filter(Boolean).map(String) : [];
+      const minK = Number.isInteger(problem?.minKeywords) ? problem.minKeywords : (kws.length ? 1 : 0);
+      if (kws.length && minK >= 0) {
+        const ltoks = Array.from(learnerTokens);
+        let hits = 0;
+        for (const kw of kws) {
+          const kwTokens = tokensFromNormalized(kw);
+          // All tokens of a keyword phrase must be present (with light fuzz) to count as one hit
+          const ok = kwTokens.length > 0 && kwTokens.every(kt => {
+            if (learnerTokens.has(kt)) return true;
+            // fuzzy for tokens length >= 4 (distance <= 1)
+            if (kt.length >= 4) {
+              return ltoks.some(t => Math.abs(t.length - kt.length) <= 1 && levenshtein(t, kt) <= 1);
+            }
+            return false;
+          });
+          if (ok) hits += 1;
+        }
+        if (hits >= minK) return true;
+      }
+    }
+    return false;
   };
 
   const expandExpectedAnswer = (ans) => {
@@ -2105,6 +2901,31 @@ function SessionPageInner() {
       return { primary: norm, synonyms: [word] };
     }
     return { primary: String(ans), synonyms: [] };
+  };
+
+  // Riddles: expand simple acceptable variants for common phrasing
+  // - Drop leading articles (a, an, the)
+  // - Drop leading possessives (your, my, our, their, his, her)
+  // - If answer is "(the) letter X", accept just "X"
+  const expandRiddleAcceptables = (answer) => {
+    const variants = new Set();
+    const raw = String(answer || '').trim();
+    if (!raw) return [];
+    variants.add(raw);
+    // Drop leading article
+    const noArticle = raw.replace(/^\s*(?:a|an|the)\s+/i, '').trim();
+    if (noArticle && noArticle !== raw) variants.add(noArticle);
+    // Drop leading possessive pronouns
+    const noPoss = raw.replace(/^\s*(?:your|my|our|their|his|her)\s+/i, '').trim();
+    if (noPoss && noPoss !== raw) variants.add(noPoss);
+    // If of the form "(the )?letter X" -> accept just X
+    const m = raw.match(/^\s*(?:the\s+)?letter\s+([a-z])\s*$/i);
+    if (m && m[1]) {
+      variants.add(m[1]);
+      variants.add(m[1].toLowerCase());
+      variants.add(m[1].toUpperCase());
+    }
+    return Array.from(variants);
   };
 
   // Build a combined expected bundle line: primary, optional any, optional acceptable
@@ -2144,7 +2965,7 @@ function SessionPageInner() {
   };
 
   // Format multiple-choice options for speech (e.g., "A) ..., B) ..., C) ...")
-  const formatMcOptions = (item) => {
+  const formatMcOptions = (item, { layout = 'inline' } = {}) => {
     try {
       const opts = Array.isArray(item?.options)
         ? item.options.filter(Boolean)
@@ -2161,8 +2982,11 @@ function SessionPageInner() {
         // Use NBSP between label and option text to prevent wrapping between them
         return `${label}.\u00A0${cleaned}`;
       });
-  // Use three spaces after commas to improve readability in the captions line
-  return parts.join(',   ');
+      if (layout === 'multiline') {
+        return parts.join('\n');
+      }
+      // Default inline with spaced commas for readability
+      return parts.join(',   ');
     } catch {
       return '';
     }
@@ -2171,10 +2995,14 @@ function SessionPageInner() {
   // Phase-agnostic question formatting helpers
   const isTrueFalse = (item) => {
     try {
-      const qType = String(item?.type || '').toLowerCase();
-      if (item?.sourceType === 'tf') return true;
+      // Normalize several possible fields
+      const sourceType = String(item?.sourceType || '').toLowerCase();
+      const typeField = String(item?.type || '').toLowerCase();
+      const qType = String(item?.questionType || '').toLowerCase();
+      if (sourceType === 'tf' || qType === 'tf') return true;
+      if (/^(true\s*\/\s*false|truefalse|tf)$/i.test(typeField)) return true;
       if (/^(true\s*\/\s*false|truefalse|tf)$/i.test(qType)) return true;
-      // Heuristic: treat as TF when expected/answer is literally true/false (common in category arrays)
+      // Heuristic: treat as TF when expected/answer is literally true/false
       const exp = String(item?.expected ?? item?.answer ?? '').trim().toLowerCase();
       if (exp === 'true' || exp === 'false') return true;
       const any = Array.isArray(item?.expectedAny) ? item.expectedAny.map((v) => String(v).trim().toLowerCase()) : [];
@@ -2229,10 +3057,10 @@ function SessionPageInner() {
   const countQuestionMarks = (s) => {
     try { return (String(s || '').match(/\?/g) || []).length; } catch { return 0; }
   };
-  const formatQuestionForSpeech = useCallback((item) => {
+  const formatQuestionForSpeech = useCallback((item, { layout = 'inline' } = {}) => {
     if (!item) return '';
     const tfPrefix = isTrueFalse(item) ? 'True/False: ' : '';
-    const mc = formatMcOptions(item);
+    const mc = formatMcOptions(item, { layout });
     const base = String(item.prompt || item.question || '').trim();
     // Put MC options on a new line; keep them comma-separated
     return mc ? `${tfPrefix}${base}\n${mc}` : `${tfPrefix}${base}`;
@@ -2314,6 +3142,7 @@ function SessionPageInner() {
       // If expected is directly a single letter, accept it as-is
       const directLetter = acc.find(v => /^[a-d]$/i.test(v));
       if (directLetter) return String(directLetter).toUpperCase();
+      const tokenize = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean).filter(w => !['a','an','the'].includes(w));
       for (let i = 0; i < opts.length; i += 1) {
         const label = labels[i] || '';
         const raw = String(opts[i] ?? '').trim();
@@ -2322,10 +3151,70 @@ function SessionPageInner() {
         const cleaned = raw.replace(anyLabel, '').trim();
         const nclean = norm(cleaned);
         if (acc.includes(nclean)) return label || null;
+        // Also accept when acceptable term tokens are contained within option tokens (e.g., 'notebook' ⊆ 'a notebook')
+        const optTokens = tokenize(nclean);
+        for (const a of acc) {
+          const accTokens = tokenize(a);
+          if (accTokens.length && accTokens.every(t => optTokens.includes(t))) {
+            return label || null;
+          }
+        }
       }
       return null;
     } catch {
       return null;
+    }
+  };
+
+  // Join list into natural language (A, B, or C)
+  const naturalJoin = (arr, conj = 'or') => {
+    const list = (arr || []).map(s => String(s || '').trim()).filter(Boolean);
+    if (!list.length) return '';
+    if (list.length === 1) return list[0];
+    if (list.length === 2) return `${list[0]} ${conj} ${list[1]}`;
+    return `${list.slice(0, -1).join(', ')}, ${conj} ${list[list.length - 1]}`;
+  };
+
+  // Derive a speakable/displayable "correct answer" text using front-end info
+  const deriveCorrectAnswerText = (problem, acceptableList = [], expectedPrimary = '') => {
+    try {
+      const rawExpected = [problem?.answer, problem?.expected].map(v => String(v ?? '').trim()).find(Boolean) || '';
+      const options = Array.isArray(problem?.options) ? problem.options : (Array.isArray(problem?.choices) ? problem.choices : []);
+      // MC: prefer letter + option text
+      const letter = letterForAnswer(problem, acceptableList);
+      if (letter) {
+        const optText = getOptionTextForLetter(problem, letter) || '';
+        if (optText) return `${letter}. ${optText}`;
+        return letter;
+      }
+      // True/False: map synonyms to canonical
+      if (isTrueFalse(problem)) {
+        const accNorm = new Set((acceptableList || []).map(a => normalizeAnswer(a)));
+        if (accNorm.has('true')) return 'True';
+        if (accNorm.has('false')) return 'False';
+        if (/^\s*true\s*$/i.test(rawExpected)) return 'True';
+        if (/^\s*false\s*$/i.test(rawExpected)) return 'False';
+      }
+      // Prefer raw expected text if provided
+      if (rawExpected) return rawExpected;
+      // Otherwise use the first meaningful acceptable (skip bare letters)
+      const acceptableClean = Array.from(new Set((acceptableList || [])
+        .map(s => String(s || '').trim())
+        .filter(Boolean)
+        .filter(s => !/^[A-D]$/i.test(s))));
+      if (acceptableClean.length) {
+        // If many, present up to 3 joined with 'or'
+        return naturalJoin(acceptableClean.slice(0, 3), 'or');
+      }
+      // As a last resort, surface keywords for short answer items
+      if (!isMultipleChoice(problem) && !isTrueFalse(problem) && Array.isArray(problem?.keywords) && problem.keywords.length) {
+        const kws = problem.keywords.map(k => String(k || '').trim()).filter(Boolean);
+        if (kws.length) return naturalJoin(kws.slice(0, 4), 'and');
+      }
+      // Nothing to show
+      return '';
+    } catch {
+      return '';
     }
   };
 
@@ -2477,40 +3366,204 @@ function SessionPageInner() {
   }, []);
 
   const startDiscussionStep = async () => {
-    // Unified discussion: Greeting -> Encouragement -> Joke -> Silly Question in ONE response
+    try { console.info('[Opening] startDiscussionStep entered'); } catch {}
+    try { console.info('[Opening] generateOpening typeof =', typeof generateOpening); } catch {}
+    // Ensure audio is unlocked and mic permissions requested within the Begin click gesture
+    try { requestAudioAndMicPermissions(); } catch {}
+    // Ensure we are not starting in a muted or paused state
+    try { setMuted(false); } catch {}
+    try { setUserPaused(false); } catch {}
+    try { mutedRef.current = false; } catch {}
+    try { forceNextPlaybackRef.current = true; } catch {}
+  // Unified discussion is now generated locally: Greeting + Encouragement + next-step prompt (no joke/silly question)
     setCanSend(false);
-  const learnerName = (typeof window !== 'undefined' ? (localStorage.getItem('learner_name') || '') : '').trim();
-  const lessonTitleExact = (effectiveLessonTitle && typeof effectiveLessonTitle === 'string' && effectiveLessonTitle.trim()) ? effectiveLessonTitle.trim() : 'the lesson';
-    // Pick and render a pre-curated, spaced joke for this subject.
-    // We instruct Ms. Sonoma to say these exact lines verbatim (no quotes) after the opener.
+    // Compose the opening text using local pools (no API/TTS for this step)
+    const learnerName = (typeof window !== 'undefined' ? (localStorage.getItem('learner_name') || '') : '').trim();
+    const lessonTitleExact = (effectiveLessonTitle && typeof effectiveLessonTitle === 'string' && effectiveLessonTitle.trim()) ? effectiveLessonTitle.trim() : 'the lesson';
     const safeSubject = (subjectParam || '').trim() || 'math';
-    const jokeObj = pickNextJoke(safeSubject);
-    const jokeText = renderJoke(jokeObj) || '';
-    const instruction = [
-      "Unified opening: In one response do all of the following in order:",
-      learnerName
-        ? `1) Greeting: begin with a hello that says the learner's name exactly as: "${learnerName}" and name the lesson exactly as: "${lessonTitleExact}" (1–2 sentences, no question).`
-        : `1) Greeting: say hello and name the lesson exactly as: "${lessonTitleExact}" (1–2 sentences, no question).`,
-      "2) Encouragement: one short, positive sentence (no question).",
-      // Joke: fixed opener, then verbatim joke lines we provide (no quotes, no additions)
-      jokeText
-        ? `3) Joke: begin with exactly "Wanna hear a joke?" OR "Let's start with a joke." Then immediately say the following lines VERBATIM with blank-line pacing and WITHOUT quotes or extra words:
-${jokeText}`
-        : "3) Joke: begin with exactly 'Wanna hear a joke?' or 'Let's start with a joke.' Then tell one very short, kid-friendly subject joke.",
-      "4) Silly question: ask one playful question before teaching, exactly one sentence ending with a question mark. THIS MUST BE THE FINAL SENTENCE of your entire response. Do NOT add anything after this question. End immediately after the silly question."
-    ].join(" ");
-    const result = await callMsSonoma(instruction, "", {
-      phase: "discussion",
-      subject: subjectParam,
-      difficulty: difficultyParam,
-      lesson: lessonParam,
-      lessonTitle: effectiveLessonTitle,
-      learnerName,
-      step: "unified-discussion",
-    });
-    if (!result.success) return;
-    setSubPhase("awaiting-learner");
-    setCanSend(true);
+    try {
+      try { console.info('[Opening] about to call generateOpening'); } catch {}
+      const openingText = generateOpening({ name: learnerName || 'friend', lessonTitle: lessonTitleExact, subject: safeSubject });
+      try { console.info('[Opening] generated text len=', (openingText || '').length); } catch {}
+      // Hygiene similar to unified-discussion cleanup when coming from API
+      let replyText = String(openingText || '')
+        .replace(/\b(exercise|worksheet|test|exam|quiz|answer key)\b/gi, '')
+        .split('\n')
+        .map((line) => line.replace(/[ \t]{2,}/g, ' ').replace(/\s+$/g, ''))
+        .join('\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+
+      // Inject into transcript and captions locally (isolate errors so TTS still proceeds)
+      try { console.info('[Opening] setting transcript and preparing captions'); } catch {}
+      setTranscript(replyText);
+      setError("");
+      let prevLen = 0;
+      let newSentences = [];
+      try {
+        // Prepare captions from the full reply
+        try { console.info('[Opening] splitIntoSentences start'); } catch {}
+        newSentences = splitIntoSentences(replyText);
+        newSentences = mergeMcChoiceFragments(newSentences);
+        newSentences = newSentences.map((s) => enforceNbspAfterMcLabels(s));
+        const normalizedOriginal = replyText.replace(/\s+/g, ' ').trim();
+        const normalizedJoined = newSentences.join(' ').replace(/\s+/g, ' ').trim();
+        if (normalizedJoined.length < Math.floor(0.9 * normalizedOriginal.length)) {
+          newSentences = [normalizedOriginal];
+        }
+        prevLen = captionSentencesRef.current?.length || 0;
+        let nextAll = [...(captionSentencesRef.current || [])];
+        nextAll = [...nextAll, ...newSentences];
+        captionSentencesRef.current = nextAll;
+        setCaptionSentences(nextAll);
+        setCaptionIndex(prevLen);
+        try { console.info('[Opening] captions prepared; sentences=', newSentences.length, 'startIndex=', prevLen); } catch {}
+      } catch (capErr) {
+        try { console.warn('[Opening] caption prep failed; proceeding to TTS anyway', capErr?.name || capErr); } catch {}
+        // Keep minimal single-sentence caption
+        newSentences = [replyText];
+        prevLen = captionSentencesRef.current?.length || 0;
+        const nextAll = [...(captionSentencesRef.current || []), replyText];
+        captionSentencesRef.current = nextAll;
+        setCaptionSentences(nextAll);
+        setCaptionIndex(prevLen);
+      }
+
+      // Request TTS for the local opening and play it using the same pipeline as API replies.
+      setLoading(true);
+      setTtsLoadingCount((c) => c + 1);
+      const replyStartIndex = prevLen; // we appended opening sentences at the end
+      try { console.info('[OpeningTTS] POST /api/tts starting…'); } catch {}
+      let res;
+      try {
+        res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: replyText }) });
+        try { console.info('[OpeningTTS] /api/tts status=', res.status, 'ok=', res.ok); } catch {}
+        var data = await res.json().catch(() => ({}));
+        try { console.info('[OpeningTTS] /api/tts payload keys=', Object.keys(data || {})); } catch {}
+        var audioB64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
+        // Dev warm-up: if route wasn’t ready (404) or no audio returned, pre-warm and retry once
+        if ((!res.ok && res.status === 404) || !audioB64) {
+          try { console.warn('[OpeningTTS] No audio or 404 from /api/tts; warming route and retrying once…'); } catch {}
+          try { await fetch('/api/tts', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(() => {}); } catch {}
+          try { await waitForBeat(400); } catch {}
+          res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: replyText }) });
+          try { console.info('[OpeningTTS] /api/tts retry status=', res.status, 'ok=', res.ok); } catch {}
+          data = await res.json().catch(() => ({}));
+          try { console.info('[OpeningTTS] /api/tts retry payload keys=', Object.keys(data || {})); } catch {}
+          audioB64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
+        }
+      } finally {
+        setTtsLoadingCount((c) => Math.max(0, c - 1));
+      }
+      if (audioB64) audioB64 = normalizeBase64Audio(audioB64);
+      // Match API flow: stop showing loading before kicking off audio
+      setLoading(false);
+      if (audioB64) {
+        try { console.info('[OpeningTTS] using Google TTS, len=', audioB64.length); } catch {}
+        // Stash payload so gesture-based unlock can retry immediately if needed
+        try { lastAudioBase64Ref.current = audioB64; } catch {}
+        setIsSpeaking(true);
+        // Give the UI a brief beat to commit !loading before starting audio
+        try { await waitForBeat(60); } catch {}
+        // Prefer HTMLAudio for the very first Opening playback; clear automatically after attempt
+        try { preferHtmlAudioOnceRef.current = true; } catch {}
+        // Fire-and-forget to match fastReturn behavior; UI remains responsive
+        playAudioFromBase64(audioB64, newSentences, replyStartIndex)
+          .catch(err => console.warn('[OpeningTTS] audio playback failed', err));
+        // Safety: if we are not speaking within ~1.2s, attempt one recovery by switching path
+        try {
+          openingReattemptedRef.current = false;
+          setTimeout(async () => {
+            try {
+              if (!isSpeakingRef.current && lastAudioBase64Ref.current && !openingReattemptedRef.current) {
+                openingReattemptedRef.current = true;
+                const b64 = lastAudioBase64Ref.current;
+                // Flip preference: if we tried HTML first, force WebAudio; otherwise, force HTML once
+                if (preferHtmlAudioOnceRef.current) {
+                  // We still prefer HTML per flag; switch to WebAudio explicitly
+                  try { console.warn('[OpeningTTS] Recovery: trying WebAudio path after initial silence'); } catch {}
+                  try { await playViaWebAudio(b64, newSentences, replyStartIndex); } catch (e) { try { console.warn('[OpeningTTS] Recovery WebAudio failed', e); } catch {} }
+                } else {
+                  try { console.warn('[OpeningTTS] Recovery: retrying via HTMLAudio path'); } catch {}
+                  try { preferHtmlAudioOnceRef.current = true; } catch {}
+                  try { await playAudioFromBase64(b64, newSentences, replyStartIndex); } catch (e) { try { console.warn('[OpeningTTS] Recovery HTMLAudio failed', e); } catch {} }
+                }
+              }
+            } catch {}
+          }, 1200);
+        } catch {}
+      } else {
+        console.warn('[OpeningTTS] No audio in TTS response for Opening');
+      }
+      setSubPhase('awaiting-learner');
+      setCanSend(true);
+    } catch (e) {
+      // Fallback: if anything fails, show a minimal safe opening and still TTS it
+      try { console.error('[Opening] generation failed, using fallback text', e); } catch {}
+  const fallback = `${learnerName ? `Hello, ${learnerName}.` : 'Hello.'} Today's lesson is ${lessonTitleExact}.\n\nYou're going to do amazing.\n\nWhat would you like to do first?`;
+      setTranscript(fallback);
+      let newSentences = splitIntoSentences(fallback);
+      newSentences = mergeMcChoiceFragments(newSentences).map((s) => enforceNbspAfterMcLabels(s));
+      const prevLen = captionSentencesRef.current?.length || 0;
+      const nextAll = [...(captionSentencesRef.current || []), ...newSentences];
+      captionSentencesRef.current = nextAll;
+      setCaptionSentences(nextAll);
+      setCaptionIndex(prevLen);
+      // Proceed to TTS the fallback so audio still plays
+      try {
+        setLoading(true);
+        setTtsLoadingCount((c) => c + 1);
+        const replyStartIndex = prevLen;
+        try { console.info('[OpeningTTS] Fallback: POST /api/tts starting…'); } catch {}
+        let res;
+        let data;
+        let audioB64;
+        try {
+          res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: fallback }) });
+          try { console.info('[OpeningTTS] Fallback status=', res.status, 'ok=', res.ok); } catch {}
+          data = await res.json().catch(() => ({}));
+          audioB64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
+          if ((!res.ok && res.status === 404) || !audioB64) {
+            try { await fetch('/api/tts', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(() => {}); } catch {}
+            try { await waitForBeat(300); } catch {}
+            res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: fallback }) });
+            data = await res.json().catch(() => ({}));
+            audioB64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
+          }
+        } finally {
+          setTtsLoadingCount((c) => Math.max(0, c - 1));
+        }
+        if (audioB64) audioB64 = normalizeBase64Audio(audioB64);
+        setLoading(false);
+        if (audioB64) {
+          try { lastAudioBase64Ref.current = audioB64; } catch {}
+          setIsSpeaking(true);
+          try { await waitForBeat(40); } catch {}
+          try { preferHtmlAudioOnceRef.current = true; } catch {}
+          playAudioFromBase64(audioB64, newSentences, replyStartIndex).catch(() => {});
+          try {
+            openingReattemptedRef.current = false;
+            setTimeout(async () => {
+              try {
+                if (!isSpeakingRef.current && lastAudioBase64Ref.current && !openingReattemptedRef.current) {
+                  openingReattemptedRef.current = true;
+                  const b64 = lastAudioBase64Ref.current;
+                  try { await playViaWebAudio(b64, newSentences, replyStartIndex); } catch {}
+                }
+              } catch {}
+            }, 1200);
+          } catch {}
+        } else {
+          try { console.warn('[OpeningTTS] Fallback had no audio'); } catch {}
+          setIsSpeaking(false);
+        }
+      } catch {
+        setLoading(false);
+        setIsSpeaking(false);
+  }
+      setSubPhase('awaiting-learner');
+      setCanSend(true);
+    }
   };
 
   const startTeachingStep = async () => {
@@ -2535,38 +3588,277 @@ ${jokeText}`
     }
     if (step.next === "awaiting-gate") {
       setSubPhase("awaiting-gate");
-      setCanSend(true);
+      // Disable text input; gate is controlled by Yes/No UI buttons
+      setCanSend(false);
     } else {
       setSubPhase(step.next);
     }
   };
 
-  const startTeachingUnified = async () => {
-    // Unified teaching: Intro -> Example(s) -> Wrap + gate question in ONE response
+  // Three-stage teaching state and helpers
+  const [teachingStage, setTeachingStage] = useState('idle'); // 'idle' | 'definitions' | 'explanation' | 'examples'
+  const [stageRepeats, setStageRepeats] = useState({ definitions: 0, explanation: 0, examples: 0 });
+
+  // Helper: gather vocab from multiple potential sources/keys
+  const getAvailableVocab = useCallback((dataOverride = null) => {
+    // Try known lessonData keys
+    const ld = dataOverride || lessonData || {};
+    const raw = ld.vocab ?? ld.vocabulary ?? ld.vocabularyTerms ?? ld.terms;
+    if (!raw) return [];
+    // If already an array, normalize items and return
+    if (Array.isArray(raw)) {
+      const arr = raw.filter(Boolean).map((v) => {
+        if (typeof v === 'string') return { term: v, definition: '' };
+        if (v && typeof v === 'object') {
+          const term = v.term || v.word || v.key || '';
+          const definition = v.definition || v.def || '';
+          if (term || definition) return { term, definition };
+        }
+        return null;
+      }).filter(Boolean);
+      return arr;
+    }
+    // If a single object, coerce to one-item array
+    if (typeof raw === 'object') {
+      // If looks like a single vocab item
+      if ('term' in raw || 'definition' in raw || 'word' in raw) {
+        const term = raw.term || raw.word || raw.key || '';
+        const definition = raw.definition || raw.def || '';
+        return (term || definition) ? [{ term, definition }] : [];
+      }
+      // If looks like a dictionary { term: definition }
+      const entries = Object.entries(raw).map(([k, v]) => ({ term: String(k), definition: typeof v === 'string' ? v : '' }));
+      return entries.filter(e => e.term || e.definition);
+    }
+    // If a string, try comma-separated list
+    if (typeof raw === 'string') {
+      const parts = raw.split(/[,;\n]/).map(s => s.trim()).filter(Boolean);
+      return parts.map(p => ({ term: p, definition: '' }));
+    }
+    return [];
+  }, [lessonData]);
+
+  // Helper: derive Grade number (e.g., 4 from "4th") from common sources
+  const getGradeNumber = useCallback(() => {
+    try {
+      const source = (manifestInfo?.title || effectiveLessonTitle || lessonParam || '').toString();
+      const m = source.match(/\b(K|1st|2nd|3rd|[4-9]th|1[0-2]th)\b/i);
+      if (!m) return '';
+      const token = m[1].toLowerCase();
+      if (token === 'k') return 'K';
+      const n = token.replace(/(st|nd|rd|th)$/i, '');
+      return String(parseInt(n, 10));
+    } catch { return ''; }
+  }, [manifestInfo?.title, effectiveLessonTitle, lessonParam]);
+
+  // Helper: clean lesson title for display (strip grade prefixes, difficulty suffixes, underscores/extensions)
+  const getCleanLessonTitle = useCallback(() => {
+    try {
+      let title = (manifestInfo?.title || effectiveLessonTitle || lessonParam || '').toString();
+      // Remove extension
+      title = title.replace(/\.json$/i, '');
+      // Replace underscores with spaces
+      title = title.replace(/_/g, ' ');
+      // Drop grade token at start (e.g., "4th ")
+      title = title.replace(/^\s*(K|1st|2nd|3rd|[4-9]th|1[0-2]th)\s+/i, '');
+      // Drop trailing difficulty markers
+      title = title.replace(/\s+(Beginner|Intermediate|Advanced)$/i, '');
+      // Title case normalization: leave as-is to avoid unintended changes
+      return title.trim();
+    } catch { return ''; }
+  }, [manifestInfo?.title, effectiveLessonTitle, lessonParam]);
+
+  // Helper: fallback vocab list from title keywords if no explicit vocab
+  const getFallbackVocabFromTitle = useCallback(() => {
+    const t = getCleanLessonTitle();
+    if (!t) return [];
+    const stop = new Set(['with','and','the','of','a','an','to','in','on','for','by','vs','versus','about','into','from']);
+    const words = t.split(/[^A-Za-z]+/).map(w => w.trim()).filter(w => w && !stop.has(w.toLowerCase()));
+    const uniq = Array.from(new Set(words.map(w => w.charAt(0).toUpperCase() + w.slice(1))));
+    return uniq.slice(0, 5); // 3–5 terms
+  }, [getCleanLessonTitle]);
+
+  const hasVocab = useMemo(() => {
+    try {
+      const v = getAvailableVocab();
+      return Array.isArray(v) && v.length > 0;
+    } catch { return false; }
+  }, [getAvailableVocab]);
+
+  const promptGateRepeat = useCallback(async () => {
+    // Hard-wired spoken gate with captions
+    try { await speakFrontend('Do you want me to go over that again?'); } catch {}
+    setSubPhase('awaiting-gate');
+    setCanSend(false); // gated via buttons
+  }, [speakFrontend]);
+
+  const teachDefinitions = useCallback(async (isRepeat = false) => {
     setCanSend(false);
-    let instruction = [
-      `Unified teaching for "${effectiveLessonTitle}": Do all parts in one response strictly within this lessonTitle scope.`,
-      "1) Intro: introduce today's topic and what they'll accomplish (about three short sentences).",
-      "2) Examples: walk through one or two worked numeric examples step by step that you fully compute yourself (no asking learner to solve).",
-      "3) Wrap: summarize the exact steps for this lesson and finish by asking exactly 'Would you like me to go over that again?'",
-      // Guardrails already established globally; reminder for brevity:
-      "Use only that single gate question; no other questions or future-phase terms.",
-      KID_FRIENDLY_STYLE
-    ].join(" ");
-    instruction = withTeachingNotes(instruction);
-    const result = await callMsSonoma(instruction, "", {
-      phase: "teaching",
-      subject: subjectParam,
-      difficulty: difficultyParam,
-      lesson: lessonParam,
-      lessonTitle: effectiveLessonTitle,
-      step: "teaching-unified",
-      teachingNotes: getTeachingNotes() || undefined,
-    });
-    if (!result.success) return;
-    setSubPhase("awaiting-gate");
-    setCanSend(true);
-  };
+    // Hide gate UI while speaking this stage
+    setSubPhase('teaching-3stage');
+    // Frontend-only announcement before API call
+    if (!isRepeat) {
+      try { await speakFrontend("First let's go over some definitions."); } catch {}
+    }
+  // Make sure lesson data is present before extracting vocab
+  const loaded = await ensureLessonDataReady();
+  const vocabList = getAvailableVocab(loaded || undefined);
+  const hasAnyVocab = Array.isArray(vocabList) && vocabList.length > 0;
+  // Use only lesson-provided vocab; do not fall back to title-derived terms
+  // Be robust: accept {term}|{word}|{key} or raw string items, then de-duplicate case-insensitively
+  const terms = hasAnyVocab
+    ? Array.from(new Map(
+        vocabList
+          .map(v => {
+            const raw = (typeof v === 'string') ? v : (v?.term || v?.word || v?.key || '');
+            const t = (raw || '').trim();
+            return t ? [t.toLowerCase(), t] : null;
+          })
+          .filter(Boolean)
+      ).values())
+    : [];
+    const gradeText = getGradeNumber();
+    const lessonTitle = getCleanLessonTitle();
+    const vocabCsv = terms.join(', ');
+    try {
+      if (!terms.length) {
+        console.warn('[Definitions] No vocab terms found to inject. lesson has keys:', Object.keys(loaded || lessonData || {}));
+      } else {
+        console.info('[Definitions] Injecting vocab terms:', terms);
+      }
+    } catch {}
+    const instruction = [
+      '',
+      `Grade: ${gradeText || ''}`.trim(),
+      '',
+      `Lesson: (do not read aloud): "${lessonTitle}"`,
+      '',
+      'No intro: Do not greet or introduce yourself; begin immediately with the definitions.',
+      '',
+  `Definitions: Define these words: ${vocabCsv}. Keep it warm, playful, and brief. Do not ask a question.`,
+      '',
+      "Kid-friendly: Use simple everyday words a 5 year old can understand. Keep sentences short (about 6–12 words). Avoid big words and jargon. If you must use one, add a quick kid-friendly meaning in parentheses. Use a warm, friendly tone with everyday examples. Speak directly to the learner using 'you' and 'we'. One idea per sentence; do not pack many steps into one sentence.",
+      '',
+      'Always respond with natural spoken text only. Do not use emojis, decorative characters, repeated punctuation, ASCII art, bullet lines, or other symbols that would be awkward to read aloud.'
+    ].join('\n');
+    const result = await callMsSonoma(
+      instruction,
+      '',
+      {
+        phase: 'teaching',
+        subject: subjectParam,
+        difficulty: difficultyParam,
+        lesson: lessonParam,
+        lessonTitle: effectiveLessonTitle,
+        step: isRepeat ? 'definitions-repeat' : 'definitions',
+        teachingNotes: getTeachingNotes() || undefined,
+        // Provide explicit vocab when available
+        vocab: hasAnyVocab ? vocabList : [],
+        stage: 'definitions'
+      }
+    );
+    return !!result.success;
+  }, [ensureLessonDataReady, getAvailableVocab, getGradeNumber, getCleanLessonTitle, subjectParam, difficultyParam, lessonParam, effectiveLessonTitle]);
+
+  const teachExplanation = useCallback(async (isRepeat = false) => {
+    setCanSend(false);
+    // Hide gate UI while speaking this stage
+    setSubPhase('teaching-3stage');
+    // Frontend-only announcement before API call
+    if (!isRepeat) {
+      try { await speakFrontend("Now I'll explain the lesson."); } catch {}
+    }
+    const gradeText = getGradeNumber();
+    const lessonTitle = getCleanLessonTitle();
+    const notes = getTeachingNotes() || '';
+    const instruction = [
+      '',
+      `Grade: ${gradeText || ''}`.trim(),
+      '',
+      `Lesson: (do not read aloud): "${lessonTitle}"`,
+      '',
+      `Teaching notes (for your internal guidance; integrate naturally—do not read verbatim): ${notes}`,
+      'No intro: Do not greet or introduce yourself; begin immediately with the explanation.',
+      'Explanation: Explain the lesson using the Teaching notes only. Keep it short, warm, and playful. Do not ask a question.',
+      '',
+      'Kid-friendly style rules: Use simple everyday words a 5 year old can understand. Keep sentences short (about 6–12 words). Avoid big words and jargon. If you must use one, add a quick kid-friendly meaning in parentheses. Use a warm, friendly tone with everyday examples. Speak directly to the learner using \"you\" and \"we\". One idea per sentence; do not pack many steps into one sentence.',
+      '',
+      'Always respond with natural spoken text only. Do not use emojis, decorative characters, repeated punctuation, ASCII art, bullet lines, or other symbols that would be awkward to read aloud.'
+    ].join('\n');
+    const result = await callMsSonoma(
+      instruction,
+      '',
+      {
+        phase: 'teaching',
+        subject: subjectParam,
+        difficulty: difficultyParam,
+        lesson: lessonParam,
+        lessonTitle: effectiveLessonTitle,
+        step: isRepeat ? 'explanation-repeat' : 'explanation',
+        teachingNotes: notes || undefined,
+        // Do not include vocab during explanation
+        vocab: [],
+        stage: 'explanation'
+      }
+    );
+    return !!result.success;
+  }, [getGradeNumber, getCleanLessonTitle, subjectParam, difficultyParam, lessonParam, effectiveLessonTitle]);
+
+  const teachExamples = useCallback(async (isRepeat = false) => {
+    setCanSend(false);
+    // Hide gate UI while speaking this stage
+    setSubPhase('teaching-3stage');
+    // Frontend-only announcement before API call
+    if (!isRepeat) {
+      try { await speakFrontend("Now let's see this in action."); } catch {}
+    }
+    const lessonTitle = getCleanLessonTitle();
+    const notes = getTeachingNotes() || '';
+    const instruction = [
+      '',
+      `Teaching notes (for your internal guidance; integrate naturally—do not read verbatim): ${notes}`,
+      '',
+      'No intro: Do not greet or introduce yourself; begin immediately with the examples.',
+      'Examples: Show 2–3 tiny worked examples appropriate for this lesson. You compute every step. Be concise, warm, and playful. Do not add definitions or broad explanations beyond what is needed to show the steps. Do not do an introduction or a wrap; give only the examples.',
+      '',
+      'Kid-friendly style rules: Use simple everyday words a 5–7 year old can understand. Keep sentences short (about 6–12 words). Avoid big words and jargon. If you must use one, add a quick kid-friendly meaning in parentheses. Use a warm, friendly tone with everyday examples. Speak directly to the learner using \"you\" and \"we\". One idea per sentence; do not pack many steps into one sentence.',
+      '',
+      'Always respond with natural spoken text only. Do not use emojis, decorative characters, repeated punctuation, ASCII art, bullet lines, or other symbols that would be awkward to read aloud.'
+    ].join('\n');
+    const result = await callMsSonoma(
+      instruction,
+      '',
+      {
+        phase: 'teaching',
+        subject: subjectParam,
+        difficulty: difficultyParam,
+        lesson: lessonParam,
+        lessonTitle: effectiveLessonTitle,
+        step: isRepeat ? 'examples-repeat' : 'examples',
+        teachingNotes: notes || undefined,
+        // Do not include vocab during examples
+        vocab: [],
+        stage: 'examples'
+      }
+    );
+    return !!result.success;
+  }, [getCleanLessonTitle, subjectParam, difficultyParam, lessonParam, effectiveLessonTitle]);
+
+  const startThreeStageTeaching = useCallback(async () => {
+    // Mark subPhase to a neutral value so legacy auto-advance doesn't trigger
+    setSubPhase('teaching-3stage');
+    setPhase('teaching');
+    // Always begin with Definitions. If no explicit vocab is provided, we will extract key terms from notes.
+    try {
+      const loaded = await ensureLessonDataReady();
+      const v = getAvailableVocab(loaded || undefined);
+      const detectedCount = Array.isArray(v) ? v.length : 0;
+      console.info('[Teaching] Start: forcing definitions first; detectedVocabCount=', detectedCount);
+    } catch {}
+    setTeachingStage('definitions');
+    let ok = await teachDefinitions(false);
+    if (ok) await promptGateRepeat();
+  }, [ensureLessonDataReady, getAvailableVocab, teachDefinitions, promptGateRepeat]);
 
   const startTeachingUnifiedRepeat = async () => {
     // Repeat teaching with a different transition tone; avoid sounding like a fresh start.
@@ -2578,9 +3870,8 @@ ${jokeText}`
       `${prefix} Re-teach the lesson strictly titled "${manifestInfo.title}" in a concise refreshed way:`,
       "1) Brief alternate angle: one or two sentences that restate the concept with a slightly different framing.",
       "2) One worked numeric example (different numbers than before) fully computed step by step.",
-      "3) Compact recap of the exact procedural steps.",
-      "End by asking exactly 'Would you like me to go over that again?' and nothing else after it.",
-      // Declaration already given for teaching phase above; no need to restate the banned list.
+      "3) Compact recap of the exact procedural steps (no questions at the end).",
+      // Declaration already given for teaching phase above; no need to restate the banned list. Re-emphasize no questions.
       "Follow prior teaching guardrails (no future-phase terms or additional questions).",
       KID_FRIENDLY_STYLE
     ].join(" ");
@@ -2597,9 +3888,111 @@ ${jokeText}`
     });
     if (!result.success) return;
     setSubPhase("awaiting-gate");
-    setCanSend(true);
+    // Disable text input; gate is controlled by Yes/No UI buttons
+    setCanSend(false);
     setTeachingRepeats((c) => c + 1);
   };
+
+  // Teaching gate UI handlers for three-stage flow
+  const handleGateYes = useCallback(async () => {
+    try { console.info('[Gate] YES clicked: repeat stage', teachingStage); } catch {}
+    if (teachingStage === 'definitions') {
+      const ok = await teachDefinitions(true);
+      if (ok) {
+        setStageRepeats((s) => ({ ...s, definitions: (s.definitions || 0) + 1 }));
+        await promptGateRepeat();
+      }
+      return;
+    }
+    if (teachingStage === 'explanation') {
+      const ok = await teachExplanation(true);
+      if (ok) {
+        setStageRepeats((s) => ({ ...s, explanation: (s.explanation || 0) + 1 }));
+        await promptGateRepeat();
+      }
+      return;
+    }
+    if (teachingStage === 'examples') {
+      const ok = await teachExamples(true);
+      if (ok) {
+        setStageRepeats((s) => ({ ...s, examples: (s.examples || 0) + 1 }));
+        await promptGateRepeat();
+      }
+      return;
+    }
+  }, [teachingStage, teachDefinitions, teachExplanation, teachExamples, promptGateRepeat]);
+
+  const moveToComprehensionWithCue = useCallback(async () => {
+    // Use the existing caption pipeline with TTS cue
+    setCanSend(false);
+    const cue = COMPREHENSION_CUE_PHRASE;
+    let sentences = splitIntoSentences(cue);
+    try { sentences = mergeMcChoiceFragments(sentences).map((s) => enforceNbspAfterMcLabels(s)); } catch {}
+    const prevLen = captionSentencesRef.current?.length || 0;
+    try {
+      const nextAll = [...(captionSentencesRef.current || []), ...sentences];
+      captionSentencesRef.current = nextAll;
+      setCaptionSentences(nextAll);
+      setCaptionIndex(prevLen);
+    } catch {}
+    const FALLBACK_SECS = 1.8;
+    let transitioned = false;
+    try {
+      setTtsLoadingCount((c) => c + 1);
+      let res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: cue }) });
+      if (!res.ok) { try { await fetch('/api/tts', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(() => {}); } catch {}
+        res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: cue }) }); }
+      if (res.ok) {
+        const data = await res.json();
+        let b64 = (data && data.audio) ? String(data.audio) : '';
+        if (b64) {
+          setTtsLoadingCount((c) => Math.max(0, c - 1));
+          b64 = b64.replace(/^data:audio\/[a-zA-Z0-9.-]+;base64,/, '').trim();
+          try { await playAudioFromBase64(b64, sentences, prevLen); } catch {}
+          setPhase('comprehension');
+          setSubPhase('comprehension-start');
+          setCurrentCompProblem(null);
+          setCanSend(false);
+          transitioned = true;
+        }
+      }
+  } catch {}
+    finally { setTtsLoadingCount((c) => Math.max(0, c - 1)); }
+    if (!transitioned) {
+      // no audio path: decrement before showing fallback timing
+      setTtsLoadingCount((c) => Math.max(0, c - 1));
+      try { if (typeof scheduleCaptionsForDuration === 'function') scheduleCaptionsForDuration(FALLBACK_SECS, sentences, prevLen); } catch {}
+      await new Promise(r => setTimeout(r, FALLBACK_SECS * 1000 + 150));
+      setPhase('comprehension');
+      setSubPhase('comprehension-start');
+      setCurrentCompProblem(null);
+      setCanSend(false);
+    }
+  }, [playAudioFromBase64, scheduleCaptionsForDuration]);
+
+  const handleGateNo = useCallback(async () => {
+    try { console.info('[Gate] NO clicked: next stage', teachingStage); } catch {}
+    if (teachingStage === 'definitions') {
+      // Advance to Explanation
+      setTeachingStage('explanation');
+      const ok = await teachExplanation(false);
+      if (ok) await promptGateRepeat();
+      return;
+    }
+    if (teachingStage === 'explanation') {
+      // Advance to Examples
+      setTeachingStage('examples');
+      const ok = await teachExamples(false);
+      if (ok) await promptGateRepeat();
+      return;
+    }
+    if (teachingStage === 'examples') {
+      // Done with three stages: cue comprehension
+      setTeachingStage('idle');
+      await moveToComprehensionWithCue();
+      return;
+    }
+  }, [teachingStage, teachExplanation, teachExamples, promptGateRepeat, moveToComprehensionWithCue]);
 
   // Auto-advance scripted steps after audio finishes speaking
   useEffect(() => {
@@ -2610,12 +4003,14 @@ ${jokeText}`
     if (phase === "discussion") return;
 
     if (phase === "teaching") {
+      // When running the new three-stage teaching flow, do not run legacy auto-advance
+      if (teachingStage !== 'idle') return;
       // Progress through teaching steps automatically until awaiting-gate
       if (["teaching-intro", "teaching-example", "teaching-wrap"].includes(subPhase)) {
         startTeachingStep();
       }
     }
-  }, [isSpeaking, loading, phase, subPhase, showBegin]);
+  }, [isSpeaking, loading, phase, subPhase, showBegin, teachingStage]);
 
   const handleDownloadWorksheet = async () => {
     const ok = await ensurePinAllowed('download');
@@ -3756,7 +5151,7 @@ ${jokeText}`
       case "silly-question":
         return "Asking a silly question before teaching.";
       case "unified-discussion":
-        return "Opening: greeting, encouragement, a quick joke, and a silly question.";
+        return "Opening: greeting, encouragement, and a quick next-step prompt.";
       case "awaiting-learner":
         return "Waiting for the learner's reply.";
       case "teaching-intro":
@@ -3986,56 +5381,71 @@ ${jokeText}`
   }, [lessonData, generatedWorksheet, generatedTest, compPool.length]);
 
   const beginSession = async () => {
+    try { console.info('[Begin] Clicked: starting session'); } catch {}
     // End any prior API/audio/mic activity before starting fresh
     try { abortAllActivity(); } catch {}
-    // Ensure audio and mic permissions are handled as part of Begin
+    // Ensure audio and mic permissions are handled as part of Begin (in-gesture)
     try { requestAudioAndMicPermissions(); } catch {}
-    await ensureRuntimeTargets(true); // Force fresh reload of targets
+
+    // Immediately update UI so it feels responsive
     setShowBegin(false);
     setPhase("discussion");
     setPhaseGuardSent({});
-    ensureBaseSessionSetup();
-    // No standalone unlock prompt: Begin handles permissions
-    // Build ephemeral provided question sets for comprehension and exercise
-    try {
-      const pool = buildQAPool();
-      const shuffled = Array.isArray(pool) ? (Array.from(pool)) : [];
-      // Simple in-place shuffle
-      for (let i = shuffled.length - 1; i > 0; i -= 1) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      const totalNeeded = Math.max(0, (COMPREHENSION_TARGET || 0)) + Math.max(0, (EXERCISE_TARGET || 0));
-      let take = shuffled.slice(0, totalNeeded);
-      // If pool is smaller than needed, allow repetition by cycling
-      if (take.length < totalNeeded && shuffled.length) {
-        const extra = [];
-        let k = 0;
-        while (take.length + extra.length < totalNeeded) {
-          extra.push({ ...shuffled[k % shuffled.length] });
-          k += 1;
-        }
-        take = [...take, ...extra];
-      }
-      const compArr = take.slice(0, COMPREHENSION_TARGET);
-      const exArr = take.slice(COMPREHENSION_TARGET, COMPREHENSION_TARGET + EXERCISE_TARGET);
-      setGeneratedComprehension(compArr);
-      setGeneratedExercise(exArr);
-      setCurrentCompIndex(0);
-      setCurrentExIndex(0);
-      setCurrentCompProblem(null);
-      setCurrentExerciseProblem(null);
-    } catch {
-      // If anything goes wrong, leave as null and fall back to on-the-fly selection
-      setGeneratedComprehension(null);
-      setGeneratedExercise(null);
-      setCurrentCompIndex(0);
-      setCurrentExIndex(0);
-      setCurrentCompProblem(null);
-      setCurrentExerciseProblem(null);
-    }
     setSubPhase("unified-discussion");
     setCanSend(false);
+    try { console.info('[Begin] UI updated → discussion/unified-discussion'); } catch {}
+
+    // Non-blocking: load targets and generate pools in the background
+    // so Opening can start speaking right away.
+    (async () => {
+      try {
+        await ensureRuntimeTargets(true); // Force fresh reload of targets
+        ensureBaseSessionSetup();
+        // Build ephemeral provided question sets for comprehension and exercise
+        try {
+          const pool = buildQAPool();
+          const shuffled = Array.isArray(pool) ? (Array.from(pool)) : [];
+          for (let i = shuffled.length - 1; i > 0; i -= 1) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
+          const totalNeeded = Math.max(0, (COMPREHENSION_TARGET || 0)) + Math.max(0, (EXERCISE_TARGET || 0));
+          let take = shuffled.slice(0, totalNeeded);
+          if (take.length < totalNeeded && shuffled.length) {
+            const extra = [];
+            let k = 0;
+            while (take.length + extra.length < totalNeeded) {
+              extra.push({ ...shuffled[k % shuffled.length] });
+              k += 1;
+            }
+            take = [...take, ...extra];
+          }
+          const compArr = take.slice(0, COMPREHENSION_TARGET);
+          const exArr = take.slice(COMPREHENSION_TARGET, COMPREHENSION_TARGET + EXERCISE_TARGET);
+          setGeneratedComprehension(compArr);
+          setGeneratedExercise(exArr);
+          setCurrentCompIndex(0);
+          setCurrentExIndex(0);
+          setCurrentCompProblem(null);
+          setCurrentExerciseProblem(null);
+          try { console.info('[Begin] Targets/pools ready'); } catch {}
+        } catch (e) {
+          // Defer to on-the-fly selection if needed
+          setGeneratedComprehension(null);
+          setGeneratedExercise(null);
+          setCurrentCompIndex(0);
+          setCurrentExIndex(0);
+          setCurrentCompProblem(null);
+          setCurrentExerciseProblem(null);
+          try { console.warn('[Begin] Pool generation failed; will select on the fly', e?.name || e); } catch {}
+        }
+      } catch (e) {
+        try { console.warn('[Begin] ensureRuntimeTargets failed', e?.name || e); } catch {}
+      }
+    })();
+
+    // Kick off the Opening immediately (does its own loading state for TTS)
+    try { console.info('[Begin] Starting Opening step…'); } catch {}
     await startDiscussionStep();
   };
 
@@ -4058,7 +5468,7 @@ ${jokeText}`
     return `${preface}\n${baseInstruction}`;
   }, [getTeachingNotes]);
 
-  const beginWorksheetPhase = () => {
+  const beginWorksheetPhase = async () => {
     // End any prior API/audio/mic activity before starting fresh
     try { abortAllActivity(); } catch {}
     // Ensure audio/mic unlocked via Begin
@@ -4074,46 +5484,32 @@ ${jokeText}`
       setCanSend(false);
       return;
     }
-    // Ensure the initial Begin button is never shown once worksheet starts
+  // Ensure the initial Begin button is never shown once worksheet starts
     setShowBegin(false);
+    // Gate quick-answer buttons until the learner presses Start the lesson
+    setQaAnswersUnlocked(false);
+    setJokeUsedThisGate(false);
+    setRiddleUsedThisGate(false);
+    setPoemUsedThisGate(false);
+  setRiddleUsedThisGate(false);
+  setPoemUsedThisGate(false);
     // Immediately advance subPhase so the "Begin Worksheet" button disappears
-    // even while we wait for Ms. Sonoma's intro + first question reply.
-  setSubPhase('worksheet-active');
-  worksheetIndexRef.current = 0;
+    setSubPhase('worksheet-active');
+    worksheetIndexRef.current = 0;
+    setCurrentWorksheetIndex(0);
+    setTicker(0);
     setCanSend(false);
   const first = generatedWorksheet[0];
-  // Use the same speech formatter so TF prefix and MC options are embedded in the asked question
-  const firstWithOptions = ensureQuestionMark(formatQuestionForSpeech(first));
-    // Instruction differs if reached via skip: include announcement + encouragement + joke announcement + joke before first question
-    const introInstruction = worksheetSkippedAwaitBegin ? [
-      'Worksheet start (skipped to): Output exactly six sentences:',
-      '(1) Announce you are beginning the worksheet now.',
-      '(2) One short encouragement sentence (different from announcement).',
-      '(3) Announce a quick joke with a lead-in like "Here comes a quick joke before we dive in."',
-      '(4) Tell one kid-friendly very short math joke (single sentence).',
-      '(5) Say one short readiness line to lead into the first question (for example, "Ready for your first question?").',
-      '(6) Ask the FIRST worksheet question exactly as provided below; this must be the final sentence and must end with a question mark.',
-      'Do not add labels; do not say any of the bracketed tokens aloud.',
-      `FIRST_WORKSHEET_QUESTION: ${firstWithOptions}`
-    ].join(' ') : [
-      'Worksheet start: Output exactly two sentences:',
-      '(1) One friendly sentence acknowledging they are ready, reassuring them they will do great. Do not mention the test.',
-      '(2) Ask the FIRST worksheet question exactly as provided below; this must be the final sentence and must end with a question mark.',
-      'Do not add labels; do not say any of the bracketed tokens aloud.',
-      `FIRST_WORKSHEET_QUESTION: ${firstWithOptions}`
-    ].join(' ');
-  callMsSonoma(introInstruction, '', { phase: 'worksheet', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, step: 'worksheet-start', skippedIntro: worksheetSkippedAwaitBegin })
-      .then(() => {
-        setTicker(1); // question number displayed as 1 for first question
-  setCurrentWorksheetIndex(0);
-  worksheetIndexRef.current = 0;
-        setCanSend(true);
-        if (worksheetSkippedAwaitBegin) setWorksheetSkippedAwaitBegin(false);
-      })
-      .catch(() => {
-        setCanSend(true);
-        if (worksheetSkippedAwaitBegin) setWorksheetSkippedAwaitBegin(false);
-      });
+  const num1 = (typeof first?.number === 'number' && first.number > 0) ? first.number : 1;
+  const q = ensureQuestionMark(`${num1}. ${formatQuestionForSpeech(first, { layout: 'multiline' })}`);
+    const opener = WORKSHEET_INTROS[Math.floor(Math.random() * WORKSHEET_INTROS.length)];
+    try {
+      await speakFrontend(opener);
+    } catch {}
+    setCanSend(true);
+    // After intro+first question, reveal Opening actions row
+    try { setShowOpeningActions(true); } catch {}
+    if (worksheetSkippedAwaitBegin) setWorksheetSkippedAwaitBegin(false);
   };
 
   const beginTestPhase = async () => {
@@ -4177,12 +5573,16 @@ ${jokeText}`
         return;
       }
     }
-    // Hide any residual Begin button if user jumped here directly
+  // Hide any residual Begin button if user jumped here directly
     setShowBegin(false);
+  // Gate quick-answer buttons until Start the lesson
+  setQaAnswersUnlocked(false);
+  setJokeUsedThisGate(false);
     // Ensure audio can play if previously paused by user
     setUserPaused(false);
     // Reset model-validated correctness tracking
     setUsedTestCuePhrases([]);
+  setTestCorrectByIndex([]);
                 // Fallback snapshot from selection page - now learner-specific
                 const currentLearnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
                 if (currentLearnerId && currentLearnerId !== 'demo') {
@@ -4207,27 +5607,47 @@ ${jokeText}`
                   if (!isNaN(lt)) TEST_TARGET = lt;
                 }
     setTestCorrectCount(0);
-    // Do not manually append the first question to captions; rely on Ms. Sonoma's spoken reply to populate transcript
+    // Do not manually append the first question to captions; we'll speak it locally
     const firstItem = generatedTest[0];
-  const firstBody = formatQuestionForInlineAsk(firstItem);
+    const firstBody = formatQuestionForSpeech(firstItem, { layout: 'multiline' });
     setTestActiveIndex(0);
     setSubPhase('test-active');
-    setCanSend(true);
+    setCanSend(false);
     try { showTipOverride('Starting test…', 3000); } catch {}
 
-  // Speak a short test intro and then ask the FIRST test question aloud (captions will come from this reply)
+    // Speak a short test intro (random); first question is gated behind Start the lesson
     try {
-      const firstWithOptions = ensureSingleTerminalQuestionMark(firstBody);
-      const introInstruction = [
-        'Test start: Output exactly two sentences:',
-        '(1) Announce that we are beginning the test now in a friendly, encouraging way (one sentence).',
-        '(2) Ask the FIRST test question exactly as provided below ON ONE LINE. If it is multiple-choice, include the lettered choices inline on the same line after the stem. Use exactly one question mark total and place it at the very end of the line. No extra sentences.',
-        'Do not add labels; do not say any bracketed tokens aloud.',
-        `FIRST_TEST_QUESTION: ${firstWithOptions}`
-      ].join(' ');
-      callMsSonoma(introInstruction, '', { phase: 'test', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, step: 'test-start' }, { fastReturn: true }).catch(() => {});
+      const opener = TEST_INTROS[Math.floor(Math.random() * TEST_INTROS.length)];
+      await speakFrontend(opener);
     } catch {}
+    // After intro, reveal Opening actions row (for Q&A extras)
+    try { setShowOpeningActions(true); } catch {}
+    setCanSend(true);
   };
+
+  // Keep grade percent and count in sync with correctness array.
+  useEffect(() => {
+    if (phase !== 'congrats') return; // only matter in preview
+    try {
+      const total = Array.isArray(generatedTest) ? generatedTest.length : 0;
+      const correct = Array.isArray(testCorrectByIndex) ? testCorrectByIndex.filter(Boolean).length : 0;
+      const percent = Math.round((correct / Math.max(1, total)) * 100);
+      if (Number.isFinite(correct)) setTestCorrectCount(correct);
+      if (Number.isFinite(percent)) setTestFinalPercent(percent);
+    } catch {}
+  }, [phase, generatedTest, testCorrectByIndex]);
+
+  // Persist medal when final percent changes in congrats (best-of safeguard handled in client)
+  useEffect(() => {
+    if (phase !== 'congrats') return;
+    if (typeof testFinalPercent !== 'number') return;
+    try {
+      const learnerId = (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null) || null;
+      const subjectLower = (subjectParam || 'math').toLowerCase();
+      const lessonKey = `${subjectLower}/${lessonParam}`;
+      if (learnerId && lessonKey) upsertMedal(learnerId, lessonKey, testFinalPercent);
+    } catch {}
+  }, [phase, testFinalPercent, subjectParam, lessonParam]);
 
   // Begin Comprehension manually when arriving at comprehension-start (e.g., via skip)
   const beginComprehensionPhase = async () => {
@@ -4241,6 +5661,11 @@ ${jokeText}`
     // Only act in comprehension phase
     if (phase !== 'comprehension') return;
   if (subPhase !== 'comprehension-start' && subPhase !== 'comprehension-active') setSubPhase('comprehension-start');
+  // Gate quick-answer buttons until Start the lesson
+  setQaAnswersUnlocked(false);
+  setJokeUsedThisGate(false);
+  setRiddleUsedThisGate(false);
+  setPoemUsedThisGate(false);
     try { console.log('[Session] Begin Comprehension clicked', { phase, subPhase, currentCompIndex, compPoolLen: Array.isArray(compPool) ? compPool.length : 0 }); } catch {}
   setCanSend(false);
     // Try to pick a first comprehension problem in the same priority order used elsewhere
@@ -4291,21 +5716,17 @@ ${jokeText}`
   if (firstComp) {
       try { console.log('[Session] Selected first comprehension item', { firstComp }); } catch {}
       setCurrentCompProblem(firstComp);
-      const formatted = formatQuestionForSpeech(firstComp);
-      const intro = [
-        'Comprehension start: Begin with exactly ONE short encouragement sentence.',
-        'Immediately after that, ask the following comprehension question exactly as the FINAL sentence (single question sentence ending with a question mark).',
-        'Do not add any other sentences after the question.',
-        `FIRST_COMPREHENSION_QUESTION: ${formatted}`
-      ].join(' ');
+      // Immediately enter active subPhase so the Begin button disappears right away
+      setSubPhase('comprehension-active');
+      // New: Phase intro (random from pool); first question is gated behind Start the lesson
+      const intro = COMPREHENSION_INTROS[Math.floor(Math.random() * COMPREHENSION_INTROS.length)];
       try {
-        await callMsSonoma(intro, '', { phase: 'comprehension', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, step: 'comprehension-start-ask-first' }, { fastReturn: true });
-      } finally {
-        // Keep input disabled until Ms. Sonoma finishes speaking the first question
-        // A dedicated effect will flip canSend to true when isSpeaking becomes false
-        setSubPhase('comprehension-active');
-        setCanSend(false);
-      }
+        await speakFrontend(intro);
+      } catch {}
+      // After intro, reveal Opening actions row
+      try { setShowOpeningActions(true); } catch {}
+      // Keep input disabled until TTS finishes; an effect will re-enable when not speaking
+      setCanSend(false);
     } else {
       try { console.warn('[Session] Begin Comprehension: no available question found on first attempt'); } catch {}
       // Nothing available yet; allow user to try again
@@ -4327,40 +5748,31 @@ ${jokeText}`
     const safeCorrect = (typeof correctCount === 'number') ? correctCount : testCorrectCount;
     const safePercent = (typeof percent === 'number') ? percent : Math.round((safeCorrect / Math.max(1, safeTotal)) * 100);
     const learnerName = (typeof window !== 'undefined' ? (localStorage.getItem('learner_name') || '') : '').trim();
-    const gradeInstruction = [
-      'Final test summary (TEST ONLY):',
-      'You are given the authoritative score numbers from the system. DO NOT recalculate or estimate.',
-      `AUTHORITATIVE_TOTAL: ${safeTotal}`,
-      `AUTHORITATIVE_CORRECT: ${safeCorrect}`,
-      `AUTHORITATIVE_PERCENT: ${safePercent}`,
-      'Output exactly one sentence reporting only the percentage in this exact pattern: "Your score is AUTHORITATIVE_PERCENT%." (replace token with the number). Nothing else in that sentence.',
-      'Then a second proud but concise congratulation sentence (no numbers).',
-      'Then a third sentence that begins exactly with: "One more joke before we go."',
-      'Then a fourth sentence containing one short kid-friendly joke (single sentence).',
-      'Then a fifth encouragement sentence to keep learning.',
-      learnerName
-        ? `Then a final warm goodbye sentence that says the learner's name exactly as: "${learnerName}". Output nothing after the goodbye.`
-        : 'Then a final warm goodbye sentence. Output nothing after the goodbye.'
-    ].join(' ');
-  const summary = await callMsSonoma(gradeInstruction, '', { phase: 'test', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, step: 'test-final-summary', correctCount: safeCorrect, total: safeTotal, percent: safePercent, learnerName });
-    if (summary.success) {
-      setPhase('congrats');
-      setSubPhase('congrats-done');
-  setCanSend(false);
-      try { setTestFinalPercent(safePercent); } catch {}
-      // Persist medal for this learner/lesson (best-of, no downgrades). Uses Supabase when available, local fallback otherwise.
-      try {
-        const learnerId = (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null) || null;
-        // lesson key convention matches lessons quota API: `${subject}/${filename}`; here lessonParam may include .json
-        const subjectLower = (subjectParam || 'math').toLowerCase();
-        const lessonKey = `${subjectLower}/${lessonParam}`;
-        if (learnerId && lessonKey && typeof safePercent === 'number') {
-          upsertMedal(learnerId, lessonKey, safePercent);
-        }
-      } catch {}
-    } else {
-      setCanSend(true);
-    }
+    // Local TTS summary
+    try {
+      const lines = [
+        `Your score is ${safePercent}%.`,
+        'Nice work today. I am proud of you.',
+        'One more joke before we go.',
+        'Why did the pencil cross the paper? To get to the other side.',
+        'Keep learning and having fun.',
+        learnerName ? `Goodbye ${learnerName}.` : 'Goodbye.'
+      ].join(' ');
+      await speakFrontend(lines);
+    } catch {}
+    setPhase('congrats');
+    setSubPhase('congrats-done');
+    setCanSend(false);
+    try { setTestFinalPercent(safePercent); } catch {}
+    // Persist medal
+    try {
+      const learnerId = (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null) || null;
+      const subjectLower = (subjectParam || 'math').toLowerCase();
+      const lessonKey = `${subjectLower}/${lessonParam}`;
+      if (learnerId && lessonKey && typeof safePercent === 'number') {
+        upsertMedal(learnerId, lessonKey, safePercent);
+      }
+    } catch {}
   };
 
 
@@ -4559,7 +5971,7 @@ ${jokeText}`
   }, [skipPendingLessonLoad, lessonData, lessonDataLoading]);
 
   // Begin Exercise manually when awaiting begin (either skipped or auto-transitioned)
-  const beginSkippedExercise = () => {
+  const beginSkippedExercise = async () => {
     if (phase !== 'exercise' || subPhase !== 'exercise-awaiting-begin') return;
     // End any prior API/audio/mic activity before starting fresh
     try { abortAllActivity(); } catch {}
@@ -4607,36 +6019,26 @@ ${jokeText}`
       setCurrentExerciseProblem(null);
     }
   setExerciseSkippedAwaitBegin(false);
-    setSubPhase('exercise-start');
-    // Build intro + first question instruction for Ms. Sonoma (mirrors worksheet pattern)
+  setSubPhase('exercise-start');
+  // Gate quick-answer buttons until Start the lesson
+  setQaAnswersUnlocked(false);
+  setJokeUsedThisGate(false);
+  setRiddleUsedThisGate(false);
+  setPoemUsedThisGate(false);
+    // Frontend-only: brief intro + first question via unified TTS/captions
     if (first) {
-      const formattedFirst = formatQuestionForSpeech(first);
-      const exerciseIntro = [
-        'Exercise start: Briefly (one friendly sentence) announce we are beginning the exercise practice. No mention of worksheet or test.',
-        'Immediately after that, ask the FIRST exercise question exactly as provided below as the FINAL sentence (single question sentence ending with a question mark, nothing after).',
-        `FIRST_EXERCISE_QUESTION: ${formattedFirst}`
-      ].join(' ');
-      setCanSend(false);
-  callMsSonoma(exerciseIntro, '', { phase: 'exercise', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, step: 'exercise-start' })
-        .then(() => {
-          // After model asks first question, allow learner to answer
-          setCanSend(true);
-          setTicker(0); // ticker counts correct answers; remains 0 initially
-        })
-        .catch(() => setCanSend(true));
+      const opener = EXERCISE_INTROS[Math.floor(Math.random() * EXERCISE_INTROS.length)];
+      try {
+        setCanSend(false);
+        setTicker(0);
+        await speakFrontend(opener);
+      } catch {}
+      // After intro, reveal Opening actions row
+      try { setShowOpeningActions(true); } catch {}
+      setCanSend(true);
     } else {
-      // No preselected problem available: instruct model to generate one so the API fires and session proceeds
-      const exerciseIntro = [
-        'Exercise start: Briefly (one friendly sentence) announce we are beginning the exercise practice. No mention of worksheet or test.',
-        'Immediately after that, generate ONE appropriate first exercise question for this lesson as the FINAL sentence (single question sentence ending with a question mark, nothing after).'
-      ].join(' ');
-      setCanSend(false);
-  callMsSonoma(exerciseIntro, '', { phase: 'exercise', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, step: 'exercise-start-generate' })
-        .then(() => {
-          setCanSend(true);
-          setTicker(0);
-        })
-        .catch(() => setCanSend(true));
+      // Nothing to ask yet (rare); leave UI enabled
+      setCanSend(true);
     }
   };
 
@@ -4650,14 +6052,101 @@ ${jokeText}`
     // Clear only when actually sending so the input doesn't appear to "eat" text without sending
     setLearnerInput("");
 
+    // Riddle attempt: when a riddle is active and we're awaiting a solve, judge the attempt first
+    if (phase === 'discussion' && subPhase === 'awaiting-learner' && riddleState === 'awaiting-solve' && currentRiddle) {
+      setCanSend(false);
+      // Echo the learner's attempt into captions as user line
+      try {
+        const prevLen = captionSentencesRef.current?.length || 0;
+        const nextAll = [...(captionSentencesRef.current || []), { text: trimmed, role: 'user' }];
+        captionSentencesRef.current = nextAll;
+        setCaptionSentences(nextAll);
+        setCaptionIndex(prevLen);
+      } catch {}
+      const result = await judgeRiddleAttempt(trimmed);
+      const line = (result && result.text) ? result.text : 'Not quite. Try again.';
+      await speakFrontend(line);
+      // If model said it's correct, end riddle and return to options; otherwise keep awaiting solve
+      const isCorrect = /\b(correct|you got it|that\'?s right)\b/i.test(line);
+      if (isCorrect) {
+        setRiddleState('inactive');
+        setCurrentRiddle(null);
+        setShowOpeningActions(true);
+        setCanSend(true);
+      } else {
+        setRiddleState('awaiting-solve');
+        setCanSend(true);
+      }
+      return;
+    }
+
+    // Poem: topic input → generate poem, then await Ok
+    if (poemState === 'awaiting-topic') {
+      setCanSend(false);
+      // Echo the user's topic to captions as user line
+      try {
+        const prevLen = captionSentencesRef.current?.length || 0;
+        const nextAll = [...(captionSentencesRef.current || []), { text: trimmed, role: 'user' }];
+        captionSentencesRef.current = nextAll;
+        setCaptionSentences(nextAll);
+        setCaptionIndex(prevLen);
+      } catch {}
+      // Ask backend to write a 16-line rhyming poem about the specific user topic; then read via unified TTS/captions
+      const topic = (trimmed || '').replace(/["“”]/g, "'");
+      const instruction = [
+        'You are Ms. Sonoma.',
+        `Write a rhyming poem with exactly 16 lines about the topic: "${topic}".`,
+        'Use simple, warm language for kids, one short idea per line.',
+        'Keep the poem clearly about that topic throughout.',
+        'Do not add a title or extra commentary.'
+      ].join(' ');
+      const result = await callMsSonoma(instruction, '', { phase: 'discussion', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, step: 'poem' }).catch(() => null);
+      const poem = (result && result.text) ? result.text : `Here is a little poem about ${trimmed}.`;
+      await speakFrontend(poem);
+      setPoemState('awaiting-ok');
+      setCanSend(false);
+      setShowOpeningActions(true);
+      return;
+    }
+
+    // Ask-a-question flow: route learner's question to Ms. Sonoma, then ask for confirmation
+    if (askState === 'awaiting-input') {
+      setCanSend(false);
+      setAskOriginalQuestion(trimmed);
+      // Derive a grade level if present in lesson or title (e.g., "4th", "10th")
+      const source = (lessonParam || effectiveLessonTitle || '').toString();
+      const gradeMatch = source.match(/\b(1st|2nd|3rd|[4-9]th|1[0-2]th)\b/i);
+      const gradeLevel = gradeMatch ? gradeMatch[0] : '';
+      const persona = [
+        'You are Ms. Sonoma, a warm, playful, kid-friendly teacher who stays on task.',
+        gradeLevel ? `The learner is a ${gradeLevel}-grade student.` : 'Speak to a school-age learner.',
+        `The current lesson is "${effectiveLessonTitle}". Answer the learner\'s question briefly and clearly using correct terms but kid-friendly language.`,
+        'Be encouraging, and keep focus on this lesson. Close with one gentle sentence that naturally returns us to the lesson topic. Do not ask a new question.'
+      ].join(' ');
+      const result = await callMsSonoma(
+        persona,
+        trimmed,
+        { phase: 'discussion', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, step: 'open-question', gradeLevel },
+        { fastReturn: false }
+      );
+      // After reply speech, ask for confirmation via frontend TTS (spoken only; no footer label)
+      try {
+        await speakFrontend('Did I answer your question?');
+      } catch {}
+      setAskState('awaiting-confirmation');
+      // Keep input disabled while awaiting button choice
+      setCanSend(false);
+      return;
+    }
+
     if (phase === 'discussion' && subPhase === 'awaiting-learner') {
       setCanSend(false);
       let combinedInstruction = [
-        "Silly question follow-up: BEGIN by directly replying to (and briefly referencing) the learner's most recent message that answered the silly question in a playful, natural way (one short sentence, two at most). Do not restate the original silly question. Immediately after that playful acknowledgment, transition smoothly into teaching.",
+        "Opening follow-up: BEGIN with one short friendly sentence that briefly acknowledges the learner's message. Do not ask a question. Immediately after that, transition smoothly into teaching.",
         `Unified teaching for "${effectiveLessonTitle}": Do all parts in one response strictly within this lessonTitle scope.`,
         '1) Intro: introduce today\'s topic and what they\'ll accomplish (about three short sentences).',
         '2) Examples: walk through one or two worked numeric examples step by step that you fully compute yourself (no asking learner to solve).',
-        '3) Wrap: summarize the exact steps for this lesson and finish by asking exactly "Would you like me to go over that again?"'
+        '3) Wrap: summarize the exact steps for this lesson in a concise sentence (no questions).'
       ].join(' ');
       combinedInstruction = withTeachingNotes(combinedInstruction);
       const result = await callMsSonoma(
@@ -4675,493 +6164,409 @@ ${jokeText}`
     }
 
     if (phase === 'teaching' && subPhase === 'awaiting-gate') {
-      setCanSend(false);
-
-      // Ms. Sonoma decides based on the learner message using strict normalization rules
-      const normalizationRules = [
-        'Normalize the learner reply by lowercasing, trimming, collapsing spaces, removing punctuation, and mapping number words zero–twenty to digits.',
-        'YES set: yes, y, yeah, yup, ok, okay, sure, please.',
-        'NO set: no, n, nope, nah, not now, later.',
-        'If and only if the normalized reply is a single token (no spaces) in the YES set, treat it as YES.',
-        'If and only if the normalized reply is a single token (no spaces) in the NO set, treat it as NO.',
-        'If unclear, ask one short clarifying question: "Do you want me to go over it again?" and stop.'
-      ].join(' ');
-
-      const gateInstruction = [
-        'Teaching gate follow-up: Decide if the learner wants a repeat or to move on using the normalization rules. Do not be lenient or interpret beyond those rules.',
-        normalizationRules,
-        // YES branch: immediately re-teach in a fresh way
-        `If YES: Re-teach now. Deliver the full unified teaching for "${effectiveLessonTitle}" again, rephrasing the intro and definitions, and use 2–3 new tiny worked examples that you fully compute yourself. End exactly with: "Would you like me to go over that again?" Do not mention exercise, worksheet, test, exam, quiz, or answer key.`,
-        // NO branch: encouragement + cue ONLY (no question yet; UI will show Begin Comprehension)
-        `If NO: Start with one short encouragement sentence. Then output exactly: "${COMPREHENSION_CUE_PHRASE}" and stop. Do not include any comprehension question or additional content after the cue.`
-      ].join(' ');
-
-      const result = await callMsSonoma(
-        withTeachingNotes(gateInstruction),
-        trimmed,
-  { phase: 'teaching', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, step: 'teaching-gate-response' }
-      );
-      const replyRaw = (result && result.data && result.data.reply) || '';
-      setLearnerInput('');
-
-      // Decide next UI state based on what Ms. Sonoma chose:
-      const cueDetected = replyRaw.trim().toLowerCase().includes(COMPREHENSION_CUE_PHRASE.toLowerCase());
-      if (cueDetected) {
-        // Proceed path: enter comprehension landing (Begin Comprehension button)
-        setPhase('comprehension');
-        setSubPhase('comprehension-start');
-        // Do not allow typing until the facilitator presses Begin Comprehension
-        setCanSend(false);
-        setCurrentCompProblem(null);
-      } else {
-        // Either a re-teach just happened (should end with the gate question), or a clarifying question was asked.
-        // Stay in the teaching gate loop.
-        setSubPhase('awaiting-gate');
-        setCanSend(true);
-      }
+      // Gate is now controlled by UI Yes/No buttons. Typing does nothing here.
+      setLearnerInput("");
+      setCanSend(true);
       return;
     }
 
     if (phase === 'comprehension') {
       setCanSend(false);
+      // Echo the learner's answer into the captions as a user-styled line
+      try {
+        const userItem = { text: trimmed, role: 'user' };
+        captionSentencesRef.current = [...(captionSentencesRef.current || []), userItem];
+        setCaptionSentences(captionSentencesRef.current.slice());
+        setCaptionIndex(Math.max(0, (captionSentencesRef.current || []).length - 1));
+      } catch {}
       const nextCount = ticker + 1;
       const progressPhrase = nextCount === 1
         ? `That makes ${nextCount} correct answer.`
         : `That makes ${nextCount} correct answers.`;
-      // Build randomized encouragement placement pattern for this turn
-      const compPattern = buildCountCuePattern(progressPhrase);
       const nearTarget = (ticker === COMPREHENSION_TARGET - 1);
       const atTarget = (nextCount === COMPREHENSION_TARGET);
-    const firstComprehensionTurn = ticker === 0; // include full declaration only on first comprehension judging turn
-  // Ensure we have a current problem; if missing, select one now.
-  // If the learner hasn't typed an answer yet, ask it; otherwise, judge immediately using the typed answer.
-  let problemForThisTurn = currentCompProblem;
-  if (!currentCompProblem) {
-        // Attempt to pick a first comprehension problem now (same priority as gate path)
-        let firstComp = null;
+
+      // Ensure a current problem; if none, select one. If no input, just speak the question and return.
+      let problem = currentCompProblem;
+      if (!problem) {
+        // Try generated list first, skipping short-answer items
+        let pick = null;
         if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
           let idx = currentCompIndex;
           while (idx < generatedComprehension.length && isShortAnswerItem(generatedComprehension[idx])) idx += 1;
-          if (idx < generatedComprehension.length) {
-            firstComp = generatedComprehension[idx];
-            setCurrentCompIndex(idx + 1);
-          }
+          if (idx < generatedComprehension.length) { pick = generatedComprehension[idx]; setCurrentCompIndex(idx + 1); }
         }
-        if (!firstComp) {
-          let tries = 0;
-          while (tries < 5) {
-            const candidate = drawSampleUnique();
-            if (candidate && !isShortAnswerItem(candidate)) { firstComp = candidate; break; }
-            tries += 1;
-          }
+        if (!pick) {
+          let tries = 0; while (tries < 5) { const s = drawSampleUnique(); if (s && !isShortAnswerItem(s)) { pick = s; break; } tries += 1; }
         }
-        if (!firstComp && compPool.length) {
+        if (!pick && compPool.length) {
           const filtered = compPool.filter(q => !isShortAnswerItem(q));
-          if (filtered.length > 0) {
-            firstComp = filtered[0];
-            setCompPool(compPool.slice(1));
-          }
+          if (filtered.length > 0) { pick = filtered[0]; setCompPool(compPool.slice(1)); }
         }
-
-        // Final fallback: rebuild pool on-the-fly from lesson data so we always have a provided item
-        if (!firstComp) {
+        if (!pick) {
           const refilled = buildQAPool();
-          if (Array.isArray(refilled) && refilled.length) {
-            firstComp = refilled[0];
-            setCompPool(refilled.slice(1));
-          }
+          if (Array.isArray(refilled) && refilled.length) { pick = refilled[0]; setCompPool(refilled.slice(1)); }
         }
-
-        if (firstComp) {
-          setCurrentCompProblem(firstComp);
-          // If no learner input yet, ask the first question now and return; else fall through to judge immediately
+        if (pick) {
+          problem = pick;
+          setCurrentCompProblem(pick);
           if (!trimmed) {
-            const formatted = formatQuestionForSpeech(firstComp);
-            const intro = [
-              'Comprehension start: Begin with exactly ONE short encouragement sentence.',
-              'Immediately after that, ask the following comprehension question exactly as the FINAL sentence (single question sentence ending with a question mark).',
-              'Do not add any other sentences after the question.',
-              `FIRST_COMPREHENSION_QUESTION: ${formatted}`
-            ].join(' ');
-            try {
-              await callMsSonoma(intro, '', { phase: 'comprehension', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, step: 'comprehension-start-ask-first' }, { fastReturn: true });
-            } finally {
-              // Keep disabled until TTS completes the first question
-              setSubPhase('comprehension-active');
-              setCanSend(false);
-            }
+            const formatted = ensureQuestionMark(formatQuestionForSpeech(pick, { layout: 'multiline' }));
+            const opener = ENCOURAGEMENT_SNIPPETS[Math.floor(Math.random() * ENCOURAGEMENT_SNIPPETS.length)] + '.';
+            try { await speakFrontend(`${opener} ${formatted}`, { mcLayout: 'multiline' }); } catch {}
             setLearnerInput('');
+            // Keep disabled until speaking done
+            setSubPhase('comprehension-active');
+            setCanSend(false);
             return;
           }
-          // else: learner has typed an answer already; continue to judging below using the selected firstComp
-          problemForThisTurn = firstComp;
         } else {
-          // Could not source a question yet; allow retry soon
-          setCanSend(true);
           setLearnerInput('');
+          setCanSend(true);
           return;
         }
       }
 
-  // If we have a provided problem, judge it and provide the exact next one
-  if (problemForThisTurn) {
-        // Draw next problem if continuing and not near-target using non-repeating deck
-        let nextProblem = null;
-        if (!nearTarget && !atTarget) {
-          if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
-            // Avoid choosing the same question as the current one; skip short-answer items
-            const isSameAsCurrent = (q) => {
-              try {
-                const qText = (q?.question ?? formatQuestionForSpeech(q)).trim();
-                return qText === currCompDisplay;
-              } catch { return false; }
-            };
-            let idx = currentCompIndex; // points to the next unseen item by design
-            while (idx < generatedComprehension.length && (isShortAnswerItem(generatedComprehension[idx]) || isSameAsCurrent(generatedComprehension[idx]))) idx += 1;
-            if (idx < generatedComprehension.length) {
-              nextProblem = generatedComprehension[idx];
-              setCurrentCompIndex(idx + 1);
-            }
-          }
-          if (!nextProblem) {
-            let tries = 0;
-            while (tries < 5) {
-              const s = drawSampleUnique();
-              // Skip short-answer and any item that matches the current question
-              const isSame = (() => { try { const t = (s?.question ?? formatQuestionForSpeech(s)).trim(); return t === currCompDisplay; } catch { return false; } })();
-              if (s && !isShortAnswerItem(s) && !isSame) { nextProblem = s; break; }
-              tries += 1;
-            }
-          }
-          if (!nextProblem && compPool.length) {
-            // Prefer the first non-short-answer item that is not the same as the current question
-            const [head, ...rest] = compPool;
-            const headSame = (() => { try { const t = (head?.question ?? formatQuestionForSpeech(head)).trim(); return t === currCompDisplay; } catch { return false; } })();
-            if (head && !isShortAnswerItem(head) && !headSame) {
-              nextProblem = head;
-              setCompPool(rest);
-            } else {
-              const altIndex = rest.findIndex(q => q && !isShortAnswerItem(q) && (() => { try { const t = (q?.question ?? formatQuestionForSpeech(q)).trim(); return t !== currCompDisplay; } catch { return true; } })());
-              if (altIndex >= 0) {
-                nextProblem = rest[altIndex];
-                setCompPool(rest.slice(altIndex + 1));
-              } else {
-                // Drop the head to avoid stalling the pool; no nextProblem found here
-                setCompPool(rest);
-              }
-            }
+      // Draw the next problem now (avoid duplicates); only used when current is correct and not final
+      let nextProblem = null;
+      if (!nearTarget && !atTarget) {
+        if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
+          const currText = (() => { try { return (problem?.question ?? formatQuestionForSpeech(problem)).trim(); } catch { return ''; } })();
+          let idx = currentCompIndex;
+          while (idx < generatedComprehension.length && (isShortAnswerItem(generatedComprehension[idx]) || (()=>{ try { const t=(generatedComprehension[idx]?.question ?? formatQuestionForSpeech(generatedComprehension[idx])).trim(); return t===currText; } catch { return false; }})())) idx += 1;
+          if (idx < generatedComprehension.length) { nextProblem = generatedComprehension[idx]; setCurrentCompIndex(idx + 1); }
+        }
+        if (!nextProblem) {
+          let tries = 0;
+          while (tries < 5) {
+            const s = drawSampleUnique();
+            const isSame = (() => { try { const t=(s?.question ?? formatQuestionForSpeech(s)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t===c; } catch { return false; }})();
+            if (s && !isShortAnswerItem(s) && !isSame) { nextProblem = s; break; }
+            tries += 1;
           }
         }
-
-    // Expand expected answer to include digit/word equivalence for friendliness
-  const { primary: expectedPrimary, synonyms: expectedSyns } = expandExpectedAnswer(problemForThisTurn.answer);
-  const anyOfC = expectedAnyList(problemForThisTurn);
-  let acceptableC = anyOfC && anyOfC.length ? Array.from(new Set(anyOfC.map(String))) : [expectedPrimary, ...expectedSyns];
-  // If this is a multiple-choice item, also accept the single-letter selection for the correct option
-  // and the underlying option text itself.
-  const letterC = letterForAnswer(problemForThisTurn, acceptableC);
-  if (letterC) {
-    const optText = getOptionTextForLetter(problemForThisTurn, letterC);
-    acceptableC = Array.from(new Set([
-      ...acceptableC,
-      letterC,
-      letterC.toLowerCase(),
-      ...(optText ? [optText] : [])
-    ]));
-  }
-  const expectedDisplay = acceptableC.length > 1 ? `${expectedPrimary} (also accept: ${acceptableC.filter(v=>v!==expectedPrimary).join(', ')})` : expectedPrimary;
-  const currCompDisplay = formatQuestionForSpeech(problemForThisTurn);
-
-        // Per-question judging spec (choose mode based on presence of keywords/min)
-        let finalAcceptableC;
-  const isShort = (Array.isArray(problemForThisTurn.keywords) && Number.isInteger(problemForThisTurn.minKeywords));
-  const hasChoicesC = (Array.isArray(problemForThisTurn?.choices) && problemForThisTurn.choices.length) || (Array.isArray(problemForThisTurn?.options) && problemForThisTurn.options.length);
-        if (isShort) {
-          finalAcceptableC = [];
-        } else {
-          const anyOfC2 = expectedAnyList(problemForThisTurn);
-          finalAcceptableC = anyOfC2 && anyOfC2.length ? Array.from(new Set(anyOfC2.map(String))) : acceptableC;
-        }
-        const expectedDisplayFinal = isShort ? expectedPrimary : finalAcceptableC[0];
-        const gradingInstruction = buildPerQuestionJudgingSpec({
-          mode: isShort ? 'short-answer' : 'exact',
-          learnerAnswer: trimmed,
-          expectedAnswer: expectedDisplayFinal,
-          acceptableAnswers: isShort ? [] : finalAcceptableC,
-          keywords: isShort ? (problemForThisTurn.keywords || []) : [],
-          minKeywords: isShort ? (problemForThisTurn.minKeywords ?? null) : null,
-          tf: problemForThisTurn?.questionType === 'tf',
-          mc: problemForThisTurn?.questionType === 'mc',
-          sa: (problemForThisTurn?.questionType || 'sa') === 'sa',
-        });
-
-        // Format the next question early so we can embed it directly when needed
-        const hasNext = !!(nextProblem && !nearTarget && !atTarget);
-        const formattedNext = hasNext ? formatQuestionForSpeech(nextProblem) : null;
-
-        const judgementInstructionLines = atTarget ? [
-          'Comprehension judging (FINAL question):',
-          `You asked: "${currCompDisplay}"`,
-          `The correct answer is: "${expectedDisplayFinal}"`,
-          gradingInstruction,
-          'Do NOT read or echo the metadata lines above; they are for your reference only.',
-          'JUDGING PROTOCOL:',
-          '1) Use the grading instruction above to determine if the answer is correct or incorrect.',
-          '2) Start your response with EITHER "Correct!" OR "Not quite right."',
-          `3) If CORRECT: Say "Correct!" then say: "${progressPhrase}" then say: "That's all for comprehension. Now let's move on to the exercise."`,
-          `4) If INCORRECT: Start with "Not quite right." Then give ONE short non-revealing hint (do NOT say the answer). Then repeat this exact question: "${currCompDisplay}"`
-        ] : nearTarget ? [
-          'Comprehension judging:',
-          `You asked: "${currCompDisplay}"`,
-          `The correct answer is: "${expectedDisplayFinal}"`,
-          gradingInstruction,
-          'Do NOT read or echo the metadata lines above; they are for your reference only.',
-          'JUDGING PROTOCOL:',
-          '1) Use the grading instruction above to determine if the answer is correct or incorrect.',
-          '2) Start your response with EITHER "Correct!" OR "Not quite right."',
-          `3) If CORRECT: Say "Correct!" then say: "${progressPhrase}" then STOP.`,
-          `4) If INCORRECT: Start with "Not quite right." Then give ONE short non-revealing hint (do NOT say the answer). Then repeat this exact question: "${currCompDisplay}"`
-        ] : [
-          'Comprehension judging:',
-          `You asked: "${currCompDisplay}"`,
-          `The correct answer is: "${expectedDisplayFinal}"`,
-          gradingInstruction,
-          'Do NOT read or echo the metadata lines above; they are for your reference only.',
-          'JUDGING PROTOCOL:',
-          '1) Use the grading instruction above to determine if the answer is correct or incorrect.',
-          '2) Start your response with EITHER "Correct!" OR "Not quite right."',
-          `3) If CORRECT: Say "Correct!" then say: "${progressPhrase}"`,
-          // Embed the next question directly so we don't need a trailing NEXT_COMPREHENSION_QUESTION line
-          (hasNext ? `Then repeat this exact question: "${formattedNext}"` : `Then repeat this exact question: "${currCompDisplay}"`),
-          `5) If INCORRECT: Start with "Not quite right." Then give ONE short non-revealing hint (do NOT say the answer).`
-        ];
-
-        // We no longer append NEXT_COMPREHENSION_QUESTION because it is embedded above when applicable.
-
-        const comprehensionInstruction = judgementInstructionLines.join(' ');
-        const result = await callMsSonoma(
-          comprehensionInstruction,
-          trimmed,
-          { phase: 'comprehension', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, ticker, step: 'comprehension-response', nearTarget, provided: true }
-        );
-        setLearnerInput('');
-        if (result && result.data && result.data.reply) {
-          const replyBody = result.data.reply;
-          const progressMatch = replyBody.match(/That makes (\d+) correct answer[s]?\./i);
-          // Guard against false positives when the model says it's incorrect
-          const incorrectHints = /(\bincorrect\b|\bnot\s+quite\s+right\b|\bwrong\b|correct answer is|correct answer was)/i;
-          const correctHints = /\bcorrect!/i;
-          const incrementOk = progressMatch && correctHints.test(replyBody) && !incorrectHints.test(replyBody);
-          if (incrementOk) {
-            const reported = parseInt(progressMatch[1], 10);
-            if (!Number.isNaN(reported) && reported === ticker + 1) {
-              const newVal = reported;
-              setTicker(newVal);
-              // Advance to next problem only on correct and not nearTarget/atTarget (they handle transitions)
-              if (!nearTarget && !atTarget) {
-                setCurrentCompProblem(nextProblem || null);
-              }
-              if (newVal >= COMPREHENSION_TARGET) {
-                // Transition to exercise phase but require explicit begin via the button
-                setPhase('exercise');
-                setSubPhase('exercise-awaiting-begin');
-                setExerciseSkippedAwaitBegin(true);
-                setTicker(0);
-                setCanSend(false);
-                setCurrentExerciseProblem(null);
-                setCurrentCompProblem(null);
-                return;
-              }
-            }
+        if (!nextProblem && compPool.length) {
+          const [head, ...rest] = compPool;
+          const headSame = (()=>{ try { const t=(head?.question ?? formatQuestionForSpeech(head)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t===c; } catch { return false; }})();
+          if (head && !isShortAnswerItem(head) && !headSame) { nextProblem = head; setCompPool(rest); }
+          else {
+            const altIndex = rest.findIndex(q => q && !isShortAnswerItem(q) && (()=>{ try { const t=(q?.question ?? formatQuestionForSpeech(q)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t!==c; } catch { return true; }})());
+            if (altIndex >= 0) { nextProblem = rest[altIndex]; setCompPool(rest.slice(altIndex + 1)); }
+            else { setCompPool(rest); }
           }
-          // If not incrementing (incorrect), keep the SAME question to repeat
         }
+      }
+
+      // Build acceptable answers for local judging
+  // Accept both schema variants: some items use `answer`, others use `expected`
+  const { primary: expectedPrimary, synonyms: expectedSyns } = expandExpectedAnswer(problem.answer || problem.expected);
+      const anyOf = expectedAnyList(problem);
+      let acceptable = anyOf && anyOf.length ? Array.from(new Set(anyOf.map(String))) : [expectedPrimary, ...expectedSyns];
+      // If the data provides a numeric correct index, use it to add the letter and option text to acceptable
+      try {
+        if (problem && typeof problem.correct === 'number') {
+          const idx = problem.correct; // JSON appears 0-based
+          const labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+          const letterFromCorrect = labels[idx] || null;
+          if (letterFromCorrect) {
+            const optList = Array.isArray(problem?.options) ? problem.options : (Array.isArray(problem?.choices) ? problem.choices : []);
+            const anyLabel = /^\s*\(?[A-Z]\)?\s*[\.\:\)\-]\s*/i;
+            const optText = optList && optList[idx] ? String(optList[idx]).replace(anyLabel, '').trim() : '';
+            acceptable = Array.from(new Set([
+              ...acceptable,
+              letterFromCorrect,
+              letterFromCorrect.toLowerCase(),
+              ...(optText ? [optText] : []),
+            ]));
+          }
+        }
+      } catch {}
+      // At this point in comprehension, acceptable contains expected answers.
+      // Add derived letter and option text when acceptable matches an option
+      try {
+        const L = letterForAnswer(problem, acceptable);
+        if (L) {
+          const optText = getOptionTextForLetter(problem, L);
+          acceptable = Array.from(new Set([
+            ...acceptable,
+            L,
+            L.toLowerCase(),
+            ...(optText ? [optText] : []),
+          ]));
+        }
+      } catch {}
+
+      // Judge locally with unified leniency
+      let correct = false;
+      try {
+        correct = isAnswerCorrectLocal(trimmed, acceptable, problem);
+      } catch {}
+
+      setLearnerInput('');
+
+      if (correct) {
+        const celebration = CELEBRATE_CORRECT[Math.floor(Math.random() * CELEBRATE_CORRECT.length)];
+        if (atTarget) {
+          try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for comprehension. Now let's begin the exercise.`); } catch {}
+          setPhase('exercise');
+          setSubPhase('exercise-awaiting-begin');
+          setExerciseSkippedAwaitBegin(true);
+          setTicker(0);
+          setCurrentCompProblem(null);
+          setCanSend(false);
+          return;
+        }
+        setTicker(ticker + 1);
+        if (!nearTarget && nextProblem) {
+          setCurrentCompProblem(nextProblem);
+          const nextQ = ensureQuestionMark(formatQuestionForSpeech(nextProblem, { layout: 'multiline' }));
+          try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
+          setSubPhase('comprehension-active');
+          setCanSend(false);
+          return;
+        }
+        try { await speakFrontend(`${celebration}. ${progressPhrase}`); } catch {}
         setCanSend(true);
         return;
       }
 
-      // No generic comprehension judging branch: provided-item judging is required
-      setLearnerInput('');
+      // Incorrect: gentle hint and re-ask same question
+      const gentle = 'Not quite right. Think about the key idea and try again.';
+      const currQ = ensureQuestionMark(formatQuestionForSpeech(problem, { layout: 'multiline' }));
+      try { await speakFrontend(`${gentle} ${currQ}`, { mcLayout: 'multiline' }); } catch {}
+      setSubPhase('comprehension-active');
       setCanSend(true);
       return;
     }
 
-    if (phase === 'worksheet') {
+  // Exercise: frontend-only judging mirrors Comprehension with multiline MC formatting
+    if (phase === 'exercise') {
+      // Ignore if we're still on the begin overlay
+      if (subPhase === 'exercise-awaiting-begin') { setLearnerInput(''); setCanSend(true); return; }
       setCanSend(false);
-      if (!generatedWorksheet || !generatedWorksheet.length) {
-        setLearnerInput('');
+      // Echo learner reply as a red "user" line in captions
+      try {
+        const userItem = { text: trimmed, role: 'user' };
+        captionSentencesRef.current = [...(captionSentencesRef.current || []), userItem];
+        setCaptionSentences(captionSentencesRef.current.slice());
+        setCaptionIndex(Math.max(0, (captionSentencesRef.current || []).length - 1));
+      } catch {}
+
+      // Ensure we have a current problem; if not, pick one and just ask it now
+      let problem = currentExerciseProblem;
+      if (!problem) {
+        let first = null;
+        if (Array.isArray(generatedExercise) && currentExIndex < generatedExercise.length) {
+          let idx = currentExIndex;
+          while (idx < generatedExercise.length && isShortAnswerItem(generatedExercise[idx])) idx += 1;
+          if (idx < generatedExercise.length) { first = generatedExercise[idx]; setCurrentExIndex(idx + 1); }
+        }
+        if (!first) {
+          let tries = 0; while (tries < 5 && !first) { const c = drawSampleUnique(); if (c && !isShortAnswerItem(c)) { first = c; break; } tries += 1; }
+        }
+        if (!first && exercisePool.length) {
+          const [head, ...rest] = exercisePool; const pick = isShortAnswerItem(head) ? null : head; if (pick) first = pick; setExercisePool(rest);
+        }
+        if (!first) {
+          const refilled = buildQAPool();
+          if (refilled.length) { const [head, ...rest] = refilled; first = head; setExercisePool(rest); }
+        }
+        if (first) {
+          setCurrentExerciseProblem(first);
+          const q = ensureQuestionMark(formatQuestionForSpeech(first, { layout: 'multiline' }));
+          try { await speakFrontend(q, { mcLayout: 'multiline' }); } catch {}
+        }
         setCanSend(true);
         return;
       }
-  const total = generatedWorksheet.length;
-  const idx = worksheetIndexRef.current ?? currentWorksheetIndex; // current question index (ref first)
-  const qObj = generatedWorksheet[idx];
-  const isFinal = idx === total - 1;
-      // Build judgement instruction similar to exercise but with distinct cueing & no progress phrase
-  const { primary: expectedPrimaryW, synonyms: expectedSynsW } = expandExpectedAnswer(qObj.answer || qObj.expected);
-  const anyOfW = expectedAnyList(qObj);
-  let acceptableW = anyOfW && anyOfW.length ? Array.from(new Set(anyOfW.map(String))) : [expectedPrimaryW, ...expectedSynsW];
-  // For MC items, also accept the single-letter selection and the option text
-  const letterW = letterForAnswer(qObj, acceptableW);
-  if (letterW) {
-    const optTextW = getOptionTextForLetter(qObj, letterW);
-    acceptableW = Array.from(new Set([
-      ...acceptableW,
-      letterW,
-      letterW.toLowerCase(),
-      ...(optTextW ? [optTextW] : []),
-    ]));
-  }
-  const expectedDisplayW = acceptableW.length > 1 ? `${expectedPrimaryW} (also accept: ${acceptableW.filter(v=>v!==expectedPrimaryW).join(', ')})` : expectedPrimaryW;
-      // Choose the next SEQUENTIAL question (no dedup skipping)
-      const nextIndex = idx + 1;
-  const hasDistinctNext = (!isFinal && nextIndex < total);
-  const nextObj = hasDistinctNext ? generatedWorksheet[nextIndex] : null;
-      // Cue phrases used to mark a correct worksheet answer and advance. The FE will look for the exact
-      // phrase we inject here. Choose at random each round to reduce repetition.
-      const cueVariant = !isFinal
-        ? WORKSHEET_CUE_VARIANTS[Math.floor(Math.random() * WORKSHEET_CUE_VARIANTS.length)]
-        : '';
-  const currDisplay = formatQuestionForSpeech(qObj);
-      
-      const isShortW = (Array.isArray(qObj.keywords) && Number.isInteger(qObj.minKeywords));
-      const hasChoicesW = (Array.isArray(qObj?.choices) && qObj.choices.length) || (Array.isArray(qObj?.options) && qObj.options.length);
-      const rubricInstructionW = buildPerQuestionJudgingSpec({
-        mode: isShortW ? 'short-answer' : 'exact',
-        learnerAnswer: trimmed,
-        expectedAnswer: expectedPrimaryW,
-        acceptableAnswers: isShortW ? [] : acceptableW,
-        keywords: isShortW ? (qObj.keywords || []) : [],
-        minKeywords: isShortW ? (qObj.minKeywords ?? null) : null,
-        tf: qObj?.questionType === 'tf',
-        mc: qObj?.questionType === 'mc',
-        sa: (qObj?.questionType || 'sa') === 'sa',
-      });
 
-      // Local correctness check to advance immediately without waiting for model cue
-      let isCorrectLocal = false;
-      try {
-        const normAns = (s) => normalizeAnswer(String(s ?? ''));
-        if (!isShortW) {
-          isCorrectLocal = acceptableW.map(a => normAns(a)).includes(normAns(trimmed));
-        } else {
-          const kws = Array.isArray(qObj.keywords) ? qObj.keywords.filter(Boolean).map(String) : [];
-          const min = Number.isInteger(qObj.minKeywords) ? qObj.minKeywords : 1;
-          const learnerN = ` ${normAns(trimmed)} `;
-          const hits = new Set();
-          for (const kw of kws) {
-            const kn = normAns(kw);
-            if (!kn) continue;
-            const re = new RegExp(`(^|\\s)${kn}(?=\\s|$)`);
-            if (re.test(learnerN)) hits.add(kn);
+      const nextCount = ticker + 1;
+      const progressPhrase = nextCount === 1
+        ? `That makes ${nextCount} correct answer.`
+        : `That makes ${nextCount} correct answers.`;
+      const nearTarget = (ticker === EXERCISE_TARGET - 1);
+      const atTarget = (nextCount === EXERCISE_TARGET);
+
+      // Pre-pick next problem if we won't be at target yet
+      let nextProblem = null;
+      if (!nearTarget && !atTarget) {
+        if (Array.isArray(generatedExercise) && currentExIndex < generatedExercise.length) {
+          const currText = (() => { try { return (problem?.question ?? formatQuestionForSpeech(problem)).trim(); } catch { return ''; } })();
+          let idx = currentExIndex;
+          while (idx < generatedExercise.length && (isShortAnswerItem(generatedExercise[idx]) || (()=>{ try { const t=(generatedExercise[idx]?.question ?? formatQuestionForSpeech(generatedExercise[idx])).trim(); return t===currText; } catch { return false; }})())) idx += 1;
+          if (idx < generatedExercise.length) { nextProblem = generatedExercise[idx]; setCurrentExIndex(idx + 1); }
+        }
+        if (!nextProblem) {
+          let tries = 0;
+          while (tries < 5) {
+            const s = drawSampleUnique();
+            const isSame = (() => { try { const t=(s?.question ?? formatQuestionForSpeech(s)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t===c; } catch { return false; }})();
+            if (s && !isShortAnswerItem(s) && !isSame) { nextProblem = s; break; }
+            tries += 1;
           }
-          isCorrectLocal = hits.size >= min;
+        }
+        if (!nextProblem && exercisePool.length) {
+          const [head, ...rest] = exercisePool;
+          const headSame = (()=>{ try { const t=(head?.question ?? formatQuestionForSpeech(head)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t===c; } catch { return false; }})();
+          if (head && !isShortAnswerItem(head) && !headSame) { nextProblem = head; setExercisePool(rest); }
+          else {
+            const altIndex = rest.findIndex(q => q && !isShortAnswerItem(q) && (()=>{ try { const t=(q?.question ?? formatQuestionForSpeech(q)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t!==c; } catch { return true; }})());
+            if (altIndex >= 0) { nextProblem = rest[altIndex]; setExercisePool(rest.slice(altIndex + 1)); }
+            else { setExercisePool(rest); }
+          }
+        }
+      }
+
+      // Build acceptable answers
+      const { primary: expectedPrimaryE, synonyms: expectedSynsE } = expandExpectedAnswer(problem.answer || problem.expected);
+      const anyOfE = expectedAnyList(problem);
+      let acceptableE = anyOfE && anyOfE.length ? Array.from(new Set(anyOfE.map(String))) : [expectedPrimaryE, ...expectedSynsE];
+      // If numeric correct index exists, add letter and option text
+      try {
+        if (problem && typeof problem.correct === 'number') {
+          const idx = problem.correct; const labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+          const L = labels[idx] || null;
+          if (L) {
+            const optList = Array.isArray(problem?.options) ? problem.options : (Array.isArray(problem?.choices) ? problem.choices : []);
+            const anyLabel = /^\s*\(?[A-Z]\)?\s*[\.\:\)\-]\s*/i;
+            const optText = optList && optList[idx] ? String(optList[idx]).replace(anyLabel, '').trim() : '';
+            acceptableE = Array.from(new Set([ ...acceptableE, L, L.toLowerCase(), ...(optText ? [optText] : []) ]));
+          }
         }
       } catch {}
-
-  // Do not pre-advance state locally; wait for the model to emit the cue to keep flow aligned.
-
-      const lines = [
-        'Worksheet judging (provided):',
-        `Question number: ${idx + 1} of ${total}.`,
-        `Question asked: "${currDisplay}"`,
-        rubricInstructionW,
-  '1) Decide if correct briefly (friendly).',
-  '2) If incorrect: give ONE short non-revealing hint (do NOT say the answer) + re-ask the SAME worksheet question EXACTLY as originally asked as the final sentence (do not advance numbering). Do NOT say any next-question cue or readiness lines. Do NOT read or reference the NEXT_WORKSHEET_QUESTION.',
-      ];
-      if (isFinal) {
-        lines.push(
-          `3) If CORRECT (FINAL question): brief positive reaction, then say: "That's all for the worksheet. Now let's move on to the test." After that: one encouraging sentence (distinct if possible), then a sentence that naturally invites another joke (paraphrasing "How about another joke?"), then tell one short kid-friendly joke, then a reminder sentence to have the facilitator print the test, then final readiness sentence exactly: "Click \"Begin Test\" when you are ready." No sentences after that readiness sentence.`
-        );
-      } else {
-        // For worksheet, correct (not final) output must be exactly three or four sentences:
-        // (a) A brief positive reaction (one sentence).
-        // (b) The cue phrase sentence verbatim: "${cueVariant}" (one sentence). Do not modify.
-        // (c) One short encouragement sentence immediately AFTER the cue (one sentence).
-        // (d) Optionally one additional short encouragement sentence (distinct).
-        // (e) FINALLY, ask the NEXT worksheet question we supply below as the FINAL sentence; it must end with a question mark.
-        // STRICT: The next question must be the LAST sentence. Do NOT add any sentence after it. Stop after the question.
-        // Do not include labels; do not speak bracketed tokens.
-        lines.push(
-          `3) If correct (not final): output in this exact order: reaction → cue → encouragement (→ optional extra encouragement) → NEXT question as the FINAL sentence (stop after it).`
-        );
-        // Provide the exact cue sentence to speak verbatim as the second sentence
-        if (cueVariant) {
-          lines.push(`The second sentence must be exactly: "${cueVariant}"`);
-        }
-        if (hasDistinctNext) {
-          lines.push('Only read the NEXT_WORKSHEET_QUESTION below when the answer is CORRECT. If the answer is incorrect, ignore it completely and stay on the current question. Do NOT say any next-question cue or readiness lines when incorrect.');
-          lines.push('When the answer is CORRECT, the NEXT_WORKSHEET_QUESTION must be the final sentence. Do not append any words or sentences after it. Stop after the question.');
-          // Always provide the literal next sequential question; the assistant must only read it on correct.
-          const nextSeq = generatedWorksheet[nextIndex];
-          if (nextSeq) {
-            const nextWithOptions = ensureQuestionMark(formatQuestionForSpeech(nextSeq));
-            lines.push(`NEXT_WORKSHEET_QUESTION: ${nextWithOptions}`);
-          }
-        }
+      const letterE = letterForAnswer(problem, acceptableE);
+      if (letterE) {
+        const optTextE = getOptionTextForLetter(problem, letterE);
+        acceptableE = Array.from(new Set([ ...acceptableE, letterE, letterE.toLowerCase(), ...(optTextE ? [optTextE] : []) ]));
       }
-      // Grading normalization is already specified in rubricInstructionW above; no extra trailing notes.
-      const instruction = lines.join(' ');
-  const result = await callMsSonoma(instruction, trimmed, { phase: 'worksheet', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, step: 'worksheet-judging', index: idx });
+
+      // Local correctness using unified helper
+      let correct = false;
+      try { correct = isAnswerCorrectLocal(trimmed, acceptableE, problem); } catch {}
+
       setLearnerInput('');
-      if (result && result.data && result.data.reply) {
-        const body = result.data.reply;
-        // Normalize helper for robust substring checks:
-        // - lowercase
-        // - strip punctuation and symbols (including ×), keep alphanumerics and spaces
-        // - collapse whitespace
-        const norm = (s) => (s || '')
-          .toLowerCase()
-          .replace(/[^a-z0-9\s]/g, ' ') // drop punctuation/symbols
-          .replace(/\s+/g, ' ')
-          .trim();
-        const bodyN = norm(body);
-        const currQ = formatQuestionForSpeech(qObj);
-        const currQN = norm(currQ);
-        const reAsk = bodyN.includes(currQN) || bodyN.includes(norm(qObj.prompt));
-        const completionPhrase = /worksheet complete\.?/i.test(body);
-        // Accept any of the allowed cue phrases in case the model deviates from the single instructed one
-        const nextCueDetected = !isFinal && WORKSHEET_CUE_VARIANTS.some(
-          (p) => new RegExp(p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(body)
-        );
-        // Note: advancement now depends ONLY on detecting a valid cue phrase.
-        // We no longer require the next question to be present or exclude re-asks.
-  const nextQ = !isFinal && nextObj ? formatQuestionForSpeech(nextObj) : '';
-  const nextQN = norm(nextQ);
-  const nextPromptOnlyN = !isFinal && nextObj ? norm(nextObj.prompt || nextObj.question || '') : '';
-        if (isFinal && completionPhrase) {
-          // Transition to test gating
-            setPhase('test');
-            setSubPhase('test-awaiting-begin');
-            setTicker(0);
-            setCanSend(false);
-            return;
+
+      if (correct) {
+        const celebration = CELEBRATE_CORRECT[Math.floor(Math.random() * CELEBRATE_CORRECT.length)];
+        if (atTarget) {
+          try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for the exercise. Now let's move on to the worksheet.`); } catch {}
+          setPhase('worksheet');
+          setSubPhase('worksheet-awaiting-begin');
+          setTicker(0);
+          setCanSend(false);
+          setCurrentExerciseProblem(null);
+          return;
         }
-        // Advance to the next item using a single condition: cue detected.
-        if (!isFinal && nextCueDetected) {
-          if (hasDistinctNext) {
-            const nextBody = formatQuestionForSpeech(generatedWorksheet[nextIndex]);
-            // Append next worksheet question to the transcript instead of replacing it
-            {
-              const line = `${nextIndex + 1}. ${nextBody}`;
-              captionSentencesRef.current = [...captionSentencesRef.current, line];
-              setCaptionSentences(captionSentencesRef.current.slice());
-              setCaptionIndex(Math.max(0, captionSentencesRef.current.length - 1));
-            }
-            setLearnerInput('');
-            setCanSend(false);
-            worksheetIndexRef.current = nextIndex;
-            setCurrentWorksheetIndex(nextIndex);
-            setTicker(nextIndex + 1);
-          } else {
-            setPhase('test');
-            setSubPhase('test-awaiting-begin');
-            setTicker(0);
-            setCanSend(false);
-            return;
+        setTicker(ticker + 1);
+        if (!nearTarget && nextProblem) {
+          setCurrentExerciseProblem(nextProblem);
+          const nextQ = ensureQuestionMark(formatQuestionForSpeech(nextProblem, { layout: 'multiline' }));
+          try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
+          // Re-enable input after the next question has been spoken. While speaking, input is locked by speakingLock.
+          setCanSend(true);
+          return;
+        }
+        try { await speakFrontend(`${celebration}. ${progressPhrase}`); } catch {}
+        setCanSend(true);
+        return;
+      }
+
+      // Incorrect: gentle hint and re-ask the same question
+      const gentle = 'Not quite right. Think about the key idea and try again.';
+      const currQ = ensureQuestionMark(formatQuestionForSpeech(problem, { layout: 'multiline' }));
+      try { await speakFrontend(`${gentle} ${currQ}`, { mcLayout: 'multiline' }); } catch {}
+      setCanSend(true);
+      return;
+    }
+
+    // Worksheet: frontend-only judging mirrors Exercise (multiline MC, retries on wrong)
+    if (phase === 'worksheet') {
+      if (subPhase === 'worksheet-awaiting-begin') { setLearnerInput(''); setCanSend(true); return; }
+      setCanSend(false);
+      // Echo learner reply into captions as user line
+      try {
+        const userItem = { text: trimmed, role: 'user' };
+        captionSentencesRef.current = [...(captionSentencesRef.current || []), userItem];
+        setCaptionSentences(captionSentencesRef.current.slice());
+        setCaptionIndex(Math.max(0, (captionSentencesRef.current || []).length - 1));
+      } catch {}
+
+      // Ensure there is a current problem; if not, ask the first one
+      const list = Array.isArray(generatedWorksheet) ? generatedWorksheet : [];
+      let idx = (typeof worksheetIndexRef?.current === 'number' ? worksheetIndexRef.current : currentWorksheetIndex) || 0;
+      if (!list.length) { setCanSend(true); return; }
+      if (idx < 0 || idx >= list.length) { idx = 0; }
+      let problem = list[idx];
+      if (!problem) {
+        // Ask first question now and return
+        const firstQ = ensureQuestionMark(formatQuestionForSpeech(list[0], { layout: 'multiline' }));
+        try { await speakFrontend(firstQ, { mcLayout: 'multiline' }); } catch {}
+        setCanSend(true);
+        return;
+      }
+
+      const nextCount = ticker + 1;
+      const totalLimit = Math.min(WORKSHEET_TARGET || list.length, list.length);
+      const progressPhrase = nextCount === 1 ? `That makes ${nextCount} correct answer.` : `That makes ${nextCount} correct answers.`;
+      const nearTarget = (ticker === totalLimit - 1);
+      const atTarget = (nextCount === totalLimit);
+
+      // Build acceptable answers
+      const { primary: expectedPrimaryW, synonyms: expectedSynsW } = expandExpectedAnswer(problem.answer || problem.expected);
+      const anyOfW = expectedAnyList(problem);
+      let acceptableW = anyOfW && anyOfW.length ? Array.from(new Set(anyOfW.map(String))) : [expectedPrimaryW, ...expectedSynsW];
+      try {
+        if (problem && typeof problem.correct === 'number') {
+          const labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+          const L = labels[problem.correct] || null;
+          if (L) {
+            const optList = Array.isArray(problem?.options) ? problem.options : (Array.isArray(problem?.choices) ? problem.choices : []);
+            const anyLabel = /^\s*\(?[A-Z]\)?\s*[\.\:\)\-]\s*/i;
+            const optText = optList && optList[problem.correct] ? String(optList[problem.correct]).replace(anyLabel, '').trim() : '';
+            acceptableW = Array.from(new Set([ ...acceptableW, L, L.toLowerCase(), ...(optText ? [optText] : []) ]));
           }
         }
+      } catch {}
+      const letterW = letterForAnswer(problem, acceptableW);
+      if (letterW) {
+        const optTextW = getOptionTextForLetter(problem, letterW);
+        acceptableW = Array.from(new Set([ ...acceptableW, letterW, letterW.toLowerCase(), ...(optTextW ? [optTextW] : []) ]));
       }
+
+      // Local correctness using unified helper
+      let correctW = false;
+      try { correctW = isAnswerCorrectLocal(trimmed, acceptableW, problem); } catch {}
+
+      setLearnerInput('');
+
+      if (correctW) {
+        const celebration = CELEBRATE_CORRECT[Math.floor(Math.random() * CELEBRATE_CORRECT.length)];
+        if (atTarget) {
+          try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for the worksheet. Now let's begin the test.`); } catch {}
+          setPhase('test');
+          setSubPhase('test-awaiting-begin');
+          setTicker(0);
+          setCanSend(false);
+          return;
+        }
+        // Advance worksheet index and ask next
+        const nextIdx = Math.min(idx + 1, list.length - 1);
+        worksheetIndexRef.current = nextIdx;
+        setCurrentWorksheetIndex(nextIdx);
+        setTicker(ticker + 1);
+  const nextObj = list[nextIdx];
+  const numN = (typeof nextObj?.number === 'number' && nextObj.number > 0) ? nextObj.number : (nextIdx + 1);
+  const nextQ = ensureQuestionMark(`${numN}. ${formatQuestionForSpeech(nextObj, { layout: 'multiline' })}`);
+        try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
+        setCanSend(true);
+        return;
+      }
+
+      // Incorrect: gentle hint and re-ask same question
+      const gentle = 'Not quite right. Think about the key idea and try again.';
+  const currNum = (typeof problem?.number === 'number' && problem.number > 0) ? problem.number : (idx + 1);
+  const currQ = ensureQuestionMark(`${currNum}. ${formatQuestionForSpeech(problem, { layout: 'multiline' })}`);
+      try { await speakFrontend(`${gentle} ${currQ}`, { mcLayout: 'multiline' }); } catch {}
       setCanSend(true);
       return;
     }
@@ -5171,6 +6576,89 @@ ${jokeText}`
       if (subPhase === 'test-active') {
         if (!generatedTest || !generatedTest.length) { setLearnerInput(''); return; }
         setCanSend(false);
+        // Frontend-only judging for Test: no retries, reveal correct on miss, auto-advance
+        try {
+          const totalLimit = Math.min(TEST_TARGET || generatedTest.length, generatedTest.length);
+          const idx = testActiveIndex;
+          const qObj = generatedTest[idx];
+          // Append learner reply to transcript as user line
+          try {
+            const replyItem = { text: trimmed, role: 'user' };
+            captionSentencesRef.current = [...(captionSentencesRef.current || []), replyItem];
+            setCaptionSentences(captionSentencesRef.current.slice());
+            setCaptionIndex(Math.max(0, (captionSentencesRef.current || []).length - 1));
+          } catch {}
+          // Persist learner answer
+          const answersNow = [...testUserAnswers];
+          answersNow[idx] = trimmed;
+          setTestUserAnswers(answersNow);
+
+          // Build acceptable answers (letter + option text support)
+          const { primary: expectedPrimaryT, synonyms: expectedSynsT } = expandExpectedAnswer(qObj.answer || qObj.expected);
+          const anyOfT = expectedAnyList(qObj);
+          let acceptableT = anyOfT && anyOfT.length ? Array.from(new Set(anyOfT.map(String))) : [expectedPrimaryT, ...expectedSynsT];
+          try {
+            if (qObj && typeof qObj.correct === 'number') {
+              const labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+              const L = labels[qObj.correct] || null;
+              if (L) {
+                const optList = Array.isArray(qObj?.options) ? qObj.options : (Array.isArray(qObj?.choices) ? qObj.choices : []);
+                const anyLabel = /^\s*\(?[A-Z]\)?\s*[\.\:\)\-]\s*/i;
+                const optText = optList && optList[qObj.correct] ? String(optList[qObj.correct]).replace(anyLabel, '').trim() : '';
+                acceptableT = Array.from(new Set([ ...acceptableT, L, L.toLowerCase(), ...(optText ? [optText] : []) ]));
+              }
+            }
+          } catch {}
+          const letterT = letterForAnswer(qObj, acceptableT);
+          if (letterT) {
+            const optTextT = getOptionTextForLetter(qObj, letterT);
+            acceptableT = Array.from(new Set([ ...acceptableT, letterT, letterT.toLowerCase(), ...(optTextT ? [optTextT] : []) ]));
+          }
+
+          // Local correctness using unified helper (no retries in test)
+          let judgedCorrect = false;
+          try { judgedCorrect = isAnswerCorrectLocal(trimmed, acceptableT, qObj); } catch {}
+
+          // Update correctness arrays and counts
+          try { setTestCorrectByIndex(prev => { const a = Array.isArray(prev) ? prev.slice() : []; a[idx] = !!judgedCorrect; return a; }); } catch {}
+          if (judgedCorrect) setTestCorrectCount(prev => prev + 1);
+
+          setLearnerInput('');
+
+          const isFinal = (idx + 1) >= totalLimit;
+          const nextIdx = idx + 1;
+          // Build feedback speech with correct answer populated
+          let speech;
+          if (judgedCorrect) {
+            speech = `${CELEBRATE_CORRECT[Math.floor(Math.random() * CELEBRATE_CORRECT.length)]}.`;
+          } else {
+            const correctText = deriveCorrectAnswerText(qObj, acceptableT, expectedPrimaryT) || expectedPrimaryT;
+            speech = correctText
+              ? `Not quite right. The correct answer is ${correctText}.`
+              : `Not quite right.`;
+          }
+
+          if (!isFinal) {
+            const nextObj = generatedTest[nextIdx];
+            const nextQ = ensureQuestionMark(`${nextIdx + 1}. ${formatQuestionForSpeech(nextObj, { layout: 'multiline' })}`);
+            try { await speakFrontend(`${speech} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
+            setTestActiveIndex(nextIdx);
+            setCanSend(true);
+            return;
+          }
+
+          // Last question: speak feedback, then finalize
+          try { await speakFrontend(speech); } catch {}
+          const total = totalLimit;
+          const correct = testCorrectCount + (judgedCorrect ? 1 : 0);
+          try { setTestCorrectByIndex(prev => { const a = Array.isArray(prev) ? prev.slice() : []; a[idx] = judgedCorrect; return a; }); } catch {}
+          const percent = Math.round((correct / Math.max(1, total)) * 100);
+          finalizeTestAndFarewell({ correctCount: correct, total, percent });
+          return;
+        } catch {}
+        // Fallback return to avoid running legacy path
+        setCanSend(true);
+        return;
         const totalLimit = Math.min(TEST_TARGET || generatedTest.length, generatedTest.length);
         const idx = testActiveIndex;
         const qObj = generatedTest[idx];
@@ -5200,305 +6688,14 @@ ${jokeText}`
             ...(optTextT ? [optTextT] : [])
           ]));
         }
-        const isShortT = (Array.isArray(qObj.keywords) && Number.isInteger(qObj.minKeywords));
-        const rubricInstructionT = buildPerQuestionJudgingSpec({
-          mode: isShortT ? 'short-answer' : 'exact',
-          learnerAnswer: trimmed,
-          expectedAnswer: expectedPrimaryT,
-          acceptableAnswers: isShortT ? [] : acceptableT,
-          keywords: isShortT ? (qObj.keywords || []) : [],
-          minKeywords: isShortT ? (qObj.minKeywords ?? null) : null,
-          tf: qObj?.questionType === 'tf',
-          mc: qObj?.questionType === 'mc',
-          sa: (qObj?.questionType || 'sa') === 'sa',
-        });
-
-        // Choose a cue phrase for correct answers; enforce exact usage
-        const unused = CORRECT_TEST_CUE_PHRASES.filter(p => !usedTestCuePhrases.includes(p));
-        const chosenCue = (unused.length ? unused : CORRECT_TEST_CUE_PHRASES)[Math.floor(Math.random() * (unused.length ? unused.length : CORRECT_TEST_CUE_PHRASES.length))];
-
-        const isFinal = (idx + 1) >= totalLimit;
-    const promptForDisplay = formatQuestionForInlineAsk(qObj);
-  const nextIdx = idx + 1;
-  const nextQForSpeech = !isFinal ? ensureSingleTerminalQuestionMark(formatQuestionForInlineAsk(generatedTest[nextIdx])) : '';
-        const instruction = [
-          'Test judging (per-question, immediate):',
-          `Question number: ${idx + 1} of ${totalLimit}.`,
-          `Question asked: "${promptForDisplay}"`,
-          rubricInstructionT,
-          'Decide correctness using the rubric above.',
-          `If CORRECT: Say one short praise sentence and append EXACTLY this cue phrase at the very end: "${chosenCue}". End that sentence with a period.`,
-          `If INCORRECT: Say one short gentle correction including the right answer: "${expectedPrimaryT}"`,
-          isFinal
-            ? 'Your reply must contain exactly ONE sentence total: provide only the feedback sentence (praise if correct or gentle correction with the right answer) and end it with a period. Do not ask another question.'
-            : [
-                'Your reply must contain exactly TWO sentences total: (1) the feedback sentence (praise if correct or gentle correction with the right answer) ending with a period; (2) the NEXT question as your final sentence ON ONE LINE. If it is multiple-choice, include the lettered choices inline on the same line after the stem. Use exactly one question mark total and place it at the very end of that line.',
-                `NEXT_QUESTION: ${nextQForSpeech}`
-              ].join(' '),
-        ].join(' ');
-
-        let judgedCorrect = false;
-        try {
-          const result = await callMsSonoma(instruction, '', { phase: 'test', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, step: 'test-judge-item', index: idx }, { fastReturn: true });
-          if (result && result.success) {
-            const replyText = result.data?.reply || '';
-            if (replyText) {
-              // Correct when the exact chosen cue phrase appears (case-insensitive match)
-              if (replyText.toLowerCase().includes(chosenCue.toLowerCase())) {
-                judgedCorrect = true;
-                setUsedTestCuePhrases(prev => [...prev, chosenCue]);
-                setTestCorrectCount(prev => prev + 1);
-              }
-              // Validation guard: if a NEXT question is expected and it's MC, ensure inline choices and a single '?'
-              if (!isFinal) {
-                try {
-                  const nextObj = generatedTest[nextIdx];
-                  if (isMultipleChoice(nextObj)) {
-                    const qm = countQuestionMarks(replyText);
-                    const inlineOK = hasInlineMcChoices(replyText);
-                    if (qm !== 1 || !inlineOK) {
-                      console.warn('[Session][Test] NEXT question formatting issue', { inlineOK, qmarks: qm, reply: replyText });
-                    }
-                  }
-                } catch {}
-              }
-            }
-          } else {
-            // Fallback local check when model call fails
-            try {
-              const normAns = (s) => normalizeAnswer(String(s ?? ''));
-              if (!isShortT) {
-                judgedCorrect = acceptableT.map(a => normAns(a)).includes(normAns(trimmed));
-              } else {
-                const kws = Array.isArray(qObj.keywords) ? qObj.keywords.filter(Boolean).map(String) : [];
-                const min = Number.isInteger(qObj.minKeywords) ? qObj.minKeywords : 1;
-                const learnerN = ` ${normAns(trimmed)} `;
-                const hits = new Set();
-                for (const kw of kws) {
-                  const kn = normAns(kw); if (!kn) continue;
-                  const re = new RegExp(`(^|\\s)${kn}(?=\\s|$)`);
-                  if (re.test(learnerN)) hits.add(kn);
-                }
-                judgedCorrect = hits.size >= min;
-              }
-              if (judgedCorrect) setTestCorrectCount(prev => prev + 1);
-            } catch {}
-          }
-        } catch {
-          // On unexpected error, best-effort local judgement already applied above when possible
-        }
-
-        setLearnerInput('');
-
-        // Decide next step: advance or finish
-        const nextIndex = idx + 1;
-        if (nextIndex < totalLimit) {
-          // Advance to next question; captions already contain the next question from Ms. Sonoma's reply
-          setTestActiveIndex(nextIndex);
-          setCanSend(true);
-          return;
-        }
-
-  // Finalize after last item – wait for any audio to finish to avoid overlap
-  const total = totalLimit;
-  // State updates are async; include the current turn's judgement explicitly to avoid off-by-one
-  const correct = testCorrectCount + (judgedCorrect ? 1 : 0);
-  const percent = Math.round((correct / Math.max(1, total)) * 100);
-        const interval = setInterval(() => {
-          const playing = audioRef.current && !audioRef.current.paused;
-          if (!playing) {
-            clearInterval(interval);
-            finalizeTestAndFarewell({ correctCount: correct, total, percent });
-          }
-        }, 300);
+        // Legacy API-driven judging path removed
         return;
       }
       setLearnerInput('');
       return;
     }
 
-  if (phase === 'exercise') {
-      setCanSend(false);
-      const nearTarget = (ticker === EXERCISE_TARGET - 1);
-      const atTarget = (ticker + 1 === EXERCISE_TARGET);
-      const firstExerciseTurn = ticker === 0;
-      const exerciseGuardLine = 'Do NOT mention test, exam, quiz, or answer key.';
-      // We should use the provided-question judging path whenever we have a concrete
-      // currentExerciseProblem (regardless of where it came from: samples, TF/MC/FIB pools, etc.).
-      // Previously this logic incorrectly gated on lessonData.sample presence for non-math lessons,
-      // causing the generic branch to run without ACCEPTABLE_ANSWERS or LEARNER_ANSWER context.
-      const hasProblem = Boolean(currentExerciseProblem);
-
-      // Build the progress phrase and count-cue pattern once for this turn so it is available
-      // in both the provided-question branch and the generic-instruction branch below.
-      const progressPhrase = `That makes ${ticker + 1} correct ${ticker + 1 === 1 ? 'answer' : 'answers'}.`;
-      const exercisePattern = buildCountCuePattern(progressPhrase);
-
-  if (hasProblem) {
-        // Draw next exercise problem if not nearTarget using non-repeating deck
-        let nextExerciseProblem = null;
-        if (!nearTarget && !atTarget) {
-          if (Array.isArray(generatedExercise) && currentExIndex < generatedExercise.length) {
-            let idx = currentExIndex;
-            while (idx < generatedExercise.length && isShortAnswerItem(generatedExercise[idx])) idx += 1;
-            if (idx < generatedExercise.length) {
-              nextExerciseProblem = generatedExercise[idx];
-              setCurrentExIndex(idx + 1);
-            }
-          }
-          if (!nextExerciseProblem) {
-            let tries = 0;
-            while (tries < 5 && !nextExerciseProblem) {
-              const candidate = drawSampleUnique();
-              if (candidate && !isShortAnswerItem(candidate)) { nextExerciseProblem = candidate; break; }
-              tries += 1;
-            }
-          }
-          if (!nextExerciseProblem) {
-            // pool fallback
-            if (exercisePool.length) {
-              const [head, ...rest] = exercisePool;
-              nextExerciseProblem = isShortAnswerItem(head) ? null : head;
-              setExercisePool(rest);
-            }
-          }
-        }
-
-  const { primary: expectedPrimaryEx, synonyms: expectedSynsEx } = expandExpectedAnswer(currentExerciseProblem.answer || currentExerciseProblem.expected);
-  const anyOfE = expectedAnyList(currentExerciseProblem);
-  let acceptableE = anyOfE && anyOfE.length ? Array.from(new Set(anyOfE.map(String))) : [expectedPrimaryEx, ...expectedSynsEx];
-  const letterE = letterForAnswer(currentExerciseProblem, acceptableE);
-  if (letterE) {
-    const optTextE = getOptionTextForLetter(currentExerciseProblem, letterE);
-    acceptableE = Array.from(new Set([
-      ...acceptableE,
-      letterE,
-      letterE.toLowerCase(),
-      ...(optTextE ? [optTextE] : [])
-    ]));
-  }
-  const expectedDisplayEx = acceptableE.length > 1 ? `${expectedPrimaryEx} (also accept: ${acceptableE.filter(v=>v!==expectedPrimaryEx).join(', ')})` : expectedPrimaryEx;
-  const currExDisplay = formatQuestionForSpeech(currentExerciseProblem);
-  
-        // Per-question judging spec
-  const isShortEx = (Array.isArray(currentExerciseProblem.keywords) && Number.isInteger(currentExerciseProblem.minKeywords));
-  const hasChoicesE = (Array.isArray(currentExerciseProblem?.choices) && currentExerciseProblem.choices.length) || (Array.isArray(currentExerciseProblem?.options) && currentExerciseProblem.options.length);
-        const finalAcceptableE = isShortEx
-          ? []
-          : (() => {
-              const anyOfE2 = expectedAnyList(currentExerciseProblem);
-              return anyOfE2 && anyOfE2.length ? Array.from(new Set(anyOfE2.map(String))) : acceptableE;
-            })();
-        const expectedDisplayExFinal = isShortEx ? expectedPrimaryEx : finalAcceptableE[0];
-        const gradingInstructionEx = buildPerQuestionJudgingSpec({
-          mode: isShortEx ? 'short-answer' : 'exact',
-          learnerAnswer: trimmed,
-          expectedAnswer: expectedDisplayExFinal,
-          acceptableAnswers: isShortEx ? [] : finalAcceptableE,
-          keywords: isShortEx ? (currentExerciseProblem.keywords || []) : [],
-          minKeywords: isShortEx ? (currentExerciseProblem.minKeywords ?? null) : null,
-          tf: currentExerciseProblem?.questionType === 'tf',
-          mc: currentExerciseProblem?.questionType === 'mc',
-          sa: (currentExerciseProblem?.questionType || 'sa') === 'sa',
-        });
-        
-        const judgementLines = atTarget ? [
-          'Exercise judging (FINAL):',
-          `You asked: "${currExDisplay}"`,
-          `The correct answer is: "${expectedDisplayExFinal}"`,
-          gradingInstructionEx,
-          'Do NOT read or echo the metadata lines above; they are for your reference only.',
-          'JUDGING PROTOCOL:',
-          '1) Use the grading instruction above to determine if the answer is correct or incorrect.',
-          '2) Start your response with EITHER "Correct!" OR "Not quite right."',
-          `3) If CORRECT: Say "Correct!" then say: "${progressPhrase}" then say: "That's all for the exercise. Now let's move on to the worksheet." Then quick joke and worksheet instructions.`,
-          `4) If INCORRECT: Start with "Not quite right." Then give ONE short non-revealing hint (do NOT say the answer). Then repeat this exact question: "${currExDisplay}"`
-        ] : nearTarget ? [
-          'Exercise judging:',
-          `You asked: "${currExDisplay}"`,
-          `The correct answer is: "${expectedDisplayExFinal}"`,
-          gradingInstructionEx,
-          'Do NOT read or echo the metadata lines above; they are for your reference only.',
-          'JUDGING PROTOCOL:',
-          '1) Use the grading instruction above to determine if the answer is correct or incorrect.',
-          '2) Start your response with EITHER "Correct!" OR "Not quite right."',
-          `3) If CORRECT: Say "Correct!" then say: "${progressPhrase}" then STOP.`,
-          `4) If INCORRECT: Start with "Not quite right." Then give ONE short non-revealing hint (do NOT say the answer). Then repeat this exact question: "${currExDisplay}"`
-        ] : [
-          'Exercise judging:',
-          `You asked: "${currExDisplay}"`,
-          `The correct answer is: "${expectedDisplayExFinal}"`,
-          gradingInstructionEx,
-          'Do NOT read or echo the metadata lines above; they are for your reference only.',
-          'JUDGING PROTOCOL:',
-          '1) Use the grading instruction above to determine if the answer is correct or incorrect.',
-          '2) Start your response with EITHER "Correct!" OR "Not quite right."',
-          `3) If CORRECT: Say "Correct!" then say: "${progressPhrase}"`,
-          '4) If CORRECT: After the progress phrase, ask the next question.',
-          `5) If INCORRECT: Start with "Not quite right." Then give ONE short non-revealing hint (do NOT say the answer). Then repeat this exact question: "${currExDisplay}"`
-        ];
-        judgementLines.push(exerciseGuardLine);
-        if (!nearTarget && !atTarget && nextExerciseProblem) {
-          const formattedNextEx = formatQuestionForSpeech(nextExerciseProblem);
-          judgementLines.push(`NEXT_EXERCISE_QUESTION: ${formattedNextEx}`);
-        }
-
-        const exerciseInstruction = judgementLines.join(' ');
-        const result = await callMsSonoma(
-          exerciseInstruction,
-          trimmed,
-          { phase: 'exercise', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, ticker, step: 'exercise-response', nearTarget, provided: true }
-        );
-        setLearnerInput('');
-        if (result && result.data && result.data.reply) {
-          const replyBody = result.data.reply;
-          const progressMatch = replyBody.match(/That makes (\d+) correct answer[s]?\./i);
-          // Guard: don't increment if the assistant explicitly marked the answer incorrect
-          const incorrectHints = /(\bincorrect\b|\bnot\s+quite\s+right\b|\bwrong\b|correct answer is|correct answer was)/i;
-          const correctHints = /\bcorrect!/i;
-          const incrementOk = progressMatch && correctHints.test(replyBody) && !incorrectHints.test(replyBody);
-          if (incrementOk) {
-            const reported = parseInt(progressMatch[1], 10);
-            if (!Number.isNaN(reported) && reported === ticker + 1) {
-              const newVal = reported;
-              setTicker(newVal);
-              // Advance to next problem only when correct and not nearTarget/atTarget
-              if (!nearTarget && !atTarget) {
-                setCurrentExerciseProblem(nextExerciseProblem || null);
-              }
-              if (newVal >= EXERCISE_TARGET) {
-                setPhase('worksheet');
-                setSubPhase('worksheet-awaiting-begin');
-                setTicker(0);
-                setCanSend(false);
-                setCurrentExerciseProblem(null);
-                return;
-              }
-            }
-          }
-          // If not incrementing (incorrect), keep SAME question to repeat
-        }
-        setCanSend(true);
-        return;
-      }
-      // No current exercise problem yet: trigger a first question so the facilitator's Send actually progresses.
-      try {
-        const exerciseIntro = [
-          'Exercise start: Briefly (one friendly sentence) announce we are beginning the exercise practice. No mention of worksheet or test.',
-          'Immediately after that, generate ONE appropriate first exercise question for this lesson as the FINAL sentence (single question sentence ending with a question mark, nothing after).'
-        ].join(' ');
-        await callMsSonoma(
-          exerciseIntro,
-          '',
-          { phase: 'exercise', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, step: 'exercise-start-generate-from-send' },
-          { fastReturn: true }
-        );
-      } finally {
-        setCanSend(true);
-      }
-      setLearnerInput('');
-      return;
-    }
+    // Old exercise API-driven path removed; exercise is now handled earlier via frontend-only branch.
 
     setLearnerInput('');
   };
@@ -5586,7 +6783,7 @@ ${jokeText}`
     if (subPhase === "awaiting-learner") {
       return (
         <p style={{ marginBottom: 16 }}>
-          Ask the learner to respond to the silly question. When they do, type their reply and press Send.
+          Use the buttons below to choose the next step, or type a message and press Send to continue.
         </p>
       );
     }
@@ -5601,7 +6798,7 @@ ${jokeText}`
         type="button"
         style={primaryButtonStyle}
         onClick={startDiscussionStep}
-        disabled={loading}
+  disabled={loading}
       >
         {currentStep.label}
       </button>
@@ -5625,7 +6822,7 @@ ${jokeText}`
         type="button"
         style={primaryButtonStyle}
         onClick={startTeachingStep}
-        disabled={loading}
+  disabled={loading}
       >
         {currentStep.label}
       </button>
@@ -5761,13 +6958,16 @@ ${jokeText}`
   {/* Video + captions: stack normally; side-by-side on mobile landscape */}
   <div style={isMobileLandscape ? { display:'flex', alignItems:'stretch', width:'100%', paddingBottom:4, '--msSideBySideH': (videoEffectiveHeight ? `${videoEffectiveHeight}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto')) } : {}}>
     <div ref={videoColRef} style={isMobileLandscape ? { flex:`0 0 ${videoColPercent}%`, display:'flex', flexDirection:'column', minWidth:0, minHeight:0, height: 'var(--msSideBySideH)' } : {}}>
-      <VideoPanel
+  <VideoPanel
         isMobileLandscape={isMobileLandscape}
         isShortHeight={isShortHeight}
   videoMaxHeight={videoEffectiveHeight || videoMaxHeight}
         videoRef={videoRef}
         showBegin={showBegin}
         isSpeaking={isSpeaking}
+        phase={phase}
+  ticker={ticker}
+    currentWorksheetIndex={currentWorksheetIndex}
         onBegin={beginSession}
         onBeginComprehension={beginComprehensionPhase}
         onBeginWorksheet={beginWorksheetPhase}
@@ -5783,11 +6983,14 @@ ${jokeText}`
         
         userPaused={userPaused}
         onToggleMute={toggleMute}
-        onTogglePlayPause={togglePlayPause}
-        loading={loading}
+    onTogglePlayPause={togglePlayPause}
+  loading={loading}
+  overlayLoading={overlayLoading}
         exerciseSkippedAwaitBegin={exerciseSkippedAwaitBegin}
         skipPendingLessonLoad={skipPendingLessonLoad}
   currentCompProblem={currentCompProblem}
+  testActiveIndex={testActiveIndex}
+  testList={Array.isArray(generatedTest) ? generatedTest : []}
         onCompleteLesson={async () => {
           const key = getAssessmentStorageKey();
           if (key) { try { const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none'; clearAssessments(key, { learnerId: lid }); } catch { /* ignore */ } }
@@ -5826,16 +7029,109 @@ ${jokeText}`
         }}
       />
     </div>
-  <div ref={captionColRef} style={isMobileLandscape ? { flex:`0 0 ${Math.max(0, 100 - videoColPercent)}%`, minWidth:0, minHeight:0, display:'flex', flexDirection:'column', overflow:'hidden', height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)', '--msSideBySideH': (videoEffectiveHeight ? `${videoEffectiveHeight}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto')) } : (stackedCaptionHeight ? { maxHeight: stackedCaptionHeight, height: stackedCaptionHeight, overflowY:'hidden', marginTop:8, paddingLeft: '4%', paddingRight: '4%' } : { paddingLeft: '4%', paddingRight: '4%' })}>
-      <CaptionPanel
-        sentences={captionSentences}
-        activeIndex={captionIndex}
-        boxRef={captionBoxRef}
-        scaleFactor={snappedScale}
-        compact={isMobileLandscape}
-        fullHeight={isMobileLandscape && !!(sideBySideHeight || videoMaxHeight)}
-        stackedHeight={(!isMobileLandscape && stackedCaptionHeight) ? stackedCaptionHeight : null}
-      />
+  <div ref={captionColRef} style={isMobileLandscape ? { flex:`0 0 ${Math.max(0, 100 - videoColPercent)}%`, minWidth:0, minHeight:0, display:'flex', flexDirection:'column', overflow: (phase === 'congrats' ? 'auto' : 'hidden'), height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)', position:'relative', '--msSideBySideH': (videoEffectiveHeight ? `${videoEffectiveHeight}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto')) } : (stackedCaptionHeight ? { maxHeight: stackedCaptionHeight, height: stackedCaptionHeight, overflowY: (phase === 'congrats' ? 'auto' : 'hidden'), marginTop:8, paddingLeft: '4%', paddingRight: '4%' } : { paddingLeft: '4%', paddingRight: '4%', position:'relative' })}>
+      {phase === 'congrats' && typeof testFinalPercent === 'number' ? (
+        (() => {
+          const list = Array.isArray(generatedTest) ? generatedTest : [];
+          const answers = Array.isArray(testUserAnswers) ? testUserAnswers : [];
+          const correctness = Array.isArray(testCorrectByIndex) ? testCorrectByIndex : [];
+          const total = list.length;
+          const correct = correctness.filter(Boolean).length;
+          const percent = typeof testFinalPercent === 'number' ? testFinalPercent : Math.round((correct/Math.max(1,total))*100);
+          const tier = tierForPercent(percent);
+          const medal = tier ? emojiForTier(tier) : '';
+          const badge = (ok) => ({
+            display:'inline-block', padding:'2px 8px', borderRadius:999, fontWeight:800, fontSize:12,
+            background: ok ? 'rgba(16,185,129,0.14)' : 'rgba(239,68,68,0.14)',
+            color: ok ? '#065f46' : '#7f1d1d', border: `1px solid ${ok ? 'rgba(16,185,129,0.35)' : 'rgba(239,68,68,0.35)'}`
+          });
+          const btn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'6px 10px', fontWeight:700, border:'none', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.18)' };
+          const card = { background:'#ffffff', border:'1px solid #e5e7eb', borderRadius:12, padding:16, boxShadow:'0 2px 10px rgba(0,0,0,0.04)'};
+          const askOverride = async (i) => {
+            const ok = await ensurePinAllowed('facilitator');
+            if (!ok) return;
+            // Toggle correctness and recompute
+            setTestCorrectByIndex((prev) => {
+              const a = Array.isArray(prev) ? prev.slice() : [];
+              a[i] = !a[i];
+              return a;
+            });
+          };
+          // Provide explicit scroll controls for visibility on touch devices
+          const scrollParent = captionColRef;
+          const doScroll = (dy) => {
+            try {
+              const el = scrollParent?.current;
+              if (el) el.scrollBy({ top: dy, behavior: 'smooth' });
+            } catch {}
+          };
+          const scrollBtn = { position:'absolute', right: 8, zIndex: 10, background:'#1f2937', color:'#fff', border:'none', width:36, height:36, display:'grid', placeItems:'center', borderRadius:999, boxShadow:'0 2px 8px rgba(0,0,0,0.25)', cursor:'pointer' };
+          return (
+            <div style={{ display:'flex', flexDirection:'column', gap:12, overflow:'visible', paddingTop:8, paddingBottom:8 }}>
+              <button type="button" aria-label="Scroll up" title="Scroll up" style={{ ...scrollBtn, top: 8 }} onClick={() => doScroll(-240)}>
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+              </button>
+              <button type="button" aria-label="Scroll down" title="Scroll down" style={{ ...scrollBtn, bottom: 8 }} onClick={() => doScroll(240)}>
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div style={{ ...card, display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, position:'sticky', top:0, zIndex:5, background:'#ffffff' }}>
+                <div style={{ fontSize:'clamp(1.1rem, 2.4vw, 1.4rem)', fontWeight:800, color:'#065f46' }}>
+                  {percent}% grade
+                </div>
+                <div style={{ fontSize: 'clamp(1.2rem, 2.6vw, 1.5rem)' }} aria-label="Medal preview">{medal}</div>
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                {list.map((q, i) => {
+                  const ok = !!correctness[i];
+                  const num = i + 1;
+                  const stem = formatQuestionForInlineAsk(q);
+                  const ans = answers[i] || '';
+                  // Resolve an expected answer string for display (best-effort)
+                  const expectedText = (() => {
+                    try {
+                      const exp = (typeof q?.expected === 'string' && q.expected.trim()) ? q.expected.trim()
+                        : (Array.isArray(q?.expectedAny) && q.expectedAny.length ? String(q.expectedAny[0]).trim()
+                          : (typeof q?.answer === 'string' ? q.answer.trim() : ''));
+                      return exp || '';
+                    } catch { return ''; }
+                  })();
+                  return (
+                    <div key={i} style={card}>
+                      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+                        <div style={{ fontWeight:800 }}>Question {num}</div>
+                        <span style={badge(ok)}>{ok ? 'correct' : 'incorrect'}</span>
+                      </div>
+                      <div style={{ marginTop:8, color:'#111827', fontWeight:600 }}>{stem}</div>
+                      <div style={{ marginTop:6, color:'#374151' }}>
+                        <span style={{ fontWeight:700 }}>Your answer:</span> {ans || <em style={{ color:'#6b7280' }}>No answer</em>}
+                      </div>
+                      {expectedText ? (
+                        <div style={{ marginTop:4, color:'#4b5563' }}>
+                          <span style={{ fontWeight:700 }}>Expected answer:</span> {expectedText}
+                        </div>
+                      ) : null}
+                      <div style={{ marginTop:10 }}>
+                        <button type="button" style={btn} onClick={() => askOverride(i)}>Facilitator override</button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div style={{ height:8 }} />
+            </div>
+          );
+        })()
+      ) : (
+        <CaptionPanel
+          sentences={captionSentences}
+          activeIndex={captionIndex}
+          boxRef={captionBoxRef}
+          scaleFactor={snappedScale}
+          compact={isMobileLandscape}
+          fullHeight={isMobileLandscape && !!(sideBySideHeight || videoMaxHeight)}
+          stackedHeight={(!isMobileLandscape && stackedCaptionHeight) ? stackedCaptionHeight : null}
+        />
+      )}
     </div>
   </div>
         </div>
@@ -5847,7 +7143,7 @@ ${jokeText}`
   </div> {/* end width-matched wrapper */}
   </div> {/* end scroll container */}
 
-      {/* Fixed footer with input controls (downloads removed) */}
+  {/* Fixed footer with input controls (downloads removed) */}
       <div ref={footerRef} style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 999, background: '#ffffff', borderTop: '1px solid #e5e7eb', boxShadow: '0 -4px 20px rgba(0,0,0,0.06)' }}>
       {/* Footer padding: default 4px, reduce to 2px when short-height AND landscape. Add horizontal inset when controls are relocated to footer. */}
       <div style={{ margin: '0 auto', width: '100%', boxSizing: 'border-box', padding: (isShortHeight && isMobileLandscape) ? '2px 16px calc(2px + env(safe-area-inset-bottom, 0px))' : '4px 12px calc(4px + env(safe-area-inset-bottom, 0px))' }}>
@@ -5870,7 +7166,23 @@ ${jokeText}`
               // Determine if a quick-answer cluster should appear (TF/MC) and render it in the middle of this row
               let qa = null;
               try {
-                if (!sendDisabled) {
+                // Show hard-wired Yes/No during teaching gate; hide while speaking (belt-and-suspenders)
+                if (phase === 'teaching' && subPhase === 'awaiting-gate' && !isSpeaking) {
+                  const qaWrap = { display:'flex', alignItems:'center', justifyContent:'center', gap:8, flex:1, flexWrap:'wrap', padding:'0 8px' };
+                  const qaBtn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight: (isShortHeight && isMobileLandscape) ? 32 : 36, minWidth:56, fontWeight:700, border:'none', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.18)' };
+                  qa = (
+                    <div style={qaWrap} aria-label="Teaching gate: repeat or move on">
+                      <button type="button" style={qaBtn} onClick={handleGateYes}>Yes</button>
+                      <button type="button" style={qaBtn} onClick={handleGateNo}>No</button>
+                      <button
+                        type="button"
+                        style={{ ...qaBtn, minWidth: 140, opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
+                        onClick={askState === 'inactive' ? handleAskQuestionStart : undefined}
+                        disabled={askState !== 'inactive'}
+                      >Ask</button>
+                    </div>
+                  );
+                } else if (!sendDisabled) {
                   let active = null;
                   if (phase === 'comprehension') {
                     active = currentCompProblem || null;
@@ -5888,13 +7200,13 @@ ${jokeText}`
                     active = list[idx] || null;
                   }
                   if (active) {
-                    const qType = active.questionType || null;
                     const choiceCount = Array.isArray(active.choices) && active.choices.length
                       ? active.choices.length
                       : (Array.isArray(active.options) ? active.options.length : 0);
                     const qaWrap = { display:'flex', alignItems:'center', justifyContent:'center', gap:8, flex:1, flexWrap:'wrap', padding:'0 8px' };
                     const qaBtn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight: (isShortHeight && isMobileLandscape) ? 32 : 36, minWidth:48, fontWeight:700, border:'none', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.18)' };
-                    if (qType === 'tf') {
+                    const isTF = isTrueFalse(active);
+                    if (isTF) {
                       qa = (
                         <div style={qaWrap} aria-label="Quick answer: true or false">
                           <button type="button" style={qaBtn} onClick={() => handleSend('true')}>True</button>
@@ -5902,7 +7214,7 @@ ${jokeText}`
                         </div>
                       );
                     } else {
-                      const isMC = (qType === 'mc') || ((choiceCount || 0) >= 2);
+                      const isMC = isMultipleChoice(active) || ((choiceCount || 0) >= 2);
                       if (isMC) {
                         const count = Math.min(4, Math.max(2, choiceCount || 4));
                         const letters = ['A','B','C','D'].slice(0, count);
@@ -6045,11 +7357,167 @@ ${jokeText}`
             return null;
           })()}
 
-          {/* Quick-answer buttons row (appears above input when a TF/MC item is active).
-              Suppressed on short-height when controls are already in this row. */}
+          {/* Congrats footer row with Complete Lesson and medal */}
+          {(() => {
+            if (phase !== 'congrats') return null;
+            const percent = typeof testFinalPercent === 'number' ? testFinalPercent : null;
+            const tier = (percent != null) ? tierForPercent(percent) : null;
+            const medal = tier ? emojiForTier(tier) : '';
+            const btnStyle = { background:'#c7442e', color:'#fff', borderRadius:10, padding:'10px 18px', fontWeight:800, fontSize:'clamp(1rem, 2.2vw, 1.125rem)', border:'none', boxShadow:'0 2px 12px rgba(199,68,46,0.28)', cursor:'pointer' };
+            return (
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:14, padding:'6px 12px' }}>
+                <button type="button" style={btnStyle} onClick={() => {
+                  try { onCompleteLesson && onCompleteLesson(); } catch {}
+                }}>Complete Lesson</button>
+                <div aria-label="Medal" style={{ fontSize:'clamp(1.2rem, 2.4vw, 1.5rem)' }}>{medal}</div>
+              </div>
+            );
+          })()}
+
+          {/* Discussion post-Opening actions: show after Opening audio ends */}
           {(() => {
             try {
-              if (sendDisabled) return null; // respect gating
+              const canShow = (
+                phase === 'discussion' &&
+                subPhase === 'awaiting-learner' &&
+                !isSpeaking &&
+                showOpeningActions &&
+                askState === 'inactive' &&
+                riddleState === 'inactive' &&
+                poemState === 'inactive'
+              );
+              if (!canShow) return null;
+              const wrap = { display:'flex', alignItems:'center', justifyContent:'center', flexWrap:'wrap', gap:8, padding:'6px 12px' };
+              const btn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
+              const goBtn = { ...btn, background:'#c7442e', boxShadow:'0 2px 12px rgba(199,68,46,0.28)' };
+              const disabledBtn = { ...btn, opacity:0.5, cursor:'not-allowed' };
+              return (
+                <div style={wrap} aria-label="Opening actions">
+                  <button type="button" style={jokeUsedThisGate ? disabledBtn : btn} onClick={jokeUsedThisGate ? undefined : handleTellJoke} disabled={jokeUsedThisGate}> Joke</button>
+                  <button type="button" style={btn} onClick={handleAskQuestionStart}>Ask</button>
+                  <button type="button" style={riddleUsedThisGate ? disabledBtn : btn} onClick={riddleUsedThisGate ? undefined : handleTellRiddle} disabled={riddleUsedThisGate}>Riddle</button>
+                  <button type="button" style={poemUsedThisGate ? disabledBtn : btn} onClick={poemUsedThisGate ? undefined : handlePoemStart} disabled={poemUsedThisGate}>Poem</button>
+                  <button type="button" style={goBtn} onClick={lessonData ? handleStartLesson : undefined} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson…'}>Go</button>
+                </div>
+              );
+            } catch {}
+            return null;
+          })()}
+
+          {/* Q&A phases Opening actions: show after phase intro ends */}
+          {(() => {
+            try {
+              const inQnA = (
+                (phase === 'comprehension' && subPhase === 'comprehension-active') ||
+                (phase === 'exercise' && subPhase === 'exercise-start') ||
+                (phase === 'worksheet' && subPhase === 'worksheet-active') ||
+                (phase === 'test' && subPhase === 'test-active')
+              );
+              const canShow = (
+                inQnA && !isSpeaking && showOpeningActions && askState === 'inactive' && riddleState === 'inactive'
+              );
+              if (!canShow) return null;
+              const wrap = { display:'flex', alignItems:'center', justifyContent:'center', flexWrap:'wrap', gap:8, padding:'6px 12px' };
+              const btn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
+              const goBtn = { ...btn, background:'#c7442e', boxShadow:'0 2px 12px rgba(199,68,46,0.28)' };
+              const disabledBtn = { ...btn, opacity:0.5, cursor:'not-allowed' };
+              return (
+                <div style={wrap} aria-label="Phase opening actions">
+                  <button type="button" style={jokeUsedThisGate ? disabledBtn : btn} onClick={jokeUsedThisGate ? undefined : handleTellJoke} disabled={jokeUsedThisGate}> Joke</button>
+                  <button type="button" style={btn} onClick={handleAskQuestionStart}>Ask</button>
+                  <button type="button" style={riddleUsedThisGate ? disabledBtn : btn} onClick={riddleUsedThisGate ? undefined : handleTellRiddle} disabled={riddleUsedThisGate}>Riddle</button>
+                  <button type="button" style={poemUsedThisGate ? disabledBtn : btn} onClick={poemUsedThisGate ? undefined : handlePoemStart} disabled={poemUsedThisGate}>Poem</button>
+                  <button type="button" style={goBtn} onClick={lessonData ? handleStartLesson : undefined} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson…'}>Go</button>
+                </div>
+              );
+            } catch {}
+            return null;
+          })()}
+
+          {/* Ask-a-question confirmation row (inside fixed footer) */}
+          {askState === 'awaiting-confirmation' && (() => {
+            const wrap = { display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'6px 12px', flexWrap:'wrap' };
+            const btnBase = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
+            const yesBtn = { ...btnBase, background:'#065f46' };
+            const noBtn = { ...btnBase, background:'#7f1d1d' };
+            return (
+              <div style={wrap} aria-label="Ask confirmation">
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <button type="button" style={yesBtn} onClick={handleAskConfirmYes}>Yes</button>
+                  <button type="button" style={noBtn} onClick={handleAskConfirmNo}>No</button>
+                  <button type="button" style={btnBase} onClick={handleAskAnother}>Ask another question</button>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Poem confirmation row: shows Ok after poem is read */}
+          {poemState === 'awaiting-ok' && (() => {
+            const wrap = { display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'6px 12px', flexWrap:'wrap' };
+            const okBtn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
+            return (
+              <div style={wrap} aria-label="Poem confirmation">
+                <button type="button" style={okBtn} onClick={handlePoemOk}>Ok</button>
+              </div>
+            );
+          })()}
+
+          {/* Riddle action row (inside fixed footer) */}
+          {(() => {
+            try {
+              const active = (phase === 'discussion' && subPhase === 'awaiting-learner' && riddleState && riddleState !== 'inactive');
+              if (!active) return null;
+              const wrap = { display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'6px 12px', flexWrap:'wrap' };
+              const btnBase = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
+              const solveBtn = { ...btnBase, background:'#065f46' };
+              const hintBtn = { ...btnBase, background:'#b45309' };
+              const answerBtn = { ...btnBase, background:'#374151' };
+              return (
+                <div style={wrap} aria-label="Riddle actions">
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <button type="button" style={solveBtn} onClick={handleRiddleSolve}>Solve</button>
+                    <button type="button" style={hintBtn} onClick={requestRiddleHint}>Hint</button>
+                    <button type="button" style={answerBtn} onClick={revealRiddleAnswer}>Tell me the answer</button>
+                  </div>
+                </div>
+              );
+            } catch {}
+            return null;
+          })()}
+
+          {/* Quick-answer buttons row (appears above input when a TF/MC item is active).
+              Also renders gate Yes/No during teaching awaiting-gate.
+              Suppressed on short-height when controls are already in this row.
+              Now gated behind Start the lesson: hidden until qaAnswersUnlocked is true. */}
+          {(() => {
+            try {
+              // Show teaching gate Yes/No when awaiting-gate; hide while speaking (belt-and-suspenders)
+              if (phase === 'teaching' && subPhase === 'awaiting-gate' && !isSpeaking) {
+                const containerStyle = {
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 8,
+                  paddingLeft: isMobileLandscape ? 12 : '4%', paddingRight: isMobileLandscape ? 12 : '4%', marginBottom: 6,
+                };
+                const btnBase = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, minWidth:56, fontWeight:700, border:'none', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.18)' };
+                if (isShortHeight) return null; // already rendered in controls row above
+                return (
+                  <div style={containerStyle} aria-label="Teaching gate: repeat or move on">
+                    <button type="button" style={btnBase} onClick={handleGateYes}>Yes</button>
+                    <button type="button" style={btnBase} onClick={handleGateNo}>No</button>
+                    <button
+                      type="button"
+                      style={{ ...btnBase, minWidth: 160, background: '#374151', opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
+                      onClick={askState === 'inactive' ? handleAskQuestionStart : undefined}
+                      disabled={askState !== 'inactive'}
+                    >Ask</button>
+                  </div>
+                );
+              }
+              // In Q&A phases, do not show quick-answer buttons until Start the lesson is pressed
+              const isQnAPhase = (
+                phase === 'comprehension' || phase === 'exercise' || phase === 'worksheet' || phase === 'test'
+              );
+              if (isQnAPhase && !qaAnswersUnlocked) return null;
+              if (sendDisabled) return null; // respect gating otherwise
               if (isShortHeight) {
                 // When short, quick answers render inline with the controls row above.
                 // Also skip if a Begin row is present (no active question yet).
@@ -6059,7 +7527,7 @@ ${jokeText}`
                 const needBeginWorksheet = (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin');
                 const needBeginTest = (phase === 'test' && subPhase === 'test-awaiting-begin');
                 const anyBegin = needBeginDiscussion || needBeginComp || needBeginExercise || needBeginWorksheet || needBeginTest;
-                if (!anyBegin) return null;
+                if (anyBegin) return null; // hide during Begin overlays; show during active questions
               }
               // Determine the currently active question across phases
               let active = null;
@@ -6080,7 +7548,6 @@ ${jokeText}`
               }
               if (!active) return null;
 
-              const qType = active.questionType || null;
               const choiceCount = Array.isArray(active.choices) && active.choices.length
                 ? active.choices.length
                 : (Array.isArray(active.options) ? active.options.length : 0);
@@ -6109,7 +7576,8 @@ ${jokeText}`
                 boxShadow: '0 2px 6px rgba(0,0,0,0.18)'
               };
 
-              if (qType === 'tf') {
+              const isTF = isTrueFalse(active);
+              if (isTF) {
                 return (
                   <div style={containerStyle} aria-label="Quick answer: true or false">
                     <button type="button" style={btnBase} onClick={() => handleSend('true')}>True</button>
@@ -6119,7 +7587,7 @@ ${jokeText}`
               }
 
               // Treat as multiple choice if tagged 'mc' or has discrete options/choices
-              const isMC = (qType === 'mc') || (choiceCount >= 2);
+              const isMC = isMultipleChoice(active) || (choiceCount >= 2);
               if (isMC) {
                 const count = Math.min(4, Math.max(2, choiceCount || 4));
                 const letters = ['A','B','C','D'].slice(0, count);
@@ -6153,20 +7621,12 @@ ${jokeText}`
           />
         </div>
       </div>
-
-      {/* Intentionally nothing rendered below the fixed footer */}
-      <style jsx global>{`
-        .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
-        .scrollbar-hidden::-webkit-scrollbar { display: none; }
-        /* Global spinner + animation (used in VideoPanel overlay) */
-        @keyframes msSpinFade { 0% { transform: rotate(0deg); opacity:1; } 50% { transform: rotate(180deg); opacity:0.55; } 100% { transform: rotate(360deg); opacity:1; } }
-        .ms-spinner { position: relative; box-sizing: border-box; width:72px; height:72px; border:7px solid rgba(255,255,255,0.25); border-top-color:#ffffff; border-radius:50%; animation: msSpinFade 0.85s linear infinite; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.45)); }
-  .ms-spinner::after { content:""; position:absolute; inset:12px; border:4px solid transparent; border-top-color:#c7442e; border-radius:50%; animation: msSpinFade 1.4s linear infinite reverse; }
-      `}</style>
+  {/* Intentionally nothing rendered below the fixed footer */}
         {/* Close outer viewport container */}
       </div>
   );
 }
+
 
 
 const primaryButtonStyle = {
@@ -6285,7 +7745,7 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
   );
 }
 
-function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, onPrev, onNext, phase, subPhase, ticker, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, onTogglePlayPause, loading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson }) {
+function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, onPrev, onNext, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, onTogglePlayPause, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList }) {
   // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
   // Remove horizontal clamp: let the video occupy the full available width of its column
   const containerMaxWidth = 'none';
@@ -6313,15 +7773,8 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
     cursor: 'pointer',
     boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
   };
-  // Determine if we are sitting at a phase-begin state where a Begin button is displayed.
-  // In these states playing/pausing the ambient video causes issues, so we disable the control entirely.
-  const atPhaseBegin = (
-    (phase === 'discussion' && showBegin) ||
-    (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin') ||
-    (phase === 'test' && subPhase === 'test-awaiting-begin') ||
-  (phase === 'comprehension' && subPhase === 'comprehension-start') ||
-    (phase === 'exercise' && subPhase === 'exercise-awaiting-begin')
-  );
+  // Begin overlays removed. Keep controls always enabled.
+  const atPhaseBegin = false;
   // Portrait refinement: instead of padding the outer wrapper, shrink the video width a bit so
   // the empty space on each side is symmetrical and the video remains visually centered.
   // We choose a slight shrink (e.g. 92%) to create subtle gutters. Landscape keeps full width.
@@ -6373,71 +7826,50 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
               }
             } catch {}
           }}
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center', opacity: phase === 'test' && subPhase === 'test-active' ? 0 : 1, transition: 'opacity 250ms ease' }}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
         />
-        {phase === 'test' && subPhase === 'test-active' && (
-          <div style={{ position: 'absolute', inset: 0, background: '#000', color: '#fff', borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', textAlign: 'center' }}>
-            <div style={{ fontSize: 'clamp(1.25rem, 3.2vw, 1.625rem)', fontWeight: 600, lineHeight: 1.3, maxWidth: 1000 }}>
-              <span />
-            </div>
-          </div>
-        )}
+        {/* No black screen during test */}
         {(phase === 'comprehension' || phase === 'exercise') && (
-          <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(17,24,39,0.78)', color: '#fff', padding: '6px 10px', borderRadius: 8, fontSize: 'clamp(0.85rem, 1.6vw, 1rem)', fontWeight: 600, letterSpacing: 0.3, boxShadow: '0 2px 6px rgba(0,0,0,0.25)' }}>
-            {ticker} correct
+          <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(17,24,39,0.78)', color: '#fff', padding: '6px 10px', borderRadius: 8, fontSize: 'clamp(0.85rem, 1.6vw, 1rem)', fontWeight: 600, letterSpacing: 0.3, boxShadow: '0 2px 6px rgba(0,0,0,0.25)', zIndex: 10000, pointerEvents: 'none' }}>
+            {phase === 'comprehension' ? `${ticker}/${COMPREHENSION_TARGET}` : `${ticker}/${EXERCISE_TARGET}`}
           </div>
         )}
-        {(phase === 'worksheet' && subPhase === 'worksheet-active') || (phase === 'test' && subPhase === 'test-active') ? (
+        {(phase === 'worksheet' && subPhase === 'worksheet-active') ? (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 32px', pointerEvents: 'none', textAlign: 'center' }}>
             <div style={{ fontSize: 'clamp(1.75rem, 4.2vw, 3.25rem)', fontWeight: 800, lineHeight: 1.18, color: '#ffffff', textShadow: '0 0 4px rgba(0,0,0,0.9), 0 2px 6px rgba(0,0,0,0.85), 0 4px 22px rgba(0,0,0,0.65)', letterSpacing: 0.5, fontFamily: 'Inter, system-ui, sans-serif', width: '100%' }}>
-              <CurrentAssessmentPrompt phase={phase} subPhase={subPhase} />
+              <CurrentAssessmentPrompt phase={phase} subPhase={subPhase} testActiveIndex={testActiveIndex} testList={testList} />
             </div>
           </div>
         ) : null}
+        {/* Ticker for worksheet/test phases rendered after prompt overlay to stay on top */}
+        {((phase === 'worksheet' && subPhase === 'worksheet-active') || (phase === 'test' && subPhase === 'test-active')) && (
+          <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(17,24,39,0.78)', color: '#fff', padding: '6px 10px', borderRadius: 8, fontSize: 'clamp(0.85rem, 1.6vw, 1rem)', fontWeight: 600, letterSpacing: 0.3, boxShadow: '0 2px 6px rgba(0,0,0,0.25)', zIndex: 10000, pointerEvents: 'none' }}>
+            {phase === 'worksheet' ? `Question ${Number((typeof currentWorksheetIndex === 'number' ? currentWorksheetIndex : 0) + 1)}` : `Question ${Number((typeof testActiveIndex === 'number' ? testActiveIndex : 0) + 1)}`}
+          </div>
+        )}
         {(phase === 'congrats') && typeof testFinalPercent === 'number' && (
           <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(17,24,39,0.85)', color: '#fff', padding: '10px 14px', borderRadius: 10, fontSize: 'clamp(1rem, 2vw, 1.25rem)', fontWeight: 700, letterSpacing: 0.4, boxShadow: '0 2px 10px rgba(0,0,0,0.4)' }}>Score: {testFinalPercent}%</div>
         )}
-        {phase === 'worksheet' && (
-          <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(17,24,39,0.78)', color: '#fff', padding: '6px 10px', borderRadius: 8, fontSize: 'clamp(0.85rem, 1.6vw, 1rem)', fontWeight: 600, letterSpacing: 0.3, boxShadow: '0 2px 6px rgba(0,0,0,0.25)' }}>Number {ticker}</div>
-        )}
-        {loading && (
-          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, zIndex: 5, pointerEvents: 'none', background: 'rgba(0,0,0,0.38)', padding: '42px 48px', borderRadius: 160, backdropFilter: 'blur(2px)', boxShadow: '0 6px 28px rgba(0,0,0,0.45)' }}>
-            <div className="ms-spinner" role="status" aria-label="Loading" />
+  {/* Ticker badges handled above for all phases */}
+        {overlayLoading && (
+          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, zIndex: 5, pointerEvents: 'none', background: 'rgba(0,0,0,0.38)', padding: '46px 50px', borderRadius: 160, backdropFilter: 'blur(2px)', boxShadow: '0 6px 28px rgba(0,0,0,0.45)' }}>
+            <div className="ms-spinner-legacy" aria-hidden="true">
+              <div className="ms-spinner" role="status" aria-label="Loading" />
+            </div>
             <div style={{ color: '#fff', fontSize: 'clamp(0.95rem, 1.6vw, 1rem)', fontWeight: 600, letterSpacing: 0.5, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>Loading...</div>
           </div>
         )}
-        {(!isShortHeight) && showBegin && phase === 'discussion' && (
-          <button type="button" onClick={onBegin} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '16px 40px', fontWeight: 700, fontSize: 'clamp(1.1rem, 2.6vw, 1.375rem)', border: 'none', boxShadow: '0 2px 16px rgba(199,68,46,0.18)', cursor: 'pointer', zIndex: 200 }}>Begin</button>
-        )}
-        {/* Removed standalone audio unlock overlay; Begin flow now handles permissions */}
-        {(!isShortHeight) && phase === 'congrats' && !loading && (
-          <button type="button" onClick={onCompleteLesson} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '18px 46px', fontWeight: 800, fontSize: 'clamp(1.25rem, 3.2vw, 1.625rem)', letterSpacing: 0.5, border: 'none', boxShadow: '0 4px 20px rgba(199,68,46,0.35)', cursor: 'pointer', zIndex: 4, textShadow: '0 2px 4px rgba(0,0,0,0.35)' }}>Complete Lesson</button>
-        )}
-        {(!isShortHeight) && phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin' && (
-          <button type="button" onClick={onBeginWorksheet} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '16px 40px', fontWeight: 700, fontSize: 'clamp(1.1rem, 2.6vw, 1.375rem)', border: 'none', boxShadow: '0 2px 16px rgba(199,68,46,0.18)', cursor: 'pointer', zIndex: 200 }}>Begin Worksheet</button>
-        )}
-        {(!isShortHeight) && phase === 'test' && subPhase === 'test-awaiting-begin' && (
-          <button type="button" onClick={onBeginTest} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '16px 40px', fontWeight: 700, fontSize: 'clamp(1.1rem, 2.6vw, 1.375rem)', border: 'none', boxShadow: '0 2px 16px rgba(199,68,46,0.18)', cursor: 'pointer', zIndex: 200 }}>Begin Test</button>
-        )}
-  {(!isShortHeight) && phase === 'comprehension' && subPhase === 'comprehension-start' && (
-          <button type="button" onClick={onBeginComprehension} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '16px 40px', fontWeight: 700, fontSize: 'clamp(1.1rem, 2.6vw, 1.375rem)', border: 'none', boxShadow: '0 2px 16px rgba(199,68,46,0.18)', cursor: 'pointer', zIndex: 200 }}>Begin Comprehension</button>
-        )}
-        {(!isShortHeight) && phase === 'exercise' && subPhase === 'exercise-awaiting-begin' && (
-          <button type="button" onClick={onBeginSkippedExercise} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#c7442e', color: '#fff', borderRadius: 16, padding: '16px 40px', fontWeight: 700, fontSize: 'clamp(1.1rem, 2.6vw, 1.375rem)', border: 'none', boxShadow: '0 2px 16px rgba(199,68,46,0.18)', cursor: 'pointer', zIndex: 200 }}>Begin Exercise</button>
-        )}
+        {/* Begin overlays removed intentionally */}
   {/* Primary control cluster (play/pause + mute) */}
   {!isShortHeight && (
   <div style={controlClusterStyle}>
           <button
             type="button"
-            onClick={atPhaseBegin ? undefined : onTogglePlayPause}
+            onClick={onTogglePlayPause}
             aria-label={userPaused ? 'Play' : 'Pause'}
-            disabled={atPhaseBegin}
-            title={atPhaseBegin ? 'Press Begin first' : (userPaused ? 'Play' : 'Pause')}
+            title={userPaused ? 'Play' : 'Pause'}
             style={{
-              ...controlButtonBase,
-              cursor: atPhaseBegin ? 'not-allowed' : 'pointer',
-              opacity: atPhaseBegin ? 0.4 : 1
+              ...controlButtonBase
             }}
           >
             {userPaused ? (
@@ -6446,7 +7878,7 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
               <svg style={{ width: '55%', height: '55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
             )}
           </button>
-          <button type="button" onClick={onToggleMute} aria-label={muted ? 'Unmute' : 'Mute'} style={controlButtonBase}>
+          <button type="button" onClick={onToggleMute} aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'} style={controlButtonBase}>
             {muted ? (
               <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
             ) : (
@@ -6456,17 +7888,16 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
         </div>
   )}
         {/* Paired skip controls at bottom-left */}
-        {!isShortHeight && (phase !== 'congrats') && (onPrev || onNext) && (
+  {!isShortHeight && (phase !== 'congrats') && (onPrev || onNext) && (
           /* Mirror cluster: same bottom & edge offset (16) and same internal gap (12) to create symmetry */
           <div style={{ position: 'absolute', bottom: 16, left: 16, display: 'flex', gap: 12 }}>
             {onPrev && (
               <button
                 type="button"
-                onClick={phase === 'discussion' ? undefined : onPrev}
+                onClick={onPrev}
                 aria-label="Previous"
                 title="Previous"
-                disabled={phase === 'discussion'}
-                style={{ ...controlButtonBase, cursor: phase === 'discussion' ? 'not-allowed' : 'pointer', opacity: phase === 'discussion' ? 0.4 : 1 }}
+                style={{ ...controlButtonBase }}
               >
                 <svg style={{ width: '55%', height: '55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
               </button>
@@ -6474,11 +7905,10 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
             {onNext && (
               <button
                 type="button"
-                onClick={phase === 'test' ? undefined : onNext}
+                onClick={onNext}
                 aria-label="Next"
                 title="Next"
-                disabled={phase === 'test'}
-                style={{ ...controlButtonBase, cursor: phase === 'test' ? 'not-allowed' : 'pointer', opacity: phase === 'test' ? 0.4 : 1 }}
+                style={{ ...controlButtonBase }}
               >
                 <svg style={{ width: '55%', height: '55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
               </button>
@@ -6494,17 +7924,34 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
 }
 
 // Helper component to extract current assessment question from global caption state via context-less DOM fallback
-function CurrentAssessmentPrompt({ phase, subPhase }) {
+function CurrentAssessmentPrompt({ phase, subPhase, testActiveIndex, testList }) {
   // We will attempt to read window.__MS_CAPTIONS if exposed else fallback to scanning caption container.
   const [prompt, setPrompt] = useState('');
   useEffect(() => {
     const extract = () => {
+      // Prefer authoritative local data for TEST overlay so numbering/choices are reliable
+      try {
+        if (phase === 'test' && subPhase === 'test-active' && Array.isArray(testList) && typeof testActiveIndex === 'number') {
+          const idx = Math.max(0, Math.min(testList.length - 1, testActiveIndex));
+          const q = testList[idx];
+          if (q) {
+            const number = `${idx + 1}. `;
+            const stem = (q.prompt || q.question || q.text || '').toString().trim();
+            const rawChoices = Array.isArray(q.choices) && q.choices.length ? q.choices : (Array.isArray(q.options) ? q.options : []);
+            if (rawChoices && rawChoices.length) {
+              const letters = ['A','B','C','D','E','F'];
+              const parts = rawChoices.slice(0, 6).map((c, i) => `${letters[i]})\u00A0${String(c)}`);
+              // Return structured payload so renderer can stack lines and keep pairs together
+              return { number, stem, parts };
+            }
+            return { number, stem, parts: [] };
+          }
+        }
+      } catch {}
       try {
         // Direct global if maintained
         if (window.__MS_CAPTION_SENTENCES && Array.isArray(window.__MS_CAPTION_SENTENCES)) {
-          if (phase === 'test' && subPhase === 'test-active') {
-            return window.__MS_CAPTION_SENTENCES[0] || '';
-          }
+          // For test, avoid using captions: handled above via local data.
           if (phase === 'worksheet' && subPhase === 'worksheet-active') {
             return window.__MS_CAPTION_SENTENCES[window.__MS_CAPTION_SENTENCES.length - 1] || '';
           }
@@ -6513,7 +7960,7 @@ function CurrentAssessmentPrompt({ phase, subPhase }) {
         const panel = document.querySelector('[data-ms-caption-panel]');
         if (panel) {
           const parts = Array.from(panel.querySelectorAll('p')).map(p => p.textContent.trim()).filter(Boolean);
-          if (phase === 'test' && subPhase === 'test-active') return parts[0] || '';
+          // For test, avoid using captions: handled above via local data.
           if (phase === 'worksheet' && subPhase === 'worksheet-active') return parts[parts.length - 1] || '';
         }
       } catch {}
@@ -6523,7 +7970,21 @@ function CurrentAssessmentPrompt({ phase, subPhase }) {
     const id = setInterval(() => setPrompt(extract()), 400); // lightweight poll to keep in sync
     return () => clearInterval(id);
   }, [phase, subPhase]);
-  return prompt ? <span>{prompt}</span> : null;
+  if (!prompt) return null;
+  // If structured payload, render stacked with nowrap options
+  if (typeof prompt === 'object' && prompt && 'number' in prompt) {
+    const { number, stem, parts } = prompt;
+    const children = [<span key="stem">{number}{stem}</span>];
+    if (parts && parts.length) {
+      parts.forEach((t, i) => {
+        children.push(<br key={`br-${i}`} />);
+        children.push(<span key={`opt-${i}`} style={{ whiteSpace: 'nowrap' }}>{enforceNbspAfterMcLabels(t)}</span>);
+      });
+    }
+    return <span>{children}</span>;
+  }
+  // Fallback: plain string
+  return <span>{String(prompt)}</span>;
 }
 
 function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, loading, onSend, showBegin, isSpeaking, phase, subPhase, tipOverride, abortKey, currentCompProblem, compact = false, hotkeys }) {
@@ -6715,6 +8176,8 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
     if (phase === 'congrats') return 'Press "Complete Lesson"';
     if (loading) return 'loading...';
     if (isSpeaking) return 'Ms. Sonoma is talking...';
+    // During Teaching gate, disable text and prompt to use buttons
+    if (phase === 'teaching' && subPhase === 'awaiting-gate') return 'Tap Yes or No below';
     // During Comprehension: lock input and guide clearly
     if (phase === 'comprehension') {
   if (subPhase === 'comprehension-start') return 'Press "Begin Comprehension"';
@@ -7128,10 +8591,32 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
             const activeText = isActive ? { fontWeight: 700, color: '#111111' } : { fontWeight: 500 };
             // Style for learner-entered lines
             const userText = { color: '#c7442e', fontWeight: 600 };
+            // If this line appears to contain multiple-choice choices, render stacked with nowrap pairs
+            const mcMatch = text && /(\s|^)[A-F][\.)]\s+\S/.test(text) && (text.match(/[A-F][\.)]\s+\S/g) || []).length >= 2;
+            let mcRender = null;
+            if (mcMatch) {
+              try {
+                const m = text.match(/^(\d+\.\s*)?(.*?)(\s+[A-F][\.)]\s.*)$/);
+                if (m) {
+                  const [, num = '', stem = '', choiceChunk = ''] = m;
+                  const tokens = choiceChunk.trim().split(/\s+(?=[A-F][\.)]\s)/);
+                  mcRender = (
+                    <div style={{ whiteSpace: 'normal' }}>
+                      {(num || stem) ? <div>{num}{stem}</div> : null}
+                      {tokens.map((t, i) => (
+                        <div key={i} style={{ whiteSpace: 'nowrap' }}>{enforceNbspAfterMcLabels(t)}</div>
+                      ))}
+                    </div>
+                  );
+                }
+              } catch {}
+            }
             return (
               <div key={idx} data-idx={idx} style={{ ...containerBase, ...(activeContainer || {}) }} aria-current={isActive ? 'true' : undefined}>
                 {s.role === 'user' ? (
                   <div style={{ ...textBase, ...userText }}>{text}</div>
+                ) : mcRender ? (
+                  <div style={{ ...textBase, ...activeText }}>{mcRender}</div>
                 ) : (
                   <div style={{ ...textBase, ...activeText }}>{text}</div>
                 )}

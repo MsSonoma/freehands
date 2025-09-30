@@ -1,0 +1,88 @@
+{
+  "id": "4th_Ghost_Town_at_Sundown_Beginner",
+  "title": "Ghost Town at Sundown",
+  "grade": "4th",
+  "difficulty": "Beginner",
+  "featured": false,
+  "blurb": "Test your comprehension of Magic Tree House #10: Ghost Town at Sundown. Questions focus on understanding the story, characters, and key events to show proof of reading.",
+  "vocab": [
+    { "term": "ghost town", "definition": "An abandoned town where no one lives anymore" },
+    { "term": "outlaw", "definition": "A person who breaks the law and is wanted by police" },
+    { "term": "sheriff", "definition": "A law officer who keeps peace in a town" },
+    { "term": "saloon", "definition": "A place in the Old West where people gathered to drink and socialize" },
+    { "term": "dusty", "definition": "Covered with fine, dry dirt particles" },
+    { "term": "tumbleweeds", "definition": "Dried plants that roll around in the wind" },
+    { "term": "Wild West", "definition": "The frontier period in American history when the western states were being settled" },
+    { "term": "legend", "definition": "A story from the past that may or may not be true" }
+  ],
+  "teachingNotes": "This lesson tests reading comprehension of Magic Tree House #10: Ghost Town at Sundown. Students should have read the book before attempting these questions. Focus on story recall, character understanding, and plot sequence. Key themes include the American frontier, friendship, helping others, and understanding history. Encourage students to think about the difference between legends and facts.",
+  "sample": [
+    { "question": "Where does the magic tree house take Jack and Annie in this adventure?", "expectedAny": ["ghost town", "old west town", "tombstone"] },
+    { "question": "What time period do Jack and Annie visit?", "expectedAny": ["old west", "wild west", "1880s"] },
+    { "question": "Who is the horse that helps Jack and Annie?", "expectedAny": ["dusty", "the horse dusty"] },
+    { "question": "What is the name of the ghost town?", "expectedAny": ["tombstone", "tombstone arizona"] },
+    { "question": "Who do Jack and Annie help in the story?", "expectedAny": ["lonesome luke", "luke"] },
+    { "question": "What does Lonesome Luke want to find?", "expectedAny": ["his horse", "dusty", "his lost horse"] },
+    { "question": "What building do Jack and Annie hide in during the story?", "expectedAny": ["saloon", "the saloon"] }
+  ],
+  "truefalse": [
+    { "question": "Jack and Annie travel to the Wild West.", "answer": true },
+    { "question": "The ghost town is called Tombstone.", "answer": true },
+    { "question": "Lonesome Luke is an outlaw.", "answer": false },
+    { "question": "Dusty is a horse that helps Jack and Annie.", "answer": true },
+    { "question": "The town is full of people when Jack and Annie arrive.", "answer": false },
+    { "question": "Jack and Annie help Lonesome Luke find his horse.", "answer": true },
+    { "question": "The story takes place in modern times.", "answer": false },
+    { "question": "Jack and Annie ride in a stagecoach.", "answer": false },
+    { "question": "Lonesome Luke is sad because he lost his horse.", "answer": true },
+    { "question": "The magic tree house appears in a cactus.", "answer": false }
+  ],
+  "multiplechoice": [
+    { "question": "What is the setting of this Magic Tree House adventure?", "choices": ["A pirate ship", "A ghost town in the Old West", "A castle", "A jungle"], "correct": 1 },
+    { "question": "What is the name of the ghost town Jack and Annie visit?", "choices": ["Deadwood", "Tombstone", "Silver City", "Gold Rush"], "correct": 1 },
+    { "question": "Who is Lonesome Luke?", "choices": ["An outlaw", "A sheriff", "A cowboy looking for his horse", "A store owner"], "correct": 2 },
+    { "question": "What is the name of the horse in the story?", "choices": ["Thunder", "Dusty", "Spirit", "Midnight"], "correct": 1 },
+    { "question": "Why is Luke called 'Lonesome'?", "choices": ["He lives alone", "He lost his horse", "He has no friends", "He's an outlaw"], "correct": 1 },
+    { "question": "What do Jack and Annie find in the saloon?", "choices": ["Gold", "A map", "Lonesome Luke", "Outlaws"], "correct": 2 },
+    { "question": "How do Jack and Annie help solve Luke's problem?", "choices": ["They find his horse", "They give him money", "They catch the outlaws", "They find his family"], "correct": 0 },
+    { "question": "What time of day does most of the story take place?", "choices": ["Morning", "Afternoon", "Evening/Sundown", "Midnight"], "correct": 2 },
+    { "question": "What kind of building is most common in the ghost town?", "choices": ["Houses", "Stores and saloons", "Churches", "Schools"], "correct": 1 },
+    { "question": "How does the story end?", "choices": ["Luke becomes sheriff", "Luke finds Dusty", "The outlaws are caught", "Jack and Annie stay in the town"], "correct": 1 }
+  ],
+  "fillintheblank": [
+    { "question": "The ghost town Jack and Annie visit is called _____.", "expectedAny": ["tombstone"] },
+    { "question": "_____ is the horse that Lonesome Luke is looking for.", "expectedAny": ["dusty"] },
+    { "question": "Lonesome Luke is sad because he lost his _____.", "expectedAny": ["horse"] },
+    { "question": "Jack and Annie travel to the _____ West.", "expectedAny": ["wild", "old"] },
+    { "question": "The story takes place at _____.", "expectedAny": ["sundown", "sunset"] },
+    { "question": "A _____ town is a place where no one lives anymore.", "expectedAny": ["ghost"] },
+    { "question": "Jack and Annie hide in the _____ during their adventure.", "expectedAny": ["saloon"] },
+    { "question": "_____ helps Jack and Annie in their quest to help Luke.", "expectedAny": ["dusty", "the horse"] },
+    { "question": "The setting of this story is in the _____ period of American history.", "expectedAny": ["frontier", "wild west", "old west"] },
+    { "question": "Luke is called _____ because he lost his horse.", "expectedAny": ["lonesome"] }
+  ],
+  "shortanswer": [
+    { "question": "Why is the town called a 'ghost town'?", "expectedAny": ["no one lives there anymore", "it's abandoned", "everyone left"] },
+    { "question": "How do Jack and Annie help Lonesome Luke?", "expectedAny": ["they help him find his horse", "they find dusty", "they reunite him with his horse"] },
+    { "question": "What makes Luke 'lonesome' in the story?", "expectedAny": ["he lost his horse", "his horse is missing", "he's separated from dusty"] },
+    { "question": "Describe what the ghost town looks like when Jack and Annie arrive.", "expectedAny": ["empty", "dusty", "abandoned", "no people"] },
+    { "question": "What time period does this Magic Tree House book take place in?", "expectedAny": ["old west", "wild west", "1880s", "frontier times"] },
+    { "question": "Why is this adventure different from other Magic Tree House books?", "expectedAny": ["it's in the old west", "they help someone find something", "western setting"] },
+    { "question": "What role does Dusty the horse play in the story?", "expectedAny": ["helps jack and annie", "luke's lost horse", "guides them"] },
+    { "question": "How does the setting of the Old West affect the story?", "expectedAny": ["creates adventure", "different time period", "frontier challenges"] },
+    { "question": "What lesson do Jack and Annie learn in this adventure?", "expectedAny": ["helping others", "friendship", "not giving up"] },
+    { "question": "Describe the main problem that needs to be solved in this story.", "expectedAny": ["luke lost his horse", "finding dusty", "reuniting luke and his horse"] }
+  ],
+  "wordProblems": [
+    { "question": "Jack and Annie arrive in Tombstone at 3:00 PM. They spend 2 hours looking for Lonesome Luke and 1 hour helping him find Dusty. What time do they finish their adventure?", "expectedAny": ["6:00 pm", "6 o'clock", "six pm"] },
+    { "question": "If Lonesome Luke has been looking for his horse for 3 days, and Jack and Annie help him find Dusty in 1 day, how many total days was Dusty missing?", "expectedAny": ["4", "4 days", "four days"] },
+    { "question": "The ghost town has 12 buildings on Main Street. If 8 of them are empty stores and the rest are saloons, how many saloons are there?", "expectedAny": ["4", "4 saloons", "four"] },
+    { "question": "Jack brought 5 research books in his backpack. If he uses 2 books to learn about the Old West and gives 1 book to Annie, how many books does he have left?", "expectedAny": ["2", "2 books", "two"] },
+    { "question": "If a stagecoach travels 8 miles per hour and needs to go 24 miles to the next town, how long will the journey take?", "expectedAny": ["3 hours", "3", "three hours"] },
+    { "question": "Lonesome Luke has been a cowboy for 15 years. If he got Dusty 8 years ago, how many years was he a cowboy before he got Dusty?", "expectedAny": ["7", "7 years", "seven years"] },
+    { "question": "The saloon has 6 tables with 4 chairs each. How many chairs are in the saloon total?", "expectedAny": ["24", "24 chairs", "twenty-four"] },
+    { "question": "If Jack and Annie's adventure lasts from sundown (6 PM) until they return to the tree house at 9 PM, how long were they in the Old West?", "expectedAny": ["3 hours", "3", "three hours"] },
+    { "question": "Dusty the horse can run 20 miles per hour. If he runs for 30 minutes to find Luke, how far does he travel?", "expectedAny": ["10 miles", "10", "ten miles"] },
+    { "question": "The ghost town was abandoned 25 years before Jack and Annie arrive. If they visit in 1881, what year was the town abandoned?", "expectedAny": ["1856"] }
+  ]
+}

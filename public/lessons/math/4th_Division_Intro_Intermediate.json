@@ -1,0 +1,88 @@
+{
+  "id": "4th_Division_Intro_Intermediate",
+  "title": "Division Intro",
+  "grade": "4th",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "blurb": "Learn division through repeated subtraction and discover how multiplication and division work together in fact families.",
+  "vocab": [
+    {"term": "repeated subtraction", "definition": "Subtracting the same number over and over until you reach zero"},
+    {"term": "fact family", "definition": "A group of related multiplication and division facts using the same three numbers"},
+    {"term": "dividend", "definition": "The number being divided"},
+    {"term": "divisor", "definition": "The number you divide by"},
+    {"term": "quotient", "definition": "The answer to a division problem"},
+    {"term": "inverse operations", "definition": "Operations that undo each other, like multiplication and division"}
+  ],
+  "teachingNotes": "Begin with concrete examples of repeated subtraction. Show how division is the opposite of multiplication. Practice fact families to strengthen understanding. Use visual models like arrays and equal groups.",
+  "sample": [
+    {"question": "Use repeated subtraction to find 20 ÷ 4.", "expectedAny": ["20 - 4 - 4 - 4 - 4 - 4 = 0, so 5", "5"]},
+    {"question": "What division fact goes with 6 × 7 = 42?", "expectedAny": ["42 ÷ 6 = 7", "42 ÷ 7 = 6"]},
+    {"question": "Complete the fact family: 8 × 9 = 72, 9 × 8 = 72, ___", "expectedAny": ["72 ÷ 8 = 9", "72 ÷ 9 = 8"]},
+    {"question": "How many times can you subtract 6 from 48?", "expectedAny": ["8", "8 times"]},
+    {"question": "What is 56 ÷ 7?", "expectedAny": ["8"]},
+    {"question": "If 5 × 12 = 60, what is 60 ÷ 5?", "expectedAny": ["12"]},
+    {"question": "Use repeated subtraction: How many 9s are in 63?", "expectedAny": ["7", "7 nines"]}
+  ],
+  "truefalse": [
+    {"question": "Division is repeated subtraction.", "answer": true},
+    {"question": "If 7 × 8 = 56, then 56 ÷ 7 = 8.", "answer": true},
+    {"question": "The fact family for 4, 6, and 24 has four facts.", "answer": true},
+    {"question": "84 ÷ 12 = 7", "answer": true},
+    {"question": "You can find 36 ÷ 4 by subtracting 4 from 36 nine times.", "answer": true},
+    {"question": "96 ÷ 8 = 11", "answer": false},
+    {"question": "Multiplication and division are inverse operations.", "answer": true},
+    {"question": "72 ÷ 9 = 8", "answer": true},
+    {"question": "The quotient is the number you divide by.", "answer": false},
+    {"question": "If you know 9 × 11 = 99, you also know 99 ÷ 9 = 11.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is 84 ÷ 12?", "choices": ["6", "7", "8", "9"], "correct": 1},
+    {"question": "Which shows repeated subtraction for 35 ÷ 7?", "choices": ["35 - 7 - 7 - 7 - 7 - 7", "35 + 7 + 7 + 7 + 7 + 7", "35 × 7", "35 ÷ 5"], "correct": 0},
+    {"question": "If 8 × 11 = 88, what is 88 ÷ 8?", "choices": ["9", "10", "11", "12"], "correct": 2},
+    {"question": "How many 6s are in 72?", "choices": ["10", "11", "12", "13"], "correct": 2},
+    {"question": "What is 91 ÷ 7?", "choices": ["12", "13", "14", "15"], "correct": 1},
+    {"question": "Which fact belongs in the same family as 9 × 12 = 108?", "choices": ["108 ÷ 6 = 18", "108 ÷ 9 = 12", "108 + 12 = 120", "108 - 9 = 99"], "correct": 1},
+    {"question": "What is 96 ÷ 8?", "choices": ["11", "12", "13", "14"], "correct": 1},
+    {"question": "How many times can you subtract 11 from 77?", "choices": ["6", "7", "8", "9"], "correct": 1},
+    {"question": "If 6 × 14 = 84, what is 84 ÷ 14?", "choices": ["5", "6", "7", "8"], "correct": 1},
+    {"question": "What is 132 ÷ 12?", "choices": ["10", "11", "12", "13"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "To find 48 ÷ 6, you can subtract 6 from 48 _____ times.", "expectedAny": ["8", "eight"]},
+    {"question": "If 7 × 13 = 91, then 91 ÷ 7 = _____.", "expectedAny": ["13"]},
+    {"question": "The fact family for 8, 9, and 72 includes: 8 × 9 = 72, 9 × 8 = 72, 72 ÷ 8 = 9, and _____.", "expectedAny": ["72 ÷ 9 = 8"]},
+    {"question": "105 ÷ 15 = _____.", "expectedAny": ["7"]},
+    {"question": "How many 12s are in 144? _____", "expectedAny": ["12"]},
+    {"question": "88 ÷ 11 = _____.", "expectedAny": ["8"]},
+    {"question": "If you subtract 9 from 108 twelve times, you get _____.", "expectedAny": ["0", "zero"]},
+    {"question": "The dividend in 156 ÷ 12 = 13 is _____.", "expectedAny": ["156"]},
+    {"question": "63 ÷ 9 = _____.", "expectedAny": ["7"]},
+    {"question": "To check if 84 ÷ 7 = 12, multiply 7 × _____ = 84.", "expectedAny": ["12"]}
+  ],
+  "shortanswer": [
+    {"question": "Explain how repeated subtraction helps you understand division.", "expectedAny": ["you keep subtracting until you reach zero", "shows how many groups you can make", "division is taking away equal amounts"]},
+    {"question": "How are multiplication and division related?", "expectedAny": ["they are inverse operations", "they undo each other", "opposite operations"]},
+    {"question": "What is a fact family and why is it useful?", "expectedAny": ["related facts using same numbers", "helps remember math facts", "shows relationship between operations"]},
+    {"question": "Show how to use repeated subtraction to find 75 ÷ 15.", "expectedAny": ["75 - 15 - 15 - 15 - 15 - 15 = 0", "subtract 15 five times", "5"]},
+    {"question": "If you know 11 × 12 = 132, what two division facts do you also know?", "expectedAny": ["132 ÷ 11 = 12 and 132 ÷ 12 = 11"]},
+    {"question": "How can knowing multiplication facts help you with division?", "expectedAny": ["they are related", "division undoes multiplication", "same fact families"]},
+    {"question": "Write the complete fact family for 6, 8, and 48.", "expectedAny": ["6 × 8 = 48, 8 × 6 = 48, 48 ÷ 6 = 8, 48 ÷ 8 = 6"]},
+    {"question": "Why might repeated subtraction take a long time for big numbers?", "expectedAny": ["lots of subtracting", "many steps", "easier to use division facts"]},
+    {"question": "How do you check if your division answer is correct?", "expectedAny": ["multiply the quotient by the divisor", "use inverse operation"]},
+    {"question": "Explain the difference between dividend, divisor, and quotient.", "expectedAny": ["dividend is number being divided, divisor is what you divide by, quotient is the answer"]}
+  ],
+  "wordProblems": [
+    {"question": "Maria has 96 stickers to share equally among 8 friends. How many stickers will each friend get?", "expectedAny": ["12", "12 stickers"]},
+    {"question": "A teacher has 84 pencils to put into boxes of 12. How many boxes will she need?", "expectedAny": ["7", "7 boxes"]},
+    {"question": "There are 72 students going on a field trip. If each bus holds 9 students, how many buses are needed?", "expectedAny": ["8", "8 buses"]},
+    {"question": "Jake collected 132 baseball cards and wants to put them in albums with 11 cards per page. How many pages will he fill?", "expectedAny": ["12", "12 pages"]},
+    {"question": "A bakery made 168 cookies and packages them 14 per box. How many boxes can they fill?", "expectedAny": ["12", "12 boxes"]},
+    {"question": "The school library has 150 books to place on shelves. If each shelf holds 15 books, how many shelves will they use?", "expectedAny": ["10", "10 shelves"]},
+    {"question": "A farmer planted 91 tomato plants in rows with 7 plants per row. How many rows did he plant?", "expectedAny": ["13", "13 rows"]},
+    {"question": "Emma saved $144 over 12 months. If she saved the same amount each month, how much did she save per month?", "expectedAny": ["$12", "12 dollars"]},
+    {"question": "A factory produces 108 toys per day and packages them 9 per box. How many boxes do they fill each day?", "expectedAny": ["12", "12 boxes"]},
+    {"question": "There are 120 chairs to arrange in rows of 8. How many rows will there be?", "expectedAny": ["15", "15 rows"]},
+    {"question": "A pizza shop cuts pizzas into 8 slices each. If they served 88 slices, how many whole pizzas did they use?", "expectedAny": ["11", "11 pizzas"]},
+    {"question": "Carlos has 156 marbles to divide equally among 13 friends. How many marbles will each friend receive?", "expectedAny": ["12", "12 marbles"]}
+  ]
+}

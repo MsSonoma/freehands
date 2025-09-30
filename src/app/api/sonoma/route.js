@@ -149,15 +149,7 @@ async function getTtsClient() {
   return ttsClientPromise
 }
 
-// Fixed, minimal stateless base system prompt. All step-specific behavior must be sent in instructions.
-const BASE_SYSTEM = [
-  'Always respond with natural spoken text only. Do not use emojis, decorative characters, repeated punctuation, ASCII art, bullet lines, or other symbols.',
-  'You are Ms. Sonoma. Follow only the lesson and directions given in the user\'s message.',
-  'Stateless: Treat each call independently. Use only the text in this request.',
-  'Closed world: Do not reference files, tools, APIs, the app, or capabilities. Do not mention UI or runtime.',
-  'Stay on the current lesson only. Politely steer back if needed.',
-  'Kid-friendly style: simple words for a young child; short sentences (about 6–12 words); warm tone; speak to “you” and “we”; one idea per sentence.'
-].join('\n')
+// Note: No system prompt is used; the client sends exact per-step instructions in a single user message.
 
 // Provider selection: default to Anthropic when key present or env explicitly set; else OpenAI
 const PROVIDER = (process.env.SONOMA_PROVIDER || (process.env.ANTHROPIC_API_KEY ? 'anthropic' : 'openai')).toLowerCase()
@@ -172,8 +164,8 @@ export async function POST(req) {
   try {
     let providerUsed = PROVIDER
     // Be resilient to non-JSON payloads (text/plain, form-data) to avoid 500s during dev/smoke tests
-    let instructions = ''
-    let innertext = ''
+  let instructions = ''
+  let innertext = ''
 
     const contentType = (req.headers?.get?.('content-type') || '').toLowerCase()
     try {
@@ -220,7 +212,7 @@ export async function POST(req) {
     if (trimmedInnertext) {
       console.log(`${logPrefix} -> innertext:\n${previewText(trimmedInnertext)}`)
     }
-    // Stateless API: no session context is consumed or logged
+    // Stateless API: only the provided instructions are sent to the LLM (no system message)
 
     // Keys by provider
     const openaiKey = process.env.OPENAI_API_KEY
@@ -249,15 +241,8 @@ export async function POST(req) {
         return NextResponse.json({ error: 'Ms. Sonoma is unavailable.' }, { status: 500 })
       }
     }
-    // Fixed system prompt for all requests (stateless)
-    const systemContent = BASE_SYSTEM
-
-    // Minimal user payload: only current step’s instructions (+ optional child utterance as a second message)
-    const userMessages = []
-    userMessages.push({ role: 'user', content: trimmedInstructions })
-    if (trimmedInnertext) {
-      userMessages.push({ role: 'user', content: trimmedInnertext })
-    }
+    // Minimal user payload: only current step’s instructions (no system, no extra user messages)
+    const userMessages = [{ role: 'user', content: trimmedInstructions }]
   // (Removed duplicate user payload log to reduce noise; instructions + innertext logs above are sufficient.)
 
     let msSonomaReply = ''
@@ -275,7 +260,6 @@ export async function POST(req) {
         body: JSON.stringify({
           model: anthropicModel,
           max_tokens: 1024,
-          system: systemContent,
           messages: userMessages.map(m => ({ role: m.role, content: [{ type: 'text', text: m.content }] }))
         })
       })
@@ -296,7 +280,6 @@ export async function POST(req) {
             body: JSON.stringify({
               model: ANTHROPIC_MODEL_FALLBACK,
               max_tokens: 1024,
-              system: systemContent,
               messages: userMessages.map(m => ({ role: m.role, content: [{ type: 'text', text: m.content }] }))
             })
           })
@@ -308,7 +291,7 @@ export async function POST(req) {
         console.error(`${logPrefix} Anthropic request failed:`, aJson)
         // Optional fallback to OpenAI if configured
         if (openaiKey) {
-          const { reply, errorStatus } = await callOpenAI(systemContent, userMessages, openaiKey, undefined, logPrefix)
+          const { reply, errorStatus } = await callOpenAI(userMessages, openaiKey, undefined, logPrefix)
           if (!reply) return NextResponse.json({ error: 'LLM request failed.' }, { status: errorStatus || 500 })
           msSonomaReply = reply
           providerUsed = 'openai-fallback'
@@ -323,7 +306,7 @@ export async function POST(req) {
     } else {
       // OpenAI Chat Completions API
       providerUsed = 'openai'
-      const { reply, errorStatus, raw } = await callOpenAI(systemContent, userMessages, openaiKey, OPENAI_MODEL_DEFAULT, logPrefix)
+      const { reply, errorStatus, raw } = await callOpenAI(userMessages, openaiKey, OPENAI_MODEL_DEFAULT, logPrefix)
       if (!reply) return NextResponse.json({ error: 'OpenAI request failed.' }, { status: errorStatus || 500 })
       msSonomaReply = reply
       if (raw) console.log(`${logPrefix} OpenAI response:`, raw)
@@ -425,7 +408,8 @@ function buildStubReply(instructions, innertext) {
     return 'Thanks for your answer. Here is the next question: What is 2 + 2?'
   }
   if (instr.includes('teaching')) {
-    return 'Today we will learn together. Would you like me to go over that again?'
+    // End teaching with a concise wrap (no spoken gate question); UI handles the Yes/No gate
+    return 'Today we will learn together. That wraps up the key steps.'
   }
   if (instr.includes('test complete')) {
     return 'Great job finishing the test. We will review your answers now.'
@@ -435,7 +419,7 @@ function buildStubReply(instructions, innertext) {
 }
 
 // OpenAI request helper
-async function callOpenAI(systemContent, userMessages, apiKey, modelOverride, logPrefix) {
+async function callOpenAI(userMessages, apiKey, modelOverride, logPrefix) {
   const model = modelOverride || OPENAI_MODEL_DEFAULT
   const logTag = logPrefix || '[Ms. Sonoma API]'
   try {
@@ -447,10 +431,7 @@ async function callOpenAI(systemContent, userMessages, apiKey, modelOverride, lo
       },
       body: JSON.stringify({
         model,
-        messages: [
-          { role: 'system', content: systemContent },
-          ...userMessages
-        ],
+        messages: userMessages,
         max_tokens: 1024
       })
     })
