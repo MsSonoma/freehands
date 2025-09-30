@@ -2312,6 +2312,13 @@ function SessionPageInner() {
     } catch {}
   }, [unlockAudioPlayback]);
 
+  // Attempt audio and microphone setup immediately on page entry.
+  // - This proactively prompts for mic permission and preps AudioContext early.
+  // - Browsers may still require a user gesture for autoplay, but this reduces friction later.
+  useEffect(() => {
+    try { requestAudioAndMicPermissions(); } catch {}
+  }, [requestAudioAndMicPermissions]);
+
   // React to mute toggle on current audio and keep a ref for async use
   useEffect(() => {
     mutedRef.current = muted;
