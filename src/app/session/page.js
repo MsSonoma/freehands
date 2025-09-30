@@ -1298,6 +1298,20 @@ function SessionPageInner() {
   const [playbackIntent, setPlaybackIntent] = useState(null); // 'play' | 'pause' | null
   // Tracks whether the user has explicitly unlocked audio via a gesture (prevents re‑prompting)
   const audioUnlockedRef = useRef(false);
+  // Persisted UX flags for audio/mic setup
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
+  const [micAllowed, setMicAllowed] = useState(null); // null=unknown, true/false=decided
+  // Load persisted flags on mount
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const au = localStorage.getItem('ms_audioUnlocked');
+        const ma = localStorage.getItem('ms_micAllowed');
+        setAudioUnlocked(au === 'true');
+        if (ma !== null) setMicAllowed(ma === 'true');
+      }
+    } catch {}
+  }, []);
   const lastAudioBase64Ref = useRef(null);
   // Prefer HTMLAudio for the very first TTS playback (Opening) to satisfy stricter autoplay policies.
   // We reset this after the first attempt so subsequent replies can use WebAudio-first as usual.
@@ -2229,6 +2243,8 @@ function SessionPageInner() {
 
     // Mark audio as explicitly unlocked so we do not force the prompt again
   audioUnlockedRef.current = true;
+  try { if (typeof window !== 'undefined') localStorage.setItem('ms_audioUnlocked', 'true'); } catch {}
+  try { setAudioUnlocked(true); } catch {}
 
   const b64 = normalizeBase64Audio(lastAudioBase64Ref.current || '');
       const sents = Array.isArray(lastSentencesRef.current) ? lastSentencesRef.current : [];
@@ -2300,12 +2316,18 @@ function SessionPageInner() {
         nav.mediaDevices.getUserMedia({ audio: true })
           .then((stream) => {
             try { stream.getTracks().forEach(t => { try { t.stop(); } catch {} }); } catch {}
+            // Persist mic allowed state
+            try { if (typeof window !== 'undefined') localStorage.setItem('ms_micAllowed', 'true'); } catch {}
+            try { setMicAllowed(true); } catch {}
           })
           .catch((err) => {
             try {
               console.info('[Session] Mic permission request failed or denied', err?.name || err);
               // Surface a brief, non-blocking tip so users know typing still works
               try { showTipOverride('Mic access denied. You can still type answers.', 5000); } catch {}
+              // Persist denied state to guide banner visibility
+              try { if (typeof window !== 'undefined') localStorage.setItem('ms_micAllowed', 'false'); } catch {}
+              try { setMicAllowed(false); } catch {}
             } catch {}
           });
       }
@@ -2318,6 +2340,14 @@ function SessionPageInner() {
   useEffect(() => {
     try { requestAudioAndMicPermissions(); } catch {}
   }, [requestAudioAndMicPermissions]);
+
+  // Keep audioUnlocked state loosely synced with ref if one changes elsewhere
+  useEffect(() => {
+    if (audioUnlockedRef.current && !audioUnlocked) {
+      try { setAudioUnlocked(true); } catch {}
+      try { if (typeof window !== 'undefined') localStorage.setItem('ms_audioUnlocked', 'true'); } catch {}
+    }
+  }, [audioUnlocked]);
 
   // React to mute toggle on current audio and keep a ref for async use
   useEffect(() => {
@@ -6938,6 +6968,23 @@ function SessionPageInner() {
   <div style={ isMobileLandscape ? { width: '100%', paddingLeft: 8, paddingRight: 8, boxSizing: 'border-box' } : { width: '100%' } }>
       {/* Sticky cluster: title + timeline + video + captions stick under the header without moving into it */}
   <div style={{ position: 'sticky', top: (isMobileLandscape ? 52 : 64), zIndex: 25, background: '#ffffff' }}>
+    {(() => {
+      const showBanner = !(audioUnlocked && micAllowed === true);
+      if (!showBanner) return null;
+      const onEnable = () => { try { requestAudioAndMicPermissions(); } catch {} };
+      return (
+        <div style={{ width: '100%', borderBottom: '1px solid #e5e7eb', background: '#fff8e1', color: '#4b3b00' }}>
+          <div style={{ maxWidth: 900, margin: '0 auto', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ flex: 1, fontSize: 13, lineHeight: 1.3 }}>
+              Enable audio and microphone so Ms. Sonoma can speak and hear you.
+            </div>
+            <button type="button" onClick={onEnable} style={{ padding: '6px 10px', background: '#111827', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>
+              Enable Audio
+            </button>
+          </div>
+        </div>
+      );
+    })()}
     <div style={{ width: '100%', boxSizing: 'border-box', padding: (isMobileLandscape ? '0 0 6px' : 0), minWidth: 0 }}>
   {/** Clickable timeline jump logic */}
   {(() => {
