@@ -1296,11 +1296,18 @@ function SessionPageInner() {
   const forceNextPlaybackRef = useRef(false);
   // Record user play/pause intents that occur while the app is loading; apply after load finishes
   const [playbackIntent, setPlaybackIntent] = useState(null); // 'play' | 'pause' | null
+  // Browser detection: treat Safari specially for mic prompts
+  const isSafari = useMemo(() => {
+    if (typeof navigator === 'undefined') return false;
+    const ua = navigator.userAgent || '';
+    return /Safari\//.test(ua) && !/Chrome|Chromium|Edg\//.test(ua);
+  }, []);
   // Tracks whether the user has explicitly unlocked audio via a gesture (prevents re‑prompting)
   const audioUnlockedRef = useRef(false);
   // Persisted UX flags for audio/mic setup
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [micAllowed, setMicAllowed] = useState(null); // null=unknown, true/false=decided
+  const micRequestInFlightRef = useRef(false);
   // Load persisted flags on mount
   useEffect(() => {
     try {
@@ -2308,11 +2315,19 @@ function SessionPageInner() {
   // - Resumes/creates AudioContext and marks audio as unlocked.
   // - Requests microphone access once, then immediately stops tracks.
   // This should be invoked synchronously inside Begin handlers before any awaits.
-  const requestAudioAndMicPermissions = useCallback(() => {
+  const requestAudioAndMicPermissions = useCallback((force = false) => {
+    // Always try to unlock audio; harmless and gesture-friendly
     try { unlockAudioPlayback(); } catch {}
+    // Avoid concurrent mic prompts
+    if (micRequestInFlightRef.current) return;
+    // If mic decision already known and not forcing, skip
+    if (!force && micAllowed !== null) return;
+    // On Safari, avoid auto mic prompts unless forced by user click
+    if (!force && isSafari) return;
     try {
       const nav = (typeof navigator !== 'undefined') ? navigator : null;
       if (nav && nav.mediaDevices && typeof nav.mediaDevices.getUserMedia === 'function') {
+        micRequestInFlightRef.current = true;
         nav.mediaDevices.getUserMedia({ audio: true })
           .then((stream) => {
             try { stream.getTracks().forEach(t => { try { t.stop(); } catch {} }); } catch {}
@@ -2329,17 +2344,19 @@ function SessionPageInner() {
               try { if (typeof window !== 'undefined') localStorage.setItem('ms_micAllowed', 'false'); } catch {}
               try { setMicAllowed(false); } catch {}
             } catch {}
-          });
+          })
+          .finally(() => { micRequestInFlightRef.current = false; });
       }
-    } catch {}
-  }, [unlockAudioPlayback]);
+    } catch { micRequestInFlightRef.current = false; }
+  }, [unlockAudioPlayback, isSafari, micAllowed]);
 
   // Attempt audio and microphone setup immediately on page entry.
   // - This proactively prompts for mic permission and preps AudioContext early.
   // - Browsers may still require a user gesture for autoplay, but this reduces friction later.
   useEffect(() => {
-    try { requestAudioAndMicPermissions(); } catch {}
-  }, [requestAudioAndMicPermissions]);
+    // On mount, only unlock audio. Do not auto-request mic for any browser.
+    try { unlockAudioPlayback(); } catch {}
+  }, [unlockAudioPlayback]);
 
   // Keep audioUnlocked state loosely synced with ref if one changes elsewhere
   useEffect(() => {
@@ -3494,7 +3511,7 @@ function SessionPageInner() {
     try { console.info('[Opening] startDiscussionStep entered'); } catch {}
     try { console.info('[Opening] generateOpening typeof =', typeof generateOpening); } catch {}
     // Ensure audio is unlocked and mic permissions requested within the Begin click gesture
-    try { requestAudioAndMicPermissions(); } catch {}
+  // mic permission will be requested only when user starts recording
     // Ensure we are not starting in a muted or paused state
     try { setMuted(false); } catch {}
     try { setUserPaused(false); } catch {}
@@ -5510,7 +5527,7 @@ function SessionPageInner() {
     // End any prior API/audio/mic activity before starting fresh
     try { abortAllActivity(); } catch {}
     // Ensure audio and mic permissions are handled as part of Begin (in-gesture)
-    try { requestAudioAndMicPermissions(); } catch {}
+  // mic permission will be requested only when user starts recording
 
     // Immediately update UI so it feels responsive
     setShowBegin(false);
@@ -5597,7 +5614,7 @@ function SessionPageInner() {
     // End any prior API/audio/mic activity before starting fresh
     try { abortAllActivity(); } catch {}
     // Ensure audio/mic unlocked via Begin
-    try { requestAudioAndMicPermissions(); } catch {}
+  // mic permission will be requested only when user starts recording
     // Ensure assessments exist if user arrived here via skip before they were generated
     if (!generatedWorksheet) {
       ensureBaseSessionSetup();
@@ -5641,7 +5658,7 @@ function SessionPageInner() {
     // End any prior API/audio/mic activity before starting fresh
     try { abortAllActivity(); } catch {}
     // Ensure audio/mic unlocked via Begin
-    try { requestAudioAndMicPermissions(); } catch {}
+  // mic permission will be requested only when user starts recording
     if (!generatedTest || !generatedTest.length) {
       // Ensure assessments exist if user arrived here via skip or regeneration lag
       ensureBaseSessionSetup();
@@ -5779,7 +5796,7 @@ function SessionPageInner() {
     // End any prior API/audio/mic activity before starting fresh
     try { abortAllActivity(); } catch {}
     // Ensure audio/mic unlocked via Begin
-    try { requestAudioAndMicPermissions(); } catch {}
+  // mic permission will be requested only when user starts recording
     // Ensure session scaffolding exists
     ensureBaseSessionSetup();
     // No standalone unlock prompt
@@ -6101,7 +6118,7 @@ function SessionPageInner() {
     // End any prior API/audio/mic activity before starting fresh
     try { abortAllActivity(); } catch {}
     // Ensure audio/mic unlocked via Begin
-    try { requestAudioAndMicPermissions(); } catch {}
+  // mic permission will be requested only when user starts recording
     // Clear any temporary awaiting lock now that the user is explicitly starting
     try { exerciseAwaitingLockRef.current = false; } catch {}
     // Ensure pools/assessments exist if we arrived here via skip before setup
@@ -6969,14 +6986,14 @@ function SessionPageInner() {
       {/* Sticky cluster: title + timeline + video + captions stick under the header without moving into it */}
   <div style={{ position: 'sticky', top: (isMobileLandscape ? 52 : 64), zIndex: 25, background: '#ffffff' }}>
     {(() => {
-      const showBanner = !(audioUnlocked && micAllowed === true);
+  const showBanner = !audioUnlocked;
       if (!showBanner) return null;
-      const onEnable = () => { try { requestAudioAndMicPermissions(); } catch {} };
+  const onEnable = () => { try { unlockAudioPlayback(); } catch {} };
       return (
         <div style={{ width: '100%', borderBottom: '1px solid #e5e7eb', background: '#fff8e1', color: '#4b3b00' }}>
           <div style={{ maxWidth: 900, margin: '0 auto', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ flex: 1, fontSize: 13, lineHeight: 1.3 }}>
-              Enable audio and microphone so Ms. Sonoma can speak and hear you.
+              Enable audio so Ms. Sonoma can speak to you.
             </div>
             <button type="button" onClick={onEnable} style={{ padding: '6px 10px', background: '#111827', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>
               Enable Audio
@@ -8191,6 +8208,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
     setErrorMsg('');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      try { if (typeof window !== 'undefined') localStorage.setItem('ms_micAllowed', 'true'); } catch {}
       const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       chunksRef.current = [];
       mr.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunksRef.current.push(e.data); };
@@ -8215,6 +8233,11 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
     } catch (e) {
       console.warn('[Mic] getUserMedia failed', e);
       setErrorMsg('Mic permission denied');
+      try {
+        if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError' || e.name === 'NotFoundError')) {
+          if (typeof window !== 'undefined') localStorage.setItem('ms_micAllowed', 'false');
+        }
+      } catch {}
     }
   }, [isRecording, uploading, transcribeBlob, learnerInput, setLearnerInput]);
 
