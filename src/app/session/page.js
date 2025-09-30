@@ -2216,7 +2216,8 @@ function SessionPageInner() {
 
   // Web Speech API fallback removed per requirement: absolutely no browser Web Speech usage.
 
-  // One-time audio unlock flow for iOS: resume/create AudioContext, try HTMLAudio immediately, then fallback to WebAudio
+  // Audio unlock flow: resume/create AudioContext and unlock HTMLMedia by a silent blip.
+  // IMPORTANT: Do NOT auto-play any prior TTS here; unlock must be passive to avoid echo/overlap.
   const unlockAudioPlayback = useCallback(() => {
     try {
       // Create/resume AudioContext during the gesture
@@ -2249,67 +2250,13 @@ function SessionPageInner() {
       } catch {}
 
     // Mark audio as explicitly unlocked so we do not force the prompt again
-  audioUnlockedRef.current = true;
-  try { if (typeof window !== 'undefined') localStorage.setItem('ms_audioUnlocked', 'true'); } catch {}
-  try { setAudioUnlocked(true); } catch {}
-
-  const b64 = normalizeBase64Audio(lastAudioBase64Ref.current || '');
-      const sents = Array.isArray(lastSentencesRef.current) ? lastSentencesRef.current : [];
-      const idx = Number.isFinite(lastStartIndexRef.current) ? lastStartIndexRef.current : 0;
-      if (!b64) return;
-
-      // Try HTMLAudio path synchronously within gesture
-      try {
-        const arr = base64ToArrayBuffer(b64);
-        const blob = new Blob([arr], { type: 'audio/mpeg' });
-        const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
-        audioRef.current = audio;
-        audio.muted = Boolean(mutedRef.current);
-        audio.volume = mutedRef.current ? 0 : 1;
-        {
-          const allowAuto = (!userPaused || forceNextPlaybackRef.current);
-          if (allowAuto) { try { scheduleCaptionsForAudio(audio, sents, idx); } catch {} }
-        }
-        audio.onplay = () => { try { setIsSpeaking(true); } catch {} };
-        audio.onended = () => {
-          try {
-            setIsSpeaking(false);
-            if (videoRef.current && (!userPaused || forceNextPlaybackRef.current)) { try { videoRef.current.pause(); } catch {} }
-          } catch {}
-          try { URL.revokeObjectURL(url); } catch {}
-          audioRef.current = null;
-        };
-        audio.onerror = () => {
-          try { setIsSpeaking(false); } catch {}
-          try { URL.revokeObjectURL(url); } catch {}
-          audioRef.current = null;
-        };
-        setIsSpeaking(true);
-        {
-          const allowAuto = (!userPaused || forceNextPlaybackRef.current);
-          if (videoRef.current && allowAuto) { try { videoRef.current.play(); } catch {} }
-        }
-        const p = audio.play();
-        if (p && p.catch) {
-          p.catch(async (err) => {
-            console.info('[Session] HTMLAudio still blocked post-unlock; falling back to WebAudio', err?.name || err);
-            try { setIsSpeaking(false); } catch {}
-            try { URL.revokeObjectURL(url); } catch {}
-            audioRef.current = null;
-            // WebAudio fallback (async; gesture no longer required since context is resumed)
-            try { await playViaWebAudio(b64, sents, idx); } catch {}
-          });
-        }
-      } catch (e) {
-        console.info('[Session] Immediate HTMLAudio path failed; trying WebAudio', e?.name || e);
-        // Fallback to WebAudio
-        (async () => { try { await playViaWebAudio(b64, sents, idx); } catch {} })();
-      }
+    audioUnlockedRef.current = true;
+    try { if (typeof window !== 'undefined') localStorage.setItem('ms_audioUnlocked', 'true'); } catch {}
+    try { setAudioUnlocked(true); } catch {}
     } catch (e) {
       console.warn('[Session] Audio unlock attempt failed', e);
     }
-  }, [scheduleCaptionsForAudio]);
+  }, []);
 
   // Request audio and mic permissions during a user gesture (Begin click).
   // - Resumes/creates AudioContext and marks audio as unlocked.
