@@ -69,10 +69,19 @@ function escapeForSsml(s) {
 }
 
 // Add a short break for blank line gaps so joke beats pace nicely
+function normalizeBlanksForSpeech(safe) {
+  try {
+    // Replace runs of three or more underscores with a speakable cue.
+    // Example: "__ __ __" or "_____" -> "blank" with a short pause for natural pacing.
+    return safe.replace(/_{2,}/g, ' blank <break time="250ms"/> ')
+  } catch { return safe }
+}
+
 function toSsml(text) {
   const safe = escapeForSsml(text || '')
   const withParagraphBreaks = safe.replace(/(?:\r?\n){2,}/g, ' <break time="700ms"/> ')
-  return `<speak>${withParagraphBreaks}</speak>`
+  const withBlanks = normalizeBlanksForSpeech(withParagraphBreaks)
+  return `<speak>${withBlanks}</speak>`
 }
 
 export async function POST(req) {

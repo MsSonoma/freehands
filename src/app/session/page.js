@@ -513,6 +513,10 @@ function SessionPageInner() {
   // Ad-hoc Q&A flow state
   // askState: 'inactive' | 'awaiting-input' | 'awaiting-confirmation'
   const [askState, setAskState] = useState('inactive');
+  // Store the body of the active Q&A question at Ask start so we can reliably recap it after Ask ends
+  const askReturnBodyRef = useRef('');
+  // Track the last spoken Q&A question body (with MC/numbering formatting)
+  const activeQuestionBodyRef = useRef('');
   const [askOriginalQuestion, setAskOriginalQuestion] = useState('');
   // Riddle state (hoisted before handlers to avoid TDZ in dependencies)
   const [riddleState, setRiddleState] = useState('inactive'); // 'inactive' | 'presented' | 'awaiting-solve'
@@ -646,6 +650,11 @@ function SessionPageInner() {
     const name = learnerName || 'friend';
     // Frontend prompt and transcript
     const prompt = `Yes, ${name} did you have a question?`;
+    // Snapshot the currently active Q&A item (if any) to recap after Ask completes
+    try {
+      // Prefer the last spoken Q&A body (authoritative)
+      askReturnBodyRef.current = activeQuestionBodyRef.current || '';
+    } catch {}
     // Enable input/mic for the facilitator immediately; speaking lock will block until prompt finishes
     setCanSend(true);
     setAskOriginalQuestion('');
@@ -660,9 +669,58 @@ function SessionPageInner() {
     // Return to unused-buttons state: hide confirmation, show normal opening actions, allow input again
     setAskState('inactive');
     setAskOriginalQuestion('');
-    setShowOpeningActions(true);
+    // After Ask resolves, do NOT surface phase opening actions during Q&A.
+    // Only re-show opening actions if we are in Discussion awaiting-learner.
+    if (phase === 'discussion' && subPhase === 'awaiting-learner') {
+      setShowOpeningActions(true);
+    } else {
+      setShowOpeningActions(false);
+    }
     setCanSend(true);
-  }, []);
+    // If we're in the teaching gate, return with a clear prompt
+    try {
+      if (phase === 'teaching' && subPhase === 'awaiting-gate') {
+        speakFrontend('Would you like me to go over the last section again?');
+      }
+      // In Q&A phases, briefly re-read the current question to ensure it is the last caption line
+      else if (
+        (phase === 'comprehension' && currentCompProblem) ||
+        (phase === 'exercise' && currentExerciseProblem) ||
+        (phase === 'worksheet' && subPhase === 'worksheet-active') ||
+        (phase === 'test' && subPhase === 'test-active')
+      ) {
+        try {
+          // Prefer the snapshot captured at Ask start; fall back to last spoken Q&A body; then to current state
+          let body = askReturnBodyRef.current || activeQuestionBodyRef.current || '';
+          if (!body) {
+            if (phase === 'comprehension' && currentCompProblem) {
+              body = ensureQuestionMark(formatQuestionForSpeech(currentCompProblem, { layout: 'multiline' }));
+            } else if (phase === 'exercise' && currentExerciseProblem) {
+              body = ensureQuestionMark(formatQuestionForSpeech(currentExerciseProblem, { layout: 'multiline' }));
+            } else if (phase === 'worksheet' && subPhase === 'worksheet-active') {
+              const idx = (typeof worksheetIndexRef !== 'undefined' && worksheetIndexRef && typeof worksheetIndexRef.current === 'number') ? (worksheetIndexRef.current ?? 0) : (typeof currentWorksheetIndex === 'number' ? currentWorksheetIndex : 0);
+              const list = Array.isArray(generatedWorksheet) ? generatedWorksheet : [];
+              const item = list[idx] || null;
+              if (item) {
+                const num = (typeof idx === 'number' ? idx : 0) + 1;
+                body = ensureQuestionMark(`${num}. ${formatQuestionForSpeech(item, { layout: 'multiline' })}`);
+              }
+            } else if (phase === 'test' && subPhase === 'test-active') {
+              const list = Array.isArray(generatedTest) ? generatedTest : [];
+              const idx = (typeof testActiveIndex === 'number' ? testActiveIndex : 0);
+              const item = list[idx] || null;
+              if (item) {
+                const num = idx + 1;
+                body = ensureQuestionMark(`${num}. ${formatQuestionForSpeech(item, { layout: 'multiline' })}`);
+              }
+            }
+          }
+          if (body) { speakFrontend(body); }
+        } catch {}
+        finally { askReturnBodyRef.current = ''; }
+      }
+    } catch {}
+  }, [phase, subPhase, speakFrontend]);
 
   const handleAskConfirmNo = useCallback(async () => {
     // Encourage re-asking with the original question populated
@@ -680,6 +738,63 @@ function SessionPageInner() {
     setAskState('awaiting-input');
     setCanSend(true);
   }, []);
+
+  // Ask: Back button — cancel ask sequence and return to unused buttons
+  const handleAskBack = useCallback(() => {
+    setAskState('inactive');
+    setAskOriginalQuestion('');
+    // After Ask resolves, do NOT surface phase opening actions during Q&A.
+    // Only re-show opening actions if we are in Discussion awaiting-learner.
+    if (phase === 'discussion' && subPhase === 'awaiting-learner') {
+      setShowOpeningActions(true);
+    } else {
+      setShowOpeningActions(false);
+    }
+    setCanSend(true);
+    // If we're in the teaching gate, return with the standard prompt
+    try {
+      if (phase === 'teaching' && subPhase === 'awaiting-gate') {
+        speakFrontend('Would you like me to go over the last section again?');
+      }
+      // In Q&A phases, re-read the current question so it is last in captions
+      else if (
+        (phase === 'comprehension' && currentCompProblem) ||
+        (phase === 'exercise' && currentExerciseProblem) ||
+        (phase === 'worksheet' && subPhase === 'worksheet-active') ||
+        (phase === 'test' && subPhase === 'test-active')
+      ) {
+        try {
+          // Prefer the snapshot captured at Ask start; fall back to last spoken Q&A body; then to current state
+          let body = askReturnBodyRef.current || activeQuestionBodyRef.current || '';
+          if (!body) {
+            if (phase === 'comprehension' && currentCompProblem) {
+              body = ensureQuestionMark(formatQuestionForSpeech(currentCompProblem, { layout: 'multiline' }));
+            } else if (phase === 'exercise' && currentExerciseProblem) {
+              body = ensureQuestionMark(formatQuestionForSpeech(currentExerciseProblem, { layout: 'multiline' }));
+            } else if (phase === 'worksheet' && subPhase === 'worksheet-active') {
+              const idx = (typeof worksheetIndexRef !== 'undefined' && worksheetIndexRef && typeof worksheetIndexRef.current === 'number') ? (worksheetIndexRef.current ?? 0) : (typeof currentWorksheetIndex === 'number' ? currentWorksheetIndex : 0);
+              const list = Array.isArray(generatedWorksheet) ? generatedWorksheet : [];
+              const item = list[idx] || null;
+              if (item) {
+                const num = (typeof idx === 'number' ? idx : 0) + 1;
+                body = ensureQuestionMark(`${num}. ${formatQuestionForSpeech(item, { layout: 'multiline' })}`);
+              }
+            } else if (phase === 'test' && subPhase === 'test-active') {
+              const list = Array.isArray(generatedTest) ? generatedTest : [];
+              const idx = (typeof testActiveIndex === 'number' ? testActiveIndex : 0);
+              const item = list[idx] || null;
+              if (item) {
+                const num = idx + 1;
+                body = ensureQuestionMark(`${num}. ${formatQuestionForSpeech(item, { layout: 'multiline' })}`);
+              }
+            }
+          }
+          if (body) { speakFrontend(body); }
+        } catch {}
+        finally { askReturnBodyRef.current = ''; }
+      }
+    } catch {}
+  }, [phase, subPhase, speakFrontend]);
 
   // Riddle: start and present one via TTS/captions
   const handleTellRiddle = useCallback(async () => {
@@ -760,12 +875,12 @@ function SessionPageInner() {
     setShowOpeningActions(true);
   }, [currentRiddle, speakFrontend]);
 
-  // Riddle: Solve button handler – puts focus back on input/mic
-  const handleRiddleSolve = useCallback(async () => {
-    setCanSend(true);
-    setRiddleState('awaiting-solve');
-    await speakFrontend('Go ahead and tell me your answer.');
-  }, [speakFrontend]);
+  // Riddle: Back button — cancel riddle flow and return to opening actions
+  const handleRiddleBack = useCallback(() => {
+    setCurrentRiddle(null);
+    setRiddleState('inactive');
+    try { setShowOpeningActions(true); } catch {}
+  }, []);
 
   // (moved: handleStartLesson is defined after explicit Go handlers to avoid TDZ)
 
@@ -987,7 +1102,8 @@ function SessionPageInner() {
     if (!item) { setShowOpeningActions(true); return; }
     try {
       setQaAnswersUnlocked(true);
-      const formatted = ensureQuestionMark(formatQuestionForSpeech(item, { layout: 'multiline' }));
+  const formatted = ensureQuestionMark(formatQuestionForSpeech(item, { layout: 'multiline' }));
+  activeQuestionBodyRef.current = formatted;
       setCanSend(false);
       await speakFrontend(formatted, { mcLayout: 'multiline' });
     } catch {}
@@ -1013,8 +1129,16 @@ function SessionPageInner() {
     if (!item) { setShowOpeningActions(true); return; }
     try {
       setQaAnswersUnlocked(true);
-      const formatted = ensureQuestionMark(formatQuestionForSpeech(item, { layout: 'multiline' }));
+      // Speak a quick encouragement right after Go, before the first Exercise question.
+      const encouragement = ENCOURAGEMENT_SNIPPETS && ENCOURAGEMENT_SNIPPETS.length
+        ? ENCOURAGEMENT_SNIPPETS[Math.floor(Math.random() * ENCOURAGEMENT_SNIPPETS.length)]
+        : null;
       setCanSend(false);
+      if (encouragement) {
+        try { await speakFrontend(`${encouragement}.`); } catch {}
+      }
+  const formatted = ensureQuestionMark(formatQuestionForSpeech(item, { layout: 'multiline' }));
+  activeQuestionBodyRef.current = formatted;
       await speakFrontend(formatted, { mcLayout: 'multiline' });
     } catch {}
     setCanSend(true);
@@ -1029,7 +1153,8 @@ function SessionPageInner() {
     try {
       setQaAnswersUnlocked(true);
       const num = (typeof item.number === 'number' && item.number > 0) ? item.number : 1;
-      const formatted = ensureQuestionMark(`${num}. ${formatQuestionForSpeech(item, { layout: 'multiline' })}`);
+  const formatted = ensureQuestionMark(`${num}. ${formatQuestionForSpeech(item, { layout: 'multiline' })}`);
+  activeQuestionBodyRef.current = formatted;
       setCanSend(false);
       await speakFrontend(formatted, { mcLayout: 'multiline' });
     } catch {}
@@ -1044,7 +1169,8 @@ function SessionPageInner() {
     if (!item) { setShowOpeningActions(true); return; }
     try {
       setQaAnswersUnlocked(true);
-      const formatted = ensureQuestionMark(`1. ${formatQuestionForSpeech(item, { layout: 'multiline' })}`);
+  const formatted = ensureQuestionMark(`1. ${formatQuestionForSpeech(item, { layout: 'multiline' })}`);
+  activeQuestionBodyRef.current = formatted;
       setCanSend(false);
       await speakFrontend(formatted, { mcLayout: 'multiline' });
     } catch {}
@@ -1057,7 +1183,8 @@ function SessionPageInner() {
     if (phase === 'comprehension' && currentCompProblem) {
       try {
         setQaAnswersUnlocked(true);
-        const formatted = ensureQuestionMark(formatQuestionForSpeech(currentCompProblem, { layout: 'multiline' }));
+  const formatted = ensureQuestionMark(formatQuestionForSpeech(currentCompProblem, { layout: 'multiline' }));
+  activeQuestionBodyRef.current = formatted;
         setCanSend(false);
         await speakFrontend(formatted, { mcLayout: 'multiline' });
       } catch {}
@@ -1067,7 +1194,8 @@ function SessionPageInner() {
     if (phase === 'exercise' && currentExerciseProblem) {
       try {
         setQaAnswersUnlocked(true);
-        const formatted = ensureQuestionMark(formatQuestionForSpeech(currentExerciseProblem, { layout: 'multiline' }));
+  const formatted = ensureQuestionMark(formatQuestionForSpeech(currentExerciseProblem, { layout: 'multiline' }));
+  activeQuestionBodyRef.current = formatted;
         setCanSend(false);
         await speakFrontend(formatted, { mcLayout: 'multiline' });
       } catch {}
@@ -1079,7 +1207,8 @@ function SessionPageInner() {
         setQaAnswersUnlocked(true);
         const first = generatedWorksheet[0];
         const num = (typeof first.number === 'number' && first.number > 0) ? first.number : 1;
-        const formatted = ensureQuestionMark(`${num}. ${formatQuestionForSpeech(first, { layout: 'multiline' })}`);
+  const formatted = ensureQuestionMark(`${num}. ${formatQuestionForSpeech(first, { layout: 'multiline' })}`);
+  activeQuestionBodyRef.current = formatted;
         setCanSend(false);
         await speakFrontend(formatted, { mcLayout: 'multiline' });
       } catch {}
@@ -1089,7 +1218,8 @@ function SessionPageInner() {
     if (phase === 'test' && Array.isArray(generatedTest) && generatedTest[0]) {
       try {
         setQaAnswersUnlocked(true);
-        const formatted = ensureQuestionMark(`1. ${formatQuestionForSpeech(generatedTest[0], { layout: 'multiline' })}`);
+  const formatted = ensureQuestionMark(`1. ${formatQuestionForSpeech(generatedTest[0], { layout: 'multiline' })}`);
+  activeQuestionBodyRef.current = formatted;
         setCanSend(false);
         await speakFrontend(formatted, { mcLayout: 'multiline' });
       } catch {}
@@ -1321,6 +1451,8 @@ function SessionPageInner() {
     } catch {}
   }, []);
   const lastAudioBase64Ref = useRef(null);
+  // Track HTMLAudio paused position so we can reconstruct/resume after long idle or GC
+  const htmlAudioPausedAtRef = useRef(0);
   // Prefer HTMLAudio for the very first TTS playback (Opening) to satisfy stricter autoplay policies.
   // We reset this after the first attempt so subsequent replies can use WebAudio-first as usual.
   const preferHtmlAudioOnceRef = useRef(false);
@@ -1909,7 +2041,7 @@ function SessionPageInner() {
     }
   };
 
-  const playAudioFromBase64 = async (audioBase64, batchSentences = [], startIndex = 0) => {
+  const playAudioFromBase64 = async (audioBase64, batchSentences = [], startIndex = 0, opts = {}) => {
     clearCaptionTimers();
 
     if (!audioBase64) {
@@ -1985,7 +2117,31 @@ function SessionPageInner() {
   {
     const allowAuto = (!userPaused || forceNextPlaybackRef.current);
     if (allowAuto) {
-      scheduleCaptionsForAudio(audio, batchSentences || [], startIndex);
+      const resumeAt = Number(opts?.resumeAtSeconds || 0);
+      if (resumeAt > 0) {
+        // Ensure metadata, then seek to resume position before scheduling captions
+        const readyThenSchedule = () => {
+          try {
+            if (Number.isFinite(audio.duration) && audio.duration > 0) {
+              const safeOffset = Math.max(0, Math.min(resumeAt, Math.max(0, audio.duration - 0.05)));
+              try { audio.currentTime = safeOffset; } catch {}
+            }
+          } catch {}
+          scheduleCaptionsForAudio(audio, batchSentences || [], startIndex);
+        };
+        if (Number.isFinite(audio.duration) && audio.duration > 0) {
+          readyThenSchedule();
+        } else {
+          const once = () => { readyThenSchedule(); };
+          audio.addEventListener('loadedmetadata', once, { once: true });
+          audio.addEventListener('canplay', once, { once: true });
+          // Fallback if metadata is slow
+          const t = window.setTimeout(() => { try { readyThenSchedule(); } catch {} }, 400);
+          captionTimersRef.current.push(t);
+        }
+      } else {
+        scheduleCaptionsForAudio(audio, batchSentences || [], startIndex);
+      }
     }
   }
         // Track current caption batch boundaries for pause/resume behavior
@@ -2012,6 +2168,8 @@ function SessionPageInner() {
             if (videoRef.current && !userPaused) {
               try { videoRef.current.pause(); } catch {}
             }
+            // Clear HTMLAudio paused offset on natural end
+            try { htmlAudioPausedAtRef.current = 0; } catch {}
           } catch {}
           cleanup();
         };
@@ -2067,8 +2225,8 @@ function SessionPageInner() {
           }
         }
         if (userPaused && !forceNextPlaybackRef.current) {
-          // User paused: do not auto play; ensure speaking state is false
-          setIsSpeaking(false);
+          // User paused: do not auto play; keep speaking state true so UI remains gated until TTS completes
+          // setIsSpeaking(false);
         }
       });
     } catch (audioError) {
@@ -2092,7 +2250,7 @@ function SessionPageInner() {
   const ensureAudioContext = () => {
     const Ctx = (typeof window !== 'undefined') && (window.AudioContext || window.webkitAudioContext);
     if (!Ctx) return null;
-    if (!audioCtxRef.current) {
+    if (!audioCtxRef.current || (audioCtxRef.current && audioCtxRef.current.state === 'closed')) {
       try {
         const ctx = new Ctx();
         const gain = ctx.createGain();
@@ -2120,7 +2278,6 @@ function SessionPageInner() {
       try { src.onended = null; } catch {}
       try { src.stop(); } catch {}
       try { src.disconnect(); } catch {}
-      webAudioSourceRef.current = null;
     }
   };
 
@@ -2142,7 +2299,6 @@ function SessionPageInner() {
       writeStr(12, 'fmt ');
       view.setUint32(16, 16, true); // PCM chunk size
       view.setUint16(20, 1, true);  // PCM format
-      view.setUint16(22, 1, true);  // mono
       view.setUint32(24, sampleRate, true);
       view.setUint32(28, byteRate, true);
       view.setUint16(32, blockAlign, true);
@@ -2380,8 +2536,7 @@ function SessionPageInner() {
       if (intent === 'pause') {
         try { if (audioRef.current) audioRef.current.pause(); } catch {}
         try { if (videoRef.current) videoRef.current.pause(); } catch {}
-        clearCaptionTimers();
-        setIsSpeaking(false);
+  clearCaptionTimers();
         // Ensure UI state reflects paused
         try { setUserPaused(true); } catch {}
       } else if (intent === 'play') {
@@ -2419,7 +2574,11 @@ function SessionPageInner() {
       if (next) {
         // Pausing
         if (audioRef.current) {
-          try { audioRef.current.pause(); } catch { /* ignore */ }
+          try {
+            // Save currentTime before pausing so long idle/GC can still resume
+            try { htmlAudioPausedAtRef.current = Number(audioRef.current.currentTime || 0); } catch {}
+            audioRef.current.pause();
+          } catch { /* ignore */ }
         }
         // Record WebAudio paused position before stopping source
         try {
@@ -2434,14 +2593,20 @@ function SessionPageInner() {
         if (videoRef.current) {
           try { videoRef.current.pause(); } catch { /* ignore */ }
         }
-        // Stop caption progression while paused
-        clearCaptionTimers();
-        setIsSpeaking(false);
+  // Stop caption progression while paused
+  clearCaptionTimers();
       } else {
         // Resuming
         if (audioRef.current) {
           try {
-            audioRef.current.play();
+            // Seek to the last paused offset if available before resuming
+            try {
+              const desired = Number(htmlAudioPausedAtRef.current || 0);
+              if (Number.isFinite(desired) && desired > 0) {
+                audioRef.current.currentTime = Math.max(0, desired);
+              }
+            } catch {}
+            const p = audioRef.current.play();
             setIsSpeaking(true);
             // Re-schedule caption timers for the remainder of the current batch
             try {
@@ -2452,6 +2617,22 @@ function SessionPageInner() {
                 scheduleCaptionsForAudio(audioRef.current, slice, startAt);
               }
             } catch {/* ignore scheduling errors */}
+            // If resume play fails (e.g., element locked), attempt reconstruction from last payload
+            if (p && p.catch) {
+              p.catch(() => {
+                const b64 = lastAudioBase64Ref.current;
+                if (b64) {
+                  const startAt = lastStartIndexRef.current || captionIndex;
+                  const sentences = Array.isArray(lastSentencesRef.current) && lastSentencesRef.current.length
+                    ? lastSentencesRef.current
+                    : (captionSentencesRef.current || []).slice(startAt, captionBatchEndRef.current || captionSentencesRef.current.length);
+                  const offset = Number(htmlAudioPausedAtRef.current || 0) || 0;
+                  try {
+                    playAudioFromBase64(b64, sentences, startAt, { resumeAtSeconds: offset }).catch(() => {});
+                  } catch { /* ignore */ }
+                }
+              });
+            }
           } catch { /* ignore */ }
         } else if (webAudioBufferRef.current) {
           // Resume WebAudio from paused offset
@@ -2484,7 +2665,17 @@ function SessionPageInner() {
             }
           } catch { /* ignore */ }
         } else {
-          // No current audio; if future audio arrives while userPaused=false it will auto-play
+          // No current audio; attempt to reconstruct from last payload near saved offset
+          const b64 = lastAudioBase64Ref.current;
+          if (b64) {
+            const startAt = lastStartIndexRef.current || captionIndex;
+            const sentences = Array.isArray(lastSentencesRef.current) && lastSentencesRef.current.length
+              ? lastSentencesRef.current
+              : (captionSentencesRef.current || []).slice(startAt, captionBatchEndRef.current || captionSentencesRef.current.length);
+            const offset = Number(htmlAudioPausedAtRef.current || 0) || 0;
+            try { setIsSpeaking(true); } catch {}
+            try { playAudioFromBase64(b64, sentences, startAt, { resumeAtSeconds: offset }).catch(() => {}); } catch {}
+          }
         }
         if (videoRef.current) {
           try { videoRef.current.play(); } catch { /* ignore */ }
@@ -2569,7 +2760,8 @@ function SessionPageInner() {
         return { res, data };
       };
 
-  let { res, data } = await attempt({ instruction: userContent });
+  // Always include innertext when provided so the backend can log/use it
+  let { res, data } = await attempt({ instruction: userContent, innertext });
 
       // Dev-only: sometimes the route compiles on first touch and returns 404 briefly.
       // If that happens, pre-warm the route, wait a beat, and retry (forcing full system registration).
@@ -2580,12 +2772,12 @@ function SessionPageInner() {
         // Pre-warm the route (GET) to trigger compilation/registration in dev
         try { await fetch('/api/sonoma', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(()=>{}) } catch {}
         await new Promise(r => setTimeout(r, 900));
-  ({ res, data } = await attempt({ instruction: userContent }));
+  ({ res, data } = await attempt({ instruction: userContent, innertext }));
         // If still 404, wait a bit longer and try one more time
         if (res && res.status === 404) {
           try { await fetch('/api/sonoma', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(()=>{}) } catch {}
           await new Promise(r => setTimeout(r, 1200));
-          ({ res, data } = await attempt({ instruction: userContent }));
+          ({ res, data } = await attempt({ instruction: userContent, innertext }));
         }
       }
 
@@ -2796,8 +2988,9 @@ function SessionPageInner() {
       }
 
       // Mark guard as sent for this phase only after a successful reply
-      setPhaseGuardSent((prev) => (prev[phaseKey] ? prev : { ...prev, [phaseKey]: true }));
-      return { success: true, data };
+  setPhaseGuardSent((prev) => (prev[phaseKey] ? prev : { ...prev, [phaseKey]: true }));
+  // Expose the sanitized reply text so callers (e.g., riddle judge/hint) can use it directly
+  return { success: true, data, text: replyText };
     } catch (err) {
       // Some runtimes surface aborts with name 'AbortError', others pass through the reason (e.g., 'skip')
       const isAbort = err?.name === 'AbortError' || err === 'skip' || err?.message === 'skip' || err?.cause === 'skip';
@@ -3872,6 +4065,30 @@ function SessionPageInner() {
       return Array.isArray(v) && v.length > 0;
     } catch { return false; }
   }, [getAvailableVocab]);
+
+  // Flatten vocab terms into a simple string array for caption highlighting during Discussion
+  const vocabTermsForHighlight = useMemo(() => {
+    try {
+      let terms = [];
+      const v = getAvailableVocab();
+      if (Array.isArray(v) && v.length) {
+        terms = v.map((it) => (typeof it === 'string' ? it : (it && typeof it === 'object' ? String(it.term || it.word || it.key || '') : '')));
+      } else {
+        // Fallback to title-derived terms when no explicit vocab is present
+        terms = getFallbackVocabFromTitle();
+      }
+      // Normalize, dedupe case-insensitively, keep original casing of first occurrence
+      const map = new Map();
+      for (const t of terms) {
+        const s = String(t || '').trim();
+        if (!s) continue;
+        const k = s.toLowerCase();
+        if (!map.has(k)) map.set(k, s);
+      }
+      // Sort by length descending so longer phrases are preferred in combined regex
+      return Array.from(map.values()).sort((a,b)=>b.length-a.length);
+    } catch { return []; }
+  }, [getAvailableVocab, getFallbackVocabFromTitle]);
 
   const promptGateRepeat = useCallback(async () => {
     // Hard-wired spoken gate with captions
@@ -6359,7 +6576,13 @@ function SessionPageInner() {
         setCaptionIndex(prevLen);
       } catch {}
       const result = await judgeRiddleAttempt(trimmed);
-      const line = (result && result.text) ? result.text : 'Not quite. Try again.';
+      const line = (result && result.text) ? result.text : '';
+      if (!line) {
+        // If the model returned nothing, keep silent here and just allow another attempt
+        setRiddleState('awaiting-solve');
+        setCanSend(true);
+        return;
+      }
       await speakFrontend(line);
       // If model said it's correct, end riddle and return to options; otherwise keep awaiting solve
       const isCorrect = /\b(correct|you got it|that\'?s right)\b/i.test(line);
@@ -6412,10 +6635,51 @@ function SessionPageInner() {
       const source = (lessonParam || effectiveLessonTitle || '').toString();
       const gradeMatch = source.match(/\b(1st|2nd|3rd|[4-9]th|1[0-2]th)\b/i);
       const gradeLevel = gradeMatch ? gradeMatch[0] : '';
+      // Try to load the lesson JSON so we can surface vocab for this Ask
+      let vocabChunk = '';
+      try {
+        const data = await ensureLessonDataReady();
+        const rawVocab = Array.isArray(data?.vocab) ? data.vocab : null;
+        if (rawVocab && rawVocab.length) {
+          // Normalize to up to 12 terms; include short definitions when provided
+          const items = rawVocab.slice(0, 12).map(v => {
+            if (typeof v === 'string') return { term: v, definition: '' };
+            const term = (v && (v.term || v.word || v.title || v.key || '')) || '';
+            const def = (v && (v.definition || v.meaning || v.explainer || '')) || '';
+            return { term: String(term), definition: String(def) };
+          }).filter(x => x.term);
+          if (items.length) {
+            const withDefs = items.some(x => x.definition);
+            if (withDefs) {
+              // Keep it brief: include at most 6 definition pairs to avoid bloating the prompt
+              const pairs = items.slice(0, 6).map(x => `${x.term}: ${x.definition}`).join('; ');
+              vocabChunk = `Relevant vocab for this lesson (use naturally): ${pairs}.`;
+            } else {
+              const list = items.map(x => x.term).join(', ');
+              vocabChunk = `Relevant vocab for this lesson (use naturally): ${list}.`;
+            }
+          }
+        }
+      } catch { /* vocab optional */ }
+      // Capture the current problem text shown when Ask was pressed, if any
+      let problemChunk = '';
+      try {
+        let body = (askReturnBodyRef?.current || activeQuestionBodyRef?.current || '').toString();
+        if (body) {
+          // Normalize whitespace and trim; cap to avoid prompt bloat
+          body = body.replace(/\s+/g, ' ').trim();
+          if (body.length > 400) body = body.slice(0, 400) + '…';
+          problemChunk = `Current problem context (for reference, do not re-read): "${body}".`;
+        }
+      } catch { /* problem context optional */ }
       const persona = [
         'You are Ms. Sonoma, a warm, playful, kid-friendly teacher who stays on task.',
         gradeLevel ? `The learner is a ${gradeLevel}-grade student.` : 'Speak to a school-age learner.',
         `The current lesson is "${effectiveLessonTitle}". Answer the learner\'s question briefly and clearly using correct terms but kid-friendly language.`,
+        // Include a compact vocab snippet so the model can use the right terms
+        vocabChunk,
+        // Provide the exact problem the learner is looking at
+        problemChunk,
         'Be encouraging, and keep focus on this lesson. Close with one gentle sentence that naturally returns us to the lesson topic. Do not ask a new question.'
       ].join(' ');
       const result = await callMsSonoma(
@@ -6508,6 +6772,8 @@ function SessionPageInner() {
           if (!trimmed) {
             const formatted = ensureQuestionMark(formatQuestionForSpeech(pick, { layout: 'multiline' }));
             const opener = ENCOURAGEMENT_SNIPPETS[Math.floor(Math.random() * ENCOURAGEMENT_SNIPPETS.length)] + '.';
+            // Track exactly what question body was spoken (without opener)
+            activeQuestionBodyRef.current = formatted;
             try { await speakFrontend(`${opener} ${formatted}`, { mcLayout: 'multiline' }); } catch {}
             setLearnerInput('');
             // Keep disabled until speaking done
@@ -6620,6 +6886,8 @@ function SessionPageInner() {
         if (!nearTarget && nextProblem) {
           setCurrentCompProblem(nextProblem);
           const nextQ = ensureQuestionMark(formatQuestionForSpeech(nextProblem, { layout: 'multiline' }));
+          // Remember the exact next question spoken
+          activeQuestionBodyRef.current = nextQ;
           try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
           setSubPhase('comprehension-active');
           setCanSend(false);
@@ -6634,6 +6902,8 @@ function SessionPageInner() {
       const qKey = (() => { try { return (problem?.question ?? formatQuestionForSpeech(problem)).trim(); } catch { return ''; } })();
       const wrongN = bumpWrongAttempt(qKey);
       const currQ = ensureQuestionMark(formatQuestionForSpeech(problem, { layout: 'multiline' }));
+      // When we re-ask with a hint or reveal, snapshot the question body
+      activeQuestionBodyRef.current = currQ;
       if (wrongN >= 3) {
         // Reveal answer on third incorrect
         const { primary: expectedPrimaryC, synonyms: expectedSynsC } = expandExpectedAnswer(problem.answer ?? problem.expected);
@@ -6689,6 +6959,8 @@ function SessionPageInner() {
         if (first) {
           setCurrentExerciseProblem(first);
           const q = ensureQuestionMark(formatQuestionForSpeech(first, { layout: 'multiline' }));
+          // Track first exercise question asked
+          activeQuestionBodyRef.current = q;
           try { await speakFrontend(q, { mcLayout: 'multiline' }); } catch {}
         }
         setCanSend(true);
@@ -6781,6 +7053,8 @@ function SessionPageInner() {
         if (!nearTarget && nextProblem) {
           setCurrentExerciseProblem(nextProblem);
           const nextQ = ensureQuestionMark(formatQuestionForSpeech(nextProblem, { layout: 'multiline' }));
+          // Remember the exact next exercise question spoken
+          activeQuestionBodyRef.current = nextQ;
           try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
           // Re-enable input after the next question has been spoken. While speaking, input is locked by speakingLock.
           setCanSend(true);
@@ -6795,6 +7069,8 @@ function SessionPageInner() {
       const qKeyE = (() => { try { return (problem?.question ?? formatQuestionForSpeech(problem)).trim(); } catch { return ''; } })();
       const wrongNE = bumpWrongAttempt(qKeyE);
       const currQ = ensureQuestionMark(formatQuestionForSpeech(problem, { layout: 'multiline' }));
+      // Snapshot the question we are re-asking with a hint
+      activeQuestionBodyRef.current = currQ;
       if (wrongNE >= 3) {
         const { primary: expectedPrimaryE2, synonyms: expectedSynsE2 } = expandExpectedAnswer(problem.answer ?? problem.expected);
         const anyOfE2 = expectedAnyList(problem);
@@ -6834,6 +7110,8 @@ function SessionPageInner() {
       if (!problem) {
         // Ask first question now and return
         const firstQ = ensureQuestionMark(formatQuestionForSpeech(list[0], { layout: 'multiline' }));
+        // Track first worksheet question asked
+        activeQuestionBodyRef.current = firstQ;
         try { await speakFrontend(firstQ, { mcLayout: 'multiline' }); } catch {}
         setCanSend(true);
         return;
@@ -6889,13 +7167,15 @@ function SessionPageInner() {
           return;
         }
         // Advance worksheet index and ask next
-        const nextIdx = Math.min(idx + 1, list.length - 1);
+    const nextIdx = Math.min(idx + 1, list.length - 1);
         worksheetIndexRef.current = nextIdx;
         setCurrentWorksheetIndex(nextIdx);
         setTicker(ticker + 1);
   const nextObj = list[nextIdx];
   const numN = (typeof nextObj?.number === 'number' && nextObj.number > 0) ? nextObj.number : (nextIdx + 1);
   const nextQ = ensureQuestionMark(`${numN}. ${formatQuestionForSpeech(nextObj, { layout: 'multiline' })}`);
+    // Remember the exact next worksheet question spoken
+    activeQuestionBodyRef.current = nextQ;
         try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
         setCanSend(true);
         return;
@@ -6906,6 +7186,8 @@ function SessionPageInner() {
       const wrongNW = bumpWrongAttempt(qKeyW);
       const currNum = (typeof problem?.number === 'number' && problem.number > 0) ? problem.number : (idx + 1);
       const currQ = ensureQuestionMark(`${currNum}. ${formatQuestionForSpeech(problem, { layout: 'multiline' })}`);
+      // Snapshot the worksheet question we are re-asking
+      activeQuestionBodyRef.current = currQ;
       if (wrongNW >= 3) {
         const { primary: expectedPrimaryW2, synonyms: expectedSynsW2 } = expandExpectedAnswer(problem.answer ?? problem.expected);
         const anyOfW2 = expectedAnyList(problem);
@@ -6994,6 +7276,8 @@ function SessionPageInner() {
           if (!isFinal) {
             const nextObj = generatedTest[nextIdx];
             const nextQ = ensureQuestionMark(`${nextIdx + 1}. ${formatQuestionForSpeech(nextObj, { layout: 'multiline' })}`);
+            // Remember the exact next test question spoken
+            activeQuestionBodyRef.current = nextQ;
             try { await speakFrontend(`${speech} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
             setTestActiveIndex(nextIdx);
             setCanSend(true);
@@ -7430,24 +7714,7 @@ function SessionPageInner() {
   testList={Array.isArray(generatedTest) ? generatedTest : []}
         onCompleteLesson={onCompleteLesson}
       />
-      {(phase === 'worksheet' && subPhase === 'worksheet-active' && (() => {
-        try {
-          const list = Array.isArray(generatedWorksheet) ? generatedWorksheet : [];
-          const idx = (typeof currentWorksheetIndex === 'number') ? currentWorksheetIndex : 0;
-          const limit = Math.min((typeof WORKSHEET_TARGET === 'number' && WORKSHEET_TARGET > 0) ? WORKSHEET_TARGET : list.length, list.length);
-          return limit > 0 && (idx + 1) >= limit;
-        } catch { return false; }
-      })()) && (
-        <div style={{ display:'flex', justifyContent:'center', paddingTop: 8, paddingBottom: 8 }}>
-          <button
-            type="button"
-            onClick={() => { try { setPhase('test'); } catch {}; try { setSubPhase('review-start'); } catch {}; try { setCanSend(false); } catch {}; }}
-            style={{ background:'#2563EB', color:'#fff', fontWeight:800, letterSpacing:0.3, borderRadius:10, padding:'10px 16px', border:'none', cursor:'pointer', boxShadow:'0 6px 16px rgba(0,0,0,0.25)' }}
-          >
-            Review
-          </button>
-        </div>
-      )}
+      {/* Worksheet end-of-phase Review button removed per requirements */}
     </div>
   <div ref={captionColRef} style={(() => {
         const showScrollable = (phase === 'congrats') || (phase === 'test' && typeof subPhase === 'string' && subPhase.startsWith('review'));
@@ -7563,6 +7830,8 @@ function SessionPageInner() {
           compact={isMobileLandscape}
           fullHeight={isMobileLandscape && !!(sideBySideHeight || videoMaxHeight)}
           stackedHeight={(!isMobileLandscape && stackedCaptionHeight) ? stackedCaptionHeight : null}
+          phase={phase}
+          vocabTerms={vocabTermsForHighlight}
         />
       )}
     </div>
@@ -7579,7 +7848,19 @@ function SessionPageInner() {
   {/* Fixed footer with input controls (downloads removed) */}
       <div ref={footerRef} style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 999, background: '#ffffff', borderTop: '1px solid #e5e7eb', boxShadow: '0 -4px 20px rgba(0,0,0,0.06)' }}>
       {/* Footer padding: default 4px, reduce to 2px when short-height AND landscape. Add horizontal inset when controls are relocated to footer. */}
-      <div style={{ margin: '0 auto', width: '100%', boxSizing: 'border-box', padding: (isShortHeight && isMobileLandscape) ? '2px 16px calc(2px + env(safe-area-inset-bottom, 0px))' : '4px 12px calc(4px + env(safe-area-inset-bottom, 0px))' }}>
+      <div
+        aria-hidden={overlayLoading ? true : undefined}
+        style={{
+          margin: '0 auto',
+          width: '100%',
+          boxSizing: 'border-box',
+          padding: (isShortHeight && isMobileLandscape) ? '2px 16px calc(2px + env(safe-area-inset-bottom, 0px))' : '4px 12px calc(4px + env(safe-area-inset-bottom, 0px))',
+          // Prevent initial flicker: hide footer contents while the loading overlay is visible
+          opacity: overlayLoading ? 0 : 1,
+          pointerEvents: overlayLoading ? 'none' : 'auto',
+          transition: 'opacity 120ms linear'
+        }}
+      >
           {/* When the screen height is very short, relocate video overlay controls into the footer. If a Begin row is present, controls join that row. */}
           {(() => {
             try {
@@ -7600,7 +7881,7 @@ function SessionPageInner() {
               let qa = null;
               try {
                 // Show hard-wired Yes/No during teaching gate; hide while speaking (belt-and-suspenders)
-                if (phase === 'teaching' && subPhase === 'awaiting-gate' && !isSpeaking) {
+                if (phase === 'teaching' && subPhase === 'awaiting-gate' && !isSpeaking && askState === 'inactive') {
                   const qaWrap = { display:'flex', alignItems:'center', justifyContent:'center', gap:8, flex:1, flexWrap:'wrap', padding:'0 8px' };
                   const qaBtn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight: (isShortHeight && isMobileLandscape) ? 32 : 36, minWidth:56, fontWeight:700, border:'none', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.18)' };
                   qa = (
@@ -7615,7 +7896,7 @@ function SessionPageInner() {
                       >Ask</button>
                     </div>
                   );
-                } else if (!sendDisabled) {
+                } else if (!sendDisabled && askState === 'inactive') {
                   let active = null;
                   if (phase === 'comprehension') {
                     active = currentCompProblem || null;
@@ -7644,6 +7925,12 @@ function SessionPageInner() {
                         <div style={qaWrap} aria-label="Quick answer: true or false">
                           <button type="button" style={qaBtn} onClick={() => handleSend('true')}>True</button>
                           <button type="button" style={qaBtn} onClick={() => handleSend('false')}>False</button>
+                          <button
+                            type="button"
+                            style={{ ...qaBtn, minWidth: 100, opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
+                            onClick={askState === 'inactive' ? handleAskQuestionStart : undefined}
+                            disabled={askState !== 'inactive'}
+                          >Ask</button>
                         </div>
                       );
                     } else {
@@ -7656,6 +7943,24 @@ function SessionPageInner() {
                             {letters.map((L) => (
                               <button key={L} type="button" style={qaBtn} onClick={() => handleSend(L)}>{L}</button>
                             ))}
+                            <button
+                              type="button"
+                              style={{ ...qaBtn, minWidth: 100, opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
+                              onClick={askState === 'inactive' ? handleAskQuestionStart : undefined}
+                              disabled={askState !== 'inactive'}
+                            >Ask</button>
+                          </div>
+                        );
+                      } else {
+                        // Short-answer or fill-in-the-blank: show Ask as the sole quick action
+                        qa = (
+                          <div style={qaWrap} aria-label="Ask about the current question">
+                            <button
+                              type="button"
+                              style={{ ...qaBtn, minWidth: 120, opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
+                              onClick={askState === 'inactive' ? handleAskQuestionStart : undefined}
+                              disabled={askState !== 'inactive'}
+                            >Ask</button>
                           </div>
                         );
                       }
@@ -7948,12 +8253,14 @@ function SessionPageInner() {
             const btnBase = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
             const yesBtn = { ...btnBase, background:'#065f46' };
             const noBtn = { ...btnBase, background:'#7f1d1d' };
+            const backBtn = { ...btnBase, background:'#374151' };
             return (
               <div style={wrap} aria-label="Ask confirmation">
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                   <button type="button" style={yesBtn} onClick={handleAskConfirmYes}>Yes</button>
                   <button type="button" style={noBtn} onClick={handleAskConfirmNo}>No</button>
                   <button type="button" style={btnBase} onClick={handleAskAnother}>Ask another question</button>
+                  <button type="button" style={backBtn} onClick={handleAskBack}>Back</button>
                 </div>
               </div>
             );
@@ -7977,15 +8284,15 @@ function SessionPageInner() {
               if (!active) return null;
               const wrap = { display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'6px 12px', flexWrap:'wrap' };
               const btnBase = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
-              const solveBtn = { ...btnBase, background:'#065f46' };
+              const backBtn = { ...btnBase, background:'#374151' };
               const hintBtn = { ...btnBase, background:'#b45309' };
               const answerBtn = { ...btnBase, background:'#374151' };
               return (
                 <div style={wrap} aria-label="Riddle actions">
                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    <button type="button" style={solveBtn} onClick={handleRiddleSolve}>Solve</button>
                     <button type="button" style={hintBtn} onClick={requestRiddleHint}>Hint</button>
                     <button type="button" style={answerBtn} onClick={revealRiddleAnswer}>Tell me the answer</button>
+                    <button type="button" style={backBtn} onClick={handleRiddleBack}>Back</button>
                   </div>
                 </div>
               );
@@ -8000,7 +8307,7 @@ function SessionPageInner() {
           {(() => {
             try {
               // Show teaching gate Yes/No when awaiting-gate; hide while speaking (belt-and-suspenders)
-              if (phase === 'teaching' && subPhase === 'awaiting-gate' && !isSpeaking) {
+              if (phase === 'teaching' && subPhase === 'awaiting-gate' && !isSpeaking && askState === 'inactive') {
                 const containerStyle = {
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 8,
                   paddingLeft: isMobileLandscape ? 12 : '4%', paddingRight: isMobileLandscape ? 12 : '4%', marginBottom: 6,
@@ -8025,6 +8332,8 @@ function SessionPageInner() {
                 phase === 'comprehension' || phase === 'exercise' || phase === 'worksheet' || phase === 'test'
               );
               if (isQnAPhase && !qaAnswersUnlocked) return null;
+              // Hide while Ask flow is active to avoid overlapping controls
+              if (askState !== 'inactive') return null;
               if (sendDisabled) return null; // respect gating otherwise
               if (isShortHeight) {
                 // When short, quick answers render inline with the controls row above.
@@ -8090,6 +8399,12 @@ function SessionPageInner() {
                   <div style={containerStyle} aria-label="Quick answer: true or false">
                     <button type="button" style={btnBase} onClick={() => handleSend('true')}>True</button>
                     <button type="button" style={btnBase} onClick={() => handleSend('false')}>False</button>
+                    <button
+                      type="button"
+                      style={{ ...btnBase, minWidth: 100, background: '#374151', opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
+                      onClick={askState === 'inactive' ? handleAskQuestionStart : undefined}
+                      disabled={askState !== 'inactive'}
+                    >Ask</button>
                   </div>
                 );
               }
@@ -8104,9 +8419,27 @@ function SessionPageInner() {
                     {letters.map((L) => (
                       <button key={L} type="button" style={btnBase} onClick={() => handleSend(L)}>{L}</button>
                     ))}
+                    <button
+                      type="button"
+                      style={{ ...btnBase, minWidth: 100, background: '#374151', opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
+                      onClick={askState === 'inactive' ? handleAskQuestionStart : undefined}
+                      disabled={askState !== 'inactive'}
+                    >Ask</button>
                   </div>
                 );
               }
+
+              // Short-answer or fill-in-the-blank: show Ask-only button
+              return (
+                <div style={containerStyle} aria-label="Ask about the current question">
+                  <button
+                    type="button"
+                    style={{ ...btnBase, minWidth: 120, background: '#374151', opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
+                    onClick={askState === 'inactive' ? handleAskQuestionStart : undefined}
+                    disabled={askState !== 'inactive'}
+                  >Ask</button>
+                </div>
+              );
             } catch {}
             return null;
           })()}
@@ -8983,7 +9316,7 @@ function DownloadPanel({
   );
 }
 
-function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact = false, fullHeight = false, stackedHeight = null }) {
+function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact = false, fullHeight = false, stackedHeight = null, phase, vocabTerms = [] }) {
   const [canScroll, setCanScroll] = useState(false);
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(true);
@@ -9147,6 +9480,41 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
                 }
               } catch {}
             }
+            // Build highlighted parts when in Discussion and vocab terms exist; skip for user lines and MC renders
+            let highlighted = null;
+            try {
+              if (!mcRender && s.role !== 'user' && (phase === 'discussion' || phase === 'teaching') && text) {
+                const terms = Array.isArray(vocabTerms) ? vocabTerms.filter(Boolean).map(t => String(t).trim()).filter(Boolean) : [];
+                if (terms.length) {
+                  const esc = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                  // Cross-compatible boundary emulation using prefix capture; allow simple plural/possessive
+                  const core = terms.map(esc).sort((a,b)=>b.length-a.length).join('|');
+                  const pattern = new RegExp(`(^|[^A-Za-z0-9])(${core})(?:'s|s)?(?![A-Za-z0-9])`, 'gi');
+                  const parts = [];
+                  let lastIndex = 0;
+                  let m;
+                  while ((m = pattern.exec(text)) !== null) {
+                    const start = m.index;
+                    const prefix = m[1] || '';
+                    const coreTerm = m[2] || '';
+                    const full = m[0] || '';
+                    const suffix = full.slice(prefix.length + coreTerm.length);
+                    // Add text before match
+                    if (start > lastIndex) parts.push(text.slice(lastIndex, start));
+                    // Add prefix unbolded
+                    if (prefix) parts.push(prefix);
+                    // Bold the term plus any simple suffix
+                    const boldKey = `b-${idx}-${start}`;
+                    parts.push(<strong key={boldKey}>{coreTerm + suffix}</strong>);
+                    lastIndex = start + full.length;
+                  }
+                  if (lastIndex > 0) {
+                    if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+                    highlighted = parts;
+                  }
+                }
+              }
+            } catch {}
             return (
               <div key={idx} data-idx={idx} style={{ ...containerBase, ...(activeContainer || {}) }} aria-current={isActive ? 'true' : undefined}>
                 {s.role === 'user' ? (
@@ -9154,7 +9522,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
                 ) : mcRender ? (
                   <div style={{ ...textBase, ...activeText }}>{mcRender}</div>
                 ) : (
-                  <div style={{ ...textBase, ...activeText }}>{text}</div>
+                  <div style={{ ...textBase, ...activeText }}>{highlighted || text}</div>
                 )}
               </div>
             );

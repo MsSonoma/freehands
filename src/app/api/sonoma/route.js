@@ -62,11 +62,20 @@ function addMcBreaks(escaped, breakMs) {
 }
 
 // Convert plain text to SSML with MC pauses
+function normalizeBlanksForSpeech(escaped) {
+  try {
+    // Speak runs of three or more underscores as the word "blank" with a brief pause.
+    // This avoids the engine reading out "underscore underscore ..." which is distracting.
+    return escaped.replace(/_{2,}/g, ' blank <break time="250ms"/> ')
+  } catch { return escaped }
+}
+
 function toSsml(text) {
   const safe = escapeForSsml(text)
   // Insert short breaks for paragraph/blank-line gaps (used to pace jokes and similar beats)
   const withParagraphBreaks = safe.replace(/(?:\r?\n){2,}/g, ' <break time="700ms"/> ')
-  const withBreaks = addMcBreaks(withParagraphBreaks, getMcBreakMs())
+  const withBlanks = normalizeBlanksForSpeech(withParagraphBreaks)
+  const withBreaks = addMcBreaks(withBlanks, getMcBreakMs())
   return `<speak>${withBreaks}</speak>`
 }
 
@@ -241,8 +250,11 @@ export async function POST(req) {
         return NextResponse.json({ error: 'Ms. Sonoma is unavailable.' }, { status: 500 })
       }
     }
-    // Minimal user payload: only current step’s instructions (no system, no extra user messages)
-    const userMessages = [{ role: 'user', content: trimmedInstructions }]
+    // Minimal user payload: single user message containing instructions + (optional) innertext
+    const combined = trimmedInnertext
+      ? `${trimmedInstructions}\n\nLearner question: "${trimmedInnertext}"`
+      : trimmedInstructions
+    const userMessages = [{ role: 'user', content: combined }]
   // (Removed duplicate user payload log to reduce noise; instructions + innertext logs above are sufficient.)
 
     let msSonomaReply = ''
