@@ -30,7 +30,7 @@ export default function SessionPage(){
 const CLEAN_SPEECH_INSTRUCTION =
   "Always respond with natural spoken text only. Do not use emojis, decorative characters, repeated punctuation, ASCII art, bullet lines, or other symbols that would be awkward to read aloud.";
 
-// Global guardrails for Ms. Sonoma (system-side, not spoken):
+// Global guardrails for Ms. Sonoma (system-side, not spoken)
 const GUARD_INSTRUCTION = [
   "You are Ms. Sonoma. Teach the defined lesson. If vocab is provided, use it during teaching only.",
   "Do not mention or reference the words 'exercise', 'worksheet', 'test', 'exam', 'quiz', or 'answer key' in your spoken responses during discussion, teaching, or comprehension phases.",
@@ -481,6 +481,7 @@ function SessionPageInner() {
   // URL params: subject/lesson/difficulty with safe defaults used throughout this component
   // Kept near the top so any effects/handlers can safely reference them without TDZ issues
   const searchParams = useSearchParams();
+  const router = useRouter();
   const subjectParam = (searchParams?.get('subject') || 'math').toLowerCase();
   const lessonParam = searchParams?.get('lesson') || '';
   const difficultyParam = (searchParams?.get('difficulty') || 'beginner').toLowerCase();
@@ -1396,8 +1397,14 @@ function SessionPageInner() {
   // Helper to use any provided expectedAny list from lesson JSON
   const expectedAnyList = (q) => {
     try {
-      const a = Array.isArray(q?.expectedAny) ? q.expectedAny.filter(Boolean) : [];
-      const b = Array.isArray(q?.acceptable) ? q.acceptable.filter(Boolean) : [];
+      // Keep boolean false; drop only null/undefined and empty strings after trim
+      const keep = (v) => {
+        if (v == null) return false;
+        const s = typeof v === 'string' ? v.trim() : v;
+        return !(typeof s === 'string' && s.length === 0);
+      };
+      const a = Array.isArray(q?.expectedAny) ? q.expectedAny.filter(keep) : [];
+      const b = Array.isArray(q?.acceptable) ? q.acceptable.filter(keep) : [];
       const merged = [...a, ...b];
       return merged.length ? merged : null;
     } catch { return null; }
@@ -2919,10 +2926,64 @@ function SessionPageInner() {
     return dp[bl];
   };
 
+  // Lightweight synonym support for short answer leniency (normalized, stemmed tokens)
+  const SYNONYM_GROUPS = [
+    ['kid','child','student','pupil'],
+    ['children','kids','students','pupils'],
+    ['buy','purchase','acquire'],
+    ['big','large','huge'],
+    ['small','little','tiny','mini'],
+    ['start','begin','commence'],
+    ['end','finish','complete','conclude'],
+    ['because','since','as'],
+    ['answer','response','reply','solution'],
+    ['ask','question','inquire'],
+    ['fast','quick','rapid','speedy'],
+    ['teacher','instructor','educator']
+  ];
+  const SYNONYMS_INDEX = (() => {
+    const m = new Map();
+    for (const group of SYNONYM_GROUPS) {
+      const set = new Set(group);
+      for (const w of group) m.set(w, set);
+    }
+    return m;
+  })();
+  const tokensSimilar = (a, b) => {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    // synonym group match
+    const ga = SYNONYMS_INDEX.get(a);
+    if (ga && ga.has(b)) return true;
+    // small typo tolerance for longer tokens
+    if (Math.abs(a.length - b.length) <= 1) {
+      const L = Math.max(a.length, b.length);
+      if (L >= 5 && levenshtein(a, b) <= 1) return true;
+    }
+    return false;
+  };
+  const phraseSimilarity = (phraseTokens, learnerTokensArr) => {
+    if (!phraseTokens.length) return 0;
+    let matched = 0;
+    for (const t of phraseTokens) {
+      if (STOPWORDS.has(t)) continue;
+      const ok = learnerTokensArr.some((lt) => tokensSimilar(t, lt));
+      if (ok) matched += 1;
+    }
+    const total = phraseTokens.filter(t => !STOPWORDS.has(t)).length || phraseTokens.length;
+    return total ? (matched / total) : 0;
+  };
+  const meetsPhraseThreshold = (tokensCount, ratio) => {
+    if (tokensCount <= 1) return ratio >= 1; // single-word must match
+    if (tokensCount === 2) return ratio >= 1; // two-word phrases require both to avoid false positives
+    return ratio >= 0.6; // 3+ words: allow partial coverage
+  };
+
   // Unified local correctness check with leniency
   const isAnswerCorrectLocal = (learnerRaw, acceptableList, problem) => {
     const learnerNorm = normalizeAnswer(String(learnerRaw ?? ''));
     const accNorm = Array.from(new Set((acceptableList || []).map(a => normalizeAnswer(String(a ?? '')))));
+    const hasChoices = isMultipleChoice(problem);
 
     // Accept single MC letter embedded (e.g., "I think b")
     const letterMatch = learnerNorm.match(/(?:^|\s)([a-d])(?:\s|$)/i);
@@ -2943,34 +3004,35 @@ function SessionPageInner() {
     // Exact normalized equality
     if (accNorm.includes(learnerNorm)) return true;
 
-    // Token-subset acceptance: all core tokens of an acceptable phrase appear in learner tokens (order-free)
-    const learnerTokens = new Set(tokensFromNormalized(learnerNorm));
+    // Token/phrase acceptance
+    const learnerTokensArr = Array.from(new Set(tokensFromNormalized(learnerNorm)));
+    const learnerTokensSet = new Set(learnerTokensArr);
     for (const a of accNorm) {
       if (/^[a-d]$/i.test(a)) continue; // skip bare letters here
-      const aTokens = tokensFromNormalized(a).filter(t => !STOPWORDS.has(t));
-      if (aTokens.length && aTokens.every(t => learnerTokens.has(t))) return true;
+      const aTokensRaw = tokensFromNormalized(a);
+      const aTokens = aTokensRaw.filter(t => !STOPWORDS.has(t));
+      if (!aTokens.length) continue;
+      // Strict subset for MC/TF; lenient phrase similarity for short answer
+      if (hasChoices || isTrueFalse(problem)) {
+        if (aTokens.every(t => learnerTokensSet.has(t))) return true;
+      } else {
+        const ratio = phraseSimilarity(aTokens, learnerTokensArr);
+        if (meetsPhraseThreshold(aTokens.length, ratio)) return true;
+      }
     }
 
     // Short-answer keyword path for non-MC/TF
-    const hasChoices = isMultipleChoice(problem);
     if (!hasChoices && !isTFq) {
       const kws = Array.isArray(problem?.keywords) ? problem.keywords.filter(Boolean).map(String) : [];
       const minK = Number.isInteger(problem?.minKeywords) ? problem.minKeywords : (kws.length ? 1 : 0);
       if (kws.length && minK >= 0) {
-        const ltoks = Array.from(learnerTokens);
+        const ltoks = learnerTokensArr.slice();
         let hits = 0;
         for (const kw of kws) {
-          const kwTokens = tokensFromNormalized(kw);
-          // All tokens of a keyword phrase must be present (with light fuzz) to count as one hit
-          const ok = kwTokens.length > 0 && kwTokens.every(kt => {
-            if (learnerTokens.has(kt)) return true;
-            // fuzzy for tokens length >= 4 (distance <= 1)
-            if (kt.length >= 4) {
-              return ltoks.some(t => Math.abs(t.length - kt.length) <= 1 && levenshtein(t, kt) <= 1);
-            }
-            return false;
-          });
-          if (ok) hits += 1;
+          const kwTokens = tokensFromNormalized(kw).filter(t => !STOPWORDS.has(t));
+          if (!kwTokens.length) continue;
+          const ratio = phraseSimilarity(kwTokens, ltoks);
+          if (meetsPhraseThreshold(kwTokens.length, ratio)) hits += 1;
         }
         if (hits >= minK) return true;
       }
@@ -3092,7 +3154,7 @@ function SessionPageInner() {
       if (/^(true\s*\/\s*false|truefalse|tf)$/i.test(typeField)) return true;
       if (/^(true\s*\/\s*false|truefalse|tf)$/i.test(qType)) return true;
       // Heuristic: treat as TF when expected/answer is literally true/false
-      const exp = String(item?.expected ?? item?.answer ?? '').trim().toLowerCase();
+  const exp = String((item?.expected ?? item?.answer) ?? '').trim().toLowerCase();
       if (exp === 'true' || exp === 'false') return true;
       const any = Array.isArray(item?.expectedAny) ? item.expectedAny.map((v) => String(v).trim().toLowerCase()) : [];
       if (any.includes('true') || any.includes('false')) return true;
@@ -3267,7 +3329,8 @@ function SessionPageInner() {
   // Derive a speakable/displayable "correct answer" text using front-end info
   const deriveCorrectAnswerText = (problem, acceptableList = [], expectedPrimary = '') => {
     try {
-      const rawExpected = [problem?.answer, problem?.expected].map(v => String(v ?? '').trim()).find(Boolean) || '';
+  const rawExpected = [problem?.answer, problem?.expected].find(v => v != null && String(v).trim().length > 0);
+  const rawExpectedStr = rawExpected != null ? String(rawExpected).trim() : '';
       const options = Array.isArray(problem?.options) ? problem.options : (Array.isArray(problem?.choices) ? problem.choices : []);
       // MC: prefer letter + option text
       const letter = letterForAnswer(problem, acceptableList);
@@ -3281,11 +3344,11 @@ function SessionPageInner() {
         const accNorm = new Set((acceptableList || []).map(a => normalizeAnswer(a)));
         if (accNorm.has('true')) return 'True';
         if (accNorm.has('false')) return 'False';
-        if (/^\s*true\s*$/i.test(rawExpected)) return 'True';
-        if (/^\s*false\s*$/i.test(rawExpected)) return 'False';
+  if (/^\s*true\s*$/i.test(rawExpectedStr)) return 'True';
+  if (/^\s*false\s*$/i.test(rawExpectedStr)) return 'False';
       }
       // Prefer raw expected text if provided
-      if (rawExpected) return rawExpected;
+  if (rawExpectedStr) return rawExpectedStr;
       // Otherwise use the first meaningful acceptable (skip bare letters)
       const acceptableClean = Array.from(new Set((acceptableList || [])
         .map(s => String(s || '').trim())
@@ -5736,19 +5799,20 @@ function SessionPageInner() {
     setCanSend(true);
   };
 
-  // Keep grade percent and count in sync with correctness array.
+  // During facilitator review (now a Test subphase): keep preview grade percent and count in sync with correctness array.
   useEffect(() => {
-    if (phase !== 'congrats') return; // only matter in preview
+    const inTestReview = (phase === 'test' && typeof subPhase === 'string' && subPhase.startsWith('review'));
+    if (!inTestReview) return; // only recompute while in the review subphase under Test
     try {
       const total = Array.isArray(generatedTest) ? generatedTest.length : 0;
       const correct = Array.isArray(testCorrectByIndex) ? testCorrectByIndex.filter(Boolean).length : 0;
       const percent = Math.round((correct / Math.max(1, total)) * 100);
       if (Number.isFinite(correct)) setTestCorrectCount(correct);
-      if (Number.isFinite(percent)) setTestFinalPercent(percent);
+      // Defer committing the final percent until after facilitator accepts
     } catch {}
-  }, [phase, generatedTest, testCorrectByIndex]);
+  }, [phase, subPhase, generatedTest, testCorrectByIndex]);
 
-  // Persist medal when final percent changes in congrats (best-of safeguard handled in client)
+  // Persist medal when final percent changes in congrats (post-review)
   useEffect(() => {
     if (phase !== 'congrats') return;
     if (typeof testFinalPercent !== 'number') return;
@@ -5845,13 +5909,99 @@ function SessionPageInner() {
     }
   };
 
+  // Finalize facilitator review: lock score, then advance to congrats
+  const finalizeReview = useCallback(async () => {
+    try { abortAllActivity(); } catch {}
+    const total = Array.isArray(generatedTest) ? generatedTest.length : 0;
+    const correct = Array.isArray(testCorrectByIndex) ? testCorrectByIndex.filter(Boolean).length : 0;
+    const safePercent = Math.round((correct / Math.max(1, Math.max(1, total))) * 100);
+    try { setTestFinalPercent(safePercent); } catch {}
+    setPhase('congrats');
+    setSubPhase('congrats-done');
+    setCanSend(false);
+    // Auto-start congrats speech so captions immediately return to transcript
+    try { setCongratsStarted(true); } catch {}
+    // Persist medal on effect when congrats
+  }, [generatedTest, testCorrectByIndex, speakFrontend]);
+
+  // Speak congrats summary once upon entering congrats
+  const congratsSpokenRef = useRef(false);
+  // Defer auto-review transitions while final TTS feedback is playing
+  const reviewDeferRef = useRef(false);
+  const [congratsStarted, setCongratsStarted] = useState(false);
+  const [congratsSpeaking, setCongratsSpeaking] = useState(false);
+  const [congratsDone, setCongratsDone] = useState(false);
+  useEffect(() => {
+    if (phase === 'congrats' && typeof testFinalPercent === 'number' && congratsStarted && !congratsSpokenRef.current) {
+      const learnerName = (typeof window !== 'undefined' ? (localStorage.getItem('learner_name') || '') : '').trim();
+      const lines = [
+        `Your score is ${testFinalPercent}%.`,
+        'Nice work today. I am proud of you.',
+        'Keep learning and having fun.',
+        learnerName ? `Goodbye ${learnerName}.` : 'Goodbye.'
+      ].join(' ');
+      (async () => {
+        setCongratsSpeaking(true);
+        setCongratsDone(false);
+        try { await speakFrontend(lines); } catch {}
+        setCongratsSpeaking(false);
+        setCongratsDone(true);
+      })();
+      congratsSpokenRef.current = true;
+    }
+    if (phase !== 'congrats') {
+      congratsSpokenRef.current = false;
+      setCongratsStarted(false);
+      setCongratsSpeaking(false);
+      setCongratsDone(false);
+    }
+  }, [phase, testFinalPercent, congratsStarted]);
+
   
 
   // ------------------------------
   // Automatic Test Review Sequence
-  // After the learner finishes silent test input, we deliver a review intro.
-  // Then we automatically iterate each question without requiring user input.
-  // Final summary now receives externally computed score so the model just reports it.
+  // When the test target is reached and Ms. Sonoma has finished speaking, enter review.
+  useEffect(() => {
+    try {
+      // Do not retrigger if we're already in test-review or in congrats
+      if (phase === 'congrats') return;
+      if (phase === 'test' && typeof subPhase === 'string' && subPhase.startsWith('review')) return;
+      if (reviewDeferRef.current) return; // Hold while we intentionally speak final feedback
+      if (isSpeaking) return; // Wait until TTS feedback is finished
+      if (phase !== 'test') return; // Treat test as the authoritative phase
+      const list = Array.isArray(generatedTest) ? generatedTest : [];
+      const limit = Math.min((typeof TEST_TARGET === 'number' && TEST_TARGET > 0) ? TEST_TARGET : list.length, list.length);
+      const answeredCount = Array.isArray(testUserAnswers) ? testUserAnswers.filter(v => typeof v === 'string' && v.length > 0).length : 0;
+      const judgedCount = Array.isArray(testCorrectByIndex) ? testCorrectByIndex.filter(v => typeof v !== 'undefined').length : 0;
+      const idxDone = (typeof testActiveIndex === 'number' ? testActiveIndex : 0) >= limit;
+      const finished = limit > 0 && (answeredCount >= limit || judgedCount >= limit || idxDone);
+      if (finished) {
+        try { setCanSend(false); } catch {}
+        try { setSubPhase('review-start'); } catch {}
+      }
+    } catch {}
+  }, [phase, subPhase, generatedTest, testUserAnswers, testCorrectByIndex, testActiveIndex, isSpeaking]);
+
+  // Direct trigger: when target is met during test (by answers or judged), enter Review after TTS completes
+  useEffect(() => {
+    try {
+      if (phase !== 'test') return;
+      if (reviewDeferRef.current) return; // Hold while final feedback is speaking
+      if (isSpeaking) return; // Do not transition mid-speech
+      if (typeof subPhase === 'string' && subPhase.startsWith('review')) return; // Already in review subphase
+      const list = Array.isArray(generatedTest) ? generatedTest : [];
+      const limit = Math.min((typeof TEST_TARGET === 'number' && TEST_TARGET > 0) ? TEST_TARGET : list.length, list.length);
+      if (limit <= 0) return;
+      const answeredCount = Array.isArray(testUserAnswers) ? testUserAnswers.filter(v => typeof v === 'string' && v.length > 0).length : 0;
+      const judgedCount = Array.isArray(testCorrectByIndex) ? testCorrectByIndex.filter(v => typeof v !== 'undefined').length : 0;
+      const idxDone = (typeof testActiveIndex === 'number' ? testActiveIndex : 0) >= limit;
+      if (answeredCount >= limit || judgedCount >= limit || idxDone || (typeof ticker === 'number' && ticker >= limit)) {
+        try { setCanSend(false); } catch {}
+        try { setSubPhase('review-start'); } catch {}
+      }
+    } catch {}
+  }, [phase, generatedTest, testUserAnswers, testCorrectByIndex, testActiveIndex, ticker, isSpeaking, subPhase]);
   const finalizeTestAndFarewell = async ({ correctCount, total, percent } = {}) => {
     if (!generatedTest || !generatedTest.length) return;
     const fallbackTotal = generatedTest.length;
@@ -5864,17 +6014,15 @@ function SessionPageInner() {
       const lines = [
         `Your score is ${safePercent}%.`,
         'Nice work today. I am proud of you.',
-        'One more joke before we go.',
-        'Why did the pencil cross the paper? To get to the other side.',
         'Keep learning and having fun.',
         learnerName ? `Goodbye ${learnerName}.` : 'Goodbye.'
       ].join(' ');
       await speakFrontend(lines);
     } catch {}
-    setPhase('congrats');
-    setSubPhase('congrats-done');
-    setCanSend(false);
-    try { setTestFinalPercent(safePercent); } catch {}
+  setPhase('congrats');
+  setSubPhase('congrats-done');
+  setCanSend(false);
+  try { setTestFinalPercent(safePercent); } catch {}
     // Persist medal
     try {
       const learnerId = (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null) || null;
@@ -6370,7 +6518,7 @@ function SessionPageInner() {
 
       // Build acceptable answers for local judging
   // Accept both schema variants: some items use `answer`, others use `expected`
-  const { primary: expectedPrimary, synonyms: expectedSyns } = expandExpectedAnswer(problem.answer || problem.expected);
+  const { primary: expectedPrimary, synonyms: expectedSyns } = expandExpectedAnswer(problem.answer ?? problem.expected);
       const anyOf = expectedAnyList(problem);
       let acceptable = anyOf && anyOf.length ? Array.from(new Set(anyOf.map(String))) : [expectedPrimary, ...expectedSyns];
       // If the data provides a numeric correct index, use it to add the letter and option text to acceptable
@@ -6529,7 +6677,7 @@ function SessionPageInner() {
       }
 
       // Build acceptable answers
-      const { primary: expectedPrimaryE, synonyms: expectedSynsE } = expandExpectedAnswer(problem.answer || problem.expected);
+  const { primary: expectedPrimaryE, synonyms: expectedSynsE } = expandExpectedAnswer(problem.answer ?? problem.expected);
       const anyOfE = expectedAnyList(problem);
       let acceptableE = anyOfE && anyOfE.length ? Array.from(new Set(anyOfE.map(String))) : [expectedPrimaryE, ...expectedSynsE];
       // If numeric correct index exists, add letter and option text
@@ -6623,7 +6771,7 @@ function SessionPageInner() {
       const atTarget = (nextCount === totalLimit);
 
       // Build acceptable answers
-      const { primary: expectedPrimaryW, synonyms: expectedSynsW } = expandExpectedAnswer(problem.answer || problem.expected);
+  const { primary: expectedPrimaryW, synonyms: expectedSynsW } = expandExpectedAnswer(problem.answer ?? problem.expected);
       const anyOfW = expectedAnyList(problem);
       let acceptableW = anyOfW && anyOfW.length ? Array.from(new Set(anyOfW.map(String))) : [expectedPrimaryW, ...expectedSynsW];
       try {
@@ -6705,7 +6853,7 @@ function SessionPageInner() {
           setTestUserAnswers(answersNow);
 
           // Build acceptable answers (letter + option text support)
-          const { primary: expectedPrimaryT, synonyms: expectedSynsT } = expandExpectedAnswer(qObj.answer || qObj.expected);
+          const { primary: expectedPrimaryT, synonyms: expectedSynsT } = expandExpectedAnswer(qObj.answer ?? qObj.expected);
           const anyOfT = expectedAnyList(qObj);
           let acceptableT = anyOfT && anyOfT.length ? Array.from(new Set(anyOfT.map(String))) : [expectedPrimaryT, ...expectedSynsT];
           try {
@@ -6758,18 +6906,26 @@ function SessionPageInner() {
             return;
           }
 
-          // Last question: speak feedback, then finalize
-          try { await speakFrontend(speech); } catch {}
-          const total = totalLimit;
-          const correct = testCorrectCount + (judgedCorrect ? 1 : 0);
+          // Last question: speak feedback + brief encouragement, then go straight to facilitator review
           try { setTestCorrectByIndex(prev => { const a = Array.isArray(prev) ? prev.slice() : []; a[idx] = judgedCorrect; return a; }); } catch {}
-          const percent = Math.round((correct / Math.max(1, total)) * 100);
-          finalizeTestAndFarewell({ correctCount: correct, total, percent });
+
+          // Always cue a short encouragement for closure, regardless of correctness
+          const encouragement = 'Way to go.';
+          const closingLine = `${speech} ${encouragement}`;
+          // Speak feedback fully, then transition to review so it opens after Ms. Sonoma responds
+          reviewDeferRef.current = true;
+          try { await speakFrontend(closingLine); } catch {}
+          reviewDeferRef.current = false;
+          // Go directly to review; congrats is gated after Accept
+          try { setCanSend(false); } catch {}
+          try { setSubPhase('review-start'); } catch {}
           return;
-        } catch {}
-        // Fallback return to avoid running legacy path
-        setCanSend(true);
-        return;
+        } catch {
+          // Hard fallback: force facilitator review to avoid dead-ends (defer score to review phase)
+          try { setCanSend(false); } catch {}
+          try { setSubPhase('review-start'); } catch {}
+          return;
+        }
         const totalLimit = Math.min(TEST_TARGET || generatedTest.length, generatedTest.length);
         const idx = testActiveIndex;
         const qObj = generatedTest[idx];
@@ -6786,7 +6942,7 @@ function SessionPageInner() {
         setTestUserAnswers(answersNow);
 
         // Build expected/acceptable (mirror worksheet/exercise logic)
-        const { primary: expectedPrimaryT, synonyms: expectedSynsT } = expandExpectedAnswer(qObj.answer || qObj.expected);
+  const { primary: expectedPrimaryT, synonyms: expectedSynsT } = expandExpectedAnswer(qObj.answer ?? qObj.expected);
         const anyOfT = expectedAnyList(qObj);
         let acceptableT = anyOfT && anyOfT.length ? Array.from(new Set(anyOfT.map(String))) : [expectedPrimaryT, ...expectedSynsT];
         const letterT = letterForAnswer(qObj, acceptableT);
@@ -6940,6 +7096,60 @@ function SessionPageInner() {
     );
   };
 
+  // Shared Complete Lesson handler used by VideoPanel (and any other triggers)
+  const onCompleteLesson = useCallback(async () => {
+    // Stop any ongoing audio/speech/mic work first
+    try { abortAllActivity(); } catch {}
+    const key = getAssessmentStorageKey();
+    if (key) {
+      try {
+        const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
+        clearAssessments(key, { learnerId: lid });
+      } catch { /* ignore */ }
+    }
+    // Persist transcript segment (append-only) to Supabase Storage
+    try {
+      const learnerId = (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null) || null;
+      const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || null;
+      const lessonId = String(lessonParam || '').replace(/\.json$/i, '');
+      const startedAt = sessionStartRef.current || new Date().toISOString();
+      const completedAt = new Date().toISOString();
+      const lines = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current
+        .filter((ln) => ln && typeof ln.text === 'string' && ln.text.trim().length > 0)
+        .map((ln) => ({ role: ln.role || 'assistant', text: ln.text })) : [];
+      if (learnerId && learnerId !== 'demo' && lines.length > 0) {
+        await appendTranscriptSegment({
+          learnerId,
+          learnerName,
+          lessonId,
+          lessonTitle: effectiveLessonTitle,
+          segment: { startedAt, completedAt, lines },
+        });
+      }
+    } catch (e) { console.warn('[Session] transcript append failed', e); }
+    sessionStartRef.current = null;
+    setShowBegin(true);
+    setPhase('discussion');
+    setSubPhase('greeting');
+    setCanSend(false);
+    setGeneratedWorksheet(null);
+    setGeneratedTest(null);
+    setCurrentWorksheetIndex(0);
+    worksheetIndexRef.current = 0;
+    // Navigate to lessons
+    try {
+      if (router && typeof router.push === 'function') {
+        router.push('/learn/lessons');
+      } else if (typeof window !== 'undefined') {
+        window.location.href = '/learn/lessons';
+      }
+    } catch {
+      if (typeof window !== 'undefined') {
+        try { window.location.href = '/learn/lessons'; } catch {}
+      }
+    }
+  }, [effectiveLessonTitle, lessonParam, router]);
+
   // No portrait spacer: timeline should sit directly under the header in portrait mode.
 
   return (
@@ -7083,9 +7293,14 @@ function SessionPageInner() {
     );
   })()}
 
+    {/* Removed inline Review button; moved to footer control bar */}
+
   {/* Video + captions: stack normally; side-by-side on mobile landscape */}
   <div style={isMobileLandscape ? { display:'flex', alignItems:'stretch', width:'100%', paddingBottom:4, '--msSideBySideH': (videoEffectiveHeight ? `${videoEffectiveHeight}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto')) } : {}}>
     <div ref={videoColRef} style={isMobileLandscape ? { flex:`0 0 ${videoColPercent}%`, display:'flex', flexDirection:'column', minWidth:0, minHeight:0, height: 'var(--msSideBySideH)' } : {}}>
+  {/* Shared Complete Lesson handler */}
+  { /* define once; stable ref for consumers */ }
+  {(() => { return null; })()}
   <VideoPanel
         isMobileLandscape={isMobileLandscape}
         isShortHeight={isShortHeight}
@@ -7119,46 +7334,56 @@ function SessionPageInner() {
   currentCompProblem={currentCompProblem}
   testActiveIndex={testActiveIndex}
   testList={Array.isArray(generatedTest) ? generatedTest : []}
-        onCompleteLesson={async () => {
-          const key = getAssessmentStorageKey();
-          if (key) { try { const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none'; clearAssessments(key, { learnerId: lid }); } catch { /* ignore */ } }
-          // Persist transcript segment (append-only) to Supabase Storage
-          try {
-            const learnerId = (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null) || null;
-            const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || null;
-            const lessonId = String(lessonParam || '').replace(/\.json$/i, '');
-            const startedAt = sessionStartRef.current || new Date().toISOString();
-            const completedAt = new Date().toISOString();
-            const lines = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current
-              .filter((ln) => ln && typeof ln.text === 'string' && ln.text.trim().length > 0)
-              .map((ln) => ({ role: ln.role || 'assistant', text: ln.text })) : [];
-            if (learnerId && learnerId !== 'demo' && lines.length > 0) {
-              await appendTranscriptSegment({
-                learnerId,
-                learnerName,
-                lessonId,
-                lessonTitle: effectiveLessonTitle,
-                segment: { startedAt, completedAt, lines },
-              });
-            }
-          } catch (e) { console.warn('[Session] transcript append failed', e); }
-          sessionStartRef.current = null;
-          setShowBegin(true);
-          setPhase('discussion');
-          setSubPhase('greeting');
-          setCanSend(false);
-          setGeneratedWorksheet(null);
-          setGeneratedTest(null);
-          setCurrentWorksheetIndex(0);
-          worksheetIndexRef.current = 0;
-          if (typeof window !== 'undefined') {
-            window.location.href = '/learn/lessons';
-          }
-        }}
+        onCompleteLesson={onCompleteLesson}
       />
+      {(phase === 'worksheet' && subPhase === 'worksheet-active' && (() => {
+        try {
+          const list = Array.isArray(generatedWorksheet) ? generatedWorksheet : [];
+          const idx = (typeof currentWorksheetIndex === 'number') ? currentWorksheetIndex : 0;
+          const limit = Math.min((typeof WORKSHEET_TARGET === 'number' && WORKSHEET_TARGET > 0) ? WORKSHEET_TARGET : list.length, list.length);
+          return limit > 0 && (idx + 1) >= limit;
+        } catch { return false; }
+      })()) && (
+        <div style={{ display:'flex', justifyContent:'center', paddingTop: 8, paddingBottom: 8 }}>
+          <button
+            type="button"
+            onClick={() => { try { setPhase('test'); } catch {}; try { setSubPhase('review-start'); } catch {}; try { setCanSend(false); } catch {}; }}
+            style={{ background:'#2563EB', color:'#fff', fontWeight:800, letterSpacing:0.3, borderRadius:10, padding:'10px 16px', border:'none', cursor:'pointer', boxShadow:'0 6px 16px rgba(0,0,0,0.25)' }}
+          >
+            Review
+          </button>
+        </div>
+      )}
     </div>
-  <div ref={captionColRef} style={isMobileLandscape ? { flex:`0 0 ${Math.max(0, 100 - videoColPercent)}%`, minWidth:0, minHeight:0, display:'flex', flexDirection:'column', overflow: (phase === 'congrats' ? 'auto' : 'hidden'), height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)', position:'relative', '--msSideBySideH': (videoEffectiveHeight ? `${videoEffectiveHeight}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto')) } : (stackedCaptionHeight ? { maxHeight: stackedCaptionHeight, height: stackedCaptionHeight, overflowY: (phase === 'congrats' ? 'auto' : 'hidden'), marginTop:8, paddingLeft: '4%', paddingRight: '4%' } : { paddingLeft: '4%', paddingRight: '4%', position:'relative' })}>
-      {phase === 'congrats' && typeof testFinalPercent === 'number' ? (
+  <div ref={captionColRef} style={(() => {
+        const showScrollable = (phase === 'congrats') || (phase === 'test' && typeof subPhase === 'string' && subPhase.startsWith('review'));
+        if (isMobileLandscape) {
+          return {
+            flex: `0 0 ${Math.max(0, 100 - videoColPercent)}%`,
+            minWidth: 0,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: showScrollable ? 'auto' : 'hidden',
+            height: 'var(--msSideBySideH)',
+            maxHeight: 'var(--msSideBySideH)',
+            position: 'relative',
+            '--msSideBySideH': (videoEffectiveHeight ? `${videoEffectiveHeight}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto')),
+          };
+        }
+        if (stackedCaptionHeight) {
+          return {
+            maxHeight: stackedCaptionHeight,
+            height: stackedCaptionHeight,
+            overflowY: showScrollable ? 'auto' : 'hidden',
+            marginTop: 8,
+            paddingLeft: '4%',
+            paddingRight: '4%',
+          };
+        }
+        return { paddingLeft: '4%', paddingRight: '4%', position: 'relative' };
+      })()}>
+      {(phase === 'test' && typeof subPhase === 'string' && subPhase.startsWith('review')) ? (
         (() => {
           const list = Array.isArray(generatedTest) ? generatedTest : [];
           const answers = Array.isArray(testUserAnswers) ? testUserAnswers : [];
@@ -7185,29 +7410,15 @@ function SessionPageInner() {
               return a;
             });
           };
-          // Provide explicit scroll controls for visibility on touch devices
-          const scrollParent = captionColRef;
-          const doScroll = (dy) => {
-            try {
-              const el = scrollParent?.current;
-              if (el) el.scrollBy({ top: dy, behavior: 'smooth' });
-            } catch {}
-          };
-          const scrollBtn = { position:'absolute', right: 8, zIndex: 10, background:'#1f2937', color:'#fff', border:'none', width:36, height:36, display:'grid', placeItems:'center', borderRadius:999, boxShadow:'0 2px 8px rgba(0,0,0,0.25)', cursor:'pointer' };
           return (
             <div style={{ display:'flex', flexDirection:'column', gap:12, overflow:'visible', paddingTop:8, paddingBottom:8 }}>
-              <button type="button" aria-label="Scroll up" title="Scroll up" style={{ ...scrollBtn, top: 8 }} onClick={() => doScroll(-240)}>
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
-              </button>
-              <button type="button" aria-label="Scroll down" title="Scroll down" style={{ ...scrollBtn, bottom: 8 }} onClick={() => doScroll(240)}>
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-              </button>
               <div style={{ ...card, display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, position:'sticky', top:0, zIndex:5, background:'#ffffff' }}>
                 <div style={{ fontSize:'clamp(1.1rem, 2.4vw, 1.4rem)', fontWeight:800, color:'#065f46' }}>
                   {percent}% grade
                 </div>
                 <div style={{ fontSize: 'clamp(1.2rem, 2.6vw, 1.5rem)' }} aria-label="Medal preview">{medal}</div>
               </div>
+              {/* No in-pane Complete action; final red button appears in footer after congrats speech */}
               <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                 {list.map((q, i) => {
                   const ok = !!correctness[i];
@@ -7373,8 +7584,58 @@ function SessionPageInner() {
                   </div>
                   {/* Middle: Quick answers if available */}
                   {qa}
-                  {/* Right: Play/Pause + Mute */}
+                  {/* Right: Submit during review + Review (when reached) + Play/Pause + Mute */}
                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    {(() => {
+                      try {
+                        // Show a red Submit button during Test review to finalize and move to Congrats
+                        const inReview = (phase === 'test' && typeof subPhase === 'string' && subPhase.startsWith('review'));
+                        if (!inReview) return null;
+                        const disabled = !!isSpeaking;
+                        const submitBtn = { background:'#c7442e', color:'#fff', border:'none', height: btnSize, padding: '0 14px', display:'grid', placeItems:'center', borderRadius: 999, cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.2)', fontWeight:800 };
+                        return (
+                          <button
+                            type="button"
+                            aria-label="Submit"
+                            title="Submit"
+                            onClick={disabled ? undefined : finalizeReview}
+                            disabled={disabled}
+                            style={{ ...submitBtn, opacity: disabled ? 0.6 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}
+                          >
+                            Submit
+                          </button>
+                        );
+                      } catch { return null; }
+                    })()}
+                    {(() => {
+                      try {
+                        if (phase !== 'test') return null;
+                        // If already in review subphase, hide the Review button
+                        if (typeof subPhase === 'string' && subPhase.startsWith('review')) return null;
+                        const list = Array.isArray(generatedTest) ? generatedTest : [];
+                        const limit = Math.min((typeof TEST_TARGET === 'number' && TEST_TARGET > 0) ? TEST_TARGET : list.length, list.length);
+                        if (limit <= 0) return null;
+                        const answeredCount = Array.isArray(testUserAnswers) ? testUserAnswers.filter(v => typeof v === 'string' && v.length > 0).length : 0;
+                        const judgedCount = Array.isArray(testCorrectByIndex) ? testCorrectByIndex.filter(v => typeof v !== 'undefined').length : 0;
+                        const idxDone = (typeof testActiveIndex === 'number' ? testActiveIndex : 0) >= limit;
+                        const reached = (answeredCount >= limit) || (judgedCount >= limit) || idxDone || (typeof ticker === 'number' && ticker >= limit);
+                        if (!reached) return null;
+                        const disabled = !!isSpeaking;
+                        const reviewBtn = { background:'#b91c1c', color:'#fff', border:'none', height: btnSize, padding: '0 14px', display:'grid', placeItems:'center', borderRadius: 999, cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.2)', fontWeight:800 };
+                        return (
+                          <button
+                            type="button"
+                            aria-label="Review"
+                            title="Review"
+                            onClick={disabled ? undefined : () => { try { setSubPhase('review-start'); } catch {}; try { setCanSend(false); } catch {}; }}
+                            disabled={disabled}
+                            style={{ ...reviewBtn, opacity: disabled ? 0.6 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}
+                          >
+                            Review
+                          </button>
+                        );
+                      } catch { return null; }
+                    })()}
                     <button type="button" aria-label={userPaused ? 'Play' : 'Pause'} title={userPaused ? 'Play' : 'Pause'} onClick={togglePlayPause} style={btnBase}>
                       {userPaused ? (
                         <svg style={{ width:'55%', height:'55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 5v14l11-7z" /></svg>
@@ -7485,9 +7746,26 @@ function SessionPageInner() {
             return null;
           })()}
 
-          {/* Congrats footer row with Complete Lesson and medal */}
+          {/* Review footer row: Submit during Test review (only when not using the short-height relocated controls) */}
+          {(() => {
+            try {
+              const inReview = (phase === 'test' && typeof subPhase === 'string' && subPhase.startsWith('review'));
+              if (!inReview) return null;
+              if (isShortHeight) return null; // submit appears in the relocated controls for short-height
+              const disabled = !!isSpeaking;
+              const btnStyle = { background:'#c7442e', color:'#fff', borderRadius:10, padding:'10px 18px', fontWeight:800, fontSize:'clamp(1rem, 2.2vw, 1.125rem)', border:'none', boxShadow:'0 2px 12px rgba(199,68,46,0.28)', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 };
+              return (
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:14, padding:'6px 12px' }}>
+                  <button type="button" aria-label="Submit" title="Submit" disabled={disabled} style={btnStyle} onClick={disabled ? undefined : finalizeReview}>Submit</button>
+                </div>
+              );
+            } catch { return null; }
+          })()}
+
+          {/* Congrats footer row with Complete Lesson and medal (only after congrats TTS finishes) */}
           {(() => {
             if (phase !== 'congrats') return null;
+            if (!congratsDone) return null;
             const percent = typeof testFinalPercent === 'number' ? testFinalPercent : null;
             const tier = (percent != null) ? tierForPercent(percent) : null;
             const medal = tier ? emojiForTier(tier) : '';
@@ -7881,7 +8159,7 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
   );
 }
 
-function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, onPrev, onNext, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, onTogglePlayPause, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList }) {
+function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, onPrev, onNext, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, onTogglePlayPause, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, isLastWorksheetQuestion, onOpenReview }) {
   // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
   // Remove horizontal clamp: let the video occupy the full available width of its column
   const containerMaxWidth = 'none';
@@ -7983,7 +8261,7 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
             {phase === 'worksheet' ? `Question ${Number((typeof currentWorksheetIndex === 'number' ? currentWorksheetIndex : 0) + 1)}` : `Question ${Number((typeof testActiveIndex === 'number' ? testActiveIndex : 0) + 1)}`}
           </div>
         )}
-        {(phase === 'congrats') && typeof testFinalPercent === 'number' && (
+        {((phase === 'congrats') || (phase === 'test' && typeof subPhase === 'string' && subPhase.startsWith('review'))) && typeof testFinalPercent === 'number' && (
           <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(17,24,39,0.85)', color: '#fff', padding: '10px 14px', borderRadius: 10, fontSize: 'clamp(1rem, 2vw, 1.25rem)', fontWeight: 700, letterSpacing: 0.4, boxShadow: '0 2px 10px rgba(0,0,0,0.4)' }}>Score: {testFinalPercent}%</div>
         )}
   {/* Ticker badges handled above for all phases */}
@@ -8053,6 +8331,28 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
         )}
         {skipPendingLessonLoad && (
           <div style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(31,41,55,0.85)', color: '#fff', padding: '6px 12px', borderRadius: 8, fontSize: 'clamp(0.75rem, 1.4vw, 0.9rem)', fontWeight: 600, letterSpacing: 0.4, boxShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>Loading lesson… skip will apply</div>
+        )}
+        {/* Last-worksheet safety: show explicit Review button to enter facilitator override */}
+        {(phase === 'worksheet' && subPhase === 'worksheet-active' && isLastWorksheetQuestion && typeof onOpenReview === 'function') && (
+          <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 10002, pointerEvents: 'auto' }}>
+            <button
+              type="button"
+              onClick={onOpenReview}
+              style={{
+                background: '#2563EB',
+                color: '#fff',
+                fontWeight: 800,
+                letterSpacing: 0.3,
+                borderRadius: 12,
+                padding: '10px 18px',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 6px 16px rgba(0,0,0,0.25)'
+              }}
+            >
+              Review
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -8857,6 +9157,21 @@ function PhaseDetail({
           </div>
         );
       case "test":
+        // Render Review controls inline when in a review subphase to keep the timeline in Test
+        if (typeof subPhase === 'string' && subPhase.startsWith('review')) {
+          return (
+            <div style={{ marginBottom: 24 }}>
+              <h2>Facilitator Review</h2>
+              <p>Adjust correctness as needed, then accept.</p>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:8 }}>
+                <span>
+                  Score preview: {typeof testFinalPercent === 'number' ? testFinalPercent : Math.round(((Array.isArray(testCorrectByIndex)?testCorrectByIndex.filter(Boolean).length:0)/Math.max(1,(Array.isArray(generatedTest)?generatedTest.length:0))*100))}%
+                </span>
+                <button type="button" style={primaryButtonStyle} onClick={finalizeReview}>Accept</button>
+              </div>
+            </div>
+          );
+        }
         return (
           <div style={{ marginBottom: 24 }}>
             <p>Test answers recorded: {testAnswers.length}</p>
@@ -8867,26 +9182,33 @@ function PhaseDetail({
                 const nextTicker = ticker + 1;
                 setTicker(nextTicker);
                 setTestAnswers([...testAnswers, learnerInput]);
-                const result = await callMsSonoma(
-                  "Test: Black screen, overlay questions, grade after all answers, no hints or rephrasing.",
-                  learnerInput,
-                    {
-                    phase: "test",
-                    subject: subjectParam,
-                    difficulty: difficultyParam,
-                    lesson: lessonParam,
+                const payload = {
+                  phase: "test",
+                  subject: subjectParam,
+                  difficulty: difficultyParam,
+                  lesson: lessonParam,
                   lessonTitle: effectiveLessonTitle,
-                    ticker: nextTicker,
-                  }
-                );
+                  ticker: nextTicker,
+                };
+                // Clear input immediately
                 setLearnerInput("");
-                if (result.success && nextTicker >= TEST_TARGET) {
-                  setPhase("grading");
-                  setSubPhase("grading-start");
-                  setCanSend(false);
-                  await waitForBeat(320);
-                  setPhase("congrats");
+                // If we've met or exceeded the target, do not await anything — go straight to review.
+                if (nextTicker >= TEST_TARGET) {
+                  try { setCanSend(false); } catch {}
+                  // Review is a subphase of Test; keep phase pinned to 'test'
+                  try { setSubPhase("review-start"); } catch {}
+                  // Fire-and-forget the API call so logs/metrics are not lost, but do not block UI.
+                  try { callMsSonoma("Test: Black screen, overlay questions, grade after all answers, no hints or rephrasing.", learnerInput, payload); } catch {}
+                  return;
                 }
+                // Otherwise, continue normal flow for intermediate questions.
+                try {
+                  await callMsSonoma(
+                    "Test: Black screen, overlay questions, grade after all answers, no hints or rephrasing.",
+                    learnerInput,
+                    payload
+                  );
+                } catch {}
               }}
             >
               Submit test answer
@@ -8899,30 +9221,21 @@ function PhaseDetail({
             <p>Grading in progress...</p>
           </div>
         );
+      case "review":
+        // Legacy: keep nothing here so timeline stays consistent; review renders under test phase
+        return null;
       case "congrats":
         return (
           <div style={{ marginBottom: 24 }}>
             <h2>Congratulations!</h2>
-            <p>{transcript}</p>
-            <button
-              type="button"
-              style={primaryButtonStyle}
-              onClick={() => {
-                const key = getAssessmentStorageKey();
-                if (key) { try { const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none'; clearAssessments(key, { learnerId: lid }); } catch {} }
-                // Reset to allow a fresh session (new randomized sets next time Begin clicked)
-                setShowBegin(true);
-                setPhase('discussion');
-                setSubPhase('greeting');
-                // Keep input disabled until Begin is pressed
-                setCanSend(false);
-                setGeneratedWorksheet(null);
-                setGeneratedTest(null);
-                setCurrentWorksheetIndex(0);
-              }}
-            >
-              Complete Lesson
-            </button>
+            {!congratsStarted ? (
+              <div>
+                <p>{transcript}</p>
+                <button type="button" style={primaryButtonStyle} onClick={() => setCongratsStarted(true)}>Start Congrats</button>
+              </div>
+            ) : (
+              <p>{transcript}</p>
+            )}
           </div>
         );
       default:
