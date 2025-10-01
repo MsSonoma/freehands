@@ -1440,6 +1440,42 @@ function SessionPageInner() {
     'You got it'
   ], []);
 
+  // Track wrong attempts per question key so we can vary hints and reveal on third try
+  const wrongAttemptsRef = useRef(new Map());
+  const bumpWrongAttempt = useCallback((qKey) => {
+    try {
+      if (!qKey) return 1;
+      const prev = wrongAttemptsRef.current.get(qKey) || 0;
+      const next = prev + 1;
+      wrongAttemptsRef.current.set(qKey, next);
+      return next;
+    } catch { return 1; }
+  }, []);
+  const resetWrongAttempt = useCallback((qKey) => {
+    try { if (qKey) wrongAttemptsRef.current.delete(qKey); } catch {}
+  }, []);
+
+  // Supportive hint variations so we don't repeat the same line each time
+  const HINT_FIRST = useMemo(() => [
+    'Not quite right. Think about the key idea and try again.',
+    'Not quite. Take another look and try again.',
+    'Almost there. Read it once more and try again.'
+  ], []);
+  const HINT_SECOND = useMemo(() => [
+    'Good effort. You have got this—focus on the main idea.',
+    'Nice try. Think about what the question is really asking.',
+    'You are close. Pick the best match for the idea.'
+  ], []);
+  const pickHint = useCallback((arr, qKey) => {
+    try {
+      const list = Array.isArray(arr) && arr.length ? arr : ['Try again.'];
+      // Simple stable pick by key hash to keep variety without randomness per turn
+      let h = 0; const s = String(qKey || '');
+      for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+      return list[h % list.length];
+    } catch { return 'Try again.'; }
+  }, []);
+
   // Helper to build a randomized pattern specification we inject into model instructions.
   // Returns an object { patternHint, pick } where pick(encouragement, progressPhrase) -> combined string
   // patternHint is inserted into instructions so model knows allowed positions.
@@ -6564,6 +6600,11 @@ function SessionPageInner() {
       setLearnerInput('');
 
       if (correct) {
+        // Reset wrong-attempt counter for this question
+        try {
+          const qKey = (problem?.question ?? formatQuestionForSpeech(problem)).trim();
+          resetWrongAttempt(qKey);
+        } catch {}
         const celebration = CELEBRATE_CORRECT[Math.floor(Math.random() * CELEBRATE_CORRECT.length)];
         if (atTarget) {
           try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for comprehension. Now let's begin the exercise.`); } catch {}
@@ -6589,10 +6630,25 @@ function SessionPageInner() {
         return;
       }
 
-      // Incorrect: gentle hint and re-ask same question
-      const gentle = 'Not quite right. Think about the key idea and try again.';
+      // Incorrect: adaptive hinting and reveal on third miss
+      const qKey = (() => { try { return (problem?.question ?? formatQuestionForSpeech(problem)).trim(); } catch { return ''; } })();
+      const wrongN = bumpWrongAttempt(qKey);
       const currQ = ensureQuestionMark(formatQuestionForSpeech(problem, { layout: 'multiline' }));
-      try { await speakFrontend(`${gentle} ${currQ}`, { mcLayout: 'multiline' }); } catch {}
+      if (wrongN >= 3) {
+        // Reveal answer on third incorrect
+        const { primary: expectedPrimaryC, synonyms: expectedSynsC } = expandExpectedAnswer(problem.answer ?? problem.expected);
+        const anyOfC = expectedAnyList(problem);
+        const acceptableC = anyOfC && anyOfC.length ? Array.from(new Set(anyOfC.map(String))) : [expectedPrimaryC, ...expectedSynsC];
+        const correctText = deriveCorrectAnswerText(problem, acceptableC, expectedPrimaryC) || expectedPrimaryC || '';
+        const reveal = correctText ? `Not quite right. The correct answer is ${correctText}.` : 'Not quite right.';
+        try { await speakFrontend(`${reveal} ${currQ}`, { mcLayout: 'multiline' }); } catch {}
+      } else if (wrongN === 2) {
+        const supportive = pickHint(HINT_SECOND, qKey);
+        try { await speakFrontend(`${supportive} ${currQ}`, { mcLayout: 'multiline' }); } catch {}
+      } else {
+        const gentle = pickHint(HINT_FIRST, qKey);
+        try { await speakFrontend(`${gentle} ${currQ}`, { mcLayout: 'multiline' }); } catch {}
+      }
       setSubPhase('comprehension-active');
       setCanSend(true);
       return;
@@ -6706,6 +6762,11 @@ function SessionPageInner() {
       setLearnerInput('');
 
       if (correct) {
+        // Reset wrong-attempt counter for this question
+        try {
+          const qKey = (problem?.question ?? formatQuestionForSpeech(problem)).trim();
+          resetWrongAttempt(qKey);
+        } catch {}
         const celebration = CELEBRATE_CORRECT[Math.floor(Math.random() * CELEBRATE_CORRECT.length)];
         if (atTarget) {
           try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for the exercise. Now let's move on to the worksheet.`); } catch {}
@@ -6730,10 +6791,24 @@ function SessionPageInner() {
         return;
       }
 
-      // Incorrect: gentle hint and re-ask the same question
-      const gentle = 'Not quite right. Think about the key idea and try again.';
+      // Incorrect: adaptive hints; reveal on third incorrect
+      const qKeyE = (() => { try { return (problem?.question ?? formatQuestionForSpeech(problem)).trim(); } catch { return ''; } })();
+      const wrongNE = bumpWrongAttempt(qKeyE);
       const currQ = ensureQuestionMark(formatQuestionForSpeech(problem, { layout: 'multiline' }));
-      try { await speakFrontend(`${gentle} ${currQ}`, { mcLayout: 'multiline' }); } catch {}
+      if (wrongNE >= 3) {
+        const { primary: expectedPrimaryE2, synonyms: expectedSynsE2 } = expandExpectedAnswer(problem.answer ?? problem.expected);
+        const anyOfE2 = expectedAnyList(problem);
+        const acceptableE2 = anyOfE2 && anyOfE2.length ? Array.from(new Set(anyOfE2.map(String))) : [expectedPrimaryE2, ...expectedSynsE2];
+        const correctTextE = deriveCorrectAnswerText(problem, acceptableE2, expectedPrimaryE2) || expectedPrimaryE2 || '';
+        const revealE = correctTextE ? `Not quite right. The correct answer is ${correctTextE}.` : 'Not quite right.';
+        try { await speakFrontend(`${revealE} ${currQ}`, { mcLayout: 'multiline' }); } catch {}
+      } else if (wrongNE === 2) {
+        const supportiveE = pickHint(HINT_SECOND, qKeyE);
+        try { await speakFrontend(`${supportiveE} ${currQ}`, { mcLayout: 'multiline' }); } catch {}
+      } else {
+        const gentleE = pickHint(HINT_FIRST, qKeyE);
+        try { await speakFrontend(`${gentleE} ${currQ}`, { mcLayout: 'multiline' }); } catch {}
+      }
       setCanSend(true);
       return;
     }
@@ -6799,6 +6874,11 @@ function SessionPageInner() {
       setLearnerInput('');
 
       if (correctW) {
+        // Reset wrong-attempt counter for this question
+        try {
+          const qKey = (problem?.question ?? formatQuestionForSpeech(problem)).trim();
+          resetWrongAttempt(qKey);
+        } catch {}
         const celebration = CELEBRATE_CORRECT[Math.floor(Math.random() * CELEBRATE_CORRECT.length)];
         if (atTarget) {
           try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for the worksheet. Now let's begin the test.`); } catch {}
@@ -6821,11 +6901,25 @@ function SessionPageInner() {
         return;
       }
 
-      // Incorrect: gentle hint and re-ask same question
-      const gentle = 'Not quite right. Think about the key idea and try again.';
-  const currNum = (typeof problem?.number === 'number' && problem.number > 0) ? problem.number : (idx + 1);
-  const currQ = ensureQuestionMark(`${currNum}. ${formatQuestionForSpeech(problem, { layout: 'multiline' })}`);
-      try { await speakFrontend(`${gentle} ${currQ}`, { mcLayout: 'multiline' }); } catch {}
+      // Incorrect: adaptive hints and reveal on third incorrect attempt
+      const qKeyW = (() => { try { return (problem?.question ?? formatQuestionForSpeech(problem)).trim(); } catch { return ''; } })();
+      const wrongNW = bumpWrongAttempt(qKeyW);
+      const currNum = (typeof problem?.number === 'number' && problem.number > 0) ? problem.number : (idx + 1);
+      const currQ = ensureQuestionMark(`${currNum}. ${formatQuestionForSpeech(problem, { layout: 'multiline' })}`);
+      if (wrongNW >= 3) {
+        const { primary: expectedPrimaryW2, synonyms: expectedSynsW2 } = expandExpectedAnswer(problem.answer ?? problem.expected);
+        const anyOfW2 = expectedAnyList(problem);
+        const acceptableW2 = anyOfW2 && anyOfW2.length ? Array.from(new Set(anyOfW2.map(String))) : [expectedPrimaryW2, ...expectedSynsW2];
+        const correctTextW = deriveCorrectAnswerText(problem, acceptableW2, expectedPrimaryW2) || expectedPrimaryW2 || '';
+        const revealW = correctTextW ? `Not quite right. The correct answer is ${correctTextW}.` : 'Not quite right.';
+        try { await speakFrontend(`${revealW} ${currQ}`, { mcLayout: 'multiline' }); } catch {}
+      } else if (wrongNW === 2) {
+        const supportiveW = pickHint(HINT_SECOND, qKeyW);
+        try { await speakFrontend(`${supportiveW} ${currQ}`, { mcLayout: 'multiline' }); } catch {}
+      } else {
+        const gentleW = pickHint(HINT_FIRST, qKeyW);
+        try { await speakFrontend(`${gentleW} ${currQ}`, { mcLayout: 'multiline' }); } catch {}
+      }
       setCanSend(true);
       return;
     }
