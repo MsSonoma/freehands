@@ -1,0 +1,75 @@
+{
+  "id": "4th_Economics_Supply_Demand_Beginner",
+  "title": "Economics: Supply and Demand",
+  "blurb": "Learn how supply and demand affect prices using kid-friendly examples like snacks, toys, and a lemonade stand.",
+  "grade": "4th",
+  "difficulty": "Beginner",
+  "vocab": [
+    { "term": "economics", "definition": "The study of how people make, buy, and sell goods and services" },
+    { "term": "supply", "definition": "How much of a good or service is available" },
+    { "term": "demand", "definition": "How much people want a good or service" },
+    { "term": "price", "definition": "How much money something costs" },
+  { "term": "scarcity", "definition": "When there is not enough of something to meet everyone's wants" }
+  ],
+  "teachingNotes": "Use simple, everyday items like pencils, snacks, and toys to show how supply and demand can change prices. Connect to a classroom store or lemonade stand.",
+  "sample": [
+    { "question": "What is supply?", "expectedAny": ["how much is available", "amount available"] },
+    { "question": "What is demand?", "expectedAny": ["how much people want it", "how many people want it"] },
+    { "question": "What does price mean?", "expectedAny": ["how much it costs", "cost"] },
+    { "question": "What is scarcity?", "expectedAny": ["not enough of something"] },
+    { "question": "Give an example of something kids might demand at school.", "expectedAny": ["pencils", "stickers", "snacks", "erasers"] },
+    { "question": "If there are many apples to sell, is supply high or low?", "expectedAny": ["high", "high supply"] },
+    { "question": "If many kids want the same toy, is demand high or low?", "expectedAny": ["high", "high demand"] },
+    { "question": "When there is not enough for everyone, what is that called?", "expectedAny": ["scarcity"] },
+    { "question": "What could make prices go down?", "expectedAny": ["too much supply", "low demand"] },
+    { "question": "What could make prices go up?", "expectedAny": ["high demand", "low supply"] }
+  ],
+  "truefalse": [
+    { "question": "If many kids want a snack and there are only a few left, the price might go up.", "answer": true },
+    { "question": "If there are lots of stickers and few kids want them, the price might go down.", "answer": true },
+    { "question": "Demand means how much is available to sell.", "answer": false },
+    { "question": "Supply means how much people want to buy.", "answer": false },
+    { "question": "Scarcity means there is more than enough for everyone.", "answer": false },
+    { "question": "When supply is high and demand is low, prices usually go down.", "answer": true },
+    { "question": "When supply is low and demand is high, prices usually go up.", "answer": true },
+    { "question": "Price is the amount of money something costs.", "answer": true },
+    { "question": "If demand goes down, sellers can always raise prices.", "answer": false },
+    { "question": "If demand goes up, sellers might raise prices.", "answer": true }
+  ],
+  "multiplechoice": [
+    { "question": "What does demand mean?", "choices": ["How much people want it", "How much is available", "How big it is", "How heavy it is"], "correct": 0 },
+    { "question": "What does supply mean?", "choices": ["How much people want it", "How much is available", "How tasty it is", "How old it is"], "correct": 1 },
+    { "question": "When there are many of a toy but few kids want it, the price will likely:", "choices": ["Go up", "Go down", "Stay super high", "Disappear"], "correct": 1 },
+    { "question": "When there are only a few ice pops and many kids want them, the price will likely:", "choices": ["Go up", "Go down", "Never change", "Be free"], "correct": 0 },
+    { "question": "Which shows high demand?", "choices": ["No one wants the game", "Many kids want the game", "Only the teacher wants it", "It is broken"], "correct": 1 },
+    { "question": "Which shows high supply?", "choices": ["Only one pencil is left", "There are many pencils to sell", "No pencils exist", "The pencils are lost"], "correct": 1 },
+    { "question": "What is price?", "choices": ["How much it costs", "How fast it sells", "How big it is", "How loud it is"], "correct": 0 },
+    { "question": "If demand increases, what might happen to price?", "choices": ["Go up", "Go down", "Disappears", "Turn blue"], "correct": 0 },
+    { "question": "If supply increases a lot and demand stays the same, price might:", "choices": ["Go up", "Go down", "Explode", "Become a secret"], "correct": 1 },
+    { "question": "Which word means not enough for everyone?", "choices": ["Plenty", "Scarcity", "Giant", "Forever"], "correct": 1 }
+  ],
+  "fillintheblank": [
+    { "question": "How much is available is called ____.", "expectedAny": ["supply"] },
+    { "question": "How much people want something is called ____.", "expectedAny": ["demand"] },
+    { "question": "How much money something costs is its ____.", "expectedAny": ["price"] },
+    { "question": "Not enough of something is called ____.", "expectedAny": ["scarcity"] },
+    { "question": "If many kids want something and there are few, the price may ____.", "expectedAny": ["go up", "rise", "increase"] },
+    { "question": "If there are many items and few buyers, the price may ____.", "expectedAny": ["go down", "fall", "decrease"] },
+    { "question": "People who buy goods and services are called ____.", "expectedAny": ["consumers"] },
+    { "question": "People who make or sell goods are called ____.", "expectedAny": ["producers", "sellers"] },
+    { "question": "When supply is high and demand is low, prices usually ____.", "expectedAny": ["go down", "fall", "decrease"] },
+    { "question": "When supply is low and demand is high, prices usually ____.", "expectedAny": ["go up", "rise", "increase"] }
+  ],
+  "shortanswer": [
+    { "question": "Why might a store lower the price of notebooks?", "expectedAny": ["too many notebooks", "low demand", "high supply"] },
+    { "question": "Why might the price of hot cocoa rise on a cold day?", "expectedAny": ["more people want it", "high demand", "low supply"] },
+    { "question": "Give a classroom example of scarcity.", "expectedAny": ["not enough markers", "few computers", "only one ball"] },
+    { "question": "How can producers respond when demand goes up?", "expectedAny": ["make more", "raise price", "stock more"] },
+    { "question": "How can producers respond when demand goes down?", "expectedAny": ["lower price", "make less", "sale"] },
+    { "question": "What happens to price if supply goes up a lot but demand stays the same?", "expectedAny": ["price goes down", "decrease"] },
+    { "question": "What happens to price if supply goes down but demand stays the same?", "expectedAny": ["price goes up", "increase"] },
+    { "question": "Why do stores pay attention to what people want?", "expectedAny": ["sell what people buy", "meet demand"] },
+    { "question": "Describe a time you saw supply and demand in real life.", "expectedAny": ["personal example", "sale when many items", "price high when few left"] },
+    { "question": "How could your class use supply and demand to price a bake sale item?", "expectedAny": ["raise price if few left", "lower price if many left"] }
+  ]
+}
