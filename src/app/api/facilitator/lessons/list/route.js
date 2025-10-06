@@ -30,11 +30,20 @@ export async function GET(request){
       return NextResponse.json([])
     }
     
+    console.log('Found folders:', userFolders?.length, 'items in facilitator-lessons')
+    console.log('Folder details:', JSON.stringify(userFolders?.slice(0, 3), null, 2))
+    
     const out = []
     
     // Iterate through each user folder
     for (const folder of userFolders || []) {
-      if (!folder.id) continue // Skip non-folder items
+      // Skip if it's a file (has metadata property) rather than a folder
+      // Folders in Supabase Storage typically don't have metadata property or have null id
+      console.log('Processing folder:', folder.name, 'has metadata?', !!folder.metadata, 'id:', folder.id)
+      if (folder.metadata || !folder.name) {
+        console.log('Skipping', folder.name, '- appears to be a file')
+        continue
+      }
       
       try {
         // List files in this user's folder
@@ -47,9 +56,15 @@ export async function GET(request){
           continue
         }
         
+        console.log(`Found ${files?.length || 0} files in ${folder.name}`)
+        
         // Process each file
         for (const fileObj of files || []) {
-          if (!fileObj.name.toLowerCase().endsWith('.json')) continue
+          console.log('Processing file:', fileObj.name, 'in folder', folder.name)
+          if (!fileObj.name.toLowerCase().endsWith('.json')) {
+            console.log('Skipping non-JSON file:', fileObj.name)
+            continue
+          }
           try {
             // Download and parse each file
             const { data: fileData, error: downloadError } = await supabase.storage
