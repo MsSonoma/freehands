@@ -41,7 +41,7 @@ export async function POST(request){
 
   try {
     // Download from Supabase Storage
-    const storagePath = `facilitator-lessons/${file}`
+    const storagePath = `facilitator-lessons/${userId}/${file}`
     const { data: fileData, error: downloadError } = await supabase.storage
       .from('lessons')
       .download(storagePath)

@@ -61,13 +61,13 @@ export async function GET(request) {
       const { createClient } = await import('@supabase/supabase-js');
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
       
-      // List all lessons from facilitator-lessons bucket
+      // List all lessons in the user's facilitator-lessons folder
       const results = [];
       
       try {
         const { data: files, error: filesError } = await supabase.storage
           .from('lessons')
-          .list('facilitator-lessons', {
+          .list(`facilitator-lessons/${userId}`, {
             limit: 1000,
             offset: 0,
           });
@@ -80,7 +80,7 @@ export async function GET(request) {
         }
         
         if (!files || files.length === 0) {
-          console.log('[FACILITATOR] No files found in facilitator-lessons');
+          console.log('[FACILITATOR] No files found in facilitator-lessons/', userId);
           return NextResponse.json(results);
         }
         
@@ -88,12 +88,12 @@ export async function GET(request) {
         const jsonFiles = files.filter(f => f.name && f.name.toLowerCase().endsWith('.json') && f.id !== null);
         console.log('[FACILITATOR] JSON files:', jsonFiles.length);
         
-        // Download and parse each file, filtering by userId
+        // Download and parse each file
         for (const file of jsonFiles) {
           try {
             const { data: fileData, error: downloadError } = await supabase.storage
               .from('lessons')
-              .download(`facilitator-lessons/${file.name}`);
+              .download(`facilitator-lessons/${userId}/${file.name}`);
             
             if (downloadError || !fileData) {
               console.error('[FACILITATOR] Download error for', file.name, downloadError);
@@ -102,12 +102,6 @@ export async function GET(request) {
             
             const text = await fileData.text();
             const lessonData = JSON.parse(text);
-            
-            // Only include lessons created by this user
-            if (lessonData.userId !== userId) {
-              console.log('[FACILITATOR] Skipping lesson from different user:', file.name);
-              continue;
-            }
             
             results.push({
               file: file.name,

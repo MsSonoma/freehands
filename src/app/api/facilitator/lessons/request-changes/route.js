@@ -69,12 +69,13 @@ export async function POST(request){
   
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error:'Invalid body' }, { status: 400 }) }
-  const { file, changeRequest } = body || {}
+  const { file, changeRequest, userId: requestUserId } = body || {}
+  const userId = requestUserId || user.id
   if (!file || !changeRequest) return NextResponse.json({ error:'Missing file or changeRequest' }, { status: 400 })
   
   try {
     // Load existing lesson from Supabase Storage
-    const storagePath = `facilitator-lessons/${file}`
+    const storagePath = `facilitator-lessons/${userId}/${file}`
     const { data: fileData, error: downloadError } = await supabase.storage
       .from('lessons')
       .download(storagePath)

@@ -96,12 +96,12 @@ export async function POST(request){
     const file = `${base}.json`
     const lessonJson = JSON.stringify(lesson, null, 2)
     
-    // Store in Supabase Storage flat in facilitator-lessons bucket
+    // Store in Supabase Storage in user's facilitator-lessons folder
     let storageUrl = null
     let storageError = null
     if (supabase) {
       try {
-        const storagePath = `facilitator-lessons/${file}`
+        const storagePath = `facilitator-lessons/${user.id}/${file}`
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('lessons')
           .upload(storagePath, lessonJson, {
