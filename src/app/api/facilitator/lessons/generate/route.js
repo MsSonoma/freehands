@@ -135,7 +135,7 @@ export async function POST(request){
       storageUrl,
       storageError,
       path: storageUrl,
-      targetUserId // Return for debugging/confirmation
+      userId: user.id // Return for debugging/confirmation
     })
   } catch (e) {
     return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })
