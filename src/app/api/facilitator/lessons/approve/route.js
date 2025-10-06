@@ -52,29 +52,12 @@ export async function POST(request){
     
     const raw = await fileData.text()
     const js = JSON.parse(raw)
-    const subj = (js.subject || '').toString().toLowerCase()
-    const allowed = new Set(['math','language arts','science','social studies'])
-    if (!allowed.has(subj)) return NextResponse.json({ error:'Unknown or missing subject on lesson' }, { status: 400 })
     
     // Mark as approved and clear needsUpdate flag
     js.approved = true
     if (js.needsUpdate) delete js.needsUpdate
     
-    // Store approved version in subject-specific path
-    const approvedPath = `lessons/${subj}/${file}`
-    const { error: uploadError } = await supabase.storage
-      .from('lessons')
-      .upload(approvedPath, JSON.stringify(js, null, 2), {
-        contentType: 'application/json',
-        upsert: true
-      })
-    
-    if (uploadError) {
-      console.error('Approve upload error:', uploadError)
-      return NextResponse.json({ error: 'Failed to save approved lesson' }, { status: 500 })
-    }
-    
-    // Also update the original file to mark it as approved
+    // Update the original file to mark it as approved
     const { error: updateError } = await supabase.storage
       .from('lessons')
       .upload(storagePath, JSON.stringify(js, null, 2), {
@@ -82,7 +65,12 @@ export async function POST(request){
         upsert: true
       })
     
-    return NextResponse.json({ ok:true, subject: subj, file })
+    if (updateError) {
+      console.error('Approve update error:', updateError)
+      return NextResponse.json({ error: 'Failed to update lesson' }, { status: 500 })
+    }
+    
+    return NextResponse.json({ ok:true, file })
   } catch (e) {
     console.error('Approve error:', e)
     return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })
