@@ -37,7 +37,15 @@ function buildPrompt({ title, subject, difficulty, grade, description, notes, vo
   if (vocab && vocab.trim()) {
     vocabText = ` Use these vocabulary terms in the lesson: ${vocab.trim()}.`
   }
-  return `You are an education content generator. Create a JSON lesson with fields: id, title, grade, difficulty, blurb, vocab (array of {term, definition}), teachingNotes, sample (at least 10 Q&A), truefalse (at least 10), multiplechoice (at least 10), fillintheblank (at least 10), shortanswer (at least 10). Keep kid-safe language. Difficulty: ${difficulty}. Grade: ${grade}. Subject: ${subject}. Title: ${title}. Blurb: ${description}.${vocabText} Notes: ${notes || 'none'}. Use concise, age-appropriate wording. Ensure each question type has at least 10 questions.`
+  let notesGuidance = ''
+  if (notes && notes.trim()) {
+    notesGuidance = ` Additional guidance for lesson creation: ${notes.trim()}.`
+  }
+  return `You are an education content generator. Create a JSON lesson with fields: id, title, grade, difficulty, blurb, vocab (array of {term, definition}), teachingNotes, sample (at least 10 Q&A), truefalse (at least 10), multiplechoice (at least 10), fillintheblank (at least 10), shortanswer (at least 10).
+
+IMPORTANT: The teachingNotes field must contain practical, actionable guidance for facilitators teaching this lesson. Include: key teaching strategies, common student misconceptions to address, suggested activities or demonstrations, connections to real-world examples, and tips for differentiation. Make it 2-4 sentences of concrete, helpful advice.${notesGuidance}
+
+Keep all content kid-safe and age-appropriate for ${grade} grade. Difficulty: ${difficulty}. Grade: ${grade}. Subject: ${subject}. Title: ${title}. Blurb: ${description}.${vocabText} Use concise, age-appropriate wording. Ensure each question type has at least 10 questions.`
 }
 
 async function callModel(prompt){
@@ -48,7 +56,8 @@ async function callModel(prompt){
     // Return a tiny stub to keep dev flows working
     return {
       id: 'Dev_Lesson', title: 'Dev Lesson', grade: '3rd', difficulty: 'Beginner',
-      blurb: 'A development stub lesson.', vocab:[{term:'term',definition:'definition'}], teachingNotes:'Notes.',
+      blurb: 'A development stub lesson.', vocab:[{term:'term',definition:'definition'}], 
+      teachingNotes:'Use concrete examples and hands-on activities. Address common misconceptions. Connect to real-world scenarios.',
       sample:[{question:'What is 1+1?', expectedAny:['2']}], truefalse:[{question:'2 is even.', answer:true}],
       multiplechoice:[{question:'Pick 2', choices:['1','2','3','4'], correct:1}],
       fillintheblank:[{question:'__ is the result of 1+1.', expectedAny:['2']}],

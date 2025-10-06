@@ -78,10 +78,26 @@ function LessonsPageInner(){
   useEffect(() => {
     let cancelled = false
     ;(async () => {
+      // Get auth token for facilitator lessons
+      let token = null
+      try {
+        const supabase = getSupabaseClient()
+        if (supabase) {
+          const { data: { session } } = await supabase.auth.getSession()
+          token = session?.access_token || null
+        }
+      } catch {}
+      
       const lessonsMap = {}
       for (const subject of subjects) {
         try {
-          const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { cache: 'no-store' })
+          const headers = subject === 'facilitator' && token 
+            ? { 'Authorization': `Bearer ${token}` }
+            : {}
+          const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { 
+            cache: 'no-store',
+            headers 
+          })
           const list = res.ok ? await res.json() : []
           lessonsMap[subject] = Array.isArray(list) ? list : []
         } catch {
