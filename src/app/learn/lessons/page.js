@@ -203,160 +203,79 @@ function LessonsPageInner(){
               const lessons = lessonsBySubject[subject]
               if (!lessons || lessons.length === 0) return null
 
-              // For facilitator lessons, render cards directly without heading
-              if (subject === 'facilitator') {
-                return lessons.map((l) => {
-                  const ent = featuresForTier(planTier)
-                  const cap = ent.lessonsPerDay
-                  const capped = Number.isFinite(cap) && todaysCount >= cap
-                  const lessonKey = `${subject}/${l.file}`
-                  const medalTier = medals[lessonKey]?.medalTier || null
-                  const medal = medalTier ? emojiForTier(medalTier) : ''
-                  
-                  // Badge for subject (from lesson.subject field)
-                  const subjectBadge = l.subject 
-                    ? l.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-                    : 'Custom'
-                  
-                  return (
-                    <div key={`${subject}-${l.file}`} style={card}>
-                      <div>
-                        <div style={{ fontSize:12, color:'#6b7280', marginBottom:4 }}>
-                          {subjectBadge}
-                        </div>
-                        <h3 style={{ margin:'0 0 6px' }}>
-                          {l.title} {medal}
-                        </h3>
-                        <p style={{ margin:0, color:'#4b5563', fontSize:14 }}>{l.blurb || ' '}</p>
-                        {(l.grade || l.difficulty) && (
-                          <div style={{ fontSize:12, color:'#9ca3af', marginTop:4 }}>
-                            {l.grade && `Grade ${l.grade}`}
-                            {l.grade && l.difficulty && '  '}
-                            {l.difficulty && l.difficulty.charAt(0).toUpperCase() + l.difficulty.slice(1)}
-                          </div>
-                        )}
+              const displaySubject = subject === 'facilitator' ? 'Facilitator Lessons' : 
+                                     subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+
+              // Render all lessons as cards with subject badges - no headings
+              return lessons.map((l) => {
+                const ent = featuresForTier(planTier)
+                const cap = ent.lessonsPerDay
+                const capped = Number.isFinite(cap) && todaysCount >= cap
+                const lessonKey = `${subject}/${l.file}`
+                const medalTier = medals[lessonKey]?.medalTier || null
+                const medal = medalTier ? emojiForTier(medalTier) : ''
+                
+                // For facilitator lessons, use lesson.subject; for others use the subject category
+                const subjectBadge = subject === 'facilitator' && l.subject
+                  ? l.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+                  : displaySubject
+                
+                return (
+                  <div key={`${subject}-${l.file}`} style={card}>
+                    <div>
+                      <div style={{ fontSize:12, color:'#6b7280', marginBottom:4 }}>
+                        {subjectBadge}
                       </div>
-                      <button
-                        style={capped ? btnDisabled : btn}
-                        disabled={capped}
-                        onClick={async ()=>{
-                          try {
-                            const supabase = getSupabaseClient()
-                            const { data: { session } } = await supabase.auth.getSession()
-                            const token = session?.access_token
-                            if (!token) { openLesson(subject, l.file); return }
-                            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
-                            const lessonKey = `${subject}/${l.file}`
-                            const res = await fetch('/api/lessons/quota', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                              body: JSON.stringify({ lessonKey, timezone: tz })
-                            })
-                            if (res.ok) {
-                              const js = await res.json()
-                              if (js.allowed) {
-                                openLesson(subject, l.file)
-                              } else {
-                                alert(js.message || 'Lesson quota exceeded')
-                              }
-                            } else {
+                      <h3 style={{ margin:'0 0 6px' }}>
+                        {l.title} {medal}
+                      </h3>
+                      <p style={{ margin:0, color:'#4b5563', fontSize:14 }}>{l.blurb || ' '}</p>
+                      {(l.grade || l.difficulty) && (
+                        <div style={{ fontSize:12, color:'#9ca3af', marginTop:4 }}>
+                          {l.grade && `Grade ${l.grade}`}
+                          {l.grade && l.difficulty && '  '}
+                          {l.difficulty && l.difficulty.charAt(0).toUpperCase() + l.difficulty.slice(1)}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      style={capped ? btnDisabled : btn}
+                      disabled={capped}
+                      onClick={async ()=>{
+                        try {
+                          const supabase = getSupabaseClient()
+                          const { data: { session } } = await supabase.auth.getSession()
+                          const token = session?.access_token
+                          if (!token) { openLesson(subject, l.file); return }
+                          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+                          const lessonKey = `${subject}/${l.file}`
+                          const res = await fetch('/api/lessons/quota', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                            body: JSON.stringify({ lessonKey, timezone: tz })
+                          })
+                          if (res.ok) {
+                            const js = await res.json()
+                            if (js.allowed) {
                               openLesson(subject, l.file)
+                            } else {
+                              alert(js.message || 'Lesson quota exceeded')
                             }
-                          } catch {
+                          } else {
                             openLesson(subject, l.file)
                           }
-                        }}
-                      >
-                        Start Lesson
-                      </button>
-                    </div>
-                  )
-                })
-              }
-
-              // For other subjects, return null - they'll be rendered separately below
-              return null
+                        } catch {
+                          openLesson(subject, l.file)
+                        }
+                      }}
+                    >
+                      Start Lesson
+                    </button>
+                  </div>
+                )
+              })
             })}
           </div>
-
-          {/* Render other subjects with headings */}
-          {subjects.map(subject => {
-            if (subject === 'facilitator') return null
-            
-            const lessons = lessonsBySubject[subject]
-            if (!lessons || lessons.length === 0) return null
-
-            const displaySubject = subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-
-            return (
-              <div key={subject}>
-                <h2 style={subjectHeading}>{displaySubject}</h2>
-                <div style={grid}>
-                  {lessons.map((l) => {
-                    const ent = featuresForTier(planTier)
-                    const cap = ent.lessonsPerDay
-                    const capped = Number.isFinite(cap) && todaysCount >= cap
-                    const lessonKey = `${subject}/${l.file}`
-                    const medalTier = medals[lessonKey]?.medalTier || null
-                    const medal = medalTier ? emojiForTier(medalTier) : ''
-                    
-                    return (
-                      <div key={l.file} style={card}>
-                        <div>
-                          <div style={{ fontSize:12, color:'#6b7280', marginBottom:4 }}>
-                            {displaySubject}
-                          </div>
-                          <h3 style={{ margin:'0 0 6px' }}>
-                            {l.title} {medal}
-                          </h3>
-                          <p style={{ margin:0, color:'#4b5563', fontSize:14 }}>{l.blurb || ' '}</p>
-                          {(l.grade || l.difficulty) && (
-                            <div style={{ fontSize:12, color:'#9ca3af', marginTop:4 }}>
-                              {l.grade && `Grade ${l.grade}`}
-                              {l.grade && l.difficulty && '  '}
-                              {l.difficulty && l.difficulty.charAt(0).toUpperCase() + l.difficulty.slice(1)}
-                            </div>
-                          )}
-                        </div>
-                        <button
-                          style={capped ? btnDisabled : btn}
-                          disabled={capped}
-                          onClick={async ()=>{
-                            try {
-                              const supabase = getSupabaseClient()
-                              const { data: { session } } = await supabase.auth.getSession()
-                              const token = session?.access_token
-                              if (!token) { openLesson(subject, l.file); return }
-                              const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
-                              const lessonKey = `${subject}/${l.file}`
-                              const res = await fetch('/api/lessons/quota', {
-                                method: 'POST',
-                                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json', 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ lesson_key: lessonKey, timezone: tz })
-                              })
-                              if (res.status === 429) {
-                                const data = await res.json().catch(()=>null)
-                                if (data?.count != null) setTodaysCount(data.count)
-                                return
-                              }
-                              if (!res.ok) { openLesson(subject, l.file); return }
-                              const data = await res.json().catch(()=>null)
-                              if (data?.count != null) setTodaysCount(data.count)
-                              openLesson(subject, l.file)
-                            } catch {
-                              openLesson(subject, l.file)
-                            }
-                          }}
-                        >
-                          Begin
-                        </button>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          })}
         </>
       )}
 
