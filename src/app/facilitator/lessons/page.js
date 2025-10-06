@@ -49,6 +49,12 @@ export default function FacilitatorLessonsPage() {
       const lessonsMap = {}
       for (const subject of subjects) {
         try {
+          // For facilitator subject, skip if no learner is selected
+          if (subject === 'facilitator' && !selectedLearnerId) {
+            lessonsMap[subject] = []
+            continue
+          }
+          
           // For facilitator subject, pass learnerId if available
           const queryParams = subject === 'facilitator' && selectedLearnerId 
             ? `?learnerId=${encodeURIComponent(selectedLearnerId)}` 
