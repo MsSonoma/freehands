@@ -49,14 +49,19 @@ export default function FacilitatorLessonsPage() {
       const lessonsMap = {}
       for (const subject of subjects) {
         try {
+          console.log(`[FRONTEND] Fetching lessons for subject: ${subject}`);
           // No special query params needed - facilitator lessons come from approved subject folders
           const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { cache: 'no-store' })
+          console.log(`[FRONTEND] Response for ${subject}:`, res.status, res.ok);
           const list = res.ok ? await res.json() : []
+          console.log(`[FRONTEND] Lessons for ${subject}:`, list.length);
           lessonsMap[subject] = Array.isArray(list) ? list : []
-        } catch {
+        } catch (err) {
+          console.error(`[FRONTEND] Error fetching ${subject}:`, err);
           lessonsMap[subject] = []
         }
       }
+      console.log('[FRONTEND] All lessons loaded:', lessonsMap);
       if (!cancelled) setAllLessons(lessonsMap)
     })()
     return () => { cancelled = true }
