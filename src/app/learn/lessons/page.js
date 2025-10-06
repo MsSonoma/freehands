@@ -205,6 +205,82 @@ function LessonsPageInner(){
             const displaySubject = subject === 'facilitator' ? 'Facilitator Lessons' : 
                                    subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 
+            // For facilitator lessons, skip heading and show flat with badges
+            if (subject === 'facilitator') {
+              return (
+                <div key={subject} style={grid}>
+                  {lessons.map((l) => {
+                    const ent = featuresForTier(planTier)
+                    const cap = ent.lessonsPerDay
+                    const capped = Number.isFinite(cap) && todaysCount >= cap
+                    const lessonKey = `${subject}/${l.file}`
+                    const medalTier = medals[lessonKey]?.medalTier || null
+                    const medal = medalTier ? emojiForTier(medalTier) : ''
+                    
+                    // Badge for subject (from lesson.subject field)
+                    const subjectBadge = l.subject 
+                      ? l.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+                      : 'Custom'
+                    
+                    return (
+                      <div key={l.file} style={card}>
+                        <div>
+                          <div style={{ fontSize:12, color:'#6b7280', marginBottom:4 }}>
+                            {subjectBadge}
+                          </div>
+                          <h3 style={{ margin:'0 0 6px' }}>
+                            {l.title} {medal}
+                          </h3>
+                          <p style={{ margin:0, color:'#4b5563', fontSize:14 }}>{l.blurb || ' '}</p>
+                          {(l.grade || l.difficulty) && (
+                            <div style={{ fontSize:12, color:'#9ca3af', marginTop:4 }}>
+                              {l.grade && `Grade ${l.grade}`}
+                              {l.grade && l.difficulty && '  '}
+                              {l.difficulty && l.difficulty.charAt(0).toUpperCase() + l.difficulty.slice(1)}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          style={capped ? btnDisabled : btn}
+                          disabled={capped}
+                          onClick={async ()=>{
+                            try {
+                              const supabase = getSupabaseClient()
+                              const { data: { session } } = await supabase.auth.getSession()
+                              const token = session?.access_token
+                              if (!token) { openLesson(subject, l.file); return }
+                              const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+                              const lessonKey = `${subject}/${l.file}`
+                              const res = await fetch('/api/lessons/quota', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                body: JSON.stringify({ lessonKey, timezone: tz })
+                              })
+                              if (res.ok) {
+                                const js = await res.json()
+                                if (js.allowed) {
+                                  openLesson(subject, l.file)
+                                } else {
+                                  alert(js.message || 'Lesson quota exceeded')
+                                }
+                              } else {
+                                openLesson(subject, l.file)
+                              }
+                            } catch {
+                              openLesson(subject, l.file)
+                            }
+                          }}
+                        >
+                          Start Lesson
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            }
+
+            // For other subjects, show with heading
             return (
               <div key={subject}>
                 <h2 style={subjectHeading}>{displaySubject}</h2>
