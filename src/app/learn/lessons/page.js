@@ -252,7 +252,7 @@ function LessonsPageInner(){
                           const res = await fetch('/api/lessons/quota', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                            body: JSON.stringify({ lessonKey, timezone: tz })
+                            body: JSON.stringify({ lesson_key: lessonKey, timezone: tz })
                           })
                           if (res.ok) {
                             const js = await res.json()
