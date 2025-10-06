@@ -20,7 +20,7 @@ export async function GET(request) {
     const subject = decodeURIComponent(parts[parts.length - 1] || '').toLowerCase();
     if (!subject) return NextResponse.json({ error: 'Subject required' }, { status: 400 });
     
-    // If subject is "facilitator", fetch ALL generated lessons from facilitator-lessons/ folders
+    // If subject is "facilitator", fetch ALL generated lessons from facilitator-lessons/ folder (flat structure)
     if (subject === 'facilitator') {
       console.log('[FACILITATOR] Fetching facilitator lessons...');
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -32,90 +32,65 @@ export async function GET(request) {
       
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
       
-      // List all user folders under facilitator-lessons/
+      // List all lessons directly in facilitator-lessons/ folder
       const results = [];
       
       try {
-        const { data: folders, error: foldersError } = await supabase.storage
+        const { data: files, error: filesError } = await supabase.storage
           .from('lessons')
           .list('facilitator-lessons', {
             limit: 1000,
             offset: 0,
           });
         
-        console.log('[FACILITATOR] Folders found:', folders?.length || 0);
+        console.log('[FACILITATOR] Items found:', files?.length || 0);
         
-        if (foldersError) {
-          console.error('[FACILITATOR] Error listing folders:', foldersError);
+        if (filesError) {
+          console.error('[FACILITATOR] Error listing files:', filesError);
           return NextResponse.json(results);
         }
         
-        if (!folders || folders.length === 0) {
-          console.log('[FACILITATOR] No folders found in facilitator-lessons/');
+        if (!files || files.length === 0) {
+          console.log('[FACILITATOR] No files found in facilitator-lessons/');
           return NextResponse.json(results);
         }
         
-        console.log('[FACILITATOR] Raw folders data:', JSON.stringify(folders.slice(0, 2), null, 2));
+        // Filter for JSON files only (skip any folders)
+        const jsonFiles = files.filter(f => f.name && f.name.toLowerCase().endsWith('.json') && f.id !== null);
+        console.log('[FACILITATOR] JSON files:', jsonFiles.length);
         
-        // Each folder is a user ID - in Supabase Storage, folders have id: null, files have id: string
-        for (const folder of folders) {
-          // Skip files (they have an id), we only want folders (id is null)
-          if (folder.id !== null) {
-            console.log('[FACILITATOR] Skipping file:', folder.name);
-            continue;
-          }
-          
-          console.log('[FACILITATOR] Processing folder:', folder.name);
-          
+        // Download and parse each file
+        for (const file of jsonFiles) {
           try {
-            const { data: files, error: filesError } = await supabase.storage
+            const { data: fileData, error: downloadError } = await supabase.storage
               .from('lessons')
-              .list(`facilitator-lessons/${folder.name}`, {
-                limit: 1000,
-                offset: 0,
-              });
+              .download(`facilitator-lessons/${file.name}`);
             
-            console.log(`[FACILITATOR] Files in ${folder.name}:`, files?.length || 0);
-            
-            if (filesError || !files) continue;
-            
-            // Filter for JSON files only
-            const jsonFiles = files.filter(f => f.name && f.name.toLowerCase().endsWith('.json'));
-            
-            // Download and parse each file
-            for (const file of jsonFiles) {
-              try {
-                const { data: fileData, error: downloadError } = await supabase.storage
-                  .from('lessons')
-                  .download(`facilitator-lessons/${folder.name}/${file.name}`);
-                
-                if (downloadError || !fileData) continue;
-                
-                const text = await fileData.text();
-                const lessonData = JSON.parse(text);
-                
-                results.push({
-                  file: file.name,
-                  id: lessonData.id || file.name,
-                  title: lessonData.title || file.name.replace(/\.json$/, '').split('_').join(' '),
-                  blurb: lessonData.blurb || '',
-                  difficulty: (lessonData.difficulty || '').toLowerCase(),
-                  grade: lessonData.grade != null ? String(lessonData.grade) : null,
-                  subject: lessonData.subject || 'unknown', // Subject from lesson data
-                  approved: lessonData.approved || false,
-                  needsUpdate: lessonData.needsUpdate || false,
-                  userId: folder.name // Track which user's folder this came from
-                });
-              } catch (err) {
-                console.error(`Error processing facilitator-lessons/${folder.name}/${file.name}:`, err);
-              }
+            if (downloadError || !fileData) {
+              console.error('[FACILITATOR] Download error for', file.name, downloadError);
+              continue;
             }
+            
+            const text = await fileData.text();
+            const lessonData = JSON.parse(text);
+            
+            results.push({
+              file: file.name,
+              id: lessonData.id || file.name,
+              title: lessonData.title || file.name.replace(/\.json$/, '').split('_').join(' '),
+              blurb: lessonData.blurb || '',
+              difficulty: (lessonData.difficulty || '').toLowerCase(),
+              grade: lessonData.grade != null ? String(lessonData.grade) : null,
+              subject: lessonData.subject || 'unknown',
+              approved: lessonData.approved || false,
+              needsUpdate: lessonData.needsUpdate || false
+            });
           } catch (err) {
-            console.error(`Error fetching files from facilitator-lessons/${folder.name}:`, err);
+            console.error(`[FACILITATOR] Error processing ${file.name}:`, err);
           }
         }
       } catch (err) {
-        console.error('Error in facilitator lessons fetch:', err);
+        console.error('[FACILITATOR] Error in facilitator lessons fetch:', err);
       }
       
       console.log('[FACILITATOR] Total lessons found:', results.length);
