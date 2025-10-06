@@ -141,22 +141,6 @@ export default function AwardsPage() {
 
   return (
     <main style={{ padding: 24, maxWidth: 980, margin: '0 auto', minHeight: 'calc(100dvh - 56px)' }}>
-      <div style={{ marginBottom: 24 }}>
-        <button
-          onClick={() => router.push('/learn')}
-          style={{
-            padding: '8px 16px',
-            border: '1px solid #e5e7eb',
-            borderRadius: 8,
-            background: '#fff',
-            cursor: 'pointer',
-            fontSize: 14
-          }}
-        >
-          ← Back
-        </button>
-      </div>
-
       <h1 style={{ margin: '8px 0 4px', textAlign: 'center' }}>
         🏆 Awards
       </h1>

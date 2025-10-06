@@ -302,7 +302,9 @@ export default function HeaderBar() {
 		if (pathname === '/') return null; // Home has no back button
 
 		// Learner chain: / -> /learn -> /learn/lessons -> /session
+		// Awards viewer returns to learn page
 		if (pathname.startsWith('/session')) return '/learn/lessons';
+		if (pathname.startsWith('/learn/awards')) return '/learn';
 		if (pathname.startsWith('/learn/lessons')) return '/learn';
 		if (pathname.startsWith('/learn')) return '/';
 
