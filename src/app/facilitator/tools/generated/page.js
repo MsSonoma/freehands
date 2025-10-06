@@ -342,7 +342,9 @@ export default function GeneratedLessonsPage(){
                   Request Changes
                 </button>
                 <button style={{...btnApprove, ...(it.approved && !it.needsUpdate ? {opacity:0.5} : {})}} disabled={busy || (it.approved && !it.needsUpdate)} onClick={()=>handleApprove(it.file, it.userId)}>
-                  {busy ? (it.needsUpdate ? 'Updating…' : 'Approving…') : (it.approved && !it.needsUpdate ? 'Approved' : it.needsUpdate ? 'Update' : 'Approve')}
+                  {busy 
+                    ? (it.approved && it.needsUpdate ? 'Updating…' : 'Approving…') 
+                    : (it.approved && !it.needsUpdate ? 'Approved' : it.approved && it.needsUpdate ? 'Update' : 'Approve')}
                 </button>
                 <button style={btnDanger} disabled={busy} onClick={()=>handleDelete(it.file, it.userId)}>
                   {busy ? 'Deleting…' : 'Delete'}
