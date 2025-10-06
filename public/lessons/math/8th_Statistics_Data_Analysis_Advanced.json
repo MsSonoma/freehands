@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Use real data sets to create scatter plots. Discuss how to interpret relationships between variables.",
-  "sample": {
-    "question": "What graph shows the relationship between two sets of data?",
-    "expectedAny": ["scatter plot", "scatterplot", "xy plot", "correlation graph"]
-  },
-  "truefalse": {
-    "question": "An outlier is a data point very different from others.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What represents the trend in scattered data?",
-    "expectedAny": ["line of best fit", "trend line", "regression line", "best fit line"]
-  },
-  "fillintheblank": {
-    "question": "A relationship between two variables is called a ________.",
-    "expectedAny": ["correlation", "relationship", "association", "connection"]
-  },
-  "shortanswer": {
-    "question": "What does a positive correlation mean?",
-    "expectedAny": ["as one variable increases, the other increases", "both variables increase together", "upward trend"]
-  },
-  "wordProblems": {
-    "question": "In a scatter plot of height vs shoe size, if most points trend upward from left to right, what type of correlation is this?",
-    "expectedAny": ["positive correlation", "positive", "direct relationship", "positive association"]
-  }
+  "sample": [
+    { "question": "What graph shows the relationship between two sets of data?", "expectedAny": ["scatter plot"] },
+    { "question": "Which is variable relationship?", "choices": ["Random", "Correlation", "Unrelated", "Independent"], "correct": 1, "expectedAny": ["correlation"] },
+    { "question": "Line representing trend is ________.", "expectedAny": ["line of best fit"] },
+    { "question": "Very different data point is ________.", "expectedAny": ["outlier"] },
+    { "question": "General data pattern is ________.", "expectedAny": ["trend"] },
+    { "question": "What shows two data sets?", "choices": ["Bar", "Scatter plot", "Pie", "Line"], "correct": 1, "expectedAny": ["scatter plot"] },
+    { "question": "Two variable relationship is ________.", "expectedAny": ["correlation"] },
+    { "question": "What is trend line?", "choices": ["Random", "Line of best fit", "Vertical", "Horizontal"], "correct": 1, "expectedAny": ["line of best fit"] },
+    { "question": "Unusual point is ________.", "expectedAny": ["outlier"] },
+    { "question": "Data direction is ________.", "expectedAny": ["trend"] }
+  ],
+  "truefalse": [
+    { "question": "An outlier is a data point very different from others.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Scatter plot shows one data set.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Correlation shows relationship.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Line of best fit is random.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Trend shows pattern.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Outliers fit pattern.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Scatter plot shows two variables.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Correlation proves causation.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Best fit line shows trend.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All data points are outliers.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What represents the trend in scattered data?", "choices": ["Random line", "Line of best fit", "Vertical line", "Horizontal line"], "correct": 1, "expectedAny": ["line of best fit"] },
+    { "question": "What shows two data sets?", "choices": ["Bar", "Scatter plot", "Pie", "Histogram"], "correct": 1, "expectedAny": ["scatter plot"] },
+    { "question": "What is variable relationship?", "choices": ["Random", "Correlation", "Unrelated", "Independent"], "correct": 1, "expectedAny": ["correlation"] },
+    { "question": "What is unusual point?", "choices": ["Normal", "Outlier", "Average", "Median"], "correct": 1, "expectedAny": ["outlier"] },
+    { "question": "What is data pattern?", "choices": ["Random", "Trend", "Chaos", "Disorder"], "correct": 1, "expectedAny": ["trend"] },
+    { "question": "Positive correlation means?", "choices": ["Opposite", "Both increase", "Both decrease", "Random"], "correct": 1, "expectedAny": ["both increase"] },
+    { "question": "Scatter plot uses?", "choices": ["One variable", "Two variables", "Three variables", "No variables"], "correct": 1, "expectedAny": ["two variables"] },
+    { "question": "Negative correlation means?", "choices": ["Both increase", "One increases, one decreases", "Both constant", "Random"], "correct": 1, "expectedAny": ["one increases, one decreases"] },
+    { "question": "Best fit line shows?", "choices": ["Nothing", "General trend", "Exact points", "Random"], "correct": 1, "expectedAny": ["general trend"] },
+    { "question": "Outlier is?", "choices": ["Typical", "Very different", "Average", "Normal"], "correct": 1, "expectedAny": ["very different"] }
+  ],
+  "fillintheblank": [
+    { "question": "A relationship between two variables is called a ________.", "expectedAny": ["correlation"] },
+    { "question": "A ________ plot shows two data sets.", "expectedAny": ["scatter"] },
+    { "question": "________ of best fit shows trend.", "expectedAny": ["line"] },
+    { "question": "An ________ is unusual data point.", "expectedAny": ["outlier"] },
+    { "question": "A ________ is general pattern.", "expectedAny": ["trend"] },
+    { "question": "________ shows variable relationship.", "expectedAny": ["correlation"] },
+    { "question": "Scatter ________ uses two variables.", "expectedAny": ["plot"] },
+    { "question": "Line of ________ fit represents trend.", "expectedAny": ["best"] },
+    { "question": "An ________ differs from others.", "expectedAny": ["outlier"] },
+    { "question": "General direction is ________.", "expectedAny": ["trend"] }
+  ],
+  "shortanswer": [
+    { "question": "What does a positive correlation mean?", "expectedAny": ["as one variable increases, the other increases", "both variables increase together"] },
+    { "question": "What is scatter plot?", "expectedAny": ["graph showing two data sets", "relationship graph", "plot showing two variables", "two-variable graph"] },
+    { "question": "What is correlation?", "expectedAny": ["relationship between variables", "variable connection", "how variables relate", "connection between data sets"] },
+    { "question": "What is line of best fit?", "expectedAny": ["line showing trend", "trend line"] },
+    { "question": "What is outlier?", "expectedAny": ["very different data point", "unusual point"] },
+    { "question": "What is trend?", "expectedAny": ["general pattern", "data direction"] },
+    { "question": "What is negative correlation?", "expectedAny": ["one increases, other decreases", "opposite relationship"] },
+    { "question": "Why use scatter plot?", "expectedAny": ["show two variable relationship", "visualize correlation"] },
+    { "question": "How identify outlier?", "expectedAny": ["very different from others", "far from pattern"] },
+    { "question": "What does no correlation mean?", "expectedAny": ["no relationship", "variables unrelated"] }
+  ],
+  "wordProblems": [
+    { "question": "In a scatter plot of height vs shoe size, if most points trend upward from left to right, what type of correlation is this?", "expectedAny": ["positive correlation", "positive"] },
+    { "question": "Study time vs errors: as study increases, errors decrease. What correlation?", "expectedAny": ["negative correlation", "negative"] },
+    { "question": "Age vs reaction time plot trends upward. What correlation?", "expectedAny": ["positive correlation", "positive"] },
+    { "question": "One point at (5,100) when others cluster near (5,10). What is it?", "expectedAny": ["outlier", "unusual point"] },
+    { "question": "Temperature vs ice cream sales both increase. What correlation?", "expectedAny": ["positive correlation", "positive"] },
+    { "question": "Exercise vs weight: exercise up, weight down. What correlation?", "expectedAny": ["negative correlation", "negative"] },
+    { "question": "Scatter plot shows no pattern. What correlation?", "expectedAny": ["no correlation", "none"] },
+    { "question": "Price vs demand: price up, demand down. What correlation?", "expectedAny": ["negative correlation", "negative"] },
+    { "question": "Most data near line, one far away. What is far point?", "expectedAny": ["outlier", "unusual point"] },
+    { "question": "Hours worked vs pay both increase. What correlation?", "expectedAny": ["positive correlation", "positive"] }
+  ]
 }

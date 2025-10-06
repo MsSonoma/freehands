@@ -23,52 +23,95 @@
     {
       "term": "adaptation",
       "definition": "A characteristic that helps an organism survive in its environment"
+    },
+    {
+      "term": "abiotic factor",
+      "definition": "A nonliving part of an ecosystem, like sunlight or water"
+    },
+    {
+      "term": "biotic factor",
+      "definition": "A living part of an ecosystem, like plants and animals"
+    },
+    {
+      "term": "niche",
+      "definition": "An organism's role and place in its environment"
+    },
+    {
+      "term": "symbiosis",
+      "definition": "A close relationship between two species that live together"
+    },
+    {
+      "term": "mutualism",
+      "definition": "A symbiotic relationship where both species benefit"
+    },
+    {
+      "term": "commensalism",
+      "definition": "A symbiotic relationship where one benefits and the other is not harmed"
+    },
+    {
+      "term": "parasitism",
+      "definition": "A symbiotic relationship where one benefits and the other is harmed"
     }
   ],
   "teachingNotes": "Explore complex relationships in ecosystems. Discuss how changes in one part affect the whole system. Study adaptations that help organisms survive in different environments.",
-  "sample": {
-    "question": "How is a food web different from a food chain?",
-    "expectedAny": [
-      "food web has multiple chains",
-      "more complex connections",
-      "shows all feeding relationships",
-      "interconnected chains"
-    ]
-  },
-  "truefalse": {
-    "question": "If one species disappears from an ecosystem, it can affect many other species.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is an example of an adaptation?",
-    "expectedAny": [
-      "thick fur in cold climates",
-      "camouflage coloring",
-      "sharp claws for hunting",
-      "survival characteristic"
-    ]
-  },
-  "fillintheblank": {
-    "question": "In a predator-prey relationship, the hawk is the ________ and the mouse is the ________.",
-    "expectedAny": [
-      "predator, prey",
-      "hunter, hunted",
-      "predator and prey",
-      "predator/prey"
-    ]
-  },
-  "shortanswer": {
-    "question": "What might happen to an ecosystem if all the predators were removed?",
-    "expectedAny": [
-      "prey overpopulation",
-      "plant damage from overgrazing",
-      "imbalance",
-      "ecosystem disruption"
-    ]
-  }
+  "sample": [
+    { "question": "How is a food web different from a food chain?", "expectedAny": ["food web has multiple chains", "more complex connections"] },
+    { "question": "Define adaptation.", "expectedAny": ["trait that helps survive"] },
+    { "question": "Give an example of a structural adaptation.", "expectedAny": ["thick fur", "camouflage"] },
+    { "question": "Give an example of a behavioral adaptation.", "expectedAny": ["migration", "nocturnal activity"] },
+    { "question": "What is a producer?", "expectedAny": ["makes own food"] },
+    { "question": "What is a decomposer?", "expectedAny": ["breaks down dead matter"] },
+    { "question": "Why are decomposers important?", "expectedAny": ["recycle nutrients"] },
+    { "question": "What is biodiversity?", "expectedAny": ["variety of living things"] },
+    { "question": "How can humans affect ecosystems?", "expectedAny": ["pollution", "habitat loss"] },
+    { "question": "What happens if prey increases a lot?", "expectedAny": ["predators may increase later"] }
+  ],
+  "truefalse": [
+    { "question": "If one species disappears, it can affect many others.", "expectedAny": ["true"] },
+    { "question": "Producers get energy from eating other organisms.", "expectedAny": ["false"] },
+    { "question": "Predators eat prey.", "expectedAny": ["true"] },
+    { "question": "Decomposers return nutrients to the soil.", "expectedAny": ["true"] },
+    { "question": "Adaptations never help survival.", "expectedAny": ["false"] },
+    { "question": "Food webs show many pathways of energy.", "expectedAny": ["true"] },
+    { "question": "Humans cannot change ecosystems.", "expectedAny": ["false"] },
+    { "question": "Camouflage can help animals avoid predators.", "expectedAny": ["true"] },
+    { "question": "Removing predators always helps prey long-term.", "expectedAny": ["false"] },
+    { "question": "Decomposers include fungi and bacteria.", "expectedAny": ["true"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is an example of an adaptation?", "choices": ["thick fur", "no change", "random color", "unused wings"], "correct": 0, "expectedAny": ["thick fur"] },
+    { "question": "Which shows energy flow in an ecosystem?", "choices": ["food web", "rock cycle", "water cycle", "star chart"], "correct": 0, "expectedAny": ["food web"] },
+    { "question": "Which is a producer?", "choices": ["wolf", "oak tree", "mushroom", "hawk"], "correct": 1, "expectedAny": ["oak tree"] },
+    { "question": "Which is a decomposer?", "choices": ["rabbit", "hawk", "mushroom", "oak tree"], "correct": 2, "expectedAny": ["mushroom"] },
+    { "question": "Predator-prey example:", "choices": ["hawk-mouse", "grass-rabbit", "fungus-log", "bee-flower"], "correct": 0, "expectedAny": ["hawk and mouse"] },
+    { "question": "Behavioral adaptation example:", "choices": ["migration", "thick fur", "sharp teeth", "long neck"], "correct": 0, "expectedAny": ["migration"] },
+    { "question": "If producers decrease, what might happen?", "choices": ["consumers increase", "consumers decrease", "no change", "decomposers vanish"], "correct": 1, "expectedAny": ["consumers decrease"] },
+    { "question": "What adds nutrients back to soil?", "choices": ["producers", "consumers", "decomposers", "predators"], "correct": 2, "expectedAny": ["decomposers"] },
+    { "question": "Which increases biodiversity?", "choices": ["habitat loss", "pollution", "protecting habitats", "overfishing"], "correct": 2, "expectedAny": ["protecting habitats"] },
+    { "question": "Camouflage helps animals to:", "choices": ["be seen", "blend in", "smell better", "make noise"], "correct": 1, "expectedAny": ["blend in"] }
+  ],
+  "fillintheblank": [
+    { "question": "In a predator-prey relationship, the hawk is the ________ and the mouse is the ________.", "expectedAny": ["predator", "prey", "hunter then hunted"] },
+    { "question": "Organisms that make their own food are ________.", "expectedAny": ["producers", "autotrophs"] },
+    { "question": "Organisms that break down dead matter are ________.", "expectedAny": ["decomposers", "bacteria and fungi"] },
+    { "question": "A trait that helps survival is an ________.", "expectedAny": ["adaptation", "adaptive trait"] },
+    { "question": "A network of connected food chains is a ________.", "expectedAny": ["food web", "web"] },
+    { "question": "Variety of life in an area is ________.", "expectedAny": ["biodiversity", "species variety"] },
+    { "question": "Animals that eat other animals are ________.", "expectedAny": ["predators", "carnivores"] },
+    { "question": "Animals that are eaten are ________.", "expectedAny": ["prey", "food for predators"] },
+    { "question": "Returning nutrients to soil is ________ role.", "expectedAny": ["decomposer's", "the role of decomposers"] },
+    { "question": "Protecting habitats can increase ________.", "expectedAny": ["biodiversity", "species diversity"] }
+  ],
+  "shortanswer": [
+    { "question": "What might happen to an ecosystem if all predators were removed?", "expectedAny": ["prey overpopulation", "overgrazing", "imbalance", "trophic cascade"] },
+    { "question": "Explain how a food web shows energy flow.", "expectedAny": ["arrows show energy from producers to consumers", "energy moves from plants to animals", "direction shows transfer"] },
+    { "question": "Give one structural and one behavioral adaptation.", "expectedAny": ["fur and migration", "camouflage and hibernation", "thorns and nocturnal hunting"] },
+    { "question": "How do decomposers support producers?", "expectedAny": ["return nutrients to soil", "recycle nutrients plants need"] },
+    { "question": "How can pollution affect an ecosystem?", "expectedAny": ["harm species", "reduce biodiversity", "poison water or soil"] },
+    { "question": "Why is biodiversity important?", "expectedAny": ["stability", "resilience", "helps ecosystems recover from change"] },
+    { "question": "How might a drought affect a food web?", "expectedAny": ["reduce producers", "affect consumers", "less water means fewer plants"] },
+    { "question": "What happens if an invasive species is introduced?", "expectedAny": ["outcompete natives", "reduce native populations", "disrupt the web"] },
+    { "question": "Describe a predator-prey cycle change.", "expectedAny": ["prey up then predators up", "predators lag behind prey", "linked population cycles"] },
+    { "question": "Give one way humans can help ecosystems.", "expectedAny": ["protect habitats", "reduce pollution", "restore habitats"] }
+  ]
 }

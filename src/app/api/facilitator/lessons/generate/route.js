@@ -34,8 +34,12 @@ function safeFileName(s){
   return base.slice(0, 80) || 'lesson'
 }
 
-function buildPrompt({ title, subject, difficulty, grade, description, notes }){
-  return `You are an education content generator. Create a JSON lesson with fields: id, title, grade, difficulty, blurb, vocab (array of {term, definition}), teachingNotes, sample (7 Q&A), truefalse (7), multiplechoice (7), fillintheblank (7), shortanswer (7). Keep kid-safe language. Difficulty: ${difficulty}. Grade: ${grade}. Subject: ${subject}. Title: ${title}. Blurb: ${description}. Notes: ${notes || 'none'}. Use concise, age-appropriate wording.`
+function buildPrompt({ title, subject, difficulty, grade, description, notes, vocab }){
+  let vocabText = ''
+  if (vocab && vocab.trim()) {
+    vocabText = ` Use these vocabulary terms in the lesson: ${vocab.trim()}.`
+  }
+  return `You are an education content generator. Create a JSON lesson with fields: id, title, grade, difficulty, blurb, vocab (array of {term, definition}), teachingNotes, sample (at least 10 Q&A), truefalse (at least 10), multiplechoice (at least 10), fillintheblank (at least 10), shortanswer (at least 10). Keep kid-safe language. Difficulty: ${difficulty}. Grade: ${grade}. Subject: ${subject}. Title: ${title}. Blurb: ${description}.${vocabText} Notes: ${notes || 'none'}. Use concise, age-appropriate wording. Ensure each question type has at least 10 questions.`
 }
 
 async function callModel(prompt){
@@ -74,10 +78,10 @@ export async function POST(request){
   if (plan_tier !== 'premium') return NextResponse.json({ error:'Premium plan required' }, { status: 403 })
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error:'Invalid body' }, { status: 400 }) }
-  const { title, subject, difficulty, grade, description, notes } = body || {}
+  const { title, subject, difficulty, grade, description, notes, vocab } = body || {}
   if (!title || !subject || !difficulty || !grade) return NextResponse.json({ error:'Missing fields' }, { status: 400 })
   try {
-    const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes })
+    const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes, vocab })
     const lesson = await callModel(prompt)
   // Normalize core fields
     lesson.id = lesson.id || `${grade}_${title}_${difficulty}`.replace(/\s+/g,'_')

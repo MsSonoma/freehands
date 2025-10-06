@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "9th_Age_Exploration_Colonization_Trade_Beginner",
   "title": "Age of Exploration: Colonization and Global Trade",
   "grade": "9th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "exploration",
-      "definition": "Period of European overseas expansion and discovery (1400s-1600s)"
-    },
-    {
-      "term": "colonization",
-      "definition": "Establishing settlements and political control over distant territories"
-    },
-    {
-      "term": "mercantilism",
-      "definition": "Economic theory that national wealth depends on accumulating gold and favorable trade"
-    },
-    {
-      "term": "conquistador",
-      "definition": "Spanish explorer and conqueror in the Americas"
-    },
-    {
-      "term": "columbian exchange",
-      "definition": "Transfer of plants, animals, and diseases between Old and New Worlds"
-    }
+    {"term": "exploration", "definition": "Period of European overseas expansion and discovery (1400s-1600s)"},
+    {"term": "colonization", "definition": "Establishing settlements and political control over distant territories"},
+    {"term": "mercantilism", "definition": "Economic theory that national wealth depends on accumulating gold and favorable trade"},
+    {"term": "conquistador", "definition": "Spanish explorer and conqueror in the Americas"},
+    {"term": "columbian exchange", "definition": "Transfer of plants, animals, and diseases between Old and New Worlds"}
   ],
   "teachingNotes": "Discuss motivations for exploration and consequences for indigenous peoples. Analyze the global impact of European expansion.",
-  "sample": {
-    "question": "What was the period of European overseas expansion called?",
-    "expectedAny": [
-      "age of exploration",
-      "exploration period",
-      "age of discovery",
-      "overseas expansion"
-    ]
-  },
-  "truefalse": {
-    "question": "Mercantilism believed national wealth depended on accumulating gold.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What were Spanish explorers in the Americas called?",
-    "expectedAny": [
-      "conquistadors",
-      "conquistadores",
-      "Spanish conquerors",
-      "Spanish explorers"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The transfer of plants and animals between worlds was the ________ exchange.",
-    "expectedAny": [
-      "Columbian",
-      "Columbus",
-      "trans-Atlantic",
-      "intercontinental"
-    ]
-  },
-  "shortanswer": {
-    "question": "What motivated European exploration in the 1400s-1500s?",
-    "expectedAny": [
-      "desire for spices and gold",
-      "spread Christianity",
-      "find new trade routes",
-      "competition between nations"
-    ]
-  }
+  "sample": [
+    {"question": "What was the period of European overseas expansion called?", "expectedAny": ["age of exploration", "exploration period", "age of discovery", "exploration era"]},
+    {"question": "What is colonization?", "expectedAny": ["establishing settlements", "political control over territories", "forming colonies", "settling new lands"]},
+    {"question": "What is mercantilism?", "expectedAny": ["economic theory about wealth", "accumulating gold and trade", "national wealth theory", "wealth through trade"]},
+    {"question": "What were Spanish explorers called?", "expectedAny": ["conquistadors", "conquistador", "Spanish conquerors", "Spanish explorers"]},
+    {"question": "What is the Columbian Exchange?", "expectedAny": ["transfer between Old and New Worlds", "exchange of plants animals diseases", "Americas and Europe exchange", "Old and New World trade"]},
+    {"question": "When was the Age of Exploration?", "expectedAny": ["1400s-1600s", "15th to 17th centuries", "Renaissance period"]},
+    {"question": "Why did Europeans explore?", "expectedAny": ["gold and resources", "trade routes", "spread Christianity", "glory and wealth"]},
+    {"question": "What did colonization involve?", "expectedAny": ["settlements in distant lands", "political control", "establishing colonies"]},
+    {"question": "What did mercantilism emphasize?", "expectedAny": ["favorable trade balance", "accumulating gold", "exports over imports"]},
+    {"question": "What was exchanged in Columbian Exchange?", "expectedAny": ["plants animals diseases", "crops and livestock", "Old and New World goods"]}
+  ],
+  "truefalse": [
+    {"question": "Mercantilism believed national wealth depended on accumulating gold. (True or False)", "correct": true},
+    {"question": "Colonization meant exploring without settling. (True or False)", "correct": false},
+    {"question": "The Age of Exploration was in the 1400s-1600s. (True or False)", "correct": true},
+    {"question": "Conquistadors were Spanish explorers. (True or False)", "correct": true},
+    {"question": "The Columbian Exchange transferred ideas only. (True or False)", "correct": false},
+    {"question": "Europeans sought gold and trade routes. (True or False)", "correct": true},
+    {"question": "Colonization established political control. (True or False)", "correct": true},
+    {"question": "Mercantilism opposed favorable trade. (True or False)", "correct": false},
+    {"question": "The Columbian Exchange involved plants and animals. (True or False)", "correct": true},
+    {"question": "Exploration had no impact on indigenous peoples. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "What were Spanish explorers in the Americas called?", "choices": [{"letter": "A", "text": "Pilgrims"}, {"letter": "B", "text": "Conquistadors"}, {"letter": "C", "text": "Patriots"}, {"letter": "D", "text": "Colonists"}], "correct": "B"},
+    {"question": "What economic theory emphasized gold accumulation?", "choices": [{"letter": "A", "text": "Capitalism"}, {"letter": "B", "text": "Socialism"}, {"letter": "C", "text": "Mercantilism"}, {"letter": "D", "text": "Feudalism"}], "correct": "C"},
+    {"question": "What period was the Age of Exploration?", "choices": [{"letter": "A", "text": "1400s-1600s"}, {"letter": "B", "text": "1700s-1800s"}, {"letter": "C", "text": "1200s-1300s"}, {"letter": "D", "text": "1800s-1900s"}], "correct": "A"},
+    {"question": "What did colonization establish?", "choices": [{"letter": "A", "text": "Trade only"}, {"letter": "B", "text": "Political control"}, {"letter": "C", "text": "Exploration"}, {"letter": "D", "text": "Tourism"}], "correct": "B"},
+    {"question": "What was exchanged between Old and New Worlds?", "choices": [{"letter": "A", "text": "Ideas only"}, {"letter": "B", "text": "Plants animals diseases"}, {"letter": "C", "text": "Books"}, {"letter": "D", "text": "Music"}], "correct": "B"},
+    {"question": "What motivated exploration?", "choices": [{"letter": "A", "text": "Gold and trade"}, {"letter": "B", "text": "Tourism"}, {"letter": "C", "text": "Education"}, {"letter": "D", "text": "Art"}], "correct": "A"},
+    {"question": "What is a settlement with political control?", "choices": [{"letter": "A", "text": "Trading post"}, {"letter": "B", "text": "Colony"}, {"letter": "C", "text": "Embassy"}, {"letter": "D", "text": "Port"}], "correct": "B"},
+    {"question": "What did mercantilism favor?", "choices": [{"letter": "A", "text": "Free trade"}, {"letter": "B", "text": "Favorable trade balance"}, {"letter": "C", "text": "No trade"}, {"letter": "D", "text": "Equal trade"}], "correct": "B"},
+    {"question": "Who conquered parts of Americas?", "choices": [{"letter": "A", "text": "Vikings"}, {"letter": "B", "text": "Pilgrims"}, {"letter": "C", "text": "Conquistadors"}, {"letter": "D", "text": "Knights"}], "correct": "C"},
+    {"question": "What transferred between continents?", "choices": [{"letter": "A", "text": "Only diseases"}, {"letter": "B", "text": "Only crops"}, {"letter": "C", "text": "Plants animals diseases"}, {"letter": "D", "text": "Only animals"}], "correct": "C"}
+  ],
+  "fillintheblank": [
+    {"question": "The period of European overseas expansion was the Age of _____.", "expectedAny": ["exploration", "discovery"]},
+    {"question": "_____ means establishing settlements with political control.", "expectedAny": ["colonization"]},
+    {"question": "_____ believed national wealth depended on gold.", "expectedAny": ["mercantilism"]},
+    {"question": "Spanish explorers were called _____.", "expectedAny": ["conquistadors", "conquistador"]},
+    {"question": "The _____ Exchange transferred plants and animals between worlds.", "expectedAny": ["Columbian", "Colombian"]},
+    {"question": "The Age of Exploration was in the _____s to _____s.", "expectedAny": ["1400s-1600s", "1400-1600", "15th-17th centuries"]},
+    {"question": "Europeans sought _____ and trade routes.", "expectedAny": ["gold", "wealth", "riches"]},
+    {"question": "_____ established political control over territories.", "expectedAny": ["colonization", "colonies"]},
+    {"question": "Mercantilism emphasized favorable _____.", "expectedAny": ["trade", "trade balance"]},
+    {"question": "The Columbian Exchange involved the _____ and New Worlds.", "expectedAny": ["Old"]}
+  ],
+  "shortanswer": [
+    {"question": "What was the Age of Exploration?", "keyTerms": ["European", "overseas", "expansion", "1400s-1600s"], "expectedAny": ["Period of European overseas expansion from 1400s-1600s", "Time when Europeans explored and discovered new lands", "Era of European discovery and colonization"]},
+    {"question": "What is colonization?", "keyTerms": ["establishing", "settlements", "political control", "territories"], "expectedAny": ["Establishing settlements and political control over distant territories", "Creating colonies with political authority", "Settling and controlling foreign lands"]},
+    {"question": "What is mercantilism?", "keyTerms": ["economic", "theory", "wealth", "gold", "trade"], "expectedAny": ["Economic theory that national wealth depends on gold and favorable trade", "System emphasizing accumulation of wealth through trade", "Economic policy of accumulating gold and exports"]},
+    {"question": "Who were conquistadors?", "keyTerms": ["Spanish", "explorers", "conquerors", "Americas"], "expectedAny": ["Spanish explorers and conquerors in the Americas", "Spanish conquistadors who conquered New World", "Spanish military leaders in Americas"]},
+    {"question": "What was the Columbian Exchange?", "keyTerms": ["transfer", "plants", "animals", "diseases", "Old New Worlds"], "expectedAny": ["Transfer of plants animals and diseases between Old and New Worlds", "Exchange between Europe and Americas", "Biological and cultural exchange after Columbus"]},
+    {"question": "Why did Europeans explore?", "keyTerms": ["gold", "trade", "routes", "wealth", "Christianity"], "expectedAny": ["To find gold trade routes and spread Christianity", "For wealth resources and religious expansion", "Seeking riches and new trade opportunities"]},
+    {"question": "What did colonization achieve?", "keyTerms": ["settlements", "political control", "resources", "territory"], "expectedAny": ["Established settlements with political control over resources", "Created colonies for economic and political benefit", "Extended European power to distant territories"]},
+    {"question": "How did mercantilism work?", "keyTerms": ["exports", "imports", "gold", "favorable trade"], "expectedAny": ["Emphasized exports over imports to accumulate gold", "Maintained favorable trade balance", "Maximized exports and minimized imports"]},
+    {"question": "What impact did exploration have?", "keyTerms": ["indigenous", "peoples", "colonization", "disease", "culture"], "expectedAny": ["Devastating impact on indigenous peoples through disease and colonization", "Cultural exchange but also exploitation", "Transformed both Old and New Worlds"]},
+    {"question": "What was exchanged?", "keyTerms": ["crops", "animals", "diseases", "continents"], "expectedAny": ["Crops animals and diseases between continents", "Biological exchange including plants livestock and pathogens", "Food animals and diseases crossed oceans"]}
+  ]
 }

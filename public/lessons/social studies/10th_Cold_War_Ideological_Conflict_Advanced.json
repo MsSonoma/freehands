@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "10th_Cold_War_Ideological_Conflict_Advanced",
   "title": "Cold War: Ideological Conflict and Global Tensions",
   "grade": "10th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "cold war",
-      "definition": "Period of geopolitical tension between US and Soviet Union (1947-1991)"
-    },
-    {
-      "term": "iron curtain",
-      "definition": "Political and ideological barrier between Western and Eastern Europe"
-    },
-    {
-      "term": "containment",
-      "definition": "US strategy to prevent spread of communism"
-    },
-    {
-      "term": "nuclear deterrence",
-      "definition": "Prevention of war through threat of nuclear retaliation"
-    },
-    {
-      "term": "proxy war",
-      "definition": "Conflict where superpowers support opposing sides without direct confrontation"
-    }
+    {"term": "cold war", "definition": "Period of geopolitical tension between US and Soviet Union (1947-1991)"},
+    {"term": "iron curtain", "definition": "Political and ideological barrier between Western and Eastern Europe"},
+    {"term": "containment", "definition": "US strategy to prevent spread of communism"},
+    {"term": "nuclear deterrence", "definition": "Prevention of war through threat of nuclear retaliation"},
+    {"term": "proxy war", "definition": "Conflict where superpowers support opposing sides without direct confrontation"}
   ],
   "teachingNotes": "Analyze the ideological differences and global impact of Cold War tensions. Examine proxy conflicts and their consequences.",
-  "sample": {
-    "question": "What was the period of tension between US and Soviet Union?",
-    "expectedAny": [
-      "Cold War",
-      "Cold War period",
-      "US-Soviet rivalry",
-      "superpower conflict"
-    ]
-  },
-  "truefalse": {
-    "question": "Containment was the US strategy to prevent spread of communism.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What prevented war through threat of nuclear retaliation?",
-    "expectedAny": [
-      "nuclear deterrence",
-      "mutually assured destruction",
-      "nuclear balance",
-      "atomic deterrent"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The barrier between Western and Eastern Europe was called the ________ curtain.",
-    "expectedAny": [
-      "iron",
-      "political",
-      "ideological",
-      "communist"
-    ]
-  },
-  "shortanswer": {
-    "question": "How did the Cold War affect global politics?",
-    "expectedAny": [
-      "created bipolar world",
-      "led to proxy wars",
-      "divided nations",
-      "nuclear arms race"
-    ]
-  }
+  "sample": [
+    {"question": "What was US USSR tension?", "expectedAny": ["cold war", "superpower rivalry", "ideological conflict", "us soviet tension", "bipolar conflict", "east west conflict"]},
+    {"question": "What divided Europe?", "expectedAny": ["iron curtain", "barrier", "eastern bloc border", "communist divide", "european division", "ideological border"]},
+    {"question": "What stopped communism spread?", "expectedAny": ["containment", "US strategy", "containment policy", "truman doctrine", "stopping communism", "anti communist policy"]},
+    {"question": "What prevents nuclear war?", "expectedAny": ["nuclear deterrence", "MAD", "mutual assured destruction", "deterrence strategy", "nuclear threat balance", "mutually assured destruction"]},
+    {"question": "What is indirect conflict?", "expectedAny": ["proxy war", "indirect war", "surrogate war", "indirect conflict", "third party war", "substitute warfare"]},
+    {"question": "What was 1947-1991?", "expectedAny": ["cold war", "tension period", "ideological conflict", "us soviet tension", "bipolar conflict", "east west conflict"]},
+    {"question": "What separated East West?", "expectedAny": ["iron curtain", "division", "eastern bloc border", "communist divide", "european division", "ideological border"]},
+    {"question": "What prevented communism?", "expectedAny": ["containment", "strategy", "containment policy", "truman doctrine", "stopping communism", "anti communist policy"]},
+    {"question": "What is nuclear threat?", "expectedAny": ["nuclear deterrence", "deterrence", "mutual assured destruction", "deterrence strategy", "nuclear threat balance", "mutually assured destruction"]},
+    {"question": "What avoids direct fight?", "expectedAny": ["proxy war", "proxy", "surrogate war", "indirect conflict", "third party war", "substitute warfare"]}
+  ],
+  "truefalse": [
+    {"question": "Cold War was US USSR tension. (True or False)", "correct": true},
+    {"question": "Iron Curtain united Europe. (True or False)", "correct": false},
+    {"question": "Containment stopped communism spread. (True or False)", "correct": true},
+    {"question": "Nuclear deterrence uses threat. (True or False)", "correct": true},
+    {"question": "Proxy war is direct conflict. (True or False)", "correct": false},
+    {"question": "Cold War was 1947-1991. (True or False)", "correct": true},
+    {"question": "Iron Curtain divided Europe. (True or False)", "correct": true},
+    {"question": "Containment was US strategy. (True or False)", "correct": true},
+    {"question": "Deterrence prevents war. (True or False)", "correct": true},
+    {"question": "Proxy wars avoid confrontation. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What was US USSR tension?", "choices": [{"letter": "A", "text": "Hot war"}, {"letter": "B", "text": "Cold War"}, {"letter": "C", "text": "WWI"}, {"letter": "D", "text": "WWII"}], "correct": "B"},
+    {"question": "What divided Europe?", "choices": [{"letter": "A", "text": "Berlin Wall only"}, {"letter": "B", "text": "Iron Curtain"}, {"letter": "C", "text": "Rhine River"}, {"letter": "D", "text": "Alps"}], "correct": "B"},
+    {"question": "What stopped communism?", "choices": [{"letter": "A", "text": "Appeasement"}, {"letter": "B", "text": "Containment"}, {"letter": "C", "text": "Isolation"}, {"letter": "D", "text": "Surrender"}], "correct": "B"},
+    {"question": "What prevents nuclear war?", "choices": [{"letter": "A", "text": "Disarmament"}, {"letter": "B", "text": "Nuclear deterrence"}, {"letter": "C", "text": "Peace treaty"}, {"letter": "D", "text": "Diplomacy"}], "correct": "B"},
+    {"question": "What is indirect conflict?", "choices": [{"letter": "A", "text": "World war"}, {"letter": "B", "text": "Proxy war"}, {"letter": "C", "text": "Civil war"}, {"letter": "D", "text": "Colonial war"}], "correct": "B"},
+    {"question": "What was 1947-1991?", "choices": [{"letter": "A", "text": "WWII"}, {"letter": "B", "text": "Cold War"}, {"letter": "C", "text": "WWI"}, {"letter": "D", "text": "Vietnam"}], "correct": "B"},
+    {"question": "What separated East West?", "choices": [{"letter": "A", "text": "Wall"}, {"letter": "B", "text": "Iron Curtain"}, {"letter": "C", "text": "Ocean"}, {"letter": "D", "text": "Desert"}], "correct": "B"},
+    {"question": "What was US strategy?", "choices": [{"letter": "A", "text": "Isolation"}, {"letter": "B", "text": "Containment"}, {"letter": "C", "text": "Appeasement"}, {"letter": "D", "text": "Expansion"}], "correct": "B"},
+    {"question": "What is MAD?", "choices": [{"letter": "A", "text": "Disarmament"}, {"letter": "B", "text": "Nuclear deterrence"}, {"letter": "C", "text": "Peace"}, {"letter": "D", "text": "Treaty"}], "correct": "B"},
+    {"question": "What avoids direct fight?", "choices": [{"letter": "A", "text": "World war"}, {"letter": "B", "text": "Proxy war"}, {"letter": "C", "text": "Total war"}, {"letter": "D", "text": "Nuclear war"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ War was US USSR tension.", "expectedAny": ["cold", "Cold"]},
+    {"question": "_____ Curtain divided Europe.", "expectedAny": ["iron", "Iron"]},
+    {"question": "_____ stopped communism.", "expectedAny": ["containment", "Containment"]},
+    {"question": "_____ deterrence prevents war.", "expectedAny": ["nuclear", "Nuclear"]},
+    {"question": "_____ war is indirect.", "expectedAny": ["proxy", "Proxy"]},
+    {"question": "Cold War was _____-1991.", "expectedAny": ["1947"]},
+    {"question": "_____ separated East West.", "expectedAny": ["iron curtain", "Iron Curtain"]},
+    {"question": "US used _____.", "expectedAny": ["containment"]},
+    {"question": "MAD is mutual assured _____.", "expectedAny": ["destruction"]},
+    {"question": "_____ wars avoid confrontation.", "expectedAny": ["proxy", "Proxy"]}
+  ],
+  "shortanswer": [
+    {"question": "What is Cold War?", "keyTerms": ["period", "geopolitical", "tension", "us", "soviet union", "1947-1991"], "expectedAny": ["Period of geopolitical tension between US and Soviet Union (1947-1991)", "Superpower rivalry", "US USSR conflict"]},
+    {"question": "What is iron curtain?", "keyTerms": ["political", "ideological", "barrier", "western", "eastern", "europe"], "expectedAny": ["Political and ideological barrier between Western and Eastern Europe", "European division", "East West divide"]},
+    {"question": "What is containment?", "keyTerms": ["us", "strategy", "prevent", "spread", "communism"], "expectedAny": ["US strategy to prevent spread of communism", "Stop communism", "Anti-communist policy"]},
+    {"question": "What is nuclear deterrence?", "keyTerms": ["prevention", "war", "threat", "nuclear", "retaliation"], "expectedAny": ["Prevention of war through threat of nuclear retaliation", "MAD", "Nuclear threat"]},
+    {"question": "What is proxy war?", "keyTerms": ["conflict", "superpowers", "support", "opposing", "sides", "without", "direct", "confrontation"], "expectedAny": ["Conflict where superpowers support opposing sides without direct confrontation", "Indirect war", "Supporting sides"]},
+    {"question": "Give example of proxy war.", "keyTerms": ["korea", "vietnam", "afghanistan", "angola"], "expectedAny": ["Korean War", "Vietnam War", "Soviet Afghanistan", "Any valid proxy war"]},
+    {"question": "What was Truman Doctrine?", "keyTerms": ["support", "countries", "resisting", "communism", "containment"], "expectedAny": ["Support countries resisting communism", "Containment policy", "Anti-communist aid"]},
+    {"question": "What was Marshall Plan?", "keyTerms": ["economic", "aid", "rebuild", "europe", "prevent", "communism"], "expectedAny": ["Economic aid to rebuild Europe and prevent communism", "European recovery", "Rebuild Western Europe"]},
+    {"question": "What ended Cold War?", "keyTerms": ["soviet", "collapse", "1991", "berlin wall", "reforms"], "expectedAny": ["Soviet collapse in 1991", "USSR dissolution", "Fall of communism"]},
+    {"question": "What was arms race?", "keyTerms": ["competition", "build", "nuclear", "weapons", "us", "ussr"], "expectedAny": ["Competition to build more nuclear weapons between US and USSR", "Nuclear buildup", "Weapon stockpiling"]}
+  ]
 }

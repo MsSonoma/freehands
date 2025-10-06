@@ -21,54 +21,158 @@
       "definition": "What you learn from the results of an experiment"
     },
     {
+      "term": "summary",
+      "definition": "A brief statement that tells the main points of what you learned"
+    },
+    {
       "term": "data",
       "definition": "Information collected during an experiment"
+    },
+    {
+      "term": "independent variable",
+      "definition": "The variable that is changed on purpose in an experiment"
+    },
+    {
+      "term": "dependent variable",
+      "definition": "The variable that is measured or observed in an experiment"
+    },
+    {
+      "term": "control group",
+      "definition": "The group used for comparison that does not get the change"
+    },
+    {
+      "term": "graph",
+      "definition": "A visual way to show data, such as a line or bar graph"
+    },
+    {
+      "term": "table",
+      "definition": "A chart that organizes data in rows and columns"
+    },
+    {
+      "term": "controlled variable",
+      "definition": "A factor that is kept the same in all groups during an experiment"
+    },
+    {
+      "term": "constant",
+      "definition": "Something you keep the same so the test is fair"
+    },
+    {
+      "term": "fair test",
+      "definition": "An investigation where only the independent variable changes and other factors are controlled"
+    },
+    {
+      "term": "trial",
+      "definition": "One complete run of an experiment"
+    },
+    {
+      "term": "replicate",
+      "definition": "Repeating trials or having multiple samples to check reliability"
+    },
+    {
+      "term": "procedure",
+      "definition": "A step-by-step plan for how to do the experiment"
+    },
+    {
+      "term": "materials",
+      "definition": "The supplies and tools used in an investigation"
+    },
+    {
+      "term": "qualitative data",
+      "definition": "Descriptions using words or categories (no numbers)"
+    },
+    {
+      "term": "quantitative data",
+      "definition": "Measurements using numbers and units"
+    },
+    {
+      "term": "bias",
+      "definition": "An unfair influence that can affect how an investigation is done or interpreted"
+    },
+    {
+      "term": "accuracy",
+      "definition": "How close a measurement is to the true value"
+    },
+    {
+      "term": "precision",
+      "definition": "How close repeated measurements are to each other"
+    },
+    {
+      "term": "evidence",
+      "definition": "Facts and data that support a claim"
+    },
+    {
+      "term": "inference",
+      "definition": "An explanation or idea based on observations and prior knowledge"
+    },
+    {
+      "term": "experimental group",
+      "definition": "The group that receives the change being tested"
+    },
+    {
+      "term": "reliability",
+      "definition": "How consistent results are when an investigation is repeated"
+    },
+    {
+      "term": "validity",
+      "definition": "How well an investigation measures what it is supposed to measure"
+    },
+    {
+      "term": "sample size",
+      "definition": "The number of items or participants tested in an investigation"
+    },
+    {
+      "term": "outlier",
+      "definition": "A data point that is very different from the others"
+    },
+    {
+      "term": "operational definition",
+      "definition": "A clear way to measure or observe a variable"
     }
   ],
   "teachingNotes": "Guide students through designing and conducting simple experiments. Emphasize the importance of fair testing and controlling variables. Practice making predictions and drawing conclusions from data.",
   "sample": [
-    {"question": "What are the main steps of the scientific method?", "expectedAny": ["question", "hypothesis", "experiment", "conclusion"]},
-    {"question": "What is a variable?", "expectedAny": ["something that can change"]},
-    {"question": "Name one way to collect data.", "expectedAny": ["measure", "count", "observe"]},
-    {"question": "What is a hypothesis?", "expectedAny": ["educated guess"]},
-    {"question": "Why do scientists repeat experiments?", "expectedAny": ["check results", "reliability"]},
-    {"question": "What is a conclusion?", "expectedAny": ["what you learn from results"]},
-    {"question": "What should you do if your results don't match your hypothesis?", "expectedAny": ["analyze", "learn", "revise hypothesis"]}
+    {"question": "What are the main steps of the scientific method?", "expectedAny": ["question, hypothesis, experiment, analyze, conclusion", "ask a question, make a hypothesis, test, analyze data, conclude", "question, predict, test, analyze, conclude", "question hypothesis experiment conclusion"]},
+    {"question": "What is a variable?", "expectedAny": ["something that can change", "a factor that can change", "anything that can be changed or measured"]},
+    {"question": "Name one way to collect data.", "expectedAny": ["measure", "count", "observe", "record in a table", "use a ruler or thermometer", "tally marks", "timer"]},
+    {"question": "What is a hypothesis?", "expectedAny": ["educated guess", "testable explanation", "prediction you can test"]},
+    {"question": "Why do scientists repeat experiments?", "expectedAny": ["check results", "reliability", "reduce error", "reproducibility", "to make results more reliable"]},
+    {"question": "What is a conclusion?", "expectedAny": ["what you learn from results", "what the data shows", "explanation based on evidence"]},
+    {"question": "What should you do if your results don't match your hypothesis?", "expectedAny": ["analyze", "learn", "revise hypothesis", "ask a new question", "change the procedure and test again", "do more trials"]}
   ],
   "truefalse": [
-    {"question": "A hypothesis must always be proven correct.", "answer": false},
-    {"question": "Scientists use data to support conclusions.", "answer": true},
-    {"question": "Changing many variables at once makes a fair test.", "answer": false},
-    {"question": "Observations can be made with tools and senses.", "answer": true},
-    {"question": "Repeating experiments helps confirm results.", "answer": true},
-    {"question": "A conclusion is a guess before the experiment.", "answer": false},
-    {"question": "Graphs can help display data.", "answer": true}
+    {"question": "A hypothesis must always be proven correct.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "Scientists use data to support conclusions.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Changing many variables at once makes a fair test.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "Observations can be made with tools and senses.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Repeating experiments helps confirm results.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "A conclusion is a guess before the experiment.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "Graphs can help display data.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]}
   ],
   "multiplechoice": [
-    {"question": "What should you do first when starting a scientific investigation?", "choices": ["Ask a question", "Write a conclusion", "Make a graph", "Do nothing"], "correct": 0},
-    {"question": "What is a testable hypothesis?", "choices": ["A wild guess", "A statement you can test", "A picture", "A rule"], "correct": 1},
-    {"question": "Which is an independent variable?", "choices": ["The thing you change", "The thing you measure", "Your conclusion", "Your title"], "correct": 0},
-    {"question": "Which is a dependent variable?", "choices": ["The thing you change", "The thing you measure", "Your conclusion", "Your materials"], "correct": 1},
-    {"question": "Why use a control in an experiment?", "choices": ["To make it harder", "To compare results", "To add variables", "To skip steps"], "correct": 1},
-    {"question": "What tool helps organize data?", "choices": ["Poem", "Song", "Table", "Dance"], "correct": 2},
-    {"question": "Which graph is best for change over time?", "choices": ["Pie chart", "Line graph", "Bar graph", "Picture graph"], "correct": 1}
+    {"question": "What should you do first when starting a scientific investigation?", "choices": ["Ask a question", "Write a conclusion", "Make a graph", "Do nothing"], "correct": 0, "expectedAny": ["ask a question", "a", "1", "first"]},
+    {"question": "What is a testable hypothesis?", "choices": ["A wild guess", "A statement you can test", "A picture", "A rule"], "correct": 1, "expectedAny": ["a statement you can test", "b", "2", "second"]},
+    {"question": "Which is an independent variable?", "choices": ["The thing you change", "The thing you measure", "Your conclusion", "Your title"], "correct": 0, "expectedAny": ["the thing you change", "a", "1", "first"]},
+    {"question": "Which is a dependent variable?", "choices": ["The thing you change", "The thing you measure", "Your conclusion", "Your materials"], "correct": 1, "expectedAny": ["the thing you measure", "b", "2", "second"]},
+    {"question": "Why use a control in an experiment?", "choices": ["To make it harder", "To compare results", "To add variables", "To skip steps"], "correct": 1, "expectedAny": ["to compare results", "b", "2", "second"]},
+    {"question": "What tool helps organize data?", "choices": ["Poem", "Song", "Table", "Dance"], "correct": 2, "expectedAny": ["table", "c", "3", "third"]},
+    {"question": "Which graph is best for change over time?", "choices": ["Pie chart", "Line graph", "Bar graph", "Picture graph"], "correct": 1, "expectedAny": ["line graph", "b", "2", "second"]}
   ],
   "fillintheblank": [
-    {"question": "An educated guess about what will happen in an experiment is called a ________.", "expectedAny": ["hypothesis"]},
-    {"question": "The thing you change in an experiment is the ________ variable.", "expectedAny": ["independent"]},
-    {"question": "The thing you measure is the ________ variable.", "expectedAny": ["dependent"]},
-    {"question": "Information collected during an experiment is called ________.", "expectedAny": ["data"]},
-    {"question": "A fair test changes only ________ variable at a time.", "expectedAny": ["one"]},
-    {"question": "A written summary of what you learned is the ________.", "expectedAny": ["conclusion"]},
-    {"question": "Using your senses to gather information is called ________.", "expectedAny": ["observation"]}
+    {"question": "An educated guess about what will happen in an experiment is called a ________.", "expectedAny": ["hypothesis", "prediction", "educated guess", "testable prediction", "educated prediction"]},
+    {"question": "The thing you change in an experiment is the ________ variable.", "expectedAny": ["independent", "manipulated", "independent variable"]},
+    {"question": "The thing you measure is the ________ variable.", "expectedAny": ["dependent", "responding", "responding variable", "measured variable", "dependent variable"]},
+    {"question": "Information collected during an experiment is called ________.", "expectedAny": ["data", "results", "observations", "evidence", "measurements", "recorded information", "data set"]},
+    {"question": "A fair test changes only ________ variable at a time.", "expectedAny": ["one", "only one", "just one", "a single", "single", "1", "one variable", "one independent"]},
+    {"question": "A written summary of what you learned is the ________.", "expectedAny": ["conclusion", "findings", "summary", "explanation based on evidence", "claim supported by evidence"]},
+    {"question": "Using your senses to gather information is called ________.", "expectedAny": ["observation", "observing", "making observations", "qualitative observation", "qualitative data"]}
   ],
   "shortanswer": [
-    {"question": "Why is it important to change only one variable at a time in an experiment?", "expectedAny": ["fair test", "know what caused change"]},
-    {"question": "How can graphs help you understand data?", "expectedAny": ["see patterns"]},
-    {"question": "Give an example of a testable hypothesis.", "expectedAny": ["If plants get more light, then they grow taller"]},
-    {"question": "Why should scientists share methods and results?", "expectedAny": ["repeatable", "verify"]},
-    {"question": "What should you do if results are unexpected?", "expectedAny": ["check procedure", "repeat experiment"]},
-    {"question": "What is the purpose of a control group?", "expectedAny": ["comparison"]},
-    {"question": "How do you choose which graph to use?", "expectedAny": ["based on data type", "line for time", "bar for categories"]}
+    {"question": "Why is it important to change only one variable at a time in an experiment?", "expectedAny": ["fair test", "know what caused change", "isolate the cause", "isolate the effect of the independent variable", "control other variables", "only the independent variable changes", "cause and effect", "valid results"]},
+    {"question": "How can graphs help you understand data?", "expectedAny": ["see patterns", "see trends", "compare easily", "show relationships", "summarize results", "visualize data", "identify outliers"]},
+    {"question": "Give an example of a testable hypothesis.", "expectedAny": ["If plants get more light, then they grow taller", "If we add fertilizer, then plants grow faster", "If temperature rises, then ice melts", "If water is warmer, then sugar dissolves faster", "If we increase sunlight, then plant height increases"]},
+    {"question": "Why should scientists share methods and results?", "expectedAny": ["repeatable", "verify", "replicate", "peer review", "so others can reproduce it", "transparency", "reproducibility"]},
+    {"question": "What should you do if results are unexpected?", "expectedAny": ["check procedure", "repeat experiment", "analyze errors", "collect more data", "check instruments", "revise hypothesis", "consider outliers", "check for bias", "increase sample size"]},
+    {"question": "What is the purpose of a control group?", "expectedAny": ["comparison", "baseline", "no change group", "to see the effect of the independent variable", "what happens without the change", "no independent variable change"]},
+    {"question": "How do you choose which graph to use?", "expectedAny": ["based on data type", "line for time", "bar for categories", "pie for parts of a whole", "line shows change over time; bar compares groups", "scatter for two variables"]}
   ]
 }

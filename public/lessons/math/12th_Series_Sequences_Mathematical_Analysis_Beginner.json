@@ -28,7 +28,7 @@
   "teachingNotes": "Start with familiar arithmetic and geometric progressions. Build understanding of infinite series through examples.",
   "sample": {
     "question": "What is an ordered list of numbers following a pattern?",
-    "expectedAny": ["sequence", "number sequence", "ordered sequence", "mathematical sequence"]
+    "expectedAny": ["sequence", "number sequence", "ordered sequence", "mathematical sequence", "pattern sequence", "series sequence"]
   },
   "truefalse": {
     "question": "A series is the sum of terms in a sequence.",

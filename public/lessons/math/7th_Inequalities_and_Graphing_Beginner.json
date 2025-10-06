@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Use number lines to show solutions. Practice with real-world inequality situations like age limits or temperature ranges.",
-  "sample": {
-    "question": "What is a mathematical statement comparing two expressions?",
-    "expectedAny": ["inequality", "comparison", "mathematical comparison", "relation"]
-  },
-  "truefalse": {
-    "question": "The symbol > means 'greater than'.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "Which inequality means x is at least 5?",
-    "expectedAny": ["x ≥ 5", "x >= 5", "x greater than or equal to 5", "x ≥ 5"]
-  },
-  "fillintheblank": {
-    "question": "All values that make an inequality true form the ________ set.",
-    "expectedAny": ["solution", "answer", "valid", "true"]
-  },
-  "shortanswer": {
-    "question": "Solve: x + 3 > 7",
-    "expectedAny": ["x > 4", "x greater than 4", "x>4", "greater than 4"]
-  },
-  "wordProblems": {
-    "question": "You need at least $20 to buy a game. You have $8. How much more money do you need?",
-    "expectedAny": ["at least $12", "$12 or more", "x ≥ 12", "12 dollars or more"]
-  }
+  "sample": [
+    { "question": "What is a mathematical statement comparing two expressions?", "expectedAny": ["inequality"] },
+    { "question": "Which symbol means larger?", "choices": ["<", ">", "=", "+"], "correct": 1, "expectedAny": [">" ] },
+    { "question": "The symbol < means ________.", "expectedAny": ["less than"] },
+    { "question": "All values making inequality true are the ________.", "expectedAny": ["solution set"] },
+    { "question": "A visual representation is a ________.", "expectedAny": ["graph"] },
+    { "question": "What compares expressions?", "choices": ["Equation", "Inequality", "Number", "Variable"], "correct": 1, "expectedAny": ["inequality"] },
+    { "question": "The > symbol means ________.", "expectedAny": ["greater than"] },
+    { "question": "Smaller value uses ________.", "expectedAny": ["less than", "<"] },
+    { "question": "Which shows all solutions?", "choices": ["Graph", "Solution set", "Number", "Symbol"], "correct": 1, "expectedAny": ["solution set"] },
+    { "question": "Visual numbers use a ________.", "expectedAny": ["graph"] }
+  ],
+  "truefalse": [
+    { "question": "The symbol > means 'greater than'.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "< means greater than.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A solution set includes all valid values.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Inequalities use equal signs only.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Graphs show visual representations.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "> and < are the same.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Inequalities compare expressions.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Solution sets have one value.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Less than uses <.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Graphs are not useful.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which inequality means x is at least 5?", "choices": ["x < 5", "x ≥ 5", "x = 5", "x ≤ 5"], "correct": 1, "expectedAny": ["x ≥ 5"] },
+    { "question": "What compares expressions?", "choices": ["Equation", "Inequality", "Number", "Variable"], "correct": 1, "expectedAny": ["inequality"] },
+    { "question": "Which means larger?", "choices": ["<", ">", "=", "+"], "correct": 1, "expectedAny": [">"] },
+    { "question": "Which means smaller?", "choices": [">", "<", "=", "-"], "correct": 1, "expectedAny": ["<"] },
+    { "question": "What shows all solutions?", "choices": ["Number", "Solution set", "Symbol", "Variable"], "correct": 1, "expectedAny": ["solution set"] },
+    { "question": "What is visual representation?", "choices": ["Number", "Graph", "Symbol", "Variable"], "correct": 1, "expectedAny": ["graph"] },
+    { "question": "Which means at most 10?", "choices": ["x > 10", "x ≥ 10", "x ≤ 10", "x < 10"], "correct": 2, "expectedAny": ["x ≤ 10"] },
+    { "question": "What symbol is greater than?", "choices": ["<", "=", ">", "+"], "correct": 2, "expectedAny": [">"] },
+    { "question": "What symbol is less than?", "choices": [">", "=", "<", "-"], "correct": 2, "expectedAny": ["<"] },
+    { "question": "Which has multiple solutions?", "choices": ["Equation", "Inequality", "Number", "Constant"], "correct": 1, "expectedAny": ["inequality"] }
+  ],
+  "fillintheblank": [
+    { "question": "All values that make an inequality true form the ________ set.", "expectedAny": ["solution"] },
+    { "question": "A comparison statement is an ________.", "expectedAny": ["inequality"] },
+    { "question": "The symbol > means ________.", "expectedAny": ["greater than"] },
+    { "question": "The symbol < means ________.", "expectedAny": ["less than"] },
+    { "question": "A visual representation is a ________.", "expectedAny": ["graph"] },
+    { "question": "The ________ includes all valid solutions.", "expectedAny": ["solution set"] },
+    { "question": "An ________ compares expressions.", "expectedAny": ["inequality"] },
+    { "question": "________ means one number is larger.", "expectedAny": ["greater than"] },
+    { "question": "________ means one number is smaller.", "expectedAny": ["less than"] },
+    { "question": "A ________ shows numbers visually.", "expectedAny": ["graph"] }
+  ],
+  "shortanswer": [
+    { "question": "Solve: x + 3 > 7", "expectedAny": ["x > 4", "x>4"] },
+    { "question": "What is an inequality?", "expectedAny": ["comparison of expressions", "mathematical comparison", "comparing two expressions", "statement with > or <"] },
+    { "question": "What does > mean?", "expectedAny": ["greater than", "larger than", "bigger than", "more than"] },
+    { "question": "What does < mean?", "expectedAny": ["less than", "smaller than"] },
+    { "question": "What is a solution set?", "expectedAny": ["all values making inequality true", "valid solutions", "all answers that work", "all numbers that work"] },
+    { "question": "What is a graph?", "expectedAny": ["visual representation", "showing numbers visually"] },
+    { "question": "Solve: x - 2 < 5", "expectedAny": ["x < 7", "x<7"] },
+    { "question": "What does ≥ mean?", "expectedAny": ["greater than or equal", "at least"] },
+    { "question": "What does ≤ mean?", "expectedAny": ["less than or equal", "at most"] },
+    { "question": "Solve: x ≥ 3", "expectedAny": ["x is 3 or more", "x is at least 3"] }
+  ],
+  "wordProblems": [
+    { "question": "You need at least $20 to buy a game. You have $8. How much more money do you need?", "expectedAny": ["at least $12", "$12 or more", "12"] },
+    { "question": "The temperature must be less than 32°F to freeze. If it's 35°F, will it freeze?", "expectedAny": ["no", "it will not freeze"] },
+    { "question": "You must be at least 13 years old to use an app. Write an inequality for age a.", "expectedAny": ["a ≥ 13", "a >= 13"] },
+    { "question": "A bag can hold at most 50 pounds. If it has 30 pounds, how much more can you add?", "expectedAny": ["at most 20 pounds", "20 or less", "20"] },
+    { "question": "Speed limit is 65 mph. Write an inequality for speed s.", "expectedAny": ["s ≤ 65", "s <= 65"] },
+    { "question": "You need more than 5 people for a game. You have 3. How many more do you need?", "expectedAny": ["more than 2", "at least 3"] },
+    { "question": "A ride requires height over 48 inches. Is someone 50 inches tall enough?", "expectedAny": ["yes", "tall enough"] },
+    { "question": "Movie tickets cost less than $15. Can you buy a ticket with $20?", "expectedAny": ["yes", "can buy ticket"] },
+    { "question": "You earned $25. You want at least $100. How much more do you need?", "expectedAny": ["at least $75", "$75 or more", "75"] },
+    { "question": "Score must be at least 80 to pass. You have 75. Did you pass?", "expectedAny": ["no", "did not pass"] }
+  ]
 }

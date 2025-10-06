@@ -1,0 +1,463 @@
+﻿{
+    "id":  "12th_Environmental_Science_Sustainability_Advanced",
+    "title":  "Environmental Science and Sustainability",
+    "grade":  "12th",
+    "difficulty":  "Advanced",
+    "vocab":  [
+                  {
+                      "term":  "anthropogenic",
+                      "definition":  "Caused by human activity"
+                  },
+                  {
+                      "term":  "bioaccumulation",
+                      "definition":  "Toxin buildup in organism over time"
+                  },
+                  {
+                      "term":  "trophic cascade",
+                      "definition":  "Ecological changes from top predator loss"
+                  },
+                  {
+                      "term":  "carbon sequestration",
+                      "definition":  "Capturing and storing atmospheric carbon"
+                  },
+                  {
+                      "term":  "ecosystem services",
+                      "definition":  "Benefits humans receive from ecosystems"
+                  }
+              ],
+    "teachingNotes":  "Examine environmental systems and sustainability challenges. Analyze human impact and solutions.",
+    "sample":  [
+                   {
+                       "question":  "What is community and environment?",
+                       "expectedAny":  [
+                                           "ecosystem",
+                                           "ecosystems",
+                                           "ecological system",
+                                           "biological community",
+                                           "environmental system",
+                                           "natural system"
+                                       ]
+                   },
+                   {
+                       "question":  "What is variety of life?",
+                       "expectedAny":  [
+                                           "biodiversity",
+                                           "diversity",
+                                           "biological diversity",
+                                           "species variety",
+                                           "life variety",
+                                           "biological variety"
+                                       ]
+                   },
+                   {
+                       "question":  "What harms environment?",
+                       "expectedAny":  [
+                                           "pollution",
+                                           "pollutants",
+                                           "contaminants",
+                                           "environmental harm",
+                                           "toxic substances",
+                                           "contamination"
+                                       ]
+                   },
+                   {
+                       "question":  "What can be replenished?",
+                       "expectedAny":  [
+                                           "renewable resource",
+                                           "renewable",
+                                           "sustainable resource",
+                                           "replenishable resource",
+                                           "renewable energy",
+                                           "sustainable energy"
+                                       ]
+                   },
+                   {
+                       "question":  "What protects nature?",
+                       "expectedAny":  [
+                                           "conservation",
+                                           "preservation",
+                                           "environmental protection",
+                                           "natural protection",
+                                           "resource protection",
+                                           "ecosystem protection"
+                                       ]
+                   },
+                   {
+                       "question":  "What is gas emissions total?",
+                       "expectedAny":  [
+                                           "carbon footprint",
+                                           "footprint",
+                                           "emissions total",
+                                           "carbon emissions",
+                                           "greenhouse gases",
+                                           "CO2 footprint"
+                                       ]
+                   },
+                   {
+                       "question":  "What are temperature shifts?",
+                       "expectedAny":  [
+                                           "climate change",
+                                           "global warming"
+                                       ]
+                   },
+                   {
+                       "question":  "What is environment loss?",
+                       "expectedAny":  [
+                                           "habitat destruction",
+                                           "destruction"
+                                       ]
+                   },
+                   {
+                       "question":  "What meets needs sustainably?",
+                       "expectedAny":  [
+                                           "sustainable development",
+                                           "sustainability"
+                                       ]
+                   },
+                   {
+                       "question":  "What is human demand?",
+                       "expectedAny":  [
+                                           "ecological footprint",
+                                           "footprint"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Ecosystem includes organisms and environment.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Biodiversity means one species.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Pollution harms environment.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Renewable resources run out quickly.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Conservation protects nature.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Carbon footprint measures emissions.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Climate change is short-term.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Habitat destruction harms species.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Sustainability ignores future.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Ecological footprint measures demand.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What includes organisms and environment?",
+                               "choices":  [
+                                               "Population",
+                                               "Community",
+                                               "Ecosystem",
+                                               "Biome"
+                                           ],
+                               "correct":  "Ecosystem"
+                           },
+                           {
+                               "question":  "What is variety of life?",
+                               "choices":  [
+                                               "Monoculture",
+                                               "Biodiversity",
+                                               "Extinction",
+                                               "Pollution"
+                                           ],
+                               "correct":  "Biodiversity"
+                           },
+                           {
+                               "question":  "What contaminates environment?",
+                               "choices":  [
+                                               "Conservation",
+                                               "Preservation",
+                                               "Pollution",
+                                               "Protection"
+                                           ],
+                               "correct":  "Pollution"
+                           },
+                           {
+                               "question":  "What can regenerate?",
+                               "choices":  [
+                                               "Fossil fuel",
+                                               "Renewable resource",
+                                               "Coal",
+                                               "Oil"
+                                           ],
+                               "correct":  "Renewable resource"
+                           },
+                           {
+                               "question":  "What protects resources?",
+                               "choices":  [
+                                               "Exploitation",
+                                               "Destruction",
+                                               "Conservation",
+                                               "Waste"
+                                           ],
+                               "correct":  "Conservation"
+                           },
+                           {
+                               "question":  "What measures emissions?",
+                               "choices":  [
+                                               "Water footprint",
+                                               "Carbon footprint",
+                                               "Land use",
+                                               "Population"
+                                           ],
+                               "correct":  "Carbon footprint"
+                           },
+                           {
+                               "question":  "What shifts temperature long-term?",
+                               "choices":  [
+                                               "Weather",
+                                               "Season",
+                                               "Climate change",
+                                               "Day"
+                                           ],
+                               "correct":  "Climate change"
+                           },
+                           {
+                               "question":  "What destroys homes?",
+                               "choices":  [
+                                               "Conservation",
+                                               "Habitat destruction",
+                                               "Protection",
+                                               "Preservation"
+                                           ],
+                               "correct":  "Habitat destruction"
+                           },
+                           {
+                               "question":  "What balances present and future?",
+                               "choices":  [
+                                               "Exploitation",
+                                               "Sustainable development",
+                                               "Waste",
+                                               "Destruction"
+                                           ],
+                               "correct":  "Sustainable development"
+                           },
+                           {
+                               "question":  "What measures human impact?",
+                               "choices":  [
+                                               "Population only",
+                                               "Ecological footprint",
+                                               "Weather",
+                                               "Season"
+                                           ],
+                               "correct":  "Ecological footprint"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "An _____ includes organisms and environment.",
+                               "expectedAny":  [
+                                                   "ecosystem",
+                                                   "Ecosystem"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ is variety of life.",
+                               "expectedAny":  [
+                                                   "biodiversity",
+                                                   "Biodiversity"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ harms the environment.",
+                               "expectedAny":  [
+                                                   "pollution",
+                                                   "Pollution"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ resources can be replenished.",
+                               "expectedAny":  [
+                                                   "renewable",
+                                                   "Renewable"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ protects nature.",
+                               "expectedAny":  [
+                                                   "conservation",
+                                                   "Conservation"
+                                               ]
+                           },
+                           {
+                               "question":  "Carbon _____ measures emissions.",
+                               "expectedAny":  [
+                                                   "footprint",
+                                                   "Footprint"
+                                               ]
+                           },
+                           {
+                               "question":  "Climate _____ shifts temperature.",
+                               "expectedAny":  [
+                                                   "change",
+                                                   "Change"
+                                               ]
+                           },
+                           {
+                               "question":  "Habitat _____ destroys environments.",
+                               "expectedAny":  [
+                                                   "destruction",
+                                                   "Destruction"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ development balances needs.",
+                               "expectedAny":  [
+                                                   "sustainable",
+                                                   "Sustainable"
+                                               ]
+                           },
+                           {
+                               "question":  "Ecological _____ measures demand.",
+                               "expectedAny":  [
+                                                   "footprint",
+                                                   "Footprint"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "What is ecosystem?",
+                            "expectedAny":  [
+                                                "community of organisms and their environment",
+                                                "living and nonliving parts interacting",
+                                                "includes producers consumers decomposers"
+                                            ]
+                        },
+                        {
+                            "question":  "Define biodiversity.",
+                            "expectedAny":  [
+                                                "variety of life in area",
+                                                "species genetic ecosystem diversity",
+                                                "essential for ecosystem health"
+                                            ]
+                        },
+                        {
+                            "question":  "What is pollution?",
+                            "expectedAny":  [
+                                                "harmful substances in environment",
+                                                "contaminants in air water soil",
+                                                "degrades ecosystem health"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain renewable resource.",
+                            "expectedAny":  [
+                                                "resource that can be replenished",
+                                                "solar wind water biomass",
+                                                "sustainable if managed properly"
+                                            ]
+                        },
+                        {
+                            "question":  "What is conservation?",
+                            "expectedAny":  [
+                                                "protection and preservation of nature",
+                                                "sustainable use of resources",
+                                                "prevents extinction and degradation"
+                                            ]
+                        },
+                        {
+                            "question":  "What is carbon footprint?",
+                            "expectedAny":  [
+                                                "total greenhouse gas emissions caused",
+                                                "measured in CO2 equivalents",
+                                                "from activities products lifestyles"
+                                            ]
+                        },
+                        {
+                            "question":  "Define climate change.",
+                            "expectedAny":  [
+                                                "long-term shifts in temperature and weather",
+                                                "caused by greenhouse gas emissions",
+                                                "leads to sea rise extreme weather"
+                                            ]
+                        },
+                        {
+                            "question":  "What is habitat destruction?",
+                            "expectedAny":  [
+                                                "loss of natural environment",
+                                                "from deforestation urbanization agriculture",
+                                                "main cause of species loss"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain sustainable development.",
+                            "expectedAny":  [
+                                                "meeting needs without harming future",
+                                                "balances economic social environmental",
+                                                "Brundtland Commission definition"
+                                            ]
+                        },
+                        {
+                            "question":  "What is ecological footprint?",
+                            "expectedAny":  [
+                                                "human demand on ecosystems",
+                                                "area needed to support lifestyle",
+                                                "measured in global hectares"
+                                            ]
+                        }
+                    ]
+}

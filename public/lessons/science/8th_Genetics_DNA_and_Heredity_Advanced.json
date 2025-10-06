@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Use Punnett squares to show inheritance patterns. Explain how DNA contains instructions for traits.",
-  "sample": {
-    "question": "What molecule carries genetic information?",
-    "expectedAny": [
-      "DNA",
-      "deoxyribonucleic acid",
-      "genetic material",
-      "hereditary material"
-    ]
-  },
-  "truefalse": {
-    "question": "A dominant allele is expressed when only one copy is present.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What are different versions of the same gene called?",
-    "expectedAny": [
-      "alleles",
-      "gene variants",
-      "genetic alternatives",
-      "gene forms"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A segment of DNA that codes for a trait is called a ________.",
-    "expectedAny": [
-      "gene",
-      "genetic unit",
-      "DNA segment",
-      "hereditary unit"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why do offspring resemble their parents?",
-    "expectedAny": [
-      "inherit DNA from parents",
-      "get genes from both parents",
-      "genetic inheritance"
-    ]
-  }
+  "sample": [
+    { "question": "What molecule carries genetic information?", "expectedAny": ["DNA", "genetic material", "heredity molecule"] },
+    { "question": "What codes for trait?", "choices": ["Protein", "Gene", "Cell", "Organ"], "correct": 1, "expectedAny": ["gene"] },
+    { "question": "Different gene versions are ________.", "expectedAny": ["allele", "gene versions", "different forms of gene"] },
+    { "question": "Expressed when present allele is ________.", "expectedAny": ["dominant"] },
+    { "question": "Needs two copies allele is ________.", "expectedAny": ["recessive"] },
+    { "question": "What is genetic molecule?", "choices": ["Protein", "DNA", "Water", "Sugar"], "correct": 1, "expectedAny": ["DNA"] },
+    { "question": "DNA segment for trait is ________.", "expectedAny": ["gene"] },
+    { "question": "What are gene versions?", "choices": ["Proteins", "Alleles", "Cells", "Organs"], "correct": 1, "expectedAny": ["alleles"] },
+    { "question": "One copy expressed is ________.", "expectedAny": ["dominant"] },
+    { "question": "Two copies needed is ________.", "expectedAny": ["recessive"] }
+  ],
+  "truefalse": [
+    { "question": "A dominant allele is expressed when only one copy is present.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "DNA does not carry information.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Gene codes for trait.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All alleles are identical.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Dominant needs one copy.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Recessive needs one copy.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "DNA carries genetic information.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Genes are identical.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Alleles are gene versions.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Recessive always shows.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What are different versions of the same gene called?", "choices": ["Proteins", "Alleles", "Cells", "Organs"], "correct": 1, "expectedAny": ["alleles"] },
+    { "question": "What is genetic molecule?", "choices": ["Protein", "DNA", "Water", "Sugar"], "correct": 1, "expectedAny": ["DNA"] },
+    { "question": "What codes for trait?", "choices": ["Protein", "Gene", "Cell", "Organ"], "correct": 1, "expectedAny": ["gene"] },
+    { "question": "What needs one copy?", "choices": ["Recessive", "Dominant", "Neutral", "Nothing"], "correct": 1, "expectedAny": ["dominant"] },
+    { "question": "What needs two copies?", "choices": ["Dominant", "Recessive", "Neutral", "Nothing"], "correct": 1, "expectedAny": ["recessive"] },
+    { "question": "Genetic information is in?", "choices": ["Protein", "DNA", "Water", "Air"], "correct": 1, "expectedAny": ["DNA"] },
+    { "question": "Trait code is?", "choices": ["Cell", "Gene", "Organ", "Tissue"], "correct": 1, "expectedAny": ["gene"] },
+    { "question": "Gene versions are?", "choices": ["Proteins", "Alleles", "Cells", "Organs"], "correct": 1, "expectedAny": ["alleles"] },
+    { "question": "Shows with one copy?", "choices": ["Recessive", "Dominant", "Hidden", "Nothing"], "correct": 1, "expectedAny": ["dominant"] },
+    { "question": "Hidden trait is?", "choices": ["Dominant", "Recessive", "Shown", "Visible"], "correct": 1, "expectedAny": ["recessive"] }
+  ],
+  "fillintheblank": [
+    { "question": "A segment of DNA that codes for a trait is called a ________.", "expectedAny": ["gene"] },
+    { "question": "________ carries genetic information.", "expectedAny": ["DNA"] },
+    { "question": "Different gene versions are ________.", "expectedAny": ["alleles", "gene versions", "different forms of gene"] },
+    { "question": "A ________ allele shows with one copy.", "expectedAny": ["dominant"] },
+    { "question": "A ________ allele needs two copies.", "expectedAny": ["recessive"] },
+    { "question": "A ________ codes for trait.", "expectedAny": ["gene"] },
+    { "question": "________ is genetic molecule.", "expectedAny": ["DNA"] },
+    { "question": "________ are gene versions.", "expectedAny": ["alleles"] },
+    { "question": "Dominant ________ shows with one.", "expectedAny": ["allele"] },
+    { "question": "Recessive ________ needs two.", "expectedAny": ["allele"] }
+  ],
+  "shortanswer": [
+    { "question": "Why do offspring resemble their parents?", "expectedAny": ["inherit DNA from parents", "get genes from both parents"] },
+    { "question": "What is DNA?", "expectedAny": ["molecule that carries genetic information", "genetic material"] },
+    { "question": "What is gene?", "expectedAny": ["segment of DNA that codes for trait", "trait code"] },
+    { "question": "What is allele?", "expectedAny": ["different versions of same gene", "gene variants"] },
+    { "question": "What is dominant?", "expectedAny": ["allele expressed when present", "shows with one copy"] },
+    { "question": "What is recessive?", "expectedAny": ["allele expressed with two copies", "needs two copies"] },
+    { "question": "How DNA pass to offspring?", "expectedAny": ["from both parents", "inherited from parents"] },
+    { "question": "Why need two recessive?", "expectedAny": ["dominant masks it", "only shows without dominant"] },
+    { "question": "What determines traits?", "expectedAny": ["genes", "DNA instructions"] },
+    { "question": "Where is genetic information?", "expectedAny": ["in DNA", "DNA molecule"] }
+  ]
 }

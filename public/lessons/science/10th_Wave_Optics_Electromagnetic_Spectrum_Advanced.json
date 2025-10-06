@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "10th_Wave_Optics_Electromagnetic_Spectrum_Advanced",
   "title": "Wave Optics and Electromagnetic Spectrum",
   "grade": "10th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "electromagnetic spectrum",
-      "definition": "Full range of electromagnetic radiation from radio waves to gamma rays"
-    },
-    {
-      "term": "wavelength",
-      "definition": "Distance between two consecutive peaks or troughs of a wave"
-    },
-    {
-      "term": "frequency",
-      "definition": "Number of wave cycles that pass a point per second"
-    },
-    {
-      "term": "refraction",
-      "definition": "Bending of light when it passes from one medium to another"
-    },
-    {
-      "term": "interference",
-      "definition": "Interaction between waves that can result in constructive or destructive patterns"
-    }
+    {"term": "electromagnetic spectrum", "definition": "Full range of electromagnetic radiation from radio waves to gamma rays"},
+    {"term": "wavelength", "definition": "Distance between two consecutive peaks or troughs of a wave"},
+    {"term": "frequency", "definition": "Number of wave cycles that pass a point per second"},
+    {"term": "refraction", "definition": "Bending of light when it passes from one medium to another"},
+    {"term": "interference", "definition": "Interaction between waves that can result in constructive or destructive patterns"}
   ],
   "teachingNotes": "Use prisms and diffraction gratings to demonstrate wave properties. Connect to applications in technology and medicine.",
-  "sample": {
-    "question": "What is the full range of electromagnetic radiation called?",
-    "expectedAny": [
-      "electromagnetic spectrum",
-      "EM spectrum",
-      "radiation spectrum",
-      "electromagnetic range"
-    ]
-  },
-  "truefalse": {
-    "question": "All electromagnetic waves travel at the speed of light in a vacuum.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the bending of light when passing between media?",
-    "expectedAny": [
-      "refraction",
-      "light bending",
-      "optical refraction",
-      "medium bending"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The distance between two wave peaks is the ________.",
-    "expectedAny": [
-      "wavelength",
-      "wave length",
-      "peak distance",
-      "cycle length"
-    ]
-  },
-  "shortanswer": {
-    "question": "How are wavelength and frequency related for electromagnetic waves?",
-    "expectedAny": [
-      "inversely related",
-      "as one increases, other decreases",
-      "product equals speed of light"
-    ]
-  }
+  "sample": [
+    {"question": "What is radiation range?", "expectedAny": ["electromagnetic spectrum", "EM spectrum", "spectrum", "electromagnetic range", "radiation spectrum", "EM range"]},
+    {"question": "What is peak to peak?", "expectedAny": ["wavelength", "lambda", "wave distance", "peak to peak distance", "wave length", "distance between peaks"]},
+    {"question": "What is cycles per second?", "expectedAny": ["frequency", "hertz", "cycles per second", "Hz", "wave frequency", "oscillations per second"]},
+    {"question": "What is light bending?", "expectedAny": ["refraction", "bending", "light bending", "wave bending", "medium bending", "refracting"]},
+    {"question": "What is wave interaction?", "expectedAny": ["interference", "superposition", "wave interaction", "wave combination", "constructive destructive", "wave overlap"]},
+    {"question": "What is radio to gamma?", "expectedAny": ["electromagnetic spectrum", "spectrum", "EM spectrum", "electromagnetic range", "radiation spectrum", "EM range"]},
+    {"question": "What is wave distance?", "expectedAny": ["wavelength", "lambda", "peak to peak", "wave length", "distance between peaks", "peak to peak distance"]},
+    {"question": "What is wave rate?", "expectedAny": ["frequency", "cycles", "hertz", "cycles per second", "Hz", "wave frequency"]},
+    {"question": "What is medium change bending?", "expectedAny": ["refraction", "light bending", "bending", "wave bending", "medium bending", "refracting"]},
+    {"question": "What is constructive destructive?", "expectedAny": ["interference", "wave interaction", "superposition", "wave combination", "wave overlap", "wave adding"]}
+  ],
+  "truefalse": [
+    {"question": "EM spectrum includes all radiation. (True or False)", "correct": true},
+    {"question": "Wavelength is peak to peak. (True or False)", "correct": true},
+    {"question": "Frequency is cycles per second. (True or False)", "correct": true},
+    {"question": "Refraction is reflection. (True or False)", "correct": false},
+    {"question": "Interference is wave interaction. (True or False)", "correct": true},
+    {"question": "Radio waves are EM radiation. (True or False)", "correct": true},
+    {"question": "Wavelength is distance. (True or False)", "correct": true},
+    {"question": "Frequency is hertz. (True or False)", "correct": true},
+    {"question": "Refraction bends light. (True or False)", "correct": true},
+    {"question": "Waves can interfere. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is radiation range?", "choices": [{"letter": "A", "text": "Visible spectrum"}, {"letter": "B", "text": "Electromagnetic spectrum"}, {"letter": "C", "text": "Sound spectrum"}, {"letter": "D", "text": "Atomic spectrum"}], "correct": "B"},
+    {"question": "What is peak to peak?", "choices": [{"letter": "A", "text": "Amplitude"}, {"letter": "B", "text": "Wavelength"}, {"letter": "C", "text": "Frequency"}, {"letter": "D", "text": "Period"}], "correct": "B"},
+    {"question": "What is cycles per second?", "choices": [{"letter": "A", "text": "Wavelength"}, {"letter": "B", "text": "Frequency"}, {"letter": "C", "text": "Amplitude"}, {"letter": "D", "text": "Speed"}], "correct": "B"},
+    {"question": "What is light bending?", "choices": [{"letter": "A", "text": "Reflection"}, {"letter": "B", "text": "Refraction"}, {"letter": "C", "text": "Diffraction"}, {"letter": "D", "text": "Dispersion"}], "correct": "B"},
+    {"question": "What is wave interaction?", "choices": [{"letter": "A", "text": "Reflection"}, {"letter": "B", "text": "Interference"}, {"letter": "C", "text": "Refraction"}, {"letter": "D", "text": "Absorption"}], "correct": "B"},
+    {"question": "What includes gamma rays?", "choices": [{"letter": "A", "text": "Visible"}, {"letter": "B", "text": "Electromagnetic spectrum"}, {"letter": "C", "text": "Sound"}, {"letter": "D", "text": "Ultrasound"}], "correct": "B"},
+    {"question": "What is lambda?", "choices": [{"letter": "A", "text": "Frequency"}, {"letter": "B", "text": "Wavelength"}, {"letter": "C", "text": "Amplitude"}, {"letter": "D", "text": "Period"}], "correct": "B"},
+    {"question": "What is hertz?", "choices": [{"letter": "A", "text": "Wavelength"}, {"letter": "B", "text": "Frequency"}, {"letter": "C", "text": "Amplitude"}, {"letter": "D", "text": "Distance"}], "correct": "B"},
+    {"question": "What occurs at medium change?", "choices": [{"letter": "A", "text": "Reflection"}, {"letter": "B", "text": "Refraction"}, {"letter": "C", "text": "Absorption"}, {"letter": "D", "text": "Emission"}], "correct": "B"},
+    {"question": "What is constructive?", "choices": [{"letter": "A", "text": "Reflection"}, {"letter": "B", "text": "Interference"}, {"letter": "C", "text": "Refraction"}, {"letter": "D", "text": "Diffusion"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ spectrum is radiation range.", "expectedAny": ["electromagnetic", "Electromagnetic"]},
+    {"question": "_____ is peak to peak.", "expectedAny": ["wavelength", "Wavelength"]},
+    {"question": "_____ is cycles per second.", "expectedAny": ["frequency", "Frequency"]},
+    {"question": "_____ is light bending.", "expectedAny": ["refraction", "Refraction"]},
+    {"question": "_____ is wave interaction.", "expectedAny": ["interference", "Interference"]},
+    {"question": "EM _____ includes all radiation.", "expectedAny": ["spectrum"]},
+    {"question": "_____ is wave distance.", "expectedAny": ["wavelength", "Wavelength"]},
+    {"question": "_____ is measured in hertz.", "expectedAny": ["frequency", "Frequency"]},
+    {"question": "_____ bends at medium change.", "expectedAny": ["light", "Light"]},
+    {"question": "Waves can show _____.", "expectedAny": ["interference"]}
+  ],
+  "shortanswer": [
+    {"question": "What is electromagnetic spectrum?", "keyTerms": ["full", "range", "electromagnetic", "radiation", "radio", "waves", "gamma", "rays"], "expectedAny": ["Full range of electromagnetic radiation from radio waves to gamma rays", "All EM radiation", "Radio to gamma"]},
+    {"question": "What is wavelength?", "keyTerms": ["distance", "two", "consecutive", "peaks", "troughs", "wave"], "expectedAny": ["Distance between two consecutive peaks or troughs of a wave", "Peak to peak distance", "Wave distance"]},
+    {"question": "What is frequency?", "keyTerms": ["number", "wave", "cycles", "pass", "point", "per", "second"], "expectedAny": ["Number of wave cycles that pass a point per second", "Cycles per second", "Hertz"]},
+    {"question": "What is refraction?", "keyTerms": ["bending", "light", "passes", "one", "medium", "another"], "expectedAny": ["Bending of light when it passes from one medium to another", "Light bending", "Medium change bending"]},
+    {"question": "What is interference?", "keyTerms": ["interaction", "waves", "result", "constructive", "destructive", "patterns"], "expectedAny": ["Interaction between waves that can result in constructive or destructive patterns", "Wave interaction", "Superposition"]},
+    {"question": "List parts of EM spectrum.", "keyTerms": ["radio", "microwave", "infrared", "visible", "ultraviolet", "X-ray", "gamma"], "expectedAny": ["Radio, microwave, infrared, visible, UV, X-ray, gamma", "All seven types", "Radio to gamma"]},
+    {"question": "What is relationship wavelength frequency?", "keyTerms": ["inverse", "longer", "wavelength", "lower", "frequency"], "expectedAny": ["Inverse relationship, longer wavelength means lower frequency", "Inversely proportional", "c = lambda times f"]},
+    {"question": "Give example of refraction.", "keyTerms": ["prism", "straw", "water", "bending"], "expectedAny": ["Prism separating light", "Straw appears bent in water", "Any bending example"]},
+    {"question": "What is constructive interference?", "keyTerms": ["waves", "add", "peak", "peak", "larger", "amplitude"], "expectedAny": ["Waves add when peak meets peak, larger amplitude", "Wave addition", "Peaks align"]},
+    {"question": "What is destructive interference?", "keyTerms": ["waves", "cancel", "peak", "trough", "smaller", "amplitude"], "expectedAny": ["Waves cancel when peak meets trough, smaller amplitude", "Wave cancellation", "Peak meets trough"]}
+  ]
 }

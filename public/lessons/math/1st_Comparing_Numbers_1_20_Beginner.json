@@ -8,17 +8,18 @@
     {"term": "compare", "definition": "To look at two things to see which is bigger or smaller"},
     {"term": "greater than", "definition": "Bigger than; more than"},
     {"term": "less than", "definition": "Smaller than; fewer than"},
-    {"term": "equal", "definition": "The same amount"}
+    {"term": "equal", "definition": "The same amount"},
+    {"term": "symbol", "definition": "A sign like < or > that shows comparing"}
   ],
   "teachingNotes": "Use number lines and counting objects. Practice with concrete comparisons before abstract numbers. Use > and < symbols gradually.",
   "sample": [
-    {"question": "Circle the bigger number: 45 or 54", "expectedAny": ["54"]},
-    {"question": "Which is smaller: 72 or 27?", "expectedAny": ["27"]},
-    {"question": "Put <, >, or = : 35 ___ 35", "expectedAny": ["="]},
-    {"question": "Order from smallest to largest: 18, 81, 28", "expectedAny": ["18, 28, 81"]},
-    {"question": "Circle the largest: 99, 89, 98", "expectedAny": ["99"]},
-    {"question": "Which number is between 40 and 50: 39, 45, 51?", "expectedAny": ["45"]},
-    {"question": "Put <, >, or = : 67 ___ 76", "expectedAny": ["<", ">", "depending on order"]}
+    {"question": "Circle the bigger number: 45 or 54", "expectedAny": ["54", "fifty-four"]},
+    {"question": "Which is smaller: 72 or 27?", "expectedAny": ["27", "twenty-seven"]},
+    {"question": "Put <, >, or = : 35 ___ 35", "expectedAny": ["=", "equal", "equals"]},
+    {"question": "Order from smallest to largest: 18, 81, 28", "expectedAny": ["18, 28, 81", "18 28 81"]},
+    {"question": "Circle the largest: 99, 89, 98", "expectedAny": ["99", "ninety-nine"]},
+    {"question": "Which number is between 40 and 50: 39, 45, 51?", "expectedAny": ["45", "forty-five"]},
+    {"question": "Put <, >, or = : 67 ___ 76", "expectedAny": ["<", "less than"]}
   ],
   "truefalse": [
     {"question": "45 is greater than 54.", "answer": false, "expectedAny": ["45 is less than 54"]},
@@ -37,20 +38,20 @@
     {"question": "Which number is between 60 and 70?", "choices": ["59", "65", "70", "71"], "correct": 1, "expectedAny": ["65"]}
   ],
   "fillintheblank": [
-    {"question": "34 is ___ than 43.", "expectedAny": ["less", "smaller"]},
-    {"question": "The number that comes after 89 is ___.", "expectedAny": ["90"]},
-    {"question": "75 is ___ than 57.", "expectedAny": ["greater", "bigger"]},
-    {"question": "The number between 48 and 50 is ___.", "expectedAny": ["49"]},
-    {"question": "100 is ___ than 99.", "expectedAny": ["greater", "bigger"]},
-    {"question": "The smallest number with 5 in the tens place is ___.", "expectedAny": ["50"]}
+    {"question": "34 is ___ than 43.", "expectedAny": ["less", "smaller", "lower"]},
+  {"question": "The number that comes after 89 is ___.", "expectedAny": ["90", "ninety"]},
+    {"question": "75 is ___ than 57.", "expectedAny": ["greater", "bigger", "more", "larger"]},
+  {"question": "The number between 48 and 50 is ___.", "expectedAny": ["49", "forty-nine", "forty nine"]},
+    {"question": "100 is ___ than 99.", "expectedAny": ["greater", "bigger", "more", "larger"]},
+    {"question": "The smallest number with 5 in the tens place is ___.", "expectedAny": ["50", "fifty"]}
   ],
   "shortanswer": [
-    {"question": "How do you know that 72 is bigger than 27?", "expectedAny": ["7 tens is more than 2 tens"]},
-    {"question": "What strategy do you use to compare 45 and 54?", "expectedAny": ["look at tens first"]},
-    {"question": "Why is 100 special?", "expectedAny": ["first three-digit number"]},
-    {"question": "Explain why all numbers in the 80s are bigger than numbers in the 70s.", "expectedAny": ["8 tens > 7 tens"]},
-    {"question": "How can you quickly tell which is bigger: 91 or 19?", "expectedAny": ["compare tens digit"]},
-    {"question": "What patterns do you see when counting by 10s?", "expectedAny": ["tens digit increases, ones stay same"]}
+    {"question": "How do you know that 72 is bigger than 27?", "expectedAny": ["7 tens is more", "compare tens digit first", "2 tens is less", "7 is bigger than 2", "70 is more than 20"]},
+    {"question": "What strategy do you use to compare 45 and 54?", "expectedAny": ["look at tens first", "if tens are the same, look at ones", "use a number line", "compare the first number", "check the tens place"]},
+    {"question": "Why is 100 special?", "expectedAny": ["first three-digit number", "comes after 99", "it has three digits", "biggest number with three digits"]},
+    {"question": "Explain why all numbers in the 80s are bigger than numbers in the 70s.", "expectedAny": ["8 tens is more than 7 tens", "the tens place decides", "80-something is bigger than 70-something", "80 is more than 70"]},
+    {"question": "How can you quickly tell which is bigger: 91 or 19?", "expectedAny": ["compare tens digit", "9 tens vs 1 ten", "look at the first digit", "90 is more than 10", "look at the tens"]},
+    {"question": "What patterns do you see when counting by 10s?", "expectedAny": ["tens digit increases", "ones digit stays 0", "numbers end with 0", "goes up by 10", "add ten each time"]}
   ],
   "wordProblems": [
     {"question": "Team A scored 45 points. Team B scored 54 points. Which team won?", "expectedAny": ["Team B"]},

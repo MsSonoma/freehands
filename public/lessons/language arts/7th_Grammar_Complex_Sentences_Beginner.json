@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Practice identifying independent and dependent clauses. Show how subordinating conjunctions create complex sentences.",
-  "sample": {
-    "question": "What is a sentence with one independent and one dependent clause?",
-    "expectedAny": [
-      "complex sentence",
-      "complex",
-      "sentence with clauses",
-      "multi-clause sentence"
-    ]
-  },
-  "truefalse": {
-    "question": "A dependent clause can stand alone as a complete sentence.",
-    "expectedAny": [
-      "false",
-      "no",
-      "f",
-      "incorrect"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which is a subordinating conjunction?",
-    "expectedAny": [
-      "because",
-      "although",
-      "when",
-      "since"
-    ]
-  },
-  "fillintheblank": {
-    "question": "An incomplete sentence is called a ________.",
-    "expectedAny": [
-      "fragment",
-      "sentence fragment",
-      "incomplete sentence",
-      "partial sentence"
-    ]
-  },
-  "shortanswer": {
-    "question": "Combine these clauses with a subordinating conjunction: 'I studied hard' and 'I passed the test.'",
-    "expectedAny": [
-      "Because I studied hard, I passed the test",
-      "I passed the test because I studied hard",
-      "Since I studied hard, I passed the test"
-    ]
-  }
+  "sample": [
+    { "question": "What is a sentence with one independent and one dependent clause?", "expectedAny": ["complex sentence"] },
+    { "question": "Which can stand alone?", "choices": ["Fragment", "Independent clause", "Dependent clause", "Phrase"], "correct": 1, "expectedAny": ["independent clause"] },
+    { "question": "A clause that cannot stand alone is ________.", "expectedAny": ["dependent clause"] },
+    { "question": "A word connecting clauses is a ________.", "expectedAny": ["subordinating conjunction"] },
+    { "question": "An incomplete sentence is a ________.", "expectedAny": ["fragment"] },
+    { "question": "What has independent and dependent clauses?", "choices": ["Simple", "Complex", "Phrase", "Word"], "correct": 1, "expectedAny": ["complex sentence"] },
+    { "question": "A complete thought is ________.", "expectedAny": ["independent clause"] },
+    { "question": "'Because' is a ________.", "expectedAny": ["subordinating conjunction"] },
+    { "question": "Which is incomplete?", "choices": ["Sentence", "Fragment", "Paragraph", "Essay"], "correct": 1, "expectedAny": ["fragment"] },
+    { "question": "A clause needing another clause is ________.", "expectedAny": ["dependent clause"] }
+  ],
+  "truefalse": [
+    { "question": "A dependent clause can stand alone as a complete sentence.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "An independent clause is a complete thought.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A complex sentence has multiple independent clauses.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "'Because' is a subordinating conjunction.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A fragment is a complete sentence.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Complex sentences have dependent clauses.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All clauses can stand alone.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Subordinating conjunctions connect clauses.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Fragments are grammatically correct.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Independent clauses have subjects and verbs.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which is a subordinating conjunction?", "choices": ["And", "Because", "But", "Or"], "correct": 1, "expectedAny": ["because"] },
+    { "question": "What can stand alone?", "choices": ["Fragment", "Independent clause", "Dependent clause", "Phrase"], "correct": 1, "expectedAny": ["independent clause"] },
+    { "question": "What has one independent and one dependent clause?", "choices": ["Simple", "Complex", "Compound", "Fragment"], "correct": 1, "expectedAny": ["complex"] },
+    { "question": "What is incomplete?", "choices": ["Sentence", "Fragment", "Paragraph", "Clause"], "correct": 1, "expectedAny": ["fragment"] },
+    { "question": "Which connects clauses?", "choices": ["Noun", "Verb", "Subordinating conjunction", "Adjective"], "correct": 2, "expectedAny": ["subordinating conjunction"] },
+    { "question": "What cannot stand alone?", "choices": ["Independent clause", "Dependent clause", "Sentence", "Paragraph"], "correct": 1, "expectedAny": ["dependent clause"] },
+    { "question": "Which word starts dependent clauses?", "choices": ["The", "Although", "Happy", "Run"], "correct": 1, "expectedAny": ["although"] },
+    { "question": "What is a complete thought?", "choices": ["Fragment", "Independent clause", "Phrase", "Word"], "correct": 1, "expectedAny": ["independent clause"] },
+    { "question": "What needs another clause?", "choices": ["Independent", "Dependent", "Simple", "Complete"], "correct": 1, "expectedAny": ["dependent"] },
+    { "question": "Which is NOT a subordinating conjunction?", "choices": ["Because", "Although", "And", "While"], "correct": 2, "expectedAny": ["and"] }
+  ],
+  "fillintheblank": [
+    { "question": "An incomplete sentence is called a ________.", "expectedAny": ["fragment"] },
+    { "question": "A sentence with independent and dependent clauses is ________.", "expectedAny": ["complex"] },
+    { "question": "A clause that stands alone is ________.", "expectedAny": ["independent"] },
+    { "question": "A clause needing another is ________.", "expectedAny": ["dependent"] },
+    { "question": "'Because' is a ________ conjunction.", "expectedAny": ["subordinating"] },
+    { "question": "A ________ is not a complete sentence.", "expectedAny": ["fragment"] },
+    { "question": "An ________ clause is a complete thought.", "expectedAny": ["independent"] },
+    { "question": "A ________ sentence has two types of clauses.", "expectedAny": ["complex"] },
+    { "question": "'Although' is a ________ conjunction.", "expectedAny": ["subordinating"] },
+    { "question": "A ________ clause cannot stand alone.", "expectedAny": ["dependent"] }
+  ],
+  "shortanswer": [
+    { "question": "Combine these clauses with a subordinating conjunction: 'I studied hard' and 'I passed the test.'", "expectedAny": ["Because I studied hard, I passed the test", "I passed the test because I studied hard"] },
+    { "question": "What is a complex sentence?", "expectedAny": ["sentence with independent and dependent clause", "one independent and one dependent clause"] },
+    { "question": "What is an independent clause?", "expectedAny": ["clause that stands alone", "complete thought", "main clause", "complete sentence"] },
+    { "question": "What is a dependent clause?", "expectedAny": ["clause that cannot stand alone", "needs another clause", "subordinate clause", "can't stand alone", "incomplete clause"] },
+    { "question": "Name two subordinating conjunctions.", "expectedAny": ["because and although", "when and since", "if and while"] },
+    { "question": "What is a fragment?", "expectedAny": ["incomplete sentence", "missing subject or verb"] },
+    { "question": "How do subordinating conjunctions work?", "expectedAny": ["connect dependent to independent clauses", "join clauses", "connects clauses", "links clauses together"] },
+    { "question": "Give an example of a dependent clause.", "expectedAny": ["because I was tired", "when she arrived", "if it rains"] },
+    { "question": "Why is 'When I arrived' a fragment?", "expectedAny": ["it's a dependent clause", "cannot stand alone"] },
+    { "question": "Fix this fragment: 'Because it was raining.'", "expectedAny": ["add independent clause", "complete the thought"] }
+  ]
 }

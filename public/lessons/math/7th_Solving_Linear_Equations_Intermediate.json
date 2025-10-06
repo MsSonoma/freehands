@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Emphasize that whatever you do to one side, you must do to the other. Start with one-step equations before moving to two-step.",
-  "sample": {
-    "question": "What is a mathematical statement that two expressions are equal?",
-    "expectedAny": ["equation", "mathematical equation", "equality", "equal statement"]
-  },
-  "truefalse": {
-    "question": "To solve x + 5 = 12, you subtract 5 from both sides.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is the solution to x - 3 = 7?",
-    "expectedAny": ["x = 10", "10", "x=10", "ten"]
-  },
-  "fillintheblank": {
-    "question": "To get a variable by itself on one side is to ________ it.",
-    "expectedAny": ["isolate", "solve for", "separate", "get alone"]
-  },
-  "shortanswer": {
-    "question": "Solve: 2x + 4 = 14",
-    "expectedAny": ["x = 5", "x=5", "5", "five"]
-  },
-  "wordProblems": {
-    "question": "Maria has some stickers. After giving away 8 stickers, she has 15 left. How many stickers did she start with?",
-    "expectedAny": ["23", "23 stickers", "x - 8 = 15, x = 23", "twenty-three"]
-  }
+  "sample": [
+    { "question": "What is a mathematical statement that two expressions are equal?", "expectedAny": ["equation"] },
+    { "question": "Which makes equation true?", "choices": ["Variable", "Solution", "Operation", "Expression"], "correct": 1, "expectedAny": ["solution"] },
+    { "question": "Operations that undo are ________.", "expectedAny": ["inverse operations"] },
+    { "question": "Getting variable alone is to ________.", "expectedAny": ["isolate"] },
+    { "question": "Keeping equation equal is to ________.", "expectedAny": ["balance"] },
+    { "question": "What is an equality statement?", "choices": ["Expression", "Equation", "Inequality", "Variable"], "correct": 1, "expectedAny": ["equation"] },
+    { "question": "The value making it true is ________.", "expectedAny": ["solution"] },
+    { "question": "Undoing operations are ________.", "expectedAny": ["inverse", "inverse operations"] },
+    { "question": "Which gets variable alone?", "choices": ["Balance", "Isolate", "Combine", "Distribute"], "correct": 1, "expectedAny": ["isolate"] },
+    { "question": "Doing same to both sides is ________.", "expectedAny": ["balance"] }
+  ],
+  "truefalse": [
+    { "question": "To solve x + 5 = 12, you subtract 5 from both sides.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "You can add to one side only.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A solution makes the equation true.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Inverse operations are the same.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Isolating gets the variable alone.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Balancing means unequal sides.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Addition and subtraction are inverse.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "You solve by guessing.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Multiplication and division are inverse.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Equations never have solutions.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is the solution to x - 3 = 7?", "choices": ["4", "10", "21", "-4"], "correct": 1, "expectedAny": ["10"] },
+    { "question": "What is two expressions equal?", "choices": ["Expression", "Equation", "Inequality", "Variable"], "correct": 1, "expectedAny": ["equation"] },
+    { "question": "What makes equation true?", "choices": ["Variable", "Solution", "Operation", "Expression"], "correct": 1, "expectedAny": ["solution"] },
+    { "question": "What undoes addition?", "choices": ["Multiplication", "Subtraction", "Division", "Addition"], "correct": 1, "expectedAny": ["subtraction"] },
+    { "question": "What undoes multiplication?", "choices": ["Addition", "Subtraction", "Division", "Multiplication"], "correct": 2, "expectedAny": ["division"] },
+    { "question": "What gets variable alone?", "choices": ["Balance", "Isolate", "Combine", "Distribute"], "correct": 1, "expectedAny": ["isolate"] },
+    { "question": "Solve x + 4 = 9", "choices": ["13", "5", "36", "2.25"], "correct": 1, "expectedAny": ["5"] },
+    { "question": "Solve x - 2 = 8", "choices": ["6", "10", "16", "4"], "correct": 1, "expectedAny": ["10"] },
+    { "question": "Solve 3x = 15", "choices": ["45", "5", "12", "18"], "correct": 1, "expectedAny": ["5"] },
+    { "question": "What keeps equation equal?", "choices": ["Guessing", "Balance", "Ignoring", "Changing"], "correct": 1, "expectedAny": ["balance"] }
+  ],
+  "fillintheblank": [
+    { "question": "To get a variable by itself on one side is to ________ it.", "expectedAny": ["isolate"] },
+    { "question": "Two equal expressions form an ________.", "expectedAny": ["equation"] },
+    { "question": "The value making equation true is the ________.", "expectedAny": ["solution"] },
+    { "question": "Operations that undo are ________.", "expectedAny": ["inverse", "inverse operations"] },
+    { "question": "Doing same to both sides is ________.", "expectedAny": ["balance", "balancing"] },
+    { "question": "An ________ has an equal sign.", "expectedAny": ["equation"] },
+    { "question": "The ________ makes the equation true.", "expectedAny": ["solution"] },
+    { "question": "To ________ means get variable alone.", "expectedAny": ["isolate"] },
+    { "question": "________ operations undo each other.", "expectedAny": ["inverse"] },
+    { "question": "To ________ means keep equation equal.", "expectedAny": ["balance"] }
+  ],
+  "shortanswer": [
+    { "question": "Solve: 2x + 4 = 14", "expectedAny": ["x = 5", "5"] },
+    { "question": "What is an equation?", "expectedAny": ["two equal expressions", "equality statement"] },
+    { "question": "What is a solution?", "expectedAny": ["value making equation true", "answer to equation"] },
+    { "question": "What are inverse operations?", "expectedAny": ["operations that undo", "opposite operations", "reverse operations", "operations that cancel"] },
+    { "question": "What does isolate mean?", "expectedAny": ["get variable alone", "variable by itself", "get x alone", "solve for x", "get x by itself"] },
+    { "question": "What does balance mean?", "expectedAny": ["keep equation equal", "same to both sides"] },
+    { "question": "Solve: x + 7 = 15", "expectedAny": ["x = 8", "8"] },
+    { "question": "Solve: x - 5 = 3", "expectedAny": ["x = 8", "8"] },
+    { "question": "Solve: 4x = 20", "expectedAny": ["x = 5", "5"] },
+    { "question": "Solve: x/2 = 6", "expectedAny": ["x = 12", "12"] }
+  ],
+  "wordProblems": [
+    { "question": "Maria has some stickers. After giving away 8 stickers, she has 15 left. How many stickers did she start with?", "expectedAny": ["23"] },
+    { "question": "A number increased by 5 equals 12. What is the number?", "expectedAny": ["7"] },
+    { "question": "Triple a number equals 24. What is the number?", "expectedAny": ["8"] },
+    { "question": "A number decreased by 9 equals 16. What is the number?", "expectedAny": ["25"] },
+    { "question": "John has $45. After buying a game, he has $20 left. How much was the game?", "expectedAny": ["$25", "25"] },
+    { "question": "A number divided by 4 equals 7. What is the number?", "expectedAny": ["28"] },
+    { "question": "Sarah had some books. After getting 6 more, she has 14. How many did she start with?", "expectedAny": ["8"] },
+    { "question": "Five times a number equals 35. What is the number?", "expectedAny": ["7"] },
+    { "question": "A number plus 12 equals 30. What is the number?", "expectedAny": ["18"] },
+    { "question": "Half a number equals 9. What is the number?", "expectedAny": ["18"] }
+  ]
 }

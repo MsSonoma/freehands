@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "9th_Evolution_Natural_Selection_Evidence_Advanced",
-  "title": "Evolution: Natural Selection and Evidence",
+  "title": "Evolution and Natural Selection Evidence",
   "grade": "9th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "natural selection",
-      "definition": "Process where organisms with favorable traits survive and reproduce"
-    },
-    {
-      "term": "adaptation",
-      "definition": "Inherited trait that helps an organism survive in its environment"
-    },
-    {
-      "term": "fossil record",
-      "definition": "Evidence of past life preserved in rocks and sediments"
-    },
-    {
-      "term": "homologous structures",
-      "definition": "Similar structures in different species indicating common ancestry"
-    },
-    {
-      "term": "speciation",
-      "definition": "Formation of new species from existing populations"
-    }
+    {"term": "natural selection", "definition": "Process where organisms better adapted survive and reproduce"},
+    {"term": "adaptation", "definition": "Inherited trait that increases survival and reproduction"},
+    {"term": "fossil record", "definition": "Evidence of past life preserved in rocks showing change over time"},
+    {"term": "common descent", "definition": "All living things share a common ancestor"},
+    {"term": "homologous structures", "definition": "Similar structures in different species from common ancestry"}
   ],
-  "teachingNotes": "Present multiple lines of evidence for evolution. Discuss how natural selection leads to adaptation over time.",
-  "sample": {
-    "question": "What is the process where organisms with favorable traits survive and reproduce?",
-    "expectedAny": [
-      "natural selection",
-      "survival of the fittest",
-      "selective pressure",
-      "evolutionary selection"
-    ]
-  },
-  "truefalse": {
-    "question": "Homologous structures indicate common ancestry between species.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What provides evidence of past life in rocks?",
-    "expectedAny": [
-      "fossil record",
-      "fossils",
-      "paleontological evidence",
-      "geological record"
-    ]
-  },
-  "fillintheblank": {
-    "question": "An inherited trait that helps survival is called an ________.",
-    "expectedAny": [
-      "adaptation",
-      "adaptive trait",
-      "beneficial trait",
-      "survival trait"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does the fossil record support evolution?",
-    "expectedAny": [
-      "shows change over time",
-      "demonstrates transitional forms",
-      "reveals extinct species relationships"
-    ]
-  }
+  "teachingNotes": "Use examples like peppered moths and Darwin's finches. Emphasize evidence from fossils, anatomy, and DNA. Distinguish natural selection from evolution.",
+  "sample": [
+    {"question": "What is natural selection?", "expectedAny": ["survival of the fittest", "better adapted survive", "selective reproduction", "best suited survive"]},
+    {"question": "What is an adaptation?", "expectedAny": ["inherited helpful trait", "trait that increases survival", "beneficial trait", "helpful inherited feature"]},
+    {"question": "What is the fossil record?", "expectedAny": ["preserved past life", "fossils in rocks", "evidence of change", "ancient life remains"]},
+    {"question": "What is common descent?", "expectedAny": ["shared common ancestor", "all life related", "common origin", "all from same source"]},
+    {"question": "What are homologous structures?", "expectedAny": ["similar structures from common ancestor", "same basic structure different function", "shared structures", "matching body parts"]},
+    {"question": "What drives natural selection?", "expectedAny": ["survival and reproduction", "environmental pressure", "competition"]},
+    {"question": "What evidence supports evolution?", "expectedAny": ["fossils", "DNA", "anatomy", "homologous structures"]},
+    {"question": "What is fitness in evolution?", "expectedAny": ["reproductive success", "survival to reproduce", "passing genes"]},
+    {"question": "How do fossils show evolution?", "expectedAny": ["show change over time", "extinct species", "transitional forms"]},
+    {"question": "What do homologous structures indicate?", "expectedAny": ["common ancestry", "shared ancestor", "evolutionary relationship"]}
+  ],
+  "truefalse": [
+    {"question": "Natural selection means better adapted organisms survive. (True or False)", "correct": true},
+    {"question": "Adaptations are learned behaviors. (True or False)", "correct": false},
+    {"question": "The fossil record shows life has changed over time. (True or False)", "correct": true},
+    {"question": "All living things share a common ancestor. (True or False)", "correct": true},
+    {"question": "Homologous structures indicate common ancestry. (True or False)", "correct": true},
+    {"question": "Natural selection is random. (True or False)", "correct": false},
+    {"question": "Adaptations are inherited traits. (True or False)", "correct": true},
+    {"question": "Fossils provide evidence for evolution. (True or False)", "correct": true},
+    {"question": "All species never change. (True or False)", "correct": false},
+    {"question": "DNA provides evidence of common descent. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What drives natural selection?", "choices": [{"letter": "A", "text": "Random chance"}, {"letter": "B", "text": "Survival and reproduction"}, {"letter": "C", "text": "Human choice"}, {"letter": "D", "text": "Desire"}], "correct": "B"},
+    {"question": "What is an inherited helpful trait?", "choices": [{"letter": "A", "text": "Mutation"}, {"letter": "B", "text": "Variation"}, {"letter": "C", "text": "Adaptation"}, {"letter": "D", "text": "Selection"}], "correct": "C"},
+    {"question": "What shows life has changed?", "choices": [{"letter": "A", "text": "Current animals"}, {"letter": "B", "text": "Fossil record"}, {"letter": "C", "text": "Weather"}, {"letter": "D", "text": "Rocks"}], "correct": "B"},
+    {"question": "What are similar structures from common ancestry?", "choices": [{"letter": "A", "text": "Analogous"}, {"letter": "B", "text": "Vestigial"}, {"letter": "C", "text": "Homologous"}, {"letter": "D", "text": "Embryonic"}], "correct": "C"},
+    {"question": "What does common descent mean?", "choices": [{"letter": "A", "text": "No relation"}, {"letter": "B", "text": "Shared ancestor"}, {"letter": "C", "text": "Same species"}, {"letter": "D", "text": "Random"}], "correct": "B"},
+    {"question": "What provides DNA evidence?", "choices": [{"letter": "A", "text": "Fossils only"}, {"letter": "B", "text": "Anatomy only"}, {"letter": "C", "text": "Genetic similarities"}, {"letter": "D", "text": "Behavior"}], "correct": "C"},
+    {"question": "What is fitness?", "choices": [{"letter": "A", "text": "Physical strength"}, {"letter": "B", "text": "Reproductive success"}, {"letter": "C", "text": "Speed"}, {"letter": "D", "text": "Size"}], "correct": "B"},
+    {"question": "What organisms survive?", "choices": [{"letter": "A", "text": "Weakest"}, {"letter": "B", "text": "Oldest"}, {"letter": "C", "text": "Better adapted"}, {"letter": "D", "text": "Largest"}], "correct": "C"},
+    {"question": "What shows common ancestry?", "choices": [{"letter": "A", "text": "Different DNA"}, {"letter": "B", "text": "Homologous structures"}, {"letter": "C", "text": "Unrelated species"}, {"letter": "D", "text": "Random traits"}], "correct": "B"},
+    {"question": "What does the fossil record show?", "choices": [{"letter": "A", "text": "No change"}, {"letter": "B", "text": "Change over time"}, {"letter": "C", "text": "Instant creation"}, {"letter": "D", "text": "Random patterns"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ selection means better adapted organisms survive.", "expectedAny": ["natural"]},
+    {"question": "An _____ is an inherited trait that increases survival.", "expectedAny": ["adaptation"]},
+    {"question": "The _____ record shows past life in rocks.", "expectedAny": ["fossil"]},
+    {"question": "_____ descent means all life shares a common ancestor.", "expectedAny": ["common"]},
+    {"question": "_____ structures are similar from common ancestry.", "expectedAny": ["homologous"]},
+    {"question": "Natural selection increases _____ and reproduction.", "expectedAny": ["survival"]},
+    {"question": "Adaptations are _____ traits.", "expectedAny": ["inherited", "genetic"]},
+    {"question": "Fossils provide _____ for evolution.", "expectedAny": ["evidence"]},
+    {"question": "_____ means reproductive success.", "expectedAny": ["fitness"]},
+    {"question": "DNA shows _____ similarities.", "expectedAny": ["genetic", "evolutionary"]}
+  ],
+  "shortanswer": [
+    {"question": "What is natural selection?", "keyTerms": ["organisms", "better adapted", "survive", "reproduce"], "expectedAny": ["Process where better adapted organisms survive and reproduce", "Survival of the fittest", "Organisms with advantageous traits survive"]},
+    {"question": "What is an adaptation?", "keyTerms": ["inherited", "trait", "increases", "survival"], "expectedAny": ["Inherited trait that increases survival and reproduction", "Helpful trait passed to offspring", "Beneficial inherited characteristic"]},
+    {"question": "What evidence supports evolution?", "keyTerms": ["fossils", "DNA", "homologous structures", "anatomy"], "expectedAny": ["Fossil record, DNA similarities, homologous structures", "Fossils, anatomy, and genetic evidence", "Multiple lines including fossils and DNA"]},
+    {"question": "What is the fossil record?", "keyTerms": ["preserved", "past life", "rocks", "change over time"], "expectedAny": ["Preserved evidence of past life showing change over time", "Fossils in rocks showing evolution", "Record of ancient life forms"]},
+    {"question": "What is common descent?", "keyTerms": ["all living things", "share", "common ancestor"], "expectedAny": ["All living things share a common ancestor", "All life is related through common origin", "Shared ancestry of all organisms"]},
+    {"question": "What are homologous structures?", "keyTerms": ["similar", "structures", "different species", "common ancestry"], "expectedAny": ["Similar structures in different species from common ancestry", "Same basic structure from shared ancestor", "Structures showing common descent"]},
+    {"question": "How does natural selection work?", "keyTerms": ["variation", "environment", "survival", "reproduction"], "expectedAny": ["Organisms with better traits for environment survive and reproduce more", "Advantageous variations are selected", "Environment selects for beneficial traits"]},
+    {"question": "Why are adaptations important?", "keyTerms": ["increase", "survival", "reproduction", "fitness"], "expectedAny": ["They increase survival and reproductive success", "Help organisms survive in environment", "Improve fitness and passing genes"]},
+    {"question": "What does fitness mean?", "keyTerms": ["reproductive", "success", "passing", "genes"], "expectedAny": ["Reproductive success and passing genes to offspring", "Ability to survive and reproduce", "Success in passing traits to next generation"]},
+    {"question": "How do fossils support evolution?", "keyTerms": ["show", "change", "over time", "extinct species"], "expectedAny": ["They show species have changed over time", "Reveal extinct species and transitions", "Demonstrate gradual change in life forms"]}
+  ]
 }

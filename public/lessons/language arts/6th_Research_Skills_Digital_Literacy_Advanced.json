@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Teach students to evaluate website credibility. Practice proper citation formats. Distinguish between primary and secondary sources with clear examples.",
-  "sample": {
-    "question": "What is the ability to effectively find and evaluate digital information called?",
-    "expectedAny": [
-      "digital literacy",
-      "information literacy",
-      "digital skills",
-      "online research skills"
-    ]
-  },
-  "truefalse": {
-    "question": "A primary source is an original material from the time period being studied.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which would be a primary source for studying the Civil War?",
-    "expectedAny": [
-      "soldier's diary",
-      "letter from battlefield",
-      "newspaper from 1863",
-      "original documents"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A list of sources used in research is called a ________.",
-    "expectedAny": [
-      "bibliography",
-      "works cited",
-      "reference list",
-      "source list"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are three things to check when evaluating a website's credibility?",
-    "expectedAny": [
-      "author, date, domain",
-      "who wrote it, when, what type of site",
-      "credibility of author, recency, purpose"
-    ]
-  }
+  "sample": [
+    { "question": "What is the ability to effectively find and evaluate digital information called?", "expectedAny": ["digital literacy", "information literacy", "digital skills"] },
+    { "question": "Which is a credible source?", "choices": ["Random blog", "Academic journal", "Unreferenced site", "Anonymous post"], "correct": 1, "expectedAny": ["academic journal"] },
+    { "question": "A list of sources is a ________.", "expectedAny": ["bibliography", "works cited"] },
+    { "question": "An original document from the time is a ________ source.", "expectedAny": ["primary"] },
+    { "question": "Which is a primary source?", "choices": ["Textbook", "Diary from 1865", "Encyclopedia", "Modern analysis"], "correct": 1, "expectedAny": ["diary from 1865"] },
+    { "question": "A reliable source is ________.", "expectedAny": ["credible", "trustworthy"] },
+    { "question": "Materials that analyze primary sources are ________ sources.", "expectedAny": ["secondary"] },
+    { "question": "What helps you find and use digital information?", "choices": ["Digital literacy", "Guessing", "Ignoring sources", "Random clicking"], "correct": 0, "expectedAny": ["digital literacy"] },
+    { "question": "Name one thing to check in sources.", "expectedAny": ["author", "date", "credibility", "purpose"] },
+    { "question": "Why cite sources?", "expectedAny": ["give credit", "avoid plagiarism", "show evidence"] }
+  ],
+  "truefalse": [
+    { "question": "A primary source is an original material from the time period being studied.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All websites are equally credible.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A bibliography lists sources used in research.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Secondary sources are original documents from the time period.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Digital literacy helps evaluate online information.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "You never need to check who wrote a source.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Credible sources are reliable and trustworthy.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Primary sources analyze other sources.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Citing sources is important in research.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Digital literacy is only about typing skills.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which would be a primary source for studying the Civil War?", "choices": ["Modern textbook", "Soldier's diary from 1863", "Encyclopedia article", "Recent documentary"], "correct": 1, "expectedAny": ["soldier's diary"] },
+    { "question": "What is a credible source?", "choices": ["Random website", "Reliable and trustworthy", "Unverified blog", "Anonymous post"], "correct": 1, "expectedAny": ["reliable and trustworthy"] },
+    { "question": "Which is a secondary source?", "choices": ["Original letter", "Photograph from event", "History textbook", "Diary entry"], "correct": 2, "expectedAny": ["history textbook"] },
+    { "question": "What should you check for credibility?", "choices": ["Website color", "Author credentials", "Font size", "Number of images"], "correct": 1, "expectedAny": ["author credentials"] },
+    { "question": "What is digital literacy?", "choices": ["Typing fast", "Finding and evaluating digital info", "Playing games", "Using emojis"], "correct": 1, "expectedAny": ["finding and evaluating digital info"] },
+    { "question": "What lists your sources?", "choices": ["Title page", "Bibliography", "Table of contents", "Index"], "correct": 1, "expectedAny": ["bibliography"] },
+    { "question": "Which is most credible?", "choices": ["Unknown blog", "Peer-reviewed journal", "Social media post", "Random website"], "correct": 1, "expectedAny": ["peer-reviewed journal"] },
+    { "question": "Primary sources are:", "choices": ["Recent analyses", "Original materials", "Modern textbooks", "Encyclopedia entries"], "correct": 1, "expectedAny": ["original materials"] },
+    { "question": "Why evaluate sources?", "choices": ["It's fun", "To ensure accuracy", "To waste time", "To avoid reading"], "correct": 1, "expectedAny": ["to ensure accuracy"] },
+    { "question": "Which domain suggests credibility?", "choices": [".com only", ".edu or .gov", "Any domain", ".xyz"], "correct": 1, "expectedAny": [".edu or .gov"] }
+  ],
+  "fillintheblank": [
+    { "question": "A list of sources used in research is called a ________.", "expectedAny": ["bibliography", "works cited"] },
+    { "question": "Original materials from the time period are ________ sources.", "expectedAny": ["primary"] },
+    { "question": "Materials that analyze primary sources are ________ sources.", "expectedAny": ["secondary"] },
+  { "question": "The ability to find and evaluate digital information is ________ literacy.", "expectedAny": ["digital", "digital (digital literacy)"] },
+    { "question": "A reliable source is a ________ source.", "expectedAny": ["credible", "trustworthy"] },
+  { "question": "To give credit to sources, you must ________ them.", "expectedAny": ["cite", "reference", "properly cite"] },
+  { "question": "Check the ________ to see who wrote the information.", "expectedAny": ["author", "author/creator"] },
+    { "question": "A ________ source is reliable and trustworthy.", "expectedAny": ["credible"] },
+    { "question": "Evaluating sources helps ensure ________.", "expectedAny": ["accuracy", "reliability"] },
+    { "question": "Digital ________ helps you use online information effectively.", "expectedAny": ["literacy"] }
+  ],
+  "shortanswer": [
+  { "question": "What are three things to check when evaluating a website's credibility?", "expectedAny": ["author, date, domain", "who wrote it, when published, source type", "author credentials, publishing date, purpose"] },
+    { "question": "Give an example of a primary source.", "expectedAny": ["diary", "letter", "photograph from event", "original document"] },
+    { "question": "Give an example of a secondary source.", "expectedAny": ["textbook", "encyclopedia", "biography", "analysis article"] },
+    { "question": "Why is digital literacy important?", "expectedAny": ["helps evaluate information", "find reliable sources", "use internet effectively"] },
+    { "question": "What is the difference between primary and secondary sources?", "expectedAny": ["primary is original", "secondary analyzes primary", "primary from time period, secondary interprets"] },
+    { "question": "Why should you cite your sources?", "expectedAny": ["give credit", "avoid plagiarism", "show where information came from"] },
+    { "question": "What makes a source credible?", "expectedAny": ["reliable author", "recent date", "trusted publisher", "verified information"] },
+    { "question": "Name two places to find credible sources.", "expectedAny": ["libraries and academic databases", ".edu and .gov websites", "peer-reviewed journals"] },
+    { "question": "How can you tell if a website is credible?", "expectedAny": ["check author credentials", "look at domain", "verify information", "check date"] },
+    { "question": "What goes in a bibliography?", "expectedAny": ["list of sources", "author, title, date", "all sources used in research"] }
+  ]
 }

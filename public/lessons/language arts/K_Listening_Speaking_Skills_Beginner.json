@@ -24,13 +24,13 @@
   ],
   "teachingNotes": "Practice turn-taking in conversations. Use listening games and following directions activities. Encourage clear speech.",
   "sample": [
-    {"question": "What should you do when someone else is talking?", "expectedAny": ["listen", "be quiet"]},
-    {"question": "How do you ask to speak in class?", "expectedAny": ["raise your hand"]},
-    {"question": "What voice do you use in the library?", "expectedAny": ["quiet voice", "whisper"]},
-    {"question": "Show me how to be a good listener.", "expectedAny": ["look at speaker", "sit still"]},
-    {"question": "When is it your turn to talk?", "expectedAny": ["after raising hand", "when teacher calls on you"]},
-    {"question": "What polite words can you use?", "expectedAny": ["please, thank you, excuse me"]},
-    {"question": "How do you greet a friend?", "expectedAny": ["hello, hi, good morning"]}
+    {"question": "What should you do when someone else is talking?", "expectedAny": ["listen", "be quiet", "stop talking", "pay attention"]},
+    {"question": "How do you ask to speak in class?", "expectedAny": ["raise your hand", "put your hand up", "raise my hand"]},
+    {"question": "What voice do you use in the library?", "expectedAny": ["quiet voice", "whisper", "soft voice", "inside voice"]},
+    {"question": "Show me how to be a good listener.", "expectedAny": ["look at speaker", "sit still", "be quiet", "pay attention"]},
+    {"question": "When is it your turn to talk?", "expectedAny": ["after raising hand", "when teacher calls on you", "when it's my turn"]},
+    {"question": "What polite words can you use?", "expectedAny": ["please, thank you, excuse me", "please", "thank you", "excuse me"]},
+    {"question": "How do you greet a friend?", "expectedAny": ["hello, hi, good morning", "hello", "hi", "good morning", "hey"]}
   ],
   "truefalse": [
     {"question": "Good listeners look at the person who is talking.", "answer": true, "expectedAny": ["true"]},
@@ -51,22 +51,22 @@
     {"question": "How do you take turns talking?", "choices": ["talk at same time", "shout louder", "wait your turn", "never talk"], "correct": 2, "expectedAny": ["wait your turn"]}
   ],
   "fillintheblank": [
-    {"question": "When you want to talk, you should raise your _____.", "expectedAny": ["hand"]},
-    {"question": "Good listeners use their _____ to hear.", "expectedAny": ["ears"]},
-    {"question": "In the classroom, we use our _____ voice.", "expectedAny": ["inside", "quiet"]},
-    {"question": "When someone is talking, I should _____.", "expectedAny": ["listen"]},
-    {"question": "To speak clearly, I need to open my _____.", "expectedAny": ["mouth"]},
-    {"question": "During story time, I should _____ to the teacher.", "expectedAny": ["listen"]},
-    {"question": "Good speakers talk _____ so others can understand.", "expectedAny": ["clearly"]}
+    {"question": "When you want to talk, you should raise your _____.", "expectedAny": ["hand", "your hand"]},
+    {"question": "Good listeners use their _____ to hear.", "expectedAny": ["ears", "their ears"]},
+    {"question": "In the classroom, we use our _____ voice.", "expectedAny": ["inside", "quiet", "soft"]},
+    {"question": "When someone is talking, I should _____.", "expectedAny": ["listen", "be quiet", "pay attention"]},
+    {"question": "To speak clearly, I need to open my _____.", "expectedAny": ["mouth", "my mouth"]},
+    {"question": "During story time, I should _____ to the teacher.", "expectedAny": ["listen", "pay attention"]},
+    {"question": "Good speakers talk _____ so others can understand.", "expectedAny": ["clearly", "slowly", "nicely"]}
   ],
   "shortanswer": [
-    {"question": "How can you be a good listener?", "expectedAny": ["be quiet", "look at speaker", "pay attention"]},
-    {"question": "What are some quiet activities you can do?", "expectedAny": ["read books", "draw pictures"]},
-    {"question": "Why is it important to take turns talking?", "expectedAny": ["so everyone gets heard", "it's polite"]},
-    {"question": "When might you need to use a loud voice?", "expectedAny": ["outside at recess", "in emergency"]},
-    {"question": "How do you show respect when others are speaking?", "expectedAny": ["listen quietly", "look at them"]},
-    {"question": "What should you do if you don't understand something?", "expectedAny": ["raise your hand", "ask a question"]},
-    {"question": "Describe your inside voice.", "expectedAny": ["quiet", "soft"]}
+    {"question": "How can you be a good listener?", "expectedAny": ["be quiet", "look at speaker", "pay attention", "sit still", "stop talking"]},
+    {"question": "What are some quiet activities you can do?", "expectedAny": ["read books", "draw pictures", "build with blocks", "color", "write"]},
+    {"question": "Why is it important to take turns talking?", "expectedAny": ["so everyone gets heard", "it's polite", "no one gets interrupted", "to be fair", "everyone can talk"]},
+    {"question": "When might you need to use a loud voice?", "expectedAny": ["outside at recess", "in emergency", "to call for help", "when far away"]},
+    {"question": "How do you show respect when others are speaking?", "expectedAny": ["listen quietly", "look at them", "wait your turn", "be quiet", "pay attention"]},
+    {"question": "What should you do if you don't understand something?", "expectedAny": ["raise your hand", "ask a question", "say please repeat", "ask for help"]},
+    {"question": "Describe your inside voice.", "expectedAny": ["quiet", "soft", "not loud", "low", "whisper"]}
   ],
   "wordProblems": [
     {"question": "In circle time, 5 children want to share. If each child talks for 1 minute, how long will sharing take?", "expectedAny": ["5 minutes"]},

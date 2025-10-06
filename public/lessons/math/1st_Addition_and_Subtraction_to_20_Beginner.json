@@ -9,14 +9,16 @@
     {"term": "subtraction", "definition": "Taking away numbers to make a smaller number"},
     {"term": "sum", "definition": "The answer when you add"},
     {"term": "difference", "definition": "The answer when you subtract"}
+    ,
+    {"term": "check", "definition": "To look again to make sure it is right"}
   ],
   "teachingNotes": "Use manipulatives and number lines. Practice fact families. Connect to real-world situations.",
   "sample": [
-    {"question": "What is 8 + 5?", "expectedAny": ["13"]},
-    {"question": "What is 7 + 6?", "expectedAny": ["13"]},
-    {"question": "What is 9 - 4?", "expectedAny": ["5"]},
-    {"question": "What is 10 - 3?", "expectedAny": ["7"]},
-    {"question": "What is 6 + 7?", "expectedAny": ["13"]}
+    {"question": "What is 8 + 5?", "expectedAny": ["13", "thirteen"]},
+    {"question": "What is 7 + 6?", "expectedAny": ["13", "thirteen"]},
+    {"question": "What is 9 - 4?", "expectedAny": ["5", "five"]},
+    {"question": "What is 10 - 3?", "expectedAny": ["7", "seven"]},
+    {"question": "What is 6 + 7?", "expectedAny": ["13", "thirteen"]}
   ],
   "truefalse": [
     {"question": "15 - 7 = 8", "answer": true, "expectedAny": ["correct subtraction"]},
@@ -34,19 +36,19 @@
     {"question": "What is 5 + 5?", "choices": ["9", "10", "11", "8"], "correct": 1, "expectedAny": ["5 + 5 = 10"]}
   ],
   "fillintheblank": [
-    {"question": "12 - 4 = _____", "expectedAny": ["8"]},
-    {"question": "7 + _____ = 10", "expectedAny": ["3"]},
-    {"question": "_____ + 5 = 9", "expectedAny": ["4"]},
-    {"question": "10 - _____ = 6", "expectedAny": ["4"]}
+    {"question": "12 - 4 = _____", "expectedAny": ["8", "eight"]},
+    {"question": "7 + _____ = 10", "expectedAny": ["3", "three"]},
+    {"question": "_____ + 5 = 9", "expectedAny": ["4", "four"]},
+    {"question": "10 - _____ = 6", "expectedAny": ["4", "four"]}
   ],
   "shortanswer": [
-    {"question": "Show me how to solve 7 + 8.", "expectedAny": ["15", "use counting or make ten strategy"]},
-    {"question": "Explain how to find 10 - 4.", "expectedAny": ["count back from 10 to 6", "subtract 4 gives 6"]},
-    {"question": "How can you check addition with subtraction?", "expectedAny": ["use inverse: a + b = c then c - a = b"]}
+    {"question": "Show me how to solve 7 + 8.", "expectedAny": ["15", "make ten: 7 + 3 + 5", "count on to fifteen", "fifteen", "7 + 8 = 15"]},
+    {"question": "Explain how to find 10 - 4.", "expectedAny": ["count back from 10 to 6", "subtract 4 gives 6", "use a number line", "6", "six"]},
+    {"question": "How can you check addition with subtraction?", "expectedAny": ["use inverse: a + b = c then c - a = b", "check with fact families", "undo addition with subtraction", "subtract to check"]}
   ],
   "wordProblems": [
-    {"question": "Sara has 11 stickers. She gives away 3. How many does she have left?", "expectedAny": ["8 stickers", "11 - 3 = 8"]},
-    {"question": "Tom has 7 apples and finds 6 more. How many apples now?", "expectedAny": ["13 apples", "7 + 6 = 13"]},
-    {"question": "There were 14 birds. 5 flew away. How many remain?", "expectedAny": ["9 birds", "14 - 5 = 9"]}
+    {"question": "Sara has 11 stickers. She gives away 3. How many does she have left?", "expectedAny": ["8 stickers", "11 - 3 = 8", "8", "eight"]},
+    {"question": "Tom has 7 apples and finds 6 more. How many apples now?", "expectedAny": ["13 apples", "7 + 6 = 13", "13", "thirteen"]},
+    {"question": "There were 14 birds. 5 flew away. How many remain?", "expectedAny": ["9 birds", "14 - 5 = 9", "9", "nine"]}
   ]
 }

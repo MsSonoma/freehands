@@ -5,12 +5,16 @@
   "difficulty": "Advanced",
   "featured": false,
   "vocab": [
-    { "term": "rock cycle", "definition": "The process that changes one type of rock into another type over long periods of time" },
-    { "term": "igneous rock", "definition": "Rock that forms when melted rock (magma or lava) cools and hardens" },
-    { "term": "sedimentary rock", "definition": "Rock formed from layers of sediment that get pressed together over time" },
-    { "term": "metamorphic rock", "definition": "Rock that forms when existing rock is changed by heat and pressure" },
-    { "term": "erosion", "definition": "The movement of weathered rock and soil from one place to another" },
-    { "term": "weathering", "definition": "The breaking down of rocks into smaller pieces" }
+    {"word": "rock cycle", "kid_friendly_definition": "The process that changes one type of rock into another type over long periods of time."},
+    {"word": "igneous rock", "kid_friendly_definition": "Rock that forms when melted rock (magma or lava) cools and hardens."},
+    {"word": "sedimentary rock", "kid_friendly_definition": "Rock formed from layers of sediment that get pressed together over time."},
+    {"word": "metamorphic rock", "kid_friendly_definition": "Rock that forms when existing rock is changed by heat and pressure."},
+    {"word": "erosion", "kid_friendly_definition": "The movement of weathered rock and soil from one place to another."},
+    {"word": "weathering", "kid_friendly_definition": "The breaking down of rocks into smaller pieces."},
+    {"word": "mineral", "kid_friendly_definition": "A natural solid material found in rocks."},
+    {"word": "sediment", "kid_friendly_definition": "Small pieces of rock, sand, or dirt."},
+    {"word": "magma", "kid_friendly_definition": "Melted rock under the ground."},
+    {"word": "lava", "kid_friendly_definition": "Melted rock that comes out of a volcano."}
   ],
   "teachingNotes": "Use rock samples if available. Create models showing the rock cycle. Discuss how rocks change very slowly over millions of years.",
   "sample": [
@@ -23,39 +27,39 @@
     { "question": "Where might igneous rock form?", "expectedAny": ["volcano", "deep underground"] }
   ],
   "truefalse": [
-    { "question": "All rocks on Earth stay the same type forever.", "answer": false },
-    { "question": "Sedimentary rocks form from layers of sediment.", "answer": true },
-    { "question": "Igneous rocks form from melted rock that cooled.", "answer": true },
-    { "question": "Weathering and erosion can change rocks over time.", "answer": true },
-    { "question": "Metamorphic rocks form without heat or pressure.", "answer": false },
-    { "question": "The rock cycle can take millions of years.", "answer": true },
-    { "question": "All rocks began as sedimentary rocks.", "answer": false }
+    { "question": "All rocks on Earth stay the same type forever.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "rocks change type"] },
+    { "question": "Sedimentary rocks form from layers of sediment.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "layers of sediment"] },
+    { "question": "Igneous rocks form from melted rock that cooled.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "melted rock cooled"] },
+    { "question": "Weathering and erosion can change rocks over time.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "weathering and erosion change rocks"] },
+    { "question": "Metamorphic rocks form without heat or pressure.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "need heat and pressure"] },
+    { "question": "The rock cycle can take millions of years.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "millions of years"] },
+    { "question": "All rocks began as sedimentary rocks.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "not all began sedimentary"] }
   ],
   "multiplechoice": [
-    { "question": "Which process creates sedimentary rock?", "choices": ["Cooling of lava", "Layers being pressed together", "Heat and pressure changing rock", "Melting"], "correct": 1 },
-    { "question": "Marble is a type of:", "choices": ["Igneous rock", "Sedimentary rock", "Metamorphic rock", "Soil"], "correct": 2 },
-    { "question": "Which best describes erosion?", "choices": ["Breaking rock into pieces", "Moving rock and soil", "Melting rock", "Growing crystals"], "correct": 1 },
-    { "question": "Which rock forms from cooled lava?", "choices": ["Sandstone", "Granite", "Marble", "Shale"], "correct": 1 },
-    { "question": "Which can make a sedimentary rock?", "choices": ["Layers of sand", "Melted lava", "Heat and pressure only", "No change"], "correct": 0 },
-    { "question": "What happens to rock during weathering?", "choices": ["It melts", "It breaks into smaller pieces", "It disappears", "It becomes metal"], "correct": 1 },
-    { "question": "Which path is possible in the rock cycle?", "choices": ["Sedimentary → Igneous → Plant", "Igneous → Sedimentary → Metamorphic", "Soil → Metal → Rock", "Water → Rock → Plant"], "correct": 1 }
+    { "question": "Which process creates sedimentary rock?", "choices": ["Cooling of lava", "Layers being pressed together", "Heat and pressure changing rock", "Melting"], "correct": 1, "expectedAny": ["b", "B", "2", "Layers being pressed together", "compaction and cementation"] },
+    { "question": "Marble is a type of:", "choices": ["Igneous rock", "Sedimentary rock", "Metamorphic rock", "Soil"], "correct": 2, "expectedAny": ["c", "C", "3", "Metamorphic rock", "marble is metamorphic"] },
+    { "question": "Which best describes erosion?", "choices": ["Breaking rock into pieces", "Moving rock and soil", "Melting rock", "Growing crystals"], "correct": 1, "expectedAny": ["b", "B", "2", "Moving rock and soil", "movement"] },
+    { "question": "Which rock forms from cooled lava?", "choices": ["Sandstone", "Granite", "Marble", "Shale"], "correct": 1, "expectedAny": ["b", "B", "2", "Granite"] },
+    { "question": "Which can make a sedimentary rock?", "choices": ["Layers of sand", "Melted lava", "Heat and pressure only", "No change"], "correct": 0, "expectedAny": ["a", "A", "1", "Layers of sand", "layers pressed"] },
+    { "question": "What happens to rock during weathering?", "choices": ["It melts", "It breaks into smaller pieces", "It disappears", "It becomes metal"], "correct": 1, "expectedAny": ["b", "B", "2", "breaks into smaller pieces"] },
+    { "question": "Which path is possible in the rock cycle?", "choices": ["Sedimentary → Igneous → Plant", "Igneous → Sedimentary → Metamorphic", "Soil → Metal → Rock", "Water → Rock → Plant"], "correct": 1, "expectedAny": ["b", "B", "2", "Igneous → Sedimentary → Metamorphic"] }
   ],
   "fillintheblank": [
-    { "question": "When limestone is changed by heat and pressure, it becomes _____ rock called marble.", "expectedAny": ["metamorphic"] },
-    { "question": "Igneous rock forms when melted rock _____ and hardens.", "expectedAny": ["cools"] },
-    { "question": "Sand, silt, and small pieces of rock are called _____.", "expectedAny": ["sediment"] },
-    { "question": "Weathering _____ rocks into smaller pieces.", "expectedAny": ["breaks"] },
-    { "question": "Erosion moves rock pieces from one place to _____.", "expectedAny": ["another"] },
-    { "question": "Sedimentary rocks form when layers get pressed _____.", "expectedAny": ["together"] },
-    { "question": "Metamorphic rocks change with heat and _____.", "expectedAny": ["pressure"] }
+    { "question": "When limestone is changed by heat and pressure, it becomes _____ rock called marble.", "expectedAny": ["metamorphic", "metamorphic-type"] },
+    { "question": "Igneous rock forms when melted rock _____ and hardens.", "expectedAny": ["cools", "cooling"] },
+    { "question": "Sand, silt, and small pieces of rock are called _____.", "expectedAny": ["sediment", "sediments"] },
+    { "question": "Weathering _____ rocks into smaller pieces.", "expectedAny": ["breaks", "breaks down", "breaks apart"] },
+    { "question": "Erosion moves rock pieces from one place to _____.", "expectedAny": ["another", "another place", "somewhere else"] },
+    { "question": "Sedimentary rocks form when layers get pressed _____.", "expectedAny": ["together", "compacted"] },
+    { "question": "Metamorphic rocks change with heat and _____.", "expectedAny": ["pressure", "compression", "squeezing"] }
   ],
   "shortanswer": [
-    { "question": "Explain how the rock cycle shows that Earth is always changing.", "expectedAny": ["rocks constantly change type", "processes like melting, pressure, and erosion"] },
-    { "question": "Describe two ways an igneous rock could become sedimentary.", "expectedAny": ["weather to sediment then press into layers", "break down and be buried"] },
-    { "question": "How does heat and pressure change rock into metamorphic rock?", "expectedAny": ["rearranges minerals", "changes texture"] },
-    { "question": "Give an example of each rock type.", "expectedAny": ["igneous: granite", "sedimentary: sandstone", "metamorphic: marble"] },
-    { "question": "What role does water play in the rock cycle?", "expectedAny": ["causes weathering and erosion", "moves sediment"] },
-    { "question": "Why do we say the rock cycle has no beginning or end?", "expectedAny": ["rocks can change from any type to another over time"] },
-    { "question": "How might a volcano affect the rock cycle?", "expectedAny": ["adds new igneous rock", "lava cools into rock"] }
+    {"question": "Explain how the rock cycle shows that Earth is always changing.", "expectedAny": ["rocks constantly change type", "processes like melting, pressure, and erosion", "rocks are recycled over time", "earth always changing", "rocks change"]},
+    {"question": "Describe two ways an igneous rock could become sedimentary.", "expectedAny": ["weather to sediment then press into layers", "break down and be buried", "erode, deposit, then compact and cement", "break down then squish together", "weather and compact"]},
+    {"question": "How does heat and pressure change rock into metamorphic rock?", "expectedAny": ["rearranges minerals", "changes texture", "recrystallizes without melting", "squeezes and heats it", "changes the rock"]},
+    {"question": "Give an example of each rock type.", "expectedAny": ["igneous: granite", "sedimentary: sandstone", "metamorphic: marble", "granite igneous", "sandstone sedimentary", "marble metamorphic"]},
+    {"question": "What role does water play in the rock cycle?", "expectedAny": ["causes weathering and erosion", "moves sediment", "carries and deposits sediment", "breaks down rocks", "moves rock pieces"]},
+    {"question": "Why do we say the rock cycle has no beginning or end?", "expectedAny": ["rocks can change from any type to another over time", "it is a continuous cycle", "rocks are recycled again and again", "goes round and round", "keeps cycling"]},
+    {"question": "How might a volcano affect the rock cycle?", "expectedAny": ["adds new igneous rock", "lava cools into rock", "ash and lava create new rocks", "makes new rock", "lava becomes rock"]}
   ]
 }

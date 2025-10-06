@@ -59,7 +59,8 @@
     {
       "question": "In my story, the main _____ is a brave dog.",
       "expectedAny": [
-        "character"
+        "character",
+        "the character"
       ]
     }
   ],
@@ -67,9 +68,9 @@
     {
       "question": "If you wrote a story about a magic pencil, what might happen?",
       "expectedAny": [
-        "anything drawn comes to life",
-        "writes by itself",
-        "creates magical things"
+        "it draws a door you can walk through",
+        "it writes kind notes that appear",
+        "it draws a pet that talks"
       ]
     }
   ]

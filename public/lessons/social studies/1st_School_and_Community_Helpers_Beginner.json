@@ -21,6 +21,12 @@
       "term": "teacher",
       "definition": "A person who helps children learn new things"
     }
+    ,
+    {"term": "mail carrier", "definition": "A person who delivers letters and packages"},
+    {"term": "doctor", "definition": "A person who helps sick people feel better"},
+    {"term": "nurse", "definition": "A person who helps doctors care for patients"},
+    {"term": "librarian", "definition": "A person who helps people find books"},
+    {"term": "farmer", "definition": "A person who grows food"}
   ],
   "teachingNotes": "Discuss different jobs and how they help the community. Invite community helpers to speak to class if possible.",
   "sample": [
@@ -51,21 +57,21 @@
     {"question": "Who helps us find books?", "choices": ["librarian", "farmer", "police", "artist"], "correct": 0, "expectedAny": ["librarian"]}
   ],
   "fillintheblank": [
-    {"question": "A _____ delivers mail to our homes.", "expectedAny": ["mail carrier", "postal worker"]},
-    {"question": "A person who puts out fires is a _____.", "expectedAny": ["firefighter"]},
-    {"question": "At school, the _____ helps students learn.", "expectedAny": ["teacher"]},
+    {"question": "A _____ delivers letters to our homes.", "expectedAny": ["mail carrier", "postal worker", "letter carrier"]},
+  {"question": "A person who puts out fires is a _____.", "expectedAny": ["firefighter", "fire fighter"]},
+  {"question": "At school, the _____ helps students learn.", "expectedAny": ["teacher", "the teacher"]},
     {"question": "A _____ takes care of sick people.", "expectedAny": ["doctor", "nurse"]},
-    {"question": "A person who grows food is a _____.", "expectedAny": ["farmer"]},
-    {"question": "A person who fixes teeth is a _____.", "expectedAny": ["dentist"]},
-    {"question": "A person who helps find books is a _____.", "expectedAny": ["librarian"]}
+  {"question": "A person who grows food is a _____.", "expectedAny": ["farmer", "a farmer"]},
+    {"question": "A person who fixes teeth is a _____.", "expectedAny": ["dentist", "tooth doctor"]},
+    {"question": "A person who helps find books is a _____.", "expectedAny": ["librarian", "library worker"]}
   ],
   "shortanswer": [
-    {"question": "How do doctors help our community?", "expectedAny": ["help sick people get better", "keep people healthy"]},
+    {"question": "How do doctors help our community?", "expectedAny": ["help sick people get better", "keep people healthy", "give medicine"]},
     {"question": "Name three community helpers you see in your town.", "expectedAny": ["teacher", "police", "firefighter", "mail carrier", "nurse", "librarian", "farmer"]},
     {"question": "How can you show respect to community helpers?", "expectedAny": ["say thank you", "follow rules", "listen"]},
-    {"question": "Draw your favorite community helper at work.", "expectedAny": ["drawing with tools/setting"]},
+    {"question": "Draw your favorite community helper at work.", "expectedAny": ["labeled drawing", "drawing with tools/setting", "picture with labels"]},
     {"question": "Why are community helpers important?", "expectedAny": ["keep us safe", "help us learn", "care for us"]},
     {"question": "What tools does a firefighter use?", "expectedAny": ["hose", "helmet", "ladder", "truck"]},
-    {"question": "Where does a librarian work?", "expectedAny": ["library"]}
+    {"question": "Where does a librarian work?", "expectedAny": ["library", "at the library", "in a library"]}
   ]
 }

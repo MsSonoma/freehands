@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Focus on the main cause (disagreement over slavery) and the outcome (slavery ended, country reunited). Keep explanations age-appropriate.",
-  "sample": {
-    "question": "Who was the President during the Civil War?",
-    "expectedAny": [
-      "Abraham Lincoln",
-      "Lincoln",
-      "President Lincoln",
-      "Abe Lincoln"
-    ]
-  },
-  "truefalse": {
-    "question": "The Civil War was fought between the North and the South.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What was the main disagreement that led to the Civil War?",
-    "expectedAny": [
-      "slavery",
-      "about slavery",
-      "whether slavery should continue",
-      "slavery issue"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The northern states were called the ________ during the Civil War.",
-    "expectedAny": [
-      "Union",
-      "United States",
-      "Union states",
-      "Northern Union"
-    ]
-  },
-  "shortanswer": {
-    "question": "What happened to slavery after the Civil War ended?",
-    "expectedAny": [
-      "it ended",
-      "slavery was abolished",
-      "slaves were freed",
-      "slavery became illegal"
-    ]
-  }
+  "sample": [
+    { "question": "Who was the President during the Civil War?", "expectedAny": ["Abraham Lincoln", "Lincoln", "President Lincoln", "Abe Lincoln"] },
+    { "question": "What were the northern states called?", "expectedAny": ["Union", "the Union"] },
+    { "question": "What were the southern states called?", "expectedAny": ["Confederacy", "the Confederacy", "Confederate States"] },
+    { "question": "What was the main cause of the Civil War?", "expectedAny": ["slavery", "disagreement over slavery"] },
+    { "question": "What document ended slavery in Confederate states in 1863?", "expectedAny": ["Emancipation Proclamation"] },
+    { "question": "What amendment abolished slavery?", "expectedAny": ["13th Amendment", "Thirteenth Amendment"] },
+    { "question": "Name one major Civil War battle.", "expectedAny": ["Gettysburg", "Antietam", "Bull Run"] },
+    { "question": "Who led the Union Army at the end of the war?", "expectedAny": ["Ulysses S. Grant", "Grant"] },
+    { "question": "Who led the Confederate Army?", "expectedAny": ["Robert E. Lee", "Lee"] },
+    { "question": "Where did Lee surrender to end the war?", "expectedAny": ["Appomattox Court House", "Appomattox"] }
+  ],
+  "truefalse": [
+    { "question": "The Civil War was fought between the North and the South.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Slavery continued legally after the Civil War.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The Emancipation Proclamation freed enslaved people in Confederate states.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The Union won the Civil War.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Robert E. Lee led the Union Army.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The 13th Amendment abolished slavery.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Gettysburg was a major Civil War battle.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Appomattox Court House is where the war ended.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The Confederacy included northern states.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Abraham Lincoln was President during the Civil War.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "What was the main disagreement that led to the Civil War?", "choices": ["taxes", "slavery", "trade", "immigration"], "correct": 1, "expectedAny": ["slavery"] },
+    { "question": "Who was the Union general at the end of the war?", "choices": ["Robert E. Lee", "Stonewall Jackson", "Ulysses S. Grant", "George McClellan"], "correct": 2, "expectedAny": ["Ulysses S. Grant", "Grant"] },
+    { "question": "Who led the Confederate Army?", "choices": ["Robert E. Lee", "Ulysses S. Grant", "William T. Sherman", "George Meade"], "correct": 0, "expectedAny": ["Robert E. Lee", "Lee"] },
+    { "question": "Where did Lee surrender to end major fighting?", "choices": ["Gettysburg", "Richmond", "Appomattox Court House", "Vicksburg"], "correct": 2, "expectedAny": ["Appomattox Court House", "Appomattox"] },
+    { "question": "Which amendment abolished slavery?", "choices": ["12th", "13th", "14th", "15th"], "correct": 1, "expectedAny": ["13th", "Thirteenth Amendment"] },
+    { "question": "In what year did the Civil War begin?", "choices": ["1860", "1861", "1863", "1865"], "correct": 1, "expectedAny": ["1861"] },
+    { "question": "Which battle is often called a turning point?", "choices": ["Bull Run", "Gettysburg", "Antietam", "Shiloh"], "correct": 1, "expectedAny": ["Gettysburg"] },
+    { "question": "What did the Emancipation Proclamation do?", "choices": ["Ended the war", "Freed slaves in Confederate states", "Created the Union", "Elected Lincoln"], "correct": 1, "expectedAny": ["Freed slaves in Confederate states", "emancipation"] },
+    { "question": "Who was President of the Confederacy?", "choices": ["Abraham Lincoln", "Jefferson Davis", "Andrew Johnson", "James Buchanan"], "correct": 1, "expectedAny": ["Jefferson Davis", "Davis"] },
+    { "question": "The northern states were called the...", "choices": ["Confederacy", "Union", "Colonies", "Allies"], "correct": 1, "expectedAny": ["Union"] }
+  ],
+  "fillintheblank": [
+    { "question": "The northern states were called the ________.", "expectedAny": ["Union"] },
+    { "question": "The southern states were called the ________.", "expectedAny": ["Confederacy"] },
+    { "question": "Abraham ________ was President during the war.", "expectedAny": ["Lincoln"] },
+    { "question": "General ________ led the Union Army to victory.", "expectedAny": ["Grant", "Ulysses S. Grant"] },
+    { "question": "General ________ led the Confederate Army.", "expectedAny": ["Lee", "Robert E. Lee"] },
+    { "question": "The ________ Proclamation announced freedom for slaves in Confederate states.", "expectedAny": ["Emancipation"] },
+    { "question": "The ________ Amendment ended slavery.", "expectedAny": ["13th", "Thirteenth"] },
+    { "question": "The war began in ________.", "expectedAny": ["1861"] },
+    { "question": "Lee surrendered at ________ Court House.", "expectedAny": ["Appomattox"] },
+    { "question": "A major turning point battle was ________.", "expectedAny": ["Gettysburg"] }
+  ],
+  "shortanswer": [
+    { "question": "Why was slavery a key cause of the Civil War?", "expectedAny": ["moral and economic conflict", "expansion of slavery", "rights of states vs slavery"] },
+    { "question": "How did the Emancipation Proclamation change the war?", "expectedAny": ["made ending slavery a goal", "allowed Black soldiers", "moral purpose"] },
+    { "question": "Name two effects of the Civil War on the United States.", "expectedAny": ["ended slavery", "reunited country", "many casualties", "destruction in South"] },
+    { "question": "Why is Gettysburg considered a turning point?", "expectedAny": ["stopped Lee's invasion", "Union momentum"] },
+    { "question": "What happened at Appomattox Court House?", "expectedAny": ["Lee surrendered", "war effectively ended"] },
+    { "question": "Name one challenge the nation faced after the war.", "expectedAny": ["reconstruction", "rebuilding South", "rights of freed people"] },
+    { "question": "What advantages did the Union have?", "expectedAny": ["more factories", "more railroads", "larger population"] },
+    { "question": "What advantages did the Confederacy have?", "expectedAny": ["defensive war", "military leaders", "home territory"] },
+    { "question": "Who were two important Union leaders?", "expectedAny": ["Lincoln and Grant", "Grant and Sherman"] },
+    { "question": "Who were two important Confederate leaders?", "expectedAny": ["Lee and Jackson", "Robert E. Lee and Stonewall Jackson"] }
+  ]
 }

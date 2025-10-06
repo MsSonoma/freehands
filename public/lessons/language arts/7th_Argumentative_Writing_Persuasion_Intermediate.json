@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Teach the structure of argumentative essays. Emphasize the importance of using credible evidence and addressing counterarguments.",
-  "sample": {
-    "question": "What is a claim supported by reasons and evidence?",
-    "expectedAny": [
-      "argument",
-      "argumentative claim",
-      "thesis",
-      "position"
-    ]
-  },
-  "truefalse": {
-    "question": "Good arguments should address counterarguments.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What makes a source credible?",
-    "expectedAny": [
-      "reliable and trustworthy",
-      "expert knowledge",
-      "factual accuracy",
-      "authoritative"
-    ]
-  },
-  "fillintheblank": {
-    "question": "An opposing viewpoint is called a ________.",
-    "expectedAny": [
-      "counterargument",
-      "opposing view",
-      "rebuttal",
-      "opposition"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are the three main parts of an argumentative essay?",
-    "expectedAny": [
-      "introduction, body, conclusion",
-      "claim, evidence, counterargument",
-      "thesis, support, conclusion"
-    ]
-  }
+  "sample": [
+    { "question": "What is a claim supported by reasons and evidence?", "expectedAny": ["argument", "claim"] },
+    { "question": "Which supports a claim?", "choices": ["Opinion", "Evidence", "Feeling", "Guess"], "correct": 1, "expectedAny": ["evidence"] },
+    { "question": "An opposing view is a ________.", "expectedAny": ["counterargument", "opposing view", "counterclaim", "counter argument"] },
+    { "question": "Convincing someone is ________.", "expectedAny": ["persuasion"] },
+    { "question": "A trustworthy source is ________.", "expectedAny": ["credible source"] },
+    { "question": "What is supported by evidence?", "choices": ["Guess", "Argument", "Feeling", "Opinion"], "correct": 1, "expectedAny": ["argument"] },
+    { "question": "Facts supporting a claim are ________.", "expectedAny": ["evidence", "proof", "support"] },
+    { "question": "An opposing viewpoint is ________.", "expectedAny": ["counterargument"] },
+    { "question": "Which is convincing?", "choices": ["Ignoring", "Persuasion", "Silence", "Avoiding"], "correct": 1, "expectedAny": ["persuasion"] },
+    { "question": "A reliable source is ________.", "expectedAny": ["credible"] }
+  ],
+  "truefalse": [
+    { "question": "Good arguments should address counterarguments.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Evidence is not needed in arguments.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Credible sources are trustworthy.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Persuasion ignores evidence.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Arguments need reasons and evidence.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Counterarguments weaken essays.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Evidence includes facts and examples.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All sources are credible.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Persuasion tries to convince.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Arguments don't need structure.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What makes a source credible?", "choices": ["Unreliable", "Reliable and trustworthy", "Biased", "Unknown"], "correct": 1, "expectedAny": ["reliable and trustworthy"] },
+    { "question": "What supports a claim?", "choices": ["Guess", "Opinion", "Evidence", "Feeling"], "correct": 2, "expectedAny": ["evidence"] },
+    { "question": "What is an opposing view?", "choices": ["Argument", "Counterargument", "Evidence", "Claim"], "correct": 1, "expectedAny": ["counterargument"] },
+    { "question": "What tries to convince?", "choices": ["Ignoring", "Persuasion", "Silence", "Avoiding"], "correct": 1, "expectedAny": ["persuasion"] },
+    { "question": "What is supported by reasons?", "choices": ["Feeling", "Argument", "Guess", "Opinion"], "correct": 1, "expectedAny": ["argument"] },
+    { "question": "What includes facts?", "choices": ["Guess", "Evidence", "Feeling", "Opinion"], "correct": 1, "expectedAny": ["evidence"] },
+    { "question": "What is trustworthy?", "choices": ["Unreliable", "Credible source", "Biased", "Unknown"], "correct": 1, "expectedAny": ["credible source"] },
+    { "question": "What opposes your claim?", "choices": ["Evidence", "Counterargument", "Support", "Agreement"], "correct": 1, "expectedAny": ["counterargument"] },
+    { "question": "What convinces readers?", "choices": ["Silence", "Persuasion", "Ignoring", "Avoiding"], "correct": 1, "expectedAny": ["persuasion"] },
+    { "question": "What needs evidence?", "choices": ["Guess", "Feeling", "Argument", "Opinion"], "correct": 2, "expectedAny": ["argument"] }
+  ],
+  "fillintheblank": [
+    { "question": "An opposing viewpoint is called a ________.", "expectedAny": ["counterargument"] },
+    { "question": "A claim supported by evidence is an ________.", "expectedAny": ["argument"] },
+    { "question": "Facts supporting claims are ________.", "expectedAny": ["evidence"] },
+    { "question": "Convincing someone is ________.", "expectedAny": ["persuasion"] },
+    { "question": "A trustworthy source is ________.", "expectedAny": ["credible"] },
+    { "question": "A ________ opposes your argument.", "expectedAny": ["counterargument"] },
+    { "question": "An ________ needs reasons.", "expectedAny": ["argument"] },
+    { "question": "________ includes facts and examples.", "expectedAny": ["evidence"] },
+    { "question": "________ tries to convince.", "expectedAny": ["persuasion"] },
+    { "question": "A ________ source is reliable.", "expectedAny": ["credible"] }
+  ],
+  "shortanswer": [
+    { "question": "What are the three main parts of an argumentative essay?", "expectedAny": ["introduction, body, conclusion", "claim, evidence, counterargument"] },
+    { "question": "What is an argument?", "expectedAny": ["claim supported by evidence", "position with reasons"] },
+    { "question": "What is evidence?", "expectedAny": ["facts supporting claims", "examples and expert opinions", "proof", "support for argument"] },
+    { "question": "What is a counterargument?", "expectedAny": ["opposing viewpoint", "opposite position", "other side", "counterclaim"] },
+    { "question": "What is persuasion?", "expectedAny": ["convincing someone", "trying to influence opinion"] },
+    { "question": "What is a credible source?", "expectedAny": ["reliable and trustworthy", "expert and accurate"] },
+    { "question": "Why address counterarguments?", "expectedAny": ["strengthen argument", "show other perspectives"] },
+    { "question": "What makes evidence strong?", "expectedAny": ["facts and expert opinions", "credible sources"] },
+    { "question": "Give an example of evidence.", "expectedAny": ["statistics", "expert quotes", "facts"] },
+    { "question": "How do you organize an argument?", "expectedAny": ["claim, evidence, counterargument", "thesis, support, conclusion"] }
+  ]
 }

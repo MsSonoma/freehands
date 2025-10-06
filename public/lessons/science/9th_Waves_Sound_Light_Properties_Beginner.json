@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "9th_Waves_Sound_Light_Properties_Beginner",
   "title": "Waves: Sound and Light Properties",
   "grade": "9th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "wave",
-      "definition": "Disturbance that transfers energy through matter or space"
-    },
-    {
-      "term": "frequency",
-      "definition": "Number of wave cycles per second, measured in hertz"
-    },
-    {
-      "term": "wavelength",
-      "definition": "Distance between two corresponding points on a wave"
-    },
-    {
-      "term": "amplitude",
-      "definition": "Maximum displacement of a wave from its rest position"
-    },
-    {
-      "term": "electromagnetic spectrum",
-      "definition": "Range of all electromagnetic waves including visible light"
-    }
+    {"term": "wave", "definition": "Disturbance that transfers energy through matter or space"},
+    {"term": "frequency", "definition": "Number of wave cycles per second, measured in hertz"},
+    {"term": "wavelength", "definition": "Distance between two corresponding points on a wave"},
+    {"term": "amplitude", "definition": "Maximum displacement of a wave from its rest position"},
+    {"term": "electromagnetic spectrum", "definition": "Range of all electromagnetic waves including visible light"}
   ],
   "teachingNotes": "Use demonstrations with sound and light waves. Emphasize the relationship between wave properties and energy transfer.",
-  "sample": {
-    "question": "What is a disturbance that transfers energy through matter or space?",
-    "expectedAny": [
-      "wave",
-      "energy wave",
-      "wave motion",
-      "wave disturbance"
-    ]
-  },
-  "truefalse": {
-    "question": "Frequency is measured in hertz (Hz).",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the distance between two corresponding points on a wave?",
-    "expectedAny": [
-      "wavelength",
-      "wave distance",
-      "cycle length",
-      "wave span"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The maximum displacement of a wave from rest position is its ________.",
-    "expectedAny": [
-      "amplitude",
-      "height",
-      "peak",
-      "maximum displacement"
-    ]
-  },
-  "shortanswer": {
-    "question": "How are frequency and wavelength related?",
-    "expectedAny": [
-      "inversely related",
-      "higher frequency means shorter wavelength",
-      "they multiply to give wave speed"
-    ]
-  }
+  "sample": [
+    {"question": "What is a disturbance that transfers energy through matter or space?", "expectedAny": ["wave", "energy wave", "wave motion", "energy transfer"]},
+    {"question": "What is frequency?", "expectedAny": ["wave cycles per second", "number of waves per second", "measured in hertz", "waves per second"]},
+    {"question": "What is wavelength?", "expectedAny": ["distance between wave points", "length of one wave", "crest to crest distance", "wave to wave distance"]},
+    {"question": "What is amplitude?", "expectedAny": ["maximum displacement", "wave height", "distance from rest", "how high the wave goes"]},
+    {"question": "What is the electromagnetic spectrum?", "expectedAny": ["range of EM waves", "all electromagnetic waves", "includes visible light", "all types of light"]},
+    {"question": "What unit measures frequency?", "expectedAny": ["hertz", "Hz", "cycles per second"]},
+    {"question": "Give an example of a wave.", "expectedAny": ["sound", "light", "water wave", "radio wave"]},
+    {"question": "What do waves transfer?", "expectedAny": ["energy", "energy through space", "energy and information"]},
+    {"question": "Is light a wave?", "expectedAny": ["yes", "electromagnetic wave", "light is a wave"]},
+    {"question": "Is sound a wave?", "expectedAny": ["yes", "sound is a wave", "mechanical wave"]}
+  ],
+  "truefalse": [
+    {"question": "Frequency is measured in hertz (Hz). (True or False)", "correct": true},
+    {"question": "Wavelength is the wave height. (True or False)", "correct": false},
+    {"question": "Amplitude is maximum displacement from rest. (True or False)", "correct": true},
+    {"question": "Waves transfer energy. (True or False)", "correct": true},
+    {"question": "All waves need a medium to travel. (True or False)", "correct": false},
+    {"question": "Light is part of electromagnetic spectrum. (True or False)", "correct": true},
+    {"question": "Frequency measures cycles per second. (True or False)", "correct": true},
+    {"question": "Wavelength is distance between crests. (True or False)", "correct": true},
+    {"question": "Sound is a mechanical wave. (True or False)", "correct": true},
+    {"question": "Higher frequency means more energy. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is the distance between two corresponding points on a wave?", "choices": [{"letter": "A", "text": "Amplitude"}, {"letter": "B", "text": "Wavelength"}, {"letter": "C", "text": "Frequency"}, {"letter": "D", "text": "Period"}], "correct": "B"},
+    {"question": "What is measured in hertz?", "choices": [{"letter": "A", "text": "Wavelength"}, {"letter": "B", "text": "Amplitude"}, {"letter": "C", "text": "Frequency"}, {"letter": "D", "text": "Speed"}], "correct": "C"},
+    {"question": "What is maximum displacement from rest?", "choices": [{"letter": "A", "text": "Wavelength"}, {"letter": "B", "text": "Frequency"}, {"letter": "C", "text": "Amplitude"}, {"letter": "D", "text": "Period"}], "correct": "C"},
+    {"question": "What transfers energy through space?", "choices": [{"letter": "A", "text": "Matter"}, {"letter": "B", "text": "Wave"}, {"letter": "C", "text": "Particle"}, {"letter": "D", "text": "Atom"}], "correct": "B"},
+    {"question": "What includes visible light?", "choices": [{"letter": "A", "text": "Sound spectrum"}, {"letter": "B", "text": "Electromagnetic spectrum"}, {"letter": "C", "text": "Mechanical waves"}, {"letter": "D", "text": "Water waves"}], "correct": "B"},
+    {"question": "Which is an electromagnetic wave?", "choices": [{"letter": "A", "text": "Sound"}, {"letter": "B", "text": "Water wave"}, {"letter": "C", "text": "Light"}, {"letter": "D", "text": "Earthquake"}], "correct": "C"},
+    {"question": "Which is a mechanical wave?", "choices": [{"letter": "A", "text": "Light"}, {"letter": "B", "text": "Radio"}, {"letter": "C", "text": "X-ray"}, {"letter": "D", "text": "Sound"}], "correct": "D"},
+    {"question": "What does frequency measure?", "choices": [{"letter": "A", "text": "Wave height"}, {"letter": "B", "text": "Wave length"}, {"letter": "C", "text": "Cycles per second"}, {"letter": "D", "text": "Wave speed"}], "correct": "C"},
+    {"question": "Higher amplitude means?", "choices": [{"letter": "A", "text": "More energy"}, {"letter": "B", "text": "Less energy"}, {"letter": "C", "text": "Faster wave"}, {"letter": "D", "text": "Slower wave"}], "correct": "A"},
+    {"question": "What do all waves do?", "choices": [{"letter": "A", "text": "Need medium"}, {"letter": "B", "text": "Transfer energy"}, {"letter": "C", "text": "Are visible"}, {"letter": "D", "text": "Make sound"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "The maximum displacement of a wave from rest position is its _____.", "expectedAny": ["amplitude", "height"]},
+    {"question": "The distance between two crests is the _____.", "expectedAny": ["wavelength"]},
+    {"question": "Frequency is measured in _____.", "expectedAny": ["hertz", "Hz"]},
+    {"question": "A _____ transfers energy through matter or space.", "expectedAny": ["wave"]},
+    {"question": "The range of all electromagnetic waves is the electromagnetic _____.", "expectedAny": ["spectrum"]},
+    {"question": "_____ is the number of wave cycles per second.", "expectedAny": ["frequency"]},
+    {"question": "Light is an _____ wave.", "expectedAny": ["electromagnetic"]},
+    {"question": "Sound is a _____ wave.", "expectedAny": ["mechanical"]},
+    {"question": "Waves transfer _____.", "expectedAny": ["energy"]},
+    {"question": "Higher frequency means _____ energy.", "expectedAny": ["more", "greater"]}
+  ],
+  "shortanswer": [
+    {"question": "What is a wave?", "keyTerms": ["disturbance", "transfers", "energy", "matter or space"], "expectedAny": ["Disturbance that transfers energy", "Energy transfer through matter or space", "Disturbance carrying energy"]},
+    {"question": "What is the difference between wavelength and amplitude?", "keyTerms": ["wavelength", "distance", "amplitude", "height"], "expectedAny": ["Wavelength is distance between crests, amplitude is height", "Wavelength measures length, amplitude measures displacement", "Wavelength is horizontal, amplitude is vertical"]},
+    {"question": "How are frequency and wavelength related?", "keyTerms": ["inverse", "one increases", "other decreases", "opposite"], "expectedAny": ["Inversely related: one increases, other decreases", "Higher frequency means shorter wavelength", "They are opposite: inverse relationship"]},
+    {"question": "What does hertz measure?", "keyTerms": ["frequency", "cycles", "per second", "waves"], "expectedAny": ["Frequency in cycles per second", "Number of waves per second", "Wave frequency"]},
+    {"question": "What do all waves have in common?", "keyTerms": ["transfer", "energy", "have properties", "wavelength frequency"], "expectedAny": ["They all transfer energy", "All have wavelength, frequency, amplitude", "Transfer energy with wave properties"]},
+    {"question": "What is the electromagnetic spectrum?", "keyTerms": ["range", "electromagnetic", "waves", "includes light"], "expectedAny": ["Range of all electromagnetic waves", "All EM waves including visible light", "Spectrum of electromagnetic radiation"]},
+    {"question": "How do sound and light waves differ?", "keyTerms": ["sound", "mechanical", "light", "electromagnetic"], "expectedAny": ["Sound is mechanical, light is electromagnetic", "Sound needs medium, light does not", "Sound is mechanical wave, light is EM wave"]},
+    {"question": "What determines wave energy?", "keyTerms": ["amplitude", "frequency", "both", "higher"], "expectedAny": ["Amplitude and frequency", "Higher amplitude and frequency mean more energy", "Both amplitude and frequency determine energy"]},
+    {"question": "Can light travel through vacuum?", "keyTerms": ["yes", "electromagnetic", "no medium", "space"], "expectedAny": ["Yes, electromagnetic waves can", "Yes, does not need medium", "Yes, can travel through space"]},
+    {"question": "Can sound travel through vacuum?", "keyTerms": ["no", "mechanical", "needs medium", "requires matter"], "expectedAny": ["No, mechanical waves need medium", "No, requires matter to travel", "No, cannot travel without medium"]}
+  ]
 }

@@ -11,6 +11,8 @@ export default function GeneratedLessonsPage(){
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [textPreviews, setTextPreviews] = useState({}) // { [file]: string }
+  const [changeRequests, setChangeRequests] = useState({}) // { [file]: string }
+  const [showChangeModal, setShowChangeModal] = useState(null) // file name when modal open
 
   async function refresh(){
     setLoading(true)
@@ -269,6 +271,50 @@ export default function GeneratedLessonsPage(){
     })
   }
 
+  async function handleRequestChanges(file) {
+    const changeRequest = changeRequests[file] || ''
+    if (!changeRequest.trim()) {
+      setError('Please describe the changes you want')
+      return
+    }
+    setBusy(true)
+    setError('')
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      const res = await fetch('/api/facilitator/lessons/request-changes', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', ...(token?{Authorization:`Bearer ${token}`}:{}) },
+        body: JSON.stringify({ file, changeRequest })
+      })
+      const js = await res.json().catch(()=>null)
+      if (!res.ok) {
+        setError(js?.error || 'Request changes failed')
+        return
+      }
+      setShowChangeModal(null)
+      setChangeRequests(prev => {
+        const next = { ...prev }
+        delete next[file]
+        return next
+      })
+      await refresh()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function openChangeModal(file) {
+    setShowChangeModal(file)
+    setError('')
+  }
+
+  function closeChangeModal() {
+    setShowChangeModal(null)
+    setError('')
+  }
+
   return (
     <main style={{ padding:24, width:'100%', margin:0 }}>
       <h1 style={{ marginTop:0 }}>Generated Lessons</h1>
@@ -279,19 +325,22 @@ export default function GeneratedLessonsPage(){
       ) : items.length === 0 ? (
         <p>No generated lessons yet. Use Lesson Maker to create one.</p>
       ) : (
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(260px, 1fr))', gap:12 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(520px, 1fr))', gap:12 }}>
           {items.map(it => {
             const isPreviewOpen = !!textPreviews[it.file]
             return (
             <div key={it.file} style={{ ...card, ...(isPreviewOpen ? { gridColumn:'1 / -1' } : null) }}>
               <h3 style={{ margin:'0 0 4px' }}>{it.title || it.file}</h3>
-              <p style={{ margin:'0 0 8px', color:'#555' }}>Grade: {it.grade || '—'} · {it.difficulty || '—'} · Subject: {it.subject || '—'} {it.approved ? '· Approved' : ''}</p>
-              <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+              <p style={{ margin:'0 0 8px', color:'#555' }}>Grade: {it.grade || '—'} · {it.difficulty || '—'} · Subject: {it.subject || '—'} {it.approved ? '· Approved' : ''}{it.needsUpdate ? ' · Needs Update' : ''}</p>
+              <div style={{ display:'flex', gap:8, flexWrap:'nowrap' }}>
                 <button style={btnSecondary} disabled={busy} onClick={()=>handlePreviewText(it.file)}>
                   {busy ? 'Loading…' : (textPreviews[it.file] ? 'Refresh Preview' : 'Preview Text')}
                 </button>
-                <button style={btnApprove} disabled={busy || it.approved} onClick={()=>handleApprove(it.file)}>
-                  {busy ? 'Approving…' : 'Approve'}
+                <button style={btn} disabled={busy} onClick={()=>openChangeModal(it.file)}>
+                  Request Changes
+                </button>
+                <button style={{...btnApprove, ...(it.approved && !it.needsUpdate ? {opacity:0.5} : {})}} disabled={busy || (it.approved && !it.needsUpdate)} onClick={()=>handleApprove(it.file)}>
+                  {busy ? (it.needsUpdate ? 'Updating…' : 'Approving…') : (it.approved && !it.needsUpdate ? 'Approved' : it.needsUpdate ? 'Update' : 'Approve')}
                 </button>
                 <button style={btnDanger} disabled={busy} onClick={()=>handleDelete(it.file)}>
                   {busy ? 'Deleting…' : 'Delete'}
@@ -313,6 +362,30 @@ export default function GeneratedLessonsPage(){
         </div>
       )}
       {error && <p style={{ color:'#b91c1c', marginTop:12 }}>{error}</p>}
+      
+      {/* Change Request Modal */}
+      {showChangeModal && (
+        <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', padding:24, zIndex:1000 }}>
+          <div style={{ background:'#fff', borderRadius:12, padding:24, maxWidth:600, width:'100%', maxHeight:'80vh', overflow:'auto' }}>
+            <h2 style={{ marginTop:0 }}>Request Changes</h2>
+            <p style={{ color:'#555' }}>Describe the changes you want to make to this lesson:</p>
+            <textarea
+              style={{ width:'100%', minHeight:120, padding:'10px 12px', border:'1px solid #e5e7eb', borderRadius:8, fontFamily:'inherit', fontSize:14 }}
+              value={changeRequests[showChangeModal] || ''}
+              onChange={e=>setChangeRequests(prev=>({...prev, [showChangeModal]: e.target.value}))}
+              placeholder="e.g., Add more examples about fractions, make questions easier, include word problems..."
+            />
+            <div style={{ marginTop:16, display:'flex', gap:8, justifyContent:'flex-end' }}>
+              <button style={btnSecondary} disabled={busy} onClick={closeChangeModal}>
+                Cancel
+              </button>
+              <button style={btn} disabled={busy} onClick={()=>handleRequestChanges(showChangeModal)}>
+                {busy ? 'Applying…' : 'Apply Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

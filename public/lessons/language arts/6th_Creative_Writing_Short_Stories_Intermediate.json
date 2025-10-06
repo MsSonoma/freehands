@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Practice writing in different points of view. Discuss different types of conflict (internal vs. external). Encourage creative story ideas while maintaining good structure.",
-  "sample": {
-    "question": "What do we call the perspective from which a story is told?",
-    "expectedAny": [
-      "point of view",
-      "narrative perspective",
-      "story perspective",
-      "narrator viewpoint"
-    ]
-  },
-  "truefalse": {
-    "question": "A first-person story uses 'I' and 'me' to tell the story.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What drives a story forward and creates interest?",
-    "expectedAny": [
-      "conflict",
-      "problem",
-      "struggle",
-      "tension"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A story told using 'he,' 'she,' and 'they' is written in ________ person.",
-    "expectedAny": [
-      "third",
-      "third person",
-      "3rd",
-      "third-person"
-    ]
-  },
-  "shortanswer": {
-    "question": "What is the difference between internal and external conflict?",
-    "expectedAny": [
-      "internal is within character, external is outside",
-      "internal is mental/emotional, external is physical",
-      "internal struggles vs. outside forces"
-    ]
-  }
+  "sample": [
+    { "question": "What do we call the perspective from which a story is told?", "expectedAny": ["point of view", "narrative perspective", "story perspective"] },
+    { "question": "Which uses 'I' and 'me'?", "choices": ["Third person", "First person", "Second person", "No person"], "correct": 1, "expectedAny": ["first person"] },
+    { "question": "The problem in a story is the ________.", "expectedAny": ["conflict"] },
+    { "question": "A story using 'he' and 'she' is ________ person.", "expectedAny": ["third"] },
+    { "question": "Which is a narrative technique?", "choices": ["Red color", "Point of view", "Temperature", "Size"], "correct": 1, "expectedAny": ["point of view"] },
+    { "question": "Methods writers use to tell stories are ________ techniques.", "expectedAny": ["narrative"] },
+    { "question": "A struggle within a character is ________ conflict.", "expectedAny": ["internal"] },
+    { "question": "Which point of view uses 'they'?", "choices": ["First person", "Third person", "Zero person", "Half person"], "correct": 1, "expectedAny": ["third person"] },
+    { "question": "Write a first-person sentence about school.", "expectedAny": ["I went to school", "I like my class", "I studied today"] },
+    { "question": "What drives a story forward?", "expectedAny": ["conflict", "problem", "tension"] }
+  ],
+  "truefalse": [
+    { "question": "A first-person story uses 'I' and 'me' to tell the story.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Third-person stories use 'I' and 'me.'", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Conflict is the problem in a story.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All stories must be written in first person.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Point of view is the perspective of the story.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "External conflict happens inside a character's mind.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Narrative techniques help writers tell stories.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "First person and third person are the same.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Internal conflict is a struggle within a character.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Point of view never affects how a story feels.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What drives a story forward and creates interest?", "choices": ["Setting only", "Conflict", "Colors", "Numbers"], "correct": 1, "expectedAny": ["conflict"] },
+    { "question": "Which is first person?", "choices": ["He walked home.", "You walked home.", "I walked home.", "They walked home."], "correct": 2, "expectedAny": ["I walked home"] },
+    { "question": "What is point of view?", "choices": ["The setting", "The perspective", "The theme", "The title"], "correct": 1, "expectedAny": ["the perspective"] },
+    { "question": "Which is third person?", "choices": ["I am happy.", "We are happy.", "She is happy.", "You are happy."], "correct": 2, "expectedAny": ["she is happy"] },
+    { "question": "What type is a struggle within a character?", "choices": ["External conflict", "Internal conflict", "No conflict", "Setting conflict"], "correct": 1, "expectedAny": ["internal conflict"] },
+    { "question": "Which word signals first person?", "choices": ["He", "She", "I", "They"], "correct": 2, "expectedAny": ["I"] },
+    { "question": "What type is a character vs. nature?", "choices": ["Internal", "External", "No conflict", "Point of view"], "correct": 1, "expectedAny": ["external"] },
+    { "question": "Which is a narrative technique?", "choices": ["Using point of view", "Picking a color", "Choosing a font", "Setting temperature"], "correct": 0, "expectedAny": ["using point of view"] },
+    { "question": "Which pronoun shows third person?", "choices": ["I", "Me", "He", "We"], "correct": 2, "expectedAny": ["he"] },
+    { "question": "What makes a story interesting?", "choices": ["No events", "Conflict and tension", "Blank pages", "No characters"], "correct": 1, "expectedAny": ["conflict and tension"] }
+  ],
+  "fillintheblank": [
+    { "question": "A story told using 'he,' 'she,' and 'they' is written in ________ person.", "expectedAny": ["third", "3rd"] },
+    { "question": "A story using 'I' and 'me' is ________ person.", "expectedAny": ["first", "1st"] },
+    { "question": "The problem or struggle in a story is the ________.", "expectedAny": ["conflict"] },
+  { "question": "The perspective from which a story is told is the ________ of view.", "expectedAny": ["point", "point (point of view)"] },
+    { "question": "A struggle within a character is ________ conflict.", "expectedAny": ["internal"] },
+    { "question": "A struggle with outside forces is ________ conflict.", "expectedAny": ["external"] },
+  { "question": "Methods writers use to tell stories are ________ techniques.", "expectedAny": ["narrative", "storytelling"] },
+    { "question": "In ________ person, the narrator is outside the story.", "expectedAny": ["third"] },
+    { "question": "________ is what drives the story forward.", "expectedAny": ["conflict"] },
+    { "question": "The ________ person narrator is a character in the story.", "expectedAny": ["first"] }
+  ],
+  "shortanswer": [
+  { "question": "What is the difference between internal and external conflict?", "expectedAny": ["internal is within character", "external is outside", "internal is mental, external is physical", "inside vs. outside the character"] },
+    { "question": "Write a sentence in first person about a pet.", "expectedAny": ["I have a dog", "I love my cat", "I feed my fish"] },
+    { "question": "Write a sentence in third person about a student.", "expectedAny": ["She studies hard", "He goes to school", "They do homework"] },
+    { "question": "Give an example of internal conflict.", "expectedAny": ["deciding between right and wrong", "being afraid but wanting to be brave", "feeling guilty"] },
+    { "question": "Give an example of external conflict.", "expectedAny": ["fighting a storm", "arguing with a friend", "competing in a race"] },
+  { "question": "Why is conflict important in stories?", "expectedAny": ["it creates interest", "it drives the story", "it engages readers", "it creates tension and stakes"] },
+    { "question": "Explain what point of view means.", "expectedAny": ["the perspective of the story", "who is telling the story", "the narrator's position"] },
+    { "question": "Name two pronouns used in first person.", "expectedAny": ["I and me", "we and us", "my and mine"] },
+    { "question": "Name two pronouns used in third person.", "expectedAny": ["he and she", "they and them", "his and her"] },
+  { "question": "How does point of view affect a story?", "expectedAny": ["changes what readers know", "affects the perspective", "influences how story feels", "controls access to thoughts and information"] }
+  ]
 }

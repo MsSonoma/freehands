@@ -21,6 +21,19 @@
       "term": "special",
       "definition": "Different from other days; important and meaningful"
     }
+    ,
+    {
+      "term": "birthday",
+      "definition": "The special day each year when you were born"
+    },
+    {
+      "term": "family",
+      "definition": "People who live together and care for each other"
+    },
+    {
+      "term": "together",
+      "definition": "With other people; not alone"
+    }
   ],
   "teachingNotes": "Discuss various cultural holidays respectfully. Share family traditions. Create classroom celebrations for learning.",
   "sample": [
@@ -51,14 +64,14 @@
   "fillintheblank": [
     {"question": "On Halloween, many children wear _____.", "expectedAny": ["costumes", "masks", "dress up clothes"]},
     {"question": "Families often eat _____ on Thanksgiving.", "expectedAny": ["turkey", "special food", "big dinner"]},
-    {"question": "A _____ is something special families do every year.", "expectedAny": ["tradition"]},
-    {"question": "People light _____ on birthday cakes.", "expectedAny": ["candles"]},
+  {"question": "A _____ is something special families do every year.", "expectedAny": ["tradition", "family tradition"]},
+  {"question": "People light _____ on birthday cakes.", "expectedAny": ["candles", "birthday candles"]},
     {"question": "Many people give _____ on holidays.", "expectedAny": ["gifts", "presents"]},
-    {"question": "On _____, people often wear green.", "expectedAny": ["St. Patrick's Day"]},
-    {"question": "_____ is a holiday when people give thanks.", "expectedAny": ["Thanksgiving"]}
+  {"question": "On _____, people often wear green.", "expectedAny": ["St. Patrick's Day", "Saint Patrick's Day"]},
+  {"question": "_____ is a holiday when people give thanks.", "expectedAny": ["Thanksgiving", "the Thanksgiving holiday"]}
   ],
   "shortanswer": [
-    {"question": "What is your favorite holiday? What makes it special?", "expectedAny": ["Christmas - presents", "birthday - cake", "Halloween - costumes", "any holiday with reason"]},
+    {"question": "What is your favorite holiday? What makes it special?", "expectedAny": ["Christmas - presents", "birthday - cake", "Halloween - costumes", "Thanksgiving - family and food"]},
     {"question": "How does your family celebrate birthdays?", "expectedAny": ["cake and presents", "party", "special dinner", "sing songs"]},
     {"question": "What traditions does your family have?", "expectedAny": ["holiday meals", "special activities", "family gatherings", "cultural practices"]},
     {"question": "How do holidays bring people together?", "expectedAny": ["family visits", "sharing meals", "celebrating together", "making memories"]},

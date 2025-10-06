@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "9th_Ancient_Civilizations_Mesopotamia_Egypt_Advanced",
   "title": "Ancient Civilizations: Mesopotamia and Egypt",
   "grade": "9th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "civilization",
-      "definition": "Complex society with cities, government, religion, and social structure"
-    },
-    {
-      "term": "cuneiform",
-      "definition": "Wedge-shaped writing system developed in Mesopotamia"
-    },
-    {
-      "term": "hieroglyphics",
-      "definition": "Egyptian writing system using pictorial symbols"
-    },
-    {
-      "term": "polytheism",
-      "definition": "Belief in multiple gods"
-    },
-    {
-      "term": "code of Hammurabi",
-      "definition": "Ancient Babylonian law code establishing justice principles"
-    }
+    {"term": "civilization", "definition": "Complex society with cities, government, religion, and social structure"},
+    {"term": "cuneiform", "definition": "Wedge-shaped writing system developed in Mesopotamia"},
+    {"term": "hieroglyphics", "definition": "Egyptian writing system using pictorial symbols"},
+    {"term": "polytheism", "definition": "Belief in multiple gods"},
+    {"term": "code of Hammurabi", "definition": "Ancient Babylonian law code establishing justice principles"}
   ],
   "teachingNotes": "Compare and contrast these early civilizations. Analyze their contributions to law, writing, and governance.",
-  "sample": {
-    "question": "What is a complex society with cities, government, and social structure?",
-    "expectedAny": [
-      "civilization",
-      "complex society",
-      "organized society",
-      "advanced culture"
-    ]
-  },
-  "truefalse": {
-    "question": "Cuneiform was the writing system developed in Mesopotamia.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What was the ancient Babylonian law code called?",
-    "expectedAny": [
-      "Code of Hammurabi",
-      "Hammurabi's Code",
-      "Babylonian Code",
-      "Hammurabi Code"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Egyptian writing using pictorial symbols was called ________.",
-    "expectedAny": [
-      "hieroglyphics",
-      "hieroglyphs",
-      "Egyptian writing",
-      "picture writing"
-    ]
-  },
-  "shortanswer": {
-    "question": "How did geography influence early Mesopotamian civilization?",
-    "expectedAny": [
-      "rivers provided water and fertile soil",
-      "flooding created agriculture",
-      "location enabled trade"
-    ]
-  }
+  "sample": [
+    {"question": "What is a complex society with cities, government, and social structure?", "expectedAny": ["civilization", "complex society", "organized society", "advanced culture"]},
+    {"question": "What is cuneiform?", "expectedAny": ["wedge-shaped writing", "Mesopotamian writing", "ancient writing system", "wedge writing"]},
+    {"question": "What are hieroglyphics?", "expectedAny": ["Egyptian writing", "pictorial symbols", "picture writing", "symbol writing"]},
+    {"question": "What is polytheism?", "expectedAny": ["belief in multiple gods", "many gods", "multiple deities", "believing in many gods"]},
+    {"question": "What is the Code of Hammurabi?", "expectedAny": ["Babylonian law code", "ancient laws", "justice code", "Hammurabi's laws"]},
+    {"question": "What defines a civilization?", "expectedAny": ["cities government religion social structure", "complex organization", "advanced society"]},
+    {"question": "Where was cuneiform developed?", "expectedAny": ["Mesopotamia", "ancient Iraq", "Fertile Crescent"]},
+    {"question": "What writing did Egypt use?", "expectedAny": ["hieroglyphics", "hieroglyphs", "pictorial writing"]},
+    {"question": "What is belief in many gods?", "expectedAny": ["polytheism", "multiple gods", "many deities"]},
+    {"question": "What code established justice principles?", "expectedAny": ["Code of Hammurabi", "Hammurabi's code", "Babylonian laws"]}
+  ],
+  "truefalse": [
+    {"question": "Cuneiform was the writing system developed in Mesopotamia. (True or False)", "correct": true},
+    {"question": "Hieroglyphics used pictorial symbols. (True or False)", "correct": true},
+    {"question": "Polytheism is belief in one god. (True or False)", "correct": false},
+    {"question": "The Code of Hammurabi established justice principles. (True or False)", "correct": true},
+    {"question": "Civilization includes cities and government. (True or False)", "correct": true},
+    {"question": "Cuneiform was wedge-shaped. (True or False)", "correct": true},
+    {"question": "Egypt had no writing system. (True or False)", "correct": false},
+    {"question": "Polytheism means multiple gods. (True or False)", "correct": true},
+    {"question": "Hammurabi created laws. (True or False)", "correct": true},
+    {"question": "Civilizations have no social structure. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "What is a complex society?", "choices": [{"letter": "A", "text": "Tribe"}, {"letter": "B", "text": "Civilization"}, {"letter": "C", "text": "Village"}, {"letter": "D", "text": "Camp"}], "correct": "B"},
+    {"question": "What was Mesopotamian writing?", "choices": [{"letter": "A", "text": "Hieroglyphics"}, {"letter": "B", "text": "Cuneiform"}, {"letter": "C", "text": "Alphabet"}, {"letter": "D", "text": "Pictographs"}], "correct": "B"},
+    {"question": "What was Egyptian writing?", "choices": [{"letter": "A", "text": "Cuneiform"}, {"letter": "B", "text": "Hieroglyphics"}, {"letter": "C", "text": "Latin"}, {"letter": "D", "text": "Greek"}], "correct": "B"},
+    {"question": "What is belief in multiple gods?", "choices": [{"letter": "A", "text": "Monotheism"}, {"letter": "B", "text": "Atheism"}, {"letter": "C", "text": "Polytheism"}, {"letter": "D", "text": "Agnosticism"}], "correct": "C"},
+    {"question": "What was the Babylonian law code?", "choices": [{"letter": "A", "text": "Ten Commandments"}, {"letter": "B", "text": "Code of Hammurabi"}, {"letter": "C", "text": "Roman law"}, {"letter": "D", "text": "Greek law"}], "correct": "B"},
+    {"question": "What includes cities and government?", "choices": [{"letter": "A", "text": "Tribe"}, {"letter": "B", "text": "Civilization"}, {"letter": "C", "text": "Clan"}, {"letter": "D", "text": "Band"}], "correct": "B"},
+    {"question": "What shape was cuneiform?", "choices": [{"letter": "A", "text": "Round"}, {"letter": "B", "text": "Wedge-shaped"}, {"letter": "C", "text": "Square"}, {"letter": "D", "text": "Spiral"}], "correct": "B"},
+    {"question": "What symbols did hieroglyphics use?", "choices": [{"letter": "A", "text": "Letters"}, {"letter": "B", "text": "Pictorial"}, {"letter": "C", "text": "Numbers"}, {"letter": "D", "text": "Lines"}], "correct": "B"},
+    {"question": "How many gods in polytheism?", "choices": [{"letter": "A", "text": "None"}, {"letter": "B", "text": "One"}, {"letter": "C", "text": "Multiple"}, {"letter": "D", "text": "Two"}], "correct": "C"},
+    {"question": "What did Hammurabi establish?", "choices": [{"letter": "A", "text": "Religion"}, {"letter": "B", "text": "Justice principles"}, {"letter": "C", "text": "Trade"}, {"letter": "D", "text": "Art"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "A _____ is a complex society with cities and government.", "expectedAny": ["civilization"]},
+    {"question": "_____ was wedge-shaped writing from Mesopotamia.", "expectedAny": ["cuneiform", "Cuneiform"]},
+    {"question": "_____ were Egyptian pictorial symbols.", "expectedAny": ["hieroglyphics", "Hieroglyphics"]},
+    {"question": "_____ is belief in multiple gods.", "expectedAny": ["polytheism", "Polytheism"]},
+    {"question": "The Code of _____ was an ancient law code.", "expectedAny": ["Hammurabi"]},
+    {"question": "Civilizations have _____, government, and social structure.", "expectedAny": ["cities"]},
+    {"question": "Cuneiform was developed in _____.", "expectedAny": ["Mesopotamia"]},
+    {"question": "Egypt used _____ for writing.", "expectedAny": ["hieroglyphics", "hieroglyphs"]},
+    {"question": "Polytheism means _____ gods.", "expectedAny": ["multiple", "many"]},
+    {"question": "Hammurabi's code established _____ principles.", "expectedAny": ["justice", "law", "legal"]}
+  ],
+  "shortanswer": [
+    {"question": "What is a civilization?", "keyTerms": ["complex", "society", "cities", "government", "social structure"], "expectedAny": ["Complex society with cities government religion and social structure", "Advanced organized society", "Society with institutions and hierarchy"]},
+    {"question": "What is cuneiform?", "keyTerms": ["wedge-shaped", "writing", "Mesopotamia", "system"], "expectedAny": ["Wedge-shaped writing system developed in Mesopotamia", "Ancient Mesopotamian script", "Early writing using wedge marks"]},
+    {"question": "What are hieroglyphics?", "keyTerms": ["Egyptian", "writing", "pictorial", "symbols"], "expectedAny": ["Egyptian writing system using pictorial symbols", "Picture writing of ancient Egypt", "Symbolic Egyptian script"]},
+    {"question": "What is polytheism?", "keyTerms": ["belief", "multiple", "gods", "many"], "expectedAny": ["Belief in multiple gods", "Worshipping many deities", "Religion with many gods"]},
+    {"question": "What is the Code of Hammurabi?", "keyTerms": ["ancient", "Babylonian", "law", "code", "justice"], "expectedAny": ["Ancient Babylonian law code establishing justice principles", "Early written laws from Babylon", "Hammurabi's legal system"]},
+    {"question": "What made these civilizations important?", "keyTerms": ["contributions", "law", "writing", "governance"], "expectedAny": ["Their contributions to law writing and governance", "Innovations in organization and culture", "Foundation for later societies"]},
+    {"question": "How did writing systems differ?", "keyTerms": ["cuneiform", "wedge", "hieroglyphics", "pictorial"], "expectedAny": ["Cuneiform used wedges while hieroglyphics used pictures", "Different symbols and methods", "Mesopotamian vs Egyptian approaches"]},
+    {"question": "Why was Hammurabi's code significant?", "keyTerms": ["written", "laws", "justice", "standards"], "expectedAny": ["First comprehensive written laws establishing justice standards", "Created legal precedents", "Set principles for fair treatment"]},
+    {"question": "What role did religion play?", "keyTerms": ["polytheism", "gods", "society", "culture"], "expectedAny": ["Polytheism shaped society and culture with many gods", "Religion central to civilization", "Gods influenced daily life and governance"]},
+    {"question": "What similarities existed?", "keyTerms": ["cities", "writing", "government", "religion"], "expectedAny": ["Both had cities writing government and religion", "Complex societies with similar structures", "Shared features of civilization"]}
+  ]
 }

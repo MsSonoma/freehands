@@ -20,17 +20,21 @@
     {
       "term": "idea",
       "definition": "A thought in your mind"
+    },
+    {
+      "term": "invented spelling",
+      "definition": "Sounding out words to spell them the best you can"
     }
   ],
   "teachingNotes": "Encourage invented spelling and drawing to communicate. Provide various writing materials. Celebrate all attempts at communication.",
   "sample": [
-    {"question": "Draw a picture of your family and tell what you drew.", "expectedAny": ["names family members and describes drawing"]},
+    {"question": "Draw a picture of your family and tell what you drew.", "expectedAny": ["mom and dad", "brother and sister", "family at home"]},
     {"question": "Write one sentence about your favorite animal.", "expectedAny": ["I like dogs."]},
     {"question": "Label the parts of your drawing.", "expectedAny": ["head, body, legs"]},
     {"question": "Draw a weather picture and describe it.", "expectedAny": ["sunny, rainy descriptions"]},
     {"question": "Make a simple card for a friend.", "expectedAny": ["card with drawing and message"]},
     {"question": "Draw something that makes you happy.", "expectedAny": ["child describes and draws"]},
-    {"question": "Write a short caption for your drawing.", "expectedAny": ["My cat, My family"]}
+    {"question": "Write a short caption for your drawing.", "expectedAny": ["My cat", "My family", "My house"]}
   ],
   "truefalse": [
     {"question": "Drawing pictures can tell a story.", "answer": true, "expectedAny": ["pictures can communicate ideas and stories"]},
@@ -64,7 +68,7 @@
     {"question": "How do pictures help tell stories?", "expectedAny": ["show what happened", "give details", "help people understand"]},
     {"question": "Why is it okay to make mistakes when you're learning to write?", "expectedAny": ["mistakes help us learn", "practice makes better", "trying is important"]},
     {"question": "What are some different ways to express your ideas?", "expectedAny": ["drawing", "writing", "talking", "acting out"]},
-    {"question": "Describe a picture you would like to draw.", "expectedAny": ["varies by student interest"]},
+  {"question": "Describe a picture you would like to draw.", "expectedAny": ["a sunny park", "my family at home", "my favorite animal"]},
     {"question": "How can writing and drawing help you remember things?", "expectedAny": ["pictures show details", "words help remember", "creating helps memory"]},
     {"question": "What would you tell a friend who says they can't write yet?", "expectedAny": ["try your best", "use invented spelling", "drawing counts too", "practice helps"]}
   ],

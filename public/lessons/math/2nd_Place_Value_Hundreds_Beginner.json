@@ -8,7 +8,10 @@
     {"term": "ones", "definition": "The rightmost place in a number, worth 1 each"},
     {"term": "tens", "definition": "The middle place in a three-digit number, worth 10 each"},
     {"term": "hundreds", "definition": "The leftmost place in a three-digit number, worth 100 each"},
-    {"term": "digit", "definition": "Any of the numbers 0, 1, 2, 3, 4, 5, 6, 7, 8, or 9"}
+    {"term": "digit", "definition": "Any of the numbers 0, 1, 2, 3, 4, 5, 6, 7, 8, or 9"},
+    {"term": "round", "definition": "To change a number to the nearest ten or hundred to make it simpler"},
+    {"term": "compare", "definition": "To look at two numbers to see which is greater, less, or equal"},
+    {"term": "values", "definition": "The amounts that digits stand for based on place"}
   ],
   "teachingNotes": "Use base-ten blocks or place value charts to show how numbers are built. Start with two-digit numbers and expand to three-digit numbers. Emphasize that the position of a digit determines its value.",
   "sample": [
@@ -18,7 +21,7 @@
     {"question": "Expand 582", "expectedAny": ["500+80+2"]},
     {"question": "Which number: 7 hundreds, 0 tens, 3 ones?", "expectedAny": ["703"]},
     {"question": "Round 367 to the nearest ten", "expectedAny": ["370"]},
-    {"question": "Compare 425 and 524", "expectedAny": ["524 is greater", "425 < 524"]}
+    {"question": "Compare 425 and 524", "expectedAny": ["524 is greater", "425 < 524", "524 > 425"]}
   ],
   "truefalse": [
     {"question": "In 234, the 3 represents 30", "answer": true},
@@ -39,21 +42,21 @@
     {"question": "Which shows 842 expanded?", "choices": ["8+4+2", "800+40+2", "80+40+2", "800+4+2"], "correct": 1}
   ],
   "fillintheblank": [
-    {"question": "The number 563 has ___ hundreds", "expectedAny": ["5"]},
-    {"question": "400 + 70 + 2 = ___", "expectedAny": ["472"]},
-    {"question": "In 891, the 9 is in the ___ place", "expectedAny": ["tens"]},
-    {"question": "The value of 3 in 345 is ___", "expectedAny": ["300"]},
-    {"question": "___ is 10 more than 456", "expectedAny": ["466"]},
-    {"question": "Round 444 to the nearest ten: ___", "expectedAny": ["440"]},
-    {"question": "7 hundreds, 2 tens, 0 ones = ___", "expectedAny": ["720"]}
+    {"question": "The number 563 has ___ hundreds", "expectedAny": ["5", "five"]},
+    {"question": "400 + 70 + 2 = ___", "expectedAny": ["472", "four hundred seventy two"]},
+    {"question": "In 891, the 9 is in the ___ place", "expectedAny": ["tens", "tens place"]},
+    {"question": "The value of 3 in 345 is ___", "expectedAny": ["300", "three hundred"]},
+    {"question": "___ is 10 more than 456", "expectedAny": ["466", "four hundred sixty six"]},
+    {"question": "Round 444 to the nearest ten: ___", "expectedAny": ["440", "four hundred forty"]},
+    {"question": "7 hundreds, 2 tens, 0 ones = ___", "expectedAny": ["720", "seven hundred twenty"]}
   ],
   "shortanswer": [
-    {"question": "How do you write 639 in expanded form?", "expectedAny": ["600 + 30 + 9"]},
-    {"question": "Compare place values in 358 and 835", "expectedAny": ["digits change value by position"]},
-    {"question": "Why is zero important in 405?", "expectedAny": ["shows no tens, holds place"]},
-    {"question": "How do you round to nearest ten?", "expectedAny": ["look at ones: 5+ up, <5 down"]},
-    {"question": "What's the largest 3-digit number?", "expectedAny": ["999"]},
-    {"question": "How do you compare 3-digit numbers?", "expectedAny": ["compare hundreds, then tens, then ones"]},
+    {"question": "How do you write 639 in expanded form?", "expectedAny": ["600 + 30 + 9", "six hundred + thirty + nine", "600 plus 30 plus 9"]},
+    {"question": "Compare place values in 358 and 835", "expectedAny": ["the 8 means 80 in 358 but 800 in 835", "same digits have different values in different places", "place changes the value of a digit"]},
+    {"question": "Why is zero important in 405?", "expectedAny": ["shows no tens, holds place", "zero is a placeholder for tens", "it keeps the hundreds and ones in the right places"]},
+    {"question": "How do you round to nearest ten?", "expectedAny": ["look at ones: 5+ up, <5 down", "if ones is 5 or more, round up; else down", "check ones place to decide up or down"]},
+    {"question": "What's the largest 3-digit number?", "expectedAny": ["999", "nine hundred ninety nine", "nine hundred ninety-nine"]},
+    {"question": "How do you compare 3-digit numbers?", "expectedAny": ["compare hundreds, then tens, then ones", "start with hundreds; if same, compare tens", "use place value to compare digits"]},
     {"question": "Write 5 hundreds in three ways", "expectedAny": ["500", "5 hundreds", "500 ones"]}
   ],
   "wordProblems": [

@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "9th_Polynomials_Operations_Factoring_Beginner",
   "title": "Polynomials: Operations and Factoring",
   "grade": "9th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "polynomial",
-      "definition": "Expression with variables raised to non-negative integer powers"
-    },
-    {
-      "term": "monomial",
-      "definition": "Polynomial with exactly one term"
-    },
-    {
-      "term": "binomial",
-      "definition": "Polynomial with exactly two terms"
-    },
-    {
-      "term": "factoring",
-      "definition": "Writing a polynomial as a product of simpler expressions"
-    },
-    {
-      "term": "greatest common factor",
-      "definition": "Largest factor that divides all terms"
-    }
+    {"term": "polynomial", "definition": "Algebraic expression with one or more terms"},
+    {"term": "monomial", "definition": "Polynomial with exactly one term"},
+    {"term": "binomial", "definition": "Polynomial with exactly two terms"},
+    {"term": "factoring", "definition": "Writing an expression as a product of factors"},
+    {"term": "GCF (Greatest Common Factor)", "definition": "Largest factor shared by all terms"}
   ],
-  "teachingNotes": "Start with simple polynomial operations. Focus on factoring out common factors before more complex methods.",
-  "sample": {
-    "question": "What is an expression with variables raised to non-negative integer powers?",
-    "expectedAny": ["polynomial", "polynomial expression", "algebraic polynomial", "polynomial function"]
-  },
-  "truefalse": {
-    "question": "A binomial has exactly two terms.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is a polynomial with one term called?",
-    "expectedAny": ["monomial", "single term", "one-term polynomial", "unit polynomial"]
-  },
-  "fillintheblank": {
-    "question": "Writing a polynomial as a product is called ________.",
-    "expectedAny": ["factoring", "factorization", "factoring out", "decomposition"]
-  },
-  "shortanswer": {
-    "question": "What is the first step in factoring polynomials?",
-    "expectedAny": ["factor out GCF", "find greatest common factor", "factor out common terms"]
-  },
-  "wordProblems": {
-    "question": "Factor 6x² + 9x. What is the GCF?",
-    "expectedAny": ["3x", "3x(2x + 3)", "three x", "3x is the GCF"]
-  }
+  "teachingNotes": "Practice polynomial operations and factoring techniques. Emphasize combining like terms and finding the GCF.",
+  "sample": [
+    {"question": "What is a polynomial?", "expectedAny": ["expression with one or more terms", "algebraic expression with terms", "sum of terms", "expression with variables and exponents"]},
+    {"question": "What is a monomial?", "expectedAny": ["polynomial with one term", "single term", "one-term expression", "one piece"]},
+    {"question": "What is a binomial?", "expectedAny": ["polynomial with two terms", "two-term expression", "sum of two terms", "two pieces"]},
+    {"question": "What is factoring?", "expectedAny": ["writing as product of factors", "expressing as multiplication", "breaking down into factors", "splitting into pieces that multiply"]},
+    {"question": "What is GCF?", "expectedAny": ["greatest common factor", "largest shared factor", "biggest common factor", "highest common factor"]},
+    {"question": "Give an example of a monomial.", "expectedAny": ["5x", "3x", "7", "any single term"]},
+    {"question": "Give an example of a binomial.", "expectedAny": ["x + 5", "2x - 3", "3x + 4", "any two terms"]},
+    {"question": "What are like terms?", "expectedAny": ["terms with same variable and exponent", "terms that can be combined", "matching terms"]},
+    {"question": "How do you add polynomials?", "expectedAny": ["combine like terms", "add matching terms", "group similar terms"]},
+    {"question": "What does degree mean in polynomials?", "expectedAny": ["highest exponent", "largest power", "greatest exponent value"]}
+  ],
+  "truefalse": [
+    {"question": "A monomial has exactly one term. (True or False)", "correct": true},
+    {"question": "A binomial has three terms. (True or False)", "correct": false},
+    {"question": "Factoring means writing as a product. (True or False)", "correct": true},
+    {"question": "GCF stands for Greatest Common Factor. (True or False)", "correct": true},
+    {"question": "You can add unlike terms. (True or False)", "correct": false},
+    {"question": "A polynomial can have many terms. (True or False)", "correct": true},
+    {"question": "3x and 3y are like terms. (True or False)", "correct": false},
+    {"question": "2x and 5x are like terms. (True or False)", "correct": true},
+    {"question": "Degree is the highest exponent. (True or False)", "correct": true},
+    {"question": "Factoring and expanding are the same. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "What is a polynomial with one term?", "choices": [{"letter": "A", "text": "Binomial"}, {"letter": "B", "text": "Monomial"}, {"letter": "C", "text": "Trinomial"}, {"letter": "D", "text": "Polynomial"}], "correct": "B"},
+    {"question": "What is a polynomial with two terms?", "choices": [{"letter": "A", "text": "Monomial"}, {"letter": "B", "text": "Binomial"}, {"letter": "C", "text": "Trinomial"}, {"letter": "D", "text": "Expression"}], "correct": "B"},
+    {"question": "What does GCF stand for?", "choices": [{"letter": "A", "text": "Great Common Form"}, {"letter": "B", "text": "Greatest Common Factor"}, {"letter": "C", "text": "General Computing Factor"}, {"letter": "D", "text": "Group Common Fraction"}], "correct": "B"},
+    {"question": "What is factoring?", "choices": [{"letter": "A", "text": "Adding terms"}, {"letter": "B", "text": "Expanding products"}, {"letter": "C", "text": "Writing as product of factors"}, {"letter": "D", "text": "Combining like terms"}], "correct": "C"},
+    {"question": "Which are like terms?", "choices": [{"letter": "A", "text": "3x and 5y"}, {"letter": "B", "text": "2x and 4x"}, {"letter": "C", "text": "x and x"}, {"letter": "D", "text": "5 and 5x"}], "correct": "B"},
+    {"question": "What is the degree of 4x?", "choices": [{"letter": "A", "text": "4"}, {"letter": "B", "text": "3"}, {"letter": "C", "text": "7"}, {"letter": "D", "text": "1"}], "correct": "B"},
+    {"question": "Add: (3x + 2) + (5x + 4)", "choices": [{"letter": "A", "text": "8x + 6"}, {"letter": "B", "text": "8x + 2"}, {"letter": "C", "text": "3x + 6"}, {"letter": "D", "text": "15x + 8"}], "correct": "A"},
+    {"question": "Factor: 6x + 9", "choices": [{"letter": "A", "text": "3(2x + 3)"}, {"letter": "B", "text": "6(x + 9)"}, {"letter": "C", "text": "3(2x + 9)"}, {"letter": "D", "text": "2(3x + 9)"}], "correct": "A"},
+    {"question": "What is the GCF of 12 and 18?", "choices": [{"letter": "A", "text": "2"}, {"letter": "B", "text": "3"}, {"letter": "C", "text": "6"}, {"letter": "D", "text": "9"}], "correct": "C"},
+    {"question": "Multiply: 2x(3x + 4)", "choices": [{"letter": "A", "text": "6x + 8"}, {"letter": "B", "text": "6x + 8x"}, {"letter": "C", "text": "5x + 6x"}, {"letter": "D", "text": "6x + 4"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "A polynomial with one term is a _____.", "expectedAny": ["monomial"]},
+    {"question": "A polynomial with two terms is a _____.", "expectedAny": ["binomial"]},
+    {"question": "Writing an expression as a product is _____.", "expectedAny": ["factoring"]},
+    {"question": "The largest shared factor is the _____.", "expectedAny": ["GCF", "greatest common factor"]},
+    {"question": "Terms with the same variable and exponent are _____ terms.", "expectedAny": ["like"]},
+    {"question": "The highest exponent in a polynomial is the _____.", "expectedAny": ["degree"]},
+    {"question": "To add polynomials, combine _____ terms.", "expectedAny": ["like"]},
+    {"question": "A polynomial with three terms is a _____.", "expectedAny": ["trinomial"]},
+    {"question": "5x and 3x are _____ terms.", "expectedAny": ["like"]},
+    {"question": "The GCF of 8 and 12 is _____.", "expectedAny": ["4"]}
+  ],
+  "shortanswer": [
+    {"question": "How do you add polynomials?", "keyTerms": ["combine", "like", "terms", "add"], "expectedAny": ["Combine like terms by adding their coefficients", "Add terms with matching variables and exponents", "Group and add like terms together"]},
+    {"question": "What is the first step in factoring?", "keyTerms": ["find", "GCF", "common", "factor"], "expectedAny": ["Find the greatest common factor", "Identify the GCF of all terms", "Look for the largest common factor"]},
+    {"question": "Why can't you add 2x and 3y?", "keyTerms": ["unlike", "different", "variables", "not"], "expectedAny": ["They are unlike terms with different variables", "Different variables make them unlike terms", "They don't have matching variables"]},
+    {"question": "How do you multiply a monomial by a polynomial?", "keyTerms": ["distribute", "multiply", "each", "term"], "expectedAny": ["Distribute the monomial to each term", "Multiply the monomial by every term", "Use the distributive property"]},
+    {"question": "What makes terms like terms?", "keyTerms": ["same", "variable", "exponent", "matching"], "expectedAny": ["Same variable with the same exponent", "Matching variables and powers", "Identical variable parts"]},
+    {"question": "How do you find the GCF of 12x and 18x?", "keyTerms": ["6x", "common", "factor", "largest"], "expectedAny": ["Find largest factor of both: 6x", "The GCF is 6x", "6x divides both terms"]},
+    {"question": "What is the degree of 5x + 3x + 7?", "keyTerms": ["2", "highest", "exponent", "degree"], "expectedAny": ["The degree is 2, the highest exponent", "2 because x is the highest power", "Degree is 2 from the x term"]},
+    {"question": "How do you subtract polynomials?", "keyTerms": ["distribute", "negative", "combine", "like terms"], "expectedAny": ["Distribute the negative and combine like terms", "Change signs of second polynomial then combine", "Subtract like terms after distributing"]},
+    {"question": "Factor: 4x + 8", "keyTerms": ["4", "x + 2", "GCF", "factor"], "expectedAny": ["4(x + 2) by factoring out GCF of 4", "Take out 4: 4(x + 2)", "GCF is 4, so 4(x + 2)"]},
+    {"question": "Expand: 3(2x + 5)", "keyTerms": ["6x", "15", "distribute", "multiply"], "expectedAny": ["Distribute 3: 6x + 15", "3 times each term: 6x + 15", "6x + 15 by multiplying through"]}
+  ],
+  "wordProblems": [
+    {"question": "Add (2x + 3) + (4x + 5). What do you get?", "expectedAny": ["6x + 8", "six x plus eight", "6x plus 8"]},
+    {"question": "Subtract (7x + 2) - (3x + 1). What is the result?", "expectedAny": ["4x + 1", "four x plus one", "4x plus 1"]},
+    {"question": "Factor 6x + 12. What is the factored form?", "expectedAny": ["6(x + 2)", "six times x plus two", "6 times (x + 2)"]},
+    {"question": "What is the GCF of 10x and 15x?", "expectedAny": ["5x", "five x", "5 x"]},
+    {"question": "Multiply 3x(2x + 4). What do you get?", "expectedAny": ["6x + 12x", "six x squared plus twelve x", "6x plus 12x"]},
+    {"question": "What is the degree of 3x + 2x + 5?", "expectedAny": ["4", "four", "degree 4"]},
+    {"question": "Combine like terms: 5x + 3x + 2. What is the result?", "expectedAny": ["8x + 2", "eight x plus two", "8x plus 2"]},
+    {"question": "Factor 8x + 20. What is the factored form?", "expectedAny": ["4(2x + 5)", "four times 2x plus five", "4 times (2x + 5)"]},
+    {"question": "Add (x + 3x) + (2x + 5x). What do you get?", "expectedAny": ["3x + 8x", "three x squared plus eight x", "3x plus 8x"]},
+    {"question": "What is the GCF of 12 and 18?", "expectedAny": ["6", "six"]}
+  ]
 }

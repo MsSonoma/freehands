@@ -7,8 +7,10 @@
   "vocab": [
     { "term": "word family", "definition": "Words that have the same ending sound and letters, like cat, bat, hat" },
     { "term": "rhyme", "definition": "Words that end with the same sound" },
-    { "term": "consonant", "definition": "Letters that are not vowels: b, c, d, f, g, h, j, k, l, m, n, p, q, r, s, t, v, w, x, y, z" },
-    { "term": "vowel", "definition": "The letters a, e, i, o, u (and sometimes y)" }
+    { "term": "consonant", "definition": "A letter that is not a vowel, like b, c, d, f, g" },
+    { "term": "vowel", "definition": "The letters a, e, i, o, u (and sometimes y)" },
+    { "term": "spelling", "definition": "How letters go in order to write a word" },
+    { "term": "compound word", "definition": "Two words put together to make a new word" }
   ],
   "teachingNotes": "Use word family charts and rhyming games. Focus on common patterns like -at, -an, -in, -ot. Practice blending sounds.",
   "sample": [
@@ -39,21 +41,21 @@
     { "question": "Which ending makes a new word: c__t to make 'cat'?", "choices": ["a", "e", "i", "o"], "correct": 0, "expectedAny": ["c-a-t"] }
   ],
   "fillintheblank": [
-    { "question": "I can make new words by changing the first letter: c_at, b_at, r_at, h_at.", "expectedAny": ["any consonant", "different beginning sounds"] },
-    { "question": "Words that end with the same sound are called ________.", "expectedAny": ["rhymes"] },
+    { "question": "I can make new words by changing the first letter: c_at, b_at, r_at, h_at.", "expectedAny": ["different beginning sounds", "new first letter", "change first sound"] },
+  { "question": "Words that end with the same sound are called ________.", "expectedAny": ["rhymes", "rhyming words"] },
     { "question": "Cat, bat, and hat are in the ________ family.", "expectedAny": ["-at", "at"] },
     { "question": "'H__' and 'f__' can make 'hat' and 'fat'.", "expectedAny": ["h", "f"] },
-    { "question": "The letters a, e, i, o, u are called ________.", "expectedAny": ["vowels"] },
-    { "question": "B, c, d, f, and g are examples of ________.", "expectedAny": ["consonants"] },
+  { "question": "The letters a, e, i, o, u are called ________.", "expectedAny": ["vowels", "vowel letters"] },
+  { "question": "B, c, d, f, and g are examples of ________.", "expectedAny": ["consonants", "consonant letters"] },
     { "question": "'S__n' and 'f__n' rhyme to make 'sun' and 'fun'.", "expectedAny": ["u", "u"] }
   ],
   "shortanswer": [
-    { "question": "How can knowing word families help you read new words?", "expectedAny": ["if you know one word, you can read similar words", "patterns help decode"] },
-    { "question": "Name three words that rhyme with 'cat'.", "expectedAny": ["bat", "hat", "rat", "mat"] },
-    { "question": "Name two words in the -og family.", "expectedAny": ["dog", "log", "fog"] },
-    { "question": "Write one word from the -in family.", "expectedAny": ["pin", "win", "tin", "fin"] },
-    { "question": "Which vowel sound is in 'ship'?", "expectedAny": ["short i", "i"] },
-    { "question": "Which consonant begins 'ball'?", "expectedAny": ["b"] },
-    { "question": "Explain how rhyming helps with spelling.", "expectedAny": ["same endings mean same spelling patterns"] }
+    { "question": "How can knowing word families help you read new words?", "expectedAny": ["if you know one word, you can read similar words", "patterns help decode", "endings help you read", "you know the pattern"] },
+    { "question": "Name three words that rhyme with 'cat'.", "expectedAny": ["bat", "hat", "rat", "mat", "sat", "fat", "pat"] },
+    { "question": "Name two words in the -og family.", "expectedAny": ["dog", "log", "fog", "hog", "jog"] },
+    { "question": "Write one word from the -in family.", "expectedAny": ["pin", "win", "tin", "fin", "bin", "din"] },
+  { "question": "Which vowel sound is in 'ship'?", "expectedAny": ["short i", "i", "/ɪ/", "the i sound"] },
+  { "question": "Which consonant begins 'ball'?", "expectedAny": ["b", "the letter b", "b sound", "the b"] },
+    { "question": "Explain how rhyming helps with spelling.", "expectedAny": ["same endings mean same spelling patterns", "helps remember endings", "shows same sounds", "patterns repeat"] }
   ]
 }

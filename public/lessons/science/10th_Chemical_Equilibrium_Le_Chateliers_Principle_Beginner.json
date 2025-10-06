@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "10th_Chemical_Equilibrium_Le_Chateliers_Principle_Beginner",
   "title": "Chemical Equilibrium and Le Chatelier's Principle",
   "grade": "10th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "chemical equilibrium",
-      "definition": "State where forward and reverse reaction rates are equal"
-    },
-    {
-      "term": "le chateliers principle",
-      "definition": "If stress is applied to equilibrium, system shifts to relieve stress"
-    },
-    {
-      "term": "equilibrium constant",
-      "definition": "Ratio of product concentrations to reactant concentrations at equilibrium"
-    },
-    {
-      "term": "dynamic equilibrium",
-      "definition": "Equilibrium where molecules continue reacting but concentrations stay constant"
-    },
-    {
-      "term": "stress",
-      "definition": "Change in conditions that disturbs chemical equilibrium"
-    }
+    {"term": "chemical equilibrium", "definition": "State where forward and reverse reaction rates are equal"},
+    {"term": "le chateliers principle", "definition": "If stress is applied to equilibrium, system shifts to relieve stress"},
+    {"term": "equilibrium constant", "definition": "Ratio of product concentrations to reactant concentrations at equilibrium"},
+    {"term": "dynamic equilibrium", "definition": "Equilibrium where molecules continue reacting but concentrations stay constant"},
+    {"term": "stress", "definition": "Change in conditions that disturbs chemical equilibrium"}
   ],
   "teachingNotes": "Use analogies like a crowded room to explain equilibrium shifts. Practice predicting effects of concentration, temperature, and pressure changes.",
-  "sample": {
-    "question": "What is the state where forward and reverse reaction rates are equal?",
-    "expectedAny": [
-      "chemical equilibrium",
-      "equilibrium",
-      "dynamic equilibrium",
-      "reaction equilibrium"
-    ]
-  },
-  "truefalse": {
-    "question": "At equilibrium, the concentrations of reactants and products remain constant.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What principle predicts how equilibrium responds to stress?",
-    "expectedAny": [
-      "Le Chatelier's principle",
-      "Le Chatelier principle",
-      "equilibrium principle",
-      "stress response principle"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A change in conditions that disturbs equilibrium is called ________.",
-    "expectedAny": [
-      "stress",
-      "disturbance",
-      "perturbation",
-      "disruption"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does increasing temperature affect an endothermic reaction at equilibrium?",
-    "expectedAny": [
-      "shifts equilibrium forward",
-      "favors product formation",
-      "equilibrium moves right"
-    ]
-  }
+  "sample": [
+    {"question": "What is equal reaction rates?", "expectedAny": ["chemical equilibrium", "equilibrium", "balance", "reaction balance", "equal rates", "dynamic balance"]},
+    {"question": "What predicts equilibrium shifts?", "expectedAny": ["le chateliers principle", "le chatelier", "le chatelier principle", "shift principle", "equilibrium principle", "stress principle"]},
+    {"question": "What is product to reactant ratio?", "expectedAny": ["equilibrium constant", "K constant", "K", "equilibrium ratio", "constant K", "eq constant"]},
+    {"question": "What is constant concentrations?", "expectedAny": ["dynamic equilibrium", "equilibrium", "dynamic balance", "constant concentrations", "ongoing equilibrium", "continuous equilibrium"]},
+    {"question": "What disturbs equilibrium?", "expectedAny": ["stress", "disturbance", "change", "perturbation", "disruption", "equilibrium stress"]},
+    {"question": "What is forward equals reverse?", "expectedAny": ["equilibrium", "balance", "chemical equilibrium", "reaction balance", "equal rates", "dynamic balance"]},
+    {"question": "What shifts to relieve stress?", "expectedAny": ["le chateliers principle", "system", "le chatelier", "equilibrium", "le chatelier principle", "shift principle"]},
+    {"question": "What is concentration ratio?", "expectedAny": ["equilibrium constant", "K", "K constant", "equilibrium ratio", "constant K", "eq constant"]},
+    {"question": "What is continuous reaction?", "expectedAny": ["dynamic equilibrium", "dynamic", "dynamic balance", "ongoing equilibrium", "continuous equilibrium", "constant concentrations"]},
+    {"question": "What is condition change?", "expectedAny": ["stress", "disturbance", "change", "perturbation", "disruption", "equilibrium stress"]}
+  ],
+  "truefalse": [
+    {"question": "Equilibrium has equal rates. (True or False)", "correct": true},
+    {"question": "Le Chatelier predicts shifts. (True or False)", "correct": true},
+    {"question": "Equilibrium constant varies. (True or False)", "correct": false},
+    {"question": "Dynamic means static. (True or False)", "correct": false},
+    {"question": "Stress disturbs equilibrium. (True or False)", "correct": true},
+    {"question": "Forward equals reverse at equilibrium. (True or False)", "correct": true},
+    {"question": "System shifts to relieve stress. (True or False)", "correct": true},
+    {"question": "Concentrations change at equilibrium. (True or False)", "correct": false},
+    {"question": "Reactions continue at equilibrium. (True or False)", "correct": true},
+    {"question": "Adding reactant is stress. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is equal rates?", "choices": [{"letter": "A", "text": "Reaction"}, {"letter": "B", "text": "Chemical equilibrium"}, {"letter": "C", "text": "Product"}, {"letter": "D", "text": "Stress"}], "correct": "B"},
+    {"question": "What predicts shifts?", "choices": [{"letter": "A", "text": "Constant"}, {"letter": "B", "text": "Le Chatelier's principle"}, {"letter": "C", "text": "Dynamic"}, {"letter": "D", "text": "Stress"}], "correct": "B"},
+    {"question": "What is concentration ratio?", "choices": [{"letter": "A", "text": "Stress"}, {"letter": "B", "text": "Equilibrium constant"}, {"letter": "C", "text": "Dynamic"}, {"letter": "D", "text": "Shift"}], "correct": "B"},
+    {"question": "What is continuous reaction?", "choices": [{"letter": "A", "text": "Static"}, {"letter": "B", "text": "Dynamic equilibrium"}, {"letter": "C", "text": "Stress"}, {"letter": "D", "text": "Constant"}], "correct": "B"},
+    {"question": "What disturbs balance?", "choices": [{"letter": "A", "text": "Constant"}, {"letter": "B", "text": "Stress"}, {"letter": "C", "text": "Dynamic"}, {"letter": "D", "text": "Rate"}], "correct": "B"},
+    {"question": "What has equal forward reverse?", "choices": [{"letter": "A", "text": "Stress"}, {"letter": "B", "text": "Equilibrium"}, {"letter": "C", "text": "Product"}, {"letter": "D", "text": "Reactant"}], "correct": "B"},
+    {"question": "What relieves stress?", "choices": [{"letter": "A", "text": "Constant"}, {"letter": "B", "text": "System shift"}, {"letter": "C", "text": "Rate"}, {"letter": "D", "text": "Dynamic"}], "correct": "B"},
+    {"question": "What is K?", "choices": [{"letter": "A", "text": "Stress"}, {"letter": "B", "text": "Equilibrium constant"}, {"letter": "C", "text": "Rate"}, {"letter": "D", "text": "Dynamic"}], "correct": "B"},
+    {"question": "What stays constant?", "choices": [{"letter": "A", "text": "Rates"}, {"letter": "B", "text": "Concentrations"}, {"letter": "C", "text": "Stress"}, {"letter": "D", "text": "Shift"}], "correct": "B"},
+    {"question": "What is condition change?", "choices": [{"letter": "A", "text": "Equilibrium"}, {"letter": "B", "text": "Stress"}, {"letter": "C", "text": "Constant"}, {"letter": "D", "text": "Dynamic"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ equilibrium has equal rates.", "expectedAny": ["chemical", "Chemical"]},
+    {"question": "Le _____'s principle predicts shifts.", "expectedAny": ["chatelier", "Chatelier"]},
+    {"question": "_____ constant is concentration ratio.", "expectedAny": ["equilibrium", "Equilibrium"]},
+    {"question": "_____ equilibrium has continuous reaction.", "expectedAny": ["dynamic", "Dynamic"]},
+    {"question": "_____ disturbs equilibrium.", "expectedAny": ["stress", "Stress"]},
+    {"question": "_____ rates are equal.", "expectedAny": ["forward", "Forward", "reverse"]},
+    {"question": "System _____ to relieve stress.", "expectedAny": ["shifts"]},
+    {"question": "K is _____ constant.", "expectedAny": ["equilibrium"]},
+    {"question": "_____ stay constant at equilibrium.", "expectedAny": ["concentrations", "Concentrations"]},
+    {"question": "Temperature is a _____.", "expectedAny": ["stress"]}
+  ],
+  "shortanswer": [
+    {"question": "What is chemical equilibrium?", "keyTerms": ["state", "forward", "reverse", "reaction", "rates", "equal"], "expectedAny": ["State where forward and reverse reaction rates are equal", "Equal reaction rates", "Balance point"]},
+    {"question": "What is Le Chatelier's principle?", "keyTerms": ["stress", "applied", "equilibrium", "system", "shifts", "relieve"], "expectedAny": ["If stress is applied to equilibrium, system shifts to relieve stress", "Equilibrium responds to stress", "System shifts to counteract"]},
+    {"question": "What is equilibrium constant?", "keyTerms": ["ratio", "product", "concentrations", "reactant", "equilibrium"], "expectedAny": ["Ratio of product concentrations to reactant concentrations at equilibrium", "K value", "Concentration ratio"]},
+    {"question": "What is dynamic equilibrium?", "keyTerms": ["equilibrium", "molecules", "continue", "reacting", "concentrations", "constant"], "expectedAny": ["Equilibrium where molecules continue reacting but concentrations stay constant", "Ongoing reactions", "Constant concentrations"]},
+    {"question": "What is stress?", "keyTerms": ["change", "conditions", "disturbs", "chemical", "equilibrium"], "expectedAny": ["Change in conditions that disturbs chemical equilibrium", "Disturbance", "Condition change"]},
+    {"question": "What happens if add reactant?", "keyTerms": ["shifts", "forward", "products", "relieve"], "expectedAny": ["Shifts forward toward products to relieve stress", "Makes more products", "Forward shift"]},
+    {"question": "What happens if remove product?", "keyTerms": ["shifts", "forward", "replace", "product"], "expectedAny": ["Shifts forward to replace removed product", "Makes more product", "Forward shift"]},
+    {"question": "What happens if increase temperature exothermic?", "keyTerms": ["shifts", "backward", "reactants", "absorb heat"], "expectedAny": ["Shifts backward toward reactants to absorb heat", "Reverse shift", "Favors reactants"]},
+    {"question": "What happens if increase pressure?", "keyTerms": ["shifts", "fewer", "moles", "gas"], "expectedAny": ["Shifts toward side with fewer moles of gas", "Reduces pressure", "Fewer gas molecules"]},
+    {"question": "Why is it called dynamic?", "keyTerms": ["reactions", "continue", "both directions", "rates equal"], "expectedAny": ["Reactions continue in both directions at equal rates", "Ongoing process", "Continuous reactions"]}
+  ]
 }

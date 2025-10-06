@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "10th_Conic_Sections_Circles_Parabolas_Intermediate",
   "title": "Conic Sections: Circles, Parabolas, and Ellipses",
   "grade": "10th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "conic section",
-      "definition": "Curve formed by intersecting a cone with a plane"
-    },
-    {
-      "term": "circle",
-      "definition": "Set of points equidistant from a center point"
-    },
-    {
-      "term": "parabola",
-      "definition": "Set of points equidistant from a focus and directrix"
-    },
-    {
-      "term": "ellipse",
-      "definition": "Set of points where sum of distances to two foci is constant"
-    },
-    {
-      "term": "center",
-      "definition": "Fixed point used as reference for conic sections"
-    }
+    {"term": "conic section", "definition": "Curve formed by intersecting a cone with a plane"},
+    {"term": "circle", "definition": "Set of points equidistant from a center point"},
+    {"term": "parabola", "definition": "Set of points equidistant from a focus and directrix"},
+    {"term": "ellipse", "definition": "Set of points where sum of distances to two foci is constant"},
+    {"term": "center", "definition": "Fixed point used as reference for conic sections"}
   ],
   "teachingNotes": "Use geometric definitions and algebraic equations. Connect to real-world applications like satellite dishes and planetary orbits.",
-  "sample": {
-    "question": "What is a curve formed by intersecting a cone with a plane?",
-    "expectedAny": ["conic section", "conic", "conical section", "cone intersection"]
-  },
-  "truefalse": {
-    "question": "A circle is the set of points equidistant from a center.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What conic section has points equidistant from focus and directrix?",
-    "expectedAny": ["parabola", "parabolic curve", "parabolic section", "quadratic curve"]
-  },
-  "fillintheblank": {
-    "question": "An ellipse is defined by the sum of distances to two ________.",
-    "expectedAny": ["foci", "focal points", "focus points", "centers"]
-  },
-  "shortanswer": {
-    "question": "What is the standard form equation of a circle with center (h,k) and radius r?",
-    "expectedAny": ["(x-h)² + (y-k)² = r²", "circle equation", "distance formula squared"]
-  },
-  "wordProblems": {
-    "question": "Find the center and radius of the circle x² + y² - 6x + 4y = 3.",
-    "expectedAny": ["center (3,-2), radius 4", "complete the square", "(3,-2) and r=4"]
-  }
+  "sample": [
+    {"question": "What is curve from cone and plane?", "expectedAny": ["conic section", "conic", "cone intersection", "conic curve", "section of cone", "intersected cone"]},
+    {"question": "What has points equidistant from center?", "expectedAny": ["circle", "circular curve", "round shape", "round curve", "circular shape", "equidistant curve"]},
+    {"question": "What has points equidistant from focus and directrix?", "expectedAny": ["parabola", "parabolic curve", "U-shape", "U-curve", "parabolic shape", "focus-directrix curve"]},
+    {"question": "What has constant sum to two foci?", "expectedAny": ["ellipse", "elliptical curve", "oval", "elliptical shape", "oval shape", "two-foci curve"]},
+    {"question": "What is fixed reference point?", "expectedAny": ["center", "fixed point", "central point", "reference point", "center point", "origin point"]},
+    {"question": "What intersects cone?", "expectedAny": ["conic section", "conic", "plane", "cone intersection", "conic curve", "section of cone"]},
+    {"question": "What is equidistant from one point?", "expectedAny": ["circle", "circular", "round", "circular curve", "round shape", "equidistant curve"]},
+    {"question": "What uses focus and directrix?", "expectedAny": ["parabola", "parabolic", "U-curve", "parabolic curve", "U-shape", "focus-directrix curve"]},
+    {"question": "What has two foci?", "expectedAny": ["ellipse", "elliptical", "oval", "elliptical curve", "oval shape", "two-foci curve"]},
+    {"question": "What is reference point?", "expectedAny": ["center", "central", "fixed", "fixed point", "central point", "origin point"]}
+  ],
+  "truefalse": [
+    {"question": "Conic section comes from cone and plane. (True or False)", "correct": true},
+    {"question": "Circle has points equidistant from center. (True or False)", "correct": true},
+    {"question": "Parabola uses focus and directrix. (True or False)", "correct": true},
+    {"question": "Ellipse has one focus. (True or False)", "correct": false},
+    {"question": "Center is a reference point. (True or False)", "correct": true},
+    {"question": "Conics come from intersecting cone. (True or False)", "correct": true},
+    {"question": "Circle is equidistant from center. (True or False)", "correct": true},
+    {"question": "Parabola is equidistant from focus and directrix. (True or False)", "correct": true},
+    {"question": "Ellipse has constant sum to foci. (True or False)", "correct": true},
+    {"question": "All conics are circles. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "What comes from cone and plane?", "choices": [{"letter": "A", "text": "Line"}, {"letter": "B", "text": "Conic section"}, {"letter": "C", "text": "Angle"}, {"letter": "D", "text": "Arc"}], "correct": "B"},
+    {"question": "What is equidistant from center?", "choices": [{"letter": "A", "text": "Parabola"}, {"letter": "B", "text": "Circle"}, {"letter": "C", "text": "Ellipse"}, {"letter": "D", "text": "Hyperbola"}], "correct": "B"},
+    {"question": "What uses focus and directrix?", "choices": [{"letter": "A", "text": "Circle"}, {"letter": "B", "text": "Parabola"}, {"letter": "C", "text": "Line"}, {"letter": "D", "text": "Arc"}], "correct": "B"},
+    {"question": "What has two foci?", "choices": [{"letter": "A", "text": "Circle"}, {"letter": "B", "text": "Ellipse"}, {"letter": "C", "text": "Parabola"}, {"letter": "D", "text": "Line"}], "correct": "B"},
+    {"question": "What is fixed reference?", "choices": [{"letter": "A", "text": "Focus"}, {"letter": "B", "text": "Center"}, {"letter": "C", "text": "Directrix"}, {"letter": "D", "text": "Axis"}], "correct": "B"},
+    {"question": "What is intersection curve?", "choices": [{"letter": "A", "text": "Line"}, {"letter": "B", "text": "Conic section"}, {"letter": "C", "text": "Point"}, {"letter": "D", "text": "Angle"}], "correct": "B"},
+    {"question": "What is round?", "choices": [{"letter": "A", "text": "Parabola"}, {"letter": "B", "text": "Circle"}, {"letter": "C", "text": "Line"}, {"letter": "D", "text": "Angle"}], "correct": "B"},
+    {"question": "What is U-shaped?", "choices": [{"letter": "A", "text": "Circle"}, {"letter": "B", "text": "Parabola"}, {"letter": "C", "text": "Line"}, {"letter": "D", "text": "Point"}], "correct": "B"},
+    {"question": "What is oval?", "choices": [{"letter": "A", "text": "Circle"}, {"letter": "B", "text": "Ellipse"}, {"letter": "C", "text": "Parabola"}, {"letter": "D", "text": "Line"}], "correct": "B"},
+    {"question": "What is central point?", "choices": [{"letter": "A", "text": "Focus"}, {"letter": "B", "text": "Center"}, {"letter": "C", "text": "Vertex"}, {"letter": "D", "text": "Directrix"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "A _____ section comes from cone.", "expectedAny": ["conic"]},
+    {"question": "A _____ is equidistant from center.", "expectedAny": ["circle"]},
+    {"question": "A _____ uses focus and directrix.", "expectedAny": ["parabola"]},
+    {"question": "An _____ has two foci.", "expectedAny": ["ellipse"]},
+    {"question": "A _____ is fixed reference point.", "expectedAny": ["center"]},
+    {"question": "_____ intersect cone with plane.", "expectedAny": ["conics", "Conics", "conic sections"]},
+    {"question": "_____ are equidistant from one point.", "expectedAny": ["circles", "Circles"]},
+    {"question": "_____ are U-shaped.", "expectedAny": ["parabolas", "Parabolas"]},
+    {"question": "_____ are oval-shaped.", "expectedAny": ["ellipses", "Ellipses"]},
+    {"question": "_____ is central point.", "expectedAny": ["center", "Center"]}
+  ],
+  "shortanswer": [
+    {"question": "What is conic section?", "keyTerms": ["curve", "formed", "intersecting", "cone", "plane"], "expectedAny": ["Curve formed by intersecting a cone with a plane", "Cone-plane intersection", "Cut through cone"]},
+    {"question": "What is a circle?", "keyTerms": ["set", "points", "equidistant", "center", "point"], "expectedAny": ["Set of points equidistant from a center point", "Points same distance from center", "Equidistant from one point"]},
+    {"question": "What is a parabola?", "keyTerms": ["set", "points", "equidistant", "focus", "directrix"], "expectedAny": ["Set of points equidistant from a focus and directrix", "Equal distance to focus and directrix", "Focus-directrix definition"]},
+    {"question": "What is an ellipse?", "keyTerms": ["set", "points", "sum", "distances", "foci", "constant"], "expectedAny": ["Set of points where sum of distances to two foci is constant", "Constant sum to two foci", "Two foci constant distance"]},
+    {"question": "What is center?", "keyTerms": ["fixed", "point", "reference", "conic"], "expectedAny": ["Fixed point used as reference for conic sections", "Reference point", "Central point"]},
+    {"question": "What is circle equation?", "keyTerms": ["x-h", "y-k", "squared", "r", "radius"], "expectedAny": ["(x-h) + (y-k) = r", "distance formula squared", "center-radius form"]},
+    {"question": "What is parabola equation?", "keyTerms": ["y", "ax", "x", "squared"], "expectedAny": ["y = ax or x = ay", "quadratic form", "squared variable"]},
+    {"question": "How many foci does circle have?", "keyTerms": ["one", "center"], "expectedAny": ["one", "one focus", "center is focus"]},
+    {"question": "How many foci does ellipse have?", "keyTerms": ["two", "pair"], "expectedAny": ["two", "two foci", "pair of foci"]},
+    {"question": "What real-world uses parabola?", "keyTerms": ["satellite", "dish", "reflector", "antenna"], "expectedAny": ["satellite dish", "reflector", "antenna", "telescope mirror"]}
+  ],
+  "wordProblems": [
+    {"question": "Find center and radius of x + y - 6x + 4y = 3", "keyTerms": ["3", "-2", "center", "4", "radius"], "expectedAny": ["center (3, -2) radius 4", "center 3 comma -2 radius 4", "h=3 k=-2 r=4"]},
+    {"question": "Circle has center (2,3) and radius 5. Write equation.", "keyTerms": ["x-2", "y-3", "25"], "expectedAny": ["(x-2) + (y-3) = 25", "x minus 2 squared plus y minus 3 squared equals 25"]},
+    {"question": "Parabola y = x - 4x + 3. Find vertex.", "keyTerms": ["2", "comma", "-1"], "expectedAny": ["(2, -1)", "2 comma -1", "vertex at 2, -1"]},
+    {"question": "Satellite dish is parabolic, 6 feet across, 2 feet deep. Where is focus?", "keyTerms": ["1.125", "feet", "above"], "expectedAny": ["1.125 feet above vertex", "1.125 feet", "9/8 feet"]},
+    {"question": "Does point (3,4) lie on circle x + y = 25?", "keyTerms": ["yes", "9", "16", "25"], "expectedAny": ["yes", "yes it does", "3 + 4 = 25"]},
+    {"question": "Ellipse has semi-major axis 5, semi-minor axis 3. Both centered at origin. Which is longer?", "keyTerms": ["major", "5"], "expectedAny": ["major axis", "5 is longer", "semi-major axis longer"]},
+    {"question": "Parabola opens upward, vertex at origin. Passes through (2,4). Find equation.", "keyTerms": ["y", "x"], "expectedAny": ["y = x", "y equals x squared", "y = 1x"]},
+    {"question": "Circle centered at (-1,2) passes through (2,6). Find radius.", "keyTerms": ["5"], "expectedAny": ["5", "five", "radius is 5"]},
+    {"question": "Archway is parabolic, 20 feet wide at base, 16 feet tall at center. Find equation if vertex at top center.", "keyTerms": ["y", "-16", "100"], "expectedAny": ["y = -16x/100", "y = -0.16x", "downward parabola"]},
+    {"question": "Ellipse x/25 + y/9 = 1. What are lengths of axes?", "keyTerms": ["10", "6", "major", "minor"], "expectedAny": ["major 10 minor 6", "10 and 6", "2a=10 2b=6"]}
+  ]
 }

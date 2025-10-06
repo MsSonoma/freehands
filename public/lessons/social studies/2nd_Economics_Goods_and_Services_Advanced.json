@@ -40,20 +40,20 @@
   ],
   "fillintheblank": [
     {"question": "When you buy bread at the store, the bread is _____ and you are the _____.", "expectedAny": ["goods", "consumer"]},
-    {"question": "A person who buys things is a ________.", "expectedAny": ["consumer"]},
-    {"question": "A person who makes things is a ________.", "expectedAny": ["producer"]},
+    {"question": "A person who buys things is a ________.", "expectedAny": ["consumer", "buyer"]},
+    {"question": "A person who makes things is a ________.", "expectedAny": ["producer", "maker"]},
     {"question": "Services are ________ people do to help others.", "expectedAny": ["work", "jobs"]},
     {"question": "Goods are ________ you can buy and touch.", "expectedAny": ["things", "objects"]},
-    {"question": "To trade means to ________.", "expectedAny": ["exchange"]},
+    {"question": "To trade means to ________.", "expectedAny": ["exchange", "swap"]},
     {"question": "A ________ sells goods to consumers.", "expectedAny": ["store", "shop"]}
   ],
   "shortanswer": [
-    {"question": "How are producers and consumers connected?", "expectedAny": ["producers make things that consumers buy"]},
+    {"question": "How are producers and consumers connected?", "expectedAny": ["producers make things that consumers buy", "producers sell goods to consumers", "consumers buy goods from producers"]},
     {"question": "Give an example of trading goods or services.", "expectedAny": ["money for food", "toy for toy", "work for pay"]},
     {"question": "Name two services your family uses.", "expectedAny": ["haircut", "doctor", "bus", "restaurant"]},
     {"question": "What goods do you use at school?", "expectedAny": ["pencils", "books", "paper"]},
-    {"question": "Why do people trade?", "expectedAny": ["to get what they need or want"]},
+    {"question": "Why do people trade?", "expectedAny": ["to get what they need or want", "to swap for needed items", "to exchange things"]},
     {"question": "What is one job that provides a service?", "expectedAny": ["teacher", "doctor", "firefighter"]},
-    {"question": "What is one good you bought recently?", "expectedAny": ["student answer"]}
+    {"question": "What is one good you bought recently?", "expectedAny": ["student answer", "a book", "a snack"]}
   ]
 }

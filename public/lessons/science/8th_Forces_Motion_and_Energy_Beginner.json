@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Use examples like roller coasters to show energy transformations. Demonstrate simple machines and their advantages.",
-  "sample": {
-    "question": "What is energy of motion called?",
-    "expectedAny": [
-      "kinetic energy",
-      "motion energy",
-      "moving energy",
-      "energy in motion"
-    ]
-  },
-  "truefalse": {
-    "question": "Potential energy is stored energy due to position.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is force applied over a distance?",
-    "expectedAny": [
-      "work",
-      "energy transfer",
-      "mechanical work",
-      "applied force"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The rate at which work is done is called ________.",
-    "expectedAny": [
-      "power",
-      "work rate",
-      "energy rate",
-      "force rate"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does a lever provide mechanical advantage?",
-    "expectedAny": [
-      "multiplies force",
-      "increases applied force",
-      "makes work easier"
-    ]
-  }
+  "sample": [
+    { "question": "What is energy of motion called?", "expectedAny": ["kinetic energy", "moving energy", "energy from moving"] },
+    { "question": "What is stored energy?", "choices": ["Kinetic", "Potential energy", "Thermal", "Light"], "correct": 1, "expectedAny": ["potential energy"] },
+    { "question": "Force applied over distance is ________.", "expectedAny": ["work", "force times distance", "effort over distance"] },
+    { "question": "Rate work is done is ________.", "expectedAny": ["power"] },
+    { "question": "Machine force multiplier is ________.", "expectedAny": ["mechanical advantage"] },
+    { "question": "What is motion energy?", "choices": ["Potential", "Kinetic energy", "Thermal", "Chemical"], "correct": 1, "expectedAny": ["kinetic energy"] },
+    { "question": "Energy from position is ________.", "expectedAny": ["potential energy"] },
+    { "question": "What is force times distance?", "choices": ["Energy", "Work", "Power", "Speed"], "correct": 1, "expectedAny": ["work"] },
+    { "question": "Work rate is ________.", "expectedAny": ["power"] },
+    { "question": "Force multiplier is ________.", "expectedAny": ["mechanical advantage"] }
+  ],
+  "truefalse": [
+    { "question": "Potential energy is stored energy due to position.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Kinetic energy is stored.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Potential energy is from position.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Work is force without distance.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Power is work rate.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Mechanical advantage divides force.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Kinetic energy is motion.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Potential energy is moving.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Work requires distance.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Power is stored energy.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is force applied over a distance?", "choices": ["Energy", "Work", "Power", "Speed"], "correct": 1, "expectedAny": ["work"] },
+    { "question": "What is motion energy?", "choices": ["Potential", "Kinetic energy", "Thermal", "Chemical"], "correct": 1, "expectedAny": ["kinetic energy"] },
+    { "question": "What is stored energy?", "choices": ["Kinetic", "Potential energy", "Thermal", "Light"], "correct": 1, "expectedAny": ["potential energy"] },
+    { "question": "What is work rate?", "choices": ["Energy", "Power", "Force", "Speed"], "correct": 1, "expectedAny": ["power"] },
+    { "question": "What multiplies force?", "choices": ["Energy", "Mechanical advantage", "Speed", "Work"], "correct": 1, "expectedAny": ["mechanical advantage"] },
+    { "question": "Moving object has?", "choices": ["Potential", "Kinetic energy", "No energy", "Static"], "correct": 1, "expectedAny": ["kinetic energy"] },
+    { "question": "High object has?", "choices": ["Kinetic", "Potential energy", "No energy", "Motion"], "correct": 1, "expectedAny": ["potential energy"] },
+    { "question": "Force with distance is?", "choices": ["Power", "Work", "Energy", "Speed"], "correct": 1, "expectedAny": ["work"] },
+    { "question": "How fast work done is?", "choices": ["Energy", "Power", "Force", "Distance"], "correct": 1, "expectedAny": ["power"] },
+    { "question": "Machine benefit is?", "choices": ["Speed", "Mechanical advantage", "Color", "Size"], "correct": 1, "expectedAny": ["mechanical advantage"] }
+  ],
+  "fillintheblank": [
+    { "question": "The rate at which work is done is called ________.", "expectedAny": ["power"] },
+    { "question": "________ energy is motion energy.", "expectedAny": ["kinetic"] },
+    { "question": "________ energy is stored.", "expectedAny": ["potential"] },
+    { "question": "________ is force over distance.", "expectedAny": ["work"] },
+    { "question": "________ advantage multiplies force.", "expectedAny": ["mechanical"] },
+    { "question": "Kinetic ________ is motion.", "expectedAny": ["energy"] },
+    { "question": "Potential ________ is stored.", "expectedAny": ["energy"] },
+    { "question": "________ is force times distance.", "expectedAny": ["work"] },
+    { "question": "________ is work rate.", "expectedAny": ["power"] },
+    { "question": "Mechanical ________ multiplies force.", "expectedAny": ["advantage"] }
+  ],
+  "shortanswer": [
+    { "question": "How does a lever provide mechanical advantage?", "expectedAny": ["multiplies force", "increases applied force"] },
+    { "question": "What is kinetic energy?", "expectedAny": ["energy of motion", "moving energy"] },
+    { "question": "What is potential energy?", "expectedAny": ["stored energy due to position", "position energy"] },
+    { "question": "What is work?", "expectedAny": ["force applied over distance", "force times distance"] },
+    { "question": "What is power?", "expectedAny": ["rate at which work is done", "work rate"] },
+    { "question": "What is mechanical advantage?", "expectedAny": ["how much machine multiplies force", "force multiplier"] },
+    { "question": "Example of kinetic energy?", "expectedAny": ["moving car", "rolling ball"] },
+    { "question": "Example of potential energy?", "expectedAny": ["lifted object", "stretched spring"] },
+    { "question": "When is work done?", "expectedAny": ["force moves object", "force over distance"] },
+    { "question": "Why use simple machines?", "expectedAny": ["make work easier", "multiply force"] }
+  ]
 }

@@ -9,6 +9,10 @@
     {"term": "vertices", "definition": "The corner points where lines meet in a shape"},
     {"term": "sides", "definition": "The straight lines that form the edges of a shape"},
     {"term": "attributes", "definition": "The characteristics or properties that describe a shape"}
+    ,
+    {"term": "square", "definition": "A shape with 4 equal sides and 4 corners"}
+    ,
+    {"term": "rectangle", "definition": "A shape with 4 sides and 4 corners; opposite sides are equal"}
   ],
   "teachingNotes": "Use real objects and shape manipulatives. Focus on identifying and sorting by multiple attributes. Practice describing shapes using mathematical language.",
   "sample": [
@@ -33,18 +37,18 @@
     {"question": "Which shape can be used to sort by number of sides: triangle, square, circle?", "choices": ["Yes", "No", "Sometimes", "Never"], "correct": 0, "expectedAny": ["Yes"]}
   ],
   "fillintheblank": [
-    {"question": "A square has _____ equal sides and _____ vertices.", "expectedAny": ["4", "4"]},
-    {"question": "A triangle has ___ sides.", "expectedAny": ["3"]},
-    {"question": "A hexagon has ___ sides.", "expectedAny": ["6"]},
-    {"question": "A circle has ___ vertices.", "expectedAny": ["0", "none"]},
-    {"question": "A rectangle has ___ pairs of equal sides.", "expectedAny": ["2"]}
+  {"question": "A square has _____ equal sides and _____ vertices.", "expectedAny": ["4", "four", "4 and 4", "four and four", "4 4"]},
+  {"question": "A triangle has ___ sides.", "expectedAny": ["3", "three", "3 sides", "three sides"]},
+  {"question": "A hexagon has ___ sides.", "expectedAny": ["6", "six", "6 sides", "six sides"]},
+    {"question": "A circle has ___ vertices.", "expectedAny": ["0", "none", "zero", "no vertices", "zero vertices"]},
+    {"question": "A rectangle has ___ pairs of equal sides.", "expectedAny": ["2", "two", "2 pairs", "two pairs"]}
   ],
   "shortanswer": [
-    {"question": "How is a square different from a rectangle?", "expectedAny": ["square has all equal sides", "rectangle has opposite sides equal"]},
-    {"question": "Describe one way to sort shapes.", "expectedAny": ["by number of sides, by size, by curved vs straight edges"]},
-    {"question": "Why might we sort shapes?", "expectedAny": ["to find patterns, to group similar objects"]},
-    {"question": "Name two shapes with vertices.", "expectedAny": ["triangle, square, rectangle"]},
-    {"question": "What tool can help you draw straight sides?", "expectedAny": ["ruler"]}
+    {"question": "How is a square different from a rectangle?", "expectedAny": ["square has all equal sides", "rectangle has opposite sides equal", "square is a special rectangle", "all sides same", "square sides all equal", "rectangle longer"]},
+    {"question": "Describe one way to sort shapes.", "expectedAny": ["by number of sides", "by size", "by curved vs straight edges", "how many sides", "by corners", "by vertices", "big and small"]},
+    {"question": "Why might we sort shapes?", "expectedAny": ["to find patterns", "to group similar objects", "to organize by attributes", "put same together", "find what's alike", "make groups"]},
+    {"question": "Name two shapes with vertices.", "expectedAny": ["triangle", "square", "rectangle", "triangle and square", "square and rectangle", "pentagon", "hexagon"]},
+    {"question": "What tool can help you draw straight sides?", "expectedAny": ["ruler", "straightedge", "meter stick", "yardstick", "a ruler", "straight thing"]}
   ],
   "wordProblems": [
     {"question": "Emma draws 2 triangles, 3 squares, and 1 circle. How many shapes with vertices did she draw?", "expectedAny": ["5 shapes"]},

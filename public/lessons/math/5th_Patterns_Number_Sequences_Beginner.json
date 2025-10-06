@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Start with simple addition and subtraction patterns. Help students identify the rule and continue patterns. Practice with both increasing and decreasing sequences.",
-  "sample": {
-    "question": "What comes next in the pattern: 2, 4, 6, 8, ___?",
-    "expectedAny": ["10", "ten", "next is 10", "pattern continues with 10"]
-  },
-  "truefalse": {
-    "question": "In the sequence 5, 10, 15, 20, the rule is 'add 5'.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is the rule for the pattern: 3, 7, 11, 15?",
-    "expectedAny": ["add 4", "plus 4", "+4", "increase by 4"]
-  },
-  "fillintheblank": {
-    "question": "Complete the pattern: 20, 18, 16, 14, ________.",
-    "expectedAny": ["12", "twelve", "next is 12", "12 comes next"]
-  },
-  "shortanswer": {
-    "question": "What is the 6th term in the sequence: 1, 4, 7, 10, 13, ___?",
-    "expectedAny": ["16", "sixteen", "1 + 15 = 16", "the 6th term is 16"]
-  },
-  "wordProblems": {
-    "question": "A library adds 5 new books each week. If they start with 25 books, how many books will they have after 4 weeks?",
-    "expectedAny": ["45", "45 books", "forty-five", "25 + 20 = 45"]
-  }
+  "sample": [
+    { "question": "What comes next in the pattern: 2, 4, 6, 8, ___?", "expectedAny": ["10", "ten", "next is 10", "pattern continues with 10"] },
+    { "question": "What is the rule for 5, 8, 11, 14?", "expectedAny": ["add 3", "+3"] },
+    { "question": "What is the next term in 10, 9, 8, 7, ___?", "expectedAny": ["6"] },
+    { "question": "In an arithmetic sequence, you add the same number each time. True or false?", "expectedAny": ["true"] },
+    { "question": "What is the 5th term of 1, 4, 7, 10, ___?", "expectedAny": ["13"] },
+    { "question": "Complete: 3, 6, 9, 12, ___", "expectedAny": ["15"] },
+    { "question": "Rule for 2, 5, 8, 11?", "expectedAny": ["add 3"] },
+    { "question": "Next two terms: 20, 18, 16, ___, ___", "expectedAny": ["14, 12", "14 and 12"] },
+    { "question": "What is the 1st term called in a sequence?", "expectedAny": ["first term"] },
+    { "question": "Each number in a sequence is called a ________.", "expectedAny": ["term"] }
+  ],
+  "truefalse": [
+    { "question": "In the sequence 5, 10, 15, 20, the rule is 'add 5'.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Subtracting 2 each time is an arithmetic sequence.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A pattern must always increase.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A sequence that goes 30, 25, 20 follows 'subtract 5'.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Terms are the rules of a sequence.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "In 2, 4, 8, 16, the rule is 'multiply by 2'.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A constant pattern has no change between terms.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The rule must be addition to be arithmetic.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A decreasing sequence gets smaller each term.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A sequence can go up and then down.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is the rule for the pattern: 3, 7, 11, 15?", "choices": ["add 3", "add 4", "add 5", "add 6"], "correct": 1, "expectedAny": ["add 4", "plus 4", "+4", "increase by 4"] },
+    { "question": "What is the next term: 1, 3, 5, 7, ___?", "choices": ["8", "9", "10", "11"], "correct": 1, "expectedAny": ["9"] },
+    { "question": "Which is the 6th term of 2, 5, 8, 11, 14, ___?", "choices": ["15", "16", "17", "20"], "correct": 2, "expectedAny": ["17"] },
+    { "question": "Which rule makes 10, 7, 4, 1?", "choices": ["add 3", "subtract 3", "add 1", "subtract 1"], "correct": 1, "expectedAny": ["subtract 3"] },
+    { "question": "What comes next: 12, 12, 12, ___?", "choices": ["11", "12", "13", "14"], "correct": 1, "expectedAny": ["12"] },
+    { "question": "Which sequence follows add 6?", "choices": ["0, 4, 8", "1, 7, 13", "2, 8, 14", "5, 11, 17"], "correct": 3, "expectedAny": ["add 6"] },
+    { "question": "What is the rule: 30, 27, 24?", "choices": ["add 3", "subtract 3", "add 6", "subtract 6"], "correct": 1, "expectedAny": ["subtract 3"] },
+    { "question": "What are the next two terms: 5, 10, 15, ___, ___?", "choices": ["16, 20", "20, 25", "25, 30", "15, 20"], "correct": 1, "expectedAny": ["20, 25"] },
+    { "question": "Which term is 4th in 2, 4, 6, 8, ...?", "choices": ["6", "7", "8", "10"], "correct": 2, "expectedAny": ["8"] },
+    { "question": "Which rule matches 2, 6, 18?", "choices": ["add 4", "subtract 2", "multiply by 3", "divide by 3"], "correct": 2, "expectedAny": ["×3"] }
+  ],
+  "fillintheblank": [
+    { "question": "Complete the pattern: 20, 18, 16, 14, ________.", "expectedAny": ["12", "twelve", "next is 12", "12 comes next", "12 next"] },
+    { "question": "The instruction that describes a pattern is the ________.", "expectedAny": ["rule", "pattern rule", "rule of the pattern"] },
+    { "question": "Each number in a sequence is called a ________.", "expectedAny": ["term", "entry", "element"] },
+    { "question": "A sequence where the same number is added each time is ________.", "expectedAny": ["arithmetic", "arithmetic sequence"] },
+    { "question": "In 4, 8, 12, the rule is add ________.", "expectedAny": ["4", "four"] },
+    { "question": "In 15, 12, 9, the rule is subtract ________.", "expectedAny": ["3", "three"] },
+    { "question": "A pattern that doesn’t change is ________.", "expectedAny": ["constant", "unchanging", "stays the same"] },
+    { "question": "A pattern that gets smaller is ________.", "expectedAny": ["decreasing", "going down", "decreases"] },
+    { "question": "A pattern that gets larger is ________.", "expectedAny": ["increasing", "going up", "increases"] },
+    { "question": "The ________ term of a sequence is the first number.", "expectedAny": ["first", "1st", "first term"] }
+  ],
+  "shortanswer": [
+    { "question": "What is the 6th term in the sequence: 1, 4, 7, 10, 13, ___?", "expectedAny": ["16", "sixteen", "1 + 15 = 16", "the 6th term is 16", "+3 pattern gives 16"] },
+    { "question": "Explain why 2, 4, 8, 16 is not an arithmetic sequence.", "expectedAny": ["multiplying by 2", "not adding same number", "geometric (times 2)"] },
+    { "question": "Find the next two terms: 25, 22, 19, ___, ___.", "expectedAny": ["16, 13", "16 and 13"] },
+    { "question": "Create a sequence using the rule add 7 (first term 3).", "expectedAny": ["3, 10, 17, 24", "add 7 each time", "3 then +7 repeatedly", "3, 10, 17, 24, 31"] },
+    { "question": "Explain how to find the 10th term in an arithmetic sequence.", "expectedAny": ["use rule repeatedly", "add n-1 times", "add the difference 9 times", "a1 + (n-1)d"] },
+    { "question": "Which rule matches: 100, 95, 90?", "expectedAny": ["subtract 5", "-5 each time", "decrease by 5"] },
+    { "question": "Write the rule for 4, 9, 14, 19.", "expectedAny": ["add 5", "+5", "increase by 5"] },
+    { "question": "Give an example of a constant sequence.", "expectedAny": ["5, 5, 5", "same number", "constant value"] },
+    { "question": "Explain how to detect a pattern in a number sequence.", "expectedAny": ["check differences", "look at changes", "see if the same amount is added or subtracted", "look for repeats"] },
+    { "question": "Find the 7th term of 2, 6, 10, ...", "expectedAny": ["26", "2 + 24 = 26"] }
+  ],
+  "wordProblems": [
+    { "question": "A library adds 5 new books each week. If they start with 25 books, how many books will they have after 4 weeks?", "expectedAny": ["45", "45 books", "forty-five", "25 + 20 = 45"] },
+    { "question": "A plant grows 3 cm every week starting at 2 cm. What is the height after 5 weeks?", "expectedAny": ["17 cm", "17"] },
+    { "question": "A runner decreases time by 2 minutes each practice from 20 minutes. What is the time after 4 practices?", "expectedAny": ["12", "12 minutes"] },
+    { "question": "A savings jar starts with $10 and increases by $4 each week. How much after 6 weeks?", "expectedAny": ["34", "$34"] },
+    { "question": "A staircase goes 2 steps up each level. After 7 levels, how many steps up?", "expectedAny": ["14"] },
+    { "question": "A game score starts at 50 and drops by 5 each round. After 3 rounds?", "expectedAny": ["35"] },
+    { "question": "A sequence starts 100, 90, 80. What is the rule and 5th term?", "expectedAny": ["subtract 10", "60"] },
+    { "question": "An exercise plan adds 500 steps each day, starting at 2000. Day 4 total?", "expectedAny": ["3500"] },
+    { "question": "A pool fills 200 liters per hour starting at 0. After 5 hours?", "expectedAny": ["1000 liters", "1000"] },
+    { "question": "A number pattern starts at 7 and adds 6 each time. What is the 6th term?", "expectedAny": ["37"] }
+  ]
 }

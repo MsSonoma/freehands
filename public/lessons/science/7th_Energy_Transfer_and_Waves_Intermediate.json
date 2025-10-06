@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Use wave demonstrations with ropes or springs. Connect wave properties to sound and light. Discuss how energy moves without matter moving.",
-  "sample": {
-    "question": "What is the ability to do work or cause change?",
-    "expectedAny": [
-      "energy",
-      "power",
-      "force",
-      "work capacity"
-    ]
-  },
-  "truefalse": {
-    "question": "Waves can transfer energy without transferring matter.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which wave property is related to energy?",
-    "expectedAny": [
-      "amplitude",
-      "wave height",
-      "intensity",
-      "magnitude"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The number of waves passing a point per second is the ________.",
-    "expectedAny": [
-      "frequency",
-      "wave frequency",
-      "rate",
-      "cycles per second"
-    ]
-  },
-  "shortanswer": {
-    "question": "How do sound waves travel through air?",
-    "expectedAny": [
-      "air molecules vibrate back and forth",
-      "compression waves",
-      "pressure changes move through air"
-    ]
-  }
+  "sample": [
+    { "question": "What is the ability to do work or cause change?", "expectedAny": ["energy"] },
+    { "question": "Which transfers energy?", "choices": ["Matter", "Wave", "Mass", "Volume"], "correct": 1, "expectedAny": ["wave"] },
+    { "question": "Waves per second is ________.", "expectedAny": ["frequency"] },
+    { "question": "Wave height is ________.", "expectedAny": ["amplitude"] },
+    { "question": "Distance between wave points is ________.", "expectedAny": ["wavelength"] },
+    { "question": "What is ability to cause change?", "choices": ["Mass", "Energy", "Volume", "Density"], "correct": 1, "expectedAny": ["energy"] },
+    { "question": "Disturbance transferring energy is ________.", "expectedAny": ["wave"] },
+    { "question": "Number of waves is ________.", "expectedAny": ["frequency"] },
+    { "question": "Which relates to wave energy?", "choices": ["Length", "Amplitude", "Speed", "Time"], "correct": 1, "expectedAny": ["amplitude"] },
+    { "question": "Distance between wave crests is ________.", "expectedAny": ["wavelength"] }
+  ],
+  "truefalse": [
+    { "question": "Waves can transfer energy without transferring matter.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Energy cannot cause change.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Frequency is waves per time.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Amplitude is wave length.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Wavelength is distance between wave points.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Waves need matter to move.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Energy is ability to do work.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "High amplitude means less energy.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Waves transfer energy.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Frequency is wave height.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which wave property is related to energy?", "choices": ["Length", "Amplitude", "Speed", "Time"], "correct": 1, "expectedAny": ["amplitude"] },
+    { "question": "What is ability to work?", "choices": ["Mass", "Energy", "Volume", "Density"], "correct": 1, "expectedAny": ["energy"] },
+    { "question": "What transfers energy?", "choices": ["Matter", "Wave", "Mass", "Volume"], "correct": 1, "expectedAny": ["wave"] },
+    { "question": "What is waves per time?", "choices": ["Amplitude", "Frequency", "Length", "Speed"], "correct": 1, "expectedAny": ["frequency"] },
+    { "question": "What is wave height?", "choices": ["Frequency", "Amplitude", "Length", "Speed"], "correct": 1, "expectedAny": ["amplitude"] },
+    { "question": "What is distance between waves?", "choices": ["Amplitude", "Wavelength", "Frequency", "Speed"], "correct": 1, "expectedAny": ["wavelength"] },
+    { "question": "Waves transfer?", "choices": ["Matter", "Energy", "Mass", "Volume"], "correct": 1, "expectedAny": ["energy"] },
+    { "question": "What relates to wave energy?", "choices": ["Length", "Amplitude", "Speed", "Time"], "correct": 1, "expectedAny": ["amplitude"] },
+    { "question": "High frequency means?", "choices": ["Fewer waves", "More waves per time", "Longer waves", "Shorter time"], "correct": 1, "expectedAny": ["more waves per time"] },
+    { "question": "Wavelength is?", "choices": ["Wave height", "Distance between waves", "Wave speed", "Wave time"], "correct": 1, "expectedAny": ["distance between waves"] }
+  ],
+  "fillintheblank": [
+    { "question": "The number of waves passing a point per second is the ________.", "expectedAny": ["frequency"] },
+    { "question": "The ability to do work is ________.", "expectedAny": ["energy"] },
+    { "question": "A disturbance transferring energy is a ________.", "expectedAny": ["wave"] },
+    { "question": "Wave height is the ________.", "expectedAny": ["amplitude"] },
+    { "question": "Distance between wave points is ________.", "expectedAny": ["wavelength"] },
+    { "question": "________ is ability to cause change.", "expectedAny": ["energy"] },
+    { "question": "A ________ transfers energy.", "expectedAny": ["wave"] },
+    { "question": "________ is waves per time.", "expectedAny": ["frequency"] },
+    { "question": "________ relates to wave energy.", "expectedAny": ["amplitude"] },
+    { "question": "________ is distance between waves.", "expectedAny": ["wavelength"] }
+  ],
+  "shortanswer": [
+    { "question": "How do sound waves travel through air?", "expectedAny": ["air molecules vibrate back and forth", "compression waves"] },
+    { "question": "What is energy?", "expectedAny": ["ability to do work", "ability to cause change", "power to do things", "makes things happen"] },
+    { "question": "What is a wave?", "expectedAny": ["disturbance transferring energy", "energy transfer through matter", "moves energy", "carries energy"] },
+    { "question": "What is frequency?", "expectedAny": ["waves per time", "number of waves passing point", "how many waves", "waves per second"] },
+    { "question": "What is amplitude?", "expectedAny": ["wave height", "related to wave energy"] },
+    { "question": "What is wavelength?", "expectedAny": ["distance between wave points", "distance between crests"] },
+    { "question": "How do waves transfer energy?", "expectedAny": ["without moving matter", "through vibrations"] },
+    { "question": "What affects wave energy?", "expectedAny": ["amplitude", "wave height"] },
+    { "question": "What is high frequency?", "expectedAny": ["many waves per time", "more waves"] },
+    { "question": "What is low frequency?", "expectedAny": ["few waves per time", "fewer waves"] }
+  ]
 }

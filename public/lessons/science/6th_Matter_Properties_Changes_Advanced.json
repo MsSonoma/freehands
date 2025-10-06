@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Demonstrate physical and chemical changes with safe experiments. Emphasize that chemical changes create new substances while physical changes don't.",
-  "sample": {
-    "question": "What type of change creates a completely new substance?",
-    "expectedAny": [
-      "chemical change",
-      "chemical reaction",
-      "chemical transformation",
-      "chemical process"
-    ]
-  },
-  "truefalse": {
-    "question": "Melting ice is an example of a physical change.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which is a chemical property of matter?",
-    "expectedAny": [
-      "flammability",
-      "ability to rust",
-      "reactivity",
-      "ability to burn"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The amount of mass in a given volume is called ________.",
-    "expectedAny": [
-      "density",
-      "mass density",
-      "material density",
-      "density measurement"
-    ]
-  },
-  "shortanswer": {
-    "question": "Give an example of a physical change and explain why it's physical.",
-    "expectedAny": [
-      "melting - same substance, different state",
-      "cutting paper - same material",
-      "dissolving sugar - no new substance"
-    ]
-  }
+  "sample": [
+    { "question": "What type of change creates a completely new substance?", "expectedAny": ["chemical change"] },
+    { "question": "Which is observed without changing matter?", "choices": ["Chemical property", "Physical property", "Reaction", "Combustion"], "correct": 1, "expectedAny": ["physical property"] },
+    { "question": "A change without new substance is ________.", "expectedAny": ["physical change"] },
+    { "question": "Mass per volume is ________.", "expectedAny": ["density"] },
+    { "question": "Behavior during reactions is a ________ property.", "expectedAny": ["chemical"] },
+    { "question": "Which creates new substances?", "choices": ["Melting", "Cutting", "Burning", "Breaking"], "correct": 2, "expectedAny": ["burning"] },
+    { "question": "Color is a ________ property.", "expectedAny": ["physical"] },
+    { "question": "Making new substances is a ________ change.", "expectedAny": ["chemical"] },
+    { "question": "What measures mass per volume?", "choices": ["Weight", "Density", "Size", "Length"], "correct": 1, "expectedAny": ["density"] },
+    { "question": "Freezing is a ________ change.", "expectedAny": ["physical"] }
+  ],
+  "truefalse": [
+    { "question": "Melting ice is an example of a physical change.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Burning wood creates a physical change.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Density is mass divided by volume.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Chemical changes don't create new substances.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Physical properties can be observed without changing matter.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All changes are chemical changes.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Chemical properties describe how matter reacts.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Cutting paper is a chemical change.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Rusting is a chemical change.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Physical changes create new substances.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which is a chemical property of matter?", "choices": ["Color", "Size", "Flammability", "Shape"], "correct": 2, "expectedAny": ["flammability"] },
+    { "question": "Which is a physical change?", "choices": ["Burning", "Rusting", "Melting", "Cooking"], "correct": 2, "expectedAny": ["melting"] },
+    { "question": "What is mass per volume?", "choices": ["Weight", "Length", "Density", "Area"], "correct": 2, "expectedAny": ["density"] },
+    { "question": "Which creates new substances?", "choices": ["Freezing", "Cutting", "Chemical change", "Breaking"], "correct": 2, "expectedAny": ["chemical change"] },
+    { "question": "Which is a physical property?", "choices": ["Flammability", "Color", "Reactivity", "Combustion"], "correct": 1, "expectedAny": ["color"] },
+    { "question": "Which is a chemical change?", "choices": ["Melting", "Burning", "Freezing", "Cutting"], "correct": 1, "expectedAny": ["burning"] },
+    { "question": "What doesn't change matter's identity?", "choices": ["Burning", "Physical property", "Rusting", "Cooking"], "correct": 1, "expectedAny": ["physical property"] },
+    { "question": "Which shows chemical property?", "choices": ["Shape", "Size", "Ability to rust", "Color"], "correct": 2, "expectedAny": ["ability to rust"] },
+    { "question": "Boiling water is:", "choices": ["Chemical change", "Physical change", "Reaction", "Combustion"], "correct": 1, "expectedAny": ["physical change"] },
+    { "question": "What measures how tightly packed?", "choices": ["Volume", "Mass", "Density", "Weight"], "correct": 2, "expectedAny": ["density"] }
+  ],
+  "fillintheblank": [
+    { "question": "The amount of mass in a given volume is called ________.", "expectedAny": ["density"] },
+    { "question": "A change that creates new substances is a ________ change.", "expectedAny": ["chemical"] },
+    { "question": "A property observed without changing matter is a ________ property.", "expectedAny": ["physical"] },
+    { "question": "A change without new substances is a ________ change.", "expectedAny": ["physical"] },
+    { "question": "How matter behaves in reactions is a ________ property.", "expectedAny": ["chemical"] },
+    { "question": "Melting is a ________ change.", "expectedAny": ["physical"] },
+    { "question": "Burning creates a ________ change.", "expectedAny": ["chemical"] },
+    { "question": "Color is a ________ property.", "expectedAny": ["physical"] },
+    { "question": "Flammability is a ________ property.", "expectedAny": ["chemical"] },
+    { "question": "________ is mass divided by volume.", "expectedAny": ["density"] }
+  ],
+  "shortanswer": [
+    { "question": "Give an example of a physical change and explain why it's physical.", "expectedAny": ["melting - same substance", "cutting paper - same material"] },
+    { "question": "What is a chemical change?", "expectedAny": ["creates new substances", "forms new matter"] },
+    { "question": "What is a physical property?", "expectedAny": ["observed without changing identity", "characteristic without change"] },
+    { "question": "What is density?", "expectedAny": ["mass per volume", "mass divided by volume"] },
+    { "question": "Give an example of a chemical change.", "expectedAny": ["burning", "rusting", "cooking egg"] },
+    { "question": "What is a chemical property?", "expectedAny": ["how matter behaves in reactions", "describes reactivity"] },
+    { "question": "Why is freezing a physical change?", "expectedAny": ["same substance", "no new matter", "only state changes"] },
+    { "question": "Name a physical property.", "expectedAny": ["color", "shape", "size", "texture"] },
+    { "question": "Name a chemical property.", "expectedAny": ["flammability", "reactivity", "ability to rust"] },
+    { "question": "How are chemical and physical changes different?", "expectedAny": ["chemical creates new substances", "physical doesn't change identity"] }
+  ]
 }

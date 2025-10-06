@@ -55,21 +55,21 @@
   ],
   "fillintheblank": [
     {"question": "We use ________ to show information in a picture form.", "expectedAny": ["graphs", "charts", "bar graphs", "pictures"]},
-    {"question": "Counting marks like ||||/ are called ________.", "expectedAny": ["tally marks", "tallies"]},
-    {"question": "When a bar is taller, it means there are ________ items.", "expectedAny": ["more"]},
-    {"question": "A set of questions to collect data is a ________.", "expectedAny": ["survey"]},
-    {"question": "The words under each bar are called ________.", "expectedAny": ["labels"]},
+    {"question": "Counting marks like ||||/ are called ________.", "expectedAny": ["tally marks", "tallies", "tally"]},
+    {"question": "When a bar is taller, it means there are ________ items.", "expectedAny": ["more", "a greater number"]},
+    {"question": "A set of questions to collect data is a ________.", "expectedAny": ["survey", "questionnaire"]},
+    {"question": "The words under each bar are called ________.", "expectedAny": ["labels", "category labels"]},
     {"question": "A picture that shows data is called a ________.", "expectedAny": ["graph", "chart"]},
-    {"question": "We can find how many more by finding the ________.", "expectedAny": ["difference"]}
+    {"question": "We can find how many more by finding the ________.", "expectedAny": ["difference", "subtracting"]}
   ],
   "shortanswer": [
-    {"question": "How do you make tally marks to count to 7?", "expectedAny": ["5 marks crossed plus 2", "||||  ||", "group of 5 plus 2", "seven marks"]},
-    {"question": "How would you collect data about favorite fruits in class?", "expectedAny": ["make a survey and ask each student"]},
-    {"question": "How can you tell which bar shows the most on a bar graph?", "expectedAny": ["it's the tallest bar"]},
-    {"question": "If two bars are the same height, what does that mean?", "expectedAny": ["same number in both groups"]},
-    {"question": "What should a good graph title tell you?", "expectedAny": ["what the data is about"]},
-    {"question": "How can you find how many more one category has than another?", "expectedAny": ["subtract the smaller from the larger", "find the difference"]},
-    {"question": "Why should bars in a bar graph be the same width?", "expectedAny": ["so we compare fairly"]}
+    {"question": "How do you make tally marks to count to 7?", "expectedAny": ["5 marks crossed plus 2", "||||/ ||", "group of 5 plus 2"]},
+  {"question": "How would you collect data about favorite fruits in class?", "expectedAny": ["make a simple survey with one question", "ask one question and mark tallies", "use a tally chart to record answers"]},
+    {"question": "How can you tell which bar shows the most on a bar graph?", "expectedAny": ["it's the tallest bar", "the highest bar shows the most", "look for the bar with the greatest height"]},
+    {"question": "If two bars are the same height, what does that mean?", "expectedAny": ["same number in both groups", "equal amounts", "a tie"]},
+    {"question": "What should a good graph title tell you?", "expectedAny": ["what the data is about", "the topic of the data", "what the graph shows"]},
+    {"question": "How can you find how many more one category has than another?", "expectedAny": ["subtract the smaller from the larger", "find the difference", "compare by subtracting"]},
+    {"question": "Why should bars in a bar graph be the same width?", "expectedAny": ["so we compare fairly", "to make a fair comparison", "so bar sizes are not confusing"]}
   ],
   "wordProblems": [
     {"question": "A bar graph shows 9 dogs and 6 cats as favorite pets. How many more picked dogs?", "expectedAny": ["3"]},

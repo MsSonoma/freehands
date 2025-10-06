@@ -5,12 +5,21 @@
   "difficulty": "Intermediate",
   "featured": false,
   "vocab": [
-    { "term": "force", "definition": "A push or pull that can make objects move, stop, or change direction" },
-    { "term": "motion", "definition": "When an object moves from one place to another" },
-    { "term": "simple machine", "definition": "A tool that makes work easier by changing the direction or amount of force needed" },
-    { "term": "lever", "definition": "A simple machine that uses a bar that turns on a fulcrum to lift or move things" },
-    { "term": "inclined plane", "definition": "A slanted surface (like a ramp) that helps move objects up or down with less force" },
-    { "term": "pulley", "definition": "A wheel with a rope that changes the direction of a pull to lift things" }
+    {"word": "force", "kid_friendly_definition": "A push or pull that can make objects move, stop, or change direction."},
+    {"word": "motion", "kid_friendly_definition": "When an object moves from one place to another."},
+    {"word": "simple machine", "kid_friendly_definition": "A tool that makes work easier by changing the direction or amount of force needed."},
+    {"word": "lever", "kid_friendly_definition": "A simple machine that uses a bar that turns on a fulcrum to lift or move things."},
+    {"word": "inclined plane", "kid_friendly_definition": "A slanted surface (like a ramp) that helps move objects up or down with less force."},
+    {"word": "pulley", "kid_friendly_definition": "A wheel with a rope that changes the direction of a pull to lift things."},
+    {"word": "friction", "kid_friendly_definition": "A force that slows or stops motion when two surfaces rub."},
+    {"word": "fulcrum", "kid_friendly_definition": "The point where a lever turns or pivots."},
+    {"word": "wheel and axle", "kid_friendly_definition": "A simple machine that helps things roll and reduces friction."},
+    {"word": "wedge", "kid_friendly_definition": "A simple machine with a sharp edge that can cut or split things."},
+    {"word": "screw", "kid_friendly_definition": "An inclined plane wrapped around a cylinder that holds things together or lifts."},
+    {"word": "balanced forces", "kid_friendly_definition": "Equal forces that act in opposite directions and do not change motion."},
+    {"word": "gravity", "kid_friendly_definition": "The force that pulls objects down toward Earth."},
+    {"word": "inertia", "kid_friendly_definition": "The way objects keep doing what they're already doing unless a force acts on them."},
+    {"word": "speed", "kid_friendly_definition": "How fast something moves."}
   ],
   "teachingNotes": "Use hands-on experiments with ramps, levers, and pulleys. Let students test different forces and observe motion. Connect to playground equipment.",
   "sample": [
@@ -44,70 +53,74 @@
     }
   ],
   "truefalse": [
-    { "question": "A seesaw is an example of a lever.", "answer": true, "expectedAny": ["uses a fulcrum"] },
-    { "question": "A ramp is an example of an inclined plane.", "answer": true },
-    { "question": "Pushing and pulling are both types of forces.", "answer": true },
-    { "question": "A pulley changes how heavy an object is.", "answer": false, "expectedAny": ["it changes direction of force, not weight"] },
-    { "question": "More force always makes an object move in a straight line.", "answer": false, "expectedAny": ["direction can change", "depends on other forces"] },
-    { "question": "Friction can slow down moving objects.", "answer": true },
-    { "question": "Simple machines make work easier by increasing the amount of force you need.", "answer": false, "expectedAny": ["they reduce needed force or change direction"] }
+    { "question": "A seesaw is an example of a lever.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "uses a fulcrum"] },
+    { "question": "A ramp is an example of an inclined plane.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "inclined plane"] },
+    { "question": "Pushing and pulling are both types of forces.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "push and pull are forces"] },
+    { "question": "A pulley changes how heavy an object is.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "changes direction not weight"] },
+    { "question": "More force always makes an object move in a straight line.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "depends on other forces"] },
+    { "question": "Friction can slow down moving objects.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "friction slows motion"] },
+    { "question": "Simple machines make work easier by increasing the amount of force you need.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "reduce force or change direction"] }
   ],
   "multiplechoice": [
     {
       "question": "Which is an example of a simple machine?",
       "choices": ["Computer", "Ramp", "Car", "Tree"],
       "correct": 1,
-      "expectedAny": ["a ramp is an inclined plane"]
+      "expectedAny": ["b", "B", "2", "Ramp"]
     },
     {
       "question": "The point a lever turns on is called the _____.",
       "choices": ["pivot", "fulcrum", "hinge", "axle"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "fulcrum"]
     },
     {
       "question": "Which tool is a lever?",
       "choices": ["Wheelbarrow", "Screw", "Pulley", "Inclined plane"],
-      "correct": 0
+      "correct": 0,
+      "expectedAny": ["a", "A", "1", "Wheelbarrow"]
     },
     {
       "question": "Which change can make it easier to move a heavy box up a ramp?",
       "choices": ["Shorten the ramp", "Make the ramp steeper", "Make the ramp longer", "Add weight"],
       "correct": 2,
-      "expectedAny": ["longer, gentler ramp reduces needed force"]
+      "expectedAny": ["c", "C", "3", "Make the ramp longer", "longer gentler ramp"]
     },
     {
       "question": "Which best describes force?",
       "choices": ["Energy of light", "A push or pull", "A type of simple machine", "A kind of matter"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "A push or pull", "push or pull"]
     },
     {
       "question": "Which simple machine is part of a flagpole?",
       "choices": ["Screw", "Pulley", "Lever", "Wedge"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "Pulley"]
     },
     {
       "question": "What happens when equal forces push an object from opposite sides?",
       "choices": ["It speeds up", "It slows down", "It stays still or moves steadily", "It flies up"],
       "correct": 2,
-      "expectedAny": ["balanced forces"]
+      "expectedAny": ["c", "C", "3", "It stays still or moves steadily", "balanced forces"]
     }
   ],
   "fillintheblank": [
     { "question": "When you push a box across the floor, you are applying a _____.", "expectedAny": ["force", "push"] },
     { "question": "A _____ is a slanted surface that helps move objects up or down.", "expectedAny": ["ramp", "inclined plane"] },
-    { "question": "The point where a lever turns is called the _____.", "expectedAny": ["fulcrum"] },
-    { "question": "A pulley changes the _____ of a pull.", "expectedAny": ["direction"] },
-    { "question": "Friction is a force that makes objects _____ down.", "expectedAny": ["slow"] },
+    { "question": "The point where a lever turns is called the _____.", "expectedAny": ["fulcrum", "pivot"] },
+    { "question": "A pulley changes the _____ of a pull.", "expectedAny": ["direction", "direction of the force"] },
+    { "question": "Friction is a force that makes objects _____ down.", "expectedAny": ["slow", "slow down", "slower"] },
     { "question": "A wheel and axle can help things roll with _____ friction.", "expectedAny": ["less", "reduced"] },
-    { "question": "More force can make an object move _____ or go farther.", "expectedAny": ["faster"] }
+    { "question": "More force can make an object move _____ or go farther.", "expectedAny": ["faster", "quicker"] }
   ],
   "shortanswer": [
-    { "question": "How does a ramp make it easier to move heavy objects?", "expectedAny": ["reduces the force needed", "spreads work over longer distance"] },
-    { "question": "Describe a time you used a simple machine at home.", "expectedAny": ["examples like using a screwdriver (screw)", "scissors (lever)"] },
-    { "question": "What happens if you push a toy car harder?", "expectedAny": ["it goes faster", "travels farther"] },
-    { "question": "Why do bicycles use wheels instead of sliding on the ground?", "expectedAny": ["reduce friction", "move easier"] },
-    { "question": "Explain the difference between a push and a pull.", "expectedAny": ["both are forces", "push moves away", "pull brings closer"] },
-    { "question": "How can you change the direction of a force using a simple machine?", "expectedAny": ["use a pulley", "use a lever"] },
-    { "question": "What are balanced forces, and what do they do to motion?", "expectedAny": ["equal forces", "no change in motion"] }
+    {"question": "How does a ramp make it easier to move heavy objects?", "expectedAny": ["reduces the force needed", "spreads work over longer distance", "a gentler slope makes lifting easier", "less force", "easier to push"]},
+    {"question": "Describe a time you used a simple machine at home.", "expectedAny": ["screwdriver (screw)", "scissors (lever)", "can opener (wheel and axle)", "any reasonable machine", "doorstop wedge"]},
+    {"question": "What happens if you push a toy car harder?", "expectedAny": ["it goes faster", "travels farther", "it speeds up", "moves faster", "goes further"]},
+    {"question": "Why do bicycles use wheels instead of sliding on the ground?", "expectedAny": ["reduce friction", "move easier", "rolling reduces sliding friction", "less friction", "wheels roll easier"]},
+    {"question": "Explain the difference between a push and a pull.", "expectedAny": ["both are forces", "push moves away", "pull brings closer", "push away pull toward", "push and pull are forces"]},
+    {"question": "How can you change the direction of a force using a simple machine?", "expectedAny": ["use a pulley", "press on a lever to lift the other end", "wrap a rope over a pulley", "pulley changes direction", "lever changes direction"]},
+    {"question": "What are balanced forces, and what do they do to motion?", "expectedAny": ["equal forces", "no change in motion", "they cancel each other", "equal and opposite", "no movement"]}
   ]
 }

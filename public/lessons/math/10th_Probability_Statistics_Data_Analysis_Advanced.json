@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "10th_Probability_Statistics_Data_Analysis_Advanced",
   "title": "Probability and Statistics: Data Analysis and Inference",
   "grade": "10th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "probability",
-      "definition": "Measure of likelihood that an event will occur"
-    },
-    {
-      "term": "sample space",
-      "definition": "Set of all possible outcomes of an experiment"
-    },
-    {
-      "term": "independent events",
-      "definition": "Events where the outcome of one does not affect the other"
-    },
-    {
-      "term": "conditional probability",
-      "definition": "Probability of an event given that another event has occurred"
-    },
-    {
-      "term": "normal distribution",
-      "definition": "Bell-shaped probability distribution symmetric about the mean"
-    }
+    {"term": "probability", "definition": "Measure of likelihood that an event will occur"},
+    {"term": "sample space", "definition": "Set of all possible outcomes of an experiment"},
+    {"term": "independent events", "definition": "Events where the outcome of one does not affect the other"},
+    {"term": "conditional probability", "definition": "Probability of an event given that another event has occurred"},
+    {"term": "normal distribution", "definition": "Bell-shaped probability distribution symmetric about the mean"}
   ],
   "teachingNotes": "Use real data sets for analysis. Emphasize the difference between correlation and causation in statistical interpretation.",
-  "sample": {
-    "question": "What is a measure of likelihood that an event will occur?",
-    "expectedAny": ["probability", "chance", "likelihood", "odds"]
-  },
-  "truefalse": {
-    "question": "Independent events do not affect each other's outcomes.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is the set of all possible outcomes called?",
-    "expectedAny": ["sample space", "outcome space", "event space", "possibility set"]
-  },
-  "fillintheblank": {
-    "question": "A bell-shaped probability distribution is called ________ distribution.",
-    "expectedAny": ["normal", "Gaussian", "bell curve", "standard"]
-  },
-  "shortanswer": {
-    "question": "What is the probability of getting heads when flipping a fair coin?",
-    "expectedAny": ["1/2", "0.5", "50%", "one half"]
-  },
-  "wordProblems": {
-    "question": "If P(A) = 0.3 and P(B) = 0.4, and A and B are independent, what is P(A and B)?",
-    "expectedAny": ["0.12", "0.3 × 0.4 = 0.12", "12%", "0.12"]
-  }
+  "sample": [
+    {"question": "What is measure of likelihood?", "expectedAny": ["probability", "chance", "likelihood", "odds", "probability measure", "likelihood measure"]},
+    {"question": "What is set of all outcomes?", "expectedAny": ["sample space", "outcome space", "all outcomes", "set of outcomes", "outcome set", "sample set"]},
+    {"question": "What events don't affect each other?", "expectedAny": ["independent events", "independent", "unrelated events", "separate events", "non-affecting events", "uncorrelated events"]},
+    {"question": "What is probability given another event?", "expectedAny": ["conditional probability", "conditional", "given probability", "dependent probability", "probability given", "conditional chance"]},
+    {"question": "What is bell-shaped distribution?", "expectedAny": ["normal distribution", "bell curve", "Gaussian", "Gaussian distribution", "bell-shaped curve", "normal curve"]},
+    {"question": "What measures event likelihood?", "expectedAny": ["probability", "chance", "likelihood", "odds", "probability measure", "likelihood measure"]},
+    {"question": "What contains all outcomes?", "expectedAny": ["sample space", "sample", "outcome space", "all outcomes", "set of outcomes", "outcome set"]},
+    {"question": "What are unaffected events?", "expectedAny": ["independent", "independent events", "unrelated events", "separate events", "non-affecting events", "uncorrelated events"]},
+    {"question": "What is given probability?", "expectedAny": ["conditional probability", "conditional", "given probability", "dependent probability", "probability given", "conditional chance"]},
+    {"question": "What is symmetric distribution?", "expectedAny": ["normal distribution", "normal", "bell curve", "Gaussian", "Gaussian distribution", "normal curve"]}
+  ],
+  "truefalse": [
+    {"question": "Probability measures likelihood. (True or False)", "correct": true},
+    {"question": "Sample space has all outcomes. (True or False)", "correct": true},
+    {"question": "Independent events affect each other. (True or False)", "correct": false},
+    {"question": "Conditional probability uses given information. (True or False)", "correct": true},
+    {"question": "Normal distribution is bell-shaped. (True or False)", "correct": true},
+    {"question": "Probability ranges 0 to 1. (True or False)", "correct": true},
+    {"question": "Sample space can be empty. (True or False)", "correct": false},
+    {"question": "Independent means no effect. (True or False)", "correct": true},
+    {"question": "Conditional uses additional info. (True or False)", "correct": true},
+    {"question": "Normal distribution symmetric. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What measures likelihood?", "choices": [{"letter": "A", "text": "Mean"}, {"letter": "B", "text": "Probability"}, {"letter": "C", "text": "Mode"}, {"letter": "D", "text": "Range"}], "correct": "B"},
+    {"question": "What has all outcomes?", "choices": [{"letter": "A", "text": "Event"}, {"letter": "B", "text": "Sample space"}, {"letter": "C", "text": "Trial"}, {"letter": "D", "text": "Variable"}], "correct": "B"},
+    {"question": "What don't affect each other?", "choices": [{"letter": "A", "text": "Dependent"}, {"letter": "B", "text": "Independent events"}, {"letter": "C", "text": "Conditional"}, {"letter": "D", "text": "Related"}], "correct": "B"},
+    {"question": "What probability uses given info?", "choices": [{"letter": "A", "text": "Simple"}, {"letter": "B", "text": "Conditional"}, {"letter": "C", "text": "Joint"}, {"letter": "D", "text": "Marginal"}], "correct": "B"},
+    {"question": "What is bell-shaped?", "choices": [{"letter": "A", "text": "Uniform"}, {"letter": "B", "text": "Normal distribution"}, {"letter": "C", "text": "Skewed"}, {"letter": "D", "text": "Bimodal"}], "correct": "B"},
+    {"question": "What is 0 to 1?", "choices": [{"letter": "A", "text": "Mean"}, {"letter": "B", "text": "Probability"}, {"letter": "C", "text": "Variance"}, {"letter": "D", "text": "Range"}], "correct": "B"},
+    {"question": "What contains outcomes?", "choices": [{"letter": "A", "text": "Event"}, {"letter": "B", "text": "Sample space"}, {"letter": "C", "text": "Variable"}, {"letter": "D", "text": "Trial"}], "correct": "B"},
+    {"question": "What are unrelated events?", "choices": [{"letter": "A", "text": "Dependent"}, {"letter": "B", "text": "Independent"}, {"letter": "C", "text": "Conditional"}, {"letter": "D", "text": "Related"}], "correct": "B"},
+    {"question": "What uses prior knowledge?", "choices": [{"letter": "A", "text": "Simple"}, {"letter": "B", "text": "Conditional probability"}, {"letter": "C", "text": "Joint"}, {"letter": "D", "text": "Independent"}], "correct": "B"},
+    {"question": "What is symmetric?", "choices": [{"letter": "A", "text": "Skewed"}, {"letter": "B", "text": "Normal distribution"}, {"letter": "C", "text": "Uniform"}, {"letter": "D", "text": "Bimodal"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ measures likelihood.", "expectedAny": ["probability", "Probability"]},
+    {"question": "_____ space has all outcomes.", "expectedAny": ["sample", "Sample"]},
+    {"question": "_____ events don't affect each other.", "expectedAny": ["independent", "Independent"]},
+    {"question": "_____ probability uses given info.", "expectedAny": ["conditional", "Conditional"]},
+    {"question": "_____ distribution is bell-shaped.", "expectedAny": ["normal", "Normal"]},
+    {"question": "_____ ranges from 0 to 1.", "expectedAny": ["probability", "Probability"]},
+    {"question": "Sample _____ contains outcomes.", "expectedAny": ["space"]},
+    {"question": "_____ means no effect.", "expectedAny": ["independent", "Independent"]},
+    {"question": "_____ uses additional information.", "expectedAny": ["conditional", "Conditional"]},
+    {"question": "_____ is symmetric distribution.", "expectedAny": ["normal", "Normal"]}
+  ],
+  "shortanswer": [
+    {"question": "What is probability?", "keyTerms": ["measure", "likelihood", "event", "occur"], "expectedAny": ["Measure of likelihood that an event will occur", "Chance of event", "Event likelihood"]},
+    {"question": "What is sample space?", "keyTerms": ["set", "all", "possible", "outcomes", "experiment"], "expectedAny": ["Set of all possible outcomes of an experiment", "All outcomes", "Outcome collection"]},
+    {"question": "What are independent events?", "keyTerms": ["events", "outcome", "one", "not", "affect", "other"], "expectedAny": ["Events where the outcome of one does not affect the other", "Unaffected events", "No influence events"]},
+    {"question": "What is conditional probability?", "keyTerms": ["probability", "event", "given", "another", "occurred"], "expectedAny": ["Probability of an event given that another event has occurred", "Given probability", "Probability with condition"]},
+    {"question": "What is normal distribution?", "keyTerms": ["bell-shaped", "probability", "distribution", "symmetric", "mean"], "expectedAny": ["Bell-shaped probability distribution symmetric about the mean", "Bell curve", "Gaussian distribution"]},
+    {"question": "What is probability of certain event?", "keyTerms": ["1", "one", "100%"], "expectedAny": ["1", "one", "100 percent"]},
+    {"question": "What is probability of impossible event?", "keyTerms": ["0", "zero"], "expectedAny": ["0", "zero", "0 percent"]},
+    {"question": "If P(A) = 0.5 and P(B) = 0.3 independent, what is P(A and B)?", "keyTerms": ["0.15", "multiply"], "expectedAny": ["0.15", "point one five", "15 percent"]},
+    {"question": "What is complement rule?", "keyTerms": ["P(not A)", "1 - P(A)"], "expectedAny": ["P(not A) = 1 - P(A)", "one minus probability", "complement is 1 minus"]},
+    {"question": "Coin flip sample space?", "keyTerms": ["heads", "tails", "H", "T"], "expectedAny": ["{heads, tails}", "H and T", "heads or tails"]}
+  ],
+  "wordProblems": [
+    {"question": "If P(A) = 0.3 and P(B) = 0.4 independent, what is P(A and B)?", "keyTerms": ["0.12", "multiply"], "expectedAny": ["0.12", "point one two", "12 percent"]},
+    {"question": "Flip fair coin. What is P(heads)?", "keyTerms": ["0.5", "1/2", "50%"], "expectedAny": ["0.5", "1/2", "50 percent"]},
+    {"question": "Roll die. What is sample space?", "keyTerms": ["1", "2", "3", "4", "5", "6"], "expectedAny": ["{1,2,3,4,5,6}", "one through six", "1 to 6"]},
+    {"question": "Bag has 3 red, 2 blue marbles. P(red)?", "keyTerms": ["3/5", "0.6", "60%"], "expectedAny": ["3/5", "0.6", "60 percent"]},
+    {"question": "If P(A) = 0.7, what is P(not A)?", "keyTerms": ["0.3", "30%"], "expectedAny": ["0.3", "point three", "30 percent"]},
+    {"question": "Two dice rolled. P(sum is 7)?", "keyTerms": ["1/6", "6/36"], "expectedAny": ["1/6", "6/36", "one sixth"]},
+    {"question": "Deck of cards. P(drawing ace)?", "keyTerms": ["4/52", "1/13"], "expectedAny": ["4/52", "1/13", "one in thirteen"]},
+    {"question": "Box has 5 items, 2 defective. P(selecting defective)?", "keyTerms": ["2/5", "0.4", "40%"], "expectedAny": ["2/5", "0.4", "40 percent"]},
+    {"question": "Test accuracy 95%. P(correct result)?", "keyTerms": ["0.95", "95%"], "expectedAny": ["0.95", "point nine five", "95 percent"]},
+    {"question": "Weather forecast 70% rain. P(no rain)?", "keyTerms": ["0.3", "30%"], "expectedAny": ["0.3", "point three", "30 percent"]}
+  ]
 }

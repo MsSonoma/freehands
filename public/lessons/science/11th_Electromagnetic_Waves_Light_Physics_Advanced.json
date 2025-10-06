@@ -1,74 +1,469 @@
-{
-  "id": "11th_Electromagnetic_Waves_Light_Physics_Advanced",
-  "title": "Electromagnetic Waves and Light Physics",
-  "grade": "11th",
-  "difficulty": "Advanced",
-  "vocab": [
-    {
-      "term": "Maxwell's equations",
-      "definition": "Four fundamental equations describing electromagnetic field behavior"
-    },
-    {
-      "term": "Poynting vector",
-      "definition": "Vector representing electromagnetic energy flux density"
-    },
-    {
-      "term": "coherence",
-      "definition": "Degree of correlation between electromagnetic wave phases"
-    },
-    {
-      "term": "birefringence",
-      "definition": "Splitting of light into two polarized rays in certain materials"
-    },
-    {
-      "term": "dispersion",
-      "definition": "Frequency-dependent variation in wave propagation speed"
-    }
-  ],
-  "teachingNotes": "Explore advanced electromagnetic theory and applications in modern technology. Connect to quantum mechanics principles.",
-  "sample": {
-    "question": "What four equations describe electromagnetic fields?",
-    "expectedAny": [
-      "Maxwell's equations",
-      "Maxwell equations",
-      "electromagnetic field equations",
-      "fundamental EM equations"
-    ]
-  },
-  "truefalse": {
-    "question": "The Poynting vector represents electromagnetic energy flux.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What causes light to split into polarized rays in certain materials?",
-    "expectedAny": [
-      "birefringence",
-      "double refraction",
-      "optical anisotropy",
-      "polarization splitting"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Frequency-dependent variation in wave speed is called ________.",
-    "expectedAny": [
-      "dispersion",
-      "frequency dispersion",
-      "chromatic dispersion",
-      "wave dispersion"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does coherence affect electromagnetic wave interactions?",
-    "expectedAny": [
-      "enables interference",
-      "creates stable patterns",
-      "maintains phase relationships",
-      "allows wave correlation"
-    ]
-  }
+﻿{
+    "id":  "11th_Electromagnetic_Waves_Light_Physics_Advanced",
+    "title":  "Electromagnetic Waves and Light Physics",
+    "grade":  "11th",
+    "difficulty":  "Advanced",
+    "vocab":  [
+                  {
+                      "term":  "photoelectric effect",
+                      "definition":  "Emission of electrons when light hits material"
+                  },
+                  {
+                      "term":  "Compton scattering",
+                      "definition":  "Photon loses energy colliding with electron"
+                  },
+                  {
+                      "term":  "Brewster angle",
+                      "definition":  "Angle producing complete polarization by reflection"
+                  },
+                  {
+                      "term":  "dispersion",
+                      "definition":  "Separation of light into colors due to wavelength-dependent refraction"
+                  },
+                  {
+                      "term":  "coherence",
+                      "definition":  "Constant phase relationship between wave portions"
+                  }
+              ],
+    "teachingNotes":  "Explore quantum nature of light. Discuss applications in lasers and fiber optics.",
+    "sample":  [
+                   {
+                       "question":  "What emits electrons from light?",
+                       "expectedAny":  [
+                                           "photoelectric effect",
+                                           "photoemission",
+                                           "Einstein effect",
+                                           "photon electron emission",
+                                           "light induced emission",
+                                           "electron ejection"
+                                       ]
+                   },
+                   {
+                       "question":  "What is photon-electron collision?",
+                       "expectedAny":  [
+                                           "Compton scattering",
+                                           "Compton effect",
+                                           "photon scattering",
+                                           "photon electron collision",
+                                           "inelastic scattering",
+                                           "Compton shift"
+                                       ]
+                   },
+                   {
+                       "question":  "What angle gives complete polarization?",
+                       "expectedAny":  [
+                                           "Brewster angle",
+                                           "Brewster\u0027s angle",
+                                           "polarizing angle",
+                                           "polarization angle",
+                                           "Brewster",
+                                           "complete polarization angle"
+                                       ]
+                   },
+                   {
+                       "question":  "What separates colors by wavelength?",
+                       "expectedAny":  [
+                                           "dispersion",
+                                           "chromatic dispersion",
+                                           "color separation"
+                                       ]
+                   },
+                   {
+                       "question":  "What is constant phase relationship?",
+                       "expectedAny":  [
+                                           "coherence",
+                                           "wave coherence",
+                                           "phase coherence"
+                                       ]
+                   },
+                   {
+                       "question":  "What proves light quantization?",
+                       "expectedAny":  [
+                                           "photoelectric effect",
+                                           "photoemission",
+                                           "quantum behavior"
+                                       ]
+                   },
+                   {
+                       "question":  "What shifts photon wavelength?",
+                       "expectedAny":  [
+                                           "Compton scattering",
+                                           "Compton effect",
+                                           "photon collision"
+                                       ]
+                   },
+                   {
+                       "question":  "What creates rainbows in prisms?",
+                       "expectedAny":  [
+                                           "dispersion",
+                                           "wavelength separation",
+                                           "refraction variation"
+                                       ]
+                   },
+                   {
+                       "question":  "What makes laser light special?",
+                       "expectedAny":  [
+                                           "coherence",
+                                           "coherent light",
+                                           "phase relationship"
+                                       ]
+                   },
+                   {
+                       "question":  "What depends on work function?",
+                       "expectedAny":  [
+                                           "photoelectric effect",
+                                           "electron emission",
+                                           "photoemission"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Photoelectric effect proves particle nature of light.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Compton scattering increases photon energy.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Brewster angle depends on refractive indices.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Dispersion occurs because all wavelengths refract equally.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Laser light is coherent.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Photoelectric effect depends on intensity not frequency.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Compton scattering demonstrates wave-particle duality.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Brewster angle is always 45 degrees.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Dispersion creates spectrum.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Incoherent light has constant phase.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What emits electrons from metal?",
+                               "choices":  [
+                                               "Reflection",
+                                               "Photoelectric effect",
+                                               "Refraction",
+                                               "Diffraction"
+                                           ],
+                               "correct":  "Photoelectric effect"
+                           },
+                           {
+                               "question":  "What conserves momentum in photon collision?",
+                               "choices":  [
+                                               "Photoelectric",
+                                               "Compton",
+                                               "Doppler",
+                                               "Brewster"
+                                           ],
+                               "correct":  "Compton"
+                           },
+                           {
+                               "question":  "At what angle is reflected light polarized?",
+                               "choices":  [
+                                               "45",
+                                               "90",
+                                               "Brewster",
+                                               "Critical"
+                                           ],
+                               "correct":  "Brewster"
+                           },
+                           {
+                               "question":  "What separates white light?",
+                               "choices":  [
+                                               "Reflection",
+                                               "Diffraction",
+                                               "Dispersion",
+                                               "Polarization"
+                                           ],
+                               "correct":  "Dispersion"
+                           },
+                           {
+                               "question":  "What do lasers produce?",
+                               "choices":  [
+                                               "Incoherent",
+                                               "Coherent",
+                                               "Random",
+                                               "Dispersed"
+                                           ],
+                               "correct":  "Coherent"
+                           },
+                           {
+                               "question":  "What determines photoelectric threshold?",
+                               "choices":  [
+                                               "Intensity",
+                                               "Frequency",
+                                               "Amplitude",
+                                               "Polarization"
+                                           ],
+                               "correct":  "Frequency"
+                           },
+                           {
+                               "question":  "What increases wavelength in Compton?",
+                               "choices":  [
+                                               "Reflection",
+                                               "Collision",
+                                               "Absorption",
+                                               "Emission"
+                                           ],
+                               "correct":  "Collision"
+                           },
+                           {
+                               "question":  "What varies with wavelength in dispersion?",
+                               "choices":  [
+                                               "Speed",
+                                               "Frequency",
+                                               "Energy",
+                                               "Amplitude"
+                                           ],
+                               "correct":  "Speed"
+                           },
+                           {
+                               "question":  "What requires monochromatic light?",
+                               "choices":  [
+                                               "Reflection",
+                                               "Coherence",
+                                               "Dispersion",
+                                               "Scattering"
+                                           ],
+                               "correct":  "Coherence"
+                           },
+                           {
+                               "question":  "Who explained photoelectric effect?",
+                               "choices":  [
+                                               "Newton",
+                                               "Maxwell",
+                                               "Einstein",
+                                               "Planck"
+                                           ],
+                               "correct":  "Einstein"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "_____ effect emits electrons from light.",
+                               "expectedAny":  [
+                                                   "photoelectric",
+                                                   "photoemission"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ scattering shifts photon wavelength.",
+                               "expectedAny":  [
+                                                   "Compton",
+                                                   "photon"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ angle completely polarizes reflection.",
+                               "expectedAny":  [
+                                                   "Brewster",
+                                                   "Brewster\u0027s"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ separates light into colors.",
+                               "expectedAny":  [
+                                                   "dispersion",
+                                                   "prism"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ means constant phase relationship.",
+                               "expectedAny":  [
+                                                   "coherence",
+                                                   "coherent"
+                                               ]
+                           },
+                           {
+                               "question":  "Photoelectric requires minimum _____.",
+                               "expectedAny":  [
+                                                   "frequency",
+                                                   "energy"
+                                               ]
+                           },
+                           {
+                               "question":  "Compton effect proves _____ nature.",
+                               "expectedAny":  [
+                                                   "particle",
+                                                   "photon"
+                                               ]
+                           },
+                           {
+                               "question":  "Brewster angle depends on _____ index.",
+                               "expectedAny":  [
+                                                   "refractive",
+                                                   "refraction"
+                                               ]
+                           },
+                           {
+                               "question":  "Dispersion creates _____.",
+                               "expectedAny":  [
+                                                   "spectrum",
+                                                   "rainbow",
+                                                   "colors"
+                                               ]
+                           },
+                           {
+                               "question":  "Lasers produce _____ light.",
+                               "expectedAny":  [
+                                                   "coherent",
+                                                   "monochromatic"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "What is photoelectric effect?",
+                            "expectedAny":  [
+                                                "emission of electrons when light hits material",
+                                                "light knocks electrons from surface",
+                                                "quantum phenomenon proving particle nature"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain Compton scattering.",
+                            "expectedAny":  [
+                                                "photon loses energy colliding with electron",
+                                                "wavelength increases after collision",
+                                                "demonstrates photon momentum"
+                                            ]
+                        },
+                        {
+                            "question":  "What is Brewster angle?",
+                            "expectedAny":  [
+                                                "angle producing complete polarization by reflection",
+                                                "when reflected and refracted rays are perpendicular",
+                                                "tan of angle equals refractive index ratio"
+                                            ]
+                        },
+                        {
+                            "question":  "Describe dispersion.",
+                            "expectedAny":  [
+                                                "separation of light into colors by wavelength",
+                                                "different wavelengths refract different amounts",
+                                                "causes prism spectrum"
+                                            ]
+                        },
+                        {
+                            "question":  "What is coherence?",
+                            "expectedAny":  [
+                                                "constant phase relationship between wave portions",
+                                                "waves stay in step",
+                                                "necessary for interference patterns"
+                                            ]
+                        },
+                        {
+                            "question":  "Why did photoelectric effect puzzle physicists?",
+                            "expectedAny":  [
+                                                "classical wave theory could not explain it",
+                                                "frequency not intensity mattered",
+                                                "required quantum explanation"
+                                            ]
+                        },
+                        {
+                            "question":  "How does Compton effect prove photon momentum?",
+                            "expectedAny":  [
+                                                "wavelength shift matches momentum transfer",
+                                                "conserves energy and momentum like particle collision",
+                                                "photon behaves as particle with momentum"
+                                            ]
+                        },
+                        {
+                            "question":  "Why does Brewster angle polarize?",
+                            "expectedAny":  [
+                                                "reflected and refracted perpendicular means no parallel component",
+                                                "geometry forces single polarization",
+                                                "tangent equals ratio of indices"
+                                            ]
+                        },
+                        {
+                            "question":  "Why does dispersion occur?",
+                            "expectedAny":  [
+                                                "refractive index varies with wavelength",
+                                                "different colors travel at different speeds in medium",
+                                                "blue bends more than red"
+                                            ]
+                        },
+                        {
+                            "question":  "Compare coherent and incoherent light.",
+                            "expectedAny":  [
+                                                "coherent has constant phase incoherent has random phase",
+                                                "laser vs bulb",
+                                                "coherent creates stable interference"
+                                            ]
+                        }
+                    ]
 }

@@ -54,17 +54,17 @@
     {"question": "Whales live in ___", "choices": ["Forest", "Desert", "Ocean", "Mountain"], "correct": 2}
   ],
   "fillintheblank": [
-    {"question": "A ___ is where an animal lives.", "expectedAny": ["habitat"]},
-    {"question": "Desert animals need little ___", "expectedAny": ["water"]},
-    {"question": "Forest animals live among ___", "expectedAny": ["trees"]},
-    {"question": "Ocean animals can ___", "expectedAny": ["swim"]},
+    {"question": "A ___ is where an animal lives.", "expectedAny": ["habitat", "home"]},
+    {"question": "Desert animals need little ___", "expectedAny": ["water", "rain"]},
+    {"question": "Forest animals live among ___", "expectedAny": ["trees", "plants"]},
+    {"question": "Ocean animals can ___", "expectedAny": ["swim", "dive"]},
     {"question": "Arctic animals have thick ___", "expectedAny": ["fur", "blubber"]},
     {"question": "___ live in ponds.", "expectedAny": ["frogs", "fish"]},
-    {"question": "Animals need food, water, and ___", "expectedAny": ["shelter"]}
+    {"question": "Animals need food, water, and ___", "expectedAny": ["shelter", "space"]}
   ],
   "shortanswer": [
-    {"question": "What makes a good habitat?", "expectedAny": ["food, water, shelter, right temperature"]},
-    {"question": "How do desert animals survive?", "expectedAny": ["store water", "active at night"]},
+    {"question": "What makes a good habitat?", "expectedAny": ["food", "water", "shelter", "right temperature"]},
+    {"question": "How do desert animals survive?", "expectedAny": ["store water", "active at night", "hide in shade"]},
     {"question": "Name three ocean animals.", "expectedAny": ["fish", "whale", "shark", "dolphin", "octopus"]},
     {"question": "Why can't a polar bear live in the desert?", "expectedAny": ["too hot", "no ice", "wrong food"]},
     {"question": "What would you find in a forest?", "expectedAny": ["trees", "birds", "squirrels"]},

@@ -1,0 +1,535 @@
+﻿{
+    "id":  "12th_AP_Calculus_Differential_Applications_Beginner",
+    "title":  "AP Calculus and Differential Applications",
+    "grade":  "12th",
+    "difficulty":  "Beginner",
+    "vocab":  [
+                  {
+                      "term":  "derivative",
+                      "definition":  "Rate of change of a function"
+                  },
+                  {
+                      "term":  "differentiation",
+                      "definition":  "Process of finding a derivative"
+                  },
+                  {
+                      "term":  "power rule",
+                      "definition":  "Rule for differentiating polynomial terms"
+                  },
+                  {
+                      "term":  "rate of change",
+                      "definition":  "How one quantity changes relative to another"
+                  },
+                  {
+                      "term":  "tangent line",
+                      "definition":  "Line touching curve at one point"
+                  }
+              ],
+    "teachingNotes":  "Master differential calculus concepts and applications. Prepare for AP Calculus exam.",
+    "sample":  [
+                   {
+                       "question":  "What is rate of change?",
+                       "expectedAny":  [
+                                           "derivative",
+                                           "rate",
+                                           "rate of change",
+                                           "instantaneous rate",
+                                           "slope",
+                                           "change rate"
+                                       ]
+                   },
+                   {
+                       "question":  "What is finding derivative?",
+                       "expectedAny":  [
+                                           "differentiation",
+                                           "differentiating",
+                                           "taking derivative",
+                                           "finding rate",
+                                           "computing derivative",
+                                           "deriving"
+                                       ]
+                   },
+                   {
+                       "question":  "What differentiates polynomials?",
+                       "expectedAny":  [
+                                           "power rule",
+                                           "rule",
+                                           "polynomial rule",
+                                           "exponent rule",
+                                           "n times x to n minus one",
+                                           "derivative rule"
+                                       ]
+                   },
+                   {
+                       "question":  "What is relative change?",
+                       "expectedAny":  [
+                                           "rate of change",
+                                           "rate",
+                                           "derivative",
+                                           "change rate",
+                                           "slope",
+                                           "instantaneous change"
+                                       ]
+                   },
+                   {
+                       "question":  "What touches curve at one point?",
+                       "expectedAny":  [
+                                           "tangent line",
+                                           "tangent"
+                                       ]
+                   },
+                   {
+                       "question":  "What differentiates composites?",
+                       "expectedAny":  [
+                                           "chain rule",
+                                           "chain"
+                                       ]
+                   },
+                   {
+                       "question":  "What differentiates products?",
+                       "expectedAny":  [
+                                           "product rule",
+                                           "product"
+                                       ]
+                   },
+                   {
+                       "question":  "What differentiates quotients?",
+                       "expectedAny":  [
+                                           "quotient rule",
+                                           "quotient"
+                                       ]
+                   },
+                   {
+                       "question":  "What differentiates implicit equations?",
+                       "expectedAny":  [
+                                           "implicit differentiation",
+                                           "implicit"
+                                       ]
+                   },
+                   {
+                       "question":  "What are changing rates?",
+                       "expectedAny":  [
+                                           "related rates",
+                                           "rates"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Derivative is rate of change.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Differentiation finds integrals.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Power rule works on polynomials.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Tangent line crosses curve twice.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Rate of change compares quantities.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Chain rule is for composites.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Product rule is for sums.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Quotient rule is for division.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Implicit differentiation requires solving for y.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Related rates involve changing quantities.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What is derivative?",
+                               "choices":  [
+                                               "Sum",
+                                               "Rate of change",
+                                               "Product",
+                                               "Quotient"
+                                           ],
+                               "correct":  "Rate of change"
+                           },
+                           {
+                               "question":  "What finds derivative?",
+                               "choices":  [
+                                               "Integration",
+                                               "Differentiation",
+                                               "Addition",
+                                               "Multiplication"
+                                           ],
+                               "correct":  "Differentiation"
+                           },
+                           {
+                               "question":  "What is power rule for x squared?",
+                               "choices":  [
+                                               "x",
+                                               "2x",
+                                               "x squared",
+                                               "2"
+                                           ],
+                               "correct":  "2x"
+                           },
+                           {
+                               "question":  "What describes relative change?",
+                               "choices":  [
+                                               "Constant",
+                                               "Rate of change",
+                                               "Sum",
+                                               "Product"
+                                           ],
+                               "correct":  "Rate of change"
+                           },
+                           {
+                               "question":  "What touches curve once?",
+                               "choices":  [
+                                               "Secant",
+                                               "Tangent",
+                                               "Chord",
+                                               "Diameter"
+                                           ],
+                               "correct":  "Tangent"
+                           },
+                           {
+                               "question":  "What rule is for f(g(x))?",
+                               "choices":  [
+                                               "Power",
+                                               "Chain",
+                                               "Product",
+                                               "Quotient"
+                                           ],
+                               "correct":  "Chain"
+                           },
+                           {
+                               "question":  "What rule is for f times g?",
+                               "choices":  [
+                                               "Power",
+                                               "Chain",
+                                               "Product",
+                                               "Quotient"
+                                           ],
+                               "correct":  "Product"
+                           },
+                           {
+                               "question":  "What rule is for f divided by g?",
+                               "choices":  [
+                                               "Power",
+                                               "Chain",
+                                               "Product",
+                                               "Quotient"
+                                           ],
+                               "correct":  "Quotient"
+                           },
+                           {
+                               "question":  "What differentiates x squared plus y squared equals 25?",
+                               "choices":  [
+                                               "Power rule",
+                                               "Implicit",
+                                               "Product rule",
+                                               "Sum rule"
+                                           ],
+                               "correct":  "Implicit"
+                           },
+                           {
+                               "question":  "What involves rates changing together?",
+                               "choices":  [
+                                               "Static rates",
+                                               "Related rates",
+                                               "Fixed rates",
+                                               "Constant rates"
+                                           ],
+                               "correct":  "Related rates"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "A _____ is rate of change.",
+                               "expectedAny":  [
+                                                   "derivative",
+                                                   "Derivative"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ finds derivatives.",
+                               "expectedAny":  [
+                                                   "differentiation",
+                                                   "Differentiation"
+                                               ]
+                           },
+                           {
+                               "question":  "The _____ rule differentiates polynomials.",
+                               "expectedAny":  [
+                                                   "power",
+                                                   "Power"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ of change compares quantities.",
+                               "expectedAny":  [
+                                                   "rate",
+                                                   "Rate"
+                                               ]
+                           },
+                           {
+                               "question":  "A _____ line touches curve once.",
+                               "expectedAny":  [
+                                                   "tangent",
+                                                   "Tangent"
+                                               ]
+                           },
+                           {
+                               "question":  "The _____ rule differentiates composites.",
+                               "expectedAny":  [
+                                                   "chain",
+                                                   "Chain"
+                                               ]
+                           },
+                           {
+                               "question":  "The _____ rule differentiates products.",
+                               "expectedAny":  [
+                                                   "product",
+                                                   "Product"
+                                               ]
+                           },
+                           {
+                               "question":  "The _____ rule differentiates quotients.",
+                               "expectedAny":  [
+                                                   "quotient",
+                                                   "Quotient"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ differentiation doesn\u0027t require solving for y.",
+                               "expectedAny":  [
+                                                   "implicit",
+                                                   "Implicit"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ rates change together.",
+                               "expectedAny":  [
+                                                   "related",
+                                                   "Related"
+                                               ]
+                           }
+                       ],
+    "wordProblems":  [
+                         {
+                             "question":  "If f(x) equals x cubed, what is f prime of x?",
+                             "expectedAny":  [
+                                                 "3x squared",
+                                                 "3 x squared",
+                                                 "three x squared"
+                                             ]
+                         },
+                         {
+                             "question":  "Find derivative of x to the fourth.",
+                             "expectedAny":  [
+                                                 "4x cubed",
+                                                 "4 x cubed",
+                                                 "four x cubed"
+                                             ]
+                         },
+                         {
+                             "question":  "What is slope of y equals x squared at x equals 2?",
+                             "expectedAny":  [
+                                                 "4",
+                                                 "four"
+                                             ]
+                         },
+                         {
+                             "question":  "Differentiate 5x cubed.",
+                             "expectedAny":  [
+                                                 "15x squared",
+                                                 "15 x squared"
+                                             ]
+                         },
+                         {
+                             "question":  "Find f prime if f(x) equals 2x squared plus 3x.",
+                             "expectedAny":  [
+                                                 "4x plus 3",
+                                                 "4x + 3",
+                                                 "4 x plus 3"
+                                             ]
+                         },
+                         {
+                             "question":  "Differentiate g(x) equals x squared using chain rule if x equals 2t.",
+                             "expectedAny":  [
+                                                 "8t",
+                                                 "eight t",
+                                                 "4x times 2"
+                                             ]
+                         },
+                         {
+                             "question":  "Find derivative of x cubed times x squared using product rule.",
+                             "expectedAny":  [
+                                                 "5x to the fourth",
+                                                 "5x^4",
+                                                 "five x to the fourth"
+                                             ]
+                         },
+                         {
+                             "question":  "Differentiate x cubed divided by x using quotient rule.",
+                             "expectedAny":  [
+                                                 "2x",
+                                                 "two x",
+                                                 "2 x"
+                                             ]
+                         },
+                         {
+                             "question":  "Find dy dx if x squared plus y squared equals 25.",
+                             "expectedAny":  [
+                                                 "negative x over y",
+                                                 "-x/y",
+                                                 "minus x divided by y"
+                                             ]
+                         },
+                         {
+                             "question":  "If radius grows at 2 cm per second, how fast does area change when r equals 3?",
+                             "expectedAny":  [
+                                                 "12 pi",
+                                                 "12pi",
+                                                 "twelve pi"
+                                             ]
+                         }
+                     ],
+    "shortanswer":  [
+                        {
+                            "question":  "What is a derivative?",
+                            "expectedAny":  [
+                                                "rate of change of a function",
+                                                "instantaneous rate of change",
+                                                "slope of tangent line"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain differentiation.",
+                            "expectedAny":  [
+                                                "process of finding a derivative",
+                                                "calculating rate of change",
+                                                "applying derivative rules"
+                                            ]
+                        },
+                        {
+                            "question":  "What is power rule?",
+                            "expectedAny":  [
+                                                "rule for differentiating polynomial terms",
+                                                "d/dx of x to n equals n times x to n minus 1",
+                                                "multiply by exponent decrease exponent by 1"
+                                            ]
+                        },
+                        {
+                            "question":  "Define rate of change.",
+                            "expectedAny":  [
+                                                "how one quantity changes relative to another",
+                                                "ratio of change in output to change in input",
+                                                "derivative of function"
+                                            ]
+                        },
+                        {
+                            "question":  "What is tangent line?",
+                            "expectedAny":  [
+                                                "line touching curve at one point",
+                                                "line with slope equal to derivative",
+                                                "best linear approximation at point"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain chain rule.",
+                            "expectedAny":  [
+                                                "rule for differentiating composite functions",
+                                                "derivative of f(g(x)) is f prime of g times g prime",
+                                                "outer derivative times inner derivative"
+                                            ]
+                        },
+                        {
+                            "question":  "What is product rule?",
+                            "expectedAny":  [
+                                                "rule for differentiating products of functions",
+                                                "derivative of fg is f prime g plus f g prime",
+                                                "first times derivative of second plus second times derivative of first"
+                                            ]
+                        },
+                        {
+                            "question":  "Define quotient rule.",
+                            "expectedAny":  [
+                                                "rule for differentiating quotients of functions",
+                                                "derivative of f over g is g f prime minus f g prime over g squared",
+                                                "low d high minus high d low over low squared"
+                                            ]
+                        },
+                        {
+                            "question":  "What is implicit differentiation?",
+                            "expectedAny":  [
+                                                "differentiating equations not solved for y",
+                                                "taking derivative of both sides treating y as function of x",
+                                                "used when solving for y is difficult"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain related rates.",
+                            "expectedAny":  [
+                                                "problems involving rates changing together",
+                                                "using chain rule to relate changing quantities",
+                                                "common in optimization and motion problems"
+                                            ]
+                        }
+                    ]
+}

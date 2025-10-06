@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Discuss major Chinese inventions like gunpowder, printing, and the compass. Explain how dynasties rose and fell based on the Mandate of Heaven.",
-  "sample": {
-    "question": "What is a series of rulers from the same family called?",
-    "expectedAny": [
-      "dynasty",
-      "royal family",
-      "ruling family",
-      "hereditary rule"
-    ]
-  },
-  "truefalse": {
-    "question": "The Chinese invented gunpowder, printing, and the compass.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What Chinese belief said rulers had divine approval?",
-    "expectedAny": [
-      "Mandate of Heaven",
-      "divine right",
-      "heavenly mandate",
-      "celestial approval"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A new invention or way of doing things is called an ________.",
-    "expectedAny": [
-      "innovation",
-      "invention",
-      "advancement",
-      "development"
-    ]
-  },
-  "shortanswer": {
-    "question": "How did the civil service system improve Chinese government?",
-    "expectedAny": [
-      "jobs based on merit not family",
-      "qualified people in government",
-      "reduced corruption"
-    ]
-  }
+  "sample": [
+    { "question": "What is a series of rulers from the same family called?", "expectedAny": ["dynasty"] },
+    { "question": "Which is divine approval?", "choices": ["Election", "Mandate of Heaven", "Democracy", "Republic"], "correct": 1, "expectedAny": ["Mandate of Heaven"] },
+    { "question": "New invention is ________.", "expectedAny": ["innovation"] },
+    { "question": "Chinese fine pottery is ________.", "expectedAny": ["porcelain"] },
+    { "question": "Merit-based government is ________.", "expectedAny": ["civil service"] },
+    { "question": "What is family rulers?", "choices": ["Democracy", "Dynasty", "Republic", "Election"], "correct": 1, "expectedAny": ["dynasty"] },
+    { "question": "Divine right belief is ________.", "expectedAny": ["Mandate of Heaven"] },
+    { "question": "New way of doing things is ________.", "expectedAny": ["innovation"] },
+    { "question": "Which is fine pottery?", "choices": ["Glass", "Porcelain", "Metal", "Wood"], "correct": 1, "expectedAny": ["porcelain"] },
+    { "question": "Jobs by merit are ________.", "expectedAny": ["civil service"] }
+  ],
+  "truefalse": [
+    { "question": "The Chinese invented gunpowder, printing, and the compass.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Dynasties are elected leaders.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Mandate of Heaven was divine approval.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Innovations are old methods.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "China made porcelain.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Civil service is based on family.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Dynasties ruled for generations.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "China invented nothing.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Mandate of Heaven justified rule.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Porcelain is metal.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What Chinese belief said rulers had divine approval?", "choices": ["Democracy", "Mandate of Heaven", "Republic", "Election"], "correct": 1, "expectedAny": ["Mandate of Heaven"] },
+    { "question": "What is family rulers?", "choices": ["Democracy", "Dynasty", "Republic", "Election"], "correct": 1, "expectedAny": ["dynasty"] },
+    { "question": "What is new invention?", "choices": ["Tradition", "Innovation", "Custom", "Habit"], "correct": 1, "expectedAny": ["innovation"] },
+    { "question": "What is fine pottery?", "choices": ["Glass", "Porcelain", "Metal", "Wood"], "correct": 1, "expectedAny": ["porcelain"] },
+    { "question": "What is merit system?", "choices": ["Family rule", "Civil service", "Dynasty", "Monarchy"], "correct": 1, "expectedAny": ["civil service"] },
+    { "question": "China invented?", "choices": ["Nothing", "Gunpowder", "Cars", "Airplanes"], "correct": 1, "expectedAny": ["gunpowder"] },
+    { "question": "What justified rule?", "choices": ["Vote", "Mandate of Heaven", "Election", "Democracy"], "correct": 1, "expectedAny": ["Mandate of Heaven"] },
+    { "question": "What is same family?", "choices": ["Democracy", "Dynasty", "Republic", "Election"], "correct": 1, "expectedAny": ["dynasty"] },
+    { "question": "China made?", "choices": ["Nothing", "Porcelain", "Steel", "Plastic"], "correct": 1, "expectedAny": ["porcelain"] },
+    { "question": "Jobs by skill?", "choices": ["Family", "Civil service", "Dynasty", "Inheritance"], "correct": 1, "expectedAny": ["civil service"] }
+  ],
+  "fillintheblank": [
+    { "question": "A new invention or way of doing things is called an ________.", "expectedAny": ["innovation"] },
+    { "question": "A series of rulers from same family is a ________.", "expectedAny": ["dynasty"] },
+    { "question": "Divine approval belief is ________.", "expectedAny": ["Mandate of Heaven"] },
+    { "question": "Fine Chinese pottery is ________.", "expectedAny": ["porcelain"] },
+    { "question": "Government jobs by merit is ________.", "expectedAny": ["civil service"] },
+    { "question": "A ________ is same family rulers.", "expectedAny": ["dynasty"] },
+    { "question": "________ of Heaven justified rule.", "expectedAny": ["Mandate"] },
+    { "question": "An ________ is new invention.", "expectedAny": ["innovation"] },
+    { "question": "________ is fine pottery.", "expectedAny": ["porcelain"] },
+    { "question": "________ service is merit system.", "expectedAny": ["civil"] }
+  ],
+  "shortanswer": [
+    { "question": "How did the civil service system improve Chinese government?", "expectedAny": ["jobs based on merit not family", "qualified people in government"] },
+    { "question": "What is a dynasty?", "expectedAny": ["series of rulers from same family", "family rulers", "ruling family", "same family ruling"] },
+    { "question": "What is Mandate of Heaven?", "expectedAny": ["belief rulers had divine approval", "divine right to rule", "heaven's approval", "god's approval to rule"] },
+    { "question": "What is innovation?", "expectedAny": ["new invention or way", "new development"] },
+    { "question": "What is porcelain?", "expectedAny": ["fine Chinese pottery", "Chinese pottery"] },
+    { "question": "What is civil service?", "expectedAny": ["government jobs by merit", "merit-based system", "jobs by skill", "jobs based on ability"] },
+    { "question": "What did China invent?", "expectedAny": ["gunpowder, printing, compass"] },
+    { "question": "How did dynasties fall?", "expectedAny": ["lost Mandate of Heaven", "divine approval lost"] },
+    { "question": "Why was civil service better?", "expectedAny": ["merit not family", "qualified people"] },
+    { "question": "What justified dynasty rule?", "expectedAny": ["Mandate of Heaven"] }
+  ]
 }

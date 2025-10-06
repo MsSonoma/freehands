@@ -50,10 +50,10 @@
   ],
   "fillintheblank": [
     {"question": "Your _____ is the place where you live.", "expectedAny": ["home", "house"]},
-    {"question": "People who live near you are called _____.", "expectedAny": ["neighbors"]},
-    {"question": "A _____ is made up of people who care for each other.", "expectedAny": ["family"]},
-    {"question": "Your _____ includes your home, school, and neighbors.", "expectedAny": ["community"]},
-    {"question": "_____ help make communities friendly places.", "expectedAny": ["Neighbors", "People"]},
+    {"question": "People who live near you are called _____.", "expectedAny": ["neighbors", "neighbours"]},
+    {"question": "A _____ is made up of people who care for each other.", "expectedAny": ["family", "a family"]},
+  {"question": "Your _____ includes your home, school, and neighbors.", "expectedAny": ["community", "your community"]},
+    {"question": "_____ help make communities friendly places.", "expectedAny": ["Neighbors", "People", "neighbours"]},
     {"question": "Every family lives in a _____.", "expectedAny": ["home", "house", "place"]},
     {"question": "_____ are people in your family who love you.", "expectedAny": ["Parents", "Family members"]}
   ],
@@ -62,7 +62,7 @@
     {"question": "What makes your family special?", "expectedAny": ["they love me", "they care for me", "we do things together", "they help me"]},
     {"question": "How do families help each other?", "expectedAny": ["share chores", "take care when sick", "help with problems", "show love"]},
     {"question": "What are some places in your community?", "expectedAny": ["school", "park", "store", "library", "post office"]},
-    {"question": "How is your family the same as other families? How is it different?", "expectedAny": ["same: love each other; different: size, traditions", "all care, but unique in their own way"]},
+  {"question": "How is your family the same as other families? How is it different?", "expectedAny": ["same: love each other; different: size, traditions", "all care, but unique in their own way", "same: care for each other; different: activities"]},
     {"question": "What would you tell someone about your community?", "expectedAny": ["friendly people", "nice places", "good neighbors", "safe place"]},
     {"question": "How do communities help families?", "expectedAny": ["provide services", "schools for children", "stores for shopping", "safe places to live"]}
   ],

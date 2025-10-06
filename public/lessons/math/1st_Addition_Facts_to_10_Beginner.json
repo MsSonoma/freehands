@@ -9,16 +9,20 @@
     {"term": "sum", "definition": "The answer when you add numbers together"},
     {"term": "plus", "definition": "The word and sign (+) that means add"},
     {"term": "equal", "definition": "The same amount; shown with the = sign"}
+    ,
+    {"term": "circles", "definition": "Round shapes you can draw"}
+    ,
+    {"term": "count", "definition": "Say numbers in order to find how many"}
   ],
   "teachingNotes": "Use manipulatives like counting bears or blocks. Practice with fingers and number lines. Focus on combinations that make 10.",
   "sample": [
-    {"question": "What is 3 + 2?", "expectedAny": ["5", "five"]},
-    {"question": "What is 1 + 4?", "expectedAny": ["5"]},
-    {"question": "What is 5 + 0?", "expectedAny": ["5"]},
-    {"question": "What is 2 + 6?", "expectedAny": ["8"]},
-    {"question": "What is 4 + 4?", "expectedAny": ["8"]},
-    {"question": "What is 3 + 5?", "expectedAny": ["8"]},
-    {"question": "What is 7 + 1?", "expectedAny": ["8"]}
+    {"question": "What is 3 + 2?", "expectedAny": ["5", "five", "the answer is 5"]},
+    {"question": "What is 1 + 4?", "expectedAny": ["5", "five"]},
+    {"question": "What is 5 + 0?", "expectedAny": ["5", "five"]},
+    {"question": "What is 2 + 6?", "expectedAny": ["8", "eight"]},
+    {"question": "What is 4 + 4?", "expectedAny": ["8", "eight"]},
+    {"question": "What is 3 + 5?", "expectedAny": ["8", "eight"]},
+    {"question": "What is 7 + 1?", "expectedAny": ["8", "eight"]}
   ],
   "truefalse": [
     {"question": "3 + 3 equals 6.", "answer": true, "expectedAny": ["3 + 3 = 6"]},
@@ -37,27 +41,27 @@
     {"question": "What is 4 + 0?", "choices": ["0", "3", "4", "5"], "correct": 2, "expectedAny": ["4 + 0 = 4"]}
   ],
   "fillintheblank": [
-    {"question": "2 + ___ = 5", "expectedAny": ["3"]},
-    {"question": "4 + ___ = 8", "expectedAny": ["4"]},
-    {"question": "___ + 3 = 7", "expectedAny": ["4"]},
-    {"question": "5 + ___ = 10", "expectedAny": ["5"]},
-    {"question": "___ + 1 = 6", "expectedAny": ["5"]},
-    {"question": "3 + ___ = 9", "expectedAny": ["6"]}
+    {"question": "2 + ___ = 5", "expectedAny": ["3", "three"]},
+    {"question": "4 + ___ = 8", "expectedAny": ["4", "four"]},
+    {"question": "___ + 3 = 7", "expectedAny": ["4", "four"]},
+    {"question": "5 + ___ = 10", "expectedAny": ["5", "five"]},
+    {"question": "___ + 1 = 6", "expectedAny": ["5", "five"]},
+    {"question": "3 + ___ = 9", "expectedAny": ["6", "six"]}
   ],
   "shortanswer": [
-    {"question": "Draw 3 circles and 2 more circles. How many in all?", "expectedAny": ["5"]},
-    {"question": "Show how to count 4 + 3 on your fingers.", "expectedAny": ["4 + 3 = 7"]},
-    {"question": "Why does 5 + 0 equal 5?", "expectedAny": ["adding zero doesn't change the number"]},
-    {"question": "What happens when you add 1 to any number?", "expectedAny": ["you get the next number"]},
-    {"question": "Draw a picture to show 2 + 4.", "expectedAny": ["6"]},
-    {"question": "How can you use counting to solve 6 + 2?", "expectedAny": ["count on: 7, 8"]}
+    {"question": "Draw 3 circles and 2 more circles. How many in all?", "expectedAny": ["5", "five", "5 circles", "five circles"]},
+    {"question": "Show how to count 4 + 3 on your fingers.", "expectedAny": ["7", "seven", "4 + 3 = 7", "count on to seven"]},
+    {"question": "Why does 5 + 0 equal 5?", "expectedAny": ["adding zero doesn't change the number", "zero property of addition", "5 stays 5", "adding nothing", "zero doesn't change it"]},
+    {"question": "What happens when you add 1 to any number?", "expectedAny": ["you get the next number", "it increases by one", "go up by 1", "it goes up one", "the next number"]},
+    {"question": "Draw a picture to show 2 + 4.", "expectedAny": ["6", "six", "2 + 4 = 6", "six total"]},
+    {"question": "How can you use counting to solve 6 + 2?", "expectedAny": ["count on: 7, 8", "start at 6 and count two more", "count on to eight", "count up 2"]}
   ],
   "wordProblems": [
-    {"question": "Tom has 3 apples. Mom gives him 2 more apples. How many apples does Tom have now?", "expectedAny": ["5 apples"]},
-    {"question": "There are 4 birds in a tree. Then 3 more birds come. How many birds in all?", "expectedAny": ["7 birds"]},
-    {"question": "Sarah has 5 crayons. She finds 4 more crayons. How many crayons does she have?", "expectedAny": ["9 crayons"]},
-    {"question": "A dog has 6 toys. He gets 1 more toy. How many toys does the dog have?", "expectedAny": ["7 toys"]},
-    {"question": "There are 2 red balls and 6 blue balls. How many balls altogether?", "expectedAny": ["8 balls"]},
-    {"question": "Jack ate 3 cookies before lunch and 4 cookies after lunch. How many cookies did Jack eat?", "expectedAny": ["7 cookies"]}
+    {"question": "Tom has 3 apples. Mom gives him 2 more apples. How many apples does Tom have now?", "expectedAny": ["5 apples", "5", "five", "five apples"]},
+    {"question": "There are 4 birds in a tree. Then 3 more birds come. How many birds in all?", "expectedAny": ["7 birds", "7", "seven", "seven birds"]},
+    {"question": "Sarah has 5 crayons. She finds 4 more crayons. How many crayons does she have?", "expectedAny": ["9 crayons", "9", "nine", "nine crayons"]},
+    {"question": "A dog has 6 toys. He gets 1 more toy. How many toys does the dog have?", "expectedAny": ["7 toys", "7", "seven", "seven toys"]},
+    {"question": "There are 2 red balls and 6 blue balls. How many balls altogether?", "expectedAny": ["8 balls", "8", "eight", "eight balls"]},
+    {"question": "Jack ate 3 cookies before lunch and 4 cookies after lunch. How many cookies did Jack eat?", "expectedAny": ["7 cookies", "7", "seven", "seven cookies"]}
   ]
 }

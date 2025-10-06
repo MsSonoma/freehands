@@ -21,53 +21,101 @@
       "definition": "When energy moves from one object to another"
     },
     {
+      "term": "energy transformation",
+      "definition": "When energy changes from one form to another (conversion)"
+    },
+    {
       "term": "conservation of energy",
       "definition": "Energy cannot be created or destroyed, only changed from one form to another"
+    },
+    {
+      "term": "thermal energy",
+      "definition": "Energy related to heat and the motion of particles"
+    },
+    {
+      "term": "electrical energy",
+      "definition": "Energy carried by moving electric charges"
+    },
+    {
+      "term": "conduction",
+      "definition": "Heat transfer by direct contact between objects"
+    },
+    {
+      "term": "convection",
+      "definition": "Heat transfer by movement of liquids or gases"
+    },
+    {
+      "term": "radiation",
+      "definition": "Heat transfer by waves, like sunlight"
+    },
+    {
+      "term": "friction",
+      "definition": "A force that resists motion and turns motion into heat"
+    },
+    {
+      "term": "closed system",
+      "definition": "A system where no energy enters or leaves"
     }
   ],
   "teachingNotes": "Use hands-on demonstrations with pendulums, rolling balls, and rubber bands to show energy transfer. Discuss how energy changes form but is never lost.",
-  "sample": {
-    "question": "What is the difference between kinetic and potential energy?",
-    "expectedAny": [
-      "kinetic is moving, potential is stored",
-      "kinetic is motion, potential is position",
-      "active vs stored energy"
-    ]
-  },
-  "truefalse": {
-    "question": "Energy can be created and destroyed.",
-    "expectedAny": [
-      "false",
-      "no",
-      "f",
-      "incorrect"
-    ]
-  },
-  "multiplechoice": {
-    "question": "A ball sitting at the top of a hill has what type of energy?",
-    "expectedAny": [
-      "potential energy",
-      "stored energy",
-      "gravitational potential",
-      "potential"
-    ]
-  },
-  "fillintheblank": {
-    "question": "When a ball rolls down a hill, potential energy changes to ________ energy.",
-    "expectedAny": [
-      "kinetic",
-      "motion",
-      "movement",
-      "moving"
-    ]
-  },
-  "shortanswer": {
-    "question": "Give an example of energy transfer you see every day.",
-    "expectedAny": [
-      "food to body energy",
-      "battery to flashlight",
-      "sun to plants",
-      "electrical to light"
-    ]
-  }
+  "sample": [
+    { "question": "What is the difference between kinetic and potential energy?", "expectedAny": ["kinetic is moving, potential is stored"] },
+    { "question": "Name one form of kinetic energy.", "expectedAny": ["motion", "heat", "sound"] },
+    { "question": "Name one form of potential energy.", "expectedAny": ["gravitational", "elastic", "chemical"] },
+    { "question": "Give an example of energy transfer.", "expectedAny": ["battery to lightbulb", "food to body"] },
+    { "question": "What does conservation of energy mean?", "expectedAny": ["energy not created or destroyed"] },
+    { "question": "A stretched rubber band has which energy?", "expectedAny": ["elastic potential"] },
+    { "question": "Falling objects convert potential to ________.", "expectedAny": ["kinetic"] },
+    { "question": "A moving bike has ________ energy.", "expectedAny": ["kinetic"] },
+    { "question": "Food stores ________ energy.", "expectedAny": ["chemical"] },
+    { "question": "Electricity to light is an energy ________.", "expectedAny": ["transfer", "transformation"] }
+  ],
+  "truefalse": [
+    { "question": "Energy can be created and destroyed.", "expectedAny": ["false"] },
+    { "question": "Energy can change from one form to another.", "expectedAny": ["true"] },
+    { "question": "A parked car has kinetic energy.", "expectedAny": ["false"] },
+    { "question": "A rock on a cliff has potential energy.", "expectedAny": ["true"] },
+    { "question": "Heat is a form of energy.", "expectedAny": ["true"] },
+    { "question": "Sound is not energy.", "expectedAny": ["false"] },
+    { "question": "Energy transfer happens when objects collide.", "expectedAny": ["true"] },
+    { "question": "Light energy can become heat.", "expectedAny": ["true"] },
+    { "question": "Conservation of energy means total energy stays constant.", "expectedAny": ["true"] },
+    { "question": "Elastic potential energy is stored in stretched objects.", "expectedAny": ["true"] }
+  ],
+  "multiplechoice": [
+    { "question": "A ball sitting at the top of a hill has what type of energy?", "choices": ["kinetic", "potential", "sound", "light"], "correct": 1, "expectedAny": ["potential"] },
+    { "question": "Which is an example of kinetic energy?", "choices": ["book on a shelf", "moving car", "stretched bow", "charged battery"], "correct": 1, "expectedAny": ["moving car"] },
+    { "question": "Which is stored energy?", "choices": ["kinetic", "thermal", "potential", "sound"], "correct": 2, "expectedAny": ["potential"] },
+    { "question": "What energy increases when you lift a book higher?", "choices": ["kinetic", "gravitational potential", "sound", "light"], "correct": 1, "expectedAny": ["gravitational potential"] },
+    { "question": "Which is an energy transfer?", "choices": ["battery powers a flashlight", "book sits on desk", "ball at rest", "cold ice"], "correct": 0, "expectedAny": ["battery to light"] },
+    { "question": "What energy does a stretched spring have?", "choices": ["kinetic", "elastic potential", "sound", "light"], "correct": 1, "expectedAny": ["elastic potential"] },
+    { "question": "As a ball falls, which energy increases?", "choices": ["kinetic", "potential", "chemical", "light"], "correct": 0, "expectedAny": ["kinetic"] },
+    { "question": "Conservation of energy means:", "choices": ["energy disappears", "energy cycles away", "total energy stays the same", "energy is created"], "correct": 2, "expectedAny": ["total stays same"] },
+    { "question": "Which stores chemical energy?", "choices": ["food", "boulder on hill", "moving car", "flashlight beam"], "correct": 0, "expectedAny": ["food"] },
+    { "question": "Which is an energy transformation?", "choices": ["electrical to light", "light to mass", "mass to length", "time to space"], "correct": 0, "expectedAny": ["electrical to light"] }
+  ],
+  "fillintheblank": [
+    { "question": "When a ball rolls down a hill, potential energy changes to ________ energy.", "expectedAny": ["kinetic", "motion", "moving energy"] },
+    { "question": "A stretched rubber band stores ________ energy.", "expectedAny": ["elastic potential", "elastic", "spring energy"] },
+    { "question": "Food contains ________ energy.", "expectedAny": ["chemical", "stored chemical", "chemical potential"] },
+    { "question": "Energy in motion is called ________ energy.", "expectedAny": ["kinetic", "motion", "moving energy"] },
+    { "question": "Energy due to position is ________ energy.", "expectedAny": ["potential", "gravitational potential", "position energy", "stored energy due to height"] },
+    { "question": "Total energy stays ________ in a closed system.", "expectedAny": ["constant", "the same", "unchanged"] },
+    { "question": "Rubbing hands together turns motion into ________ energy.", "expectedAny": ["heat", "thermal", "heat energy", "thermal energy"] },
+    { "question": "Batteries store ________ energy.", "expectedAny": ["chemical", "stored chemical", "chemical potential"] },
+    { "question": "A moving skateboard has ________ energy.", "expectedAny": ["kinetic", "motion", "moving energy"] },
+    { "question": "Dropping an object converts potential to ________ energy.", "expectedAny": ["kinetic", "motion", "moving energy"] }
+  ],
+  "shortanswer": [
+    { "question": "Give an example of energy transfer you see every day.", "expectedAny": ["battery to flashlight", "sun to plants", "plug to lamp", "hand to ice cube warms it"] },
+    { "question": "Explain conservation of energy in your own words.", "expectedAny": ["energy changes form, total stays same", "energy is not created or destroyed", "total energy is conserved", "energy transforms but does not vanish"] },
+    { "question": "Why does a ball speed up as it falls?", "expectedAny": ["potential converts to kinetic", "gravity converts potential to motion", "loses height gains speed", "energy changes from position to motion"] },
+    { "question": "What happens to energy when you stop pedaling a bike and it slows?", "expectedAny": ["lost to heat/friction", "transforms to heat", "thermal and sound", "friction turns motion into heat"] },
+    { "question": "How does height affect potential energy?", "expectedAny": ["higher means more", "increases with height", "greater height, greater potential", "more height equals more stored energy"] },
+    { "question": "Give an example of electrical energy turning into heat.", "expectedAny": ["toaster", "space heater", "electric stove", "hair dryer"] },
+    { "question": "Name one way sound energy is produced.", "expectedAny": ["vibrations", "speaker movement", "striking a drum", "plucking a guitar string"] },
+    { "question": "Explain why a stretched spring can do work.", "expectedAny": ["stored energy released", "elastic potential becomes motion", "it can push/pull when released", "stored energy turns into motion"] },
+    { "question": "Give an example of light energy becoming heat.", "expectedAny": ["sun warming skin", "sun warms pavement", "light bulb warms air", "dark car gets hot in sun"] },
+    { "question": "How can energy transfer in a collision?", "expectedAny": ["from one object to another", "through contact", "via impact", "by touching during the hit"] }
+  ]
 }

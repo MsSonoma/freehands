@@ -4,71 +4,60 @@
   "grade": "4th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "complex sentence",
-      "definition": "A sentence that has one main idea and one or more dependent ideas"
-    },
-    {
-      "term": "conjunction",
-      "definition": "A word that connects words, phrases, or sentences (and, but, because)"
-    },
-    {
-      "term": "clause",
-      "definition": "A group of words that has a subject and a verb"
-    },
-    {
-      "term": "dependent clause",
-      "definition": "A group of words that cannot stand alone as a sentence"
-    },
-    {
-      "term": "independent clause",
-      "definition": "A group of words that can stand alone as a complete sentence"
-    }
+    { "term": "complex sentence", "definition": "A sentence that has one main idea and one or more dependent ideas" },
+    { "term": "conjunction", "definition": "A word that connects words, phrases, or sentences (and, but, because)" },
+    { "term": "clause", "definition": "A group of words that has a subject and a verb" },
+    { "term": "dependent clause", "definition": "A group of words that cannot stand alone as a sentence" },
+    { "term": "independent clause", "definition": "A group of words that can stand alone as a complete sentence" },
+    { "term": "subordinating conjunction", "definition": "A word that begins a dependent clause (because, although, when, if, since)" },
+    { "term": "subordinate clause marker", "definition": "Another name for a subordinating conjunction that signals a dependent clause" },
+    { "term": "comma rule", "definition": "When a dependent clause comes first, put a comma after it" },
+    { "term": "sentence variety", "definition": "Using different kinds of sentences to make writing interesting" }
   ],
   "teachingNotes": "Teach students to identify and create complex sentences using subordinating conjunctions. Practice combining simple sentences into complex ones. Focus on proper punctuation and sentence variety.",
   "sample": [
-    {"question": "What makes a sentence complex?", "expectedAny": ["independent + dependent clause"]},
-    {"question": "Name a subordinating conjunction.", "expectedAny": ["because", "although", "when", "if", "since"]},
-    {"question": "What punctuation is used when a dependent clause comes first?", "expectedAny": ["comma"]},
-    {"question": "Identify the dependent clause: 'Because it rained, the game was canceled.'", "expectedAny": ["Because it rained"]},
-    {"question": "Identify the independent clause: 'Although she was tired, she finished her homework.'", "expectedAny": ["she finished her homework"]},
-    {"question": "Combine: 'I studied. I passed the test.' using 'because'.", "expectedAny": ["I passed the test because I studied."]},
-    {"question": "Rewrite with dependent clause first: 'We went inside because it was cold.'", "expectedAny": ["Because it was cold, we went inside."]}
+    { "question": "What makes a sentence complex?", "expectedAny": ["independent + dependent clause", "one independent and one dependent clause"] },
+    { "question": "Name a subordinating conjunction.", "expectedAny": ["because", "although", "when", "if", "since"] },
+    { "question": "What punctuation is used when a dependent clause comes first?", "expectedAny": [",", "comma"] },
+    { "question": "Identify the dependent clause: 'Because it rained, the game was canceled.'", "expectedAny": ["Because it rained"] },
+    { "question": "Identify the independent clause: 'Although she was tired, she finished her homework.'", "expectedAny": ["she finished her homework"] },
+    { "question": "Combine: 'I studied. I passed the test.' using 'because'.", "expectedAny": ["I passed the test because I studied.", "I passed the test, because I studied."] },
+    { "question": "Rewrite with dependent clause first: 'We went inside because it was cold.'", "expectedAny": ["Because it was cold, we went inside."] }
   ],
   "truefalse": [
-    {"question": "The word 'because' can be used to start a dependent clause.", "answer": true, "expectedAny": ["true"]},
-    {"question": "An independent clause can stand alone as a sentence.", "answer": true, "expectedAny": ["true"]},
-    {"question": "A comma is never used in a complex sentence.", "answer": false, "expectedAny": ["false"]},
-    {"question": "If the dependent clause comes first, a comma follows it.", "answer": true, "expectedAny": ["true"]},
-    {"question": "'And' is a subordinating conjunction.", "answer": false, "expectedAny": ["false"]},
-    {"question": "Complex sentences improve sentence variety.", "answer": true, "expectedAny": ["true"]},
-    {"question": "A dependent clause can stand alone.", "answer": false, "expectedAny": ["false"]}
+    { "question": "The word 'because' can be used to start a dependent clause.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "question": "An independent clause can stand alone as a sentence.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "question": "A comma is never used in a complex sentence.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"] },
+    { "question": "If the dependent clause comes first, a comma follows it.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "question": "'And' is a subordinating conjunction.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"] },
+    { "question": "Complex sentences improve sentence variety.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "question": "A dependent clause can stand alone.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"] }
   ],
   "multiplechoice": [
-    {"question": "Which sentence is complex?", "choices": ["We stayed inside.", "Because it was raining, we stayed inside.", "We stayed inside and watched a movie.", "Stay inside!"], "correct": 1, "expectedAny": ["Because it was raining, we stayed inside."]},
-    {"question": "Which is a subordinating conjunction?", "choices": ["and", "but", "because", "or"], "correct": 2, "expectedAny": ["because"]},
-    {"question": "Where does the comma go?", "choices": ["After the dependent clause when it comes first", "Never", "Before 'because' always", "At the end"], "correct": 0, "expectedAny": ["after dependent clause"]},
-    {"question": "Identify the independent clause: 'When the bell rang, the class packed up.'", "choices": ["When the bell rang", "the class packed up", "When", "the bell"], "correct": 1, "expectedAny": ["the class packed up"]},
-    {"question": "Which sentence places the dependent clause first?", "choices": ["We left because it was late.", "Because it was late, we left.", "We left, because it was late.", "It was late because we left."], "correct": 1, "expectedAny": ["Because it was late, we left."]},
-    {"question": "Which sentence is NOT complex?", "choices": ["Although it snowed, school was open.", "She went home because she felt sick.", "He ran and jumped.", "When it stopped, we went outside."], "correct": 2, "expectedAny": ["He ran and jumped."]},
-    {"question": "Which is the dependent clause? 'I finished my book after I ate dinner.'", "choices": ["I finished my book", "after I ate dinner", "my book", "after"], "correct": 1, "expectedAny": ["after I ate dinner"]}
+    { "question": "Which sentence is complex?", "choices": ["We stayed inside.", "Because it was raining, we stayed inside.", "We stayed inside and watched a movie.", "Stay inside!"], "correct": 1, "expectedAny": ["Because it was raining, we stayed inside.", "because it was raining, we stayed inside", "b", "2", "second"] },
+    { "question": "Which is a subordinating conjunction?", "choices": ["and", "but", "because", "or"], "correct": 2, "expectedAny": ["because", "c", "3", "third"] },
+    { "question": "Where does the comma go?", "choices": ["After the dependent clause when it comes first", "Never", "Before 'because' always", "At the end"], "correct": 0, "expectedAny": ["after the dependent clause when it comes first", "after dependent clause when it comes first", "a", "1", "first"] },
+    { "question": "Identify the independent clause: 'When the bell rang, the class packed up.'", "choices": ["When the bell rang", "the class packed up", "When", "the bell"], "correct": 1, "expectedAny": ["the class packed up", "b", "2", "second"] },
+    { "question": "Which sentence places the dependent clause first?", "choices": ["We left because it was late.", "Because it was late, we left.", "We left, because it was late.", "It was late because we left."], "correct": 1, "expectedAny": ["Because it was late, we left.", "b", "2", "second"] },
+    { "question": "Which sentence is NOT complex?", "choices": ["Although it snowed, school was open.", "She went home because she felt sick.", "He ran and jumped.", "When it stopped, we went outside."], "correct": 2, "expectedAny": ["He ran and jumped.", "c", "3", "third"] },
+    { "question": "Which is the dependent clause? 'I finished my book after I ate dinner.'", "choices": ["I finished my book", "after I ate dinner", "my book", "after"], "correct": 1, "expectedAny": ["after I ate dinner", "b", "2", "second"] }
   ],
   "fillintheblank": [
-    {"question": "A ________ connects words, phrases, or sentences together.", "expectedAny": ["conjunction"]},
-    {"question": "An ________ clause can stand alone as a sentence.", "expectedAny": ["independent"]},
-    {"question": "A ________ clause cannot stand alone.", "expectedAny": ["dependent", "subordinate"]},
-    {"question": "Use a ______ when the dependent clause comes first.", "expectedAny": ["comma"]},
-    {"question": "'Because' and 'although' are ________ conjunctions.", "expectedAny": ["subordinating"]},
-    {"question": "A complex ________ has at least one dependent clause.", "expectedAny": ["sentence"]},
-    {"question": "We can combine short sentences to improve ________ variety.", "expectedAny": ["sentence"]}
+    { "question": "A ________ connects words, phrases, or sentences together.", "expectedAny": ["conjunction", "joining word", "connector", "connects words"] },
+    { "question": "An ________ clause can stand alone as a sentence.", "expectedAny": ["independent", "main", "independent clause"] },
+    { "question": "A ________ clause cannot stand alone.", "expectedAny": ["dependent", "subordinate", "dependent clause"] },
+    { "question": "Use a ______ when the dependent clause comes first.", "expectedAny": ["comma", "comma mark", ","] },
+    { "question": "'Because' and 'although' are ________ conjunctions.", "expectedAny": ["subordinating", "subordinate", "subordinating conjunctions"] },
+    { "question": "A complex ________ has at least one dependent clause.", "expectedAny": ["sentence", "sentence type", "complex sentence"] },
+    { "question": "We can combine short sentences to improve ________ variety.", "expectedAny": ["sentence", "sentence-style", "sentence variety"] }
   ],
   "shortanswer": [
-    {"question": "How do you combine two simple sentences into one complex sentence?", "expectedAny": ["use a subordinating conjunction; make one clause dependent"]},
-    {"question": "Combine using 'although': 'It was cold. We went hiking.'", "expectedAny": ["Although it was cold, we went hiking."]},
-    {"question": "Why use complex sentences?", "expectedAny": ["add variety", "show relationships", "sound more mature"]},
-    {"question": "Correct the comma: 'Because I was late I missed the bus.'", "expectedAny": ["Because I was late, I missed the bus."]},
-    {"question": "Write a complex sentence about school.", "expectedAny": ["varies"]},
-    {"question": "Identify the conjunction and clauses: 'Since we finished early, we read quietly.'", "expectedAny": ["since", "dependent: Since we finished early", "independent: we read quietly"]},
-    {"question": "Turn this into two sentences: 'When the bell rang we lined up.'", "expectedAny": ["When the bell rang, we lined up."]}
+    { "question": "How do you combine two simple sentences into one complex sentence?", "expectedAny": ["use a subordinating conjunction; make one clause dependent", "use a subordinating conjunction to join them; make one dependent", "join with because/although/when so one clause becomes dependent", "make one clause dependent with a subordinating conjunction"] },
+    { "question": "Combine two short sentences using 'although'.", "expectedAny": ["Although it rained, we stayed inside.", "We stayed inside although it rained.", "Although it rained, we still stayed inside."] },
+    { "question": "Why use complex sentences?", "expectedAny": ["add variety", "show relationships", "sound more mature", "connect ideas clearly"] },
+    { "question": "Add the comma needed when a dependent clause comes first.", "expectedAny": ["Because it rained, we stayed inside.", "We stayed inside because it rained.", "Since it rained, we stayed inside."] },
+    { "question": "Write a complex sentence of your own.", "expectedAny": ["Although __, __.", "When __, __.", "Because __, __."] },
+    { "question": "Identify the conjunction and the dependent and independent clauses in a complex sentence that begins with 'Since'.", "expectedAny": ["since", "dependent clause at the start", "independent clause after the comma", "conjunction: since"] },
+    { "question": "Turn a complex sentence that begins with 'When' into two simple sentences.", "expectedAny": ["The __ __. We __ __.", "Split into two sentences", "Make two sentences by separating the clauses"] }
   ]
 }

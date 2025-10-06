@@ -1,0 +1,455 @@
+﻿{
+    "id":  "12th_Organic_Chemistry_Carbon_Compounds_Beginner",
+    "title":  "Organic Chemistry and Carbon Compounds",
+    "grade":  "12th",
+    "difficulty":  "Beginner",
+    "vocab":  [
+                  {
+                      "term":  "organic chemistry",
+                      "definition":  "Study of carbon-containing compounds"
+                  },
+                  {
+                      "term":  "hydrocarbon",
+                      "definition":  "Compound of only hydrogen and carbon"
+                  },
+                  {
+                      "term":  "functional group",
+                      "definition":  "Atom group determining compound properties"
+                  },
+                  {
+                      "term":  "isomer",
+                      "definition":  "Compounds with same formula different structure"
+                  },
+                  {
+                      "term":  "polymer",
+                      "definition":  "Large molecule made of repeating units"
+                  }
+              ],
+    "teachingNotes":  "Explore organic chemistry fundamentals and carbon compound diversity. Study structure-function relationships.",
+    "sample":  [
+                   {
+                       "question":  "What studies carbon compounds?",
+                       "expectedAny":  [
+                                           "organic chemistry",
+                                           "organic",
+                                           "carbon chemistry",
+                                           "study of carbon",
+                                           "carbon compound chemistry",
+                                           "biological chemistry"
+                                       ]
+                   },
+                   {
+                       "question":  "What has hydrogen and carbon?",
+                       "expectedAny":  [
+                                           "hydrocarbon",
+                                           "hydrocarbons",
+                                           "H and C compound",
+                                           "hydrogen carbon compound",
+                                           "HC compound",
+                                           "carbon hydrogen molecule"
+                                       ]
+                   },
+                   {
+                       "question":  "What determines properties?",
+                       "expectedAny":  [
+                                           "functional group",
+                                           "group",
+                                           "reactive group",
+                                           "chemical group",
+                                           "active site",
+                                           "characteristic group"
+                                       ]
+                   },
+                   {
+                       "question":  "What has same formula different structure?",
+                       "expectedAny":  [
+                                           "isomer",
+                                           "isomers",
+                                           "structural variant",
+                                           "same formula different structure",
+                                           "structural isomer",
+                                           "molecular variant"
+                                       ]
+                   },
+                   {
+                       "question":  "What has repeating units?",
+                       "expectedAny":  [
+                                           "polymer",
+                                           "polymers"
+                                       ]
+                   },
+                   {
+                       "question":  "What has single bonds?",
+                       "expectedAny":  [
+                                           "alkane",
+                                           "alkanes"
+                                       ]
+                   },
+                   {
+                       "question":  "What has double bonds?",
+                       "expectedAny":  [
+                                           "alkene",
+                                           "alkenes"
+                                       ]
+                   },
+                   {
+                       "question":  "What has benzene ring?",
+                       "expectedAny":  [
+                                           "aromatic compound",
+                                           "aromatic"
+                                       ]
+                   },
+                   {
+                       "question":  "What forms from alcohol and acid?",
+                       "expectedAny":  [
+                                           "ester",
+                                           "esters"
+                                       ]
+                   },
+                   {
+                       "question":  "What produces water?",
+                       "expectedAny":  [
+                                           "condensation reaction",
+                                           "condensation"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Organic chemistry studies carbon.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Hydrocarbons contain nitrogen.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Functional groups affect properties.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Isomers have different formulas.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Polymers have repeating units.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Alkanes have single bonds.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Alkenes are saturated.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Aromatic compounds have benzene.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Esters come from acids only.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Condensation produces water.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What studies carbon?",
+                               "choices":  [
+                                               "Inorganic",
+                                               "Organic",
+                                               "Physical",
+                                               "Nuclear"
+                                           ],
+                               "correct":  "Organic"
+                           },
+                           {
+                               "question":  "What is H and C only?",
+                               "choices":  [
+                                               "Carbohydrate",
+                                               "Protein",
+                                               "Hydrocarbon",
+                                               "Nucleic acid"
+                                           ],
+                               "correct":  "Hydrocarbon"
+                           },
+                           {
+                               "question":  "What determines properties?",
+                               "choices":  [
+                                               "Color",
+                                               "Functional group",
+                                               "Size",
+                                               "Weight"
+                                           ],
+                               "correct":  "Functional group"
+                           },
+                           {
+                               "question":  "What are structural variants?",
+                               "choices":  [
+                                               "Elements",
+                                               "Compounds",
+                                               "Isomers",
+                                               "Ions"
+                                           ],
+                               "correct":  "Isomers"
+                           },
+                           {
+                               "question":  "What is repeating chain?",
+                               "choices":  [
+                                               "Monomer",
+                                               "Polymer",
+                                               "Dimer",
+                                               "Trimer"
+                                           ],
+                               "correct":  "Polymer"
+                           },
+                           {
+                               "question":  "What has single bonds?",
+                               "choices":  [
+                                               "Alkene",
+                                               "Alkyne",
+                                               "Alkane",
+                                               "Aromatic"
+                                           ],
+                               "correct":  "Alkane"
+                           },
+                           {
+                               "question":  "What has double bonds?",
+                               "choices":  [
+                                               "Alkane",
+                                               "Alkene",
+                                               "Saturated",
+                                               "Aromatic"
+                                           ],
+                               "correct":  "Alkene"
+                           },
+                           {
+                               "question":  "What has benzene?",
+                               "choices":  [
+                                               "Aliphatic",
+                                               "Aromatic",
+                                               "Alkane",
+                                               "Alkene"
+                                           ],
+                               "correct":  "Aromatic"
+                           },
+                           {
+                               "question":  "What forms from alcohol and acid?",
+                               "choices":  [
+                                               "Ether",
+                                               "Ester",
+                                               "Ketone",
+                                               "Aldehyde"
+                                           ],
+                               "correct":  "Ester"
+                           },
+                           {
+                               "question":  "What releases water?",
+                               "choices":  [
+                                               "Hydrolysis",
+                                               "Condensation",
+                                               "Oxidation",
+                                               "Reduction"
+                                           ],
+                               "correct":  "Condensation"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "_____ chemistry studies carbon.",
+                               "expectedAny":  [
+                                                   "organic",
+                                                   "Organic"
+                                               ]
+                           },
+                           {
+                               "question":  "A _____ has H and C only.",
+                               "expectedAny":  [
+                                                   "hydrocarbon",
+                                                   "Hydrocarbon"
+                                               ]
+                           },
+                           {
+                               "question":  "A functional _____ determines properties.",
+                               "expectedAny":  [
+                                                   "group",
+                                                   "Group"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ have same formula different structure.",
+                               "expectedAny":  [
+                                                   "isomers",
+                                                   "Isomers"
+                                               ]
+                           },
+                           {
+                               "question":  "A _____ has repeating units.",
+                               "expectedAny":  [
+                                                   "polymer",
+                                                   "Polymer"
+                                               ]
+                           },
+                           {
+                               "question":  "An _____ has single bonds.",
+                               "expectedAny":  [
+                                                   "alkane",
+                                                   "Alkane"
+                                               ]
+                           },
+                           {
+                               "question":  "An _____ has double bonds.",
+                               "expectedAny":  [
+                                                   "alkene",
+                                                   "Alkene"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ compounds have benzene.",
+                               "expectedAny":  [
+                                                   "aromatic",
+                                                   "Aromatic"
+                                               ]
+                           },
+                           {
+                               "question":  "An _____ forms from alcohol and acid.",
+                               "expectedAny":  [
+                                                   "ester",
+                                                   "Ester"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ reaction produces water.",
+                               "expectedAny":  [
+                                                   "condensation",
+                                                   "Condensation"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "What is organic chemistry?",
+                            "expectedAny":  [
+                                                "study of carbon-containing compounds",
+                                                "chemistry of life molecules",
+                                                "includes hydrocarbons and derivatives"
+                                            ]
+                        },
+                        {
+                            "question":  "Define hydrocarbon.",
+                            "expectedAny":  [
+                                                "compound of only hydrogen and carbon",
+                                                "simplest organic compounds",
+                                                "includes alkanes alkenes alkynes"
+                                            ]
+                        },
+                        {
+                            "question":  "What is functional group?",
+                            "expectedAny":  [
+                                                "atom group determining compound properties",
+                                                "gives characteristic reactions",
+                                                "like alcohol carbonyl carboxyl"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain isomers.",
+                            "expectedAny":  [
+                                                "compounds with same formula different structure",
+                                                "can be structural or geometric",
+                                                "different properties despite same atoms"
+                                            ]
+                        },
+                        {
+                            "question":  "What is polymer?",
+                            "expectedAny":  [
+                                                "large molecule made of repeating units",
+                                                "monomers linked together",
+                                                "like proteins DNA plastics"
+                                            ]
+                        },
+                        {
+                            "question":  "What is alkane?",
+                            "expectedAny":  [
+                                                "saturated hydrocarbon with single bonds",
+                                                "general formula C n H 2n plus 2",
+                                                "like methane ethane propane"
+                                            ]
+                        },
+                        {
+                            "question":  "Define alkene.",
+                            "expectedAny":  [
+                                                "unsaturated hydrocarbon with double bonds",
+                                                "general formula C n H 2n",
+                                                "like ethene propene"
+                                            ]
+                        },
+                        {
+                            "question":  "What is aromatic compound?",
+                            "expectedAny":  [
+                                                "molecule with benzene ring structure",
+                                                "has delocalized electrons",
+                                                "unusually stable"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain ester.",
+                            "expectedAny":  [
+                                                "compound from alcohol and carboxylic acid",
+                                                "has C O O group",
+                                                "fruity smell used in flavors"
+                                            ]
+                        },
+                        {
+                            "question":  "What is condensation reaction?",
+                            "expectedAny":  [
+                                                "reaction forming water as byproduct",
+                                                "joins molecules removing water",
+                                                "opposite of hydrolysis"
+                                            ]
+                        }
+                    ]
+}

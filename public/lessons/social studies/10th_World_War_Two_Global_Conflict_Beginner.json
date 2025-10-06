@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "10th_World_War_Two_Global_Conflict_Beginner",
   "title": "World War II: Global Conflict and Allied Victory",
   "grade": "10th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "world war two",
-      "definition": "Global conflict from 1939-1945 between Axis and Allied powers"
-    },
-    {
-      "term": "axis powers",
-      "definition": "Alliance of Germany, Italy, and Japan during WWII"
-    },
-    {
-      "term": "allied powers",
-      "definition": "Alliance including Britain, Soviet Union, and United States"
-    },
-    {
-      "term": "holocaust",
-      "definition": "Systematic persecution and murder of Jews by Nazi Germany"
-    },
-    {
-      "term": "d day",
-      "definition": "Allied invasion of Nazi-occupied France on June 6, 1944"
-    }
+    {"term": "world war two", "definition": "Global conflict from 1939-1945 between Axis and Allied powers"},
+    {"term": "axis powers", "definition": "Alliance of Germany, Italy, and Japan during WWII"},
+    {"term": "allied powers", "definition": "Alliance including Britain, Soviet Union, and United States"},
+    {"term": "holocaust", "definition": "Systematic persecution and murder of Jews by Nazi Germany"},
+    {"term": "d day", "definition": "Allied invasion of Nazi-occupied France on June 6, 1944"}
   ],
   "teachingNotes": "Emphasize the global scope of the conflict and its humanitarian consequences. Discuss the importance of Allied cooperation.",
-  "sample": {
-    "question": "What was the global conflict from 1939-1945?",
-    "expectedAny": [
-      "World War II",
-      "Second World War",
-      "WWII",
-      "World War Two"
-    ]
-  },
-  "truefalse": {
-    "question": "The Axis powers included Germany, Italy, and Japan.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What was the Allied invasion of France called?",
-    "expectedAny": [
-      "D-Day",
-      "Operation Overlord",
-      "Normandy invasion",
-      "June 6 invasion"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The systematic persecution of Jews was called the ________.",
-    "expectedAny": [
-      "Holocaust",
-      "Shoah",
-      "Jewish persecution",
-      "genocide"
-    ]
-  },
-  "shortanswer": {
-    "question": "What factors led to Allied victory in WWII?",
-    "expectedAny": [
-      "industrial capacity",
-      "cooperation",
-      "two-front war",
-      "technological advantage"
-    ]
-  }
+  "sample": [
+    {"question": "What was 1939-1945 conflict?", "expectedAny": ["world war two", "WWII", "second world war", "ww2", "world war 2", "global conflict"]},
+    {"question": "Who were Germany Italy Japan?", "expectedAny": ["axis powers", "axis", "axis nations", "tripartite", "axis alliance", "axis countries"]},
+    {"question": "Who were Britain US USSR?", "expectedAny": ["allied powers", "allies", "allied nations", "grand alliance", "allied forces", "allied coalition"]},
+    {"question": "What was Jewish persecution?", "expectedAny": ["holocaust", "shoah", "jewish genocide", "nazi genocide", "final solution", "extermination"]},
+    {"question": "What was June 6 1944?", "expectedAny": ["d day", "invasion", "normandy invasion", "overlord", "normandy landing", "operation overlord"]},
+    {"question": "What was global war?", "expectedAny": ["world war two", "second world war", "WWII", "ww2", "world war 2", "global conflict"]},
+    {"question": "Who fought allies?", "expectedAny": ["axis powers", "axis", "axis nations", "tripartite", "axis alliance", "axis countries"]},
+    {"question": "Who defeated axis?", "expectedAny": ["allied powers", "allies", "allied nations", "grand alliance", "allied forces", "allied coalition"]},
+    {"question": "What was Nazi genocide?", "expectedAny": ["holocaust", "genocide", "shoah", "jewish genocide", "nazi genocide", "final solution"]},
+    {"question": "What was France invasion?", "expectedAny": ["d day", "normandy", "normandy invasion", "overlord", "normandy landing", "operation overlord"]}
+  ],
+  "truefalse": [
+    {"question": "WWII was 1939-1945. (True or False)", "correct": true},
+    {"question": "Axis included United States. (True or False)", "correct": false},
+    {"question": "Allies included Britain. (True or False)", "correct": true},
+    {"question": "Holocaust persecuted Jews. (True or False)", "correct": true},
+    {"question": "D-Day was in 1944. (True or False)", "correct": true},
+    {"question": "WWII was global conflict. (True or False)", "correct": true},
+    {"question": "Axis powers included Germany. (True or False)", "correct": true},
+    {"question": "Soviet Union was axis. (True or False)", "correct": false},
+    {"question": "Holocaust was genocide. (True or False)", "correct": true},
+    {"question": "D-Day invaded France. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What was 1939-1945?", "choices": [{"letter": "A", "text": "WWI"}, {"letter": "B", "text": "World War Two"}, {"letter": "C", "text": "Cold War"}, {"letter": "D", "text": "Korean War"}], "correct": "B"},
+    {"question": "Who were axis?", "choices": [{"letter": "A", "text": "Britain France US"}, {"letter": "B", "text": "Germany Italy Japan"}, {"letter": "C", "text": "USSR China"}, {"letter": "D", "text": "Spain Portugal"}], "correct": "B"},
+    {"question": "Who were allies?", "choices": [{"letter": "A", "text": "Germany Italy"}, {"letter": "B", "text": "Britain US USSR"}, {"letter": "C", "text": "Japan Germany"}, {"letter": "D", "text": "Italy Spain"}], "correct": "B"},
+    {"question": "What persecuted Jews?", "choices": [{"letter": "A", "text": "Cold War"}, {"letter": "B", "text": "Holocaust"}, {"letter": "C", "text": "D-Day"}, {"letter": "D", "text": "Pearl Harbor"}], "correct": "B"},
+    {"question": "What was June 6 1944?", "choices": [{"letter": "A", "text": "Pearl Harbor"}, {"letter": "B", "text": "D-Day"}, {"letter": "C", "text": "VE Day"}, {"letter": "D", "text": "VJ Day"}], "correct": "B"},
+    {"question": "What was global war?", "choices": [{"letter": "A", "text": "WWI"}, {"letter": "B", "text": "WWII"}, {"letter": "C", "text": "Vietnam"}, {"letter": "D", "text": "Korea"}], "correct": "B"},
+    {"question": "Who included Germany?", "choices": [{"letter": "A", "text": "Allies"}, {"letter": "B", "text": "Axis powers"}, {"letter": "C", "text": "Neutral"}, {"letter": "D", "text": "United Nations"}], "correct": "B"},
+    {"question": "Who defeated axis?", "choices": [{"letter": "A", "text": "Axis"}, {"letter": "B", "text": "Allied powers"}, {"letter": "C", "text": "Neutral"}, {"letter": "D", "text": "Nobody"}], "correct": "B"},
+    {"question": "What was genocide?", "choices": [{"letter": "A", "text": "D-Day"}, {"letter": "B", "text": "Holocaust"}, {"letter": "C", "text": "Blitz"}, {"letter": "D", "text": "Battle"}], "correct": "B"},
+    {"question": "What invaded France?", "choices": [{"letter": "A", "text": "Pearl Harbor"}, {"letter": "B", "text": "D-Day"}, {"letter": "C", "text": "Midway"}, {"letter": "D", "text": "Stalingrad"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "World War _____ was 1939-1945.", "expectedAny": ["two", "Two", "II"]},
+    {"question": "_____ powers included Germany.", "expectedAny": ["axis", "Axis"]},
+    {"question": "_____ powers included Britain.", "expectedAny": ["allied", "Allied"]},
+    {"question": "_____ persecuted Jews.", "expectedAny": ["holocaust", "Holocaust"]},
+    {"question": "___-Day invaded France.", "expectedAny": ["D", "d"]},
+    {"question": "WWII was _____ conflict.", "expectedAny": ["global"]},
+    {"question": "Germany was _____ power.", "expectedAny": ["axis"]},
+    {"question": "US was _____ power.", "expectedAny": ["allied"]},
+    {"question": "_____ was Nazi genocide.", "expectedAny": ["holocaust", "Holocaust"]},
+    {"question": "June 6 1944 was ___-Day.", "expectedAny": ["D", "d"]}
+  ],
+  "shortanswer": [
+    {"question": "What is World War Two?", "keyTerms": ["global", "conflict", "1939-1945", "axis", "allied", "powers"], "expectedAny": ["Global conflict from 1939-1945 between Axis and Allied powers", "Second World War", "WWII 1939-1945"]},
+    {"question": "What are Axis powers?", "keyTerms": ["alliance", "germany", "italy", "japan", "during", "wwii"], "expectedAny": ["Alliance of Germany, Italy, and Japan during WWII", "Germany Italy Japan", "Axis alliance"]},
+    {"question": "What are Allied powers?", "keyTerms": ["alliance", "including", "britain", "soviet union", "united states"], "expectedAny": ["Alliance including Britain, Soviet Union, and United States", "Britain US USSR", "Allied alliance"]},
+    {"question": "What is Holocaust?", "keyTerms": ["systematic", "persecution", "murder", "jews", "nazi", "germany"], "expectedAny": ["Systematic persecution and murder of Jews by Nazi Germany", "Jewish genocide", "Nazi genocide"]},
+    {"question": "What is D-Day?", "keyTerms": ["allied", "invasion", "nazi-occupied", "france", "june", "6", "1944"], "expectedAny": ["Allied invasion of Nazi-occupied France on June 6, 1944", "Normandy invasion", "France invasion 1944"]},
+    {"question": "What started WWII?", "keyTerms": ["germany", "invaded", "poland", "1939"], "expectedAny": ["Germany invaded Poland in 1939", "Polish invasion", "1939 invasion"]},
+    {"question": "What ended WWII in Europe?", "keyTerms": ["germany", "surrendered", "may", "1945", "VE Day"], "expectedAny": ["Germany surrendered May 1945", "VE Day", "Nazi surrender"]},
+    {"question": "What ended WWII in Pacific?", "keyTerms": ["japan", "surrendered", "august", "1945", "VJ Day", "atomic bombs"], "expectedAny": ["Japan surrendered August 1945", "VJ Day", "After atomic bombs"]},
+    {"question": "Who led Nazi Germany?", "keyTerms": ["adolf", "hitler", "fuhrer"], "expectedAny": ["Adolf Hitler", "Hitler", "Nazi leader"]},
+    {"question": "What was Holocaust result?", "keyTerms": ["six million", "jews", "murdered", "millions", "others"], "expectedAny": ["Six million Jews murdered plus millions of others", "Genocide of millions", "Mass murder"]}
+  ]
 }

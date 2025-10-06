@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Walk through each step of the scientific method. Emphasize that science is about asking questions and finding evidence-based answers.",
-  "sample": {
-    "question": "What is an educated guess that can be tested called?",
-    "expectedAny": [
-      "hypothesis",
-      "testable prediction",
-      "scientific guess",
-      "experimental prediction"
-    ]
-  },
-  "truefalse": {
-    "question": "A good hypothesis must be testable.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the first step in the scientific method?",
-    "expectedAny": [
-      "ask a question",
-      "observation",
-      "make an observation",
-      "identify a problem"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Information collected during an experiment is called ________.",
-    "expectedAny": [
-      "data",
-      "experimental data",
-      "results",
-      "observations"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why is it important to have a control in an experiment?",
-    "expectedAny": [
-      "to compare results",
-      "shows what happens without the variable",
-      "provides baseline for comparison"
-    ]
-  }
+  "sample": [
+    { "question": "What is an educated guess that can be tested called?", "expectedAny": ["hypothesis"] },
+    { "question": "Which can change in experiment?", "choices": ["Constant", "Variable", "Control", "Result"], "correct": 1, "expectedAny": ["variable"] },
+    { "question": "Staying the same for comparison is ________.", "expectedAny": ["control"] },
+    { "question": "Information collected is ________.", "expectedAny": ["data"] },
+    { "question": "What you learn is ________.", "expectedAny": ["conclusion"] },
+    { "question": "What is testable guess?", "choices": ["Theory", "Hypothesis", "Law", "Fact"], "correct": 1, "expectedAny": ["hypothesis"] },
+    { "question": "Factor that changes is ________.", "expectedAny": ["variable"] },
+    { "question": "Unchanged comparison is ________.", "expectedAny": ["control"] },
+    { "question": "Which is collected info?", "choices": ["Theory", "Data", "Law", "Fact"], "correct": 1, "expectedAny": ["data"] },
+    { "question": "Result of analysis is ________.", "expectedAny": ["conclusion"] }
+  ],
+  "truefalse": [
+    { "question": "A good hypothesis must be testable.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Variables should never change.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Controls provide comparison.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Data is not important.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Conclusions come from data analysis.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Hypotheses are always correct.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Scientific method follows steps.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Controls should change.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Data is collected information.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Conclusions ignore data.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is the first step in the scientific method?", "choices": ["Hypothesis", "Ask a question", "Experiment", "Conclusion"], "correct": 1, "expectedAny": ["ask a question"] },
+    { "question": "What is testable guess?", "choices": ["Theory", "Hypothesis", "Law", "Fact"], "correct": 1, "expectedAny": ["hypothesis"] },
+    { "question": "What can change?", "choices": ["Constant", "Variable", "Control", "Law"], "correct": 1, "expectedAny": ["variable"] },
+    { "question": "What stays same?", "choices": ["Variable", "Control", "Hypothesis", "Data"], "correct": 1, "expectedAny": ["control"] },
+    { "question": "What is collected info?", "choices": ["Theory", "Data", "Law", "Fact"], "correct": 1, "expectedAny": ["data"] },
+    { "question": "What do you learn?", "choices": ["Hypothesis", "Conclusion", "Variable", "Control"], "correct": 1, "expectedAny": ["conclusion"] },
+    { "question": "What tests hypothesis?", "choices": ["Question", "Experiment", "Theory", "Law"], "correct": 1, "expectedAny": ["experiment"] },
+    { "question": "What provides baseline?", "choices": ["Variable", "Control", "Data", "Hypothesis"], "correct": 1, "expectedAny": ["control"] },
+    { "question": "Results are?", "choices": ["Variables", "Data", "Controls", "Questions"], "correct": 1, "expectedAny": ["data"] },
+    { "question": "Final step is?", "choices": ["Question", "Conclusion", "Hypothesis", "Variable"], "correct": 1, "expectedAny": ["conclusion"] }
+  ],
+  "fillintheblank": [
+    { "question": "Information collected during an experiment is called ________.", "expectedAny": ["data"] },
+    { "question": "An educated testable guess is a ________.", "expectedAny": ["hypothesis"] },
+    { "question": "A factor that can change is a ________.", "expectedAny": ["variable"] },
+    { "question": "The unchanged part for comparison is the ________.", "expectedAny": ["control"] },
+    { "question": "What you learn from data is the ________.", "expectedAny": ["conclusion"] },
+    { "question": "A ________ must be testable.", "expectedAny": ["hypothesis"] },
+    { "question": "A ________ can change.", "expectedAny": ["variable"] },
+    { "question": "A ________ stays the same.", "expectedAny": ["control"] },
+    { "question": "________ is collected information.", "expectedAny": ["data"] },
+    { "question": "A ________ comes from analysis.", "expectedAny": ["conclusion"] }
+  ],
+  "shortanswer": [
+    { "question": "Why is it important to have a control in an experiment?", "expectedAny": ["to compare results", "shows what happens without the variable"] },
+    { "question": "What is a hypothesis?", "expectedAny": ["educated testable guess", "prediction you can test", "testable prediction", "educated guess"] },
+    { "question": "What is a variable?", "expectedAny": ["factor that can change", "something you change or measure", "thing that changes", "changing factor"] },
+    { "question": "What is a control?", "expectedAny": ["unchanged part for comparison", "stays the same", "part that doesn't change", "comparison group"] },
+    { "question": "What is data?", "expectedAny": ["information collected", "experimental results"] },
+    { "question": "What is a conclusion?", "expectedAny": ["what you learn from data", "results interpretation"] },
+    { "question": "What is scientific method?", "expectedAny": ["steps for investigation", "process for testing ideas"] },
+    { "question": "What is first step?", "expectedAny": ["ask a question", "observation"] },
+    { "question": "Why test hypothesis?", "expectedAny": ["to see if correct", "to gather evidence"] },
+    { "question": "What comes after data?", "expectedAny": ["conclusion", "analysis"] }
+  ]
 }

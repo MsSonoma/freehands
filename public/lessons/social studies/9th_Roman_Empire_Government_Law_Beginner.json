@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "9th_Roman_Empire_Government_Law_Beginner",
   "title": "Roman Empire: Government and Legal System",
   "grade": "9th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "republic",
-      "definition": "Government where power rests with citizens and elected representatives"
-    },
-    {
-      "term": "senate",
-      "definition": "Assembly of nobles that advised Roman magistrates"
-    },
-    {
-      "term": "consul",
-      "definition": "Chief executive officer of the Roman Republic"
-    },
-    {
-      "term": "Roman law",
-      "definition": "Legal system that influenced modern legal codes"
-    },
-    {
-      "term": "citizenship",
-      "definition": "Legal status granting rights and responsibilities"
-    }
+    {"term": "republic", "definition": "Government where power rests with citizens and elected representatives"},
+    {"term": "senate", "definition": "Assembly of nobles that advised Roman magistrates"},
+    {"term": "consul", "definition": "Chief executive officer of the Roman Republic"},
+    {"term": "Roman law", "definition": "Legal system that influenced modern legal codes"},
+    {"term": "citizenship", "definition": "Legal status granting rights and responsibilities"}
   ],
   "teachingNotes": "Focus on Roman contributions to government and law. Compare Roman republic to modern democratic systems.",
-  "sample": {
-    "question": "What is a government where power rests with citizens and representatives?",
-    "expectedAny": [
-      "republic",
-      "republican government",
-      "representative government",
-      "constitutional republic"
-    ]
-  },
-  "truefalse": {
-    "question": "The consul was the chief executive officer of the Roman Republic.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What assembly advised Roman magistrates?",
-    "expectedAny": [
-      "senate",
-      "Roman Senate",
-      "senatorial assembly",
-      "noble assembly"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Legal status granting rights and responsibilities is called ________.",
-    "expectedAny": [
-      "citizenship",
-      "civic status",
-      "legal status",
-      "citizen rights"
-    ]
-  },
-  "shortanswer": {
-    "question": "How did Roman law influence modern legal systems?",
-    "expectedAny": [
-      "provided foundation for legal codes",
-      "established legal principles",
-      "influenced court procedures"
-    ]
-  }
+  "sample": [
+    {"question": "What is a government where power rests with citizens and representatives?", "expectedAny": ["republic", "republican government", "representative government", "elected government"]},
+    {"question": "What assembly advised Roman magistrates?", "expectedAny": ["senate", "Roman senate", "advisory assembly"]},
+    {"question": "What was the chief executive of the Roman Republic?", "expectedAny": ["consul", "Roman consul", "chief executive", "top leader"]},
+    {"question": "What legal system influenced modern codes?", "expectedAny": ["Roman law", "Roman legal system", "Roman justice system"]},
+    {"question": "What is legal status granting rights?", "expectedAny": ["citizenship", "citizen status", "being a citizen"]},
+    {"question": "What did the Roman Republic have?", "expectedAny": ["elected representatives", "citizens with power", "republican system"]},
+    {"question": "What was the senate?", "expectedAny": ["assembly of nobles", "advisory body", "group of senators"]},
+    {"question": "What did consuls do?", "expectedAny": ["chief executives", "led government", "Roman leaders"]},
+    {"question": "What did Roman law create?", "expectedAny": ["legal codes", "foundation for modern law", "justice system"]},
+    {"question": "What did citizenship provide?", "expectedAny": ["rights and responsibilities", "legal protection", "political participation"]}
+  ],
+  "truefalse": [
+    {"question": "The consul was the chief executive officer of the Roman Republic. (True or False)", "correct": true},
+    {"question": "A republic has no elected representatives. (True or False)", "correct": false},
+    {"question": "The senate advised Roman magistrates. (True or False)", "correct": true},
+    {"question": "Roman law influenced modern legal systems. (True or False)", "correct": true},
+    {"question": "Citizenship granted no rights. (True or False)", "correct": false},
+    {"question": "Power in a republic rests with citizens. (True or False)", "correct": true},
+    {"question": "The senate was an assembly of nobles. (True or False)", "correct": true},
+    {"question": "Consuls were not executives. (True or False)", "correct": false},
+    {"question": "Roman law created legal codes. (True or False)", "correct": true},
+    {"question": "Citizenship had responsibilities. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What assembly advised Roman magistrates?", "choices": [{"letter": "A", "text": "Senate"}, {"letter": "B", "text": "Congress"}, {"letter": "C", "text": "Parliament"}, {"letter": "D", "text": "Assembly"}], "correct": "A"},
+    {"question": "What was the chief executive called?", "choices": [{"letter": "A", "text": "King"}, {"letter": "B", "text": "Consul"}, {"letter": "C", "text": "Emperor"}, {"letter": "D", "text": "President"}], "correct": "B"},
+    {"question": "What is a government with elected representatives?", "choices": [{"letter": "A", "text": "Monarchy"}, {"letter": "B", "text": "Dictatorship"}, {"letter": "C", "text": "Republic"}, {"letter": "D", "text": "Empire"}], "correct": "C"},
+    {"question": "What influenced modern law?", "choices": [{"letter": "A", "text": "Greek law"}, {"letter": "B", "text": "Roman law"}, {"letter": "C", "text": "Egyptian law"}, {"letter": "D", "text": "Persian law"}], "correct": "B"},
+    {"question": "What grants rights and responsibilities?", "choices": [{"letter": "A", "text": "Slavery"}, {"letter": "B", "text": "Property"}, {"letter": "C", "text": "Citizenship"}, {"letter": "D", "text": "Title"}], "correct": "C"},
+    {"question": "Where did power rest in republic?", "choices": [{"letter": "A", "text": "King only"}, {"letter": "B", "text": "Citizens and representatives"}, {"letter": "C", "text": "Nobles only"}, {"letter": "D", "text": "Military"}], "correct": "B"},
+    {"question": "Who made up the senate?", "choices": [{"letter": "A", "text": "Commoners"}, {"letter": "B", "text": "Slaves"}, {"letter": "C", "text": "Nobles"}, {"letter": "D", "text": "Foreigners"}], "correct": "C"},
+    {"question": "What did consuls lead?", "choices": [{"letter": "A", "text": "Army only"}, {"letter": "B", "text": "Republic government"}, {"letter": "C", "text": "Senate"}, {"letter": "D", "text": "Courts"}], "correct": "B"},
+    {"question": "What system did Rome create?", "choices": [{"letter": "A", "text": "Democracy"}, {"letter": "B", "text": "Legal codes"}, {"letter": "C", "text": "Monarchy"}, {"letter": "D", "text": "Feudalism"}], "correct": "B"},
+    {"question": "What status had rights?", "choices": [{"letter": "A", "text": "Visitor"}, {"letter": "B", "text": "Slave"}, {"letter": "C", "text": "Citizen"}, {"letter": "D", "text": "Prisoner"}], "correct": "C"}
+  ],
+  "fillintheblank": [
+    {"question": "A _____ is a government with elected representatives.", "expectedAny": ["republic"]},
+    {"question": "The _____ advised Roman magistrates.", "expectedAny": ["senate"]},
+    {"question": "The _____ was the chief executive of the Roman Republic.", "expectedAny": ["consul"]},
+    {"question": "_____ law influenced modern legal systems.", "expectedAny": ["Roman"]},
+    {"question": "_____ grants rights and responsibilities.", "expectedAny": ["citizenship"]},
+    {"question": "Power in a republic rests with _____ and representatives.", "expectedAny": ["citizens"]},
+    {"question": "The senate was an assembly of _____.", "expectedAny": ["nobles"]},
+    {"question": "Consuls were chief _____.", "expectedAny": ["executives", "executive officers"]},
+    {"question": "Roman law created legal _____.", "expectedAny": ["codes", "systems"]},
+    {"question": "Citizenship provided legal _____.", "expectedAny": ["rights", "status", "protection"]}
+  ],
+  "shortanswer": [
+    {"question": "What is a republic?", "keyTerms": ["government", "power", "citizens", "elected representatives"], "expectedAny": ["Government where power rests with citizens and elected representatives", "System with elected leaders representing citizens", "Representative government with citizen power"]},
+    {"question": "What was the Roman senate?", "keyTerms": ["assembly", "nobles", "advised", "magistrates"], "expectedAny": ["Assembly of nobles that advised Roman magistrates", "Group of nobles providing government advice", "Advisory body of Roman nobles"]},
+    {"question": "What did consuls do?", "keyTerms": ["chief", "executive", "officer", "Roman Republic"], "expectedAny": ["Chief executive officers of the Roman Republic", "Led and administered Roman government", "Top officials of Roman Republic"]},
+    {"question": "What is Roman law?", "keyTerms": ["legal", "system", "influenced", "modern codes"], "expectedAny": ["Legal system that influenced modern legal codes", "Foundation of many modern legal systems", "Roman legal framework for justice"]},
+    {"question": "What is citizenship?", "keyTerms": ["legal", "status", "rights", "responsibilities"], "expectedAny": ["Legal status granting rights and responsibilities", "Membership in community with rights and duties", "Status providing legal protections and obligations"]},
+    {"question": "How did the republic work?", "keyTerms": ["citizens", "elect", "representatives", "power"], "expectedAny": ["Citizens elected representatives who held power", "Power shared between citizens and elected officials", "Representative system with citizen participation"]},
+    {"question": "What did the senate do?", "keyTerms": ["advised", "magistrates", "government", "decisions"], "expectedAny": ["Advised magistrates on government decisions", "Provided counsel to Roman leaders", "Guided policy and administration"]},
+    {"question": "Why were consuls important?", "keyTerms": ["led", "government", "executive", "authority"], "expectedAny": ["They led government with executive authority", "Top officials who administered the republic", "Chief executives managing Roman state"]},
+    {"question": "How did Roman law influence us?", "keyTerms": ["foundation", "modern", "legal", "systems"], "expectedAny": ["Provided foundation for modern legal systems", "Many current laws based on Roman principles", "Created legal concepts still used today"]},
+    {"question": "What did citizens gain?", "keyTerms": ["rights", "responsibilities", "protection", "participation"], "expectedAny": ["Rights to participate and legal protection with responsibilities", "Political and legal rights plus civic duties", "Ability to vote and legal protections"]}
+  ]
 }

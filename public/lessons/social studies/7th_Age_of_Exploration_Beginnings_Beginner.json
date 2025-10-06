@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Explain motivations for exploration: gold, God, and glory. Discuss technological advances that made ocean travel possible.",
-  "sample": {
-    "question": "What is the act of traveling to discover new places?",
-    "expectedAny": [
-      "exploration",
-      "discovery",
-      "expedition",
-      "voyage"
-    ]
-  },
-  "truefalse": {
-    "question": "Europeans explored to find new trade routes to Asia.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What instrument helped sailors determine direction?",
-    "expectedAny": [
-      "compass",
-      "magnetic compass",
-      "navigation compass",
-      "directional tool"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Establishing settlements in new territories is called ________.",
-    "expectedAny": [
-      "colonization",
-      "settlement",
-      "establishing colonies",
-      "founding settlements"
-    ]
-  },
-  "shortanswer": {
-    "question": "What were the three main motivations for European exploration?",
-    "expectedAny": [
-      "gold, God, and glory",
-      "wealth, religion, fame",
-      "riches, Christianity, honor"
-    ]
-  }
+  "sample": [
+    { "question": "What is the act of traveling to discover new places?", "expectedAny": ["exploration"] },
+    { "question": "Which is route planning?", "choices": ["Exploration", "Navigation", "Colonization", "Trade"], "correct": 1, "expectedAny": ["navigation"] },
+    { "question": "Direction tool is ________.", "expectedAny": ["compass"] },
+    { "question": "Establishing settlements is ________.", "expectedAny": ["colonization"] },
+    { "question": "Path for merchants is ________.", "expectedAny": ["trade route"] },
+    { "question": "What is discovering places?", "choices": ["Settlement", "Exploration", "Trade", "War"], "correct": 1, "expectedAny": ["exploration"] },
+    { "question": "Planning a route is ________.", "expectedAny": ["navigation"] },
+    { "question": "Magnetic direction tool is ________.", "expectedAny": ["compass"] },
+    { "question": "Which is new settlements?", "choices": ["Exploration", "Colonization", "Navigation", "Trade"], "correct": 1, "expectedAny": ["colonization"] },
+    { "question": "Trading path is ________.", "expectedAny": ["trade route"] }
+  ],
+  "truefalse": [
+    { "question": "Europeans explored to find new trade routes to Asia.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Compasses show time.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Navigation is planning routes.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Colonization is destroying settlements.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Trade routes connected regions.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Exploration means staying home.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Compasses use magnetism.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Europeans avoided Asia.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Gold motivated explorers.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Navigation is random travel.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What instrument helped sailors determine direction?", "choices": ["Clock", "Compass", "Telescope", "Ruler"], "correct": 1, "expectedAny": ["compass"] },
+    { "question": "What is discovering places?", "choices": ["Settlement", "Exploration", "Trade", "War"], "correct": 1, "expectedAny": ["exploration"] },
+    { "question": "What is route planning?", "choices": ["Exploration", "Navigation", "Colonization", "Trade"], "correct": 1, "expectedAny": ["navigation"] },
+    { "question": "What is new settlements?", "choices": ["Exploration", "Colonization", "Navigation", "Trade"], "correct": 1, "expectedAny": ["colonization"] },
+    { "question": "What is merchant path?", "choices": ["Compass", "Trade route", "Navigation", "Exploration"], "correct": 1, "expectedAny": ["trade route"] },
+    { "question": "What shows direction?", "choices": ["Clock", "Compass", "Map", "Book"], "correct": 1, "expectedAny": ["compass"] },
+    { "question": "Why explore?", "choices": ["Stay home", "Find trade routes", "Build walls", "Sleep"], "correct": 1, "expectedAny": ["find trade routes"] },
+    { "question": "What motivated explorers?", "choices": ["Fear", "Gold", "Darkness", "Sleep"], "correct": 1, "expectedAny": ["gold"] },
+    { "question": "Establishing settlements is?", "choices": ["Exploration", "Colonization", "Navigation", "Trade"], "correct": 1, "expectedAny": ["colonization"] },
+    { "question": "Planning routes is?", "choices": ["Random", "Navigation", "Guessing", "Sleeping"], "correct": 1, "expectedAny": ["navigation"] }
+  ],
+  "fillintheblank": [
+    { "question": "Establishing settlements in new territories is called ________.", "expectedAny": ["colonization"] },
+    { "question": "Traveling to discover new places is ________.", "expectedAny": ["exploration"] },
+    { "question": "Planning and following a route is ________.", "expectedAny": ["navigation"] },
+    { "question": "An instrument showing direction is a ________.", "expectedAny": ["compass"] },
+    { "question": "A path for merchants is a ________.", "expectedAny": ["trade route"] },
+    { "question": "________ means discovering new places.", "expectedAny": ["exploration"] },
+    { "question": "________ uses planning and routes.", "expectedAny": ["navigation"] },
+    { "question": "A ________ shows direction.", "expectedAny": ["compass"] },
+    { "question": "________ establishes new settlements.", "expectedAny": ["colonization"] },
+    { "question": "A ________ route connects merchants.", "expectedAny": ["trade"] }
+  ],
+  "shortanswer": [
+    { "question": "What were the three main motivations for European exploration?", "expectedAny": ["gold, God, and glory"] },
+    { "question": "What is exploration?", "expectedAny": ["traveling to discover new places", "discovering new lands", "finding new places", "discovering new areas"] },
+    { "question": "What is navigation?", "expectedAny": ["planning and following routes", "science of routes", "finding your way", "following routes"] },
+    { "question": "What is a compass?", "expectedAny": ["direction showing instrument", "magnetic direction tool"] },
+    { "question": "What is colonization?", "expectedAny": ["establishing settlements", "creating new colonies", "settling new lands", "creating settlements"] },
+    { "question": "What is a trade route?", "expectedAny": ["path for merchants", "route for buying and selling"] },
+    { "question": "Why did Europeans explore?", "expectedAny": ["find trade routes to Asia", "gold, God, glory"] },
+    { "question": "What tool helped navigation?", "expectedAny": ["compass"] },
+    { "question": "What does gold, God, glory mean?", "expectedAny": ["wealth, religion, fame"] },
+    { "question": "Why was compass important?", "expectedAny": ["showed direction", "helped sailors navigate"] }
+  ]
 }

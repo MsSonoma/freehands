@@ -5,12 +5,16 @@
   "difficulty": "Advanced",
   "featured": false,
   "vocab": [
-    { "term": "timeline", "definition": "A line that shows when important events happened in order" },
-    { "term": "chronological", "definition": "Arranged in the order that things happened in time" },
-    { "term": "decade", "definition": "A period of 10 years" },
-    { "term": "century", "definition": "A period of 100 years" },
-    { "term": "historical", "definition": "Related to events that happened in the past" },
-    { "term": "era", "definition": "A long period of time marked by special events or characteristics" }
+    {"word": "timeline", "kid_friendly_definition": "A line that shows when important events happened in order."},
+    {"word": "chronological", "kid_friendly_definition": "Arranged in the order that things happened in time."},
+    {"word": "decade", "kid_friendly_definition": "A period of 10 years."},
+    {"word": "century", "kid_friendly_definition": "A period of 100 years."},
+    {"word": "historical", "kid_friendly_definition": "Related to events that happened in the past."},
+    {"word": "era", "kid_friendly_definition": "A long period of time marked by special events or characteristics."},
+    {"word": "millennium", "kid_friendly_definition": "A period of 1000 years."},
+    {"word": "past", "kid_friendly_definition": "Time before now; events that already happened."},
+    {"word": "present", "kid_friendly_definition": "Time happening right now."},
+    {"word": "future", "kid_friendly_definition": "Time that has not happened yet."}
   ],
   "teachingNotes": "Create classroom timeline of students' lives. Use family photos to show change over time. Connect to school and community history.",
   "sample": [
@@ -23,67 +27,74 @@
     { "question": "What era are we living in now?", "expectedAny": ["modern era", "digital age", "21st century"] }
   ],
   "truefalse": [
-    { "question": "A timeline shows events in the order they happened.", "answer": true },
-    { "question": "One century equals 50 years.", "answer": false },
-    { "question": "Technology has changed how people communicate.", "answer": true },
-    { "question": "All historical events happened before you were born.", "answer": false },
-    { "question": "Change happens quickly in all parts of life.", "answer": false },
-    { "question": "Photographs can show change over time.", "answer": true },
-    { "question": "Historical events only happened long ago.", "answer": false }
+    { "question": "A timeline shows events in the order they happened.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "events in order"] },
+    { "question": "One century equals 50 years.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "a century is 100 years"] },
+    { "question": "Technology has changed how people communicate.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "technology changed communication"] },
+    { "question": "All historical events happened before you were born.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "history can be recent"] },
+    { "question": "Change happens quickly in all parts of life.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "change can be slow"] },
+    { "question": "Photographs can show change over time.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "photos show change"] },
+    { "question": "Historical events only happened long ago.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "recent events are history too"] }
   ],
   "multiplechoice": [
     {
       "question": "How many decades are in one century?",
       "choices": ["5", "10", "50", "100"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "10", "ten"]
     },
     {
       "question": "What happened first in American history?",
       "choices": ["Civil War", "World War II", "Revolutionary War", "Moon Landing"],
-      "correct": 2
+      "correct": 2,
+      "expectedAny": ["c", "C", "3", "Revolutionary War", "American Revolution"]
     },
     {
       "question": "Which shows change over time?",
       "choices": ["timeline", "map", "dictionary", "menu"],
-      "correct": 0
+      "correct": 0,
+      "expectedAny": ["a", "A", "1", "timeline"]
     },
     {
       "question": "When did the 20th century end?",
       "choices": ["1999", "2000", "2001", "1900"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "2000", "year 2000", "December 31, 2000"]
     },
     {
       "question": "What invention changed communication most?",
       "choices": ["pencil", "telephone", "paper", "bicycle"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "telephone", "phone"]
     },
     {
       "question": "Which is an example of historical change?",
       "choices": ["same clothes", "no change", "horses to cars", "nothing new"],
-      "correct": 2
+      "correct": 2,
+      "expectedAny": ["c", "C", "3", "horses to cars", "horses replaced by cars"]
     },
     {
       "question": "How do we learn about the past?",
       "choices": ["photographs", "stories", "artifacts", "all of these"],
-      "correct": 3
+      "correct": 3,
+      "expectedAny": ["d", "D", "4", "all of these", "all of the above"]
     }
   ],
   "fillintheblank": [
-    { "question": "A ___ shows events in the order they happened.", "expectedAny": ["timeline"] },
-    { "question": "Ten years equals one ___.", "expectedAny": ["decade"] },
-    { "question": "One hundred years equals one ___.", "expectedAny": ["century"] },
-    { "question": "Events in ___ order happened in time sequence.", "expectedAny": ["chronological"] },
-    { "question": "We live in the ___ century.", "expectedAny": ["21st", "twenty-first"] },
-    { "question": "___ events happened in the past.", "expectedAny": ["Historical"] },
+    { "question": "A ___ shows events in the order they happened.", "expectedAny": ["timeline", "a timeline"] },
+    { "question": "Ten years equals one ___.", "expectedAny": ["decade", "10 years"] },
+    { "question": "One hundred years equals one ___.", "expectedAny": ["century", "100 years"] },
+    { "question": "Events in ___ order happened in time sequence.", "expectedAny": ["chronological", "in chronological order"] },
+    { "question": "We live in the ___ century.", "expectedAny": ["21st", "twenty-first", "21st century"] },
+    { "question": "___ events happened in the past.", "expectedAny": ["Historical", "historical events", "events from the past"] },
     { "question": "Change over time can be shown with ___.", "expectedAny": ["photographs", "timelines", "artifacts"] }
   ],
   "shortanswer": [
-    { "question": "How has transportation changed over 100 years?", "expectedAny": ["horses to cars", "invention of airplanes", "faster travel", "more options"] },
-    { "question": "What are three ways to learn about the past?", "expectedAny": ["photographs", "stories", "artifacts", "documents", "museums"] },
-    { "question": "How have homes changed over time?", "expectedAny": ["electricity added", "modern appliances", "different materials", "larger"] },
-    { "question": "Why are timelines important?", "expectedAny": ["organize events", "understand sequence", "see patterns", "learn history"] },
-    { "question": "How has communication changed?", "expectedAny": ["letters to phones", "email", "instant messaging", "internet"] },
-    { "question": "What can old photographs tell us?", "expectedAny": ["how people dressed", "what places looked like", "family history", "changes over time"] },
-    { "question": "How might life change in the future?", "expectedAny": ["new technology", "different transportation", "new inventions", "space travel"] }
+    {"question": "How has transportation changed over 100 years?", "expectedAny": ["horses to cars", "invention of airplanes", "faster travel", "more options", "cars and planes invented", "much faster now"]},
+    {"question": "What are three ways to learn about the past?", "expectedAny": ["photographs", "stories", "artifacts", "documents", "museums", "books", "old things"]},
+    {"question": "How have homes changed over time?", "expectedAny": ["electricity added", "modern appliances", "different materials", "larger", "better technology", "more comfortable"]},
+    {"question": "Why are timelines important?", "expectedAny": ["organize events", "understand sequence", "see patterns", "learn history", "show order", "see what happened when"]},
+    {"question": "How has communication changed?", "expectedAny": ["letters to phones", "email", "instant messaging", "internet", "faster now", "phones and computers"]},
+    {"question": "What can old photographs tell us?", "expectedAny": ["how people dressed", "what places looked like", "family history", "changes over time", "the past", "how things were"]},
+    {"question": "How might life change in the future?", "expectedAny": ["new technology", "different transportation", "new inventions", "space travel", "better computers", "who knows"]}
   ]
 }

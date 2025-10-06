@@ -7,7 +7,7 @@
   "vocab": [
     {
       "term": "seed",
-      "definition": "A tiny part of a plant that can grow into a new plant"
+      "definition": "A tiny part that can grow into a plant"
     },
     {
       "term": "roots",
@@ -18,17 +18,25 @@
       "definition": "The part of a plant that holds it up"
     },
     {
+      "term": "leaves",
+      "definition": "Flat green parts of a plant that make food"
+    },
+    {
+      "term": "grows",
+      "definition": "Gets bigger over time"
+    },
+    {
       "term": "sunlight",
       "definition": "Light from the sun that helps plants grow"
     }
   ],
   "teachingNotes": "Plant seeds in cups and observe growth. Use sequence cards showing plant growth stages. Discuss what plants need.",
   "sample": [
-    {"question": "What do plants need to grow?", "expectedAny": ["water", "sunlight", "soil", "air"]},
-    {"question": "What comes from a seed?", "expectedAny": ["a plant", "roots and stem"]},
-    {"question": "What part of the plant drinks water?", "expectedAny": ["roots"]},
-    {"question": "Where do most plants grow?", "expectedAny": ["in soil", "in the ground"]},
-    {"question": "What helps plants make food?", "expectedAny": ["sunlight", "sun"]}
+    {"question": "What do plants need to grow?", "expectedAny": ["water", "sunlight", "soil", "air", "sun", "light", "dirt"]},
+    {"question": "What comes from a seed?", "expectedAny": ["a plant", "roots and stem", "plant", "a little plant"]},
+    {"question": "What part of the plant drinks water?", "expectedAny": ["roots", "the roots"]},
+    {"question": "Where do most plants grow?", "expectedAny": ["in soil", "in the ground", "in dirt", "outside"]},
+    {"question": "What helps plants make food?", "expectedAny": ["sunlight", "sun", "the sun", "light"]}
   ],
   "truefalse": [
     {"question": "Plants need water to grow.", "answer": true, "expectedAny": ["all plants need water to survive"]},
@@ -49,22 +57,22 @@
     {"question": "What happens if you don't water a plant?", "choices": ["it grows faster", "it gets bigger", "it may die", "it changes color only"], "correct": 2, "expectedAny": ["plants need water to survive"]}
   ],
   "fillintheblank": [
-    {"question": "A plant's _____ help it get water from the ground.", "expectedAny": ["roots"]},
-    {"question": "Plants need _____ from the sun to grow.", "expectedAny": ["sunlight", "light"]},
-    {"question": "A tiny _____ can grow into a big plant.", "expectedAny": ["seed"]},
-    {"question": "The _____ holds the plant up straight.", "expectedAny": ["stem"]},
-    {"question": "Plants make their own _____ using sunlight.", "expectedAny": ["food"]},
-    {"question": "When a seed starts to grow, we say it _____.", "expectedAny": ["sprouts", "grows"]},
-    {"question": "_____ grow down into the soil.", "expectedAny": ["Roots"]}
+    {"question": "A plant's _____ help it get water from the ground.", "expectedAny": ["roots", "its roots", "root"]},
+    {"question": "Plants need _____ from the sun to grow.", "expectedAny": ["sunlight", "light", "sun"]},
+    {"question": "A tiny _____ can grow into a big plant.", "expectedAny": ["seed", "little seed"]},
+    {"question": "The _____ holds the plant up straight.", "expectedAny": ["stem", "plant stem"]},
+    {"question": "Plants make their own _____ using sunlight.", "expectedAny": ["food", "plant food"]},
+    {"question": "When a seed starts to grow, we say it _____.", "expectedAny": ["sprouts", "grows", "germinates"]},
+    {"question": "_____ grow down into the soil.", "expectedAny": ["Roots", "roots", "the roots"]}
   ],
   "shortanswer": [
-    {"question": "What happens to a seed when you plant it in soil and give it water?", "expectedAny": ["it grows", "it becomes a plant", "roots and shoots grow"]},
-    {"question": "Name the parts of a plant and what they do.", "expectedAny": ["roots get water", "stem holds up", "leaves make food"]},
-    {"question": "Why do plants need sunlight?", "expectedAny": ["to make food", "to grow", "to be healthy"]},
-    {"question": "What would happen if a plant didn't get any water?", "expectedAny": ["it would die", "it would wilt", "it couldn't grow"]},
-    {"question": "How do plants change as they grow?", "expectedAny": ["get bigger", "grow more leaves", "may get flowers"]},
-    {"question": "What can you do to help a plant grow well?", "expectedAny": ["water it", "put it in sunlight", "plant it in good soil"]},
-    {"question": "Describe how a sunflower grows from seed to big plant.", "expectedAny": ["seed sprouts", "roots grow down", "stem grows up", "leaves appear", "gets taller"]}
+    {"question": "What happens to a seed when you plant it in soil and give it water?", "expectedAny": ["it grows", "it becomes a plant", "roots and shoots grow", "it sprouts", "a plant comes out"]},
+    {"question": "Name the parts of a plant and what they do.", "expectedAny": ["roots get water", "stem holds up", "leaves make food", "roots drink water", "stem holds it"]},
+    {"question": "Why do plants need sunlight?", "expectedAny": ["to make food", "to grow", "to be healthy", "they need it"]},
+    {"question": "What would happen if a plant didn't get any water?", "expectedAny": ["it would die", "it would wilt", "it couldn't grow", "it would dry up"]},
+    {"question": "How do plants change as they grow?", "expectedAny": ["get bigger", "grow more leaves", "may get flowers", "become taller", "add leaves"]},
+    {"question": "What can you do to help a plant grow well?", "expectedAny": ["water it", "put it in sunlight", "plant it in good soil", "give it water and sun"]},
+    {"question": "Describe how a sunflower grows from seed to big plant.", "expectedAny": ["seed sprouts", "roots grow down", "stem grows up", "leaves appear", "gets taller", "flower blooms", "starts small then gets big"]}
   ],
   "wordProblems": [
     {"question": "Maria plants 3 seeds. If 2 seeds sprout and grow, how many plants does she have?", "expectedAny": ["2 plants"]},

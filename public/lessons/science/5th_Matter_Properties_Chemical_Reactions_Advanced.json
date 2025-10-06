@@ -23,52 +23,87 @@
     {
       "term": "conservation of mass",
       "definition": "Matter cannot be created or destroyed in a chemical reaction"
+    },
+    {
+      "term": "physical change",
+      "definition": "A change in form or state without making a new substance"
+    },
+    {
+      "term": "chemical change",
+      "definition": "A change that creates one or more new substances"
+    },
+    {
+      "term": "precipitate",
+      "definition": "A solid that forms from a solution during a reaction"
+    },
+    {
+      "term": "exothermic",
+      "definition": "A reaction that releases heat energy"
+    },
+    {
+      "term": "endothermic",
+      "definition": "A reaction that absorbs heat energy"
     }
   ],
   "teachingNotes": "Demonstrate safe chemical reactions like baking soda and vinegar. Discuss how atoms rearrange during reactions. Emphasize that mass is conserved even when new substances form.",
-  "sample": {
-    "question": "What happens to atoms during a chemical reaction?",
-    "expectedAny": [
-      "they rearrange",
-      "form new combinations",
-      "bond differently",
-      "reorganize"
-    ]
-  },
-  "truefalse": {
-    "question": "In a chemical reaction, the total mass of reactants equals the total mass of products.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is a catalyst?",
-    "expectedAny": [
-      "speeds up reactions",
-      "helps reactions occur",
-      "reaction accelerator",
-      "chemical helper"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The substances you start with in a chemical reaction are called ________.",
-    "expectedAny": [
-      "reactants",
-      "starting materials",
-      "inputs",
-      "initial substances"
-    ]
-  },
-  "shortanswer": {
-    "question": "How can you tell if a chemical reaction has occurred?",
-    "expectedAny": [
-      "new substance formed",
-      "color change",
-      "gas produced",
-      "temperature change"
-    ]
-  }
+  "sample": [
+    { "question": "What happens to atoms during a chemical reaction?", "expectedAny": ["they rearrange", "new combinations"] },
+    { "question": "What are reactants?", "expectedAny": ["starting substances"] },
+    { "question": "What are products?", "expectedAny": ["substances formed"] },
+    { "question": "Define catalyst.", "expectedAny": ["speeds up reaction", "not consumed"] },
+    { "question": "What law says mass is conserved?", "expectedAny": ["conservation of mass"] },
+    { "question": "Name a sign of a chemical reaction.", "expectedAny": ["color change", "gas", "temperature change"] },
+    { "question": "Is melting ice a chemical change?", "expectedAny": ["no", "physical change"] },
+    { "question": "Is rusting a chemical change?", "expectedAny": ["yes"] },
+    { "question": "What is a chemical equation?", "expectedAny": ["symbols showing reactants and products"] },
+    { "question": "Name a safe classroom reaction.", "expectedAny": ["baking soda and vinegar"] }
+  ],
+  "truefalse": [
+    { "question": "In a chemical reaction, total mass of reactants equals total mass of products.", "expectedAny": ["true"] },
+    { "question": "Catalysts are used up in reactions.", "expectedAny": ["false"] },
+    { "question": "Physical changes form new substances.", "expectedAny": ["false"] },
+    { "question": "Burning wood is a chemical change.", "expectedAny": ["true"] },
+    { "question": "A color change can be evidence of a reaction.", "expectedAny": ["true"] },
+    { "question": "Freezing water is a chemical change.", "expectedAny": ["false"] },
+    { "question": "Bubbles may indicate gas production in a reaction.", "expectedAny": ["true"] },
+    { "question": "Reactants are on the right side of a chemical equation.", "expectedAny": ["false"] },
+    { "question": "Products are on the right side of a chemical equation.", "expectedAny": ["true"] },
+    { "question": "Mass can disappear during reactions.", "expectedAny": ["false"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is a catalyst?", "choices": ["used-up reactant", "speeds up reaction", "product", "inhibitor"], "correct": 1, "expectedAny": ["speeds up reactions"] },
+    { "question": "Which is a chemical change?", "choices": ["melting", "boiling", "rusting", "cutting"], "correct": 2, "expectedAny": ["rusting"] },
+    { "question": "Which shows law of conservation of mass?", "choices": ["equal masses before and after", "mass decreases", "mass increases", "mass random"], "correct": 0, "expectedAny": ["equal before and after"] },
+    { "question": "What are starting substances called?", "choices": ["products", "reactants", "catalysts", "solvents"], "correct": 1, "expectedAny": ["reactants"] },
+    { "question": "Which observation suggests a reaction?", "choices": ["temperature change", "dissolving", "cutting", "breaking"], "correct": 0, "expectedAny": ["temperature change"] },
+    { "question": "Which is a product in baking soda and vinegar?", "choices": ["carbon dioxide gas", "ice", "salt", "iron"], "correct": 0, "expectedAny": ["carbon dioxide"] },
+    { "question": "Which is NOT a chemical change?", "choices": ["burning", "rusting", "melting", "baking"], "correct": 2, "expectedAny": ["melting"] },
+    { "question": "Reactants appear on which side of equation?", "choices": ["left", "right", "middle", "bottom"], "correct": 0, "expectedAny": ["left"] },
+    { "question": "Which could slow a reaction?", "choices": ["lower temperature", "add catalyst", "increase surface area", "stirring"], "correct": 0, "expectedAny": ["lower temperature"] },
+    { "question": "Which is a physical change?", "choices": ["burning paper", "rusting nail", "boiling water", "baking cake"], "correct": 2, "expectedAny": ["boiling water"] }
+  ],
+  "fillintheblank": [
+    { "question": "The substances you start with in a chemical reaction are called ________.", "expectedAny": ["reactants", "starting materials"] },
+    { "question": "The substances formed are called ________.", "expectedAny": ["products", "new substances"] },
+    { "question": "The law of conservation of ________ says mass is conserved.", "expectedAny": ["mass", "matter"] },
+    { "question": "A ________ speeds up a reaction but is not consumed.", "expectedAny": ["catalyst", "enzyme"] },
+    { "question": "A ________ change forms new substances.", "expectedAny": ["chemical", "chemical change"] },
+    { "question": "A ________ change does not form new substances.", "expectedAny": ["physical", "physical change"] },
+    { "question": "Gas produced may form ________.", "expectedAny": ["bubbles", "bubbling"] },
+    { "question": "A chemical ________ shows reactants and products.", "expectedAny": ["equation", "formula sentence"] },
+    { "question": "In many reactions ________ changes are observed.", "expectedAny": ["temperature", "heat"] },
+    { "question": "Rusting is a ________ change.", "expectedAny": ["chemical", "chemical change"] }
+  ],
+  "shortanswer": [
+    { "question": "How can you tell if a chemical reaction has occurred?", "expectedAny": ["new substance", "color change", "gas", "temperature change", "precipitate forms"] },
+    { "question": "Explain the law of conservation of mass.", "expectedAny": ["mass same before and after", "total mass stays constant", "matter is not created or destroyed"] },
+    { "question": "How does a catalyst affect a reaction?", "expectedAny": ["speeds up", "lowers needed energy", "makes reaction faster"] },
+    { "question": "Give an example of a physical change.", "expectedAny": ["melting", "boiling", "cutting", "freezing"] },
+    { "question": "Give an example of a chemical change.", "expectedAny": ["rusting", "burning", "baking a cake"] },
+    { "question": "Why is dissolving salt in water not a chemical reaction?", "expectedAny": ["no new substance formed", "salt and water can be separated", "composition stays the same"] },
+    { "question": "What is a chemical equation used for?", "expectedAny": ["represent reactions", "show reactants and products"] },
+    { "question": "Name two signs that a reaction is happening.", "expectedAny": ["bubbles and heat", "color change and smell", "light and gas"] },
+    { "question": "Is breaking glass chemical or physical? Why?", "expectedAny": ["physical", "substance same", "no new substance", "only shape changes"] },
+    { "question": "How does temperature affect reaction rate?", "expectedAny": ["higher temp faster", "lower temperature slows reactions"] }
+  ]
 }

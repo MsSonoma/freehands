@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Use scale models to show distances in space. Discuss how gravity keeps planets in orbit around the sun.",
-  "sample": {
-    "question": "What is the sun and all objects that orbit around it?",
-    "expectedAny": [
-      "solar system",
-      "our solar system",
-      "planetary system",
-      "sun's system"
-    ]
-  },
-  "truefalse": {
-    "question": "Gravity keeps planets in orbit around the sun.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is a rocky object that orbits the sun?",
-    "expectedAny": [
-      "asteroid",
-      "space rock",
-      "minor planet",
-      "rocky body"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The path an object takes around another object in space is called an ________.",
-    "expectedAny": [
-      "orbit",
-      "orbital path",
-      "revolution",
-      "circular path"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why do planets stay in orbit instead of flying off into space?",
-    "expectedAny": [
-      "gravity pulls them toward the sun",
-      "gravitational force",
-      "sun's gravity holds them"
-    ]
-  }
+  "sample": [
+    { "question": "What is the sun and all objects that orbit around it?", "expectedAny": ["solar system", "sun and planets", "planetary system"] },
+    { "question": "What attracts objects?", "choices": ["Magnetism", "Gravity", "Electricity", "Light"], "correct": 1, "expectedAny": ["gravity"] },
+    { "question": "Path around object in space is ________.", "expectedAny": ["orbit", "space path", "circular path"] },
+    { "question": "Rocky object orbiting sun is ________.", "expectedAny": ["asteroid"] },
+    { "question": "Distance light travels yearly is ________.", "expectedAny": ["light-year"] },
+    { "question": "What is sun system?", "choices": ["Galaxy", "Solar system", "Universe", "Planet"], "correct": 1, "expectedAny": ["solar system"] },
+    { "question": "Force pulling objects is ________.", "expectedAny": ["gravity"] },
+    { "question": "What is space path?", "choices": ["Line", "Orbit", "Curve", "Straight"], "correct": 1, "expectedAny": ["orbit"] },
+    { "question": "Space rock is ________.", "expectedAny": ["asteroid"] },
+    { "question": "Light distance unit is ________.", "expectedAny": ["light-year"] }
+  ],
+  "truefalse": [
+    { "question": "Gravity keeps planets in orbit around the sun.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Solar system is only Earth.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Gravity attracts objects.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Orbit is straight line.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Asteroid is rocky object.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Light-year is time.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Solar system includes planets.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Gravity pushes objects away.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Orbit is path around object.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Asteroids are made of gas.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is a rocky object that orbits the sun?", "choices": ["Planet", "Asteroid", "Star", "Comet"], "correct": 1, "expectedAny": ["asteroid"] },
+    { "question": "What is sun system?", "choices": ["Galaxy", "Solar system", "Universe", "Planet"], "correct": 1, "expectedAny": ["solar system"] },
+    { "question": "What attracts objects?", "choices": ["Magnetism", "Gravity", "Electricity", "Light"], "correct": 1, "expectedAny": ["gravity"] },
+    { "question": "What is space path?", "choices": ["Line", "Orbit", "Straight", "Random"], "correct": 1, "expectedAny": ["orbit"] },
+    { "question": "What is light distance?", "choices": ["Meter", "Light-year", "Kilometer", "Mile"], "correct": 1, "expectedAny": ["light-year"] },
+    { "question": "Sun and orbiting objects are?", "choices": ["Galaxy", "Solar system", "Universe", "Nothing"], "correct": 1, "expectedAny": ["solar system"] },
+    { "question": "Pulling force is?", "choices": ["Magnetism", "Gravity", "Electricity", "Push"], "correct": 1, "expectedAny": ["gravity"] },
+    { "question": "Path around sun is?", "choices": ["Line", "Orbit", "Straight", "Random"], "correct": 1, "expectedAny": ["orbit"] },
+    { "question": "Rocky space object is?", "choices": ["Planet", "Asteroid", "Star", "Gas"], "correct": 1, "expectedAny": ["asteroid"] },
+    { "question": "Year light travels is?", "choices": ["Time", "Light-year", "Speed", "Distance"], "correct": 1, "expectedAny": ["light-year"] }
+  ],
+  "fillintheblank": [
+    { "question": "The path an object takes around another object in space is called an ________.", "expectedAny": ["orbit"] },
+    { "question": "The ________ system is sun and orbiting objects.", "expectedAny": ["solar"] },
+    { "question": "________ attracts objects toward each other.", "expectedAny": ["gravity"] },
+    { "question": "An ________ is rocky object.", "expectedAny": ["asteroid"] },
+    { "question": "A ________-year is light distance.", "expectedAny": ["light"] },
+    { "question": "Solar ________ includes planets.", "expectedAny": ["system"] },
+    { "question": "________ pulls objects together.", "expectedAny": ["gravity"] },
+    { "question": "An ________ is space path.", "expectedAny": ["orbit"] },
+    { "question": "An ________ orbits sun.", "expectedAny": ["asteroid"] },
+    { "question": "Light-________ is distance unit.", "expectedAny": ["year"] }
+  ],
+  "shortanswer": [
+    { "question": "Why do planets stay in orbit instead of flying off into space?", "expectedAny": ["gravity pulls them toward the sun", "gravitational force"] },
+    { "question": "What is solar system?", "expectedAny": ["sun and all objects that orbit around it", "sun and planets"] },
+    { "question": "What is gravity?", "expectedAny": ["force that attracts objects toward each other", "pulling force"] },
+    { "question": "What is orbit?", "expectedAny": ["path an object takes around another object", "space path"] },
+    { "question": "What is asteroid?", "expectedAny": ["rocky object that orbits sun", "space rock"] },
+    { "question": "What is light-year?", "expectedAny": ["distance light travels in one year", "light distance"] },
+    { "question": "How gravity affect planets?", "expectedAny": ["keeps them in orbit", "pulls toward sun"] },
+    { "question": "What in solar system?", "expectedAny": ["sun, planets, asteroids", "orbiting objects"] },
+    { "question": "Why use light-years?", "expectedAny": ["measure vast space distances", "space is too big"] },
+    { "question": "Difference asteroid and planet?", "expectedAny": ["asteroids are much smaller", "size and shape"] }
+  ]
 }

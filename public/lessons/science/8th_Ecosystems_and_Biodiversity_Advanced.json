@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Discuss human impacts on ecosystems. Explain why biodiversity is important for ecosystem stability.",
-  "sample": {
-    "question": "What is all living and non-living things in an environment interacting together?",
-    "expectedAny": [
-      "ecosystem",
-      "ecological system",
-      "environmental system",
-      "biotic community"
-    ]
-  },
-  "truefalse": {
-    "question": "A keystone species has a large impact on its ecosystem.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What shows how energy flows through an ecosystem?",
-    "expectedAny": [
-      "food web",
-      "food chain",
-      "energy flow diagram",
-      "trophic levels"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The variety of life in an ecosystem is called ________.",
-    "expectedAny": [
-      "biodiversity",
-      "biological diversity",
-      "species diversity",
-      "life variety"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why is biodiversity important for ecosystems?",
-    "expectedAny": [
-      "provides stability",
-      "increases ecosystem resilience",
-      "supports food webs"
-    ]
-  }
+  "sample": [
+    { "question": "What is all living and non-living things in an environment interacting together?", "expectedAny": ["ecosystem", "interacting environment", "living and nonliving together"] },
+    { "question": "What shows energy flow?", "choices": ["Diagram", "Food web", "Chart", "Graph"], "correct": 1, "expectedAny": ["food web", "energy flow network", "eating connections"] },
+    { "question": "Variety of life is ________.", "expectedAny": ["biodiversity", "life variety", "variety of species"] },
+    { "question": "Large impact species is ________.", "expectedAny": ["keystone species", "important species", "critical species"] },
+    { "question": "Maximum population environment supports is ________.", "expectedAny": ["carrying capacity"] },
+    { "question": "What is interacting environment?", "choices": ["Habitat", "Ecosystem", "Population", "Community"], "correct": 1, "expectedAny": ["ecosystem"] },
+    { "question": "Energy flow network is ________.", "expectedAny": ["food web"] },
+    { "question": "What is life variety?", "choices": ["Population", "Biodiversity", "Community", "Species"], "correct": 1, "expectedAny": ["biodiversity"] },
+    { "question": "Important ecosystem species is ________.", "expectedAny": ["keystone species"] },
+    { "question": "Population maximum is ________.", "expectedAny": ["carrying capacity"] }
+  ],
+  "truefalse": [
+    { "question": "A keystone species has a large impact on its ecosystem.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Ecosystem is only living things.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Food web shows energy flow.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Biodiversity is one species.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Keystone species is important.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Carrying capacity is unlimited.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Ecosystem includes non-living things.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Food web is simple.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Biodiversity is variety of life.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Environment can support infinite population.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What shows how energy flows through an ecosystem?", "choices": ["Chart", "Food web", "Graph", "Map"], "correct": 1, "expectedAny": ["food web"] },
+    { "question": "What is interacting environment?", "choices": ["Habitat", "Ecosystem", "Population", "Community"], "correct": 1, "expectedAny": ["ecosystem"] },
+    { "question": "What is life variety?", "choices": ["Population", "Biodiversity", "Community", "Species"], "correct": 1, "expectedAny": ["biodiversity"] },
+    { "question": "What is important species?", "choices": ["Common", "Keystone species", "Rare", "Extinct"], "correct": 1, "expectedAny": ["keystone species"] },
+    { "question": "What is population maximum?", "choices": ["Unlimited", "Carrying capacity", "Infinite", "Zero"], "correct": 1, "expectedAny": ["carrying capacity"] },
+    { "question": "Energy network is?", "choices": ["Web", "Food web", "Chain", "Link"], "correct": 1, "expectedAny": ["food web"] },
+    { "question": "Living and non-living is?", "choices": ["Population", "Ecosystem", "Community", "Habitat"], "correct": 1, "expectedAny": ["ecosystem"] },
+    { "question": "Species variety is?", "choices": ["Population", "Biodiversity", "Community", "Group"], "correct": 1, "expectedAny": ["biodiversity"] },
+    { "question": "Large impact species is?", "choices": ["Common", "Keystone", "Rare", "Small"], "correct": 1, "expectedAny": ["keystone"] },
+    { "question": "Environment support limit is?", "choices": ["Infinite", "Carrying capacity", "Unlimited", "None"], "correct": 1, "expectedAny": ["carrying capacity"] }
+  ],
+  "fillintheblank": [
+    { "question": "The variety of life in an ecosystem is called ________.", "expectedAny": ["biodiversity"] },
+    { "question": "An ________ is living and non-living things interacting.", "expectedAny": ["ecosystem"] },
+    { "question": "A ________ web shows energy flow.", "expectedAny": ["food"] },
+    { "question": "A ________ species has large impact.", "expectedAny": ["keystone"] },
+    { "question": "________ capacity is maximum population.", "expectedAny": ["carrying"] },
+    { "question": "________ is variety of life.", "expectedAny": ["biodiversity"] },
+    { "question": "An ________ includes interactions.", "expectedAny": ["ecosystem"] },
+    { "question": "Food ________ is energy network.", "expectedAny": ["web"] },
+    { "question": "Keystone ________ is important.", "expectedAny": ["species"] },
+    { "question": "Carrying ________ is population limit.", "expectedAny": ["capacity"] }
+  ],
+  "shortanswer": [
+    { "question": "Why is biodiversity important for ecosystems?", "expectedAny": ["provides stability", "increases ecosystem resilience"] },
+    { "question": "What is ecosystem?", "expectedAny": ["all living and non-living things interacting", "environment with interactions"] },
+    { "question": "What is food web?", "expectedAny": ["complex network showing energy flow", "energy flow diagram"] },
+    { "question": "What is biodiversity?", "expectedAny": ["variety of life in ecosystem", "life diversity"] },
+    { "question": "What is keystone species?", "expectedAny": ["species with large impact on ecosystem", "important species"] },
+    { "question": "What is carrying capacity?", "expectedAny": ["maximum population environment can support", "population limit"] },
+    { "question": "How humans affect ecosystems?", "expectedAny": ["habitat destruction", "pollution and overuse"] },
+    { "question": "Why keystone species important?", "expectedAny": ["large ecosystem impact", "maintains balance"] },
+    { "question": "What happens without biodiversity?", "expectedAny": ["ecosystem becomes unstable", "less resilient"] },
+    { "question": "What limits population?", "expectedAny": ["carrying capacity", "resource availability"] }
+  ]
 }

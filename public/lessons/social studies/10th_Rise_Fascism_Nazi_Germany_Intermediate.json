@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "10th_Rise_Fascism_Nazi_Germany_Intermediate",
   "title": "Rise of Fascism and Nazi Germany",
   "grade": "10th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "fascism",
-      "definition": "Authoritarian political ideology emphasizing nationalism and dictatorial power"
-    },
-    {
-      "term": "nazi party",
-      "definition": "German fascist political party led by Adolf Hitler"
-    },
-    {
-      "term": "propaganda",
-      "definition": "Information used to promote political cause or viewpoint"
-    },
-    {
-      "term": "totalitarian state",
-      "definition": "Government that seeks total control over all aspects of life"
-    },
-    {
-      "term": "appeasement",
-      "definition": "Policy of making concessions to avoid conflict"
-    }
+    {"term": "fascism", "definition": "Authoritarian political ideology emphasizing nationalism and dictatorial power"},
+    {"term": "nazi party", "definition": "German fascist political party led by Adolf Hitler"},
+    {"term": "propaganda", "definition": "Information used to promote political cause or viewpoint"},
+    {"term": "totalitarian state", "definition": "Government that seeks total control over all aspects of life"},
+    {"term": "appeasement", "definition": "Policy of making concessions to avoid conflict"}
   ],
   "teachingNotes": "Analyze conditions that allowed fascism to rise. Examine propaganda techniques and their effectiveness.",
-  "sample": {
-    "question": "What is authoritarian ideology emphasizing nationalism and dictatorial power?",
-    "expectedAny": [
-      "fascism",
-      "fascist ideology",
-      "authoritarian nationalism",
-      "dictatorial system"
-    ]
-  },
-  "truefalse": {
-    "question": "Propaganda is information used to promote a political cause.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What policy involves making concessions to avoid conflict?",
-    "expectedAny": [
-      "appeasement",
-      "conciliation",
-      "accommodation",
-      "peaceful resolution"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A government seeking total control over life is a ________ state.",
-    "expectedAny": [
-      "totalitarian",
-      "total control",
-      "authoritarian",
-      "dictatorial"
-    ]
-  },
-  "shortanswer": {
-    "question": "What conditions allowed fascism to rise in Germany?",
-    "expectedAny": [
-      "economic hardship",
-      "political instability",
-      "national humiliation",
-      "weak democracy"
-    ]
-  }
+  "sample": [
+    {"question": "What is authoritarian nationalism?", "expectedAny": ["fascism", "fascist ideology", "authoritarian nationalism", "fascist system", "far right", "ultra nationalism"]},
+    {"question": "What was Hitler's party?", "expectedAny": ["nazi party", "nazis", "national socialist", "nsdap", "hitler party", "third reich party"]},
+    {"question": "What promotes political viewpoint?", "expectedAny": ["propaganda", "political information", "persuasion", "political messaging", "indoctrination", "political promotion"]},
+    {"question": "What seeks total control?", "expectedAny": ["totalitarian state", "totalitarian", "authoritarian state", "dictatorship", "absolute state", "totalitarian regime"]},
+    {"question": "What makes concessions?", "expectedAny": ["appeasement", "concession policy", "concessions", "policy of appeasement", "giving in", "pacification"]},
+    {"question": "What is dictatorial power?", "expectedAny": ["fascism", "authoritarian", "fascist ideology", "authoritarian nationalism", "fascist system", "far right"]},
+    {"question": "What led Germany?", "expectedAny": ["nazi party", "nazis", "national socialist", "nsdap", "hitler party", "third reich party"]},
+    {"question": "What is political promotion?", "expectedAny": ["propaganda", "promotion", "persuasion", "political messaging", "indoctrination", "political information"]},
+    {"question": "What controls all life?", "expectedAny": ["totalitarian state", "totalitarian", "authoritarian state", "dictatorship", "absolute state", "totalitarian regime"]},
+    {"question": "What avoids conflict?", "expectedAny": ["appeasement", "concessions", "concession policy", "policy of appeasement", "giving in", "pacification"]}
+  ],
+  "truefalse": [
+    {"question": "Fascism is authoritarian. (True or False)", "correct": true},
+    {"question": "Nazi party was democratic. (True or False)", "correct": false},
+    {"question": "Propaganda promotes viewpoint. (True or False)", "correct": true},
+    {"question": "Totalitarian limits control. (True or False)", "correct": false},
+    {"question": "Appeasement makes concessions. (True or False)", "correct": true},
+    {"question": "Fascism emphasizes nationalism. (True or False)", "correct": true},
+    {"question": "Hitler led Nazi party. (True or False)", "correct": true},
+    {"question": "Propaganda is neutral information. (True or False)", "correct": false},
+    {"question": "Totalitarian seeks total control. (True or False)", "correct": true},
+    {"question": "Appeasement avoids conflict. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is authoritarian?", "choices": [{"letter": "A", "text": "Democracy"}, {"letter": "B", "text": "Fascism"}, {"letter": "C", "text": "Republic"}, {"letter": "D", "text": "Anarchy"}], "correct": "B"},
+    {"question": "What was Hitler's party?", "choices": [{"letter": "A", "text": "Communist"}, {"letter": "B", "text": "Nazi party"}, {"letter": "C", "text": "Socialist"}, {"letter": "D", "text": "Liberal"}], "correct": "B"},
+    {"question": "What promotes viewpoint?", "choices": [{"letter": "A", "text": "News"}, {"letter": "B", "text": "Propaganda"}, {"letter": "C", "text": "Facts"}, {"letter": "D", "text": "Truth"}], "correct": "B"},
+    {"question": "What has total control?", "choices": [{"letter": "A", "text": "Democracy"}, {"letter": "B", "text": "Totalitarian state"}, {"letter": "C", "text": "Republic"}, {"letter": "D", "text": "Federation"}], "correct": "B"},
+    {"question": "What makes concessions?", "choices": [{"letter": "A", "text": "Aggression"}, {"letter": "B", "text": "Appeasement"}, {"letter": "C", "text": "War"}, {"letter": "D", "text": "Embargo"}], "correct": "B"},
+    {"question": "What is dictatorial?", "choices": [{"letter": "A", "text": "Democracy"}, {"letter": "B", "text": "Fascism"}, {"letter": "C", "text": "Republic"}, {"letter": "D", "text": "Anarchy"}], "correct": "B"},
+    {"question": "What led Germany?", "choices": [{"letter": "A", "text": "Communist"}, {"letter": "B", "text": "Nazi party"}, {"letter": "C", "text": "Liberal"}, {"letter": "D", "text": "Green"}], "correct": "B"},
+    {"question": "What is biased information?", "choices": [{"letter": "A", "text": "Facts"}, {"letter": "B", "text": "Propaganda"}, {"letter": "C", "text": "Truth"}, {"letter": "D", "text": "Science"}], "correct": "B"},
+    {"question": "What controls everything?", "choices": [{"letter": "A", "text": "Democracy"}, {"letter": "B", "text": "Totalitarian"}, {"letter": "C", "text": "Republic"}, {"letter": "D", "text": "Anarchy"}], "correct": "B"},
+    {"question": "What avoids war?", "choices": [{"letter": "A", "text": "Aggression"}, {"letter": "B", "text": "Appeasement"}, {"letter": "C", "text": "Invasion"}, {"letter": "D", "text": "Attack"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ is authoritarian ideology.", "expectedAny": ["fascism", "Fascism"]},
+    {"question": "_____ party led Germany.", "expectedAny": ["nazi", "Nazi"]},
+    {"question": "_____ promotes viewpoint.", "expectedAny": ["propaganda", "Propaganda"]},
+    {"question": "_____ state controls all life.", "expectedAny": ["totalitarian", "Totalitarian"]},
+    {"question": "_____ makes concessions.", "expectedAny": ["appeasement", "Appeasement"]},
+    {"question": "_____ emphasizes nationalism.", "expectedAny": ["fascism", "Fascism"]},
+    {"question": "Hitler led _____ party.", "expectedAny": ["nazi", "Nazi"]},
+    {"question": "_____ is biased information.", "expectedAny": ["propaganda", "Propaganda"]},
+    {"question": "_____ seeks total control.", "expectedAny": ["totalitarian", "Totalitarian"]},
+    {"question": "_____ avoids conflict.", "expectedAny": ["appeasement", "Appeasement"]}
+  ],
+  "shortanswer": [
+    {"question": "What is fascism?", "keyTerms": ["authoritarian", "political", "ideology", "emphasizing", "nationalism", "dictatorial", "power"], "expectedAny": ["Authoritarian political ideology emphasizing nationalism and dictatorial power", "Dictatorial nationalism", "Authoritarian system"]},
+    {"question": "What is Nazi party?", "keyTerms": ["german", "fascist", "political", "party", "led", "adolf", "hitler"], "expectedAny": ["German fascist political party led by Adolf Hitler", "Hitler's party", "German fascists"]},
+    {"question": "What is propaganda?", "keyTerms": ["information", "used", "promote", "political", "cause", "viewpoint"], "expectedAny": ["Information used to promote political cause or viewpoint", "Biased information", "Political promotion"]},
+    {"question": "What is totalitarian state?", "keyTerms": ["government", "seeks", "total", "control", "all", "aspects", "life"], "expectedAny": ["Government that seeks total control over all aspects of life", "Complete control", "Total control state"]},
+    {"question": "What is appeasement?", "keyTerms": ["policy", "making", "concessions", "avoid", "conflict"], "expectedAny": ["Policy of making concessions to avoid conflict", "Avoiding war", "Making concessions"]},
+    {"question": "Why did fascism rise?", "keyTerms": ["economic", "depression", "unemployment", "fear", "weak", "democracy"], "expectedAny": ["Economic depression, unemployment, fear, weak democracy", "Economic crisis", "Great Depression effects"]},
+    {"question": "How did Hitler gain power?", "keyTerms": ["promised", "jobs", "restore", "pride", "blamed", "scapegoats"], "expectedAny": ["Promised jobs and restored pride, blamed scapegoats", "Economic promises", "Appealed to nationalism"]},
+    {"question": "What was Nazi propaganda?", "keyTerms": ["posters", "radio", "films", "rallies", "controlled", "message"], "expectedAny": ["Posters, radio, films, rallies with controlled message", "Mass media control", "Goebbels propaganda"]},
+    {"question": "Give example of appeasement.", "keyTerms": ["munich", "agreement", "gave", "hitler", "sudetenland", "czechoslovakia"], "expectedAny": ["Munich Agreement gave Hitler Sudetenland", "Gave Hitler territory", "Chamberlain policy"]},
+    {"question": "Why did appeasement fail?", "keyTerms": ["hitler", "wanted", "more", "encouraged", "aggression", "WWII"], "expectedAny": ["Hitler wanted more and it encouraged aggression", "Emboldened Hitler", "Led to WWII"]}
+  ]
 }

@@ -28,7 +28,7 @@
   "teachingNotes": "Emphasize geometric interpretation as area under curves. Connect to real applications like distance and accumulation.",
   "sample": {
     "question": "What mathematical operation finds area under curves?",
-    "expectedAny": ["integral", "integration", "antiderivative", "area calculation"]
+    "expectedAny": ["integral", "integration", "antiderivative", "area calculation", "anti derivative", "reverse derivative"]
   },
   "truefalse": {
     "question": "An antiderivative is a function whose derivative gives the original function.",

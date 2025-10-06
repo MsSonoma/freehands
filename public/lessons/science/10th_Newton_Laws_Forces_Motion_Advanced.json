@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "10th_Newton_Laws_Forces_Motion_Advanced",
   "title": "Newton's Laws: Forces and Motion Analysis",
   "grade": "10th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "newtons first law",
-      "definition": "An object at rest stays at rest, an object in motion stays in motion unless acted upon by a force"
-    },
-    {
-      "term": "newtons second law",
-      "definition": "The acceleration of an object is directly proportional to net force and inversely proportional to mass"
-    },
-    {
-      "term": "newtons third law",
-      "definition": "For every action force, there is an equal and opposite reaction force"
-    },
-    {
-      "term": "net force",
-      "definition": "The vector sum of all forces acting on an object"
-    },
-    {
-      "term": "inertia",
-      "definition": "The tendency of an object to resist changes in its motion"
-    }
+    {"term": "newtons first law", "definition": "An object at rest stays at rest, an object in motion stays in motion unless acted upon by a force"},
+    {"term": "newtons second law", "definition": "Acceleration of an object is directly proportional to net force and inversely proportional to mass"},
+    {"term": "newtons third law", "definition": "For every action force, there is an equal and opposite reaction force"},
+    {"term": "net force", "definition": "Vector sum of all forces acting on an object"},
+    {"term": "inertia", "definition": "Tendency of an object to resist changes in its motion"}
   ],
   "teachingNotes": "Use free body diagrams to analyze forces. Practice applying F = ma to solve complex motion problems.",
-  "sample": {
-    "question": "What states that an object in motion stays in motion unless acted upon by a force?",
-    "expectedAny": [
-      "Newton's first law",
-      "law of inertia",
-      "first law of motion",
-      "inertia law"
-    ]
-  },
-  "truefalse": {
-    "question": "Newton's second law states that F = ma.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the vector sum of all forces acting on an object?",
-    "expectedAny": [
-      "net force",
-      "resultant force",
-      "total force",
-      "combined force"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The tendency of an object to resist changes in motion is called ________.",
-    "expectedAny": [
-      "inertia",
-      "resistance to change",
-      "momentum tendency",
-      "motion resistance"
-    ]
-  },
-  "shortanswer": {
-    "question": "Explain Newton's third law with an example.",
-    "expectedAny": [
-      "action-reaction pairs",
-      "walking pushes ground, ground pushes back",
-      "forces occur in pairs"
-    ]
-  }
+  "sample": [
+    {"question": "What is law of inertia?", "expectedAny": ["newtons first law", "first law", "law of inertia", "inertia law", "first law of motion", "newton first"]},
+    {"question": "What is F equals ma?", "expectedAny": ["newtons second law", "second law", "F equals ma", "force equals mass times acceleration", "second law of motion", "newton second"]},
+    {"question": "What is action reaction?", "expectedAny": ["newtons third law", "third law", "action reaction", "equal and opposite", "third law of motion", "newton third"]},
+    {"question": "What is force sum?", "expectedAny": ["net force", "total force", "sum of forces", "resultant force", "combined force", "force sum"]},
+    {"question": "What resists motion change?", "expectedAny": ["inertia", "resistance", "resistance to change", "tendency to resist", "inertial property", "mass property"]},
+    {"question": "What is motion stays motion?", "expectedAny": ["newtons first law", "first law", "law of inertia", "inertia law", "first law of motion", "newton first"]},
+    {"question": "What is acceleration law?", "expectedAny": ["newtons second law", "second law", "F equals ma", "force equals mass times acceleration", "second law of motion", "newton second"]},
+    {"question": "What is equal opposite?", "expectedAny": ["newtons third law", "third law", "action reaction", "equal and opposite", "third law of motion", "newton third"]},
+    {"question": "What is vector sum?", "expectedAny": ["net force", "resultant", "total force", "sum of forces", "resultant force", "combined force"]},
+    {"question": "What is resistance?", "expectedAny": ["inertia", "tendency", "resistance to change", "resistance", "inertial property", "mass property"]}
+  ],
+  "truefalse": [
+    {"question": "First law is inertia. (True or False)", "correct": true},
+    {"question": "Second law is F equals ma. (True or False)", "correct": true},
+    {"question": "Third law is action reaction. (True or False)", "correct": true},
+    {"question": "Net force is scalar. (True or False)", "correct": false},
+    {"question": "Inertia resists change. (True or False)", "correct": true},
+    {"question": "Motion stays unless force acts. (True or False)", "correct": true},
+    {"question": "Acceleration proportional to force. (True or False)", "correct": true},
+    {"question": "Action equals reaction. (True or False)", "correct": true},
+    {"question": "Net force is sum. (True or False)", "correct": true},
+    {"question": "Mass affects inertia. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is inertia law?", "choices": [{"letter": "A", "text": "Third law"}, {"letter": "B", "text": "First law"}, {"letter": "C", "text": "Second law"}, {"letter": "D", "text": "Zero law"}], "correct": "B"},
+    {"question": "What is F equals ma?", "choices": [{"letter": "A", "text": "First law"}, {"letter": "B", "text": "Second law"}, {"letter": "C", "text": "Third law"}, {"letter": "D", "text": "Zero law"}], "correct": "B"},
+    {"question": "What is action reaction?", "choices": [{"letter": "A", "text": "First law"}, {"letter": "B", "text": "Third law"}, {"letter": "C", "text": "Second law"}, {"letter": "D", "text": "Zero law"}], "correct": "B"},
+    {"question": "What is force sum?", "choices": [{"letter": "A", "text": "Gross force"}, {"letter": "B", "text": "Net force"}, {"letter": "C", "text": "Normal force"}, {"letter": "D", "text": "Applied force"}], "correct": "B"},
+    {"question": "What resists change?", "choices": [{"letter": "A", "text": "Momentum"}, {"letter": "B", "text": "Inertia"}, {"letter": "C", "text": "Energy"}, {"letter": "D", "text": "Power"}], "correct": "B"},
+    {"question": "What is motion stays motion?", "choices": [{"letter": "A", "text": "Third law"}, {"letter": "B", "text": "First law"}, {"letter": "C", "text": "Second law"}, {"letter": "D", "text": "Energy"}], "correct": "B"},
+    {"question": "What relates acceleration?", "choices": [{"letter": "A", "text": "First law"}, {"letter": "B", "text": "Second law"}, {"letter": "C", "text": "Third law"}, {"letter": "D", "text": "Zero law"}], "correct": "B"},
+    {"question": "What is equal opposite?", "choices": [{"letter": "A", "text": "Second law"}, {"letter": "B", "text": "Third law"}, {"letter": "C", "text": "First law"}, {"letter": "D", "text": "Inertia"}], "correct": "B"},
+    {"question": "What is vector sum?", "choices": [{"letter": "A", "text": "Normal force"}, {"letter": "B", "text": "Net force"}, {"letter": "C", "text": "Friction"}, {"letter": "D", "text": "Weight"}], "correct": "B"},
+    {"question": "What depends on mass?", "choices": [{"letter": "A", "text": "Speed"}, {"letter": "B", "text": "Inertia"}, {"letter": "C", "text": "Distance"}, {"letter": "D", "text": "Time"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "Newton's _____ law is inertia.", "expectedAny": ["first"]},
+    {"question": "Newton's _____ law is F equals ma.", "expectedAny": ["second"]},
+    {"question": "Newton's _____ law is action reaction.", "expectedAny": ["third"]},
+    {"question": "_____ force is vector sum.", "expectedAny": ["net", "Net"]},
+    {"question": "_____ resists motion change.", "expectedAny": ["inertia", "Inertia"]},
+    {"question": "Object in _____ stays in motion.", "expectedAny": ["motion"]},
+    {"question": "F equals m times _____.", "expectedAny": ["a", "acceleration"]},
+    {"question": "Action and _____ are equal opposite.", "expectedAny": ["reaction"]},
+    {"question": "Net force is _____ sum.", "expectedAny": ["vector"]},
+    {"question": "_____ depends on mass.", "expectedAny": ["inertia", "Inertia"]}
+  ],
+  "shortanswer": [
+    {"question": "What is Newton's first law?", "keyTerms": ["object", "rest", "stays", "motion", "unless", "force"], "expectedAny": ["An object at rest stays at rest, an object in motion stays in motion unless acted upon by a force", "Law of inertia", "Motion stays unless force"]},
+    {"question": "What is Newton's second law?", "keyTerms": ["acceleration", "object", "proportional", "net", "force", "mass"], "expectedAny": ["Acceleration of an object is directly proportional to net force and inversely proportional to mass", "F equals ma", "Force mass acceleration"]},
+    {"question": "What is Newton's third law?", "keyTerms": ["every", "action", "force", "equal", "opposite", "reaction"], "expectedAny": ["For every action force, there is an equal and opposite reaction force", "Action reaction", "Equal opposite forces"]},
+    {"question": "What is net force?", "keyTerms": ["vector", "sum", "all", "forces", "acting", "object"], "expectedAny": ["Vector sum of all forces acting on an object", "Total force", "Force sum"]},
+    {"question": "What is inertia?", "keyTerms": ["tendency", "object", "resist", "changes", "motion"], "expectedAny": ["Tendency of an object to resist changes in its motion", "Resistance to change", "Motion resistance"]},
+    {"question": "Give example of first law.", "keyTerms": ["hockey puck", "sliding", "seat belt", "continues"], "expectedAny": ["Hockey puck sliding on ice", "Seat belt in car", "Any inertia example"]},
+    {"question": "Give example of second law.", "keyTerms": ["pushing", "car", "heavier", "harder", "accelerate"], "expectedAny": ["Pushing car requires more force for heavier mass", "F equals ma calculation", "Any force acceleration example"]},
+    {"question": "Give example of third law.", "keyTerms": ["rocket", "exhaust", "swimming", "push water"], "expectedAny": ["Rocket exhaust pushes down, rocket goes up", "Swimming pushes water back", "Any action reaction example"]},
+    {"question": "What if net force is zero?", "keyTerms": ["no", "acceleration", "constant", "velocity", "equilibrium"], "expectedAny": ["No acceleration, constant velocity", "Equilibrium", "Balanced forces"]},
+    {"question": "What is F equals ma equation?", "keyTerms": ["force", "equals", "mass", "times", "acceleration"], "expectedAny": ["Force equals mass times acceleration", "F = ma", "Newton's second law equation"]}
+  ]
 }

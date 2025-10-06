@@ -26,28 +26,77 @@
     }
   ],
   "teachingNotes": "Practice converting between mixed numbers and improper fractions. Teach finding common denominators for addition and subtraction. Emphasize simplifying answers to lowest terms.",
-  "sample": {
-    "question": "Convert 2 3/4 to an improper fraction.",
-    "expectedAny": ["11/4", "eleven fourths", "11 over 4", "11/4 total"]
-  },
-  "truefalse": {
-    "question": "The fractions 2/3 and 4/6 are equivalent.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is 1/3 + 1/6?",
-    "expectedAny": ["1/2", "3/6", "one half", "0.5"]
-  },
-  "fillintheblank": {
-    "question": "To add fractions with different denominators, you need to find a ________.",
-    "expectedAny": ["common denominator", "same denominator", "equivalent denominator", "shared bottom number"]
-  },
-  "shortanswer": {
-    "question": "How do you convert 13/4 to a mixed number?",
-    "expectedAny": ["3 1/4", "divide 13 by 4", "3 and 1/4", "three and one fourth"]
-  },
-  "wordProblems": {
-    "question": "Tom ate 1 1/2 pizzas and Jerry ate 2 3/4 pizzas. How much pizza did they eat together?",
-    "expectedAny": ["4 1/4", "4.25", "four and one fourth", "17/4 pizzas"]
-  }
+  
+  "sample": [
+    { "question": "Add: 3/4 + 1/2", "expectedAny": ["1 1/4", "1.25", "5/4"] },
+    { "question": "Subtract: 5/6 - 1/3", "expectedAny": ["1/2", "0.5"] },
+    { "question": "Add: 2 1/3 + 1 2/3", "expectedAny": ["4", "4/1"] },
+    { "question": "Convert 9/4 to a mixed number", "expectedAny": ["2 1/4", "2.25"] },
+    { "question": "Simplify: 8/12", "expectedAny": ["2/3"] },
+    { "question": "Compare: which is larger, 5/8 or 1/2?", "expectedAny": ["5/8"] },
+    { "question": "Add: 7/10 + 3/10", "expectedAny": ["1", "10/10"] },
+    { "question": "Find common denominator for 2/5 and 3/4", "expectedAny": ["20"] },
+    { "question": "Turn 0.75 into a fraction", "expectedAny": ["3/4"] },
+    { "question": "Is 10/15 simplified?", "expectedAny": ["no", "false"] }
+  ],
+  "truefalse": [
+    { "question": "1 1/2 is the same as 3/2.", "expectedAny": ["true", "t", "yes", "correct"] },
+    { "question": "2/4 simplifies to 1/3.", "expectedAny": ["false", "no", "f"] },
+    { "question": "Improper fractions are greater than or equal to 1.", "expectedAny": ["true"] },
+    { "question": "To add fractions, denominators must match.", "expectedAny": ["true"] },
+    { "question": "3/5 + 2/5 equals 5/25.", "expectedAny": ["false"] },
+    { "question": "7/8 is greater than 3/4.", "expectedAny": ["true"] },
+    { "question": "12/18 simplifies to 3/2.", "expectedAny": ["false"] },
+    { "question": "1/2 is equal to 0.5.", "expectedAny": ["true"] },
+    { "question": "To subtract mixed numbers, borrowing may be needed.", "expectedAny": ["true"] },
+    { "question": "5/6 and 4/6 have the same denominator.", "expectedAny": ["true"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which is greater: 2/3 or 3/5?", "choices": ["2/3", "3/5", "equal", "cannot tell"], "correct": 0, "expectedAny": ["2/3"] },
+    { "question": "Simplify 10/15.", "choices": ["2/3", "3/5", "1/2", "5/10"], "correct": 0, "expectedAny": ["2/3"] },
+    { "question": "Add 1/4 + 3/8.", "choices": ["1/2", "5/8", "7/8", "3/4"], "correct": 1, "expectedAny": ["5/8"] },
+    { "question": "Convert 11/3 to a mixed number.", "choices": ["3 2/3", "3 1/3", "2 2/3", "2 1/3"], "correct": 0, "expectedAny": ["3 2/3", "3.666..."] },
+    { "question": "Find common denominator of 3/4 and 5/6.", "choices": ["10", "12", "18", "24"], "correct": 1, "expectedAny": ["12", "24"] },
+    { "question": "Which is equal to 0.2?", "choices": ["1/2", "1/4", "1/5", "2/5"], "correct": 2, "expectedAny": ["1/5"] },
+    { "question": "Add 2 3/4 + 1 1/4.", "choices": ["3 1/2", "4", "4 1/2", "5"], "correct": 1, "expectedAny": ["4"] },
+    { "question": "Subtract 5/6 - 1/2.", "choices": ["1/6", "2/6", "3/6", "4/6"], "correct": 2, "expectedAny": ["1/3", "3/6"] },
+    { "question": "Which fraction is largest?", "choices": ["3/8", "1/2", "5/12", "2/5"], "correct": 1, "expectedAny": ["1/2"] },
+    { "question": "Which pair needs common denominators to add?", "choices": ["1/3 + 1/3", "2/5 + 1/5", "1/4 + 1/2", "3/8 + 1/8"], "correct": 2, "expectedAny": ["1/4 + 1/2"] }
+  ],
+  "fillintheblank": [
+    { "question": "Convert 7/4 to a mixed number: ________", "expectedAny": ["1 3/4", "1.75", "one and three quarters"] },
+    { "question": "Simplify 12/18 to ________.", "expectedAny": ["2/3", "two thirds"] },
+    { "question": "Add 3/10 + 4/10 = ________.", "expectedAny": ["7/10", "seven tenths"] },
+    { "question": "Common denominator of 2/3 and 3/5 is ________.", "expectedAny": ["15", "fifteen"] },
+    { "question": "0.5 equals ________ as a fraction.", "expectedAny": ["1/2", "one half"] },
+    { "question": "3/4 is ________ percent.", "expectedAny": ["75%", "75", "75 percent", "seventy-five percent"] },
+    { "question": "To add unlike denominators, find the ________ denominator.", "expectedAny": ["common", "least common", "lcd", "common denominator"] },
+    { "question": "8/12 simplified is ________.", "expectedAny": ["2/3", "two thirds"] },
+    { "question": "2 1/5 equals ________ improper fraction.", "expectedAny": ["11/5", "eleven fifths"] },
+    { "question": "Compare: 5/6 ________ 4/6.", "expectedAny": [">", "greater", "is greater than"] }
+  ],
+  "shortanswer": [
+    { "question": "Simplify: 12/18", "expectedAny": ["2/3", "two thirds", "divide both by 6"] },
+    { "question": "Explain how to add 2/3 + 1/4.", "expectedAny": ["common denominator 12", "lcd 12", "find lcd 12", "8/12 + 3/12 = 11/12", "11/12"] },
+    { "question": "Why is 1 1/2 equal to 3/2?", "expectedAny": ["improper fraction conversion", "convert mixed to improper: 1*2+1=3", "1 = 2/2 so 2/2 + 1/2 = 3/2"] },
+    { "question": "Which is larger: 7/10 or 2/3?", "expectedAny": ["7/10", "0.7"] },
+    { "question": "Subtract: 3 1/4 - 2 3/4.", "expectedAny": ["1/2", "0.5"] },
+    { "question": "Add: 4/5 + 1/10.", "expectedAny": ["9/10", "0.9"] },
+    { "question": "Convert 13/6 to mixed number.", "expectedAny": ["2 1/6", "two and one sixth"] },
+    { "question": "Explain simplifying 50/100.", "expectedAny": ["1/2", "divide both by 50", "reduce to one half"] },
+    { "question": "Compare 5/8 and 0.6.", "expectedAny": ["5/8 is larger", "0.625 > 0.6", "five eighths is greater"] },
+    { "question": "Add 1/6 + 5/12.", "expectedAny": ["7/12", "seven twelfths"] }
+  ],
+  "wordProblems": [
+    { "question": "You have 2 1/2 pizzas and eat 3/4 pizza. How much is left?", "expectedAny": ["1 3/4", "1.75"] },
+    { "question": "A recipe needs 3/4 cup sugar and 2/3 cup flour more. Total?", "expectedAny": ["1 5/12", "17/12"] },
+    { "question": "You ran 1 1/4 miles Monday and 1 3/4 miles Tuesday. Total?", "expectedAny": ["3", "3 miles"] },
+    { "question": "Cut a board 5/6 m long from 2 m board. Left?", "expectedAny": ["7/6", "1 1/6"] },
+    { "question": "You drink 3/8 L juice and 1/8 L water. Total?", "expectedAny": ["1/2 L"] },
+    { "question": "A tank fills 1/4 L per min for 12 min. Volume?", "expectedAny": ["3 L"] },
+    { "question": "You add 2/5 L then 3/10 L to a jar. Total?", "expectedAny": ["7/10 L"] },
+    { "question": "A rope is 3 1/2 m; you cut 1 1/4 m. Left?", "expectedAny": ["2 1/4 m"] },
+    { "question": "Bake uses 2/3 cup sugar and 1/6 cup later. Total?", "expectedAny": ["5/6 cup"] },
+    { "question": "A walk is 1 2/3 mi morning and 1 1/3 mi afternoon. Total?", "expectedAny": ["3 mi"] }
+  ]
 }

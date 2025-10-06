@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Use cross-section diagrams of Earth. Explain how plate movement causes earthquakes and volcanoes. Connect to real-world examples.",
-  "sample": {
-    "question": "What theory explains how Earth's crust is made of moving plates?",
-    "expectedAny": [
-      "plate tectonics",
-      "tectonic theory",
-      "continental drift",
-      "plate tectonic theory"
-    ]
-  },
-  "truefalse": {
-    "question": "Earth's crust is broken into several large pieces called plates.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What happens at a convergent boundary?",
-    "expectedAny": [
-      "plates move together",
-      "plates collide",
-      "plates converge",
-      "plates push toward each other"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The hot, dense layer beneath Earth's crust is the ________.",
-    "expectedAny": [
-      "mantle",
-      "upper mantle",
-      "asthenosphere",
-      "hot rock layer"
-    ]
-  },
-  "shortanswer": {
-    "question": "How do earthquakes relate to plate tectonics?",
-    "expectedAny": [
-      "plates suddenly move and shake ground",
-      "plate movement causes ground shaking",
-      "tectonic activity creates earthquakes"
-    ]
-  }
+  "sample": [
+    { "question": "What theory explains how Earth's crust is made of moving plates?", "expectedAny": ["plate tectonics"] },
+    { "question": "Which is hot rock beneath crust?", "choices": ["Core", "Mantle", "Crust", "Surface"], "correct": 1, "expectedAny": ["mantle"] },
+    { "question": "Plates moving together is ________.", "expectedAny": ["convergent boundary"] },
+    { "question": "Plates moving apart is ________.", "expectedAny": ["divergent boundary"] },
+    { "question": "Ground shaking from plates is ________.", "expectedAny": ["earthquake"] },
+    { "question": "What says crust has moving plates?", "choices": ["Evolution", "Plate tectonics", "Gravity", "Magnetism"], "correct": 1, "expectedAny": ["plate tectonics"] },
+    { "question": "Hot dense layer is ________.", "expectedAny": ["mantle"] },
+    { "question": "Plates colliding is ________.", "expectedAny": ["convergent", "convergent boundary"] },
+    { "question": "Which is plates separating?", "choices": ["Convergent", "Divergent", "Transform", "Static"], "correct": 1, "expectedAny": ["divergent"] },
+    { "question": "Plate movement causes ________.", "expectedAny": ["earthquake"] }
+  ],
+  "truefalse": [
+    { "question": "Earth's crust is broken into several large pieces called plates.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The mantle is above the crust.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Convergent boundaries have plates moving together.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Divergent boundaries have plates moving together.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Earthquakes are caused by plate movement.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The mantle is cold.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Plate tectonics explains moving plates.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All plates move the same direction.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Divergent means plates move apart.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Earth's crust is one solid piece.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What happens at a convergent boundary?", "choices": ["Plates separate", "Plates move together", "Plates slide", "Plates stop"], "correct": 1, "expectedAny": ["plates move together"] },
+    { "question": "What theory explains moving plates?", "choices": ["Evolution", "Plate tectonics", "Gravity", "Magnetism"], "correct": 1, "expectedAny": ["plate tectonics"] },
+    { "question": "What is beneath the crust?", "choices": ["Core", "Mantle", "Surface", "Ocean"], "correct": 1, "expectedAny": ["mantle"] },
+    { "question": "What happens at divergent boundary?", "choices": ["Plates collide", "Plates move apart", "Plates slide", "Plates stop"], "correct": 1, "expectedAny": ["plates move apart"] },
+    { "question": "What is ground shaking?", "choices": ["Volcano", "Earthquake", "Tsunami", "Avalanche"], "correct": 1, "expectedAny": ["earthquake"] },
+    { "question": "What causes earthquakes?", "choices": ["Wind", "Plate movement", "Rain", "Temperature"], "correct": 1, "expectedAny": ["plate movement"] },
+    { "question": "What is the mantle?", "choices": ["Crust", "Hot rock layer", "Core", "Surface"], "correct": 1, "expectedAny": ["hot rock layer"] },
+    { "question": "Plates moving together?", "choices": ["Divergent", "Convergent", "Transform", "Static"], "correct": 1, "expectedAny": ["convergent"] },
+    { "question": "Plates moving apart?", "choices": ["Convergent", "Divergent", "Transform", "Static"], "correct": 1, "expectedAny": ["divergent"] },
+    { "question": "What is Earth's crust made of?", "choices": ["One piece", "Moving plates", "Water", "Air"], "correct": 1, "expectedAny": ["moving plates"] }
+  ],
+  "fillintheblank": [
+    { "question": "The hot, dense layer beneath Earth's crust is the ________.", "expectedAny": ["mantle"] },
+    { "question": "The theory of moving plates is ________.", "expectedAny": ["plate tectonics"] },
+    { "question": "Plates moving together is a ________ boundary.", "expectedAny": ["convergent"] },
+    { "question": "Plates moving apart is a ________ boundary.", "expectedAny": ["divergent"] },
+    { "question": "Ground shaking from plate movement is an ________.", "expectedAny": ["earthquake"] },
+    { "question": "________ tectonics explains moving plates.", "expectedAny": ["plate"] },
+    { "question": "The ________ is beneath the crust.", "expectedAny": ["mantle"] },
+    { "question": "A ________ boundary has plates colliding.", "expectedAny": ["convergent"] },
+    { "question": "A ________ boundary has plates separating.", "expectedAny": ["divergent"] },
+    { "question": "An ________ is caused by plate movement.", "expectedAny": ["earthquake"] }
+  ],
+  "shortanswer": [
+    { "question": "How do earthquakes relate to plate tectonics?", "expectedAny": ["plates suddenly move and shake ground", "plate movement causes ground shaking"] },
+    { "question": "What is plate tectonics?", "expectedAny": ["theory that crust has moving plates", "moving plate theory", "theory of moving plates", "plates moving on Earth"] },
+    { "question": "What is the mantle?", "expectedAny": ["hot dense layer beneath crust", "hot rock beneath crust"] },
+    { "question": "What is a convergent boundary?", "expectedAny": ["plates moving together", "plates colliding", "plates pushing together", "plates crashing"] },
+    { "question": "What is a divergent boundary?", "expectedAny": ["plates moving apart", "plates separating"] },
+    { "question": "What is an earthquake?", "expectedAny": ["ground shaking from plate movement", "shaking from plates", "ground shaking", "plates shaking earth"] },
+    { "question": "What causes earthquakes?", "expectedAny": ["sudden plate movement", "tectonic plate movement"] },
+    { "question": "What is Earth's crust?", "expectedAny": ["broken into plates", "outer layer with plates"] },
+    { "question": "What happens at convergent boundary?", "expectedAny": ["plates move together", "plates collide"] },
+    { "question": "What happens at divergent boundary?", "expectedAny": ["plates move apart", "plates separate"] }
+  ]
 }

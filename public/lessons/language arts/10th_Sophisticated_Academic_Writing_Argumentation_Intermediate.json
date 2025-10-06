@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "10th_Sophisticated_Academic_Writing_Argumentation_Intermediate",
   "title": "Sophisticated Academic Writing: Argumentation",
   "grade": "10th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "rhetorical appeal",
-      "definition": "Persuasive techniques including ethos, pathos, and logos"
-    },
-    {
-      "term": "concession",
-      "definition": "Acknowledging validity in an opposing argument"
-    },
-    {
-      "term": "refutation",
-      "definition": "Disproving or challenging an opposing argument"
-    },
-    {
-      "term": "syllogism",
-      "definition": "A logical argument with a major premise, minor premise, and conclusion"
-    },
-    {
-      "term": "fallacy",
-      "definition": "An error in reasoning that undermines an argument"
-    }
+    {"term": "rhetorical appeal", "definition": "Persuasive strategy using ethos, pathos, or logos to convince an audience"},
+    {"term": "concession", "definition": "Acknowledging the validity of an opposing viewpoint in an argument"},
+    {"term": "refutation", "definition": "Disproving or countering an opposing argument with evidence and reasoning"},
+    {"term": "syllogism", "definition": "A logical argument structure with major premise, minor premise, and conclusion"},
+    {"term": "fallacy", "definition": "An error in reasoning that weakens an argument"}
   ],
-  "teachingNotes": "Teach sophisticated argumentative techniques and logical structures. Identify and avoid common logical fallacies.",
-  "sample": {
-    "question": "What are ethos, pathos, and logos examples of?",
-    "expectedAny": [
-      "rhetorical appeals",
-      "persuasive techniques",
-      "argumentative strategies",
-      "rhetorical devices"
-    ]
-  },
-  "truefalse": {
-    "question": "A concession acknowledges validity in an opposing argument.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is an error in reasoning that undermines an argument?",
-    "expectedAny": [
-      "fallacy",
-      "logical error",
-      "reasoning flaw",
-      "invalid argument"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A logical argument with major premise, minor premise, and conclusion is a ________.",
-    "expectedAny": [
-      "syllogism",
-      "logical structure",
-      "deductive argument",
-      "formal logic"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does addressing counterarguments strengthen an essay?",
-    "expectedAny": [
-      "shows credibility",
-      "demonstrates fairness",
-      "strengthens position",
-      "builds trust"
-    ]
-  }
+  "teachingNotes": "Master persuasive strategies and logical argument structures. Identify and avoid common fallacies.",
+  "sample": [
+    {"question": "What uses ethos, pathos, or logos to persuade?", "expectedAny": ["rhetorical appeal", "appeal", "persuasive strategy", "persuasive technique", "rhetorical strategy", "persuasive method"]},
+    {"question": "What is acknowledging an opposing viewpoint?", "expectedAny": ["concession", "acknowledging opposition", "admitting validity", "acknowledgment", "admitting point", "recognizing opposing view"]},
+    {"question": "What is disproving an opposing argument?", "expectedAny": ["refutation", "counter-argument", "rebuttal", "counter", "disproving", "countering"]},
+    {"question": "What is a logical argument structure?", "expectedAny": ["syllogism", "logical form", "deductive reasoning", "logical argument", "deduction", "logical structure"]},
+    {"question": "What is an error in reasoning?", "expectedAny": ["fallacy", "logical fallacy", "reasoning error", "error", "logical flaw", "faulty reasoning"]},
+    {"question": "What are ethos, pathos, and logos?", "expectedAny": ["rhetorical appeals", "appeals", "persuasive strategies", "rhetorical strategies", "persuasive techniques", "persuasive methods"]},
+    {"question": "What shows you understand the opposition?", "expectedAny": ["concession", "acknowledgment", "admitting point", "acknowledging opposition", "admitting validity", "recognizing opposing view"]},
+    {"question": "What counters opposing claims?", "expectedAny": ["refutation", "rebuttal", "counter", "counter-argument", "disproving", "countering"]},
+    {"question": "What has premises and conclusion?", "expectedAny": ["syllogism", "logical argument", "deduction", "logical form", "deductive reasoning", "logical structure"]},
+    {"question": "What weakens your argument?", "expectedAny": ["fallacy", "error", "logical flaw", "logical fallacy", "reasoning error", "faulty reasoning"]}
+  ],
+  "truefalse": [
+    {"question": "Rhetorical appeals include ethos, pathos, and logos. (True or False)", "correct": true},
+    {"question": "Concession strengthens your argument. (True or False)", "correct": true},
+    {"question": "Refutation ignores opposing arguments. (True or False)", "correct": false},
+    {"question": "Syllogisms have premises and conclusions. (True or False)", "correct": true},
+    {"question": "Fallacies strengthen arguments. (True or False)", "correct": false},
+    {"question": "Ethos appeals to credibility. (True or False)", "correct": true},
+    {"question": "Pathos appeals to emotion. (True or False)", "correct": true},
+    {"question": "Logos appeals to logic. (True or False)", "correct": true},
+    {"question": "Concession means giving up your argument. (True or False)", "correct": false},
+    {"question": "Refutation disproves opposing claims. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What uses ethos, pathos, and logos?", "choices": [{"letter": "A", "text": "Evidence"}, {"letter": "B", "text": "Rhetorical appeal"}, {"letter": "C", "text": "Citation"}, {"letter": "D", "text": "Thesis"}], "correct": "B"},
+    {"question": "What acknowledges opposing validity?", "choices": [{"letter": "A", "text": "Refutation"}, {"letter": "B", "text": "Concession"}, {"letter": "C", "text": "Fallacy"}, {"letter": "D", "text": "Thesis"}], "correct": "B"},
+    {"question": "What disproves opposing arguments?", "choices": [{"letter": "A", "text": "Concession"}, {"letter": "B", "text": "Refutation"}, {"letter": "C", "text": "Appeal"}, {"letter": "D", "text": "Syllogism"}], "correct": "B"},
+    {"question": "What has premises and conclusion?", "choices": [{"letter": "A", "text": "Fallacy"}, {"letter": "B", "text": "Syllogism"}, {"letter": "C", "text": "Appeal"}, {"letter": "D", "text": "Concession"}], "correct": "B"},
+    {"question": "What is an error in reasoning?", "choices": [{"letter": "A", "text": "Logic"}, {"letter": "B", "text": "Fallacy"}, {"letter": "C", "text": "Refutation"}, {"letter": "D", "text": "Appeal"}], "correct": "B"},
+    {"question": "What appeals to credibility?", "choices": [{"letter": "A", "text": "Pathos"}, {"letter": "B", "text": "Ethos"}, {"letter": "C", "text": "Logos"}, {"letter": "D", "text": "Fallacy"}], "correct": "B"},
+    {"question": "What appeals to emotion?", "choices": [{"letter": "A", "text": "Ethos"}, {"letter": "B", "text": "Pathos"}, {"letter": "C", "text": "Logos"}, {"letter": "D", "text": "Syllogism"}], "correct": "B"},
+    {"question": "What appeals to logic?", "choices": [{"letter": "A", "text": "Pathos"}, {"letter": "B", "text": "Logos"}, {"letter": "C", "text": "Ethos"}, {"letter": "D", "text": "Concession"}], "correct": "B"},
+    {"question": "What shows understanding opposition?", "choices": [{"letter": "A", "text": "Fallacy"}, {"letter": "B", "text": "Concession"}, {"letter": "C", "text": "Error"}, {"letter": "D", "text": "Appeal"}], "correct": "B"},
+    {"question": "What counters opposing claims?", "choices": [{"letter": "A", "text": "Concession"}, {"letter": "B", "text": "Refutation"}, {"letter": "C", "text": "Fallacy"}, {"letter": "D", "text": "Appeal"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ appeals use ethos, pathos, and logos.", "expectedAny": ["rhetorical", "Rhetorical"]},
+    {"question": "A _____ acknowledges opposing validity.", "expectedAny": ["concession"]},
+    {"question": "A _____ disproves opposing arguments.", "expectedAny": ["refutation"]},
+    {"question": "A _____ has premises and conclusion.", "expectedAny": ["syllogism"]},
+    {"question": "A _____ is an error in reasoning.", "expectedAny": ["fallacy"]},
+    {"question": "_____ appeals to credibility.", "expectedAny": ["ethos", "Ethos"]},
+    {"question": "_____ appeals to emotion.", "expectedAny": ["pathos", "Pathos"]},
+    {"question": "_____ appeals to logic.", "expectedAny": ["logos", "Logos"]},
+    {"question": "_____ shows understanding of opposition.", "expectedAny": ["concession", "Concession"]},
+    {"question": "_____ counters opposing claims.", "expectedAny": ["refutation", "Refutation"]}
+  ],
+  "shortanswer": [
+    {"question": "What is a rhetorical appeal?", "keyTerms": ["persuasive", "strategy", "ethos", "pathos", "logos"], "expectedAny": ["Persuasive strategy using ethos, pathos, or logos to convince an audience", "Method of persuasion", "Appeal to audience"]},
+    {"question": "What is concession?", "keyTerms": ["acknowledging", "validity", "opposing", "viewpoint"], "expectedAny": ["Acknowledging the validity of an opposing viewpoint in an argument", "Admitting opposing point", "Recognizing other side"]},
+    {"question": "What is refutation?", "keyTerms": ["disproving", "countering", "opposing", "argument", "evidence"], "expectedAny": ["Disproving or countering an opposing argument with evidence and reasoning", "Rebutting opposition", "Counter-argument"]},
+    {"question": "What is a syllogism?", "keyTerms": ["logical", "argument", "major premise", "minor premise", "conclusion"], "expectedAny": ["A logical argument structure with major premise, minor premise, and conclusion", "Deductive reasoning form", "Logical structure"]},
+    {"question": "What is a fallacy?", "keyTerms": ["error", "reasoning", "weakens", "argument"], "expectedAny": ["An error in reasoning that weakens an argument", "Logical flaw", "Reasoning mistake"]},
+    {"question": "What is ethos?", "keyTerms": ["appeal", "credibility", "trust", "authority"], "expectedAny": ["Appeal to credibility, trust, and authority", "Credibility persuasion", "Ethical appeal"]},
+    {"question": "What is pathos?", "keyTerms": ["appeal", "emotion", "feelings", "audience"], "expectedAny": ["Appeal to emotion and feelings of audience", "Emotional persuasion", "Emotional appeal"]},
+    {"question": "What is logos?", "keyTerms": ["appeal", "logic", "reasoning", "facts"], "expectedAny": ["Appeal to logic, reasoning, and facts", "Logical persuasion", "Logical appeal"]},
+    {"question": "Why make concessions?", "keyTerms": ["show", "understanding", "strengthen", "fairness"], "expectedAny": ["Show understanding and strengthen argument through fairness", "Build credibility", "Demonstrate objectivity"]},
+    {"question": "Why avoid fallacies?", "keyTerms": ["maintain", "credibility", "logical", "strength"], "expectedAny": ["Maintain credibility and logical strength of argument", "Keep argument valid", "Preserve reasoning"]}
+  ]
 }

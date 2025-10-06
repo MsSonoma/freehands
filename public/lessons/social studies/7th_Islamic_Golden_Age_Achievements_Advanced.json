@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Emphasize how Islamic scholars preserved and expanded upon Greek and Roman knowledge. Discuss contributions to math, science, and medicine.",
-  "sample": {
-    "question": "What was the period of great learning in the Islamic world called?",
-    "expectedAny": [
-      "Islamic Golden Age",
-      "Golden Age of Islam",
-      "Islamic Renaissance",
-      "Islamic flowering"
-    ]
-  },
-  "truefalse": {
-    "question": "Islamic scholars made important contributions to mathematics and science.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which city became a major center of Islamic learning?",
-    "expectedAny": [
-      "Baghdad",
-      "Damascus",
-      "Cordoba",
-      "Cairo"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The famous library in Baghdad was called the House of ________.",
-    "expectedAny": [
-      "Wisdom",
-      "Learning",
-      "Knowledge",
-      "Study"
-    ]
-  },
-  "shortanswer": {
-    "question": "How did Islamic scholars help preserve ancient knowledge?",
-    "expectedAny": [
-      "translated Greek and Roman texts",
-      "copied and studied ancient works",
-      "preserved classical learning"
-    ]
-  }
+  "sample": [
+    { "question": "What was the period of great learning in the Islamic world called?", "expectedAny": ["Islamic Golden Age"] },
+    { "question": "Which was learning capital?", "choices": ["Rome", "Baghdad", "Athens", "London"], "correct": 1, "expectedAny": ["Baghdad"] },
+    { "question": "Famous Baghdad library was ________.", "expectedAny": ["House of Wisdom"] },
+    { "question": "Math branch from Islam is ________.", "expectedAny": ["algebra"] },
+    { "question": "Keeping knowledge safe is ________.", "expectedAny": ["preservation"] },
+    { "question": "What was great learning period?", "choices": ["Dark Ages", "Islamic Golden Age", "Stone Age", "Ice Age"], "correct": 1, "expectedAny": ["Islamic Golden Age"] },
+    { "question": "Islamic learning center was ________.", "expectedAny": ["Baghdad"] },
+    { "question": "Library and center was ________.", "expectedAny": ["House of Wisdom"] },
+    { "question": "Which is math branch?", "choices": ["Poetry", "Algebra", "History", "Art"], "correct": 1, "expectedAny": ["algebra"] },
+    { "question": "Saving texts is ________.", "expectedAny": ["preservation"] }
+  ],
+  "truefalse": [
+    { "question": "Islamic scholars made important contributions to mathematics and science.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Baghdad was unimportant.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "House of Wisdom was library.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Islam destroyed knowledge.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Algebra came from Islamic scholars.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Islamic Golden Age had no learning.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Scholars preserved ancient texts.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Baghdad avoided learning.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Islamic world advanced science.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "House of Wisdom was destroyed immediately.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which city became a major center of Islamic learning?", "choices": ["Rome", "Baghdad", "Athens", "London"], "correct": 1, "expectedAny": ["Baghdad"] },
+    { "question": "What was great learning period?", "choices": ["Dark Ages", "Islamic Golden Age", "Stone Age", "Ice Age"], "correct": 1, "expectedAny": ["Islamic Golden Age"] },
+    { "question": "What was famous library?", "choices": ["Library of Congress", "House of Wisdom", "British Library", "Vatican Library"], "correct": 1, "expectedAny": ["House of Wisdom"] },
+    { "question": "What math did Islam develop?", "choices": ["Poetry", "Algebra", "History", "Art"], "correct": 1, "expectedAny": ["algebra"] },
+    { "question": "What did scholars do?", "choices": ["Destroy", "Preserve knowledge", "Ignore", "Hide"], "correct": 1, "expectedAny": ["preserve knowledge"] },
+    { "question": "Where was House of Wisdom?", "choices": ["Rome", "Baghdad", "Athens", "London"], "correct": 1, "expectedAny": ["Baghdad"] },
+    { "question": "What did Islam advance?", "choices": ["Nothing", "Math and science", "War", "Poverty"], "correct": 1, "expectedAny": ["math and science"] },
+    { "question": "What texts preserved?", "choices": ["None", "Greek and Roman", "Modern", "Future"], "correct": 1, "expectedAny": ["Greek and Roman"] },
+    { "question": "Golden Age had?", "choices": ["No learning", "Great learning", "War only", "Darkness"], "correct": 1, "expectedAny": ["great learning"] },
+    { "question": "Scholars translated?", "choices": ["Nothing", "Ancient texts", "Comics", "Novels"], "correct": 1, "expectedAny": ["ancient texts"] }
+  ],
+  "fillintheblank": [
+    { "question": "The famous library in Baghdad was called the House of ________.", "expectedAny": ["Wisdom"] },
+    { "question": "The period of great Islamic learning was ________.", "expectedAny": ["Islamic Golden Age"] },
+    { "question": "The learning capital was ________.", "expectedAny": ["Baghdad"] },
+    { "question": "The math branch developed was ________.", "expectedAny": ["algebra"] },
+    { "question": "Keeping knowledge safe is ________.", "expectedAny": ["preservation"] },
+    { "question": "The ________ Golden Age had great learning.", "expectedAny": ["Islamic"] },
+    { "question": "________ became learning center.", "expectedAny": ["Baghdad"] },
+    { "question": "House of ________ was famous library.", "expectedAny": ["Wisdom"] },
+    { "question": "________ is branch of mathematics.", "expectedAny": ["algebra"] },
+    { "question": "________ kept texts safe.", "expectedAny": ["preservation"] }
+  ],
+  "shortanswer": [
+    { "question": "How did Islamic scholars help preserve ancient knowledge?", "expectedAny": ["translated Greek and Roman texts", "copied and studied ancient works"] },
+    { "question": "What was Islamic Golden Age?", "expectedAny": ["period of great learning", "time of achievement", "time of great learning", "period of advancement"] },
+    { "question": "What was Baghdad?", "expectedAny": ["capital and learning center", "Islamic learning city", "center of learning", "Islamic capital"] },
+    { "question": "What was House of Wisdom?", "expectedAny": ["library and research center", "famous library"] },
+    { "question": "What is algebra?", "expectedAny": ["math branch from Islam", "Islamic mathematics"] },
+    { "question": "What is preservation?", "expectedAny": ["keeping knowledge safe", "saving texts", "protecting knowledge", "saving ancient texts"] },
+    { "question": "What did Islam contribute?", "expectedAny": ["math, science, medicine"] },
+    { "question": "What texts did scholars save?", "expectedAny": ["Greek and Roman", "ancient works"] },
+    { "question": "Why was Golden Age important?", "expectedAny": ["great learning and achievement", "advanced knowledge"] },
+    { "question": "What did scholars translate?", "expectedAny": ["Greek and Roman texts", "ancient knowledge"] }
+  ]
 }

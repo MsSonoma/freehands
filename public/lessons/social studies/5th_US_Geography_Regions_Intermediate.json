@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Use maps to show the five major US regions. Discuss how geography affects how people live and work in different areas.",
-  "sample": {
-    "question": "What do we call a large area with similar land features and climate?",
-    "expectedAny": [
-      "region",
-      "geographic region",
-      "geographical area",
-      "regional area"
-    ]
-  },
-  "truefalse": {
-    "question": "The Great Plains region is known for its flat land good for farming.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which region of the US has many mountains and forests?",
-    "expectedAny": [
-      "West",
-      "Western region",
-      "Mountain West",
-      "Rocky Mountain region"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The usual weather patterns in an area over time are called the ________.",
-    "expectedAny": [
-      "climate",
-      "regional climate",
-      "weather climate",
-      "climate patterns"
-    ]
-  },
-  "shortanswer": {
-    "question": "Name two natural resources that might be found in different US regions.",
-    "expectedAny": [
-      "oil and trees",
-      "water and coal",
-      "farmland and minerals",
-      "forests and rivers"
-    ]
-  }
+  "sample": [
+    { "question": "What do we call a large area with similar land features and climate?", "expectedAny": ["region", "geographic region"] },
+    { "question": "What is the study of Earth's surface called?", "expectedAny": ["geography"] },
+    { "question": "What are usual weather patterns over time called?", "expectedAny": ["climate"] },
+    { "question": "Name a flat farming region in the central U.S.", "expectedAny": ["Great Plains"] },
+    { "question": "Which region has many mountains and forests in the west?", "expectedAny": ["West", "Western region", "Rocky Mountains"] },
+    { "question": "What do we call materials found in nature that people use?", "expectedAny": ["natural resources"] },
+    { "question": "Name one natural resource.", "expectedAny": ["oil", "water", "trees", "coal", "minerals"] },
+    { "question": "What region includes the Mississippi River delta?", "expectedAny": ["South", "Southeast"] },
+    { "question": "Which region includes the Great Lakes?", "expectedAny": ["Midwest"] },
+    { "question": "Which coast touches the Pacific Ocean?", "expectedAny": ["West Coast", "Pacific Coast"] }
+  ],
+  "truefalse": [
+    { "question": "The Great Plains region is known for its flat land good for farming.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The West region has many mountains.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Climate is the weather on one single day.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Natural resources include water, trees, and minerals.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The Midwest includes the Great Lakes region.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The West Coast touches the Atlantic Ocean.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The South can include the Mississippi River delta.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Geography never affects jobs or lifestyles.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Mountains can make travel harder and weather different.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Deserts are found only on the East Coast.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which region of the US has many mountains and forests?", "choices": ["Midwest", "West", "South", "Northeast"], "correct": 1, "expectedAny": ["West", "Western region"] },
+    { "question": "What are usual weather patterns over time called?", "choices": ["weather", "climate", "geography", "ecosystem"], "correct": 1, "expectedAny": ["climate"] },
+    { "question": "Which region includes the Great Lakes?", "choices": ["West", "Midwest", "South", "Northeast"], "correct": 1, "expectedAny": ["Midwest"] },
+    { "question": "Which coast touches the Pacific Ocean?", "choices": ["Gulf Coast", "East Coast", "West Coast", "Arctic Coast"], "correct": 2, "expectedAny": ["West Coast"] },
+    { "question": "Which region is known for flat land good for farming?", "choices": ["Great Plains", "Appalachians", "Rockies", "Desert Southwest"], "correct": 0, "expectedAny": ["Great Plains"] },
+    { "question": "Which is a natural resource?", "choices": ["video games", "oil", "cars", "phones"], "correct": 1, "expectedAny": ["oil"] },
+    { "question": "Which region often has deserts?", "choices": ["Northeast", "South", "Midwest", "West"], "correct": 3, "expectedAny": ["West"] },
+    { "question": "Which region includes New England?", "choices": ["South", "Midwest", "Northeast", "West"], "correct": 2, "expectedAny": ["Northeast"] },
+    { "question": "Which landform is common in the Appalachian region?", "choices": ["deserts", "mountains", "coastal plains", "tundra"], "correct": 1, "expectedAny": ["mountains"] },
+    { "question": "Which factor can shape where people live and work?", "choices": ["geography", "random", "luck", "myth"], "correct": 0, "expectedAny": ["geography"] }
+  ],
+  "fillintheblank": [
+    { "question": "A large area with similar features is a ________.", "expectedAny": ["region"] },
+    { "question": "The study of Earth's surface is ________.", "expectedAny": ["geography"] },
+    { "question": "Usual weather patterns over time are called ________.", "expectedAny": ["climate"] },
+    { "question": "The ________ Coast touches the Pacific Ocean.", "expectedAny": ["West"] },
+    { "question": "The ________ region includes the Great Lakes.", "expectedAny": ["Midwest"] },
+    { "question": "Flat farming land in the central U.S. is the ________ ________.", "expectedAny": ["Great Plains"] },
+    { "question": "Materials found in nature people use are ________ ________.", "expectedAny": ["natural resources"] },
+    { "question": "The ________ region includes many mountains in the west.", "expectedAny": ["Western"] },
+    { "question": "The ________ River delta is in the South.", "expectedAny": ["Mississippi"] },
+    { "question": "Which coast includes California? The ________ Coast.", "expectedAny": ["West", "Pacific"] }
+  ],
+  "shortanswer": [
+    { "question": "Name two natural resources found in different regions.", "expectedAny": ["oil", "trees", "water", "coal", "minerals"] },
+    { "question": "How can mountains affect climate and travel?", "expectedAny": ["colder, more snow, harder travel"] },
+    { "question": "Why do many people live near coasts or rivers?", "expectedAny": ["trade", "water", "jobs"] },
+    { "question": "How does climate affect what people wear or grow?", "expectedAny": ["clothes and crops match climate"] },
+    { "question": "Name a region and describe a landform there.", "expectedAny": ["West has mountains", "Great Plains are flat"] },
+    { "question": "Where are the Great Lakes located?", "expectedAny": ["Midwest"] },
+    { "question": "Name a desert region in the U.S.", "expectedAny": ["Southwest", "Mojave"] },
+    { "question": "What is one way geography shapes jobs?", "expectedAny": ["farming in plains", "fishing on coasts"] },
+    { "question": "Name a reason people might move regions.", "expectedAny": ["jobs", "climate", "family"] },
+    { "question": "How can rivers help cities grow?", "expectedAny": ["transport", "trade", "water"] }
+  ]
 }

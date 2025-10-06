@@ -1,4 +1,4 @@
-{
+﻿{
   "id": "11th_Advanced_Functions_Transformations_Beginner",
   "title": "Advanced Functions and Transformations",
   "grade": "11th",
@@ -26,28 +26,266 @@
     }
   ],
   "teachingNotes": "Use graphing technology to visualize transformations. Connect algebraic changes to graphical effects.",
-  "sample": {
-    "question": "What changes function position or shape on coordinate plane?",
-    "expectedAny": ["function transformation", "transformation", "function change", "graph transformation"]
-  },
-  "truefalse": {
-    "question": "A vertical shift moves the graph up or down.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What flips a function graph across an axis?",
-    "expectedAny": ["reflection", "flip", "mirror", "axis reflection"]
-  },
-  "fillintheblank": {
-    "question": "Expanding a function graph is called a ________.",
-    "expectedAny": ["stretch", "expansion", "dilation", "scaling"]
-  },
-  "shortanswer": {
-    "question": "How does f(x) + 3 transform the graph of f(x)?",
-    "expectedAny": ["shifts up 3 units", "vertical shift up", "moves up 3", "upward translation"]
-  },
-  "wordProblems": {
-    "question": "If f(x) = x² and g(x) = 2f(x-1) + 3, describe all transformations from f to g.",
-    "expectedAny": ["right 1, stretch by 2, up 3", "horizontal shift right 1, vertical stretch 2, vertical shift up 3"]
-  }
+  "sample": [
+    {
+      "question": "What changes function position or shape on coordinate plane?",
+      "expectedAny": ["function transformation", "transformation", "function change", "graph transformation", "function shift", "coordinate change"]
+    },
+    {
+      "question": "What moves a graph up or down?",
+      "expectedAny": ["vertical shift", "vertical translation", "up-down movement", "vertical move", "y shift", "up down shift"]
+    },
+    {
+      "question": "What moves a graph left or right?",
+      "expectedAny": ["horizontal shift", "horizontal translation", "left-right movement", "horizontal move", "x shift", "left right shift"]
+    },
+    {
+      "question": "What flips a function across an axis?",
+      "expectedAny": ["reflection", "flip", "mirror", "axis reflection", "graph flip", "symmetry reflection"]
+    },
+    {
+      "question": "What expands a function graph?",
+      "expectedAny": ["stretch", "expansion", "scaling", "dilation", "vertical stretch", "graph expansion"]
+    },
+    {
+      "question": "What is any change to a function graph called?",
+      "expectedAny": ["transformation", "function transformation", "graph change", "function change"]
+    },
+    {
+      "question": "What transformation adds a constant to the output?",
+      "expectedAny": ["vertical shift", "vertical translation", "up-down shift", "output change"]
+    },
+    {
+      "question": "What transformation changes the input value?",
+      "expectedAny": ["horizontal shift", "horizontal translation", "left-right shift", "input change"]
+    },
+    {
+      "question": "What creates a mirror image?",
+      "expectedAny": ["reflection", "flip", "mirror transformation", "axis flip"]
+    },
+    {
+      "question": "What makes a graph wider or narrower?",
+      "expectedAny": ["stretch", "compression", "scaling", "width change"]
+    }
+  ],
+  "truefalse": [
+    {
+      "question": "A vertical shift moves the graph up or down.",
+      "expectedAny": ["true", "yes", "t", "correct"]
+    },
+    {
+      "question": "Adding a constant inside the function creates a vertical shift.",
+      "expectedAny": ["false", "no", "f", "incorrect"]
+    },
+    {
+      "question": "A reflection flips a function graph across an axis.",
+      "expectedAny": ["true", "yes", "t", "correct"]
+    },
+    {
+      "question": "A horizontal shift changes the function's output.",
+      "expectedAny": ["false", "no", "f", "incorrect"]
+    },
+    {
+      "question": "A vertical stretch expands the graph away from the x-axis.",
+      "expectedAny": ["true", "yes", "t", "correct"]
+    },
+    {
+      "question": "Function transformations always change the domain.",
+      "expectedAny": ["false", "no", "f", "incorrect"]
+    },
+    {
+      "question": "Multiplying the function by -1 reflects it across the x-axis.",
+      "expectedAny": ["true", "yes", "t", "correct"]
+    },
+    {
+      "question": "A horizontal stretch makes the graph narrower.",
+      "expectedAny": ["false", "no", "f", "incorrect"]
+    },
+    {
+      "question": "Adding 5 to f(x) shifts the graph up 5 units.",
+      "expectedAny": ["true", "yes", "t", "correct"]
+    },
+    {
+      "question": "Multiple transformations cannot be combined.",
+      "expectedAny": ["false", "no", "f", "incorrect"]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "What flips a function graph across an axis?",
+      "choices": ["Shift", "Reflection", "Stretch", "Rotation"],
+      "correct": "Reflection"
+    },
+    {
+      "question": "What is f(x) + 3?",
+      "choices": ["Vertical shift up 3", "Horizontal shift right 3", "Reflection", "Stretch by 3"],
+      "correct": "Vertical shift up 3"
+    },
+    {
+      "question": "What is f(x - 2)?",
+      "choices": ["Shift left 2", "Shift right 2", "Shift up 2", "Shift down 2"],
+      "correct": "Shift right 2"
+    },
+    {
+      "question": "What is 2f(x)?",
+      "choices": ["Horizontal stretch", "Vertical stretch", "Horizontal shift", "Vertical shift"],
+      "correct": "Vertical stretch"
+    },
+    {
+      "question": "What is -f(x)?",
+      "choices": ["Reflect over x-axis", "Reflect over y-axis", "Shift down", "Shift up"],
+      "correct": "Reflect over x-axis"
+    },
+    {
+      "question": "What moves a graph horizontally?",
+      "choices": ["Adding to output", "Changing input", "Multiplying output", "Dividing output"],
+      "correct": "Changing input"
+    },
+    {
+      "question": "What is f(x) - 5?",
+      "choices": ["Up 5", "Down 5", "Left 5", "Right 5"],
+      "correct": "Down 5"
+    },
+    {
+      "question": "What is f(x + 4)?",
+      "choices": ["Right 4", "Left 4", "Up 4", "Down 4"],
+      "correct": "Left 4"
+    },
+    {
+      "question": "What is 0.5f(x)?",
+      "choices": ["Vertical compression", "Horizontal compression", "Vertical stretch", "Horizontal stretch"],
+      "correct": "Vertical compression"
+    },
+    {
+      "question": "What is f(-x)?",
+      "choices": ["Reflect over x-axis", "Reflect over y-axis", "Shift left", "Shift right"],
+      "correct": "Reflect over y-axis"
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "A _____ shift moves a graph up or down.",
+      "expectedAny": ["vertical", "up-down", "y"]
+    },
+    {
+      "question": "A _____ shift moves a graph left or right.",
+      "expectedAny": ["horizontal", "left-right", "x"]
+    },
+    {
+      "question": "A _____ flips a graph across an axis.",
+      "expectedAny": ["reflection", "flip", "mirror"]
+    },
+    {
+      "question": "A _____ expands the graph vertically or horizontally.",
+      "expectedAny": ["stretch", "expansion", "dilation"]
+    },
+    {
+      "question": "Any change to a function graph is a _____.",
+      "expectedAny": ["transformation", "change", "modification"]
+    },
+    {
+      "question": "f(x) + k creates a _____ shift of k units.",
+      "expectedAny": ["vertical", "up-down", "y"]
+    },
+    {
+      "question": "f(x - h) creates a _____ shift of h units.",
+      "expectedAny": ["horizontal", "left-right", "x"]
+    },
+    {
+      "question": "-f(x) reflects the graph across the _____-axis.",
+      "expectedAny": ["x", "horizontal"]
+    },
+    {
+      "question": "f(-x) reflects the graph across the _____-axis.",
+      "expectedAny": ["y", "vertical"]
+    },
+    {
+      "question": "af(x) where a > 1 creates a vertical _____.",
+      "expectedAny": ["stretch", "expansion", "dilation"]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Describe what happens to the graph of y = x when it becomes y = (x - 3).",
+      "expectedAny": ["the graph shifts 3 units to the right", "horizontal shift right by 3", "moves right 3 units"]
+    },
+    {
+      "question": "Explain the difference between f(x) + 2 and f(x + 2).",
+      "expectedAny": ["f(x) + 2 shifts up 2 units while f(x + 2) shifts left 2 units", "first is vertical shift up, second is horizontal shift left", "adding to output shifts up, adding to input shifts left"]
+    },
+    {
+      "question": "How does multiplying a function by a negative number affect its graph?",
+      "expectedAny": ["it reflects the graph across the x-axis", "flips the graph upside down", "creates a reflection over the horizontal axis"]
+    },
+    {
+      "question": "What transformation changes y = |x| to y = |x| - 4?",
+      "expectedAny": ["vertical shift down 4 units", "downward translation of 4", "moves the graph down by 4"]
+    },
+    {
+      "question": "If f(x) = x, what is the transformation for g(x) = 2x?",
+      "expectedAny": ["vertical stretch by factor of 2", "expansion away from x-axis by 2", "multiply all y-values by 2"]
+    },
+    {
+      "question": "Describe the transformation from y = x to y = (x + 1).",
+      "expectedAny": ["horizontal shift left 1 unit", "leftward translation of 1", "moves the graph left by 1"]
+    },
+    {
+      "question": "What happens when you apply both a vertical stretch and a reflection?",
+      "expectedAny": ["the graph stretches and flips across the x-axis", "combines expansion with reflection", "graph is stretched and inverted"]
+    },
+    {
+      "question": "How can you tell if a transformation is horizontal or vertical?",
+      "expectedAny": ["changes to input are horizontal, changes to output are vertical", "inside the function is horizontal, outside is vertical", "x changes are horizontal, function changes are vertical"]
+    },
+    {
+      "question": "What is the result of applying f(x - 2) + 3?",
+      "expectedAny": ["shifts right 2 and up 3", "horizontal shift right 2 and vertical shift up 3", "moves right 2 units and up 3 units"]
+    },
+    {
+      "question": "Why does f(x + h) shift left instead of right?",
+      "expectedAny": ["adding to input moves opposite direction to reach same output", "the inside change works opposite to expectation", "the graph shifts left to compensate for added value"]
+    }
+  ],
+  "wordProblems": [
+    {
+      "question": "A company's profit function is P(t) = 1000t where t is time in years. If they start tracking 3 years late, the function becomes P(t - 3) = 1000(t - 3). Describe this transformation.",
+      "expectedAny": ["horizontal shift right 3 years", "time delay of 3 years", "shifts the graph 3 units right"]
+    },
+    {
+      "question": "The temperature T(h) = 70 - 2h gives temperature at height h. If the ground temperature increases to 75 degrees, the new function is T(h) = 75 - 2h. What transformation occurred?",
+      "expectedAny": ["vertical shift up 5 degrees", "upward translation of 5", "temperature increased by 5 at all heights"]
+    },
+    {
+      "question": "A ball's height is h(t) = -16t + 64t. If thrown from a 10-foot platform, the function becomes h(t) = -16t + 64t + 10. What transformation is this?",
+      "expectedAny": ["vertical shift up 10 feet", "upward translation of 10", "starting height increased by 10"]
+    },
+    {
+      "question": "The cost function C(x) = 50x represents cost in dollars. If prices double, the function becomes C(x) = 100x. What transformation occurred?",
+      "expectedAny": ["vertical stretch by factor of 2", "doubled output", "expansion by 2"]
+    },
+    {
+      "question": "A wave function is y = sin(x). When shifted to start at x = π/2, it becomes y = sin(x - π/2). Describe this transformation.",
+      "expectedAny": ["horizontal shift right π/2", "rightward phase shift", "moves right by π/2"]
+    },
+    {
+      "question": "The population P(t) = 1000(1.05)^t models growth. If we look back 5 years, we use P(t + 5). What transformation is this?",
+      "expectedAny": ["horizontal shift left 5 years", "leftward time shift", "moves left 5 units"]
+    },
+    {
+      "question": "A spring's position is y = cos(t). When inverted, it becomes y = -cos(t). What transformation occurred?",
+      "expectedAny": ["reflection across x-axis", "vertical flip", "inverted across horizontal axis"]
+    },
+    {
+      "question": "The profit is P(x) = 100x - x. If costs decrease by $50 per unit, the function becomes P(x) = 100x - x + 50. What transformation is this?",
+      "expectedAny": ["vertical shift up 50", "upward translation of 50", "profit increased by 50 at all levels"]
+    },
+    {
+      "question": "A function models distance d(t) = 60t. If measured from a starting point 20 miles ahead, it becomes d(t) = 60t + 20. Describe the transformation.",
+      "expectedAny": ["vertical shift up 20 miles", "upward translation of 20", "starting position increased by 20"]
+    },
+    {
+      "question": "The voltage V(t) = 120sin(t) is halved to V(t) = 60sin(t). What transformation occurred?",
+      "expectedAny": ["vertical compression by factor of 0.5", "amplitude reduced by half", "vertical shrink by 1/2"]
+    }
+  ]
 }

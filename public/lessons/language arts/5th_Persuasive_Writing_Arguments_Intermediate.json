@@ -23,51 +23,100 @@
     {
       "term": "conclusion",
       "definition": "The ending that restates the main opinion and summarizes the arguments"
+    },
+    {
+      "term": "claim",
+      "definition": "The main point or opinion you are arguing for"
+    },
+    {
+      "term": "counterclaim",
+      "definition": "An opposing view or argument against your claim"
+    },
+    {
+      "term": "rebuttal",
+      "definition": "Your response that explains why the counterclaim is weak or less valid"
+    },
+    {
+      "term": "bias",
+      "definition": "Language or ideas that are unfairly one-sided"
+    },
+    {
+      "term": "transition",
+      "definition": "A word or phrase that connects ideas (for example, 'because', 'therefore')"
+    },
+    {
+      "term": "call to action",
+      "definition": "A sentence that tells the reader what to do next"
+    },
+    {
+      "term": "source",
+      "definition": "A place where information comes from"
+    },
+    {
+      "term": "statistics",
+      "definition": "Numbers or data used as evidence"
     }
   ],
   "teachingNotes": "Start with topics students care about like school policies or favorite activities. Teach the structure: opinion, reasons, evidence, conclusion. Practice distinguishing fact from opinion.",
-  "sample": {
-    "question": "What type of writing tries to convince readers to agree with you?",
-    "expectedAny": [
-      "persuasive writing",
-      "persuasive",
-      "argumentative writing",
-      "convincing writing"
-    ]
-  },
-  "truefalse": {
-    "question": "Evidence should support your arguments in persuasive writing.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What should you include to support your opinion?",
-    "expectedAny": [
-      "evidence",
-      "facts",
-      "examples",
-      "supporting details"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A reason given to support an opinion is called an ________.",
-    "expectedAny": [
-      "argument",
-      "supporting argument",
-      "reason",
-      "supporting reason"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are the main parts of a persuasive essay?",
-    "expectedAny": [
-      "opinion, arguments, evidence, conclusion",
-      "introduction, reasons, examples, ending",
-      "claim, support, evidence, summary"
-    ]
-  }
+  "sample": [
+    { "question": "What type of writing tries to convince readers to agree with you?", "expectedAny": ["persuasive writing", "persuasive", "argumentative writing", "convincing writing"] },
+    { "question": "Your main point or opinion is your ________.", "expectedAny": ["claim", "position", "argument"] },
+    { "question": "Facts and examples that back up your claim are called ________.", "expectedAny": ["evidence", "support"] },
+    { "question": "Words like 'because' and 'therefore' show ________.", "expectedAny": ["reasoning", "logic"] },
+    { "question": "An opposing view is called a ________.", "expectedAny": ["counterclaim", "opposing claim"] },
+    { "question": "Answering a counterclaim is your ________.", "expectedAny": ["rebuttal", "refutation"] },
+    { "question": "A sentence that tells the reader what to do next is a call to ________.", "expectedAny": ["action"] },
+    { "question": "Numbers that support your idea are ________.", "expectedAny": ["statistics", "data"] },
+    { "question": "A trustworthy place to get information is a reliable ________.", "expectedAny": ["source"] },
+    { "question": "The last paragraph should restate the claim and ________.", "expectedAny": ["reasons", "call to action"] }
+  ],
+  "truefalse": [
+    { "question": "Evidence should support your arguments in persuasive writing.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A claim and a counterclaim mean the same thing.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Reliable sources make your writing stronger.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Bias means being completely fair and neutral.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A rebuttal explains why the counterclaim is weak.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Emotional appeals are always better than facts.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Transitions help connect reasons to evidence.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A call to action belongs only in the introduction.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "You should explain how evidence supports your reason.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Repeating the claim many times without evidence is effective.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What should you include to support your opinion?", "choices": ["Jokes", "Facts and examples", "Random thoughts", "Unrelated stories"], "correct": 1, "expectedAny": ["evidence", "facts", "examples", "supporting details"] },
+    { "question": "Which sentence is a clear claim?", "choices": ["School is fine.", "School should start later to help students rest.", "I like school.", "School is a place."], "correct": 1, "expectedAny": ["clear claim"] },
+    
+    { "question": "Which is a reliable source?", "choices": ["Anonymous blog", "Peer-reviewed study", "Random comment", "Advertisement"], "correct": 1, "expectedAny": ["study", "peer-reviewed"] },
+    { "question": "Which word signals a reason?", "choices": ["Because", "Wow", "Hey", "Fun"], "correct": 0, "expectedAny": ["because"] },
+    { "question": "Which sentence is a counterclaim?", "choices": ["Recycling saves resources.", "Some people say recycling takes too much time.", "We should recycle more.", "I recycle."], "correct": 1, "expectedAny": ["counterclaim"] },
+    { "question": "Which is a strong rebuttal?", "choices": ["No way.", "That's wrong.", "Although it takes time, the benefits are greater.", "Whatever."], "correct": 2, "expectedAny": ["rebuttal"] },
+    { "question": "Which transition links evidence to a reason?", "choices": ["Therefore", "Hello", "Wow", "Yay"], "correct": 0, "expectedAny": ["therefore"] },
+    { "question": "Which is a call to action?", "choices": ["We learned a lot.", "You can help by bringing a reusable bottle today.", "It is interesting.", "I think so."], "correct": 1, "expectedAny": ["call to action"] },
+    { "question": "Which choice shows biased language?", "choices": ["According to the data...", "Experts report...", "Only a fool would disagree.", "The study finds..."], "correct": 2, "expectedAny": ["bias"] },
+    { "question": "Which conclusion ties back to the claim?", "choices": ["That's all.", "These reasons show later starts improve student health.", "Okay bye.", "The end."], "correct": 1, "expectedAny": ["restates claim"] }
+  ],
+  "fillintheblank": [
+    { "question": "A reason given to support an opinion is called an ________.", "expectedAny": ["argument", "supporting argument", "reason", "supporting reason", "justification"] },
+  { "question": "Facts, data, and examples are types of ________.", "expectedAny": ["evidence", "support", "supporting details", "proof", "supporting evidence"] },
+    { "question": "A statement against your claim is a ________.", "expectedAny": ["counterclaim", "opposing view", "opposing claim", "opposing argument"] },
+    { "question": "Answering a counterclaim with reasons is a ________.", "expectedAny": ["rebuttal", "refutation", "counterargument", "reply"] },
+  { "question": "Words like 'because' and 'therefore' show ________.", "expectedAny": ["reasoning", "logic", "cause and effect", "logical connection"] },
+  { "question": "A sentence that asks the reader to do something is a call to ________.", "expectedAny": ["action", "act"] },
+  { "question": "Information from a trustworthy author is a reliable ________.", "expectedAny": ["source", "reference", "resource"] },
+    { "question": "Numbers that support your idea are ________.", "expectedAny": ["statistics", "data", "figures", "stats"] },
+    { "question": "Explaining how evidence proves a reason is your ________.", "expectedAny": ["analysis", "explanation", "reasoning"] },
+    { "question": "The last paragraph that restates your claim is the ________.", "expectedAny": ["conclusion", "closing", "summary", "concluding paragraph"] }
+  ],
+  "shortanswer": [
+    { "question": "What are the main parts of a persuasive essay?", "expectedAny": ["opinion, arguments, evidence, conclusion", "introduction, reasons, examples, ending", "claim, support, evidence, summary", "introduction, reasons, evidence, conclusion"] },
+    { "question": "Write one counterclaim about longer recess.", "expectedAny": ["less class time", "lower scores", "harder schedule", "less learning time", "not enough time for subjects"] },
+    { "question": "Give a short rebuttal to that counterclaim.", "expectedAny": ["more focused learning", "better health", "improved behavior", "higher attention", "students return ready to learn"] },
+    { "question": "Provide a call to action about cleaning the park.", "expectedAny": ["join the cleanup", "pick up trash", "bring gloves", "bring a bag", "help us clean", "meet at the park"] },
+  { "question": "Name one credible source for school health topics.", "expectedAny": ["cdc", "nurse", "peer-reviewed journal", "Centers for Disease Control", "doctor", "health department"] },
+  { "question": "Write a linking sentence using 'therefore'.", "expectedAny": ["therefore", "thus", "for that reason", "as a result"] },
+    { "question": "Give one transition to introduce a reason.", "expectedAny": ["first", "to begin", "one reason", "another reason"] },
+  { "question": "State a clear claim about homework.", "expectedAny": ["should", "should not", "more", "less", "students should have less homework", "homework should be reduced", "students need less homework"] },
+    { "question": "Explain how one piece of evidence supports your claim.", "expectedAny": ["shows that", "proves", "supports", "demonstrates", "because"] },
+    { "question": "Restate your claim in a stronger way.", "expectedAny": ["therefore", "clearly", "these reasons", "this evidence shows", "in conclusion", "it is clear that"] }
+  ]
 }

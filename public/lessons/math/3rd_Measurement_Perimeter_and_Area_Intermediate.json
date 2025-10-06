@@ -7,61 +7,63 @@
 	"vocab": [
 		{"term": "perimeter", "definition": "The distance around a shape"},
 		{"term": "area", "definition": "The amount of space inside a shape"},
-		{"term": "square unit", "definition": "A unit used to measure area"}
+		{"term": "square unit", "definition": "A unit used to measure area"},
+		{"term": "length", "definition": "How long something is (one side of a rectangle)"},
+		{"term": "width", "definition": "How wide something is (the other side of a rectangle)"}
 	],
 	"teachingNotes": "Use grids, unit squares, and real measurements. Contrast 'around' (perimeter) vs 'inside' (area).",
 	"sample": [
-		{"question": "Find the perimeter of a square with side 5 cm.", "expectedAny": ["20", "20 cm"]},
-		{"question": "What is the area of a 4×6 rectangle?", "expectedAny": ["24", "24 square units"]},
-		{"question": "A rectangle has perimeter 20. One side is 6. Find other side.", "expectedAny": ["4"]},
-		{"question": "Find area of a square with side 7.", "expectedAny": ["49"]},
-		{"question": "What's the perimeter of a triangle with sides 3, 4, 5?", "expectedAny": ["12"]},
-		{"question": "How many square units in a 5×5 grid?", "expectedAny": ["25"]},
-		{"question": "Find perimeter of rectangle: length 8, width 3.", "expectedAny": ["22"]}
+		{"question": "Find the perimeter of a square with side 5 cm.", "expectedAny": ["20", "20 cm", "twenty", "20 centimeters"]},
+		{"question": "What is the area of a 4×6 rectangle?", "expectedAny": ["24", "24 square units", "twenty-four"]},
+		{"question": "A rectangle has perimeter 20. One side is 6. Find other side.", "expectedAny": ["4", "four", "side is 4"]},
+		{"question": "Find area of a square with side 7.", "expectedAny": ["49", "forty-nine", "49 square units"]},
+		{"question": "What's the perimeter of a triangle with sides 3, 4, 5?", "expectedAny": ["12", "twelve", "12 units"]},
+		{"question": "How many square units in a 5×5 grid?", "expectedAny": ["25", "twenty-five", "25 squares"]},
+		{"question": "Find perimeter of rectangle: length 8, width 3.", "expectedAny": ["22", "twenty-two", "22 units"]}
 	],
 	"truefalse": [
-		{"question": "Perimeter is the distance around a shape.", "answer": true},
-		{"question": "Area is measured in square units.", "answer": true},
-		{"question": "All rectangles with same perimeter have same area.", "answer": false},
-		{"question": "A square with side 4 has area 16.", "answer": true},
-		{"question": "Perimeter is inside the shape.", "answer": false},
-		{"question": "To find rectangle area, multiply length × width.", "answer": true},
-		{"question": "A 3×3 square has perimeter 12.", "answer": true}
+		{"question": "Perimeter is the distance around a shape.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "around the outside"]},
+		{"question": "Area is measured in square units.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "square units"]},
+		{"question": "All rectangles with same perimeter have same area.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "same perimeter different area"]},
+		{"question": "A square with side 4 has area 16.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "4×4=16"]},
+		{"question": "Perimeter is inside the shape.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "perimeter is around"]},
+		{"question": "To find rectangle area, multiply length × width.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "l×w"]},
+		{"question": "A 3×3 square has perimeter 12.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "3+3+3+3=12"]}
 	],
 	"multiplechoice": [
-		{"question": "Perimeter of square, side 6:", "choices": ["12", "18", "24", "36"], "correct": 2},
-		{"question": "Area of 5×7 rectangle:", "choices": ["12", "24", "35", "40"], "correct": 2},
-		{"question": "Square has perimeter 20. Each side is:", "choices": ["4", "5", "10", "20"], "correct": 1},
-		{"question": "Area of square, side 8:", "choices": ["32", "48", "64", "72"], "correct": 2},
-		{"question": "Perimeter of rectangle: 9×3", "choices": ["12", "24", "27", "36"], "correct": 1},
-		{"question": "Which has greater area?", "choices": ["6×4", "5×5", "8×3", "7×3"], "correct": 1},
-		{"question": "Triangle perimeter: sides 5,6,7", "choices": ["16", "17", "18", "19"], "correct": 2}
+		{"question": "Perimeter of square, side 6:", "choices": ["12", "18", "24", "36"], "correct": 2, "expectedAny": ["c", "C", "3", "24"]},
+		{"question": "Area of 5×7 rectangle:", "choices": ["12", "24", "35", "40"], "correct": 2, "expectedAny": ["c", "C", "3", "35"]},
+		{"question": "Square has perimeter 20. Each side is:", "choices": ["4", "5", "10", "20"], "correct": 1, "expectedAny": ["b", "B", "2", "5"]},
+		{"question": "Area of square, side 8:", "choices": ["32", "48", "64", "72"], "correct": 2, "expectedAny": ["c", "C", "3", "64"]},
+		{"question": "Perimeter of rectangle: 9×3", "choices": ["12", "24", "27", "36"], "correct": 1, "expectedAny": ["b", "B", "2", "24"]},
+		{"question": "Which has greater area?", "choices": ["6×4", "5×5", "8×3", "7×3"], "correct": 1, "expectedAny": ["b", "B", "2", "5×5"]},
+		{"question": "Triangle perimeter: sides 5,6,7", "choices": ["16", "17", "18", "19"], "correct": 2, "expectedAny": ["c", "C", "3", "18"]}
 	],
 	"fillintheblank": [
-		{"question": "Perimeter of square with side 7 is ___", "expectedAny": ["28"]},
-		{"question": "Area of 6×8 rectangle is ___ square units", "expectedAny": ["48"]},
-		{"question": "A rectangle 10×2 has perimeter ___", "expectedAny": ["24"]},
-		{"question": "Square with area 49 has side length ___", "expectedAny": ["7"]},
-		{"question": "To find perimeter, ___ all sides", "expectedAny": ["add"]},
-		{"question": "Area is measured in ___ units", "expectedAny": ["square"]},
-		{"question": "Rectangle with perimeter 18 and width 3 has length ___", "expectedAny": ["6"]}
+		{"question": "Perimeter of square with side 7 is ___", "expectedAny": ["28", "28 units", "twenty-eight"]},
+		{"question": "Area of 6×8 rectangle is ___ square units", "expectedAny": ["48", "48 square units", "forty-eight"]},
+		{"question": "A rectangle 10×2 has perimeter ___", "expectedAny": ["24", "24 units", "twenty-four"]},
+		{"question": "Square with area 49 has side length ___", "expectedAny": ["7", "seven", "side 7"]},
+		{"question": "To find perimeter, ___ all sides", "expectedAny": ["add", "add up", "sum", "add them"]},
+		{"question": "Area is measured in ___ units", "expectedAny": ["square", "square units", "sq", "square-shaped"]},
+		{"question": "Rectangle with perimeter 18 and width 3 has length ___", "expectedAny": ["6", "six", "6 units", "length 6"]}
 	],
 	"shortanswer": [
-		{"question": "What's the difference between perimeter and area?", "expectedAny": ["perimeter around, area inside"]},
-		{"question": "How do you find perimeter of any shape?", "expectedAny": ["add all sides"]},
-		{"question": "Why is area in square units?", "expectedAny": ["2D space measured by unit squares"]},
-		{"question": "Draw two rectangles with same perimeter but different areas.", "expectedAny": ["e.g., 4×4 and 6×2"]},
-		{"question": "How do you find a missing side with perimeter?", "expectedAny": ["subtract known sides from total"]},
-		{"question": "What shapes can have same area?", "expectedAny": ["different rectangles, irregular shapes"]},
-		{"question": "When use perimeter vs area?", "expectedAny": ["fence vs carpet"]}
+		{"question": "What's the difference between perimeter and area?", "expectedAny": ["perimeter is around the outside", "area is the space inside", "around vs inside", "border vs cover", "distance around vs space inside", "perimeter outside, area inside"]},
+		{"question": "How do you find perimeter of any shape?", "expectedAny": ["add all sides", "sum the side lengths", "go around and add", "add the side lengths", "add up all sides", "total of all sides"]},
+		{"question": "Why is area in square units?", "expectedAny": ["we count unit squares", "it measures 2D space", "area is covered by squares", "measured with square tiles", "space inside", "count squares"]},
+		{"question": "Draw two rectangles with same perimeter but different areas.", "expectedAny": ["4×4 and 6×2", "8×2 and 6×4", "5×5 and 7×3", "10×2 and 8×3", "any two valid examples"]},
+		{"question": "How do you find a missing side with perimeter?", "expectedAny": ["add known sides and subtract from total", "subtract the known lengths from the perimeter", "share what is left between the unknown sides if needed", "use P=2(l+w) and solve", "subtract known sides", "take away what you know"]},
+		{"question": "What shapes can have same area?", "expectedAny": ["different rectangles can have equal area", "irregular shapes can match areas", "many shapes can cover the same area", "same area different shapes", "different shapes", "lots of shapes"]},
+		{"question": "When use perimeter vs area?", "expectedAny": ["perimeter for borders like fences", "area for covering like carpet", "border vs cover", "fence vs paint", "perimeter for around, area for inside", "around vs cover"]}
 	],
 	"wordProblems": [
-		{"question": "A garden is 12m by 8m. How much fence needed?", "expectedAny": ["40", "40 m", "40 meters"]},
-		{"question": "A square playground has side 15m. Find its area.", "expectedAny": ["225", "225 sq m"]},
-		{"question": "Rectangular rug: 6 ft by 4 ft. What's the area?", "expectedAny": ["24", "24 sq ft"]},
-		{"question": "Pool perimeter is 36m. Width is 6m. What's length?", "expectedAny": ["12", "12 m"]},
-		{"question": "Which room is bigger: 9×9 or 12×6?", "expectedAny": ["9×9", "81 > 72"]},
-		{"question": "Tile costs $2 per sq ft. Cost for 7×5 floor?", "expectedAny": ["70", "$70"]},
-		{"question": "Square field perimeter 48m. Find area.", "expectedAny": ["144", "side 12, area 144"]}
+		{"question": "A garden is 12m by 8m. How much fence needed?", "expectedAny": ["40", "40 m", "40 meters", "forty meters"]},
+		{"question": "A square playground has side 15m. Find its area.", "expectedAny": ["225", "225 sq m", "225 square meters"]},
+		{"question": "Rectangular rug: 6 ft by 4 ft. What's the area?", "expectedAny": ["24", "24 sq ft", "24 square feet"]},
+		{"question": "Pool perimeter is 36m. Width is 6m. What's length?", "expectedAny": ["12", "12 m", "twelve meters"]},
+		{"question": "Which room is bigger: 9×9 or 12×6?", "expectedAny": ["9×9", "81 > 72", "9 by 9"]},
+		{"question": "Tile costs $2 per sq ft. Cost for 7×5 floor?", "expectedAny": ["70", "$70", "$70.00", "seventy dollars"]},
+		{"question": "Square field perimeter 48m. Find area.", "expectedAny": ["144", "side 12, area 144", "area 144 square meters"]}
 	]
 }

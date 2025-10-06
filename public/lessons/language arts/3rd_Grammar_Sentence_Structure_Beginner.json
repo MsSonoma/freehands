@@ -10,6 +10,10 @@
       "definition": "A word that names a person, place, thing, or idea"
     },
     {
+      "term": "proper noun",
+      "definition": "A specific name that starts with a capital letter"
+    },
+    {
       "term": "verb",
       "definition": "A word that shows action or being"
     },
@@ -20,6 +24,18 @@
     {
       "term": "complete sentence",
       "definition": "A group of words that has a subject and verb and expresses a complete thought"
+    },
+    {
+      "term": "comma",
+      "definition": "A punctuation mark (,) used to separate parts of a sentence"
+    },
+    {
+      "term": "apostrophe",
+      "definition": "A punctuation mark (') used in contractions and possessives"
+    },
+    {
+      "term": "quotation marks",
+      "definition": "Punctuation marks (\" \") used around spoken words"
     }
   ],
   "teachingNotes": "Use interactive games to identify parts of speech. Practice building sentences from simple to complex. Use colorful sentence strips.",
@@ -27,7 +43,9 @@
     "question": "What part of speech is the word 'run' in the sentence 'I run fast'?",
     "expectedAny": [
       "verb",
-      "action word"
+      "action word",
+      "action verb",
+      "doing word"
     ]
   },
   "truefalse": [
@@ -35,6 +53,10 @@
       "question": "Every complete sentence must have a noun and a verb.",
       "answer": true,
       "expectedAny": [
+        "true",
+        "yes",
+        "t",
+        "correct",
         "sentences need both a subject (noun) and predicate (verb)"
       ]
     }
@@ -50,7 +72,10 @@
       ],
       "correct": 1,
       "expectedAny": [
-        "big describes the dog"
+        "big",
+        "big describes the dog",
+        "the adjective is big",
+        "big is the describing word"
       ]
     }
   ],
@@ -58,7 +83,12 @@
     {
       "question": "In the sentence 'The cat sleeps,' the word 'cat' is a _____ and 'sleeps' is a _____.",
       "expectedAny": [
-        "noun, verb"
+        "noun, verb",
+        "noun and verb",
+        "subject and predicate",
+        "subject, verb",
+        "a noun and a verb",
+        "subject and verb"
       ]
     }
   ],
@@ -67,9 +97,14 @@
       "question": "How can you tell if a group of words is a complete sentence?",
       "expectedAny": [
         "has a subject and verb",
+        "has a subject and predicate",
         "expresses a complete thought",
         "makes sense by itself",
-        "tells who did what"
+        "tells who did what",
+        "has a noun and verb",
+        "person/place/thing and action word",
+        "naming word and doing word",
+        "complete idea"
       ]
     }
   ]

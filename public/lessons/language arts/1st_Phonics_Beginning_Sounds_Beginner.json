@@ -20,6 +20,14 @@
     {
       "term": "vowel",
       "definition": "The letters a, e, i, o, u"
+    },
+    {
+      "term": "short a",
+      "definition": "The sound a makes in words like cat and bat"
+    },
+    {
+      "term": "long e",
+      "definition": "The sound e makes in words like bee and tree"
     }
   ],
   "teachingNotes": "Use picture cards and sound games. Practice isolating beginning sounds. Connect sounds to letters students know.",
@@ -28,7 +36,11 @@
     "expectedAny": [
       "/b/",
       "buh",
-      "like in ball"
+      "like in ball",
+      "b",
+      "b sound",
+      "bbb",
+      "like in boy"
     ]
   },
   "truefalse": [
@@ -60,7 +72,10 @@
       "question": "The word 'sun' starts with the letter _____.",
       "expectedAny": [
         "s",
-        "S"
+        "S",
+        "letter S",
+        "letter s",
+        "the letter S"
       ]
     }
   ],
@@ -72,7 +87,13 @@
         "mouse",
         "milk",
         "man",
-        "moon"
+        "moon",
+        "mat",
+        "map",
+        "mop",
+        "mud",
+        "mix",
+        "mommy"
       ]
     }
   ]

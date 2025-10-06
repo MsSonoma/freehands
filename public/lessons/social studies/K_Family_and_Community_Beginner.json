@@ -21,14 +21,23 @@
       "term": "helper",
       "definition": "Someone who helps others in the community"
     }
+    ,
+    {
+      "term": "mail",
+      "definition": "Letters and packages delivered to homes"
+    },
+    {
+      "term": "address",
+      "definition": "The number and street name of your home"
+    }
   ],
   "teachingNotes": "Discuss different family structures. Identify community helpers and their roles. Practice addresses and community locations.",
   "sample": [
-    {"question": "Who are some helpers in your community?", "expectedAny": ["police", "firefighters", "teachers", "doctors"]},
-    {"question": "What do families do together?", "expectedAny": ["eat meals", "play", "help each other", "live together"]},
-    {"question": "Where do you live in your community?", "expectedAny": ["house", "apartment", "home", "neighborhood"]},
-    {"question": "Who takes care of you at home?", "expectedAny": ["parents", "family", "mom", "dad", "guardians"]},
-    {"question": "What makes a good neighbor?", "expectedAny": ["helpful", "kind", "friendly", "caring"]}
+    {"question": "Who are some helpers in your community?", "expectedAny": ["police", "firefighters", "teachers", "doctors", "nurses", "mail carriers"]},
+    {"question": "What do families do together?", "expectedAny": ["eat meals", "play", "help each other", "live together", "talk", "spend time"]},
+    {"question": "Where do you live in your community?", "expectedAny": ["house", "apartment", "home", "neighborhood", "my house"]},
+    {"question": "Who takes care of you at home?", "expectedAny": ["parents", "family", "mom", "dad", "guardians", "grandparents", "grown-ups"]},
+    {"question": "What makes a good neighbor?", "expectedAny": ["helpful", "kind", "friendly", "caring", "nice"]}
   ],
   "truefalse": [
     {"question": "Teachers help children learn.", "answer": true, "expectedAny": ["teachers help with learning"]},
@@ -49,22 +58,22 @@
     {"question": "What do good neighbors do?", "choices": ["ignore each other", "help each other", "never talk", "only argue"], "correct": 1, "expectedAny": ["good neighbors help each other"]}
   ],
   "fillintheblank": [
-    {"question": "A _____ delivers mail to your house.", "expectedAny": ["mailman", "mail carrier"]},
-    {"question": "People who live near you are called _____.", "expectedAny": ["neighbors"]},
-    {"question": "A _____ is a group of people who care for each other.", "expectedAny": ["family"]},
-    {"question": "The place where you live is your _____.", "expectedAny": ["community", "neighborhood"]},
-    {"question": "_____ help keep us safe in our community.", "expectedAny": ["Police officers", "Police"]},
-    {"question": "_____ help put out fires.", "expectedAny": ["Firefighters"]},
-    {"question": "Your _____ is your home address.", "expectedAny": ["address"]}
+    {"question": "A _____ delivers mail to your house.", "expectedAny": ["mailman", "mail carrier", "letter carrier", "mailperson"]},
+    {"question": "People who live near you are called _____.", "expectedAny": ["neighbors", "neighbours"]},
+    {"question": "A _____ is a group of people who care for each other.", "expectedAny": ["family", "a family"]},
+    {"question": "The place where you live is your _____.", "expectedAny": ["community", "neighborhood", "home"]},
+    {"question": "_____ help keep us safe in our community.", "expectedAny": ["Police officers", "Police", "police", "cops"]},
+    {"question": "_____ help put out fires.", "expectedAny": ["Firefighters", "fire fighters", "firemen"]},
+    {"question": "Your _____ is your home address.", "expectedAny": ["address", "home address"]}
   ],
   "shortanswer": [
-    {"question": "Tell me about your family.", "expectedAny": ["describes family members"]},
-    {"question": "How do families help each other?", "expectedAny": ["share chores", "take care of each other", "help with problems"]},
-    {"question": "What places are in your community?", "expectedAny": ["school", "stores", "hospital", "park", "library"]},
-    {"question": "How can you be a good community member?", "expectedAny": ["follow rules", "help others", "be kind", "keep clean"]},
-    {"question": "What jobs do community helpers have?", "expectedAny": ["protect people", "teach", "heal sick", "deliver mail"]},
-    {"question": "How are families different from each other?", "expectedAny": ["different sizes", "different people", "different homes", "different traditions"]},
-    {"question": "Why do we need rules in our community?", "expectedAny": ["stay safe", "be fair", "help everyone", "work together"]}
+    {"question": "Tell me about your family.", "expectedAny": ["I live with mom and dad", "I have a sister/brother", "we do things together", "I live with grandma", "I have parents", "we're a family"]},
+    {"question": "How do families help each other?", "expectedAny": ["share chores", "take care of each other", "help with problems", "do things together", "love each other"]},
+    {"question": "What places are in your community?", "expectedAny": ["school", "stores", "hospital", "park", "library", "houses", "shops"]},
+    {"question": "How can you be a good community member?", "expectedAny": ["follow rules", "help others", "be kind", "keep clean", "be nice"]},
+    {"question": "What jobs do community helpers have?", "expectedAny": ["protect people", "teach", "heal sick", "deliver mail", "help others", "fix things"]},
+    {"question": "How are families different from each other?", "expectedAny": ["different sizes", "different people", "different homes", "different traditions", "some big some small"]},
+    {"question": "Why do we need rules in our community?", "expectedAny": ["stay safe", "be fair", "help everyone", "work together", "keep order"]}
   ],
   "wordProblems": [
     {"question": "There are 4 people in Sam's family and 3 people in Maya's family. How many people are in both families together?", "expectedAny": ["7 people", "4 + 3 = 7"]},

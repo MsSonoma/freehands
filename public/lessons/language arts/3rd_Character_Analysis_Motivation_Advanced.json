@@ -5,22 +5,12 @@
   "difficulty": "Advanced",
   "featured": false,
   "vocab": [
-    {
-      "term": "character",
-      "definition": "A person or animal in a story"
-    },
-    {
-      "term": "motivation",
-      "definition": "The reason why a character does something"
-    },
-    {
-      "term": "character trait",
-      "definition": "A quality that describes what a character is like"
-    },
-    {
-      "term": "evidence",
-      "definition": "Proof from the story that supports what you think"
-    }
+    {"word": "character", "kid_friendly_definition": "A person or animal in a story."},
+    {"word": "motivation", "kid_friendly_definition": "The reason why a character does something."},
+    {"word": "character trait", "kid_friendly_definition": "A quality that describes what a character is like."},
+    {"word": "evidence", "kid_friendly_definition": "Proof from the story that supports what you think."},
+    {"word": "internal motivation", "kid_friendly_definition": "When a character wants something inside, like to feel happy or brave."},
+    {"word": "external motivation", "kid_friendly_definition": "When a character wants something outside, like a prize or to help someone."}
   ],
   "teachingNotes": "Use character analysis charts. Practice finding evidence in text. Discuss how character actions reveal personality.",
   "sample": {
@@ -29,7 +19,9 @@
       "kindness",
       "generosity",
       "caring",
-      "helpfulness"
+      "helpfulness",
+      "being kind",
+      "thoughtful"
     ]
   },
   "truefalse": [
@@ -37,6 +29,10 @@
       "question": "You can learn about a character by paying attention to what they say and do.",
       "answer": true,
       "expectedAny": [
+        "true",
+        "yes",
+        "t",
+        "correct",
         "character actions and dialogue reveal personality"
       ]
     }
@@ -52,6 +48,10 @@
       ],
       "correct": 1,
       "expectedAny": [
+        "they want to improve",
+        "desire to get better",
+        "they want to get better",
+        "they want to improve their skills",
         "daily practice shows desire to get better"
       ]
     }
@@ -60,7 +60,11 @@
     {
       "question": "When you make a claim about a character, you need to find _____ from the story to support your idea.",
       "expectedAny": [
-        "evidence"
+        "evidence",
+        "text evidence",
+        "proof",
+        "support from the text",
+        "evidence from the text"
       ]
     }
   ],
@@ -71,7 +75,13 @@
         "look at their actions",
         "pay attention to what they say",
         "notice their goals",
-        "see what problems they try to solve"
+        "see what problems they try to solve",
+        "look for reasons behind actions",
+        "find text evidence of wants and needs",
+        "look at how other characters react to them",
+        "see what they do",
+        "hear what they say",
+        "think about why they do it"
       ]
     }
   ]

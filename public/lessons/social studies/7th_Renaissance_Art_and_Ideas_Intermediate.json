@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Show examples of Renaissance art. Explain how new ideas about learning and human capability emerged. Connect to modern concepts.",
-  "sample": {
-    "question": "What was the period of renewed interest in art, learning, and culture called?",
-    "expectedAny": [
-      "Renaissance",
-      "rebirth",
-      "cultural revival",
-      "artistic revival"
-    ]
-  },
-  "truefalse": {
-    "question": "Renaissance artists developed new techniques like perspective to make art more realistic.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which city was a major center of Renaissance culture?",
-    "expectedAny": [
-      "Florence",
-      "Venice",
-      "Rome",
-      "Italian city-states"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A wealthy person who supports artists is called a ________.",
-    "expectedAny": [
-      "patron",
-      "sponsor",
-      "supporter",
-      "benefactor"
-    ]
-  },
-  "shortanswer": {
-    "question": "How did humanism change the way people thought about themselves?",
-    "expectedAny": [
-      "focused on human potential",
-      "emphasized individual achievement",
-      "valued human capabilities"
-    ]
-  }
+  "sample": [
+    { "question": "What was the period of renewed interest in art, learning, and culture called?", "expectedAny": ["Renaissance"] },
+    { "question": "Which is human potential focus?", "choices": ["Feudalism", "Humanism", "Militarism", "Isolationism"], "correct": 1, "expectedAny": ["humanism"] },
+    { "question": "Wealthy art supporter is ________.", "expectedAny": ["patron"] },
+    { "question": "Art depth technique is ________.", "expectedAny": ["perspective"] },
+    { "question": "Renaissance culture center was ________.", "expectedAny": ["Florence"] },
+    { "question": "What was rebirth period?", "choices": ["Dark Ages", "Renaissance", "Middle Ages", "Stone Age"], "correct": 1, "expectedAny": ["Renaissance"] },
+    { "question": "Focus on human achievement is ________.", "expectedAny": ["humanism"] },
+    { "question": "What is art supporter?", "choices": ["Enemy", "Patron", "Stranger", "Thief"], "correct": 1, "expectedAny": ["patron"] },
+    { "question": "Depth illusion is ________.", "expectedAny": ["perspective"] },
+    { "question": "Italian culture center was ________.", "expectedAny": ["Florence"] }
+  ],
+  "truefalse": [
+    { "question": "Renaissance artists developed new techniques like perspective to make art more realistic.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Renaissance means war.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Humanism focused on humans.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Patrons destroyed art.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Perspective creates depth.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Florence was unimportant.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Renaissance renewed learning.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Humanism ignored humans.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Patrons supported artists.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Perspective is cooking technique.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which city was a major center of Renaissance culture?", "choices": ["London", "Florence", "Paris", "Berlin"], "correct": 1, "expectedAny": ["Florence"] },
+    { "question": "What was rebirth period?", "choices": ["Dark Ages", "Renaissance", "Middle Ages", "Stone Age"], "correct": 1, "expectedAny": ["Renaissance"] },
+    { "question": "What focused on humans?", "choices": ["Feudalism", "Humanism", "Militarism", "Isolationism"], "correct": 1, "expectedAny": ["humanism"] },
+    { "question": "Who supported artists?", "choices": ["Enemy", "Patron", "Stranger", "Thief"], "correct": 1, "expectedAny": ["patron"] },
+    { "question": "What creates depth?", "choices": ["Color", "Perspective", "Size", "Smell"], "correct": 1, "expectedAny": ["perspective"] },
+    { "question": "Renaissance renewed?", "choices": ["War", "Art and learning", "Poverty", "Disease"], "correct": 1, "expectedAny": ["art and learning"] },
+    { "question": "Humanism valued?", "choices": ["Nothing", "Human potential", "War", "Isolation"], "correct": 1, "expectedAny": ["human potential"] },
+    { "question": "Patrons were?", "choices": ["Poor", "Wealthy supporters", "Enemies", "Thieves"], "correct": 1, "expectedAny": ["wealthy supporters"] },
+    { "question": "Florence was in?", "choices": ["France", "Italy", "Spain", "England"], "correct": 1, "expectedAny": ["Italy"] },
+    { "question": "Art became more?", "choices": ["Ugly", "Realistic", "Simple", "Dark"], "correct": 1, "expectedAny": ["realistic"] }
+  ],
+  "fillintheblank": [
+    { "question": "A wealthy person who supports artists is called a ________.", "expectedAny": ["patron"] },
+    { "question": "The period of renewed interest was ________.", "expectedAny": ["Renaissance"] },
+    { "question": "Focus on human potential is ________.", "expectedAny": ["humanism"] },
+    { "question": "Art technique for depth is ________.", "expectedAny": ["perspective"] },
+    { "question": "Italian culture center was ________.", "expectedAny": ["Florence"] },
+    { "question": "The ________ renewed art and learning.", "expectedAny": ["Renaissance"] },
+    { "question": "________ focused on humans.", "expectedAny": ["humanism"] },
+    { "question": "A ________ supports artists.", "expectedAny": ["patron"] },
+    { "question": "________ creates illusion of depth.", "expectedAny": ["perspective"] },
+    { "question": "________ was culture center.", "expectedAny": ["Florence"] }
+  ],
+  "shortanswer": [
+    { "question": "How did humanism change the way people thought about themselves?", "expectedAny": ["focused on human potential", "emphasized individual achievement"] },
+    { "question": "What was Renaissance?", "expectedAny": ["period of renewed interest in art", "rebirth of learning", "cultural rebirth", "reawakening", "cultural revival"] },
+    { "question": "What was humanism?", "expectedAny": ["focus on human potential", "human achievement focus", "belief in human ability", "focus on people"] },
+    { "question": "What was patron?", "expectedAny": ["wealthy art supporter", "sponsor"] },
+    { "question": "What was perspective?", "expectedAny": ["art technique for depth", "depth illusion"] },
+    { "question": "What was Florence?", "expectedAny": ["Italian culture center", "Renaissance city"] },
+    { "question": "What did Renaissance renew?", "expectedAny": ["art, learning, culture"] },
+    { "question": "What did humanism value?", "expectedAny": ["human potential and achievement"] },
+    { "question": "What did patrons do?", "expectedAny": ["supported artists and scholars"] },
+    { "question": "What did perspective do?", "expectedAny": ["made art more realistic", "created depth"] }
+  ]
 }

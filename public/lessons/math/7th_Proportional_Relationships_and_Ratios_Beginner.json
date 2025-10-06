@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Use real-world examples like recipes or speed. Show how to find unit rates by dividing. Practice setting up proportions.",
-  "sample": {
-    "question": "What is a comparison of two quantities called?",
-    "expectedAny": ["ratio", "comparison", "relationship", "proportion"]
-  },
-  "truefalse": {
-    "question": "A unit rate has a denominator of 1.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "If 3 apples cost $2, what is the unit rate?",
-    "expectedAny": ["$2/3 per apple", "$0.67 per apple", "67 cents per apple", "$2÷3 per apple"]
-  },
-  "fillintheblank": {
-    "question": "Two ratios that are equal form a ________.",
-    "expectedAny": ["proportion", "proportional relationship", "equal ratios", "equivalent ratios"]
-  },
-  "shortanswer": {
-    "question": "If 4 pencils cost $3, how much do 8 pencils cost?",
-    "expectedAny": ["$6", "6 dollars", "$6.00", "six dollars"]
-  },
-  "wordProblems": {
-    "question": "A car travels 120 miles in 3 hours. At this rate, how far will it travel in 5 hours?",
-    "expectedAny": ["200 miles", "200", "two hundred miles", "120÷3×5=200"]
-  }
+  "sample": [
+    { "question": "What is a comparison of two quantities called?", "expectedAny": ["ratio"] },
+    { "question": "Which has denominator 1?", "choices": ["Ratio", "Unit rate", "Proportion", "Factor"], "correct": 1, "expectedAny": ["unit rate"] },
+    { "question": "Two equal ratios form a ________.", "expectedAny": ["proportion"] },
+    { "question": "The constant ratio is the ________.", "expectedAny": ["constant of proportionality"] },
+    { "question": "Multiplying diagonally is ________.", "expectedAny": ["cross multiply"] },
+    { "question": "What compares quantities?", "choices": ["Sum", "Ratio", "Product", "Difference"], "correct": 1, "expectedAny": ["ratio"] },
+    { "question": "A rate per one is ________.", "expectedAny": ["unit rate"] },
+    { "question": "Equal ratios are a ________.", "expectedAny": ["proportion"] },
+    { "question": "Which is constant ratio?", "choices": ["Sum", "Constant of proportionality", "Product", "Difference"], "correct": 1, "expectedAny": ["constant of proportionality"] },
+    { "question": "Solving proportions uses ________.", "expectedAny": ["cross multiply"] }
+  ],
+  "truefalse": [
+    { "question": "A unit rate has a denominator of 1.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A ratio compares three quantities.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A proportion has two equal ratios.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Cross multiply adds numbers.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Constant of proportionality is a fixed ratio.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Ratios cannot be simplified.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Unit rates have denominator 1.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Proportions compare unequal ratios.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Cross multiplication solves proportions.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All ratios are proportions.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "If 3 apples cost $2, what is the unit rate?", "choices": ["$3 per apple", "$2/3 per apple", "$2 per apple", "$6 per apple"], "correct": 1, "expectedAny": ["$2/3 per apple", "$0.67"] },
+    { "question": "What compares quantities?", "choices": ["Sum", "Ratio", "Product", "Difference"], "correct": 1, "expectedAny": ["ratio"] },
+    { "question": "Which has denominator 1?", "choices": ["Ratio", "Unit rate", "Proportion", "Factor"], "correct": 1, "expectedAny": ["unit rate"] },
+    { "question": "What are equal ratios?", "choices": ["Sum", "Proportion", "Product", "Difference"], "correct": 1, "expectedAny": ["proportion"] },
+    { "question": "What is constant ratio?", "choices": ["Sum", "Constant of proportionality", "Product", "Difference"], "correct": 1, "expectedAny": ["constant of proportionality"] },
+    { "question": "What solves proportions?", "choices": ["Adding", "Cross multiply", "Subtracting", "Dividing only"], "correct": 1, "expectedAny": ["cross multiply"] },
+    { "question": "3:4 is a?", "choices": ["Sum", "Ratio", "Product", "Difference"], "correct": 1, "expectedAny": ["ratio"] },
+    { "question": "$5 per item is a?", "choices": ["Ratio", "Unit rate", "Sum", "Product"], "correct": 1, "expectedAny": ["unit rate"] },
+    { "question": "2/3 = 4/6 is a?", "choices": ["Ratio", "Proportion", "Sum", "Product"], "correct": 1, "expectedAny": ["proportion"] },
+    { "question": "To solve a/b = c/d, you?", "choices": ["Add", "Cross multiply", "Subtract", "Divide only"], "correct": 1, "expectedAny": ["cross multiply"] }
+  ],
+  "fillintheblank": [
+    { "question": "Two ratios that are equal form a ________.", "expectedAny": ["proportion"] },
+    { "question": "A comparison of quantities is a ________.", "expectedAny": ["ratio"] },
+    { "question": "A rate with denominator 1 is a ________.", "expectedAny": ["unit rate"] },
+    { "question": "The fixed ratio is the ________ of proportionality.", "expectedAny": ["constant"] },
+    { "question": "Solving proportions uses ________.", "expectedAny": ["cross multiply"] },
+    { "question": "A ________ compares two quantities.", "expectedAny": ["ratio"] },
+    { "question": "A ________ has denominator 1.", "expectedAny": ["unit rate"] },
+    { "question": "Equal ratios are a ________.", "expectedAny": ["proportion"] },
+    { "question": "The ________ is a constant ratio.", "expectedAny": ["constant of proportionality"] },
+    { "question": "________ multiplies diagonally.", "expectedAny": ["cross multiply"] }
+  ],
+  "shortanswer": [
+    { "question": "If 4 pencils cost $3, how much do 8 pencils cost?", "expectedAny": ["$6", "6"] },
+    { "question": "What is a ratio?", "expectedAny": ["comparison of quantities", "comparing two numbers", "comparing amounts", "relationship between numbers"] },
+    { "question": "What is a unit rate?", "expectedAny": ["rate with denominator 1", "rate per one", "amount per 1", "per one unit"] },
+    { "question": "What is a proportion?", "expectedAny": ["two equal ratios", "equal ratios"] },
+    { "question": "What is constant of proportionality?", "expectedAny": ["fixed ratio", "constant ratio"] },
+    { "question": "How do you cross multiply?", "expectedAny": ["multiply diagonally", "multiply across", "multiply opposite corners", "diagonal multiplication"] },
+    { "question": "Find unit rate: 12 miles in 3 hours", "expectedAny": ["4 miles per hour", "4"] },
+    { "question": "Simplify the ratio 6:9", "expectedAny": ["2:3", "2 to 3"] },
+    { "question": "Solve: 2/3 = x/6", "expectedAny": ["x = 4", "4"] },
+    { "question": "If y = 3x, what is the constant?", "expectedAny": ["3", "constant is 3"] }
+  ],
+  "wordProblems": [
+    { "question": "A car travels 120 miles in 3 hours. At this rate, how far will it travel in 5 hours?", "expectedAny": ["200 miles", "200"] },
+    { "question": "If 5 notebooks cost $8, how much do 15 notebooks cost?", "expectedAny": ["$24", "24"] },
+    { "question": "A recipe calls for 2 cups of flour for 3 batches. How much flour for 9 batches?", "expectedAny": ["6 cups", "6"] },
+    { "question": "A printer prints 180 pages in 6 minutes. How many pages per minute?", "expectedAny": ["30 pages", "30"] },
+    { "question": "If 8 pounds of apples cost $12, what is the cost per pound?", "expectedAny": ["$1.50", "1.50"] },
+    { "question": "A map scale is 1 inch = 50 miles. How far is 3.5 inches?", "expectedAny": ["175 miles", "175"] },
+    { "question": "A hose fills a pool at 15 gallons per minute. How long to fill 450 gallons?", "expectedAny": ["30 minutes", "30"] },
+    { "question": "If 3 tickets cost $21, how much do 7 tickets cost?", "expectedAny": ["$49", "49"] },
+    { "question": "A runner completes 6 miles in 48 minutes. What is the rate per mile?", "expectedAny": ["8 minutes", "8"] },
+    { "question": "If 4 pens cost $6, how many pens can you buy with $15?", "expectedAny": ["10 pens", "10"] }
+  ]
 }

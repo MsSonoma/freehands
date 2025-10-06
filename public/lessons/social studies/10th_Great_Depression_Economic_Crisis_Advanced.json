@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "10th_Great_Depression_Economic_Crisis_Advanced",
   "title": "Great Depression: Global Economic Crisis and Response",
   "grade": "10th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "great depression",
-      "definition": "Severe worldwide economic downturn from 1929 to late 1930s"
-    },
-    {
-      "term": "stock market crash",
-      "definition": "Sudden dramatic decline in stock market values"
-    },
-    {
-      "term": "new deal",
-      "definition": "Series of programs to combat the Great Depression in the US"
-    },
-    {
-      "term": "unemployment",
-      "definition": "Condition of being without work despite seeking employment"
-    },
-    {
-      "term": "keynesian economics",
-      "definition": "Economic theory advocating government intervention during recessions"
-    }
+    {"term": "great depression", "definition": "Severe worldwide economic downturn from 1929 to late 1930s"},
+    {"term": "stock market crash", "definition": "Sudden dramatic decline in stock market values"},
+    {"term": "new deal", "definition": "Series of programs to combat the Great Depression in the US"},
+    {"term": "unemployment", "definition": "Condition of being without work despite seeking employment"},
+    {"term": "keynesian economics", "definition": "Economic theory advocating government intervention during recessions"}
   ],
   "teachingNotes": "Analyze the global nature of the crisis and various governmental responses. Connect to modern economic policies.",
-  "sample": {
-    "question": "What was the severe worldwide economic downturn of the 1930s?",
-    "expectedAny": [
-      "Great Depression",
-      "economic depression",
-      "1930s depression",
-      "global depression"
-    ]
-  },
-  "truefalse": {
-    "question": "The New Deal was a series of programs to combat the Great Depression.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What economic theory advocates government intervention during recessions?",
-    "expectedAny": [
-      "Keynesian economics",
-      "Keynesian theory",
-      "interventionist economics",
-      "demand-side economics"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Being without work despite seeking employment is called ________.",
-    "expectedAny": [
-      "unemployment",
-      "joblessness",
-      "economic displacement",
-      "work scarcity"
-    ]
-  },
-  "shortanswer": {
-    "question": "What caused the Great Depression?",
-    "expectedAny": [
-      "stock market crash",
-      "overproduction",
-      "banking failures",
-      "reduced consumer spending"
-    ]
-  }
+  "sample": [
+    {"question": "What was 1930s downturn?", "expectedAny": ["great depression", "depression", "economic depression", "1929 depression", "great crash", "economic crisis"]},
+    {"question": "What was market decline?", "expectedAny": ["stock market crash", "crash", "market crash", "wall street crash", "black tuesday", "1929 crash"]},
+    {"question": "What were FDR programs?", "expectedAny": ["new deal", "FDR programs", "roosevelt programs", "new deal programs", "recovery programs", "fdr policies"]},
+    {"question": "What is jobless condition?", "expectedAny": ["unemployment", "joblessness", "jobless", "no work", "out of work", "without employment"]},
+    {"question": "What advocates intervention?", "expectedAny": ["keynesian economics", "keynes theory", "keynesian theory", "keynes economics", "demand side economics", "government intervention"]},
+    {"question": "What was economic crisis?", "expectedAny": ["great depression", "1929 crash", "economic depression", "1929 depression", "great crash", "economic crisis"]},
+    {"question": "What was 1929 event?", "expectedAny": ["stock market crash", "black tuesday", "market crash", "wall street crash", "crash", "1929 crash"]},
+    {"question": "What helped recovery?", "expectedAny": ["new deal", "programs", "roosevelt programs", "new deal programs", "recovery programs", "fdr policies"]},
+    {"question": "What is no work?", "expectedAny": ["unemployment", "jobless", "joblessness", "no work", "out of work", "without employment"]},
+    {"question": "What is intervention theory?", "expectedAny": ["keynesian economics", "keynesian", "keynesian theory", "keynes economics", "demand side economics", "government intervention"]}
+  ],
+  "truefalse": [
+    {"question": "Great Depression was 1930s. (True or False)", "correct": true},
+    {"question": "Stock crash increased values. (True or False)", "correct": false},
+    {"question": "New Deal combated depression. (True or False)", "correct": true},
+    {"question": "Unemployment is having work. (True or False)", "correct": false},
+    {"question": "Keynesian advocates intervention. (True or False)", "correct": true},
+    {"question": "Depression was worldwide. (True or False)", "correct": true},
+    {"question": "Stock market crashed. (True or False)", "correct": true},
+    {"question": "FDR created New Deal. (True or False)", "correct": true},
+    {"question": "Unemployment is joblessness. (True or False)", "correct": true},
+    {"question": "Keynes supported intervention. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What was 1930s?", "choices": [{"letter": "A", "text": "Prosperity"}, {"letter": "B", "text": "Great Depression"}, {"letter": "C", "text": "Boom"}, {"letter": "D", "text": "Growth"}], "correct": "B"},
+    {"question": "What was 1929?", "choices": [{"letter": "A", "text": "Market boom"}, {"letter": "B", "text": "Stock market crash"}, {"letter": "C", "text": "Recovery"}, {"letter": "D", "text": "Expansion"}], "correct": "B"},
+    {"question": "What were FDR programs?", "choices": [{"letter": "A", "text": "Fair Deal"}, {"letter": "B", "text": "New Deal"}, {"letter": "C", "text": "Square Deal"}, {"letter": "D", "text": "Great Society"}], "correct": "B"},
+    {"question": "What is joblessness?", "choices": [{"letter": "A", "text": "Employment"}, {"letter": "B", "text": "Unemployment"}, {"letter": "C", "text": "Retirement"}, {"letter": "D", "text": "Vacation"}], "correct": "B"},
+    {"question": "What advocates intervention?", "choices": [{"letter": "A", "text": "Laissez-faire"}, {"letter": "B", "text": "Keynesian economics"}, {"letter": "C", "text": "Free market"}, {"letter": "D", "text": "Capitalism"}], "correct": "B"},
+    {"question": "What was economic crisis?", "choices": [{"letter": "A", "text": "Boom"}, {"letter": "B", "text": "Great Depression"}, {"letter": "C", "text": "Prosperity"}, {"letter": "D", "text": "Growth"}], "correct": "B"},
+    {"question": "What was Black Tuesday?", "choices": [{"letter": "A", "text": "Recovery"}, {"letter": "B", "text": "Stock market crash"}, {"letter": "C", "text": "Boom"}, {"letter": "D", "text": "Expansion"}], "correct": "B"},
+    {"question": "What was recovery program?", "choices": [{"letter": "A", "text": "Old Deal"}, {"letter": "B", "text": "New Deal"}, {"letter": "C", "text": "No Deal"}, {"letter": "D", "text": "Bad Deal"}], "correct": "B"},
+    {"question": "What is no job?", "choices": [{"letter": "A", "text": "Employment"}, {"letter": "B", "text": "Unemployment"}, {"letter": "C", "text": "Retirement"}, {"letter": "D", "text": "Hobby"}], "correct": "B"},
+    {"question": "Who advocated intervention?", "choices": [{"letter": "A", "text": "Smith"}, {"letter": "B", "text": "Keynes"}, {"letter": "C", "text": "Marx"}, {"letter": "D", "text": "Hayek"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ Depression was 1930s.", "expectedAny": ["great", "Great"]},
+    {"question": "Stock _____ crashed in 1929.", "expectedAny": ["market"]},
+    {"question": "_____ Deal combated depression.", "expectedAny": ["new", "New"]},
+    {"question": "_____ is joblessness.", "expectedAny": ["unemployment", "Unemployment"]},
+    {"question": "_____ economics advocates intervention.", "expectedAny": ["keynesian", "Keynesian"]},
+    {"question": "Depression was _____.", "expectedAny": ["worldwide", "severe"]},
+    {"question": "_____ crashed in 1929.", "expectedAny": ["stocks", "market"]},
+    {"question": "FDR created _____ Deal.", "expectedAny": ["new", "New"]},
+    {"question": "_____ rate was high.", "expectedAny": ["unemployment"]},
+    {"question": "_____ supported intervention.", "expectedAny": ["keynes", "Keynes"]}
+  ],
+  "shortanswer": [
+    {"question": "What is Great Depression?", "keyTerms": ["severe", "worldwide", "economic", "downturn", "1929", "late", "1930s"], "expectedAny": ["Severe worldwide economic downturn from 1929 to late 1930s", "1930s depression", "Global economic crisis"]},
+    {"question": "What is stock market crash?", "keyTerms": ["sudden", "dramatic", "decline", "stock", "market", "values"], "expectedAny": ["Sudden dramatic decline in stock market values", "1929 crash", "Black Tuesday"]},
+    {"question": "What is New Deal?", "keyTerms": ["series", "programs", "combat", "great", "depression", "us"], "expectedAny": ["Series of programs to combat the Great Depression in the US", "FDR programs", "Recovery programs"]},
+    {"question": "What is unemployment?", "keyTerms": ["condition", "being", "without", "work", "despite", "seeking", "employment"], "expectedAny": ["Condition of being without work despite seeking employment", "Joblessness", "No work"]},
+    {"question": "What is Keynesian economics?", "keyTerms": ["economic", "theory", "advocating", "government", "intervention", "during", "recessions"], "expectedAny": ["Economic theory advocating government intervention during recessions", "Intervention theory", "Keynes theory"]},
+    {"question": "What caused Great Depression?", "keyTerms": ["stock crash", "bank failures", "overproduction", "speculation", "debt"], "expectedAny": ["Stock crash, bank failures, overproduction, speculation, debt", "Multiple causes", "1929 crash effects"]},
+    {"question": "What were depression effects?", "keyTerms": ["unemployment", "poverty", "homelessness", "hunger", "hardship"], "expectedAny": ["High unemployment, poverty, homelessness, hunger, hardship", "Economic suffering", "Widespread poverty"]},
+    {"question": "What was New Deal goal?", "keyTerms": ["relief", "recovery", "reform", "help", "economy"], "expectedAny": ["Relief, recovery, and reform to help economy", "Three Rs", "Economic recovery"]},
+    {"question": "Name New Deal program.", "keyTerms": ["social security", "CCC", "WPA", "TVA", "FDIC"], "expectedAny": ["Social Security", "CCC", "WPA", "TVA", "Any valid program"]},
+    {"question": "What is Keynesian solution?", "keyTerms": ["government", "spending", "stimulate", "economy", "demand"], "expectedAny": ["Government spending to stimulate economy and demand", "Deficit spending", "Intervention spending"]}
+  ]
 }

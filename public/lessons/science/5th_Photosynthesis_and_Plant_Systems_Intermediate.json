@@ -20,57 +20,83 @@
     {
       "term": "glucose",
       "definition": "A type of sugar that plants make during photosynthesis"
+    },
+    {
+      "term": "chloroplast",
+      "definition": "The part of plant cells where photosynthesis happens"
+    },
+    {
+      "term": "xylem",
+      "definition": "Plant tubes that carry water from roots to leaves"
+    },
+    {
+      "term": "phloem",
+      "definition": "Plant tubes that carry sugars from leaves to the rest of the plant"
+    },
+    {
+      "term": "guard cells",
+      "definition": "Cells that open and close stomata to control gas and water loss"
     }
   ],
   "teachingNotes": "Use leaf investigations and experiments with light conditions. Connect to human dependence on plants for food and oxygen. Demonstrate with aquatic plants producing oxygen bubbles.",
-  "sample": {
-    "question": "What do plants need for photosynthesis?",
-    "expectedAny": [
-      "sunlight, water, carbon dioxide",
-      "light, CO₂, H₂O"
-    ]
-  },
+  "sample": [
+    { "question": "What do plants need for photosynthesis?", "expectedAny": ["sunlight, water, carbon dioxide", "light, CO2, H2O"] },
+    { "question": "What sugar do plants make?", "expectedAny": ["glucose"] },
+    { "question": "What gas do plants release during photosynthesis?", "expectedAny": ["oxygen"] },
+    { "question": "Where in the plant does photosynthesis mainly occur?", "expectedAny": ["leaves"] },
+    { "question": "What pigment captures light energy?", "expectedAny": ["chlorophyll"] },
+    { "question": "What gas do plants take in for photosynthesis?", "expectedAny": ["carbon dioxide", "CO2"] },
+    { "question": "Plants use sunlight to convert water and CO2 into ________.", "expectedAny": ["glucose and oxygen"] },
+    { "question": "Explain stomata in one phrase.", "expectedAny": ["tiny openings for gas exchange"] },
+    { "question": "Name a factor that affects photosynthesis rate.", "expectedAny": ["light", "water", "CO2"] },
+    { "question": "Why are plants green?", "expectedAny": ["chlorophyll", "reflect green light"] }
+  ],
   "truefalse": [
-    {
-      "question": "Plants produce oxygen as a byproduct of photosynthesis.",
-      "answer": true,
-      "expectedAny": [
-        "oxygen is released during photosynthesis"
-      ]
-    }
+    { "question": "Plants produce oxygen as a byproduct of photosynthesis.", "expectedAny": ["true"] },
+    { "question": "Photosynthesis happens mainly in roots.", "expectedAny": ["false"] },
+    { "question": "Chlorophyll is green.", "expectedAny": ["true"] },
+    { "question": "Plants use oxygen to make glucose.", "expectedAny": ["false"] },
+    { "question": "Stomata allow gases to enter and exit leaves.", "expectedAny": ["true"] },
+    { "question": "Carbon dioxide is taken in by plants.", "expectedAny": ["true"] },
+    { "question": "Glucose is a type of sugar.", "expectedAny": ["true"] },
+    { "question": "Plants do not need water for photosynthesis.", "expectedAny": ["false"] },
+    { "question": "Light provides energy for photosynthesis.", "expectedAny": ["true"] },
+    { "question": "Only animals do cellular respiration.", "expectedAny": ["false"] }
   ],
   "multiplechoice": [
-    {
-      "question": "Where in the plant does photosynthesis mainly occur?",
-      "choices": [
-        "roots",
-        "stem",
-        "leaves",
-        "flowers"
-      ],
-      "correct": 2,
-      "expectedAny": [
-        "leaves contain chloroplasts for photosynthesis"
-      ]
-    }
+    { "question": "Where in the plant does photosynthesis mainly occur?", "choices": ["roots", "stem", "leaves", "flowers"], "correct": 2, "expectedAny": ["leaves contain chloroplasts"] },
+    { "question": "What is the main pigment for photosynthesis?", "choices": ["hemoglobin", "chlorophyll", "melanin", "keratin"], "correct": 1, "expectedAny": ["chlorophyll"] },
+    { "question": "Which gas do plants take in?", "choices": ["oxygen", "hydrogen", "carbon dioxide", "nitrogen"], "correct": 2, "expectedAny": ["CO2"] },
+    { "question": "Which sugar is produced?", "choices": ["sucrose", "fructose", "glucose", "lactose"], "correct": 2, "expectedAny": ["glucose"] },
+    { "question": "What do stomata do?", "choices": ["absorb water", "gas exchange", "transport sugars", "store starch"], "correct": 1, "expectedAny": ["gas exchange"] },
+    { "question": "What are the products of photosynthesis?", "choices": ["glucose and oxygen", "water and CO2", "oxygen and nitrogen", "sugar and minerals"], "correct": 0, "expectedAny": ["glucose and oxygen"] },
+    { "question": "What affects photosynthesis rate?", "choices": ["light intensity", "rock type", "wind direction", "planet phase"], "correct": 0, "expectedAny": ["light intensity"] },
+    { "question": "Where are chloroplasts found?", "choices": ["roots", "leaf cells", "flower petals", "bark"], "correct": 1, "expectedAny": ["leaf cells"] },
+    { "question": "Plants are green because:", "choices": ["they absorb green", "they reflect green", "they emit green", "they filter blue"], "correct": 1, "expectedAny": ["reflect green"] },
+    { "question": "Which of these is NOT needed for photosynthesis?", "choices": ["light", "water", "carbon dioxide", "salt"], "correct": 3, "expectedAny": ["salt"] }
   ],
   "fillintheblank": [
-    {
-      "question": "During photosynthesis, plants take in _____ and release _____.",
-      "expectedAny": [
-        "carbon dioxide",
-        "oxygen"
-      ]
-    }
+    { "question": "During photosynthesis, plants take in _____ and release _____.", "expectedAny": ["carbon dioxide", "oxygen", "CO2 then O2"] },
+    { "question": "The main pigment is ________.", "expectedAny": ["chlorophyll", "green pigment"] },
+    { "question": "The sugar produced is ________.", "expectedAny": ["glucose", "sugar"] },
+    { "question": "Tiny openings in leaves are called ________.", "expectedAny": ["stomata", "leaf pores"] },
+    { "question": "Photosynthesis mainly occurs in the ________.", "expectedAny": ["leaves", "leaf cells", "chloroplasts in leaves"] },
+    { "question": "Plants need ________, water, and CO2 for photosynthesis.", "expectedAny": ["light", "sunlight"] },
+    { "question": "The process stores energy in chemical bonds of ________.", "expectedAny": ["glucose", "sugar"] },
+    { "question": "Plants release ________ we breathe.", "expectedAny": ["oxygen", "O2"] },
+    { "question": "Chloroplasts are found in ________ cells.", "expectedAny": ["leaf", "plant", "green"] },
+    { "question": "Stomata allow ________ exchange.", "expectedAny": ["gas", "gases"] }
   ],
   "shortanswer": [
-    {
-      "question": "Explain why plants are important for other living things.",
-      "expectedAny": [
-        "produce oxygen we breathe",
-        "provide food directly or indirectly",
-        "base of food chains"
-      ]
-    }
+    { "question": "Explain why plants are important for other living things.", "expectedAny": ["oxygen and food", "base of food chains", "they make sugar and oxygen"] },
+    { "question": "Describe how light affects photosynthesis.", "expectedAny": ["more light increases rate up to a point", "low light slows photosynthesis"] },
+    { "question": "What role do stomata play?", "expectedAny": ["allow gas exchange", "let CO2 in and O2 out"] },
+    { "question": "Why do leaves have chloroplasts?", "expectedAny": ["capture light energy", "do photosynthesis"] },
+    { "question": "What happens to oxygen made in photosynthesis?", "expectedAny": ["released to air", "goes into the atmosphere"] },
+    { "question": "How does water reach leaves?", "expectedAny": ["through xylem", "up the xylem tubes"] },
+    { "question": "How is glucose used by plants?", "expectedAny": ["energy and building materials", "used for energy and to build plant parts"] },
+    { "question": "Name one factor besides light that affects photosynthesis.", "expectedAny": ["water", "CO2", "carbon dioxide", "temperature"] },
+    { "question": "Why are plants green?", "expectedAny": ["chlorophyll reflects green light", "they reflect green"] },
+    { "question": "What do plants take in from the air for photosynthesis?", "expectedAny": ["carbon dioxide", "CO2"] }
   ]
 }

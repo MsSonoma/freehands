@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "10th_Industrial_Revolution_Social_Economic_Change_Advanced",
   "title": "Industrial Revolution: Social and Economic Transformation",
   "grade": "10th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "industrial revolution",
-      "definition": "Period of major industrialization and technological advancement (1760-1840)"
-    },
-    {
-      "term": "factory system",
-      "definition": "Method of manufacturing using machinery and division of labor"
-    },
-    {
-      "term": "urbanization",
-      "definition": "Movement of people from rural areas to cities"
-    },
-    {
-      "term": "capitalism",
-      "definition": "Economic system based on private ownership and free markets"
-    },
-    {
-      "term": "proletariat",
-      "definition": "Working class who sell their labor for wages"
-    }
+    {"term": "industrial revolution", "definition": "Period of major industrialization and technological advancement (1760-1840)"},
+    {"term": "factory system", "definition": "Method of manufacturing using machinery and division of labor"},
+    {"term": "urbanization", "definition": "Movement of people from rural areas to cities"},
+    {"term": "capitalism", "definition": "Economic system based on private ownership and free markets"},
+    {"term": "proletariat", "definition": "Working class who sell their labor for wages"}
   ],
   "teachingNotes": "Analyze both positive and negative effects of industrialization. Connect to modern economic and social issues.",
-  "sample": {
-    "question": "What was the period of major industrialization from 1760-1840?",
-    "expectedAny": [
-      "Industrial Revolution",
-      "industrial period",
-      "age of industry",
-      "industrial transformation"
-    ]
-  },
-  "truefalse": {
-    "question": "The factory system used machinery and division of labor.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the movement from rural areas to cities called?",
-    "expectedAny": [
-      "urbanization",
-      "city migration",
-      "urban movement",
-      "rural exodus"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The working class who sell their labor are called the ________.",
-    "expectedAny": [
-      "proletariat",
-      "workers",
-      "working class",
-      "laborers"
-    ]
-  },
-  "shortanswer": {
-    "question": "How did the Industrial Revolution change social structures?",
-    "expectedAny": [
-      "created distinct social classes",
-      "separated workers from owners",
-      "changed family structures",
-      "urbanized society"
-    ]
-  }
+  "sample": [
+    {"question": "What was 1760-1840 period?", "expectedAny": ["industrial revolution", "industrialization", "age of industry", "industrial era", "mechanization period", "industrial age"]},
+    {"question": "What uses machinery labor division?", "expectedAny": ["factory system", "factory", "manufacturing system", "mechanized production", "industrial production", "assembly system"]},
+    {"question": "What is rural to city movement?", "expectedAny": ["urbanization", "urban growth", "city migration", "urban movement", "city development", "urban expansion"]},
+    {"question": "What is private ownership system?", "expectedAny": ["capitalism", "free market", "market economy", "capitalist system", "private enterprise", "laissez faire"]},
+    {"question": "What is working class?", "expectedAny": ["proletariat", "workers", "working class", "laborers", "wage earners", "industrial workers"]},
+    {"question": "What was industrialization period?", "expectedAny": ["industrial revolution", "revolution", "age of industry", "industrial era", "mechanization period", "industrial age"]},
+    {"question": "What is manufacturing method?", "expectedAny": ["factory system", "factories", "manufacturing system", "mechanized production", "industrial production", "assembly system"]},
+    {"question": "What is city growth?", "expectedAny": ["urbanization", "cities growing", "city migration", "urban movement", "city development", "urban expansion"]},
+    {"question": "What is market economy?", "expectedAny": ["capitalism", "capitalist system", "market economy", "free market", "private enterprise", "laissez faire"]},
+    {"question": "Who sells labor?", "expectedAny": ["proletariat", "workers", "working class", "laborers", "wage earners", "industrial workers"]}
+  ],
+  "truefalse": [
+    {"question": "Industrial Revolution was 1760-1840. (True or False)", "correct": true},
+    {"question": "Factory system avoided machinery. (True or False)", "correct": false},
+    {"question": "Urbanization is city movement. (True or False)", "correct": true},
+    {"question": "Capitalism is government ownership. (True or False)", "correct": false},
+    {"question": "Proletariat is working class. (True or False)", "correct": true},
+    {"question": "Industrialization advanced technology. (True or False)", "correct": true},
+    {"question": "Factories used division of labor. (True or False)", "correct": true},
+    {"question": "People moved to cities. (True or False)", "correct": true},
+    {"question": "Capitalism has free markets. (True or False)", "correct": true},
+    {"question": "Proletariat sell labor. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What was 1760-1840?", "choices": [{"letter": "A", "text": "Agricultural"}, {"letter": "B", "text": "Industrial Revolution"}, {"letter": "C", "text": "Information Age"}, {"letter": "D", "text": "Stone Age"}], "correct": "B"},
+    {"question": "What uses machinery?", "choices": [{"letter": "A", "text": "Cottage"}, {"letter": "B", "text": "Factory system"}, {"letter": "C", "text": "Farming"}, {"letter": "D", "text": "Hunting"}], "correct": "B"},
+    {"question": "What is city movement?", "choices": [{"letter": "A", "text": "Rural flight"}, {"letter": "B", "text": "Urbanization"}, {"letter": "C", "text": "Suburbanization"}, {"letter": "D", "text": "Migration"}], "correct": "B"},
+    {"question": "What is private ownership?", "choices": [{"letter": "A", "text": "Communism"}, {"letter": "B", "text": "Capitalism"}, {"letter": "C", "text": "Socialism"}, {"letter": "D", "text": "Feudalism"}], "correct": "B"},
+    {"question": "What is working class?", "choices": [{"letter": "A", "text": "Bourgeoisie"}, {"letter": "B", "text": "Proletariat"}, {"letter": "C", "text": "Nobility"}, {"letter": "D", "text": "Clergy"}], "correct": "B"},
+    {"question": "What was industrialization?", "choices": [{"letter": "A", "text": "Agricultural"}, {"letter": "B", "text": "Industrial Revolution"}, {"letter": "C", "text": "Renaissance"}, {"letter": "D", "text": "Reformation"}], "correct": "B"},
+    {"question": "What is manufacturing?", "choices": [{"letter": "A", "text": "Cottage"}, {"letter": "B", "text": "Factory system"}, {"letter": "C", "text": "Farming"}, {"letter": "D", "text": "Foraging"}], "correct": "B"},
+    {"question": "What grows cities?", "choices": [{"letter": "A", "text": "Rural"}, {"letter": "B", "text": "Urbanization"}, {"letter": "C", "text": "Suburban"}, {"letter": "D", "text": "Agricultural"}], "correct": "B"},
+    {"question": "What is market economy?", "choices": [{"letter": "A", "text": "Communism"}, {"letter": "B", "text": "Capitalism"}, {"letter": "C", "text": "Feudalism"}, {"letter": "D", "text": "Monarchy"}], "correct": "B"},
+    {"question": "Who are workers?", "choices": [{"letter": "A", "text": "Bourgeoisie"}, {"letter": "B", "text": "Proletariat"}, {"letter": "C", "text": "Nobility"}, {"letter": "D", "text": "Royalty"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ Revolution was 1760-1840.", "expectedAny": ["industrial", "Industrial"]},
+    {"question": "_____ system uses machinery.", "expectedAny": ["factory", "Factory"]},
+    {"question": "_____ is city movement.", "expectedAny": ["urbanization", "Urbanization"]},
+    {"question": "_____ has private ownership.", "expectedAny": ["capitalism", "Capitalism"]},
+    {"question": "_____ is working class.", "expectedAny": ["proletariat", "Proletariat"]},
+    {"question": "_____ advanced technology.", "expectedAny": ["industrialization", "Industrialization"]},
+    {"question": "Factories used _____ of labor.", "expectedAny": ["division"]},
+    {"question": "People moved to _____.", "expectedAny": ["cities"]},
+    {"question": "_____ has free markets.", "expectedAny": ["capitalism", "Capitalism"]},
+    {"question": "Workers sell _____.", "expectedAny": ["labor"]}
+  ],
+  "shortanswer": [
+    {"question": "What is Industrial Revolution?", "keyTerms": ["period", "major", "industrialization", "technological", "advancement", "1760-1840"], "expectedAny": ["Period of major industrialization and technological advancement (1760-1840)", "Age of industry", "Industrial transformation"]},
+    {"question": "What is factory system?", "keyTerms": ["method", "manufacturing", "using", "machinery", "division", "labor"], "expectedAny": ["Method of manufacturing using machinery and division of labor", "Factory production", "Industrial manufacturing"]},
+    {"question": "What is urbanization?", "keyTerms": ["movement", "people", "rural", "areas", "cities"], "expectedAny": ["Movement of people from rural areas to cities", "City growth", "Rural to urban migration"]},
+    {"question": "What is capitalism?", "keyTerms": ["economic", "system", "based", "private", "ownership", "free", "markets"], "expectedAny": ["Economic system based on private ownership and free markets", "Free market economy", "Private enterprise"]},
+    {"question": "What is proletariat?", "keyTerms": ["working", "class", "sell", "labor", "wages"], "expectedAny": ["Working class who sell their labor for wages", "Workers", "Industrial laborers"]},
+    {"question": "What inventions drove revolution?", "keyTerms": ["steam engine", "spinning jenny", "power loom", "cotton gin"], "expectedAny": ["Steam engine, spinning jenny, power loom, cotton gin", "Industrial machines", "Any valid invention"]},
+    {"question": "What were positive effects?", "keyTerms": ["increased", "production", "wealth", "technology", "goods"], "expectedAny": ["Increased production, wealth, technology, more goods", "Economic growth", "Technological progress"]},
+    {"question": "What were negative effects?", "keyTerms": ["poor", "working", "conditions", "pollution", "child", "labor", "inequality"], "expectedAny": ["Poor working conditions, pollution, child labor, inequality", "Worker exploitation", "Environmental damage"]},
+    {"question": "How did capitalism develop?", "keyTerms": ["private", "business", "profit", "competition", "markets"], "expectedAny": ["Private business seeking profit through competition and markets", "Free enterprise growth", "Market economy"]},
+    {"question": "What were urban problems?", "keyTerms": ["overcrowding", "disease", "pollution", "poverty", "slums"], "expectedAny": ["Overcrowding, disease, pollution, poverty, slums", "City problems", "Urban challenges"]}
+  ]
 }

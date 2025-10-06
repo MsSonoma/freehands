@@ -20,6 +20,18 @@
     {
       "term": "property",
       "definition": "A characteristic that describes how something looks, feels, or acts"
+    },
+    {
+      "term": "texture",
+      "definition": "How something feels when you touch it"
+    },
+    {
+      "term": "flexible",
+      "definition": "Able to bend without breaking"
+    },
+    {
+      "term": "rigid",
+      "definition": "Stiff and not easy to bend"
     }
   ],
   "teachingNotes": "Use hands-on experiments with ice, water, and steam. Let students observe and compare different materials and their properties.",
@@ -53,19 +65,19 @@
   "fillintheblank": [
     {"question": "When you heat ice, it melts and becomes a _____", "expectedAny": ["liquid", "water"]},
     {"question": "When you cool water, it becomes _____", "expectedAny": ["ice", "solid"]},
-    {"question": "A rock is a _____", "expectedAny": ["solid"]},
-    {"question": "Milk is a _____", "expectedAny": ["liquid"]},
-    {"question": "Air around us is a _____", "expectedAny": ["gas"]},
-    {"question": "Liquids can be _____", "expectedAny": ["poured"]},
-    {"question": "Gases can _____ to fill the space", "expectedAny": ["spread out"]}
+    {"question": "A rock is a _____", "expectedAny": ["solid", "solid object"]},
+    {"question": "Milk is a _____", "expectedAny": ["liquid", "liquid drink"]},
+    {"question": "Air around us is a _____", "expectedAny": ["gas", "gas state"]},
+    {"question": "Liquids can be _____", "expectedAny": ["poured", "poured easily"]},
+    {"question": "Gases can _____ to fill the space", "expectedAny": ["spread out", "expand"]}
   ],
   "shortanswer": [
-    {"question": "How can you tell the difference between a solid and a liquid?", "expectedAny": ["solids keep shape, liquids flow"]},
-    {"question": "Give an example of each state of matter.", "expectedAny": ["solid: rock", "liquid: water", "gas: air"]},
-    {"question": "Why does a liquid take the shape of its container?", "expectedAny": ["it flows and doesn't keep its own shape"]},
-    {"question": "What happens to water on a hot day?", "expectedAny": ["evaporates into gas"]},
-    {"question": "How can you change water back from gas to liquid?", "expectedAny": ["cool it", "condense it"]},
-    {"question": "What tools could you use to observe changes?", "expectedAny": ["thermometer", "clear container"]},
-    {"question": "Describe a solid you use every day.", "expectedAny": ["pencil", "book", "chair"]}
+    {"question": "How can you tell the difference between a solid and a liquid?", "expectedAny": ["solids keep their shape", "liquids flow", "liquids take the container's shape", "solids don't flow"]},
+    {"question": "Give an example of each state of matter.", "expectedAny": ["solid: rock", "liquid: water", "gas: air", "rock water air"]},
+    {"question": "Why does a liquid take the shape of its container?", "expectedAny": ["it flows", "no fixed shape", "takes the container's shape", "it pours"]},
+    {"question": "What happens to water on a hot day?", "expectedAny": ["evaporates", "becomes steam", "dries up", "turns to gas"]},
+    {"question": "How can you change water back from gas to liquid?", "expectedAny": ["cool it", "condense it", "lower the temperature", "make it cold"]},
+    {"question": "What tools could you use to observe changes?", "expectedAny": ["thermometer", "clear container", "measuring cup", "beaker"]},
+    {"question": "Describe a solid you use every day.", "expectedAny": ["pencil", "book", "chair", "desk", "cup"]}
   ]
 }

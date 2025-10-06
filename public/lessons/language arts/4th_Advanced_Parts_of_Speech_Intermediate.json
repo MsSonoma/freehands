@@ -20,7 +20,22 @@
     {
       "term": "conjunction",
       "definition": "A word that connects words, phrases, or sentences"
-    }
+    },
+    {"term": "noun", "definition": "A word that names a person, place, thing, or idea"},
+    {"term": "pronoun", "definition": "A word that takes the place of a noun"},
+    {"term": "verb", "definition": "A word that shows action or a state of being"},
+    {"term": "linking verb", "definition": "A verb that connects the subject to information about it (is, are, seem)"},
+    {"term": "interjection", "definition": "A word or phrase that shows strong feeling (Wow!, Hey!)"}
+    ,
+    {"term": "article", "definition": "A small word used before a noun (a, an, the)"},
+    {"term": "proper noun", "definition": "A specific name that needs a capital letter (Chicago, Maya)"},
+    {"term": "subject", "definition": "Who or what the sentence is about"},
+    {"term": "predicate", "definition": "What the subject does or is"},
+    {"term": "phrase", "definition": "A group of words that work together but do not have both a subject and a verb"},
+    {"term": "prepositional phrase", "definition": "A preposition plus its object and any describing words (under the table)"},
+    {"term": "coordinating conjunction", "definition": "A conjunction that joins equal parts (for, and, nor, but, or, yet, so)"}
+    ,
+    {"term": "pronoun", "definition": "A word used instead of a noun (she, he, it, they)"}
   ],
   "teachingNotes": "Use sentence manipulation activities. Practice identifying parts of speech in context. Focus on how different parts work together in sentences.",
   "sample": [
@@ -33,39 +48,41 @@
     {"question": "Is 'Chicago' a common or proper noun?", "expectedAny": ["proper noun", "proper"]}
   ],
   "truefalse": [
-    {"question": "Adverbs can describe verbs, adjectives, and other adverbs.", "answer": true, "expectedAny": ["true"]},
-    {"question": "Linking verbs show a state of being, like 'is' or 'seem'.", "answer": true, "expectedAny": ["true"]},
-    {"question": "Pronouns replace nouns in sentences.", "answer": true, "expectedAny": ["true"]},
-    {"question": "Prepositions show relationships like location or time.", "answer": true, "expectedAny": ["true"]},
-    {"question": "Every sentence must have an adverb to be complete.", "answer": false, "expectedAny": ["false"]},
-    {"question": "Conjunctions connect words or groups of words.", "answer": true, "expectedAny": ["true"]},
-    {"question": "Proper nouns do not need capital letters.", "answer": false, "expectedAny": ["false"]}
+    {"question": "Adverbs can describe verbs, adjectives, and other adverbs.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "describe verbs adjectives adverbs"]},
+    {"question": "Linking verbs show a state of being, like 'is' or 'seem'.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "state of being"]},
+    {"question": "Pronouns replace nouns in sentences.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "replace nouns"]},
+    {"question": "Prepositions show relationships like location or time.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "show relationships"]},
+    {"question": "Every sentence must have an adverb to be complete.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "sentences do not need adverbs"]},
+    {"question": "Conjunctions connect words or groups of words.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "connect words"]},
+    {"question": "Proper nouns do not need capital letters.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "proper nouns are capitalized"]}
   ],
   "multiplechoice": [
-    {"question": "In the sentence 'She ran quickly to the store,' what part of speech is 'quickly'?", "choices": ["Adjective", "Adverb", "Noun", "Verb"], "correct": 1, "expectedAny": ["adverb"]},
-    {"question": "Which is a preposition?", "choices": ["under", "happy", "jumped", "they"], "correct": 0, "expectedAny": ["under"]},
-    {"question": "Which sentence contains a conjunction?", "choices": ["I ran.", "We played and laughed.", "Blue sky.", "Quickly left."], "correct": 1, "expectedAny": ["and"]},
-    {"question": "Identify the pronoun: 'Maria said she will help.'", "choices": ["Maria", "said", "she", "help"], "correct": 2, "expectedAny": ["she"]},
-    {"question": "Which word is an adjective?", "choices": ["carefully", "beautiful", "sing", "yesterday"], "correct": 1, "expectedAny": ["beautiful"]},
-    {"question": "Which is a linking verb?", "choices": ["run", "is", "dance", "clap"], "correct": 1, "expectedAny": ["is"]},
-    {"question": "Which is an interjection?", "choices": ["Wow!", "quickly", "table", "they"], "correct": 0, "expectedAny": ["wow"]}
+    {"question": "In the sentence 'She ran quickly to the store,' what part of speech is 'quickly'?", "choices": ["Adjective", "Adverb", "Noun", "Verb"], "correct": 1, "expectedAny": ["b", "B", "2", "Adverb", "adverb"]},
+    {"question": "Which is a preposition?", "choices": ["under", "happy", "jumped", "they"], "correct": 0, "expectedAny": ["a", "A", "1", "under"]},
+    {"question": "Which sentence contains a conjunction?", "choices": ["I ran.", "We played and laughed.", "Blue sky.", "Quickly left."], "correct": 1, "expectedAny": ["b", "B", "2", "We played and laughed.", "and"]},
+    {"question": "Identify the pronoun: 'Maria said she will help.'", "choices": ["Maria", "said", "she", "help"], "correct": 2, "expectedAny": ["c", "C", "3", "she"]},
+    {"question": "Which word is an adjective?", "choices": ["carefully", "beautiful", "sing", "yesterday"], "correct": 1, "expectedAny": ["b", "B", "2", "beautiful"]},
+    {"question": "Which is a linking verb?", "choices": ["run", "is", "dance", "clap"], "correct": 1, "expectedAny": ["b", "B", "2", "is"]},
+    {"question": "Which is an interjection?", "choices": ["Wow!", "quickly", "table", "they"], "correct": 0, "expectedAny": ["a", "A", "1", "Wow!", "wow"]}
   ],
   "fillintheblank": [
-    {"question": "In the sentence 'The book is on the table,' the word 'on' is a _____ that shows location.", "expectedAny": ["preposition"]},
-    {"question": "An _____ describes a noun or pronoun.", "expectedAny": ["adjective"]},
-    {"question": "An _____ describes a verb, adjective, or another adverb.", "expectedAny": ["adverb"]},
-    {"question": "A _____ connects words, phrases, or clauses.", "expectedAny": ["conjunction"]},
-    {"question": "A _____ names a person, place, thing, or idea.", "expectedAny": ["noun"]},
-    {"question": "A _____ replaces a noun.", "expectedAny": ["pronoun"]},
-    {"question": "A _____ shows action or a state of being.", "expectedAny": ["verb"]}
+    {"question": "In the sentence 'The book is on the table,' the word 'on' is a _____ that shows location.", "expectedAny": ["preposition", "prepositional word", "position word", "location word"]},
+    {"question": "An _____ describes a noun or pronoun.", "expectedAny": ["adjective", "describing word", "modifier"]},
+    {"question": "An _____ describes a verb, adjective, or another adverb.", "expectedAny": ["adverb", "how/when/where word", "describes a verb", "verb modifier"]},
+    {"question": "A _____ connects words, phrases, or clauses.", "expectedAny": ["conjunction", "joining word", "connector", "connects words"]},
+    {"question": "A _____ names a person, place, thing, or idea.", "expectedAny": ["noun", "naming word", "person place thing idea"]},
+    {"question": "A _____ replaces a noun.", "expectedAny": ["pronoun", "replacement word", "stands in for a noun"]},
+    {"question": "A _____ shows action or a state of being.", "expectedAny": ["verb", "action word", "linking verb", "state of being verb"]},
+    {"question": "The words 'a', 'an', and 'the' are called _______.", "expectedAny": ["articles", "article"]},
+    {"question": "'Maya' and 'Chicago' are examples of _______ nouns.", "expectedAny": ["proper", "proper nouns", "specific"]}
   ],
   "shortanswer": [
-    {"question": "How do conjunctions help make writing better?", "expectedAny": ["connect ideas", "avoid choppy sentences", "show relationships"]},
-    {"question": "Write a sentence that uses an adjective and underline it.", "expectedAny": ["sentence with adjective"]},
-    {"question": "Write a sentence with a prepositional phrase.", "expectedAny": ["sentence with preposition"]},
-    {"question": "Explain the difference between an action verb and a linking verb.", "expectedAny": ["action shows action; linking connects subject to info"]},
-    {"question": "List three common prepositions.", "expectedAny": ["in", "on", "under", "over", "by"]},
-    {"question": "Rewrite this sentence adding an adverb: 'The boy jumped.'", "expectedAny": ["e.g., The boy jumped high."]},
-    {"question": "Replace the noun with a pronoun in: 'Lena read Lena's book.'", "expectedAny": ["She read her book."]}
+    {"question": "How do conjunctions help make writing better?", "expectedAny": ["connect ideas", "avoid choppy sentences", "show relationships", "join words or clauses", "combine sentences"]},
+  {"question": "Write a sentence that has an adjective. Then name the word that is the adjective.", "expectedAny": ["sentence with an adjective", "name the word that is the adjective", "includes an adjective", "identifies the describing word"]},
+    {"question": "Write a sentence with a prepositional phrase.", "expectedAny": ["has a prepositional phrase", "includes a preposition and its object", "contains a prepositional phrase"]},
+    {"question": "Explain the difference between an action verb and a linking verb.", "expectedAny": ["action shows action; linking connects subject to info", "action: runs; linking: is", "linking shows state of being", "action does; linking equals/is"]},
+    {"question": "List three common prepositions.", "expectedAny": ["in", "on", "under", "over", "by", "with", "at", "from", "to"]},
+    {"question": "Rewrite a short sentence by adding an adverb.", "expectedAny": ["adds an adverb", "uses a how/when/where word", "adds a word that describes the verb"]},
+    {"question": "Change a sentence to use a pronoun instead of repeating a noun.", "expectedAny": ["uses a pronoun to replace a repeated noun", "replaces the noun with an appropriate pronoun", "uses pronouns instead of the noun"]}
   ]
 }

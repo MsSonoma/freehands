@@ -173,7 +173,7 @@
     },
     {
       "question": "How would you summarize a short story about a lost dog?",
-      "expectedAny": ["tell who, what, where, when, and how it ended", "main parts only"]
+      "expectedAny": ["tell who, what, where, when, and how it ended", "main parts only", "short retell of big parts"]
     }
   ]
 }

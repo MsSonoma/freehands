@@ -20,20 +20,31 @@
     {
       "term": "respect",
       "definition": "Showing that you think something is important and valuable"
+    },
+    {
+      "term": "statue",
+      "definition": "A big figure made of stone or metal"
+    },
+    {
+      "term": "liberty",
+      "definition": "Another word for freedom"
     }
+    ,
+    {"term": "bald eagle", "definition": "A large bird that is a symbol of the United States"},
+    {"term": "liberty bell", "definition": "A symbol of American independence found in Philadelphia"}
   ],
   "teachingNotes": "Show pictures of American symbols and discuss their meanings. Practice proper flag etiquette. Connect to classroom and school community respect.",
   "sample": [
-    {"question": "What does the American flag represent?", "expectedAny": ["our country", "United States"]},
-    {"question": "Name one American symbol.", "expectedAny": ["flag", "bald eagle", "Statue of Liberty", "Liberty Bell"]},
+  {"question": "What does the American flag represent?", "expectedAny": ["our country", "United States", "America"]},
+  {"question": "Name one American symbol.", "expectedAny": ["flag", "bald eagle", "Statue of Liberty", "Liberty Bell", "liberty bell"]},
     {"question": "What does patriotism mean?", "expectedAny": ["love for your country"]},
     {"question": "How do we show respect to the flag?", "expectedAny": ["stand", "be quiet", "hand over heart"]},
-    {"question": "Where do we see American symbols?", "expectedAny": ["schools", "parks", "government buildings"]},
+  {"question": "Where do we see American symbols?", "expectedAny": ["schools", "parks", "government buildings", "museums"]},
     {"question": "What colors are on the flag?", "expectedAny": ["red", "white", "blue"]},
-    {"question": "What bird is a symbol of America?", "expectedAny": ["bald eagle"]}
+    {"question": "What bird is a symbol of America?", "expectedAny": ["bald eagle", "eagle"]}
   ],
   "truefalse": [
-    {"question": "The bald eagle is a symbol of America.", "answer": true, "expectedAny": ["true"]},
+  {"question": "The bald eagle is a symbol of America.", "answer": true, "expectedAny": ["true"]},
     {"question": "The American flag is green and yellow.", "answer": false, "expectedAny": ["false"]},
     {"question": "We show respect by standing during the Pledge.", "answer": true, "expectedAny": ["true"]},
     {"question": "The Statue of Liberty is in New York.", "answer": true, "expectedAny": ["true"]},
@@ -51,20 +62,20 @@
     {"question": "Patriotism means ___", "choices": ["love for your country", "being mean", "not caring", "being loud"], "correct": 0, "expectedAny": ["love for your country"]}
   ],
   "fillintheblank": [
-    {"question": "The _____ is red, white, and blue.", "expectedAny": ["flag"]},
-    {"question": "The bald _____ is our national bird.", "expectedAny": ["eagle"]},
-    {"question": "The Liberty _____ is a symbol of freedom.", "expectedAny": ["Bell"]},
-    {"question": "The Statue of _____ stands in New York.", "expectedAny": ["Liberty"]},
-    {"question": "We show _____ for the flag.", "expectedAny": ["respect"]},
+    {"question": "The _____ is red, white, and blue.", "expectedAny": ["flag", "the flag"]},
+    {"question": "The bald _____ is our national bird.", "expectedAny": ["eagle", "an eagle"]},
+    {"question": "The Liberty _____ is a symbol of freedom.", "expectedAny": ["Bell", "Liberty Bell"]},
+    {"question": "The Statue of _____ stands in New York.", "expectedAny": ["Liberty", "Statue of Liberty"]},
+    {"question": "We show _____ for the flag.", "expectedAny": ["respect", "be respectful"]},
     {"question": "The colors of the flag are _____, _____, and _____.", "expectedAny": ["red", "white", "blue"]},
-    {"question": "The flag has stars and _____.", "expectedAny": ["stripes"]}
+    {"question": "The flag has stars and _____.", "expectedAny": ["stripes", "red and white stripes"]}
   ],
   "shortanswer": [
-    {"question": "Why do we show respect for American symbols?", "expectedAny": ["they represent our country", "show love for America"]},
+    {"question": "Why do we show respect for American symbols?", "expectedAny": ["they represent our country", "show love for America", "they stand for our values"]},
     {"question": "How can you show respect during the Pledge?", "expectedAny": ["stand", "be quiet", "hand over heart"]},
-    {"question": "Draw one American symbol and label it.", "expectedAny": ["drawing with label"]},
-    {"question": "What does the Statue of Liberty mean to you?", "expectedAny": ["freedom", "welcoming"]},
-    {"question": "Why do we have national symbols?", "expectedAny": ["represent our country", "help us remember values"]},
+  {"question": "Draw one American symbol and label it.", "expectedAny": ["labeled drawing", "drawing with labels", "picture with labels"]},
+  {"question": "What does the Statue of Liberty mean to you?", "expectedAny": ["freedom", "welcoming", "hope", "liberty"]},
+  {"question": "Why do we have national symbols?", "expectedAny": ["represent our country", "help us remember values", "show what we believe"]},
     {"question": "Where have you seen the American flag?", "expectedAny": ["school", "home", "parks"]},
     {"question": "What happens on Independence Day?", "expectedAny": ["fireworks", "parades", "celebrations"]}
   ]

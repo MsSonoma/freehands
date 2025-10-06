@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "9th_Vocabulary_Academic_Language_Context_Advanced",
   "title": "Vocabulary: Academic Language and Context Clues",
   "grade": "9th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "academic language",
-      "definition": "Formal language used in educational and professional settings"
-    },
-    {
-      "term": "context clues",
-      "definition": "Hints in surrounding text that help determine word meaning"
-    },
-    {
-      "term": "connotation",
-      "definition": "Emotional or cultural associations of a word beyond its literal meaning"
-    },
-    {
-      "term": "denotation",
-      "definition": "Literal, dictionary definition of a word"
-    },
-    {
-      "term": "semantic field",
-      "definition": "Group of words related in meaning within a specific domain"
-    }
+    {"term": "academic language", "definition": "Formal language used in educational and professional settings"},
+    {"term": "context clues", "definition": "Hints in surrounding text that help determine word meaning"},
+    {"term": "connotation", "definition": "Emotional or cultural associations of a word beyond its literal meaning"},
+    {"term": "denotation", "definition": "Literal, dictionary definition of a word"},
+    {"term": "semantic field", "definition": "Group of words related in meaning within a specific domain"}
   ],
   "teachingNotes": "Practice using context clues to determine meanings. Emphasize the difference between connotation and denotation in word choice.",
-  "sample": {
-    "question": "What is formal language used in educational settings?",
-    "expectedAny": [
-      "academic language",
-      "formal language",
-      "scholarly language",
-      "educational language"
-    ]
-  },
-  "truefalse": {
-    "question": "Context clues help determine word meaning from surrounding text.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the literal dictionary definition of a word?",
-    "expectedAny": [
-      "denotation",
-      "literal meaning",
-      "dictionary definition",
-      "explicit meaning"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The emotional associations of a word are its ________.",
-    "expectedAny": [
-      "connotation",
-      "emotional meaning",
-      "implied meaning",
-      "associations"
-    ]
-  },
-  "shortanswer": {
-    "question": "How do context clues help readers understand unfamiliar words?",
-    "expectedAny": [
-      "provide hints about meaning",
-      "show word relationships",
-      "give examples or definitions"
-    ]
-  }
+  "sample": [
+    {"question": "What is academic language?", "expectedAny": ["formal language in educational settings", "scholarly language", "professional language"]},
+    {"question": "What are context clues?", "expectedAny": ["hints in surrounding text", "clues to word meaning", "textual hints", "word hints", "meaning clues"]},
+    {"question": "What is connotation?", "expectedAny": ["emotional associations of words", "implied meaning beyond literal", "cultural associations"]},
+    {"question": "What is denotation?", "expectedAny": ["literal dictionary definition", "explicit meaning", "dictionary meaning"]},
+    {"question": "What is a semantic field?", "expectedAny": ["group of related words", "words in specific domain", "related meaning group"]},
+    {"question": "Give an example of context clues.", "expectedAny": ["definition in text", "example", "synonym", "antonym", "restatement"]},
+    {"question": "How do connotation and denotation differ?", "expectedAny": ["connotation is emotional; denotation is literal", "connotation implies; denotation defines"]},
+    {"question": "Why is academic language important?", "expectedAny": ["for professional communication", "in education", "for clarity", "formal settings"]},
+    {"question": "Name types of context clues.", "expectedAny": ["definition", "example", "synonym", "antonym", "inference"]},
+    {"question": "How does connotation affect meaning?", "expectedAny": ["adds emotional layer", "influences perception", "creates associations"]}
+  ],
+  "truefalse": [
+    {"question": "Context clues help determine word meaning from surrounding text. (True or False)", "correct": true},
+    {"question": "Connotation is the literal dictionary definition. (True or False)", "correct": false},
+    {"question": "Academic language is formal and professional. (True or False)", "correct": true},
+    {"question": "Denotation includes emotional associations. (True or False)", "correct": false},
+    {"question": "A semantic field contains related words. (True or False)", "correct": true},
+    {"question": "Context clues are hints in the text. (True or False)", "correct": true},
+    {"question": "Connotation and denotation are identical. (True or False)", "correct": false},
+    {"question": "Academic language is used in educational settings. (True or False)", "correct": true},
+    {"question": "Denotation is emotional meaning. (True or False)", "correct": false},
+    {"question": "Context clues aid comprehension. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is the literal dictionary definition of a word?", "choices": [{"letter": "A", "text": "Connotation"}, {"letter": "B", "text": "Denotation"}, {"letter": "C", "text": "Context"}, {"letter": "D", "text": "Semantic field"}], "correct": "B"},
+    {"question": "What is formal language used in education?", "choices": [{"letter": "A", "text": "Slang"}, {"letter": "B", "text": "Casual language"}, {"letter": "C", "text": "Academic language"}, {"letter": "D", "text": "Colloquial speech"}], "correct": "C"},
+    {"question": "What are hints in surrounding text?", "choices": [{"letter": "A", "text": "Definitions"}, {"letter": "B", "text": "Context clues"}, {"letter": "C", "text": "Footnotes"}, {"letter": "D", "text": "Citations"}], "correct": "B"},
+    {"question": "What includes emotional associations?", "choices": [{"letter": "A", "text": "Denotation"}, {"letter": "B", "text": "Dictionary meaning"}, {"letter": "C", "text": "Connotation"}, {"letter": "D", "text": "Literal meaning"}], "correct": "C"},
+    {"question": "What is a group of related words?", "choices": [{"letter": "A", "text": "Context clues"}, {"letter": "B", "text": "Semantic field"}, {"letter": "C", "text": "Connotation"}, {"letter": "D", "text": "Bibliography"}], "correct": "B"},
+    {"question": "Which is a type of context clue?", "choices": [{"letter": "A", "text": "Title"}, {"letter": "B", "text": "Page number"}, {"letter": "C", "text": "Definition or example"}, {"letter": "D", "text": "Chapter heading"}], "correct": "C"},
+    {"question": "Connotation affects:", "choices": [{"letter": "A", "text": "Dictionary definition"}, {"letter": "B", "text": "Emotional impact"}, {"letter": "C", "text": "Spelling"}, {"letter": "D", "text": "Grammar"}], "correct": "B"},
+    {"question": "Academic language is used in:", "choices": [{"letter": "A", "text": "Casual conversations"}, {"letter": "B", "text": "Text messages"}, {"letter": "C", "text": "Professional and educational settings"}, {"letter": "D", "text": "Informal emails"}], "correct": "C"},
+    {"question": "Denotation is:", "choices": [{"letter": "A", "text": "Emotional meaning"}, {"letter": "B", "text": "Implied associations"}, {"letter": "C", "text": "Literal definition"}, {"letter": "D", "text": "Cultural meaning"}], "correct": "C"},
+    {"question": "Context clues help readers:", "choices": [{"letter": "A", "text": "Skip words"}, {"letter": "B", "text": "Understand unfamiliar words"}, {"letter": "C", "text": "Ignore difficult text"}, {"letter": "D", "text": "Read faster only"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "The emotional associations of a word are its _____.", "expectedAny": ["connotation"]},
+    {"question": "The literal definition of a word is its _____.", "expectedAny": ["denotation"]},
+    {"question": "Formal language used in education is _____ language.", "expectedAny": ["academic"]},
+    {"question": "Hints in surrounding text are called _____ clues.", "expectedAny": ["context"]},
+    {"question": "A group of related words is a _____ field.", "expectedAny": ["semantic"]},
+    {"question": "Context clues help determine word _____.", "expectedAny": ["meaning", "definition"]},
+    {"question": "_____ includes emotional and cultural associations.", "expectedAny": ["Connotation"]},
+    {"question": "_____ is the dictionary definition without emotion.", "expectedAny": ["Denotation"]},
+    {"question": "Academic language is _____ and professional.", "expectedAny": ["formal"]},
+    {"question": "Semantic fields group words by related _____.", "expectedAny": ["meaning", "meanings"]}
+  ],
+  "shortanswer": [
+    {"question": "How do context clues help readers understand unfamiliar words?", "keyTerms": ["hints", "surrounding", "meaning", "infer"], "expectedAny": ["Context clues provide hints in surrounding text to infer meaning", "They give examples, definitions, or synonyms that clarify meaning", "Readers use nearby words and sentences to figure out unknown words"]},
+    {"question": "What is the difference between connotation and denotation?", "keyTerms": ["connotation", "emotional", "denotation", "literal"], "expectedAny": ["Connotation is emotional associations; denotation is literal definition", "Denotation is dictionary meaning; connotation is implied feelings", "Connotation adds emotional layers beyond denotation's literal meaning"]},
+    {"question": "Why is academic language important in education?", "keyTerms": ["formal", "professional", "clear", "precise"], "expectedAny": ["Academic language is formal, professional, and precise for clear communication", "It ensures clarity in educational and scholarly contexts", "Academic language conveys complex ideas formally and accurately"]},
+    {"question": "What are different types of context clues?", "keyTerms": ["definition", "example", "synonym", "antonym"], "expectedAny": ["Definition, example, synonym, antonym, and inference clues", "Authors provide definitions, examples, or restatements", "Types include direct definitions, synonyms, antonyms, and examples"]},
+    {"question": "How does connotation affect word choice in writing?", "keyTerms": ["emotional", "impact", "perception", "tone"], "expectedAny": ["Connotation affects emotional impact and reader perception", "Word choice with different connotations changes tone and feeling", "Connotations influence how readers emotionally respond to text"]},
+    {"question": "What is a semantic field and why is it useful?", "keyTerms": ["related", "words", "domain", "meaning"], "expectedAny": ["A semantic field is related words in a domain that build understanding", "It groups words by meaning helping learn vocabulary together", "Semantic fields show how words relate within specific topics"]},
+    {"question": "How can you use context to infer word meaning?", "keyTerms": ["clues", "surrounding", "infer", "text"], "expectedAny": ["Look at surrounding text for clues like examples or definitions", "Use nearby sentences and words to infer the meaning", "Examine context including examples, synonyms, or explanations"]},
+    {"question": "Why do writers choose words with specific connotations?", "keyTerms": ["emotion", "effect", "tone", "purpose"], "expectedAny": ["To create specific emotional effects and establish tone", "Connotations help achieve the writer's purpose and mood", "Word choices with certain feelings influence reader response"]},
+    {"question": "How does academic language differ from casual language?", "keyTerms": ["formal", "precise", "casual", "informal"], "expectedAny": ["Academic language is formal and precise; casual is informal", "Academic avoids slang and uses technical terms; casual is conversational", "Academic language is structured and professional; casual is relaxed"]},
+    {"question": "What role do semantic fields play in vocabulary development?", "keyTerms": ["related", "words", "connections", "learning"], "expectedAny": ["Semantic fields help learn related words together building connections", "They organize vocabulary by topic aiding understanding", "Related words in fields make learning vocabulary more systematic"]}
+  ]
 }

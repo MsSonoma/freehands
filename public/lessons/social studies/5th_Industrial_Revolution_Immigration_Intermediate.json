@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Connect how new machines changed work and brought people to cities. Discuss why people immigrated and their contributions to America.",
-  "sample": {
-    "question": "What do we call the time when machines began replacing hand work?",
-    "expectedAny": [
-      "Industrial Revolution",
-      "the Industrial Revolution",
-      "machine age",
-      "industrial period"
-    ]
-  },
-  "truefalse": {
-    "question": "Ellis Island was where many immigrants first arrived in America.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What happened to cities during the Industrial Revolution?",
-    "expectedAny": [
-      "they grew larger",
-      "urbanization occurred",
-      "people moved to cities",
-      "cities expanded"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Moving from one country to live in another is called ________.",
-    "expectedAny": [
-      "immigration",
-      "immigrating",
-      "moving to America",
-      "coming to America"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why did many people move from farms to cities during the Industrial Revolution?",
-    "expectedAny": [
-      "factory jobs",
-      "work in factories",
-      "better opportunities",
-      "industrial jobs available"
-    ]
-  }
+  "sample": [
+    { "question": "What do we call the time when machines began replacing hand work?", "expectedAny": ["Industrial Revolution", "the Industrial Revolution", "machine age"] },
+    { "question": "Where were many immigrants processed upon arriving in America?", "expectedAny": ["Ellis Island"] },
+    { "question": "What is the growth of cities called?", "expectedAny": ["urbanization"] },
+    { "question": "A building where goods are made with machines is a ________.", "expectedAny": ["factory"] },
+    { "question": "Why did people move to cities?", "expectedAny": ["factory jobs", "work"] },
+    { "question": "What is it called when people move to live in another country?", "expectedAny": ["immigration"] },
+    { "question": "Name one reason people immigrated to America.", "expectedAny": ["jobs", "freedom", "opportunity", "family"] },
+    { "question": "What transport innovation connected cities faster?", "expectedAny": ["railroads", "trains"] },
+    { "question": "Which island on the West Coast processed immigrants?", "expectedAny": ["Angel Island"] },
+    { "question": "What kind of housing did many workers live in?", "expectedAny": ["tenements"] }
+  ],
+  "truefalse": [
+    { "question": "Ellis Island was where many immigrants first arrived in America.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Urbanization means people moved from cities to farms.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Factories often used machines and many workers.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Immigration is moving within the same city.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Railroads connected cities and sped up travel.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Tenements were large, comfortable homes for workers.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Immigrants contributed to building the nation.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Angel Island processed many immigrants on the East Coast.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Child labor did not exist during this time.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Unions sometimes formed to improve working conditions.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "What happened to cities during the Industrial Revolution?", "choices": ["they shrank", "they stayed the same", "they grew larger", "they disappeared"], "correct": 2, "expectedAny": ["they grew larger", "urbanization"] },
+    { "question": "Where were many immigrants processed on the East Coast?", "choices": ["Liberty Island", "Ellis Island", "Angel Island", "Coney Island"], "correct": 1, "expectedAny": ["Ellis Island"] },
+    { "question": "What is moving from one country to another called?", "choices": ["emigration", "immigration", "migration", "urbanization"], "correct": 1, "expectedAny": ["immigration"] },
+    { "question": "What is a factory?", "choices": ["a farm", "a store", "a building where goods are made", "a school"], "correct": 2, "expectedAny": ["building where goods are made"] },
+    { "question": "Which transport innovation connected cities?", "choices": ["canals", "railroads", "stagecoaches", "airplanes"], "correct": 1, "expectedAny": ["railroads"] },
+    { "question": "Why did many people move from farms to cities?", "choices": ["to be closer to nature", "factory jobs", "to avoid crowds", "to grow crops"], "correct": 1, "expectedAny": ["factory jobs"] },
+    { "question": "Which housing describes crowded worker apartments?", "choices": ["tenements", "mansions", "cottages", "suburbs"], "correct": 0, "expectedAny": ["tenements"] },
+    { "question": "Which island processed many immigrants on the West Coast?", "choices": ["Ellis Island", "Angel Island", "Staten Island", "Treasure Island"], "correct": 1, "expectedAny": ["Angel Island"] },
+    { "question": "Which group formed to improve working conditions?", "choices": ["unions", "teams", "clubs", "guilds"], "correct": 0, "expectedAny": ["unions"] },
+    { "question": "What often powered early factories?", "choices": ["wind", "water and steam", "solar", "electric only"], "correct": 1, "expectedAny": ["water", "steam"] }
+  ],
+  "fillintheblank": [
+    { "question": "The ________ Revolution changed how goods were made.", "expectedAny": ["Industrial"] },
+    { "question": "People moving to cities is called ________.", "expectedAny": ["urbanization"] },
+    { "question": "Many immigrants entered at ________ Island in New York.", "expectedAny": ["Ellis"] },
+    { "question": "A ________ is a building where machines make goods.", "expectedAny": ["factory"] },
+    { "question": "Railroads connected cities with ________.", "expectedAny": ["trains"] },
+    { "question": "Crowded worker housing was called ________.", "expectedAny": ["tenements"] },
+    { "question": "Moving to live in another country is ________.", "expectedAny": ["immigration"] },
+    { "question": "On the West Coast, many immigrants came through ________ Island.", "expectedAny": ["Angel"] },
+    { "question": "Workers formed ________ to improve conditions.", "expectedAny": ["unions"] },
+    { "question": "Many people moved to cities for ________ jobs.", "expectedAny": ["factory"] }
+  ],
+  "shortanswer": [
+    { "question": "Why did factories lead to urbanization?", "expectedAny": ["jobs in cities", "work opportunities"] },
+    { "question": "Name two reasons people immigrated to America.", "expectedAny": ["jobs", "freedom", "family", "safety"] },
+    { "question": "How did railroads change life?", "expectedAny": ["faster travel", "connected markets"] },
+    { "question": "What problems did tenements have?", "expectedAny": ["crowded", "unsanitary", "unsafe"] },
+    { "question": "How did immigrants contribute to America?", "expectedAny": ["built railroads", "worked in factories", "brought culture"] },
+    { "question": "Why did some people leave farms?", "expectedAny": ["machines changed farm work", "factory pay"] },
+    { "question": "What is the difference between immigration and migration?", "expectedAny": ["immigration across countries", "migration within or across areas"] },
+    { "question": "What did unions seek to improve?", "expectedAny": ["wages", "hours", "safety"] },
+    { "question": "Name two processing stations for immigrants.", "expectedAny": ["Ellis Island", "Angel Island"] },
+    { "question": "How did inventions change factory work?", "expectedAny": ["machines increased production", "specialization"] }
+  ]
 }

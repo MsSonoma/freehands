@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "10th_Globalization_Modern_World_Economy_Beginner",
   "title": "Globalization and the Modern World Economy",
   "grade": "10th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "globalization",
-      "definition": "Process of increased interconnectedness between countries and peoples"
-    },
-    {
-      "term": "multinational corporation",
-      "definition": "Company that operates in multiple countries"
-    },
-    {
-      "term": "free trade",
-      "definition": "International commerce with minimal government restrictions"
-    },
-    {
-      "term": "cultural exchange",
-      "definition": "Sharing of ideas, customs, and practices between cultures"
-    },
-    {
-      "term": "interdependence",
-      "definition": "Mutual reliance between countries or regions"
-    }
+    {"term": "globalization", "definition": "Process of increased interconnectedness between countries and peoples"},
+    {"term": "multinational corporation", "definition": "Company that operates in multiple countries"},
+    {"term": "free trade", "definition": "International commerce with minimal government restrictions"},
+    {"term": "cultural exchange", "definition": "Sharing of ideas, customs, and practices between cultures"},
+    {"term": "interdependence", "definition": "Mutual reliance between countries or regions"}
   ],
   "teachingNotes": "Discuss both benefits and challenges of globalization. Connect to students' daily experiences with global products and culture.",
-  "sample": {
-    "question": "What is increased interconnectedness between countries called?",
-    "expectedAny": [
-      "globalization",
-      "global integration",
-      "worldwide connection",
-      "international interdependence"
-    ]
-  },
-  "truefalse": {
-    "question": "A multinational corporation operates in multiple countries.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is international commerce with minimal restrictions?",
-    "expectedAny": [
-      "free trade",
-      "open trade",
-      "unrestricted commerce",
-      "liberal trade"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Mutual reliance between countries is called ________.",
-    "expectedAny": [
-      "interdependence",
-      "mutual dependence",
-      "economic dependence",
-      "global dependence"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are positive effects of globalization?",
-    "expectedAny": [
-      "increased trade",
-      "cultural exchange",
-      "technological spread",
-      "economic growth"
-    ]
-  }
+  "sample": [
+    {"question": "What is country interconnectedness?", "expectedAny": ["globalization", "global integration", "global interconnection", "world integration", "worldwide connection", "global economy"]},
+    {"question": "What operates in multiple countries?", "expectedAny": ["multinational corporation", "MNC", "global company", "international corporation", "transnational company", "multinational"]},
+    {"question": "What is minimal restriction trade?", "expectedAny": ["free trade", "open trade", "unrestricted trade", "trade without barriers", "liberal trade", "barrier free trade"]},
+    {"question": "What is idea sharing?", "expectedAny": ["cultural exchange", "exchange", "cultural sharing", "cross cultural exchange", "cultural interaction", "sharing cultures"]},
+    {"question": "What is mutual reliance?", "expectedAny": ["interdependence", "dependence", "mutual dependence", "reliance", "interconnection", "mutual reliance"]},
+    {"question": "What is global connection?", "expectedAny": ["globalization", "interconnection", "global integration", "world integration", "worldwide connection", "global economy"]},
+    {"question": "What is international company?", "expectedAny": ["multinational corporation", "global company", "MNC", "international corporation", "transnational company", "multinational"]},
+    {"question": "What is unrestricted commerce?", "expectedAny": ["free trade", "trade", "unrestricted trade", "trade without barriers", "liberal trade", "barrier free trade"]},
+    {"question": "What is culture sharing?", "expectedAny": ["cultural exchange", "cultural sharing", "exchange", "cross cultural exchange", "cultural interaction", "sharing cultures"]},
+    {"question": "What is mutual dependence?", "expectedAny": ["interdependence", "reliance", "mutual dependence", "dependence", "interconnection", "mutual reliance"]}
+  ],
+  "truefalse": [
+    {"question": "Globalization connects countries. (True or False)", "correct": true},
+    {"question": "Multinationals operate one country. (True or False)", "correct": false},
+    {"question": "Free trade has restrictions. (True or False)", "correct": false},
+    {"question": "Cultural exchange shares ideas. (True or False)", "correct": true},
+    {"question": "Interdependence is mutual reliance. (True or False)", "correct": true},
+    {"question": "Globalization increases connections. (True or False)", "correct": true},
+    {"question": "Multinationals operate globally. (True or False)", "correct": true},
+    {"question": "Free trade is unrestricted. (True or False)", "correct": true},
+    {"question": "Cultural exchange shares customs. (True or False)", "correct": true},
+    {"question": "Countries are interdependent. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What connects countries?", "choices": [{"letter": "A", "text": "Isolation"}, {"letter": "B", "text": "Globalization"}, {"letter": "C", "text": "Nationalism"}, {"letter": "D", "text": "Protectionism"}], "correct": "B"},
+    {"question": "What operates globally?", "choices": [{"letter": "A", "text": "Local business"}, {"letter": "B", "text": "Multinational corporation"}, {"letter": "C", "text": "Small shop"}, {"letter": "D", "text": "Family store"}], "correct": "B"},
+    {"question": "What has minimal restrictions?", "choices": [{"letter": "A", "text": "Protectionism"}, {"letter": "B", "text": "Free trade"}, {"letter": "C", "text": "Tariffs"}, {"letter": "D", "text": "Embargo"}], "correct": "B"},
+    {"question": "What shares ideas?", "choices": [{"letter": "A", "text": "Isolation"}, {"letter": "B", "text": "Cultural exchange"}, {"letter": "C", "text": "Nationalism"}, {"letter": "D", "text": "Protectionism"}], "correct": "B"},
+    {"question": "What is mutual reliance?", "choices": [{"letter": "A", "text": "Independence"}, {"letter": "B", "text": "Interdependence"}, {"letter": "C", "text": "Isolation"}, {"letter": "D", "text": "Autarky"}], "correct": "B"},
+    {"question": "What is global process?", "choices": [{"letter": "A", "text": "Isolation"}, {"letter": "B", "text": "Globalization"}, {"letter": "C", "text": "Nationalism"}, {"letter": "D", "text": "Separation"}], "correct": "B"},
+    {"question": "What is MNC?", "choices": [{"letter": "A", "text": "Local"}, {"letter": "B", "text": "Multinational corporation"}, {"letter": "C", "text": "Small"}, {"letter": "D", "text": "Family"}], "correct": "B"},
+    {"question": "What is open commerce?", "choices": [{"letter": "A", "text": "Tariff"}, {"letter": "B", "text": "Free trade"}, {"letter": "C", "text": "Embargo"}, {"letter": "D", "text": "Quota"}], "correct": "B"},
+    {"question": "What is culture sharing?", "choices": [{"letter": "A", "text": "Isolation"}, {"letter": "B", "text": "Cultural exchange"}, {"letter": "C", "text": "Nationalism"}, {"letter": "D", "text": "Separation"}], "correct": "B"},
+    {"question": "What is mutual dependence?", "choices": [{"letter": "A", "text": "Independence"}, {"letter": "B", "text": "Interdependence"}, {"letter": "C", "text": "Isolation"}, {"letter": "D", "text": "Autarky"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ connects countries.", "expectedAny": ["globalization", "Globalization"]},
+    {"question": "_____ corporation operates globally.", "expectedAny": ["multinational", "Multinational"]},
+    {"question": "_____ trade has minimal restrictions.", "expectedAny": ["free", "Free"]},
+    {"question": "Cultural _____ shares ideas.", "expectedAny": ["exchange"]},
+    {"question": "_____ is mutual reliance.", "expectedAny": ["interdependence", "Interdependence"]},
+    {"question": "Global _____ is interconnection.", "expectedAny": ["globalization"]},
+    {"question": "MNC is _____ corporation.", "expectedAny": ["multinational"]},
+    {"question": "_____ commerce is unrestricted.", "expectedAny": ["free", "Free"]},
+    {"question": "_____ exchange shares customs.", "expectedAny": ["cultural", "Cultural"]},
+    {"question": "Countries show _____.", "expectedAny": ["interdependence"]}
+  ],
+  "shortanswer": [
+    {"question": "What is globalization?", "keyTerms": ["process", "increased", "interconnectedness", "countries", "peoples"], "expectedAny": ["Process of increased interconnectedness between countries and peoples", "Global connection", "Worldwide integration"]},
+    {"question": "What is multinational corporation?", "keyTerms": ["company", "operates", "multiple", "countries"], "expectedAny": ["Company that operates in multiple countries", "Global company", "International corporation"]},
+    {"question": "What is free trade?", "keyTerms": ["international", "commerce", "minimal", "government", "restrictions"], "expectedAny": ["International commerce with minimal government restrictions", "Open trade", "Unrestricted trade"]},
+    {"question": "What is cultural exchange?", "keyTerms": ["sharing", "ideas", "customs", "practices", "cultures"], "expectedAny": ["Sharing of ideas, customs, and practices between cultures", "Cultural sharing", "Idea exchange"]},
+    {"question": "What is interdependence?", "keyTerms": ["mutual", "reliance", "countries", "regions"], "expectedAny": ["Mutual reliance between countries or regions", "Mutual dependence", "Connected reliance"]},
+    {"question": "Give example of globalization.", "keyTerms": ["internet", "trade", "travel", "communication", "products"], "expectedAny": ["Internet connecting people worldwide", "International trade", "Global travel", "Any valid example"]},
+    {"question": "Name multinational corporation.", "keyTerms": ["apple", "mcdonalds", "coca cola", "toyota", "any MNC"], "expectedAny": ["Apple", "McDonald's", "Coca-Cola", "Toyota", "Any valid MNC"]},
+    {"question": "What is free trade benefit?", "keyTerms": ["lower prices", "more choices", "efficiency", "competition"], "expectedAny": ["Lower prices and more choices", "Increased efficiency", "Greater competition"]},
+    {"question": "Give example of cultural exchange.", "keyTerms": ["food", "music", "language", "art", "customs"], "expectedAny": ["International food", "World music", "Language learning", "Any cultural sharing"]},
+    {"question": "How are countries interdependent?", "keyTerms": ["trade", "resources", "technology", "cooperation", "rely"], "expectedAny": ["Trade and resource sharing", "Technology cooperation", "Rely on each other"]}
+  ]
 }

@@ -4,71 +4,74 @@
   "grade": "5th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "poetry",
-      "definition": "A type of writing that uses rhythm, rhyme, and imagery to express feelings"
-    },
-    {
-      "term": "metaphor",
-      "definition": "A comparison that says one thing is another thing"
-    },
-    {
-      "term": "simile",
-      "definition": "A comparison using 'like' or 'as'"
-    },
-    {
-      "term": "alliteration",
-      "definition": "The repetition of the same beginning sound in words"
-    },
-    {
-      "term": "imagery",
-      "definition": "Words that help you picture something in your mind"
-    }
+    { "term": "poetry", "definition": "A type of writing that uses rhythm, rhyme, and imagery to express feelings" },
+    { "term": "metaphor", "definition": "A comparison that says one thing is another thing" },
+    { "term": "simile", "definition": "A comparison using 'like' or 'as'" },
+    { "term": "alliteration", "definition": "The repetition of the same beginning sound in words" },
+    { "term": "imagery", "definition": "Words that help you picture something in your mind" },
+    { "term": "personification", "definition": "Giving human qualities or actions to nonhuman things" },
+    { "term": "onomatopoeia", "definition": "A word that imitates a natural sound like 'buzz' or 'crash'" },
+    { "term": "hyperbole", "definition": "An extreme exaggeration for effect" }
   ],
   "teachingNotes": "Start with simple poems and clear examples of literary devices. Help students identify feelings and images in poetry. Practice writing simple poems using these devices.",
-  "sample": {
-    "question": "What literary device compares two things using 'like' or 'as'?",
-    "expectedAny": [
-      "simile",
-      "comparison with like or as",
-      "simile comparison",
-      "like/as comparison"
-    ]
-  },
-  "truefalse": {
-    "question": "'The cat's eyes were stars' is an example of a metaphor.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the repetition of beginning sounds called?",
-    "expectedAny": [
-      "alliteration",
-      "repeated sounds",
-      "sound repetition",
-      "beginning sound repetition"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Words that help you picture something in your mind are called ________.",
-    "expectedAny": [
-      "imagery",
-      "descriptive words",
-      "visual words",
-      "picture words"
-    ]
-  },
-  "shortanswer": {
-    "question": "Give an example of alliteration using words that start with 'b'.",
-    "expectedAny": [
-      "big brown bear",
-      "beautiful bright butterfly",
-      "bouncing blue ball",
-      "busy buzzing bees"
-    ]
-  }
+  "sample": [
+    { "question": "What literary device compares two things using 'like' or 'as'?", "expectedAny": ["simile", "comparison with like or as"] },
+    { "question": "What device says one thing is another thing?", "choices": ["Simile", "Personification", "Metaphor", "Hyperbole"], "correct": 2, "expectedAny": ["metaphor"] },
+    { "question": "What do we call repeated beginning sounds?", "expectedAny": ["alliteration", "repetition of beginning sounds"] },
+    { "question": "What device gives human qualities to nonhuman things?", "expectedAny": ["personification"] },
+    { "question": "Words that create pictures in your mind are called ________.", "expectedAny": ["imagery"] },
+    { "question": "'As brave as a lion' is a ________.", "expectedAny": ["simile"] },
+    { "question": "'Time is a thief' is a ________.", "expectedAny": ["metaphor"] },
+    { "question": "'The leaves danced' uses ________.", "expectedAny": ["personification"] },
+    { "question": "'Boom' and 'buzz' are examples of ________.", "expectedAny": ["onomatopoeia"] },
+    { "question": "'I told you a million times' is ________.", "expectedAny": ["hyperbole", "exaggeration"] }
+  ],
+  "truefalse": [
+    { "question": "'The cat's eyes were stars' is an example of a metaphor.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A simile uses 'like' or 'as'.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Onomatopoeia is when words imitate sounds.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Hyperbole means using exact measurements.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Personification gives human actions to objects or animals.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Imagery appeals only to the sense of sight.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A metaphor says one thing is another to compare them.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A simile and a metaphor are exactly the same.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Alliteration can make a poem sound musical.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "'Buzz' is not onomatopoeia.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is the repetition of beginning sounds called?", "choices": ["Metaphor", "Hyperbole", "Alliteration", "Imagery"], "correct": 2, "expectedAny": ["alliteration"] },
+    { "question": "Which line is a simile?", "choices": ["Her smile was sunshine.", "He ran like the wind.", "The river sang.", "A thousand tasks waited."], "correct": 1, "expectedAny": ["ran like the wind", "simile"] },
+    { "question": "Which device appears: 'The thunder grumbled angrily'?", "choices": ["Metaphor", "Personification", "Simile", "Onomatopoeia"], "correct": 1, "expectedAny": ["personification"] },
+    { "question": "Which word is onomatopoeia?", "choices": ["glow", "crash", "silent", "blue"], "correct": 1, "expectedAny": ["crash"] },
+    { "question": "Which line shows hyperbole?", "choices": ["The bag weighed a ton.", "Leaves danced.", "As cool as ice.", "The sky cried."], "correct": 0, "expectedAny": ["bag weighed a ton", "hyperbole"] },
+    { "question": "Which phrase best shows imagery?", "choices": ["a rough, salty breeze", "a breeze", "a thing", "a concept"], "correct": 0, "expectedAny": ["rough, salty breeze", "imagery"] },
+    { "question": "Which line is a metaphor?", "choices": ["The classroom was a zoo.", "He ate like a bird.", "The pan popped.", "The moon smiled."], "correct": 0, "expectedAny": ["classroom was a zoo", "metaphor"] },
+    { "question": "Which sense is used: 'warm cinnamon smell'?", "choices": ["Sight", "Touch", "Taste", "Smell"], "correct": 3, "expectedAny": ["smell"] },
+    { "question": "Which line shows personification?", "choices": ["The stars winked.", "Cold as ice.", "Roar of waves.", "He is a rock."], "correct": 0, "expectedAny": ["stars winked", "personification"] },
+    { "question": "Which device uses 'like' or 'as'?", "choices": ["Metaphor", "Simile", "Alliteration", "Hyperbole"], "correct": 1, "expectedAny": ["simile"] }
+  ],
+  "fillintheblank": [
+    { "question": "Words that help you picture something in your mind are called ________.", "expectedAny": ["imagery", "descriptive words", "visual words", "picture words", "sensory details"] },
+  { "question": "A comparison using 'like' or 'as' is a ________.", "expectedAny": ["simile", "comparison with like or as", "uses like or as", "like-or-as comparison", "a simile"] },
+  { "question": "A comparison that says one thing is another is a ________.", "expectedAny": ["metaphor", "direct comparison", "implied comparison", "a metaphor"] },
+    { "question": "Giving human actions to objects is ________.", "expectedAny": ["personification", "human qualities to objects", "human characteristics to things"] },
+  { "question": "Words like 'buzz' and 'clang' are ________.", "expectedAny": ["onomatopoeia", "sound words", "sound imitation", "sound effect words", "onomatopoeias"] },
+  { "question": "An extreme exaggeration is called ________.", "expectedAny": ["hyperbole", "exaggeration", "overstatement", "a hyperbole"] },
+  { "question": "Repeated beginning sounds create ________.", "expectedAny": ["alliteration", "repetition of beginning sounds", "same starting sound", "alliterative sounds"] },
+    { "question": "Taste, smell, touch, sight, and sound are ________.", "expectedAny": ["senses", "five senses", "the senses"] },
+    { "question": "'Her heart is stone' is a ________.", "expectedAny": ["metaphor", "a metaphor"] },
+    { "question": "'As light as a feather' is a ________.", "expectedAny": ["simile", "a simile"] }
+  ],
+  "shortanswer": [
+    { "question": "Give an example of alliteration using words that start with 'b'.", "expectedAny": ["big brown bear", "beautiful bright butterfly", "bouncing blue ball", "busy buzzing bees", "brave bold bears"] },
+    { "question": "Write a simile about running fast.", "expectedAny": ["like the wind", "as fast as lightning", "fast as a cheetah", "as quick as a flash", "as swift as a deer"] },
+    { "question": "Write a metaphor for a difficult test.", "expectedAny": ["a mountain to climb", "a storm to face", "a maze", "a battlefield", "a brick wall"] },
+    { "question": "Give one example of personification for the sun.", "expectedAny": ["smiled", "winked", "hugged the earth", "danced across the sky", "peeked over the hills"] },
+    { "question": "Name a sound word you might hear in a kitchen.", "expectedAny": ["sizzle", "clang", "buzz", "pop", "whirr", "click"] },
+    { "question": "Describe imagery that uses smell.", "expectedAny": ["sweet cinnamon", "fresh bread", "salty ocean", "buttery popcorn"] },
+    { "question": "Give a hyperbole about homework.", "expectedAny": ["a ton of homework", "mountain of homework", "endless homework", "a pile of homework", "a billion pages"] },
+    { "question": "Write a line with alliteration using 's'.", "expectedAny": ["slippery slimy snake", "soft silver snow", "sudden summer storm", "silent soft steps"] },
+    { "question": "Explain how a simile is different from a metaphor.", "expectedAny": ["like or as", "metaphor says is", "simile uses like/as", "uses like/as vs says is"] },
+    { "question": "Name one reason poets use imagery.", "expectedAny": ["help readers picture", "engage senses", "make writing vivid", "create mood", "help visualize"] }
+  ]
 }

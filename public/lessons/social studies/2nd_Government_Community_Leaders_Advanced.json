@@ -55,20 +55,20 @@
   ],
   "fillintheblank": [
     {"question": "An important rule that everyone must follow is called a ________.", "expectedAny": ["law", "rule"]},
-    {"question": "People ________ to choose leaders.", "expectedAny": ["vote"]},
-    {"question": "A ________ leads a city or town.", "expectedAny": ["mayor"]},
-    {"question": "A group that helps make local laws is the city ________.", "expectedAny": ["council"]},
-    {"question": "Leaders help ________ problems in the community.", "expectedAny": ["solve"]},
-    {"question": "Laws help keep people ________.", "expectedAny": ["safe"]},
-    {"question": "The person who leads a school is the ________.", "expectedAny": ["principal"]}
+    {"question": "People ________ to choose leaders.", "expectedAny": ["vote", "vote in elections"]},
+    {"question": "A ________ leads a city or town.", "expectedAny": ["mayor", "city leader"]},
+    {"question": "A group that helps make local laws is the city ________.", "expectedAny": ["council", "city council"]},
+    {"question": "Leaders help ________ problems in the community.", "expectedAny": ["solve", "fix"]},
+    {"question": "Laws help keep people ________.", "expectedAny": ["safe", "protected"]},
+    {"question": "The person who leads a school is the ________.", "expectedAny": ["principal", "school principal"]}
   ],
   "shortanswer": [
     {"question": "Why do communities need leaders?", "expectedAny": ["make decisions", "solve problems", "help people", "keep order"]},
     {"question": "Name one way leaders help the community.", "expectedAny": ["make rules", "keep people safe", "fix roads", "support schools"]},
-    {"question": "How does voting help a community?", "expectedAny": ["people choose leaders", "everyone has a voice"]},
+  {"question": "How does voting help a community?", "expectedAny": ["people choose leaders", "everyone has a voice", "people pick leaders they trust"]},
     {"question": "What should a good leader be like?", "expectedAny": ["fair", "kind", "listens", "responsible"]},
     {"question": "Who are some leaders at your school?", "expectedAny": ["principal", "teachers", "student council (if any)"]},
-    {"question": "Give an example of a law that keeps people safe.", "expectedAny": ["stop at red lights", "no running in hallways"]},
-    {"question": "What would you change if you were class leader?", "expectedAny": ["student choice with reason"]}
+    {"question": "Give an example of a law that keeps people safe.", "expectedAny": ["stop at red lights", "no running in hallways", "wear a helmet when biking"]},
+    {"question": "What would you change if you were class leader?", "expectedAny": ["longer recess for playtime", "more reading time in class", "a class cleanup day"]}
   ]
 }

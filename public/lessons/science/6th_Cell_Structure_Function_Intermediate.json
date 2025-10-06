@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Use microscope images and cell diagrams. Compare plant and animal cells. Emphasize that cells are the building blocks of all life.",
-  "sample": {
-    "question": "What is the basic unit of life?",
-    "expectedAny": [
-      "cell",
-      "the cell",
-      "cells",
-      "basic cell"
-    ]
-  },
-  "truefalse": {
-    "question": "The nucleus controls what the cell does.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What controls what enters and leaves a cell?",
-    "expectedAny": [
-      "cell membrane",
-      "membrane",
-      "cell wall",
-      "cellular membrane"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The jelly-like substance inside a cell is called ________.",
-    "expectedAny": [
-      "cytoplasm",
-      "cell cytoplasm",
-      "cellular cytoplasm",
-      "cytoplasmic material"
-    ]
-  },
-  "shortanswer": {
-    "question": "What is the difference between plant and animal cells?",
-    "expectedAny": [
-      "plant cells have cell walls",
-      "plants have chloroplasts",
-      "plant cells have larger vacuoles",
-      "cell wall and chloroplasts"
-    ]
-  }
+  "sample": [
+    { "question": "What is the basic unit of life?", "expectedAny": ["cell"] },
+    { "question": "Which controls the cell?", "choices": ["Membrane", "Nucleus", "Cytoplasm", "Wall"], "correct": 1, "expectedAny": ["nucleus"] },
+    { "question": "Jelly-like substance in cells is ________.", "expectedAny": ["cytoplasm"] },
+    { "question": "The barrier around a cell is the ________.", "expectedAny": ["cell membrane", "membrane"] },
+    { "question": "Cell parts with functions are ________.", "expectedAny": ["organelles"] },
+    { "question": "What contains DNA?", "choices": ["Membrane", "Cytoplasm", "Nucleus", "Wall"], "correct": 2, "expectedAny": ["nucleus"] },
+    { "question": "The ________ is the building block of life.", "expectedAny": ["cell"] },
+    { "question": "Controls what enters and leaves is ________.", "expectedAny": ["cell membrane", "membrane"] },
+    { "question": "Where do reactions occur?", "choices": ["Nucleus", "Membrane", "Cytoplasm", "Outside"], "correct": 2, "expectedAny": ["cytoplasm"] },
+    { "question": "Specialized structures are ________.", "expectedAny": ["organelles"] }
+  ],
+  "truefalse": [
+    { "question": "The nucleus controls what the cell does.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Cytoplasm is the cell's control center.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The cell membrane controls what enters.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All cells are the same.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Cells are the basic unit of life.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The nucleus is jelly-like.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Organelles have specific functions.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Cytoplasm is outside the cell.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The nucleus contains DNA.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Cells don't need membranes.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What controls what enters and leaves a cell?", "choices": ["Nucleus", "Cell membrane", "Cytoplasm", "Organelle"], "correct": 1, "expectedAny": ["cell membrane"] },
+    { "question": "What is the control center?", "choices": ["Membrane", "Nucleus", "Cytoplasm", "Wall"], "correct": 1, "expectedAny": ["nucleus"] },
+    { "question": "What is the basic unit of life?", "choices": ["Atom", "Molecule", "Cell", "Organ"], "correct": 2, "expectedAny": ["cell"] },
+    { "question": "Where do chemical reactions occur?", "choices": ["Nucleus", "Membrane", "Cytoplasm", "Outside"], "correct": 2, "expectedAny": ["cytoplasm"] },
+    { "question": "What are specialized cell structures?", "choices": ["Atoms", "Organelles", "Tissues", "Organs"], "correct": 1, "expectedAny": ["organelles"] },
+    { "question": "What contains DNA?", "choices": ["Membrane", "Cytoplasm", "Nucleus", "Organelle"], "correct": 2, "expectedAny": ["nucleus"] },
+    { "question": "What is jelly-like?", "choices": ["Nucleus", "Membrane", "Cytoplasm", "DNA"], "correct": 2, "expectedAny": ["cytoplasm"] },
+    { "question": "What makes up all living things?", "choices": ["Water", "Air", "Cells", "Rocks"], "correct": 2, "expectedAny": ["cells"] },
+    { "question": "What forms a barrier?", "choices": ["Nucleus", "Cytoplasm", "Cell membrane", "DNA"], "correct": 2, "expectedAny": ["cell membrane"] },
+    { "question": "What directs cell activities?", "choices": ["Membrane", "Nucleus", "Cytoplasm", "Wall"], "correct": 1, "expectedAny": ["nucleus"] }
+  ],
+  "fillintheblank": [
+    { "question": "The jelly-like substance inside a cell is called ________.", "expectedAny": ["cytoplasm"] },
+    { "question": "The ________ is the control center of the cell.", "expectedAny": ["nucleus"] },
+    { "question": "The basic unit of life is the ________.", "expectedAny": ["cell"] },
+    { "question": "The ________ controls what enters and leaves.", "expectedAny": ["cell membrane", "membrane"] },
+    { "question": "Specialized structures in cells are ________.", "expectedAny": ["organelles"] },
+    { "question": "The nucleus contains ________.", "expectedAny": ["DNA"] },
+    { "question": "Chemical reactions occur in the ________.", "expectedAny": ["cytoplasm"] },
+    { "question": "All living things are made of ________.", "expectedAny": ["cells"] },
+    { "question": "The ________ forms a barrier around the cell.", "expectedAny": ["cell membrane", "membrane"] },
+    { "question": "________ perform specific functions in cells.", "expectedAny": ["organelles"] }
+  ],
+  "shortanswer": [
+    { "question": "What is the difference between plant and animal cells?", "expectedAny": ["plant cells have cell walls", "plants have chloroplasts", "plant cells have wall and chloroplasts", "plants have wall"] },
+    { "question": "What is a cell?", "expectedAny": ["basic unit of life", "building block of life", "smallest unit of life"] },
+    { "question": "What does the nucleus do?", "expectedAny": ["controls the cell", "contains DNA", "directs activities", "control center", "boss of the cell"] },
+    { "question": "What is cytoplasm?", "expectedAny": ["jelly-like substance", "where reactions occur", "gel inside cell"] },
+    { "question": "What does the cell membrane do?", "expectedAny": ["controls what enters and leaves", "forms barrier", "guards the cell", "protects the cell"] },
+    { "question": "What are organelles?", "expectedAny": ["specialized structures", "parts with specific functions", "cell parts", "tiny organs"] },
+    { "question": "Why are cells important?", "expectedAny": ["basic unit of life", "make up all living things"] },
+    { "question": "Name a cell organelle.", "expectedAny": ["nucleus", "mitochondria", "chloroplast", "ribosome"] },
+    { "question": "What is inside the nucleus?", "expectedAny": ["DNA", "genetic material"] },
+    { "question": "Where are organelles found?", "expectedAny": ["inside cells", "in cytoplasm"] }
+  ]
 }

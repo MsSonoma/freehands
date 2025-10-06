@@ -28,7 +28,7 @@
   "teachingNotes": "Practice differentiation rules and techniques. Apply to optimization problems and real-world scenarios.",
   "sample": {
     "question": "What method finds the derivative of composite functions?",
-    "expectedAny": ["chain rule", "composite rule", "function composition rule", "nested function rule"]
+    "expectedAny": ["chain rule", "composite rule", "function composition rule", "nested function rule", "composition differentiation", "composite differentiation"]
   },
   "truefalse": {
     "question": "The product rule finds derivatives of products of functions.",

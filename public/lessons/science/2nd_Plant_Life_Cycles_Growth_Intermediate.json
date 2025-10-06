@@ -23,6 +23,14 @@
     {
       "term": "pollination",
       "definition": "When pollen moves from one flower to another to help make seeds"
+    },
+    {
+      "term": "roots",
+      "definition": "The part of a plant that takes in water and holds the plant in place"
+    },
+    {
+      "term": "leaves",
+      "definition": "The parts of a plant that make food using sunlight"
     }
   ],
   "teachingNotes": "Use real plants or pictures to show different stages of plant growth. Plant seeds in class and observe changes over time. Discuss what plants need to grow: water, sunlight, air, and nutrients from soil.",
@@ -54,21 +62,21 @@
     {"question": "Green plants make ___", "choices": ["Soil", "Rocks", "Oxygen", "Carbon dioxide"], "correct": 2}
   ],
   "fillintheblank": [
-    {"question": "Plants need sunlight, air, and ___", "expectedAny": ["water"]},
-    {"question": "___ make food for the plant", "expectedAny": ["Leaves"]},
-    {"question": "___ absorb water from soil", "expectedAny": ["Roots"]},
-    {"question": "The ___ holds the plant up", "expectedAny": ["stem"]},
-    {"question": "___ help make new plants", "expectedAny": ["Seeds", "flowers"]},
-    {"question": "Plants make ___ for us to breathe", "expectedAny": ["oxygen"]},
-    {"question": "Without ___, plants can't make food", "expectedAny": ["sunlight"]}
+    {"question": "Plants need sunlight, air, and ___", "expectedAny": ["water", "H2O"]},
+    {"question": "___ make food for the plant", "expectedAny": ["Leaves", "leafs"]},
+    {"question": "___ absorb water from soil", "expectedAny": ["Roots", "plant roots"]},
+    {"question": "The ___ holds the plant up", "expectedAny": ["stem", "plant stem"]},
+    {"question": "___ help make new plants", "expectedAny": ["Seeds", "flowers", "flower seeds"]},
+    {"question": "Plants make ___ for us to breathe", "expectedAny": ["oxygen", "O2"]},
+    {"question": "Without ___, plants can't make food", "expectedAny": ["sunlight", "sun light"]}
   ],
   "shortanswer": [
-    {"question": "What are the parts of a plant?", "expectedAny": ["roots", "stem", "leaves", "flowers"]},
-    {"question": "How do plants make food?", "expectedAny": ["use sunlight, water, and air in leaves"]},
-    {"question": "Why are plants important?", "expectedAny": ["make oxygen", "food", "homes for animals"]},
+    {"question": "What are the parts of a plant?", "expectedAny": ["roots", "stem", "leaves", "flowers", "seeds"]},
+    {"question": "How do plants make food?", "expectedAny": ["use sunlight, water, and air in leaves", "photosynthesis in leaves", "leaves use sunlight to make food"]},
+    {"question": "Why are plants important?", "expectedAny": ["make oxygen", "make food", "homes for animals"]},
     {"question": "What happens if plants don't get water?", "expectedAny": ["wilt", "turn brown", "die"]},
     {"question": "How do seeds travel?", "expectedAny": ["wind", "water", "animals", "people"]},
-    {"question": "Compare roots and leaves jobs.", "expectedAny": ["roots absorb water; leaves make food"]},
-    {"question": "Design a perfect place for plants.", "expectedAny": ["sunny spot", "good soil", "water available"]}
+    {"question": "Compare roots and leaves jobs.", "expectedAny": ["roots absorb water", "leaves make food", "roots hold plant; leaves use sun"]},
+    {"question": "Design a perfect place for plants.", "expectedAny": ["sunny spot", "good soil", "water available", "air and space to grow"]}
   ]
 }

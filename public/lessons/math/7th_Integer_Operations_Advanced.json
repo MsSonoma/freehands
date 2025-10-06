@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Use number line models and real-world contexts like temperature or debt. Emphasize rules for adding and subtracting integers.",
-  "sample": {
-    "question": "What are positive and negative whole numbers called?",
-    "expectedAny": ["integers", "whole numbers", "positive and negative numbers", "signed numbers"]
-  },
-  "truefalse": {
-    "question": "The absolute value of -5 is 5.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is -3 + (-7)?",
-    "expectedAny": ["-10", "negative ten", "-10", "negative 10"]
-  },
-  "fillintheblank": {
-    "question": "The distance a number is from zero is its ________ value.",
-    "expectedAny": ["absolute", "distance", "magnitude", "numerical"]
-  },
-  "shortanswer": {
-    "question": "Calculate: 8 - (-4)",
-    "expectedAny": ["12", "twelve", "8 + 4 = 12", "positive 12"]
-  },
-  "wordProblems": {
-    "question": "The temperature starts at -2°F and drops 5 degrees. What is the final temperature?",
-    "expectedAny": ["-7°F", "-7 degrees", "negative 7", "-7°"]
-  }
+  "sample": [
+    { "question": "What are positive and negative whole numbers called?", "expectedAny": ["integers"] },
+    { "question": "Which is distance from zero?", "choices": ["Integer", "Absolute value", "Opposite", "Number"], "correct": 1, "expectedAny": ["absolute value"] },
+    { "question": "Same distance, different sides are ________.", "expectedAny": ["opposites"] },
+    { "question": "Number making sum zero is ________.", "expectedAny": ["additive inverse"] },
+    { "question": "Line showing numbers in order is ________.", "expectedAny": ["number line"] },
+    { "question": "What includes positive and negative?", "choices": ["Fractions", "Integers", "Decimals", "Percents"], "correct": 1, "expectedAny": ["integers"] },
+    { "question": "Distance from zero is ________.", "expectedAny": ["absolute value"] },
+    { "question": "The opposite of 5 is ________.", "expectedAny": ["-5"] },
+    { "question": "Which makes sum zero?", "choices": ["Same number", "Inverse", "Double", "Half"], "correct": 1, "expectedAny": ["inverse"] },
+    { "question": "Numbers in order on a ________.", "expectedAny": ["number line"] }
+  ],
+  "truefalse": [
+    { "question": "The absolute value of -5 is 5.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All integers are positive.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Zero is an integer.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Opposites are on same side of zero.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Additive inverse makes sum zero.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Absolute value can be negative.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Integers include negative numbers.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The opposite of -3 is -3.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Number lines show order.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All numbers are integers.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is -3 + (-7)?", "choices": ["-10", "10", "-4", "4"], "correct": 0, "expectedAny": ["-10"] },
+    { "question": "What are whole numbers?", "choices": ["Fractions", "Integers", "Decimals", "Percents"], "correct": 1, "expectedAny": ["integers"] },
+    { "question": "What is distance from zero?", "choices": ["Integer", "Absolute value", "Opposite", "Sum"], "correct": 1, "expectedAny": ["absolute value"] },
+    { "question": "What is opposite of 8?", "choices": ["8", "-8", "0", "16"], "correct": 1, "expectedAny": ["-8"] },
+    { "question": "What makes sum zero?", "choices": ["Same", "Additive inverse", "Double", "Half"], "correct": 1, "expectedAny": ["additive inverse"] },
+    { "question": "What is -5 + 5?", "choices": ["-10", "0", "10", "-5"], "correct": 1, "expectedAny": ["0"] },
+    { "question": "What is absolute value of -8?", "choices": ["-8", "8", "0", "-16"], "correct": 1, "expectedAny": ["8"] },
+    { "question": "What is 6 + (-4)?", "choices": ["10", "2", "-2", "-10"], "correct": 1, "expectedAny": ["2"] },
+    { "question": "What shows numbers in order?", "choices": ["Graph", "Number line", "Chart", "Table"], "correct": 1, "expectedAny": ["number line"] },
+    { "question": "What is -2 - 3?", "choices": ["-5", "5", "1", "-1"], "correct": 0, "expectedAny": ["-5"] }
+  ],
+  "fillintheblank": [
+    { "question": "The distance a number is from zero is its ________ value.", "expectedAny": ["absolute"] },
+    { "question": "Positive and negative whole numbers are ________.", "expectedAny": ["integers"] },
+    { "question": "Two numbers equidistant from zero are ________.", "expectedAny": ["opposites"] },
+    { "question": "A number making sum zero is ________.", "expectedAny": ["additive inverse", "inverse"] },
+    { "question": "Numbers in order on a ________ line.", "expectedAny": ["number"] },
+    { "question": "________ value is always positive.", "expectedAny": ["absolute"] },
+    { "question": "________ are whole numbers.", "expectedAny": ["integers"] },
+    { "question": "The ________ of 7 is -7.", "expectedAny": ["opposite"] },
+    { "question": "The ________ inverse makes sum zero.", "expectedAny": ["additive"] },
+    { "question": "A ________ line shows order.", "expectedAny": ["number"] }
+  ],
+  "shortanswer": [
+    { "question": "Calculate: 8 - (-4)", "expectedAny": ["12"] },
+    { "question": "What is an integer?", "expectedAny": ["positive and negative whole numbers", "whole numbers", "whole numbers including negatives", "counting numbers and their opposites"] },
+    { "question": "What is absolute value?", "expectedAny": ["distance from zero", "how far from zero", "how far from 0", "always positive distance"] },
+    { "question": "What is an opposite?", "expectedAny": ["same distance different sides", "negative of number"] },
+    { "question": "What is additive inverse?", "expectedAny": ["makes sum zero", "opposite number", "number that adds to zero", "negative of number"] },
+    { "question": "What is a number line?", "expectedAny": ["line showing numbers in order", "ordered numbers"] },
+    { "question": "Calculate: -6 + 10", "expectedAny": ["4"] },
+    { "question": "Calculate: -3 - 5", "expectedAny": ["-8"] },
+    { "question": "What is absolute value of -9?", "expectedAny": ["9"] },
+    { "question": "What is opposite of -4?", "expectedAny": ["4"] }
+  ],
+  "wordProblems": [
+    { "question": "The temperature starts at -2°F and drops 5 degrees. What is the final temperature?", "expectedAny": ["-7", "-7°F"] },
+    { "question": "You owe $8 and pay back $5. How much do you still owe?", "expectedAny": ["$3", "3"] },
+    { "question": "A submarine is at -50 feet and rises 20 feet. What is its depth?", "expectedAny": ["-30", "-30 feet"] },
+    { "question": "The temperature is -3°C and rises 8 degrees. What is the new temperature?", "expectedAny": ["5", "5°C"] },
+    { "question": "You have -$10 in your account and deposit $15. What is your balance?", "expectedAny": ["$5", "5"] },
+    { "question": "A plane at 20,000 feet descends 5,000 feet. What is its altitude?", "expectedAny": ["15,000", "15,000 feet"] },
+    { "question": "The temperature is 6°F and drops 10 degrees. What is the new temperature?", "expectedAny": ["-4", "-4°F"] },
+    { "question": "You lose 7 points and then gain 3 points. What is your net change?", "expectedAny": ["-4"] },
+    { "question": "A diver is at -15 meters and goes down 10 more meters. What is the depth?", "expectedAny": ["-25", "-25 meters"] },
+    { "question": "The temperature is -8°C and warms 12 degrees. What is the new temperature?", "expectedAny": ["4", "4°C"] }
+  ]
 }

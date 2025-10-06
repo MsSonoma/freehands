@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Use maps to show Mesoamerican geography. Compare Mayan and Aztec achievements. Discuss how these civilizations adapted to their environments.",
-  "sample": {
-    "question": "What region includes Mexico and Central America where ancient civilizations developed?",
-    "expectedAny": [
-      "Mesoamerica",
-      "Middle America",
-      "Central Mexico region",
-      "pre-Columbian America"
-    ]
-  },
-  "truefalse": {
-    "question": "The Aztec capital Tenochtitlan was built on a lake.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which civilization was known for astronomy and calendar systems?",
-    "expectedAny": [
-      "Maya",
-      "Mayan civilization",
-      "the Maya",
-      "ancient Maya"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The capital city of the Aztec Empire was called ________.",
-    "expectedAny": [
-      "Tenochtitlan",
-      "Aztec capital",
-      "lake city",
-      "Tenochtitlan city"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are two achievements of the Maya civilization?",
-    "expectedAny": [
-      "astronomy and mathematics",
-      "calendar and writing",
-      "pyramids and hieroglyphics",
-      "science and architecture"
-    ]
-  }
+  "sample": [
+    { "question": "What region includes Mexico and Central America where ancient civilizations developed?", "expectedAny": ["Mesoamerica"] },
+    { "question": "Which was known for astronomy?", "choices": ["Rome", "Maya", "Egypt", "China"], "correct": 1, "expectedAny": ["Maya"] },
+    { "question": "The Aztec capital was ________.", "expectedAny": ["Tenochtitlan"] },
+    { "question": "Picture writing is ________.", "expectedAny": ["hieroglyphics"] },
+    { "question": "An empire in central Mexico was ________.", "expectedAny": ["Aztec"] },
+    { "question": "What is Mexico and Central America?", "choices": ["Europe", "Mesoamerica", "Asia", "Africa"], "correct": 1, "expectedAny": ["Mesoamerica"] },
+    { "question": "The ________ made calendars.", "expectedAny": ["Maya"] },
+    { "question": "Tenochtitlan was built on a ________.", "expectedAny": ["lake"] },
+    { "question": "Which used picture symbols?", "choices": ["Aztec", "Maya", "Rome", "Greece"], "correct": 1, "expectedAny": ["Maya"] },
+    { "question": "A powerful Mexican empire was ________.", "expectedAny": ["Aztec"] }
+  ],
+  "truefalse": [
+    { "question": "The Aztec capital Tenochtitlan was built on a lake.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The Maya had no writing system.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Mesoamerica includes Mexico and Central America.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The Aztec and Maya were in Europe.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Maya were known for astronomy.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Tenochtitlan was on a mountain.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The Maya used hieroglyphics.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The Aztec had no cities.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Maya developed calendar systems.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Mesoamerica had no civilizations.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which civilization was known for astronomy and calendar systems?", "choices": ["Rome", "Maya", "Egypt", "Greece"], "correct": 1, "expectedAny": ["Maya"] },
+    { "question": "What region is Mexico and Central America?", "choices": ["Asia", "Europe", "Mesoamerica", "Africa"], "correct": 2, "expectedAny": ["Mesoamerica"] },
+    { "question": "What was the Aztec capital?", "choices": ["Rome", "Athens", "Tenochtitlan", "Cairo"], "correct": 2, "expectedAny": ["Tenochtitlan"] },
+    { "question": "Which built an empire in Mexico?", "choices": ["Maya", "Aztec", "Romans", "Greeks"], "correct": 1, "expectedAny": ["Aztec"] },
+    { "question": "What is picture writing?", "choices": ["Alphabet", "Numbers", "Hieroglyphics", "Morse code"], "correct": 2, "expectedAny": ["hieroglyphics"] },
+    { "question": "Where was Tenochtitlan built?", "choices": ["Mountain", "Lake", "Desert", "Forest"], "correct": 1, "expectedAny": ["lake"] },
+    { "question": "Who studied astronomy?", "choices": ["Maya", "Romans", "Egyptians", "Greeks"], "correct": 0, "expectedAny": ["Maya"] },
+    { "question": "Which had hieroglyphics?", "choices": ["Rome", "Maya", "Greece", "China"], "correct": 1, "expectedAny": ["Maya"] },
+    { "question": "What did Maya make?", "choices": ["Cars", "Calendars", "Planes", "Phones"], "correct": 1, "expectedAny": ["calendars"] },
+    { "question": "Where did ancient civilizations develop?", "choices": ["Europe", "Mesoamerica", "Australia", "Antarctica"], "correct": 1, "expectedAny": ["Mesoamerica"] }
+  ],
+  "fillintheblank": [
+    { "question": "The capital city of the Aztec Empire was called ________.", "expectedAny": ["Tenochtitlan"] },
+    { "question": "The region including Mexico is ________.", "expectedAny": ["Mesoamerica"] },
+    { "question": "The ________ were known for astronomy.", "expectedAny": ["Maya"] },
+    { "question": "Picture writing is called ________.", "expectedAny": ["hieroglyphics"] },
+    { "question": "The ________ built an empire in Mexico.", "expectedAny": ["Aztec"] },
+    { "question": "Tenochtitlan was built on a ________.", "expectedAny": ["lake"] },
+    { "question": "________ developed calendar systems.", "expectedAny": ["Maya"] },
+    { "question": "Ancient ________ includes Central America.", "expectedAny": ["Mesoamerica"] },
+    { "question": "The Aztec capital was ________.", "expectedAny": ["Tenochtitlan"] },
+    { "question": "The Maya used ________ for writing.", "expectedAny": ["hieroglyphics"] }
+  ],
+  "shortanswer": [
+    { "question": "What are two achievements of the Maya civilization?", "expectedAny": ["astronomy and mathematics", "calendar and writing"] },
+    { "question": "What is Mesoamerica?", "expectedAny": ["region with Mexico and Central America", "where ancient civilizations developed"] },
+    { "question": "What was special about Tenochtitlan?", "expectedAny": ["Aztec capital on a lake", "built on water"] },
+    { "question": "What are hieroglyphics?", "expectedAny": ["picture writing", "writing with symbols"] },
+    { "question": "What did the Maya study?", "expectedAny": ["astronomy", "mathematics", "stars"] },
+    { "question": "What did the Aztec build?", "expectedAny": ["empire", "Tenochtitlan", "cities"] },
+    { "question": "How did Maya record information?", "expectedAny": ["hieroglyphics", "picture writing"] },
+    { "question": "Where was the Aztec Empire?", "expectedAny": ["central Mexico", "Mesoamerica"] },
+    { "question": "What did Maya create to track time?", "expectedAny": ["calendar", "calendar system"] },
+    { "question": "Name a Mesoamerican civilization.", "expectedAny": ["Maya", "Aztec"] }
+  ]
 }

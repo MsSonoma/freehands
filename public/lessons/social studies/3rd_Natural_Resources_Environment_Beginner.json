@@ -5,12 +5,16 @@
   "difficulty": "Beginner",
   "featured": false,
   "vocab": [
-    { "term": "natural resource", "definition": "Something from nature that people use, like water, trees, or rocks" },
-    { "term": "environment", "definition": "All the living and non-living things around us" },
-    { "term": "renewable", "definition": "A resource that can be replaced naturally, like trees that can grow back" },
-    { "term": "conservation", "definition": "Using resources carefully so they don't run out" },
-    { "term": "pollution", "definition": "Harmful things that make the air, water, or land dirty" },
-    { "term": "recycling", "definition": "Using old materials to make new things instead of throwing them away" }
+    {"word": "natural resource", "kid_friendly_definition": "Something from nature that people use, like water, trees, or rocks."},
+    {"word": "environment", "kid_friendly_definition": "All the living and non-living things around us."},
+    {"word": "renewable", "kid_friendly_definition": "A resource that can be replaced naturally, like trees that can grow back."},
+    {"word": "conservation", "kid_friendly_definition": "Using resources carefully so they don't run out."},
+    {"word": "pollution", "kid_friendly_definition": "Harmful things that make the air, water, or land dirty."},
+    {"word": "recycling", "kid_friendly_definition": "Using old materials to make new things instead of throwing them away."},
+    {"word": "energy", "kid_friendly_definition": "Power we use for lights, heat, and machines; saving energy helps the environment."},
+    {"word": "nonrenewable", "kid_friendly_definition": "A resource that cannot be replaced easily, like oil or coal."},
+    {"word": "fossil fuels", "kid_friendly_definition": "Energy sources from old plants and animals buried long ago, like oil and coal."},
+    {"word": "habitat", "kid_friendly_definition": "The natural home of an animal or plant."}
   ],
   "teachingNotes": "Use examples from students' daily lives. Practice conservation activities like recycling. Discuss local natural resources.",
   "sample": [
@@ -23,67 +27,74 @@
     { "question": "What natural resource do we use to make paper?", "expectedAny": ["trees", "wood", "forests"] }
   ],
   "truefalse": [
-    { "question": "Water is a natural resource that all living things need.", "answer": true },
-    { "question": "We should waste natural resources because there are plenty.", "answer": false },
-    { "question": "Trees are a renewable resource because they can grow back.", "answer": true },
-    { "question": "Pollution helps the environment.", "answer": false },
-    { "question": "Recycling helps save natural resources.", "answer": true },
-    { "question": "The environment includes only living things.", "answer": false },
-    { "question": "Conservation means using resources carefully.", "answer": true }
+    { "question": "Water is a natural resource that all living things need.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "all living things need water"] },
+    { "question": "We should waste natural resources because there are plenty.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "do not waste resources"] },
+    { "question": "Trees are a renewable resource because they can grow back.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "can grow back"] },
+    { "question": "Pollution helps the environment.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "pollution harms the environment"] },
+    { "question": "Recycling helps save natural resources.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "recycling saves resources"] },
+    { "question": "The environment includes only living things.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "includes non-living too"] },
+    { "question": "Conservation means using resources carefully.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "use resources carefully"] }
   ],
   "multiplechoice": [
     {
       "question": "Which is the best way to conserve water?",
       "choices": ["leave faucet running", "take shorter showers", "water plants all day", "fill bathtub completely"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "take shorter showers", "shorter showers"]
     },
     {
       "question": "What makes trees a renewable resource?",
       "choices": ["they never die", "they can grow back", "they're everywhere", "they don't matter"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "they can grow back", "grow back"]
     },
     {
       "question": "Which is NOT a natural resource?",
       "choices": ["water", "plastic toys", "trees", "rocks"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "plastic toys", "plastic"]
     },
     {
       "question": "What is pollution?",
       "choices": ["clean air", "dirty water", "fresh food", "new plants"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "dirty water", "dirty air", "something dirty or harmful"]
     },
     {
       "question": "How can kids help the environment?",
       "choices": ["litter everywhere", "waste water", "recycle paper", "cut down trees"],
-      "correct": 2
+      "correct": 2,
+      "expectedAny": ["c", "C", "3", "recycle paper", "recycle"]
     },
     {
       "question": "What do we get from forests?",
       "choices": ["only animals", "wood and paper", "nothing useful", "just dirt"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "wood and paper", "wood", "paper"]
     },
     {
       "question": "Why should we turn off lights?",
       "choices": ["it's dark", "save energy", "lights are bad", "no reason"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "save energy", "save electricity"]
     }
   ],
   "fillintheblank": [
-    { "question": "We can help save trees by ___ paper instead of throwing it away.", "expectedAny": ["recycling"] },
-    { "question": "___ resources can be replaced naturally.", "expectedAny": ["Renewable"] },
-    { "question": "All living and non-living things around us make up the ___.", "expectedAny": ["environment"] },
-    { "question": "___ means using resources carefully.", "expectedAny": ["Conservation"] },
-    { "question": "Harmful things that make the environment dirty are called ___.", "expectedAny": ["pollution"] },
-    { "question": "___ from nature are called natural resources.", "expectedAny": ["Things"] },
+    { "question": "We can help save trees by ___ paper instead of throwing it away.", "expectedAny": ["recycling", "recycle"] },
+    { "question": "___ resources can be replaced naturally.", "expectedAny": ["Renewable", "renewable"] },
+    { "question": "All living and non-living things around us make up the ___.", "expectedAny": ["environment", "the environment"] },
+    { "question": "___ means using resources carefully.", "expectedAny": ["Conservation", "conservation", "careful use of resources"] },
+    { "question": "Harmful things that make the environment dirty are called ___.", "expectedAny": ["pollution", "pollutants"] },
+    { "question": "___ from nature are called natural resources.", "expectedAny": ["Things", "natural resources", "resources from nature"] },
     { "question": "We can ___ energy by turning off lights.", "expectedAny": ["save", "conserve"] }
   ],
   "shortanswer": [
-    { "question": "Why is it important to take care of our environment?", "expectedAny": ["clean air and water", "protect animals", "save resources", "healthy place to live"] },
-    { "question": "What are three ways to conserve natural resources?", "expectedAny": ["recycle", "use less water", "turn off lights", "reuse items"] },
-    { "question": "How does pollution hurt the environment?", "expectedAny": ["makes air dirty", "hurts animals", "pollutes water", "kills plants"] },
-    { "question": "What natural resources do you use every day?", "expectedAny": ["water", "air", "food from soil", "wood products"] },
-    { "question": "How can your family help the environment?", "expectedAny": ["recycle", "use less water", "walk more", "plant trees"] },
-    { "question": "What would happen if we ran out of trees?", "expectedAny": ["no paper", "less oxygen", "animals lose homes", "no wood"] },
-    { "question": "How does recycling help natural resources?", "expectedAny": ["uses old materials", "saves trees", "reduces waste", "makes new from old"] }
+    {"question": "Why is it important to take care of our environment?", "expectedAny": ["clean air and water", "protect animals", "save resources", "healthy place to live", "for animals and plants", "keep it clean"]},
+    {"question": "What are three ways to conserve natural resources?", "expectedAny": ["recycle", "use less water", "turn off lights", "reuse items", "save energy", "don't waste"]},
+    {"question": "How does pollution hurt the environment?", "expectedAny": ["makes air dirty", "hurts animals", "pollutes water", "kills plants", "makes things dirty", "harms nature"]},
+    {"question": "What natural resources do you use every day?", "expectedAny": ["water", "air", "food from soil", "wood products", "trees", "sun"]},
+    {"question": "How can your family help the environment?", "expectedAny": ["recycle", "use less water", "walk more", "plant trees", "save energy", "less trash"]},
+    {"question": "What would happen if we ran out of trees?", "expectedAny": ["no paper", "less oxygen", "animals lose homes", "no wood", "no clean air", "animals homeless"]},
+    {"question": "How does recycling help natural resources?", "expectedAny": ["uses old materials", "saves trees", "reduces waste", "makes new from old", "less trash", "reuse things"]}
   ]
 }

@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "9th_Linear_Equations_Slope_Intercept_Advanced",
   "title": "Linear Equations: Slope-Intercept Form",
   "grade": "9th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "slope-intercept form",
-      "definition": "Linear equation written as y = mx + b"
-    },
-    {
-      "term": "slope",
-      "definition": "Rate of change or steepness of a line (m)"
-    },
-    {
-      "term": "y-intercept",
-      "definition": "Point where line crosses the y-axis (b)"
-    },
-    {
-      "term": "parallel lines",
-      "definition": "Lines with the same slope that never intersect"
-    },
-    {
-      "term": "perpendicular lines",
-      "definition": "Lines whose slopes are negative reciprocals"
-    }
+    {"term": "slope-intercept form", "definition": "Linear equation written as y = mx + b"},
+    {"term": "slope", "definition": "Rate of change or steepness of a line (m)"},
+    {"term": "y-intercept", "definition": "Point where line crosses the y-axis (b)"},
+    {"term": "parallel lines", "definition": "Lines with the same slope that never intersect"},
+    {"term": "perpendicular lines", "definition": "Lines whose slopes are negative reciprocals"}
   ],
   "teachingNotes": "Emphasize graphing from slope-intercept form. Practice finding equations of parallel and perpendicular lines.",
-  "sample": {
-    "question": "What is the form y = mx + b called?",
-    "expectedAny": ["slope-intercept form", "slope intercept form", "linear form", "standard linear form"]
-  },
-  "truefalse": {
-    "question": "In y = mx + b, the variable m represents the slope.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What do parallel lines have in common?",
-    "expectedAny": ["same slope", "equal slopes", "identical slope values", "matching slopes"]
-  },
-  "fillintheblank": {
-    "question": "The point where a line crosses the y-axis is the ________-intercept.",
-    "expectedAny": ["y", "vertical", "y-axis", "ordinate"]
-  },
-  "shortanswer": {
-    "question": "How do you find the slope of a line passing through points (2,3) and (4,7)?",
-    "expectedAny": ["(7-3)/(4-2) = 2", "rise over run", "change in y over change in x", "4/2 = 2"]
-  },
-  "wordProblems": {
-    "question": "A line has slope 3 and passes through (1,5). What is its equation in slope-intercept form?",
-    "expectedAny": ["y = 3x + 2", "y = 3x + 2", "3x - y = -2", "y equals 3x plus 2"]
-  }
+  "sample": [
+    {"question": "What is the form y = mx + b called?", "expectedAny": ["slope-intercept form", "slope intercept form", "linear form", "y equals mx plus b"]},
+    {"question": "What is slope?", "expectedAny": ["rate of change", "steepness", "m in y = mx + b", "rise over run", "how steep the line is"]},
+    {"question": "What is the y-intercept?", "expectedAny": ["where line crosses y-axis", "b in y = mx + b", "point on y-axis", "where it hits the y axis", "starting point on y"]},
+    {"question": "What are parallel lines?", "expectedAny": ["lines with same slope", "never intersect", "equal slopes"]},
+    {"question": "What are perpendicular lines?", "expectedAny": ["slopes are negative reciprocals", "intersect at 90 degrees", "right angle"]},
+    {"question": "In y = 2x + 3, what is the slope?", "expectedAny": ["2", "two", "m = 2"]},
+    {"question": "In y = 2x + 3, what is the y-intercept?", "expectedAny": ["3", "three", "b = 3"]},
+    {"question": "What does m represent?", "expectedAny": ["slope", "rate of change", "steepness"]},
+    {"question": "What does b represent?", "expectedAny": ["y-intercept", "where crosses y-axis", "starting point"]},
+    {"question": "How do you find slope from two points?", "expectedAny": ["rise over run", "change in y over change in x", "(y2-y1)/(x2-x1)"]}
+  ],
+  "truefalse": [
+    {"question": "In y = mx + b, the variable m represents the slope. (True or False)", "correct": true},
+    {"question": "In y = mx + b, the variable b represents the slope. (True or False)", "correct": false},
+    {"question": "Parallel lines have the same slope. (True or False)", "correct": true},
+    {"question": "Perpendicular lines have the same slope. (True or False)", "correct": false},
+    {"question": "The y-intercept is where the line crosses the y-axis. (True or False)", "correct": true},
+    {"question": "Slope measures steepness. (True or False)", "correct": true},
+    {"question": "Perpendicular slopes are negative reciprocals. (True or False)", "correct": true},
+    {"question": "A slope of 0 is horizontal. (True or False)", "correct": true},
+    {"question": "A vertical line has slope 0. (True or False)", "correct": false},
+    {"question": "Slope-intercept form is y = mx + b. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What do parallel lines have in common?", "choices": [{"letter": "A", "text": "Same y-intercept"}, {"letter": "B", "text": "Same slope"}, {"letter": "C", "text": "Same x-intercept"}, {"letter": "D", "text": "Different slopes"}], "correct": "B"},
+    {"question": "In y = 5x - 2, what is the slope?", "choices": [{"letter": "A", "text": "-2"}, {"letter": "B", "text": "5"}, {"letter": "C", "text": "x"}, {"letter": "D", "text": "y"}], "correct": "B"},
+    {"question": "In y = 3x + 7, what is the y-intercept?", "choices": [{"letter": "A", "text": "3"}, {"letter": "B", "text": "7"}, {"letter": "C", "text": "x"}, {"letter": "D", "text": "y"}], "correct": "B"},
+    {"question": "What is the slope formula?", "choices": [{"letter": "A", "text": "x2 - x1"}, {"letter": "B", "text": "(y2 - y1) / (x2 - x1)"}, {"letter": "C", "text": "y = mx + b"}, {"letter": "D", "text": "ax + b"}], "correct": "B"},
+    {"question": "If a line has slope 2, what is the slope of a perpendicular line?", "choices": [{"letter": "A", "text": "2"}, {"letter": "B", "text": "-2"}, {"letter": "C", "text": "-1/2"}, {"letter": "D", "text": "1/2"}], "correct": "C"},
+    {"question": "If a line has slope 4, what is the slope of a parallel line?", "choices": [{"letter": "A", "text": "4"}, {"letter": "B", "text": "-4"}, {"letter": "C", "text": "1/4"}, {"letter": "D", "text": "-1/4"}], "correct": "A"},
+    {"question": "What is the slope of a horizontal line?", "choices": [{"letter": "A", "text": "1"}, {"letter": "B", "text": "-1"}, {"letter": "C", "text": "0"}, {"letter": "D", "text": "Undefined"}], "correct": "C"},
+    {"question": "What is the slope of a vertical line?", "choices": [{"letter": "A", "text": "0"}, {"letter": "B", "text": "1"}, {"letter": "C", "text": "-1"}, {"letter": "D", "text": "Undefined"}], "correct": "D"},
+    {"question": "Which form is y = mx + b?", "choices": [{"letter": "A", "text": "Standard"}, {"letter": "B", "text": "Slope-intercept"}, {"letter": "C", "text": "Point-slope"}, {"letter": "D", "text": "Vertex"}], "correct": "B"},
+    {"question": "What does b represent in y = mx + b?", "choices": [{"letter": "A", "text": "Slope"}, {"letter": "B", "text": "Y-intercept"}, {"letter": "C", "text": "X-intercept"}, {"letter": "D", "text": "Variable"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "The point where a line crosses the y-axis is the _____-intercept.", "expectedAny": ["y", "vertical"]},
+    {"question": "In y = mx + b, m is the _____.", "expectedAny": ["slope", "rate of change"]},
+    {"question": "In y = mx + b, b is the _____.", "expectedAny": ["y-intercept", "intercept"]},
+    {"question": "_____ lines have the same slope.", "expectedAny": ["parallel"]},
+    {"question": "_____ lines have slopes that are negative reciprocals.", "expectedAny": ["perpendicular"]},
+    {"question": "Slope is rise over _____.", "expectedAny": ["run"]},
+    {"question": "A _____ line has slope 0.", "expectedAny": ["horizontal", "flat"]},
+    {"question": "A _____ line has undefined slope.", "expectedAny": ["vertical", "straight up"]},
+    {"question": "The slope formula is (y2 - y1) / (_____  - _____).", "expectedAny": ["x2 x1", "x2 - x1", "x2, x1"]},
+    {"question": "The form y = mx + b is called _____ form.", "expectedAny": ["slope-intercept", "slope intercept"]}
+  ],
+  "shortanswer": [
+    {"question": "How do you find the slope of a line passing through points (2,3) and (4,7)?", "keyTerms": ["rise over run", "(7-3)/(4-2)", "2", "change"], "expectedAny": ["(7-3)/(4-2) = 2", "Rise over run equals 4/2 = 2", "Change in y over change in x: 4/2 = 2"]},
+    {"question": "What is the relationship between parallel lines?", "keyTerms": ["same slope", "equal", "never intersect"], "expectedAny": ["Same slope but never intersect", "Equal slopes", "Same slope, different y-intercepts"]},
+    {"question": "What is the relationship between perpendicular lines?", "keyTerms": ["negative reciprocals", "slopes", "multiply to -1"], "expectedAny": ["Slopes are negative reciprocals", "Slopes multiply to -1", "One slope is negative reciprocal of other"]},
+    {"question": "How do you graph using slope-intercept form?", "keyTerms": ["plot", "y-intercept", "use slope", "rise run"], "expectedAny": ["Plot y-intercept then use slope rise over run", "Start at b on y-axis, use m to find next points", "Plot b, then rise and run with slope"]},
+    {"question": "What does a positive slope mean?", "keyTerms": ["increases", "goes up", "rises", "right"], "expectedAny": ["Line goes up from left to right", "Line increases", "Line rises as x increases"]},
+    {"question": "What does a negative slope mean?", "keyTerms": ["decreases", "goes down", "falls", "right"], "expectedAny": ["Line goes down from left to right", "Line decreases", "Line falls as x increases"]},
+    {"question": "What is the slope of y = -3x + 5?", "keyTerms": ["-3", "negative 3", "coefficient of x"], "expectedAny": ["The slope is -3", "-3", "Negative 3"]},
+    {"question": "What is the y-intercept of y = 4x - 8?", "keyTerms": ["-8", "negative 8", "constant"], "expectedAny": ["The y-intercept is -8", "-8", "Negative 8"]},
+    {"question": "Write the equation of a line with slope 2 and y-intercept 5.", "keyTerms": ["y = 2x + 5", "slope-intercept", "substitute"], "expectedAny": ["y = 2x + 5", "The equation is y = 2x + 5", "y equals 2x plus 5"]},
+    {"question": "If line A has slope 3, what is the slope of a line perpendicular to A?", "keyTerms": ["-1/3", "negative reciprocal", "flip and negate"], "expectedAny": ["-1/3", "Negative one-third", "The negative reciprocal: -1/3"]}
+  ],
+  "wordProblems": [
+    {"question": "A line has slope 3 and passes through (1,5). What is its equation in slope-intercept form?", "expectedAny": ["y = 3x + 2", "y equals 3x plus 2"]},
+    {"question": "Find the slope of the line through (2,4) and (6,10).", "expectedAny": ["1.5", "3/2", "one and a half", "1 1/2"]},
+    {"question": "What is the slope of the line y = -2x + 7?", "expectedAny": ["-2", "negative 2", "negative two"]},
+    {"question": "What is the y-intercept of y = 5x - 3?", "expectedAny": ["-3", "negative 3", "negative three"]},
+    {"question": "Write the equation of a line with slope 4 and y-intercept -1.", "expectedAny": ["y = 4x - 1", "y equals 4x minus 1"]},
+    {"question": "A line has slope -2 and y-intercept 6. What is its equation?", "expectedAny": ["y = -2x + 6", "y equals negative 2x plus 6"]},
+    {"question": "If a line has slope 5, what is the slope of a parallel line?", "expectedAny": ["5", "five"]},
+    {"question": "If a line has slope 2, what is the slope of a perpendicular line?", "expectedAny": ["-1/2", "negative one-half", "-0.5"]},
+    {"question": "Find the slope between (0,0) and (3,6).", "expectedAny": ["2", "two"]},
+    {"question": "What is the slope of a line through (1,2) and (1,5)?", "expectedAny": ["undefined", "no slope", "vertical"]}
+  ]
 }

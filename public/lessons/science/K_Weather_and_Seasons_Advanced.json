@@ -18,17 +18,17 @@
       "definition": "How hot or cold something is"
     },
     {
-      "term": "precipitation",
-      "definition": "Water that falls from the sky like rain or snow"
+      "term": "rainfall",
+      "definition": "Rain that falls from the sky"
     }
   ],
   "teachingNotes": "Use weather chart daily. Discuss seasonal clothing and activities. Observe weather changes. Connect to calendar and months.",
   "sample": [
-    {"question": "What clothes would you wear on a snowy winter day?", "expectedAny": ["warm clothes", "coat", "boots", "winter clothing"]},
-    {"question": "What season has the hottest weather?", "expectedAny": ["summer"]},
-    {"question": "What falls from the sky when it rains?", "expectedAny": ["water", "raindrops"]},
-    {"question": "When do leaves change colors and fall?", "expectedAny": ["fall", "autumn"]},
-    {"question": "What season comes before summer?", "expectedAny": ["spring"]}
+    {"question": "What clothes would you wear on a snowy winter day?", "expectedAny": ["warm clothes", "coat", "boots", "winter clothing", "jacket", "snow pants", "mittens"]},
+    {"question": "What season has the hottest weather?", "expectedAny": ["summer", "summertime", "summer time"]},
+    {"question": "What falls from the sky when it rains?", "expectedAny": ["water", "raindrops", "rain", "drops"]},
+    {"question": "When do leaves change colors and fall?", "expectedAny": ["fall", "autumn", "in the fall"]},
+    {"question": "What season comes before summer?", "expectedAny": ["spring", "springtime"]}
   ],
   "truefalse": [
     {"question": "We can have snow in summer.", "answer": false, "expectedAny": ["snow typically in winter"]},
@@ -49,22 +49,22 @@
     {"question": "When do many animals hibernate?", "choices": ["spring", "summer", "fall", "winter"], "correct": 3, "expectedAny": ["animals hibernate in winter"]}
   ],
   "fillintheblank": [
-    {"question": "When it's very hot outside, the temperature is _____.", "expectedAny": ["high", "warm", "hot"]},
-    {"question": "The four seasons are spring, summer, fall, and _____.", "expectedAny": ["winter"]},
-    {"question": "When it _____, we use umbrellas.", "expectedAny": ["rains"]},
-    {"question": "_____ is the season when leaves fall from trees.", "expectedAny": ["Fall", "Autumn"]},
-    {"question": "Snow falls when the weather is very _____.", "expectedAny": ["cold"]},
-    {"question": "_____ is the warmest season of the year.", "expectedAny": ["Summer"]},
-    {"question": "We measure how hot or cold it is using _____.", "expectedAny": ["temperature"]}
+    {"question": "When it's very hot outside, the temperature is _____.", "expectedAny": ["high", "warm", "hot", "very high", "really hot"]},
+    {"question": "The four seasons are spring, summer, fall, and _____.", "expectedAny": ["winter", "wintertime"]},
+    {"question": "When it _____, we use umbrellas.", "expectedAny": ["rains", "is raining", "rain", "pours"]},
+    {"question": "_____ is the season when leaves fall from trees.", "expectedAny": ["Fall", "Autumn", "fall season", "autumn"]},
+    {"question": "Snow falls when the weather is very _____.", "expectedAny": ["cold", "very cold", "freezing"]},
+    {"question": "_____ is the warmest season of the year.", "expectedAny": ["Summer", "summer time", "summertime"]},
+    {"question": "We measure how hot or cold it is using _____.", "expectedAny": ["temperature", "a thermometer", "thermometer"]}
   ],
   "shortanswer": [
-    {"question": "What activities do you like to do in summer?", "expectedAny": ["swimming", "playing outside", "going to beach", "picnics"]},
-    {"question": "How do you know what the weather is like?", "expectedAny": ["look outside", "feel the air", "check thermometer"]},
-    {"question": "What changes do you see in fall?", "expectedAny": ["leaves change color", "leaves fall", "gets cooler"]},
-    {"question": "Why do we wear different clothes in different seasons?", "expectedAny": ["weather changes", "temperature changes", "stay comfortable"]},
-    {"question": "What happens to plants in winter?", "expectedAny": ["stop growing", "some die", "trees lose leaves", "go dormant"]},
-    {"question": "Describe what spring weather is like.", "expectedAny": ["warmer", "flowers bloom", "rain showers", "mild temperatures"]},
-    {"question": "How does weather affect what we do outside?", "expectedAny": ["choose activities", "dress appropriately", "plan indoor/outdoor time"]}
+    {"question": "What activities do you like to do in summer?", "expectedAny": ["swimming", "playing outside", "going to beach", "picnics", "run around", "water play"]},
+    {"question": "How do you know what the weather is like?", "expectedAny": ["look outside", "feel the air", "check thermometer", "look at sky"]},
+    {"question": "What changes do you see in fall?", "expectedAny": ["leaves change color", "leaves fall", "gets cooler", "trees lose leaves", "colder weather"]},
+    {"question": "Why do we wear different clothes in different seasons?", "expectedAny": ["weather changes", "temperature changes", "stay comfortable", "cold in winter", "hot in summer"]},
+    {"question": "What happens to plants in winter?", "expectedAny": ["stop growing", "some die", "trees lose leaves", "go dormant", "sleep"]},
+    {"question": "Describe what spring weather is like.", "expectedAny": ["warmer", "flowers bloom", "rain showers", "mild temperatures", "not too hot or cold"]},
+    {"question": "How does weather affect what we do outside?", "expectedAny": ["choose activities", "dress appropriately", "plan indoor/outdoor time", "can't play in rain", "swim when hot"]}
   ],
   "wordProblems": [
     {"question": "There are 4 seasons in a year. If we're in winter now, how many more seasons until winter comes again?", "expectedAny": ["3 seasons", "spring, summer, fall = 3"]},

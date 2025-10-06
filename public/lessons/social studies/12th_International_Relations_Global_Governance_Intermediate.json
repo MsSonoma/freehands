@@ -1,74 +1,463 @@
-{
-  "id": "12th_International_Relations_Global_Governance_Intermediate",
-  "title": "International Relations and Global Governance",
-  "grade": "12th",
-  "difficulty": "Intermediate",
-  "vocab": [
-    {
-      "term": "balance of power",
-      "definition": "Distribution of power among states preventing dominance by any one"
-    },
-    {
-      "term": "multilateralism",
-      "definition": "Cooperation among three or more states on common issues"
-    },
-    {
-      "term": "soft power",
-      "definition": "Ability to influence through attraction rather than coercion"
-    },
-    {
-      "term": "international law",
-      "definition": "Rules governing relations between sovereign states"
-    },
-    {
-      "term": "collective security",
-      "definition": "System where aggression against one is treated as aggression against all"
-    }
-  ],
-  "teachingNotes": "Analyze power dynamics and international institutions. Examine challenges to global governance.",
-  "sample": {
-    "question": "What prevents dominance by distributing power among states?",
-    "expectedAny": [
-      "balance of power",
-      "power equilibrium",
-      "strategic balance",
-      "power distribution"
-    ]
-  },
-  "truefalse": {
-    "question": "Soft power influences through attraction rather than coercion.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What describes cooperation among three or more states?",
-    "expectedAny": [
-      "multilateralism",
-      "multilateral cooperation",
-      "multinational approach",
-      "collective action"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Rules governing relations between states form ________ law.",
-    "expectedAny": [
-      "international",
-      "global",
-      "world",
-      "transnational"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does collective security system work?",
-    "expectedAny": [
-      "shared defense",
-      "mutual protection",
-      "aggression response",
-      "common security"
-    ]
-  }
+﻿{
+    "id":  "12th_International_Relations_Global_Governance_Intermediate",
+    "title":  "International Relations and Global Governance",
+    "grade":  "12th",
+    "difficulty":  "Intermediate",
+    "vocab":  [
+                  {
+                      "term":  "collective security",
+                      "definition":  "Nations defending each other against aggression"
+                  },
+                  {
+                      "term":  "human rights",
+                      "definition":  "Fundamental rights belonging to all people"
+                  },
+                  {
+                      "term":  "globalization",
+                      "definition":  "Increasing interconnection of world"
+                  },
+                  {
+                      "term":  "multinational corporation",
+                      "definition":  "Company operating in multiple countries"
+                  },
+                  {
+                      "term":  "NGO",
+                      "definition":  "Non-governmental organization"
+                  }
+              ],
+    "teachingNotes":  "Examine international relations and global systems. Analyze cooperation, conflict, and governance.",
+    "sample":  [
+                   {
+                       "question":  "What are country interactions?",
+                       "expectedAny":  [
+                                           "international relations",
+                                           "relations",
+                                           "foreign relations",
+                                           "global relations",
+                                           "world relations",
+                                           "IR"
+                                       ]
+                   },
+                   {
+                       "question":  "What negotiates between nations?",
+                       "expectedAny":  [
+                                           "diplomacy",
+                                           "diplomatic",
+                                           "negotiation",
+                                           "diplomatic relations",
+                                           "international diplomacy",
+                                           "foreign policy"
+                                       ]
+                   },
+                   {
+                       "question":  "What is formal agreement?",
+                       "expectedAny":  [
+                                           "treaty",
+                                           "treaties",
+                                           "agreement",
+                                           "accord",
+                                           "pact",
+                                           "convention"
+                                       ]
+                   },
+                   {
+                       "question":  "What is supreme authority?",
+                       "expectedAny":  [
+                                           "sovereignty",
+                                           "sovereign",
+                                           "independence",
+                                           "autonomy",
+                                           "self determination",
+                                           "supreme power"
+                                       ]
+                   },
+                   {
+                       "question":  "What promotes peace?",
+                       "expectedAny":  [
+                                           "United Nations",
+                                           "UN",
+                                           "U.N.",
+                                           "international organization",
+                                           "world organization",
+                                           "global organization"
+                                       ]
+                   },
+                   {
+                       "question":  "What is mutual defense?",
+                       "expectedAny":  [
+                                           "collective security",
+                                           "security",
+                                           "mutual defense",
+                                           "alliance",
+                                           "security alliance",
+                                           "defense pact"
+                                       ]
+                   },
+                   {
+                       "question":  "What are fundamental rights?",
+                       "expectedAny":  [
+                                           "human rights",
+                                           "rights"
+                                       ]
+                   },
+                   {
+                       "question":  "What connects world?",
+                       "expectedAny":  [
+                                           "globalization",
+                                           "global"
+                                       ]
+                   },
+                   {
+                       "question":  "What operates in multiple countries?",
+                       "expectedAny":  [
+                                           "multinational corporation",
+                                           "MNC"
+                                       ]
+                   },
+                   {
+                       "question":  "What is non-governmental?",
+                       "expectedAny":  [
+                                           "NGO",
+                                           "non-governmental organization"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "International relations involve countries.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Diplomacy uses only force.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Treaties are formal agreements.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Sovereignty means no authority.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "UN promotes peace.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Collective security is mutual defense.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Human rights are optional.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Globalization connects world.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Multinationals stay in one country.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "NGOs are non-governmental.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What involves countries?",
+                               "choices":  [
+                                               "Domestic policy",
+                                               "International relations",
+                                               "Local government",
+                                               "City politics"
+                                           ],
+                               "correct":  "International relations"
+                           },
+                           {
+                               "question":  "What uses negotiation?",
+                               "choices":  [
+                                               "War only",
+                                               "Force only",
+                                               "Diplomacy",
+                                               "Violence"
+                                           ],
+                               "correct":  "Diplomacy"
+                           },
+                           {
+                               "question":  "What is formal agreement?",
+                               "choices":  [
+                                               "Suggestion",
+                                               "Treaty",
+                                               "Hint",
+                                               "Rumor"
+                                           ],
+                               "correct":  "Treaty"
+                           },
+                           {
+                               "question":  "What is supreme authority?",
+                               "choices":  [
+                                               "Dependence",
+                                               "Sovereignty",
+                                               "Submission",
+                                               "Weakness"
+                                           ],
+                               "correct":  "Sovereignty"
+                           },
+                           {
+                               "question":  "What is international organization?",
+                               "choices":  [
+                                               "NATO only",
+                                               "United Nations",
+                                               "EU only",
+                                               "Single country"
+                                           ],
+                               "correct":  "United Nations"
+                           },
+                           {
+                               "question":  "What is mutual defense?",
+                               "choices":  [
+                                               "Isolation",
+                                               "Collective security",
+                                               "Neutrality",
+                                               "Surrender"
+                                           ],
+                               "correct":  "Collective security"
+                           },
+                           {
+                               "question":  "What are universal rights?",
+                               "choices":  [
+                                               "Privileges",
+                                               "Human rights",
+                                               "Luxuries",
+                                               "Options"
+                                           ],
+                               "correct":  "Human rights"
+                           },
+                           {
+                               "question":  "What increases connection?",
+                               "choices":  [
+                                               "Isolation",
+                                               "Globalization",
+                                               "Separation",
+                                               "Division"
+                                           ],
+                               "correct":  "Globalization"
+                           },
+                           {
+                               "question":  "What operates globally?",
+                               "choices":  [
+                                               "Local shop",
+                                               "Multinational corporation",
+                                               "City store",
+                                               "Town business"
+                                           ],
+                               "correct":  "Multinational corporation"
+                           },
+                           {
+                               "question":  "What is non-government group?",
+                               "choices":  [
+                                               "Congress",
+                                               "NGO",
+                                               "Parliament",
+                                               "Senate"
+                                           ],
+                               "correct":  "NGO"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "_____ relations involve countries.",
+                               "expectedAny":  [
+                                                   "international",
+                                                   "International"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ negotiates between nations.",
+                               "expectedAny":  [
+                                                   "diplomacy",
+                                                   "Diplomacy"
+                                               ]
+                           },
+                           {
+                               "question":  "A _____ is formal agreement.",
+                               "expectedAny":  [
+                                                   "treaty",
+                                                   "Treaty"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ is supreme authority.",
+                               "expectedAny":  [
+                                                   "sovereignty",
+                                                   "Sovereignty"
+                                               ]
+                           },
+                           {
+                               "question":  "United _____ promotes peace.",
+                               "expectedAny":  [
+                                                   "Nations",
+                                                   "nations"
+                                               ]
+                           },
+                           {
+                               "question":  "Collective _____ is mutual defense.",
+                               "expectedAny":  [
+                                                   "security",
+                                                   "Security"
+                                               ]
+                           },
+                           {
+                               "question":  "Human _____ are fundamental.",
+                               "expectedAny":  [
+                                                   "rights",
+                                                   "Rights"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ connects the world.",
+                               "expectedAny":  [
+                                                   "globalization",
+                                                   "Globalization"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ corporations operate globally.",
+                               "expectedAny":  [
+                                                   "multinational",
+                                                   "Multinational"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ are non-governmental organizations.",
+                               "expectedAny":  [
+                                                   "NGOs",
+                                                   "NGO"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "What is international relations?",
+                            "expectedAny":  [
+                                                "interactions between countries",
+                                                "diplomacy conflict cooperation",
+                                                "foreign policy and global systems"
+                                            ]
+                        },
+                        {
+                            "question":  "Define diplomacy.",
+                            "expectedAny":  [
+                                                "conducting negotiations between nations",
+                                                "peaceful resolution of conflicts",
+                                                "ambassadors and treaties"
+                                            ]
+                        },
+                        {
+                            "question":  "What is treaty?",
+                            "expectedAny":  [
+                                                "formal agreement between countries",
+                                                "binding international contract",
+                                                "requires ratification"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain sovereignty.",
+                            "expectedAny":  [
+                                                "supreme authority within territory",
+                                                "state independence",
+                                                "right to govern without interference"
+                                            ]
+                        },
+                        {
+                            "question":  "What is United Nations?",
+                            "expectedAny":  [
+                                                "international organization promoting peace",
+                                                "founded after World War II",
+                                                "193 member states"
+                                            ]
+                        },
+                        {
+                            "question":  "What is collective security?",
+                            "expectedAny":  [
+                                                "nations defending each other against aggression",
+                                                "attack on one is attack on all",
+                                                "NATO example"
+                                            ]
+                        },
+                        {
+                            "question":  "Define human rights.",
+                            "expectedAny":  [
+                                                "fundamental rights belonging to all people",
+                                                "universal declaration 1948",
+                                                "life liberty dignity"
+                                            ]
+                        },
+                        {
+                            "question":  "What is globalization?",
+                            "expectedAny":  [
+                                                "increasing interconnection of world",
+                                                "economic cultural political integration",
+                                                "trade technology migration"
+                                            ]
+                        },
+                        {
+                            "question":  "What is multinational corporation?",
+                            "expectedAny":  [
+                                                "company operating in multiple countries",
+                                                "global business presence",
+                                                "Coca-Cola Apple examples"
+                                            ]
+                        },
+                        {
+                            "question":  "What is NGO?",
+                            "expectedAny":  [
+                                                "non-governmental organization",
+                                                "private voluntary groups",
+                                                "Red Cross Amnesty International"
+                                            ]
+                        }
+                    ]
 }

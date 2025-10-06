@@ -23,61 +23,81 @@
     {
       "term": "quotient",
       "definition": "The answer when you divide one number by another"
+    },
+    {
+      "term": "place value",
+      "definition": "The value of a digit based on its position (ones, tens, hundreds, etc.)"
+    },
+    {
+      "term": "rounding",
+      "definition": "Changing a number to a nearby value to make it simpler"
+    },
+    {
+      "term": "partial quotients",
+      "definition": "A division method that subtracts big chunks (multiples of the divisor) and adds the quotients"
+    },
+    {
+      "term": "area model",
+      "definition": "A way to multiply using a rectangle split by place values"
+    },
+    {
+      "term": "distributive property",
+      "definition": "Breaking a factor into parts to multiply each part, then add"
     }
   ],
   "teachingNotes": "Teach standard algorithms for addition, subtraction, multiplication, and division with multi-digit numbers. Emphasize place value understanding and the importance of lining up digits correctly.",
   "sample": [
-    {"question": "What is 1,247 + 863?", "expectedAny": ["2,110", "2110"]},
-    {"question": "Compute 5,003 − 789.", "expectedAny": ["4,214", "4214"]},
-    {"question": "Estimate 3,987 + 2,014 by rounding to the nearest thousand.", "expectedAny": ["6,000"]},
-    {"question": "What is 144 ÷ 12?", "expectedAny": ["12"]},
-    {"question": "Find 37 × 6.", "expectedAny": ["222"]},
-    {"question": "Compute 800 ÷ 4.", "expectedAny": ["200"]},
-    {"question": "What is the product of 25 × 16?", "expectedAny": ["400"]}
+    {"question": "What is 1,247 + 863?", "expectedAny": ["2,110", "2110", "two thousand one hundred ten"]},
+    {"question": "Compute 5,003 − 789.", "expectedAny": ["4,214", "4214", "four thousand two hundred fourteen"]},
+    {"question": "Estimate 3,987 + 2,014 by rounding to the nearest thousand.", "expectedAny": ["6,000", "6000", "about 6,000"]},
+    {"question": "What is 144 ÷ 12?", "expectedAny": ["12", "twelve"]},
+    {"question": "Find 37 × 6.", "expectedAny": ["222", "two hundred twenty-two"]},
+    {"question": "Compute 800 ÷ 4.", "expectedAny": ["200", "two hundred"]},
+    {"question": "What is the product of 25 × 16?", "expectedAny": ["400", "four hundred"]}
   ],
   "truefalse": [
-    {"question": "When multiplying 23 × 45, you can break it into (20 × 45) + (3 × 45).", "answer": true},
-    {"question": "You never regroup when subtracting multi-digit numbers.", "answer": false},
-    {"question": "Rounding 3,487 to the nearest hundred gives 3,500.", "answer": true},
-    {"question": "Division is the inverse of multiplication.", "answer": true},
-    {"question": "The standard algorithm requires lining up digits by place value.", "answer": true},
-    {"question": "Partial quotients is a method for division.", "answer": true},
-    {"question": "In 402 + 39, you add hundreds to ones directly.", "answer": false}
+    {"question": "When multiplying 23 × 45, you can break it into (20 × 45) + (3 × 45).", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "You never regroup when subtracting multi-digit numbers.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "Rounding 3,487 to the nearest hundred gives 3,500.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Division is the inverse of multiplication.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "The standard algorithm requires lining up digits by place value.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Partial quotients is a method for division.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "In 402 + 39, you add hundreds to ones directly.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]}
   ],
   "multiplechoice": [
-    {"question": "What is 144 ÷ 12?", "choices": ["10", "11", "12", "13"], "correct": 2},
-    {"question": "What is 3,506 + 297?", "choices": ["3,703", "3,803", "3,793", "3,607"], "correct": 0},
-    {"question": "Estimate 492 × 21.", "choices": ["1,000", "10,000", "500 × 20 ≈ 10,000", "50,000"], "correct": 2},
-    {"question": "Which shows correct regrouping for 502 − 268?", "choices": ["Borrow from tens", "Borrow from hundreds", "No regrouping", "Add instead"], "correct": 1},
-    {"question": "What is 96 ÷ 8?", "choices": ["8", "10", "12", "16"], "correct": 2},
-    {"question": "Which is the best estimate for 2,987 + 1,025?", "choices": ["3,000", "4,000", "5,000", "6,000"], "correct": 1},
-    {"question": "Which property justifies (20 + 3) × 15 = 20×15 + 3×15?", "choices": ["Commutative", "Associative", "Distributive", "Identity"], "correct": 2}
+    {"question": "What is 144 ÷ 12?", "choices": ["10", "11", "12", "13"], "correct": 2, "expectedAny": ["12", "c", "3", "third"]},
+    {"question": "What is 3,506 + 297?", "choices": ["3,703", "3,803", "3,793", "3,607"], "correct": 0, "expectedAny": ["3,703", "a", "1", "first"]},
+    {"question": "Estimate 492 × 21.", "choices": ["1,000", "10,000", "500 × 20 ≈ 10,000", "50,000"], "correct": 2, "expectedAny": ["500 × 20 ≈ 10,000", "c", "3", "third"]},
+    {"question": "Which shows correct regrouping for 502 − 268?", "choices": ["Borrow from tens", "Borrow from hundreds", "No regrouping", "Add instead"], "correct": 1, "expectedAny": ["borrow from hundreds", "b", "2", "second"]},
+    {"question": "What is 96 ÷ 8?", "choices": ["8", "10", "12", "16"], "correct": 2, "expectedAny": ["12", "c", "3", "third"]},
+    {"question": "Which is the best estimate for 2,987 + 1,025?", "choices": ["3,000", "4,000", "5,000", "6,000"], "correct": 1, "expectedAny": ["4,000", "b", "2", "second"]},
+    {"question": "Which property justifies (20 + 3) × 15 = 20×15 + 3×15?", "choices": ["Commutative", "Associative", "Distributive", "Identity"], "correct": 2, "expectedAny": ["distributive", "c", "3", "third"]}
   ],
   "fillintheblank": [
-    {"question": "When you multiply 34 × 26, the ________ is 884.", "expectedAny": ["product"]},
-    {"question": "In 4,207 + 395, the digit 9 is in the ________ place.", "expectedAny": ["tens"]},
-    {"question": "To divide 728 by 7, start with the ________ place.", "expectedAny": ["hundreds"]},
-    {"question": "When subtracting 500 − 278, you must ________ from the hundreds.", "expectedAny": ["regroup", "borrow"]},
-    {"question": "The result of a division problem is called the ________.", "expectedAny": ["quotient"]},
-    {"question": "An estimate close to 3,987 + 2,014 is ________.", "expectedAny": ["6,000"]},
-    {"question": "In multiplication, the answer is called the ________.", "expectedAny": ["product"]}
+    {"question": "When you multiply 34 × 26, the ________ is 884.", "expectedAny": ["product", "result"]},
+    {"question": "In 4,207 + 395, the digit 9 is in the ________ place.", "expectedAny": ["tens", "tens place"]},
+    {"question": "To divide 728 by 7, start with the ________ place.", "expectedAny": ["hundreds", "hundreds place"]},
+    {"question": "When subtracting 500 − 278, you must ________ from the hundreds.", "expectedAny": ["regroup", "borrow", "trade"]},
+    {"question": "The result of a division problem is called the ________.", "expectedAny": ["quotient", "the quotient"]},
+    {"question": "An estimate close to 3,987 + 2,014 is ________.", "expectedAny": ["6,000", "about 6,000", "6000"]},
+    {"question": "In multiplication, the answer is called the ________.", "expectedAny": ["product", "the product"]}
   ],
   "shortanswer": [
-    {"question": "Explain how to estimate 487 + 321.", "expectedAny": ["round to 500 + 300 ≈ 800"]},
-    {"question": "Describe the steps of the standard addition algorithm.", "expectedAny": ["line up digits", "add ones, tens, hundreds", "regroup as needed"]},
-    {"question": "How does the distributive property help multiply 27 × 14?", "expectedAny": ["(20+7)(10+4)"]},
-    {"question": "Explain partial quotients for 196 ÷ 7.", "expectedAny": ["subtract multiples of 7", "28"]},
-    {"question": "Why check with estimation after computing?", "expectedAny": ["reasonableness"]},
-    {"question": "Compare area model vs standard algorithm.", "expectedAny": ["visual vs efficient"]},
-    {"question": "When would you regroup twice in subtraction?", "expectedAny": ["zeros in minuend"]}
+    {"question": "Explain how to estimate 487 + 321.", "expectedAny": ["round to 500 + 300 ≈ 800", "round to nearest hundred then add", "about 800"]},
+    {"question": "Describe the steps of the standard addition algorithm.", "expectedAny": ["line up digits", "add ones then tens then hundreds", "regroup or carry as needed"]},
+    {"question": "How does the distributive property help multiply 27 × 14?", "expectedAny": ["(20+7)(10+4)", "20×14 + 7×14", "split by place value then add partial products"]},
+    {"question": "Explain partial quotients for 196 ÷ 7.", "expectedAny": ["subtract multiples of 7 until zero", "7×20=140 then 7×8=56 so 28", "build quotient in parts and add them"]},
+    {"question": "Why check with estimation after computing?", "expectedAny": ["see if the answer is reasonable", "quick error check", "approximate to spot mistakes"]},
+    {"question": "Compare area model vs standard algorithm.", "expectedAny": ["area model is visual", "standard algorithm is efficient/compact", "both use place value differently"]},
+    {"question": "When would you regroup twice in subtraction?", "expectedAny": ["when there are zeros in the minuend", "like 500 − 278 needs two borrows", "when you must borrow across more than one place"]}
   ],
   "wordProblems": [
-    {"question": "A school has 24 classrooms and each has 28 students. How many students are in the school?", "expectedAny": ["672"]},
-    {"question": "A store sold 347 apples on Monday and 289 on Tuesday. How many in total?", "expectedAny": ["636"]},
-    {"question": "There are 18 boxes with 24 markers each. How many markers?", "expectedAny": ["432"]},
-    {"question": "A ribbon is 7 meters long. If you cut it into 4 equal pieces, how long is each piece?", "expectedAny": ["1.75 m", "1 3/4 m"]},
-    {"question": "The library has 2,405 books and buys 375 more. How many books now?", "expectedAny": ["2,780"]},
-    {"question": "A factory makes 56 bottles per minute. How many in 15 minutes?", "expectedAny": ["840"]},
-    {"question": "A team scored 1,276 points this season and 1,189 last season. How many more this season?", "expectedAny": ["87"]}
+    {"question": "A school has 24 classrooms and each has 28 students. How many students are in the school?", "expectedAny": ["672", "six hundred seventy-two"]},
+    {"question": "A store sold 347 apples on Monday and 289 on Tuesday. How many in total?", "expectedAny": ["636", "six hundred thirty-six"]},
+    {"question": "There are 18 boxes with 24 markers each. How many markers?", "expectedAny": ["432", "four hundred thirty-two"]},
+    {"question": "A ribbon is 7 meters long. If you cut it into 4 equal pieces, how long is each piece?", "expectedAny": ["1.75 m", "1 3/4 m", "1.75 meters", "1.75m"]},
+    {"question": "The library has 2,405 books and buys 375 more. How many books now?", "expectedAny": ["2,780", "2780", "two thousand seven hundred eighty"]},
+    {"question": "A factory makes 56 bottles per minute. How many in 15 minutes?", "expectedAny": ["840", "eight hundred forty"]},
+    {"question": "A team scored 1,276 points this season and 1,189 last season. How many more this season?", "expectedAny": ["87", "eighty-seven"]}
   ]
 }

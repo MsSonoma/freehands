@@ -46,10 +46,10 @@
     {"question": "Circle, square, triangle - these are all _____.", "expectedAny": ["shapes"]}
   ],
   "shortanswer": [
-    {"question": "Name two shapes you see in the classroom.", "expectedAny": ["various shape names", "clock is circle", "window is rectangle"]},
+    {"question": "Name two shapes you see in the classroom.", "expectedAny": ["circle and rectangle", "square and triangle", "circle and square"]},
     {"question": "How can you make a pattern with toys?", "expectedAny": ["put them in repeating order", "use different colors", "arrange by size"]},
     {"question": "What's the difference between a circle and a square?", "expectedAny": ["circle is round, square has corners", "circle has no sides, square has 4"]},
-    {"question": "Describe a pattern you can make with blocks.", "expectedAny": ["red, blue, red, blue", "big, small, big, small"]},
+  {"question": "Describe a pattern you can make with blocks.", "expectedAny": ["red, blue, red, blue", "big, small, big, small", "circle, square, circle, square"]},
     {"question": "Where do you see triangles in real life?", "expectedAny": ["pizza slice", "roof of house", "mountain"]},
     {"question": "How do you know if something is a pattern?", "expectedAny": ["it repeats", "same order over and over"]},
     {"question": "What shapes can you find at home?", "expectedAny": ["plates are circles", "windows are rectangles", "doors are rectangles"]}

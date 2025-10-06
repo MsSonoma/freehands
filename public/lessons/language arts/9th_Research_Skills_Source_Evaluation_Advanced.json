@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "9th_Research_Skills_Source_Evaluation_Advanced",
   "title": "Research Skills: Source Evaluation and Citation",
   "grade": "9th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "primary source",
-      "definition": "Original documents or firsthand accounts from the time period studied"
-    },
-    {
-      "term": "secondary source",
-      "definition": "Analysis or interpretation of primary sources by later scholars"
-    },
-    {
-      "term": "citation",
-      "definition": "Formal reference giving credit to sources used in research"
-    },
-    {
-      "term": "plagiarism",
-      "definition": "Using someone else's work or ideas without proper attribution"
-    },
-    {
-      "term": "bibliography",
-      "definition": "List of sources consulted or referenced in research"
-    }
+    {"term": "primary source", "definition": "Original documents or firsthand accounts from the time period studied"},
+    {"term": "secondary source", "definition": "Analysis or interpretation of primary sources by later scholars"},
+    {"term": "citation", "definition": "Formal reference giving credit to sources used in research"},
+    {"term": "plagiarism", "definition": "Using someone else's work or ideas without proper attribution"},
+    {"term": "bibliography", "definition": "List of sources consulted or referenced in research"}
   ],
   "teachingNotes": "Teach students to evaluate source credibility and reliability. Practice proper citation formats and academic integrity principles.",
-  "sample": {
-    "question": "What are original documents from the time period studied?",
-    "expectedAny": [
-      "primary sources",
-      "firsthand accounts",
-      "original documents",
-      "contemporary sources"
-    ]
-  },
-  "truefalse": {
-    "question": "Secondary sources analyze or interpret primary sources.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is using someone's work without proper attribution?",
-    "expectedAny": [
-      "plagiarism",
-      "academic dishonesty",
-      "copying",
-      "stealing ideas"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A formal reference giving credit to sources is a ________.",
-    "expectedAny": [
-      "citation",
-      "reference",
-      "credit",
-      "acknowledgment"
-    ]
-  },
-  "shortanswer": {
-    "question": "How do you evaluate the credibility of a source?",
-    "expectedAny": [
-      "check author credentials",
-      "verify publication date",
-      "examine bias and accuracy",
-      "cross-reference with other sources"
-    ]
-  }
+  "sample": [
+    {"question": "What is a primary source?", "expectedAny": ["original documents from time period", "firsthand accounts", "contemporary sources"]},
+    {"question": "What is a secondary source?", "expectedAny": ["analysis of primary sources", "interpretation by later scholars", "scholarly analysis", "scholarly source", "academic source"]},
+    {"question": "What is a citation?", "expectedAny": ["formal reference giving credit", "source reference", "acknowledgment of sources", "giving credit"]},
+    {"question": "What is plagiarism?", "expectedAny": ["using work without attribution", "academic dishonesty", "copying without credit"]},
+    {"question": "What is a bibliography?", "expectedAny": ["list of sources consulted", "list of references", "source list"]},
+    {"question": "Give an example of a primary source.", "expectedAny": ["diary", "letter", "photograph", "original document", "eyewitness account"]},
+    {"question": "Give an example of a secondary source.", "expectedAny": ["textbook", "scholarly article", "biography", "analysis essay"]},
+    {"question": "Why is citation important?", "expectedAny": ["gives credit", "avoids plagiarism", "shows credibility", "allows verification"]},
+    {"question": "How do you evaluate a source?", "expectedAny": ["check author credentials", "verify date", "examine bias", "assess credibility"]},
+    {"question": "Why avoid plagiarism?", "expectedAny": ["it is dishonest", "violates ethics", "it is stealing", "academic integrity"]}
+  ],
+  "truefalse": [
+    {"question": "Secondary sources analyze or interpret primary sources. (True or False)", "correct": true},
+    {"question": "Primary sources are written by later scholars. (True or False)", "correct": false},
+    {"question": "Plagiarism is using work without proper attribution. (True or False)", "correct": true},
+    {"question": "Citations are unnecessary in research. (True or False)", "correct": false},
+    {"question": "A bibliography lists sources consulted. (True or False)", "correct": true},
+    {"question": "Primary sources are firsthand accounts. (True or False)", "correct": true},
+    {"question": "All sources are equally credible. (True or False)", "correct": false},
+    {"question": "Citations give credit to original authors. (True or False)", "correct": true},
+    {"question": "Plagiarism is acceptable if unintentional. (True or False)", "correct": false},
+    {"question": "Secondary sources provide analysis. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is using someone's work without proper attribution?", "choices": [{"letter": "A", "text": "Citation"}, {"letter": "B", "text": "Research"}, {"letter": "C", "text": "Plagiarism"}, {"letter": "D", "text": "Bibliography"}], "correct": "C"},
+    {"question": "What are original documents from the time period?", "choices": [{"letter": "A", "text": "Secondary sources"}, {"letter": "B", "text": "Textbooks"}, {"letter": "C", "text": "Primary sources"}, {"letter": "D", "text": "Encyclopedias"}], "correct": "C"},
+    {"question": "What analyzes primary sources?", "choices": [{"letter": "A", "text": "Primary sources"}, {"letter": "B", "text": "Secondary sources"}, {"letter": "C", "text": "Plagiarism"}, {"letter": "D", "text": "Bibliography"}], "correct": "B"},
+    {"question": "What is a formal reference to sources?", "choices": [{"letter": "A", "text": "Plagiarism"}, {"letter": "B", "text": "Citation"}, {"letter": "C", "text": "Paraphrase"}, {"letter": "D", "text": "Summary"}], "correct": "B"},
+    {"question": "What lists research sources?", "choices": [{"letter": "A", "text": "Introduction"}, {"letter": "B", "text": "Conclusion"}, {"letter": "C", "text": "Bibliography"}, {"letter": "D", "text": "Abstract"}], "correct": "C"},
+    {"question": "Which is a primary source?", "choices": [{"letter": "A", "text": "Textbook"}, {"letter": "B", "text": "Biography"}, {"letter": "C", "text": "Original letter"}, {"letter": "D", "text": "Encyclopedia"}], "correct": "C"},
+    {"question": "Why use citations?", "choices": [{"letter": "A", "text": "To confuse readers"}, {"letter": "B", "text": "To give credit and allow verification"}, {"letter": "C", "text": "To make writing longer"}, {"letter": "D", "text": "They are optional"}], "correct": "B"},
+    {"question": "What should you evaluate in sources?", "choices": [{"letter": "A", "text": "Color scheme"}, {"letter": "B", "text": "Credibility and bias"}, {"letter": "C", "text": "Font size"}, {"letter": "D", "text": "Page count"}], "correct": "B"},
+    {"question": "Which is a secondary source?", "choices": [{"letter": "A", "text": "Diary entry"}, {"letter": "B", "text": "Photograph"}, {"letter": "C", "text": "Scholarly analysis"}, {"letter": "D", "text": "Speech transcript"}], "correct": "C"},
+    {"question": "Academic integrity requires:", "choices": [{"letter": "A", "text": "Plagiarism"}, {"letter": "B", "text": "Copying freely"}, {"letter": "C", "text": "Proper citation"}, {"letter": "D", "text": "Ignoring sources"}], "correct": "C"}
+  ],
+  "fillintheblank": [
+    {"question": "A formal reference giving credit to sources is a _____.", "expectedAny": ["citation", "reference"]},
+    {"question": "Original documents from the time period are _____ sources.", "expectedAny": ["primary"]},
+    {"question": "Analysis of primary sources are _____ sources.", "expectedAny": ["secondary"]},
+    {"question": "Using work without attribution is _____.", "expectedAny": ["plagiarism"]},
+    {"question": "A list of sources consulted is a _____.", "expectedAny": ["bibliography", "works cited", "reference list"]},
+    {"question": "Primary sources are _____ accounts from the time period.", "expectedAny": ["firsthand", "original"]},
+    {"question": "Secondary sources provide _____ and interpretation.", "expectedAny": ["analysis"]},
+    {"question": "Citations give _____ to original authors.", "expectedAny": ["credit", "acknowledgment"]},
+    {"question": "Evaluating sources requires checking _____.", "expectedAny": ["credibility", "reliability", "accuracy"]},
+    {"question": "Academic _____ requires proper citation.", "expectedAny": ["integrity", "honesty"]}
+  ],
+  "shortanswer": [
+    {"question": "How do you evaluate the credibility of a source?", "keyTerms": ["author", "credentials", "date", "bias"], "expectedAny": ["Check author credentials, publication date, and examine for bias", "Verify author expertise, currency, and accuracy of information", "Assess author qualifications, timeliness, and objectivity"]},
+    {"question": "What is the difference between primary and secondary sources?", "keyTerms": ["primary", "original", "secondary", "analysis"], "expectedAny": ["Primary are original documents; secondary analyze primary sources", "Primary sources are firsthand; secondary are interpretations", "Primary are contemporary; secondary are later scholarly analysis"]},
+    {"question": "Why is proper citation important in research?", "keyTerms": ["credit", "plagiarism", "verification", "integrity"], "expectedAny": ["It gives credit, avoids plagiarism, and allows verification", "Proper citation shows academic integrity and acknowledges sources", "Citations credit authors and let readers find original sources"]},
+    {"question": "What makes plagiarism wrong?", "keyTerms": ["dishonest", "stealing", "credit", "ethics"], "expectedAny": ["It is dishonest, steals credit, and violates academic ethics", "Plagiarism takes credit for others' work without permission", "It is theft of intellectual property and breaks trust"]},
+    {"question": "How does a bibliography support research?", "keyTerms": ["lists", "sources", "credibility", "verification"], "expectedAny": ["It lists sources showing research depth and allowing verification", "Bibliography demonstrates credibility and lets readers check sources", "It provides complete source information for readers to examine"]},
+    {"question": "When should you use primary versus secondary sources?", "keyTerms": ["primary", "firsthand", "secondary", "analysis"], "expectedAny": ["Use primary for firsthand evidence; secondary for analysis and context", "Primary sources for direct evidence; secondary for interpretation", "Primary when you need original data; secondary for scholarly perspective"]},
+    {"question": "What information belongs in a citation?", "keyTerms": ["author", "title", "date", "publication"], "expectedAny": ["Author, title, publication date, and source information", "Creator name, work title, when published, and where found", "Who wrote it, what it is, when published, and publication details"]},
+    {"question": "How can bias affect source reliability?", "keyTerms": ["bias", "objectivity", "reliability", "credibility"], "expectedAny": ["Bias reduces objectivity and can undermine reliability", "Heavy bias makes sources less credible and trustworthy", "Biased sources may present skewed information reducing reliability"]},
+    {"question": "Why cross-reference multiple sources?", "keyTerms": ["verify", "accuracy", "multiple", "reliable"], "expectedAny": ["To verify accuracy and ensure information is reliable", "Multiple sources confirm facts and reveal different perspectives", "Cross-referencing checks accuracy and builds complete understanding"]},
+    {"question": "What are consequences of plagiarism?", "keyTerms": ["academic", "consequences", "dishonesty", "punishment"], "expectedAny": ["Academic consequences including failing grades and disciplinary action", "Loss of credibility, academic penalties, and damaged reputation", "Serious punishments ranging from failing to expulsion"]}
+  ]
 }

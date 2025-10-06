@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Introduce variables as placeholders for unknown numbers. Start with simple one-step equations. Practice substituting values and checking solutions.",
-  "sample": {
-    "question": "If x = 5, what is the value of x + 3?",
-    "expectedAny": ["8", "eight", "5 + 3 = 8", "x + 3 = 8"]
-  },
-  "truefalse": {
-    "question": "In the equation x + 4 = 9, the value of x is 5.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What does the variable represent in the expression 2n + 1?",
-    "expectedAny": ["unknown number", "any number", "a value", "number we don't know"]
-  },
-  "fillintheblank": {
-    "question": "In the equation y - 3 = 7, the value of y is ________.",
-    "expectedAny": ["10", "ten", "y = 10", "10 is the answer"]
-  },
-  "shortanswer": {
-    "question": "Solve for n: n + 6 = 11",
-    "expectedAny": ["n = 5", "5", "five", "n equals 5"]
-  },
-  "wordProblems": {
-    "question": "Maria has some stickers. After giving away 8 stickers, she has 15 left. Write an equation to find how many stickers she started with.",
-    "expectedAny": ["s - 8 = 15", "x - 8 = 15", "n - 8 = 15", "stickers - 8 = 15"]
-  }
+  "sample": [
+    { "question": "If x = 5, what is x + 3?", "expectedAny": ["8"] },
+    { "question": "If y = 12, what is y - 7?", "expectedAny": ["5"] },
+    { "question": "If n = 4, evaluate 2n + 1.", "expectedAny": ["9"] },
+    { "question": "If a = 3, evaluate a².", "expectedAny": ["9"] },
+    { "question": "If b = 10, what is b/2?", "expectedAny": ["5"] },
+    { "question": "If t = 6, compute t - 6.", "expectedAny": ["0"] },
+    { "question": "If p = 8, compute 3p.", "expectedAny": ["24"] },
+    { "question": "If m = 9, compute m - 3.", "expectedAny": ["6"] },
+    { "question": "If k = 2, compute 5 + k.", "expectedAny": ["7"] },
+    { "question": "If r = 7, compute r + r.", "expectedAny": ["14"] }
+  ],
+  "truefalse": [
+    { "question": "In the equation x + 4 = 9, x is 5.", "expectedAny": ["true"] },
+    { "question": "A variable must be x.", "expectedAny": ["false"] },
+    { "question": "An expression can have no equals sign.", "expectedAny": ["true"] },
+    { "question": "To solve y - 3 = 7, add 3 to both sides.", "expectedAny": ["true"] },
+    { "question": "Substituting means replacing a number with a variable.", "expectedAny": ["false"] },
+    { "question": "Equation 2n = 10 has solution n = 5.", "expectedAny": ["true"] },
+    { "question": "Expression 3 + n equals equation.", "expectedAny": ["false"] },
+    { "question": "If 4 + p = 9, then p = 4.", "expectedAny": ["false"] },
+    { "question": "If k/2 = 6, then k = 12.", "expectedAny": ["true"] },
+    { "question": "If 3t = 18, then t = 5.", "expectedAny": ["false"] }
+  ],
+  "multiplechoice": [
+    { "question": "What does the variable represent in 2n + 1?", "choices": ["an unknown number", "addition sign", "a unit", "a fixed value"], "correct": 0, "expectedAny": ["unknown number"] },
+    { "question": "Solve x + 7 = 12.", "choices": ["x = 3", "x = 5", "x = 7", "x = 12"], "correct": 1, "expectedAny": ["5"] },
+  { "question": "Solve 3n = 24.", "choices": ["n = 6", "n = 8", "n = 12", "n = 72"], "correct": 1, "expectedAny": ["8", "n = 8"] },
+    { "question": "If y/4 = 5, then y = ?", "choices": ["1", "9", "20", "25"], "correct": 2, "expectedAny": ["20"] },
+    { "question": "Which is an equation?", "choices": ["3 + n", "n - 4", "2p = 10", "k/2"], "correct": 2, "expectedAny": ["2p = 10"] },
+    { "question": "Which keeps an equation balanced?", "choices": ["Add to one side only", "Multiply both sides by same number", "Change variable name", "Erase equals"], "correct": 1, "expectedAny": ["multiply both sides"] },
+    { "question": "If t + 4 = 10, t equals?", "choices": ["6", "5", "4", "10"], "correct": 0, "expectedAny": ["6"] },
+    { "question": "Which value makes 2k + 3 = 11 true?", "choices": ["k=3", "k=4", "k=5", "k=6"], "correct": 0, "expectedAny": ["3"] },
+    { "question": "Evaluate when m=5: m + m.", "choices": ["5", "10", "15", "25"], "correct": 1, "expectedAny": ["10"] },
+    { "question": "Solve r - 9 = 1.", "choices": ["r=8", "r=9", "r=10", "r=11"], "correct": 2, "expectedAny": ["10"] }
+  ],
+  "fillintheblank": [
+    { "question": "In y - 3 = 7, y is ________.", "expectedAny": ["10", "ten", "y=10", "y equals 10"] },
+    { "question": "Solve 2n = 14: n = ________.", "expectedAny": ["7", "seven", "n=7", "n equals 7"] },
+    { "question": "If k/5 = 3, then k = ________.", "expectedAny": ["15", "fifteen", "k=15", "k equals 15"] },
+    { "question": "If p + 2 = 2, then p = ________.", "expectedAny": ["0", "zero", "p=0", "p equals 0"] },
+    { "question": "If 4 + x = 9, x = ________.", "expectedAny": ["5", "five", "x=5", "x equals 5"] },
+    { "question": "If 3t = 27, t = ________.", "expectedAny": ["9", "nine", "t=9", "t equals 9"] },
+    { "question": "If y/2 = 8, y = ________.", "expectedAny": ["16", "sixteen", "y=16", "y equals 16"] },
+    { "question": "If a + a = 14 and a is same number, a = ________.", "expectedAny": ["7", "seven", "a=7", "a equals 7"] },
+    { "question": "If m - 6 = 0, m = ________.", "expectedAny": ["6", "six", "m=6", "m equals 6"] },
+    { "question": "If r + 10 = 17, r = ________.", "expectedAny": ["7", "seven", "r=7", "r equals 7"] }
+  ],
+  "shortanswer": [
+    { "question": "Solve for n: n + 6 = 11", "expectedAny": ["5", "n=5", "five"] },
+    { "question": "Explain what a variable is.", "expectedAny": ["unknown number", "placeholder", "letter that stands for a number", "symbol for an unknown value"] },
+    { "question": "How do you keep an equation balanced?", "expectedAny": ["do same to both sides", "do the same operation to both sides", "use inverse operations on both sides", "keep both sides equal"] },
+    { "question": "If x=2, evaluate 3x + 1.", "expectedAny": ["7", "three times two plus one is seven", "3*2 + 1 = 7", "seven"] },
+    { "question": "If k=9, evaluate k - 4.", "expectedAny": ["5", "nine minus four is five", "9 - 4 = 5", "five"] },
+    { "question": "Solve y/3 = 6.", "expectedAny": ["18", "y = 18", "multiply both sides by 3"] },
+    { "question": "Solve 5 + p = 12.", "expectedAny": ["7", "p = 7", "seven"] },
+    { "question": "If m+m=12, what is m?", "expectedAny": ["6", "m = 6", "six"] },
+    { "question": "If 2r=14, what is r?", "expectedAny": ["7", "r = 7", "seven"] },
+    { "question": "If 4a=20, what is a?", "expectedAny": ["5", "a = 5", "five"] }
+  ],
+  "wordProblems": [
+    { "question": "Maria has some stickers. After giving away 8, she has 15 left. Write an equation.", "expectedAny": ["s - 8 = 15"] },
+    { "question": "A number plus 7 equals 20. Write and solve.", "expectedAny": ["x + 7 = 20", "x = 13"] },
+    { "question": "Twice a number is 18. Write and solve.", "expectedAny": ["2n = 18", "n = 9"] },
+    { "question": "A length y divided by 4 is 5. Find y.", "expectedAny": ["y/4 = 5", "y = 20"] },
+    { "question": "You have r marbles. After losing 9, you have 1. Find r.", "expectedAny": ["r - 9 = 1", "r = 10"] },
+    { "question": "Three times t is 18. Find t.", "expectedAny": ["3t = 18", "t = 6"] },
+    { "question": "k/2 equals 6. Find k.", "expectedAny": ["k/2 = 6", "k = 12"] },
+    { "question": "Sum of a number and itself is 14. Find the number.", "expectedAny": ["a + a = 14", "a = 7"] },
+    { "question": "m minus 6 is 0. Find m.", "expectedAny": ["m - 6 = 0", "m = 6"] },
+    { "question": "p + 5 = 12. Find p.", "expectedAny": ["p + 5 = 12", "p = 7"] }
+  ]
 }

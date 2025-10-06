@@ -23,17 +23,97 @@
     {
       "term": "physical map",
       "definition": "A map that shows natural features like mountains and rivers"
+    },
+    {
+      "term": "plain",
+      "definition": "Flat land that is generally good for farming"
+    },
+    {
+      "term": "valley",
+      "definition": "A low area of land between hills or mountains"
+    },
+    {
+      "term": "plateau",
+      "definition": "High, flat land with steep sides"
+    },
+    {
+      "term": "erosion",
+      "definition": "The wearing away of rock and soil by water, wind, or ice"
+    },
+    {
+      "term": "deposition",
+      "definition": "When sediment is dropped in a new place by water, wind, or ice"
+    },
+    {
+      "term": "delta",
+      "definition": "A landform at a river's mouth made by deposited sediment"
+    },
+    {
+      "term": "irrigation",
+      "definition": "Bringing water to land to help grow crops"
+    },
+    {
+      "term": "dam",
+      "definition": "A barrier built across a river to hold back water"
+    },
+    {
+      "term": "stilt house",
+      "definition": "A house built on posts to avoid floods or wet ground"
+    },
+    {
+      "term": "continent",
+      "definition": "One of Earth's large landmasses such as Africa or Asia"
+    },
+    {
+      "term": "peninsula",
+      "definition": "Land surrounded by water on three sides"
+    },
+    {
+      "term": "isthmus",
+      "definition": "A narrow strip of land connecting two larger land areas"
+    },
+    {
+      "term": "archipelago",
+      "definition": "A group or chain of islands"
+    },
+    {
+      "term": "canyon",
+      "definition": "A deep, narrow valley with steep sides"
+    },
+    {
+      "term": "coastline",
+      "definition": "The place where land meets the ocean or sea"
+    },
+    {
+      "term": "elevation",
+      "definition": "How high the land is above sea level"
+    },
+    {
+      "term": "latitude",
+      "definition": "Lines on a map that run east-west and tell how far north or south a place is"
+    },
+    {
+      "term": "longitude",
+      "definition": "Lines on a map that run north-south and tell how far east or west a place is"
+    },
+    {
+      "term": "scale (map)",
+      "definition": "A tool on a map that shows how distances on the map compare to real distances"
+    },
+    {
+      "term": "compass rose",
+      "definition": "A symbol on a map that shows directions (N, S, E, W)"
     }
   ],
   "teachingNotes": "Study major regions of your state and country. Compare different landforms and how they affect where people live and work. Use physical maps to identify geographical features.",
   "sample": [
-    {"question": "What makes one region different from another?", "expectedAny": ["landforms", "climate"]},
+    {"question": "What makes one region different from another?", "expectedAny": ["landforms", "climate", "natural resources", "how people use the land"]},
     {"question": "Name three types of landforms.", "expectedAny": ["mountains", "valleys", "plains", "plateaus"]},
-    {"question": "What is climate?", "expectedAny": ["usual weather over time"]},
-    {"question": "What is a physical map?", "expectedAny": ["shows natural features"]},
-    {"question": "Name a landform found in your state.", "expectedAny": []},
+    {"question": "What is climate?", "expectedAny": ["usual weather over time", "average weather over many years", "long-term weather"]},
+    {"question": "What is a physical map?", "expectedAny": ["shows natural features", "shows mountains and rivers", "shows landforms"]},
+    {"question": "Name a landform found in your state.", "expectedAny": ["mountain", "valley", "plain", "plateau", "river", "canyon", "coast", "lake"]},
     {"question": "How do rivers shape land?", "expectedAny": ["erosion", "deposition"]},
-    {"question": "How can geography affect jobs?", "expectedAny": ["farming", "fishing", "tourism"]}
+    {"question": "How can geography affect jobs?", "expectedAny": ["farming", "fishing", "tourism", "mining", "logging", "shipping"]}
   ],
   "truefalse": [
     {"question": "Mountains, valleys, and plains are all landforms.", "answer": true},
@@ -54,21 +134,25 @@
     {"question": "A river delta is formed by:", "choices": ["Wind", "Deposition", "Earthquakes", "Volcanoes"], "correct": 1}
   ],
   "fillintheblank": [
-    {"question": "The usual weather patterns over time is called ____.", "expectedAny": ["climate"]},
-    {"question": "A map that shows natural features is a ____ map.", "expectedAny": ["physical"]},
-    {"question": "Flat land good for crops is called a ____.", "expectedAny": ["plain"]},
-    {"question": "A deep low area between hills or mountains is a ____.", "expectedAny": ["valley"]},
-    {"question": "High land with steep sides and a flat top is a ____.", "expectedAny": ["plateau"]},
-    {"question": "Wearing away of rock by water or wind is called ____.", "expectedAny": ["erosion"]},
-    {"question": "Dropping sediment in a new place is called ____.", "expectedAny": ["deposition"]}
+    {"question": "The usual weather patterns over time is called ____.", "expectedAny": ["climate", "average weather", "long-term weather", "typical weather", "weather over time"]},
+    {"question": "A map that shows natural features is a ____ map.", "expectedAny": ["physical", "physical map"]},
+    {"question": "Flat land good for crops is called a ____.", "expectedAny": ["plain", "plains", "flatland"]},
+    {"question": "A deep low area between hills or mountains is a ____.", "expectedAny": ["valley", "river valley"]},
+    {"question": "High land with steep sides and a flat top is a ____.", "expectedAny": ["plateau", "mesa", "tableland"]},
+    {"question": "Wearing away of rock by water or wind is called ____.", "expectedAny": ["erosion", "eroding", "wearing away"]},
+    {"question": "Dropping sediment in a new place is called ____.", "expectedAny": ["deposition", "sediment deposition", "sedimentation"]},
+  {"question": "Land surrounded by water on three sides is a ____.", "expectedAny": ["peninsula", "headland", "land cape"]},
+    {"question": "Lines that run east-west and measure north-south are called ____.", "expectedAny": ["latitude", "lines of latitude"]},
+    {"question": "Lines that run north-south and measure east-west are called ____.", "expectedAny": ["longitude", "lines of longitude"]},
+    {"question": "The height of land above sea level is called ____.", "expectedAny": ["elevation", "altitude", "how high above sea level"]}
   ],
   "shortanswer": [
-    {"question": "How do landforms affect where people choose to live?", "expectedAny": ["flat land easier to build", "near water for resources"]},
-    {"question": "How can climate affect daily life?", "expectedAny": ["clothes", "houses", "activities"]},
-    {"question": "Why do people build cities near rivers?", "expectedAny": ["transportation", "water supply"]},
-    {"question": "How do mountains affect travel?", "expectedAny": ["hard to cross", "tunnels", "passes"]},
-    {"question": "Give an example of a natural resource in your region.", "expectedAny": []},
-    {"question": "How can people adapt to their region's geography?", "expectedAny": ["build dams", "irrigation", "stilt houses"]},
-    {"question": "What jobs are common in your region and why?", "expectedAny": ["based on geography and climate"]}
+    {"question": "How do landforms affect where people choose to live?", "expectedAny": ["flat land easier to build", "near water for resources", "steep slopes are hard to farm", "mountains limit building", "flood risk on floodplains", "shelter from wind in valleys", "coasts allow ports and trade"]},
+    {"question": "How can climate affect daily life?", "expectedAny": ["clothes", "houses", "activities", "clothing", "outdoor plans", "heating or cooling needs"]},
+    {"question": "Why do people build cities near rivers?", "expectedAny": ["transportation", "water supply", "trade", "fresh water", "fertile soil", "irrigation", "fishing", "hydropower"]},
+  {"question": "How do mountains affect transportation?", "expectedAny": ["hard to cross", "tunnels", "passes", "winding roads", "slow travel", "roads cost more to build"]},
+    {"question": "Give an example of a natural resource in your region.", "expectedAny": ["water", "trees", "timber", "oil", "coal", "wind", "sunlight", "natural gas", "soil"]},
+    {"question": "How can people adapt to their region's geography?", "expectedAny": ["build dams", "irrigation", "stilt houses", "terracing", "levees", "windbreaks", "raise buildings above floods"]},
+    {"question": "What jobs are common in your region and why?", "expectedAny": ["based on geography and climate", "farming where soils are fertile", "fishing near coasts", "mining where minerals are found", "logging where forests are dense", "tourism in scenic areas", "shipping in port cities"]}
   ]
 }

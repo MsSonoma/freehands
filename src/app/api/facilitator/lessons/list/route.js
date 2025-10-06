@@ -18,7 +18,8 @@ export async function GET(){
         const subj = (js.subject || '').toString().toLowerCase()
         const approvedPath = subj ? path.join(process.cwd(), 'public', 'lessons', subj, file) : null
         const approved = approvedPath ? fs.existsSync(approvedPath) : false
-        out.push({ file, title: js.title || file, grade: js.grade || null, difficulty: (js.difficulty || '').toLowerCase(), subject: subj || null, approved })
+        const needsUpdate = js.needsUpdate === true
+        out.push({ file, title: js.title || file, grade: js.grade || null, difficulty: (js.difficulty || '').toLowerCase(), subject: subj || null, approved, needsUpdate })
       } catch {}
     }
     return NextResponse.json(out)

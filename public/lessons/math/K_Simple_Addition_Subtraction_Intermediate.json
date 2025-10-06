@@ -49,12 +49,12 @@
   ],
   "shortanswer": [
     {"question": "If you have 3 cookies and eat 1 cookie, how many cookies do you have left?", "expectedAny": ["2 cookies", "3 - 1 = 2"]},
-    {"question": "Tell a story about adding toys.", "expectedAny": ["addition story with toys"]},
-    {"question": "Tell a story about taking away crayons.", "expectedAny": ["subtraction story with crayons"]},
+    {"question": "Tell a story about adding toys.", "expectedAny": ["I had 2 cars and got 1 more. I have 3.", "I had 1 block and got 2 more. I have 3.", "I had 3 bears and got 2 more. I have 5."]},
+    {"question": "Tell a story about taking away crayons.", "expectedAny": ["I had 4 crayons and lost 1. I have 3.", "I had 5 crayons and used 2. I have 3.", "I had 3 crayons and gave away 1. I have 2."]},
     {"question": "What's the difference between + and -?", "expectedAny": ["+ means add, - means subtract", "plus adds, minus takes away"]},
-    {"question": "Show me 2 + 2 using anything in the room.", "expectedAny": ["demonstrates with objects", "shows 4 total"]},
+  {"question": "Show me 2 + 2 using anything in the room.", "expectedAny": ["4 total", "four total", "shows four"]},
     {"question": "How do you know if you should add or subtract?", "expectedAny": ["add for more, subtract for less", "add for total, subtract for left"]},
-    {"question": "Make up a problem that equals 4.", "expectedAny": ["3+1", "5-1", "2+2", "any problem = 4"]}
+    {"question": "Make up a problem that equals 4.", "expectedAny": ["3+1", "5-1", "2+2", "1+3"]}
   ],
   "wordProblems": [
     {"question": "There are 2 birds in a tree. 3 more birds fly to the tree. How many birds are in the tree now?", "expectedAny": ["5 birds", "2 + 3 = 5"]},

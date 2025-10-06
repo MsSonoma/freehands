@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Practice using compass and straightedge. Show real applications of scale drawings like maps and blueprints.",
-  "sample": {
-    "question": "What is the ratio between measurements in a drawing and actual measurements?",
-    "expectedAny": ["scale", "scale ratio", "proportion", "drawing ratio"]
-  },
-  "truefalse": {
-    "question": "A scale of 1:10 means the drawing is smaller than the actual object.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What tool is needed for geometric constructions?",
-    "expectedAny": ["compass", "compass and straightedge", "ruler and compass", "geometric tools"]
-  },
-  "fillintheblank": {
-    "question": "Lines that meet at 90 degrees are ________.",
-    "expectedAny": ["perpendicular", "right angles", "90 degree", "square"]
-  },
-  "shortanswer": {
-    "question": "If a scale is 1 inch = 5 feet, how long is a 3-inch line in real life?",
-    "expectedAny": ["15 feet", "15 ft", "3 × 5 = 15 feet", "fifteen feet"]
-  },
-  "wordProblems": {
-    "question": "A room is 12 feet by 15 feet. On a scale drawing where 1 inch = 3 feet, what are the drawing dimensions?",
-    "expectedAny": ["4 inches by 5 inches", "4×5 inches", "12÷3 by 15÷3", "4 in × 5 in"]
-  }
+  "sample": [
+    { "question": "What is the ratio between measurements in a drawing and actual measurements?", "expectedAny": ["scale"] },
+    { "question": "Which divides an angle equally?", "choices": ["Scale", "Angle bisector", "Perpendicular", "Factor"], "correct": 1, "expectedAny": ["angle bisector"] },
+    { "question": "Lines at 90 degrees are ________.", "expectedAny": ["perpendicular"] },
+    { "question": "The number multiplying dimensions is ________.", "expectedAny": ["scale factor"] },
+    { "question": "Drawing with compass is ________.", "expectedAny": ["construction"] },
+    { "question": "What compares drawing to reality?", "choices": ["Factor", "Scale", "Angle", "Line"], "correct": 1, "expectedAny": ["scale"] },
+    { "question": "A line dividing an angle is ________.", "expectedAny": ["angle bisector"] },
+    { "question": "90-degree lines are ________.", "expectedAny": ["perpendicular"] },
+    { "question": "Which multiplies dimensions?", "choices": ["Scale", "Scale factor", "Angle", "Line"], "correct": 1, "expectedAny": ["scale factor"] },
+    { "question": "Geometric drawing is ________.", "expectedAny": ["construction"] }
+  ],
+  "truefalse": [
+    { "question": "A scale of 1:10 means the drawing is smaller than the actual object.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Perpendicular lines meet at 45 degrees.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "An angle bisector divides an angle equally.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Scale factor can be any number.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Construction uses only a compass and straightedge.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Scale is irrelevant in drawings.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Perpendicular lines form right angles.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Angle bisectors create unequal parts.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Scale drawings are proportional.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Construction requires a protractor.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What tool is needed for geometric constructions?", "choices": ["Protractor", "Compass", "Calculator", "Ruler only"], "correct": 1, "expectedAny": ["compass"] },
+    { "question": "What is the ratio in drawings?", "choices": ["Factor", "Scale", "Angle", "Line"], "correct": 1, "expectedAny": ["scale"] },
+    { "question": "What meets at 90 degrees?", "choices": ["Parallel", "Perpendicular", "Intersecting", "Diagonal"], "correct": 1, "expectedAny": ["perpendicular"] },
+    { "question": "What divides an angle?", "choices": ["Scale", "Angle bisector", "Factor", "Line"], "correct": 1, "expectedAny": ["angle bisector"] },
+    { "question": "What multiplies dimensions?", "choices": ["Scale", "Scale factor", "Angle", "Line"], "correct": 1, "expectedAny": ["scale factor"] },
+    { "question": "What uses compass and straightedge?", "choices": ["Calculation", "Construction", "Measurement", "Estimation"], "correct": 1, "expectedAny": ["construction"] },
+    { "question": "If scale is 1:5, drawing is?", "choices": ["Larger", "Smaller", "Same", "Doubled"], "correct": 1, "expectedAny": ["smaller"] },
+    { "question": "What forms right angles?", "choices": ["Parallel", "Perpendicular", "Diagonal", "Curved"], "correct": 1, "expectedAny": ["perpendicular"] },
+    { "question": "What creates equal angle parts?", "choices": ["Scale", "Bisector", "Factor", "Line"], "correct": 1, "expectedAny": ["bisector"] },
+    { "question": "What is used in scaling?", "choices": ["Angle", "Scale factor", "Bisector", "Construction"], "correct": 1, "expectedAny": ["scale factor"] }
+  ],
+  "fillintheblank": [
+    { "question": "Lines that meet at 90 degrees are ________.", "expectedAny": ["perpendicular"] },
+    { "question": "The ratio in drawings is the ________.", "expectedAny": ["scale"] },
+    { "question": "A line dividing an angle is an ________ bisector.", "expectedAny": ["angle"] },
+    { "question": "The multiplier for dimensions is the ________ factor.", "expectedAny": ["scale"] },
+    { "question": "Drawing with compass is geometric ________.", "expectedAny": ["construction"] },
+    { "question": "________ lines form right angles.", "expectedAny": ["perpendicular"] },
+    { "question": "A ________ compares drawing to reality.", "expectedAny": ["scale"] },
+    { "question": "An ________ divides an angle equally.", "expectedAny": ["angle bisector"] },
+    { "question": "The ________ is used to multiply dimensions.", "expectedAny": ["scale factor"] },
+    { "question": "Geometric ________ uses compass and straightedge.", "expectedAny": ["construction"] }
+  ],
+  "shortanswer": [
+    { "question": "If a scale is 1 inch = 5 feet, how long is a 3-inch line in real life?", "expectedAny": ["15 feet", "15"] },
+    { "question": "What is scale?", "expectedAny": ["ratio between drawing and actual", "comparison of measurements", "drawing to real size ratio", "proportion of drawing"] },
+    { "question": "What is an angle bisector?", "expectedAny": ["line dividing angle equally", "divides angle in half", "cuts angle in half", "splits angle equally"] },
+    { "question": "What is perpendicular?", "expectedAny": ["lines at 90 degrees", "right angle lines"] },
+    { "question": "What is scale factor?", "expectedAny": ["number multiplying dimensions", "multiplier for scaling", "how much to multiply by", "scaling multiplier"] },
+    { "question": "What is construction?", "expectedAny": ["drawing with compass and straightedge", "geometric drawing"] },
+    { "question": "If scale is 1:10, what does it mean?", "expectedAny": ["drawing is smaller", "1 unit represents 10"] },
+    { "question": "How do you create an angle bisector?", "expectedAny": ["use compass to divide angle", "compass and straightedge"] },
+    { "question": "What angle do perpendicular lines form?", "expectedAny": ["90 degrees", "right angle"] },
+    { "question": "If scale factor is 2, what happens?", "expectedAny": ["dimensions double", "multiply by 2"] }
+  ],
+  "wordProblems": [
+    { "question": "A room is 12 feet by 15 feet. On a scale drawing where 1 inch = 3 feet, what are the drawing dimensions?", "expectedAny": ["4 inches by 5 inches", "4 by 5"] },
+    { "question": "A map scale is 1 cm = 10 km. If two cities are 3 cm apart on the map, what is the actual distance?", "expectedAny": ["30 km", "30"] },
+    { "question": "A blueprint uses scale 1:50. If a wall is 200 cm in reality, how long is it on the blueprint?", "expectedAny": ["4 cm", "4"] },
+    { "question": "A model car is built with scale factor 1:24. If the model is 6 inches long, how long is the real car?", "expectedAny": ["144 inches", "144", "12 feet"] },
+    { "question": "On a map, 2 inches represents 50 miles. What distance does 5 inches represent?", "expectedAny": ["125 miles", "125"] },
+    { "question": "A garden is drawn at 1 inch = 4 feet. If the drawing is 3 inches by 5 inches, what are the actual dimensions?", "expectedAny": ["12 feet by 20 feet", "12 by 20"] },
+    { "question": "A scale drawing uses 1 cm = 2 m. What is the scale factor?", "expectedAny": ["1:200", "1 to 200"] },
+    { "question": "If a building is 60 meters tall and the scale is 1:100, how tall is it in the drawing?", "expectedAny": ["60 cm", "0.6 meters"] },
+    { "question": "A map shows 1 inch = 25 miles. Two towns are 100 miles apart. How far apart are they on the map?", "expectedAny": ["4 inches", "4"] },
+    { "question": "Using scale 1:5, a drawing shows a length of 8 cm. What is the actual length?", "expectedAny": ["40 cm", "40"] }
+  ]
 }

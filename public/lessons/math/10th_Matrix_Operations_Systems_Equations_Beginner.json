@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "10th_Matrix_Operations_Systems_Equations_Beginner",
   "title": "Matrix Operations and Systems of Equations",
   "grade": "10th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "matrix",
-      "definition": "Rectangular array of numbers arranged in rows and columns"
-    },
-    {
-      "term": "element",
-      "definition": "Individual number in a matrix"
-    },
-    {
-      "term": "dimension",
-      "definition": "Size of matrix described as rows × columns"
-    },
-    {
-      "term": "matrix addition",
-      "definition": "Operation that adds corresponding elements of matrices"
-    },
-    {
-      "term": "matrix multiplication",
-      "definition": "Operation combining matrices using rows and columns"
-    }
+    {"term": "matrix", "definition": "Rectangular array of numbers arranged in rows and columns"},
+    {"term": "element", "definition": "Individual number in a matrix"},
+    {"term": "dimension", "definition": "Size of matrix described as rows  columns"},
+    {"term": "matrix addition", "definition": "Operation that adds corresponding elements of matrices"},
+    {"term": "matrix multiplication", "definition": "Operation combining matrices using rows and columns"}
   ],
-  "teachingNotes": "Start with simple 2×2 matrices. Emphasize that matrices must have compatible dimensions for operations.",
-  "sample": {
-    "question": "What is a rectangular array of numbers in rows and columns?",
-    "expectedAny": ["matrix", "mathematical matrix", "number array", "rectangular array"]
-  },
-  "truefalse": {
-    "question": "Matrix addition requires matrices to have the same dimensions.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What describes the size of a matrix?",
-    "expectedAny": ["dimension", "size", "order", "dimensions"]
-  },
-  "fillintheblank": {
-    "question": "An individual number in a matrix is called an ________.",
-    "expectedAny": ["element", "entry", "component", "term"]
-  },
-  "shortanswer": {
-    "question": "How do you add two matrices?",
-    "expectedAny": ["add corresponding elements", "element-wise addition", "add same position numbers"]
-  },
-  "wordProblems": {
-    "question": "Add matrices A = [2 3; 1 4] and B = [1 2; 3 1]. What is A + B?",
-    "expectedAny": ["[3 5; 4 5]", "matrix with elements 3,5,4,5", "[3 5; 4 5]"]
-  }
+  "teachingNotes": "Start with simple 22 matrices. Emphasize that matrices must have compatible dimensions for operations.",
+  "sample": [
+    {"question": "What is rectangular array of numbers?", "expectedAny": ["matrix", "number array", "rectangular array", "array", "matrix array", "number grid"]},
+    {"question": "What is individual number in matrix?", "expectedAny": ["element", "entry", "component", "number", "matrix entry", "matrix element"]},
+    {"question": "What describes matrix size?", "expectedAny": ["dimension", "size", "order", "dimensions", "matrix size", "matrix order"]},
+    {"question": "What adds corresponding elements?", "expectedAny": ["matrix addition", "addition", "element-wise addition", "adding matrices", "matrix add", "elementwise addition"]},
+    {"question": "What combines using rows and columns?", "expectedAny": ["matrix multiplication", "multiplication", "matrix product", "multiplying matrices", "matrix multiply", "product operation"]},
+    {"question": "What has rows and columns?", "expectedAny": ["matrix", "array", "rectangular array", "number array", "matrix array", "number grid"]},
+    {"question": "What is each number called?", "expectedAny": ["element", "entry", "term", "component", "matrix entry", "matrix element"]},
+    {"question": "What is rows times columns?", "expectedAny": ["dimension", "size", "order", "dimensions", "matrix size", "matrix order"]},
+    {"question": "What adds matrices?", "expectedAny": ["matrix addition", "addition", "adding", "element-wise addition", "matrix add", "elementwise addition"]},
+    {"question": "What multiplies matrices?", "expectedAny": ["matrix multiplication", "multiplication", "multiplying", "matrix product", "matrix multiply", "product operation"]}
+  ],
+  "truefalse": [
+    {"question": "A matrix is rectangular array. (True or False)", "correct": true},
+    {"question": "Elements are individual numbers. (True or False)", "correct": true},
+    {"question": "Dimension is rows times columns. (True or False)", "correct": true},
+    {"question": "Addition adds corresponding elements. (True or False)", "correct": true},
+    {"question": "Matrices can always be added. (True or False)", "correct": false},
+    {"question": "Matrix has rows and columns. (True or False)", "correct": true},
+    {"question": "Element is a number. (True or False)", "correct": true},
+    {"question": "Same dimensions needed for addition. (True or False)", "correct": true},
+    {"question": "Multiplication needs compatible dimensions. (True or False)", "correct": true},
+    {"question": "Matrix is a single number. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "What is rectangular array?", "choices": [{"letter": "A", "text": "Vector"}, {"letter": "B", "text": "Matrix"}, {"letter": "C", "text": "Scalar"}, {"letter": "D", "text": "Number"}], "correct": "B"},
+    {"question": "What is individual number?", "choices": [{"letter": "A", "text": "Matrix"}, {"letter": "B", "text": "Element"}, {"letter": "C", "text": "Dimension"}, {"letter": "D", "text": "Array"}], "correct": "B"},
+    {"question": "What describes size?", "choices": [{"letter": "A", "text": "Element"}, {"letter": "B", "text": "Dimension"}, {"letter": "C", "text": "Addition"}, {"letter": "D", "text": "Product"}], "correct": "B"},
+    {"question": "What adds corresponding?", "choices": [{"letter": "A", "text": "Multiplication"}, {"letter": "B", "text": "Matrix addition"}, {"letter": "C", "text": "Dimension"}, {"letter": "D", "text": "Element"}], "correct": "B"},
+    {"question": "What uses rows and columns?", "choices": [{"letter": "A", "text": "Addition"}, {"letter": "B", "text": "Matrix multiplication"}, {"letter": "C", "text": "Element"}, {"letter": "D", "text": "Dimension"}], "correct": "B"},
+    {"question": "What has rows and columns?", "choices": [{"letter": "A", "text": "Scalar"}, {"letter": "B", "text": "Matrix"}, {"letter": "C", "text": "Number"}, {"letter": "D", "text": "Variable"}], "correct": "B"},
+    {"question": "What is each number?", "choices": [{"letter": "A", "text": "Matrix"}, {"letter": "B", "text": "Element"}, {"letter": "C", "text": "Dimension"}, {"letter": "D", "text": "Operation"}], "correct": "B"},
+    {"question": "What is rows  columns?", "choices": [{"letter": "A", "text": "Element"}, {"letter": "B", "text": "Dimension"}, {"letter": "C", "text": "Addition"}, {"letter": "D", "text": "Matrix"}], "correct": "B"},
+    {"question": "What adds same position?", "choices": [{"letter": "A", "text": "Multiplication"}, {"letter": "B", "text": "Addition"}, {"letter": "C", "text": "Dimension"}, {"letter": "D", "text": "Element"}], "correct": "B"},
+    {"question": "What combines matrices?", "choices": [{"letter": "A", "text": "Element"}, {"letter": "B", "text": "Multiplication"}, {"letter": "C", "text": "Dimension"}, {"letter": "D", "text": "Addition"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "A _____ is rectangular array.", "expectedAny": ["matrix"]},
+    {"question": "An _____ is individual number.", "expectedAny": ["element"]},
+    {"question": "_____ describes matrix size.", "expectedAny": ["dimension", "Dimension"]},
+    {"question": "Matrix _____ adds corresponding elements.", "expectedAny": ["addition"]},
+    {"question": "Matrix _____ combines rows and columns.", "expectedAny": ["multiplication"]},
+    {"question": "_____ have rows and columns.", "expectedAny": ["matrices", "Matrices"]},
+    {"question": "Each number is an _____.", "expectedAny": ["element"]},
+    {"question": "Size is rows  _____.", "expectedAny": ["columns"]},
+    {"question": "_____ requires same dimensions.", "expectedAny": ["addition", "Addition"]},
+    {"question": "_____ needs compatible dimensions.", "expectedAny": ["multiplication", "Multiplication"]}
+  ],
+  "shortanswer": [
+    {"question": "What is a matrix?", "keyTerms": ["rectangular", "array", "numbers", "rows", "columns"], "expectedAny": ["Rectangular array of numbers arranged in rows and columns", "Number array", "Rows and columns of numbers"]},
+    {"question": "What is an element?", "keyTerms": ["individual", "number", "matrix"], "expectedAny": ["Individual number in a matrix", "Single number", "Matrix entry"]},
+    {"question": "What is dimension?", "keyTerms": ["size", "matrix", "rows", "columns"], "expectedAny": ["Size of matrix described as rows  columns", "Matrix size", "Order of matrix"]},
+    {"question": "What is matrix addition?", "keyTerms": ["operation", "adds", "corresponding", "elements"], "expectedAny": ["Operation that adds corresponding elements of matrices", "Element-wise addition", "Adding same positions"]},
+    {"question": "What is matrix multiplication?", "keyTerms": ["operation", "combining", "rows", "columns"], "expectedAny": ["Operation combining matrices using rows and columns", "Row by column", "Matrix product"]},
+    {"question": "How add matrices?", "keyTerms": ["add", "corresponding", "elements", "same", "position"], "expectedAny": ["Add corresponding elements in same positions", "Element-wise addition", "Add matching positions"]},
+    {"question": "What needed for addition?", "keyTerms": ["same", "dimensions", "equal", "size"], "expectedAny": ["Same dimensions or equal size", "Matching dimensions", "Equal rows and columns"]},
+    {"question": "What is 23 matrix?", "keyTerms": ["2", "rows", "3", "columns"], "expectedAny": ["Matrix with 2 rows and 3 columns", "2 rows by 3 columns", "2 by 3 array"]},
+    {"question": "How find element in row 2, column 3?", "keyTerms": ["locate", "intersection", "second row", "third column"], "expectedAny": ["Locate intersection of second row and third column", "Row 2 column 3 position", "Second row third column"]},
+    {"question": "Why must dimensions match for addition?", "keyTerms": ["corresponding", "elements", "same", "positions"], "expectedAny": ["Need corresponding elements in same positions", "Must match positions", "Require equal dimensions"]}
+  ],
+  "wordProblems": [
+    {"question": "Add matrices A = [2 3; 1 4] and B = [1 2; 3 1]. What is A + B?", "keyTerms": ["3 5", "4 5"], "expectedAny": ["[3 5; 4 5]", "3 5 over 4 5", "matrix [3 5; 4 5]"]},
+    {"question": "Matrix C is 32. Matrix D is 32. Can you add C + D?", "keyTerms": ["yes", "same dimensions"], "expectedAny": ["yes", "yes can add", "same dimensions allow addition"]},
+    {"question": "Matrix E is 23. Matrix F is 32. Can you add E + F?", "keyTerms": ["no", "different dimensions"], "expectedAny": ["no", "no cannot add", "different dimensions prevent addition"]},
+    {"question": "A matrix has 4 rows and 5 columns. What is its dimension?", "keyTerms": ["45", "4 by 5"], "expectedAny": ["45", "4 by 5", "four by five"]},
+    {"question": "If A = [6 8; 2 10] and B = [3 4; 1 5], find A + B", "keyTerms": ["9 12", "3 15"], "expectedAny": ["[9 12; 3 15]", "9 12 over 3 15", "matrix with 9 12 and 3 15"]},
+    {"question": "Store A sold 10 apples and 5 oranges. Store B sold 8 apples and 7 oranges. Write matrix showing total sales.", "keyTerms": ["18", "12"], "expectedAny": ["[18 12]", "18 apples 12 oranges", "18 and 12"]},
+    {"question": "In matrix [7 3 9; 2 5 1], what is element in row 2, column 3?", "keyTerms": ["1", "one"], "expectedAny": ["1", "one", "the element is 1"]},
+    {"question": "What is dimension of [4 2; 1 8; 3 6]?", "keyTerms": ["32", "3 by 2"], "expectedAny": ["32", "3 by 2", "three by two"]},
+    {"question": "22 matrix A has elements 1, 2, 3, 4 (row by row). Write matrix A.", "keyTerms": ["1 2", "3 4"], "expectedAny": ["[1 2; 3 4]", "1 2 over 3 4", "matrix with 1 2 and 3 4"]},
+    {"question": "Can multiply 23 matrix by 32 matrix?", "keyTerms": ["yes", "columns", "rows", "match"], "expectedAny": ["yes", "yes can multiply", "columns of first match rows of second"]}
+  ]
 }

@@ -14,12 +14,41 @@
       "definition": "Where something is; a place"
     },
     {
+      "term": "direction",
+      "definition": "Which way to go"
+    },
+    {
+      "term": "up",
+      "definition": "Moving toward the top"
+    },
+    {
+      "term": "down",
+      "definition": "Moving toward the bottom"
+    },
+    {
+      "term": "left",
+      "definition": "The direction to your left side"
+    },
+    {
+      "term": "right",
+      "definition": "The direction to your right side"
+    },
+    {
       "term": "near",
       "definition": "Close to something"
     },
     {
       "term": "far",
       "definition": "A long way from something"
+    }
+    ,
+    {
+      "term": "bedroom",
+      "definition": "A room in a home where you sleep"
+    },
+    {
+      "term": "kitchen",
+      "definition": "A room in a home where you cook and eat"
     }
   ],
   "teachingNotes": "Use simple classroom and school maps. Practice directional vocabulary. Create maps of familiar places like playground.",
@@ -50,21 +79,21 @@
   ],
   "fillintheblank": [
     {"question": "The library is _____ to the school because you can walk there quickly.", "expectedAny": ["near", "close"]},
-    {"question": "A _____ shows where places are located.", "expectedAny": ["map"]},
-    {"question": "Something that is _____ away takes a long time to reach.", "expectedAny": ["far"]},
+    {"question": "A _____ shows where places are located.", "expectedAny": ["map", "a map"]},
+    {"question": "Something that is _____ away takes a long time to reach.", "expectedAny": ["far", "very far"]},
     {"question": "Your _____ is where you live.", "expectedAny": ["home", "house", "address"]},
-    {"question": "To find north, south, east, and west on a map, look for the _____ rose.", "expectedAny": ["compass"]},
+    {"question": "To find north, south, east, and west on a map, look for the _____ rose.", "expectedAny": ["compass", "compass"]},
     {"question": "The _____ is usually near your classroom in the school.", "expectedAny": ["hallway", "bathroom", "library"]},
     {"question": "Maps help us understand different _____.", "expectedAny": ["locations", "places"]}
   ],
   "shortanswer": [
-    {"question": "How would you tell someone how to get from your classroom to the playground?", "expectedAny": ["go out the door", "walk down the hall", "go outside", "follow the path"]},
-    {"question": "What places are near your home?", "expectedAny": ["neighbors' houses", "park", "store", "school"]},
-    {"question": "How is your bedroom location different from the kitchen location in your house?", "expectedAny": ["different rooms", "bedroom upstairs", "kitchen downstairs", "separate places"]},
-    {"question": "What would you put on a map of your playground?", "expectedAny": ["swings", "slides", "sandbox", "trees", "benches"]},
-    {"question": "How do you know if two places are near each other?", "expectedAny": ["close together", "short walk", "can see both", "easy to travel between"]},
-    {"question": "Why might someone need to use a map?", "expectedAny": ["find new places", "not get lost", "learn about area", "plan trips"]},
-    {"question": "What's the difference between near and far?", "expectedAny": ["near is close", "far is away", "near takes less time", "far takes more time"]}
+    {"question": "How would you tell someone how to get from your classroom to the playground?", "expectedAny": ["go out the door", "walk down the hall", "go outside", "follow the path", "out the door then outside", "down the hall and outside", "turn left then go out", "straight ahead"]},
+    {"question": "What places are near your home?", "expectedAny": ["neighbors' houses", "park", "store", "school", "close to my house", "next to my house", "the park nearby", "houses around me"]},
+    {"question": "How is your bedroom location different from the kitchen location in your house?", "expectedAny": ["different rooms", "bedroom upstairs", "kitchen downstairs", "separate places", "bedroom is up", "kitchen is down", "one is on top", "one is below", "far apart", "in different spots"]},
+    {"question": "What would you put on a map of your playground?", "expectedAny": ["swings", "slides", "sandbox", "trees", "benches", "all the playground stuff", "swings and slides", "everything on the playground"]},
+    {"question": "How do you know if two places are near each other?", "expectedAny": ["close together", "short walk", "can see both", "easy to travel between", "next to each other", "real close", "not far", "right there", "walk fast"]},
+    {"question": "Why might someone need to use a map?", "expectedAny": ["find new places", "not get lost", "learn about area", "plan trips", "to find where to go", "know how to get there", "helps you find stuff", "shows the way"]},
+    {"question": "What's the difference between near and far?", "expectedAny": ["near is close", "far is away", "near takes less time", "far takes more time", "near is right there", "far is way over", "close and far away", "near is not far"]}
   ],
   "wordProblems": [
     {"question": "On the school map, there are 4 classrooms on the first floor and 6 classrooms on the second floor. How many classrooms total?", "expectedAny": ["10 classrooms", "4 + 6 = 10"]},

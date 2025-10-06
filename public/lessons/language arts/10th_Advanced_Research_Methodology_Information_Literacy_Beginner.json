@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "10th_Advanced_Research_Methodology_Information_Literacy_Beginner",
   "title": "Advanced Research Methodology and Information Literacy",
   "grade": "10th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "primary source",
-      "definition": "Original documents or firsthand accounts of events"
-    },
-    {
-      "term": "secondary source",
-      "definition": "Analysis or interpretation of primary sources"
-    },
-    {
-      "term": "credible source",
-      "definition": "Reliable and trustworthy information source"
-    },
-    {
-      "term": "citation",
-      "definition": "Reference that credits the source of information"
-    },
-    {
-      "term": "research question",
-      "definition": "Specific question that guides research investigation"
-    }
+    {"term": "primary source", "definition": "Original documents or firsthand accounts of events"},
+    {"term": "secondary source", "definition": "Analysis or interpretation of primary sources"},
+    {"term": "credible source", "definition": "Reliable and trustworthy information source"},
+    {"term": "citation", "definition": "Reference that credits the source of information"},
+    {"term": "research question", "definition": "Specific question that guides research investigation"}
   ],
   "teachingNotes": "Emphasize importance of source evaluation and proper citation. Practice developing focused research questions.",
-  "sample": {
-    "question": "What are original documents or firsthand accounts called?",
-    "expectedAny": [
-      "primary sources",
-      "original sources",
-      "firsthand sources",
-      "direct sources"
-    ]
-  },
-  "truefalse": {
-    "question": "Secondary sources analyze or interpret primary sources.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What credits the source of information?",
-    "expectedAny": [
-      "citation",
-      "reference",
-      "attribution",
-      "source credit"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A specific question that guides investigation is a ________ question.",
-    "expectedAny": [
-      "research",
-      "investigative",
-      "inquiry",
-      "study"
-    ]
-  },
-  "shortanswer": {
-    "question": "What makes a source credible?",
-    "expectedAny": [
-      "expert author",
-      "peer review",
-      "reliable publisher",
-      "current information"
-    ]
-  }
+  "sample": [
+    {"question": "What are original documents or firsthand accounts called?", "expectedAny": ["primary sources", "original sources", "firsthand sources", "original documents", "direct evidence", "firsthand accounts"]},
+    {"question": "What analyzes primary sources?", "expectedAny": ["secondary sources", "interpretations", "analyses", "analysis", "interpretation", "secondary works"]},
+    {"question": "What is a reliable information source?", "expectedAny": ["credible source", "trustworthy source", "reliable source", "credible information", "trustworthy information", "reliable information"]},
+    {"question": "What credits the source of information?", "expectedAny": ["citation", "reference", "credit", "source credit", "acknowledgment", "source reference"]},
+    {"question": "What guides research?", "expectedAny": ["research question", "guiding question", "inquiry question", "specific question", "guiding inquiry", "research inquiry"]},
+    {"question": "What are firsthand accounts?", "expectedAny": ["primary sources", "original documents", "direct evidence", "original sources", "firsthand sources", "firsthand accounts"]},
+    {"question": "What interprets primary sources?", "expectedAny": ["secondary sources", "analysis", "interpretation", "interpretations", "analyses", "secondary works"]},
+    {"question": "What makes a source trustworthy?", "expectedAny": ["credibility", "reliability", "accuracy", "trustworthiness", "being credible", "being reliable"]},
+    {"question": "What gives credit to sources?", "expectedAny": ["citation", "reference", "acknowledgment", "credit", "source credit", "source reference"]},
+    {"question": "What focuses your research?", "expectedAny": ["research question", "specific question", "guiding inquiry", "guiding question", "inquiry question", "research inquiry"]}
+  ],
+  "truefalse": [
+    {"question": "Secondary sources analyze or interpret primary sources. (True or False)", "correct": true},
+    {"question": "Primary sources are original documents. (True or False)", "correct": true},
+    {"question": "Credible sources are unreliable. (True or False)", "correct": false},
+    {"question": "Citations credit information sources. (True or False)", "correct": true},
+    {"question": "Research questions guide investigations. (True or False)", "correct": true},
+    {"question": "Primary sources are firsthand accounts. (True or False)", "correct": true},
+    {"question": "Secondary sources are original documents. (True or False)", "correct": false},
+    {"question": "All sources are credible. (True or False)", "correct": false},
+    {"question": "Citations are optional. (True or False)", "correct": false},
+    {"question": "Research questions should be focused. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What credits the source of information?", "choices": [{"letter": "A", "text": "Thesis"}, {"letter": "B", "text": "Citation"}, {"letter": "C", "text": "Evidence"}, {"letter": "D", "text": "Claim"}], "correct": "B"},
+    {"question": "What are original documents?", "choices": [{"letter": "A", "text": "Secondary sources"}, {"letter": "B", "text": "Primary sources"}, {"letter": "C", "text": "Citations"}, {"letter": "D", "text": "Summaries"}], "correct": "B"},
+    {"question": "What analyzes primary sources?", "choices": [{"letter": "A", "text": "Citations"}, {"letter": "B", "text": "Secondary sources"}, {"letter": "C", "text": "Research questions"}, {"letter": "D", "text": "Evidence"}], "correct": "B"},
+    {"question": "What makes a source reliable?", "choices": [{"letter": "A", "text": "Age"}, {"letter": "B", "text": "Credibility"}, {"letter": "C", "text": "Length"}, {"letter": "D", "text": "Popularity"}], "correct": "B"},
+    {"question": "What guides research?", "choices": [{"letter": "A", "text": "Random ideas"}, {"letter": "B", "text": "Research question"}, {"letter": "C", "text": "Citations"}, {"letter": "D", "text": "Sources only"}], "correct": "B"},
+    {"question": "What are firsthand accounts?", "choices": [{"letter": "A", "text": "Secondary"}, {"letter": "B", "text": "Primary sources"}, {"letter": "C", "text": "Citations"}, {"letter": "D", "text": "Questions"}], "correct": "B"},
+    {"question": "What interprets information?", "choices": [{"letter": "A", "text": "Primary sources"}, {"letter": "B", "text": "Secondary sources"}, {"letter": "C", "text": "Citations"}, {"letter": "D", "text": "Questions"}], "correct": "B"},
+    {"question": "What is trustworthy?", "choices": [{"letter": "A", "text": "Any source"}, {"letter": "B", "text": "Credible source"}, {"letter": "C", "text": "Old source"}, {"letter": "D", "text": "Long source"}], "correct": "B"},
+    {"question": "What gives credit?", "choices": [{"letter": "A", "text": "Thesis"}, {"letter": "B", "text": "Citation"}, {"letter": "C", "text": "Evidence"}, {"letter": "D", "text": "Question"}], "correct": "B"},
+    {"question": "What focuses investigation?", "choices": [{"letter": "A", "text": "Random topic"}, {"letter": "B", "text": "Research question"}, {"letter": "C", "text": "Any source"}, {"letter": "D", "text": "Long paper"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ sources are original documents.", "expectedAny": ["primary", "Primary"]},
+    {"question": "_____ sources analyze primary sources.", "expectedAny": ["secondary", "Secondary"]},
+    {"question": "A _____ source is reliable and trustworthy.", "expectedAny": ["credible"]},
+    {"question": "A _____ credits the source of information.", "expectedAny": ["citation"]},
+    {"question": "A _____ question guides research.", "expectedAny": ["research"]},
+    {"question": "Firsthand accounts are _____ sources.", "expectedAny": ["primary"]},
+    {"question": "Interpretations are _____ sources.", "expectedAny": ["secondary"]},
+    {"question": "_____ makes sources trustworthy.", "expectedAny": ["credibility", "reliability"]},
+    {"question": "_____ give credit to sources.", "expectedAny": ["citations", "references"]},
+    {"question": "Research needs a focused _____.", "expectedAny": ["question", "inquiry"]}
+  ],
+  "shortanswer": [
+    {"question": "What are primary sources?", "keyTerms": ["original", "documents", "firsthand", "accounts"], "expectedAny": ["Original documents or firsthand accounts of events", "Direct evidence", "Original materials"]},
+    {"question": "What are secondary sources?", "keyTerms": ["analysis", "interpretation", "primary sources"], "expectedAny": ["Analysis or interpretation of primary sources", "Secondhand accounts", "Studies of original documents"]},
+    {"question": "What makes a source credible?", "keyTerms": ["reliable", "trustworthy", "accurate", "authoritative"], "expectedAny": ["Being reliable trustworthy and accurate", "Author expertise and accuracy", "Verifiable information"]},
+    {"question": "What is a citation?", "keyTerms": ["reference", "credits", "source", "information"], "expectedAny": ["Reference that credits the source of information", "Acknowledgment of sources", "Documentation of sources"]},
+    {"question": "What is a research question?", "keyTerms": ["specific", "question", "guides", "investigation"], "expectedAny": ["Specific question that guides research investigation", "Focused inquiry", "Question directing research"]},
+    {"question": "Why use primary sources?", "keyTerms": ["original", "firsthand", "direct", "evidence"], "expectedAny": ["They provide original firsthand evidence", "Direct access to information", "Unfiltered accounts"]},
+    {"question": "Why use secondary sources?", "keyTerms": ["analysis", "interpretation", "context", "understanding"], "expectedAny": ["They provide analysis and interpretation for understanding", "Offer expert insights", "Add context"]},
+    {"question": "How do you evaluate sources?", "keyTerms": ["credibility", "accuracy", "bias", "authority"], "expectedAny": ["Check credibility accuracy bias and authority", "Evaluate reliability", "Assess trustworthiness"]},
+    {"question": "Why cite sources?", "keyTerms": ["credit", "avoid", "plagiarism", "support"], "expectedAny": ["To give credit avoid plagiarism and support claims", "Acknowledge authors", "Show evidence"]},
+    {"question": "How do you develop research questions?", "keyTerms": ["specific", "focused", "answerable", "guides"], "expectedAny": ["Make them specific focused and answerable to guide research", "Start with topic then narrow", "Focus on what you want to learn"]}
+  ]
 }

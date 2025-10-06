@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Use real objects to demonstrate 3D shapes. Connect formulas to practical applications like packaging and construction.",
-  "sample": {
-    "question": "What is the amount of space inside a 3D shape?",
-    "expectedAny": ["volume", "capacity", "3D space", "cubic space"]
-  },
-  "truefalse": {
-    "question": "Surface area is measured in square units.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "Which shape has a circular base and curved sides?",
-    "expectedAny": ["cylinder", "cylindrical shape", "tube shape", "circular prism"]
-  },
-  "fillintheblank": {
-    "question": "A perfectly round 3D shape is called a ________.",
-    "expectedAny": ["sphere", "ball", "globe", "spherical shape"]
-  },
-  "shortanswer": {
-    "question": "What formula is used to find the volume of a rectangular prism?",
-    "expectedAny": ["V = l × w × h", "length × width × height", "base area × height", "lwh"]
-  },
-  "wordProblems": {
-    "question": "A cylindrical can has a radius of 3 cm and height of 10 cm. What is its volume? (Use V = πr²h and π ≈ 3.14)",
-    "expectedAny": ["282.6 cm³", "about 283 cubic cm", "π × 9 × 10 ≈ 283", "282.6"]
-  }
+  "sample": [
+    { "question": "What is the amount of space inside a 3D shape?", "expectedAny": ["volume"] },
+    { "question": "What is total face area?", "choices": ["Volume", "Surface area", "Length", "Width"], "correct": 1, "expectedAny": ["surface area"] },
+    { "question": "Circular bases with curved sides is ________.", "expectedAny": ["cylinder"] },
+    { "question": "Circular base with pointed top is ________.", "expectedAny": ["cone"] },
+    { "question": "Perfectly round 3D shape is ________.", "expectedAny": ["sphere"] },
+    { "question": "What is 3D space inside?", "choices": ["Area", "Volume", "Perimeter", "Length"], "correct": 1, "expectedAny": ["volume"] },
+    { "question": "All face area combined is ________.", "expectedAny": ["surface area"] },
+    { "question": "What is tube shape?", "choices": ["Cone", "Cylinder", "Sphere", "Cube"], "correct": 1, "expectedAny": ["cylinder"] },
+    { "question": "Pointed top 3D shape is ________.", "expectedAny": ["cone"] },
+    { "question": "Ball shape is ________.", "expectedAny": ["sphere"] }
+  ],
+  "truefalse": [
+    { "question": "Surface area is measured in square units.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Volume is measured in square units.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Cylinder has circular bases.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Cone has square base.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Sphere is perfectly round.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Surface area is inside space.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Volume is cubic units.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Cylinder has pointed top.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Cone has circular base.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Sphere has flat faces.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which shape has a circular base and curved sides?", "choices": ["Cone", "Cylinder", "Sphere", "Cube"], "correct": 1, "expectedAny": ["cylinder"] },
+    { "question": "What is space inside?", "choices": ["Area", "Volume", "Perimeter", "Length"], "correct": 1, "expectedAny": ["volume"] },
+    { "question": "What is all face area?", "choices": ["Volume", "Surface area", "Perimeter", "Length"], "correct": 1, "expectedAny": ["surface area"] },
+    { "question": "What has pointed top?", "choices": ["Cylinder", "Cone", "Sphere", "Cube"], "correct": 1, "expectedAny": ["cone"] },
+    { "question": "What is perfectly round?", "choices": ["Cylinder", "Cone", "Sphere", "Cube"], "correct": 1, "expectedAny": ["sphere"] },
+    { "question": "Volume units are?", "choices": ["Square", "Cubic", "Linear", "None"], "correct": 1, "expectedAny": ["cubic"] },
+    { "question": "Surface area units are?", "choices": ["Cubic", "Square", "Linear", "None"], "correct": 1, "expectedAny": ["square"] },
+    { "question": "Tube shape is?", "choices": ["Cone", "Cylinder", "Sphere", "Pyramid"], "correct": 1, "expectedAny": ["cylinder"] },
+    { "question": "Ball shape is?", "choices": ["Cylinder", "Cone", "Sphere", "Cube"], "correct": 1, "expectedAny": ["sphere"] },
+    { "question": "Ice cream cone shape is?", "choices": ["Cylinder", "Cone", "Sphere", "Cube"], "correct": 1, "expectedAny": ["cone"] }
+  ],
+  "fillintheblank": [
+    { "question": "A perfectly round 3D shape is called a ________.", "expectedAny": ["sphere"] },
+    { "question": "The amount of space inside is ________.", "expectedAny": ["volume"] },
+    { "question": "Total face area is ________ area.", "expectedAny": ["surface"] },
+    { "question": "Circular bases with curved sides is ________.", "expectedAny": ["cylinder"] },
+    { "question": "Circular base with point is ________.", "expectedAny": ["cone"] },
+    { "question": "Space inside 3D shape is ________.", "expectedAny": ["volume"] },
+    { "question": "All faces area is ________.", "expectedAny": ["surface area"] },
+    { "question": "A ________ has circular bases.", "expectedAny": ["cylinder"] },
+    { "question": "A ________ has pointed top.", "expectedAny": ["cone"] },
+    { "question": "A ________ is ball shaped.", "expectedAny": ["sphere"] }
+  ],
+  "shortanswer": [
+    { "question": "What formula is used to find the volume of a rectangular prism?", "expectedAny": ["V = l × w × h", "length × width × height"] },
+    { "question": "What is volume?", "expectedAny": ["amount of space inside 3D shape", "space inside", "how much fits inside", "capacity"] },
+    { "question": "What is surface area?", "expectedAny": ["total area of all faces", "all face area", "outside area", "total outer area"] },
+    { "question": "What is cylinder?", "expectedAny": ["3D shape with circular bases and curved sides", "circular bases shape", "tube shape", "can shape"] },
+    { "question": "What is cone?", "expectedAny": ["3D shape with circular base and pointed top", "pointed top shape"] },
+    { "question": "What is sphere?", "expectedAny": ["perfectly round 3D shape", "ball shape"] },
+    { "question": "What units for volume?", "expectedAny": ["cubic units", "cubic"] },
+    { "question": "What units for surface area?", "expectedAny": ["square units", "square"] },
+    { "question": "Formula for cube volume?", "expectedAny": ["V = s³", "side cubed"] },
+    { "question": "Difference between volume and surface area?", "expectedAny": ["volume is inside, surface area is outside", "inside vs outside"] }
+  ],
+  "wordProblems": [
+    { "question": "A cylindrical can has a radius of 3 cm and height of 10 cm. What is its volume? (Use V = πr²h and π ≈ 3.14)", "expectedAny": ["282.6 cm³", "about 283"] },
+    { "question": "Rectangular prism: length 5, width 3, height 4. Find volume.", "expectedAny": ["60", "60 cubic units"] },
+    { "question": "Cube has side 6. Find volume.", "expectedAny": ["216", "216 cubic units"] },
+    { "question": "Cylinder: radius 2, height 8. Volume? (Use π ≈ 3.14)", "expectedAny": ["100.48", "about 100"] },
+    { "question": "Rectangular prism: 4 by 4 by 10. Find volume.", "expectedAny": ["160", "160 cubic units"] },
+    { "question": "Cube side is 5. Find volume.", "expectedAny": ["125", "125 cubic units"] },
+    { "question": "Box: length 8, width 3, height 2. Find volume.", "expectedAny": ["48", "48 cubic units"] },
+    { "question": "Cylinder: radius 5, height 4. Volume? (Use π ≈ 3.14)", "expectedAny": ["314", "about 314"] },
+    { "question": "Cube has side 10. Find volume.", "expectedAny": ["1000", "1000 cubic units"] },
+    { "question": "Rectangular prism: 6 by 2 by 5. Find volume.", "expectedAny": ["60", "60 cubic units"] }
+  ]
 }

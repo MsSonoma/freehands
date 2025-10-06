@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Use scale models to show relative sizes and distances. Discuss recent space missions and discoveries. Compare terrestrial and gas giant planets.",
-  "sample": {
-    "question": "What do we call a ball of ice and rock that develops a tail near the sun?",
-    "expectedAny": [
-      "comet",
-      "icy comet",
-      "space comet",
-      "comet with tail"
-    ]
-  },
-  "truefalse": {
-    "question": "All planets in our solar system are the same size.",
-    "expectedAny": [
-      "false",
-      "no",
-      "f",
-      "incorrect"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the largest planet in our solar system?",
-    "expectedAny": [
-      "Jupiter",
-      "planet Jupiter",
-      "Jupiter the gas giant",
-      "the planet Jupiter"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Any object that orbits another object in space is called a ________.",
-    "expectedAny": [
-      "satellite",
-      "orbital satellite",
-      "space satellite",
-      "orbiting object"
-    ]
-  },
-  "shortanswer": {
-    "question": "What is the difference between an asteroid and a comet?",
-    "expectedAny": [
-      "asteroids are rocky, comets are icy",
-      "comets have tails, asteroids don't",
-      "comets are ice and rock, asteroids are just rock"
-    ]
-  }
+  "sample": [
+    { "question": "What do we call a ball of ice and rock that develops a tail near the sun?", "expectedAny": ["comet"] },
+    { "question": "Which is the largest planet?", "choices": ["Earth", "Mars", "Jupiter", "Venus"], "correct": 2, "expectedAny": ["Jupiter"] },
+    { "question": "The sun and its orbiting objects form the ________.", "expectedAny": ["solar system"] },
+    { "question": "A small rocky space object is an ________.", "expectedAny": ["asteroid"] },
+    { "question": "An object that orbits another is a ________.", "expectedAny": ["satellite"] },
+    { "question": "Which orbits the sun?", "choices": ["Moon", "Planet", "Star", "Galaxy"], "correct": 1, "expectedAny": ["planet"] },
+    { "question": "A ________ has a tail near the sun.", "expectedAny": ["comet"] },
+    { "question": "Large objects orbiting the sun are ________.", "expectedAny": ["planets"] },
+    { "question": "What is at the center of our solar system?", "choices": ["Earth", "Moon", "Sun", "Mars"], "correct": 2, "expectedAny": ["sun"] },
+    { "question": "Rocky objects in space are ________.", "expectedAny": ["asteroids"] }
+  ],
+  "truefalse": [
+    { "question": "All planets in our solar system are the same size.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The sun is at the center of our solar system.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Comets are made of ice and rock.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Asteroids have long tails.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Planets orbit the sun.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Earth is the largest planet.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A satellite orbits another object.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All planets are made of gas.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The solar system includes the sun.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Comets orbit the moon.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is the largest planet in our solar system?", "choices": ["Earth", "Mars", "Jupiter", "Saturn"], "correct": 2, "expectedAny": ["Jupiter"] },
+    { "question": "Which is icy with a tail?", "choices": ["Planet", "Comet", "Asteroid", "Moon"], "correct": 1, "expectedAny": ["comet"] },
+    { "question": "What orbits the sun?", "choices": ["Stars", "Planets", "Galaxies", "Universe"], "correct": 1, "expectedAny": ["planets"] },
+    { "question": "Which is at the center?", "choices": ["Earth", "Sun", "Moon", "Mars"], "correct": 1, "expectedAny": ["sun"] },
+    { "question": "What is a small rocky object?", "choices": ["Planet", "Comet", "Asteroid", "Star"], "correct": 2, "expectedAny": ["asteroid"] },
+    { "question": "Which orbits another object?", "choices": ["Sun", "Satellite", "Star", "Galaxy"], "correct": 1, "expectedAny": ["satellite"] },
+    { "question": "What includes all planets?", "choices": ["Galaxy", "Universe", "Solar system", "Moon"], "correct": 2, "expectedAny": ["solar system"] },
+    { "question": "Which has cleared its orbit?", "choices": ["Asteroid", "Planet", "Comet", "Dust"], "correct": 1, "expectedAny": ["planet"] },
+    { "question": "What develops a tail?", "choices": ["Planet", "Comet", "Asteroid", "Moon"], "correct": 1, "expectedAny": ["comet"] },
+    { "question": "Earth is what type?", "choices": ["Gas giant", "Star", "Planet", "Comet"], "correct": 2, "expectedAny": ["planet"] }
+  ],
+  "fillintheblank": [
+    { "question": "Any object that orbits another object in space is called a ________.", "expectedAny": ["satellite"] },
+    { "question": "The sun and all orbiting objects form the ________.", "expectedAny": ["solar system"] },
+    { "question": "A large object that orbits the sun is a ________.", "expectedAny": ["planet"] },
+    { "question": "A small rocky object in space is an ________.", "expectedAny": ["asteroid"] },
+    { "question": "A ball of ice and rock is a ________.", "expectedAny": ["comet"] },
+    { "question": "The ________ is at the center of our solar system.", "expectedAny": ["sun"] },
+    { "question": "Comets develop a ________ near the sun.", "expectedAny": ["tail"] },
+    { "question": "________ are smaller than planets.", "expectedAny": ["asteroids"] },
+    { "question": "Planets ________ the sun.", "expectedAny": ["orbit"] },
+    { "question": "The moon is Earth's natural ________.", "expectedAny": ["satellite"] }
+  ],
+  "shortanswer": [
+    { "question": "What is the difference between an asteroid and a comet?", "expectedAny": ["asteroids are rocky, comets are icy", "comets have tails, asteroids don't", "comets are ice, asteroids are rock", "comets have ice"] },
+    { "question": "What is the solar system?", "expectedAny": ["sun and all orbiting objects", "sun and planets", "sun and everything around it"] },
+    { "question": "What is a planet?", "expectedAny": ["large object orbiting sun", "object that has cleared its orbit", "big round thing orbiting sun"] },
+    { "question": "What is at the center of our solar system?", "expectedAny": ["sun", "the sun", "our star"] },
+    { "question": "What is a satellite?", "expectedAny": ["object that orbits another", "orbiting object", "something that goes around"] },
+    { "question": "Name the largest planet.", "expectedAny": ["Jupiter", "jupiter"] },
+    { "question": "What makes a comet's tail?", "expectedAny": ["heat from sun", "sun melts ice", "solar heat", "sun's energy"] },
+    { "question": "Are asteroids made of ice or rock?", "expectedAny": ["rock", "rocky", "stone"] },
+    { "question": "What do planets orbit?", "expectedAny": ["sun", "the sun", "our star"] },
+    { "question": "Give an example of a satellite.", "expectedAny": ["moon", "artificial satellite", "space station", "the moon", "Earth's moon"] }
+  ]
 }

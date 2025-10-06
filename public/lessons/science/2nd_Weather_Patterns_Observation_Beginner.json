@@ -54,21 +54,21 @@
     {"question": "A rainbow appears when ___ and ___ mix", "choices": ["Snow and wind", "Sun and rain", "Hot and cold", "Day and night"], "correct": 1}
   ],
   "fillintheblank": [
-    {"question": "The four seasons are spring, summer, fall, and ___", "expectedAny": ["winter"]},
-    {"question": "A ___ measures temperature", "expectedAny": ["thermometer"]},
+    {"question": "The four seasons are spring, summer, fall, and ___", "expectedAny": ["winter", "winter season"]},
+    {"question": "A ___ measures temperature", "expectedAny": ["thermometer", "temperature thermometer"]},
     {"question": "Water falling from clouds is called ___", "expectedAny": ["rain", "precipitation"]},
-    {"question": "In winter, days are ___", "expectedAny": ["shorter"]},
+    {"question": "In winter, days are ___", "expectedAny": ["shorter", "not as long"]},
     {"question": "___ is frozen rain", "expectedAny": ["snow", "hail"]},
     {"question": "Weather ___ tell us about coming weather", "expectedAny": ["patterns", "forecasts"]},
-    {"question": "The ___ warms the Earth", "expectedAny": ["sun"]}
+    {"question": "The ___ warms the Earth", "expectedAny": ["sun", "sunlight"]}
   ],
   "shortanswer": [
-    {"question": "How do seasons affect plants?", "expectedAny": ["spring grow, summer bloom, fall prepare, winter rest"]},
-    {"question": "What should you wear in rain vs snow?", "expectedAny": ["raincoat vs warm coat, boots, hat"]},
-    {"question": "How can you predict weather?", "expectedAny": ["look at clouds, feel wind, check temperature"]},
-    {"question": "Why do birds fly south?", "expectedAny": ["escape cold, find food"]},
-    {"question": "What makes a rainbow?", "expectedAny": ["sunlight through raindrops"]},
-    {"question": "How does weather affect activities?", "expectedAny": ["rain cancels outdoor plans; snow allows sledding"]},
-    {"question": "Describe a sunny day.", "expectedAny": ["bright, warm, few clouds"]}
+    {"question": "How do seasons affect plants?", "expectedAny": ["spring grow", "summer bloom", "fall prepare", "winter rest"]},
+    {"question": "What should you wear in rain vs snow?", "expectedAny": ["raincoat in rain", "warm coat and boots in snow", "hat and gloves in snow"]},
+    {"question": "How can you predict weather?", "expectedAny": ["look at clouds", "feel wind", "check temperature"]},
+    {"question": "Why do birds fly south?", "expectedAny": ["to escape cold", "to find food", "migration to warmer places"]},
+    {"question": "What makes a rainbow?", "expectedAny": ["sunlight through raindrops", "light bends in raindrops", "sun and rain together"]},
+    {"question": "How does weather affect activities?", "expectedAny": ["rain cancels outdoor plans", "snow allows sledding", "hot days mean swim instead"]},
+    {"question": "Describe a sunny day.", "expectedAny": ["bright", "warm", "few clouds"]}
   ]
 }

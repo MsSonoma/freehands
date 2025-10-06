@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Explain how human activities affect Earth systems. Discuss evidence for climate change and its causes.",
-  "sample": {
-    "question": "What is the layer of gases surrounding Earth?",
-    "expectedAny": [
-      "atmosphere",
-      "air layer",
-      "gas envelope",
-      "atmospheric layer"
-    ]
-  },
-  "truefalse": {
-    "question": "The greenhouse effect helps keep Earth warm enough for life.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What are coal, oil, and natural gas examples of?",
-    "expectedAny": [
-      "fossil fuels",
-      "carbon fuels",
-      "ancient fuels",
-      "non-renewable energy"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Long-term weather patterns in a region are called ________.",
-    "expectedAny": [
-      "climate",
-      "weather patterns",
-      "atmospheric conditions",
-      "regional weather"
-    ]
-  },
-  "shortanswer": {
-    "question": "How do fossil fuels contribute to climate change?",
-    "expectedAny": [
-      "release carbon dioxide",
-      "add greenhouse gases",
-      "increase atmospheric CO2"
-    ]
-  }
+  "sample": [
+    { "question": "What is the layer of gases surrounding Earth?", "expectedAny": ["atmosphere", "gas layer around Earth", "air around Earth"] },
+    { "question": "What is Earth warming from trapped heat?", "choices": ["Cooling", "Greenhouse effect", "Freezing", "Ice age"], "correct": 1, "expectedAny": ["greenhouse effect", "heat trapped by gases", "warming from gases"] },
+    { "question": "Carbon movement through systems is ________.", "expectedAny": ["carbon cycle", "carbon circulation", "carbon movement"] },
+    { "question": "Long-term weather patterns are ________.", "expectedAny": ["climate", "weather over time", "longterm weather patterns"] },
+    { "question": "Coal, oil, and gas are ________.", "expectedAny": ["fossil fuels"] },
+    { "question": "What is gas layer?", "choices": ["Lithosphere", "Atmosphere", "Hydrosphere", "Core"], "correct": 1, "expectedAny": ["atmosphere"] },
+    { "question": "Trapped heat warming is ________.", "expectedAny": ["greenhouse effect"] },
+    { "question": "What is carbon movement?", "choices": ["Water cycle", "Carbon cycle", "Nitrogen cycle", "Rock cycle"], "correct": 1, "expectedAny": ["carbon cycle"] },
+    { "question": "Weather patterns over time are ________.", "expectedAny": ["climate"] },
+    { "question": "Ancient organism fuels are ________.", "expectedAny": ["fossil fuels"] }
+  ],
+  "truefalse": [
+    { "question": "The greenhouse effect helps keep Earth warm enough for life.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Atmosphere is solid layer.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Greenhouse effect traps heat.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Carbon cycle is instant.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Climate is long-term weather.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Fossil fuels are renewable.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Atmosphere surrounds Earth.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Greenhouse effect cools Earth.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Carbon cycles through systems.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Climate changes daily.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What are coal, oil, and natural gas examples of?", "choices": ["Renewable", "Fossil fuels", "Solar", "Wind"], "correct": 1, "expectedAny": ["fossil fuels"] },
+    { "question": "What is gas layer?", "choices": ["Lithosphere", "Atmosphere", "Hydrosphere", "Core"], "correct": 1, "expectedAny": ["atmosphere"] },
+    { "question": "What traps heat?", "choices": ["Ice", "Greenhouse effect", "Wind", "Water"], "correct": 1, "expectedAny": ["greenhouse effect"] },
+    { "question": "What is carbon movement?", "choices": ["Water cycle", "Carbon cycle", "Nitrogen cycle", "Rock cycle"], "correct": 1, "expectedAny": ["carbon cycle"] },
+    { "question": "What is long-term weather?", "choices": ["Temperature", "Climate", "Humidity", "Pressure"], "correct": 1, "expectedAny": ["climate"] },
+    { "question": "Ancient organism fuels are?", "choices": ["Solar", "Fossil fuels", "Wind", "Nuclear"], "correct": 1, "expectedAny": ["fossil fuels"] },
+    { "question": "Gas surrounding Earth is?", "choices": ["Ocean", "Atmosphere", "Core", "Crust"], "correct": 1, "expectedAny": ["atmosphere"] },
+    { "question": "Warming from gases is?", "choices": ["Cooling", "Greenhouse effect", "Ice age", "Freezing"], "correct": 1, "expectedAny": ["greenhouse effect"] },
+    { "question": "Carbon moves through?", "choices": ["Nothing", "Earth systems", "Space", "Moon"], "correct": 1, "expectedAny": ["Earth systems"] },
+    { "question": "Regional weather patterns are?", "choices": ["Daily", "Climate", "Hourly", "Instant"], "correct": 1, "expectedAny": ["climate"] }
+  ],
+  "fillintheblank": [
+    { "question": "Long-term weather patterns in a region are called ________.", "expectedAny": ["climate"] },
+    { "question": "The ________ is gas layer around Earth.", "expectedAny": ["atmosphere"] },
+    { "question": "________ effect traps heat.", "expectedAny": ["greenhouse"] },
+    { "question": "________ cycle moves carbon.", "expectedAny": ["carbon"] },
+    { "question": "________ fuels are ancient organisms.", "expectedAny": ["fossil"] },
+    { "question": "Gas layer is ________.", "expectedAny": ["atmosphere"] },
+    { "question": "Greenhouse ________ warms Earth.", "expectedAny": ["effect"] },
+    { "question": "Carbon ________ is movement.", "expectedAny": ["cycle"] },
+    { "question": "________ is long-term weather.", "expectedAny": ["climate"] },
+    { "question": "Fossil ________ are coal, oil, gas.", "expectedAny": ["fuels"] }
+  ],
+  "shortanswer": [
+    { "question": "How do fossil fuels contribute to climate change?", "expectedAny": ["release carbon dioxide", "add greenhouse gases"] },
+    { "question": "What is atmosphere?", "expectedAny": ["layer of gases surrounding Earth", "gas layer around Earth"] },
+    { "question": "What is greenhouse effect?", "expectedAny": ["warming of Earth due to trapped heat", "heat trapped by gases"] },
+    { "question": "What is carbon cycle?", "expectedAny": ["movement of carbon through Earth systems", "carbon circulation"] },
+    { "question": "What is climate?", "expectedAny": ["long-term weather patterns in region", "weather over time"] },
+    { "question": "What are fossil fuels?", "expectedAny": ["coal, oil, and natural gas from ancient organisms", "ancient organism fuels"] },
+    { "question": "Why important greenhouse effect?", "expectedAny": ["keeps Earth warm enough for life", "maintains temperature"] },
+    { "question": "How humans affect climate?", "expectedAny": ["burn fossil fuels", "release greenhouse gases"] },
+    { "question": "Difference weather and climate?", "expectedAny": ["weather is short-term, climate is long-term", "daily vs patterns"] },
+    { "question": "Why fossil fuels problem?", "expectedAny": ["increase carbon dioxide", "cause climate change"] }
+  ]
 }

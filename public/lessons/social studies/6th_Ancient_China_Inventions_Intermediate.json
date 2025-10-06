@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Emphasize Chinese inventions like paper, gunpowder, and the compass. Discuss how the Silk Road connected different cultures. Show the Great Wall's significance.",
-  "sample": {
-    "question": "What were the ancient trade routes connecting China to Europe called?",
-    "expectedAny": [
-      "Silk Road",
-      "the Silk Road",
-      "Silk Route",
-      "ancient trade routes"
-    ]
-  },
-  "truefalse": {
-    "question": "Ancient China invented paper, gunpowder, and the compass.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What was built to protect China from northern invaders?",
-    "expectedAny": [
-      "Great Wall",
-      "Great Wall of China",
-      "Chinese wall",
-      "protective wall"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A series of rulers from the same family is called a ________.",
-    "expectedAny": [
-      "dynasty",
-      "ruling dynasty",
-      "family dynasty",
-      "imperial dynasty"
-    ]
-  },
-  "shortanswer": {
-    "question": "What did Confucius teach about how people should live?",
-    "expectedAny": [
-      "respect elders and authority",
-      "education and good government",
-      "proper behavior and relationships",
-      "moral values and respect"
-    ]
-  }
+  "sample": [
+    { "question": "What were the ancient trade routes connecting China to Europe called?", "expectedAny": ["Silk Road"] },
+    { "question": "Which protected from invaders?", "choices": ["River", "Great Wall", "Mountain", "Forest"], "correct": 1, "expectedAny": ["Great Wall"] },
+    { "question": "Rulers from same family are a ________.", "expectedAny": ["dynasty"] },
+    { "question": "The Chinese philosopher was ________.", "expectedAny": ["Confucius"] },
+    { "question": "Something new created is an ________.", "expectedAny": ["invention"] },
+    { "question": "What connected China to Europe?", "choices": ["River", "Silk Road", "Ocean", "Desert"], "correct": 1, "expectedAny": ["Silk Road"] },
+    { "question": "China built the ________.", "expectedAny": ["Great Wall"] },
+    { "question": "A series of family rulers is a ________.", "expectedAny": ["dynasty"] },
+    { "question": "Who taught about respect?", "choices": ["Caesar", "Confucius", "Alexander", "Napoleon"], "correct": 1, "expectedAny": ["Confucius"] },
+    { "question": "China made many ________.", "expectedAny": ["inventions"] }
+  ],
+  "truefalse": [
+    { "question": "Ancient China invented paper, gunpowder, and the compass.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The Silk Road was in Europe.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The Great Wall protected China.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A dynasty has no family rulers.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Confucius was a Chinese philosopher.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "China invented nothing.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The Silk Road connected cultures.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The Great Wall was small.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Dynasties ruled China.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Confucius taught nothing.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What was built to protect China from northern invaders?", "choices": ["Silk Road", "Great Wall", "Palace", "Bridge"], "correct": 1, "expectedAny": ["Great Wall"] },
+    { "question": "What connected China to Europe?", "choices": ["River", "Ocean", "Silk Road", "Mountain"], "correct": 2, "expectedAny": ["Silk Road"] },
+    { "question": "What is a series of family rulers?", "choices": ["Kingdom", "Dynasty", "Republic", "Democracy"], "correct": 1, "expectedAny": ["dynasty"] },
+    { "question": "Who was the Chinese philosopher?", "choices": ["Socrates", "Confucius", "Plato", "Aristotle"], "correct": 1, "expectedAny": ["Confucius"] },
+    { "question": "What did China invent?", "choices": ["Cars", "Paper", "Planes", "Phones"], "correct": 1, "expectedAny": ["paper"] },
+    { "question": "What protected from invaders?", "choices": ["Silk Road", "Dynasty", "Great Wall", "Palace"], "correct": 2, "expectedAny": ["Great Wall"] },
+    { "question": "What were trade routes?", "choices": ["Great Wall", "Silk Road", "Dynasty", "Palace"], "correct": 1, "expectedAny": ["Silk Road"] },
+    { "question": "What is something newly created?", "choices": ["Dynasty", "Wall", "Invention", "Road"], "correct": 2, "expectedAny": ["invention"] },
+    { "question": "Who taught about education?", "choices": ["Caesar", "Alexander", "Confucius", "Napoleon"], "correct": 2, "expectedAny": ["Confucius"] },
+    { "question": "What did dynasties have?", "choices": ["Democracy", "Family rulers", "Elections", "Votes"], "correct": 1, "expectedAny": ["family rulers"] }
+  ],
+  "fillintheblank": [
+    { "question": "A series of rulers from the same family is called a ________.", "expectedAny": ["dynasty"] },
+    { "question": "Ancient trade routes were the ________.", "expectedAny": ["Silk Road"] },
+    { "question": "The ________ protected China from invaders.", "expectedAny": ["Great Wall"] },
+    { "question": "________ taught about respect and education.", "expectedAny": ["Confucius"] },
+    { "question": "Something new created is an ________.", "expectedAny": ["invention"] },
+    { "question": "The ________ connected China to Europe.", "expectedAny": ["Silk Road"] },
+    { "question": "A ________ is family rulers.", "expectedAny": ["dynasty"] },
+    { "question": "China built the ________.", "expectedAny": ["Great Wall"] },
+    { "question": "________ was a Chinese philosopher.", "expectedAny": ["Confucius"] },
+    { "question": "China made many ________.", "expectedAny": ["inventions"] }
+  ],
+  "shortanswer": [
+    { "question": "What did Confucius teach about how people should live?", "expectedAny": ["respect elders and authority", "education and good government"] },
+    { "question": "What is the Silk Road?", "expectedAny": ["trade routes connecting China to Europe", "ancient trade routes"] },
+    { "question": "What is the Great Wall?", "expectedAny": ["wall protecting China", "massive wall from invaders"] },
+    { "question": "What is a dynasty?", "expectedAny": ["series of family rulers", "rulers from same family"] },
+    { "question": "Name a Chinese invention.", "expectedAny": ["paper", "gunpowder", "compass"] },
+    { "question": "Why was the Great Wall built?", "expectedAny": ["protect from invaders", "defense"] },
+    { "question": "What did the Silk Road do?", "expectedAny": ["connected cultures", "allowed trade"] },
+    { "question": "Who was Confucius?", "expectedAny": ["Chinese philosopher", "taught about respect"] },
+    { "question": "What is an invention?", "expectedAny": ["something new created", "new discovery"] },
+    { "question": "What three things did China invent?", "expectedAny": ["paper, gunpowder, compass"] }
+  ]
 }

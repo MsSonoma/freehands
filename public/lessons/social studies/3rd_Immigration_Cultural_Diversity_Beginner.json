@@ -5,12 +5,16 @@
   "difficulty": "Beginner",
   "featured": false,
   "vocab": [
-    { "term": "immigration", "definition": "When people move from one country to live in another country" },
-    { "term": "culture", "definition": "The way a group of people live, including their food, language, and traditions" },
-    { "term": "tradition", "definition": "Something that families or groups have done the same way for a long time" },
-    { "term": "diversity", "definition": "Having many different kinds of people or things" },
-    { "term": "heritage", "definition": "The traditions and culture passed down from your family" },
-    { "term": "customs", "definition": "Special ways of doing things that are important to a group" }
+    {"word": "immigration", "kid_friendly_definition": "When people move from one country to live in another country."},
+    {"word": "immigrant", "kid_friendly_definition": "A person who moves to live in a new country."},
+    {"word": "culture", "kid_friendly_definition": "The way a group of people live, including their food, language, and traditions."},
+    {"word": "tradition", "kid_friendly_definition": "Something that families or groups have done the same way for a long time."},
+    {"word": "diversity", "kid_friendly_definition": "Having many different kinds of people or things."},
+    {"word": "heritage", "kid_friendly_definition": "The traditions and culture passed down from your family."},
+    {"word": "customs", "kid_friendly_definition": "Special ways of doing things that are important to a group."},
+    {"word": "multicultural", "kid_friendly_definition": "Having many different cultures together."},
+    {"word": "ethnic groups", "kid_friendly_definition": "Groups of people who share the same culture, language, or background."},
+    {"word": "integration", "kid_friendly_definition": "When different groups come together and include everyone."}
   ],
   "teachingNotes": "Celebrate cultural diversity in classroom. Share family traditions and foods. Use maps to show where families come from.",
   "sample": [
@@ -23,67 +27,74 @@
     { "question": "Why is diversity good?", "expectedAny": ["learn new things", "different ideas", "makes community stronger"] }
   ],
   "truefalse": [
-    { "question": "All families in America originally came from somewhere else.", "answer": true },
-    { "question": "Different cultures make communities weaker.", "answer": false },
-    { "question": "Immigration has always been part of American history.", "answer": true },
-    { "question": "Only one culture exists in America.", "answer": false },
-    { "question": "People bring their traditions when they move.", "answer": true },
-    { "question": "Diversity means everyone is exactly the same.", "answer": false },
-    { "question": "Learning about other cultures is important.", "answer": true }
+    { "question": "All families in America originally came from somewhere else.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "came from other places"] },
+    { "question": "Different cultures make communities weaker.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "diversity strengthens communities"] },
+    { "question": "Immigration has always been part of American history.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "part of American history"] },
+    { "question": "Only one culture exists in America.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "many cultures in America"] },
+    { "question": "People bring their traditions when they move.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "bring traditions"] },
+    { "question": "Diversity means everyone is exactly the same.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "diversity means differences"] },
+    { "question": "Learning about other cultures is important.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "important to learn"] }
   ],
   "multiplechoice": [
     {
       "question": "What makes a community stronger?",
       "choices": ["everyone being the same", "having different cultures", "one language only", "same food for all"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "having different cultures", "diversity"]
     },
     {
       "question": "People who move to America from other countries are called ___.",
       "choices": ["visitors", "tourists", "immigrants", "travelers"],
-      "correct": 2
+      "correct": 2,
+      "expectedAny": ["c", "C", "3", "immigrants", "immigrant"]
     },
     {
       "question": "Which is an example of culture?",
       "choices": ["favorite color", "holiday celebrations", "homework", "bedtime"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "holiday celebrations", "holidays"]
     },
     {
       "question": "What do immigrants often bring to America?",
       "choices": ["bad habits", "their culture", "nothing", "problems"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "their culture", "culture", "traditions"]
     },
     {
       "question": "Diversity in schools means ___.",
       "choices": ["all students are alike", "students from different backgrounds", "no differences", "same families"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "students from different backgrounds", "different backgrounds"]
     },
     {
-      "question": "Which country has the most cultural diversity?",
+      "question": "Which country is known for high cultural diversity?",
       "choices": ["America", "Japan", "Iceland", "Denmark"],
-      "correct": 0
+      "correct": 0,
+      "expectedAny": ["a", "A", "1", "America", "United States", "USA", "U.S.A."]
     },
     {
       "question": "What can you learn from other cultures?",
       "choices": ["nothing new", "new foods and games", "how to be sad", "to be afraid"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "new foods and games", "new foods", "new games"]
     }
   ],
   "fillintheblank": [
-    { "question": "When people move from one country to another, it's called ___.", "expectedAny": ["immigration"] },
-    { "question": "___ includes food, language, and traditions.", "expectedAny": ["Culture"] },
-    { "question": "Having many different kinds of people is called ___.", "expectedAny": ["diversity"] },
-    { "question": "___ are special ways families do things.", "expectedAny": ["Traditions", "Customs"] },
-    { "question": "People who come to America from other countries are ___.", "expectedAny": ["immigrants"] },
-    { "question": "Your family's ___ includes traditions from your ancestors.", "expectedAny": ["heritage"] },
+    { "question": "When people move from one country to another, it's called ___.", "expectedAny": ["immigration", "moving to another country"] },
+    { "question": "___ includes food, language, and traditions.", "expectedAny": ["Culture", "culture"] },
+    { "question": "Having many different kinds of people is called ___.", "expectedAny": ["diversity", "cultural diversity"] },
+    { "question": "___ are special ways families do things.", "expectedAny": ["Traditions", "Customs", "family traditions"] },
+    { "question": "People who come to America from other countries are ___.", "expectedAny": ["immigrants", "newcomers", "people who immigrate"] },
+    { "question": "Your family's ___ includes traditions from your ancestors.", "expectedAny": ["heritage", "family heritage"] },
     { "question": "Different cultures make communities more ___.", "expectedAny": ["interesting", "diverse", "strong"] }
   ],
   "shortanswer": [
-    { "question": "How can you learn about other cultures?", "expectedAny": ["try different foods", "learn about holidays", "make friends", "cultural events"] },
-    { "question": "Why do people immigrate to America?", "expectedAny": ["better opportunities", "freedom", "join family", "escape problems"] },
-    { "question": "What traditions does your family have?", "expectedAny": ["holiday celebrations", "special foods", "family stories", "customs"] },
-    { "question": "How does immigration help America?", "expectedAny": ["brings new ideas", "different skills", "cultural richness", "hard workers"] },
-    { "question": "What makes your community diverse?", "expectedAny": ["different families", "various cultures", "many languages", "different traditions"] },
-    { "question": "How can schools celebrate diversity?", "expectedAny": ["cultural events", "share traditions", "learn languages", "try foods"] },
-    { "question": "What would America be like without immigration?", "expectedAny": ["less diverse", "fewer ideas", "different culture", "smaller population"] }
+    {"question": "How can you learn about other cultures?", "expectedAny": ["try different foods", "learn about holidays", "make friends", "cultural events", "read books", "ask questions"]},
+    {"question": "Why do people immigrate to America?", "expectedAny": ["better opportunities", "freedom", "join family", "escape problems", "jobs", "safer life"]},
+    {"question": "What traditions does your family have?", "expectedAny": ["holiday celebrations", "special foods", "family stories", "customs", "any reasonable answer", "celebrations"]},
+    {"question": "How does immigration help America?", "expectedAny": ["brings new ideas", "different skills", "cultural richness", "hard workers", "more diversity", "new businesses"]},
+    {"question": "What makes your community diverse?", "expectedAny": ["different families", "various cultures", "many languages", "different traditions", "varied backgrounds", "people from everywhere"]},
+    {"question": "How can schools celebrate diversity?", "expectedAny": ["cultural events", "share traditions", "learn languages", "try foods", "celebrate holidays", "learn about cultures"]},
+    {"question": "What would America be like without immigration?", "expectedAny": ["less diverse", "fewer ideas", "different culture", "smaller population", "not as interesting", "less variety"]}
   ]
 }

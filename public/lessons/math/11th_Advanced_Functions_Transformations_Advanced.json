@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "11th_Advanced_Functions_Transformations_Advanced",
   "title": "Advanced Functions and Transformations",
   "grade": "11th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "bijective function",
-      "definition": "Function that is both one-to-one and onto"
-    },
-    {
-      "term": "asymptotic behavior",
-      "definition": "Function behavior as input approaches specific values or infinity"
-    },
-    {
-      "term": "discontinuity",
-      "definition": "Point where function is not continuous or well-defined"
-    },
-    {
-      "term": "modular arithmetic",
-      "definition": "Arithmetic system with finite number of elements using remainder operation"
-    },
-    {
-      "term": "functional equation",
-      "definition": "Equation involving unknown function and its values at different points"
-    }
+    {"term": "absolute value function transformation", "definition": "V-shaped graph shifting stretching reflecting"},
+    {"term": "parametric equations", "definition": "Expressing x and y separately as functions of parameter"},
+    {"term": "implicit function", "definition": "Relation where y is not isolated"},
+    {"term": "modulus function", "definition": "Absolute value operation creating piecewise behavior"},
+    {"term": "even and odd functions", "definition": "Symmetry properties about y-axis or origin"}
   ],
-  "teachingNotes": "Explore advanced function properties and theoretical concepts. Analyze complex function behaviors and relationships.",
-  "sample": {
-    "question": "What is a function that is both one-to-one and onto?",
-    "expectedAny": ["bijective function", "bijection", "one-to-one correspondence", "invertible function"]
-  },
-  "truefalse": {
-    "question": "Asymptotic behavior describes function limits at infinity.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What involves an unknown function at different points?",
-    "expectedAny": ["functional equation", "function equation", "differential relation", "function identity"]
-  },
-  "fillintheblank": {
-    "question": "A point where function is not continuous is a ________.",
-    "expectedAny": ["discontinuity", "break", "gap", "interruption"]
-  },
-  "shortanswer": {
-    "question": "What properties must a function have to be bijective?",
-    "expectedAny": ["injective and surjective", "one-to-one and onto", "invertible", "perfect mapping"]
-  },
-  "wordProblems": {
-    "question": "If f(x+y) = f(x)·f(y) and f(1) = 2, what is f(3)?",
-    "expectedAny": ["8", "eight", "2³ = 8", "f(3) = f(1+1+1) = f(1)³ = 8"]
-  }
+  "teachingNotes": "Explore advanced function types and complex transformations. Analyze symmetry properties.",
+  "sample": [
+    {"question": "What creates V-shaped graphs?", "expectedAny": ["absolute value function", "modulus function", "abs function", "magnitude function"]},
+    {"question": "What expresses x and y using a parameter?", "expectedAny": ["parametric equations", "parametric form", "parameter equations", "parametric representation"]},
+    {"question": "What relation doesn't isolate y?", "expectedAny": ["implicit function", "implicit relation", "implicit equation", "non-explicit form"]},
+    {"question": "What operation creates piecewise behavior?", "expectedAny": ["modulus", "absolute value", "abs function", "magnitude"]},
+    {"question": "What symmetry properties classify functions?", "expectedAny": ["even and odd", "even or odd functions", "symmetry types", "function parity"]},
+    {"question": "What function has characteristic V shape?", "expectedAny": ["absolute value", "modulus", "abs", "magnitude function"]},
+    {"question": "What uses parameter t for both coordinates?", "expectedAny": ["parametric equations", "parametric", "parameter form", "parametric representation"]},
+    {"question": "What form keeps variables mixed?", "expectedAny": ["implicit", "implicit function", "implicit relation", "non-explicit"]},
+    {"question": "What is |x| also called?", "expectedAny": ["modulus", "absolute value", "magnitude", "mod function"]},
+    {"question": "What property makes f(-x) = f(x)?", "expectedAny": ["even function", "even symmetry", "y-axis symmetry", "even property"]}
+  ],
+  "truefalse": [
+    {"question": "Absolute value functions are piecewise linear.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Parametric equations always give functions.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Implicit functions can represent circles.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Even functions are symmetric about the origin.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Odd functions satisfy f(-x) = -f(x).", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "All absolute value graphs open upward.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Parametric equations can create curves that aren't functions.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "x + y = 1 is explicit.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Modulus always returns non-negative values.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "A function can be both even and odd.", "expectedAny": ["false", "no", "f", "incorrect"]}
+  ],
+  "multiplechoice": [
+    {"question": "What is the graph of y = |x - 2|?", "choices": ["Line", "Parabola", "V-shape", "Circle"], "correct": "V-shape"},
+    {"question": "What form is x = cos t, y = sin t?", "choices": ["Explicit", "Implicit", "Parametric", "Piecewise"], "correct": "Parametric"},
+    {"question": "What is x + y = 25?", "choices": ["Explicit function", "Implicit relation", "Parametric", "Linear"], "correct": "Implicit relation"},
+    {"question": "What symmetry does f(-x) = f(x) show?", "choices": ["Origin", "Y-axis", "X-axis", "None"], "correct": "Y-axis"},
+    {"question": "What is f(x) = x?", "choices": ["Even", "Odd", "Neither", "Both"], "correct": "Odd"},
+    {"question": "How does y = -|x| transform?", "choices": ["Opens up", "Opens down", "Shifts right", "Shifts up"], "correct": "Opens down"},
+    {"question": "What creates a circle parametrically?", "choices": ["x = t, y = t", "x = cos t, y = sin t", "x = t, y = t", "x = t, y = t"], "correct": "x = cos t, y = sin t"},
+    {"question": "What is |x - 3| at x = 1?", "choices": ["1", "2", "3", "4"], "correct": "2"},
+    {"question": "What is an even function?", "choices": ["x", "x", "x", "x"], "correct": "x"},
+    {"question": "What symmetry does sin(x) have?", "choices": ["Even", "Odd", "Neither", "Both"], "correct": "Odd"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ value functions create V-shaped graphs.", "expectedAny": ["absolute", "modulus", "abs", "absolute value", "magnitude", "mod"]},
+    {"question": "_____ equations express coordinates using a parameter.", "expectedAny": ["parametric", "parameter", "parametrized", "parametric equations", "param", "parameter based"]},
+    {"question": "_____ functions don't isolate one variable.", "expectedAny": ["implicit", "non-explicit", "implicit relation", "implicit equations", "non isolated", "embedded"]},
+    {"question": "The _____ function returns absolute value.", "expectedAny": ["modulus", "absolute value", "abs", "magnitude", "mod", "absolute"]},
+    {"question": "_____ functions satisfy f(-x) = f(x).", "expectedAny": ["even", "symmetric", "y-axis symmetric", "even functions", "y symmetric", "axis symmetric"]},
+    {"question": "_____ functions satisfy f(-x) = -f(x).", "expectedAny": ["odd", "origin symmetric", "antisymmetric", "odd functions", "rotational", "point symmetric"]},
+    {"question": "The vertex of y = |x - h| is at x = _____.", "expectedAny": ["h", "the h value", "h coordinate"]},
+    {"question": "x = t, y = t is in _____ form.", "expectedAny": ["parametric", "parameter", "parametrized"]},
+    {"question": "x + y = r is _____ form for a circle.", "expectedAny": ["implicit", "standard", "implicit relation"]},
+    {"question": "|-5| = _____.", "expectedAny": ["5", "positive 5", "five"]}
+  ],
+  "shortanswer": [
+    {"question": "Describe transformations of y = |x - 3| + 2.", "expectedAny": ["shift right 3 units and up 2 units from basic absolute value", "vertex at (3, 2) with V shape", "translated 3 right and 2 up"]},
+    {"question": "Explain how parametric equations can represent a circle.", "expectedAny": ["use x = r cos t and y = r sin t where t is parameter", "cos and sin relationship creates circular path", "parameter t traces circle as it varies"]},
+    {"question": "What makes x + y = 1 implicit and how would you graph it?", "expectedAny": ["implicit because y not isolated and graph is unit circle", "y not solved for separately creates circle centered at origin", "both variables mixed in equation forming circle"]},
+    {"question": "Prove f(x) = x is an even function.", "expectedAny": ["f(-x) = (-x) = x = f(x) so even", "substituting negative x gives same result", "symmetry about y-axis since f(-x) equals f(x)"]},
+    {"question": "Prove f(x) = x is an odd function.", "expectedAny": ["f(-x) = (-x) = -x = -f(x) so odd", "negative input gives negative of output", "origin symmetry since f(-x) equals negative f(x)"]},
+    {"question": "How do you convert parametric to Cartesian form?", "expectedAny": ["eliminate the parameter by solving for t and substituting", "express t from one equation and substitute into other", "solve one equation for parameter then replace in other"]},
+    {"question": "Graph y = -|x + 1| - 2 and describe transformations.", "expectedAny": ["reflect over x-axis shift left 1 and down 2 vertex at (-1, -2) opens down", "inverted V centered at (-1, -2)", "reflected and translated absolute value"]},
+    {"question": "Why can parametric equations fail vertical line test?", "expectedAny": ["parameter can loop back creating multiple y values for one x", "curves can cross themselves or be vertical", "not restricted to functions can be any curve"]},
+    {"question": "Determine if f(x) = x + x is even, odd, or neither.", "expectedAny": ["neither because f(-x) = x - x which equals neither f(x) nor -f(x)", "neither even nor odd no symmetry", "fails both tests so neither"]},
+    {"question": "Write parametric equations for the line y = 2x + 1.", "expectedAny": ["x = t and y = 2t + 1", "let x equal t then y equals 2t plus 1", "parameter t gives x = t, y = 2t + 1"]}
+  ],
+  "wordProblems": [
+    {"question": "A spring's compression distance is d = |F - 10| where F is force. Graph this.", "expectedAny": ["V-shaped graph with vertex at F = 10", "absolute value centered at 10", "minimum at force 10 increasing both directions"]},
+    {"question": "Parametric path: x = 3cos(t), y = 3sin(t). What shape and size?", "expectedAny": ["circle with radius 3", "circular path radius 3 units", "circle centered at origin radius 3"]},
+    {"question": "Temperature variation is T = |t - 12| + 18 where t is hour. Find minimum temperature.", "expectedAny": ["18 degrees at hour 12", "minimum 18 at t = 12", "18 degrees at noon"]},
+    {"question": "Implicit equation x/9 + y/4 = 1. What shape?", "expectedAny": ["ellipse", "oval", "ellipse with semi-axes 3 and 2"]},
+    {"question": "Is distance function d(x) = |x| even, odd, or neither?", "expectedAny": ["even because d(-x) = |-x| = |x| = d(x)", "even function symmetry about y-axis", "even due to absolute value"]},
+    {"question": "Parametric motion: x = 2t, y = t - 1. Eliminate parameter.", "expectedAny": ["y = (x/2) - 1 = x/4 - 1", "y equals x squared over 4 minus 1", "parabola y = x/4 - 1"]},
+    {"question": "Profit function P(x) = 100|x - 50| - 500. Find break-even points.", "expectedAny": ["x = 45 or x = 55", "50  5 gives 45 and 55", "45 and 55 units"]},
+    {"question": "Verify x - y = 1 is not a function. Why?", "expectedAny": ["for some x values there are two y values fails vertical line test", "hyperbola has two branches", "implicit relation not a function"]},
+    {"question": "Parametric curve x = t, y = t. Is it a function of x?", "expectedAny": ["yes because each x gives unique y", "function since t is one-to-one", "yes passes vertical line test"]},
+    {"question": "Transform f(x) = |x| to open downward with vertex at (4, -3).", "expectedAny": ["f(x) = -|x - 4| - 3", "negative absolute value of x minus 4 minus 3", "reflect and translate to -|x - 4| - 3"]}
+  ]
 }

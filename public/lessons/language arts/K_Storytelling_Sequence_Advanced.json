@@ -20,6 +20,10 @@
     {
       "term": "end",
       "definition": "How a story finishes"
+    },
+    {
+      "term": "sequence",
+      "definition": "The order that events happen: first, next, last"
     }
   ],
   "teachingNotes": "Use picture books to identify story parts. Practice retelling familiar stories. Create class stories with sequence cards.",
@@ -59,13 +63,13 @@
     {"question": "The words that help tell order are: first, next, and ___.", "expectedAny": ["last"]}
   ],
   "shortanswer": [
-    {"question": "Tell me about your favorite story. What happens in the beginning?", "expectedAny": ["characters introduced", "setting is described"]},
-    {"question": "What happens when you get ready for bed? Tell in order.", "expectedAny": ["brush teeth, put on pajamas, read story, go to sleep"]},
-    {"question": "Describe the middle of your favorite book.", "expectedAny": ["main events", "problems happen"]},
-    {"question": "How do you make a snack? Tell steps.", "expectedAny": ["get bread, add filling, eat"]},
-    {"question": "Why is order important?", "expectedAny": ["so it makes sense"]},
-    {"question": "Can you retell The Three Bears?", "expectedAny": ["beginning, middle, end summary"]},
-    {"question": "Make up a short 3-part story.", "expectedAny": ["three events in order"]}
+    {"question": "Tell me about your favorite story. What happens in the beginning?", "expectedAny": ["characters introduced", "setting is described", "problem is introduced"]},
+    {"question": "What happens when you get ready for bed? Tell in order.", "expectedAny": ["brush teeth, put on pajamas, read story, go to sleep", "bath, pajamas, brush teeth, sleep", "clean up toys, pajamas, brush teeth, sleep"]},
+    {"question": "Describe the middle of your favorite book.", "expectedAny": ["main events", "problems happen", "characters try to solve problem"]},
+    {"question": "How do you make a snack? Tell steps.", "expectedAny": ["get bread, add filling, eat", "wash hands, get food, eat", "get bowl, pour cereal, eat"]},
+    {"question": "Why is order important?", "expectedAny": ["so it makes sense", "so others understand", "so you do not forget steps"]},
+    {"question": "Can you retell The Three Bears?", "expectedAny": ["beginning, middle, end summary", "Goldilocks tries things, bears come home, she runs away"]},
+    {"question": "Make up a short 3-part story.", "expectedAny": ["three events in order", "first, next, last events", "beginning, middle, end events"]}
   ],
   "wordProblems": [
     {"question": "Maria tells a story with 3 parts. If the beginning has 2 events and the middle has 4 events, how many events so far?", "expectedAny": ["6 events"]},

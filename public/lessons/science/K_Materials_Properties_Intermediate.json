@@ -10,6 +10,10 @@
       "definition": "What something is made of, like wood, metal, or plastic"
     },
     {
+      "term": "property",
+      "definition": "How something looks or feels"
+    },
+    {
       "term": "hard",
       "definition": "Something that doesn't bend or break easily"
     },
@@ -20,6 +24,11 @@
     {
       "term": "rough",
       "definition": "Something that feels bumpy or scratchy"
+    }
+    ,
+    {
+      "term": "smooth",
+      "definition": "Something that feels flat and not bumpy"
     }
   ],
   "teachingNotes": "Provide texture boxes with different materials. Let children touch and describe various objects. Sort items by properties.",
@@ -51,20 +60,20 @@
   "fillintheblank": [
     {"question": "Sandpaper feels _____ when you touch it.", "expectedAny": ["rough", "scratchy", "bumpy"]},
     {"question": "A _____ ball is soft and squishy.", "expectedAny": ["foam", "rubber"]},
-    {"question": "Windows are made of _____ so you can see through them.", "expectedAny": ["glass"]},
+  {"question": "Windows are made of _____ so you can see through them.", "expectedAny": ["glass", "clear glass"]},
     {"question": "_____ is a hard material used to build things.", "expectedAny": ["Wood", "Metal", "Stone"]},
     {"question": "Feathers feel very _____ and light.", "expectedAny": ["soft", "fluffy"]},
     {"question": "Ice feels _____ and smooth.", "expectedAny": ["cold", "hard"]},
-    {"question": "Different _____ have different textures.", "expectedAny": ["materials"]}
+    {"question": "Different _____ have different textures.", "expectedAny": ["materials", "kinds of materials"]}
   ],
   "shortanswer": [
-    {"question": "Name something that is smooth and something that is rough.", "expectedAny": ["smooth: glass, table", "rough: sandpaper, tree bark"]},
-    {"question": "What materials would you use to make a toy?", "expectedAny": ["plastic", "wood", "fabric", "soft materials"]},
-    {"question": "How can you tell the difference between materials?", "expectedAny": ["touch them", "look at them", "feel texture"]},
-    {"question": "Why do we use different materials for different things?", "expectedAny": ["different properties", "some are stronger", "some are softer"]},
-    {"question": "What material would be good for making a cup? Why?", "expectedAny": ["plastic or glass", "hard materials", "won't break easily"]},
-    {"question": "Describe three ways materials can feel different.", "expectedAny": ["rough or smooth", "hard or soft", "bumpy or flat"]},
-    {"question": "What happens when you mix different materials together?", "expectedAny": ["make new things", "combine properties", "create something useful"]}
+  {"question": "Name something that is smooth and something that is rough.", "expectedAny": ["smooth: glass", "smooth: table", "rough: sandpaper", "rough: tree bark", "glass is smooth", "table smooth", "sandpaper rough", "bark rough", "smooth glass rough bark", "bumpy bark", "scratchy sandpaper"]},
+    {"question": "What materials would you use to make a toy?", "expectedAny": ["plastic", "wood", "fabric", "soft materials", "plastic and wood", "something soft", "fluffy stuff", "hard stuff"]},
+    {"question": "How can you tell the difference between materials?", "expectedAny": ["touch them", "look at them", "feel texture", "feels like", "it is", "by touching", "by looking", "how it feels", "feels different"]},
+    {"question": "Why do we use different materials for different things?", "expectedAny": ["different properties", "some are stronger", "some are softer", "works better", "needs to be strong", "needs to be soft", "depends what you need"]},
+    {"question": "What material would be good for making a cup? Why?", "expectedAny": ["plastic or glass", "hard materials", "won't break easily", "plastic", "glass", "something hard", "needs to be hard", "holds water", "doesn't leak"]},
+    {"question": "Describe three ways materials can feel different.", "expectedAny": ["rough or smooth", "hard or soft", "bumpy or flat", "scratchy or smooth", "rough smooth hard soft", "bumpy smooth hard", "soft hard rough"]},
+    {"question": "What happens when you mix different materials together?", "expectedAny": ["make new things", "combine properties", "create something useful", "get something new", "makes new stuff", "can make things", "build something"]}
   ],
   "wordProblems": [
     {"question": "Emma has 3 hard toys and 4 soft toys. How many toys does she have in total?", "expectedAny": ["7 toys", "3 + 4 = 7"]},

@@ -1,74 +1,485 @@
-{
-  "id": "11th_Quantum_Mechanics_Atomic_Structure_Intermediate",
-  "title": "Quantum Mechanics and Atomic Structure",
-  "grade": "11th",
-  "difficulty": "Intermediate",
-  "vocab": [
-    {
-      "term": "Heisenberg uncertainty principle",
-      "definition": "Principle stating position and momentum cannot be precisely known simultaneously"
-    },
-    {
-      "term": "Schrödinger equation",
-      "definition": "Mathematical equation describing quantum mechanical wave functions"
-    },
-    {
-      "term": "electron configuration",
-      "definition": "Distribution of electrons among atomic orbitals"
-    },
-    {
-      "term": "spin quantum number",
-      "definition": "Quantum number describing intrinsic angular momentum of particles"
-    },
-    {
-      "term": "Pauli exclusion principle",
-      "definition": "Principle that no two electrons can have identical quantum states"
-    }
-  ],
-  "teachingNotes": "Introduce fundamental quantum principles and their implications. Practice electron configuration notation.",
-  "sample": {
-    "question": "What principle states position and momentum cannot be known precisely together?",
-    "expectedAny": [
-      "Heisenberg uncertainty principle",
-      "uncertainty principle",
-      "Heisenberg principle",
-      "quantum uncertainty"
-    ]
-  },
-  "truefalse": {
-    "question": "The Pauli exclusion principle prevents electrons from having identical quantum states.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What describes the distribution of electrons among orbitals?",
-    "expectedAny": [
-      "electron configuration",
-      "electronic configuration",
-      "electron arrangement",
-      "orbital filling"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The quantum number describing particle spin is the ________ quantum number.",
-    "expectedAny": [
-      "spin",
-      "magnetic spin",
-      "intrinsic",
-      "angular momentum"
-    ]
-  },
-  "shortanswer": {
-    "question": "What does the Schrödinger equation describe?",
-    "expectedAny": [
-      "wave functions",
-      "quantum states",
-      "probability distributions",
-      "quantum behavior"
-    ]
-  }
+﻿{
+    "id":  "11th_Quantum_Mechanics_Atomic_Structure_Intermediate",
+    "title":  "Quantum Mechanics and Atomic Structure",
+    "grade":  "11th",
+    "difficulty":  "Intermediate",
+    "vocab":  [
+                  {
+                      "term":  "wave-particle duality",
+                      "definition":  "Concept that matter and energy exhibit both wave and particle properties"
+                  },
+                  {
+                      "term":  "Heisenberg uncertainty principle",
+                      "definition":  "Cannot simultaneously know exact position and momentum of particle"
+                  },
+                  {
+                      "term":  "probability density",
+                      "definition":  "Likelihood of finding electron at specific location"
+                  },
+                  {
+                      "term":  "electron configuration",
+                      "definition":  "Distribution of electrons among atomic orbitals"
+                  },
+                  {
+                      "term":  "Pauli exclusion principle",
+                      "definition":  "No two electrons can have same quantum numbers"
+                  }
+              ],
+    "teachingNotes":  "Emphasize probabilistic nature of quantum mechanics. Discuss implications of uncertainty principle.",
+    "sample":  [
+                   {
+                       "question":  "What describes matter as both wave and particle?",
+                       "expectedAny":  [
+                                           "wave-particle duality",
+                                           "dual nature",
+                                           "duality",
+                                           "wave particle property",
+                                           "dual behavior",
+                                           "wave and particle nature"
+                                       ]
+                   },
+                   {
+                       "question":  "What limits simultaneous measurement of position and momentum?",
+                       "expectedAny":  [
+                                           "Heisenberg uncertainty principle",
+                                           "uncertainty principle",
+                                           "Heisenberg principle",
+                                           "uncertainty",
+                                           "uncertainty relation",
+                                           "Heisenberg"
+                                       ]
+                   },
+                   {
+                       "question":  "What shows likelihood of finding an electron?",
+                       "expectedAny":  [
+                                           "probability density",
+                                           "electron density",
+                                           "probability distribution",
+                                           "density function",
+                                           "electron probability",
+                                           "probability cloud"
+                                       ]
+                   },
+                   {
+                       "question":  "What describes electron distribution in orbitals?",
+                       "expectedAny":  [
+                                           "electron configuration",
+                                           "orbital configuration",
+                                           "electron arrangement",
+                                           "electronic structure"
+                                       ]
+                   },
+                   {
+                       "question":  "What principle prevents identical quantum states?",
+                       "expectedAny":  [
+                                           "Pauli exclusion principle",
+                                           "exclusion principle",
+                                           "Pauli principle",
+                                           "no-duplicate rule"
+                                       ]
+                   },
+                   {
+                       "question":  "What dual behavior do electrons show?",
+                       "expectedAny":  [
+                                           "wave-particle duality",
+                                           "wave and particle nature",
+                                           "dual property",
+                                           "both behaviors"
+                                       ]
+                   },
+                   {
+                       "question":  "Who stated the uncertainty principle?",
+                       "expectedAny":  [
+                                           "Heisenberg",
+                                           "Werner Heisenberg",
+                                           "Heisenberg uncertainty",
+                                           "uncertainty principle"
+                                       ]
+                   },
+                   {
+                       "question":  "What measures electron presence probability?",
+                       "expectedAny":  [
+                                           "probability density",
+                                           "density",
+                                           "probability cloud",
+                                           "likelihood function"
+                                       ]
+                   },
+                   {
+                       "question":  "What notation shows orbital filling?",
+                       "expectedAny":  [
+                                           "electron configuration",
+                                           "configuration",
+                                           "orbital notation",
+                                           "electron structure"
+                                       ]
+                   },
+                   {
+                       "question":  "What prevents two identical electrons?",
+                       "expectedAny":  [
+                                           "Pauli exclusion principle",
+                                           "exclusion",
+                                           "Pauli rule",
+                                           "exclusion law"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Electrons exhibit both wave and particle properties.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Position and momentum can be known exactly simultaneously.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Probability density indicates likely electron locations.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Two electrons can have identical quantum numbers.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Electron configuration follows specific filling rules.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Quantum mechanics is deterministic.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Wave-particle duality applies to all matter.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Uncertainty principle applies only to electrons.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Orbital shapes are determined by quantum numbers.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Electrons fill orbitals randomly.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What principle describes wave-particle behavior?",
+                               "choices":  [
+                                               "Pauli",
+                                               "Heisenberg",
+                                               "Wave-particle duality",
+                                               "Exclusion"
+                                           ],
+                               "correct":  "Wave-particle duality"
+                           },
+                           {
+                               "question":  "What cannot be known simultaneously?",
+                               "choices":  [
+                                               "Energy and time",
+                                               "Position and momentum",
+                                               "Spin and charge",
+                                               "Mass and velocity"
+                                           ],
+                               "correct":  "Position and momentum"
+                           },
+                           {
+                               "question":  "What is electron configuration for helium?",
+                               "choices":  [
+                                               "1s",
+                                               "1s",
+                                               "2s",
+                                               "1s2s"
+                                           ],
+                               "correct":  "1s"
+                           },
+                           {
+                               "question":  "What does Pauli exclusion prevent?",
+                               "choices":  [
+                                               "Electron movement",
+                                               "Identical quantum states",
+                                               "Energy changes",
+                                               "Orbital overlap"
+                                           ],
+                               "correct":  "Identical quantum states"
+                           },
+                           {
+                               "question":  "What determines orbital shape?",
+                               "choices":  [
+                                               "Energy",
+                                               "Quantum numbers",
+                                               "Electrons",
+                                               "Nucleus"
+                                           ],
+                               "correct":  "Quantum numbers"
+                           },
+                           {
+                               "question":  "What is maximum electrons in p sublevel?",
+                               "choices":  [
+                                               "2",
+                                               "6",
+                                               "10",
+                                               "14"
+                                           ],
+                               "correct":  "6"
+                           },
+                           {
+                               "question":  "What describes electron location probabilistically?",
+                               "choices":  [
+                                               "Orbit",
+                                               "Trajectory",
+                                               "Probability density",
+                                               "Path"
+                                           ],
+                               "correct":  "Probability density"
+                           },
+                           {
+                               "question":  "What fills first in ground state?",
+                               "choices":  [
+                                               "2s",
+                                               "2p",
+                                               "1s",
+                                               "3s"
+                                           ],
+                               "correct":  "1s"
+                           },
+                           {
+                               "question":  "What property shows wave behavior?",
+                               "choices":  [
+                                               "Mass",
+                                               "Charge",
+                                               "Interference",
+                                               "Spin"
+                                           ],
+                               "correct":  "Interference"
+                           },
+                           {
+                               "question":  "What notation is 1s 2s 2p?",
+                               "choices":  [
+                                               "Hydrogen",
+                                               "Helium",
+                                               "Carbon",
+                                               "Neon"
+                                           ],
+                               "correct":  "Neon"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "Wave-_____ duality describes electron behavior.",
+                               "expectedAny":  [
+                                                   "particle",
+                                                   "corpuscle",
+                                                   "matter"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ uncertainty principle limits measurement.",
+                               "expectedAny":  [
+                                                   "Heisenberg",
+                                                   "Werner Heisenberg",
+                                                   "uncertainty"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ density shows electron probability.",
+                               "expectedAny":  [
+                                                   "probability",
+                                                   "electron",
+                                                   "charge"
+                                               ]
+                           },
+                           {
+                               "question":  "Electron _____ describes orbital filling.",
+                               "expectedAny":  [
+                                                   "configuration",
+                                                   "arrangement",
+                                                   "structure"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ exclusion principle prevents duplicate states.",
+                               "expectedAny":  [
+                                                   "Pauli",
+                                                   "Wolfgang Pauli",
+                                                   "exclusion"
+                                               ]
+                           },
+                           {
+                               "question":  "Electrons behave as both waves and _____.",
+                               "expectedAny":  [
+                                                   "particles",
+                                                   "matter",
+                                                   "corpuscles"
+                                               ]
+                           },
+                           {
+                               "question":  "Position and _____ cannot both be exact.",
+                               "expectedAny":  [
+                                                   "momentum",
+                                                   "velocity",
+                                                   "motion"
+                                               ]
+                           },
+                           {
+                               "question":  "Orbitals are regions of high probability _____.",
+                               "expectedAny":  [
+                                                   "density",
+                                                   "distribution",
+                                                   "cloud"
+                                               ]
+                           },
+                           {
+                               "question":  "The s sublevel holds _____ electrons maximum.",
+                               "expectedAny":  [
+                                                   "2",
+                                                   "two",
+                                                   "a pair"
+                                               ]
+                           },
+                           {
+                               "question":  "Quantum mechanics is _____, not deterministic.",
+                               "expectedAny":  [
+                                                   "probabilistic",
+                                                   "statistical",
+                                                   "uncertain"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "Explain wave-particle duality.",
+                            "expectedAny":  [
+                                                "matter and energy exhibit both wave and particle properties depending on experiment",
+                                                "electrons show interference like waves but interact like particles",
+                                                "fundamental concept that all matter has wave and particle characteristics"
+                                            ]
+                        },
+                        {
+                            "question":  "State the Heisenberg uncertainty principle.",
+                            "expectedAny":  [
+                                                "cannot simultaneously know exact position and momentum of particle",
+                                                "more precisely you know position less precisely you know momentum",
+                                                "inherent limit to precision of simultaneous measurements"
+                                            ]
+                        },
+                        {
+                            "question":  "What is probability density?",
+                            "expectedAny":  [
+                                                "likelihood of finding electron at specific location",
+                                                "mathematical function describing where electron is likely to be",
+                                                "electron cloud intensity at each point"
+                                            ]
+                        },
+                        {
+                            "question":  "Describe electron configuration.",
+                            "expectedAny":  [
+                                                "distribution of electrons among atomic orbitals following rules",
+                                                "notation showing how electrons fill shells and sublevels",
+                                                "arrangement like 1s 2s 2p for neon"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain the Pauli exclusion principle.",
+                            "expectedAny":  [
+                                                "no two electrons can have same set of quantum numbers",
+                                                "each orbital holds maximum two electrons with opposite spins",
+                                                "prevents electrons from occupying identical states"
+                                            ]
+                        },
+                        {
+                            "question":  "How does uncertainty principle affect measurement?",
+                            "expectedAny":  [
+                                                "measuring one property disturbs the other",
+                                                "limits precision of simultaneous observations",
+                                                "fundamental not just measurement error"
+                                            ]
+                        },
+                        {
+                            "question":  "Why is quantum mechanics probabilistic?",
+                            "expectedAny":  [
+                                                "can only predict probabilities not exact outcomes",
+                                                "wave nature means uncertainty in position",
+                                                "measurements affect system cannot know everything"
+                                            ]
+                        },
+                        {
+                            "question":  "What evidence supports wave-particle duality?",
+                            "expectedAny":  [
+                                                "double-slit experiment shows interference",
+                                                "photoelectric effect shows particle behavior",
+                                                "electron diffraction demonstrates wave properties"
+                                            ]
+                        },
+                        {
+                            "question":  "Write electron configuration for oxygen.",
+                            "expectedAny":  [
+                                                "1s 2s 2p",
+                                                "1s2 2s2 2p4",
+                                                "eight electrons total"
+                                            ]
+                        },
+                        {
+                            "question":  "How does Pauli exclusion affect electron capacity?",
+                            "expectedAny":  [
+                                                "limits two electrons per orbital with opposite spins",
+                                                "determines maximum electrons per sublevel",
+                                                "causes orbital filling pattern"
+                                            ]
+                        }
+                    ]
 }

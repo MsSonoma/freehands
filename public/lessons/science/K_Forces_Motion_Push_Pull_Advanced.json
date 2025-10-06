@@ -49,22 +49,22 @@
     {"question": "How do you pick up a toy?", "choices": ["push it down", "pull it up", "blow on it", "ignore it"], "correct": 1, "expectedAny": ["you pull upward to lift things"]}
   ],
   "fillintheblank": [
-    {"question": "When you _____ a wagon, it moves toward you.", "expectedAny": ["pull"]},
-    {"question": "To make a ball roll away, you _____ it.", "expectedAny": ["push"]},
+    {"question": "When you _____ a wagon, it moves toward you.", "expectedAny": ["pull", "pull it"]},
+    {"question": "To make a ball roll away, you _____ it.", "expectedAny": ["push", "push it"]},
     {"question": "_____ and _____ are two kinds of forces.", "expectedAny": ["Push", "pull"]},
-    {"question": "When something moves, it is in _____.", "expectedAny": ["motion"]},
-    {"question": "You need _____ to make things move.", "expectedAny": ["force"]},
-    {"question": "To open most doors, you _____ them.", "expectedAny": ["pull"]},
-    {"question": "Heavy things need more _____ to move them.", "expectedAny": ["force"]}
+    {"question": "When something moves, it is in _____.", "expectedAny": ["motion", "movement"]},
+    {"question": "You need _____ to make things move.", "expectedAny": ["force", "a force"]},
+    {"question": "To open most doors, you _____ them.", "expectedAny": ["pull", "pull them"]},
+    {"question": "Heavy things need more _____ to move them.", "expectedAny": ["force", "pushing"]}
   ],
   "shortanswer": [
-    {"question": "Give an example of something you push and something you pull.", "expectedAny": ["push: door, toy car", "pull: wagon, rope"]},
+    {"question": "Give an example of something you push and something you pull.", "expectedAny": ["push: door", "push: toy car", "pull: wagon", "pull: rope"]},
     {"question": "How do forces help us in everyday life?", "expectedAny": ["move things", "open doors", "play with toys"]},
     {"question": "What happens when you push something really hard?", "expectedAny": ["it moves faster", "goes farther", "might fall over"]},
-    {"question": "Why do you think heavy things are harder to move?", "expectedAny": ["they need more force", "weigh more", "harder to push or pull"]},
+    {"question": "Why are heavy things hard to move?", "expectedAny": ["they need more force", "weigh more", "hard to push or pull"]},
     {"question": "Name three things at the playground that you push or pull.", "expectedAny": ["swings", "doors", "wagon", "seesaw"]},
-    {"question": "How can you tell if something is moving?", "expectedAny": ["it changes position", "goes from one place to another"]},
-    {"question": "What would happen if there were no forces?", "expectedAny": ["nothing would move", "things would stay still"]}
+    {"question": "How can you tell if something is moving?", "expectedAny": ["it changes position", "goes from one place to another", "it is not still"]},
+    {"question": "What would happen if there were no forces?", "expectedAny": ["nothing would move", "things would stay still", "everything would stop"]}
   ],
   "wordProblems": [
     {"question": "Sam pushes 3 toy cars and pulls 2 wagons. How many things did he move using force?", "expectedAny": ["5 things", "3 + 2 = 5"]},

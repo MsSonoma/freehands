@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "10th_Logarithms_Exponential_Equations_Beginner",
   "title": "Logarithms and Exponential Equations",
   "grade": "10th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "logarithm",
-      "definition": "The power to which a base must be raised to get a given number"
-    },
-    {
-      "term": "common logarithm",
-      "definition": "Logarithm with base 10, written as log"
-    },
-    {
-      "term": "natural logarithm",
-      "definition": "Logarithm with base e, written as ln"
-    },
-    {
-      "term": "exponential equation",
-      "definition": "Equation where the variable appears in an exponent"
-    },
-    {
-      "term": "logarithmic equation",
-      "definition": "Equation involving logarithms of variable expressions"
-    }
+    {"term": "logarithm", "definition": "The power to which a base must be raised to get a given number"},
+    {"term": "common logarithm", "definition": "Logarithm with base 10, written as log"},
+    {"term": "natural logarithm", "definition": "Logarithm with base e, written as ln"},
+    {"term": "exponential equation", "definition": "Equation where the variable appears in an exponent"},
+    {"term": "logarithmic equation", "definition": "Equation involving logarithms of variable expressions"}
   ],
   "teachingNotes": "Emphasize that logarithms and exponentials are inverse operations. Practice converting between exponential and logarithmic forms.",
-  "sample": {
-    "question": "What is the power to which a base must be raised to get a given number?",
-    "expectedAny": ["logarithm", "log", "logarithmic function", "log function"]
-  },
-  "truefalse": {
-    "question": "Logarithms and exponentials are inverse operations.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is a logarithm with base 10 called?",
-    "expectedAny": ["common logarithm", "log base 10", "decimal logarithm", "standard logarithm"]
-  },
-  "fillintheblank": {
-    "question": "The logarithm with base e is called the ________ logarithm.",
-    "expectedAny": ["natural", "ln", "Napierian", "e-based"]
-  },
-  "shortanswer": {
-    "question": "How do you solve the equation 2^x = 8?",
-    "expectedAny": ["take log of both sides", "x = 3", "2^3 = 8", "use logarithms"]
-  },
-  "wordProblems": {
-    "question": "If log₂(x) = 4, what is the value of x?",
-    "expectedAny": ["16", "x = 16", "2^4 = 16", "sixteen"]
-  }
+  "sample": [
+    {"question": "What is power to get a number?", "expectedAny": ["logarithm", "log", "log function", "logarithmic function", "power", "exponent"]},
+    {"question": "What is log base 10?", "expectedAny": ["common logarithm", "log", "decimal log", "base 10 log", "common log", "log base ten"]},
+    {"question": "What is log base e?", "expectedAny": ["natural logarithm", "ln", "natural log", "base e log", "natural log function", "ln function"]},
+    {"question": "What has variable in exponent?", "expectedAny": ["exponential equation", "exponential", "power equation", "exponent equation", "exponential function", "power function"]},
+    {"question": "What involves log of variable?", "expectedAny": ["logarithmic equation", "log equation", "logarithmic", "logarithm equation", "log function equation", "logarithmic function"]},
+    {"question": "What is inverse of exponential?", "expectedAny": ["logarithm", "log", "log function", "logarithmic function", "inverse function", "exponent inverse"]},
+    {"question": "What is written as log?", "expectedAny": ["common logarithm", "base 10", "log 10", "common log", "decimal log", "base 10 log"]},
+    {"question": "What is written as ln?", "expectedAny": ["natural logarithm", "base e", "natural log", "natural log function", "ln function", "base e log"]},
+    {"question": "What is 2^x = 8?", "expectedAny": ["exponential equation", "exponential", "power equation", "exponent equation", "exponential function", "power function"]},
+    {"question": "What is log(x) = 2?", "expectedAny": ["logarithmic equation", "log equation", "logarithmic", "logarithm equation", "log function equation", "logarithmic function"]}
+  ],
+  "truefalse": [
+    {"question": "Logarithms are inverse of exponentials. (True or False)", "correct": true},
+    {"question": "Common log is base e. (True or False)", "correct": false},
+    {"question": "Natural log is base e. (True or False)", "correct": true},
+    {"question": "Exponential has variable in exponent. (True or False)", "correct": true},
+    {"question": "Log equations involve logarithms. (True or False)", "correct": true},
+    {"question": "Log and exponential are inverses. (True or False)", "correct": true},
+    {"question": "Common log is base 10. (True or False)", "correct": true},
+    {"question": "ln is natural logarithm. (True or False)", "correct": true},
+    {"question": "2^x is logarithmic. (True or False)", "correct": false},
+    {"question": "log(x) is logarithmic. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is inverse of exponential?", "choices": [{"letter": "A", "text": "Power"}, {"letter": "B", "text": "Logarithm"}, {"letter": "C", "text": "Root"}, {"letter": "D", "text": "Factor"}], "correct": "B"},
+    {"question": "What is log base 10?", "choices": [{"letter": "A", "text": "Natural"}, {"letter": "B", "text": "Common logarithm"}, {"letter": "C", "text": "ln"}, {"letter": "D", "text": "e"}], "correct": "B"},
+    {"question": "What is log base e?", "choices": [{"letter": "A", "text": "Common"}, {"letter": "B", "text": "Natural logarithm"}, {"letter": "C", "text": "log"}, {"letter": "D", "text": "10"}], "correct": "B"},
+    {"question": "What has variable in exponent?", "choices": [{"letter": "A", "text": "Linear"}, {"letter": "B", "text": "Exponential equation"}, {"letter": "C", "text": "Logarithmic"}, {"letter": "D", "text": "Quadratic"}], "correct": "B"},
+    {"question": "What involves log of variable?", "choices": [{"letter": "A", "text": "Exponential"}, {"letter": "B", "text": "Logarithmic equation"}, {"letter": "C", "text": "Linear"}, {"letter": "D", "text": "Power"}], "correct": "B"},
+    {"question": "What is written as log?", "choices": [{"letter": "A", "text": "Natural"}, {"letter": "B", "text": "Common logarithm"}, {"letter": "C", "text": "e"}, {"letter": "D", "text": "ln"}], "correct": "B"},
+    {"question": "What is written as ln?", "choices": [{"letter": "A", "text": "Common"}, {"letter": "B", "text": "Natural logarithm"}, {"letter": "C", "text": "10"}, {"letter": "D", "text": "log"}], "correct": "B"},
+    {"question": "What is 3^x = 9?", "choices": [{"letter": "A", "text": "Logarithmic"}, {"letter": "B", "text": "Exponential equation"}, {"letter": "C", "text": "Linear"}, {"letter": "D", "text": "Quadratic"}], "correct": "B"},
+    {"question": "What is log(x) = 5?", "choices": [{"letter": "A", "text": "Exponential"}, {"letter": "B", "text": "Logarithmic equation"}, {"letter": "C", "text": "Linear"}, {"letter": "D", "text": "Power"}], "correct": "B"},
+    {"question": "What undoes exponential?", "choices": [{"letter": "A", "text": "Root"}, {"letter": "B", "text": "Logarithm"}, {"letter": "C", "text": "Power"}, {"letter": "D", "text": "Factor"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "A _____ is a power.", "expectedAny": ["logarithm", "log"]},
+    {"question": "_____ logarithm is base 10.", "expectedAny": ["common", "Common"]},
+    {"question": "_____ logarithm is base e.", "expectedAny": ["natural", "Natural"]},
+    {"question": "_____ equation has variable in exponent.", "expectedAny": ["exponential", "Exponential"]},
+    {"question": "_____ equation involves logs.", "expectedAny": ["logarithmic", "Logarithmic"]},
+    {"question": "_____ and exponentials are inverses.", "expectedAny": ["logarithms", "Logarithms", "logs"]},
+    {"question": "log is _____ logarithm.", "expectedAny": ["common"]},
+    {"question": "ln is _____ logarithm.", "expectedAny": ["natural"]},
+    {"question": "2^x is _____ equation.", "expectedAny": ["exponential"]},
+    {"question": "log(x) is _____ equation.", "expectedAny": ["logarithmic"]}
+  ],
+  "shortanswer": [
+    {"question": "What is a logarithm?", "keyTerms": ["power", "base", "raised", "get", "number"], "expectedAny": ["The power to which a base must be raised to get a given number", "Exponent needed", "Power to get number"]},
+    {"question": "What is common logarithm?", "keyTerms": ["logarithm", "base", "10", "log"], "expectedAny": ["Logarithm with base 10, written as log", "Base 10 log", "log function"]},
+    {"question": "What is natural logarithm?", "keyTerms": ["logarithm", "base", "e", "ln"], "expectedAny": ["Logarithm with base e, written as ln", "Base e log", "ln function"]},
+    {"question": "What is exponential equation?", "keyTerms": ["equation", "variable", "appears", "exponent"], "expectedAny": ["Equation where the variable appears in an exponent", "Variable as power", "Power equation"]},
+    {"question": "What is logarithmic equation?", "keyTerms": ["equation", "involving", "logarithms", "variable"], "expectedAny": ["Equation involving logarithms of variable expressions", "Equation with logs", "Log equation"]},
+    {"question": "How solve 2^x = 8?", "keyTerms": ["log", "both sides", "x", "3"], "expectedAny": ["Take log of both sides, x = 3", "x equals 3", "2 to 3rd is 8"]},
+    {"question": "How convert log(8) = 3?", "keyTerms": ["2", "power", "3", "equals", "8"], "expectedAny": ["2^3 = 8", "2 to 3rd equals 8", "Exponential form"]},
+    {"question": "What is log(100)?", "keyTerms": ["2", "10", "power", "100"], "expectedAny": ["2", "two", "10 squared is 100"]},
+    {"question": "What is ln(e)?", "keyTerms": ["2", "e", "power"], "expectedAny": ["2", "two", "power of e"]},
+    {"question": "Why are they inverses?", "keyTerms": ["undo", "each other", "exponential", "logarithm"], "expectedAny": ["They undo each other", "Opposite operations", "Cancel each other"]}
+  ],
+  "wordProblems": [
+    {"question": "If log(x) = 4, what is x?", "keyTerms": ["16", "2^4", "sixteen"], "expectedAny": ["16", "sixteen", "2^4 = 16"]},
+    {"question": "Solve 3^x = 27", "keyTerms": ["3", "x", "3^3"], "expectedAny": ["3", "three", "x = 3"]},
+    {"question": "If log(x) = 2, find x", "keyTerms": ["100", "10^2"], "expectedAny": ["100", "one hundred", "10^2 = 100"]},
+    {"question": "Solve 2^(x+1) = 16", "keyTerms": ["3", "x", "2^4"], "expectedAny": ["3", "three", "x = 3"]},
+    {"question": "What is log(125)?", "keyTerms": ["3", "5^3"], "expectedAny": ["3", "three", "5 cubed"]},
+    {"question": "Population doubles every 5 years. Start 1000. Write exponential equation.", "keyTerms": ["P", "1000", "2", "t/5"], "expectedAny": ["P = 1000(2)^(t/5)", "1000 times 2 to t over 5", "doubling formula"]},
+    {"question": "Solve log(x) = 2", "keyTerms": ["9", "3^2"], "expectedAny": ["9", "nine", "3 squared"]},
+    {"question": "If 5^x = 625, find x", "keyTerms": ["4", "5^4"], "expectedAny": ["4", "four", "x = 4"]},
+    {"question": "Earthquake strength doubles for each 1 increase on Richter scale. Magnitude 5 is how many times stronger than magnitude 3?", "keyTerms": ["4", "2^2", "four times"], "expectedAny": ["4", "four times", "4 times stronger"]},
+    {"question": "Solve log(x) + log(4) = 5", "keyTerms": ["8", "2^5", "divide 4"], "expectedAny": ["8", "eight", "x = 8"]}
+  ]
 }

@@ -23,56 +23,64 @@
     }
   ],
   "teachingNotes": "Use primary source documents and maps. Discuss multiple perspectives and complex causes. Connect to ongoing struggles for civil rights and equality.",
-  "sample": {
-    "question": "What was the main issue that divided the North and South before the Civil War?",
-    "expectedAny": [
-      "slavery",
-      "disagreements about slavery",
-      "whether slavery should expand"
-    ]
-  },
+  "sample": [
+    { "question": "What was the main issue that divided the North and South before the Civil War?", "expectedAny": ["slavery"] },
+    { "question": "What is withdrawing from union?", "choices": ["Joining", "Secession", "Voting", "Trading"], "correct": 1, "expectedAny": ["secession", "leaving the union", "withdrawing from country"] },
+    { "question": "Movement to end slavery is ________.", "expectedAny": ["abolition", "ending slavery", "freedom movement"] },
+    { "question": "Lincoln's declaration freeing slaves is ________.", "expectedAny": ["Emancipation Proclamation"] },
+    { "question": "Rebuilding South period is ________.", "expectedAny": ["Reconstruction"] },
+    { "question": "What divided North and South?", "choices": ["Weather", "Slavery", "Food", "Music"], "correct": 1, "expectedAny": ["slavery"] },
+    { "question": "Leaving union is ________.", "expectedAny": ["secession"] },
+    { "question": "What is ending slavery?", "choices": ["Preservation", "Abolition", "Expansion", "Creation"], "correct": 1, "expectedAny": ["abolition"] },
+    { "question": "Freeing slaves declaration is ________.", "expectedAny": ["Emancipation Proclamation"] },
+    { "question": "After war rebuilding is ________.", "expectedAny": ["Reconstruction"] }
+  ],
   "truefalse": [
-    {
-      "question": "The Civil War was fought only over economic differences between North and South.",
-      "answer": false,
-      "expectedAny": [
-        "slavery was the central moral and political issue"
-      ]
-    }
+    { "question": "The Civil War was fought only over economic differences between North and South.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Slavery was central issue.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Secession is withdrawing from union.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Abolition supported slavery.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Emancipation Proclamation freed slaves.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Reconstruction happened before war.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "North and South disagreed on slavery.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All states agreed on slavery.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "War lasted four years.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Reconstruction reunited nation.", "expectedAny": ["true", "yes", "t", "correct"] }
   ],
   "multiplechoice": [
-    {
-      "question": "What did the Emancipation Proclamation do?",
-      "choices": [
-        "Ended the war",
-        "Freed all slaves immediately",
-        "Freed slaves in rebellious states",
-        "Created new states"
-      ],
-      "correct": 2,
-      "expectedAny": [
-        "freed slaves in Confederate states as war measure"
-      ]
-    }
+    { "question": "What did the Emancipation Proclamation do?", "choices": ["Ended war", "Freed all slaves", "Freed slaves in rebellious states", "Created states"], "correct": 2, "expectedAny": ["freed slaves in rebellious states"] },
+    { "question": "What divided North and South?", "choices": ["Weather", "Slavery", "Food", "Music"], "correct": 1, "expectedAny": ["slavery"] },
+    { "question": "What is leaving union?", "choices": ["Joining", "Secession", "Voting", "Trading"], "correct": 1, "expectedAny": ["secession"] },
+    { "question": "What is ending slavery?", "choices": ["Preservation", "Abolition", "Expansion", "Creation"], "correct": 1, "expectedAny": ["abolition"] },
+    { "question": "What freed slaves?", "choices": ["Constitution", "Emancipation Proclamation", "Bill of Rights", "Articles"], "correct": 1, "expectedAny": ["Emancipation Proclamation"] },
+    { "question": "What is rebuilding period?", "choices": ["Revolution", "Reconstruction", "Independence", "Expansion"], "correct": 1, "expectedAny": ["Reconstruction"] },
+    { "question": "Main war issue was?", "choices": ["Money", "Slavery", "Food", "Land"], "correct": 1, "expectedAny": ["slavery"] },
+    { "question": "Withdrawing from union is?", "choices": ["Joining", "Secession", "Voting", "Nothing"], "correct": 1, "expectedAny": ["secession"] },
+    { "question": "Movement against slavery was?", "choices": ["Support", "Abolition", "Expansion", "Nothing"], "correct": 1, "expectedAny": ["abolition"] },
+    { "question": "After war was?", "choices": ["Revolution", "Reconstruction", "Independence", "Nothing"], "correct": 1, "expectedAny": ["Reconstruction"] }
   ],
   "fillintheblank": [
-    {
-      "question": "The war began in _____ and ended in _____, lasting about _____ years.",
-      "expectedAny": [
-        "1861",
-        "1865",
-        "4"
-      ]
-    }
+    { "question": "The war began in _____ and ended in _____, lasting about _____ years.", "expectedAny": ["1861", "1865", "4"] },
+    { "question": "________ was main issue dividing nation.", "expectedAny": ["slavery"] },
+    { "question": "________ is withdrawing from union.", "expectedAny": ["secession"] },
+    { "question": "________ was movement to end slavery.", "expectedAny": ["abolition"] },
+    { "question": "________ Proclamation freed slaves.", "expectedAny": ["Emancipation"] },
+    { "question": "________ was rebuilding period.", "expectedAny": ["Reconstruction"] },
+    { "question": "North and South divided over ________.", "expectedAny": ["slavery"] },
+    { "question": "________ is leaving the union.", "expectedAny": ["secession"] },
+    { "question": "________ opposed slavery.", "expectedAny": ["abolition"] },
+    { "question": "Emancipation ________ freed slaves.", "expectedAny": ["Proclamation"] }
   ],
   "shortanswer": [
-    {
-      "question": "Why was the Civil War considered a 'total war'?",
-      "expectedAny": [
-        "affected entire populations, not just armies",
-        "targeted civilian infrastructure",
-        "mobilized entire societies"
-      ]
-    }
+    { "question": "Why was the Civil War considered a 'total war'?", "expectedAny": ["affected entire populations, not just armies", "targeted civilian infrastructure"] },
+    { "question": "What was main war issue?", "expectedAny": ["slavery", "disagreements about slavery"] },
+    { "question": "What is secession?", "expectedAny": ["withdrawing from political union", "states leaving union"] },
+    { "question": "What is abolition?", "expectedAny": ["movement to end slavery", "ending slavery"] },
+    { "question": "What is Emancipation Proclamation?", "expectedAny": ["Lincoln's declaration freeing slaves", "freed slaves in rebellious states"] },
+    { "question": "What is Reconstruction?", "expectedAny": ["period after war rebuilding South", "rejoining union"] },
+    { "question": "Why South secede?", "expectedAny": ["protect slavery", "disagreement over slavery"] },
+    { "question": "What abolitionists want?", "expectedAny": ["end slavery", "free slaves"] },
+    { "question": "When was Civil War?", "expectedAny": ["1861-1865", "four years"] },
+    { "question": "What happened during Reconstruction?", "expectedAny": ["South rebuilt", "states rejoined union"] }
   ]
 }

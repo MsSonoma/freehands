@@ -1,74 +1,463 @@
-{
-  "id": "12th_Economic_Systems_Market_Analysis_Advanced",
-  "title": "Economic Systems and Market Analysis",
-  "grade": "12th",
-  "difficulty": "Advanced",
-  "vocab": [
-    {
-      "term": "behavioral economics",
-      "definition": "Study of psychological factors in economic decision-making"
-    },
-    {
-      "term": "game theory",
-      "definition": "Mathematical framework for analyzing strategic interactions"
-    },
-    {
-      "term": "pareto efficiency",
-      "definition": "Allocation where no improvement can benefit one without harming another"
-    },
-    {
-      "term": "asymmetric information",
-      "definition": "Situation where parties have unequal access to relevant information"
-    },
-    {
-      "term": "creative destruction",
-      "definition": "Process where innovation destroys old industries while creating new ones"
-    }
-  ],
-  "teachingNotes": "Explore advanced economic theories and behavioral insights. Connect microeconomic principles to macroeconomic outcomes.",
-  "sample": {
-    "question": "What studies psychological factors in economic decisions?",
-    "expectedAny": [
-      "behavioral economics",
-      "psychological economics",
-      "cognitive economics",
-      "decision science"
-    ]
-  },
-  "truefalse": {
-    "question": "Pareto efficiency means everyone receives equal benefits.",
-    "expectedAny": [
-      "false",
-      "no",
-      "f",
-      "incorrect"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What framework analyzes strategic interactions?",
-    "expectedAny": [
-      "game theory",
-      "strategic analysis",
-      "decision theory",
-      "interactive modeling"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Innovation that destroys old industries is called ________ destruction.",
-    "expectedAny": [
-      "creative",
-      "innovative",
-      "transformative",
-      "disruptive"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does asymmetric information lead to market inefficiency?",
-    "expectedAny": [
-      "adverse selection",
-      "moral hazard",
-      "information gaps",
-      "market distortions"
-    ]
-  }
+﻿{
+    "id":  "12th_Economic_Systems_Market_Analysis_Advanced",
+    "title":  "Economic Systems and Market Analysis",
+    "grade":  "12th",
+    "difficulty":  "Advanced",
+    "vocab":  [
+                  {
+                      "term":  "elasticity",
+                      "definition":  "Responsiveness of quantity to price changes"
+                  },
+                  {
+                      "term":  "comparative advantage",
+                      "definition":  "Ability to produce at lower opportunity cost"
+                  },
+                  {
+                      "term":  "market failure",
+                      "definition":  "Inefficient allocation of resources"
+                  },
+                  {
+                      "term":  "externality",
+                      "definition":  "Cost or benefit affecting third parties"
+                  },
+                  {
+                      "term":  "marginal utility",
+                      "definition":  "Additional satisfaction from one more unit"
+                  }
+              ],
+    "teachingNotes":  "Examine economic systems and market principles. Analyze production, distribution, and policy.",
+    "sample":  [
+                   {
+                       "question":  "What studies production?",
+                       "expectedAny":  [
+                                           "economics",
+                                           "economy",
+                                           "economic science",
+                                           "economic study",
+                                           "economic system",
+                                           "economic theory"
+                                       ]
+                   },
+                   {
+                       "question":  "What determines prices?",
+                       "expectedAny":  [
+                                           "supply and demand",
+                                           "supply demand",
+                                           "market forces",
+                                           "supply demand forces",
+                                           "market mechanism",
+                                           "price mechanism"
+                                       ]
+                   },
+                   {
+                       "question":  "What is free exchange?",
+                       "expectedAny":  [
+                                           "market economy",
+                                           "market",
+                                           "free market",
+                                           "market system",
+                                           "free enterprise",
+                                           "capitalism"
+                                       ]
+                   },
+                   {
+                       "question":  "What are limited resources?",
+                       "expectedAny":  [
+                                           "scarcity",
+                                           "limited",
+                                           "resource scarcity",
+                                           "limited supply",
+                                           "shortage",
+                                           "resource limitation"
+                                       ]
+                   },
+                   {
+                       "question":  "What is alternative given up?",
+                       "expectedAny":  [
+                                           "opportunity cost",
+                                           "cost",
+                                           "tradeoff",
+                                           "alternative cost",
+                                           "foregone alternative",
+                                           "economic cost"
+                                       ]
+                   },
+                   {
+                       "question":  "What is total value produced?",
+                       "expectedAny":  [
+                                           "GDP",
+                                           "gross domestic product",
+                                           "national output",
+                                           "economic output",
+                                           "total production",
+                                           "domestic product"
+                                       ]
+                   },
+                   {
+                       "question":  "What increases prices?",
+                       "expectedAny":  [
+                                           "inflation",
+                                           "price increase"
+                                       ]
+                   },
+                   {
+                       "question":  "What controls money supply?",
+                       "expectedAny":  [
+                                           "monetary policy",
+                                           "monetary"
+                                       ]
+                   },
+                   {
+                       "question":  "What is government spending?",
+                       "expectedAny":  [
+                                           "fiscal policy",
+                                           "fiscal"
+                                       ]
+                   },
+                   {
+                       "question":  "What is jobless percentage?",
+                       "expectedAny":  [
+                                           "unemployment rate",
+                                           "unemployment"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Economics studies production.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Supply and demand are unrelated.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Market economy uses free exchange.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Scarcity means unlimited resources.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Opportunity cost is alternative given up.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "GDP measures production value.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Inflation decreases prices.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Monetary policy controls money.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Fiscal policy ignores taxation.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Unemployment rate measures joblessness.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What studies goods production?",
+                               "choices":  [
+                                               "Sociology",
+                                               "Economics",
+                                               "Psychology",
+                                               "Biology"
+                                           ],
+                               "correct":  "Economics"
+                           },
+                           {
+                               "question":  "What sets prices?",
+                               "choices":  [
+                                               "Government only",
+                                               "Supply and demand",
+                                               "Random",
+                                               "Fixed"
+                                           ],
+                               "correct":  "Supply and demand"
+                           },
+                           {
+                               "question":  "What economy is free?",
+                               "choices":  [
+                                               "Command",
+                                               "Traditional",
+                                               "Market",
+                                               "Closed"
+                                           ],
+                               "correct":  "Market"
+                           },
+                           {
+                               "question":  "What means limited?",
+                               "choices":  [
+                                               "Abundance",
+                                               "Scarcity",
+                                               "Surplus",
+                                               "Excess"
+                                           ],
+                               "correct":  "Scarcity"
+                           },
+                           {
+                               "question":  "What is cost of alternative?",
+                               "choices":  [
+                                               "Zero cost",
+                                               "Opportunity cost",
+                                               "Sunk cost",
+                                               "Fixed cost"
+                                           ],
+                               "correct":  "Opportunity cost"
+                           },
+                           {
+                               "question":  "What measures production?",
+                               "choices":  [
+                                               "GNP only",
+                                               "GDP",
+                                               "Inflation",
+                                               "Unemployment"
+                                           ],
+                               "correct":  "GDP"
+                           },
+                           {
+                               "question":  "What raises prices?",
+                               "choices":  [
+                                               "Deflation",
+                                               "Inflation",
+                                               "Stagnation",
+                                               "Depression"
+                                           ],
+                               "correct":  "Inflation"
+                           },
+                           {
+                               "question":  "What controls money?",
+                               "choices":  [
+                                               "Fiscal",
+                                               "Monetary",
+                                               "Trade",
+                                               "Labor"
+                                           ],
+                               "correct":  "Monetary"
+                           },
+                           {
+                               "question":  "What is government spending?",
+                               "choices":  [
+                                               "Monetary",
+                                               "Fiscal",
+                                               "Trade",
+                                               "Labor"
+                                           ],
+                               "correct":  "Fiscal"
+                           },
+                           {
+                               "question":  "What measures jobless?",
+                               "choices":  [
+                                               "GDP",
+                                               "Inflation",
+                                               "Unemployment",
+                                               "Supply"
+                                           ],
+                               "correct":  "Unemployment"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "_____ studies production.",
+                               "expectedAny":  [
+                                                   "economics",
+                                                   "Economics"
+                                               ]
+                           },
+                           {
+                               "question":  "Supply and _____ determine prices.",
+                               "expectedAny":  [
+                                                   "demand",
+                                                   "Demand"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ economy uses free exchange.",
+                               "expectedAny":  [
+                                                   "market",
+                                                   "Market"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ means limited resources.",
+                               "expectedAny":  [
+                                                   "scarcity",
+                                                   "Scarcity"
+                                               ]
+                           },
+                           {
+                               "question":  "Opportunity _____ is alternative given up.",
+                               "expectedAny":  [
+                                                   "cost",
+                                                   "Cost"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ measures total production value.",
+                               "expectedAny":  [
+                                                   "GDP",
+                                                   "Gross Domestic Product"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ increases prices over time.",
+                               "expectedAny":  [
+                                                   "inflation",
+                                                   "Inflation"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ policy controls money supply.",
+                               "expectedAny":  [
+                                                   "monetary",
+                                                   "Monetary"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ policy uses taxation.",
+                               "expectedAny":  [
+                                                   "fiscal",
+                                                   "Fiscal"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ rate measures joblessness.",
+                               "expectedAny":  [
+                                                   "unemployment",
+                                                   "Unemployment"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "What is economics?",
+                            "expectedAny":  [
+                                                "study of production and distribution of goods",
+                                                "allocation of scarce resources",
+                                                "choices about what how for whom"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain supply and demand.",
+                            "expectedAny":  [
+                                                "relationship determining prices",
+                                                "supply is quantity offered demand is quantity wanted",
+                                                "equilibrium where they meet"
+                                            ]
+                        },
+                        {
+                            "question":  "What is market economy?",
+                            "expectedAny":  [
+                                                "economy based on free exchange",
+                                                "prices set by supply and demand",
+                                                "private ownership and competition"
+                                            ]
+                        },
+                        {
+                            "question":  "Define scarcity.",
+                            "expectedAny":  [
+                                                "limited resources relative to wants",
+                                                "fundamental economic problem",
+                                                "requires choices and tradeoffs"
+                                            ]
+                        },
+                        {
+                            "question":  "What is opportunity cost?",
+                            "expectedAny":  [
+                                                "value of next best alternative given up",
+                                                "what you sacrifice to get something",
+                                                "real cost of decision"
+                                            ]
+                        },
+                        {
+                            "question":  "What is GDP?",
+                            "expectedAny":  [
+                                                "total value of goods and services produced",
+                                                "gross domestic product",
+                                                "measures economic output"
+                                            ]
+                        },
+                        {
+                            "question":  "Define inflation.",
+                            "expectedAny":  [
+                                                "general increase in prices over time",
+                                                "purchasing power decreases",
+                                                "measured by CPI"
+                                            ]
+                        },
+                        {
+                            "question":  "What is monetary policy?",
+                            "expectedAny":  [
+                                                "central bank control of money supply",
+                                                "Federal Reserve sets interest rates",
+                                                "manages inflation and employment"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain fiscal policy.",
+                            "expectedAny":  [
+                                                "government spending and taxation",
+                                                "Congress controls budget",
+                                                "stimulates or restrains economy"
+                                            ]
+                        },
+                        {
+                            "question":  "What is unemployment rate?",
+                            "expectedAny":  [
+                                                "percentage of labor force without jobs",
+                                                "measures economic health",
+                                                "excludes discouraged workers"
+                                            ]
+                        }
+                    ]
 }

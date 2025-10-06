@@ -18,8 +18,33 @@
       "definition": "Using your ears to hear sounds"
     },
     {
+      "term": "nose",
+      "definition": "The body part you use to smell"
+    },
+    {
+      "term": "tongue",
+      "definition": "The body part you use to taste"
+    },
+    {
+      "term": "ears",
+      "definition": "The body parts you use to hear"
+    },
+    {
+      "term": "eyes",
+      "definition": "The body parts you use to see"
+    },
+    {
+      "term": "touch",
+      "definition": "Using skin to feel how things are"
+    },
+    {
       "term": "healthy",
       "definition": "Being strong and feeling good"
+    }
+    ,
+    {
+      "term": "foods",
+      "definition": "Things we eat like fruits, vegetables, and bread"
     }
   ],
   "teachingNotes": "Use sensory exploration activities. Practice identifying body parts. Discuss healthy habits like brushing teeth and washing hands.",
@@ -49,22 +74,22 @@
     {"question": "What should you do when you cough?", "choices": ["cover your mouth", "cough on others", "never cover", "cough loudly"], "correct": 0, "expectedAny": ["cover mouth to stop germs"]}
   ],
   "fillintheblank": [
-    {"question": "You use your _____ to hear music.", "expectedAny": ["ears"]},
+    {"question": "You use your _____ to hear music.", "expectedAny": ["ears", "your ears"]},
     {"question": "_____ your hands before you eat.", "expectedAny": ["Wash", "Clean"]},
-    {"question": "Your _____ help you walk and run.", "expectedAny": ["legs", "feet"]},
-    {"question": "You _____ with your tongue.", "expectedAny": ["taste"]},
+    {"question": "Your _____ help you walk and run.", "expectedAny": ["legs", "feet", "my legs"]},
+    {"question": "You _____ with your tongue.", "expectedAny": ["taste", "taste food"]},
     {"question": "_____ keeps your body healthy and strong.", "expectedAny": ["Exercise", "Sleep", "Food"]},
-    {"question": "You see with your _____.", "expectedAny": ["eyes"]},
-    {"question": "_____ your teeth every day.", "expectedAny": ["Brush"]}
+    {"question": "You see with your _____.", "expectedAny": ["eyes", "your eyes"]},
+    {"question": "_____ your teeth every day.", "expectedAny": ["Brush", "Brush your"]}
   ],
   "shortanswer": [
     {"question": "Name three things you can do to stay healthy.", "expectedAny": ["brush teeth", "wash hands", "eat good food", "exercise", "sleep"]},
-    {"question": "What are the five senses?", "expectedAny": ["sight, hearing, smell, taste, touch"]},
-    {"question": "How do you take care of your body?", "expectedAny": ["eat healthy", "exercise", "sleep", "wash", "brush teeth"]},
-    {"question": "Which body parts help you learn about the world?", "expectedAny": ["eyes, ears, nose, tongue, hands"]},
+    {"question": "What are the five senses?", "expectedAny": ["sight, hearing, smell, taste, touch", "hearing, sight, smell, taste, touch", "touch, taste, smell, hearing, sight"]},
+    {"question": "How do you take care of your body?", "expectedAny": ["eat healthy", "exercise", "sleep", "wash", "brush teeth", "drink water"]},
+    {"question": "Which body parts help you learn about the world?", "expectedAny": ["eyes, ears, nose, tongue, hands", "eyes and ears", "eyes, ears, and hands"]},
     {"question": "Why is it important to wash your hands?", "expectedAny": ["removes germs", "keeps you healthy", "prevents sickness"]},
     {"question": "What foods help your body grow?", "expectedAny": ["fruits", "vegetables", "milk", "healthy foods"]},
-    {"question": "How do your senses work together?", "expectedAny": ["they all give information", "help understand things better"]}
+    {"question": "How do your senses work together?", "expectedAny": ["they all give information", "help understand things better", "use more than one sense"]}
   ],
   "wordProblems": [
     {"question": "Emma uses 2 senses to enjoy her snack: she sees it and tastes it. How many senses is she using?", "expectedAny": ["2 senses"]},

@@ -60,13 +60,13 @@
      {"question": "It is ____ outside.", "expectedAny": ["sunny", "cold"]}
   ],
   "shortanswer": [
-     {"question": "Write a sentence about your family.", "expectedAny": ["My mom is kind."]},
-     {"question": "What do you like to eat? Write one sentence.", "expectedAny": ["I like pizza."]},
-     {"question": "Describe your favorite toy in one sentence.", "expectedAny": ["It is red and small."]},
-     {"question": "Write a sentence about your school.", "expectedAny": ["My school is fun."]},
-     {"question": "Make a sentence about the weather.", "expectedAny": ["It is sunny."]},
-     {"question": "Write one sentence about a friend.", "expectedAny": ["My friend is nice."]},
-     {"question": "Write a sentence about something you can do.", "expectedAny": ["I can run fast."]}
+    {"question": "Write a sentence about your family.", "expectedAny": ["My mom is kind.", "I love my family.", "My dad is funny."]},
+    {"question": "What do you like to eat? Write one sentence.", "expectedAny": ["I like pizza.", "I like apples.", "I like cake."]},
+    {"question": "Describe your favorite toy in one sentence.", "expectedAny": ["It is red and small.", "My toy is fast.", "I play with my doll."]},
+    {"question": "Write a sentence about your school.", "expectedAny": ["My school is fun.", "I learn at school.", "We read at school."]},
+    {"question": "Make a sentence about the weather.", "expectedAny": ["It is sunny.", "It is rainy.", "It is cold."]},
+    {"question": "Write one sentence about a friend.", "expectedAny": ["My friend is nice.", "I play with my friend.", "My friend can run."]},
+    {"question": "Write a sentence about something you can do.", "expectedAny": ["I can run fast.", "I can jump high.", "I can read."]}
   ],
   "wordProblems": [
      {"question": "If you have 2 pencils and get 3 more, how many pencils do you have?", "expectedAny": ["5"]},

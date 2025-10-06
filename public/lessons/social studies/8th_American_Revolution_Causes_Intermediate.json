@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Trace the escalating conflict between Britain and the colonies. Explain how economic and political grievances led to revolution.",
-  "sample": {
-    "question": "What meant being taxed without having a voice in government?",
-    "expectedAny": [
-      "taxation without representation",
-      "no representation",
-      "taxation without voice",
-      "unfair taxation"
-    ]
-  },
-  "truefalse": {
-    "question": "The Boston Tea Party was a protest against British tea taxes.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What was refusing to buy goods called?",
-    "expectedAny": [
-      "boycott",
-      "protest",
-      "economic protest",
-      "trade protest"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The ________ Act required colonists to pay taxes on printed materials.",
-    "expectedAny": [
-      "Stamp",
-      "printing",
-      "paper",
-      "document"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why did colonists oppose British taxation?",
-    "expectedAny": [
-      "no representation in Parliament",
-      "couldn't vote on taxes",
-      "taxation without representation"
-    ]
-  }
+  "sample": [
+    { "question": "What meant being taxed without having a voice in government?", "expectedAny": ["taxation without representation", "tax without voice", "unfair taxing"] },
+    { "question": "What is refusing to buy?", "choices": ["Purchase", "Boycott", "Trade", "Sale"], "correct": 1, "expectedAny": ["boycott", "refusing to buy", "not buying protest"] },
+    { "question": "Tax on printed materials was ________.", "expectedAny": ["Stamp Act"] },
+    { "question": "Tea dumping protest was ________.", "expectedAny": ["Boston Tea Party"] },
+    { "question": "Harsh punishment laws were ________.", "expectedAny": ["Intolerable Acts"] },
+    { "question": "What is tax without voice?", "choices": ["Fair tax", "Taxation without representation", "Good tax", "Free tax"], "correct": 1, "expectedAny": ["taxation without representation"] },
+    { "question": "Protest by not buying is ________.", "expectedAny": ["boycott"] },
+    { "question": "What taxed paper?", "choices": ["Tea Act", "Stamp Act", "Sugar Act", "Iron Act"], "correct": 1, "expectedAny": ["Stamp Act"] },
+    { "question": "Boston Harbor tea protest is ________.", "expectedAny": ["Boston Tea Party"] },
+    { "question": "Punishment laws were ________.", "expectedAny": ["Intolerable Acts"] }
+  ],
+  "truefalse": [
+    { "question": "The Boston Tea Party was a protest against British tea taxes.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Colonists had representation in Parliament.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Taxation without representation was unfair.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Boycott means buying more.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Stamp Act taxed printed materials.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Boston Tea Party supported Britain.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Intolerable Acts punished Massachusetts.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Colonists liked British taxes.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Boycotts were form of protest.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Stamp Act was popular.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What was refusing to buy goods called?", "choices": ["Purchase", "Boycott", "Trade", "Sale"], "correct": 1, "expectedAny": ["boycott"] },
+    { "question": "What is tax without voice?", "choices": ["Fair", "Taxation without representation", "Good", "Free"], "correct": 1, "expectedAny": ["taxation without representation"] },
+    { "question": "What taxed paper?", "choices": ["Tea Act", "Stamp Act", "Sugar Act", "Iron Act"], "correct": 1, "expectedAny": ["Stamp Act"] },
+    { "question": "What was tea protest?", "choices": ["Tea Party", "Boston Tea Party", "Harbor Party", "Ship Party"], "correct": 1, "expectedAny": ["Boston Tea Party"] },
+    { "question": "What were punishment laws?", "choices": ["Fair Acts", "Intolerable Acts", "Good Acts", "Free Acts"], "correct": 1, "expectedAny": ["Intolerable Acts"] },
+    { "question": "Refusing goods is?", "choices": ["Buying", "Boycott", "Trading", "Selling"], "correct": 1, "expectedAny": ["boycott"] },
+    { "question": "No voice in taxes is?", "choices": ["Fair", "Taxation without representation", "Good", "Right"], "correct": 1, "expectedAny": ["taxation without representation"] },
+    { "question": "Printed materials tax was?", "choices": ["Tea Act", "Stamp Act", "Sugar Act", "None"], "correct": 1, "expectedAny": ["Stamp Act"] },
+    { "question": "Dumping tea was?", "choices": ["Party", "Boston Tea Party", "Celebration", "Nothing"], "correct": 1, "expectedAny": ["Boston Tea Party"] },
+    { "question": "Harsh laws were?", "choices": ["Fair", "Intolerable Acts", "Good", "Kind"], "correct": 1, "expectedAny": ["Intolerable Acts"] }
+  ],
+  "fillintheblank": [
+    { "question": "The ________ Act required colonists to pay taxes on printed materials.", "expectedAny": ["Stamp"] },
+    { "question": "________ without representation was unfair.", "expectedAny": ["taxation"] },
+    { "question": "A ________ is refusing to buy goods.", "expectedAny": ["boycott"] },
+    { "question": "The Boston ________ Party dumped tea.", "expectedAny": ["Tea"] },
+    { "question": "________ Acts punished Massachusetts.", "expectedAny": ["Intolerable"] },
+    { "question": "Taxation without ________ was problem.", "expectedAny": ["representation"] },
+    { "question": "________ was protest by not buying.", "expectedAny": ["boycott"] },
+    { "question": "Stamp ________ taxed paper.", "expectedAny": ["Act"] },
+    { "question": "Boston Tea ________ was protest.", "expectedAny": ["Party"] },
+    { "question": "Intolerable ________ were harsh.", "expectedAny": ["Acts"] }
+  ],
+  "shortanswer": [
+    { "question": "Why did colonists oppose British taxation?", "expectedAny": ["no representation in Parliament", "couldn't vote on taxes"] },
+    { "question": "What is taxation without representation?", "expectedAny": ["being taxed without having voice in government", "unfair taxation"] },
+    { "question": "What is boycott?", "expectedAny": ["refusing to buy goods as protest", "economic protest"] },
+    { "question": "What is Stamp Act?", "expectedAny": ["British law taxing printed materials", "paper tax"] },
+    { "question": "What is Boston Tea Party?", "expectedAny": ["protest where colonists dumped tea in harbor", "tea dumping protest"] },
+    { "question": "What are Intolerable Acts?", "expectedAny": ["harsh laws punishing Massachusetts", "punishment laws"] },
+    { "question": "Why colonists angry at taxes?", "expectedAny": ["no say in government", "no representation"] },
+    { "question": "How boycotts work?", "expectedAny": ["refuse to buy British goods", "economic pressure"] },
+    { "question": "Why Boston Tea Party happen?", "expectedAny": ["protest tea tax", "anger at Britain"] },
+    { "question": "What caused revolution?", "expectedAny": ["unfair taxes and laws", "no representation"] }
+  ]
 }

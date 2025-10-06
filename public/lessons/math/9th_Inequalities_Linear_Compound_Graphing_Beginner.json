@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "9th_Inequalities_Linear_Compound_Graphing_Beginner",
   "title": "Inequalities: Linear and Compound with Graphing",
   "grade": "9th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "inequality",
-      "definition": "Mathematical statement comparing expressions using <, >, ≤, or ≥"
-    },
-    {
-      "term": "compound inequality",
-      "definition": "Two inequalities connected by 'and' or 'or'"
-    },
-    {
-      "term": "solution set",
-      "definition": "All values that make an inequality true"
-    },
-    {
-      "term": "boundary line",
-      "definition": "Line that separates regions in inequality graphing"
-    },
-    {
-      "term": "test point",
-      "definition": "Point used to determine which region satisfies the inequality"
-    }
+    {"term": "inequality", "definition": "Mathematical statement comparing expressions using <, >, , or "},
+    {"term": "compound inequality", "definition": "Two inequalities connected by and or or"},
+    {"term": "solution set", "definition": "All values that make an inequality true"},
+    {"term": "boundary line", "definition": "Line that separates regions in inequality graphing"},
+    {"term": "test point", "definition": "Point used to determine which region satisfies the inequality"}
   ],
   "teachingNotes": "Practice solving and graphing inequalities. Emphasize when to reverse the inequality sign and shading regions on graphs.",
-  "sample": {
-    "question": "What is a mathematical statement comparing expressions using inequality symbols?",
-    "expectedAny": ["inequality", "inequality statement", "comparison statement", "relational statement"]
-  },
-  "truefalse": {
-    "question": "When multiplying by a negative number, reverse the inequality sign.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What are two inequalities connected by 'and' or 'or'?",
-    "expectedAny": ["compound inequality", "compound inequalities", "combined inequality", "double inequality"]
-  },
-  "fillintheblank": {
-    "question": "All values that make an inequality true form the ________ set.",
-    "expectedAny": ["solution", "answer", "truth", "valid"]
-  },
-  "shortanswer": {
-    "question": "How do you test which region to shade when graphing inequalities?",
-    "expectedAny": ["use a test point", "substitute a point", "check which side works", "try a coordinate"]
-  },
-  "wordProblems": {
-    "question": "Solve 2x + 3 > 7. What is the solution?",
-    "expectedAny": ["x > 2", "x greater than 2", "x > 2", "greater than 2"]
-  }
+  "sample": [
+    {"question": "What is an inequality?", "expectedAny": ["mathematical statement with <, >, , or ", "comparison using inequality symbols", "statement comparing expressions", "greater than or less than statement"]},
+    {"question": "What is a compound inequality?", "expectedAny": ["two inequalities connected by and or or", "combined inequalities", "double inequality", "two inequalities together"]},
+    {"question": "What is a solution set?", "expectedAny": ["all values making inequality true", "all solutions", "values that work", "all answers that satisfy it"]},
+    {"question": "What is a boundary line?", "expectedAny": ["line separating regions", "dividing line in graph", "edge line", "line that splits the graph"]},
+    {"question": "What is a test point?", "expectedAny": ["point to test which region works", "point to check solution", "checking point"]},
+    {"question": "When do you reverse the inequality sign?", "expectedAny": ["when multiplying or dividing by negative", "multiply by negative", "divide by negative"]},
+    {"question": "What does x > 3 mean?", "expectedAny": ["x is greater than 3", "x is more than 3", "x exceeds 3"]},
+    {"question": "What does x  5 mean?", "expectedAny": ["x is less than or equal to 5", "x is at most 5", "x is 5 or less"]},
+    {"question": "How do you graph x > 2?", "expectedAny": ["open circle at 2, shade right", "hollow dot, arrow right", "open point, to the right"]},
+    {"question": "How do you graph x  4?", "expectedAny": ["closed circle at 4, shade left", "filled dot, arrow left", "solid point, to the left"]}
+  ],
+  "truefalse": [
+    {"question": "When multiplying by a negative number, reverse the inequality sign. (True or False)", "correct": true},
+    {"question": "< means greater than. (True or False)", "correct": false},
+    {"question": "A compound inequality uses and or or. (True or False)", "correct": true},
+    {"question": "The solution set includes all values that work. (True or False)", "correct": true},
+    {"question": " means strictly less than. (True or False)", "correct": false},
+    {"question": "You test points to determine shading. (True or False)", "correct": true},
+    {"question": "> includes the boundary value. (True or False)", "correct": false},
+    {"question": " includes the boundary value. (True or False)", "correct": true},
+    {"question": "Boundary lines separate solution regions. (True or False)", "correct": true},
+    {"question": "Adding the same value changes the inequality direction. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "What are two inequalities connected by and or or?", "choices": [{"letter": "A", "text": "Simple inequality"}, {"letter": "B", "text": "Compound inequality"}, {"letter": "C", "text": "Equation"}, {"letter": "D", "text": "Expression"}], "correct": "B"},
+    {"question": "When do you flip the inequality sign?", "choices": [{"letter": "A", "text": "When adding"}, {"letter": "B", "text": "When subtracting"}, {"letter": "C", "text": "When multiplying by negative"}, {"letter": "D", "text": "When dividing by positive"}], "correct": "C"},
+    {"question": "What symbol means less than or equal to?", "choices": [{"letter": "A", "text": "<"}, {"letter": "B", "text": ">"}, {"letter": "C", "text": ""}, {"letter": "D", "text": ""}], "correct": "C"},
+    {"question": "What is used to check which region satisfies an inequality?", "choices": [{"letter": "A", "text": "Boundary line"}, {"letter": "B", "text": "Test point"}, {"letter": "C", "text": "Origin only"}, {"letter": "D", "text": "Y-intercept"}], "correct": "B"},
+    {"question": "Which symbol means greater than?", "choices": [{"letter": "A", "text": "<"}, {"letter": "B", "text": ">"}, {"letter": "C", "text": "="}, {"letter": "D", "text": ""}], "correct": "B"},
+    {"question": "What separates regions in inequality graphing?", "choices": [{"letter": "A", "text": "Test point"}, {"letter": "B", "text": "Solution set"}, {"letter": "C", "text": "Boundary line"}, {"letter": "D", "text": "Origin"}], "correct": "C"},
+    {"question": "For x > 5, which circle do you use?", "choices": [{"letter": "A", "text": "Closed/filled"}, {"letter": "B", "text": "Open/hollow"}, {"letter": "C", "text": "Square"}, {"letter": "D", "text": "Triangle"}], "correct": "B"},
+    {"question": "For x  3, which circle do you use?", "choices": [{"letter": "A", "text": "Open/hollow"}, {"letter": "B", "text": "Closed/filled"}, {"letter": "C", "text": "No circle"}, {"letter": "D", "text": "Dashed"}], "correct": "B"},
+    {"question": "What contains all solutions?", "choices": [{"letter": "A", "text": "Test point"}, {"letter": "B", "text": "Boundary"}, {"letter": "C", "text": "Solution set"}, {"letter": "D", "text": "Equation"}], "correct": "C"},
+    {"question": "Solve: x + 3 < 7. What is x?", "choices": [{"letter": "A", "text": "x < 4"}, {"letter": "B", "text": "x > 4"}, {"letter": "C", "text": "x = 4"}, {"letter": "D", "text": "x < 10"}], "correct": "A"}
+  ],
+  "fillintheblank": [
+    {"question": "All values that make an inequality true form the _____ set.", "expectedAny": ["solution"]},
+    {"question": "When multiplying by a _____ number, flip the inequality sign.", "expectedAny": ["negative"]},
+    {"question": "Two inequalities connected by and or or form a _____ inequality.", "expectedAny": ["compound"]},
+    {"question": "A _____ point tests which region satisfies the inequality.", "expectedAny": ["test"]},
+    {"question": "The _____ line separates regions in a graph.", "expectedAny": ["boundary"]},
+    {"question": "The symbol < means _____ than.", "expectedAny": ["less"]},
+    {"question": "The symbol > means _____ than.", "expectedAny": ["greater"]},
+    {"question": " means less than or _____ to.", "expectedAny": ["equal"]},
+    {"question": "For >, use an _____ circle.", "expectedAny": ["open", "hollow"]},
+    {"question": "For , use a _____ circle.", "expectedAny": ["closed", "filled", "solid"]}
+  ],
+  "shortanswer": [
+    {"question": "How do you test which region to shade when graphing inequalities?", "keyTerms": ["test", "point", "substitute", "check"], "expectedAny": ["Use a test point and substitute to see if it works", "Pick a point and check if it satisfies the inequality", "Try coordinates to determine which region is correct"]},
+    {"question": "Why reverse the inequality when multiplying by negative?", "keyTerms": ["direction", "order", "negative", "changes"], "expectedAny": ["Multiplying by negative reverses the order", "Negative multiplication flips the comparison direction", "The relationship changes when you multiply by negative"]},
+    {"question": "What is the difference between < and ?", "keyTerms": ["less than", "equal", "includes", "boundary"], "expectedAny": ["< is strictly less than,  includes equal to", " includes the boundary value, < does not", "< excludes equals,  includes it"]},
+    {"question": "How do you solve 2x - 5 > 9?", "keyTerms": ["add", "divide", "x > 7"], "expectedAny": ["Add 5 to get 2x > 14, then divide by 2 to get x > 7", "2x > 14, so x > 7", "Add 5, divide by 2: x > 7"]},
+    {"question": "What does a compound inequality with and mean?", "keyTerms": ["both", "conditions", "intersection", "overlap"], "expectedAny": ["Both conditions must be true", "Solution satisfies both inequalities", "The overlap or intersection of both"]},
+    {"question": "What does a compound inequality with or mean?", "keyTerms": ["either", "one", "union", "at least"], "expectedAny": ["Either condition can be true", "Solution satisfies at least one inequality", "The union of both solution sets"]},
+    {"question": "How do you graph x  -2?", "keyTerms": ["closed", "circle", "right", "shade"], "expectedAny": ["Closed circle at -2, shade to the right", "Filled dot at -2, arrow pointing right", "Solid point at -2, shading rightward"]},
+    {"question": "What is the solution set of x > 3 and x < 8?", "keyTerms": ["between", "3", "8", "both"], "expectedAny": ["Values between 3 and 8 not including endpoints", "3 < x < 8", "x is greater than 3 and less than 8"]},
+    {"question": "Why use open versus closed circles?", "keyTerms": ["open", "excludes", "closed", "includes"], "expectedAny": ["Open excludes the boundary, closed includes it", "Open for < or >, closed for  or ", "Open means not equal, closed means equal is allowed"]},
+    {"question": "How do you solve -3x < 12?", "keyTerms": ["divide", "negative", "flip", "x > -4"], "expectedAny": ["Divide by -3 and flip sign to get x > -4", "x > -4 after dividing by -3 and reversing", "Divide by -3, reverse sign: x > -4"]}
+  ],
+  "wordProblems": [
+    {"question": "Solve 2x + 3 > 7. What is the solution?", "expectedAny": ["x > 2", "x greater than 2", "greater than 2"]},
+    {"question": "Solve x - 5  10. What is x?", "expectedAny": ["x  15", "x less than or equal to 15", "at most 15"]},
+    {"question": "Solve 3x < 12. What is x?", "expectedAny": ["x < 4", "x less than 4", "less than 4"]},
+    {"question": "Solve -2x  8. What is x?", "expectedAny": ["x  -4", "x less than or equal to -4", "at most -4"]},
+    {"question": "Solve x/2 > 5. What is x?", "expectedAny": ["x > 10", "x greater than 10", "more than 10"]},
+    {"question": "Solve 4x - 8 < 16. What is x?", "expectedAny": ["x < 6", "x less than 6", "less than 6"]},
+    {"question": "Solve -x > 3. What is x?", "expectedAny": ["x < -3", "x less than -3", "less than -3"]},
+    {"question": "Solve 5 + x  12. What is x?", "expectedAny": ["x  7", "x greater than or equal to 7", "at least 7"]},
+    {"question": "Solve 3x + 2  14. What is x?", "expectedAny": ["x  4", "x less than or equal to 4", "at most 4"]},
+    {"question": "Solve -4x < -16. What is x?", "expectedAny": ["x > 4", "x greater than 4", "more than 4"]}
+  ]
 }

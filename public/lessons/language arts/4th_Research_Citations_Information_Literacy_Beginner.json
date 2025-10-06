@@ -23,7 +23,19 @@
     {
       "term": "plagiarism",
       "definition": "Using someone else's words or ideas without giving them credit"
-    }
+    },
+  {"term": "bibliography", "definition": "A list of sources you used for your research"},
+  {"term": "title", "definition": "The name of a book, article, or webpage"},
+  {"term": "publisher", "definition": "The company or group that makes the information available"},
+  {"term": "URL", "definition": "The web address of a page on the internet"},
+  {"term": "paraphrase", "definition": "To restate information in your own words"},
+  {"term": "quote", "definition": "To copy the exact words from a source using quotation marks"},
+  {"term": "note-taking", "definition": "Writing short facts and ideas you learn while researching"},
+    {"term": "keywords", "definition": "Important words you use to search for information"},
+    {"term": "primary source", "definition": "Firsthand information, like a diary, photo, or interview"},
+    {"term": "secondary source", "definition": "Information written about events by someone who was not there"},
+    {"term": "author", "definition": "The person who wrote the text or created the content"},
+    {"term": "publication date", "definition": "The date when the information was published"}
   ],
   "teachingNotes": "Teach students how to find and evaluate sources. Introduce basic citation formats. Emphasize the importance of giving credit to sources and avoiding plagiarism. Practice distinguishing between reliable and unreliable sources.",
   "sample": [
@@ -36,39 +48,39 @@
     {"question": "Why should you check the publication date?", "expectedAny": ["see if info is current"]}
   ],
   "truefalse": [
-    {"question": "It's okay to copy information from a website without saying where it came from.", "answer": false, "expectedAny": ["false"]},
-    {"question": "A citation tells where you found information.", "answer": true, "expectedAny": ["true"]},
-    {"question": "Not all websites are reliable.", "answer": true, "expectedAny": ["true"]},
-    {"question": ".gov and .edu sites are often more reliable.", "answer": true, "expectedAny": ["true"]},
-    {"question": "You only need to cite direct quotes, not ideas.", "answer": false, "expectedAny": ["false"]},
-    {"question": "A bibliography is a list of sources used.", "answer": true, "expectedAny": ["true"]},
-    {"question": "Plagiarism is allowed in school projects.", "answer": false, "expectedAny": ["false"]}
+    {"question": "It's okay to copy information from a website without saying where it came from.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "A citation tells where you found information.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Not all websites are reliable.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": ".gov and .edu sites are often more reliable.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "You only need to cite direct quotes, not ideas.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "A bibliography is a list of sources used.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Plagiarism is allowed in school projects.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]}
   ],
   "multiplechoice": [
-    {"question": "Which would be the most reliable source for a school report?", "choices": ["random blog", "encyclopedia", "advertisement", "comic"], "correct": 1, "expectedAny": ["encyclopedia"]},
-    {"question": "Which is a citation?", "choices": ["A list of chores", "A note giving source info", "A picture", "A title"], "correct": 1, "expectedAny": ["source info"]},
-    {"question": "Which domain is often reliable?", "choices": [".gov", ".edu", ".com", "both .gov and .edu"], "correct": 3, "expectedAny": [".gov and .edu"]},
-    {"question": "Which is plagiarism?", "choices": ["Using your own words", "Taking words without credit", "Quoting with a citation", "Summarizing with a citation"], "correct": 1, "expectedAny": ["without credit"]},
-    {"question": "Where do you put a bibliography?", "choices": ["At the start", "At the end", "In the middle", "Never"], "correct": 1, "expectedAny": ["end"]},
-    {"question": "What helps you search better?", "choices": ["Using keywords", "Typing the whole question", "Guessing", "Clicking ads"], "correct": 0, "expectedAny": ["keywords"]},
-    {"question": "Which is a primary source?", "choices": ["Diary", "Textbook", "Article about history", "Encyclopedia"], "correct": 0, "expectedAny": ["diary"]}
+    {"question": "Which would be the most reliable source for a school report?", "choices": ["random blog", "encyclopedia", "advertisement", "comic"], "correct": 1, "expectedAny": ["encyclopedia", "an encyclopedia", "b", "2", "second"]},
+    {"question": "Which is a citation?", "choices": ["A list of chores", "A note giving source info", "A picture", "A title"], "correct": 1, "expectedAny": ["a note giving source info", "source info", "b", "2", "second"]},
+    {"question": "Which domain is often reliable?", "choices": [".gov", ".edu", ".com", "both .gov and .edu"], "correct": 3, "expectedAny": ["both .gov and .edu", ".gov and .edu", "d", "4", "fourth"]},
+    {"question": "Which is plagiarism?", "choices": ["Using your own words", "Taking words without credit", "Quoting with a citation", "Summarizing with a citation"], "correct": 1, "expectedAny": ["taking words without credit", "without credit", "b", "2", "second"]},
+    {"question": "Where do you put a bibliography?", "choices": ["At the start", "At the end", "In the middle", "Never"], "correct": 1, "expectedAny": ["at the end", "end", "b", "2", "second"]},
+    {"question": "What helps you search better?", "choices": ["Using keywords", "Typing the whole question", "Guessing", "Clicking ads"], "correct": 0, "expectedAny": ["using keywords", "keywords", "a", "1", "first"]},
+    {"question": "Which is a primary source?", "choices": ["Diary", "Textbook", "Article about history", "Encyclopedia"], "correct": 0, "expectedAny": ["diary", "a diary", "a", "1", "first"]}
   ],
   "fillintheblank": [
-    {"question": "When you use someone else's ideas in your writing, you must include a ________.", "expectedAny": ["citation"]},
-    {"question": "A list of sources is a ________.", "expectedAny": ["bibliography", "works cited"]},
-    {"question": "Trustworthy means ________.", "expectedAny": ["reliable"]},
-    {"question": "Use ________ to find information on a topic.", "expectedAny": ["keywords"]},
-    {"question": "A website's author is the ________ of the page.", "expectedAny": ["creator", "writer"]},
-    {"question": "Check the ________ date to see if information is current.", "expectedAny": ["publication"]},
-    {"question": "A diary written long ago can be a ________ source.", "expectedAny": ["primary"]}
+    {"question": "When you use someone else's ideas in your writing, you must include a ________.", "expectedAny": ["citation", "reference", "source citation", "credit"]},
+    {"question": "A list of sources is a ________.", "expectedAny": ["bibliography", "works cited", "reference list", "sources list"]},
+    {"question": "Trustworthy means ________.", "expectedAny": ["reliable", "trustworthy", "accurate"]},
+    {"question": "Use ________ to find information on a topic.", "expectedAny": ["keywords", "search terms", "key words"]},
+    {"question": "A website's author is the ________ of the page.", "expectedAny": ["creator", "writer", "author", "person who wrote it"]},
+    {"question": "Check the ________ date to see if information is current.", "expectedAny": ["publication", "publish", "publication date", "date it was published", "posted date"]},
+    {"question": "A diary written long ago can be a ________ source.", "expectedAny": ["primary", "firsthand", "original", "primary source"]}
   ],
   "shortanswer": [
-    {"question": "What makes a source reliable?", "expectedAny": ["expert author", "factual", "recent"]},
-    {"question": "Write a citation for a book you used (author and title).", "expectedAny": ["varies"]},
-    {"question": "Explain plagiarism in your own words.", "expectedAny": ["varies"]},
-    {"question": "List two primary sources and two secondary sources.", "expectedAny": ["varies"]},
-    {"question": "How do keywords help your search?", "expectedAny": ["more focused results"]},
-    {"question": "Evaluate a website: what 3 things do you check?", "expectedAny": ["author", "date", "purpose/bias"]},
-    {"question": "Why is it important to keep a bibliography?", "expectedAny": ["give credit", "track sources"]}
+    {"question": "What makes a source reliable?", "expectedAny": ["expert author", "facts not opinions only", "factual", "recent", "current", "unbiased", "no obvious ads", "trusted domain like .gov or .edu", "author credentials", "trusted site"]},
+    {"question": "Write a citation for a book you used (author and title).", "expectedAny": ["Author Last, First. Title.", "Author and book title.", "Author's name and the title of the book.", "Last name, first name and the book title"]},
+    {"question": "Explain plagiarism in your own words.", "expectedAny": ["using words without credit", "copying ideas without citation", "pretending someone else's work is yours", "not giving credit", "taking someone else's words", "stealing ideas", "using someone else's work"]},
+    {"question": "List two primary sources and two secondary sources.", "expectedAny": ["primary: diary, photo; secondary: textbook, article", "primary: letter, interview; secondary: encyclopedia, website article", "primary: map, speech; secondary: history book, documentary", "primary examples and secondary examples"]},
+    {"question": "How do keywords help your search?", "expectedAny": ["more focused results", "find relevant sources faster", "narrow down the topic", "better search results", "helps find what you need"]},
+    {"question": "Evaluate a website: what 3 things do you check?", "expectedAny": ["author", "date", "purpose/bias", "domain (.gov/.edu)", "who wrote it", "when it was published", "why it was written", "author expertise date"]},
+    {"question": "Why is it important to keep a bibliography?", "expectedAny": ["give credit", "track sources", "so others can find them", "avoid plagiarism", "show where information came from", "list your sources"]}
   ]
 }

@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Use examples like finch beaks or peppered moths. Explain how environmental changes can drive evolution. Discuss fossil evidence.",
-  "sample": {
-    "question": "What is the gradual change in species over time called?",
-    "expectedAny": [
-      "evolution",
-      "evolutionary change",
-      "species change",
-      "biological evolution"
-    ]
-  },
-  "truefalse": {
-    "question": "Natural selection causes organisms with helpful traits to survive better.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What provides evidence for evolution?",
-    "expectedAny": [
-      "fossils",
-      "fossil record",
-      "comparative anatomy",
-      "DNA similarities"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A trait that helps an organism survive is called an ________.",
-    "expectedAny": [
-      "adaptation",
-      "adaptive trait",
-      "favorable trait",
-      "survival trait"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does natural selection lead to evolution?",
-    "expectedAny": [
-      "favorable traits passed to offspring",
-      "helpful traits become more common",
-      "survival advantage leads to reproduction"
-    ]
-  }
+  "sample": [
+    { "question": "What is the gradual change in species over time called?", "expectedAny": ["evolution"] },
+    { "question": "Which is survival process?", "choices": ["Mutation", "Natural selection", "Adaptation", "Variation"], "correct": 1, "expectedAny": ["natural selection"] },
+    { "question": "Helpful survival trait is ________.", "expectedAny": ["adaptation"] },
+    { "question": "Group reproducing together is ________.", "expectedAny": ["species"] },
+    { "question": "Preserved ancient remains are ________.", "expectedAny": ["fossils"] },
+    { "question": "What is species change over time?", "choices": ["Adaptation", "Evolution", "Selection", "Variation"], "correct": 1, "expectedAny": ["evolution"] },
+    { "question": "Survival advantage process is ________.", "expectedAny": ["natural selection"] },
+    { "question": "Trait helping survival is ________.", "expectedAny": ["adaptation"] },
+    { "question": "Which reproduces together?", "choices": ["Genus", "Species", "Family", "Order"], "correct": 1, "expectedAny": ["species"] },
+    { "question": "Ancient evidence is ________.", "expectedAny": ["fossil"] }
+  ],
+  "truefalse": [
+    { "question": "Natural selection causes organisms with helpful traits to survive better.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Evolution happens instantly.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Adaptations help organisms survive.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All species are identical.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Fossils provide evidence for evolution.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Natural selection is random.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Evolution is gradual change.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Adaptations are always harmful.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Species can change over time.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Fossils are recent remains.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What provides evidence for evolution?", "choices": ["Rocks", "Fossils", "Water", "Air"], "correct": 1, "expectedAny": ["fossils"] },
+    { "question": "What is species change over time?", "choices": ["Adaptation", "Evolution", "Selection", "Variation"], "correct": 1, "expectedAny": ["evolution"] },
+    { "question": "What is survival advantage?", "choices": ["Mutation", "Natural selection", "Variation", "Extinction"], "correct": 1, "expectedAny": ["natural selection"] },
+    { "question": "What helps organisms survive?", "choices": ["Weakness", "Adaptation", "Disadvantage", "Harm"], "correct": 1, "expectedAny": ["adaptation"] },
+    { "question": "What reproduces together?", "choices": ["Genus", "Species", "Family", "Order"], "correct": 1, "expectedAny": ["species"] },
+    { "question": "What are ancient remains?", "choices": ["Rocks", "Fossils", "Minerals", "Crystals"], "correct": 1, "expectedAny": ["fossils"] },
+    { "question": "What drives evolution?", "choices": ["Luck", "Natural selection", "Magic", "Chance"], "correct": 1, "expectedAny": ["natural selection"] },
+    { "question": "Favorable traits lead to?", "choices": ["Death", "Survival", "Extinction", "Weakness"], "correct": 1, "expectedAny": ["survival"] },
+    { "question": "Evolution is?", "choices": ["Fast", "Gradual", "Instant", "Sudden"], "correct": 1, "expectedAny": ["gradual"] },
+    { "question": "Adaptations are?", "choices": ["Harmful", "Helpful", "Useless", "Random"], "correct": 1, "expectedAny": ["helpful"] }
+  ],
+  "fillintheblank": [
+    { "question": "A trait that helps an organism survive is called an ________.", "expectedAny": ["adaptation"] },
+    { "question": "Gradual change in species is ________.", "expectedAny": ["evolution"] },
+    { "question": "Survival advantage process is ________.", "expectedAny": ["natural selection"] },
+    { "question": "A group reproducing together is a ________.", "expectedAny": ["species"] },
+    { "question": "Ancient preserved remains are ________.", "expectedAny": ["fossils"] },
+    { "question": "________ is species change over time.", "expectedAny": ["evolution"] },
+    { "question": "________ selection favors helpful traits.", "expectedAny": ["natural"] },
+    { "question": "An ________ helps organism survive.", "expectedAny": ["adaptation"] },
+    { "question": "A ________ can reproduce together.", "expectedAny": ["species"] },
+    { "question": "________ provide evolution evidence.", "expectedAny": ["fossils"] }
+  ],
+  "shortanswer": [
+    { "question": "How does natural selection lead to evolution?", "expectedAny": ["favorable traits passed to offspring", "helpful traits become more common"] },
+    { "question": "What is evolution?", "expectedAny": ["gradual change in species", "species change over time"] },
+    { "question": "What is natural selection?", "expectedAny": ["survival of favorable traits", "process where helpful traits survive", "best suited survive", "survival of fittest"] },
+    { "question": "What is an adaptation?", "expectedAny": ["trait helping survival", "helpful trait", "trait that helps organism survive", "survival trait"] },
+    { "question": "What is a species?", "expectedAny": ["group reproducing together", "organisms having fertile offspring"] },
+    { "question": "What is a fossil?", "expectedAny": ["preserved ancient remains", "traces of ancient organisms"] },
+    { "question": "How do adaptations develop?", "expectedAny": ["through natural selection", "helpful traits survive"] },
+    { "question": "What is fossil evidence?", "expectedAny": ["proof of ancient life", "shows species change"] },
+    { "question": "Why do species change?", "expectedAny": ["environmental changes", "natural selection"] },
+    { "question": "What survives better?", "expectedAny": ["organisms with adaptations", "helpful traits"] }
+  ]
 }

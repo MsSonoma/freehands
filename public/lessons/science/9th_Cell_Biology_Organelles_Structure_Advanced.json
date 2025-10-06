@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "9th_Cell_Biology_Organelles_Structure_Advanced",
-  "title": "Cell Biology: Organelle Structure and Function",
+  "title": "Cell Biology: Organelles and Structure",
   "grade": "9th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "organelle",
-      "definition": "Specialized structures within cells that perform specific functions"
-    },
-    {
-      "term": "mitochondria",
-      "definition": "Organelles that produce ATP energy for cellular processes"
-    },
-    {
-      "term": "endoplasmic reticulum",
-      "definition": "Network of membranes for protein and lipid synthesis"
-    },
-    {
-      "term": "ribosome",
-      "definition": "Cellular structures that synthesize proteins"
-    },
-    {
-      "term": "cytoplasm",
-      "definition": "Gel-like substance that fills the cell and contains organelles"
-    }
+    {"term": "organelle", "definition": "Specialized structure within a cell performing specific functions"},
+    {"term": "mitochondria", "definition": "Powerhouse of the cell; produces ATP through cellular respiration"},
+    {"term": "endoplasmic reticulum", "definition": "Network of membranes for protein and lipid synthesis"},
+    {"term": "ribosome", "definition": "Site of protein synthesis; translates mRNA into proteins"},
+    {"term": "cell membrane", "definition": "Selectively permeable barrier controlling what enters and exits"}
   ],
-  "teachingNotes": "Emphasize the relationship between organelle structure and function. Use diagrams to show how organelles work together in cellular processes.",
-  "sample": {
-    "question": "What are specialized structures within cells that perform specific functions?",
-    "expectedAny": [
-      "organelles",
-      "cellular organelles",
-      "cell structures",
-      "subcellular structures"
-    ]
-  },
-  "truefalse": {
-    "question": "Mitochondria are known as the powerhouses of the cell.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which organelle is responsible for protein synthesis?",
-    "expectedAny": [
-      "ribosome",
-      "ribosomes",
-      "ribosomal structures",
-      "protein factories"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The ________ is a network of membranes for protein and lipid synthesis.",
-    "expectedAny": [
-      "endoplasmic reticulum",
-      "ER",
-      "endoplasmic reticuli",
-      "membrane network"
-    ]
-  },
-  "shortanswer": {
-    "question": "Explain how mitochondria structure relates to its function in energy production.",
-    "expectedAny": [
-      "folded inner membranes increase surface area",
-      "cristae provide space for ATP synthesis",
-      "double membrane creates compartments"
-    ]
-  }
+  "teachingNotes": "Use analogies comparing organelles to city structures. Emphasize structure-function relationships for each organelle.",
+  "sample": [
+    {"question": "What are specialized structures within cells called?", "expectedAny": ["organelles", "cell organelles", "cellular structures", "cell parts"]},
+    {"question": "What organelle produces ATP?", "expectedAny": ["mitochondria", "mitochondrion", "powerhouse of cell"]},
+    {"question": "What is the endoplasmic reticulum?", "expectedAny": ["membrane network", "ER", "protein synthesis site", "cell transport system"]},
+    {"question": "Where does protein synthesis occur?", "expectedAny": ["ribosomes", "ribosome", "ER", "protein makers"]},
+    {"question": "What controls what enters and exits the cell?", "expectedAny": ["cell membrane", "plasma membrane", "membrane", "cell barrier"]},
+    {"question": "What is the powerhouse of the cell?", "expectedAny": ["mitochondria", "mitochondrion"]},
+    {"question": "What are ribosomes?", "expectedAny": ["protein synthesis sites", "make proteins", "translate mRNA"]},
+    {"question": "What does the cell membrane do?", "expectedAny": ["controls entry and exit", "selectively permeable", "protects cell"]},
+    {"question": "What produces energy in cells?", "expectedAny": ["mitochondria", "cellular respiration", "ATP production"]},
+    {"question": "What is the function of organelles?", "expectedAny": ["perform specific tasks", "specialized functions", "cell operations"]}
+  ],
+  "truefalse": [
+    {"question": "Mitochondria produce ATP. (True or False)", "correct": true},
+    {"question": "Ribosomes make lipids. (True or False)", "correct": false},
+    {"question": "The cell membrane is selectively permeable. (True or False)", "correct": true},
+    {"question": "Organelles have specialized functions. (True or False)", "correct": true},
+    {"question": "The endoplasmic reticulum synthesizes proteins. (True or False)", "correct": true},
+    {"question": "Mitochondria are the powerhouse of the cell. (True or False)", "correct": true},
+    {"question": "All cells have the same organelles. (True or False)", "correct": false},
+    {"question": "Ribosomes translate mRNA into proteins. (True or False)", "correct": true},
+    {"question": "The cell membrane is completely impermeable. (True or False)", "correct": false},
+    {"question": "Organelles work together for cell function. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What organelle produces ATP?", "choices": [{"letter": "A", "text": "Nucleus"}, {"letter": "B", "text": "Mitochondria"}, {"letter": "C", "text": "Ribosome"}, {"letter": "D", "text": "Golgi"}], "correct": "B"},
+    {"question": "Where does protein synthesis occur?", "choices": [{"letter": "A", "text": "Mitochondria"}, {"letter": "B", "text": "Nucleus"}, {"letter": "C", "text": "Ribosomes"}, {"letter": "D", "text": "Vacuole"}], "correct": "C"},
+    {"question": "What is selectively permeable?", "choices": [{"letter": "A", "text": "Nucleus"}, {"letter": "B", "text": "Cell membrane"}, {"letter": "C", "text": "Ribosome"}, {"letter": "D", "text": "Mitochondria"}], "correct": "B"},
+    {"question": "What synthesizes proteins and lipids?", "choices": [{"letter": "A", "text": "Golgi apparatus"}, {"letter": "B", "text": "Lysosomes"}, {"letter": "C", "text": "Endoplasmic reticulum"}, {"letter": "D", "text": "Vacuoles"}], "correct": "C"},
+    {"question": "What are specialized cell structures called?", "choices": [{"letter": "A", "text": "Tissues"}, {"letter": "B", "text": "Organs"}, {"letter": "C", "text": "Organelles"}, {"letter": "D", "text": "Systems"}], "correct": "C"},
+    {"question": "What is the powerhouse of the cell?", "choices": [{"letter": "A", "text": "Nucleus"}, {"letter": "B", "text": "Chloroplast"}, {"letter": "C", "text": "Mitochondria"}, {"letter": "D", "text": "Ribosome"}], "correct": "C"},
+    {"question": "What translates mRNA?", "choices": [{"letter": "A", "text": "DNA"}, {"letter": "B", "text": "Nucleus"}, {"letter": "C", "text": "Ribosomes"}, {"letter": "D", "text": "Lysosomes"}], "correct": "C"},
+    {"question": "What controls cell entry and exit?", "choices": [{"letter": "A", "text": "Nucleus"}, {"letter": "B", "text": "Cytoplasm"}, {"letter": "C", "text": "Cell wall"}, {"letter": "D", "text": "Cell membrane"}], "correct": "D"},
+    {"question": "What network makes proteins?", "choices": [{"letter": "A", "text": "Golgi apparatus"}, {"letter": "B", "text": "Endoplasmic reticulum"}, {"letter": "C", "text": "Mitochondria"}, {"letter": "D", "text": "Lysosomes"}], "correct": "B"},
+    {"question": "Where does cellular respiration occur?", "choices": [{"letter": "A", "text": "Nucleus"}, {"letter": "B", "text": "Cytoplasm only"}, {"letter": "C", "text": "Mitochondria"}, {"letter": "D", "text": "Ribosomes"}], "correct": "C"}
+  ],
+  "fillintheblank": [
+    {"question": "The _____ produces ATP through cellular respiration.", "expectedAny": ["mitochondria", "mitochondrion"]},
+    {"question": "_____ are the site of protein synthesis.", "expectedAny": ["ribosomes", "ribosome"]},
+    {"question": "The _____ membrane controls what enters and exits the cell.", "expectedAny": ["cell", "plasma"]},
+    {"question": "Specialized structures within cells are called _____.", "expectedAny": ["organelles"]},
+    {"question": "The _____ _____ is a network for protein synthesis.", "expectedAny": ["endoplasmic reticulum", "ER"]},
+    {"question": "Mitochondria are the _____ of the cell.", "expectedAny": ["powerhouse", "power house"]},
+    {"question": "Ribosomes translate _____ into proteins.", "expectedAny": ["mRNA", "messenger RNA", "RNA"]},
+    {"question": "The cell membrane is selectively _____.", "expectedAny": ["permeable"]},
+    {"question": "The _____ reticulum synthesizes proteins and lipids.", "expectedAny": ["endoplasmic"]},
+    {"question": "_____ respiration occurs in mitochondria.", "expectedAny": ["cellular", "cell"]}
+  ],
+  "shortanswer": [
+    {"question": "What is an organelle?", "keyTerms": ["specialized", "structure", "cell", "function"], "expectedAny": ["Specialized structure in cells with specific functions", "Cell part that does specific job", "Specialized cell component"]},
+    {"question": "What do mitochondria do?", "keyTerms": ["produce", "ATP", "energy", "cellular respiration"], "expectedAny": ["Produce ATP through cellular respiration", "Make energy for the cell", "Powerhouse that produces ATP"]},
+    {"question": "What is the endoplasmic reticulum?", "keyTerms": ["membrane", "network", "protein", "synthesis"], "expectedAny": ["Network of membranes for protein and lipid synthesis", "Membrane system that makes proteins", "ER that synthesizes proteins"]},
+    {"question": "What do ribosomes do?", "keyTerms": ["protein", "synthesis", "translate", "mRNA"], "expectedAny": ["Synthesize proteins by translating mRNA", "Make proteins from mRNA", "Site of protein synthesis"]},
+    {"question": "What does the cell membrane do?", "keyTerms": ["control", "entry", "exit", "selectively permeable"], "expectedAny": ["Controls what enters and exits the cell", "Selectively permeable barrier", "Regulates what passes through"]},
+    {"question": "Why are mitochondria called the powerhouse?", "keyTerms": ["produce", "ATP", "energy", "power"], "expectedAny": ["They produce ATP which is cellular energy", "Make energy for the cell", "Generate ATP through respiration"]},
+    {"question": "How do organelles work together?", "keyTerms": ["specialized", "functions", "coordinate", "cell survival"], "expectedAny": ["Each does specialized job for cell function", "Work together to keep cell alive", "Coordinate specialized functions"]},
+    {"question": "What does selectively permeable mean?", "keyTerms": ["allows", "some", "blocks", "others"], "expectedAny": ["Allows some substances through but blocks others", "Selective about what passes", "Lets certain things through"]},
+    {"question": "Where does protein synthesis occur?", "keyTerms": ["ribosomes", "endoplasmic reticulum", "translate"], "expectedAny": ["At ribosomes on endoplasmic reticulum", "Ribosomes translate mRNA", "ER and ribosomes"]},
+    {"question": "What is cellular respiration?", "keyTerms": ["break down", "glucose", "produce", "ATP"], "expectedAny": ["Process that breaks down glucose to produce ATP", "Making energy from sugar", "Converting glucose to ATP"]}
+  ]
 }

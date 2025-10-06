@@ -28,7 +28,7 @@
   "teachingNotes": "Explore power series and function approximation. Connect to applications in physics and engineering.",
   "sample": {
     "question": "What is an infinite series in powers of a variable?",
-    "expectedAny": ["power series", "polynomial series", "variable power series", "infinite polynomial"]
+    "expectedAny": ["power series", "polynomial series", "variable power series", "infinite polynomial", "series expansion", "power expansion"]
   },
   "truefalse": {
     "question": "A Maclaurin series is a Taylor series expanded around x = 0.",

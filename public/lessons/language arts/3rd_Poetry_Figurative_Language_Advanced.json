@@ -5,29 +5,23 @@
   "difficulty": "Advanced",
   "featured": false,
   "vocab": [
-    {
-      "term": "poetry",
-      "definition": "Writing that uses rhythm, rhyme, and special language to express feelings or ideas"
-    },
-    {
-      "term": "simile",
-      "definition": "A comparison using 'like' or 'as' (The snow is like a blanket)"
-    },
-    {
-      "term": "metaphor",
-      "definition": "A comparison that says one thing is another (The sun is a golden ball)"
-    },
-    {
-      "term": "alliteration",
-      "definition": "Words that start with the same sound (Sally sells seashells)"
-    }
+    {"word": "poetry", "kid_friendly_definition": "Writing that uses rhythm, rhyme, and special language to express feelings or ideas."},
+    {"word": "figurative language", "kid_friendly_definition": "Words or phrases that compare or create images beyond their literal meaning."},
+    {"word": "simile", "kid_friendly_definition": "A comparison using 'like' or 'as' (The snow is like a blanket)."},
+    {"word": "metaphor", "kid_friendly_definition": "A comparison that says one thing is another (The sun is a golden ball)."},
+    {"word": "alliteration", "kid_friendly_definition": "Words that start with the same sound (Sally sells seashells)."},
+    {"word": "personification", "kid_friendly_definition": "Giving human qualities to an object or animal (The wind whispered)."},
+    {"word": "onomatopoeia", "kid_friendly_definition": "A word that sounds like what it means, like buzz or crash."},
+    {"word": "imagery", "kid_friendly_definition": "Words that help you picture, hear, smell, taste, or feel something."},
+    {"word": "stanza", "kid_friendly_definition": "A group of lines in a poem, like a paragraph."}
   ],
   "teachingNotes": "Read various poems aloud. Practice identifying rhyme patterns. Have students create their own simple poems with figurative language.",
   "sample": {
-    "question": "Is 'The wind whispered through the trees' a simile or metaphor?",
+    "question": "What kind of figurative language is 'The wind whispered through the trees'?",
     "expectedAny": [
-      "metaphor",
-      "it says the wind whispered without using like or as"
+      "personification",
+      "it gives the wind a human action",
+      "giving human qualities to wind"
     ]
   },
   "truefalse": [
@@ -35,7 +29,12 @@
       "question": "A simile always uses the words 'like' or 'as' to make a comparison.",
       "answer": true,
       "expectedAny": [
-        "similes require like or as to make comparisons"
+        "similes require like or as to make comparisons",
+        "true",
+        "t",
+        "yes",
+        "y",
+        "correct"
       ]
     }
   ],
@@ -50,7 +49,13 @@
       ],
       "correct": 1,
       "expectedAny": [
-        "busy bees buzzing repeats the 'b' sound"
+        "busy bees buzzing repeats the 'b' sound",
+        "b",
+        "B",
+        "2",
+        "busy bees buzzing",
+        "repeats the b sound",
+        "same beginning sound"
       ]
     }
   ],
@@ -58,7 +63,10 @@
     {
       "question": "'Her smile is as bright as the sun' is an example of a _____.",
       "expectedAny": [
-        "simile"
+        "simile",
+        "a simile",
+        "comparison using like or as",
+        "uses like or as"
       ]
     }
   ],
@@ -69,7 +77,12 @@
         "make writing more interesting",
         "help readers picture things",
         "express feelings better",
-        "create vivid images"
+        "create vivid images",
+        "paint pictures in the reader's mind",
+        "make ideas clearer",
+        "make it more fun",
+        "show things better",
+        "help us see it"
       ]
     }
   ]

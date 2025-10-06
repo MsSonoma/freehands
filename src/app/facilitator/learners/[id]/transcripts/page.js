@@ -2,8 +2,9 @@
 
 import { useEffect, useState, use } from 'react';
 import Link from 'next/link';
-import { listLearnerTranscriptPdfs } from '@/app/lib/transcriptsClient';
+// Fetch via server API to ensure service role access
 import { getLearner } from '@/app/facilitator/learners/clientApi';
+import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
 
 export default function LearnerTranscriptsPage({ params }) {
   // In Next.js 15 App Router, params is a Promise in client components.
@@ -19,13 +20,20 @@ export default function LearnerTranscriptsPage({ params }) {
     (async () => {
       try {
         setLoading(true);
-        const [meta, list] = await Promise.all([
+        const supabase = getSupabaseClient?.();
+        const hasEnv = hasSupabaseEnv?.();
+        const { data: { session } = { data: {} } } = supabase ? await supabase.auth.getSession() : { data: {} };
+        const token = session?.access_token || '';
+        const [meta, listResp] = await Promise.all([
           learnerId ? getLearner(learnerId) : null,
-          learnerId ? listLearnerTranscriptPdfs(learnerId) : [],
+          learnerId ? fetch(`/api/facilitator/learners/${encodeURIComponent(learnerId)}/transcripts`, {
+            cache: 'no-store',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          }).then(r => r.json()).catch(() => ({ items: [] })) : { items: [] },
         ]);
         if (!mounted) return;
         setLearnerName(meta?.name || '');
-        setItems(list);
+        setItems(Array.isArray(listResp?.items) ? listResp.items : []);
       } catch (e) {
         if (!mounted) return;
         setError(e?.message || 'Failed to load transcripts');
@@ -52,10 +60,10 @@ export default function LearnerTranscriptsPage({ params }) {
             <div key={it.path} style={{ border:'1px solid #eee', borderRadius:8, background:'#fff', padding:12, display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
               <div>
                 <div style={{ fontWeight:700 }}>Lesson: {it.lessonId}</div>
-                <div style={{ color:'#555', fontSize:14 }}>{it.path.split('/').slice(-2).join('/')}</div>
+                <div style={{ color:'#555', fontSize:14 }}>{it.path.split('/').slice(-2).join('/')} {it.kind ? `(${it.kind.toUpperCase()})` : ''}</div>
               </div>
               <div style={{ display:'flex', gap:8 }}>
-                <a href={it.url} target="_blank" rel="noreferrer" style={{ padding:'8px 12px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff', textDecoration:'none' }}>Open PDF</a>
+                <a href={it.url} target="_blank" rel="noreferrer" style={{ padding:'8px 12px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff', textDecoration:'none' }}>Open</a>
                 <a href={it.url} download style={{ padding:'8px 12px', border:'1px solid #111', borderRadius:8, background:'#fff', color:'#111', textDecoration:'none' }}>Download</a>
               </div>
             </div>

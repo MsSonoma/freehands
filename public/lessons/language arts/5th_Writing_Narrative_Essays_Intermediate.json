@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Teach students to use time order and transition words. Practice writing personal experiences with vivid details. Emphasize beginning, middle, and end structure.",
-  "sample": {
-    "question": "What type of writing tells a story in the order events happened?",
-    "expectedAny": [
-      "narrative",
-      "narrative writing",
-      "story writing",
-      "narrative essay"
-    ]
-  },
-  "truefalse": {
-    "question": "Dialogue shows the exact words that characters say.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which words help show the order of events in a story?",
-    "expectedAny": [
-      "transition words",
-      "time words",
-      "sequence words",
-      "connecting words"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A true story about something that happened to you is called a ________ narrative.",
-    "expectedAny": [
-      "personal",
-      "personal narrative",
-      "true",
-      "autobiographical"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are three transition words you could use to show time order?",
-    "expectedAny": [
-      "first, then, finally",
-      "next, after, last",
-      "beginning, middle, end",
-      "initially, later, eventually"
-    ]
-  }
+  "sample": [
+    { "question": "What type of writing tells a story in the order events happened?", "expectedAny": ["narrative", "narrative writing", "story writing", "narrative essay"] },
+    { "question": "A true story about your life is a ________ narrative.", "expectedAny": ["personal", "personal narrative"] },
+    { "question": "Quoted conversation in a story is called ________.", "expectedAny": ["dialogue"] },
+  { "question": "Words like 'first' and 'next' are ________ words.", "expectedAny": ["transition", "time", "sequence", "signal"] },
+    { "question": "The order in which events happen is the ________.", "expectedAny": ["sequence", "order"] },
+    { "question": "Which point of view uses 'I' and 'me'?", "choices": ["Third person", "Second person", "First person", "Omniscient"], "correct": 2, "expectedAny": ["first person"] },
+    { "question": "Vivid details help readers ________ the story.", "expectedAny": ["picture", "imagine", "visualize"] },
+    { "question": "A narrative needs a beginning, ________, and end.", "expectedAny": ["middle"] },
+    { "question": "A small problem the character faces is a ________.", "expectedAny": ["conflict", "challenge"] },
+    { "question": "Words that show time are called ________ words.", "expectedAny": ["transition", "time"] }
+  ],
+  "truefalse": [
+    { "question": "Dialogue shows the exact words that characters say.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A personal narrative is always fictional.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Transition words can help sentences flow.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Narratives should include senses and details.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The sequence of events is not important in narratives.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Using 'I' and 'me' is first-person point of view.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Every narrative must include dialogue to be valid.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A strong beginning hooks the reader.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Transitions belong only at the start of the story.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Editing helps improve clarity in narratives.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which words help show the order of events in a story?", "choices": ["Adjectives", "Transition words", "Interjections", "Pronouns"], "correct": 1, "expectedAny": ["transition words", "time words", "sequence words", "connecting words"] },
+    { "question": "Which opening best hooks the reader?", "choices": ["I woke up.", "It was a day.", "My heart pounded as the rope swung.", "I went to school."], "correct": 2, "expectedAny": ["hook", "exciting start"] },
+    { "question": "Which is a time transition?", "choices": ["Because", "Although", "Later", "Very"], "correct": 2, "expectedAny": ["later", "time word"] },
+    { "question": "Which sentence uses dialogue correctly?", "choices": ["I said I am ready.", "I said, \"I am ready.\"", "I said I am, ready.", "I said: I am ready"], "correct": 1, "expectedAny": ["quotes", "dialogue punctuation"] },
+    { "question": "Which POV is best for a personal narrative?", "choices": ["Third person", "First person", "Second person", "Omniscient"], "correct": 1, "expectedAny": ["first person"] },
+    { "question": "Which detail shows imagery?", "choices": ["It was nice.", "The crisp leaves crunched under my boots.", "We went outside.", "I was there."], "correct": 1, "expectedAny": ["crunch", "crisp leaves"] },
+    { "question": "Which event should come last?", "choices": ["Hook", "Rising action", "Resolution", "Middle detail"], "correct": 2, "expectedAny": ["resolution"] },
+    { "question": "Which transition shows the end?", "choices": ["Finally", "Next", "Meanwhile", "Before"], "correct": 0, "expectedAny": ["finally"] },
+    { "question": "Which sentence shows first person?", "choices": ["He turned and ran.", "They laughed loudly.", "I clutched the map.", "The crowd cheered."], "correct": 2, "expectedAny": ["I clutched the map."] },
+    { "question": "Which option is a strong concluding sentence?", "choices": ["That's it.", "I learned to be brave that day.", "The end.", "Okay."], "correct": 1, "expectedAny": ["lesson learned", "reflection"] }
+  ],
+  "fillintheblank": [
+    { "question": "A true story about something that happened to you is called a ________ narrative.", "expectedAny": ["personal", "personal narrative", "true", "autobiographical", "nonfiction", "real-life", "true story"] },
+    { "question": "Words that help connect ideas and show the order of events are ________ words.", "expectedAny": ["transition", "time", "sequence", "signal", "connecting", "linking", "time-order"] },
+    { "question": "The order in which events happen is the ________.", "expectedAny": ["sequence", "order", "chronology", "timeline"] },
+  { "question": "Quotations mark ________ in a story.", "expectedAny": ["dialogue", "spoken words", "speech", "exact words", "conversation", "what someone says", "quoted speech"] },
+    { "question": "A narrative should have a beginning, ________, and end.", "expectedAny": ["middle", "middle part"] },
+  { "question": "Words like 'first' and 'next' are ________.", "expectedAny": ["transitions", "transition words", "signal words", "time words", "sequence words", "linking words"] },
+    { "question": "Adding sensory details makes writing more ________.", "expectedAny": ["vivid", "interesting", "descriptive", "engaging", "alive", "clear"] },
+  { "question": "A lesson or reflection at the end is the ________.", "expectedAny": ["conclusion", "ending", "reflection", "wrap-up", "closing", "final thought", "lesson learned"] },
+  { "question": "A small problem the writer faces is a ________.", "expectedAny": ["conflict", "challenge", "problem", "struggle", "obstacle"] },
+    { "question": "The person telling the story is the ________.", "expectedAny": ["narrator", "storyteller", "speaker"] }
+  ],
+  "shortanswer": [
+  { "question": "What are three transition words you could use to show time order?", "expectedAny": ["first, then, finally", "first, next, last", "next, after, last", "initially, later, eventually", "before, during, after", "at first, then, finally", "to start, then, finally", "first, next, then"] },
+  { "question": "Give one tip for writing a strong hook.", "expectedAny": ["start with action", "ask a question", "use a sound", "start with a quote", "start with dialogue", "use a surprising fact", "paint a vivid picture", "set the scene"] },
+  { "question": "Write one sentence of dialogue using quotation marks.", "expectedAny": ["\"...\"", "quoted speech", "He said, \"", "She said, \"", "character said, \""] },
+    { "question": "Name one sensory detail you could add about a rainy day.", "expectedAny": ["smell of wet earth", "sound of rain", "cold drops", "pattering on the roof", "raindrops tapping", "rumble of thunder", "muddy puddles", "gray clouds", "fresh smell"] },
+    { "question": "Give a reflection sentence to end a story.", "expectedAny": ["I learned", "I realized", "I will never forget", "I now understand", "This taught me", "I felt proud"] },
+    { "question": "What is one way to show, not tell, fear?", "expectedAny": ["hands shaking", "heart racing", "sweaty palms", "shaky voice", "wide eyes", "knees trembling", "goosebumps", "stomach fluttering"] },
+  { "question": "Provide a 'because' sentence that explains why something happened.", "expectedAny": ["because I", "because we", "because it", "because my", "because the", "because they", "because he", "because she", "because of"] },
+    { "question": "Give one way to keep events in order while writing.", "expectedAny": ["outline", "timeline", "numbered list", "story map", "plan", "graphic organizer", "sequencing chart"] },
+    { "question": "Write a closing sentence that shows a lesson learned.", "expectedAny": ["I learned to", "This taught me", "I now know", "I realized that", "From then on"] },
+    { "question": "Name one place where a transition word could help in your last paragraph.", "expectedAny": ["finally", "in the end", "after that", "last", "at last", "in conclusion", "to sum up"] }
+  ]
 }

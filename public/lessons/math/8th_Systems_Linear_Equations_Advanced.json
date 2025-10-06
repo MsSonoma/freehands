@@ -11,23 +11,76 @@
     {"term": "elimination method", "definition": "Solving systems by adding or subtracting equations to eliminate a variable"}
   ],
   "teachingNotes": "Use graphing and algebraic methods. Connect to real-world situations with two constraints. Emphasize checking solutions in both equations.",
-  "sample": {
-    "question": "Solve the system: x + y = 8 and x - y = 2",
-    "expectedAny": ["x = 5, y = 3", "(5, 3)", "add equations to eliminate y"]
-  },
+  "sample": [
+    { "question": "Solve the system: x + y = 8 and x - y = 2", "expectedAny": ["x = 5, y = 3", "(5, 3)"] },
+    { "question": "What are two equations with same variables?", "choices": ["Parallel", "System of equations", "Single", "Unrelated"], "correct": 1, "expectedAny": ["system of equations"] },
+    { "question": "Ordered pair making both true is ________.", "expectedAny": ["solution"] },
+    { "question": "Substituting one equation into another is ________.", "expectedAny": ["substitution method"] },
+    { "question": "Adding equations to eliminate variable is ________.", "expectedAny": ["elimination method"] },
+    { "question": "What is two equations?", "choices": ["Single", "System of equations", "Parallel", "Independent"], "correct": 1, "expectedAny": ["system of equations"] },
+    { "question": "Point satisfying both is ________.", "expectedAny": ["solution"] },
+    { "question": "What is replacing variable method?", "choices": ["Elimination", "Substitution method", "Graphing", "Random"], "correct": 1, "expectedAny": ["substitution method"] },
+    { "question": "Removing variable by adding is ________.", "expectedAny": ["elimination method"] },
+    { "question": "x + y = 10, x - y = 2. What is x?", "expectedAny": ["6", "x = 6"] }
+  ],
   "truefalse": [
-    {"question": "A system of linear equations can have no solution, one solution, or infinitely many solutions.", "answer": true, "expectedAny": ["lines can be parallel, intersecting, or identical"]}
+    { "question": "A system of linear equations can have no solution, one solution, or infinitely many solutions.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All systems have exactly one solution.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Solution makes both equations true.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Substitution method never works.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Elimination removes a variable.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Parallel lines have infinite solutions.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "System needs same variables.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Solution is always positive.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Intersecting lines have one solution.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "You cannot check solutions.", "expectedAny": ["false", "no", "f", "incorrect"] }
   ],
   "multiplechoice": [
-    {"question": "What does it mean graphically when a system has no solution?", "choices": ["Lines intersect at origin", "Lines are identical", "Lines are parallel", "Lines intersect twice"], "correct": 2, "expectedAny": ["parallel lines never intersect"]}
+    { "question": "What does it mean graphically when a system has no solution?", "choices": ["Lines intersect at origin", "Lines are identical", "Lines are parallel", "Lines intersect twice"], "correct": 2, "expectedAny": ["lines are parallel"] },
+    { "question": "What are two equations?", "choices": ["Single", "System of equations", "Parallel", "Independent"], "correct": 1, "expectedAny": ["system of equations"] },
+    { "question": "What makes both true?", "choices": ["Random", "Solution", "Variable", "Constant"], "correct": 1, "expectedAny": ["solution"] },
+    { "question": "What is replacing variable?", "choices": ["Elimination", "Substitution method", "Graphing", "Division"], "correct": 1, "expectedAny": ["substitution method"] },
+    { "question": "What removes variable?", "choices": ["Substitution", "Elimination method", "Graphing", "Nothing"], "correct": 1, "expectedAny": ["elimination method"] },
+    { "question": "Identical lines have?", "choices": ["No solution", "Infinite solutions", "One solution", "Two solutions"], "correct": 1, "expectedAny": ["infinite solutions"] },
+    { "question": "Where lines meet is?", "choices": ["Random", "Solution", "Variable", "Nothing"], "correct": 1, "expectedAny": ["solution"] },
+    { "question": "Best when variable isolated?", "choices": ["Elimination", "Substitution", "Graphing", "None"], "correct": 1, "expectedAny": ["substitution"] },
+    { "question": "Parallel lines have?", "choices": ["One solution", "No solution", "Infinite solutions", "Two solutions"], "correct": 1, "expectedAny": ["no solution"] },
+    { "question": "Adding equations uses?", "choices": ["Substitution", "Elimination", "Graphing", "Division"], "correct": 1, "expectedAny": ["elimination"] }
   ],
   "fillintheblank": [
-    {"question": "To use elimination to solve 2x + 3y = 12 and 2x - y = 4, you could subtract the equations to eliminate _____.", "expectedAny": ["x", "2x"]}
+    { "question": "To use elimination to solve 2x + 3y = 12 and 2x - y = 4, you could subtract the equations to eliminate _____.", "expectedAny": ["x", "2x"] },
+    { "question": "A ________ of equations has same variables.", "expectedAny": ["system"] },
+    { "question": "The ________ makes both true.", "expectedAny": ["solution"] },
+    { "question": "________ method replaces variable.", "expectedAny": ["substitution"] },
+    { "question": "________ method removes variable.", "expectedAny": ["elimination"] },
+    { "question": "System of ________ has same variables.", "expectedAny": ["equations"] },
+    { "question": "________ is ordered pair.", "expectedAny": ["solution"] },
+    { "question": "________ replaces one equation.", "expectedAny": ["substitution"] },
+    { "question": "________ adds or subtracts equations.", "expectedAny": ["elimination"] },
+    { "question": "Parallel lines have ________ solution.", "expectedAny": ["no"] }
   ],
   "shortanswer": [
-    {"question": "When would you choose substitution over elimination to solve a system?", "expectedAny": ["when one variable is already isolated", "when coefficients don't line up well for elimination"]}
+    { "question": "When would you choose substitution over elimination to solve a system?", "expectedAny": ["when one variable is already isolated", "when variable alone"] },
+    { "question": "What is system of equations?", "expectedAny": ["two or more equations with same variables", "equations with same variables"] },
+    { "question": "What is solution?", "expectedAny": ["ordered pair making both true", "point where lines meet"] },
+    { "question": "What is substitution method?", "expectedAny": ["replacing one variable with expression", "substituting equation", "plug in one equation", "replace variable"] },
+    { "question": "What is elimination method?", "expectedAny": ["adding or subtracting to remove variable", "eliminating variable", "add or subtract equations", "cancel out variable"] },
+    { "question": "Solve: x + y = 7, x - y = 1", "expectedAny": ["x = 4, y = 3", "(4, 3)"] },
+    { "question": "When has system no solution?", "expectedAny": ["parallel lines", "lines never meet"] },
+    { "question": "When has system infinite solutions?", "expectedAny": ["identical lines", "same line"] },
+    { "question": "Solve: x + y = 10, x - y = 4", "expectedAny": ["x = 7, y = 3", "(7, 3)"] },
+    { "question": "How check solution?", "expectedAny": ["substitute into both equations", "plug in values"] }
   ],
   "wordProblems": [
-    {"question": "Adult tickets cost $12 and child tickets cost $8. If 50 tickets were sold for $520 total, how many of each type were sold?", "expectedAny": ["30 adult tickets, 20 child tickets", "set up system: a + c = 50, 12a + 8c = 520"]}
+    { "question": "Adult tickets cost $12 and child tickets cost $8. If 50 tickets were sold for $520 total, how many of each type were sold?", "expectedAny": ["30 adult tickets, 20 child tickets", "30 adult, 20 child"] },
+    { "question": "Two numbers add to 20, difference is 6. Find numbers.", "expectedAny": ["13 and 7", "7 and 13"] },
+    { "question": "Apples cost $2, oranges $3. Bought 10 fruits for $26. How many apples?", "expectedAny": ["4 apples", "4"] },
+    { "question": "Perimeter of rectangle is 30. Length is 3 more than width. Find width.", "expectedAny": ["6", "width is 6"] },
+    { "question": "Sum of two numbers is 15, one is twice the other. Find smaller.", "expectedAny": ["5", "smaller is 5"] },
+    { "question": "Concert tickets: student $5, adult $8. 100 tickets sold for $650. How many student?", "expectedAny": ["50 student", "50"] },
+    { "question": "Two numbers add to 25, difference is 5. Find larger.", "expectedAny": ["15", "larger is 15"] },
+    { "question": "Coffee $3, tea $2. Bought 12 drinks for $31. How many coffees?", "expectedAny": ["7 coffees", "7"] },
+    { "question": "Age sum is 40, one is 6 years older. Find younger age.", "expectedAny": ["17", "younger is 17"] },
+    { "question": "Nickels and dimes total 20 coins worth $1.55. How many nickels?", "expectedAny": ["9 nickels", "9"] }
   ]
 }

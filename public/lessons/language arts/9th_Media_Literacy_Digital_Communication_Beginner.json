@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "9th_Media_Literacy_Digital_Communication_Beginner",
   "title": "Media Literacy: Digital Communication and Ethics",
   "grade": "9th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "media literacy",
-      "definition": "Ability to analyze, evaluate, and create media messages"
-    },
-    {
-      "term": "digital footprint",
-      "definition": "Trail of data left by online activities and communications"
-    },
-    {
-      "term": "cyberbullying",
-      "definition": "Using digital technology to harass or intimidate others"
-    },
-    {
-      "term": "information literacy",
-      "definition": "Skills to find, evaluate, and use information effectively"
-    },
-    {
-      "term": "digital citizenship",
-      "definition": "Responsible and ethical use of digital technology"
-    }
+    {"term": "media literacy", "definition": "Ability to analyze, evaluate, and create media messages"},
+    {"term": "digital footprint", "definition": "Trail of data left by online activities and communications"},
+    {"term": "cyberbullying", "definition": "Using digital technology to harass or intimidate others"},
+    {"term": "information literacy", "definition": "Skills to find, evaluate, and use information effectively"},
+    {"term": "digital citizenship", "definition": "Responsible and ethical use of digital technology"}
   ],
   "teachingNotes": "Discuss responsible online behavior and critical evaluation of digital media. Address privacy, security, and ethical considerations.",
-  "sample": {
-    "question": "What is the ability to analyze and evaluate media messages?",
-    "expectedAny": [
-      "media literacy",
-      "digital literacy",
-      "media analysis",
-      "critical media skills"
-    ]
-  },
-  "truefalse": {
-    "question": "A digital footprint is the trail of data left by online activities.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is responsible and ethical use of digital technology?",
-    "expectedAny": [
-      "digital citizenship",
-      "cyber ethics",
-      "online responsibility",
-      "digital responsibility"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Using technology to harass others is called ________.",
-    "expectedAny": [
-      "cyberbullying",
-      "online bullying",
-      "digital harassment",
-      "cyber harassment"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why is it important to think before posting online?",
-    "expectedAny": [
-      "creates permanent digital footprint",
-      "can affect reputation",
-      "may harm others",
-      "content can be shared widely"
-    ]
-  }
+  "sample": [
+    {"question": "What is media literacy?", "expectedAny": ["ability to analyze and evaluate media messages", "skills to understand media", "critical thinking about media", "understanding media", "critical media thinking"]},
+    {"question": "What is a digital footprint?", "expectedAny": ["trail of data left online", "record of online activities", "digital trace of your actions", "online trace", "digital record"]},
+    {"question": "What is cyberbullying?", "expectedAny": ["using technology to harass others", "online bullying", "digital harassment"]},
+    {"question": "What is information literacy?", "expectedAny": ["skills to find and evaluate information", "ability to use information effectively", "knowing how to research and evaluate sources"]},
+    {"question": "What is digital citizenship?", "expectedAny": ["responsible use of digital technology", "ethical online behavior", "being a good digital community member"]},
+    {"question": "Why should you think before posting online?", "expectedAny": ["creates permanent record", "can affect reputation", "may harm others", "content can spread widely"]},
+    {"question": "What can be part of your digital footprint?", "expectedAny": ["social media posts", "comments", "photos", "search history", "any online activity"]},
+    {"question": "Why is media literacy important?", "expectedAny": ["helps evaluate information", "prevents being misled", "understand media messages", "think critically"]},
+    {"question": "What is one way to be a good digital citizen?", "expectedAny": ["respect others online", "protect privacy", "verify information", "be ethical", "think before posting"]},
+    {"question": "How can you evaluate online information?", "expectedAny": ["check the source", "look for evidence", "verify with other sources", "consider author credentials"]}
+  ],
+  "truefalse": [
+    {"question": "A digital footprint is the trail of data left by online activities. (True or False)", "correct": true},
+    {"question": "Cyberbullying is acceptable behavior online. (True or False)", "correct": false},
+    {"question": "Media literacy helps you analyze media messages. (True or False)", "correct": true},
+    {"question": "Your digital footprint disappears after you delete posts. (True or False)", "correct": false},
+    {"question": "Digital citizenship means using technology responsibly. (True or False)", "correct": true},
+    {"question": "Information literacy involves finding and evaluating information. (True or False)", "correct": true},
+    {"question": "Everything you read online is true. (True or False)", "correct": false},
+    {"question": "It is important to think before posting online. (True or False)", "correct": true},
+    {"question": "Your online actions have no real-world consequences. (True or False)", "correct": false},
+    {"question": "Good digital citizens respect others online. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is responsible and ethical use of digital technology?", "choices": [{"letter": "A", "text": "Social media"}, {"letter": "B", "text": "Digital citizenship"}, {"letter": "C", "text": "Internet access"}, {"letter": "D", "text": "Wi-Fi connection"}], "correct": "B"},
+    {"question": "What is cyberbullying?", "choices": [{"letter": "A", "text": "Using technology for homework"}, {"letter": "B", "text": "Playing online games"}, {"letter": "C", "text": "Using technology to harass others"}, {"letter": "D", "text": "Sending emails"}], "correct": "C"},
+    {"question": "What does media literacy help you do?", "choices": [{"letter": "A", "text": "Watch more videos"}, {"letter": "B", "text": "Analyze and evaluate media"}, {"letter": "C", "text": "Post more often"}, {"letter": "D", "text": "Download apps"}], "correct": "B"},
+    {"question": "A digital footprint is:", "choices": [{"letter": "A", "text": "A shoe size"}, {"letter": "B", "text": "A computer program"}, {"letter": "C", "text": "Trail of online data"}, {"letter": "D", "text": "A website"}], "correct": "C"},
+    {"question": "What is information literacy?", "choices": [{"letter": "A", "text": "Reading books"}, {"letter": "B", "text": "Skills to find and evaluate information"}, {"letter": "C", "text": "Typing fast"}, {"letter": "D", "text": "Using a library"}], "correct": "B"},
+    {"question": "Why should you verify online information?", "choices": [{"letter": "A", "text": "To waste time"}, {"letter": "B", "text": "Because not everything online is accurate"}, {"letter": "C", "text": "To annoy others"}, {"letter": "D", "text": "It is unnecessary"}], "correct": "B"},
+    {"question": "What is part of being a digital citizen?", "choices": [{"letter": "A", "text": "Bullying others"}, {"letter": "B", "text": "Sharing passwords"}, {"letter": "C", "text": "Respecting others online"}, {"letter": "D", "text": "Ignoring privacy"}], "correct": "C"},
+    {"question": "Can your digital footprint affect your future?", "choices": [{"letter": "A", "text": "No, never"}, {"letter": "B", "text": "Yes, it can"}, {"letter": "C", "text": "Only if you want it to"}, {"letter": "D", "text": "Only for adults"}], "correct": "B"},
+    {"question": "What should you check when evaluating a source?", "choices": [{"letter": "A", "text": "The color scheme"}, {"letter": "B", "text": "The author and evidence"}, {"letter": "C", "text": "The font size"}, {"letter": "D", "text": "How many ads it has"}], "correct": "B"},
+    {"question": "Thinking before posting helps you:", "choices": [{"letter": "A", "text": "Post faster"}, {"letter": "B", "text": "Avoid creating negative digital footprints"}, {"letter": "C", "text": "Get more likes"}, {"letter": "D", "text": "Use less data"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "Using technology to harass others is called _____.", "expectedAny": ["cyberbullying", "online bullying", "digital harassment"]},
+    {"question": "The ability to analyze media messages is _____ literacy.", "expectedAny": ["media"]},
+    {"question": "The trail of data you leave online is your digital _____.", "expectedAny": ["footprint"]},
+    {"question": "Responsible use of technology is called digital _____.", "expectedAny": ["citizenship"]},
+    {"question": "Skills to find and evaluate information are called _____ literacy.", "expectedAny": ["information"]},
+    {"question": "A good digital citizen _____ others online.", "expectedAny": ["respects", "helps", "supports"]},
+    {"question": "You should _____ before posting online.", "expectedAny": ["think", "pause", "consider"]},
+    {"question": "Not everything online is _____.", "expectedAny": ["true", "accurate", "reliable", "correct"]},
+    {"question": "Your online actions create a permanent _____.", "expectedAny": ["record", "footprint", "trail", "history"]},
+    {"question": "Media literacy helps you _____ media messages.", "expectedAny": ["analyze", "evaluate", "understand", "examine"]}
+  ],
+  "shortanswer": [
+    {"question": "Why is it important to think before posting online?", "keyTerms": ["permanent", "footprint", "reputation", "consequences"], "expectedAny": ["It creates a permanent digital footprint that can affect your reputation", "Online posts can have real-world consequences and affect your future", "Content can be shared widely and is difficult to remove completely"]},
+    {"question": "What is media literacy and why does it matter?", "keyTerms": ["analyze", "evaluate", "media", "critical"], "expectedAny": ["The ability to analyze and evaluate media messages critically", "It helps you think critically about media and not be misled", "Skills to understand and question media messages you encounter"]},
+    {"question": "How can you be a responsible digital citizen?", "keyTerms": ["respect", "ethical", "responsible", "privacy"], "expectedAny": ["Respect others online, protect privacy, and behave ethically", "Think before posting, verify information, and treat others kindly", "Use technology responsibly and consider consequences of your actions"]},
+    {"question": "What is a digital footprint and why should you care?", "keyTerms": ["trail", "data", "permanent", "affects"], "expectedAny": ["The trail of data from your online activities that is often permanent", "A record of your online behavior that can affect your reputation", "Digital traces you leave that others can see and that may impact your future"]},
+    {"question": "What is cyberbullying and how can you prevent it?", "keyTerms": ["harass", "technology", "respect", "report"], "expectedAny": ["Using technology to harass others; prevent by respecting others and reporting incidents", "Online harassment that can be prevented by being kind and standing up for victims", "Digital bullying that requires respectful behavior and intervention when witnessed"]},
+    {"question": "How do you evaluate if online information is reliable?", "keyTerms": ["source", "evidence", "verify", "author"], "expectedAny": ["Check the source, look for evidence, and verify with other sources", "Evaluate the author's credentials and look for supporting evidence", "Consider the source's reputation and whether claims are backed by facts"]},
+    {"question": "Why is information literacy important in the digital age?", "keyTerms": ["evaluate", "information", "overwhelming", "accurate"], "expectedAny": ["Helps you find and evaluate information effectively when there is so much available", "Essential for distinguishing accurate information from misinformation online", "Allows you to navigate overwhelming amounts of information and find reliable sources"]},
+    {"question": "What are the consequences of poor digital citizenship?", "keyTerms": ["reputation", "harm", "consequences", "permanent"], "expectedAny": ["Damaged reputation, harm to others, and permanent negative digital footprint", "Real-world consequences including hurting others and affecting future opportunities", "Can lead to cyberbullying, privacy violations, and lasting negative impacts"]},
+    {"question": "How does your digital footprint affect your future?", "keyTerms": ["colleges", "employers", "permanent", "reputation"], "expectedAny": ["Colleges and employers may review your online presence when making decisions", "Permanent posts can affect your reputation and future opportunities", "Your online behavior creates a lasting record that others can access"]},
+    {"question": "What role does privacy play in digital citizenship?", "keyTerms": ["protect", "personal", "information", "safe"], "expectedAny": ["Protecting personal information keeps you safe and respects boundaries", "Good digital citizens guard their privacy and respect others' privacy too", "Privacy protection is essential for safety and responsible online behavior"]}
+  ]
 }

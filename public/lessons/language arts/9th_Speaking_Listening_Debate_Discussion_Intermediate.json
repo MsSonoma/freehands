@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "9th_Speaking_Listening_Debate_Discussion_Intermediate",
   "title": "Speaking and Listening: Debate and Class Discussion",
   "grade": "9th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "debate",
-      "definition": "Formal discussion where opposing sides argue different positions"
-    },
-    {
-      "term": "rebuttal",
-      "definition": "Response that challenges or refutes an opponent's argument"
-    },
-    {
-      "term": "evidence",
-      "definition": "Facts, statistics, or examples that support a position"
-    },
-    {
-      "term": "active listening",
-      "definition": "Fully concentrating on and engaging with the speaker"
-    },
-    {
-      "term": "ethos",
-      "definition": "Appeal to credibility and trustworthiness of the speaker"
-    }
+    {"term": "debate", "definition": "Formal discussion where opposing sides argue different positions"},
+    {"term": "rebuttal", "definition": "Response that challenges or refutes an opponent's argument"},
+    {"term": "evidence", "definition": "Facts, statistics, or examples that support a position"},
+    {"term": "active listening", "definition": "Fully concentrating on and engaging with the speaker"},
+    {"term": "ethos", "definition": "Appeal to credibility and trustworthiness of the speaker"}
   ],
   "teachingNotes": "Practice formal debate structure and respectful disagreement. Emphasize listening skills and constructive response techniques.",
-  "sample": {
-    "question": "What is a formal discussion with opposing sides arguing positions?",
-    "expectedAny": [
-      "debate",
-      "formal debate",
-      "argumentative discussion",
-      "structured argument"
-    ]
-  },
-  "truefalse": {
-    "question": "Active listening involves fully concentrating on the speaker.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is a response that challenges an opponent's argument?",
-    "expectedAny": [
-      "rebuttal",
-      "counterargument",
-      "refutation",
-      "challenge"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Appeal to credibility and trustworthiness is called ________.",
-    "expectedAny": [
-      "ethos",
-      "credibility appeal",
-      "authority",
-      "trustworthiness"
-    ]
-  },
-  "shortanswer": {
-    "question": "What makes evidence effective in a debate?",
-    "expectedAny": [
-      "relevant and credible",
-      "specific and current",
-      "from reliable sources",
-      "supports the argument clearly"
-    ]
-  }
+  "sample": [
+    {"question": "What is a debate?", "expectedAny": ["formal discussion with opposing sides", "argumentative discussion", "structured argument"]},
+    {"question": "What is a rebuttal?", "expectedAny": ["response challenging an argument", "refutation", "counterargument", "counter response"]},
+    {"question": "What is evidence in debate?", "expectedAny": ["facts supporting a position", "proof for arguments", "statistics and examples"]},
+    {"question": "What is active listening?", "expectedAny": ["fully concentrating on the speaker", "engaged listening", "attentive listening"]},
+    {"question": "What is ethos?", "expectedAny": ["appeal to credibility", "appeal to trustworthiness", "credibility appeal", "speaker trust"]},
+    {"question": "Why is evidence important in debate?", "expectedAny": ["supports your position", "proves claims", "makes arguments credible"]},
+    {"question": "What makes a good rebuttal?", "expectedAny": ["challenges opponent's logic", "provides counter-evidence", "refutes claims effectively"]},
+    {"question": "Why practice active listening?", "expectedAny": ["to understand fully", "to respond effectively", "to respect speaker"]},
+    {"question": "What are the two sides in a debate called?", "expectedAny": ["affirmative and negative", "pro and con", "for and against"]},
+    {"question": "How does ethos strengthen an argument?", "expectedAny": ["builds trust", "shows credibility", "makes speaker believable"]}
+  ],
+  "truefalse": [
+    {"question": "Active listening involves fully concentrating on the speaker. (True or False)", "correct": true},
+    {"question": "A debate has only one side. (True or False)", "correct": false},
+    {"question": "A rebuttal challenges an opponent's argument. (True or False)", "correct": true},
+    {"question": "Evidence is unnecessary in debates. (True or False)", "correct": false},
+    {"question": "Ethos appeals to credibility. (True or False)", "correct": true},
+    {"question": "Active listening means waiting to talk. (True or False)", "correct": false},
+    {"question": "Good debaters support claims with evidence. (True or False)", "correct": true},
+    {"question": "Rebuttals agree with opponents. (True or False)", "correct": false},
+    {"question": "Debate involves respectful disagreement. (True or False)", "correct": true},
+    {"question": "Ethos builds speaker trustworthiness. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is a response that challenges an opponent's argument?", "choices": [{"letter": "A", "text": "Agreement"}, {"letter": "B", "text": "Rebuttal"}, {"letter": "C", "text": "Compliment"}, {"letter": "D", "text": "Question"}], "correct": "B"},
+    {"question": "What is a formal discussion with opposing sides?", "choices": [{"letter": "A", "text": "Conversation"}, {"letter": "B", "text": "Debate"}, {"letter": "C", "text": "Chat"}, {"letter": "D", "text": "Interview"}], "correct": "B"},
+    {"question": "What is fully concentrating on a speaker?", "choices": [{"letter": "A", "text": "Passive listening"}, {"letter": "B", "text": "Ignoring"}, {"letter": "C", "text": "Active listening"}, {"letter": "D", "text": "Daydreaming"}], "correct": "C"},
+    {"question": "What appeals to credibility?", "choices": [{"letter": "A", "text": "Pathos"}, {"letter": "B", "text": "Logos"}, {"letter": "C", "text": "Ethos"}, {"letter": "D", "text": "Kairos"}], "correct": "C"},
+    {"question": "What supports your position in debate?", "choices": [{"letter": "A", "text": "Opinions only"}, {"letter": "B", "text": "Evidence"}, {"letter": "C", "text": "Yelling"}, {"letter": "D", "text": "Personal attacks"}], "correct": "B"},
+    {"question": "A good rebuttal should:", "choices": [{"letter": "A", "text": "Agree completely"}, {"letter": "B", "text": "Ignore the argument"}, {"letter": "C", "text": "Challenge the logic"}, {"letter": "D", "text": "Change the subject"}], "correct": "C"},
+    {"question": "Why is active listening important?", "choices": [{"letter": "A", "text": "To interrupt"}, {"letter": "B", "text": "To understand fully"}, {"letter": "C", "text": "To ignore others"}, {"letter": "D", "text": "To talk more"}], "correct": "B"},
+    {"question": "What makes evidence effective?", "choices": [{"letter": "A", "text": "It is vague"}, {"letter": "B", "text": "It is relevant and credible"}, {"letter": "C", "text": "It is unrelated"}, {"letter": "D", "text": "It is emotional"}], "correct": "B"},
+    {"question": "Debate involves:", "choices": [{"letter": "A", "text": "Agreement only"}, {"letter": "B", "text": "Yelling"}, {"letter": "C", "text": "Respectful disagreement"}, {"letter": "D", "text": "Personal attacks"}], "correct": "C"},
+    {"question": "Ethos builds:", "choices": [{"letter": "A", "text": "Emotion"}, {"letter": "B", "text": "Logic"}, {"letter": "C", "text": "Trustworthiness"}, {"letter": "D", "text": "Timing"}], "correct": "C"}
+  ],
+  "fillintheblank": [
+    {"question": "Appeal to credibility and trustworthiness is called _____.", "expectedAny": ["ethos"]},
+    {"question": "A formal discussion with opposing sides is a _____.", "expectedAny": ["debate"]},
+    {"question": "A response that challenges an argument is a _____.", "expectedAny": ["rebuttal", "counterargument"]},
+    {"question": "Fully concentrating on the speaker is _____ listening.", "expectedAny": ["active"]},
+    {"question": "Facts and statistics that support your position are _____.", "expectedAny": ["evidence", "proof"]},
+    {"question": "Good debaters support claims with _____.", "expectedAny": ["evidence", "facts", "proof"]},
+    {"question": "A rebuttal _____ an opponent's argument.", "expectedAny": ["challenges", "refutes", "counters"]},
+    {"question": "Ethos appeals to the speaker's _____.", "expectedAny": ["credibility", "trustworthiness"]},
+    {"question": "Debate involves _____ disagreement.", "expectedAny": ["respectful", "civil", "polite"]},
+    {"question": "Active listening requires full _____.", "expectedAny": ["concentration", "attention", "focus"]}
+  ],
+  "shortanswer": [
+    {"question": "What makes evidence effective in a debate?", "keyTerms": ["relevant", "credible", "specific", "supports"], "expectedAny": ["Evidence that is relevant, credible, and specific", "Effective evidence is from reliable sources and supports the argument", "Good evidence is current, specific, and directly supports your position"]},
+    {"question": "How do you construct a strong rebuttal?", "keyTerms": ["address", "logic", "evidence", "counter"], "expectedAny": ["Address the opponent's logic and provide counter-evidence", "Challenge their reasoning with facts and logical arguments", "Refute their claims systematically with strong evidence"]},
+    {"question": "Why is active listening important in debate?", "keyTerms": ["understand", "respond", "respect", "effective"], "expectedAny": ["To understand arguments fully and respond effectively", "Active listening shows respect and helps you counter properly", "You must listen well to address opponent's points accurately"]},
+    {"question": "How does ethos strengthen a speaker's argument?", "keyTerms": ["credibility", "trust", "believable", "authority"], "expectedAny": ["Ethos builds credibility making the speaker more believable", "It establishes trust and authority on the topic", "Strong ethos makes audiences more likely to accept arguments"]},
+    {"question": "What is the structure of a formal debate?", "keyTerms": ["opening", "arguments", "rebuttals", "closing"], "expectedAny": ["Opening statements, arguments, rebuttals, and closing statements", "Each side presents arguments then rebuts the other side", "Structured with timed speeches for each side to argue and respond"]},
+    {"question": "How can you show respect during debate?", "keyTerms": ["listen", "courteous", "address", "avoid"], "expectedAny": ["Listen actively, be courteous, and avoid personal attacks", "Address arguments not people and show respect for opponents", "Disagree respectfully and focus on ideas not individuals"]},
+    {"question": "What types of evidence work best in debates?", "keyTerms": ["facts", "statistics", "examples", "credible"], "expectedAny": ["Facts, statistics, and examples from credible sources", "Current data, expert opinions, and real-world examples", "Specific evidence that is verifiable and relevant"]},
+    {"question": "How do you prepare for a debate?", "keyTerms": ["research", "evidence", "arguments", "anticipate"], "expectedAny": ["Research thoroughly, gather evidence, and anticipate opposing arguments", "Prepare main arguments and supporting evidence", "Study the topic, collect facts, and plan rebuttals"]},
+    {"question": "What role does body language play in debate?", "keyTerms": ["confidence", "engagement", "credibility", "nonverbal"], "expectedAny": ["Body language shows confidence and enhances credibility", "Nonverbal communication affects how audiences perceive you", "Good posture and eye contact build ethos and engagement"]},
+    {"question": "How do rebuttals differ from opening arguments?", "keyTerms": ["respond", "address", "counter", "specific"], "expectedAny": ["Rebuttals respond to and counter specific opponent arguments", "They address what the other side said rather than presenting new points", "Rebuttals refute opposing claims while arguments state your position"]}
+  ]
 }

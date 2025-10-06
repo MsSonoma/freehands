@@ -23,52 +23,119 @@
     {
       "term": "demand",
       "definition": "How much people want a particular good or service"
+    },
+    {
+      "term": "consumer",
+      "definition": "A person who buys goods and services"
+    },
+    {
+      "term": "producer",
+      "definition": "A person or business that makes goods or provides services"
+    },
+    {
+      "term": "natural resource",
+      "definition": "Something found in nature used to make goods or provide services"
+    },
+    {
+      "term": "human resource",
+      "definition": "People and their skills used to make goods or provide services"
+    },
+    {
+      "term": "capital resource",
+      "definition": "Tools, machines, and buildings used to make goods or provide services"
+    },
+    {
+      "term": "resources",
+      "definition": "Things used to make goods or provide services, like natural, human, and capital"
+    },
+    {
+      "term": "goods",
+      "definition": "Things people can buy and use, like toys or food"
+    },
+    {
+      "term": "services",
+      "definition": "Work people do for others, like haircuts or teaching"
+    },
+    {
+      "term": "trade",
+      "definition": "Buying and selling goods and services"
+    },
+    {
+      "term": "barter",
+      "definition": "Trading goods or services without using money"
+    },
+    {
+      "term": "profit",
+      "definition": "Money left after paying costs"
+    },
+    {
+      "term": "revenue",
+      "definition": "All the money a business gets from sales"
+    },
+    {
+      "term": "cost",
+      "definition": "What a business pays to make or sell something"
+    },
+    {
+      "term": "inventory",
+      "definition": "Goods a store has on hand to sell"
+    },
+    {
+      "term": "price",
+      "definition": "How much money something costs"
+    },
+    {
+      "term": "distribution",
+      "definition": "How goods get from where they are made to where they are sold"
     }
   ],
+  "vocabExtra": [],
   "teachingNotes": "Use simple examples to explain basic economic concepts. Discuss how communities use resources to produce goods. Explore the relationship between supply, demand, and scarcity in everyday situations.",
   "sample": [
-    {"question": "What is an economy?", "expectedAny": ["system of buying and selling", "making and trading goods"]},
-    {"question": "What is production?", "expectedAny": ["making goods", "providing services"]},
+    {"question": "What is an economy?", "expectedAny": ["system of buying and selling", "making and trading goods", "how a community makes and uses goods and services"]},
+    {"question": "What is production?", "expectedAny": ["making goods", "providing services", "making things people use"]},
     {"question": "What is scarcity?", "expectedAny": ["not enough of something"]},
     {"question": "What is supply?", "expectedAny": ["how much is available"]},
     {"question": "What is demand?", "expectedAny": ["how much people want it"]},
-    {"question": "Why do communities produce goods?", "expectedAny": ["to meet needs and wants"]},
-    {"question": "Name a resource used to make bread.", "expectedAny": ["wheat", "flour", "labor"]}
+    {"question": "Why do communities produce goods?", "expectedAny": ["to meet needs and wants", "to earn money", "to provide jobs"]},
+    {"question": "Name a resource used to make bread.", "expectedAny": ["wheat", "flour", "labor", "water", "yeast", "oven"]}
   ],
   "truefalse": [
-    {"question": "Scarcity means there is not enough of something for everyone who wants it.", "answer": true},
-    {"question": "Supply means how much of something is available.", "answer": true},
-    {"question": "Demand means how much people want something.", "answer": true},
-    {"question": "If supply is low and demand is high, prices usually go down.", "answer": false},
-    {"question": "Producers make goods or provide services.", "answer": true},
-    {"question": "Consumers are people who buy goods and services.", "answer": true},
-    {"question": "Resources are not needed for production.", "answer": false}
+    {"question": "Scarcity means there is not enough of something for everyone who wants it.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Supply means how much of something is available.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Demand means how much people want something.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "If supply is low and demand is high, prices usually go down.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "Producers make goods or provide services.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Consumers are people who buy goods and services.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Resources are not needed for production.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]}
   ],
   "multiplechoice": [
-    {"question": "If many people want to buy bicycles but there are only a few available, this is:", "choices": ["High supply, low demand", "Scarcity", "Overflow", "No demand"], "correct": 1},
-    {"question": "Which is a natural resource?", "choices": ["Computer", "Wheat", "Car", "Shirt"], "correct": 1},
-    {"question": "Which is a human resource?", "choices": ["Teacher", "Tree", "Oil", "Water"], "correct": 0},
-    {"question": "Which is a capital resource?", "choices": ["Hammer", "Air", "Sun", "Ocean"], "correct": 0},
-    {"question": "When supply is high and demand is low, prices usually:", "choices": ["Go up", "Go down", "Stay the same", "Disappear"], "correct": 1},
-    {"question": "People who make goods are called:", "choices": ["Consumers", "Producers", "Shoppers", "Drivers"], "correct": 1},
-    {"question": "Which is NOT a factor of production?", "choices": ["Land", "Labor", "Capital", "Weather wishes"], "correct": 3}
+    {"question": "If many people want to buy bicycles but there are only a few available, this is:", "choices": ["High supply, low demand", "Scarcity", "Overflow", "No demand"], "correct": 1, "expectedAny": ["scarcity", "b", "2", "second"]},
+    {"question": "Which is a natural resource?", "choices": ["Computer", "Wheat", "Car", "Shirt"], "correct": 1, "expectedAny": ["wheat", "b", "2", "second"]},
+    {"question": "Which is a human resource?", "choices": ["Teacher", "Tree", "Oil", "Water"], "correct": 0, "expectedAny": ["teacher", "a", "1", "first"]},
+    {"question": "Which is a capital resource?", "choices": ["Hammer", "Air", "Sun", "Ocean"], "correct": 0, "expectedAny": ["hammer", "a", "1", "first"]},
+    {"question": "When supply is high and demand is low, prices usually:", "choices": ["Go up", "Go down", "Stay the same", "Disappear"], "correct": 1, "expectedAny": ["go down", "b", "2", "second"]},
+    {"question": "People who make goods are called:", "choices": ["Consumers", "Producers", "Shoppers", "Drivers"], "correct": 1, "expectedAny": ["producers", "b", "2", "second"]},
+    {"question": "Which is NOT a factor of production?", "choices": ["Land", "Labor", "Capital", "Weather wishes"], "correct": 3, "expectedAny": ["weather wishes", "d", "4", "fourth"]}
   ],
   "fillintheblank": [
-    {"question": "The process of making goods is called ____.", "expectedAny": ["production"]},
-    {"question": "Not enough of something is called ____.", "expectedAny": ["scarcity"]},
-    {"question": "How much is available is called ____.", "expectedAny": ["supply"]},
-    {"question": "How much people want something is called ____.", "expectedAny": ["demand"]},
-    {"question": "People who buy goods and services are ____.", "expectedAny": ["consumers"]},
-    {"question": "People who make goods and services are ____.", "expectedAny": ["producers"]},
-    {"question": "Tools and machines used to make goods are called ____ resources.", "expectedAny": ["capital"]}
+    {"question": "The process of making goods is called ____.", "expectedAny": ["production", "producing", "making"]},
+    {"question": "Not enough of something is called ____.", "expectedAny": ["scarcity", "shortage", "limited supply"]},
+    {"question": "How much is available is called ____.", "expectedAny": ["supply", "amount available"]},
+    {"question": "How much people want something is called ____.", "expectedAny": ["demand", "desire to buy"]},
+    {"question": "People who buy goods and services are ____.", "expectedAny": ["consumers", "buyers", "customers"]},
+    {"question": "People who make goods and services are ____.", "expectedAny": ["producers", "makers", "builders", "workers"]},
+    {"question": "Tools and machines used to make goods are called ____ resources.", "expectedAny": ["capital", "capital resources"]},
+    {"question": "Trading without money is called ____.", "expectedAny": ["barter", "bartering"]},
+    {"question": "Money a business makes after costs is called ____.", "expectedAny": ["profit", "earnings", "money left over"]}
   ],
   "shortanswer": [
-    {"question": "How does scarcity affect the price of goods?", "expectedAny": ["prices go up"]},
-    {"question": "Why do producers pay attention to demand?", "expectedAny": ["make what people want"]},
-    {"question": "Give an example of a natural, human, and capital resource for a lemonade stand.", "expectedAny": ["lemons", "worker", "pitcher"]},
-    {"question": "How do consumers help decide what gets produced?", "expectedAny": ["by what they buy"]},
-    {"question": "Why might a store lower prices?", "expectedAny": ["too much supply", "low demand"]},
-    {"question": "How can a community use resources wisely?", "expectedAny": ["reduce waste", "recycle"]},
-    {"question": "What happens when demand increases?", "expectedAny": ["prices may rise"]}
+    {"question": "How does scarcity affect the price of goods?", "expectedAny": ["prices go up", "higher prices when items are scarce", "limited items cost more", "price increases"]},
+    {"question": "Why do producers pay attention to demand?", "expectedAny": ["make what people want", "produce popular items", "sell more by matching demand"]},
+    {"question": "Give an example of a natural, human, and capital resource for a lemonade stand.", "expectedAny": ["lemons", "worker", "pitcher", "water", "ice", "table", "cups", "cash box", "sign"]},
+    {"question": "How do consumers help decide what gets produced?", "expectedAny": ["by what they buy", "buying choices", "spending shows demand"]},
+  {"question": "Why might a store lower prices?", "expectedAny": ["too much supply", "low demand", "to sell more", "clear inventory"]},
+    {"question": "How can a community use resources wisely?", "expectedAny": ["reduce waste", "recycle", "reuse materials"]},
+    {"question": "What happens when demand increases?", "expectedAny": ["prices may rise", "higher prices when more people want it", "more produced", "produce more to meet demand"]}
   ]
 }

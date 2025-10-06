@@ -1,74 +1,455 @@
-{
-  "id": "11th_Progressive_Era_Social_Reform_Beginner",
-  "title": "Progressive Era and Social Reform",
-  "grade": "11th",
-  "difficulty": "Beginner",
-  "vocab": [
-    {
-      "term": "Progressive Era",
-      "definition": "Period of social and political reform in early 1900s America"
-    },
-    {
-      "term": "muckraker",
-      "definition": "Journalist who exposed corruption and social problems"
-    },
-    {
-      "term": "trust busting",
-      "definition": "Government action to break up large business monopolies"
-    },
-    {
-      "term": "settlement house",
-      "definition": "Community center providing services to urban poor and immigrants"
-    },
-    {
-      "term": "suffrage",
-      "definition": "Right to vote in political elections"
-    }
-  ],
-  "teachingNotes": "Focus on major reforms and key figures. Connect Progressive ideals to modern social movements.",
-  "sample": {
-    "question": "What was the period of social reform in early 1900s called?",
-    "expectedAny": [
-      "Progressive Era",
-      "Progressive Period",
-      "Age of Reform",
-      "Progressive Movement"
-    ]
-  },
-  "truefalse": {
-    "question": "Muckrakers were journalists who exposed social problems.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What provided services to urban poor and immigrants?",
-    "expectedAny": [
-      "settlement house",
-      "community center",
-      "social house",
-      "immigrant center"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Government action to break up monopolies was called trust ________.",
-    "expectedAny": [
-      "busting",
-      "breaking",
-      "dissolution",
-      "destruction"
-    ]
-  },
-  "shortanswer": {
-    "question": "What were main goals of Progressive reformers?",
-    "expectedAny": [
-      "reduce corruption",
-      "help poor",
-      "regulate business",
-      "expand democracy"
-    ]
-  }
+﻿{
+    "id":  "11th_Progressive_Era_Social_Reform_Beginner",
+    "title":  "Progressive Era and Social Reform",
+    "grade":  "11th",
+    "difficulty":  "Beginner",
+    "vocab":  [
+                  {
+                      "term":  "Progressive Era",
+                      "definition":  "Period of social and political reform 1890s-1920s"
+                  },
+                  {
+                      "term":  "muckraker",
+                      "definition":  "Journalist exposing social problems and corruption"
+                  },
+                  {
+                      "term":  "trust",
+                      "definition":  "Large corporation controlling an industry"
+                  },
+                  {
+                      "term":  "suffrage",
+                      "definition":  "Right to vote especially for women"
+                  },
+                  {
+                      "term":  "settlement house",
+                      "definition":  "Community center providing services to poor"
+                  }
+              ],
+    "teachingNotes":  "Examine Progressive Era reforms addressing industrialization impacts. Analyze diverse reform movements.",
+    "sample":  [
+                   {
+                       "question":  "What was reform period?",
+                       "expectedAny":  [
+                                           "Progressive Era",
+                                           "Progressive period",
+                                           "progressive movement",
+                                           "reform era",
+                                           "progressive age",
+                                           "reform period"
+                                       ]
+                   },
+                   {
+                       "question":  "Who exposed corruption?",
+                       "expectedAny":  [
+                                           "muckrakers",
+                                           "muckraker",
+                                           "investigative journalists",
+                                           "reform journalists",
+                                           "exposers",
+                                           "investigative reporters"
+                                       ]
+                   },
+                   {
+                       "question":  "What controlled industries?",
+                       "expectedAny":  [
+                                           "trusts",
+                                           "monopolies",
+                                           "business trusts",
+                                           "industrial monopolies",
+                                           "cartels",
+                                           "business monopolies"
+                                       ]
+                   },
+                   {
+                       "question":  "What is voting right?",
+                       "expectedAny":  [
+                                           "suffrage",
+                                           "franchise",
+                                           "voting rights",
+                                           "right to vote",
+                                           "electoral rights",
+                                           "enfranchisement"
+                                       ]
+                   },
+                   {
+                       "question":  "What served poor communities?",
+                       "expectedAny":  [
+                                           "settlement houses",
+                                           "settlement house"
+                                       ]
+                   },
+                   {
+                       "question":  "What broke up monopolies?",
+                       "expectedAny":  [
+                                           "trust-busting",
+                                           "antitrust"
+                                       ]
+                   },
+                   {
+                       "question":  "What were direct democracy reforms?",
+                       "expectedAny":  [
+                                           "initiative referendum recall",
+                                           "IRR"
+                                       ]
+                   },
+                   {
+                       "question":  "What opposed alcohol?",
+                       "expectedAny":  [
+                                           "temperance movement",
+                                           "temperance"
+                                       ]
+                   },
+                   {
+                       "question":  "What fire led to reforms?",
+                       "expectedAny":  [
+                                           "Triangle Shirtwaist",
+                                           "Triangle Fire"
+                                       ]
+                   },
+                   {
+                       "question":  "What amendment gave women vote?",
+                       "expectedAny":  [
+                                           "19th",
+                                           "Nineteenth"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Progressive Era focused on reform.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Muckrakers supported corruption.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Trusts controlled industries.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Suffrage means right to vote.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Settlement houses served wealthy.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Trust-busting promoted competition.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Initiative allows citizens propose laws.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Temperance supported alcohol.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Triangle Fire improved safety.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "19th Amendment ended Prohibition.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "When was Progressive Era?",
+                               "choices":  [
+                                               "1860s-1880s",
+                                               "1890s-1920s",
+                                               "1930s-1950s",
+                                               "1960s-1980s"
+                                           ],
+                               "correct":  "1890s-1920s"
+                           },
+                           {
+                               "question":  "What did muckrakers do?",
+                               "choices":  [
+                                               "Support trusts",
+                                               "Expose problems",
+                                               "Create monopolies",
+                                               "Oppose reform"
+                                           ],
+                               "correct":  "Expose problems"
+                           },
+                           {
+                               "question":  "What were trusts?",
+                               "choices":  [
+                                               "Small businesses",
+                                               "Large corporations",
+                                               "Labor unions",
+                                               "Government agencies"
+                                           ],
+                               "correct":  "Large corporations"
+                           },
+                           {
+                               "question":  "What did suffrage movement seek?",
+                               "choices":  [
+                                               "Temperance",
+                                               "Voting rights",
+                                               "Education",
+                                               "Labor reform"
+                                           ],
+                               "correct":  "Voting rights"
+                           },
+                           {
+                               "question":  "What did settlement houses provide?",
+                               "choices":  [
+                                               "Luxury housing",
+                                               "Community services",
+                                               "Factory jobs",
+                                               "Political power"
+                                           ],
+                               "correct":  "Community services"
+                           },
+                           {
+                               "question":  "What was trust-busting?",
+                               "choices":  [
+                                               "Creating monopolies",
+                                               "Breaking monopolies",
+                                               "Supporting trusts",
+                                               "Ignoring competition"
+                                           ],
+                               "correct":  "Breaking monopolies"
+                           },
+                           {
+                               "question":  "What allowed direct lawmaking?",
+                               "choices":  [
+                                               "Initiative",
+                                               "Suffrage",
+                                               "Trust",
+                                               "Settlement"
+                                           ],
+                               "correct":  "Initiative"
+                           },
+                           {
+                               "question":  "What did temperance oppose?",
+                               "choices":  [
+                                               "Voting",
+                                               "Alcohol",
+                                               "Reform",
+                                               "Industry"
+                                           ],
+                               "correct":  "Alcohol"
+                           },
+                           {
+                               "question":  "What improved factory safety?",
+                               "choices":  [
+                                               "Trusts",
+                                               "Triangle Fire reforms",
+                                               "Muckraking",
+                                               "Settlement houses"
+                                           ],
+                               "correct":  "Triangle Fire reforms"
+                           },
+                           {
+                               "question":  "What granted women vote?",
+                               "choices":  [
+                                               "18th",
+                                               "19th",
+                                               "20th",
+                                               "21st"
+                                           ],
+                               "correct":  "19th"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "_____ Era was period of reform.",
+                               "expectedAny":  [
+                                                   "Progressive",
+                                                   "Reform"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ exposed social problems.",
+                               "expectedAny":  [
+                                                   "muckrakers",
+                                                   "journalists"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ controlled entire industries.",
+                               "expectedAny":  [
+                                                   "trusts",
+                                                   "monopolies"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ means right to vote.",
+                               "expectedAny":  [
+                                                   "suffrage",
+                                                   "franchise"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ houses served poor communities.",
+                               "expectedAny":  [
+                                                   "settlement",
+                                                   "community"
+                                               ]
+                           },
+                           {
+                               "question":  "Trust-_____ broke up monopolies.",
+                               "expectedAny":  [
+                                                   "busting",
+                                                   "breaking"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ allows citizens propose laws.",
+                               "expectedAny":  [
+                                                   "initiative",
+                                                   "direct democracy"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ movement opposed alcohol.",
+                               "expectedAny":  [
+                                                   "temperance",
+                                                   "prohibition"
+                                               ]
+                           },
+                           {
+                               "question":  "Triangle _____ Fire led to safety reforms.",
+                               "expectedAny":  [
+                                                   "Shirtwaist",
+                                                   "factory"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ Amendment granted women suffrage.",
+                               "expectedAny":  [
+                                                   "19th",
+                                                   "Nineteenth"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "What was Progressive Era?",
+                            "expectedAny":  [
+                                                "period of social and political reform 1890s-1920s",
+                                                "response to industrialization problems",
+                                                "diverse reform movements"
+                                            ]
+                        },
+                        {
+                            "question":  "What did muckrakers do?",
+                            "expectedAny":  [
+                                                "journalists exposing corruption and problems",
+                                                "investigated social issues",
+                                                "created public pressure for reform"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain trusts.",
+                            "expectedAny":  [
+                                                "large corporations controlling industries",
+                                                "monopolistic business combinations",
+                                                "targets of antitrust reform"
+                                            ]
+                        },
+                        {
+                            "question":  "What was suffrage movement?",
+                            "expectedAny":  [
+                                                "campaign for women voting rights",
+                                                "culminated in 19th Amendment",
+                                                "decades-long struggle"
+                                            ]
+                        },
+                        {
+                            "question":  "Describe settlement houses.",
+                            "expectedAny":  [
+                                                "community centers providing services to poor",
+                                                "education health childcare",
+                                                "like Hull House in Chicago"
+                                            ]
+                        },
+                        {
+                            "question":  "What was trust-busting?",
+                            "expectedAny":  [
+                                                "breaking up monopolies promoting competition",
+                                                "antitrust enforcement",
+                                                "Theodore Roosevelt policy"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain initiative referendum recall.",
+                            "expectedAny":  [
+                                                "direct democracy reforms citizens propose laws vote on issues recall officials",
+                                                "Progressive political reforms",
+                                                "increased public participation"
+                                            ]
+                        },
+                        {
+                            "question":  "What was temperance movement?",
+                            "expectedAny":  [
+                                                "campaign against alcohol consumption",
+                                                "led to 18th Amendment Prohibition",
+                                                "religious and reform motivations"
+                                            ]
+                        },
+                        {
+                            "question":  "What was Triangle Shirtwaist Fire?",
+                            "expectedAny":  [
+                                                "1911 factory fire killing 146 workers",
+                                                "exposed unsafe conditions",
+                                                "led to labor and safety reforms"
+                                            ]
+                        },
+                        {
+                            "question":  "What did 19th Amendment do?",
+                            "expectedAny":  [
+                                                "granted women right to vote 1920",
+                                                "culmination of suffrage movement",
+                                                "expanded democracy"
+                                            ]
+                        }
+                    ]
 }

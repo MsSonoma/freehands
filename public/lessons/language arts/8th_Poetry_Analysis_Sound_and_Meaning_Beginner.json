@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Read poems aloud to hear sound devices. Analyze how sound contributes to meaning and mood in poetry.",
-  "sample": {
-    "question": "What are literary techniques that use the sounds of words?",
-    "expectedAny": [
-      "sound device",
-      "sound technique",
-      "auditory device",
-      "phonetic technique"
-    ]
-  },
-  "truefalse": {
-    "question": "Onomatopoeia refers to words that imitate sounds.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the repetition of vowel sounds called?",
-    "expectedAny": [
-      "assonance",
-      "vowel repetition",
-      "vowel echo",
-      "internal rhyme"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Poetry without regular rhyme or meter is called ________ verse.",
-    "expectedAny": [
-      "free",
-      "open",
-      "blank",
-      "unstructured"
-    ]
-  },
-  "shortanswer": {
-    "question": "How do sound devices enhance poetry?",
-    "expectedAny": [
-      "create rhythm and mood",
-      "add musical quality",
-      "emphasize meaning"
-    ]
-  }
+  "sample": [
+    { "question": "What are literary techniques that use the sounds of words?", "expectedAny": ["sound device"] },
+    { "question": "Which is vowel repetition?", "choices": ["Rhyme", "Assonance", "Metaphor", "Simile"], "correct": 1, "expectedAny": ["assonance"] },
+    { "question": "Consonant repetition is ________.", "expectedAny": ["consonance"] },
+    { "question": "Words imitating sounds are ________.", "expectedAny": ["onomatopoeia"] },
+    { "question": "Poetry without regular pattern is ________.", "expectedAny": ["free verse"] },
+    { "question": "What uses word sounds?", "choices": ["Plot", "Sound device", "Character", "Setting"], "correct": 1, "expectedAny": ["sound device"] },
+    { "question": "Vowel sound repetition is ________.", "expectedAny": ["assonance"] },
+    { "question": "What repeats consonants?", "choices": ["Rhyme", "Consonance", "Metaphor", "Simile"], "correct": 1, "expectedAny": ["consonance"] },
+    { "question": "Sound-imitating words are ________.", "expectedAny": ["onomatopoeia"] },
+    { "question": "Unrhymed poetry is ________.", "expectedAny": ["free verse"] }
+  ],
+  "truefalse": [
+    { "question": "Onomatopoeia refers to words that imitate sounds.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Sound devices are plot techniques.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Assonance repeats vowels.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Consonance repeats vowels.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Free verse has regular meter.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Sound devices use word sounds.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Onomatopoeia is character development.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Consonance repeats consonants.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Free verse lacks regular rhyme.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Assonance is consonant repetition.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is the repetition of vowel sounds called?", "choices": ["Rhyme", "Assonance", "Metaphor", "Simile"], "correct": 1, "expectedAny": ["assonance"] },
+    { "question": "What uses word sounds?", "choices": ["Plot", "Sound device", "Character", "Setting"], "correct": 1, "expectedAny": ["sound device"] },
+    { "question": "What repeats consonants?", "choices": ["Rhyme", "Consonance", "Metaphor", "Simile"], "correct": 1, "expectedAny": ["consonance"] },
+    { "question": "What imitates sounds?", "choices": ["Metaphor", "Onomatopoeia", "Simile", "Personification"], "correct": 1, "expectedAny": ["onomatopoeia"] },
+    { "question": "What is unrhymed poetry?", "choices": ["Sonnet", "Free verse", "Haiku", "Limerick"], "correct": 1, "expectedAny": ["free verse"] },
+    { "question": "Sound devices affect?", "choices": ["Nothing", "Mood and rhythm", "Only plot", "Only character"], "correct": 1, "expectedAny": ["mood and rhythm"] },
+    { "question": "Buzz is example of?", "choices": ["Metaphor", "Onomatopoeia", "Simile", "Rhyme"], "correct": 1, "expectedAny": ["onomatopoeia"] },
+    { "question": "Assonance uses?", "choices": ["Consonants", "Vowels", "Meaning", "Plot"], "correct": 1, "expectedAny": ["vowels"] },
+    { "question": "Free verse lacks?", "choices": ["Meaning", "Regular pattern", "Words", "Sound"], "correct": 1, "expectedAny": ["regular pattern"] },
+    { "question": "Consonance repeats?", "choices": ["Vowels", "Consonants", "Meaning", "Plot"], "correct": 1, "expectedAny": ["consonants"] }
+  ],
+  "fillintheblank": [
+    { "question": "Poetry without regular rhyme or meter is called ________ verse.", "expectedAny": ["free"] },
+    { "question": "Techniques using word sounds are ________.", "expectedAny": ["sound device"] },
+    { "question": "Vowel repetition is ________.", "expectedAny": ["assonance"] },
+    { "question": "Consonant repetition is ________.", "expectedAny": ["consonance"] },
+    { "question": "Words imitating sounds are ________.", "expectedAny": ["onomatopoeia"] },
+    { "question": "________ device uses sounds.", "expectedAny": ["sound"] },
+    { "question": "________ repeats vowels.", "expectedAny": ["assonance"] },
+    { "question": "________ repeats consonants.", "expectedAny": ["consonance"] },
+    { "question": "________ imitates sounds.", "expectedAny": ["onomatopoeia"] },
+    { "question": "________ verse lacks pattern.", "expectedAny": ["free"] }
+  ],
+  "shortanswer": [
+    { "question": "How do sound devices enhance poetry?", "expectedAny": ["create rhythm and mood", "add musical quality"] },
+    { "question": "What is sound device?", "expectedAny": ["technique using word sounds", "auditory technique"] },
+    { "question": "What is assonance?", "expectedAny": ["vowel repetition", "repeating vowel sounds", "same vowel sounds", "repeated vowels"] },
+    { "question": "What is consonance?", "expectedAny": ["consonant repetition", "repeating consonants"] },
+    { "question": "What is onomatopoeia?", "expectedAny": ["words imitating sounds", "sound-imitating words", "words that sound like what they mean", "sound words"] },
+    { "question": "What is free verse?", "expectedAny": ["poetry without regular pattern", "unrhymed poetry", "no rhyme or meter", "poetry without rules"] },
+    { "question": "Why use sound devices?", "expectedAny": ["enhance mood", "create rhythm"] },
+    { "question": "Give onomatopoeia example?", "expectedAny": ["buzz", "crash", "bang"] },
+    { "question": "How does assonance work?", "expectedAny": ["repeats vowel sounds", "vowel repetition"] },
+    { "question": "What makes free verse?", "expectedAny": ["lacks regular rhyme or meter", "no pattern"] }
+  ]
 }

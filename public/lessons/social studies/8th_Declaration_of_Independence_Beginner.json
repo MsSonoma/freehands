@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "8th_Declaration_of_Independence_Beginner",
   "title": "Declaration of Independence and Revolutionary War",
   "grade": "8th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "Declaration of Independence",
-      "definition": "The document declaring American independence from Britain"
-    },
-    {
-      "term": "natural rights",
-      "definition": "Rights that all people are born with"
-    },
-    {
-      "term": "unalienable rights",
-      "definition": "Rights that cannot be taken away"
-    },
-    {
-      "term": "Continental Congress",
-      "definition": "The governing body of the American colonies"
-    },
-    {
-      "term": "revolution",
-      "definition": "A complete change in government or way of life"
-    }
+    {"term": "Declaration of Independence", "definition": "The document declaring American independence from Britain"},
+    {"term": "natural rights", "definition": "Rights that all people are born with"},
+    {"term": "unalienable rights", "definition": "Rights that cannot be taken away"},
+    {"term": "Continental Congress", "definition": "The governing body of the American colonies"},
+    {"term": "revolution", "definition": "A complete change in government or way of life"}
   ],
   "teachingNotes": "Focus on key ideas in the Declaration. Explain how revolutionary ideals influenced American government.",
-  "sample": {
-    "question": "What document declared American independence from Britain?",
-    "expectedAny": [
-      "Declaration of Independence",
-      "independence declaration",
-      "founding document",
-      "1776 declaration"
-    ]
-  },
-  "truefalse": {
-    "question": "The Declaration states that all people have natural rights.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What are rights that cannot be taken away?",
-    "expectedAny": [
-      "unalienable rights",
-      "natural rights",
-      "inherent rights",
-      "God-given rights"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The governing body of the colonies was the ________ Congress.",
-    "expectedAny": [
-      "Continental",
-      "colonial",
-      "American",
-      "revolutionary"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are the three unalienable rights mentioned in the Declaration?",
-    "expectedAny": [
-      "life, liberty, pursuit of happiness",
-      "life liberty happiness",
-      "basic human rights"
-    ]
-  }
+  "sample": [
+    {"question": "What document declared American independence from Britain?", "expectedAny": ["Declaration of Independence", "independence declaration", "1776 declaration", "independence document", "freedom declaration"]},
+    {"question": "What are natural rights?", "expectedAny": ["rights all people are born with", "inherent rights", "God-given rights", "born with rights", "rights from birth"]},
+    {"question": "What are unalienable rights?", "expectedAny": ["rights that cannot be taken away", "permanent rights", "rights that cannot be removed"]},
+    {"question": "What was the Continental Congress?", "expectedAny": ["governing body of the colonies", "colonial government", "meeting of colonial representatives"]},
+    {"question": "What is a revolution?", "expectedAny": ["complete change in government", "overthrow of government", "major political change"]},
+    {"question": "When was the Declaration of Independence signed?", "expectedAny": ["1776", "July 4, 1776", "seventeen seventy-six"]},
+    {"question": "Who wrote the Declaration of Independence?", "expectedAny": ["Thomas Jefferson", "Jefferson"]},
+    {"question": "What three rights are mentioned in the Declaration?", "expectedAny": ["life, liberty, pursuit of happiness", "life liberty happiness"]},
+    {"question": "From which country did America declare independence?", "expectedAny": ["Britain", "Great Britain", "England"]},
+    {"question": "What did the Declaration announce?", "expectedAny": ["independence from Britain", "separation from England", "American freedom"]}
+  ],
+  "truefalse": [
+    {"question": "The Declaration states that all people have natural rights. (True or False)", "correct": true},
+    {"question": "The Declaration of Independence was signed in 1776. (True or False)", "correct": true},
+    {"question": "Unalienable rights can be taken away. (True or False)", "correct": false},
+    {"question": "Thomas Jefferson wrote the Declaration of Independence. (True or False)", "correct": true},
+    {"question": "The Declaration declared independence from France. (True or False)", "correct": false},
+    {"question": "Natural rights are rights people are born with. (True or False)", "correct": true},
+    {"question": "The Continental Congress governed the colonies. (True or False)", "correct": true},
+    {"question": "The Declaration says only some people have rights. (True or False)", "correct": false},
+    {"question": "Life, liberty, and pursuit of happiness are mentioned in the Declaration. (True or False)", "correct": true},
+    {"question": "A revolution is a minor change in government. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "What are rights that cannot be taken away?", "choices": [{"letter": "A", "text": "Temporary rights"}, {"letter": "B", "text": "Unalienable rights"}, {"letter": "C", "text": "Legal rights"}, {"letter": "D", "text": "Voting rights"}], "correct": "B"},
+    {"question": "Who wrote the Declaration of Independence?", "choices": [{"letter": "A", "text": "George Washington"}, {"letter": "B", "text": "Benjamin Franklin"}, {"letter": "C", "text": "Thomas Jefferson"}, {"letter": "D", "text": "John Adams"}], "correct": "C"},
+    {"question": "When was the Declaration of Independence signed?", "choices": [{"letter": "A", "text": "1775"}, {"letter": "B", "text": "1776"}, {"letter": "C", "text": "1777"}, {"letter": "D", "text": "1783"}], "correct": "B"},
+    {"question": "What are natural rights?", "choices": [{"letter": "A", "text": "Rights given by government"}, {"letter": "B", "text": "Rights all people are born with"}, {"letter": "C", "text": "Rights only for citizens"}, {"letter": "D", "text": "Rights earned through service"}], "correct": "B"},
+    {"question": "From which country did America declare independence?", "choices": [{"letter": "A", "text": "France"}, {"letter": "B", "text": "Spain"}, {"letter": "C", "text": "Britain"}, {"letter": "D", "text": "Portugal"}], "correct": "C"},
+    {"question": "What was the Continental Congress?", "choices": [{"letter": "A", "text": "British Parliament"}, {"letter": "B", "text": "Governing body of colonies"}, {"letter": "C", "text": "American court system"}, {"letter": "D", "text": "Military leadership"}], "correct": "B"},
+    {"question": "Which rights are mentioned in the Declaration?", "choices": [{"letter": "A", "text": "Life, liberty, pursuit of happiness"}, {"letter": "B", "text": "Speech, religion, press"}, {"letter": "C", "text": "Vote, assemble, petition"}, {"letter": "D", "text": "Work, education, health"}], "correct": "A"},
+    {"question": "What is a revolution?", "choices": [{"letter": "A", "text": "Small change in law"}, {"letter": "B", "text": "Complete change in government"}, {"letter": "C", "text": "Military battle"}, {"letter": "D", "text": "Trade agreement"}], "correct": "B"},
+    {"question": "What did the Declaration announce?", "choices": [{"letter": "A", "text": "New taxes"}, {"letter": "B", "text": "Peace treaty"}, {"letter": "C", "text": "Independence from Britain"}, {"letter": "D", "text": "Alliance with France"}], "correct": "C"},
+    {"question": "What makes rights unalienable?", "choices": [{"letter": "A", "text": "Government grants them"}, {"letter": "B", "text": "They can be voted on"}, {"letter": "C", "text": "They cannot be taken away"}, {"letter": "D", "text": "They expire over time"}], "correct": "C"}
+  ],
+  "fillintheblank": [
+    {"question": "The governing body of the colonies was the _____ Congress.", "expectedAny": ["Continental"]},
+    {"question": "The _____ of Independence declared America free from Britain.", "expectedAny": ["Declaration"]},
+    {"question": "_____ Jefferson wrote the Declaration of Independence.", "expectedAny": ["Thomas"]},
+    {"question": "Rights that cannot be taken away are called _____ rights.", "expectedAny": ["unalienable", "inalienable"]},
+    {"question": "Rights all people are born with are called _____ rights.", "expectedAny": ["natural"]},
+    {"question": "The Declaration was signed in _____.", "expectedAny": ["1776", "seventeen seventy-six"]},
+    {"question": "America declared independence from _____.", "expectedAny": ["Britain", "Great Britain", "England"]},
+    {"question": "A complete change in government is called a _____.", "expectedAny": ["revolution"]},
+    {"question": "The Declaration mentions life, liberty, and the pursuit of _____.", "expectedAny": ["happiness"]},
+    {"question": "The _____ Congress governed the American colonies.", "expectedAny": ["Continental"]}
+  ],
+  "shortanswer": [
+    {"question": "What are the three unalienable rights mentioned in the Declaration?", "keyTerms": ["life", "liberty", "happiness"], "expectedAny": ["life, liberty, pursuit of happiness", "life liberty happiness", "basic human rights"]},
+    {"question": "Why was the Declaration of Independence important?", "keyTerms": ["independence", "Britain", "freedom", "announced"], "expectedAny": ["It announced America's independence from Britain", "It declared freedom from British rule", "It established America as an independent nation"]},
+    {"question": "What are natural rights and why are they important?", "keyTerms": ["born", "rights", "people", "inherent"], "expectedAny": ["They are rights all people are born with that cannot be taken away", "Natural rights belong to everyone from birth", "They are inherent rights that all people possess"]},
+    {"question": "Who wrote the Declaration and when was it signed?", "keyTerms": ["Jefferson", "1776", "Thomas", "July"], "expectedAny": ["Thomas Jefferson wrote it and it was signed in 1776", "Jefferson wrote it in July 1776", "Thomas Jefferson authored it in seventeen seventy-six"]},
+    {"question": "What does unalienable mean in the Declaration?", "keyTerms": ["cannot", "taken", "away", "permanent"], "expectedAny": ["Rights that cannot be taken away or removed", "Permanent rights that cannot be denied", "Rights that are impossible to take from people"]},
+    {"question": "What was the Continental Congress?", "keyTerms": ["governing", "body", "colonies", "representatives"], "expectedAny": ["The governing body of the American colonies", "A meeting of representatives from the colonies", "The colonial government that led the revolution"]},
+    {"question": "Why did the colonies want independence?", "keyTerms": ["freedom", "British", "rule", "rights"], "expectedAny": ["They wanted freedom from British rule and control", "To gain rights and govern themselves", "To escape British tyranny and establish self-government"]},
+    {"question": "How did the Declaration change America?", "keyTerms": ["independent", "nation", "Britain", "free"], "expectedAny": ["It made America an independent nation free from Britain", "It established the United States as a separate country", "It freed America from British control and created a new nation"]},
+    {"question": "What revolutionary ideas are in the Declaration?", "keyTerms": ["equality", "rights", "people", "government"], "expectedAny": ["All people have equal rights and government serves the people", "Natural rights and equality for all people", "Rights come from birth not government and all are equal"]},
+    {"question": "What does it mean that the Declaration declared independence?", "keyTerms": ["announced", "separation", "Britain", "free"], "expectedAny": ["It announced America's separation from Britain", "It declared the colonies were free from British rule", "It proclaimed America was no longer under British control"]}
+  ]
 }

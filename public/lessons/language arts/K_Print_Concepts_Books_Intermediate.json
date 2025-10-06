@@ -1,6 +1,14 @@
 {
   "id": "print-concepts-books-intermediate",
-  "title": "Print Concepts and Books",
+  "title": "Print  "fillintheblank": [
+    {"question": "When you read, you move your eyes from _____ to right.", "expectedAny": ["left", "from left", "left side", "the left"]},
+    {"question": "A _____ is a group of words that tells a complete thought.", "expectedAny": ["sentence", "a sentence"]},
+    {"question": "The name of a book is called the _____.", "expectedAny": ["title", "book title", "the title"]},
+    {"question": "Books are made up of many _____.", "expectedAny": ["pages", "page"]},
+    {"question": "_____ are made up of letters.", "expectedAny": ["words", "word", "Words"]},
+    {"question": "You start reading at the _____ of a page.", "expectedAny": ["top", "the top", "top of the page"]},
+    {"question": "The _____ cover shows you what the book is about.", "expectedAny": ["front", "front cover"]}
+  ], and Books",
   "grade": "K",
   "difficulty": "Intermediate",
   "featured": false,
@@ -20,17 +28,29 @@
     {
       "term": "sentence",
       "definition": "A group of words that tells a complete thought"
+    },
+    {
+      "term": "cover",
+      "definition": "The outside part of a book"
+    },
+    {
+      "term": "left",
+      "definition": "The side on your left hand"
+    },
+    {
+      "term": "turn",
+      "definition": "To move a page to the next one"
     }
   ],
   "teachingNotes": "Demonstrate how to hold books correctly. Practice finding front, back, title. Show left-to-right reading direction.",
   "sample": [
-    {"question": "Where do you start reading on a page?", "expectedAny": ["at the top", "on the left"]},
-    {"question": "How do you hold a book?", "expectedAny": ["right side up", "front facing you"]},
-    {"question": "Which way do you turn pages?", "expectedAny": ["left to right", "forward"]},
-    {"question": "What tells you the name of a book?", "expectedAny": ["title", "front cover"]},
-    {"question": "Where does a book begin?", "expectedAny": ["front cover", "first page"]},
-    {"question": "Point to the title on this cover.", "expectedAny": ["student points to title"]},
-    {"question": "Show me the first word on the page.", "expectedAny": ["student identifies first word"]}
+    {"question": "Where do you start reading on a page?", "expectedAny": ["at the top", "on the left", "top left", "the top"]},
+    {"question": "How do you hold a book?", "expectedAny": ["right side up", "front facing you", "with front showing", "correctly"]},
+    {"question": "Which way do you turn pages?", "expectedAny": ["left to right", "forward", "to the right", "this way"]},
+    {"question": "What tells you the name of a book?", "expectedAny": ["title", "front cover", "the title", "book title"]},
+    {"question": "Where does a book begin?", "expectedAny": ["front cover", "first page", "at the front", "the beginning"]},
+    {"question": "Point to the title on this cover.", "expectedAny": ["title", "the title", "book title"]},
+    {"question": "Show me the first word on the page.", "expectedAny": ["first word", "the first word"]}
   ],
   "truefalse": [
     {"question": "You read books from front to back.", "answer": true, "expectedAny": ["true"]},
@@ -51,22 +71,22 @@
     {"question": "Which way do you turn pages?", "choices": ["backward", "upward", "forward", "downward"], "correct": 2, "expectedAny": ["forward"]}
   ],
   "fillintheblank": [
-    {"question": "When you read, you move your eyes from _____ to right.", "expectedAny": ["left"]},
-    {"question": "A _____ is a group of words that tells a complete thought.", "expectedAny": ["sentence"]},
-    {"question": "The name of a book is called the _____.", "expectedAny": ["title"]},
-    {"question": "Books are made up of many _____.", "expectedAny": ["pages"]},
-    {"question": "_____ are made up of letters.", "expectedAny": ["words"]},
-    {"question": "You start reading at the _____ of a page.", "expectedAny": ["top"]},
-    {"question": "The _____ cover shows you what the book is about.", "expectedAny": ["front"]}
+    {"question": "When you read, you move your eyes from _____ to right.", "expectedAny": ["left", "from left", "left side"]},
+    {"question": "A _____ is a group of words that tells a complete thought.", "expectedAny": ["sentence", "a sentence"]},
+    {"question": "The name of a book is called the _____..", "expectedAny": ["title", "book title", "the title"]},
+  {"question": "Books are made up of many _____..", "expectedAny": ["pages"]},
+    {"question": "_____ are made up of letters.", "expectedAny": ["words", "word"]},
+    {"question": "You start reading at the _____ of a page.", "expectedAny": ["top", "the top", "top of the page"]},
+    {"question": "The _____ cover shows you what the book is about.", "expectedAny": ["front", "front cover"]}
   ],
   "shortanswer": [
-    {"question": "What can you learn by looking at the cover of a book?", "expectedAny": ["the title", "what it's about"]},
-    {"question": "Why do we read from left to right?", "expectedAny": ["that's how English works"]},
-    {"question": "What parts does every book have?", "expectedAny": ["front cover, pages, back cover, title"]},
-    {"question": "How do pictures help when reading?", "expectedAny": ["show what story is about", "help understand words"]},
-    {"question": "What should you do before you start reading a book?", "expectedAny": ["look at cover, find the title"]},
-    {"question": "Describe how to turn pages properly.", "expectedAny": ["gently, one at a time"]},
-    {"question": "What makes words different from just letters?", "expectedAny": ["words have meaning"]}
+    {"question": "What can you learn by looking at the cover of a book?", "expectedAny": ["the title", "what it's about", "topic", "story idea", "who wrote it"]},
+    {"question": "Why do we read from left to right?", "expectedAny": ["english reads left to right", "because english is left to right", "that's how english is read", "that's how english works", "that's the rule"]},
+    {"question": "What parts does every book have?", "expectedAny": ["front cover, title, pages, back cover", "title, pages, covers", "front cover and back cover and pages and title", "covers and pages", "title and pages"]},
+    {"question": "How do pictures help when reading?", "expectedAny": ["show what story is about", "help understand words", "give clues", "show meaning", "tell the story"]},
+    {"question": "What should you do before you start reading a book?", "expectedAny": ["look at cover and find the title", "look at the title", "preview the cover", "see what it's about"]},
+    {"question": "How should you turn pages?", "expectedAny": ["gently", "carefully", "one at a time", "turn one page at a time", "slowly", "softly"]},
+    {"question": "What makes words different from just letters?", "expectedAny": ["words have meaning", "words make ideas", "groups of letters with meaning", "they mean something"]}
   ],
   "wordProblems": [
     {"question": "A book has 20 pages. If you read 5 pages, how many pages are left to read?", "expectedAny": ["15 pages"]},

@@ -20,6 +20,14 @@
     {
       "term": "speed",
       "definition": "How fast or slow something moves"
+    },
+    {
+      "term": "stop",
+      "definition": "To make something not move"
+    },
+    {
+      "term": "arrow",
+      "definition": "A simple shape that points to show direction"
     }
   ],
   "teachingNotes": "Use playground equipment and classroom demonstrations. Let students experiment with different forces and observe motion changes. Connect to everyday experiences.",
@@ -51,21 +59,21 @@
     {"question": "What tool helps measure how far something moved?", "choices": ["ruler", "clock", "thermometer", "scale"], "correct": 0, "expectedAny": ["ruler"]}
   ],
   "fillintheblank": [
-    {"question": "When you _____ a door, it opens away from you.", "expectedAny": ["push"]},
-    {"question": "When you _____ a door, it opens toward you.", "expectedAny": ["pull"]},
-    {"question": "A harder push makes an object go _____.", "expectedAny": ["faster"]},
-    {"question": "A softer push makes an object go _____.", "expectedAny": ["slower"]},
-    {"question": "_____ can slow moving things down.", "expectedAny": ["Friction"]},
-    {"question": "_____ pulls things toward the ground.", "expectedAny": ["Gravity"]},
+    {"question": "When you _____ a door, it opens away from you.", "expectedAny": ["push", "push it"]},
+    {"question": "When you _____ a door, it opens toward you.", "expectedAny": ["pull", "pull it"]},
+    {"question": "A harder push makes an object go _____.", "expectedAny": ["faster", "more quickly"]},
+    {"question": "A softer push makes an object go _____.", "expectedAny": ["slower", "more slowly"]},
+    {"question": "_____ can slow moving things down.", "expectedAny": ["friction", "rough surfaces"]},
+    {"question": "_____ pulls things toward the ground.", "expectedAny": ["gravity", "Earth's gravity"]},
     {"question": "We can change an object's _____ with a push or pull.", "expectedAny": ["direction", "speed"]}
   ],
   "shortanswer": [
-    {"question": "Describe two ways you can change how a toy car moves.", "expectedAny": ["push harder/softer", "push different direction"]},
-    {"question": "How does friction change motion?", "expectedAny": ["slows things down"]},
-    {"question": "How can you make a ball go farther?", "expectedAny": ["push or kick harder"]},
-    {"question": "How can you make a swing stop?", "expectedAny": ["stop pushing", "use feet to slow"]},
-    {"question": "Why do we use wheels on carts?", "expectedAny": ["reduce friction", "easier to move"]},
-    {"question": "Draw arrows to show the direction of a push and a pull.", "expectedAny": ["drawing with arrows"]},
-    {"question": "What happens if two people push a box from opposite sides with the same force?", "expectedAny": ["it might not move"]}
+    {"question": "Describe two ways you can change how a toy car moves.", "expectedAny": ["push harder/softer", "push different direction", "pull it to change direction", "push harder or softer", "push from different side", "use more or less force"]},
+    {"question": "How does friction change motion?", "expectedAny": ["slows things down", "reduces speed", "makes it harder to move", "slows it", "makes it slow", "stops it faster"]},
+    {"question": "How can you make a ball go farther?", "expectedAny": ["push or kick harder", "use more force", "run and kick", "kick harder", "throw harder", "more force"]},
+    {"question": "How can you make a swing stop?", "expectedAny": ["stop pushing", "use feet to slow", "drag your feet", "don't push", "put feet down", "use your feet"]},
+    {"question": "Why do we use wheels on carts?", "expectedAny": ["reduce friction", "easier to move", "to roll smoothly", "less friction", "makes it easier", "helps it roll"]},
+    {"question": "Draw arrows to show the direction of a push and a pull.", "expectedAny": ["drawing with arrows", "sketch with arrows", "picture with arrows", "arrows showing push and pull", "arrows for directions"]},
+    {"question": "What happens if two people push a box from opposite sides with the same force?", "expectedAny": ["it might not move", "stays still", "no movement", "doesn't move", "box stays put", "stays in place"]}
   ]
 }

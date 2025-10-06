@@ -1,4 +1,4 @@
-{
+﻿{
   "id": "11th_Advanced_Composition_Rhetorical_Analysis_Beginner",
   "title": "Advanced Composition: Rhetorical Analysis",
   "grade": "11th",
@@ -26,49 +26,224 @@
     }
   ],
   "teachingNotes": "Introduce classical rhetorical concepts through contemporary examples. Practice identifying appeals in various texts.",
-  "sample": {
-    "question": "What is the art of effective speaking and writing called?",
-    "expectedAny": [
-      "rhetoric",
-      "rhetorical art",
-      "persuasive communication",
-      "effective discourse"
-    ]
-  },
-  "truefalse": {
-    "question": "Ethos is a persuasive appeal based on credibility.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What appeal is based on emotion and feeling?",
-    "expectedAny": [
-      "pathos",
-      "emotional appeal",
-      "feeling-based",
-      "emotional persuasion"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The model showing speaker, audience, and message relationship is the rhetorical ________.",
-    "expectedAny": [
-      "triangle",
-      "relationship",
-      "model",
-      "framework"
-    ]
-  },
-  "shortanswer": {
-    "question": "How do the three rhetorical appeals work together?",
-    "expectedAny": [
-      "credibility supports logic",
-      "emotion motivates action",
-      "combined persuasion",
-      "balanced approach"
-    ]
-  }
+  "sample": [
+    {
+      "question": "What is the art of effective speaking and writing called?",
+      "expectedAny": ["rhetoric", "rhetorical art", "persuasive communication", "effective discourse", "art of persuasion", "persuasive discourse"]
+    },
+    {
+      "question": "What is ethos in rhetorical analysis?",
+      "expectedAny": ["credibility appeal", "character appeal", "persuasive appeal based on credibility", "appeal to authority", "ethical appeal", "trustworthiness appeal"]
+    },
+    {
+      "question": "What appeal uses emotion to persuade?",
+      "expectedAny": ["pathos", "emotional appeal", "appeal to emotion", "feeling-based persuasion", "pathetic appeal", "emotional persuasion"]
+    },
+    {
+      "question": "What is logos in persuasive writing?",
+      "expectedAny": ["logical appeal", "appeal to logic", "reasoning appeal", "persuasion through logic", "appeal to reason", "logical persuasion"]
+    },
+    {
+      "question": "What model shows speaker, audience, and message relationships?",
+      "expectedAny": ["rhetorical triangle", "triangle of rhetoric", "communication triangle", "rhetorical model", "persuasion model", "rhetorical triad"]
+    },
+    {
+      "question": "Which appeal relies on the speaker's character?",
+      "expectedAny": ["ethos", "credibility appeal", "ethical appeal", "character-based appeal"]
+    },
+    {
+      "question": "What type of appeal uses facts and data?",
+      "expectedAny": ["logos", "logical appeal", "rational appeal", "evidence-based appeal"]
+    },
+    {
+      "question": "Which persuasive strategy targets feelings?",
+      "expectedAny": ["pathos", "emotional appeal", "appeal to feelings", "emotion-based persuasion"]
+    },
+    {
+      "question": "What term describes effective communication techniques?",
+      "expectedAny": ["rhetoric", "rhetorical strategies", "persuasive techniques", "communication art"]
+    },
+    {
+      "question": "What are the three main rhetorical appeals?",
+      "expectedAny": ["ethos pathos logos", "logos ethos pathos", "pathos logos ethos", "credibility emotion logic"]
+    }
+  ],
+  "truefalse": [
+    {
+      "question": "Ethos is a persuasive appeal based on credibility.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Pathos appeals to logic and reasoning.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Logos uses facts and evidence to persuade.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "The rhetorical triangle ignores the audience.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Rhetoric is the art of effective communication.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Ethos relies primarily on emotional appeals.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Pathos targets the audience's emotions.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "The speaker is not part of the rhetorical triangle.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Logos means using logical reasoning in arguments.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Effective rhetoric uses only one type of appeal.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Which appeal is based on the speaker's credibility?",
+      "choices": ["Ethos", "Pathos", "Logos", "Mythos"],
+      "correct": "Ethos"
+    },
+    {
+      "question": "What does pathos appeal to?",
+      "choices": ["Logic", "Emotion", "Credibility", "Statistics"],
+      "correct": "Emotion"
+    },
+    {
+      "question": "Which appeal uses facts and reasoning?",
+      "choices": ["Pathos", "Ethos", "Logos", "Kairos"],
+      "correct": "Logos"
+    },
+    {
+      "question": "What is the study of effective persuasion called?",
+      "choices": ["Rhetoric", "Grammar", "Syntax", "Semantics"],
+      "correct": "Rhetoric"
+    },
+    {
+      "question": "What connects speaker, audience, and message?",
+      "choices": ["Triangle", "Circle", "Square", "Line"],
+      "correct": "Triangle"
+    },
+    {
+      "question": "Which appeal would use personal stories?",
+      "choices": ["Logos", "Ethos", "Pathos", "None"],
+      "correct": "Pathos"
+    },
+    {
+      "question": "What establishes trust with the audience?",
+      "choices": ["Pathos", "Logos", "Ethos", "Rhetoric"],
+      "correct": "Ethos"
+    },
+    {
+      "question": "Which appeal relies on statistics?",
+      "choices": ["Ethos", "Pathos", "Logos", "Mythos"],
+      "correct": "Logos"
+    },
+    {
+      "question": "What makes writing persuasive and effective?",
+      "choices": ["Rhetoric", "Length", "Complexity", "Vocabulary"],
+      "correct": "Rhetoric"
+    },
+    {
+      "question": "Which appeal uses vivid imagery?",
+      "choices": ["Logos", "Ethos", "Pathos", "All three"],
+      "correct": "Pathos"
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "The art of effective communication is called _____.",
+      "expectedAny": ["rhetoric", "rhetorical art", "persuasion"]
+    },
+    {
+      "question": "_____ is the appeal based on credibility and character.",
+      "expectedAny": ["ethos", "ethical appeal", "credibility"]
+    },
+    {
+      "question": "Emotional appeals are known as _____.",
+      "expectedAny": ["pathos", "emotional appeals", "pathetic appeals"]
+    },
+    {
+      "question": "_____ uses logic and reasoning to persuade.",
+      "expectedAny": ["logos", "logical appeal", "logic"]
+    },
+    {
+      "question": "The _____ triangle shows speaker, audience, and message.",
+      "expectedAny": ["rhetorical", "rhetoric", "communication"]
+    },
+    {
+      "question": "To establish trust, a writer uses _____.",
+      "expectedAny": ["ethos", "credibility", "ethical appeal"]
+    },
+    {
+      "question": "_____ appeals target the audience's feelings.",
+      "expectedAny": ["pathos", "emotional", "pathetic"]
+    },
+    {
+      "question": "Facts and data support _____ appeals.",
+      "expectedAny": ["logos", "logical", "rational"]
+    },
+    {
+      "question": "The three main appeals are ethos, pathos, and _____.",
+      "expectedAny": ["logos", "logic", "logical appeal"]
+    },
+    {
+      "question": "_____ is persuasive writing and speaking.",
+      "expectedAny": ["rhetoric", "rhetorical discourse", "persuasion"]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Explain what rhetoric means and why it is important.",
+      "expectedAny": ["rhetoric is the art of persuasive communication used to effectively convey messages", "rhetoric means effective speaking and writing to influence audiences", "the art of using language persuasively in various contexts"]
+    },
+    {
+      "question": "Describe the difference between ethos and pathos.",
+      "expectedAny": ["ethos appeals to credibility while pathos appeals to emotion", "ethos is character-based and pathos is feeling-based persuasion", "ethos builds trust and pathos evokes feelings"]
+    },
+    {
+      "question": "How does logos help make an argument more convincing?",
+      "expectedAny": ["logos uses facts and logic to provide rational support for claims", "logical appeals strengthen arguments with evidence and reasoning", "logos makes arguments credible through data and analysis"]
+    },
+    {
+      "question": "What are the three components of the rhetorical triangle?",
+      "expectedAny": ["speaker audience and message", "the communicator the audience and the content", "writer reader and text"]
+    },
+    {
+      "question": "Why might a speaker use all three appeals together?",
+      "expectedAny": ["using all three appeals creates more persuasive and balanced arguments", "combining ethos pathos and logos reaches different audience needs", "multiple appeals strengthen overall persuasiveness"]
+    },
+    {
+      "question": "Give an example of when ethos would be most important.",
+      "expectedAny": ["when establishing expert credibility in professional settings", "when a doctor gives medical advice requiring trust", "when credentials matter to audience acceptance"]
+    },
+    {
+      "question": "How can pathos be used effectively without manipulation?",
+      "expectedAny": ["by connecting genuinely to audience values and experiences", "through authentic stories that support logical arguments", "by balancing emotion with facts and credibility"]
+    },
+    {
+      "question": "What role does evidence play in logos?",
+      "expectedAny": ["evidence provides factual support for logical arguments", "data and facts strengthen rational appeals", "evidence makes logos-based claims verifiable"]
+    },
+    {
+      "question": "How does understanding rhetoric improve communication?",
+      "expectedAny": ["rhetoric helps identify persuasive strategies and craft effective messages", "understanding appeals makes communication more purposeful and impactful", "rhetorical knowledge improves analysis and creation of arguments"]
+    },
+    {
+      "question": "Why is audience important in the rhetorical triangle?",
+      "expectedAny": ["the audience determines which appeals will be most effective", "understanding audience needs guides message and strategy", "audience shapes how speakers choose ethos pathos or logos"]
+    }
+  ]
 }

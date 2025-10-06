@@ -46,6 +46,14 @@ body {
 .ms-spinner { position: relative; box-sizing: border-box; width:72px; height:72px; border:7px solid rgba(255,255,255,0.25); border-top-color:#ffffff; border-radius:50%; animation: msSpinFade 0.85s linear infinite; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.45)); }
 .ms-spinner::after { content:""; position:absolute; inset:12px; border:4px solid transparent; border-top-color:#c7442e; border-radius:50%; animation: msSpinFade 1.4s linear infinite reverse; }
 
+/* Brand red checkboxes for facilitator lesson approval */
+input[type="checkbox"].brand-checkbox {
+  accent-color: #c7442e;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
 /* Legacy-style spinner accent: animated conic ring behind core spinner */
 .ms-spinner-legacy {
   position: relative;

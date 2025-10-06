@@ -13,7 +13,7 @@ export default function LessonMakerPage(){
   const [tier, setTier] = useState('free')
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({
-    grade:'', difficulty:'intermediate', subject:'math', title:'', description:'', notes:''
+    grade:'', difficulty:'intermediate', subject:'math', title:'', description:'', notes:'', vocab:''
   })
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
@@ -94,6 +94,9 @@ export default function LessonMakerPage(){
         <label style={label}>Short Description</label>
         <textarea style={{...input, minHeight:80}} value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="What this lesson covers and the key skills." />
 
+        <label style={label}>Vocabulary Terms (optional)</label>
+        <textarea style={{...input, minHeight:80}} value={form.vocab} onChange={e=>setForm(f=>({...f,vocab:e.target.value}))} placeholder="Enter vocabulary terms, one per line or comma-separated." />
+
         <label style={label}>Additional Notes (optional)</label>
         <textarea style={{...input, minHeight:80}} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} placeholder="Constraints, examples to include, or standards." />
 
@@ -102,6 +105,12 @@ export default function LessonMakerPage(){
         </div>
       </form>
       {message && <p style={{ marginTop:12 }}>{message}</p>}
+      
+      <div style={{ marginTop:24, paddingTop:24, borderTop:'1px solid #e5e7eb' }}>
+        <a href="/facilitator/tools/generated" style={{ ...btn, textDecoration:'none', background:'#374151', borderColor:'#374151' }}>
+          View Generated Lessons
+        </a>
+      </div>
     </main>
   )
 }

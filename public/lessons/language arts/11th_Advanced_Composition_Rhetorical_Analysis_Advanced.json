@@ -1,4 +1,4 @@
-{
+﻿{
   "id": "11th_Advanced_Composition_Rhetorical_Analysis_Advanced",
   "title": "Advanced Composition: Rhetorical Analysis",
   "grade": "11th",
@@ -26,49 +26,224 @@
     }
   ],
   "teachingNotes": "Explore sophisticated rhetorical theory and analysis. Examine how context shapes meaning and effectiveness.",
-  "sample": {
-    "question": "What is rhetoric that generates rather than transmits knowledge?",
-    "expectedAny": [
-      "epistemic rhetoric",
-      "knowledge-generating rhetoric",
-      "epistemic discourse",
-      "generative rhetoric"
-    ]
-  },
-  "truefalse": {
-    "question": "Kairos involves strategic use of timing in rhetoric.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is a rhetorical syllogism with implied premises?",
-    "expectedAny": [
-      "enthymeme",
-      "rhetorical argument",
-      "implied syllogism",
-      "assumed reasoning"
-    ]
-  },
-  "fillintheblank": {
-    "question": "An urgent situation demanding rhetorical response is an ________.",
-    "expectedAny": [
-      "exigence",
-      "exigency",
-      "urgent situation",
-      "rhetorical emergency"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does rhetorical ecology expand traditional analysis?",
-    "expectedAny": [
-      "includes environment",
-      "network approach",
-      "contextual factors",
-      "systemic view"
-    ]
-  }
+  "sample": [
+    {
+      "question": "What is rhetoric that generates rather than transmits knowledge?",
+      "expectedAny": ["epistemic rhetoric", "knowledge-generating rhetoric", "epistemic discourse", "generative rhetoric", "knowledge creating rhetoric", "epistemic function"]
+    },
+    {
+      "question": "What is an urgent problem demanding rhetorical response?",
+      "expectedAny": ["exigence", "rhetorical exigence", "urgent situation", "pressing problem", "rhetorical urgency", "compelling situation"]
+    },
+    {
+      "question": "What is strategic use of timing in rhetoric?",
+      "expectedAny": ["kairos", "rhetorical timing", "opportune moment", "strategic timing", "appropriate time", "right moment"]
+    },
+    {
+      "question": "What is a rhetorical syllogism with implied premises?",
+      "expectedAny": ["enthymeme", "rhetorical syllogism", "implied argument", "incomplete syllogism", "abbreviated argument", "implicit syllogism"]
+    },
+    {
+      "question": "What is the network of relationships in rhetoric?",
+      "expectedAny": ["rhetorical ecology", "rhetorical environment", "discourse network", "communication ecology", "rhetorical system", "contextual network"]
+    },
+    {
+      "question": "What type of rhetoric creates knowledge?",
+      "expectedAny": ["epistemic rhetoric", "knowledge-generating discourse", "epistemic communication", "generative rhetoric"]
+    },
+    {
+      "question": "What calls for a rhetorical response?",
+      "expectedAny": ["exigence", "urgent problem", "rhetorical situation", "pressing issue"]
+    },
+    {
+      "question": "What considers context and timing together?",
+      "expectedAny": ["kairos", "opportune moment", "rhetorical timing", "contextual timing"]
+    },
+    {
+      "question": "What argument relies on unstated assumptions?",
+      "expectedAny": ["enthymeme", "implicit argument", "rhetorical syllogism", "implied reasoning"]
+    },
+    {
+      "question": "What examines rhetoric as an interconnected system?",
+      "expectedAny": ["rhetorical ecology", "discourse ecology", "communication network", "rhetorical environment"]
+    }
+  ],
+  "truefalse": [
+    {
+      "question": "Kairos involves strategic use of timing in rhetoric.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Epistemic rhetoric only transmits existing knowledge.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Exigence is an urgent situation demanding response.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Enthymemes state all their premises explicitly.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Rhetorical ecology examines interconnected relationships.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Epistemic rhetoric generates new knowledge.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Kairos ignores context and timing.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Exigence creates rhetorical situations.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Enthymemes are complete formal syllogisms.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Rhetorical ecology considers environment and audience.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "What generates rather than transmits knowledge?",
+      "choices": ["Traditional rhetoric", "Epistemic rhetoric", "Simple rhetoric", "Basic rhetoric"],
+      "correct": "Epistemic rhetoric"
+    },
+    {
+      "question": "What demands rhetorical response?",
+      "choices": ["Style", "Exigence", "Grammar", "Format"],
+      "correct": "Exigence"
+    },
+    {
+      "question": "What considers timing and context?",
+      "choices": ["Logos", "Pathos", "Kairos", "Ethos"],
+      "correct": "Kairos"
+    },
+    {
+      "question": "What has implied premises?",
+      "choices": ["Syllogism", "Enthymeme", "Metaphor", "Simile"],
+      "correct": "Enthymeme"
+    },
+    {
+      "question": "What examines rhetorical networks?",
+      "choices": ["Ecology", "Biology", "Chemistry", "Physics"],
+      "correct": "Ecology"
+    },
+    {
+      "question": "What creates new understanding?",
+      "choices": ["Static rhetoric", "Epistemic rhetoric", "Fixed rhetoric", "Simple rhetoric"],
+      "correct": "Epistemic rhetoric"
+    },
+    {
+      "question": "What is an urgent problem?",
+      "choices": ["Style", "Tone", "Exigence", "Diction"],
+      "correct": "Exigence"
+    },
+    {
+      "question": "What is the opportune moment?",
+      "choices": ["Chronos", "Kairos", "Logos", "Mythos"],
+      "correct": "Kairos"
+    },
+    {
+      "question": "What is a rhetorical syllogism?",
+      "choices": ["Metaphor", "Simile", "Enthymeme", "Hyperbole"],
+      "correct": "Enthymeme"
+    },
+    {
+      "question": "What studies rhetorical relationships?",
+      "choices": ["Syntax", "Grammar", "Ecology", "Spelling"],
+      "correct": "Ecology"
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "_____ rhetoric generates rather than transmits knowledge.",
+      "expectedAny": ["epistemic", "knowledge-generating", "generative"]
+    },
+    {
+      "question": "_____ is an urgent problem demanding response.",
+      "expectedAny": ["exigence", "rhetorical exigence", "urgency"]
+    },
+    {
+      "question": "_____ involves strategic timing and context.",
+      "expectedAny": ["kairos", "opportune moment", "timing"]
+    },
+    {
+      "question": "An _____ is a syllogism with implied premises.",
+      "expectedAny": ["enthymeme", "implicit argument", "rhetorical syllogism"]
+    },
+    {
+      "question": "_____ ecology examines rhetorical relationships.",
+      "expectedAny": ["rhetorical", "discourse", "communication"]
+    },
+    {
+      "question": "_____ rhetoric creates new understanding.",
+      "expectedAny": ["epistemic", "generative", "knowledge-creating"]
+    },
+    {
+      "question": "A rhetorical situation requires an _____.",
+      "expectedAny": ["exigence", "urgent problem", "pressing issue"]
+    },
+    {
+      "question": "The _____ moment considers perfect timing.",
+      "expectedAny": ["kairos", "opportune", "right"]
+    },
+    {
+      "question": "Audiences fill in _____ premises in enthymemes.",
+      "expectedAny": ["implied", "unstated", "missing"]
+    },
+    {
+      "question": "_____ examines rhetoric as interconnected systems.",
+      "expectedAny": ["ecology", "rhetorical ecology", "discourse ecology"]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Explain what makes rhetoric epistemic rather than merely transmissive.",
+      "expectedAny": ["epistemic rhetoric generates new knowledge through discourse rather than just conveying existing ideas", "rhetorical acts create understanding and meaning rather than simply transmitting information", "epistemic rhetoric views language as constitutive of knowledge not just representative"]
+    },
+    {
+      "question": "How does exigence create rhetorical situations?",
+      "expectedAny": ["exigence is an urgent problem that demands response and creates the need for rhetoric", "rhetorical situations arise when exigence requires discourse to address pressing issues", "exigence motivates speakers to engage audiences about important problems"]
+    },
+    {
+      "question": "Why is kairos important in rhetorical effectiveness?",
+      "expectedAny": ["kairos ensures arguments are timely and contextually appropriate for maximum impact", "strategic timing makes rhetoric more persuasive by fitting the moment", "kairos considers when and where rhetoric will be most effective"]
+    },
+    {
+      "question": "How do enthymemes engage audiences differently than formal syllogisms?",
+      "expectedAny": ["enthymemes require audiences to supply missing premises making them active participants", "implicit reasoning invites audiences to complete arguments using shared assumptions", "enthymemes are more persuasive because audiences co-create the logic"]
+    },
+    {
+      "question": "What does rhetorical ecology reveal about communication?",
+      "expectedAny": ["rhetorical ecology shows how rhetoric exists in networks of relationships and contexts", "it reveals that communication is shaped by interconnected environmental factors", "ecology emphasizes the dynamic relationships between rhetoric audience and environment"]
+    },
+    {
+      "question": "Give an example of epistemic rhetoric creating knowledge.",
+      "expectedAny": ["scientific discourse generates new understanding through collaborative argumentation", "political debates create shared meanings and shape public knowledge", "classroom discussions produce insights that emerge through dialogue"]
+    },
+    {
+      "question": "How can recognizing exigence improve rhetorical analysis?",
+      "expectedAny": ["identifying exigence helps explain why rhetoric emerges and what it responds to", "understanding the urgent problem clarifies the speaker's purpose and constraints", "exigence reveals the motivating situation behind rhetorical choices"]
+    },
+    {
+      "question": "Describe a situation where kairos matters greatly.",
+      "expectedAny": ["announcing a controversial decision requires careful timing to minimize backlash", "election speeches must align with campaign momentum and voter concerns", "crisis communication demands immediate response at the right moment"]
+    },
+    {
+      "question": "Why do effective arguments often use enthymemes?",
+      "expectedAny": ["enthymemes are persuasive because they rely on shared cultural assumptions", "implied premises make arguments more efficient and engaging", "audiences find enthymemes compelling when they supply missing logic"]
+    },
+    {
+      "question": "How does rhetorical ecology change how we study communication?",
+      "expectedAny": ["it shifts focus from individual texts to systems of relationships and contexts", "ecology emphasizes how rhetoric circulates and transforms across networks", "viewing rhetoric ecologically reveals interconnected influences on meaning"]
+    }
+  ]
 }

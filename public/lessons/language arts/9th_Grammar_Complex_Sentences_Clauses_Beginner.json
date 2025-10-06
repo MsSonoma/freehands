@@ -1,76 +1,74 @@
-{
+﻿{
   "id": "9th_Grammar_Complex_Sentences_Clauses_Beginner",
   "title": "Grammar: Complex Sentences and Clauses",
   "grade": "9th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "complex sentence",
-      "definition": "Sentence with one independent clause and at least one dependent clause"
-    },
-    {
-      "term": "independent clause",
-      "definition": "Group of words that can stand alone as a complete sentence"
-    },
-    {
-      "term": "dependent clause",
-      "definition": "Group of words that cannot stand alone as a sentence"
-    },
-    {
-      "term": "subordinating conjunction",
-      "definition": "Word that connects dependent clause to independent clause"
-    },
-    {
-      "term": "relative pronoun",
-      "definition": "Pronoun that introduces relative clauses (who, which, that)"
-    }
+    {"term": "complex sentence", "definition": "Sentence with one independent clause and at least one dependent clause"},
+    {"term": "independent clause", "definition": "Group of words that can stand alone as a complete sentence"},
+    {"term": "dependent clause", "definition": "Group of words that cannot stand alone as a sentence"},
+    {"term": "subordinating conjunction", "definition": "Word that connects dependent clause to independent clause"},
+    {"term": "relative pronoun", "definition": "Pronoun that introduces relative clauses (who, which, that)"}
   ],
   "teachingNotes": "Practice identifying and creating complex sentences. Focus on proper punctuation with dependent clauses.",
-  "sample": {
-    "question": "What is a sentence with one independent and one dependent clause?",
-    "expectedAny": [
-      "complex sentence",
-      "complex",
-      "compound-complex sentence",
-      "multi-clause sentence"
-    ]
-  },
-  "truefalse": {
-    "question": "An independent clause can stand alone as a complete sentence.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What connects a dependent clause to an independent clause?",
-    "expectedAny": [
-      "subordinating conjunction",
-      "subordinator",
-      "dependent connector",
-      "clause connector"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A group of words that cannot stand alone is a ________ clause.",
-    "expectedAny": [
-      "dependent",
-      "subordinate",
-      "incomplete",
-      "non-independent"
-    ]
-  },
-  "shortanswer": {
-    "question": "Give an example of a subordinating conjunction.",
-    "expectedAny": [
-      "because",
-      "although",
-      "when",
-      "if",
-      "since",
-      "while"
-    ]
-  }
+  "sample": [
+    {"question": "What is a complex sentence?", "expectedAny": ["sentence with one independent and one dependent clause", "sentence with independent and dependent clauses", "multi-clause sentence"]},
+    {"question": "What is an independent clause?", "expectedAny": ["group of words that can stand alone", "complete sentence", "clause that stands alone"]},
+    {"question": "What is a dependent clause?", "expectedAny": ["group of words that cannot stand alone", "incomplete clause", "subordinate clause"]},
+    {"question": "What is a subordinating conjunction?", "expectedAny": ["word that connects dependent to independent clause", "conjunction for dependent clauses", "word like because or although", "joining word", "connecting word"]},
+    {"question": "What is a relative pronoun?", "expectedAny": ["pronoun that introduces relative clauses", "who, which, or that", "pronoun like who or which"]},
+    {"question": "Give an example of a subordinating conjunction.", "expectedAny": ["because", "although", "when", "if", "since", "while", "unless", "after", "before"]},
+    {"question": "Can an independent clause stand alone?", "expectedAny": ["yes", "it can stand alone", "yes it can"]},
+    {"question": "Can a dependent clause stand alone?", "expectedAny": ["no", "it cannot stand alone", "no it cannot"]},
+    {"question": "Name a relative pronoun.", "expectedAny": ["who", "which", "that", "whom", "whose"]},
+    {"question": "How many independent clauses are in a complex sentence?", "expectedAny": ["one", "1", "only one"]}
+  ],
+  "truefalse": [
+    {"question": "An independent clause can stand alone as a complete sentence. (True or False)", "correct": true},
+    {"question": "A dependent clause can stand alone as a sentence. (True or False)", "correct": false},
+    {"question": "A complex sentence has one independent and one dependent clause. (True or False)", "correct": true},
+    {"question": "Subordinating conjunctions connect dependent clauses. (True or False)", "correct": true},
+    {"question": "Who, which, and that are relative pronouns. (True or False)", "correct": true},
+    {"question": "A complex sentence must have two independent clauses. (True or False)", "correct": false},
+    {"question": "Because is a subordinating conjunction. (True or False)", "correct": true},
+    {"question": "All clauses can stand alone. (True or False)", "correct": false},
+    {"question": "A dependent clause is also called a subordinate clause. (True or False)", "correct": true},
+    {"question": "A complex sentence is simpler than a simple sentence. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "What connects a dependent clause to an independent clause?", "choices": [{"letter": "A", "text": "Period"}, {"letter": "B", "text": "Subordinating conjunction"}, {"letter": "C", "text": "Comma only"}, {"letter": "D", "text": "Semicolon"}], "correct": "B"},
+    {"question": "Which is an independent clause?", "choices": [{"letter": "A", "text": "Because I was tired"}, {"letter": "B", "text": "When she arrives"}, {"letter": "C", "text": "I went to bed"}, {"letter": "D", "text": "Although it rained"}], "correct": "C"},
+    {"question": "Which is a subordinating conjunction?", "choices": [{"letter": "A", "text": "And"}, {"letter": "B", "text": "But"}, {"letter": "C", "text": "Although"}, {"letter": "D", "text": "Or"}], "correct": "C"},
+    {"question": "What is a dependent clause also called?", "choices": [{"letter": "A", "text": "Main clause"}, {"letter": "B", "text": "Subordinate clause"}, {"letter": "C", "text": "Complete clause"}, {"letter": "D", "text": "Simple clause"}], "correct": "B"},
+    {"question": "Which is a relative pronoun?", "choices": [{"letter": "A", "text": "And"}, {"letter": "B", "text": "Because"}, {"letter": "C", "text": "Who"}, {"letter": "D", "text": "Very"}], "correct": "C"},
+    {"question": "How many clauses does a complex sentence need?", "choices": [{"letter": "A", "text": "One"}, {"letter": "B", "text": "At least two"}, {"letter": "C", "text": "Exactly three"}, {"letter": "D", "text": "Four or more"}], "correct": "B"},
+    {"question": "What type of clause can stand alone?", "choices": [{"letter": "A", "text": "Dependent"}, {"letter": "B", "text": "Subordinate"}, {"letter": "C", "text": "Independent"}, {"letter": "D", "text": "Relative"}], "correct": "C"},
+    {"question": "Which starts a dependent clause?", "choices": [{"letter": "A", "text": "The dog"}, {"letter": "B", "text": "Because"}, {"letter": "C", "text": "I think"}, {"letter": "D", "text": "She runs"}], "correct": "B"},
+    {"question": "A complex sentence has:", "choices": [{"letter": "A", "text": "One independent clause only"}, {"letter": "B", "text": "Two independent clauses"}, {"letter": "C", "text": "One independent and one dependent"}, {"letter": "D", "text": "All dependent clauses"}], "correct": "C"},
+    {"question": "Which is NOT a relative pronoun?", "choices": [{"letter": "A", "text": "Who"}, {"letter": "B", "text": "Which"}, {"letter": "C", "text": "That"}, {"letter": "D", "text": "Because"}], "correct": "D"}
+  ],
+  "fillintheblank": [
+    {"question": "A group of words that cannot stand alone is a _____ clause.", "expectedAny": ["dependent", "subordinate"]},
+    {"question": "An _____ clause can stand alone as a sentence.", "expectedAny": ["independent", "main"]},
+    {"question": "A _____ sentence has one independent and one dependent clause.", "expectedAny": ["complex"]},
+    {"question": "A _____ conjunction connects a dependent clause to an independent clause.", "expectedAny": ["subordinating"]},
+    {"question": "Who, which, and that are _____ pronouns.", "expectedAny": ["relative"]},
+    {"question": "Because, although, and when are _____ conjunctions.", "expectedAny": ["subordinating"]},
+    {"question": "A dependent clause is also called a _____ clause.", "expectedAny": ["subordinate"]},
+    {"question": "An independent clause is also called a _____ clause.", "expectedAny": ["main"]},
+    {"question": "A complex sentence contains at least _____ clauses.", "expectedAny": ["two", "2"]},
+    {"question": "The word that introduces a relative clause is a relative _____.", "expectedAny": ["pronoun"]}
+  ],
+  "shortanswer": [
+    {"question": "What makes a clause independent?", "keyTerms": ["stand", "alone", "complete", "sentence"], "expectedAny": ["It can stand alone as a complete sentence", "An independent clause is complete on its own", "It expresses a complete thought and can stand alone"]},
+    {"question": "What is the difference between independent and dependent clauses?", "keyTerms": ["independent", "stand", "alone", "dependent", "cannot"], "expectedAny": ["Independent clauses can stand alone but dependent clauses cannot", "Independent clauses are complete but dependent clauses are incomplete", "Independent clauses express complete thoughts while dependent clauses do not"]},
+    {"question": "Give an example of a complex sentence.", "keyTerms": ["independent", "dependent", "conjunction"], "expectedAny": ["Although it rained, we went outside", "I stayed home because I was sick", "When the bell rings, class begins"]},
+    {"question": "What role do subordinating conjunctions play?", "keyTerms": ["connect", "dependent", "independent", "clause"], "expectedAny": ["They connect dependent clauses to independent clauses", "Subordinating conjunctions join dependent and independent clauses", "They show the relationship between dependent and independent clauses"]},
+    {"question": "Name three subordinating conjunctions.", "keyTerms": ["because", "although", "when", "if", "since", "while"], "expectedAny": ["because, although, when", "if, since, while", "after, before, unless"]},
+    {"question": "What are relative pronouns used for?", "keyTerms": ["introduce", "relative", "clause", "connect"], "expectedAny": ["They introduce relative clauses", "Relative pronouns connect relative clauses to nouns", "They start clauses that describe nouns"]},
+    {"question": "Why is a dependent clause called dependent?", "keyTerms": ["depends", "independent", "incomplete", "cannot"], "expectedAny": ["It depends on an independent clause to make sense", "It cannot stand alone and needs another clause", "It is incomplete without an independent clause"]},
+    {"question": "How do you identify a complex sentence?", "keyTerms": ["one", "independent", "dependent", "conjunction"], "expectedAny": ["Look for one independent and at least one dependent clause", "Find a sentence with a subordinating conjunction joining clauses", "Identify sentences with both independent and dependent clauses"]},
+    {"question": "What punctuation is often used with dependent clauses?", "keyTerms": ["comma", "beginning", "introductory"], "expectedAny": ["A comma when the dependent clause comes first", "Commas separate introductory dependent clauses", "Use a comma after a dependent clause at the beginning"]},
+    {"question": "How does a complex sentence differ from a simple sentence?", "keyTerms": ["complex", "clauses", "simple", "one"], "expectedAny": ["Complex sentences have multiple clauses while simple sentences have one", "Simple sentences have one independent clause but complex have dependent clauses too", "Complex sentences are more detailed with dependent clauses added"]}
+  ]
 }

@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Use character maps and graphic organizers. Analyze how characters change from beginning to end. Discuss internal vs. external conflicts that drive character development.",
-  "sample": {
-    "question": "What do we call the main character in a story?",
-    "expectedAny": [
-      "protagonist",
-      "main character",
-      "hero",
-      "central character"
-    ]
-  },
-  "truefalse": {
-    "question": "Character development shows how a character changes throughout a story.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the character or force that opposes the main character?",
-    "expectedAny": [
-      "antagonist",
-      "villain",
-      "opposing character",
-      "conflict creator"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The reason why a character acts a certain way is their ________.",
-    "expectedAny": [
-      "motivation",
-      "motive",
-      "driving force",
-      "reason"
-    ]
-  },
-  "shortanswer": {
-    "question": "How can you tell if a character has developed during a story?",
-    "expectedAny": [
-      "compare beginning to end",
-      "character changes attitudes or actions",
-      "learns lessons or grows",
-      "overcomes challenges differently"
-    ]
-  }
+  "sample": [
+    { "question": "What do we call the main character in a story?", "expectedAny": ["protagonist", "main character", "hero"] },
+    { "question": "Which opposes the protagonist?", "choices": ["Friend", "Antagonist", "Setting", "Theme"], "correct": 1, "expectedAny": ["antagonist"] },
+    { "question": "How a character changes is called character ________.", "expectedAny": ["development"] },
+    { "question": "The reason a character acts is their ________.", "expectedAny": ["motivation"] },
+    { "question": "Which is a character trait?", "choices": ["Blue sky", "Brave", "Thursday", "Pencil"], "correct": 1, "expectedAny": ["brave"] },
+    { "question": "A quality describing personality is a character ________.", "expectedAny": ["trait"] },
+    { "question": "The main character is the ________.", "expectedAny": ["protagonist"] },
+    { "question": "Which shows motivation?", "choices": ["He is tall.", "She acts to help her family.", "The setting is nice.", "It's sunny."], "correct": 1, "expectedAny": ["she acts to help her family"] },
+    { "question": "Name a protagonist from any story.", "expectedAny": ["Harry Potter", "Katniss", "any story protagonist"] },
+    { "question": "What drives character actions?", "expectedAny": ["motivation", "reasons", "goals"] }
+  ],
+  "truefalse": [
+    { "question": "Character development shows how a character changes throughout a story.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The antagonist is always the main character.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Motivation is the reason why a character acts.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All characters stay exactly the same from start to finish.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The protagonist is the main character.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Character traits describe a character's personality.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Every story must have both protagonist and antagonist.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Character development can show growth or change.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Motivation has nothing to do with character actions.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Analyzing characters helps understand stories better.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is the character or force that opposes the main character?", "choices": ["Protagonist", "Antagonist", "Setting", "Theme"], "correct": 1, "expectedAny": ["antagonist"] },
+    { "question": "What describes a character's personality?", "choices": ["Setting", "Character trait", "Plot", "Title"], "correct": 1, "expectedAny": ["character trait"] },
+    { "question": "What is motivation?", "choices": ["Where story happens", "Why character acts", "The ending", "The title"], "correct": 1, "expectedAny": ["why character acts"] },
+    { "question": "Which shows character development?", "choices": ["Character stays same", "Character learns and changes", "Setting changes", "No change occurs"], "correct": 1, "expectedAny": ["character learns and changes"] },
+    { "question": "Who is the protagonist?", "choices": ["The villain", "The main character", "The setting", "The theme"], "correct": 1, "expectedAny": ["the main character"] },
+    { "question": "Which is a character trait?", "choices": ["Generous", "Tuesday", "Blue", "Fast car"], "correct": 0, "expectedAny": ["generous"] },
+    { "question": "What can drive character development?", "choices": ["Page numbers", "Conflicts and challenges", "Font size", "Cover design"], "correct": 1, "expectedAny": ["conflicts and challenges"] },
+    { "question": "Which analyzes characters?", "choices": ["Ignoring the story", "Examining traits and changes", "Counting words", "Drawing pictures"], "correct": 1, "expectedAny": ["examining traits and changes"] },
+    { "question": "What opposes the hero?", "choices": ["Protagonist", "Friend", "Antagonist", "Reader"], "correct": 2, "expectedAny": ["antagonist"] },
+    { "question": "Character motivation explains:", "choices": ["The setting", "Why they act", "The title", "The author"], "correct": 1, "expectedAny": ["why they act"] }
+  ],
+  "fillintheblank": [
+  { "question": "The reason why a character acts a certain way is their ________.", "expectedAny": ["motivation", "motive", "driving reason"] },
+    { "question": "The main character is called the ________.", "expectedAny": ["protagonist"] },
+    { "question": "The character who opposes the main character is the ________.", "expectedAny": ["antagonist"] },
+  { "question": "How a character changes is called character ________.", "expectedAny": ["development", "growth"] },
+    { "question": "A quality describing personality is a character ________.", "expectedAny": ["trait"] },
+    { "question": "________ drives a character's actions and decisions.", "expectedAny": ["motivation"] },
+    { "question": "Character ________ shows growth throughout the story.", "expectedAny": ["development"] },
+    { "question": "The ________ is the hero or main character.", "expectedAny": ["protagonist"] },
+  { "question": "Brave, kind, and selfish are examples of character ________.", "expectedAny": ["traits", "character traits"] },
+    { "question": "The ________ creates conflict for the protagonist.", "expectedAny": ["antagonist"] }
+  ],
+  "shortanswer": [
+  { "question": "How can you tell if a character has developed during a story?", "expectedAny": ["compare beginning to end", "character changes attitudes", "learns lessons", "growth shown across the plot"] },
+    { "question": "Give an example of character motivation.", "expectedAny": ["wanting to save family", "seeking revenge", "finding love", "achieving a goal"] },
+    { "question": "Name two character traits for a hero.", "expectedAny": ["brave and loyal", "kind and determined", "honest and strong"] },
+    { "question": "What is the difference between protagonist and antagonist?", "expectedAny": ["protagonist is main character", "antagonist opposes protagonist", "hero vs. villain"] },
+    { "question": "How do conflicts help character development?", "expectedAny": ["challenges cause growth", "force characters to change", "test character traits"] },
+    { "question": "Describe a character who shows development.", "expectedAny": ["starts selfish becomes generous", "begins afraid becomes brave", "changes through experience"] },
+    { "question": "Why is character motivation important?", "expectedAny": ["explains actions", "makes characters believable", "drives the plot"] },
+    { "question": "Give an example of an antagonist.", "expectedAny": ["Voldemort", "any villain", "opposing force"] },
+    { "question": "What traits might a villain have?", "expectedAny": ["cruel and selfish", "dishonest and mean", "power-hungry"] },
+    { "question": "How can you analyze a character?", "expectedAny": ["examine traits and actions", "look at motivations", "track changes throughout story"] }
+  ]
 }

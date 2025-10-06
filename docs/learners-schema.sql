@@ -32,6 +32,7 @@ alter table public.learners add column if not exists exercise int;
 alter table public.learners add column if not exists worksheet int;
 alter table public.learners add column if not exists test int;
 alter table public.learners add column if not exists targets jsonb;
+alter table public.learners add column if not exists approved_lessons jsonb;
 alter table public.learners add column if not exists created_at timestamptz default now();
 
 -- Keep JSONB targets and flat numeric columns in sync on write

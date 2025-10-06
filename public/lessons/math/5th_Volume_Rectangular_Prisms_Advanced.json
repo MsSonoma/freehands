@@ -23,31 +23,87 @@
     {
       "term": "formula",
       "definition": "A mathematical rule expressed as symbols that shows how to calculate something"
+    },
+    {
+      "term": "base area",
+      "definition": "The area of the base face (length × width) used in V = (base area) × height"
+    },
+    {
+      "term": "net (3D)",
+      "definition": "A 2D pattern that can be folded to form a 3D shape"
     }
   ],
   "teachingNotes": "Teach the formula Volume = length × width × height. Practice with real-world examples like boxes and containers. Emphasize using cubic units for volume measurements.",
-  "sample": {
-    "question": "Find the volume of a box that is 4 inches long, 3 inches wide, and 2 inches tall.",
-    "expectedAny": ["24 cubic inches", "24 in³", "24", "twenty-four cubic inches"]
-  },
-  "truefalse": {
-    "question": "A cube with sides of 3 feet has a volume of 27 cubic feet.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is the volume of a rectangular prism with length 5 cm, width 2 cm, and height 4 cm?",
-    "expectedAny": ["40 cubic cm", "40 cm³", "40", "forty cubic centimeters"]
-  },
-  "fillintheblank": {
-    "question": "The formula for finding the volume of a rectangular prism is V = l × w × ________.",
-    "expectedAny": ["h", "height", "h (height)", "the height"]
-  },
-  "shortanswer": {
-    "question": "A storage container measures 8 feet by 6 feet by 5 feet. What is its volume?",
-    "expectedAny": ["240 cubic feet", "240 ft³", "240", "two hundred forty cubic feet"]
-  },
-  "wordProblems": {
-    "question": "Sarah's fish tank is 20 inches long, 10 inches wide, and 12 inches high. How many cubic inches of water can it hold?",
-    "expectedAny": ["2400 cubic inches", "2400 in³", "2400", "two thousand four hundred cubic inches"]
-  }
+  "sample": [
+    { "question": "Find the volume of a box that is 4 inches long, 3 inches wide, and 2 inches tall.", "expectedAny": ["24 cubic inches", "24 in³", "24", "twenty-four cubic inches", "24 in^3"] },
+    { "question": "What is V for l=5, w=2, h=4?", "expectedAny": ["40", "40 cm³", "40 cubic centimeters"] },
+    { "question": "Volume of cube with side 3 m?", "expectedAny": ["27 m³", "27"] },
+  { "question": "What are the units for volume?", "expectedAny": ["cubic units", "units cubed", "units to the third power"] },
+    { "question": "V = l × w × ________.", "expectedAny": ["h", "height"] },
+    { "question": "If l=10, w=1, h=1, then V= ________.", "expectedAny": ["10"] },
+    { "question": "If any dimension is 0, volume is ________.", "expectedAny": ["0", "zero"] },
+    { "question": "Volume measures the ________ of space inside.", "expectedAny": ["amount"] },
+  { "question": "Units like in³ or cm³ are ________ units.", "expectedAny": ["cubic", "cubed"] },
+    { "question": "If l doubles, V ________.", "expectedAny": ["doubles"] }
+  ],
+  "truefalse": [
+    { "question": "A cube with sides of 3 feet has a volume of 27 cubic feet.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Volume uses square units.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "V = l × w × h is the formula for a rectangular prism.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "If height is 0, the volume is still positive.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "If you triple l, the volume triples (when w and h are fixed).", "expectedAny": ["true", "yes", "t", "correct"] },
+  { "question": "Changing units from cm to m does not change the number for volume.", "expectedAny": ["false", "no", "f", "incorrect", "unit conversion changes the number"] },
+    { "question": "A prism 2×3×4 has the same volume as 3×2×4.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Volume is measured in 1D units.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Doubling all three dimensions increases volume by 8×.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A prism 5×0×4 has zero volume.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is the volume of a rectangular prism with length 5 cm, width 2 cm, and height 4 cm?", "choices": ["20 cm³", "30 cm³", "40 cm³", "50 cm³"], "correct": 2, "expectedAny": ["40 cubic cm", "40 cm³", "40", "forty cubic centimeters"] },
+  { "question": "Which units are correct for volume?", "choices": ["cm²", "cm³", "cm", "cm⁻¹"], "correct": 1, "expectedAny": ["cubic units", "cm³", "cubic centimeters"] },
+    { "question": "A cube has side 4 in. Volume?", "choices": ["12 in³", "16 in³", "32 in³", "64 in³"], "correct": 3, "expectedAny": ["64 in³"] },
+    { "question": "If l=10, w=2, h=0.5, volume?", "choices": ["5", "10", "15", "20"], "correct": 1, "expectedAny": ["10"] },
+    { "question": "If l doubles and w, h stay, volume?", "choices": ["same", "doubles", "triples", "halves"], "correct": 1, "expectedAny": ["doubles"] },
+    { "question": "Prism A: 2×3×4. Prism B: 3×4×2. Compare volumes.", "choices": ["A>B", "A<B", "A=B", "Cannot tell"], "correct": 2, "expectedAny": ["equal"] },
+  { "question": "Which formula finds volume of a rectangular prism?", "choices": ["l + w + h", "l × w × h", "2(l + w)", "l × h"], "correct": 1, "expectedAny": ["l×w×h", "l * w * h", "length times width times height"] },
+    { "question": "If h triples, volume ________.", "choices": ["triples", "doubles", "stays same", "halves"], "correct": 0, "expectedAny": ["triples"] },
+    { "question": "Units of volume for meters are ________.", "choices": ["m", "m²", "m³", "m⁴"], "correct": 2, "expectedAny": ["m³"] },
+    { "question": "If each edge of a cube doubles, the volume becomes ________ times.", "choices": ["2", "4", "6", "8"], "correct": 3, "expectedAny": ["8"] }
+  ],
+  "fillintheblank": [
+    { "question": "The formula for finding the volume of a rectangular prism is V = l × w × ________.", "expectedAny": ["h", "height", "h (height)", "the height"] },
+  { "question": "Volume uses ________ units.", "expectedAny": ["cubic", "cubed", "units cubed"] },
+  { "question": "A cube with side s has volume ________.", "expectedAny": ["s³", "s^3", "s*s*s"] },
+  { "question": "If any dimension is 0, the volume is ________.", "expectedAny": ["0", "zero", "zero volume"] },
+  { "question": "If l=3 and w=5 and h=2, V= ________.", "expectedAny": ["30", "thirty", "3×5×2 = 30"] },
+  { "question": "Doubling all three dimensions increases volume by ________.", "expectedAny": ["8", "eight", "8×"] },
+  { "question": "Volume measures the ________ of space inside.", "expectedAny": ["amount", "capacity", "space", "how much space"] },
+  { "question": "Changing cm to m changes the ________ and the number.", "expectedAny": ["units", "unit", "measurement units", "unit size"] },
+  { "question": "The volume of 10×1×1 is ________.", "expectedAny": ["10", "ten", "10 cubic units"] },
+    { "question": "Units like in³ and ft³ are ________ units.", "expectedAny": ["cubic", "cubed", "volume"] }
+  ],
+  "shortanswer": [
+    { "question": "A storage container measures 8 feet by 6 feet by 5 feet. What is its volume?", "expectedAny": ["240 cubic feet", "240 ft³", "240", "two hundred forty cubic feet", "8×6×5 = 240"] },
+  { "question": "Explain why l×w×h works for rectangular prisms.", "expectedAny": ["layers/area×height", "base area times height", "area of base multiplied by height", "stacking layers of base area"] },
+  { "question": "Compare volumes of 2×3×4 vs 3×2×4.", "expectedAny": ["same", "equal", "equal volumes", "same product", "commutative for multiplication"] },
+  { "question": "Find volume: 12×0.5×4.", "expectedAny": ["24", "24 cubic units", "twenty-four", "12×0.5×4 = 24"] },
+  { "question": "If l doubles and h halves, what can happen to V?", "expectedAny": ["same if w constant", "can stay the same", "unchanged if width fixed", "product l×h stays same"] },
+  { "question": "Compute V for cube with s=10 cm.", "expectedAny": ["1000 cm³", "1000 cubic centimeters", "1000", "10×10×10 = 1000"] },
+  { "question": "Explain effect of changing units from cm to m.", "expectedAny": ["number changes by 10^6 for volume", "unit conversion", "1 m³ = 1,000,000 cm³", "larger unit → smaller number"] },
+  { "question": "Give a real-world example using volume.", "expectedAny": ["box capacity", "aquarium", "container size", "storage bin capacity"] },
+  { "question": "Find V for 7×3×2.", "expectedAny": ["42", "forty-two", "42 cubic units", "7×3×2 = 42"] },
+    { "question": "Why does V become 8× when each edge doubles?", "expectedAny": ["2×2×2=8", "volume scales with the cube", "doubling each dimension multiplies by 2 three times", "(2s)^3 = 8s^3"] }
+  ],
+  "wordProblems": [
+    { "question": "Sarah's fish tank is 20 inches long, 10 inches wide, and 12 inches high. How many cubic inches of water can it hold?", "expectedAny": ["2400 cubic inches", "2400 in³", "2400", "two thousand four hundred cubic inches"] },
+    { "question": "A shipping box is 15×10×8 inches. What is its volume?", "expectedAny": ["1200 in³", "1200"] },
+    { "question": "A storage bin 2×0.5×1.5 meters holds how many m³?", "expectedAny": ["1.5 m³"] },
+    { "question": "A crate 4×3×2 ft is filled with smaller boxes 1×1×1 ft. How many fit?", "expectedAny": ["24"] },
+    { "question": "A pool section is 10×5×2 m. Volume?", "expectedAny": ["100 m³"] },
+    { "question": "A bookshelf cubby 30×30×30 cm in volume is what?", "expectedAny": ["27,000 cm³", "27000"] },
+    { "question": "A tank doubles each dimension from 1×2×3 to 2×4×6. How many times does V change?", "expectedAny": ["8×"] },
+    { "question": "A drawer 18×12×4 in holds how many in³?", "expectedAny": ["864 in³", "864"] },
+    { "question": "A cereal box 25×20×6 cm volume?", "expectedAny": ["3000 cm³"] },
+    { "question": "A toolbox 0.4×0.3×0.2 m volume?", "expectedAny": ["0.024 m³"] }
+  ]
 }

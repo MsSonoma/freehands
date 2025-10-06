@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Practice breaking complex shapes into simpler ones. Use grid paper for area calculations. Connect to real-world applications like flooring and fencing.",
-  "sample": {
-    "question": "What is the distance around the outside of a shape called?",
-    "expectedAny": ["perimeter", "perimeter measurement", "outer distance", "boundary distance"]
-  },
-  "truefalse": {
-    "question": "The area of a rectangle is length times width.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is a shape made of two or more basic shapes called?",
-    "expectedAny": ["composite figure", "complex shape", "combined shape", "composite shape"]
-  },
-  "fillintheblank": {
-    "question": "The amount of space inside a shape is called its ________.",
-    "expectedAny": ["area", "surface area", "interior area", "enclosed area"]
-  },
-  "shortanswer": {
-    "question": "How do you find the area of a parallelogram?",
-    "expectedAny": ["base times height", "b × h", "multiply base by height", "base × height"]
-  },
-  "wordProblems": {
-    "question": "A rectangular garden is 12 feet long and 8 feet wide. How much fencing is needed to go around it?",
-    "expectedAny": ["40 feet", "40 ft", "2(12+8) = 40", "perimeter = 40 feet"]
-  }
+  "sample": [
+    { "question": "What is the distance around the outside of a shape called?", "expectedAny": ["perimeter"] },
+    { "question": "Which measures inside a shape?", "choices": ["Perimeter", "Area", "Length", "Width"], "correct": 1, "expectedAny": ["area"] },
+    { "question": "Space inside is ________.", "expectedAny": ["area"] },
+    { "question": "Distance around is ________.", "expectedAny": ["perimeter"] },
+    { "question": "A shape with 3 sides is a ________.", "expectedAny": ["triangle"] },
+    { "question": "Which has opposite sides parallel?", "choices": ["Triangle", "Parallelogram", "Circle", "Angle"], "correct": 1, "expectedAny": ["parallelogram"] },
+    { "question": "Combined shapes form a ________ figure.", "expectedAny": ["composite"] },
+    { "question": "What is the area unit for a square?", "choices": ["meters", "square meters", "cubic meters", "perimeter"], "correct": 1, "expectedAny": ["square meters", "square units"] },
+    { "question": "Rectangle area is length times ________.", "expectedAny": ["width"] },
+    { "question": "Triangle has ________ sides.", "expectedAny": ["3", "three"] }
+  ],
+  "truefalse": [
+    { "question": "The area of a rectangle is length times width.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Perimeter measures the inside of a shape.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A composite figure contains multiple shapes.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All triangles have four sides.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Perimeter is measured in linear units.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Area is measured in cubic units.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A parallelogram has opposite sides parallel.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Perimeter and area are the same.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Triangle area uses base times height.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Perimeter is always larger than area.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is a shape made of two or more basic shapes called?", "choices": ["Triangle", "Composite figure", "Perimeter", "Angle"], "correct": 1, "expectedAny": ["composite figure"] },
+    { "question": "What is the perimeter of a square with side 5?", "choices": ["10", "15", "20", "25"], "correct": 2, "expectedAny": ["20"] },
+    { "question": "What is the area of a rectangle 4 by 6?", "choices": ["10", "20", "24", "36"], "correct": 2, "expectedAny": ["24"] },
+    { "question": "Which shape has 3 sides?", "choices": ["Square", "Rectangle", "Triangle", "Parallelogram"], "correct": 2, "expectedAny": ["triangle"] },
+    { "question": "What measures space inside?", "choices": ["Perimeter", "Area", "Length", "Width"], "correct": 1, "expectedAny": ["area"] },
+    { "question": "Perimeter of a rectangle 3 by 7?", "choices": ["10", "20", "21", "30"], "correct": 1, "expectedAny": ["20"] },
+    { "question": "Area of a square with side 4?", "choices": ["8", "12", "16", "20"], "correct": 2, "expectedAny": ["16"] },
+    { "question": "What has opposite sides equal and parallel?", "choices": ["Triangle", "Circle", "Parallelogram", "Angle"], "correct": 2, "expectedAny": ["parallelogram"] },
+    { "question": "Area units are:", "choices": ["linear", "square", "cubic", "none"], "correct": 1, "expectedAny": ["square"] },
+    { "question": "Perimeter of a triangle with sides 3, 4, 5?", "choices": ["7", "10", "12", "15"], "correct": 2, "expectedAny": ["12"] }
+  ],
+  "fillintheblank": [
+    { "question": "The amount of space inside a shape is called its ________.", "expectedAny": ["area"] },
+    { "question": "The distance around a shape is the ________.", "expectedAny": ["perimeter"] },
+    { "question": "A shape with three sides is a ________.", "expectedAny": ["triangle"] },
+    { "question": "A ________ figure is made of multiple shapes.", "expectedAny": ["composite"] },
+    { "question": "A quadrilateral with opposite sides parallel is a ________.", "expectedAny": ["parallelogram"] },
+    { "question": "Rectangle area is length times ________.", "expectedAny": ["width"] },
+    { "question": "Triangle area is half base times ________.", "expectedAny": ["height"] },
+    { "question": "Perimeter is measured in ________ units.", "expectedAny": ["linear"] },
+    { "question": "Area is measured in ________ units.", "expectedAny": ["square"] },
+    { "question": "The ________ of a parallelogram is base times height.", "expectedAny": ["area"] }
+  ],
+  "shortanswer": [
+    { "question": "How do you find the area of a parallelogram?", "expectedAny": ["base times height", "b × h", "multiply base by height", "height times base", "h × b"] },
+    { "question": "What is the formula for rectangle area?", "expectedAny": ["length times width", "L × W", "l × w", "width times length", "W × L", "w × l"] },
+    { "question": "How do you find perimeter of a rectangle?", "expectedAny": ["2(l+w)", "add all sides", "2 times length plus width", "2l + 2w", "2(w+l)"] },
+    { "question": "What is the area formula for a triangle?", "expectedAny": ["½ × base × height", "base times height divided by 2", "(b×h)/2", "½ × h × b", "(h×b)/2", "bh/2", "hb/2"] },
+    { "question": "Describe a composite figure.", "expectedAny": ["made of multiple shapes", "combined shapes", "two or more basic shapes"] },
+    { "question": "How do you find perimeter of any polygon?", "expectedAny": ["add all sides", "sum of all sides"] },
+    { "question": "What units are used for area?", "expectedAny": ["square units", "square meters", "square feet"] },
+    { "question": "What is special about a parallelogram?", "expectedAny": ["opposite sides parallel", "opposite sides equal"] },
+    { "question": "How is triangle area different from rectangle?", "expectedAny": ["triangle is half", "divide by 2", "uses ½"] },
+    { "question": "Why use square units for area?", "expectedAny": ["measures two dimensions", "covers surface", "space inside"] }
+  ],
+  "wordProblems": [
+    { "question": "A rectangular garden is 12 feet long and 8 feet wide. How much fencing is needed to go around it?", "expectedAny": ["40 feet", "40", "2(12+8)=40", "40 ft", "40ft"] },
+    { "question": "A room is 10 m by 6 m. What is the floor area?", "expectedAny": ["60 square meters", "60 m²", "60", "60 sq m", "60 m^2"] },
+    { "question": "A triangle has base 8 cm and height 5 cm. Find the area.", "expectedAny": ["20 square cm", "20 cm²", "20", "(8×5)/2=20", "20 sq cm", "20 cm^2"] },
+    { "question": "A square field has side 15 m. What is the perimeter?", "expectedAny": ["60 meters", "60 m", "60", "4×15=60", "60m"] },
+    { "question": "A parallelogram has base 7 in and height 4 in. Find area.", "expectedAny": ["28 square inches", "28 in²", "28", "28 sq in", "28 in^2"] },
+    { "question": "A fence goes around a yard 20 ft by 30 ft. How long is the fence?", "expectedAny": ["100 feet", "100 ft", "100", "2(20+30)=100", "100ft"] },
+    { "question": "A rectangular poster is 2 ft by 3 ft. What is the area?", "expectedAny": ["6 square feet", "6 ft²", "6", "6 sq ft", "6 ft^2"] },
+    { "question": "A triangle with sides 6, 8, 10 cm. What is the perimeter?", "expectedAny": ["24 cm", "24", "6+8+10=24", "24cm"] },
+    { "question": "A square tile has side 5 in. What is its area?", "expectedAny": ["25 square inches", "25 in²", "25", "25 sq in", "25 in^2"] },
+    { "question": "A composite figure has a rectangle 4×6 and a triangle base 4 height 3. Total area?", "expectedAny": ["30 square units", "30", "24+6=30"] }
+  ]
 }

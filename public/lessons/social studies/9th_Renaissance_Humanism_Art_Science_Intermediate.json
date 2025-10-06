@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "9th_Renaissance_Humanism_Art_Science_Intermediate",
   "title": "Renaissance: Humanism, Art, and Scientific Revolution",
   "grade": "9th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "renaissance",
-      "definition": "Period of renewed interest in classical learning and arts (1300-1600)"
-    },
-    {
-      "term": "humanism",
-      "definition": "Intellectual movement emphasizing human potential and achievement"
-    },
-    {
-      "term": "patron",
-      "definition": "Wealthy person who financially supports artists and scholars"
-    },
-    {
-      "term": "scientific method",
-      "definition": "Systematic approach to understanding natural world through observation"
-    },
-    {
-      "term": "printing press",
-      "definition": "Machine that revolutionized book production and spread of ideas"
-    }
+    {"term": "renaissance", "definition": "Period of renewed interest in classical learning and arts (1300-1600)"},
+    {"term": "humanism", "definition": "Intellectual movement emphasizing human potential and achievement"},
+    {"term": "patron", "definition": "Wealthy person who financially supports artists and scholars"},
+    {"term": "scientific method", "definition": "Systematic approach to understanding natural world through observation"},
+    {"term": "printing press", "definition": "Machine that revolutionized book production and spread of ideas"}
   ],
   "teachingNotes": "Emphasize the cultural shift from medieval to modern thinking. Discuss key figures like Leonardo da Vinci and their contributions.",
-  "sample": {
-    "question": "What period renewed interest in classical learning and arts?",
-    "expectedAny": [
-      "renaissance",
-      "Renaissance period",
-      "rebirth period",
-      "cultural revival"
-    ]
-  },
-  "truefalse": {
-    "question": "Humanism emphasized human potential and achievement.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What machine revolutionized book production?",
-    "expectedAny": [
-      "printing press",
-      "Gutenberg press",
-      "movable type press",
-      "printing machine"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A wealthy person who supports artists is called a ________.",
-    "expectedAny": [
-      "patron",
-      "sponsor",
-      "benefactor",
-      "supporter"
-    ]
-  },
-  "shortanswer": {
-    "question": "How did the printing press change European society?",
-    "expectedAny": [
-      "spread literacy and ideas",
-      "made books affordable",
-      "accelerated learning and reform"
-    ]
-  }
+  "sample": [
+    {"question": "What period renewed interest in classical learning and arts?", "expectedAny": ["renaissance", "Renaissance period", "rebirth period", "rebirth of learning"]},
+    {"question": "What is humanism?", "expectedAny": ["emphasizing human potential", "intellectual movement", "focus on human achievement", "valuing human ability"]},
+    {"question": "What is a patron?", "expectedAny": ["wealthy supporter", "financial backer", "sponsor of artists", "art supporter"]},
+    {"question": "What is the scientific method?", "expectedAny": ["systematic observation approach", "method for understanding nature", "systematic inquiry", "scientific approach"]},
+    {"question": "What machine revolutionized book production?", "expectedAny": ["printing press", "press", "Gutenberg press"]},
+    {"question": "When was the Renaissance?", "expectedAny": ["1300-1600", "14th to 16th centuries", "late medieval early modern"]},
+    {"question": "What did humanism emphasize?", "expectedAny": ["human potential and achievement", "human abilities", "individual worth"]},
+    {"question": "What did patrons do?", "expectedAny": ["financially support artists", "sponsor scholars", "fund creative work"]},
+    {"question": "What approach studies nature?", "expectedAny": ["scientific method", "systematic observation", "empirical method"]},
+    {"question": "What did the printing press do?", "expectedAny": ["spread ideas", "mass produce books", "revolutionize knowledge sharing"]}
+  ],
+  "truefalse": [
+    {"question": "Humanism emphasized human potential and achievement. (True or False)", "correct": true},
+    {"question": "The Renaissance occurred in 1300-1600. (True or False)", "correct": true},
+    {"question": "Patrons were poor supporters. (True or False)", "correct": false},
+    {"question": "The printing press revolutionized book production. (True or False)", "correct": true},
+    {"question": "The scientific method uses systematic observation. (True or False)", "correct": true},
+    {"question": "Renaissance means rebirth. (True or False)", "correct": true},
+    {"question": "Humanism ignored human achievement. (True or False)", "correct": false},
+    {"question": "Patrons financially supported artists. (True or False)", "correct": true},
+    {"question": "The scientific method is unsystematic. (True or False)", "correct": false},
+    {"question": "The printing press spread ideas. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What machine revolutionized book production?", "choices": [{"letter": "A", "text": "Loom"}, {"letter": "B", "text": "Printing press"}, {"letter": "C", "text": "Steam engine"}, {"letter": "D", "text": "Telegraph"}], "correct": "B"},
+    {"question": "What movement emphasized human potential?", "choices": [{"letter": "A", "text": "Feudalism"}, {"letter": "B", "text": "Humanism"}, {"letter": "C", "text": "Mercantilism"}, {"letter": "D", "text": "Colonialism"}], "correct": "B"},
+    {"question": "What period renewed classical learning?", "choices": [{"letter": "A", "text": "Medieval"}, {"letter": "B", "text": "Renaissance"}, {"letter": "C", "text": "Ancient"}, {"letter": "D", "text": "Modern"}], "correct": "B"},
+    {"question": "What is a wealthy supporter of arts?", "choices": [{"letter": "A", "text": "Peasant"}, {"letter": "B", "text": "Patron"}, {"letter": "C", "text": "Serf"}, {"letter": "D", "text": "Merchant"}], "correct": "B"},
+    {"question": "What is systematic observation?", "choices": [{"letter": "A", "text": "Religion"}, {"letter": "B", "text": "Philosophy"}, {"letter": "C", "text": "Scientific method"}, {"letter": "D", "text": "Art"}], "correct": "C"},
+    {"question": "When was the Renaissance?", "choices": [{"letter": "A", "text": "1000-1200"}, {"letter": "B", "text": "1300-1600"}, {"letter": "C", "text": "1700-1900"}, {"letter": "D", "text": "800-1000"}], "correct": "B"},
+    {"question": "What did patrons support?", "choices": [{"letter": "A", "text": "Wars"}, {"letter": "B", "text": "Artists and scholars"}, {"letter": "C", "text": "Armies"}, {"letter": "D", "text": "Trade"}], "correct": "B"},
+    {"question": "What spread ideas widely?", "choices": [{"letter": "A", "text": "Handwriting"}, {"letter": "B", "text": "Printing press"}, {"letter": "C", "text": "Singing"}, {"letter": "D", "text": "Painting"}], "correct": "B"},
+    {"question": "What emphasized human achievement?", "choices": [{"letter": "A", "text": "Feudalism"}, {"letter": "B", "text": "Humanism"}, {"letter": "C", "text": "Isolationism"}, {"letter": "D", "text": "Monasticism"}], "correct": "B"},
+    {"question": "What approach understands nature?", "choices": [{"letter": "A", "text": "Random guessing"}, {"letter": "B", "text": "Scientific method"}, {"letter": "C", "text": "Superstition"}, {"letter": "D", "text": "Tradition"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "The _____ renewed interest in classical learning.", "expectedAny": ["renaissance", "Renaissance"]},
+    {"question": "_____ emphasized human potential and achievement.", "expectedAny": ["humanism"]},
+    {"question": "A _____ financially supports artists and scholars.", "expectedAny": ["patron"]},
+    {"question": "The _____ _____ is a systematic approach to understanding nature.", "expectedAny": ["scientific method"]},
+    {"question": "The _____ _____ revolutionized book production.", "expectedAny": ["printing press"]},
+    {"question": "The Renaissance occurred from _____ to _____.", "expectedAny": ["1300-1600", "1300 to 1600"]},
+    {"question": "Humanism focused on _____ potential.", "expectedAny": ["human"]},
+    {"question": "_____ were wealthy supporters of the arts.", "expectedAny": ["patrons"]},
+    {"question": "The scientific method uses systematic _____.", "expectedAny": ["observation", "inquiry"]},
+    {"question": "The printing press spread _____ widely.", "expectedAny": ["ideas", "knowledge", "books"]}
+  ],
+  "shortanswer": [
+    {"question": "What was the Renaissance?", "keyTerms": ["period", "renewed interest", "classical learning", "arts"], "expectedAny": ["Period of renewed interest in classical learning and arts from 1300-1600", "Cultural rebirth focusing on classical knowledge", "Era of artistic and intellectual revival"]},
+    {"question": "What is humanism?", "keyTerms": ["intellectual", "movement", "human potential", "achievement"], "expectedAny": ["Intellectual movement emphasizing human potential and achievement", "Focus on human abilities and worth", "Philosophy celebrating human capacity"]},
+    {"question": "What did patrons do?", "keyTerms": ["wealthy", "financially support", "artists", "scholars"], "expectedAny": ["Wealthy people who financially supported artists and scholars", "Funded creative and intellectual work", "Sponsored Renaissance artists"]},
+    {"question": "What is the scientific method?", "keyTerms": ["systematic", "approach", "observation", "natural world"], "expectedAny": ["Systematic approach to understanding natural world through observation", "Method of inquiry using observation and testing", "Process for scientific investigation"]},
+    {"question": "What did the printing press do?", "keyTerms": ["revolutionized", "book production", "spread", "ideas"], "expectedAny": ["Revolutionized book production and spread of ideas", "Made books widely available", "Enabled mass communication"]},
+    {"question": "Why was the Renaissance important?", "keyTerms": ["cultural shift", "medieval", "modern", "thinking"], "expectedAny": ["Cultural shift from medieval to modern thinking", "Revived classical knowledge and sparked innovation", "Transformed European culture and learning"]},
+    {"question": "How did humanism change thinking?", "keyTerms": ["emphasized", "human", "potential", "individual"], "expectedAny": ["Emphasized human potential and individual worth", "Focused on human achievement rather than just divine", "Celebrated human abilities and reason"]},
+    {"question": "Why were patrons important?", "keyTerms": ["funded", "artists", "enabled", "Renaissance"], "expectedAny": ["Funded artists and scholars enabling Renaissance achievements", "Made artistic and intellectual work possible", "Supported creative innovation"]},
+    {"question": "How does the scientific method work?", "keyTerms": ["observation", "testing", "systematic", "evidence"], "expectedAny": ["Uses systematic observation and testing based on evidence", "Observes nature and tests hypotheses", "Gathers evidence through organized inquiry"]},
+    {"question": "What impact did printing have?", "keyTerms": ["spread", "knowledge", "ideas", "widely"], "expectedAny": ["Spread knowledge and ideas widely and quickly", "Made information accessible to more people", "Revolutionized communication and learning"]}
+  ]
 }

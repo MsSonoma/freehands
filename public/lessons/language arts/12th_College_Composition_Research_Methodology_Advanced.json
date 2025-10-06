@@ -1,74 +1,459 @@
-{
-  "id": "12th_College_Composition_Research_Methodology_Advanced",
-  "title": "College Composition and Research Methodology",
-  "grade": "12th",
-  "difficulty": "Advanced",
-  "vocab": [
-    {
-      "term": "epistemology",
-      "definition": "Study of nature and grounds of knowledge and justified belief"
-    },
-    {
-      "term": "methodology",
-      "definition": "System of methods and principles for conducting research"
-    },
-    {
-      "term": "meta-analysis",
-      "definition": "Statistical analysis combining results of multiple scientific studies"
-    },
-    {
-      "term": "paradigm",
-      "definition": "Fundamental model or framework for understanding phenomena"
-    },
-    {
-      "term": "interdisciplinary",
-      "definition": "Combining insights and methods from multiple academic fields"
-    }
-  ],
-  "teachingNotes": "Explore advanced research methodologies and knowledge construction. Develop sophisticated analytical writing.",
-  "sample": {
-    "question": "What studies nature and grounds of knowledge?",
-    "expectedAny": [
-      "epistemology",
-      "theory of knowledge",
-      "knowledge study",
-      "cognitive philosophy"
-    ]
-  },
-  "truefalse": {
-    "question": "Meta-analysis combines results of multiple scientific studies.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What describes fundamental model for understanding phenomena?",
-    "expectedAny": [
-      "paradigm",
-      "framework",
-      "theoretical model",
-      "conceptual structure"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Research combining multiple academic fields is ________.",
-    "expectedAny": [
-      "interdisciplinary",
-      "multidisciplinary",
-      "cross-disciplinary",
-      "transdisciplinary"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does epistemology influence research methodology?",
-    "expectedAny": [
-      "knowledge assumptions",
-      "truth criteria",
-      "validity standards",
-      "evidence evaluation"
-    ]
-  }
+﻿{
+    "id":  "12th_College_Composition_Research_Methodology_Advanced",
+    "title":  "College Composition and Research Methodology",
+    "grade":  "12th",
+    "difficulty":  "Advanced",
+    "vocab":  [
+                  {
+                      "term":  "epistemology",
+                      "definition":  "Study of knowledge and how we know what we know"
+                  },
+                  {
+                      "term":  "paradigm",
+                      "definition":  "Theoretical framework or worldview"
+                  },
+                  {
+                      "term":  "methodology",
+                      "definition":  "System of methods used in research"
+                  },
+                  {
+                      "term":  "historiography",
+                      "definition":  "Study of how history is written and interpreted"
+                  },
+                  {
+                      "term":  "meta-analysis",
+                      "definition":  "Statistical analysis combining results of multiple studies"
+                  }
+              ],
+    "teachingNotes":  "Develop advanced research and composition skills for college. Master academic writing conventions.",
+    "sample":  [
+                   {
+                       "question":  "What establishes facts?",
+                       "expectedAny":  [
+                                           "research",
+                                           "investigation",
+                                           "inquiry",
+                                           "systematic study",
+                                           "fact finding",
+                                           "scholarly investigation"
+                                       ]
+                   },
+                   {
+                       "question":  "What is main argument?",
+                       "expectedAny":  [
+                                           "thesis statement",
+                                           "thesis",
+                                           "main argument",
+                                           "central claim",
+                                           "argument statement",
+                                           "main claim"
+                                       ]
+                   },
+                   {
+                       "question":  "What references sources?",
+                       "expectedAny":  [
+                                           "citation",
+                                           "reference",
+                                           "source citation",
+                                           "citing",
+                                           "documenting sources",
+                                           "bibliographic reference"
+                                       ]
+                   },
+                   {
+                       "question":  "What is firsthand evidence?",
+                       "expectedAny":  [
+                                           "primary source",
+                                           "primary",
+                                           "original source",
+                                           "firsthand source",
+                                           "original document",
+                                           "direct evidence"
+                                       ]
+                   },
+                   {
+                       "question":  "What interprets primary sources?",
+                       "expectedAny":  [
+                                           "secondary source",
+                                           "secondary",
+                                           "interpretive source",
+                                           "analytical source",
+                                           "secondary analysis",
+                                           "commentary"
+                                       ]
+                   },
+                   {
+                       "question":  "What lists and evaluates sources?",
+                       "expectedAny":  [
+                                           "annotated bibliography",
+                                           "bibliography"
+                                       ]
+                   },
+                   {
+                       "question":  "What is colleague evaluation?",
+                       "expectedAny":  [
+                                           "peer review",
+                                           "review"
+                                       ]
+                   },
+                   {
+                       "question":  "What combines sources?",
+                       "expectedAny":  [
+                                           "synthesis",
+                                           "integration"
+                                       ]
+                   },
+                   {
+                       "question":  "What examines persuasion?",
+                       "expectedAny":  [
+                                           "rhetorical analysis",
+                                           "rhetoric"
+                                       ]
+                   },
+                   {
+                       "question":  "What is scholarly communication?",
+                       "expectedAny":  [
+                                           "academic discourse",
+                                           "discourse"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Research establishes facts.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Thesis is a minor detail.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Citations reference sources.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Primary sources are secondhand.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Secondary sources interpret primaries.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Annotated bibliographies include summaries.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Peer review is self-evaluation.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Synthesis combines sources.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Rhetorical analysis ignores persuasion.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Academic discourse is formal.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What is systematic investigation?",
+                               "choices":  [
+                                               "Guessing",
+                                               "Research",
+                                               "Copying",
+                                               "Ignoring"
+                                           ],
+                               "correct":  "Research"
+                           },
+                           {
+                               "question":  "What states main argument?",
+                               "choices":  [
+                                               "Title",
+                                               "Citation",
+                                               "Thesis statement",
+                                               "Footnote"
+                                           ],
+                               "correct":  "Thesis statement"
+                           },
+                           {
+                               "question":  "What references sources?",
+                               "choices":  [
+                                               "Title",
+                                               "Citation",
+                                               "Subject",
+                                               "Topic"
+                                           ],
+                               "correct":  "Citation"
+                           },
+                           {
+                               "question":  "What is firsthand evidence?",
+                               "choices":  [
+                                               "Secondary",
+                                               "Tertiary",
+                                               "Primary",
+                                               "Quaternary"
+                                           ],
+                               "correct":  "Primary"
+                           },
+                           {
+                               "question":  "What interprets primary sources?",
+                               "choices":  [
+                                               "Primary",
+                                               "Secondary",
+                                               "Original",
+                                               "Firsthand"
+                                           ],
+                               "correct":  "Secondary"
+                           },
+                           {
+                               "question":  "What includes source summaries?",
+                               "choices":  [
+                                               "Title page",
+                                               "Annotated bibliography",
+                                               "Table of contents",
+                                               "Index"
+                                           ],
+                               "correct":  "Annotated bibliography"
+                           },
+                           {
+                               "question":  "Who evaluates in peer review?",
+                               "choices":  [
+                                               "Self only",
+                                               "Colleagues",
+                                               "No one",
+                                               "Computer"
+                                           ],
+                               "correct":  "Colleagues"
+                           },
+                           {
+                               "question":  "What combines multiple sources?",
+                               "choices":  [
+                                               "Citation",
+                                               "Summary",
+                                               "Synthesis",
+                                               "Title"
+                                           ],
+                               "correct":  "Synthesis"
+                           },
+                           {
+                               "question":  "What examines persuasion techniques?",
+                               "choices":  [
+                                               "Grammar check",
+                                               "Rhetorical analysis",
+                                               "Spell check",
+                                               "Word count"
+                                           ],
+                               "correct":  "Rhetorical analysis"
+                           },
+                           {
+                               "question":  "What is formal scholarly communication?",
+                               "choices":  [
+                                               "Texting",
+                                               "Social media",
+                                               "Academic discourse",
+                                               "Slang"
+                                           ],
+                               "correct":  "Academic discourse"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "_____ establishes facts systematically.",
+                               "expectedAny":  [
+                                                   "research",
+                                                   "Research"
+                                               ]
+                           },
+                           {
+                               "question":  "A _____ statement is the main argument.",
+                               "expectedAny":  [
+                                                   "thesis",
+                                                   "Thesis"
+                                               ]
+                           },
+                           {
+                               "question":  "A _____ references a source.",
+                               "expectedAny":  [
+                                                   "citation",
+                                                   "reference"
+                                               ]
+                           },
+                           {
+                               "question":  "A _____ source is firsthand evidence.",
+                               "expectedAny":  [
+                                                   "primary",
+                                                   "Primary"
+                                               ]
+                           },
+                           {
+                               "question":  "A _____ source interprets primary sources.",
+                               "expectedAny":  [
+                                                   "secondary",
+                                                   "Secondary"
+                                               ]
+                           },
+                           {
+                               "question":  "An annotated _____ lists and evaluates sources.",
+                               "expectedAny":  [
+                                                   "bibliography",
+                                                   "Bibliography"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ review is colleague evaluation.",
+                               "expectedAny":  [
+                                                   "peer",
+                                                   "Peer"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ combines multiple sources.",
+                               "expectedAny":  [
+                                                   "synthesis",
+                                                   "Synthesis"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ analysis examines persuasion.",
+                               "expectedAny":  [
+                                                   "rhetorical",
+                                                   "Rhetorical"
+                                               ]
+                           },
+                           {
+                               "question":  "Academic _____ is scholarly communication.",
+                               "expectedAny":  [
+                                                   "discourse",
+                                                   "Discourse"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "What is research?",
+                            "expectedAny":  [
+                                                "systematic investigation to establish facts",
+                                                "gathering and analyzing information",
+                                                "evidence-based inquiry"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain thesis statement.",
+                            "expectedAny":  [
+                                                "main argument of an essay",
+                                                "central claim paper will prove",
+                                                "controlling idea for writing"
+                                            ]
+                        },
+                        {
+                            "question":  "What is a citation?",
+                            "expectedAny":  [
+                                                "reference to source of information",
+                                                "gives credit to original authors",
+                                                "allows readers to find sources"
+                                            ]
+                        },
+                        {
+                            "question":  "Define primary source.",
+                            "expectedAny":  [
+                                                "original firsthand document or evidence",
+                                                "created at time of event",
+                                                "diary letter artifact speech"
+                                            ]
+                        },
+                        {
+                            "question":  "What is secondary source?",
+                            "expectedAny":  [
+                                                "analysis or interpretation of primary sources",
+                                                "scholarly commentary on original materials",
+                                                "textbook article biography"
+                                            ]
+                        },
+                        {
+                            "question":  "What is annotated bibliography?",
+                            "expectedAny":  [
+                                                "list of sources with summaries and evaluations",
+                                                "includes brief description of each source",
+                                                "assesses relevance and quality"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain peer review.",
+                            "expectedAny":  [
+                                                "evaluation of work by others in same field",
+                                                "quality control in academic publishing",
+                                                "experts assess research"
+                                            ]
+                        },
+                        {
+                            "question":  "What is synthesis?",
+                            "expectedAny":  [
+                                                "combining multiple sources into coherent argument",
+                                                "integrating ideas from various texts",
+                                                "creating new understanding from sources"
+                                            ]
+                        },
+                        {
+                            "question":  "Define rhetorical analysis.",
+                            "expectedAny":  [
+                                                "examining how authors persuade audiences",
+                                                "analyzing appeals ethos pathos logos",
+                                                "studying effective communication strategies"
+                                            ]
+                        },
+                        {
+                            "question":  "What is academic discourse?",
+                            "expectedAny":  [
+                                                "formal scholarly communication conventions",
+                                                "ways academics discuss ideas",
+                                                "includes specific vocabulary and structures"
+                                            ]
+                        }
+                    ]
 }

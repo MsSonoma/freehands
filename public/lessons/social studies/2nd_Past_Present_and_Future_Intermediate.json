@@ -24,12 +24,12 @@
   ],
   "teachingNotes": "Use personal timelines and family photos. Discuss how things change over time. Compare old and new technologies.",
   "sample": [
-    {"question": "Give an example of something from the past, present, and future.", "expectedAny": ["past: yesterday's lunch; present: today's lesson; future: tomorrow's weather"]},
+  {"question": "Give an example of something from the past, present, and future.", "expectedAny": ["past: yesterday's lunch; present: today's lesson; future: tomorrow's weather", "past: last year's birthday; present: this morning; future: next week's field trip", "past: my baby pictures; present: my school; future: my next birthday"]},
     {"question": "What is the past?", "expectedAny": ["time that already happened"]},
     {"question": "What is the present?", "expectedAny": ["time happening now"]},
     {"question": "What is the future?", "expectedAny": ["time that has not happened yet"]},
     {"question": "What does a timeline show?", "expectedAny": ["events in order", "sequence of events"]},
-    {"question": "Name something that has changed from the past to now.", "expectedAny": ["technology", "transportation", "schools"]},
+  {"question": "Name something that has changed from the past to now.", "expectedAny": ["technology", "transportation", "schools", "clothing styles", "homes and buildings"]},
     {"question": "Why do we study the past?", "expectedAny": ["to learn", "to understand changes"]}
   ],
   "truefalse": [
@@ -51,21 +51,21 @@
     {"question": "Which is NOT in the past?", "choices": ["Dinosaurs", "Old phones", "Tomorrow", "Yesterday"], "correct": 2}
   ],
   "fillintheblank": [
-    {"question": "Last week I went to the zoo. That trip happened in the _____.", "expectedAny": ["past"]},
-    {"question": "The time happening right now is the ________.", "expectedAny": ["present", "today"]},
-    {"question": "The time that has not happened yet is the ________.", "expectedAny": ["future"]},
-    {"question": "A ________ shows events in order.", "expectedAny": ["timeline"]},
-    {"question": "Long ________, people used horses for travel.", "expectedAny": ["ago"]},
-    {"question": "In the ________, I will be in 3rd grade.", "expectedAny": ["future"]},
-    {"question": "Today is part of the ________.", "expectedAny": ["present"]}
+    {"question": "Last week I went to the zoo. That trip happened in the _____.", "expectedAny": ["past", "the past"]},
+    {"question": "The time happening right now is the ________.", "expectedAny": ["present", "today", "right now"]},
+    {"question": "The time that has not happened yet is the ________.", "expectedAny": ["future", "tomorrow"]},
+    {"question": "A ________ shows events in order.", "expectedAny": ["timeline", "time line"]},
+    {"question": "Long ________, people used horses for travel.", "expectedAny": ["ago", "a long time ago"]},
+    {"question": "In the ________, I will be in 3rd grade.", "expectedAny": ["future", "next year"]},
+    {"question": "Today is part of the ________.", "expectedAny": ["present", "now"]}
   ],
   "shortanswer": [
     {"question": "How have schools changed from the past to the present?", "expectedAny": ["computers", "different teaching methods", "bigger buildings"]},
     {"question": "What is one way transportation is different now?", "expectedAny": ["cars faster", "planes common", "trains better"]},
-    {"question": "What is something you plan to do in the future?", "expectedAny": ["student plan"]},
-    {"question": "Why is it helpful to put events on a timeline?", "expectedAny": ["see order", "make sense of changes"]},
-    {"question": "Name one thing from the past that we still use today.", "expectedAny": ["books", "bikes", "pencils"]},
-    {"question": "Give an example of past, present, and future from your life.", "expectedAny": ["student examples"]},
-    {"question": "How does learning about the past help us today?", "expectedAny": ["avoid mistakes", "learn from others"]}
+  {"question": "What is something you plan to do in the future?", "expectedAny": ["go to a new grade", "visit a new place", "learn a new skill", "attend a field trip"]},
+  {"question": "Why is it helpful to put events on a timeline?", "expectedAny": ["see order", "make sense of changes", "remember when things happened"]},
+  {"question": "Name one thing from the past that we still use today.", "expectedAny": ["books", "bikes", "pencils", "watches"]},
+  {"question": "Give an example of past, present, and future from your life.", "expectedAny": ["past: baby photos; present: school; future: summer vacation", "past: learned to crawl; present: can read; future: learn to ride a bike", "past: moved houses; present: live here; future: visit grandma"]},
+    {"question": "How does learning about the past help us today?", "expectedAny": ["avoid mistakes", "learn from others", "understand why things changed"]}
   ]
 }

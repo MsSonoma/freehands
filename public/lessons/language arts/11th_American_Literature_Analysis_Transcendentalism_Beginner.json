@@ -1,4 +1,4 @@
-{
+﻿{
   "id": "11th_American_Literature_Analysis_Transcendentalism_Beginner",
   "title": "American Literature Analysis: Transcendentalism and Romanticism",
   "grade": "11th",
@@ -26,49 +26,224 @@
     }
   ],
   "teachingNotes": "Focus on key American authors like Emerson, Thoreau, and Hawthorne. Connect philosophical ideas to literary techniques.",
-  "sample": {
-    "question": "What movement emphasized intuition and individual conscience?",
-    "expectedAny": [
-      "transcendentalism",
-      "transcendentalist movement",
-      "American transcendentalism",
-      "intuitive philosophy"
-    ]
-  },
-  "truefalse": {
-    "question": "Romanticism emphasized emotion and individual experience.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is a story with symbolic meaning representing deeper truths?",
-    "expectedAny": [
-      "allegory",
-      "symbolic story",
-      "metaphorical tale",
-      "symbolic narrative"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The central message of a literary work is its ________.",
-    "expectedAny": [
-      "theme",
-      "central idea",
-      "main message",
-      "core meaning"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are key characteristics of transcendentalist writing?",
-    "expectedAny": [
-      "nature focus",
-      "individualism",
-      "spiritual insight",
-      "self-reliance"
-    ]
-  }
+  "sample": [
+    {
+      "question": "What movement emphasized intuition and individual conscience?",
+      "expectedAny": ["transcendentalism", "transcendentalist movement", "American transcendentalism", "intuitive philosophy", "transcendental thought", "emersonian philosophy"]
+    },
+    {
+      "question": "What literary movement emphasized emotion and nature?",
+      "expectedAny": ["romanticism", "romantic movement", "romantic literature", "romantic era", "romantic period", "emotion literature"]
+    },
+    {
+      "question": "What is a story with symbolic deeper meaning called?",
+      "expectedAny": ["allegory", "allegorical story", "symbolic narrative", "allegorical tale", "metaphorical story", "deeper meaning story"]
+    },
+    {
+      "question": "What term describes using objects to represent ideas?",
+      "expectedAny": ["symbolism", "symbolic representation", "literary symbols", "symbolic meaning", "use of symbols", "representational technique"]
+    },
+    {
+      "question": "What is the central message of a literary work?",
+      "expectedAny": ["theme", "central theme", "main message", "thematic meaning", "core idea", "underlying message"]
+    },
+    {
+      "question": "Which philosophy valued intuition over logic?",
+      "expectedAny": ["transcendentalism", "transcendentalist philosophy", "intuitive philosophy", "American transcendentalism"]
+    },
+    {
+      "question": "What movement celebrated individual experience?",
+      "expectedAny": ["romanticism", "romantic movement", "individualism", "romantic literature"]
+    },
+    {
+      "question": "What literary device uses symbolic representation?",
+      "expectedAny": ["allegory", "symbolism", "allegorical technique", "symbolic storytelling"]
+    },
+    {
+      "question": "What carries deeper meaning in symbolism?",
+      "expectedAny": ["objects", "symbols", "images", "actions"]
+    },
+    {
+      "question": "What unifies a literary work's meaning?",
+      "expectedAny": ["theme", "central theme", "thematic unity", "main idea"]
+    }
+  ],
+  "truefalse": [
+    {
+      "question": "Romanticism emphasized emotion and individual experience.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Transcendentalism rejected intuition and conscience.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "An allegory has symbolic meaning beyond the literal story.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Symbolism uses objects only for decoration.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Theme is the central message of a literary work.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Transcendentalism was a European movement.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Romanticism valued nature and emotion.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Allegories have no deeper meaning.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Symbols can represent abstract concepts.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Theme is always stated explicitly in literature.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "What did transcendentalism emphasize?",
+      "choices": ["Intuition", "Logic only", "Tradition", "Authority"],
+      "correct": "Intuition"
+    },
+    {
+      "question": "Which movement valued emotion and nature?",
+      "choices": ["Realism", "Romanticism", "Modernism", "Naturalism"],
+      "correct": "Romanticism"
+    },
+    {
+      "question": "What is a story with symbolic meaning?",
+      "choices": ["Biography", "Allegory", "Editorial", "Journal"],
+      "correct": "Allegory"
+    },
+    {
+      "question": "What uses objects to represent ideas?",
+      "choices": ["Irony", "Metaphor", "Symbolism", "Alliteration"],
+      "correct": "Symbolism"
+    },
+    {
+      "question": "What is the central message of a work?",
+      "choices": ["Plot", "Setting", "Character", "Theme"],
+      "correct": "Theme"
+    },
+    {
+      "question": "Which author was a transcendentalist?",
+      "choices": ["Poe", "Emerson", "Melville", "Whitman"],
+      "correct": "Emerson"
+    },
+    {
+      "question": "What did romantics celebrate?",
+      "choices": ["Industry", "Science", "Nature", "Cities"],
+      "correct": "Nature"
+    },
+    {
+      "question": "What contains deeper truths?",
+      "choices": ["Allegory", "Summary", "Outline", "Index"],
+      "correct": "Allegory"
+    },
+    {
+      "question": "What creates layers of meaning?",
+      "choices": ["Grammar", "Spelling", "Symbolism", "Punctuation"],
+      "correct": "Symbolism"
+    },
+    {
+      "question": "What unifies a literary work?",
+      "choices": ["Length", "Theme", "Pages", "Words"],
+      "correct": "Theme"
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "_____ emphasized intuition and individual conscience.",
+      "expectedAny": ["transcendentalism", "the transcendentalist movement", "American transcendentalism"]
+    },
+    {
+      "question": "_____ valued emotion, nature, and individual experience.",
+      "expectedAny": ["romanticism", "the romantic movement", "romantic literature"]
+    },
+    {
+      "question": "An _____ is a story with symbolic deeper meaning.",
+      "expectedAny": ["allegory", "allegorical story", "allegorical tale"]
+    },
+    {
+      "question": "_____ uses objects to represent ideas or concepts.",
+      "expectedAny": ["symbolism", "symbolic representation", "literary symbolism"]
+    },
+    {
+      "question": "The central message of a work is its _____.",
+      "expectedAny": ["theme", "central theme", "thematic meaning"]
+    },
+    {
+      "question": "_____ and Thoreau were major transcendentalist writers.",
+      "expectedAny": ["emerson", "ralph waldo emerson", "Ralph Emerson"]
+    },
+    {
+      "question": "_____ literature celebrates nature and emotion.",
+      "expectedAny": ["romantic", "romanticism", "romanticist"]
+    },
+    {
+      "question": "Hawthorne often used _____ in his stories.",
+      "expectedAny": ["allegory", "symbolism", "allegorical techniques"]
+    },
+    {
+      "question": "A dove might _____ peace in literature.",
+      "expectedAny": ["symbolize", "represent", "stand for"]
+    },
+    {
+      "question": "The _____ of a work reveals its deeper meaning.",
+      "expectedAny": ["theme", "central theme", "thematic message"]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Explain what transcendentalism means and its main beliefs.",
+      "expectedAny": ["transcendentalism is an American movement emphasizing intuition and individual conscience over tradition", "a philosophy valuing personal insight and connection to nature and divine", "belief in inherent goodness and self-reliance through intuitive understanding"]
+    },
+    {
+      "question": "How does romanticism differ from earlier literary movements?",
+      "expectedAny": ["romanticism emphasized emotion and nature rather than reason and order", "romantic writers valued individual experience over classical rules", "the movement celebrated feelings and imagination over logic"]
+    },
+    {
+      "question": "What makes a story an allegory?",
+      "expectedAny": ["an allegory has symbolic meaning representing deeper truths beyond the literal story", "characters and events represent abstract ideas or moral lessons", "the narrative works on both literal and symbolic levels"]
+    },
+    {
+      "question": "Give an example of symbolism in literature.",
+      "expectedAny": ["a white whale representing obsession or nature in Moby Dick", "a scarlet letter symbolizing sin and identity", "darkness representing evil or the unknown"]
+    },
+    {
+      "question": "Why is identifying theme important in literature?",
+      "expectedAny": ["theme reveals the central message and deeper meaning of the work", "understanding theme helps connect to universal human experiences", "theme shows the author's purpose and significance"]
+    },
+    {
+      "question": "How did transcendentalists view nature?",
+      "expectedAny": ["as a source of spiritual truth and divine presence", "nature revealed deeper wisdom and connection to the oversoul", "transcendentalists saw nature as sacred and teaching moral lessons"]
+    },
+    {
+      "question": "What role does emotion play in romantic literature?",
+      "expectedAny": ["emotion drives romantic plots and reveals character depth", "romantics valued authentic feelings over rational thought", "emotional experience connects readers to universal themes"]
+    },
+    {
+      "question": "How can allegory teach moral lessons?",
+      "expectedAny": ["by using symbolic characters and events to represent virtues and vices", "allegory makes abstract concepts concrete through narrative", "readers learn lessons through identifying symbolic meanings"]
+    },
+    {
+      "question": "Why do authors use symbolism?",
+      "expectedAny": ["to add layers of meaning and depth to their work", "symbols create connections between concrete objects and abstract ideas", "symbolism allows readers to discover deeper significance"]
+    },
+    {
+      "question": "How do theme and symbolism work together?",
+      "expectedAny": ["symbols reinforce and develop the central theme throughout the work", "theme provides unity while symbols add specific meaningful details", "symbolism helps express theme through concrete images"]
+    }
+  ]
 }

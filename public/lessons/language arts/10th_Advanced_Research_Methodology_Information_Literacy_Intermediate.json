@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "10th_Advanced_Research_Methodology_Information_Literacy_Intermediate",
-  "title": "Advanced Research Methodology and Information Literacy",
+  "title": "Advanced Research Methodology: Information Literacy",
   "grade": "10th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "peer review",
-      "definition": "Evaluation of research by experts in the same field"
-    },
-    {
-      "term": "bias",
-      "definition": "Prejudice or unfair preference that affects objectivity"
-    },
-    {
-      "term": "methodology",
-      "definition": "Systematic approach to conducting research"
-    },
-    {
-      "term": "annotation",
-      "definition": "Brief summary and evaluation of a source"
-    },
-    {
-      "term": "database",
-      "definition": "Organized collection of scholarly information"
-    }
+    {"term": "peer review", "definition": "Evaluation of research by experts in the same field before publication"},
+    {"term": "bias", "definition": "Prejudice or perspective that affects objectivity in research or reporting"},
+    {"term": "methodology", "definition": "Systematic approach and procedures used to conduct research"},
+    {"term": "annotation", "definition": "Brief summary and evaluation of a source"},
+    {"term": "database", "definition": "Organized collection of scholarly resources for research"}
   ],
-  "teachingNotes": "Teach advanced source evaluation criteria and research methodologies. Practice creating annotated bibliographies.",
-  "sample": {
-    "question": "What is evaluation of research by field experts called?",
-    "expectedAny": [
-      "peer review",
-      "expert evaluation",
-      "scholarly review",
-      "academic assessment"
-    ]
-  },
-  "truefalse": {
-    "question": "Bias affects the objectivity of research sources.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is a systematic approach to conducting research?",
-    "expectedAny": [
-      "methodology",
-      "research method",
-      "systematic approach",
-      "research design"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A brief summary and evaluation of a source is an ________.",
-    "expectedAny": [
-      "annotation",
-      "summary evaluation",
-      "source assessment",
-      "critical summary"
-    ]
-  },
-  "shortanswer": {
-    "question": "How can researchers identify potential bias in sources?",
-    "expectedAny": [
-      "check author credentials",
-      "examine funding sources",
-      "analyze language",
-      "compare perspectives"
-    ]
-  }
+  "teachingNotes": "Evaluate source quality and research methods. Create annotated bibliographies and navigate databases.",
+  "sample": [
+    {"question": "What is evaluation by field experts?", "expectedAny": ["peer review", "expert evaluation", "scholarly review", "expert review", "review process", "scholarly evaluation"]},
+    {"question": "What is prejudice affecting objectivity?", "expectedAny": ["bias", "prejudice", "perspective", "partiality", "slant", "subjectivity"]},
+    {"question": "What is a systematic research approach?", "expectedAny": ["methodology", "method", "research approach", "methods", "procedures", "research method"]},
+    {"question": "What is a brief source summary?", "expectedAny": ["annotation", "summary", "evaluation", "source summary", "brief summary", "source evaluation"]},
+    {"question": "What is an organized collection of resources?", "expectedAny": ["database", "collection", "repository", "resource collection", "archive", "organized resources"]},
+    {"question": "What evaluates research before publication?", "expectedAny": ["peer review", "review process", "evaluation", "expert evaluation", "scholarly review", "expert review"]},
+    {"question": "What affects research objectivity?", "expectedAny": ["bias", "prejudice", "perspective", "partiality", "slant", "subjectivity"]},
+    {"question": "What are systematic research procedures?", "expectedAny": ["methodology", "methods", "procedures", "method", "research approach", "research method"]},
+    {"question": "What summarizes and evaluates sources?", "expectedAny": ["annotation", "annotated bibliography", "source summary", "summary", "evaluation", "source evaluation"]},
+    {"question": "What organizes scholarly resources?", "expectedAny": ["database", "collection", "archive", "repository", "resource collection", "organized resources"]}
+  ],
+  "truefalse": [
+    {"question": "Peer review evaluates research quality. (True or False)", "correct": true},
+    {"question": "Bias improves research objectivity. (True or False)", "correct": false},
+    {"question": "Methodology is a systematic approach. (True or False)", "correct": true},
+    {"question": "Annotations are lengthy essays. (True or False)", "correct": false},
+    {"question": "Databases organize scholarly resources. (True or False)", "correct": true},
+    {"question": "Peer review happens before publication. (True or False)", "correct": true},
+    {"question": "All bias can be eliminated. (True or False)", "correct": false},
+    {"question": "Methodology includes procedures. (True or False)", "correct": true},
+    {"question": "Annotations summarize sources. (True or False)", "correct": true},
+    {"question": "Databases contain research materials. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What evaluates research by experts?", "choices": [{"letter": "A", "text": "Citation"}, {"letter": "B", "text": "Peer review"}, {"letter": "C", "text": "Database"}, {"letter": "D", "text": "Bibliography"}], "correct": "B"},
+    {"question": "What affects research objectivity?", "choices": [{"letter": "A", "text": "Methodology"}, {"letter": "B", "text": "Bias"}, {"letter": "C", "text": "Database"}, {"letter": "D", "text": "Citation"}], "correct": "B"},
+    {"question": "What is a systematic research approach?", "choices": [{"letter": "A", "text": "Bias"}, {"letter": "B", "text": "Methodology"}, {"letter": "C", "text": "Annotation"}, {"letter": "D", "text": "Database"}], "correct": "B"},
+    {"question": "What is a brief source summary?", "choices": [{"letter": "A", "text": "Citation"}, {"letter": "B", "text": "Annotation"}, {"letter": "C", "text": "Bias"}, {"letter": "D", "text": "Review"}], "correct": "B"},
+    {"question": "What organizes scholarly resources?", "choices": [{"letter": "A", "text": "Citation"}, {"letter": "B", "text": "Database"}, {"letter": "C", "text": "Annotation"}, {"letter": "D", "text": "Bias"}], "correct": "B"},
+    {"question": "What ensures research quality?", "choices": [{"letter": "A", "text": "Bias"}, {"letter": "B", "text": "Peer review"}, {"letter": "C", "text": "Database"}, {"letter": "D", "text": "Annotation"}], "correct": "B"},
+    {"question": "What must researchers recognize?", "choices": [{"letter": "A", "text": "Annotation"}, {"letter": "B", "text": "Bias"}, {"letter": "C", "text": "Database"}, {"letter": "D", "text": "Citation"}], "correct": "B"},
+    {"question": "What guides research procedures?", "choices": [{"letter": "A", "text": "Bias"}, {"letter": "B", "text": "Methodology"}, {"letter": "C", "text": "Database"}, {"letter": "D", "text": "Annotation"}], "correct": "B"},
+    {"question": "What evaluates sources briefly?", "choices": [{"letter": "A", "text": "Citation"}, {"letter": "B", "text": "Annotation"}, {"letter": "C", "text": "Review"}, {"letter": "D", "text": "Bias"}], "correct": "B"},
+    {"question": "What contains organized research?", "choices": [{"letter": "A", "text": "Annotation"}, {"letter": "B", "text": "Database"}, {"letter": "C", "text": "Bias"}, {"letter": "D", "text": "Review"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ review evaluates research quality.", "expectedAny": ["peer", "Peer"]},
+    {"question": "_____ affects research objectivity.", "expectedAny": ["bias", "Bias"]},
+    {"question": "_____ is a systematic research approach.", "expectedAny": ["methodology", "Methodology"]},
+    {"question": "An _____ summarizes a source.", "expectedAny": ["annotation"]},
+    {"question": "A _____ organizes scholarly resources.", "expectedAny": ["database"]},
+    {"question": "_____ happens before publication.", "expectedAny": ["review", "Review", "peer review"]},
+    {"question": "Researchers must recognize _____.", "expectedAny": ["bias"]},
+    {"question": "_____ guides research procedures.", "expectedAny": ["methodology", "Methodology"]},
+    {"question": "_____ evaluate sources briefly.", "expectedAny": ["annotations", "Annotations"]},
+    {"question": "_____ contain research materials.", "expectedAny": ["databases", "Databases"]}
+  ],
+  "shortanswer": [
+    {"question": "What is peer review?", "keyTerms": ["evaluation", "research", "experts", "field", "publication"], "expectedAny": ["Evaluation of research by experts in the same field before publication", "Expert evaluation process", "Scholarly review"]},
+    {"question": "What is bias?", "keyTerms": ["prejudice", "perspective", "affects", "objectivity"], "expectedAny": ["Prejudice or perspective that affects objectivity in research or reporting", "Subjective viewpoint", "Lack of objectivity"]},
+    {"question": "What is methodology?", "keyTerms": ["systematic", "approach", "procedures", "conduct", "research"], "expectedAny": ["Systematic approach and procedures used to conduct research", "Research methods", "Procedural framework"]},
+    {"question": "What is an annotation?", "keyTerms": ["brief", "summary", "evaluation", "source"], "expectedAny": ["Brief summary and evaluation of a source", "Source description", "Source assessment"]},
+    {"question": "What is a database?", "keyTerms": ["organized", "collection", "scholarly", "resources", "research"], "expectedAny": ["Organized collection of scholarly resources for research", "Research repository", "Information system"]},
+    {"question": "Why is peer review important?", "keyTerms": ["ensures", "quality", "credibility", "accuracy"], "expectedAny": ["Ensures quality, credibility, and accuracy of research", "Validates research", "Maintains standards"]},
+    {"question": "How does bias affect research?", "keyTerms": ["influences", "objectivity", "interpretation", "results"], "expectedAny": ["Influences objectivity and interpretation of results", "Skews findings", "Affects validity"]},
+    {"question": "Why have a methodology?", "keyTerms": ["systematic", "replicable", "rigorous", "valid"], "expectedAny": ["Ensures systematic, replicable, rigorous, and valid research", "Maintains consistency", "Provides structure"]},
+    {"question": "What goes in an annotation?", "keyTerms": ["summary", "evaluation", "relevance", "credibility"], "expectedAny": ["Summary, evaluation, relevance, and credibility assessment", "Source description and quality", "Brief analysis"]},
+    {"question": "Why use databases?", "keyTerms": ["access", "organized", "scholarly", "credible", "efficient"], "expectedAny": ["Access organized scholarly credible sources efficiently", "Find quality research", "Systematic searching"]}
+  ]
 }

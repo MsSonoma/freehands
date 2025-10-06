@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Practice plotting points in all four quadrants. Introduce simple linear relationships and patterns. Use real-world data for graphing activities.",
-  "sample": {
-    "question": "What do we call the point (0, 0) on the coordinate plane?",
-    "expectedAny": ["origin", "the origin", "center point", "intersection point"]
-  },
-  "truefalse": {
-    "question": "The coordinate plane has four quadrants.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "In which quadrant is the point (-3, 2)?",
-    "expectedAny": ["Quadrant II", "second quadrant", "upper left", "Quadrant 2"]
-  },
-  "fillintheblank": {
-    "question": "A relationship that forms a straight line when graphed is called a ________ relationship.",
-    "expectedAny": ["linear", "straight line", "direct", "proportional"]
-  },
-  "shortanswer": {
-    "question": "What are the signs of x and y coordinates in Quadrant III?",
-    "expectedAny": ["both negative", "x negative, y negative", "(-,-)","negative x and y"]
-  },
-  "wordProblems": {
-    "question": "A point moves from (2, 3) to (5, 3). How many units did it move and in which direction?",
-    "expectedAny": ["3 units right", "3 units to the right", "moved 3 units horizontally", "3 units in positive x direction"]
-  }
+  "sample": [
+    { "question": "What do we call the point (0, 0) on the coordinate plane?", "expectedAny": ["origin"] },
+    { "question": "Which shows location on a plane?", "choices": ["Origin", "Ordered pair", "Quadrant", "Axis"], "correct": 1, "expectedAny": ["ordered pair", "point"] },
+    { "question": "The plane has four ________.", "expectedAny": ["quadrants"] },
+    { "question": "A straight line graph shows a ________ relationship.", "expectedAny": ["linear"] },
+    { "question": "Where axes meet is the ________.", "expectedAny": ["origin"] },
+    { "question": "Which axis is horizontal?", "choices": ["y-axis", "x-axis", "Origin", "Quadrant"], "correct": 1, "expectedAny": ["x-axis"] },
+    { "question": "The first number in (x, y) is ________.", "expectedAny": ["x", "x-coordinate"] },
+    { "question": "How many quadrants are there?", "choices": ["2", "3", "4", "5"], "correct": 2, "expectedAny": ["4"] },
+    { "question": "Point (-2, 3) is in quadrant ________.", "expectedAny": ["II", "2", "second"] },
+    { "question": "The y-axis is ________.", "expectedAny": ["vertical"] }
+  ],
+  "truefalse": [
+    { "question": "The coordinate plane has four quadrants.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The origin is at (1, 1).", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Ordered pairs are written (x, y).", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All quadrants contain positive numbers.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Linear relationships form straight lines.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The x-axis is vertical.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Quadrant I has both coordinates positive.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The y-coordinate comes first in an ordered pair.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The origin is where axes intersect.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Points can only be in one quadrant.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "In which quadrant is the point (-3, 2)?", "choices": ["I", "II", "III", "IV"], "correct": 1, "expectedAny": ["II", "2", "second"] },
+    { "question": "What is the x-coordinate of (5, -2)?", "choices": ["-2", "0", "2", "5"], "correct": 3, "expectedAny": ["5"] },
+    { "question": "Which point is on the y-axis?", "choices": ["(2, 0)", "(0, 3)", "(1, 1)", "(2, 2)"], "correct": 1, "expectedAny": ["(0, 3)"] },
+    { "question": "Where is (4, -4)?", "choices": ["I", "II", "III", "IV"], "correct": 3, "expectedAny": ["IV", "4", "fourth"] },
+    { "question": "What is the origin?", "choices": ["(1, 0)", "(0, 1)", "(0, 0)", "(1, 1)"], "correct": 2, "expectedAny": ["(0, 0)"] },
+    { "question": "In which quadrant are both coordinates negative?", "choices": ["I", "II", "III", "IV"], "correct": 2, "expectedAny": ["III", "3", "third"] },
+    { "question": "What is the y-coordinate of (-3, 7)?", "choices": ["-3", "0", "3", "7"], "correct": 3, "expectedAny": ["7"] },
+    { "question": "Which point is in Quadrant I?", "choices": ["(-2, 3)", "(2, -3)", "(-2, -3)", "(2, 3)"], "correct": 3, "expectedAny": ["(2, 3)"] },
+    { "question": "Point (0, -5) is on which axis?", "choices": ["x-axis", "y-axis", "Origin", "None"], "correct": 1, "expectedAny": ["y-axis"] },
+    { "question": "Which shows a linear pattern: x=1,2,3 and y=?", "choices": ["2,4,6", "1,4,9", "1,2,4", "2,3,5"], "correct": 0, "expectedAny": ["2,4,6"] }
+  ],
+  "fillintheblank": [
+    { "question": "A relationship that forms a straight line when graphed is called a ________ relationship.", "expectedAny": ["linear"] },
+    { "question": "The point where axes meet is the ________.", "expectedAny": ["origin"] },
+    { "question": "In (x, y), the first value is the ________-coordinate.", "expectedAny": ["x"] },
+    { "question": "The coordinate plane is divided into four ________.", "expectedAny": ["quadrants"] },
+    { "question": "An ________ pair locates a point on the plane.", "expectedAny": ["ordered"] },
+    { "question": "The horizontal axis is the ________-axis.", "expectedAny": ["x"] },
+    { "question": "The vertical axis is the ________-axis.", "expectedAny": ["y"] },
+    { "question": "Quadrant III has both coordinates ________.", "expectedAny": ["negative"] },
+    { "question": "The origin is at coordinates (0, ________).", "expectedAny": ["0"] },
+    { "question": "A ________ is one section of the coordinate plane.", "expectedAny": ["quadrant"] }
+  ],
+  "shortanswer": [
+    { "question": "What are the signs of x and y coordinates in Quadrant III?", "expectedAny": ["both negative", "negative", "(-,-)"] },
+    { "question": "Describe the origin.", "expectedAny": ["where axes meet", "(0, 0)", "center point", "intersection"] },
+    { "question": "In which quadrant is (5, -3)?", "expectedAny": ["IV", "4", "fourth", "quadrant 4"] },
+    { "question": "What is the x-coordinate of point (7, 2)?", "expectedAny": ["7"] },
+    { "question": "Name the quadrant with positive x, negative y.", "expectedAny": ["IV", "4", "fourth"] },
+    { "question": "How do you write an ordered pair?", "expectedAny": ["(x, y)", "parentheses with x then y", "x comma y", "(x,y)", "x, y"] },
+    { "question": "Where is point (0, 0)?", "expectedAny": ["origin", "at the origin"] },
+    { "question": "Which axis does (0, 5) lie on?", "expectedAny": ["y-axis"] },
+    { "question": "What makes a relationship linear?", "expectedAny": ["forms straight line", "constant rate", "proportional"] },
+    { "question": "In Quadrant II, which is negative?", "expectedAny": ["x", "x-coordinate"] }
+  ],
+  "wordProblems": [
+    { "question": "A point moves from (2, 3) to (5, 3). How many units did it move and in which direction?", "expectedAny": ["3 units right", "3 right", "3 units in x direction"] },
+    { "question": "Plot (4, 2) then move 3 units down. What is the new point?", "expectedAny": ["(4, -1)"] },
+    { "question": "A treasure is at (-2, 5). What quadrant is it in?", "expectedAny": ["II", "2", "second"] },
+    { "question": "Start at origin, move 3 right and 4 up. What point?", "expectedAny": ["(3, 4)"] },
+    { "question": "Points (1,2), (2,4), (3,6) form what relationship?", "expectedAny": ["linear", "straight line", "proportional"] },
+    { "question": "From (-1, 2) to (-1, -3), how far and which way?", "expectedAny": ["5 units down", "5 down", "5 in negative y"] },
+    { "question": "A robot at (0, 0) moves to (5, 0). Which axis?", "expectedAny": ["x-axis"] },
+    { "question": "Point A is (3, -4). What is the distance from x-axis?", "expectedAny": ["4 units", "4"] },
+    { "question": "From (2, 5) to (2, 1), how many units?", "expectedAny": ["4 units", "4", "4 down"] },
+    { "question": "If x increases by 1 and y increases by 2, is it linear?", "expectedAny": ["yes", "true", "linear"] }
+  ]
 }

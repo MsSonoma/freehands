@@ -18,17 +18,21 @@
       "definition": "Being kind and caring toward others"
     },
     {
-      "term": "responsibility",
+      "term": "duty",
       "definition": "A job you need to do"
+    },
+    {
+      "term": "clean",
+      "definition": "To make something neat and not messy"
     }
   ],
   "teachingNotes": "Create classroom rules together. Practice emergency procedures. Role-play respectful behavior. Discuss consequences.",
   "sample": [
-    {"question": "Why do we have rules at school?", "expectedAny": ["to keep safe", "to be kind", "to help everyone learn", "so no one gets hurt"]},
-    {"question": "What should you do when you arrive at school?", "expectedAny": ["hang up backpack", "sit in your seat", "get ready to learn", "say good morning"]},
-    {"question": "How do you show respect to your teacher?", "expectedAny": ["listen", "follow directions", "raise your hand", "be polite"]},
-    {"question": "What do you do if you need help?", "expectedAny": ["raise your hand", "ask the teacher", "wait your turn"]},
-    {"question": "How should you treat school property?", "expectedAny": ["take care of it", "be gentle", "don't break things", "clean up"]}
+    {"question": "Why do we have rules at school?", "expectedAny": ["to keep safe", "to be kind", "to help everyone learn", "so no one gets hurt", "to be fair"]},
+    {"question": "What should you do when you arrive at school?", "expectedAny": ["hang up backpack", "sit in your seat", "get ready to learn", "say good morning", "put stuff away"]},
+    {"question": "How do you show respect to your teacher?", "expectedAny": ["listen", "follow directions", "raise your hand", "be polite", "be nice", "pay attention"]},
+    {"question": "What do you do if you need help?", "expectedAny": ["raise your hand", "ask the teacher", "wait your turn", "ask for help"]},
+    {"question": "How should you treat school property?", "expectedAny": ["take care of it", "be gentle", "don't break things", "clean up", "be careful"]}
   ],
   "truefalse": [
     {"question": "It's important to walk in the hallways.", "answer": true, "expectedAny": ["walking keeps everyone safe in hallways"]},
@@ -49,22 +53,22 @@
     {"question": "How do you show respect during story time?", "choices": ["talk to friends", "listen quietly", "play with toys", "take a nap"], "correct": 1, "expectedAny": ["listen quietly during story time"]}
   ],
   "fillintheblank": [
-    {"question": "When someone is talking, you should _____ and listen.", "expectedAny": ["wait", "be quiet", "stop"]},
-    {"question": "We should always _____ in the hallways.", "expectedAny": ["walk"]},
-    {"question": "Before speaking, you should raise your _____.", "expectedAny": ["hand"]},
-    {"question": "It's important to be _____ to everyone at school.", "expectedAny": ["kind", "nice", "respectful"]},
-    {"question": "When we line up, we should keep our _____ to ourselves.", "expectedAny": ["hands"]},
-    {"question": "At lunch, we should _____ up our area when finished.", "expectedAny": ["clean"]},
-    {"question": "During fire drills, we should line up _____.", "expectedAny": ["quietly", "calmly"]}
+    {"question": "When someone is talking, you should _____ and listen.", "expectedAny": ["wait", "be quiet", "stop", "stop talking"]},
+    {"question": "We should always _____ in the hallways.", "expectedAny": ["walk", "walk quietly", "go slow"]},
+    {"question": "Before speaking, you should raise your _____.", "expectedAny": ["hand", "your hand"]},
+    {"question": "It's important to be _____ to everyone at school.", "expectedAny": ["kind", "nice", "respectful", "polite"]},
+    {"question": "When we line up, we should keep our _____ to ourselves.", "expectedAny": ["hands", "our hands"]},
+    {"question": "At lunch, we should _____ up our area when finished.", "expectedAny": ["clean", "clean up", "tidy"]},
+    {"question": "During fire drills, we should line up _____.", "expectedAny": ["quietly", "calmly", "fast"]}
   ],
   "shortanswer": [
-    {"question": "What is one rule that helps keep our classroom safe?", "expectedAny": ["walk don't run", "keep hands to yourself", "sit in your chair", "use inside voice"]},
-    {"question": "How do school rules help us learn?", "expectedAny": ["keep us focused", "prevent distractions", "create safe space", "help us listen"]},
+    {"question": "What is one rule that helps keep our classroom safe?", "expectedAny": ["walk don't run", "keep hands to yourself", "sit in your chair", "use inside voice", "don't push"]},
+    {"question": "How do school rules help us learn?", "expectedAny": ["keep us focused", "prevent distractions", "create safe space", "help us listen", "make it quiet"]},
     {"question": "What should you do if you don't understand a rule?", "expectedAny": ["ask the teacher", "ask for help", "raise your hand", "ask questions"]},
-    {"question": "How can you be a good friend at school?", "expectedAny": ["be kind", "share", "help others", "include everyone", "be respectful"]},
-    {"question": "What are some ways to show respect at school?", "expectedAny": ["listen to teacher", "be kind to others", "follow rules", "take care of things"]},
-    {"question": "Why is it important to clean up after yourself?", "expectedAny": ["keeps school clean", "shows respect", "helps everyone", "takes care of things"]},
-    {"question": "How do you handle disagreements with classmates?", "expectedAny": ["talk it out", "get teacher help", "use words", "be calm", "compromise"]}
+    {"question": "How can you be a good friend at school?", "expectedAny": ["be kind", "share", "help others", "include everyone", "be respectful", "be nice"]},
+    {"question": "What are some ways to show respect at school?", "expectedAny": ["listen to teacher", "be kind to others", "follow rules", "take care of things", "be polite"]},
+    {"question": "Why is it important to clean up after yourself?", "expectedAny": ["keeps school clean", "shows respect", "helps everyone", "takes care of things", "makes it nice"]},
+    {"question": "How do you handle disagreements with classmates?", "expectedAny": ["talk it out", "get teacher help", "use words", "be calm", "compromise", "ask for help"]}
   ],
   "wordProblems": [
     {"question": "There are 8 classroom rules and 6 hallway rules. How many school rules is that total?", "expectedAny": ["14 rules", "8 + 6 = 14"]},

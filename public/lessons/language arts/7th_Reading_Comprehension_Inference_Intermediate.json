@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Practice distinguishing between explicit and implicit information. Teach students to support inferences with textual evidence.",
-  "sample": {
-    "question": "What is a logical conclusion based on evidence and reasoning?",
-    "expectedAny": [
-      "inference",
-      "conclusion",
-      "deduction",
-      "logical guess"
-    ]
-  },
-  "truefalse": {
-    "question": "Explicit information is directly stated in the text.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What type of information is suggested but not directly stated?",
-    "expectedAny": [
-      "implicit",
-      "implied",
-      "inferred",
-      "suggested"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The most important point of a text is the ________ idea.",
-    "expectedAny": [
-      "main",
-      "central",
-      "primary",
-      "key"
-    ]
-  },
-  "shortanswer": {
-    "question": "How do you make a good inference while reading?",
-    "expectedAny": [
-      "use text evidence and prior knowledge",
-      "combine clues with reasoning",
-      "evidence plus logical thinking"
-    ]
-  }
+  "sample": [
+    { "question": "What is a logical conclusion based on evidence and reasoning?", "expectedAny": ["inference"] },
+    { "question": "Which is directly stated?", "choices": ["Implicit", "Explicit", "Hidden", "Suggested"], "correct": 1, "expectedAny": ["explicit"] },
+    { "question": "Information suggested but not stated is ________.", "expectedAny": ["implicit"] },
+    { "question": "How information is organized is ________.", "expectedAny": ["text structure"] },
+    { "question": "The central message is the ________.", "expectedAny": ["main idea"] },
+    { "question": "What uses evidence and reasoning?", "choices": ["Guess", "Inference", "Opinion", "Feeling"], "correct": 1, "expectedAny": ["inference"] },
+    { "question": "Clear information is ________.", "expectedAny": ["explicit"] },
+    { "question": "Suggested information is ________.", "expectedAny": ["implicit"] },
+    { "question": "Which organizes text?", "choices": ["Main idea", "Text structure", "Inference", "Opinion"], "correct": 1, "expectedAny": ["text structure"] },
+    { "question": "The most important point is the ________.", "expectedAny": ["main idea"] }
+  ],
+  "truefalse": [
+    { "question": "Explicit information is directly stated in the text.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Implicit information is clearly stated.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Inferences use evidence and reasoning.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Text structure is irrelevant.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The main idea is the central message.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All information is explicit.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Implicit means suggested.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Inferences are wild guesses.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Text structure organizes information.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Main idea is a minor detail.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What type of information is suggested but not directly stated?", "choices": ["Explicit", "Implicit", "Clear", "Direct"], "correct": 1, "expectedAny": ["implicit"] },
+    { "question": "What is based on evidence?", "choices": ["Guess", "Inference", "Opinion", "Feeling"], "correct": 1, "expectedAny": ["inference"] },
+    { "question": "What is clearly stated?", "choices": ["Implicit", "Explicit", "Hidden", "Suggested"], "correct": 1, "expectedAny": ["explicit"] },
+    { "question": "What is the central message?", "choices": ["Detail", "Main idea", "Opinion", "Feeling"], "correct": 1, "expectedAny": ["main idea"] },
+    { "question": "What organizes text?", "choices": ["Main idea", "Text structure", "Inference", "Detail"], "correct": 1, "expectedAny": ["text structure"] },
+    { "question": "What is not directly stated?", "choices": ["Explicit", "Clear", "Implicit", "Direct"], "correct": 2, "expectedAny": ["implicit"] },
+    { "question": "What uses reasoning?", "choices": ["Guess", "Opinion", "Inference", "Feeling"], "correct": 2, "expectedAny": ["inference"] },
+    { "question": "What is direct information?", "choices": ["Implicit", "Hidden", "Explicit", "Suggested"], "correct": 2, "expectedAny": ["explicit"] },
+    { "question": "What is most important?", "choices": ["Detail", "Opinion", "Main idea", "Feeling"], "correct": 2, "expectedAny": ["main idea"] },
+    { "question": "What shows organization?", "choices": ["Opinion", "Text structure", "Guess", "Feeling"], "correct": 1, "expectedAny": ["text structure"] }
+  ],
+  "fillintheblank": [
+    { "question": "The most important point of a text is the ________ idea.", "expectedAny": ["main"] },
+    { "question": "A logical conclusion is an ________.", "expectedAny": ["inference"] },
+    { "question": "Directly stated information is ________.", "expectedAny": ["explicit"] },
+    { "question": "Suggested information is ________.", "expectedAny": ["implicit"] },
+    { "question": "How text is organized is ________.", "expectedAny": ["text structure"] },
+    { "question": "The ________ idea is the central message.", "expectedAny": ["main"] },
+    { "question": "An ________ uses evidence and reasoning.", "expectedAny": ["inference"] },
+    { "question": "Clear information is ________.", "expectedAny": ["explicit"] },
+    { "question": "________ information is not directly stated.", "expectedAny": ["implicit"] },
+    { "question": "________ shows how text is organized.", "expectedAny": ["text structure"] }
+  ],
+  "shortanswer": [
+    { "question": "How do you make a good inference while reading?", "expectedAny": ["use text evidence and prior knowledge", "combine clues with reasoning"] },
+    { "question": "What is an inference?", "expectedAny": ["logical conclusion from evidence", "reasoning based on clues", "reading between the lines", "figuring out", "educated guess"] },
+    { "question": "What is implicit information?", "expectedAny": ["suggested but not stated", "implied information", "hidden meaning", "not directly stated"] },
+    { "question": "What is explicit information?", "expectedAny": ["clearly and directly stated", "obvious information"] },
+    { "question": "What is text structure?", "expectedAny": ["how information is organized", "organization of text"] },
+    { "question": "What is the main idea?", "expectedAny": ["most important point", "central message"] },
+    { "question": "Give an example of an inference.", "expectedAny": ["reading clues to conclude mood", "using evidence to determine character feeling"] },
+    { "question": "What's the difference between explicit and implicit?", "expectedAny": ["explicit is stated, implicit is suggested", "one is clear, one is hidden"] },
+    { "question": "Name two types of text structure.", "expectedAny": ["chronological and compare-contrast", "cause-effect and sequence"] },
+    { "question": "How do you find the main idea?", "expectedAny": ["look for central message", "identify most important point"] }
+  ]
 }

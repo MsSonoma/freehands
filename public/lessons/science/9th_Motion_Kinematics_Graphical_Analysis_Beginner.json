@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "9th_Motion_Kinematics_Graphical_Analysis_Beginner",
   "title": "Motion and Kinematics: Graphical Analysis",
   "grade": "9th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "kinematics",
-      "definition": "The study of motion without considering the forces that cause it"
-    },
-    {
-      "term": "displacement",
-      "definition": "Change in position of an object"
-    },
-    {
-      "term": "velocity",
-      "definition": "Rate of change of displacement with time"
-    },
-    {
-      "term": "acceleration",
-      "definition": "Rate of change of velocity with time"
-    },
-    {
-      "term": "position-time graph",
-      "definition": "Graph showing how position changes over time"
-    }
+    {"term": "kinematics", "definition": "The study of motion without considering the forces that cause it"},
+    {"term": "displacement", "definition": "Change in position of an object"},
+    {"term": "velocity", "definition": "Rate of change of displacement with time"},
+    {"term": "acceleration", "definition": "Rate of change of velocity with time"},
+    {"term": "position-time graph", "definition": "Graph showing how position changes over time"}
   ],
   "teachingNotes": "Focus on interpreting motion graphs. Practice reading slope and area from position-time and velocity-time graphs.",
-  "sample": {
-    "question": "What is the study of motion without considering forces?",
-    "expectedAny": [
-      "kinematics",
-      "kinematic analysis",
-      "motion study",
-      "descriptive motion"
-    ]
-  },
-  "truefalse": {
-    "question": "Velocity is the rate of change of position with time.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What does the slope of a position-time graph represent?",
-    "expectedAny": [
-      "velocity",
-      "speed",
-      "rate of position change",
-      "displacement rate"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The rate of change of velocity with time is called ________.",
-    "expectedAny": [
-      "acceleration",
-      "change in velocity",
-      "velocity rate",
-      "acceleration rate"
-    ]
-  },
-  "shortanswer": {
-    "question": "How do you find displacement from a velocity-time graph?",
-    "expectedAny": [
-      "calculate area under the curve",
-      "find area between line and time axis",
-      "integrate velocity over time"
-    ]
-  }
+  "sample": [
+    {"question": "What is the study of motion without considering forces?", "expectedAny": ["kinematics", "kinematic analysis", "motion study", "study of how things move"]},
+    {"question": "What is displacement?", "expectedAny": ["change in position", "position change", "shift in location", "how far moved"]},
+    {"question": "What is velocity?", "expectedAny": ["rate of change of displacement", "speed with direction", "displacement per time", "how fast with direction"]},
+    {"question": "What is acceleration?", "expectedAny": ["rate of change of velocity", "velocity change per time", "change in speed", "how velocity changes"]},
+    {"question": "What is a position-time graph?", "expectedAny": ["graph of position vs time", "shows position over time", "position changing with time", "position plotted over time"]},
+    {"question": "What does slope of position-time graph show?", "expectedAny": ["velocity", "speed", "rate of position change"]},
+    {"question": "What does slope of velocity-time graph show?", "expectedAny": ["acceleration", "rate of velocity change", "change in velocity"]},
+    {"question": "What is the unit of velocity?", "expectedAny": ["meters per second", "m/s", "distance per time"]},
+    {"question": "What is the unit of acceleration?", "expectedAny": ["meters per second squared", "m/s", "velocity per time"]},
+    {"question": "How do you find displacement from velocity-time graph?", "expectedAny": ["area under curve", "area between graph and axis", "calculate area"]}
+  ],
+  "truefalse": [
+    {"question": "Velocity is the rate of change of position with time. (True or False)", "correct": true},
+    {"question": "Acceleration is change in position. (True or False)", "correct": false},
+    {"question": "Kinematics studies forces. (True or False)", "correct": false},
+    {"question": "Displacement is change in position. (True or False)", "correct": true},
+    {"question": "Slope of position-time graph is velocity. (True or False)", "correct": true},
+    {"question": "Slope of velocity-time graph is displacement. (True or False)", "correct": false},
+    {"question": "Acceleration is rate of change of velocity. (True or False)", "correct": true},
+    {"question": "Velocity has magnitude and direction. (True or False)", "correct": true},
+    {"question": "Speed and velocity are exactly the same. (True or False)", "correct": false},
+    {"question": "Area under velocity-time graph gives displacement. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What does the slope of a position-time graph represent?", "choices": [{"letter": "A", "text": "Acceleration"}, {"letter": "B", "text": "Velocity"}, {"letter": "C", "text": "Displacement"}, {"letter": "D", "text": "Force"}], "correct": "B"},
+    {"question": "What does the slope of a velocity-time graph represent?", "choices": [{"letter": "A", "text": "Velocity"}, {"letter": "B", "text": "Position"}, {"letter": "C", "text": "Acceleration"}, {"letter": "D", "text": "Distance"}], "correct": "C"},
+    {"question": "What is the study of motion without forces?", "choices": [{"letter": "A", "text": "Dynamics"}, {"letter": "B", "text": "Kinematics"}, {"letter": "C", "text": "Statics"}, {"letter": "D", "text": "Mechanics"}], "correct": "B"},
+    {"question": "What is change in position called?", "choices": [{"letter": "A", "text": "Velocity"}, {"letter": "B", "text": "Acceleration"}, {"letter": "C", "text": "Displacement"}, {"letter": "D", "text": "Speed"}], "correct": "C"},
+    {"question": "What measures rate of velocity change?", "choices": [{"letter": "A", "text": "Speed"}, {"letter": "B", "text": "Displacement"}, {"letter": "C", "text": "Position"}, {"letter": "D", "text": "Acceleration"}], "correct": "D"},
+    {"question": "On a position-time graph, what does a horizontal line mean?", "choices": [{"letter": "A", "text": "Constant velocity"}, {"letter": "B", "text": "At rest"}, {"letter": "C", "text": "Accelerating"}, {"letter": "D", "text": "Decelerating"}], "correct": "B"},
+    {"question": "On a velocity-time graph, what does a horizontal line mean?", "choices": [{"letter": "A", "text": "At rest"}, {"letter": "B", "text": "Constant velocity"}, {"letter": "C", "text": "Accelerating"}, {"letter": "D", "text": "Changing position"}], "correct": "B"},
+    {"question": "What unit measures velocity?", "choices": [{"letter": "A", "text": "Meters"}, {"letter": "B", "text": "Seconds"}, {"letter": "C", "text": "Meters per second"}, {"letter": "D", "text": "Newtons"}], "correct": "C"},
+    {"question": "What does area under velocity-time graph show?", "choices": [{"letter": "A", "text": "Velocity"}, {"letter": "B", "text": "Acceleration"}, {"letter": "C", "text": "Displacement"}, {"letter": "D", "text": "Force"}], "correct": "C"},
+    {"question": "Which has both magnitude and direction?", "choices": [{"letter": "A", "text": "Speed"}, {"letter": "B", "text": "Distance"}, {"letter": "C", "text": "Velocity"}, {"letter": "D", "text": "Time"}], "correct": "C"}
+  ],
+  "fillintheblank": [
+    {"question": "The rate of change of velocity with time is called _____.", "expectedAny": ["acceleration"]},
+    {"question": "The rate of change of displacement with time is _____.", "expectedAny": ["velocity"]},
+    {"question": "Change in position is called _____.", "expectedAny": ["displacement"]},
+    {"question": "The study of motion without forces is _____.", "expectedAny": ["kinematics"]},
+    {"question": "The slope of a position-time graph is _____.", "expectedAny": ["velocity"]},
+    {"question": "The slope of a velocity-time graph is _____.", "expectedAny": ["acceleration"]},
+    {"question": "A _____ graph shows how position changes over time.", "expectedAny": ["position-time", "position vs time"]},
+    {"question": "Velocity is measured in meters per _____.", "expectedAny": ["second"]},
+    {"question": "The area under a velocity-time graph gives _____.", "expectedAny": ["displacement"]},
+    {"question": "Velocity includes both magnitude and _____.", "expectedAny": ["direction"]}
+  ],
+  "shortanswer": [
+    {"question": "How do you find velocity from a position-time graph?", "keyTerms": ["slope", "rise over run", "change"], "expectedAny": ["Find the slope of the line", "Calculate rise over run", "Change in position over change in time"]},
+    {"question": "How do you find acceleration from a velocity-time graph?", "keyTerms": ["slope", "rise over run", "change"], "expectedAny": ["Find the slope of the line", "Calculate rise over run", "Change in velocity over change in time"]},
+    {"question": "What is the difference between velocity and speed?", "keyTerms": ["velocity", "direction", "speed", "magnitude"], "expectedAny": ["Velocity has direction, speed does not", "Velocity is vector, speed is scalar", "Speed is magnitude only"]},
+    {"question": "What does a horizontal line on a position-time graph mean?", "keyTerms": ["not moving", "at rest", "zero velocity", "stationary"], "expectedAny": ["Object is at rest", "Not moving", "Zero velocity"]},
+    {"question": "What does a straight diagonal line on position-time graph mean?", "keyTerms": ["constant", "velocity", "uniform", "steady"], "expectedAny": ["Constant velocity", "Uniform motion", "Steady speed"]},
+    {"question": "What does a horizontal line on velocity-time graph mean?", "keyTerms": ["constant", "velocity", "zero", "acceleration"], "expectedAny": ["Constant velocity", "Zero acceleration", "No acceleration"]},
+    {"question": "What does kinematics study?", "keyTerms": ["motion", "without", "forces", "describes"], "expectedAny": ["Motion without considering forces", "Describes motion only", "How objects move"]},
+    {"question": "How do you find displacement from velocity-time graph?", "keyTerms": ["area", "under", "curve", "graph"], "expectedAny": ["Find area under the curve", "Calculate area between graph and axis", "Area under velocity line"]},
+    {"question": "What is displacement?", "keyTerms": ["change", "position", "from start", "to end"], "expectedAny": ["Change in position", "Difference between final and initial position", "From start to end position"]},
+    {"question": "If velocity-time graph has positive slope, what is happening?", "keyTerms": ["accelerating", "speeding up", "positive", "acceleration"], "expectedAny": ["Object is accelerating", "Speeding up", "Positive acceleration"]}
+  ]
 }

@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Practice identifying verbals in sentences. Show how active voice creates stronger, clearer writing than passive voice.",
-  "sample": {
-    "question": "What is a verb form that functions as another part of speech?",
-    "expectedAny": [
-      "verbal",
-      "verb form",
-      "verbal phrase",
-      "non-finite verb"
-    ]
-  },
-  "truefalse": {
-    "question": "A gerund is a verb form ending in -ing that acts as a noun.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "When the subject performs the action, what voice is used?",
-    "expectedAny": [
-      "active voice",
-      "active",
-      "subject-verb",
-      "direct action"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A verb form that functions as an adjective is a ________.",
-    "expectedAny": [
-      "participle",
-      "participial",
-      "verbal adjective",
-      "descriptive verbal"
-    ]
-  },
-  "shortanswer": {
-    "question": "Identify the gerund in this sentence: 'Swimming is my favorite activity.'",
-    "expectedAny": [
-      "Swimming",
-      "swimming",
-      "the word swimming",
-      "swimming (subject)"
-    ]
-  }
+  "sample": [
+    { "question": "What is a verb form that functions as another part of speech?", "expectedAny": ["verbal"] },
+    { "question": "Which ends in -ing as noun?", "choices": ["Verb", "Gerund", "Adjective", "Adverb"], "correct": 1, "expectedAny": ["gerund"] },
+    { "question": "Verb form as adjective is ________.", "expectedAny": ["participle"] },
+    { "question": "Subject performs action is ________.", "expectedAny": ["active voice"] },
+    { "question": "Subject receives action is ________.", "expectedAny": ["passive voice"] },
+    { "question": "What is verb as other speech?", "choices": ["Noun", "Verbal", "Adjective", "Adverb"], "correct": 1, "expectedAny": ["verbal"] },
+    { "question": "Verb ending -ing as noun is ________.", "expectedAny": ["gerund"] },
+    { "question": "What is verb as adjective?", "choices": ["Gerund", "Participle", "Noun", "Adverb"], "correct": 1, "expectedAny": ["participle"] },
+    { "question": "Subject doing action is ________.", "expectedAny": ["active voice"] },
+    { "question": "Subject receiving is ________.", "expectedAny": ["passive voice"] }
+  ],
+  "truefalse": [
+    { "question": "A gerund is a verb form ending in -ing that acts as a noun.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Verbal is just a verb.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Participle functions as adjective.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Active voice has subject receiving action.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Passive voice has subject receiving action.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Gerunds end in -ed.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Verbals are verb forms.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Participles are nouns.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Active voice is stronger.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Gerund is adjective.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "When the subject performs the action, what voice is used?", "choices": ["Passive voice", "Active voice", "Past tense", "Future tense"], "correct": 1, "expectedAny": ["active voice"] },
+    { "question": "What is verb as other speech?", "choices": ["Noun", "Verbal", "Adjective", "Adverb"], "correct": 1, "expectedAny": ["verbal"] },
+    { "question": "What ends in -ing as noun?", "choices": ["Verb", "Gerund", "Adjective", "Adverb"], "correct": 1, "expectedAny": ["gerund"] },
+    { "question": "What is verb as adjective?", "choices": ["Gerund", "Participle", "Noun", "Adverb"], "correct": 1, "expectedAny": ["participle"] },
+    { "question": "What has subject receiving?", "choices": ["Active voice", "Passive voice", "Past tense", "Future tense"], "correct": 1, "expectedAny": ["passive voice"] },
+    { "question": "Verb form functioning differently?", "choices": ["Adjective", "Verbal", "Noun", "Adverb"], "correct": 1, "expectedAny": ["verbal"] },
+    { "question": "Running as noun is?", "choices": ["Verb", "Gerund", "Participle", "Adverb"], "correct": 1, "expectedAny": ["gerund"] },
+    { "question": "Broken as adjective is?", "choices": ["Gerund", "Participle", "Verb", "Noun"], "correct": 1, "expectedAny": ["participle"] },
+    { "question": "Clearer writing uses?", "choices": ["Passive voice", "Active voice", "Neither", "Both equally"], "correct": 1, "expectedAny": ["active voice"] },
+    { "question": "Subject doing action is?", "choices": ["Passive", "Active voice", "Past", "Future"], "correct": 1, "expectedAny": ["active voice"] }
+  ],
+  "fillintheblank": [
+    { "question": "A verb form that functions as an adjective is a ________.", "expectedAny": ["participle"] },
+    { "question": "A verb form as another part of speech is ________.", "expectedAny": ["verbal"] },
+    { "question": "Verb ending -ing as noun is ________.", "expectedAny": ["gerund"] },
+    { "question": "Subject performs action in ________.", "expectedAny": ["active voice"] },
+    { "question": "Subject receives action in ________.", "expectedAny": ["passive voice"] },
+    { "question": "A ________ is verb as other speech.", "expectedAny": ["verbal"] },
+    { "question": "A ________ ends in -ing as noun.", "expectedAny": ["gerund"] },
+    { "question": "A ________ is verb as adjective.", "expectedAny": ["participle"] },
+    { "question": "________ voice has subject performing.", "expectedAny": ["active"] },
+    { "question": "________ voice has subject receiving.", "expectedAny": ["passive"] }
+  ],
+  "shortanswer": [
+    { "question": "Identify the gerund in this sentence: 'Swimming is my favorite activity.'", "expectedAny": ["Swimming"] },
+    { "question": "What is verbal?", "expectedAny": ["verb form as other part of speech", "verb functioning differently"] },
+    { "question": "What is gerund?", "expectedAny": ["verb ending -ing as noun", "-ing verb as noun", "-ing form used as noun", "verb with -ing acting as noun"] },
+    { "question": "What is participle?", "expectedAny": ["verb form as adjective", "verb functioning as adjective", "verb used to describe", "verb acting as adjective"] },
+    { "question": "What is active voice?", "expectedAny": ["subject performs action", "subject doing action", "subject does the action", "doer comes first"] },
+    { "question": "What is passive voice?", "expectedAny": ["subject receives action", "subject receiving action"] },
+    { "question": "Why use active voice?", "expectedAny": ["stronger clearer writing", "more direct"] },
+    { "question": "Give gerund example?", "expectedAny": ["swimming", "running", "reading"] },
+    { "question": "Give participle example?", "expectedAny": ["broken", "running", "fallen"] },
+    { "question": "What voice is clearer?", "expectedAny": ["active voice", "active"] }
+  ]
 }

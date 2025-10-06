@@ -20,6 +20,42 @@
     {
       "term": "patriot",
       "definition": "Someone who supported American independence from Britain"
+    },
+    {
+      "term": "boycott",
+      "definition": "A protest where people refuse to buy certain goods"
+    },
+    {
+      "term": "Parliament",
+      "definition": "Britain's law-making body"
+    },
+    {
+      "term": "tariff",
+      "definition": "A tax on imports or exports"
+    },
+    {
+      "term": "quartering",
+      "definition": "When colonists had to house and feed British soldiers"
+    },
+    {
+      "term": "militia",
+      "definition": "Citizen soldiers who could fight in emergencies"
+    },
+    {
+      "term": "delegate",
+      "definition": "A person chosen to represent a colony at a meeting"
+    },
+    {
+      "term": "protest",
+      "definition": "An action showing disagreement with a law or policy"
+    },
+    {
+      "term": "treaty",
+      "definition": "A formal agreement between countries"
+    },
+    {
+      "term": "colonies",
+      "definition": "Lands ruled by another country; before 1776 the thirteen colonies were ruled by Britain"
     }
   ],
   "teachingNotes": "Use timeline activities and cause-and-effect charts. Discuss concepts of fairness and representation. Connect to modern democratic principles.",
@@ -33,39 +69,41 @@
     {"question": "Why did colonists think British taxes were unfair?", "expectedAny": ["no representation", "no consent"]}
   ],
   "truefalse": [
-    {"question": "The Boston Tea Party protested British taxes on tea.", "answer": true},
-    {"question": "All colonists immediately wanted independence.", "answer": false},
-    {"question": "The Intolerable Acts punished Boston after the Tea Party.", "answer": true},
-    {"question": "George III was king of Britain during the Revolution.", "answer": true},
-    {"question": "The Declaration of Independence was signed in Philadelphia.", "answer": true},
-    {"question": "The colonists had representatives in Parliament.", "answer": false},
-    {"question": "The war ended with the Treaty of Paris.", "answer": true}
+    {"question": "The Boston Tea Party protested British taxes on tea.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "All colonists immediately wanted independence.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "The Intolerable Acts punished Boston after the Tea Party.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "George III was king of Britain during the Revolution.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "The Declaration of Independence was signed in Philadelphia.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "The colonists had representatives in Parliament.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "The war ended with the Treaty of Paris.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]}
   ],
   "multiplechoice": [
-    {"question": "Which was a major cause of the American Revolution?", "choices": ["Too much freedom", "British taxes and laws", "Bad weather", "No land"], "correct": 1},
-    {"question": "What did the Stamp Act tax?", "choices": ["Tea", "Printed materials", "Sugar", "Stamps only"], "correct": 1},
-    {"question": "Which event came first?", "choices": ["Declaration of Independence", "Boston Tea Party", "Treaty of Paris", "Yorktown"], "correct": 1},
-    {"question": "Who wrote the Declaration of Independence?", "choices": ["George Washington", "Thomas Jefferson", "Benjamin Franklin", "John Adams"], "correct": 1},
-    {"question": "'No taxation without representation' means:", "choices": ["No taxes ever", "Taxes only by local assemblies", "No taxes without a vote/voice", "Tax Britain"], "correct": 2},
-    {"question": "Which act closed Boston Harbor?", "choices": ["Stamp Act", "Townshend Acts", "Intolerable Acts", "Sugar Act"], "correct": 2},
-    {"question": "Where did Washington's army spend a harsh winter?", "choices": ["Boston", "Valley Forge", "New York", "Philadelphia"], "correct": 1}
+    {"question": "Which was a major cause of the American Revolution?", "choices": ["Too much freedom", "British taxes and laws", "Bad weather", "No land"], "correct": 1, "expectedAny": ["british taxes and laws", "taxes and laws", "b", "2", "second"]},
+    {"question": "What did the Stamp Act tax?", "choices": ["Tea", "Printed materials", "Sugar", "Stamps only"], "correct": 1, "expectedAny": ["printed materials", "paper goods", "documents", "b", "2", "second"]},
+    {"question": "Which event came first?", "choices": ["Declaration of Independence", "Boston Tea Party", "Treaty of Paris", "Yorktown"], "correct": 1, "expectedAny": ["boston tea party", "b", "2", "second"]},
+    {"question": "Who wrote the Declaration of Independence?", "choices": ["George Washington", "Thomas Jefferson", "Benjamin Franklin", "John Adams"], "correct": 1, "expectedAny": ["thomas jefferson", "b", "2", "second"]},
+    {"question": "'No taxation without representation' means:", "choices": ["No taxes ever", "Taxes only by local assemblies", "No taxes without a vote/voice", "Tax Britain"], "correct": 2, "expectedAny": ["no taxes without a vote", "no taxes without representation", "c", "3", "third"]},
+    {"question": "Which act closed Boston Harbor?", "choices": ["Stamp Act", "Townshend Acts", "Intolerable Acts", "Sugar Act"], "correct": 2, "expectedAny": ["intolerable acts", "coercive acts", "c", "3", "third"]},
+    {"question": "Where did Washington's army spend a harsh winter?", "choices": ["Boston", "Valley Forge", "New York", "Philadelphia"], "correct": 1, "expectedAny": ["valley forge", "b", "2", "second"]}
   ],
   "fillintheblank": [
-    {"question": "The Declaration of Independence, written in ____, declared freedom from ____.", "expectedAny": ["1776", "Britain"]},
-    {"question": "Colonists protested the ____ Act by refusing to buy tea.", "expectedAny": ["Tea"]},
-    {"question": "The first shots were fired at ____ and ____.", "expectedAny": ["Lexington", "Concord"]},
-    {"question": "A person who supported independence was called a ____.", "expectedAny": ["Patriot"]},
-    {"question": "The British government is called ____.", "expectedAny": ["Parliament"]},
-    {"question": "Punitive laws after the Tea Party were called the ____ Acts.", "expectedAny": ["Intolerable"]},
-    {"question": "The war officially ended with the Treaty of ____.", "expectedAny": ["Paris"]}
+    {"question": "The Declaration of Independence, written in ____, declared freedom from ____.", "expectedAny": ["1776", "july 4, 1776", "britain", "great britain", "king george iii's britain"]},
+    {"question": "Colonists protested the ____ Act by refusing to buy tea.", "expectedAny": ["tea", "tea act"]},
+    {"question": "The first shots were fired at ____ and ____.", "expectedAny": ["lexington", "concord", "lexington and concord"]},
+    {"question": "A person who supported independence was called a ____.", "expectedAny": ["patriot", "a patriot"]},
+    {"question": "The British government is called ____.", "expectedAny": ["parliament", "the british parliament", "parliament of great britain"]},
+    {"question": "Punitive laws after the Tea Party were called the ____ Acts.", "expectedAny": ["intolerable", "coercive"]},
+    {"question": "The war officially ended with the Treaty of ____.", "expectedAny": ["paris", "treaty of paris"]},
+  {"question": "A refusal to buy goods as protest is a ____.", "expectedAny": ["boycott", "boycotting", "to boycott"]},
+    {"question": "Colonists had to house soldiers under the ____ Act.", "expectedAny": ["quartering", "quartering act"]}
   ],
   "shortanswer": [
-    {"question": "How did the Stamp Act anger colonists?", "expectedAny": ["taxed printed items", "no representation"]},
-    {"question": "Why did colonists dump tea in Boston Harbor?", "expectedAny": ["protest Tea Act"]},
-    {"question": "How did the Intolerable Acts unite the colonies?", "expectedAny": ["colonies supported Boston", "First Continental Congress"]},
-    {"question": "What ideas are in the Declaration of Independence?", "expectedAny": ["natural rights", "self-government"]},
-    {"question": "How did geography affect the war?", "expectedAny": ["colonists knew the land", "long British supply lines"]},
-    {"question": "What were Loyalists and Patriots?", "expectedAny": ["loyal to Britain vs for independence"]},
-    {"question": "What roles did different groups play?", "expectedAny": ["women", "African Americans", "Native Americans"]}
+    {"question": "How did the Stamp Act anger colonists?", "expectedAny": ["taxed printed items", "no representation", "tax on paper documents", "tax without consent", "taxes without a vote"]},
+    {"question": "Why did colonists dump tea in Boston Harbor?", "expectedAny": ["protest tea act", "protest tax on tea", "boycott and protest monopoly", "against tea tax and monopoly"]},
+    {"question": "How did the Intolerable Acts unite the colonies?", "expectedAny": ["colonies supported boston", "first continental congress", "punishment sparked colonial unity", "shared resistance"]},
+    {"question": "What ideas are in the Declaration of Independence?", "expectedAny": ["natural rights", "self-government", "consent of the governed", "unalienable rights life liberty pursuit of happiness", "right to change unjust government", "equality"]},
+    {"question": "How did geography affect the war?", "expectedAny": ["colonists knew the land", "long british supply lines", "home-field advantage", "familiar terrain helped patriots"]},
+    {"question": "What were Loyalists and Patriots?", "expectedAny": ["loyal to britain vs for independence", "tories vs patriots", "sides in the colonies"]},
+  {"question": "What roles did different people play in the war?", "expectedAny": ["women ran farms and made supplies", "african americans served on both sides", "native nations allied with both sides", "various groups supported the war effort", "militias fought locally"]}
   ]
 }

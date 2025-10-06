@@ -23,52 +23,87 @@
     {
       "term": "nervous system",
       "definition": "The system that controls and coordinates body activities"
+    },
+    {
+      "term": "skeletal system",
+      "definition": "The body system of bones that supports and protects"
+    },
+    {
+      "term": "muscular system",
+      "definition": "The body system of muscles that helps you move"
+    },
+    {
+      "term": "excretory system",
+      "definition": "The system that removes liquid wastes from the body"
+    },
+    {
+      "term": "immune system",
+      "definition": "The system that helps protect the body from disease"
+    },
+    {
+      "term": "homeostasis",
+      "definition": "The body's way of keeping internal conditions stable"
     }
   ],
   "teachingNotes": "Focus on how different body systems work together. Use diagrams to show connections between systems. Discuss how the body maintains itself through system interactions.",
-  "sample": {
-    "question": "How do the circulatory and respiratory systems work together?",
-    "expectedAny": [
-      "blood carries oxygen from lungs",
-      "oxygen transport",
-      "gas exchange",
-      "breathing and circulation"
-    ]
-  },
-  "truefalse": {
-    "question": "The nervous system controls all other body systems.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which system breaks down food into nutrients?",
-    "expectedAny": [
-      "digestive system",
-      "digestive",
-      "stomach and intestines",
-      "food processing system"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The ________ system pumps blood throughout your body.",
-    "expectedAny": [
-      "circulatory",
-      "cardiovascular",
-      "heart",
-      "blood"
-    ]
-  },
-  "shortanswer": {
-    "question": "What happens when you exercise that shows systems working together?",
-    "expectedAny": [
-      "heart beats faster",
-      "breathing increases",
-      "systems speed up",
-      "increased oxygen need"
-    ]
-  }
+  "sample": [
+    { "question": "How do the circulatory and respiratory systems work together?", "expectedAny": ["blood carries oxygen from lungs"] },
+    { "question": "What is the job of the digestive system?", "expectedAny": ["breaks down food to nutrients"] },
+    { "question": "What system controls body activities?", "expectedAny": ["nervous system"] },
+    { "question": "How do the muscular and skeletal systems work together?", "expectedAny": ["movement", "support"] },
+    { "question": "What does the excretory system remove?", "expectedAny": ["wastes"] },
+    { "question": "How does the circulatory system move materials?", "expectedAny": ["blood carries oxygen and nutrients"] },
+    { "question": "What system helps you breathe?", "expectedAny": ["respiratory system"] },
+    { "question": "What organ pumps blood?", "expectedAny": ["heart"] },
+    { "question": "What system protects against germs?", "expectedAny": ["immune system"] },
+    { "question": "Which system sends signals quickly?", "expectedAny": ["nervous system"] }
+  ],
+  "truefalse": [
+    { "question": "The nervous system controls many body activities.", "expectedAny": ["true"] },
+    { "question": "The digestive system adds oxygen to blood.", "expectedAny": ["false"] },
+    { "question": "The respiratory system brings oxygen into the body.", "expectedAny": ["true"] },
+    { "question": "The circulatory system moves blood around the body.", "expectedAny": ["true"] },
+    { "question": "Muscles attach to bones to help you move.", "expectedAny": ["true"] },
+    { "question": "The excretory system stores nutrients.", "expectedAny": ["false"] },
+    { "question": "The immune system helps fight disease.", "expectedAny": ["true"] },
+    { "question": "The skeletal system makes hormones.", "expectedAny": ["false"] },
+    { "question": "Systems often work together to do a job.", "expectedAny": ["true"] },
+    { "question": "The heart is part of the respiratory system.", "expectedAny": ["false"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which system breaks down food into nutrients?", "choices": ["circulatory", "respiratory", "digestive", "nervous"], "correct": 2, "expectedAny": ["digestive system"] },
+    { "question": "Which organ pumps blood?", "choices": ["lungs", "heart", "brain", "stomach"], "correct": 1, "expectedAny": ["heart"] },
+    { "question": "Which system brings oxygen into the body?", "choices": ["digestive", "respiratory", "nervous", "skeletal"], "correct": 1, "expectedAny": ["respiratory"] },
+    { "question": "Which two systems help you move?", "choices": ["muscular and skeletal", "digestive and nervous", "respiratory and immune", "circulatory and excretory"], "correct": 0, "expectedAny": ["muscular and skeletal"] },
+    { "question": "Which system fights germs?", "choices": ["skeletal", "immune", "digestive", "respiratory"], "correct": 1, "expectedAny": ["immune"] },
+    { "question": "Which system controls body activities?", "choices": ["digestive", "circulatory", "respiratory", "nervous"], "correct": 3, "expectedAny": ["nervous"] },
+    { "question": "Which part adds oxygen to blood?", "choices": ["heart", "lungs", "stomach", "brain"], "correct": 1, "expectedAny": ["lungs"] },
+    { "question": "Which carries nutrients and oxygen?", "choices": ["nerves", "blood", "air", "urine"], "correct": 1, "expectedAny": ["blood"] },
+    { "question": "Which system removes liquid waste?", "choices": ["excretory", "nervous", "immune", "skeletal"], "correct": 0, "expectedAny": ["excretory"] },
+    { "question": "Which organ is part of the digestive system?", "choices": ["heart", "lungs", "stomach", "brain"], "correct": 2, "expectedAny": ["stomach"] }
+  ],
+  "fillintheblank": [
+    { "question": "The ________ system pumps blood throughout your body.", "expectedAny": ["circulatory", "circulatory system"] },
+    { "question": "The ________ system brings oxygen into the body.", "expectedAny": ["respiratory", "respiratory system"] },
+    { "question": "The ________ system breaks down food.", "expectedAny": ["digestive", "digestive system"] },
+    { "question": "The ________ system controls body activities.", "expectedAny": ["nervous", "nervous system"] },
+    { "question": "Muscles pull on ________ to move.", "expectedAny": ["bones", "the bones", "skeleton"] },
+    { "question": "The ________ system removes wastes.", "expectedAny": ["excretory", "urinary", "excretory system"] },
+    { "question": "The ________ pumps blood.", "expectedAny": ["heart", "the heart"] },
+    { "question": "The ________ take in oxygen and release carbon dioxide.", "expectedAny": ["lungs", "the lungs"] },
+    { "question": "The ________ system helps fight disease.", "expectedAny": ["immune", "immune system"] },
+    { "question": "The body uses ________ to carry materials around.", "expectedAny": ["blood", "the blood"] }
+  ],
+  "shortanswer": [
+    { "question": "What happens when you exercise that shows systems working together?", "expectedAny": ["heart beats faster", "breathing increases", "muscles need more oxygen", "circulation and breathing increase"] },
+    { "question": "Explain how the respiratory and circulatory systems work together.", "expectedAny": ["oxygen from lungs carried by blood", "lungs add oxygen and blood delivers it", "blood brings oxygen to cells"] },
+    { "question": "Give one example of the digestive system helping another system.", "expectedAny": ["nutrients supply energy for muscles", "food energy powers movement", "nutrients help cells work"] },
+    { "question": "How does the nervous system help you move?", "expectedAny": ["sends signals to muscles", "brain and nerves tell muscles to move"] },
+    { "question": "What systems help remove waste from the body?", "expectedAny": ["excretory and circulatory", "urinary and circulatory", "kidneys and blood"] },
+    { "question": "How does the immune system protect you?", "expectedAny": ["fights germs", "attacks pathogens", "keeps you from getting sick"] },
+    { "question": "Which systems help deliver oxygen to cells?", "expectedAny": ["respiratory and circulatory", "lungs and blood", "breathing and circulation"] },
+    { "question": "Why do athletes need the digestive system?", "expectedAny": ["provide energy from food", "gives fuel for muscles", "nutrients for energy"] },
+    { "question": "How do bones and muscles work together?", "expectedAny": ["bones provide support, muscles pull to move", "skeleton gives shape and muscles move it"] },
+    { "question": "What system helps you think and react quickly?", "expectedAny": ["nervous system", "nervous"] }
+  ]
 }

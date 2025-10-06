@@ -5,12 +5,21 @@
   "difficulty": "Beginner",
   "featured": false,
   "vocab": [
-    { "term": "community", "definition": "A group of people who live and work together in the same area" },
-    { "term": "community helper", "definition": "A person whose job helps make the community safe and better" },
-    { "term": "responsibility", "definition": "A job or duty that someone must do" },
-    { "term": "service", "definition": "Work done to help other people" },
-    { "term": "volunteer", "definition": "Someone who helps without being paid" },
-    { "term": "emergency", "definition": "A dangerous situation that needs quick help" }
+    {"word": "community", "kid_friendly_definition": "A group of people who live and work together in the same area."},
+    {"word": "community helper", "kid_friendly_definition": "A person whose job helps make the community safe and better."},
+    {"word": "responsibility", "kid_friendly_definition": "A job or duty that someone must do."},
+    {"word": "service", "kid_friendly_definition": "Work done to help other people."},
+    {"word": "volunteer", "kid_friendly_definition": "Someone who helps without being paid."},
+    {"word": "emergency", "kid_friendly_definition": "A dangerous situation that needs quick help."},
+    {"word": "paramedic", "kid_friendly_definition": "A trained helper who gives emergency medical care and drives an ambulance."},
+    {"word": "librarian", "kid_friendly_definition": "A person who helps people find books and information."},
+    {"word": "sanitation worker", "kid_friendly_definition": "A person who collects trash to keep the community clean."},
+    {"word": "plumber", "kid_friendly_definition": "A worker who fixes pipes and water problems."},
+    {"word": "veterinarian", "kid_friendly_definition": "An animal doctor who takes care of sick animals."},
+    {"word": "crossing guard", "kid_friendly_definition": "A helper who keeps people safe crossing the street."},
+    {"word": "first responder", "kid_friendly_definition": "Someone who arrives first in an emergency, like police, firefighters, or paramedics."},
+    {"word": "public service", "kid_friendly_definition": "Work that helps everyone in the community."},
+    {"word": "neighborhood", "kid_friendly_definition": "The area where you live with nearby houses and people."}
   ],
   "teachingNotes": "Invite local community helpers to speak. Use role-play activities. Connect to students' experiences with police, firefighters, teachers, etc.",
   "sample": [
@@ -23,67 +32,74 @@
     { "question": "Who grows food for us?", "expectedAny": ["farmer", "gardener"] }
   ],
   "truefalse": [
-    { "question": "Police officers help keep us safe.", "answer": true },
-    { "question": "Librarians help us find books.", "answer": true },
-    { "question": "Garbage collectors aren't important.", "answer": false },
-    { "question": "Veterinarians take care of animals.", "answer": true },
-    { "question": "Bus drivers help students get to school.", "answer": true },
-    { "question": "Community helpers only work for money.", "answer": false },
-    { "question": "Volunteers are community helpers too.", "answer": true }
+    { "question": "Police officers help keep us safe.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "keep us safe"] },
+    { "question": "Librarians help us find books.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "find books"] },
+    { "question": "Garbage collectors aren't important.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "they keep the community clean"] },
+    { "question": "Veterinarians take care of animals.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "animal doctor"] },
+    { "question": "Bus drivers help students get to school.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "get to school"] },
+    { "question": "Community helpers only work for money.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "volunteers also help"] },
+    { "question": "Volunteers are community helpers too.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "volunteers help"] }
   ],
   "multiplechoice": [
     {
       "question": "Who helps you cross the street safely?",
       "choices": ["chef", "crossing guard", "pilot", "artist"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "crossing guard"]
     },
     {
       "question": "What number do you call for emergencies?",
       "choices": ["411", "511", "911", "811"],
-      "correct": 2
+      "correct": 2,
+      "expectedAny": ["c", "C", "3", "911", "nine one one", "9-1-1"]
     },
     {
       "question": "Who puts out fires?",
       "choices": ["police officer", "teacher", "firefighter", "mayor"],
-      "correct": 2
+      "correct": 2,
+      "expectedAny": ["c", "C", "3", "firefighter", "fire fighter"]
     },
     {
       "question": "Where does a lifeguard work?",
       "choices": ["hospital", "school", "pool or beach", "library"],
-      "correct": 2
+      "correct": 2,
+      "expectedAny": ["c", "C", "3", "pool", "beach", "swimming pool"]
     },
     {
       "question": "Who fixes pipes and water problems?",
       "choices": ["electrician", "plumber", "carpenter", "painter"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "plumber"]
     },
     {
       "question": "Who takes care of sick animals?",
       "choices": ["doctor", "veterinarian", "farmer", "zookeeper"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "veterinarian", "vet"]
     },
     {
       "question": "Who drives an ambulance?",
       "choices": ["paramedic", "teacher", "chef", "banker"],
-      "correct": 0
+      "correct": 0,
+      "expectedAny": ["a", "A", "1", "paramedic", "emt"]
     }
   ],
   "fillintheblank": [
-    { "question": "A ___ helps students learn to read.", "expectedAny": ["teacher"] },
-    { "question": "___ officers protect our community.", "expectedAny": ["Police"] },
-    { "question": "A ___ takes care of sick people in the hospital.", "expectedAny": ["nurse"] },
-    { "question": "The ___ delivers packages to our homes.", "expectedAny": ["mail carrier"] },
-    { "question": "A ___ grows vegetables and raises animals.", "expectedAny": ["farmer"] },
-    { "question": "___ collect our trash every week.", "expectedAny": ["Garbage collectors"] },
-    { "question": "A ___ cuts and styles hair.", "expectedAny": ["hairdresser"] }
+    { "question": "A ___ helps students learn to read.", "expectedAny": ["teacher", "a teacher", "educator", "reading teacher"] },
+    { "question": "___ officers protect our community.", "expectedAny": ["Police", "police officers", "police", "police officer"] },
+    { "question": "A ___ takes care of sick people in the hospital.", "expectedAny": ["nurse", "a nurse", "hospital nurse"] },
+    { "question": "The ___ delivers packages to our homes.", "expectedAny": ["mail carrier", "postal worker", "mailman"] },
+    { "question": "A ___ grows vegetables and raises animals.", "expectedAny": ["farmer", "a farmer", "grower"] },
+    { "question": "___ collect our trash every week.", "expectedAny": ["Garbage collectors", "trash collectors", "sanitation workers"] },
+    { "question": "A ___ cuts and styles hair.", "expectedAny": ["hairdresser", "a hairdresser", "barber"] }
   ],
   "shortanswer": [
-    { "question": "How do teachers help our community?", "expectedAny": ["educate children", "teach", "help kids learn"] },
-    { "question": "Why are garbage collectors important?", "expectedAny": ["keep community clean", "prevent disease", "recycle"] },
-    { "question": "Name two ways police officers help.", "expectedAny": ["stop crime", "direct traffic", "find lost people", "keep safe"] },
-    { "question": "How can kids be community helpers?", "expectedAny": ["pick up litter", "help neighbors", "volunteer", "be kind"] },
-    { "question": "What would happen without firefighters?", "expectedAny": ["fires spread", "people get hurt", "buildings burn", "danger"] },
-    { "question": "How do librarians help students?", "expectedAny": ["find books", "research", "read stories", "learn"] },
-    { "question": "Why should we thank community helpers?", "expectedAny": ["they help us", "show appreciation", "hard work", "important jobs"] }
+    {"question": "How do teachers help our community?", "expectedAny": ["educate children", "teach", "help kids learn", "build knowledge", "make us smart", "help us learn"]},
+    {"question": "Why are garbage collectors important?", "expectedAny": ["keep community clean", "prevent disease", "recycle", "reduce litter", "take trash away", "clean up"]},
+    {"question": "Name two ways police officers help.", "expectedAny": ["stop crime", "direct traffic", "find lost people", "keep safe", "respond to emergencies", "help people"]},
+    {"question": "How can kids be community helpers?", "expectedAny": ["pick up litter", "help neighbors", "volunteer", "be kind", "report hazards", "be nice", "help others"]},
+    {"question": "What would happen without firefighters?", "expectedAny": ["fires spread", "people get hurt", "buildings burn", "danger", "more damage", "bad fires"]},
+    {"question": "How do librarians help students?", "expectedAny": ["find books", "research", "read stories", "learn", "use information", "help with books"]},
+    {"question": "Why should we thank community helpers?", "expectedAny": ["they help us", "show appreciation", "hard work", "important jobs", "support the community", "be grateful", "they work hard"]}
   ]
 }

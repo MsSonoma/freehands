@@ -18,6 +18,10 @@
       "definition": "A dot that goes at the end of sentences"
     },
     {
+      "term": "question mark",
+      "definition": "A mark (?) that goes at the end of questions"
+    },
+    {
       "term": "sight words",
       "definition": "Words we see often and should know right away"
     }
@@ -27,7 +31,11 @@
     "question": "What goes at the end of a sentence?",
     "expectedAny": [
       "period",
-      "a period (.)"
+      "a period (.)",
+      ".",
+      "a period",
+      "punctuation",
+      "question mark"
     ]
   },
   "truefalse": [
@@ -60,7 +68,11 @@
       "expectedAny": [
         "runs",
         "plays",
-        "sits"
+        "sits",
+        "jumped",
+        "barks",
+        "sleeps",
+        "is"
       ]
     }
   ],
@@ -68,7 +80,12 @@
     {
       "question": "What makes a good sentence?",
       "expectedAny": [
-        "capital letter, complete thought, period"
+        "starts with a capital letter",
+        "has a complete thought",
+        "ends with a period",
+        "has a capital and period",
+        "makes sense",
+        "tells something"
       ]
     }
   ]

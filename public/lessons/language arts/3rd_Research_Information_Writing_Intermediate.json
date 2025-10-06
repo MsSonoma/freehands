@@ -5,29 +5,26 @@
   "difficulty": "Intermediate",
   "featured": false,
   "vocab": [
-    {
-      "term": "research",
-      "definition": "Looking for information about a topic from different sources"
-    },
-    {
-      "term": "fact",
-      "definition": "Information that is true and can be proven"
-    },
-    {
-      "term": "opinion",
-      "definition": "What someone thinks or believes about something"
-    },
-    {
-      "term": "source",
-      "definition": "A place where you get information, like a book or website"
-    }
+    {"word": "research", "kid_friendly_definition": "Looking for information about a topic from different sources."},
+    {"word": "fact", "kid_friendly_definition": "Information that is true and can be proven."},
+    {"word": "opinion", "kid_friendly_definition": "What someone thinks or believes about something."},
+    {"word": "source", "kid_friendly_definition": "A place where you get information, like a book or website."},
+    {"word": "encyclopedia", "kid_friendly_definition": "A book or website that gives factual information on many topics."},
+    {"word": "reliable source", "kid_friendly_definition": "A trustworthy place to get information."},
+    {"word": "note-taking", "kid_friendly_definition": "Writing down key ideas in your own words."},
+    {"word": "citation", "kid_friendly_definition": "Telling where you got your information."},
+    {"word": "bibliography", "kid_friendly_definition": "A list of sources you used in your research."},
+    {"word": "plagiarism", "kid_friendly_definition": "Copying someone else's work and saying it is yours."},
+    {"word": "paraphrase", "kid_friendly_definition": "Putting information into your own words."}
   ],
   "teachingNotes": "Practice using age-appropriate reference materials. Teach difference between fact and opinion. Model note-taking strategies.",
   "sample": {
     "question": "Is 'Dogs are the best pets' a fact or an opinion?",
     "expectedAny": [
       "opinion",
-      "it's what someone believes, not provable"
+      "it's what someone believes, not provable",
+      "a personal belief",
+      "not a fact"
     ]
   },
   "truefalse": [
@@ -35,7 +32,14 @@
       "question": "When doing research, you should use more than one source of information.",
       "answer": true,
       "expectedAny": [
-        "multiple sources help verify information and provide different perspectives"
+        "multiple sources help verify information and provide different perspectives",
+        "use more than one source",
+        "check facts in more than one place",
+        "true",
+        "t",
+        "yes",
+        "y",
+        "correct"
       ]
     }
   ],
@@ -50,7 +54,13 @@
       ],
       "correct": 1,
       "expectedAny": [
-        "encyclopedias contain factual information"
+        "encyclopedias contain factual information",
+        "an encyclopedia has facts",
+        "encyclopedia is nonfiction reference",
+        "b",
+        "B",
+        "2",
+        "an encyclopedia"
       ]
     }
   ],
@@ -60,7 +70,11 @@
       "expectedAny": [
         "facts",
         "notes",
-        "information"
+        "information",
+        "ideas",
+        "outline",
+        "research notes",
+        "key points"
       ]
     }
   ],
@@ -69,10 +83,17 @@
       "question": "What steps should you follow when researching a topic?",
       "expectedAny": [
         "choose a topic",
+        "ask questions",
         "find reliable sources",
         "take notes",
         "organize information",
-        "write about what you learned"
+        "make an outline",
+        "write about what you learned",
+        "cite your sources",
+        "create a bibliography",
+        "pick a subject",
+        "look up facts",
+        "write it down"
       ]
     }
   ]

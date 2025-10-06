@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Use everyday examples like riding a bike, batteries, and hot objects. Demonstrate energy transformations with simple activities.",
-  "sample": {
-    "question": "What is the energy of motion called?",
-    "expectedAny": [
-      "kinetic energy",
-      "kinetic",
-      "motion energy",
-      "moving energy"
-    ]
-  },
-  "truefalse": {
-    "question": "A book sitting on a high shelf has potential energy.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What type of energy do you feel as heat?",
-    "expectedAny": [
-      "thermal energy",
-      "heat energy",
-      "thermal",
-      "temperature energy"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The change of energy from one form to another is called energy ________.",
-    "expectedAny": [
-      "transformation",
-      "conversion",
-      "change",
-      "transfer"
-    ]
-  },
-  "shortanswer": {
-    "question": "Give an example of potential energy being transformed to kinetic energy.",
-    "expectedAny": [
-      "ball rolling down hill",
-      "dropping a book",
-      "swinging on swing",
-      "water flowing downhill"
-    ]
-  }
+  "sample": [
+    { "question": "What is the energy of motion called?", "expectedAny": ["kinetic energy"] },
+    { "question": "Which is stored energy?", "choices": ["Kinetic", "Potential", "Motion", "Speed"], "correct": 1, "expectedAny": ["potential"] },
+    { "question": "Energy from heat is ________.", "expectedAny": ["thermal energy", "thermal"] },
+    { "question": "The ability to cause change is ________.", "expectedAny": ["energy"] },
+    { "question": "Moving objects have ________ energy.", "expectedAny": ["kinetic"] },
+    { "question": "Which is energy?", "choices": ["Color", "Thermal", "Shape", "Size"], "correct": 1, "expectedAny": ["thermal"] },
+    { "question": "Energy changing forms is ________.", "expectedAny": ["transformation", "energy transformation"] },
+    { "question": "Stored energy is ________.", "expectedAny": ["potential", "potential energy"] },
+    { "question": "What can energy do?", "choices": ["Nothing", "Work", "Sleep", "Think"], "correct": 1, "expectedAny": ["work"] },
+    { "question": "Heat is ________ energy.", "expectedAny": ["thermal"] }
+  ],
+  "truefalse": [
+    { "question": "A book sitting on a high shelf has potential energy.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Kinetic energy is stored energy.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Energy can change from one form to another.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Thermal energy is cold energy.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Moving objects have kinetic energy.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Energy cannot do work.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Potential energy is stored energy.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Heat is not a form of energy.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A rolling ball has kinetic energy.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Energy transformations never happen.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What type of energy do you feel as heat?", "choices": ["Kinetic", "Thermal", "Potential", "Motion"], "correct": 1, "expectedAny": ["thermal"] },
+    { "question": "A moving car has:", "choices": ["Potential energy", "Kinetic energy", "No energy", "Thermal only"], "correct": 1, "expectedAny": ["kinetic energy"] },
+    { "question": "Which is stored energy?", "choices": ["Kinetic", "Motion", "Potential", "Speed"], "correct": 2, "expectedAny": ["potential"] },
+    { "question": "What is energy?", "choices": ["Color", "Ability to work", "Shape", "Size"], "correct": 1, "expectedAny": ["ability to work"] },
+    { "question": "A stretched rubber band has:", "choices": ["Kinetic energy", "Potential energy", "No energy", "Speed"], "correct": 1, "expectedAny": ["potential energy"] },
+    { "question": "What type is motion energy?", "choices": ["Thermal", "Potential", "Kinetic", "Stored"], "correct": 2, "expectedAny": ["kinetic"] },
+    { "question": "Energy changing forms is:", "choices": ["Destruction", "Transformation", "Creation", "Loss"], "correct": 1, "expectedAny": ["transformation"] },
+    { "question": "Hot soup has:", "choices": ["Potential only", "Thermal energy", "No energy", "Kinetic only"], "correct": 1, "expectedAny": ["thermal energy"] },
+    { "question": "A ball on a hill has:", "choices": ["Kinetic", "Potential", "Thermal", "None"], "correct": 1, "expectedAny": ["potential"] },
+    { "question": "Running uses which energy?", "choices": ["Stored", "Kinetic", "Potential", "None"], "correct": 1, "expectedAny": ["kinetic"] }
+  ],
+  "fillintheblank": [
+    { "question": "The change of energy from one form to another is called energy ________.", "expectedAny": ["transformation"] },
+    { "question": "Energy of motion is ________ energy.", "expectedAny": ["kinetic"] },
+    { "question": "Stored energy is ________ energy.", "expectedAny": ["potential"] },
+    { "question": "Heat energy is called ________ energy.", "expectedAny": ["thermal"] },
+    { "question": "The ability to do work is ________.", "expectedAny": ["energy"] },
+    { "question": "A moving object has ________ energy.", "expectedAny": ["kinetic"] },
+    { "question": "Energy based on position is ________.", "expectedAny": ["potential"] },
+    { "question": "Energy from particle movement is ________.", "expectedAny": ["thermal"] },
+    { "question": "When energy changes forms, it is a ________.", "expectedAny": ["transformation"] },
+    { "question": "________ energy can cause change.", "expectedAny": ["all", "any"] }
+  ],
+  "shortanswer": [
+    { "question": "Give an example of potential energy being transformed to kinetic energy.", "expectedAny": ["ball rolling down hill", "dropping a book", "water flowing downhill", "falling object"] },
+    { "question": "What is kinetic energy?", "expectedAny": ["energy of motion", "moving energy", "energy when moving"] },
+    { "question": "What is potential energy?", "expectedAny": ["stored energy", "energy of position", "saved up energy"] },
+    { "question": "What is energy?", "expectedAny": ["ability to do work", "ability to cause change", "power to do things"] },
+    { "question": "What is thermal energy?", "expectedAny": ["heat energy", "energy from particle movement", "heat"] },
+    { "question": "Give an example of kinetic energy.", "expectedAny": ["moving car", "rolling ball", "running person", "anything moving"] },
+    { "question": "Give an example of potential energy.", "expectedAny": ["book on shelf", "stretched rubber band", "ball on hill", "raised object"] },
+    { "question": "What is energy transformation?", "expectedAny": ["energy changing forms", "conversion of energy", "energy changing type", "one energy becomes another"] },
+    { "question": "Does a moving bike have kinetic or potential energy?", "expectedAny": ["kinetic", "motion energy"] },
+    { "question": "How is heat energy felt?", "expectedAny": ["as warmth", "as temperature", "as thermal energy", "as heat"] }
+  ]
 }

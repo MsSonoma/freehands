@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "9th_Chemical_Bonding_Molecular_Structure_Intermediate",
   "title": "Chemical Bonding and Molecular Structure",
   "grade": "9th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "ionic bond",
-      "definition": "Chemical bond formed by transfer of electrons between atoms"
-    },
-    {
-      "term": "covalent bond",
-      "definition": "Chemical bond formed by sharing electrons between atoms"
-    },
-    {
-      "term": "electronegativity",
-      "definition": "Measure of an atom's ability to attract electrons"
-    },
-    {
-      "term": "polar molecule",
-      "definition": "Molecule with unequal distribution of electric charge"
-    },
-    {
-      "term": "valence electrons",
-      "definition": "Electrons in the outermost shell of an atom"
-    }
+    {"term": "ionic bond", "definition": "Chemical bond formed by transfer of electrons between atoms"},
+    {"term": "covalent bond", "definition": "Chemical bond formed by sharing electrons between atoms"},
+    {"term": "electronegativity", "definition": "Measure of an atom's ability to attract electrons"},
+    {"term": "polar molecule", "definition": "Molecule with unequal distribution of electric charge"},
+    {"term": "valence electrons", "definition": "Electrons in the outermost shell of an atom"}
   ],
   "teachingNotes": "Use Lewis structures and molecular models to visualize bonding. Emphasize how bonding affects molecular properties.",
-  "sample": {
-    "question": "What is a chemical bond formed by sharing electrons called?",
-    "expectedAny": [
-      "covalent bond",
-      "covalent bonding",
-      "electron sharing bond",
-      "molecular bond"
-    ]
-  },
-  "truefalse": {
-    "question": "Ionic bonds form when electrons are transferred between atoms.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What determines an atom's ability to attract electrons?",
-    "expectedAny": [
-      "electronegativity",
-      "electron affinity",
-      "nuclear charge",
-      "atomic attraction"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Electrons in the outermost shell are called ________ electrons.",
-    "expectedAny": [
-      "valence",
-      "outer shell",
-      "bonding",
-      "peripheral"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does electronegativity difference determine bond type?",
-    "expectedAny": [
-      "large difference creates ionic bonds",
-      "small difference creates covalent bonds",
-      "determines electron sharing"
-    ]
-  }
+  "sample": [
+    {"question": "What is a chemical bond formed by sharing electrons called?", "expectedAny": ["covalent bond", "covalent bonding", "electron sharing", "shared electron bond"]},
+    {"question": "What is an ionic bond?", "expectedAny": ["electron transfer bond", "transfer of electrons", "ion bond", "charged atom bond"]},
+    {"question": "What is electronegativity?", "expectedAny": ["ability to attract electrons", "electron attraction", "pull on electrons", "electron pulling power"]},
+    {"question": "What is a polar molecule?", "expectedAny": ["unequal charge distribution", "has positive and negative ends", "partial charges", "charged ends"]},
+    {"question": "What are valence electrons?", "expectedAny": ["outer shell electrons", "outermost electrons", "electrons in last shell", "outside electrons"]},
+    {"question": "Which atoms form ionic bonds?", "expectedAny": ["metals and nonmetals", "opposite charges", "different electronegativity"]},
+    {"question": "Which atoms form covalent bonds?", "expectedAny": ["nonmetals", "similar electronegativity", "share electrons"]},
+    {"question": "What determines bonding type?", "expectedAny": ["electronegativity difference", "type of atoms", "electron behavior"]},
+    {"question": "Give an example of ionic compound.", "expectedAny": ["NaCl", "salt", "any metal + nonmetal"]},
+    {"question": "Give an example of covalent compound.", "expectedAny": ["H2O", "water", "CO2", "any nonmetal + nonmetal"]}
+  ],
+  "truefalse": [
+    {"question": "Ionic bonds form when electrons are transferred between atoms. (True or False)", "correct": true},
+    {"question": "Covalent bonds form by sharing electrons. (True or False)", "correct": true},
+    {"question": "Valence electrons are in the innermost shell. (True or False)", "correct": false},
+    {"question": "Electronegativity measures electron attraction. (True or False)", "correct": true},
+    {"question": "Polar molecules have unequal charge distribution. (True or False)", "correct": true},
+    {"question": "Metals and nonmetals form covalent bonds. (True or False)", "correct": false},
+    {"question": "Nonmetals typically form covalent bonds. (True or False)", "correct": true},
+    {"question": "Valence electrons determine bonding. (True or False)", "correct": true},
+    {"question": "Water is a polar molecule. (True or False)", "correct": true},
+    {"question": "All molecules are polar. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "What determines an atom's ability to attract electrons?", "choices": [{"letter": "A", "text": "Mass"}, {"letter": "B", "text": "Electronegativity"}, {"letter": "C", "text": "Volume"}, {"letter": "D", "text": "Density"}], "correct": "B"},
+    {"question": "Which bond involves electron transfer?", "choices": [{"letter": "A", "text": "Covalent"}, {"letter": "B", "text": "Metallic"}, {"letter": "C", "text": "Ionic"}, {"letter": "D", "text": "Hydrogen"}], "correct": "C"},
+    {"question": "Which bond involves electron sharing?", "choices": [{"letter": "A", "text": "Ionic"}, {"letter": "B", "text": "Covalent"}, {"letter": "C", "text": "Metallic"}, {"letter": "D", "text": "None"}], "correct": "B"},
+    {"question": "Where are valence electrons?", "choices": [{"letter": "A", "text": "Nucleus"}, {"letter": "B", "text": "Inner shell"}, {"letter": "C", "text": "Outer shell"}, {"letter": "D", "text": "Between atoms"}], "correct": "C"},
+    {"question": "What has unequal charge distribution?", "choices": [{"letter": "A", "text": "Nonpolar molecule"}, {"letter": "B", "text": "Polar molecule"}, {"letter": "C", "text": "Ion"}, {"letter": "D", "text": "Atom"}], "correct": "B"},
+    {"question": "Which typically forms ionic bonds?", "choices": [{"letter": "A", "text": "Two nonmetals"}, {"letter": "B", "text": "Two metals"}, {"letter": "C", "text": "Metal and nonmetal"}, {"letter": "D", "text": "Noble gases"}], "correct": "C"},
+    {"question": "Which forms covalent bonds?", "choices": [{"letter": "A", "text": "Metal and nonmetal"}, {"letter": "B", "text": "Two nonmetals"}, {"letter": "C", "text": "Two metals"}, {"letter": "D", "text": "Ions"}], "correct": "B"},
+    {"question": "What determines bonding?", "choices": [{"letter": "A", "text": "Color"}, {"letter": "B", "text": "Valence electrons"}, {"letter": "C", "text": "Mass"}, {"letter": "D", "text": "Volume"}], "correct": "B"},
+    {"question": "NaCl has which bond?", "choices": [{"letter": "A", "text": "Covalent"}, {"letter": "B", "text": "Ionic"}, {"letter": "C", "text": "Metallic"}, {"letter": "D", "text": "Hydrogen"}], "correct": "B"},
+    {"question": "H2O has which bond?", "choices": [{"letter": "A", "text": "Ionic"}, {"letter": "B", "text": "Metallic"}, {"letter": "C", "text": "Covalent"}, {"letter": "D", "text": "No bond"}], "correct": "C"}
+  ],
+  "fillintheblank": [
+    {"question": "Electrons in the outermost shell are called _____ electrons.", "expectedAny": ["valence", "outer"]},
+    {"question": "_____ bonds form by transferring electrons.", "expectedAny": ["ionic"]},
+    {"question": "_____ bonds form by sharing electrons.", "expectedAny": ["covalent"]},
+    {"question": "_____ measures ability to attract electrons.", "expectedAny": ["electronegativity"]},
+    {"question": "A _____ molecule has unequal charge distribution.", "expectedAny": ["polar"]},
+    {"question": "Metals and nonmetals form _____ bonds.", "expectedAny": ["ionic"]},
+    {"question": "Nonmetals with nonmetals form _____ bonds.", "expectedAny": ["covalent"]},
+    {"question": "_____ electrons determine bonding behavior.", "expectedAny": ["valence", "outer"]},
+    {"question": "Water is a _____ molecule.", "expectedAny": ["polar"]},
+    {"question": "Salt (NaCl) has _____ bonds.", "expectedAny": ["ionic"]}
+  ],
+  "shortanswer": [
+    {"question": "What is the difference between ionic and covalent bonds?", "keyTerms": ["ionic", "transfer", "covalent", "share"], "expectedAny": ["Ionic transfers electrons, covalent shares", "Ionic is transfer, covalent is sharing", "Transfer vs sharing electrons"]},
+    {"question": "What are valence electrons and why are they important?", "keyTerms": ["outer shell", "determine", "bonding", "reactions"], "expectedAny": ["Outer shell electrons that determine bonding", "Electrons in last shell that participate in bonds", "Important for chemical bonding"]},
+    {"question": "How does electronegativity affect bonding?", "keyTerms": ["difference", "determines", "ionic or covalent", "attraction"], "expectedAny": ["Large difference makes ionic, small makes covalent", "Determines bond type", "Affects electron distribution"]},
+    {"question": "What makes a molecule polar?", "keyTerms": ["unequal", "charge", "distribution", "electronegativity"], "expectedAny": ["Unequal charge distribution", "Different electronegativities cause separation", "Has positive and negative ends"]},
+    {"question": "Why do metals and nonmetals form ionic bonds?", "keyTerms": ["large", "electronegativity", "difference", "transfer"], "expectedAny": ["Large electronegativity difference", "Metal gives electron, nonmetal takes", "Electron transfer occurs"]},
+    {"question": "Why do nonmetals form covalent bonds?", "keyTerms": ["similar", "electronegativity", "share", "electrons"], "expectedAny": ["Similar electronegativity so they share", "Both want electrons so share", "Small difference means sharing"]},
+    {"question": "What is a Lewis structure?", "keyTerms": ["diagram", "shows", "valence", "electrons", "bonds"], "expectedAny": ["Diagram showing valence electrons and bonds", "Shows bonding electrons", "Electron dot structure"]},
+    {"question": "How many valence electrons does carbon have?", "keyTerms": ["4", "four", "outer shell"], "expectedAny": ["4 valence electrons", "Four", "4 in outer shell"]},
+    {"question": "What is the octet rule?", "keyTerms": ["8", "valence", "electrons", "stable"], "expectedAny": ["Atoms want 8 valence electrons", "Stable with 8 outer electrons", "8 electrons in outer shell"]},
+    {"question": "Give an example of polar and nonpolar molecules.", "keyTerms": ["polar", "water", "nonpolar", "CO2", "methane"], "expectedAny": ["Polar: water; Nonpolar: CO2 or methane", "H2O is polar, CH4 is nonpolar", "Water polar, carbon dioxide nonpolar"]}
+  ]
 }

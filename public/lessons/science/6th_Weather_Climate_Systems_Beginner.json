@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Distinguish between weather and climate. Use local examples and weather maps. Discuss how the sun drives weather patterns.",
-  "sample": {
-    "question": "What is the difference between weather and climate?",
-    "expectedAny": [
-      "weather is daily, climate is long-term",
-      "weather changes daily, climate is average",
-      "weather is short-term, climate is patterns"
-    ]
-  },
-  "truefalse": {
-    "question": "Climate is the average weather over many years.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What drives most weather patterns on Earth?",
-    "expectedAny": [
-      "the sun",
-      "solar energy",
-      "sunlight",
-      "sun's heat"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The layer of gases around Earth is called the ________.",
-    "expectedAny": [
-      "atmosphere",
-      "atmospheric layer",
-      "air layer",
-      "Earth's atmosphere"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are three types of precipitation?",
-    "expectedAny": [
-      "rain, snow, hail",
-      "rain, sleet, snow",
-      "snow, rain, sleet",
-      "hail, rain, snow"
-    ]
-  }
+  "sample": [
+    { "question": "What is the difference between weather and climate?", "expectedAny": ["weather is daily, climate is long-term"] },
+    { "question": "Which is long-term?", "choices": ["Weather", "Climate", "Rain", "Wind"], "correct": 1, "expectedAny": ["climate"] },
+    { "question": "Daily conditions are ________.", "expectedAny": ["weather"] },
+    { "question": "Average patterns over years are ________.", "expectedAny": ["climate"] },
+    { "question": "Gases around Earth form the ________.", "expectedAny": ["atmosphere"] },
+    { "question": "What drives weather?", "choices": ["Moon", "Sun", "Stars", "Clouds"], "correct": 1, "expectedAny": ["sun"] },
+    { "question": "Water falling from clouds is ________.", "expectedAny": ["precipitation"] },
+    { "question": "Air pushing down is ________.", "expectedAny": ["air pressure", "pressure"] },
+    { "question": "Which changes daily?", "choices": ["Climate", "Weather", "Seasons", "Years"], "correct": 1, "expectedAny": ["weather"] },
+    { "question": "The ________ surrounds Earth.", "expectedAny": ["atmosphere"] }
+  ],
+  "truefalse": [
+    { "question": "Climate is the average weather over many years.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Weather and climate are the same thing.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The sun drives most weather patterns.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Precipitation is only rain.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The atmosphere is a layer of gases.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Weather is the same every day.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Air pressure is the weight of air.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Climate changes every hour.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Snow is a type of precipitation.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The atmosphere is made of water.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What drives most weather patterns on Earth?", "choices": ["Moon", "Sun", "Wind", "Ocean"], "correct": 1, "expectedAny": ["sun"] },
+    { "question": "Which is precipitation?", "choices": ["Wind", "Sun", "Rain", "Air"], "correct": 2, "expectedAny": ["rain"] },
+    { "question": "What is the atmosphere?", "choices": ["Water layer", "Gas layer", "Rock layer", "Ice layer"], "correct": 1, "expectedAny": ["gas layer"] },
+    { "question": "Which describes long-term patterns?", "choices": ["Weather", "Climate", "Daily report", "Forecast"], "correct": 1, "expectedAny": ["climate"] },
+    { "question": "What is air pressure?", "choices": ["Air speed", "Air weight", "Air color", "Air smell"], "correct": 1, "expectedAny": ["air weight"] },
+    { "question": "Which changes day to day?", "choices": ["Climate", "Weather", "Atmosphere", "Seasons"], "correct": 1, "expectedAny": ["weather"] },
+    { "question": "Which is NOT precipitation?", "choices": ["Rain", "Snow", "Wind", "Hail"], "correct": 2, "expectedAny": ["wind"] },
+    { "question": "What surrounds Earth?", "choices": ["Ocean", "Atmosphere", "Space", "Moon"], "correct": 1, "expectedAny": ["atmosphere"] },
+    { "question": "Climate is measured over:", "choices": ["Hours", "Days", "Years", "Minutes"], "correct": 2, "expectedAny": ["years"] },
+    { "question": "What heats Earth?", "choices": ["Moon", "Stars", "Sun", "Wind"], "correct": 2, "expectedAny": ["sun"] }
+  ],
+  "fillintheblank": [
+    { "question": "The layer of gases around Earth is called the ________.", "expectedAny": ["atmosphere"] },
+    { "question": "Day-to-day conditions are called ________.", "expectedAny": ["weather"] },
+    { "question": "Long-term patterns are called ________.", "expectedAny": ["climate"] },
+    { "question": "Water falling from clouds is ________.", "expectedAny": ["precipitation"] },
+    { "question": "The weight of air is ________.", "expectedAny": ["air pressure", "pressure"] },
+    { "question": "The ________ drives weather patterns.", "expectedAny": ["sun"] },
+    { "question": "Rain, snow, and hail are types of ________.", "expectedAny": ["precipitation"] },
+    { "question": "________ is measured over many years.", "expectedAny": ["climate"] },
+    { "question": "The ________ is made of gases.", "expectedAny": ["atmosphere"] },
+    { "question": "________ changes from day to day.", "expectedAny": ["weather"] }
+  ],
+  "shortanswer": [
+    { "question": "What are three types of precipitation?", "expectedAny": ["rain, snow, hail", "rain, sleet, snow"] },
+    { "question": "Explain the difference between weather and climate.", "expectedAny": ["weather is daily, climate is long-term", "weather changes fast, climate is average"] },
+    { "question": "What is the atmosphere?", "expectedAny": ["layer of gases around Earth", "gases surrounding Earth"] },
+    { "question": "How does the sun affect weather?", "expectedAny": ["heats Earth", "drives weather patterns", "provides energy"] },
+    { "question": "What is air pressure?", "expectedAny": ["weight of air", "air pushing down"] },
+    { "question": "Name two forms of precipitation.", "expectedAny": ["rain and snow", "hail and sleet", "snow and rain"] },
+    { "question": "Why is climate measured over years?", "expectedAny": ["shows long-term patterns", "averages out daily changes", "reveals trends"] },
+    { "question": "What makes up the atmosphere?", "expectedAny": ["gases", "air", "layers of gas"] },
+    { "question": "How is weather different from a forecast?", "expectedAny": ["weather is current, forecast is prediction", "weather is now, forecast is future"] },
+    { "question": "Give an example of weather.", "expectedAny": ["sunny today", "raining now", "cloudy day", "hot afternoon"] }
+  ]
 }

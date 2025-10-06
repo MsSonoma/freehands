@@ -1,0 +1,102 @@
+{
+  "id": "community-helpers-services-intermediate",
+  "title": "Community Helpers and Services",
+  "grade": "2nd",
+  "difficulty": "Intermediate",
+  "featured": false,
+  "vocab": [
+    {
+      "term": "community",
+      "definition": "A place where people live, work, and help each other"
+    },
+    {
+      "term": "service",
+      "definition": "Work that helps other people"
+    },
+    {
+      "term": "emergency",
+      "definition": "A dangerous situation that needs help right away"
+    },
+    {
+      "term": "volunteer",
+      "definition": "A person who helps others without being paid"
+    },
+    {
+      "term": "citizen",
+      "definition": "A person who belongs to a community"
+    },
+    {
+      "term": "firefighter",
+      "definition": "A person who puts out fires and keeps people safe"
+    },
+    {
+      "term": "paramedic",
+      "definition": "A person who helps sick or hurt people in emergencies"
+    },
+    {
+      "term": "librarian",
+      "definition": "A person who helps people find books and information"
+    }
+  ],
+  "teachingNotes": "Use role-play activities. Invite community helpers to speak. Create a community map showing where helpers work.",
+  "sample": [
+    {"question": "Who helps put out fires?", "expectedAny": ["firefighter", "firefighters", "a firefighter"]},
+    {"question": "Who helps you find books at the library?", "expectedAny": ["librarian", "a librarian", "the librarian"]},
+    {"question": "Who keeps our community safe?", "expectedAny": ["police officer", "police", "police officers"]},
+    {"question": "Who delivers mail to homes?", "expectedAny": ["mail carrier", "mailman", "postal worker"]},
+    {"question": "Who teaches children at school?", "expectedAny": ["teacher", "teachers", "a teacher"]},
+    {"question": "Who helps sick people at the hospital?", "expectedAny": ["doctor", "nurse", "doctors and nurses"]},
+    {"question": "Who fixes water pipes?", "expectedAny": ["plumber", "a plumber", "plumbers"]},
+    {"question": "Who drives children to school?", "expectedAny": ["bus driver", "school bus driver", "the bus driver"]},
+    {"question": "Who collects garbage?", "expectedAny": ["garbage collector", "sanitation worker", "trash collector"]},
+    {"question": "Who helps in emergencies?", "expectedAny": ["paramedic", "EMT", "emergency workers"]}
+  ],
+  "truefalse": [
+    {"question": "Firefighters help put out fires.", "answer": true},
+    {"question": "Teachers work at the post office.", "answer": false},
+    {"question": "Police officers help keep communities safe.", "answer": true},
+    {"question": "Volunteers get paid for helping.", "answer": false},
+    {"question": "Mail carriers deliver letters to homes.", "answer": true},
+    {"question": "Doctors work at schools.", "answer": false},
+    {"question": "Librarians help people find books.", "answer": true},
+    {"question": "Bus drivers take children to school.", "answer": true},
+    {"question": "All community helpers wear the same uniform.", "answer": false},
+    {"question": "Community helpers make our town a better place.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "Who do you call in a fire emergency?", "choices": ["teacher", "firefighter", "librarian", "mail carrier"], "correct": 1},
+    {"question": "Where does a teacher work?", "choices": ["hospital", "school", "post office", "fire station"], "correct": 1},
+    {"question": "What does a police officer do?", "choices": ["deliver mail", "teach math", "keep people safe", "fix pipes"], "correct": 2},
+    {"question": "Where does a doctor work?", "choices": ["library", "school", "hospital", "post office"], "correct": 2},
+    {"question": "Who helps you when you're sick at school?", "choices": ["janitor", "bus driver", "school nurse", "mail carrier"], "correct": 2},
+    {"question": "What number do you call for emergencies?", "choices": ["411", "911", "311", "511"], "correct": 1},
+    {"question": "Who fixes broken pipes?", "choices": ["teacher", "plumber", "librarian", "bus driver"], "correct": 1},
+    {"question": "What does a volunteer do?", "choices": ["helps without pay", "drives a bus", "delivers mail", "teaches math"], "correct": 0},
+    {"question": "Where does a librarian work?", "choices": ["hospital", "fire station", "library", "post office"], "correct": 2},
+    {"question": "Who collects garbage from homes?", "choices": ["teacher", "doctor", "sanitation worker", "librarian"], "correct": 2}
+  ],
+  "fillintheblank": [
+    {"question": "A _____ helps put out fires.", "expectedAny": ["firefighter", "fire fighter"]},
+    {"question": "We call _____ in an emergency.", "expectedAny": ["911", "nine one one"]},
+    {"question": "A _____ helps sick people get better.", "expectedAny": ["doctor", "nurse"]},
+    {"question": "The _____ delivers mail to our homes.", "expectedAny": ["mail carrier", "mailman", "postal worker"]},
+    {"question": "A _____ helps people for free.", "expectedAny": ["volunteer", "a volunteer", "volunteers"]},
+    {"question": "The school _____ drives children to school.", "expectedAny": ["bus driver", "driver"]},
+    {"question": "A _____ helps you find books.", "expectedAny": ["librarian", "library worker"]},
+    {"question": "Police officers keep our _____ safe.", "expectedAny": ["community", "town", "neighborhood"]},
+    {"question": "A _____ fixes broken pipes.", "expectedAny": ["plumber", "plumbers"]},
+    {"question": "_____ help sick or hurt people in emergencies.", "expectedAny": ["paramedics", "EMTs", "paramedic"]}
+  ],
+  "shortanswer": [
+    {"question": "Name three community helpers.", "expectedAny": ["firefighter, teacher, doctor", "police officer, nurse, librarian", "mail carrier, bus driver, plumber", "firefighter teacher doctor"]},
+    {"question": "How do firefighters help our community?", "expectedAny": ["they put out fires", "keep people safe from fires", "save people from burning buildings", "put out fires"]},
+    {"question": "Why are community helpers important?", "expectedAny": ["they keep us safe", "they help us when we need it", "they make our community better", "we need their help"]},
+    {"question": "What would happen without garbage collectors?", "expectedAny": ["trash would pile up", "streets would be dirty", "it would smell bad", "garbage everywhere"]},
+    {"question": "How can you help your community?", "expectedAny": ["pick up trash", "be kind to others", "volunteer to help", "help neighbors"]},
+    {"question": "Name two places where community helpers work.", "expectedAny": ["hospital and school", "fire station and library", "police station and post office", "hospital school"]},
+    {"question": "What does a school nurse do?", "expectedAny": ["helps sick children", "gives medicine", "takes care of injuries", "helps when you're hurt"]},
+    {"question": "Why do we need police officers?", "expectedAny": ["to keep us safe", "to stop bad people", "to help in emergencies", "for safety"]},
+    {"question": "How do teachers help the community?", "expectedAny": ["they teach children", "help kids learn", "prepare children for the future", "teach us"]},
+    {"question": "What should you do if you see a fire?", "expectedAny": ["call 911", "tell an adult", "get to safety and call for help", "call for help"]}
+  ]
+}

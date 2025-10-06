@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Use local ecosystem examples. Discuss the importance of biodiversity and how human activities affect ecosystems. Create food webs showing predator-prey relationships.",
-  "sample": {
-    "question": "What is the variety of species in an ecosystem called?",
-    "expectedAny": [
-      "biodiversity",
-      "biological diversity",
-      "species variety",
-      "ecosystem diversity"
-    ]
-  },
-  "truefalse": {
-    "question": "An ecosystem includes both living and non-living things.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What do we call an animal that hunts other animals?",
-    "expectedAny": [
-      "predator",
-      "hunter",
-      "carnivore",
-      "predatory animal"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The natural environment where an organism lives is its ________.",
-    "expectedAny": [
-      "habitat",
-      "natural habitat",
-      "living space",
-      "home environment"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why is biodiversity important for ecosystems?",
-    "expectedAny": [
-      "keeps ecosystem stable",
-      "provides food sources",
-      "maintains balance",
-      "supports all life"
-    ]
-  }
+  "sample": [
+    { "question": "What is the variety of species in an ecosystem called?", "expectedAny": ["biodiversity"] },
+    { "question": "Which hunts other animals?", "choices": ["Prey", "Predator", "Plant", "Habitat"], "correct": 1, "expectedAny": ["predator"] },
+    { "question": "Living and nonliving things form an ________.", "expectedAny": ["ecosystem"] },
+    { "question": "An animal that is hunted is ________.", "expectedAny": ["prey"] },
+    { "question": "Where an organism lives is its ________.", "expectedAny": ["habitat"] },
+    { "question": "Which shows variety?", "choices": ["One species", "Biodiversity", "Single type", "Same animal"], "correct": 1, "expectedAny": ["biodiversity"] },
+    { "question": "An ________ includes living things.", "expectedAny": ["ecosystem"] },
+    { "question": "A lion is a ________.", "expectedAny": ["predator"] },
+    { "question": "What is hunted?", "choices": ["Predator", "Hunter", "Prey", "Plant"], "correct": 2, "expectedAny": ["prey"] },
+    { "question": "Natural living space is a ________.", "expectedAny": ["habitat"] }
+  ],
+  "truefalse": [
+    { "question": "An ecosystem includes both living and non-living things.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Biodiversity means only one type of species.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Predators hunt other animals.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Prey hunts predators.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A habitat is where an organism lives.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Ecosystems only include animals.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Biodiversity helps ecosystems stay stable.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All animals are predators.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Habitats provide what organisms need.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Ecosystems never change.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What do we call an animal that hunts other animals?", "choices": ["Prey", "Predator", "Plant", "Habitat"], "correct": 1, "expectedAny": ["predator"] },
+    { "question": "What is variety of species?", "choices": ["Habitat", "Ecosystem", "Biodiversity", "Food chain"], "correct": 2, "expectedAny": ["biodiversity"] },
+    { "question": "What is an animal that is hunted?", "choices": ["Predator", "Prey", "Producer", "Decomposer"], "correct": 1, "expectedAny": ["prey"] },
+    { "question": "Where does an organism live?", "choices": ["Ecosystem", "Biodiversity", "Habitat", "Food web"], "correct": 2, "expectedAny": ["habitat"] },
+    { "question": "What includes living and nonliving?", "choices": ["Habitat", "Ecosystem", "Organism", "Cell"], "correct": 1, "expectedAny": ["ecosystem"] },
+    { "question": "A deer is usually:", "choices": ["Predator", "Prey", "Producer", "Decomposer"], "correct": 1, "expectedAny": ["prey"] },
+    { "question": "High biodiversity means:", "choices": ["One species", "Few species", "Many species", "No species"], "correct": 2, "expectedAny": ["many species"] },
+    { "question": "What includes water and soil?", "choices": ["Organism", "Ecosystem", "Predator", "Prey"], "correct": 1, "expectedAny": ["ecosystem"] },
+    { "question": "A hawk is a:", "choices": ["Prey", "Producer", "Predator", "Plant"], "correct": 2, "expectedAny": ["predator"] },
+    { "question": "What provides shelter and food?", "choices": ["Prey", "Habitat", "Predator", "Cell"], "correct": 1, "expectedAny": ["habitat"] }
+  ],
+  "fillintheblank": [
+    { "question": "The natural environment where an organism lives is its ________.", "expectedAny": ["habitat"] },
+    { "question": "The variety of species is called ________.", "expectedAny": ["biodiversity"] },
+    { "question": "Living and nonliving things form an ________.", "expectedAny": ["ecosystem"] },
+    { "question": "An animal that hunts is a ________.", "expectedAny": ["predator"] },
+    { "question": "An animal that is hunted is ________.", "expectedAny": ["prey"] },
+    { "question": "High ________ means many species.", "expectedAny": ["biodiversity"] },
+    { "question": "An ________ includes water, soil, and organisms.", "expectedAny": ["ecosystem"] },
+    { "question": "A ________ provides what an organism needs.", "expectedAny": ["habitat"] },
+    { "question": "In a food chain, ________ are hunted.", "expectedAny": ["prey"] },
+    { "question": "________ eat other animals.", "expectedAny": ["predators"] }
+  ],
+  "shortanswer": [
+    { "question": "Why is biodiversity important for ecosystems?", "expectedAny": ["keeps ecosystem stable", "provides food sources", "maintains balance"] },
+    { "question": "What is an ecosystem?", "expectedAny": ["living and nonliving things together", "community and environment"] },
+    { "question": "What is a habitat?", "expectedAny": ["where an organism lives", "natural environment"] },
+    { "question": "What is a predator?", "expectedAny": ["animal that hunts", "hunts other animals"] },
+    { "question": "What is prey?", "expectedAny": ["animal that is hunted", "hunted by predators"] },
+    { "question": "Give an example of a predator.", "expectedAny": ["lion", "hawk", "wolf", "shark"] },
+    { "question": "Give an example of prey.", "expectedAny": ["deer", "rabbit", "mouse", "fish"] },
+    { "question": "How do humans affect ecosystems?", "expectedAny": ["pollution", "habitat destruction", "introduce species", "climate change"] },
+    { "question": "What makes a good habitat?", "expectedAny": ["food, water, shelter", "meets organism needs"] },
+    { "question": "Why do ecosystems need variety?", "expectedAny": ["stability", "resilience", "balance", "survival"] }
+  ]
 }

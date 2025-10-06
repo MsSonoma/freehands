@@ -20,62 +20,87 @@
     {
       "term": "uppercase",
       "definition": "Big letters like A, B, C"
+    },
+    {
+      "term": "lowercase",
+      "definition": "Small letters like a, b, c"
+    },
+    {
+      "term": "vowel",
+      "definition": "Special letters: A, E, I, O, U"
     }
   ],
   "teachingNotes": "Use letter recognition games and songs. Practice letter formation with finger tracing. Connect letters to words students know.",
   "sample": [
-    {"question": "What sound does 'B' make?", "expectedAny": ["/b/", "buh", "like in ball"]},
-    {"question": "What letter comes after 'A'?", "expectedAny": ["B"]},
-    {"question": "Point to the letter 'M'.", "expectedAny": ["M", "m"]},
-    {"question": "What sound does 'S' make?", "expectedAny": ["/s/", "sss"]},
-    {"question": "Which letter starts your name?", "expectedAny": ["varies by student name"]},
-    {"question": "Find the letter 'T'.", "expectedAny": ["T", "t"]},
-    {"question": "What letter comes before 'C'?", "expectedAny": ["B"]
-    }
+    {"question": "What sound does 'B' make?", "expectedAny": ["/b/", "buh", "b sound", "like in ball", "like in boy", "bbb"]},
+    {"question": "What letter comes after 'A'?", "expectedAny": ["B", "b", "letter B", "B comes next", "the letter B"]},
+    {"question": "Point to the letter 'M'.", "expectedAny": ["M", "m", "letter M"]},
+    {"question": "What sound does 'S' make?", "expectedAny": ["/s/", "sss", "s sound", "like in snake", "like in sun"]},
+    {"question": "What letter comes first in the alphabet?", "expectedAny": ["A", "a", "letter A"]},
+    {"question": "Find the letter 'T'.", "expectedAny": ["T", "t", "letter T"]},
+    {"question": "What letter comes before 'C'?", "expectedAny": ["B", "b", "letter B", "B comes before", "the letter B"]},
+    {"question": "What sound does 'M' make?", "expectedAny": ["/m/", "mmm", "m sound", "like in mom"]},
+    {"question": "What letter comes after 'B'?", "expectedAny": ["C", "c", "letter C", "C comes next", "the letter C"]},
+    {"question": "What sound does 'T' make?", "expectedAny": ["/t/", "tuh", "t sound", "like in top"]}
   ],
   "truefalse": [
-    {"question": "The letter 'A' makes the /a/ sound.", "answer": true, "expectedAny": ["true"]},
-    {"question": "The letter 'Z' comes first in the alphabet.", "answer": false, "expectedAny": ["false"]},
-    {"question": "The letter 'M' makes the /mmm/ sound.", "answer": true, "expectedAny": ["true"]},
-    {"question": "All letters make sounds.", "answer": true, "expectedAny": ["true"]},
-    {"question": "The letter 'B' comes after 'C'.", "answer": false, "expectedAny": ["false"]},
-    {"question": "Your name starts with a letter.", "answer": true, "expectedAny": ["true"]},
-    {"question": "There are 26 letters in the alphabet.", "answer": true, "expectedAny": ["true"]}
+    {"question": "The letter 'A' makes the /a/ sound.", "answer": true, "expectedAny": ["true", "yes", "correct", "right", "t"]},
+    {"question": "The letter 'Z' comes first in the alphabet.", "answer": false, "expectedAny": ["false", "no", "incorrect", "wrong", "f"]},
+    {"question": "The letter 'M' makes the /mmm/ sound.", "answer": true, "expectedAny": ["true", "yes", "correct", "right", "t"]},
+    {"question": "All letters make sounds.", "answer": true, "expectedAny": ["true", "yes", "correct", "right", "t"]},
+    {"question": "The letter 'B' comes after 'C'.", "answer": false, "expectedAny": ["false", "no", "incorrect", "wrong", "f"]},
+    {"question": "Your name starts with a letter.", "answer": true, "expectedAny": ["true", "yes", "correct", "right", "t"]},
+    {"question": "There are 26 letters in the alphabet.", "answer": true, "expectedAny": ["true", "yes", "correct", "right", "t"]},
+    {"question": "The letter 'D' comes before 'E'.", "answer": true, "expectedAny": ["true", "yes", "correct", "right", "t"]},
+    {"question": "The letter 'P' makes the /b/ sound.", "answer": false, "expectedAny": ["false", "no", "incorrect", "wrong", "f"]},
+    {"question": "A, E, I, O, U are vowels.", "answer": true, "expectedAny": ["true", "yes", "correct", "right", "t"]}
   ],
   "multiplechoice": [
-    {"question": "Which letter comes first?", "choices": ["B", "A", "C", "D"], "correct": 1, "expectedAny": ["A comes first"]},
-    {"question": "What sound does 'P' make?", "choices": ["/b/", "/p/", "/m/", "/s/"], "correct": 1, "expectedAny": ["/p/"]},
-    {"question": "Which letter is this: S?", "choices": ["R", "P", "S", "T"], "correct": 2, "expectedAny": ["S"]},
-    {"question": "What letter starts 'cat'?", "choices": ["K", "S", "T", "C"], "correct": 3, "expectedAny": ["C"]},
-    {"question": "Which letter comes after 'D'?", "choices": ["C", "E", "F", "B"], "correct": 1, "expectedAny": ["E"]},
-    {"question": "What sound does 'T' make?", "choices": ["/d/", "/p/", "/t/", "/s/"], "correct": 2, "expectedAny": ["/t/"]},
-    {"question": "Which letter starts 'dog'?", "choices": ["B", "P", "G", "D"], "correct": 3, "expectedAny": ["D"]}
+    {"question": "Which letter comes first?", "choices": ["B", "A", "C", "D"], "correct": 1, "expectedAny": ["A", "a", "letter A"]},
+    {"question": "What sound does 'P' make?", "choices": ["/b/", "/p/", "/m/", "/s/"], "correct": 1, "expectedAny": ["/p/", "puh", "p sound"]},
+    {"question": "Which letter is this: S?", "choices": ["R", "P", "S", "T"], "correct": 2, "expectedAny": ["S", "s", "letter S"]},
+    {"question": "What letter starts 'cat'?", "choices": ["K", "S", "T", "C"], "correct": 3, "expectedAny": ["C", "c", "letter C"]},
+    {"question": "Which letter comes after 'D'?", "choices": ["C", "E", "F", "B"], "correct": 1, "expectedAny": ["E", "e", "letter E"]},
+    {"question": "What sound does 'T' make?", "choices": ["/d/", "/p/", "/t/", "/s/"], "correct": 2, "expectedAny": ["/t/", "tuh", "t sound"]},
+    {"question": "Which letter starts 'dog'?", "choices": ["B", "P", "G", "D"], "correct": 3, "expectedAny": ["D", "d", "letter D"]},
+    {"question": "How many letters in the alphabet?", "choices": ["20", "24", "26", "30"], "correct": 2, "expectedAny": ["26", "twenty-six", "twenty six"]},
+    {"question": "Which is a vowel?", "choices": ["B", "A", "C", "D"], "correct": 1, "expectedAny": ["A", "a", "letter A"]},
+    {"question": "What letter comes before 'B'?", "choices": ["C", "A", "D", "E"], "correct": 1, "expectedAny": ["A", "a", "letter A"]}
   ],
   "fillintheblank": [
-    {"question": "The letter ___ comes after A.", "expectedAny": ["B"]},
-    {"question": "The letter M makes the ___ sound.", "expectedAny": ["/m/", "mmm"]},
-    {"question": "The first letter of the alphabet is ___ .", "expectedAny": ["A"]},
-    {"question": "Cat starts with the letter ___ .", "expectedAny": ["C"]},
-    {"question": "The letter ___ comes before Z.", "expectedAny": ["Y"]},
-    {"question": "Dog starts with the letter ___ .", "expectedAny": ["D"]},
-    {"question": "The letter S makes the ___ sound.", "expectedAny": ["/s/", "sss"]}
+    {"question": "The letter ___ comes after A.", "expectedAny": ["B", "b", "letter B"]},
+    {"question": "The letter M makes the ___ sound.", "expectedAny": ["/m/", "mmm", "m sound", "mmm sound"]},
+    {"question": "The first letter of the alphabet is ___ .", "expectedAny": ["A", "a", "letter A"]},
+    {"question": "Cat starts with the letter ___ .", "expectedAny": ["C", "c", "letter C"]},
+    {"question": "The letter ___ comes before Z.", "expectedAny": ["Y", "y", "letter Y"]},
+    {"question": "Dog starts with the letter ___ .", "expectedAny": ["D", "d", "letter D"]},
+    {"question": "The letter S makes the ___ sound.", "expectedAny": ["/s/", "sss", "s sound", "sss sound"]},
+    {"question": "The letter ___ comes after C.", "expectedAny": ["D", "d", "letter D"]},
+    {"question": "Ball starts with the letter ___ .", "expectedAny": ["B", "b", "letter B"]},
+    {"question": "There are ___ letters in the alphabet.", "expectedAny": ["26", "twenty-six", "twenty six"]}
   ],
   "shortanswer": [
-    {"question": "Name three letters you know.", "expectedAny": ["any three letters"]},
-    {"question": "What letter does your name start with?", "expectedAny": ["varies by student name"]},
-    {"question": "Draw the letter 'A'.", "expectedAny": ["drawing of A"]},
-    {"question": "What words start with 'B'?", "expectedAny": ["ball, bear, book"]},
-    {"question": "Sing the alphabet song.", "expectedAny": ["A-B-C-D-E-F-G..."]},
-    {"question": "Point to all the vowels: A E I O U", "expectedAny": ["A, E, I, O, U"]},
-    {"question": "What's your favorite letter and why?", "expectedAny": ["personal answer"]}
+    {"question": "Name a letter you know.", "expectedAny": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]},
+    {"question": "What sound does the letter B make?", "expectedAny": ["/b/", "buh", "b sound", "like in ball", "like in boy", "bbb"]},
+    {"question": "Name the first letter of the alphabet.", "expectedAny": ["A", "a", "letter A"]},
+    {"question": "What words start with 'B'?", "expectedAny": ["ball", "bear", "book", "boy", "baby", "bat", "bag", "box"]},
+    {"question": "What letter comes after A?", "expectedAny": ["B", "b", "letter B"]},
+    {"question": "Name all the vowels.", "expectedAny": ["A E I O U", "AEIOU", "a e i o u", "vowels are A E I O U"]},
+    {"question": "What letter does 'cat' start with?", "expectedAny": ["C", "c", "letter C"]},
+    {"question": "How many letters are in the alphabet?", "expectedAny": ["26", "twenty-six", "twenty six", "26 letters"]},
+    {"question": "What letter comes before C?", "expectedAny": ["B", "b", "letter B"]},
+    {"question": "Name a letter that comes after M.", "expectedAny": ["N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]}
   ],
   "wordProblems": [
-    {"question": "Anna counts 5 letters: A, B, C, D, E. How many more letters are there in the alphabet?", "expectedAny": ["21 letters", "26 - 5 = 21"]},
-    {"question": "If you know 10 letter sounds and there are 26 letters total, how many do you still need to learn?", "expectedAny": ["16 letters", "26 - 10 = 16"]},
-    {"question": "Tom writes his name with 3 letters: T-O-M. How many letters are in Tom's name?", "expectedAny": ["3 letters"]},
-    {"question": "In the word 'book', how many letters come before the letter 'k'?", "expectedAny": ["3 letters", "b, o, o come before k"]},
-    {"question": "Sarah knows letters A through G. That's how many letters?", "expectedAny": ["7 letters", "A, B, C, D, E, F, G = 7"]},
-    {"question": "If each letter has a sound, and you know 8 letter sounds, how many sounds is that?", "expectedAny": ["8 sounds"]},
-    {"question": "The alphabet song has 26 letters. If you sing 13 letters, how many are left to sing?", "expectedAny": ["13 letters", "26 - 13 = 13"]}
+    {"question": "Anna counts 5 letters: A, B, C, D, E. How many more letters are there in the alphabet?", "expectedAny": ["21", "twenty-one", "twenty one", "21 letters"]},
+    {"question": "If you know 10 letter sounds and there are 26 letters total, how many do you still need to learn?", "expectedAny": ["16", "sixteen", "16 letters"]},
+    {"question": "Tom writes his name with 3 letters: T-O-M. How many letters are in Tom's name?", "expectedAny": ["3", "three", "3 letters"]},
+    {"question": "In the word 'book', how many letters come before the letter 'k'?", "expectedAny": ["3", "three", "3 letters"]},
+    {"question": "Sarah knows letters A through G. That's how many letters?", "expectedAny": ["7", "seven", "7 letters"]},
+    {"question": "If each letter has a sound, and you know 8 letter sounds, how many sounds is that?", "expectedAny": ["8", "eight", "8 sounds"]},
+    {"question": "The alphabet song has 26 letters. If you sing 13 letters, how many are left to sing?", "expectedAny": ["13", "thirteen", "13 letters"]},
+    {"question": "There are 5 vowels. How many consonants are in the alphabet?", "expectedAny": ["21", "twenty-one", "twenty one", "21 consonants"]},
+    {"question": "If you write 2 letters and then write 3 more letters, how many letters did you write?", "expectedAny": ["5", "five", "5 letters"]},
+    {"question": "The word 'cat' has 3 letters. The word 'dog' has 3 letters. How many letters total?", "expectedAny": ["6", "six", "6 letters"]}
   ]
 }

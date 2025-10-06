@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "10th_World_War_One_Causes_Consequences_Intermediate",
   "title": "World War I: Causes, Conduct, and Consequences",
   "grade": "10th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "imperialism",
-      "definition": "Policy of extending a country's power through colonization or military force"
-    },
-    {
-      "term": "alliance system",
-      "definition": "Network of agreements between countries for mutual defense"
-    },
-    {
-      "term": "trench warfare",
-      "definition": "Type of combat in which armies fight from trenches facing each other"
-    },
-    {
-      "term": "total war",
-      "definition": "Conflict involving complete mobilization of society's resources"
-    },
-    {
-      "term": "treaty of versailles",
-      "definition": "Peace treaty ending WWI that imposed harsh terms on Germany"
-    }
+    {"term": "imperialism", "definition": "Policy of extending a country's power through colonization or military force"},
+    {"term": "alliance system", "definition": "Network of agreements between countries for mutual defense"},
+    {"term": "trench warfare", "definition": "Type of combat in which armies fight from trenches facing each other"},
+    {"term": "total war", "definition": "Conflict involving complete mobilization of society's resources"},
+    {"term": "treaty of versailles", "definition": "Peace treaty ending WWI that imposed harsh terms on Germany"}
   ],
   "teachingNotes": "Examine multiple causes of the war and analyze the peace settlement's long-term effects on Europe.",
-  "sample": {
-    "question": "What is the policy of extending power through colonization or force?",
-    "expectedAny": [
-      "imperialism",
-      "imperial policy",
-      "empire building",
-      "colonial expansion"
-    ]
-  },
-  "truefalse": {
-    "question": "The alliance system created networks of mutual defense agreements.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What peace treaty ended World War I?",
-    "expectedAny": [
-      "Treaty of Versailles",
-      "Versailles Treaty",
-      "Paris Peace Treaty",
-      "WWI peace treaty"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Combat from trenches facing each other is called ________ warfare.",
-    "expectedAny": [
-      "trench",
-      "positional",
-      "static",
-      "defensive"
-    ]
-  },
-  "shortanswer": {
-    "question": "What were the main causes of World War I?",
-    "expectedAny": [
-      "imperialism, alliance system, nationalism, assassination",
-      "MAIN factors",
-      "political tensions and alliances"
-    ]
-  }
+  "sample": [
+    {"question": "What extends power by force?", "expectedAny": ["imperialism", "imperial policy", "colonialism", "empire building", "colonial expansion", "territorial expansion"]},
+    {"question": "What is mutual defense network?", "expectedAny": ["alliance system", "alliances", "military alliances", "defense pacts", "mutual defense", "alliance network"]},
+    {"question": "What is trench combat?", "expectedAny": ["trench warfare", "trench fighting", "static warfare", "trench combat", "defensive fighting", "positional warfare"]},
+    {"question": "What mobilizes all resources?", "expectedAny": ["total war", "complete war", "total warfare", "all out war", "unrestricted war", "comprehensive war"]},
+    {"question": "What ended WWI?", "expectedAny": ["treaty of versailles", "versailles treaty", "versailles peace", "peace treaty", "versailles settlement", "paris peace"]},
+    {"question": "What is empire building?", "expectedAny": ["imperialism", "colonization", "imperial policy", "empire building", "colonial expansion", "territorial expansion"]},
+    {"question": "What is defense agreements?", "expectedAny": ["alliance system", "alliances", "military alliances", "defense pacts", "mutual defense", "alliance network"]},
+    {"question": "What is facing trenches?", "expectedAny": ["trench warfare", "warfare", "trench fighting", "static warfare", "trench combat", "defensive fighting"]},
+    {"question": "What is complete mobilization?", "expectedAny": ["total war", "total warfare", "complete war", "all out war", "unrestricted war", "comprehensive war"]},
+    {"question": "What punished Germany?", "expectedAny": ["treaty of versailles", "versailles", "versailles treaty", "versailles peace", "peace treaty", "versailles settlement"]}
+  ],
+  "truefalse": [
+    {"question": "Imperialism extends power. (True or False)", "correct": true},
+    {"question": "Alliances prevented WWI. (True or False)", "correct": false},
+    {"question": "Trench warfare was WWI tactic. (True or False)", "correct": true},
+    {"question": "Total war mobilizes all resources. (True or False)", "correct": true},
+    {"question": "Versailles punished Germany. (True or False)", "correct": true},
+    {"question": "Imperialism is colonization. (True or False)", "correct": true},
+    {"question": "Alliance system aided defense. (True or False)", "correct": true},
+    {"question": "Trenches faced each other. (True or False)", "correct": true},
+    {"question": "Total war involves society. (True or False)", "correct": true},
+    {"question": "Versailles ended WWI. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What extends power?", "choices": [{"letter": "A", "text": "Isolationism"}, {"letter": "B", "text": "Imperialism"}, {"letter": "C", "text": "Pacifism"}, {"letter": "D", "text": "Neutrality"}], "correct": "B"},
+    {"question": "What is defense network?", "choices": [{"letter": "A", "text": "Isolationism"}, {"letter": "B", "text": "Alliance system"}, {"letter": "C", "text": "Neutrality"}, {"letter": "D", "text": "Pacifism"}], "correct": "B"},
+    {"question": "What is trench combat?", "choices": [{"letter": "A", "text": "Blitzkrieg"}, {"letter": "B", "text": "Trench warfare"}, {"letter": "C", "text": "Guerrilla"}, {"letter": "D", "text": "Naval"}], "correct": "B"},
+    {"question": "What mobilizes all?", "choices": [{"letter": "A", "text": "Limited war"}, {"letter": "B", "text": "Total war"}, {"letter": "C", "text": "Cold war"}, {"letter": "D", "text": "Civil war"}], "correct": "B"},
+    {"question": "What ended WWI?", "choices": [{"letter": "A", "text": "Armistice"}, {"letter": "B", "text": "Treaty of Versailles"}, {"letter": "C", "text": "Surrender"}, {"letter": "D", "text": "Peace"}], "correct": "B"},
+    {"question": "What is colonization?", "choices": [{"letter": "A", "text": "Isolationism"}, {"letter": "B", "text": "Imperialism"}, {"letter": "C", "text": "Neutrality"}, {"letter": "D", "text": "Pacifism"}], "correct": "B"},
+    {"question": "What is mutual defense?", "choices": [{"letter": "A", "text": "Isolationism"}, {"letter": "B", "text": "Alliance system"}, {"letter": "C", "text": "Neutrality"}, {"letter": "D", "text": "Independence"}], "correct": "B"},
+    {"question": "What was WWI tactic?", "choices": [{"letter": "A", "text": "Blitzkrieg"}, {"letter": "B", "text": "Trench warfare"}, {"letter": "C", "text": "Atomic"}, {"letter": "D", "text": "Cyber"}], "correct": "B"},
+    {"question": "What is complete mobilization?", "choices": [{"letter": "A", "text": "Limited"}, {"letter": "B", "text": "Total war"}, {"letter": "C", "text": "Cold"}, {"letter": "D", "text": "Civil"}], "correct": "B"},
+    {"question": "What punished Germany?", "choices": [{"letter": "A", "text": "Armistice"}, {"letter": "B", "text": "Versailles"}, {"letter": "C", "text": "Surrender"}, {"letter": "D", "text": "Treaty"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ extends power.", "expectedAny": ["imperialism", "Imperialism"]},
+    {"question": "_____ system is defense network.", "expectedAny": ["alliance", "Alliance"]},
+    {"question": "_____ warfare is trench combat.", "expectedAny": ["trench", "Trench"]},
+    {"question": "_____ war mobilizes all.", "expectedAny": ["total", "Total"]},
+    {"question": "Treaty of _____ ended WWI.", "expectedAny": ["versailles", "Versailles"]},
+    {"question": "_____ builds empires.", "expectedAny": ["imperialism", "Imperialism"]},
+    {"question": "_____ provided mutual defense.", "expectedAny": ["alliances", "Alliances"]},
+    {"question": "Soldiers fought in _____.", "expectedAny": ["trenches"]},
+    {"question": "_____ war involves all resources.", "expectedAny": ["total", "Total"]},
+    {"question": "_____ punished Germany.", "expectedAny": ["versailles", "Versailles"]}
+  ],
+  "shortanswer": [
+    {"question": "What is imperialism?", "keyTerms": ["policy", "extending", "country", "power", "colonization", "military", "force"], "expectedAny": ["Policy of extending a country's power through colonization or military force", "Empire building", "Colonial expansion"]},
+    {"question": "What is alliance system?", "keyTerms": ["network", "agreements", "countries", "mutual", "defense"], "expectedAny": ["Network of agreements between countries for mutual defense", "Defense alliances", "Mutual protection"]},
+    {"question": "What is trench warfare?", "keyTerms": ["type", "combat", "armies", "fight", "trenches", "facing", "each other"], "expectedAny": ["Type of combat in which armies fight from trenches facing each other", "Trench combat", "Static warfare"]},
+    {"question": "What is total war?", "keyTerms": ["conflict", "involving", "complete", "mobilization", "society", "resources"], "expectedAny": ["Conflict involving complete mobilization of society's resources", "All-out war", "Complete mobilization"]},
+    {"question": "What is Treaty of Versailles?", "keyTerms": ["peace", "treaty", "ending", "wwi", "imposed", "harsh", "terms", "germany"], "expectedAny": ["Peace treaty ending WWI that imposed harsh terms on Germany", "WWI peace treaty", "Punished Germany"]},
+    {"question": "What caused WWI?", "keyTerms": ["nationalism", "imperialism", "alliances", "militarism", "assassination"], "expectedAny": ["Nationalism, imperialism, alliances, militarism, assassination", "Multiple causes", "Complex factors"]},
+    {"question": "When was WWI?", "keyTerms": ["1914-1918", "four years"], "expectedAny": ["1914-1918", "Four years", "Great War"]},
+    {"question": "What was WWI like?", "keyTerms": ["trench", "stalemate", "casualties", "technology", "brutal"], "expectedAny": ["Trench warfare stalemate with massive casualties", "Brutal static combat", "Technological warfare"]},
+    {"question": "What did Versailles do?", "keyTerms": ["blamed", "germany", "reparations", "territory", "military limits"], "expectedAny": ["Blamed Germany, demanded reparations, took territory, limited military", "Punished Germany harshly", "War guilt clause"]},
+    {"question": "What were Versailles effects?", "keyTerms": ["resentment", "germany", "economic", "problems", "WWII", "causes"], "expectedAny": ["German resentment and economic problems contributed to WWII", "Led to WWII", "Created problems"]}
+  ]
 }

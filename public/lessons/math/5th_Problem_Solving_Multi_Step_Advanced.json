@@ -23,31 +23,99 @@
     {
       "term": "estimate",
       "definition": "To find an approximate answer to check if your exact answer is reasonable"
+    },
+    {
+      "term": "order of operations",
+      "definition": "The agreed-upon order to perform operations so results are consistent (for example, parentheses before multiplication/addition)"
+    },
+    {
+      "term": "inverse operation",
+      "definition": "An operation that undoes another (addition/ subtraction, multiplication/ division)"
+    },
+    {
+      "term": "diagram",
+      "definition": "A simple drawing or model used to represent information in a problem"
+    },
+    {
+      "term": "unit",
+      "definition": "A label that tells what a number measures, such as dollars, meters, or minutes"
+    },
+    {
+      "term": "work backwards",
+      "definition": "A strategy where you start from the final result and reverse each step to find the starting value"
     }
   ],
   "teachingNotes": "Teach the problem-solving process: read carefully, identify what you know and need to find, plan your steps, solve, and check your answer. Practice breaking complex problems into smaller parts.",
-  "sample": {
-    "question": "What should you do first when solving a word problem?",
-    "expectedAny": ["read carefully", "understand the problem", "read the problem", "identify what you know"]
-  },
-  "truefalse": {
-    "question": "You should always estimate your answer to check if it's reasonable.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "Which strategy helps break down complex problems?",
-    "expectedAny": ["work backwards", "make smaller steps", "identify steps needed", "break into parts"]
-  },
-  "fillintheblank": {
-    "question": "After solving a problem, you should always ________ your answer to see if it makes sense.",
-    "expectedAny": ["check", "verify", "review", "examine"]
-  },
-  "shortanswer": {
-    "question": "List the steps you would use to solve a multi-step word problem.",
-    "expectedAny": ["read, plan, solve, check", "understand, plan, calculate, verify", "read carefully, identify steps, solve, check answer"]
-  },
-  "wordProblems": {
-    "question": "A school has 24 classrooms with 28 students each. If 156 students are absent today, how many students are present?",
-    "expectedAny": ["516 students", "516", "672 - 156 = 516", "five hundred sixteen"]
-  }
+  "sample": [
+    { "question": "What should you do first when solving a word problem?", "expectedAny": ["read carefully", "understand the problem"] },
+    { "question": "After planning, what comes next?", "expectedAny": ["solve"] },
+    { "question": "What should you do last?", "expectedAny": ["check", "verify"] },
+    { "question": "Name one strategy to break down a problem.", "expectedAny": ["work backwards", "draw a diagram"] },
+    { "question": "Estimate 298 + 603.", "expectedAny": ["900", "about 900"] },
+    { "question": "Round 152 to nearest ten.", "expectedAny": ["150"] },
+    { "question": "Round 152 to nearest hundred.", "expectedAny": ["200"] },
+    { "question": "Check: 45×20 is about ________.", "expectedAny": ["900"] },
+    { "question": "Identify the unknown in a problem.", "expectedAny": ["what we solve for", "variable"] },
+    { "question": "Show your work to make it ________.", "expectedAny": ["clear"] }
+  ],
+  "truefalse": [
+    { "question": "You should always estimate your answer to check reasonableness.", "expectedAny": ["true"] },
+    { "question": "In multi-step problems, order of operations never matters.", "expectedAny": ["false"] },
+    { "question": "Breaking a big problem into parts can help.", "expectedAny": ["true"] },
+    { "question": "If an answer seems unreasonable, re-check steps.", "expectedAny": ["true"] },
+    { "question": "Labels or units are not important in word problems.", "expectedAny": ["false"] },
+    { "question": "A diagram can sometimes help.", "expectedAny": ["true"] },
+    { "question": "Work backwards means start from the end.", "expectedAny": ["true"] },
+    { "question": "You never need to reread the problem.", "expectedAny": ["false"] },
+    { "question": "Check if your answer fits the context.", "expectedAny": ["true"] },
+    { "question": "Estimating gives an exact answer.", "expectedAny": ["false"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which strategy helps break down complex problems?", "choices": ["ignore details", "work backwards", "guess wildly", "skip steps"], "correct": 1, "expectedAny": ["work backwards"] },
+    { "question": "After you plan, what should you do?", "choices": ["solve", "estimate", "stop", "erase"], "correct": 0, "expectedAny": ["solve"] },
+    { "question": "Which tool checks reasonableness?", "choices": ["estimating", "erasing", "coloring", "glue"], "correct": 0, "expectedAny": ["estimate"] },
+    { "question": "Which step should be last?", "choices": ["reread", "solve", "check", "plan"], "correct": 2, "expectedAny": ["check"] },
+    { "question": "Which can make a plan clearer?", "choices": ["drawing a diagram", "daydreaming", "guessing", "hiding work"], "correct": 0, "expectedAny": ["diagram"] },
+    { "question": "A problem says 'each' and 'total'. Likely operations?", "choices": ["division then subtraction", "multiplication then addition", "subtraction then division", "none"], "correct": 1, "expectedAny": ["multiply then add"] },
+    { "question": "Which is a reasonable estimate of 299 + 602?", "choices": ["800", "900", "1000", "700"], "correct": 1, "expectedAny": ["900"] },
+    { "question": "If an answer is too large, what next?", "choices": ["check steps", "celebrate", "ignore", "double it"], "correct": 0, "expectedAny": ["check steps"] },
+    { "question": "Which helps track steps?", "choices": ["showing work", "hiding work", "no units", "random notes"], "correct": 0, "expectedAny": ["show work"] },
+    { "question": "Which is a multi-step problem clue?", "choices": ["and then", "add only", "always subtract", "none"], "correct": 0, "expectedAny": ["and then"] }
+  ],
+  "fillintheblank": [
+    { "question": "After solving, always ________ your answer.", "expectedAny": ["check", "verify", "double-check"] },
+    { "question": "Draw a ________ to visualize.", "expectedAny": ["diagram", "model", "picture"] },
+    { "question": "Round 47 to nearest ten: ________.", "expectedAny": ["50", "fifty"] },
+    { "question": "Plan → Solve → ________.", "expectedAny": ["Check", "check", "verify"] },
+    { "question": "Use ________ to see if answer is about right.", "expectedAny": ["estimation", "an estimate", "estimating"] },
+    { "question": "Underline key ________ in the problem.", "expectedAny": ["words", "terms", "phrases"] },
+    { "question": "Show your ________ for each step.", "expectedAny": ["work", "steps", "reasoning"] },
+    { "question": "A clue word 'each' suggests ________.", "expectedAny": ["multiplication", "multiply", "groups of", "per"] },
+    { "question": "A clue phrase 'left over' suggests ________.", "expectedAny": ["subtraction", "subtract", "remaining"] },
+    { "question": "A clue 'split equally' suggests ________.", "expectedAny": ["division", "divide", "equal groups"] }
+  ],
+  "shortanswer": [
+    { "question": "List steps to solve a multi-step problem.", "expectedAny": ["read, plan, solve, check", "understand, plan, compute, check", "reread, plan, solve, check"] },
+    { "question": "Explain 'work backwards' with an example.", "expectedAny": ["start from final", "reverse steps", "undo operations using inverse operations", "begin at the result and backtrack"] },
+    { "question": "Why estimate before solving?", "expectedAny": ["check reasonableness", "predict a ballpark answer", "see if the result makes sense"] },
+    { "question": "Give a clue word for multiplication.", "expectedAny": ["each", "groups of", "per", "times"] },
+    { "question": "How do you decide if an answer is reasonable?", "expectedAny": ["estimate and compare", "check units and context", "compare with a rounded answer"] },
+    { "question": "When would you draw a diagram?", "expectedAny": ["visualize relationships", "organize parts of the problem", "show groups or comparisons"] },
+    { "question": "Why reread the problem?", "expectedAny": ["catch details", "find missed conditions", "confirm units and question asked"] },
+    { "question": "What if you get a negative where not possible?", "expectedAny": ["recheck steps", "review operations and order", "revise the model or plan"] },
+    { "question": "Give a two-step plan example.", "expectedAny": ["multiply then add", "add then divide", "subtract then multiply"] },
+    { "question": "What units should you include?", "expectedAny": ["appropriate labels", "units like dollars, meters, minutes", "the unit named in the problem"] }
+  ],
+  "wordProblems": [
+    { "question": "A school has 24 rooms with 28 students each. If 156 are absent, how many present?", "expectedAny": ["516"] },
+    { "question": "A store sells 45 boxes at $12 each, then gives $50 discount. Total revenue?", "expectedAny": ["490"] },
+    { "question": "You run 3 miles daily for 5 days, then rest 2 days. Total miles?", "expectedAny": ["15"] },
+    { "question": "A recipe needs 3 batches. Each batch uses 2 eggs and 1 cup sugar. How many eggs and cups sugar total?", "expectedAny": ["6 eggs and 3 cups"] },
+    { "question": "A bus seats 48. Four trips carry 43, 47, 48, 45 passengers. Total?", "expectedAny": ["183"] },
+    { "question": "A box has 12 pencils. 18 boxes are bought. 25 pencils are given away. How many left?", "expectedAny": ["191"] },
+  { "question": "Tickets cost $9 for children and $12 for adults. You sell 38 child tickets and 27 adult tickets. Total money?", "expectedAny": ["666", "$666", "342 + 324 = 666"] },
+    { "question": "A tank leaks 3 L/hour and is filled at 8 L/hour for 6 hours. Net change?", "expectedAny": ["30 L"] },
+  { "question": "A rectangle is 8 by 5. Increase length by 3 and decrease width by 2. New perimeter?", "expectedAny": ["28"] },
+    { "question": "A sale is 25% off $80. Then add 8% tax on the discounted price. Final cost?", "expectedAny": ["64.8", "$64.80"] }
+  ]
 }

@@ -49,9 +49,9 @@
   ],
   "shortanswer": [
     {"question": "Count these objects: 🍎🍎🍎🍎. How many apples are there?", "expectedAny": ["4", "four", "4 apples"]},
-    {"question": "Count from 10 to 15.", "expectedAny": ["10, 11, 12, 13, 14, 15"]},
+  {"question": "Count from 10 to 15.", "expectedAny": ["10, 11, 12, 13, 14, 15", "10 11 12 13 14 15", "ten, eleven, twelve, thirteen, fourteen, fifteen"]},
     {"question": "Count backwards from 5 to 1.", "expectedAny": ["5, 4, 3, 2, 1"]},
-    {"question": "Name three numbers bigger than 15.", "expectedAny": ["16, 17, 18", "any three > 15"]},
+  {"question": "Name three numbers bigger than 15.", "expectedAny": ["16, 17, 18", "17, 18, 19", "18, 19, 20"]},
     {"question": "What numbers come between 8 and 12?", "expectedAny": ["9, 10, 11"]},
     {"question": "Count by 2s: 2, 4, 6...", "expectedAny": ["2, 4, 6, 8, 10"]},
     {"question": "How many fingers and toes do you have total?", "expectedAny": ["20", "twenty", "10 + 10 = 20"]}

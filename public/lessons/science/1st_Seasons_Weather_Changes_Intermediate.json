@@ -27,7 +27,8 @@
     "question": "What season comes after winter?",
     "expectedAny": [
       "spring",
-      "springtime"
+      "springtime",
+      "the spring"
     ]
   },
   "truefalse": [
@@ -35,7 +36,9 @@
       "question": "You wear a heavy coat in summer.",
       "answer": false,
       "expectedAny": [
-        "summer is hot, so you wear light clothes"
+        "summer is hot, so you wear light clothes",
+        "no, summer is hot",
+        "false"
       ]
     }
   ],
@@ -50,7 +53,8 @@
       ],
       "correct": 1,
       "expectedAny": [
-        "snow is perfect for building snowmen"
+        "snow is perfect for building snowmen",
+        "build a snowman"
       ]
     }
   ],
@@ -59,17 +63,18 @@
       "question": "In _____, leaves change colors and fall from trees.",
       "expectedAny": [
         "fall",
-        "autumn"
+        "autumn",
+        "the fall"
       ]
     }
   ],
   "shortanswer": [
-    {"question": "How do you dress differently in winter compared to summer?", "expectedAny": ["coats/hats vs shorts/t-shirts"]},
-    {"question": "What happens to trees in fall?", "expectedAny": ["leaves change color and fall"]},
-    {"question": "Why do we have seasons?", "expectedAny": ["Earth tilts and orbits the sun"]},
-    {"question": "What are signs that spring is coming?", "expectedAny": ["warmer weather", "flowers bloom"]},
-    {"question": "How does weather affect what we do?", "expectedAny": ["clothes and activities change"]},
-    {"question": "Draw a picture for each season.", "expectedAny": ["four drawings labeled"]},
-    {"question": "What should you wear on a rainy day and why?", "expectedAny": ["raincoat/boots to stay dry"]}
+    {"question": "How do you dress differently in winter compared to summer?", "expectedAny": ["coats/hats vs shorts/t-shirts", "warm clothes vs light clothes", "jackets vs t-shirts", "winter clothes vs summer clothes", "heavy coat vs t-shirt", "warm vs cool clothes"]},
+    {"question": "What happens to trees in fall?", "expectedAny": ["leaves change color and fall", "leaves turn colors and drop", "leaves fall off", "leaves change and fall down", "turn red and yellow", "leaves drop"]},
+    {"question": "Why do we have seasons?", "expectedAny": ["Earth tilts and orbits the sun", "Earth's tilt and orbit", "tilt plus going around the sun", "Earth goes around the sun", "the way Earth moves", "Earth tilts"]},
+    {"question": "What are signs that spring is coming?", "expectedAny": ["warmer weather", "flowers bloom", "birds and bugs return", "getting warmer", "flowers grow", "plants come back", "snow melts"]},
+    {"question": "How does weather affect what we do?", "expectedAny": ["clothes and activities change", "we dress and play differently", "we choose activities for weather", "changes what we wear", "changes what we do outside", "hot or cold matters"]},
+    {"question": "Draw a picture for each season.", "expectedAny": ["four drawings labeled", "labeled drawings", "pictures with labels", "4 pictures", "spring summer fall winter pictures"]},
+    {"question": "What should you wear on a rainy day and why?", "expectedAny": ["raincoat/boots to stay dry", "coat and boots to stay dry", "umbrella and boots", "rain jacket", "rain boots and coat", "to not get wet", "stay dry"]}
   ]
 }

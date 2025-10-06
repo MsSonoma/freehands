@@ -1,0 +1,80 @@
+{
+  "id": "past-present-future-timelines-advanced",
+  "title": "Past, Present, and Future Timelines",
+  "grade": "2nd",
+  "difficulty": "Advanced",
+  "featured": false,
+  "vocab": [
+    {"term": "timeline", "definition": "A line that shows when things happened in order"},
+    {"term": "past", "definition": "Time that has already happened"},
+    {"term": "present", "definition": "The time that is happening now"},
+    {"term": "future", "definition": "Time that has not happened yet"},
+    {"term": "decade", "definition": "A period of ten years"},
+    {"term": "century", "definition": "A period of one hundred years"},
+    {"term": "generation", "definition": "People born around the same time"},
+    {"term": "sequence", "definition": "The order in which things happen"},
+    {"term": "chronological", "definition": "Arranged in the order of time"},
+    {"term": "ancestor", "definition": "A family member who lived long ago"}
+  ],
+  "teachingNotes": "Create personal and historical timelines. Use visual aids and hands-on activities. Connect to family history.",
+  "sample": [
+    {"question": "What comes first: past, present, or future?", "expectedAny": ["past", "the past"]},
+    {"question": "How many years are in a decade?", "expectedAny": ["10", "ten", "ten years"]},
+    {"question": "What do we call 100 years?", "expectedAny": ["century", "a century", "one century"]},
+    {"question": "What shows events in order?", "expectedAny": ["timeline", "a timeline", "time line"]},
+    {"question": "Is yesterday past or present?", "expectedAny": ["past", "the past"]},
+    {"question": "Is tomorrow past or future?", "expectedAny": ["future", "the future"]},
+    {"question": "What is happening right now called?", "expectedAny": ["present", "the present", "now"]},
+    {"question": "What do we call the order of events?", "expectedAny": ["sequence", "chronological order", "order"]},
+    {"question": "Who are your ancestors?", "expectedAny": ["family from long ago", "great grandparents", "family members who lived before"]},
+    {"question": "How do you read a timeline?", "expectedAny": ["from left to right", "in order", "from earliest to latest"]}
+  ],
+  "truefalse": [
+    {"question": "A timeline shows events in order.", "answer": true},
+    {"question": "The future has already happened.", "answer": false},
+    {"question": "A decade is 100 years.", "answer": false},
+    {"question": "Yesterday is in the past.", "answer": true},
+    {"question": "A century is 100 years.", "answer": true},
+    {"question": "Tomorrow is in the present.", "answer": false},
+    {"question": "Timelines can show family history.", "answer": true},
+    {"question": "The present is happening right now.", "answer": true},
+    {"question": "Events on a timeline are random.", "answer": false},
+    {"question": "Your grandparents lived in the past.", "answer": true}
+  ],
+  "multiplechoice": [
+    {"question": "How many years in a decade?", "choices": ["5", "10", "50", "100"], "correct": 1},
+    {"question": "What comes after the present?", "choices": ["past", "yesterday", "future", "decade"], "correct": 2},
+    {"question": "A timeline shows events in ___ order.", "choices": ["random", "chronological", "backward", "confusing"], "correct": 1},
+    {"question": "How many years in a century?", "choices": ["10", "50", "100", "1000"], "correct": 2},
+    {"question": "Your great-grandparents are your ___.", "choices": ["future family", "ancestors", "present family", "neighbors"], "correct": 1},
+    {"question": "Which is the correct order?", "choices": ["future, past, present", "present, past, future", "past, present, future", "future, present, past"], "correct": 2},
+    {"question": "What helps us understand when things happened?", "choices": ["map", "timeline", "picture", "story"], "correct": 1},
+    {"question": "Last year is in the ___.", "choices": ["future", "present", "past", "decade"], "correct": 2},
+    {"question": "Next week is in the ___.", "choices": ["past", "present", "future", "century"], "correct": 2},
+    {"question": "A generation includes people born ___.", "choices": ["100 years apart", "around the same time", "in different centuries", "in the future"], "correct": 1}
+  ],
+  "fillintheblank": [
+    {"question": "A _____ shows events in the order they happened.", "expectedAny": ["timeline", "time line"]},
+    {"question": "Ten years equals one _____.", "expectedAny": ["decade", "10 years"]},
+    {"question": "One hundred years equals one _____.", "expectedAny": ["century", "100 years"]},
+    {"question": "Yesterday is in the _____.", "expectedAny": ["past", "the past"]},
+    {"question": "Tomorrow is in the _____.", "expectedAny": ["future", "the future"]},
+    {"question": "Right now is the _____.", "expectedAny": ["present", "now"]},
+    {"question": "Events in order are called _____.", "expectedAny": ["chronological", "sequential", "in sequence"]},
+    {"question": "Your great-grandparents are your _____.", "expectedAny": ["ancestors", "relatives from long ago"]},
+    {"question": "People born around the same time are a _____.", "expectedAny": ["generation", "a generation"]},
+    {"question": "The _____ of events means their order.", "expectedAny": ["sequence", "order"]}
+  ],
+  "shortanswer": [
+    {"question": "Name three things that belong in the past.", "expectedAny": ["yesterday, last year, when you were born", "old toys, childhood memories, historical events", "grandparents childhood, old cars, early technologies"]},
+    {"question": "What is the difference between past and present?", "expectedAny": ["past already happened, present is now", "past is over, present is happening", "past is history, present is today"]},
+    {"question": "How can a timeline help you?", "expectedAny": ["shows when things happened", "puts events in order", "helps understand history"]},
+    {"question": "Give an example of something in your future.", "expectedAny": ["growing up", "going to high school", "learning new skills"]},
+    {"question": "Why is it important to know about the past?", "expectedAny": ["learn from mistakes", "understand how things changed", "know our history"]},
+    {"question": "How many decades are in a century?", "expectedAny": ["10", "ten", "ten decades"]},
+    {"question": "What would you put on your personal timeline?", "expectedAny": ["birth, first day of school, learned to ride a bike", "moving to a new house, a birthday, a big trip", "family events, first pet, starting school"]},
+    {"question": "How has transportation changed from past to present?", "expectedAny": ["horses to cars", "walking to cars and planes", "slow to fast"]},
+    {"question": "What might schools look like in the future?", "expectedAny": ["computers in every classroom", "more online learning", "different classrooms and tools"]},
+    {"question": "Why do we study timelines?", "expectedAny": ["understand when things happened", "see how things change", "learn about history"]}
+  ]
+}

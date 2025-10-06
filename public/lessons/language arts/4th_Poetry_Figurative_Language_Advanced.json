@@ -23,6 +23,38 @@
     {
       "term": "rhyme scheme",
       "definition": "The pattern of rhyming words at the end of lines in a poem"
+    },
+    {
+      "term": "alliteration",
+      "definition": "Repeating the same beginning sound in nearby words"
+    },
+    {
+      "term": "onomatopoeia",
+      "definition": "A word that imitates a natural sound, like buzz or bang"
+    },
+    {
+      "term": "stanza",
+      "definition": "A group of lines in a poem, like a paragraph in poetry"
+    },
+    {
+      "term": "line break",
+      "definition": "Where a poet ends a line and starts a new one"
+    },
+    {
+      "term": "meter",
+      "definition": "A repeating pattern of stressed and unstressed syllables"
+    },
+    {
+      "term": "rhythm",
+      "definition": "The beat or flow created by patterns of sounds in a poem"
+    },
+    {
+      "term": "free verse",
+      "definition": "Poetry without a regular rhyme or meter"
+    },
+    {
+      "term": "mood",
+      "definition": "The feeling a poem or story creates for the reader"
     }
   ],
   "teachingNotes": "Introduce basic figurative language through poetry examples. Help students identify and create similes, metaphors, and personification. Practice analyzing rhyme schemes and rhythm in poems.",
@@ -36,39 +68,39 @@
     {"question": "Name a figurative language device poets use.", "expectedAny": ["simile", "metaphor", "personification", "hyperbole"]}
   ],
   "truefalse": [
-    {"question": "'The wind whispered through the trees' is an example of personification.", "answer": true, "expectedAny": ["true"]},
-    {"question": "All poems must rhyme.", "answer": false, "expectedAny": ["false"]},
-    {"question": "Onomatopoeia uses words like 'buzz' and 'clang'.", "answer": true, "expectedAny": ["true"]},
-    {"question": "A simile uses 'like' or 'as'.", "answer": true, "expectedAny": ["true"]},
-    {"question": "A metaphor says one thing is another.", "answer": true, "expectedAny": ["true"]},
-    {"question": "Alliteration repeats beginning sounds.", "answer": true, "expectedAny": ["true"]},
-    {"question": "Rhyme scheme is the pattern of rhymes at line endings.", "answer": true, "expectedAny": ["true"]}
+    {"question": "'The wind whispered through the trees' is an example of personification.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "All poems must rhyme.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "Onomatopoeia uses words like 'buzz' and 'clang'.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "A simile uses 'like' or 'as'.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "A metaphor says one thing is another.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Alliteration repeats beginning sounds.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Rhyme scheme is the pattern of rhymes at line endings.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]}
   ],
   "multiplechoice": [
-    {"question": "Which is an example of a metaphor?", "choices": ["Her voice is music", "Her voice is like music", "Her voice sounds nice", "Her voice was loud"], "correct": 0, "expectedAny": ["Her voice is music"]},
-    {"question": "Which line shows alliteration?", "choices": ["Blue sky above", "Whispering winds were warm", "Dogs barked loudly", "The clouds moved"], "correct": 1, "expectedAny": ["Whispering winds were warm"]},
-    {"question": "Which is a simile?", "choices": ["The moon was a lantern", "She ran like the wind", "The wind danced", "The bell buzzed"], "correct": 1, "expectedAny": ["ran like the wind"]},
-    {"question": "'Bang!' and 'pop!' are examples of:", "choices": ["hyperbole", "personification", "onomatopoeia", "metaphor"], "correct": 2, "expectedAny": ["onomatopoeia"]},
-    {"question": "What is an AABB rhyme scheme?", "choices": ["First two lines rhyme; next two lines rhyme", "Alternating lines rhyme", "No rhyme", "Every line rhymes"], "correct": 0, "expectedAny": ["AABB"]},
-    {"question": "Which device gives human qualities to objects?", "choices": ["metaphor", "simile", "personification", "alliteration"], "correct": 2, "expectedAny": ["personification"]},
-    {"question": "Which most affects a poem's beat?", "choices": ["rhyme scheme", "syllable stress pattern", "title", "font size"], "correct": 1, "expectedAny": ["stress pattern"]}
+    {"question": "Which is an example of a metaphor?", "choices": ["Her voice is music", "Her voice is like music", "Her voice sounds nice", "Her voice was loud"], "correct": 0, "expectedAny": ["her voice is music", "Her voice is music", "a", "1", "first"]},
+    {"question": "Which line shows alliteration?", "choices": ["Blue sky above", "Whispering winds were warm", "Dogs barked loudly", "The clouds moved"], "correct": 1, "expectedAny": ["whispering winds were warm", "Whispering winds were warm", "b", "2", "second"]},
+    {"question": "Which is a simile?", "choices": ["The moon was a lantern", "She ran like the wind", "The wind danced", "The bell buzzed"], "correct": 1, "expectedAny": ["she ran like the wind", "ran like the wind", "b", "2", "second"]},
+    {"question": "'Bang!' and 'pop!' are examples of:", "choices": ["hyperbole", "personification", "onomatopoeia", "metaphor"], "correct": 2, "expectedAny": ["onomatopoeia", "c", "3", "third"]},
+    {"question": "What is an AABB rhyme scheme?", "choices": ["First two lines rhyme; next two lines rhyme", "Alternating lines rhyme", "No rhyme", "Every line rhymes"], "correct": 0, "expectedAny": ["first two lines rhyme; next two lines rhyme", "aabb", "a", "1", "first"]},
+    {"question": "Which device gives human qualities to objects?", "choices": ["metaphor", "simile", "personification", "alliteration"], "correct": 2, "expectedAny": ["personification", "c", "3", "third"]},
+    {"question": "Which most affects a poem's beat?", "choices": ["rhyme scheme", "syllable stress pattern", "title", "font size"], "correct": 1, "expectedAny": ["syllable stress pattern", "stress pattern", "b", "2", "second"]}
   ],
   "fillintheblank": [
-    {"question": "The sentence 'She runs like the wind' contains a ________.", "expectedAny": ["simile"]},
-    {"question": "'The classroom was a zoo' is a ________.", "expectedAny": ["metaphor"]},
-    {"question": "Words like 'buzz' and 'clang' are ________.", "expectedAny": ["onomatopoeia"]},
-    {"question": "'Peter Piper picked' shows ________.", "expectedAny": ["alliteration"]},
-    {"question": "A poem's rhyme ________ is its end-rhyme pattern.", "expectedAny": ["scheme"]},
-    {"question": "Poetry often creates ________ images in the reader's mind.", "expectedAny": ["vivid"]},
-    {"question": "Rhythm is the ________ in poetry.", "expectedAny": ["beat"]}
+    {"question": "The sentence 'She runs like the wind' contains a ________.", "expectedAny": ["simile", "a comparison using like or as", "comparison using like or as"]},
+    {"question": "'The classroom was a zoo' is a ________.", "expectedAny": ["metaphor", "direct comparison without like or as", "a direct comparison"]},
+    {"question": "Words like 'buzz' and 'clang' are ________.", "expectedAny": ["onomatopoeia", "sound words", "sound-imitating words"]},
+    {"question": "'Peter Piper picked' shows ________.", "expectedAny": ["alliteration", "repeated beginning sounds", "same starting sounds"]},
+    {"question": "A poem's rhyme ________ is its end-rhyme pattern.", "expectedAny": ["scheme", "pattern", "rhyme pattern"]},
+    {"question": "Poetry often creates ________ images in the reader's mind.", "expectedAny": ["vivid", "strong", "clear"]},
+    {"question": "Rhythm is the ________ in poetry.", "expectedAny": ["beat", "pattern of beats", "flow"]}
   ],
   "shortanswer": [
-    {"question": "Why do poets use figurative language?", "expectedAny": ["vivid images", "express feelings"]},
-    {"question": "Label the rhyme scheme for: \nLine1: sky\nLine2: blue\nLine3: high\nLine4: true", "expectedAny": ["ABAB"]},
-    {"question": "Write a simile about rain.", "expectedAny": ["varies"]},
-    {"question": "Write a metaphor about the sun.", "expectedAny": ["varies"]},
-    {"question": "Give an example of personification for the wind.", "expectedAny": ["varies"]},
-    {"question": "Find and copy a line with alliteration from a poem you know.", "expectedAny": ["varies"]},
-    {"question": "Describe how rhythm changes a poem's mood.", "expectedAny": ["varies"]}
+    {"question": "Why do poets use figurative language?", "expectedAny": ["create vivid images", "express feelings", "make ideas stronger", "deepen meaning", "engage the senses"]},
+    {"question": "Label the rhyme scheme for: \nLine1: sky\nLine2: blue\nLine3: high\nLine4: true", "expectedAny": ["ABAB", "A B A B", "a-b-a-b"]},
+  {"question": "Write a simile using weather.", "expectedAny": ["uses like or as", "compares two things with like or as", "simile with like or as"]},
+    {"question": "Write a metaphor about the sun.", "expectedAny": ["the sun is __", "a __ in the sky", "a golden __", "the sun equals __"]},
+  {"question": "Give an example of personification for nature.", "expectedAny": ["gives a non-human thing a human action", "gives human qualities to a non-human thing", "non-human doing a human action"]},
+    {"question": "Find and copy a line with alliteration from a poem you know.", "expectedAny": ["repeats beginning sounds", "__ __ __ pattern", "same starting sound words", "same starting sound"]},
+    {"question": "Describe how rhythm changes a poem's mood.", "expectedAny": ["fast beat feels exciting", "slow beat feels calm", "steady beat feels steady", "rhythm affects mood"]}
   ]
 }

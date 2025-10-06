@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Focus on respect for Native American cultures. Discuss different tribes and their ways of life. Emphasize that Native Americans are still an important part of America today.",
-  "sample": {
-    "question": "Who were the first people to live in North America?",
-    "expectedAny": [
-      "Native Americans",
-      "American Indians",
-      "indigenous people",
-      "first peoples"
-    ]
-  },
-  "truefalse": {
-    "question": "All Native American tribes had the same culture and traditions.",
-    "expectedAny": [
-      "false",
-      "no",
-      "f",
-      "incorrect"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What do we call the customs and beliefs passed down through generations?",
-    "expectedAny": [
-      "traditions",
-      "cultural traditions",
-      "tribal traditions",
-      "customs"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A group of Native Americans who share the same culture is called a ________.",
-    "expectedAny": [
-      "tribe",
-      "tribal group",
-      "Native American tribe",
-      "tribal community"
-    ]
-  },
-  "shortanswer": {
-    "question": "Name two things that might be part of a Native American tribe's culture.",
-    "expectedAny": [
-      "language and art",
-      "ceremonies and stories",
-      "food and clothing",
-      "traditions and beliefs"
-    ]
-  }
+  "sample": [
+    { "question": "Who were the first people to live in North America?", "expectedAny": ["Native Americans", "American Indians", "indigenous people", "first peoples"] },
+    { "question": "A group that shares culture and language is called a ________.", "expectedAny": ["tribe"] },
+    { "question": "Customs and beliefs passed down are called ________.", "expectedAny": ["traditions"] },
+    { "question": "Land set aside by the government for tribes is called a ________.", "expectedAny": ["reservation"] },
+    { "question": "Name one Native American cultural practice.", "expectedAny": ["storytelling", "dancing", "art", "ceremonies"] },
+    { "question": "What do we call the way of life of a group?", "expectedAny": ["culture"] },
+    { "question": "Name one major Native American group.", "expectedAny": ["Navajo", "Cherokee", "Lakota", "Iroquois"] },
+    { "question": "What did many tribes use for shelter on the Great Plains?", "expectedAny": ["tipis", "teepees"] },
+    { "question": "What did coastal tribes often eat?", "expectedAny": ["fish", "seafood"] },
+    { "question": "What crop is known as 'maize'?", "expectedAny": ["corn"] }
+  ],
+  "truefalse": [
+    { "question": "All Native American tribes had the same culture and traditions.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Native American cultures are diverse and still exist today.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Some tribes lived in tipis on the Great Plains.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Storytelling was not important in Native cultures.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Many tribes farmed corn, beans, and squash.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Reservations are places where tribes cannot live.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Different regions influenced how tribes lived.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All tribes lived in the same kinds of homes.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Native Americans only lived in the past.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Art and music are part of many Native cultures.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "What do we call customs and beliefs passed down?", "choices": ["laws", "traditions", "habits", "inventions"], "correct": 1, "expectedAny": ["traditions"] },
+    { "question": "A group that shares culture and language is a...", "choices": ["village", "tribe", "family", "team"], "correct": 1, "expectedAny": ["tribe"] },
+    { "question": "What is land set aside for tribes called?", "choices": ["park", "reservation", "farm", "forest"], "correct": 1, "expectedAny": ["reservation"] },
+    { "question": "Which home is common on the Great Plains?", "choices": ["longhouse", "pueblo", "tipi", "igloo"], "correct": 2, "expectedAny": ["tipi", "teepee"] },
+    { "question": "Which crops are called the 'Three Sisters'?", "choices": ["corn, beans, squash", "wheat, rice, barley", "apples, oranges, grapes", "peas, lentils, soy"], "correct": 0, "expectedAny": ["corn", "beans", "squash"] },
+    { "question": "Which is an example of a Native craft?", "choices": ["knitting", "basket weaving", "glass blowing", "pottery only"], "correct": 1, "expectedAny": ["basket weaving"] },
+    { "question": "What do coastal tribes often eat?", "choices": ["desert plants", "seafood", "snow", "cactus"], "correct": 1, "expectedAny": ["seafood"] },
+    { "question": "Which region influenced tipi homes?", "choices": ["Great Plains", "Arctic", "Southwest", "Northeast"], "correct": 0, "expectedAny": ["Great Plains"] },
+    { "question": "Which is a Native group?", "choices": ["Navajo", "Romans", "Vikings", "Egyptians"], "correct": 0, "expectedAny": ["Navajo"] },
+    { "question": "What is maize?", "choices": ["wheat", "corn", "rice", "oats"], "correct": 1, "expectedAny": ["corn"] }
+  ],
+  "fillintheblank": [
+    { "question": "A group sharing culture is a ________.", "expectedAny": ["tribe"] },
+    { "question": "Customs passed down are ________.", "expectedAny": ["traditions"] },
+    { "question": "Land set aside for tribes is a ________.", "expectedAny": ["reservation"] },
+    { "question": "Homes used on the Great Plains include the ________.", "expectedAny": ["tipi", "teepee"] },
+    { "question": "The 'Three Sisters' are corn, ________, and ________.", "expectedAny": ["beans", "squash"] },
+    { "question": "Coastal tribes often ate ________.", "expectedAny": ["fish", "seafood"] },
+    { "question": "The way of life of a group is its ________.", "expectedAny": ["culture"] },
+    { "question": "Some tribes lived in ________ in the Southwest.", "expectedAny": ["pueblos"] },
+    { "question": "Native Americans are ________ an important part of America today.", "expectedAny": ["still"] },
+    { "question": "Many tribes told stories in the tradition of ________.", "expectedAny": ["storytelling"] }
+  ],
+  "shortanswer": [
+    { "question": "Name two parts of a tribe's culture.", "expectedAny": ["language", "art", "ceremonies", "stories", "food", "clothing"] },
+    { "question": "How did regions shape how tribes lived?", "expectedAny": ["resources and climate affected homes and food"] },
+    { "question": "Give an example of cooperation in a tribe.", "expectedAny": ["sharing resources", "working together"] },
+    { "question": "How do we show respect for Native cultures today?", "expectedAny": ["listen", "learn", "honor traditions"] },
+    { "question": "Name one Native contribution that influences us today.", "expectedAny": ["agriculture", "art", "place names"] },
+    { "question": "Why are traditions important?", "expectedAny": ["connect generations", "share values"] },
+    { "question": "What is one difference between two tribes you know?", "expectedAny": ["homes", "food", "language"] },
+    { "question": "What is a reservation used for?", "expectedAny": ["tribal land", "community"] },
+    { "question": "How were stories used in teaching?", "expectedAny": ["teach lessons", "history"] },
+    { "question": "Why is it wrong to say all tribes were the same?", "expectedAny": ["diverse cultures"] }
+  ]
 }

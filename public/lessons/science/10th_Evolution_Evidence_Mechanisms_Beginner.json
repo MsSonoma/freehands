@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "10th_Evolution_Evidence_Mechanisms_Beginner",
   "title": "Evolution: Evidence and Mechanisms of Change",
   "grade": "10th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "evolution",
-      "definition": "Change in heritable traits of populations over successive generations"
-    },
-    {
-      "term": "natural selection",
-      "definition": "Mechanism where favorable traits become more common over time"
-    },
-    {
-      "term": "adaptation",
-      "definition": "Inherited characteristic that enhances survival and reproduction"
-    },
-    {
-      "term": "genetic drift",
-      "definition": "Random changes in allele frequencies in small populations"
-    },
-    {
-      "term": "speciation",
-      "definition": "Formation of new species from existing populations"
-    }
+    {"term": "evolution", "definition": "Change in heritable traits of populations over successive generations"},
+    {"term": "natural selection", "definition": "Mechanism where favorable traits become more common over time"},
+    {"term": "adaptation", "definition": "Inherited characteristic that enhances survival and reproduction"},
+    {"term": "genetic drift", "definition": "Random changes in allele frequencies in small populations"},
+    {"term": "speciation", "definition": "Formation of new species from existing populations"}
   ],
   "teachingNotes": "Use comparative anatomy and molecular evidence. Discuss common misconceptions about evolution and natural selection.",
-  "sample": {
-    "question": "What is change in heritable traits over successive generations?",
-    "expectedAny": [
-      "evolution",
-      "evolutionary change",
-      "biological evolution",
-      "species change"
-    ]
-  },
-  "truefalse": {
-    "question": "Natural selection causes favorable traits to become more common.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is an inherited characteristic that enhances survival?",
-    "expectedAny": [
-      "adaptation",
-      "adaptive trait",
-      "survival trait",
-      "beneficial trait"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The formation of new species is called ________.",
-    "expectedAny": [
-      "speciation",
-      "species formation",
-      "evolutionary divergence",
-      "species development"
-    ]
-  },
-  "shortanswer": {
-    "question": "What evidence supports the theory of evolution?",
-    "expectedAny": [
-      "fossil record",
-      "comparative anatomy",
-      "molecular similarities",
-      "biogeography"
-    ]
-  }
+  "sample": [
+    {"question": "What is change in heritable traits?", "expectedAny": ["evolution", "evolutionary change", "trait change", "genetic change", "species change", "descent with modification"]},
+    {"question": "What makes favorable traits common?", "expectedAny": ["natural selection", "selection", "survival of fittest", "selective pressure", "differential survival", "fitness advantage"]},
+    {"question": "What enhances survival?", "expectedAny": ["adaptation", "adaptive trait", "beneficial trait", "survival trait", "advantageous trait", "adapted feature"]},
+    {"question": "What are random allele changes?", "expectedAny": ["genetic drift", "drift", "random change", "allele frequency change", "random genetic change", "chance variation"]},
+    {"question": "What is new species formation?", "expectedAny": ["speciation", "species formation", "new species", "species divergence", "forming species", "species creation"]},
+    {"question": "What changes over generations?", "expectedAny": ["evolution", "traits", "evolutionary change", "trait change", "genetic change", "species change"]},
+    {"question": "What is survival mechanism?", "expectedAny": ["natural selection", "selection", "survival of fittest", "selective pressure", "differential survival", "fitness advantage"]},
+    {"question": "What is inherited characteristic?", "expectedAny": ["adaptation", "trait", "adaptive trait", "beneficial trait", "survival trait", "advantageous trait"]},
+    {"question": "What happens in small populations?", "expectedAny": ["genetic drift", "drift", "random change", "allele frequency change", "random genetic change", "chance variation"]},
+    {"question": "What creates new species?", "expectedAny": ["speciation", "divergence", "species formation", "new species", "species divergence", "forming species"]}
+  ],
+  "truefalse": [
+    {"question": "Evolution is change in traits. (True or False)", "correct": true},
+    {"question": "Natural selection is random. (True or False)", "correct": false},
+    {"question": "Adaptations enhance survival. (True or False)", "correct": true},
+    {"question": "Genetic drift is non-random. (True or False)", "correct": false},
+    {"question": "Speciation forms new species. (True or False)", "correct": true},
+    {"question": "Evolution occurs over generations. (True or False)", "correct": true},
+    {"question": "Selection favors beneficial traits. (True or False)", "correct": true},
+    {"question": "All traits are adaptations. (True or False)", "correct": false},
+    {"question": "Drift affects small populations. (True or False)", "correct": true},
+    {"question": "Species can diverge. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is trait change?", "choices": [{"letter": "A", "text": "Mutation"}, {"letter": "B", "text": "Evolution"}, {"letter": "C", "text": "Variation"}, {"letter": "D", "text": "Selection"}], "correct": "B"},
+    {"question": "What favors beneficial traits?", "choices": [{"letter": "A", "text": "Drift"}, {"letter": "B", "text": "Natural selection"}, {"letter": "C", "text": "Mutation"}, {"letter": "D", "text": "Migration"}], "correct": "B"},
+    {"question": "What enhances survival?", "choices": [{"letter": "A", "text": "Mutation"}, {"letter": "B", "text": "Adaptation"}, {"letter": "C", "text": "Drift"}, {"letter": "D", "text": "Variation"}], "correct": "B"},
+    {"question": "What is random change?", "choices": [{"letter": "A", "text": "Selection"}, {"letter": "B", "text": "Genetic drift"}, {"letter": "C", "text": "Adaptation"}, {"letter": "D", "text": "Speciation"}], "correct": "B"},
+    {"question": "What forms new species?", "choices": [{"letter": "A", "text": "Mutation"}, {"letter": "B", "text": "Speciation"}, {"letter": "C", "text": "Drift"}, {"letter": "D", "text": "Selection"}], "correct": "B"},
+    {"question": "What changes populations?", "choices": [{"letter": "A", "text": "Stasis"}, {"letter": "B", "text": "Evolution"}, {"letter": "C", "text": "Variation"}, {"letter": "D", "text": "Mutation"}], "correct": "B"},
+    {"question": "What is non-random mechanism?", "choices": [{"letter": "A", "text": "Drift"}, {"letter": "B", "text": "Natural selection"}, {"letter": "C", "text": "Mutation"}, {"letter": "D", "text": "Migration"}], "correct": "B"},
+    {"question": "What is beneficial trait?", "choices": [{"letter": "A", "text": "Variation"}, {"letter": "B", "text": "Adaptation"}, {"letter": "C", "text": "Mutation"}, {"letter": "D", "text": "Drift"}], "correct": "B"},
+    {"question": "What affects small groups?", "choices": [{"letter": "A", "text": "Selection"}, {"letter": "B", "text": "Genetic drift"}, {"letter": "C", "text": "Adaptation"}, {"letter": "D", "text": "Mutation"}], "correct": "B"},
+    {"question": "What separates populations?", "choices": [{"letter": "A", "text": "Mutation"}, {"letter": "B", "text": "Speciation"}, {"letter": "C", "text": "Drift"}, {"letter": "D", "text": "Variation"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ is trait change over time.", "expectedAny": ["evolution", "Evolution"]},
+    {"question": "_____ selection favors beneficial traits.", "expectedAny": ["natural", "Natural"]},
+    {"question": "An _____ enhances survival.", "expectedAny": ["adaptation"]},
+    {"question": "_____ drift is random change.", "expectedAny": ["genetic", "Genetic"]},
+    {"question": "_____ forms new species.", "expectedAny": ["speciation", "Speciation"]},
+    {"question": "_____ occurs over generations.", "expectedAny": ["evolution", "Evolution"]},
+    {"question": "_____ is non-random mechanism.", "expectedAny": ["selection", "Selection"]},
+    {"question": "_____ are inherited traits.", "expectedAny": ["adaptations", "Adaptations"]},
+    {"question": "_____ affects small populations.", "expectedAny": ["drift", "Drift"]},
+    {"question": "_____ creates diversity.", "expectedAny": ["speciation", "Speciation", "evolution"]}
+  ],
+  "shortanswer": [
+    {"question": "What is evolution?", "keyTerms": ["change", "heritable", "traits", "populations", "generations"], "expectedAny": ["Change in heritable traits of populations over successive generations", "Trait change over time", "Population change"]},
+    {"question": "What is natural selection?", "keyTerms": ["mechanism", "favorable", "traits", "common", "time"], "expectedAny": ["Mechanism where favorable traits become more common over time", "Survival of fittest", "Differential reproduction"]},
+    {"question": "What is adaptation?", "keyTerms": ["inherited", "characteristic", "enhances", "survival", "reproduction"], "expectedAny": ["Inherited characteristic that enhances survival and reproduction", "Beneficial trait", "Survival feature"]},
+    {"question": "What is genetic drift?", "keyTerms": ["random", "changes", "allele", "frequencies", "small populations"], "expectedAny": ["Random changes in allele frequencies in small populations", "Random variation", "Non-selective change"]},
+    {"question": "What is speciation?", "keyTerms": ["formation", "new", "species", "existing", "populations"], "expectedAny": ["Formation of new species from existing populations", "Species formation", "Divergence into species"]},
+    {"question": "How does selection work?", "keyTerms": ["beneficial", "traits", "survive", "reproduce", "pass on"], "expectedAny": ["Beneficial traits help organisms survive reproduce and pass on genes", "Favorable traits increase", "Better adapted survive"]},
+    {"question": "Give adaptation example", "keyTerms": ["camouflage", "speed", "thick fur", "any beneficial trait"], "expectedAny": ["Camouflage speed thick fur or any beneficial trait", "Protective coloring", "Survival features"]},
+    {"question": "What causes genetic drift?", "keyTerms": ["random", "sampling", "chance", "small", "population"], "expectedAny": ["Random sampling or chance events in small populations", "Random chance", "Sampling error"]},
+    {"question": "What evidence supports evolution?", "keyTerms": ["fossils", "DNA", "anatomy", "comparative", "molecular"], "expectedAny": ["Fossils DNA comparative anatomy and molecular evidence", "Fossil record", "Genetic similarities"]},
+    {"question": "Why is variation important?", "keyTerms": ["raw material", "selection", "adaptation", "change"], "expectedAny": ["Provides raw material for selection and adaptation to change", "Allows evolution", "Enables adaptation"]}
+  ]
 }

@@ -1,72 +1,74 @@
-{
+﻿{
   "id": "10th_Cellular_Respiration_Photosynthesis_Advanced",
   "title": "Cellular Respiration and Photosynthesis: Energy Flow",
   "grade": "10th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "cellular respiration",
-      "definition": "The process by which cells break down glucose to release energy in the form of ATP"
-    },
-    {
-      "term": "photosynthesis",
-      "definition": "The process by which plants convert light energy into chemical energy stored in glucose"
-    },
-    {
-      "term": "ATP",
-      "definition": "Adenosine triphosphate, the energy currency of cells"
-    },
-    {
-      "term": "chloroplast",
-      "definition": "The organelle in plant cells where photosynthesis occurs"
-    },
-    {
-      "term": "mitochondria",
-      "definition": "The organelle where cellular respiration occurs in eukaryotic cells"
-    }
+    {"term": "cellular respiration", "definition": "Process by which cells break down glucose to release energy in the form of ATP"},
+    {"term": "photosynthesis", "definition": "Process by which plants convert light energy into chemical energy stored in glucose"},
+    {"term": "ATP", "definition": "Adenosine triphosphate, the energy currency of cells"},
+    {"term": "chloroplast", "definition": "Organelle in plant cells where photosynthesis occurs"},
+    {"term": "mitochondria", "definition": "Organelle where cellular respiration occurs in eukaryotic cells"}
   ],
   "teachingNotes": "Use molecular models and diagrams. Emphasize the complementary nature of these processes. Connect to energy flow in ecosystems.",
-  "sample": {
-    "question": "What is the process by which cells break down glucose to release ATP?",
-    "expectedAny": [
-      "cellular respiration",
-      "respiration",
-      "glucose breakdown",
-      "metabolic respiration"
-    ]
-  },
-  "truefalse": {
-    "question": "Photosynthesis and cellular respiration are opposite processes.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Where does photosynthesis occur in plant cells?",
-    "expectedAny": [
-      "chloroplast",
-      "chloroplasts",
-      "in chloroplasts",
-      "chloroplast organelles"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The energy currency of cells is called ________.",
-    "expectedAny": [
-      "ATP",
-      "adenosine triphosphate",
-      "cellular energy",
-      "energy molecule"
-    ]
-  },
-  "shortanswer": {
-    "question": "Write the balanced equation for cellular respiration.",
-    "expectedAny": [
-      "C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + ATP",
-      "glucose plus oxygen yields carbon dioxide and water and energy"
-    ]
-  }
+  "sample": [
+    {"question": "What breaks down glucose?", "expectedAny": ["cellular respiration", "respiration", "cell respiration", "breaking down glucose", "glucose breakdown", "aerobic respiration"]},
+    {"question": "What makes glucose?", "expectedAny": ["photosynthesis", "photo", "making glucose", "glucose synthesis", "plant process", "light synthesis"]},
+    {"question": "What is energy currency?", "expectedAny": ["ATP", "adenosine triphosphate", "energy molecule", "energy currency", "cellular energy", "energy carrier"]},
+    {"question": "What is photosynthesis site?", "expectedAny": ["chloroplast", "chloroplasts", "green organelle", "photosynthesis organelle", "plant organelle", "plastid"]},
+    {"question": "What is respiration site?", "expectedAny": ["mitochondria", "mitochondrion", "powerhouse", "respiration organelle", "energy organelle", "cellular powerhouse"]},
+    {"question": "What releases ATP?", "expectedAny": ["cellular respiration", "respiration", "cell respiration", "breaking down glucose", "glucose breakdown", "aerobic respiration"]},
+    {"question": "What converts light?", "expectedAny": ["photosynthesis", "photo", "light conversion", "making glucose", "glucose synthesis", "light synthesis"]},
+    {"question": "What is energy molecule?", "expectedAny": ["ATP", "adenosine", "adenosine triphosphate", "energy currency", "cellular energy", "energy carrier"]},
+    {"question": "What is green organelle?", "expectedAny": ["chloroplast", "plastid", "chloroplasts", "photosynthesis organelle", "green organelle", "plant organelle"]},
+    {"question": "What is powerhouse?", "expectedAny": ["mitochondria", "mitochondrion", "cellular powerhouse", "respiration organelle", "energy organelle", "powerhouse"]}
+  ],
+  "truefalse": [
+    {"question": "Respiration releases ATP. (True or False)", "correct": true},
+    {"question": "Photosynthesis uses light. (True or False)", "correct": true},
+    {"question": "ATP is energy currency. (True or False)", "correct": true},
+    {"question": "Chloroplast does respiration. (True or False)", "correct": false},
+    {"question": "Mitochondria makes ATP. (True or False)", "correct": true},
+    {"question": "Respiration breaks glucose. (True or False)", "correct": true},
+    {"question": "Photosynthesis makes glucose. (True or False)", "correct": true},
+    {"question": "ATP stores energy. (True or False)", "correct": true},
+    {"question": "Chloroplast does photosynthesis. (True or False)", "correct": true},
+    {"question": "Processes are complementary. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What releases energy?", "choices": [{"letter": "A", "text": "Photosynthesis"}, {"letter": "B", "text": "Cellular respiration"}, {"letter": "C", "text": "Mitosis"}, {"letter": "D", "text": "Meiosis"}], "correct": "B"},
+    {"question": "What stores energy?", "choices": [{"letter": "A", "text": "Respiration"}, {"letter": "B", "text": "Photosynthesis"}, {"letter": "C", "text": "Mitosis"}, {"letter": "D", "text": "Digestion"}], "correct": "B"},
+    {"question": "What is energy currency?", "choices": [{"letter": "A", "text": "Glucose"}, {"letter": "B", "text": "ATP"}, {"letter": "C", "text": "Oxygen"}, {"letter": "D", "text": "Water"}], "correct": "B"},
+    {"question": "What is photosynthesis site?", "choices": [{"letter": "A", "text": "Mitochondria"}, {"letter": "B", "text": "Chloroplast"}, {"letter": "C", "text": "Nucleus"}, {"letter": "D", "text": "Ribosome"}], "correct": "B"},
+    {"question": "What is respiration site?", "choices": [{"letter": "A", "text": "Chloroplast"}, {"letter": "B", "text": "Mitochondria"}, {"letter": "C", "text": "Nucleus"}, {"letter": "D", "text": "Golgi"}], "correct": "B"},
+    {"question": "What uses CO2?", "choices": [{"letter": "A", "text": "Respiration"}, {"letter": "B", "text": "Photosynthesis"}, {"letter": "C", "text": "Digestion"}, {"letter": "D", "text": "Excretion"}], "correct": "B"},
+    {"question": "What produces CO2?", "choices": [{"letter": "A", "text": "Photosynthesis"}, {"letter": "B", "text": "Cellular respiration"}, {"letter": "C", "text": "Diffusion"}, {"letter": "D", "text": "Osmosis"}], "correct": "B"},
+    {"question": "What is adenosine triphosphate?", "choices": [{"letter": "A", "text": "Glucose"}, {"letter": "B", "text": "ATP"}, {"letter": "C", "text": "DNA"}, {"letter": "D", "text": "RNA"}], "correct": "B"},
+    {"question": "What is green?", "choices": [{"letter": "A", "text": "Mitochondria"}, {"letter": "B", "text": "Chloroplast"}, {"letter": "C", "text": "Nucleus"}, {"letter": "D", "text": "Ribosome"}], "correct": "B"},
+    {"question": "What is powerhouse?", "choices": [{"letter": "A", "text": "Chloroplast"}, {"letter": "B", "text": "Mitochondria"}, {"letter": "C", "text": "Nucleus"}, {"letter": "D", "text": "Ribosome"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ respiration releases ATP.", "expectedAny": ["cellular", "Cellular"]},
+    {"question": "_____ converts light energy.", "expectedAny": ["photosynthesis", "Photosynthesis"]},
+    {"question": "_____ is energy currency.", "expectedAny": ["ATP"]},
+    {"question": "_____ does photosynthesis.", "expectedAny": ["chloroplast", "Chloroplast"]},
+    {"question": "_____ does respiration.", "expectedAny": ["mitochondria", "Mitochondria"]},
+    {"question": "Respiration breaks _____.", "expectedAny": ["glucose"]},
+    {"question": "Photosynthesis makes _____.", "expectedAny": ["glucose"]},
+    {"question": "_____ stores energy.", "expectedAny": ["ATP"]},
+    {"question": "_____ is green organelle.", "expectedAny": ["chloroplast", "Chloroplast"]},
+    {"question": "Mitochondria releases _____.", "expectedAny": ["ATP"]}
+  ],
+  "shortanswer": [
+    {"question": "What is cellular respiration?", "keyTerms": ["process", "cells", "break down", "glucose", "release", "energy", "ATP"], "expectedAny": ["Process by which cells break down glucose to release energy in the form of ATP", "Glucose breakdown", "ATP production"]},
+    {"question": "What is photosynthesis?", "keyTerms": ["process", "plants", "convert", "light", "energy", "chemical", "glucose"], "expectedAny": ["Process by which plants convert light energy into chemical energy stored in glucose", "Light to chemical energy", "Glucose production"]},
+    {"question": "What is ATP?", "keyTerms": ["adenosine", "triphosphate", "energy", "currency", "cells"], "expectedAny": ["Adenosine triphosphate, the energy currency of cells", "Energy molecule", "Cell energy"]},
+    {"question": "What is chloroplast?", "keyTerms": ["organelle", "plant", "cells", "photosynthesis", "occurs"], "expectedAny": ["Organelle in plant cells where photosynthesis occurs", "Photosynthesis site", "Green organelle"]},
+    {"question": "What is mitochondria?", "keyTerms": ["organelle", "cellular", "respiration", "occurs", "eukaryotic", "cells"], "expectedAny": ["Organelle where cellular respiration occurs in eukaryotic cells", "Respiration site", "Powerhouse"]},
+    {"question": "What is respiration equation?", "keyTerms": ["glucose", "oxygen", "carbon dioxide", "water", "ATP"], "expectedAny": ["C6H12O6 + O2  CO2 + H2O + ATP", "Glucose plus oxygen yields CO2 water ATP", "Opposite of photosynthesis"]},
+    {"question": "What is photosynthesis equation?", "keyTerms": ["carbon dioxide", "water", "glucose", "oxygen", "light"], "expectedAny": ["CO2 + H2O + light  C6H12O6 + O2", "Carbon dioxide water light yields glucose oxygen", "Opposite of respiration"]},
+    {"question": "How are they complementary?", "keyTerms": ["products", "reactants", "opposite", "cycle"], "expectedAny": ["Products of one are reactants of the other", "Opposite processes", "Form cycle"]},
+    {"question": "Where does photosynthesis occur?", "keyTerms": ["chloroplast", "plant", "cells"], "expectedAny": ["In chloroplasts", "Chloroplast", "Green organelles"]},
+    {"question": "Where does respiration occur?", "keyTerms": ["mitochondria", "eukaryotic", "cells"], "expectedAny": ["In mitochondria", "Mitochondria", "Powerhouse"]}
+  ]
 }

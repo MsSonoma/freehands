@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Use dice, coins, and cards for examples. Connect probability to fractions and percents. Discuss real-world applications.",
-  "sample": {
-    "question": "What is the likelihood that an event will occur?",
-    "expectedAny": ["probability", "chance", "likelihood", "odds"]
-  },
-  "truefalse": {
-    "question": "The probability of any event is between 0 and 1.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is the probability of rolling a 3 on a six-sided die?",
-    "expectedAny": ["1/6", "one sixth", "1 out of 6", "0.167"]
-  },
-  "fillintheblank": {
-    "question": "All possible outcomes of an experiment make up the ________ space.",
-    "expectedAny": ["sample", "outcome", "event", "possibility"]
-  },
-  "shortanswer": {
-    "question": "If you flip two coins, what is the probability of getting two heads?",
-    "expectedAny": ["1/4", "0.25", "25%", "one fourth"]
-  },
-  "wordProblems": {
-    "question": "A bag has 3 red marbles and 7 blue marbles. What is the probability of drawing a red marble?",
-    "expectedAny": ["3/10", "0.3", "30%", "3 out of 10"]
-  }
+  "sample": [
+    { "question": "What is the likelihood that an event will occur?", "expectedAny": ["probability"] },
+    { "question": "Which is a possible result?", "choices": ["Probability", "Outcome", "Event", "Space"], "correct": 1, "expectedAny": ["outcome"] },
+    { "question": "All possible outcomes are ________.", "expectedAny": ["sample space"] },
+    { "question": "Two or more events is ________.", "expectedAny": ["compound event"] },
+    { "question": "Events not affecting each other are ________.", "expectedAny": ["independent"] },
+    { "question": "What is chance?", "choices": ["Outcome", "Probability", "Event", "Result"], "correct": 1, "expectedAny": ["probability"] },
+    { "question": "A possible result is ________.", "expectedAny": ["outcome"] },
+    { "question": "All outcomes together are ________.", "expectedAny": ["sample space"] },
+    { "question": "Which is multiple events?", "choices": ["Simple", "Compound", "Independent", "Single"], "correct": 1, "expectedAny": ["compound"] },
+    { "question": "Not affecting each other are ________.", "expectedAny": ["independent"] }
+  ],
+  "truefalse": [
+    { "question": "The probability of any event is between 0 and 1.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Probability can be greater than 1.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "An outcome is a possible result.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Sample space is one outcome.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Independent events don't affect each other.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Compound event is one simple event.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Probability 0 means impossible.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All events are independent.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Sample space includes all outcomes.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Probability 1 means unlikely.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is the probability of rolling a 3 on a six-sided die?", "choices": ["1/6", "1/3", "1/2", "2/3"], "correct": 0, "expectedAny": ["1/6"] },
+    { "question": "What is likelihood?", "choices": ["Outcome", "Probability", "Event", "Space"], "correct": 1, "expectedAny": ["probability"] },
+    { "question": "What is possible result?", "choices": ["Probability", "Outcome", "Event", "Space"], "correct": 1, "expectedAny": ["outcome"] },
+    { "question": "What is all outcomes?", "choices": ["Event", "Sample space", "Probability", "Result"], "correct": 1, "expectedAny": ["sample space"] },
+    { "question": "What is multiple events?", "choices": ["Simple", "Compound", "Independent", "Single"], "correct": 1, "expectedAny": ["compound"] },
+    { "question": "What don't affect each other?", "choices": ["Dependent", "Independent", "Compound", "Simple"], "correct": 1, "expectedAny": ["independent"] },
+    { "question": "Coin flip probability of heads?", "choices": ["1/4", "1/2", "1/3", "2/3"], "correct": 1, "expectedAny": ["1/2"] },
+    { "question": "Probability range?", "choices": ["0-10", "0-1", "1-10", "-1 to 1"], "correct": 1, "expectedAny": ["0-1"] },
+    { "question": "Rolling even on die?", "choices": ["1/6", "1/2", "1/3", "2/3"], "correct": 1, "expectedAny": ["1/2"] },
+    { "question": "Impossible event probability?", "choices": ["0", "1/2", "1", "-1"], "correct": 0, "expectedAny": ["0"] }
+  ],
+  "fillintheblank": [
+    { "question": "All possible outcomes of an experiment make up the ________ space.", "expectedAny": ["sample"] },
+    { "question": "The likelihood of an event is its ________.", "expectedAny": ["probability"] },
+    { "question": "A possible result is an ________.", "expectedAny": ["outcome"] },
+    { "question": "Two or more events make a ________ event.", "expectedAny": ["compound"] },
+    { "question": "Events not affecting each other are ________.", "expectedAny": ["independent"] },
+    { "question": "________ is chance of event.", "expectedAny": ["probability"] },
+    { "question": "An ________ is a possible result.", "expectedAny": ["outcome"] },
+    { "question": "All outcomes are ________ space.", "expectedAny": ["sample"] },
+    { "question": "A ________ event has multiple parts.", "expectedAny": ["compound"] },
+    { "question": "________ events don't affect each other.", "expectedAny": ["independent"] }
+  ],
+  "shortanswer": [
+    { "question": "If you flip two coins, what is the probability of getting two heads?", "expectedAny": ["1/4"] },
+    { "question": "What is probability?", "expectedAny": ["likelihood of event", "chance of event", "how likely", "odds"] },
+    { "question": "What is an outcome?", "expectedAny": ["possible result", "result of experiment", "what can happen", "one result"] },
+    { "question": "What is sample space?", "expectedAny": ["all possible outcomes", "all outcomes"] },
+    { "question": "What is compound event?", "expectedAny": ["two or more events", "multiple events"] },
+    { "question": "What are independent events?", "expectedAny": ["events not affecting each other", "unrelated events"] },
+    { "question": "Probability of rolling 1 on die?", "expectedAny": ["1/6"] },
+    { "question": "Probability of flipping heads?", "expectedAny": ["1/2"] },
+    { "question": "What is probability range?", "expectedAny": ["0 to 1", "between 0 and 1"] },
+    { "question": "Probability of certain event?", "expectedAny": ["1"] }
+  ],
+  "wordProblems": [
+    { "question": "A bag has 3 red marbles and 7 blue marbles. What is the probability of drawing a red marble?", "expectedAny": ["3/10"] },
+    { "question": "You roll a die. What is the probability of getting a number greater than 4?", "expectedAny": ["1/3", "2/6"] },
+    { "question": "A spinner has 8 equal sections: 3 red, 5 blue. What is probability of red?", "expectedAny": ["3/8"] },
+    { "question": "You flip two coins. What is probability of getting at least one head?", "expectedAny": ["3/4"] },
+    { "question": "A jar has 5 green and 5 yellow candies. What is probability of green?", "expectedAny": ["1/2", "5/10"] },
+    { "question": "You roll a die twice. What is probability of rolling two 6s?", "expectedAny": ["1/36"] },
+    { "question": "A bag has 4 red, 3 blue, 3 green marbles. What is probability of blue?", "expectedAny": ["3/10"] },
+    { "question": "You flip a coin three times. What is probability of three tails?", "expectedAny": ["1/8"] },
+    { "question": "A spinner has 6 sections: 2 red, 4 blue. What is probability of blue?", "expectedAny": ["2/3", "4/6"] },
+    { "question": "You draw a card from 52 cards. What is probability of drawing a heart?", "expectedAny": ["1/4", "13/52"] }
+  ]
 }

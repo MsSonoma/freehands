@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Use demonstrations with mirrors, prisms, and musical instruments. Show how waves behave with different materials.",
-  "sample": {
-    "question": "What is the range of all electromagnetic waves called?",
-    "expectedAny": [
-      "electromagnetic spectrum",
-      "EM spectrum",
-      "light spectrum",
-      "wave spectrum"
-    ]
-  },
-  "truefalse": {
-    "question": "Light waves can travel through empty space.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What happens when light bounces off a surface?",
-    "expectedAny": [
-      "reflection",
-      "bouncing",
-      "mirroring",
-      "reflected light"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The bending of waves when entering a new medium is called ________.",
-    "expectedAny": [
-      "refraction",
-      "bending",
-      "wave bending",
-      "light bending"
-    ]
-  },
-  "shortanswer": {
-    "question": "How are sound waves different from light waves?",
-    "expectedAny": [
-      "sound needs matter, light doesn't",
-      "sound is mechanical, light is electromagnetic",
-      "sound needs medium"
-    ]
-  }
+  "sample": [
+    { "question": "What is the range of all electromagnetic waves called?", "expectedAny": ["electromagnetic spectrum", "all EM waves", "light spectrum"] },
+    { "question": "What is wave bouncing?", "choices": ["Absorption", "Reflection", "Refraction", "Vibration"], "correct": 1, "expectedAny": ["reflection", "bouncing waves", "wave bounce"] },
+    { "question": "Wave bending in new medium is ________.", "expectedAny": ["refraction", "wave bending", "light bending"] },
+    { "question": "Materials taking in wave energy is ________.", "expectedAny": ["absorption"] },
+    { "question": "Rapid back-and-forth motion is ________.", "expectedAny": ["vibration", "back and forth motion", "rapid motion"] },
+    { "question": "What is all EM waves?", "choices": ["Rainbow", "Electromagnetic spectrum", "Sound", "Music"], "correct": 1, "expectedAny": ["electromagnetic spectrum"] },
+    { "question": "Light bouncing off is ________.", "expectedAny": ["reflection"] },
+    { "question": "What is wave bending?", "choices": ["Absorption", "Refraction", "Reflection", "Vibration"], "correct": 1, "expectedAny": ["refraction"] },
+    { "question": "Taking in energy is ________.", "expectedAny": ["absorption"] },
+    { "question": "Back-and-forth motion is ________.", "expectedAny": ["vibration"] }
+  ],
+  "truefalse": [
+    { "question": "Light waves can travel through empty space.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Sound travels through empty space.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Reflection is bouncing.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Refraction is bouncing.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Absorption takes in energy.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Vibration is still motion.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Light is electromagnetic.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Sound is electromagnetic.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Refraction bends waves.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All waves are same.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What happens when light bounces off a surface?", "choices": ["Absorption", "Reflection", "Refraction", "Vibration"], "correct": 1, "expectedAny": ["reflection"] },
+    { "question": "What is all EM waves?", "choices": ["Rainbow", "Electromagnetic spectrum", "Sound", "Music"], "correct": 1, "expectedAny": ["electromagnetic spectrum"] },
+    { "question": "What is wave bending?", "choices": ["Absorption", "Refraction", "Reflection", "Vibration"], "correct": 1, "expectedAny": ["refraction"] },
+    { "question": "What takes in energy?", "choices": ["Reflection", "Absorption", "Refraction", "Vibration"], "correct": 1, "expectedAny": ["absorption"] },
+    { "question": "What creates waves?", "choices": ["Stillness", "Vibration", "Quiet", "Nothing"], "correct": 1, "expectedAny": ["vibration"] },
+    { "question": "Bouncing off is?", "choices": ["Absorption", "Reflection", "Refraction", "Vibration"], "correct": 1, "expectedAny": ["reflection"] },
+    { "question": "All light types are?", "choices": ["Sound", "Electromagnetic spectrum", "Mechanical", "Nothing"], "correct": 1, "expectedAny": ["electromagnetic spectrum"] },
+    { "question": "Bending through medium is?", "choices": ["Reflection", "Refraction", "Absorption", "Nothing"], "correct": 1, "expectedAny": ["refraction"] },
+    { "question": "Material taking energy is?", "choices": ["Reflection", "Absorption", "Refraction", "Nothing"], "correct": 1, "expectedAny": ["absorption"] },
+    { "question": "Rapid motion is?", "choices": ["Stillness", "Vibration", "Rest", "Nothing"], "correct": 1, "expectedAny": ["vibration"] }
+  ],
+  "fillintheblank": [
+    { "question": "The bending of waves when entering a new medium is called ________.", "expectedAny": ["refraction"] },
+    { "question": "The ________ spectrum is all EM waves.", "expectedAny": ["electromagnetic"] },
+    { "question": "________ is waves bouncing.", "expectedAny": ["reflection"] },
+    { "question": "________ is taking in energy.", "expectedAny": ["absorption"] },
+    { "question": "________ creates waves.", "expectedAny": ["vibration"] },
+    { "question": "Electromagnetic ________ is all light.", "expectedAny": ["spectrum"] },
+    { "question": "________ bounces waves.", "expectedAny": ["reflection"] },
+    { "question": "________ bends waves.", "expectedAny": ["refraction"] },
+    { "question": "________ takes in waves.", "expectedAny": ["absorption"] },
+    { "question": "________ is rapid motion.", "expectedAny": ["vibration"] }
+  ],
+  "shortanswer": [
+    { "question": "How are sound waves different from light waves?", "expectedAny": ["sound needs matter, light doesn't", "sound is mechanical, light is electromagnetic"] },
+    { "question": "What is electromagnetic spectrum?", "expectedAny": ["range of all electromagnetic waves", "all EM waves"] },
+    { "question": "What is reflection?", "expectedAny": ["when waves bounce off surface", "bouncing waves"] },
+    { "question": "What is refraction?", "expectedAny": ["bending of waves when entering new medium", "wave bending"] },
+    { "question": "What is absorption?", "expectedAny": ["when materials take in wave energy", "taking in energy"] },
+    { "question": "What is vibration?", "expectedAny": ["rapid back-and-forth motion that creates waves", "motion creating waves"] },
+    { "question": "Why light travel through space?", "expectedAny": ["electromagnetic, doesn't need medium", "no medium needed"] },
+    { "question": "Why sound need medium?", "expectedAny": ["mechanical wave needs matter", "needs particles"] },
+    { "question": "Example of reflection?", "expectedAny": ["mirror", "light bouncing off surface"] },
+    { "question": "Example of refraction?", "expectedAny": ["prism bending light", "straw in water"] }
+  ]
 }

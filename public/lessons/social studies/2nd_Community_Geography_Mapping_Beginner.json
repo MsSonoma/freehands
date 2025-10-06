@@ -23,6 +23,10 @@
     {
       "term": "directions",
       "definition": "Ways to tell someone how to get from one place to another"
+    },
+    {
+      "term": "globe",
+      "definition": "A round model of Earth"
     }
   ],
   "teachingNotes": "Use simple maps of the school and local community. Practice basic directions (left, right, north, south). Have students draw maps of their classroom or bedroom. Identify local landmarks.",
@@ -55,20 +59,20 @@
   ],
   "fillintheblank": [
     {"question": "People live, work, and play together in a ________.", "expectedAny": ["community", "neighborhood", "town", "city"]},
-    {"question": "A picture that shows where places are is called a ___.", "expectedAny": ["map"]},
-    {"question": "The directions north, south, east, west are called ________ directions.", "expectedAny": ["cardinal"]},
-    {"question": "A ________ helps people know where they are.", "expectedAny": ["landmark"]},
-    {"question": "The area around where you live is your ________.", "expectedAny": ["neighborhood"]},
-    {"question": "A ________ is a model of the Earth.", "expectedAny": ["globe"]},
+    {"question": "A picture that shows where places are is called a ___.", "expectedAny": ["map", "drawing", "map picture"]},
+    {"question": "The directions north, south, east, west are called ________ directions.", "expectedAny": ["cardinal", "cardinal directions"]},
+    {"question": "A ________ helps people know where they are.", "expectedAny": ["landmark", "important place"]},
+    {"question": "The area around where you live is your ________.", "expectedAny": ["neighborhood", "local area"]},
+    {"question": "A ________ is a model of the Earth.", "expectedAny": ["globe", "round model of Earth"]},
     {"question": "A map ________ tells what symbols mean.", "expectedAny": ["key", "legend"]}
   ],
   "shortanswer": [
-    {"question": "Name two landmarks in your community.", "expectedAny": ["school and library", "park and store", "any two local places"]},
-    {"question": "How can a map help you get to a friend's house?", "expectedAny": ["shows route", "shows streets and landmarks"]},
-    {"question": "Describe how to get from your classroom to the library using directions.", "expectedAny": ["left/right or north/south style directions"]},
+  {"question": "Name two landmarks in your community.", "expectedAny": ["school and library", "park and store", "post office and grocery store", "playground and museum"]},
+  {"question": "How can a map help you get to a friend's house?", "expectedAny": ["shows route", "shows streets and landmarks", "shows where the friend's house is", "helps you follow streets to the house", "helps you not get lost"]},
+  {"question": "Describe how to get from your classroom to the library using directions.", "expectedAny": ["go out the door, turn left, walk to the end", "exit classroom, turn right, go straight to library", "walk forward two rows, turn left and go to the library"]},
     {"question": "What symbols might you put on a map of your room?", "expectedAny": ["bed", "desk", "door", "window"]},
-    {"question": "Why do people use maps instead of just guessing?", "expectedAny": ["to not get lost", "to find fastest way"]},
-    {"question": "What is one difference between a map and a globe?", "expectedAny": ["map is flat, globe is round", "globe shows whole Earth"]},
-    {"question": "Give directions from the door to your desk.", "expectedAny": ["student provides steps with left/right or cardinal directions"]}
+    {"question": "Why do people use maps instead of just guessing?", "expectedAny": ["to not get lost", "to find fastest way", "to see where places are"]},
+    {"question": "What is one difference between a map and a globe?", "expectedAny": ["map is flat, globe is round", "globe shows whole Earth", "map is flat and shows one area, globe is round and shows whole planet"]},
+    {"question": "Give directions from the door to your desk.", "expectedAny": ["go straight and turn left at the bookshelf", "turn right after the coat hooks and the desk is the third on the left", "walk forward three steps then turn left to your desk"]}
   ]
 }

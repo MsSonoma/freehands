@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "11th_Limits_Introduction_Calculus_Advanced",
   "title": "Limits and Introduction to Calculus",
   "grade": "11th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "epsilon-delta definition",
-      "definition": "Rigorous mathematical definition of limit using arbitrary precision"
-    },
-    {
-      "term": "uniform continuity",
-      "definition": "Stronger form of continuity where rate applies globally"
-    },
-    {
-      "term": "oscillating behavior",
-      "definition": "Function that fluctuates without approaching single value"
-    },
-    {
-      "term": "removable discontinuity",
-      "definition": "Gap in function that can be filled by redefining at single point"
-    },
-    {
-      "term": "essential discontinuity",
-      "definition": "Discontinuity that cannot be removed by redefining function"
-    }
+    {"term": "squeeze theorem", "definition": "Limit method using bounding functions"},
+    {"term": "removable discontinuity", "definition": "Hole in graph where limit exists but function undefined"},
+    {"term": "jump discontinuity", "definition": "Break where left and right limits differ"},
+    {"term": "infinite limit", "definition": "Function approaches infinity at a point"},
+    {"term": "limit at infinity", "definition": "Behavior as x approaches positive or negative infinity"}
   ],
-  "teachingNotes": "Introduce rigorous limit theory and advanced discontinuity types. Prepare for formal calculus study.",
-  "sample": {
-    "question": "What is the rigorous mathematical definition of limit?",
-    "expectedAny": ["epsilon-delta definition", "ε-δ definition", "formal limit definition", "precise definition"]
-  },
-  "truefalse": {
-    "question": "Uniform continuity is a stronger condition than regular continuity.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What type of discontinuity can be fixed by redefining at one point?",
-    "expectedAny": ["removable discontinuity", "removable gap", "point discontinuity", "hole discontinuity"]
-  },
-  "fillintheblank": {
-    "question": "Function that fluctuates without approaching single value shows ________ behavior.",
-    "expectedAny": ["oscillating", "oscillatory", "fluctuating", "vibrating"]
-  },
-  "shortanswer": {
-    "question": "What distinguishes essential from removable discontinuities?",
-    "expectedAny": ["cannot be removed", "fundamental gap", "limit doesn't exist", "unfixable break"]
-  },
-  "wordProblems": {
-    "question": "For ε = 0.01, what δ makes |f(x) - L| < ε when |x - a| < δ for f(x) = 2x + 1?",
-    "expectedAny": ["δ = 0.005", "δ = ε/2", "0.005", "half epsilon"]
-  }
+  "teachingNotes": "Master advanced limit techniques and discontinuity types. Explore infinite behavior.",
+  "sample": [
+    {"question": "What theorem uses bounding functions?", "expectedAny": ["squeeze theorem", "sandwich theorem", "pinching theorem", "squeeze lemma"]},
+    {"question": "What discontinuity is a hole?", "expectedAny": ["removable discontinuity", "removable", "point discontinuity", "hole"]},
+    {"question": "What discontinuity has different one-sided limits?", "expectedAny": ["jump discontinuity", "jump", "step discontinuity", "break"]},
+    {"question": "What limit goes to infinity?", "expectedAny": ["infinite limit", "unbounded limit", "vertical asymptote", "divergent"]},
+    {"question": "What describes end behavior?", "expectedAny": ["limit at infinity", "horizontal asymptote", "end behavior limit", "infinite input"]},
+    {"question": "What traps a limit between two functions?", "expectedAny": ["squeeze theorem", "sandwich theorem", "pinching", "bounding method"]},
+    {"question": "What hole can be filled?", "expectedAny": ["removable discontinuity", "removable", "point gap", "fillable hole"]},
+    {"question": "What creates a step in the graph?", "expectedAny": ["jump discontinuity", "jump", "step", "break"]},
+    {"question": "What happens at a vertical asymptote?", "expectedAny": ["infinite limit", "function approaches infinity", "unbounded", "diverges"]},
+    {"question": "What is lim(x) f(x)?", "expectedAny": ["limit at infinity", "end behavior", "horizontal asymptote", "long-term behavior"]}
+  ],
+  "truefalse": [
+    {"question": "Squeeze theorem requires three functions.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Removable discontinuities cannot be fixed.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Jump discontinuities have different one-sided limits.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Infinite limits equal infinity.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Limits at infinity describe end behavior.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Squeeze theorem works when bounds have same limit.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "All discontinuities are removable.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Jump discontinuities occur in piecewise functions.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Vertical asymptotes are infinite limits.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "lim(x) (1/x) = 0.", "expectedAny": ["true", "yes", "t", "correct"]}
+  ],
+  "multiplechoice": [
+    {"question": "If g(x)  f(x)  h(x) and lim g = lim h = L, what is lim f?", "choices": ["Undefined", "0", "L", "Infinity"], "correct": "L"},
+    {"question": "What is f(x) = (x - 4)/(x - 2) at x = 2?", "choices": ["Removable", "Jump", "Infinite", "Continuous"], "correct": "Removable"},
+    {"question": "What is lim(x2) 1/(x - 2)?", "choices": ["0", "2", "+", "-"], "correct": "+"},
+    {"question": "What is lim(x) (3x + 1)/(x - 5)?", "choices": ["0", "1", "3", ""], "correct": "3"},
+    {"question": "Which has a jump?", "choices": ["x", "|x|", "floor(x)", "sin(x)"], "correct": "floor(x)"},
+    {"question": "What is lim(x0) (sin x)/x?", "choices": ["0", "1", "", "Undefined"], "correct": "1"},
+    {"question": "What describes lim(xa) f(x) = ?", "choices": ["Horizontal asymptote", "Vertical asymptote", "Removable", "Jump"], "correct": "Vertical asymptote"},
+    {"question": "What is lim(x) (2x + 1)/(x - 3)?", "choices": ["0", "1", "2", ""], "correct": "2"},
+    {"question": "Squeeze theorem needs what?", "choices": ["One function", "Two functions", "Three functions", "Four functions"], "correct": "Three functions"},
+    {"question": "What is lim(x-) e^x?", "choices": ["-", "0", "1", ""], "correct": "0"}
+  ],
+  "fillintheblank": [
+    {"question": "The _____ theorem bounds a function between two others.", "expectedAny": ["squeeze", "sandwich", "pinching", "squeeze theorem", "sandwich theorem", "pinch theorem"]},
+    {"question": "A _____ discontinuity is a hole that can be filled.", "expectedAny": ["removable", "point", "fillable", "removable discontinuity", "hole", "fixable"]},
+    {"question": "A _____ discontinuity has a step or break.", "expectedAny": ["jump", "step", "break", "jump discontinuity", "step discontinuity", "discrete jump"]},
+    {"question": "An _____ limit approaches infinity.", "expectedAny": ["infinite", "unbounded", "divergent", "infinite limit", "unlimited", "unbounded limit"]},
+    {"question": "A limit at _____ describes end behavior.", "expectedAny": ["infinity", "", "infinite x", "infinite input", "unbounded x", "large x"]},
+    {"question": "If -x  f(x)  x near 0, then lim(x0) f(x) = _____.", "expectedAny": ["0", "zero", "nothing"]},
+    {"question": "f(x) = (x - 3)/(x - 3) has a _____ discontinuity at x = 3.", "expectedAny": ["removable", "hole", "point"]},
+    {"question": "lim(x) (5x + 2)/(x + 1) = _____.", "expectedAny": ["5", "five", "5.0"]},
+    {"question": "Vertical asymptotes are _____ limits.", "expectedAny": ["infinite", "unbounded", "divergent"]},
+    {"question": "lim(x) (1/x) = _____.", "expectedAny": ["0", "zero", "nothing"]}
+  ],
+  "shortanswer": [
+    {"question": "State and explain the squeeze theorem.", "expectedAny": ["if g(x)  f(x)  h(x) and lim g = lim h = L then lim f = L", "function trapped between two bounds with same limit must have that limit", "bounding functions force middle function to same limit"]},
+    {"question": "Describe a removable discontinuity and how to remove it.", "expectedAny": ["hole where limit exists but function undefined can be removed by redefining function value at that point", "define f(a) to equal the limit to fill the hole", "limit exists so extend function definition to include that point"]},
+    {"question": "Explain the difference between jump and removable discontinuities.", "expectedAny": ["jump has different one-sided limits while removable has matching limit but undefined point", "jump cannot be fixed but removable can be filled", "jump is permanent break removable is fixable hole"]},
+    {"question": "What does lim(xa) f(x) =  mean graphically?", "expectedAny": ["vertical asymptote on the right side of x = a going upward", "function increases without bound as x approaches a from right", "graph shoots up toward positive infinity"]},
+    {"question": "Evaluate lim(x) (3x - x + 1)/(2x + 5) and explain method.", "expectedAny": ["divide by highest power x to get 3/2", "coefficients of highest terms give 3/2", "limit is 3/2 by comparing leading terms"]},
+    {"question": "Use squeeze theorem to prove lim(x0) xsin(1/x) = 0.", "expectedAny": ["-x  xsin(1/x)  x and both bounds approach 0", "bound by x which both go to 0", "sin(1/x) bounded by 1 so xsin(1/x) bounded by x"]},
+    {"question": "Why is tan(x) discontinuous at x = π/2?", "expectedAny": ["infinite discontinuity because denominator cos(π/2) = 0", "vertical asymptote at π/2", "undefined and approaches infinity"]},
+    {"question": "Determine lim(x2) (x - 8)/(x - 2) by factoring.", "expectedAny": ["factor as (x - 2)(x + 2x + 4)/(x - 2) = x + 2x + 4 so limit is 12", "cancel common factor to get 12", "equals 12 after simplification"]},
+    {"question": "Explain horizontal asymptotes using limits at infinity.", "expectedAny": ["horizontal asymptote y = L when lim(x) f(x) = L", "end behavior limit gives horizontal asymptote", "function approaches constant value as x gets large"]},
+    {"question": "Compare lim(x) (x + 1)/(x + 1) and lim(x) (x + 1)/(x + 1).", "expectedAny": ["first is infinity because degree 3 over 2 and second is 0 because degree 1 over 2", "numerator higher degree gives infinity lower gives 0", "first diverges second approaches 0"]}
+  ],
+  "wordProblems": [
+    {"question": "If -cos(x)  f(x)  cos(x) for all x, find lim(xπ) f(x).", "expectedAny": ["-1", "negative 1", "both bounds approach -1"]},
+    {"question": "Function h(x) = (x - 9)/(x + 3). What type of discontinuity at x = -3?", "expectedAny": ["removable discontinuity", "hole at x = -3", "removable with limit -6"]},
+    {"question": "Find lim(x) (5x - 2x + 1)/(2x + x - 7).", "expectedAny": ["5/2", "two point five", "ratio of leading coefficients"]},
+    {"question": "Verify lim(x0) xcos(1/x) = 0 using squeeze theorem.", "expectedAny": ["-x  xcos(1/x)  x and both approach 0", "bounded by x which go to 0", "squeeze between -x and x"]},
+    {"question": "Explain why floor(x) has jump discontinuities at integers.", "expectedAny": ["left and right limits differ at each integer", "jumps from n-1 to n at each integer", "one-sided limits do not match"]},
+    {"question": "What is lim(x1) 1/(x - 1)?", "expectedAny": ["-", "negative infinity", "approaches negative infinity from left"]},
+    {"question": "Graph f(x) = (x - 1)/(x - 1) and describe discontinuity.", "expectedAny": ["removable at x = 1 with hole at (1, 2)", "linear graph y = x + 1 with hole at x = 1", "limit is 2 but undefined at x = 1"]},
+    {"question": "Find lim(x) (x + x) - x.", "expectedAny": ["1/2", "rationalize to get limit 1/2", "multiply by conjugate gives 1/2"]},
+    {"question": "Population model P(t) = 500/(1 + 4e^(-0.5t)). Find lim(t) P(t).", "expectedAny": ["500", "carrying capacity 500", "approaches 500 as t gets large"]},
+    {"question": "Does lim(x0) sin(1/x) exist? Explain.", "expectedAny": ["no because sin(1/x) oscillates between -1 and 1", "does not exist oscillates without settling", "no limit due to infinite oscillation"]}
+  ]
 }

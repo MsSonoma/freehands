@@ -55,20 +55,20 @@
   ],
   "fillintheblank": [
     {"question": "The way a group of people lives is called their ________.", "expectedAny": ["culture", "way of life", "customs"]},
-    {"question": "A ________ is something passed down through time.", "expectedAny": ["tradition"]},
-    {"question": "A special way of doing things is a ________.", "expectedAny": ["custom"]},
-    {"question": "When people come together to honor something, it is a ________.", "expectedAny": ["celebration"]},
-    {"question": "Your family's ________ includes traditions and stories.", "expectedAny": ["heritage"]},
-    {"question": "We should show ________ for all cultures.", "expectedAny": ["respect"]},
-    {"question": "Trying new foods can teach us about ________.", "expectedAny": ["culture"]}
+    {"question": "A ________ is something passed down through time.", "expectedAny": ["tradition", "custom", "family practice"]},
+    {"question": "A special way of doing things is a ________.", "expectedAny": ["custom", "tradition"]},
+    {"question": "When people come together to honor something, it is a ________.", "expectedAny": ["celebration", "festival", "gathering"]},
+    {"question": "Your family's ________ includes traditions and stories.", "expectedAny": ["heritage", "family history"]},
+    {"question": "We should show ________ for all cultures.", "expectedAny": ["respect", "kindness"]},
+    {"question": "Trying new foods can teach us about ________.", "expectedAny": ["culture", "traditions"]}
   ],
   "shortanswer": [
     {"question": "How does your family celebrate a special day?", "expectedAny": ["special food", "family gathering", "traditions"]},
-    {"question": "Name one tradition you would like to learn about and why.", "expectedAny": ["student choice with reason"]},
-    {"question": "Describe a celebration you know. What makes it special?", "expectedAny": ["food", "music", "customs", "family"]},
+  {"question": "Name one tradition you would like to learn about and why.", "expectedAny": ["learn a dance because it's fun", "try a special food to taste new flavors", "learn a holiday song to sing with friends"]},
+  {"question": "Describe a celebration you know. What makes it special?", "expectedAny": ["special food", "music", "customs", "family", "gathering with friends"]},
     {"question": "How can you show respect for someone's tradition?", "expectedAny": ["listen", "be kind", "ask questions politely"]},
     {"question": "What is one thing that different cultures might share?", "expectedAny": ["celebrations", "food", "music"]},
-    {"question": "Why do families keep traditions?", "expectedAny": ["remember history", "feel connected", "have fun together"]},
-    {"question": "What could be a new class tradition?", "expectedAny": ["weekly activity", "special greeting", "sharing time"]}
+    {"question": "Why do families keep traditions?", "expectedAny": ["remember history", "feel connected", "have fun together", "pass stories to children"]},
+    {"question": "What could be a new class tradition?", "expectedAny": ["weekly activity", "special greeting", "sharing time", "class reading day"]}
   ]
 }

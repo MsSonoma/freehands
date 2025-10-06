@@ -21,54 +21,114 @@
       "definition": "A material that electricity cannot flow through easily"
     },
     {
+      "term": "plastic",
+      "definition": "A common insulator used to cover wires for safety"
+    },
+    {
       "term": "battery",
       "definition": "A device that stores electrical energy"
+    },
+    {
+      "term": "switch",
+      "definition": "A device that opens or closes a circuit"
+    },
+    {
+      "term": "electric current",
+      "definition": "The flow of electric charge through a circuit"
+    },
+    {
+      "term": "closed circuit",
+      "definition": "A complete path so current can flow"
+    },
+    {
+      "term": "open circuit",
+      "definition": "A break in the path so current cannot flow"
+    },
+    {
+      "term": "series circuit",
+      "definition": "A circuit with one path where components are connected one after another"
+    },
+    {
+      "term": "parallel circuit",
+      "definition": "A circuit with more than one path for current to flow"
+    },
+    {
+      "term": "load",
+      "definition": "A device in a circuit that uses electrical energy (like a bulb or motor)"
+    },
+    {
+      "term": "lamp/bulb",
+      "definition": "A light in a circuit that glows when current flows"
+    },
+    {
+      "term": "short circuit",
+      "definition": "An accidental low-resistance path that can make too much current flow"
+    },
+    {
+      "term": "terminal",
+      "definition": "The end point on a battery or device where wires connect"
+    },
+    {
+      "term": "energy source",
+      "definition": "What provides energy for a circuit, like a battery"
+    },
+    {
+      "term": "terminal clip",
+      "definition": "A clip used to connect wires to battery terminals"
+    },
+    {
+      "term": "materials",
+      "definition": "Things we use in a circuit or test, like wires, bulbs, or metals"
+    },
+    {
+      "term": "simple circuit",
+      "definition": "A basic circuit with just a few parts like a battery, wires, and a bulb"
     }
   ],
   "teachingNotes": "Use simple circuit kits to demonstrate how electricity flows. Test various materials to identify conductors and insulators. Discuss electrical safety and the importance of complete circuits.",
   "sample": [
-    {"question": "What is needed for electricity to flow in a circuit?", "expectedAny": ["closed circuit", "complete path"]},
-    {"question": "Name one conductor and one insulator.", "expectedAny": ["conductor: metal", "insulator: rubber"]},
-    {"question": "What does a battery do in a circuit?", "expectedAny": ["provides energy", "power source"]},
-    {"question": "What happens if a switch is open?", "expectedAny": ["circuit breaks", "no current flows"]},
-    {"question": "What device lights up in a simple circuit?", "expectedAny": ["bulb", "LED"]},
-    {"question": "What flows through a conductor?", "expectedAny": ["electric current", "electricity"]},
-    {"question": "What connects the parts of a circuit?", "expectedAny": ["wires"]}
+    {"question": "What is needed for electricity to flow in a circuit?", "expectedAny": ["closed circuit", "complete path", "closed path", "closed loop", "unbroken path", "a loop with no breaks"]},
+    {"question": "Name one conductor and one insulator.", "expectedAny": ["conductor: metal and insulator: rubber", "copper and rubber", "metal conductor and plastic insulator", "aluminum and glass", "penny and wood", "foil and plastic"]},
+    {"question": "What does a battery do in a circuit?", "expectedAny": ["provides energy", "power source", "pushes charges", "provides voltage", "makes electricity move"]},
+    {"question": "What happens if a switch is open?", "expectedAny": ["circuit breaks", "no current flows", "open circuit", "current stops", "no closed path", "the loop is broken"]},
+    {"question": "What device lights up in a simple circuit?", "expectedAny": ["bulb", "LED", "light", "lamp", "small lamp"]},
+    {"question": "What flows through a conductor?", "expectedAny": ["electric current", "electricity", "current", "charge flow", "charges"]},
+    {"question": "What connects the parts of a circuit?", "expectedAny": ["wires", "conductive wires", "metal wires", "leads", "clips and wires"]}
   ],
   "truefalse": [
-    {"question": "Metal is a good conductor of electricity.", "answer": true},
-    {"question": "Plastic is a good conductor.", "answer": false},
-    {"question": "A switch can open or close a circuit.", "answer": true},
-    {"question": "A complete circuit is called a closed circuit.", "answer": true},
-    {"question": "If a bulb burns out, the circuit is still closed.", "answer": false},
-    {"question": "Batteries store chemical energy.", "answer": true},
-    {"question": "Electricity can flow through air as easily as through copper wire.", "answer": false}
+    {"question": "Metal is a good conductor of electricity.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Plastic is a good conductor.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "A switch can open or close a circuit.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "A complete circuit is called a closed circuit.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "If a bulb burns out, the circuit is still closed.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "Batteries store chemical energy.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Electricity can flow through air as easily as through copper wire.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]}
   ],
   "multiplechoice": [
-    {"question": "Which material would be the best insulator?", "choices": ["Copper", "Aluminum", "Rubber", "Steel"], "correct": 2},
-    {"question": "Which part provides energy in a simple circuit?", "choices": ["Wire", "Switch", "Battery", "Bulb"], "correct": 2},
-    {"question": "What happens when a switch is closed?", "choices": ["Circuit opens", "Electricity flows", "Bulb breaks", "Nothing"], "correct": 1},
-    {"question": "Which symbol often represents a battery in diagrams?", "choices": ["Zigzag", "Two parallel lines", "Circle", "Triangle"], "correct": 1},
-    {"question": "Which material is a conductor?", "choices": ["Glass", "Rubber", "Wood", "Copper"], "correct": 3},
-    {"question": "What device can control a circuit?", "choices": ["Switch", "Paper", "Sticker", "Crayon"], "correct": 0},
-    {"question": "What do you call a break in a circuit?", "choices": ["Closed", "Open", "Powered", "Insulated"], "correct": 1}
+    {"question": "Which material would be the best insulator?", "choices": ["Copper", "Aluminum", "Rubber", "Steel"], "correct": 2, "expectedAny": ["rubber", "c", "3", "third"]},
+    {"question": "Which part provides energy in a simple circuit?", "choices": ["Wire", "Switch", "Battery", "Bulb"], "correct": 2, "expectedAny": ["battery", "the battery", "c", "3", "third"]},
+    {"question": "What happens when a switch is closed?", "choices": ["Circuit opens", "Electricity flows", "Bulb breaks", "Nothing"], "correct": 1, "expectedAny": ["electricity flows", "current flows", "b", "2", "second"]},
+    {"question": "Which symbol often represents a battery in diagrams?", "choices": ["Zigzag", "Two parallel lines", "Circle", "Triangle"], "correct": 1, "expectedAny": ["two parallel lines", "parallel lines", "b", "2", "second"]},
+    {"question": "Which material is a conductor?", "choices": ["Glass", "Rubber", "Wood", "Copper"], "correct": 3, "expectedAny": ["copper", "d", "4", "fourth"]},
+    {"question": "What device can control a circuit?", "choices": ["Switch", "Paper", "Sticker", "Crayon"], "correct": 0, "expectedAny": ["switch", "a", "1", "first"]},
+    {"question": "What do you call a break in a circuit?", "choices": ["Closed", "Open", "Powered", "Insulated"], "correct": 1, "expectedAny": ["open", "open circuit", "b", "2", "second"]}
   ],
   "fillintheblank": [
-    {"question": "A ________ provides the energy to make electricity flow in a circuit.", "expectedAny": ["battery"]},
-    {"question": "Materials that allow electricity to flow are called ________.", "expectedAny": ["conductors"]},
-    {"question": "Materials that block electricity are called ________.", "expectedAny": ["insulators"]},
-    {"question": "A complete circuit is a ________ circuit.", "expectedAny": ["closed"]},
-    {"question": "The flow of electric charge is called electric ________.", "expectedAny": ["current"]},
-    {"question": "Wires are usually made of ________ because it conducts well.", "expectedAny": ["copper"]},
-    {"question": "A device that opens or closes a circuit is a ________.", "expectedAny": ["switch"]}
+    {"question": "A ________ provides the energy to make electricity flow in a circuit.", "expectedAny": ["battery", "power source", "energy source", "power supply", "cell"]},
+    {"question": "Materials that allow electricity to flow are called ________.", "expectedAny": ["conductors", "conductive materials", "good conductors", "metal conductors"]},
+    {"question": "Materials that block electricity are called ________.", "expectedAny": ["insulators", "nonconductors", "good insulators", "electrical insulators"]},
+    {"question": "A complete circuit is a ________ circuit.", "expectedAny": ["closed", "complete", "closed loop", "unbroken"]},
+    {"question": "The flow of electric charge is called electric ________.", "expectedAny": ["current", "electric current", "charge flow", "current flow"]},
+    {"question": "Wires are usually made of ________ because it conducts well.", "expectedAny": ["copper", "copper metal", "metal like copper", "copper wire"]},
+    {"question": "A device that opens or closes a circuit is a ________.", "expectedAny": ["switch", "on/off switch", "toggle switch", "circuit switch"]}
   ],
   "shortanswer": [
-    {"question": "Why won't a light bulb turn on if there's a break in the circuit?", "expectedAny": ["no complete path"]},
-    {"question": "Explain the difference between conductors and insulators.", "expectedAny": ["conductors let current flow", "insulators block it"]},
-    {"question": "How can you add a switch to a simple circuit?", "expectedAny": ["in series with the bulb or battery"]},
-    {"question": "Why are wires coated with plastic?", "expectedAny": ["safety", "insulation"]},
-    {"question": "What happens to the bulb if you reverse the battery in a simple DC circuit?", "expectedAny": ["still lights", "polarity usually doesn't matter for bulbs"]},
-    {"question": "How can you make a series circuit with two bulbs?", "expectedAny": ["connect bulbs one after another"]},
-    {"question": "How can you test if a material is a conductor?", "expectedAny": ["put it in a circuit and see if bulb lights"]}
+    {"question": "Why won't a light bulb turn on if there's a break in the circuit?", "expectedAny": ["no complete path", "the circuit is open", "open circuit so no current flows", "the loop is broken so current stops", "there is a gap so charges can't move"]},
+    {"question": "Explain the difference between conductors and insulators.", "expectedAny": ["conductors let current flow", "insulators block it", "metals conduct but rubber/plastic insulate", "conductors carry electricity; insulators stop it", "conductors are pathways, insulators are blockers"]},
+    {"question": "How can you add a switch to a simple circuit?", "expectedAny": ["in series with the bulb or battery", "place it in the path to open/close", "put a switch on one wire", "put a switch in the loop to break or complete it", "put it on one side of the battery"]},
+    {"question": "Why are wires coated with plastic?", "expectedAny": ["safety", "insulation", "prevent shocks or short circuits", "to protect us from the conductor inside", "plastic is an insulator"]},
+    {"question": "What happens to the bulb if you reverse the battery in a simple DC circuit?", "expectedAny": ["still lights", "works the same", "polarity usually doesn't matter for bulbs", "bulb lights either way in simple circuits", "bulb will light with either direction"]},
+    {"question": "How can you make a series circuit with two bulbs?", "expectedAny": ["connect bulbs one after another", "same path in one loop", "single path series connection", "put both bulbs on the same loop one after the other", "wire bulb to bulb on one path"]},
+    {"question": "How can you test if a material is a conductor?", "expectedAny": ["put it in a circuit and see if bulb lights", "complete the circuit to see if it lights", "use a simple tester to see if the light turns on", "connect it between wires and check if current flows", "does the lamp come on when it is in the loop?"]}
   ]
 }

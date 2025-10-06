@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Practice proper citation format. Emphasize the importance of avoiding plagiarism through correct documentation.",
-  "sample": {
-    "question": "What is the Modern Language Association style for documenting sources?",
-    "expectedAny": [
-      "MLA format",
-      "MLA style",
-      "Modern Language Association format",
-      "academic citation style"
-    ]
-  },
-  "truefalse": {
-    "question": "Works Cited is a list of all sources used in a research paper.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is restating someone's ideas in your own words?",
-    "expectedAny": [
-      "paraphrase",
-      "paraphrasing",
-      "restating",
-      "rewording"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A brief reference to a source within text is an ________ citation.",
-    "expectedAny": [
-      "in-text",
-      "internal",
-      "parenthetical",
-      "embedded"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are the key components of a strong thesis statement?",
-    "expectedAny": [
-      "clear argument, specific claim, debatable position",
-      "main argument and support",
-      "position and evidence"
-    ]
-  }
+  "sample": [
+    { "question": "What is the Modern Language Association style for documenting sources?", "expectedAny": ["MLA format"] },
+    { "question": "Which is brief source reference?", "choices": ["Bibliography", "In-text citation", "Footnote", "Index"], "correct": 1, "expectedAny": ["in-text citation"] },
+    { "question": "List of sources used is ________.", "expectedAny": ["Works Cited"] },
+    { "question": "Restating ideas in own words is ________.", "expectedAny": ["paraphrase"] },
+    { "question": "Main argument statement is ________.", "expectedAny": ["thesis statement"] },
+    { "question": "What is MLA?", "choices": ["Math", "MLA format", "Music", "Medicine"], "correct": 1, "expectedAny": ["MLA format"] },
+    { "question": "Brief text reference is ________.", "expectedAny": ["in-text citation"] },
+    { "question": "What is source list?", "choices": ["Introduction", "Works Cited", "Conclusion", "Abstract"], "correct": 1, "expectedAny": ["Works Cited"] },
+    { "question": "Rewording ideas is ________.", "expectedAny": ["paraphrase"] },
+    { "question": "Paper main claim is ________.", "expectedAny": ["thesis statement"] }
+  ],
+  "truefalse": [
+    { "question": "Works Cited is a list of all sources used in a research paper.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "MLA format is unimportant.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "In-text citation references sources.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Paraphrase copies exactly.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Thesis states main argument.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Works Cited is optional.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Citations avoid plagiarism.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "MLA format is random.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Paraphrase uses own words.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Thesis is conclusion.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is restating someone's ideas in your own words?", "choices": ["Copying", "Paraphrase", "Plagiarism", "Quoting"], "correct": 1, "expectedAny": ["paraphrase"] },
+    { "question": "What is MLA?", "choices": ["Math", "MLA format", "Music", "Medicine"], "correct": 1, "expectedAny": ["MLA format"] },
+    { "question": "What is brief reference?", "choices": ["Bibliography", "In-text citation", "Footnote", "Index"], "correct": 1, "expectedAny": ["in-text citation"] },
+    { "question": "What is source list?", "choices": ["Introduction", "Works Cited", "Conclusion", "Abstract"], "correct": 1, "expectedAny": ["Works Cited"] },
+    { "question": "What is main argument?", "choices": ["Introduction", "Thesis statement", "Conclusion", "Body"], "correct": 1, "expectedAny": ["thesis statement"] },
+    { "question": "MLA format documents?", "choices": ["Nothing", "Sources", "Only images", "Only videos"], "correct": 1, "expectedAny": ["sources"] },
+    { "question": "Citation appears where?", "choices": ["Nowhere", "In text", "Only cover", "Only back"], "correct": 1, "expectedAny": ["in text"] },
+    { "question": "Works Cited goes?", "choices": ["Beginning", "End of paper", "Middle", "Cover"], "correct": 1, "expectedAny": ["end of paper"] },
+    { "question": "Paraphrase requires?", "choices": ["Exact copying", "Own words", "No changes", "Nothing"], "correct": 1, "expectedAny": ["own words"] },
+    { "question": "Thesis states?", "choices": ["Nothing", "Main argument", "Random ideas", "Conclusion only"], "correct": 1, "expectedAny": ["main argument"] }
+  ],
+  "fillintheblank": [
+    { "question": "A brief reference to a source within text is an ________ citation.", "expectedAny": ["in-text"] },
+    { "question": "Modern Language Association style is ________.", "expectedAny": ["MLA format"] },
+    { "question": "List of sources is ________.", "expectedAny": ["Works Cited"] },
+    { "question": "Restating in own words is ________.", "expectedAny": ["paraphrase"] },
+    { "question": "Main argument sentence is ________.", "expectedAny": ["thesis statement"] },
+    { "question": "________ format documents sources.", "expectedAny": ["MLA"] },
+    { "question": "________-text citation is brief reference.", "expectedAny": ["in"] },
+    { "question": "________ Cited lists sources.", "expectedAny": ["Works"] },
+    { "question": "________ uses own words.", "expectedAny": ["paraphrase"] },
+    { "question": "________ statement states argument.", "expectedAny": ["thesis"] }
+  ],
+  "shortanswer": [
+    { "question": "What are the key components of a strong thesis statement?", "expectedAny": ["clear argument, specific claim", "main argument and support"] },
+    { "question": "What is MLA format?", "expectedAny": ["style for documenting sources", "citation format", "way to cite sources", "source documentation style"] },
+    { "question": "What is in-text citation?", "expectedAny": ["brief source reference in text", "parenthetical reference", "citation in the writing", "source note in paper"] },
+    { "question": "What is Works Cited?", "expectedAny": ["list of sources used", "source list"] },
+    { "question": "What is paraphrase?", "expectedAny": ["restating in own words", "rewording ideas"] },
+    { "question": "What is thesis statement?", "expectedAny": ["main argument sentence", "paper claim", "main idea statement", "central argument"] },
+    { "question": "Why use MLA format?", "expectedAny": ["document sources properly", "avoid plagiarism"] },
+    { "question": "Why cite sources?", "expectedAny": ["give credit", "avoid plagiarism"] },
+    { "question": "When paraphrase?", "expectedAny": ["restating ideas in own words", "using source information"] },
+    { "question": "Where goes thesis?", "expectedAny": ["introduction", "beginning of paper"] }
+  ]
 }

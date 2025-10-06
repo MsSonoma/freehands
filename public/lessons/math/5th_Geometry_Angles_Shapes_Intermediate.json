@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Practice identifying different types of angles and shapes. Teach properties of common polygons. Use real-world examples to show parallel and perpendicular lines.",
-  "sample": {
-    "question": "How many sides does a pentagon have?",
-    "expectedAny": ["5", "five", "pentagon has 5 sides", "5 sides"]
-  },
-  "truefalse": {
-    "question": "A right angle measures exactly 90 degrees.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "Which shape has exactly 6 sides?",
-    "expectedAny": ["hexagon", "6-sided polygon", "six-sided shape", "hexagon shape"]
-  },
-  "fillintheblank": {
-    "question": "Lines that never meet and stay the same distance apart are called ________ lines.",
-    "expectedAny": ["parallel", "parallel lines", "always parallel", "parallel to each other"]
-  },
-  "shortanswer": {
-    "question": "Name two shapes that have exactly 4 sides.",
-    "expectedAny": ["square and rectangle", "rectangle and square", "rhombus and square", "quadrilaterals"]
-  },
-  "wordProblems": {
-    "question": "A stop sign has 8 equal sides. What type of polygon is a stop sign, and how many vertices does it have?",
-    "expectedAny": ["octagon with 8 vertices", "octagon, 8 vertices", "8-sided polygon with 8 vertices", "regular octagon"]
-  }
+  "sample": [
+    { "question": "How many sides does a pentagon have?", "expectedAny": ["5", "five", "pentagon has 5 sides", "5 sides"] },
+    { "question": "A triangle has ________ sides.", "expectedAny": ["3", "three"] },
+    { "question": "A quadrilateral has ________ sides.", "expectedAny": ["4", "four"] },
+    { "question": "A shape with 6 sides is a ________.", "expectedAny": ["hexagon"] },
+    { "question": "A right angle measures ________ degrees.", "expectedAny": ["90"] },
+    { "question": "Lines that never meet are called ________.", "expectedAny": ["parallel"] },
+    { "question": "Lines that meet at right angles are ________.", "expectedAny": ["perpendicular"] },
+    { "question": "The point where sides meet is a ________.", "expectedAny": ["vertex"] },
+    { "question": "An 8-sided polygon is called an ________.", "expectedAny": ["octagon"] },
+    { "question": "A 5-sided polygon is called a ________.", "expectedAny": ["pentagon"] }
+  ],
+  "truefalse": [
+    { "question": "A right angle measures exactly 90 degrees.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Parallel lines cross at some point.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A hexagon has 6 sides.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A triangle can have four sides.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Perpendicular lines form right angles.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All quadrilaterals have four vertices.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "An octagon has 7 sides.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A square is a type of rectangle.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A pentagon has 8 sides.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A vertex is where two sides meet.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which shape has exactly 6 sides?", "choices": ["pentagon", "hexagon", "heptagon", "octagon"], "correct": 1, "expectedAny": ["hexagon", "6-sided polygon", "six-sided shape", "hexagon shape"] },
+    { "question": "Which lines are perpendicular?", "choices": ["lines that never meet", "lines that meet at 90°", "lines that curve", "lines that overlap"], "correct": 1, "expectedAny": ["90", "right angle"] },
+    { "question": "How many vertices does a quadrilateral have?", "choices": ["3", "4", "5", "6"], "correct": 1, "expectedAny": ["4"] },
+    { "question": "Which shape is a quadrilateral?", "choices": ["triangle", "pentagon", "rectangle", "hexagon"], "correct": 2, "expectedAny": ["rectangle"] },
+    { "question": "Which angle is acute?", "choices": ["120°", "90°", "45°", "180°"], "correct": 2, "expectedAny": ["acute less than 90"] },
+    { "question": "Which shape has 8 sides?", "choices": ["heptagon", "octagon", "nonagon", "decagon"], "correct": 1, "expectedAny": ["octagon"] },
+    { "question": "Which pair of lines is parallel?", "choices": ["railroad tracks", "scissors blades", "crossing streets", "folded paper"], "correct": 0, "expectedAny": ["railroad tracks"] },
+    { "question": "Which shape has all sides equal and all angles right?", "choices": ["rectangle", "square", "rhombus", "trapezoid"], "correct": 1, "expectedAny": ["square"] },
+    { "question": "How many sides does a heptagon have?", "choices": ["6", "7", "8", "9"], "correct": 1, "expectedAny": ["7"] },
+    { "question": "Which angle is obtuse?", "choices": ["60°", "90°", "110°", "180°"], "correct": 2, "expectedAny": ["obtuse greater than 90"] }
+  ],
+  "fillintheblank": [
+    { "question": "Lines that never meet and stay the same distance apart are called ________ lines.", "expectedAny": ["parallel", "parallel lines", "always parallel", "parallel to each other", "equidistant lines"] },
+    { "question": "Lines that meet at right angles are ________ lines.", "expectedAny": ["perpendicular", "perpendicular lines", "right-angle lines"] },
+    { "question": "The point where two sides meet is a ________.", "expectedAny": ["vertex", "corner"] },
+    { "question": "A shape with 4 sides is a ________.", "expectedAny": ["quadrilateral", "4-sided polygon", "four-sided shape"] },
+    { "question": "A right angle measures ________ degrees.", "expectedAny": ["90", "90°", "ninety"] },
+    { "question": "An 8-sided polygon is an ________.", "expectedAny": ["octagon", "eight-sided polygon"] },
+    { "question": "A triangle has ________ sides.", "expectedAny": ["3", "three"] },
+    { "question": "A pentagon has ________ sides.", "expectedAny": ["5", "five"] },
+    { "question": "A hexagon has ________ sides.", "expectedAny": ["6", "six"] },
+    { "question": "A heptagon has ________ sides.", "expectedAny": ["7", "seven"] }
+  ],
+  "shortanswer": [
+    { "question": "Name two shapes that have exactly 4 sides.", "expectedAny": ["square and rectangle", "rectangle and square", "rhombus and square", "quadrilaterals", "rectangle and rhombus", "parallelogram and square"] },
+    { "question": "Explain the difference between parallel and perpendicular lines.", "expectedAny": ["never meet vs meet at 90", "equidistant vs right angles", "stay apart vs cross at right angles"] },
+    { "question": "Give one real-world example of parallel lines.", "expectedAny": ["railroad tracks", "notebook lines", "ladder rails", "edges of a book"] },
+    { "question": "Give one real-world example of perpendicular lines.", "expectedAny": ["street intersection", "corner of paper", "floor and wall", "window frame corners"] },
+    { "question": "Describe an acute angle.", "expectedAny": ["less than 90°", "< 90 degrees", "smaller than a right angle"] },
+    { "question": "Describe an obtuse angle.", "expectedAny": ["greater than 90° and less than 180°", "> 90° and < 180°", "bigger than a right angle but not straight"] },
+    { "question": "Describe a right angle.", "expectedAny": ["90°", "ninety degrees", "square corner"] },
+    { "question": "Name a 6-sided polygon.", "expectedAny": ["hexagon", "six-sided polygon"] },
+    { "question": "How many vertices does a rectangle have?", "expectedAny": ["4", "four"] },
+    { "question": "Name a quadrilateral with all sides equal and right angles.", "expectedAny": ["square", "a square"] }
+  ],
+  "wordProblems": [
+    { "question": "A stop sign has 8 equal sides. What type of polygon is a stop sign, and how many vertices does it have?", "expectedAny": ["octagon with 8 vertices", "octagon, 8 vertices", "8-sided polygon with 8 vertices", "regular octagon"] },
+    { "question": "A rectangular garden is 8 m by 5 m. How many vertices does it have?", "expectedAny": ["4"] },
+    { "question": "A tiled floor shows parallel grout lines. What type of lines are they?", "expectedAny": ["parallel"] },
+    { "question": "A crosswalk shows two streets meeting at right angles. What kind of lines are these?", "expectedAny": ["perpendicular"] },
+    { "question": "A window frame corner forms a ________ angle.", "expectedAny": ["right", "90"] },
+    { "question": "A beehive cell has 6 sides. Name the shape.", "expectedAny": ["hexagon"] },
+    { "question": "A sign has 5 sides. Name the polygon.", "expectedAny": ["pentagon"] },
+    { "question": "Two roads never meet and stay the same distance apart. What are they called?", "expectedAny": ["parallel"] },
+    { "question": "A pizza slice shows a small angle at the tip. What type?", "expectedAny": ["acute"] },
+    { "question": "A door opens to form a 90° angle. What type?", "expectedAny": ["right"] }
+  ]
 }

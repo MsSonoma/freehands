@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "9th_Composition_Thesis_Development_Support_Intermediate",
   "title": "Composition: Thesis Development and Support",
   "grade": "9th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "thesis statement",
-      "definition": "Central argument or main claim of an essay"
-    },
-    {
-      "term": "supporting evidence",
-      "definition": "Facts, examples, or reasoning that backs up the thesis"
-    },
-    {
-      "term": "topic sentence",
-      "definition": "Sentence that introduces the main idea of a paragraph"
-    },
-    {
-      "term": "coherence",
-      "definition": "Logical connection and flow between ideas"
-    },
-    {
-      "term": "conclusion",
-      "definition": "Final paragraph that reinforces the thesis and provides closure"
-    }
+    {"term": "thesis statement", "definition": "Central argument or main claim of an essay"},
+    {"term": "supporting evidence", "definition": "Facts, examples, or reasoning that backs up the thesis"},
+    {"term": "topic sentence", "definition": "Sentence that introduces the main idea of a paragraph"},
+    {"term": "coherence", "definition": "Logical connection and flow between ideas"},
+    {"term": "conclusion", "definition": "Final paragraph that reinforces the thesis and provides closure"}
   ],
   "teachingNotes": "Practice writing clear, arguable thesis statements. Emphasize the importance of evidence and logical organization in essays.",
-  "sample": {
-    "question": "What is the central argument or main claim of an essay?",
-    "expectedAny": [
-      "thesis statement",
-      "thesis",
-      "main argument",
-      "central claim"
-    ]
-  },
-  "truefalse": {
-    "question": "Supporting evidence backs up the thesis statement.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What introduces the main idea of a paragraph?",
-    "expectedAny": [
-      "topic sentence",
-      "opening sentence",
-      "main sentence",
-      "introductory sentence"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Logical connection between ideas is called ________.",
-    "expectedAny": [
-      "coherence",
-      "flow",
-      "unity",
-      "logical connection"
-    ]
-  },
-  "shortanswer": {
-    "question": "What makes a thesis statement effective?",
-    "expectedAny": [
-      "clear and arguable",
-      "specific and focused",
-      "supportable with evidence",
-      "debatable position"
-    ]
-  }
+  "sample": [
+    {"question": "What is a thesis statement?", "expectedAny": ["central argument of an essay", "main claim", "main argument", "main idea", "primary argument"]},
+    {"question": "What is supporting evidence?", "expectedAny": ["facts that back up the thesis", "examples supporting claims", "proof for arguments", "proof", "backup for claims"]},
+    {"question": "What is a topic sentence?", "expectedAny": ["sentence introducing paragraph's main idea", "opening sentence of paragraph", "main sentence of paragraph"]},
+    {"question": "What is coherence?", "expectedAny": ["logical connection between ideas", "flow between ideas", "unity of ideas"]},
+    {"question": "What is a conclusion?", "expectedAny": ["final paragraph reinforcing thesis", "closing paragraph", "end of essay"]},
+    {"question": "Where does a thesis statement usually appear?", "expectedAny": ["introduction", "end of introduction", "first paragraph"]},
+    {"question": "What makes a thesis effective?", "expectedAny": ["clear and arguable", "specific and focused", "debatable"]},
+    {"question": "Why do you need supporting evidence?", "expectedAny": ["to prove your thesis", "to back up claims", "to support arguments"]},
+    {"question": "What does a topic sentence do?", "expectedAny": ["introduces paragraph's idea", "states main point", "guides the paragraph"]},
+    {"question": "How do you create coherence?", "expectedAny": ["connect ideas logically", "use transitions", "organize clearly"]}
+  ],
+  "truefalse": [
+    {"question": "Supporting evidence backs up the thesis statement. (True or False)", "correct": true},
+    {"question": "A thesis statement is always a question. (True or False)", "correct": false},
+    {"question": "Topic sentences introduce the main idea of paragraphs. (True or False)", "correct": true},
+    {"question": "Coherence means ideas are randomly placed. (True or False)", "correct": false},
+    {"question": "The conclusion reinforces the thesis. (True or False)", "correct": true},
+    {"question": "Evidence is unnecessary if your thesis is strong. (True or False)", "correct": false},
+    {"question": "A good thesis is specific and arguable. (True or False)", "correct": true},
+    {"question": "Every paragraph needs a topic sentence. (True or False)", "correct": true},
+    {"question": "Coherence improves essay quality. (True or False)", "correct": true},
+    {"question": "The thesis appears in the conclusion. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "What introduces the main idea of a paragraph?", "choices": [{"letter": "A", "text": "Conclusion"}, {"letter": "B", "text": "Topic sentence"}, {"letter": "C", "text": "Supporting detail"}, {"letter": "D", "text": "Transition"}], "correct": "B"},
+    {"question": "What is the central argument of an essay?", "choices": [{"letter": "A", "text": "Topic sentence"}, {"letter": "B", "text": "Conclusion"}, {"letter": "C", "text": "Thesis statement"}, {"letter": "D", "text": "Introduction"}], "correct": "C"},
+    {"question": "What backs up your thesis?", "choices": [{"letter": "A", "text": "Questions"}, {"letter": "B", "text": "Supporting evidence"}, {"letter": "C", "text": "Opinions only"}, {"letter": "D", "text": "Random facts"}], "correct": "B"},
+    {"question": "What is logical connection between ideas?", "choices": [{"letter": "A", "text": "Confusion"}, {"letter": "B", "text": "Repetition"}, {"letter": "C", "text": "Coherence"}, {"letter": "D", "text": "Length"}], "correct": "C"},
+    {"question": "Where does the thesis usually appear?", "choices": [{"letter": "A", "text": "Conclusion"}, {"letter": "B", "text": "Middle paragraph"}, {"letter": "C", "text": "Introduction"}, {"letter": "D", "text": "Title"}], "correct": "C"},
+    {"question": "What makes a thesis effective?", "choices": [{"letter": "A", "text": "Very general"}, {"letter": "B", "text": "Clear and arguable"}, {"letter": "C", "text": "A question"}, {"letter": "D", "text": "A fact"}], "correct": "B"},
+    {"question": "What does the conclusion do?", "choices": [{"letter": "A", "text": "Introduces new ideas"}, {"letter": "B", "text": "Reinforces the thesis"}, {"letter": "C", "text": "Asks questions"}, {"letter": "D", "text": "Lists evidence"}], "correct": "B"},
+    {"question": "What type of evidence is best?", "choices": [{"letter": "A", "text": "Personal opinions"}, {"letter": "B", "text": "Vague statements"}, {"letter": "C", "text": "Specific facts and examples"}, {"letter": "D", "text": "Unsupported claims"}], "correct": "C"},
+    {"question": "Why are topic sentences important?", "choices": [{"letter": "A", "text": "They organize paragraphs"}, {"letter": "B", "text": "They confuse readers"}, {"letter": "C", "text": "They are optional"}, {"letter": "D", "text": "They replace evidence"}], "correct": "A"},
+    {"question": "How do you improve coherence?", "choices": [{"letter": "A", "text": "Random order"}, {"letter": "B", "text": "No connections"}, {"letter": "C", "text": "Logical organization"}, {"letter": "D", "text": "Shorter sentences"}], "correct": "C"}
+  ],
+  "fillintheblank": [
+    {"question": "Logical connection between ideas is called _____.", "expectedAny": ["coherence", "flow", "unity"]},
+    {"question": "The central argument of an essay is the _____ statement.", "expectedAny": ["thesis"]},
+    {"question": "Facts that back up the thesis are _____ evidence.", "expectedAny": ["supporting"]},
+    {"question": "The sentence that introduces a paragraph's idea is the _____ sentence.", "expectedAny": ["topic"]},
+    {"question": "The final paragraph that reinforces the thesis is the _____.", "expectedAny": ["conclusion"]},
+    {"question": "A good thesis is specific and _____.", "expectedAny": ["arguable", "debatable", "clear"]},
+    {"question": "Supporting evidence includes facts, examples, and _____.", "expectedAny": ["reasoning", "statistics", "data"]},
+    {"question": "The thesis usually appears in the _____.", "expectedAny": ["introduction"]},
+    {"question": "Each paragraph should have a _____ sentence.", "expectedAny": ["topic"]},
+    {"question": "Essays need _____ to connect ideas logically.", "expectedAny": ["coherence", "transitions", "flow"]}
+  ],
+  "shortanswer": [
+    {"question": "What makes a thesis statement effective?", "keyTerms": ["clear", "arguable", "specific", "focused"], "expectedAny": ["It is clear, arguable, and specific", "An effective thesis is focused and debatable", "Good theses are specific, supportable, and make an argument"]},
+    {"question": "Why is supporting evidence important in an essay?", "keyTerms": ["prove", "support", "thesis", "credible"], "expectedAny": ["Evidence proves and supports the thesis making it credible", "Supporting evidence backs up your claims with facts", "Evidence makes your argument stronger and more convincing"]},
+    {"question": "How does a topic sentence function in a paragraph?", "keyTerms": ["introduces", "main", "idea", "guides"], "expectedAny": ["It introduces the main idea and guides the paragraph", "Topic sentences state the paragraph's main point", "They tell readers what the paragraph will discuss"]},
+    {"question": "What is coherence and why does it matter?", "keyTerms": ["logical", "connection", "flow", "understanding"], "expectedAny": ["Coherence is logical connection that helps understanding", "It creates flow between ideas making essays clear", "Coherence connects ideas logically for better comprehension"]},
+    {"question": "What should a conclusion accomplish?", "keyTerms": ["reinforce", "thesis", "closure", "summarize"], "expectedAny": ["The conclusion reinforces the thesis and provides closure", "It summarizes main points and restates the thesis", "Conclusions tie everything together and leave final impression"]},
+    {"question": "How do you develop a strong thesis?", "keyTerms": ["specific", "arguable", "focused", "claim"], "expectedAny": ["Make it specific, arguable, and focused on one main claim", "Start with a topic, narrow it down, and make an argument", "Create a clear position that can be supported with evidence"]},
+    {"question": "What types of evidence best support an essay?", "keyTerms": ["facts", "examples", "statistics", "credible"], "expectedAny": ["Facts, examples, and statistics from credible sources", "Specific evidence like data, expert quotes, and real examples", "Relevant and reliable facts that directly support your points"]},
+    {"question": "How are topic sentences and thesis statements related?", "keyTerms": ["support", "thesis", "paragraph", "main"], "expectedAny": ["Topic sentences support the thesis by introducing paragraph ideas", "They break down the thesis into smaller main points", "Each topic sentence connects its paragraph to the overall thesis"]},
+    {"question": "Why is organization important in an essay?", "keyTerms": ["logical", "clear", "coherence", "understanding"], "expectedAny": ["Organization creates logical flow and coherence for understanding", "Good organization makes essays clear and easy to follow", "Logical structure helps readers understand your argument"]},
+    {"question": "How do transitions improve essay coherence?", "keyTerms": ["connect", "ideas", "flow", "smooth"], "expectedAny": ["Transitions connect ideas and create smooth flow", "They link paragraphs and show relationships between ideas", "Transitions guide readers through your argument logically"]}
+  ]
 }

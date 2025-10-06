@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Emphasize the importance of fair testing and controlling variables. Practice writing hypotheses in 'if-then' format. Discuss peer review in science.",
-  "sample": {
-    "question": "What is an educated guess that can be tested called?",
-    "expectedAny": [
-      "hypothesis",
-      "scientific hypothesis",
-      "testable prediction",
-      "educated guess"
-    ]
-  },
-  "truefalse": {
-    "question": "A good experiment should only test one variable at a time.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the group that doesn't receive treatment in an experiment?",
-    "expectedAny": [
-      "control group",
-      "control",
-      "comparison group",
-      "baseline group"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Information collected during an experiment is called ________.",
-    "expectedAny": [
-      "data",
-      "experimental data",
-      "research data",
-      "scientific data"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are the main steps of the scientific method?",
-    "expectedAny": [
-      "question, hypothesis, experiment, analyze, conclude",
-      "observe, question, test, analyze, conclude",
-      "ask, predict, test, record, explain"
-    ]
-  }
+  "sample": [
+    { "question": "What is an educated guess that can be tested called?", "expectedAny": ["hypothesis"] },
+    { "question": "Which can change?", "choices": ["Constant", "Variable", "Data", "Result"], "correct": 1, "expectedAny": ["variable"] },
+    { "question": "The group without treatment is the ________.", "expectedAny": ["control group", "control"] },
+    { "question": "Information collected is ________.", "expectedAny": ["data"] },
+    { "question": "What explains experiment results?", "expectedAny": ["conclusion"] },
+    { "question": "Which is testable?", "choices": ["Opinion", "Hypothesis", "Belief", "Guess"], "correct": 1, "expectedAny": ["hypothesis"] },
+    { "question": "A factor that changes is a ________.", "expectedAny": ["variable"] },
+    { "question": "Collected information is ________.", "expectedAny": ["data"] },
+    { "question": "What doesn't receive treatment?", "choices": ["Test group", "Control group", "Variable", "Data"], "correct": 1, "expectedAny": ["control group"] },
+    { "question": "Final explanation is the ________.", "expectedAny": ["conclusion"] }
+  ],
+  "truefalse": [
+    { "question": "A good experiment should only test one variable at a time.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A hypothesis is a proven fact.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Data is collected during experiments.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Control groups receive the treatment.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Conclusions explain what was learned.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Variables never change.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Hypotheses can be tested.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Experiments don't need controls.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Scientists collect data.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All hypotheses are correct.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is the group that doesn't receive treatment in an experiment?", "choices": ["Test group", "Control group", "Variable", "Data"], "correct": 1, "expectedAny": ["control group"] },
+    { "question": "What is an educated guess?", "choices": ["Data", "Hypothesis", "Conclusion", "Variable"], "correct": 1, "expectedAny": ["hypothesis"] },
+    { "question": "What is collected information?", "choices": ["Variable", "Control", "Data", "Hypothesis"], "correct": 2, "expectedAny": ["data"] },
+    { "question": "What can change in an experiment?", "choices": ["Constant", "Variable", "Control", "Conclusion"], "correct": 1, "expectedAny": ["variable"] },
+    { "question": "What explains results?", "choices": ["Hypothesis", "Variable", "Conclusion", "Control"], "correct": 2, "expectedAny": ["conclusion"] },
+    { "question": "What must be testable?", "choices": ["Conclusion", "Hypothesis", "Data", "Control"], "correct": 1, "expectedAny": ["hypothesis"] },
+    { "question": "What is measured in experiments?", "choices": ["Hypothesis", "Control", "Data", "Method"], "correct": 2, "expectedAny": ["data"] },
+    { "question": "What provides comparison?", "choices": ["Variable", "Control group", "Data", "Hypothesis"], "correct": 1, "expectedAny": ["control group"] },
+    { "question": "What changes on purpose?", "choices": ["Control", "Conclusion", "Variable", "Data"], "correct": 2, "expectedAny": ["variable"] },
+    { "question": "What comes after analyzing data?", "choices": ["Hypothesis", "Question", "Conclusion", "Variable"], "correct": 2, "expectedAny": ["conclusion"] }
+  ],
+  "fillintheblank": [
+    { "question": "Information collected during an experiment is called ________.", "expectedAny": ["data"] },
+    { "question": "A testable prediction is a ________.", "expectedAny": ["hypothesis"] },
+    { "question": "A factor that can change is a ________.", "expectedAny": ["variable"] },
+    { "question": "The group without treatment is the ________.", "expectedAny": ["control group", "control"] },
+    { "question": "The final explanation is the ________.", "expectedAny": ["conclusion"] },
+    { "question": "An educated guess is a ________.", "expectedAny": ["hypothesis"] },
+    { "question": "Scientists collect ________ in experiments.", "expectedAny": ["data"] },
+    { "question": "The ________ group provides comparison.", "expectedAny": ["control"] },
+    { "question": "Changing factors are ________.", "expectedAny": ["variables"] },
+    { "question": "After analyzing data, you write a ________.", "expectedAny": ["conclusion"] }
+  ],
+  "shortanswer": [
+    { "question": "What are the main steps of the scientific method?", "expectedAny": ["question, hypothesis, experiment, analyze, conclude"] },
+    { "question": "What is a hypothesis?", "expectedAny": ["educated guess", "testable prediction"] },
+    { "question": "What is a variable?", "expectedAny": ["factor that can change", "changeable factor"] },
+    { "question": "What is a control group?", "expectedAny": ["group without treatment", "comparison group"] },
+    { "question": "What is data?", "expectedAny": ["collected information", "experiment measurements"] },
+    { "question": "Why use a control group?", "expectedAny": ["for comparison", "to see effect of variable"] },
+    { "question": "How do you write a hypothesis?", "expectedAny": ["if-then format", "testable prediction"] },
+    { "question": "What is a conclusion?", "expectedAny": ["explains results", "what was learned"] },
+    { "question": "Why test one variable?", "expectedAny": ["fair testing", "know what caused change"] },
+    { "question": "What comes before the hypothesis?", "expectedAny": ["question", "observation"] }
+  ]
 }

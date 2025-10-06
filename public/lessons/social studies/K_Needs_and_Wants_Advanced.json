@@ -49,22 +49,22 @@
     {"question": "Which is NOT a basic need?", "choices": ["air", "water", "pizza party", "food"], "correct": 2, "expectedAny": ["pizza parties are wants"]}
   ],
   "fillintheblank": [
-    {"question": "We need _____ to keep our bodies warm.", "expectedAny": ["clothing", "clothes"]},
+    {"question": "We need _____ to keep our bodies warm.", "expectedAny": ["clothing", "clothes", "warm clothes"]},
     {"question": "_____ is something you must have to live.", "expectedAny": ["Need", "A need"]},
     {"question": "_____ is something nice to have but not necessary.", "expectedAny": ["Want", "A want"]},
-    {"question": "We need _____ to drink and stay alive.", "expectedAny": ["water"]},
+  {"question": "We need _____ to drink and stay alive.", "expectedAny": ["water", "clean water"]},
     {"question": "A _____ protects us from rain and cold.", "expectedAny": ["house", "home", "shelter"]},
-    {"question": "We need _____ to eat and give us energy.", "expectedAny": ["food"]},
-    {"question": "_____ keeps us breathing.", "expectedAny": ["Air"]}
+  {"question": "We need _____ to eat and give us energy.", "expectedAny": ["food", "healthy food"]},
+    {"question": "_____ keeps us breathing.", "expectedAny": ["Air", "air"]}
   ],
   "shortanswer": [
-    {"question": "Name something you need and something you want.", "expectedAny": ["identifies need and want"]},
+  {"question": "Name something you need and something you want.", "expectedAny": ["need: food; want: toy", "need: water; want: game", "need: clothing; want: candy"]},
     {"question": "What happens if we don't get our basic needs?", "expectedAny": ["get sick", "can't survive", "feel bad", "not healthy"]},
     {"question": "How are needs different from wants?", "expectedAny": ["needs are necessary", "wants are extra", "needs for survival", "wants are nice to have"]},
     {"question": "What basic needs do all people have?", "expectedAny": ["food", "water", "shelter", "clothing", "air"]},
     {"question": "Is it okay to want things? Why?", "expectedAny": ["yes, wants are normal", "wants can be fun", "wants motivate us", "balance needs and wants"]},
     {"question": "How can families decide between needs and wants?", "expectedAny": ["needs come first", "budget for wants", "discuss together", "prioritize needs"]},
-    {"question": "Give an example of something that could be both a need and a want.", "expectedAny": ["food - need basic nutrition, want fancy food", "clothing - need basic clothes, want designer clothes"]}
+  {"question": "Give an example of something that could be both a need and a want.", "expectedAny": ["food - need basic nutrition, want fancy food", "clothing - need basic clothes, want fancy clothes", "shoes - need shoes, want fun shoes"]}
   ],
   "wordProblems": [
     {"question": "Tommy has $10. He needs lunch for $4 and wants a toy for $8. Does he have enough for both?", "expectedAny": ["no", "only $10 total", "4 + 8 = 12, more than $10"]},

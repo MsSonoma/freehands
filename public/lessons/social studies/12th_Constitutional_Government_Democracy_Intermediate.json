@@ -1,74 +1,455 @@
-{
-  "id": "12th_Constitutional_Government_Democracy_Intermediate",
-  "title": "Constitutional Government and Democracy",
-  "grade": "12th",
-  "difficulty": "Intermediate",
-  "vocab": [
-    {
-      "term": "judicial review",
-      "definition": "Court power to declare laws unconstitutional"
-    },
-    {
-      "term": "due process",
-      "definition": "Constitutional guarantee of fair legal procedures"
-    },
-    {
-      "term": "equal protection",
-      "definition": "Constitutional requirement for equal treatment under law"
-    },
-    {
-      "term": "civil liberties",
-      "definition": "Individual freedoms protected from government interference"
-    },
-    {
-      "term": "civil rights",
-      "definition": "Legal protections ensuring equal treatment and participation"
-    }
-  ],
-  "teachingNotes": "Analyze constitutional principles through landmark Supreme Court cases. Examine tensions between individual rights and collective security.",
-  "sample": {
-    "question": "What court power declares laws unconstitutional?",
-    "expectedAny": [
-      "judicial review",
-      "constitutional review",
-      "court review",
-      "judicial oversight"
-    ]
-  },
-  "truefalse": {
-    "question": "Due process guarantees fair legal procedures.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What are individual freedoms protected from government interference?",
-    "expectedAny": [
-      "civil liberties",
-      "constitutional freedoms",
-      "individual rights",
-      "personal freedoms"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Constitutional requirement for equal treatment is ________ protection.",
-    "expectedAny": [
-      "equal",
-      "fair",
-      "uniform",
-      "identical"
-    ]
-  },
-  "shortanswer": {
-    "question": "How do civil liberties differ from civil rights?",
-    "expectedAny": [
-      "freedoms vs. protections",
-      "individual vs. group",
-      "negative vs. positive rights",
-      "protection from vs. access to"
-    ]
-  }
+﻿{
+    "id":  "12th_Constitutional_Government_Democracy_Intermediate",
+    "title":  "Constitutional Government and Democracy",
+    "grade":  "12th",
+    "difficulty":  "Intermediate",
+    "vocab":  [
+                  {
+                      "term":  "judicial review",
+                      "definition":  "Court power to declare laws unconstitutional"
+                  },
+                  {
+                      "term":  "due process",
+                      "definition":  "Fair legal procedures protecting rights"
+                  },
+                  {
+                      "term":  "bill of rights",
+                      "definition":  "First ten constitutional amendments"
+                  },
+                  {
+                      "term":  "amendment process",
+                      "definition":  "Procedure for changing constitution"
+                  },
+                  {
+                      "term":  "popular sovereignty",
+                      "definition":  "Government power from consent of people"
+                  }
+              ],
+    "teachingNotes":  "Examine constitutional principles and democratic governance. Analyze structure and function of US government.",
+    "sample":  [
+                   {
+                       "question":  "What is government plan?",
+                       "expectedAny":  [
+                                           "constitution",
+                                           "Constitution",
+                                           "founding document",
+                                           "supreme law",
+                                           "government framework",
+                                           "basic law"
+                                       ]
+                   },
+                   {
+                       "question":  "What is government by people?",
+                       "expectedAny":  [
+                                           "democracy",
+                                           "Democracy",
+                                           "rule by people",
+                                           "popular sovereignty",
+                                           "democratic system",
+                                           "people power"
+                                       ]
+                   },
+                   {
+                       "question":  "What divides government?",
+                       "expectedAny":  [
+                                           "separation of powers",
+                                           "separation",
+                                           "three branches",
+                                           "divided government",
+                                           "branch separation",
+                                           "power division"
+                                       ]
+                   },
+                   {
+                       "question":  "What limits branch power?",
+                       "expectedAny":  [
+                                           "checks and balances",
+                                           "checks",
+                                           "mutual oversight",
+                                           "balance of power",
+                                           "limiting powers",
+                                           "branch limits"
+                                       ]
+                   },
+                   {
+                       "question":  "What divides national and state?",
+                       "expectedAny":  [
+                                           "federalism",
+                                           "Federalism"
+                                       ]
+                   },
+                   {
+                       "question":  "What declares laws unconstitutional?",
+                       "expectedAny":  [
+                                           "judicial review",
+                                           "review"
+                                       ]
+                   },
+                   {
+                       "question":  "What are fair procedures?",
+                       "expectedAny":  [
+                                           "due process",
+                                           "process"
+                                       ]
+                   },
+                   {
+                       "question":  "What are first ten amendments?",
+                       "expectedAny":  [
+                                           "bill of rights",
+                                           "Bill of Rights"
+                                       ]
+                   },
+                   {
+                       "question":  "What changes constitution?",
+                       "expectedAny":  [
+                                           "amendment process",
+                                           "amendments"
+                                       ]
+                   },
+                   {
+                       "question":  "What is people consent?",
+                       "expectedAny":  [
+                                           "popular sovereignty",
+                                           "sovereignty"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Constitution plans government.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Democracy excludes people.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Separation divides branches.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Checks and balances give unlimited power.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Federalism divides power.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Judicial review checks laws.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Due process ignores rights.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Bill of Rights is first ten.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Constitution cannot be amended.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Popular sovereignty comes from people.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What is government plan?",
+                               "choices":  [
+                                               "Treaty",
+                                               "Law",
+                                               "Constitution",
+                                               "Statute"
+                                           ],
+                               "correct":  "Constitution"
+                           },
+                           {
+                               "question":  "What is rule by people?",
+                               "choices":  [
+                                               "Monarchy",
+                                               "Oligarchy",
+                                               "Democracy",
+                                               "Dictatorship"
+                                           ],
+                               "correct":  "Democracy"
+                           },
+                           {
+                               "question":  "How many branches?",
+                               "choices":  [
+                                               "One",
+                                               "Two",
+                                               "Three",
+                                               "Four"
+                                           ],
+                               "correct":  "Three"
+                           },
+                           {
+                               "question":  "What prevents tyranny?",
+                               "choices":  [
+                                               "Concentration",
+                                               "Checks and balances",
+                                               "Unlimited power",
+                                               "Single branch"
+                                           ],
+                               "correct":  "Checks and balances"
+                           },
+                           {
+                               "question":  "What divides power?",
+                               "choices":  [
+                                               "Unitary",
+                                               "Federalism",
+                                               "Confederation only",
+                                               "Centralized"
+                                           ],
+                               "correct":  "Federalism"
+                           },
+                           {
+                               "question":  "What checks constitutionality?",
+                               "choices":  [
+                                               "Executive",
+                                               "Legislative",
+                                               "Judicial review",
+                                               "Military"
+                                           ],
+                               "correct":  "Judicial review"
+                           },
+                           {
+                               "question":  "What protects legal rights?",
+                               "choices":  [
+                                               "Arbitrary process",
+                                               "Due process",
+                                               "No process",
+                                               "Random process"
+                                           ],
+                               "correct":  "Due process"
+                           },
+                           {
+                               "question":  "What are first ten?",
+                               "choices":  [
+                                               "Articles",
+                                               "Laws",
+                                               "Bill of Rights",
+                                               "Statutes"
+                                           ],
+                               "correct":  "Bill of Rights"
+                           },
+                           {
+                               "question":  "How to change Constitution?",
+                               "choices":  [
+                                               "Executive order",
+                                               "Amendment process",
+                                               "Judicial decree",
+                                               "State law"
+                                           ],
+                               "correct":  "Amendment process"
+                           },
+                           {
+                               "question":  "Where does power originate?",
+                               "choices":  [
+                                               "King",
+                                               "Dictator",
+                                               "Popular sovereignty",
+                                               "Elite"
+                                           ],
+                               "correct":  "Popular sovereignty"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "A _____ plans government.",
+                               "expectedAny":  [
+                                                   "constitution",
+                                                   "Constitution"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ is government by people.",
+                               "expectedAny":  [
+                                                   "democracy",
+                                                   "Democracy"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ of powers divides government.",
+                               "expectedAny":  [
+                                                   "separation",
+                                                   "Separation"
+                                               ]
+                           },
+                           {
+                               "question":  "Checks and _____ limit power.",
+                               "expectedAny":  [
+                                                   "balances",
+                                                   "Balances"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ divides national and state.",
+                               "expectedAny":  [
+                                                   "federalism",
+                                                   "Federalism"
+                                               ]
+                           },
+                           {
+                               "question":  "Judicial _____ checks laws.",
+                               "expectedAny":  [
+                                                   "review",
+                                                   "Review"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ process protects rights.",
+                               "expectedAny":  [
+                                                   "due",
+                                                   "Due"
+                                               ]
+                           },
+                           {
+                               "question":  "Bill of _____ is first ten.",
+                               "expectedAny":  [
+                                                   "rights",
+                                                   "Rights"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ process changes Constitution.",
+                               "expectedAny":  [
+                                                   "amendment",
+                                                   "Amendment"
+                                               ]
+                           },
+                           {
+                               "question":  "Popular _____ comes from people.",
+                               "expectedAny":  [
+                                                   "sovereignty",
+                                                   "Sovereignty"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "What is constitution?",
+                            "expectedAny":  [
+                                                "written plan for government",
+                                                "supreme law of land",
+                                                "establishes structure rights procedures"
+                                            ]
+                        },
+                        {
+                            "question":  "Define democracy.",
+                            "expectedAny":  [
+                                                "government by the people",
+                                                "citizens have voice in decisions",
+                                                "majority rule with minority rights"
+                                            ]
+                        },
+                        {
+                            "question":  "What is separation of powers?",
+                            "expectedAny":  [
+                                                "division of government into branches",
+                                                "legislative executive judicial",
+                                                "prevents concentration of power"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain checks and balances.",
+                            "expectedAny":  [
+                                                "system limiting each branch power",
+                                                "each branch can check others",
+                                                "prevents tyranny and abuse"
+                                            ]
+                        },
+                        {
+                            "question":  "What is federalism?",
+                            "expectedAny":  [
+                                                "power divided between national and state",
+                                                "dual sovereignty system",
+                                                "US has federal and state governments"
+                                            ]
+                        },
+                        {
+                            "question":  "What is judicial review?",
+                            "expectedAny":  [
+                                                "court power to declare laws unconstitutional",
+                                                "Marbury v Madison established",
+                                                "Supreme Court checks other branches"
+                                            ]
+                        },
+                        {
+                            "question":  "Define due process.",
+                            "expectedAny":  [
+                                                "fair legal procedures protecting rights",
+                                                "5th and 14th Amendments",
+                                                "notice hearing fair treatment"
+                                            ]
+                        },
+                        {
+                            "question":  "What is Bill of Rights?",
+                            "expectedAny":  [
+                                                "first ten constitutional amendments",
+                                                "protects individual liberties",
+                                                "speech religion press assembly"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain amendment process.",
+                            "expectedAny":  [
+                                                "procedure for changing constitution",
+                                                "requires two-thirds Congress three-fourths states",
+                                                "or convention method"
+                                            ]
+                        },
+                        {
+                            "question":  "What is popular sovereignty?",
+                            "expectedAny":  [
+                                                "government power from consent of people",
+                                                "people are ultimate authority",
+                                                "foundation of democracy"
+                                            ]
+                        }
+                    ]
 }

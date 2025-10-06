@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Use images of castles and knights. Explain the feudal pyramid structure. Discuss how this system provided order during uncertain times.",
-  "sample": {
-    "question": "What is another name for the medieval time period?",
-    "expectedAny": [
-      "Middle Ages",
-      "the Middle Ages",
-      "Dark Ages",
-      "medieval period"
-    ]
-  },
-  "truefalse": {
-    "question": "Knights served lords in exchange for land.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What was the system where people received land for loyalty called?",
-    "expectedAny": [
-      "feudalism",
-      "feudal system",
-      "medieval system",
-      "land for service"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A fortified building where nobles lived was called a ________.",
-    "expectedAny": [
-      "castle",
-      "medieval castle",
-      "fortified castle",
-      "stone castle"
-    ]
-  },
-  "shortanswer": {
-    "question": "How was a serf's life different from a knight's life?",
-    "expectedAny": [
-      "serfs farmed, knights fought",
-      "serfs were bound to land, knights were free",
-      "serfs worked for lords, knights served lords",
-      "different social classes"
-    ]
-  }
+  "sample": [
+    { "question": "What is another name for the medieval time period?", "expectedAny": ["Middle Ages"] },
+    { "question": "Which served lords for land?", "choices": ["Serf", "Knight", "Farmer", "Merchant"], "correct": 1, "expectedAny": ["knight"] },
+    { "question": "Land for loyalty is ________.", "expectedAny": ["feudalism"] },
+    { "question": "A fortified noble building is a ________.", "expectedAny": ["castle"] },
+    { "question": "A bound farmer is a ________.", "expectedAny": ["serf"] },
+    { "question": "What is the Middle Ages also called?", "choices": ["Ancient", "Medieval", "Modern", "Renaissance"], "correct": 1, "expectedAny": ["medieval"] },
+    { "question": "The feudal system involved ________.", "expectedAny": ["land for service", "loyalty"] },
+    { "question": "Warriors who fought for lords were ________.", "expectedAny": ["knights"] },
+    { "question": "Where did nobles live?", "choices": ["Huts", "Castles", "Tents", "Caves"], "correct": 1, "expectedAny": ["castles"] },
+    { "question": "Farmers bound to land were ________.", "expectedAny": ["serfs"] }
+  ],
+  "truefalse": [
+    { "question": "Knights served lords in exchange for land.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Serfs were free to leave their lord's land.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Feudalism was a system of land for loyalty.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Castles were poorly defended.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Medieval means the Middle Ages.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Knights were farmers.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Nobles lived in castles.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Serfs owned their own land.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Feudalism provided order.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Everyone had equal rights in feudalism.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What was the system where people received land for loyalty called?", "choices": ["Democracy", "Feudalism", "Republic", "Monarchy"], "correct": 1, "expectedAny": ["feudalism"] },
+    { "question": "What is another name for medieval?", "choices": ["Ancient times", "Middle Ages", "Modern era", "Renaissance"], "correct": 1, "expectedAny": ["Middle Ages"] },
+    { "question": "Who served lords for land?", "choices": ["Serfs", "Knights", "Peasants", "Merchants"], "correct": 1, "expectedAny": ["knights"] },
+    { "question": "Where did nobles live?", "choices": ["Huts", "Tents", "Castles", "Villages"], "correct": 2, "expectedAny": ["castles"] },
+    { "question": "Who was bound to work the land?", "choices": ["Knight", "Noble", "Serf", "Lord"], "correct": 2, "expectedAny": ["serf"] },
+    { "question": "What were knights?", "choices": ["Farmers", "Warriors", "Merchants", "Priests"], "correct": 1, "expectedAny": ["warriors"] },
+    { "question": "What did castles provide?", "choices": ["Entertainment", "Defense", "Trade", "Farming"], "correct": 1, "expectedAny": ["defense"] },
+    { "question": "What system used land for service?", "choices": ["Democracy", "Republic", "Feudalism", "Empire"], "correct": 2, "expectedAny": ["feudalism"] },
+    { "question": "When was the medieval period?", "choices": ["Ancient times", "Middle Ages", "Modern times", "Future"], "correct": 1, "expectedAny": ["Middle Ages"] },
+    { "question": "Who worked for lords?", "choices": ["Kings", "Emperors", "Serfs", "Presidents"], "correct": 2, "expectedAny": ["serfs"] }
+  ],
+  "fillintheblank": [
+    { "question": "A fortified building where nobles lived was called a ________.", "expectedAny": ["castle"] },
+    { "question": "The time period also known as the Middle Ages is ________.", "expectedAny": ["medieval"] },
+    { "question": "The system of land for loyalty was ________.", "expectedAny": ["feudalism"] },
+    { "question": "A warrior who served a lord was a ________.", "expectedAny": ["knight"] },
+    { "question": "A farmer bound to work land was a ________.", "expectedAny": ["serf"] },
+    { "question": "________ lived in fortified buildings.", "expectedAny": ["nobles"] },
+    { "question": "The Middle Ages is also called ________.", "expectedAny": ["medieval"] },
+    { "question": "________ served lords in exchange for land.", "expectedAny": ["knights"] },
+    { "question": "A ________ was a fortified defense structure.", "expectedAny": ["castle"] },
+    { "question": "________ provided order through land and service.", "expectedAny": ["feudalism"] }
+  ],
+  "shortanswer": [
+    { "question": "How was a serf's life different from a knight's life?", "expectedAny": ["serfs farmed, knights fought", "serfs were bound, knights were free"] },
+    { "question": "What is feudalism?", "expectedAny": ["system of land for loyalty", "land for service"] },
+    { "question": "What is the medieval period?", "expectedAny": ["Middle Ages", "time period in European history"] },
+    { "question": "What is a knight?", "expectedAny": ["warrior who served lord", "fought for land"] },
+    { "question": "What is a castle?", "expectedAny": ["fortified building", "where nobles lived and defended"] },
+    { "question": "What is a serf?", "expectedAny": ["farmer bound to land", "worked for lord"] },
+    { "question": "Why did feudalism exist?", "expectedAny": ["provided order", "protection during uncertain times"] },
+    { "question": "What did knights receive for their service?", "expectedAny": ["land", "land from lord"] },
+    { "question": "What was the feudal pyramid?", "expectedAny": ["social structure", "hierarchy from king to serfs"] },
+    { "question": "How were castles used?", "expectedAny": ["defense", "protection", "noble homes"] }
+  ]
 }

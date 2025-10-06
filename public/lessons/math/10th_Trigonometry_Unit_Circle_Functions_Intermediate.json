@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "10th_Trigonometry_Unit_Circle_Functions_Intermediate",
   "title": "Trigonometry: Unit Circle and Trigonometric Functions",
   "grade": "10th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "unit circle",
-      "definition": "Circle with radius 1 centered at the origin"
-    },
-    {
-      "term": "sine function",
-      "definition": "Trigonometric function representing y-coordinate on unit circle"
-    },
-    {
-      "term": "cosine function",
-      "definition": "Trigonometric function representing x-coordinate on unit circle"
-    },
-    {
-      "term": "tangent function",
-      "definition": "Trigonometric function equal to sine divided by cosine"
-    },
-    {
-      "term": "radian",
-      "definition": "Unit of angle measurement where 2π radians equals 360°"
-    }
+    {"term": "unit circle", "definition": "Circle with radius 1 centered at the origin"},
+    {"term": "sine function", "definition": "Trigonometric function representing y-coordinate on unit circle"},
+    {"term": "cosine function", "definition": "Trigonometric function representing x-coordinate on unit circle"},
+    {"term": "tangent function", "definition": "Trigonometric function equal to sine divided by cosine"},
+    {"term": "radian", "definition": "Unit of angle measurement where 2π radians equals 360"}
   ],
   "teachingNotes": "Emphasize the relationship between the unit circle and trigonometric functions. Practice converting between degrees and radians.",
-  "sample": {
-    "question": "What is a circle with radius 1 centered at the origin?",
-    "expectedAny": ["unit circle", "standard circle", "trigonometric circle", "reference circle"]
-  },
-  "truefalse": {
-    "question": "The sine function represents the y-coordinate on the unit circle.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What equals sine divided by cosine?",
-    "expectedAny": ["tangent", "tangent function", "tan", "tan function"]
-  },
-  "fillintheblank": {
-    "question": "The unit of angle measurement where 2π equals 360° is called a ________.",
-    "expectedAny": ["radian", "rad", "radian measure", "circular measure"]
-  },
-  "shortanswer": {
-    "question": "What are the coordinates of the point on the unit circle at angle π/2?",
-    "expectedAny": ["(0, 1)", "x = 0, y = 1", "zero comma one", "coordinates (0,1)"]
-  },
-  "wordProblems": {
-    "question": "Convert 45° to radians.",
-    "expectedAny": ["π/4", "π/4 radians", "pi over 4", "45° × π/180° = π/4"]
-  }
+  "sample": [
+    {"question": "What circle has radius 1?", "expectedAny": ["unit circle", "standard circle", "circle with radius one", "radius one circle", "standard unit circle", "unit circle graph"]},
+    {"question": "What represents y-coordinate?", "expectedAny": ["sine function", "sine", "sin", "y-value", "vertical coordinate", "y coordinate"]},
+    {"question": "What represents x-coordinate?", "expectedAny": ["cosine function", "cosine", "cos", "x-value", "horizontal coordinate", "x coordinate"]},
+    {"question": "What equals sin/cos?", "expectedAny": ["tangent function", "tangent", "tan", "sine over cosine", "sin divided by cos", "ratio of sine to cosine"]},
+    {"question": "What unit has 2π = 360?", "expectedAny": ["radian", "rad", "radian measure", "radians", "angle measure", "radian unit"]},
+    {"question": "What is centered at origin?", "expectedAny": ["unit circle", "standard circle", "circle at origin", "radius one circle", "standard unit circle", "unit circle graph"]},
+    {"question": "What is y on circle?", "expectedAny": ["sine", "sin", "y-coordinate", "sine function", "y-value", "vertical coordinate"]},
+    {"question": "What is x on circle?", "expectedAny": ["cosine", "cos", "x-coordinate", "cosine function", "x-value", "horizontal coordinate"]},
+    {"question": "What is sin divided by cos?", "expectedAny": ["tangent", "tan", "sine over cosine", "tangent function", "sin/cos", "ratio"]},
+    {"question": "What measures angles?", "expectedAny": ["radian", "degree", "angle measure", "radians", "degrees", "radian measure"]}
+  ],
+  "truefalse": [
+    {"question": "Unit circle has radius 1. (True or False)", "correct": true},
+    {"question": "Sine is y-coordinate. (True or False)", "correct": true},
+    {"question": "Cosine is y-coordinate. (True or False)", "correct": false},
+    {"question": "Tangent equals sin/cos. (True or False)", "correct": true},
+    {"question": "2π radians equals 360. (True or False)", "correct": true},
+    {"question": "Unit circle centered at origin. (True or False)", "correct": true},
+    {"question": "sin represents x-coordinate. (True or False)", "correct": false},
+    {"question": "cos represents x-coordinate. (True or False)", "correct": true},
+    {"question": "tan equals cos/sin. (True or False)", "correct": false},
+    {"question": "π radians equals 180. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What has radius 1?", "choices": [{"letter": "A", "text": "Circle"}, {"letter": "B", "text": "Unit circle"}, {"letter": "C", "text": "Sphere"}, {"letter": "D", "text": "Ellipse"}], "correct": "B"},
+    {"question": "What is y-coordinate?", "choices": [{"letter": "A", "text": "Cosine"}, {"letter": "B", "text": "Sine"}, {"letter": "C", "text": "Tangent"}, {"letter": "D", "text": "Secant"}], "correct": "B"},
+    {"question": "What is x-coordinate?", "choices": [{"letter": "A", "text": "Sine"}, {"letter": "B", "text": "Cosine"}, {"letter": "C", "text": "Tangent"}, {"letter": "D", "text": "Cotangent"}], "correct": "B"},
+    {"question": "What equals sin/cos?", "choices": [{"letter": "A", "text": "Secant"}, {"letter": "B", "text": "Tangent"}, {"letter": "C", "text": "Cosecant"}, {"letter": "D", "text": "Cotangent"}], "correct": "B"},
+    {"question": "What has 2π = 360?", "choices": [{"letter": "A", "text": "Degree"}, {"letter": "B", "text": "Radian"}, {"letter": "C", "text": "Grade"}, {"letter": "D", "text": "Turn"}], "correct": "B"},
+    {"question": "What centered at origin?", "choices": [{"letter": "A", "text": "Parabola"}, {"letter": "B", "text": "Unit circle"}, {"letter": "C", "text": "Line"}, {"letter": "D", "text": "Hyperbola"}], "correct": "B"},
+    {"question": "What is y on unit circle?", "choices": [{"letter": "A", "text": "cos"}, {"letter": "B", "text": "sin"}, {"letter": "C", "text": "tan"}, {"letter": "D", "text": "sec"}], "correct": "B"},
+    {"question": "What is x on unit circle?", "choices": [{"letter": "A", "text": "sin"}, {"letter": "B", "text": "cos"}, {"letter": "C", "text": "tan"}, {"letter": "D", "text": "csc"}], "correct": "B"},
+    {"question": "What is sin divided by cos?", "choices": [{"letter": "A", "text": "sec"}, {"letter": "B", "text": "tan"}, {"letter": "C", "text": "csc"}, {"letter": "D", "text": "cot"}], "correct": "B"},
+    {"question": "What unit uses π?", "choices": [{"letter": "A", "text": "Degree"}, {"letter": "B", "text": "Radian"}, {"letter": "C", "text": "Grade"}, {"letter": "D", "text": "Percent"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "The _____ circle has radius 1.", "expectedAny": ["unit"]},
+    {"question": "_____ function is y-coordinate.", "expectedAny": ["sine", "Sine"]},
+    {"question": "_____ function is x-coordinate.", "expectedAny": ["cosine", "Cosine"]},
+    {"question": "_____ equals sin/cos.", "expectedAny": ["tangent", "Tangent"]},
+    {"question": "A _____ has 2π = 360.", "expectedAny": ["radian"]},
+    {"question": "Unit circle centered at _____.", "expectedAny": ["origin"]},
+    {"question": "_____ is y on circle.", "expectedAny": ["sin", "sine"]},
+    {"question": "_____ is x on circle.", "expectedAny": ["cos", "cosine"]},
+    {"question": "tan = _____ / cos.", "expectedAny": ["sin"]},
+    {"question": "π _____ equal 180.", "expectedAny": ["radians"]}
+  ],
+  "shortanswer": [
+    {"question": "What is unit circle?", "keyTerms": ["circle", "radius", "1", "centered", "origin"], "expectedAny": ["Circle with radius 1 centered at the origin", "Radius 1 at origin", "Standard circle"]},
+    {"question": "What is sine function?", "keyTerms": ["trigonometric", "function", "y-coordinate", "unit circle"], "expectedAny": ["Trigonometric function representing y-coordinate on unit circle", "y-coordinate function", "vertical coordinate"]},
+    {"question": "What is cosine function?", "keyTerms": ["trigonometric", "function", "x-coordinate", "unit circle"], "expectedAny": ["Trigonometric function representing x-coordinate on unit circle", "x-coordinate function", "horizontal coordinate"]},
+    {"question": "What is tangent function?", "keyTerms": ["trigonometric", "function", "sine", "divided", "cosine"], "expectedAny": ["Trigonometric function equal to sine divided by cosine", "sin/cos", "ratio of sin to cos"]},
+    {"question": "What is a radian?", "keyTerms": ["unit", "angle", "measurement", "2π", "360"], "expectedAny": ["Unit of angle measurement where 2π radians equals 360", "Circular angle unit", "π-based measure"]},
+    {"question": "What are coordinates at π/2?", "keyTerms": ["0", "1", "coordinates"], "expectedAny": ["(0, 1)", "zero comma one", "x=0 y=1"]},
+    {"question": "What are coordinates at π?", "keyTerms": ["-1", "0"], "expectedAny": ["(-1, 0)", "negative one comma zero", "x=-1 y=0"]},
+    {"question": "What is sin(0)?", "keyTerms": ["0", "zero"], "expectedAny": ["0", "zero", "sine of zero is zero"]},
+    {"question": "What is cos(0)?", "keyTerms": ["1", "one"], "expectedAny": ["1", "one", "cosine of zero is one"]},
+    {"question": "Convert 180 to radians", "keyTerms": ["π", "pi"], "expectedAny": ["π", "pi", "π radians"]}
+  ],
+  "wordProblems": [
+    {"question": "Convert 45 to radians", "keyTerms": ["π/4", "pi over 4"], "expectedAny": ["π/4", "pi over 4", "45π/180"]},
+    {"question": "Convert π/3 to degrees", "keyTerms": ["60", "degrees"], "expectedAny": ["60", "60 degrees", "sixty degrees"]},
+    {"question": "On unit circle, point at 0. What are coordinates?", "keyTerms": ["1", "0"], "expectedAny": ["(1, 0)", "one comma zero", "x=1 y=0"]},
+    {"question": "What is sin(π/6)?", "keyTerms": ["1/2", "0.5", "half"], "expectedAny": ["1/2", "0.5", "one half"]},
+    {"question": "What is cos(π/3)?", "keyTerms": ["1/2", "0.5", "half"], "expectedAny": ["1/2", "0.5", "one half"]},
+    {"question": "What is tan(π/4)?", "keyTerms": ["1", "one"], "expectedAny": ["1", "one", "tan 45 is 1"]},
+    {"question": "If sin(θ) = 1, what is θ in radians?", "keyTerms": ["π/2", "pi over 2"], "expectedAny": ["π/2", "pi over 2", "90 degrees"]},
+    {"question": "If cos(θ) = 0, what is smallest positive θ?", "keyTerms": ["π/2", "pi over 2"], "expectedAny": ["π/2", "pi over 2", "90 degrees"]},
+    {"question": "Ferris wheel rotates π/6 radians. How many degrees?", "keyTerms": ["30", "degrees"], "expectedAny": ["30", "30 degrees", "thirty degrees"]},
+    {"question": "Circle has circumference 2π. What is radius?", "keyTerms": ["1", "one", "unit"], "expectedAny": ["1", "one", "radius is 1"]}
+  ]
 }

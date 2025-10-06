@@ -1,74 +1,485 @@
-{
-  "id": "11th_Quantum_Mechanics_Atomic_Structure_Advanced",
-  "title": "Quantum Mechanics and Atomic Structure",
-  "grade": "11th",
-  "difficulty": "Advanced",
-  "vocab": [
-    {
-      "term": "wave function collapse",
-      "definition": "Reduction of quantum superposition to definite state upon measurement"
-    },
-    {
-      "term": "quantum superposition",
-      "definition": "Principle that particles exist in multiple states simultaneously"
-    },
-    {
-      "term": "quantum entanglement",
-      "definition": "Phenomenon where particles remain correlated regardless of distance"
-    },
-    {
-      "term": "Hamiltonian operator",
-      "definition": "Mathematical operator representing total energy in quantum systems"
-    },
-    {
-      "term": "eigenvalue",
-      "definition": "Specific measurable value of quantum mechanical observable"
-    }
-  ],
-  "teachingNotes": "Explore advanced quantum concepts and their philosophical implications. Discuss applications in quantum technology.",
-  "sample": {
-    "question": "What happens when quantum superposition reduces to a definite state?",
-    "expectedAny": [
-      "wave function collapse",
-      "quantum collapse",
-      "state reduction",
-      "measurement collapse"
-    ]
-  },
-  "truefalse": {
-    "question": "Quantum entanglement allows particles to remain correlated over any distance.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What represents total energy in quantum systems?",
-    "expectedAny": [
-      "Hamiltonian operator",
-      "energy operator",
-      "total energy operator",
-      "quantum Hamiltonian"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Particles existing in multiple states simultaneously demonstrates quantum ________.",
-    "expectedAny": [
-      "superposition",
-      "superposition principle",
-      "multiple states",
-      "quantum superposition"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are the implications of quantum entanglement for information transfer?",
-    "expectedAny": [
-      "instantaneous correlation",
-      "quantum communication",
-      "non-local effects",
-      "quantum information"
-    ]
-  }
+﻿{
+    "id":  "11th_Quantum_Mechanics_Atomic_Structure_Advanced",
+    "title":  "Quantum Mechanics and Atomic Structure",
+    "grade":  "11th",
+    "difficulty":  "Advanced",
+    "vocab":  [
+                  {
+                      "term":  "wave function collapse",
+                      "definition":  "Reduction of quantum superposition to definite state upon measurement"
+                  },
+                  {
+                      "term":  "quantum superposition",
+                      "definition":  "Principle that particles exist in multiple states simultaneously"
+                  },
+                  {
+                      "term":  "quantum entanglement",
+                      "definition":  "Phenomenon where particles remain correlated regardless of distance"
+                  },
+                  {
+                      "term":  "Hamiltonian operator",
+                      "definition":  "Mathematical operator representing total energy in quantum systems"
+                  },
+                  {
+                      "term":  "eigenvalue",
+                      "definition":  "Specific measurable value of quantum mechanical observable"
+                  }
+              ],
+    "teachingNotes":  "Explore advanced quantum concepts and their philosophical implications. Discuss applications in quantum technology.",
+    "sample":  [
+                   {
+                       "question":  "What happens when superposition reduces to definite state?",
+                       "expectedAny":  [
+                                           "wave function collapse",
+                                           "quantum collapse",
+                                           "state reduction",
+                                           "measurement collapse",
+                                           "collapse",
+                                           "state collapse"
+                                       ]
+                   },
+                   {
+                       "question":  "What principle allows multiple simultaneous states?",
+                       "expectedAny":  [
+                                           "quantum superposition",
+                                           "superposition",
+                                           "superposition principle",
+                                           "multiple states",
+                                           "simultaneous states",
+                                           "state superposition"
+                                       ]
+                   },
+                   {
+                       "question":  "What correlates particles over any distance?",
+                       "expectedAny":  [
+                                           "quantum entanglement",
+                                           "entanglement",
+                                           "quantum correlation",
+                                           "nonlocal correlation",
+                                           "entangled states",
+                                           "quantum connection"
+                                       ]
+                   },
+                   {
+                       "question":  "What operator represents total energy?",
+                       "expectedAny":  [
+                                           "Hamiltonian operator",
+                                           "Hamiltonian",
+                                           "energy operator",
+                                           "H operator"
+                                       ]
+                   },
+                   {
+                       "question":  "What is a measurable quantum value?",
+                       "expectedAny":  [
+                                           "eigenvalue",
+                                           "observable value",
+                                           "measurement value",
+                                           "quantum eigenvalue"
+                                       ]
+                   },
+                   {
+                       "question":  "What occurs upon quantum measurement?",
+                       "expectedAny":  [
+                                           "wave function collapse",
+                                           "collapse",
+                                           "superposition collapse",
+                                           "state determination"
+                                       ]
+                   },
+                   {
+                       "question":  "What allows Schrodinger\u0027s cat paradox?",
+                       "expectedAny":  [
+                                           "quantum superposition",
+                                           "superposition",
+                                           "multiple states",
+                                           "quantum states"
+                                       ]
+                   },
+                   {
+                       "question":  "What Einstein called spooky action?",
+                       "expectedAny":  [
+                                           "quantum entanglement",
+                                           "entanglement",
+                                           "spooky action at distance",
+                                           "nonlocal effects"
+                                       ]
+                   },
+                   {
+                       "question":  "What describes system energy mathematically?",
+                       "expectedAny":  [
+                                           "Hamiltonian operator",
+                                           "Hamiltonian",
+                                           "energy function",
+                                           "H"
+                                       ]
+                   },
+                   {
+                       "question":  "What results from applying operator to eigenstate?",
+                       "expectedAny":  [
+                                           "eigenvalue",
+                                           "measured value",
+                                           "observable",
+                                           "quantum measurement"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Quantum entanglement allows instant correlation over any distance.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Wave function collapse is reversible.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Superposition means particle is in all states at once.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Measurement does not affect quantum systems.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Eigenvalues are the possible measurement outcomes.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Quantum mechanics is fully deterministic.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Entangled particles share quantum state.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Hamiltonian operator is always time-dependent.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Superposition collapses upon observation.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "All quantum states are eigenstates.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What represents total energy in quantum systems?",
+                               "choices":  [
+                                               "Wave function",
+                                               "Hamiltonian operator",
+                                               "Eigenvalue",
+                                               "Superposition"
+                                           ],
+                               "correct":  "Hamiltonian operator"
+                           },
+                           {
+                               "question":  "What reduces superposition to single state?",
+                               "choices":  [
+                                               "Entanglement",
+                                               "Collapse",
+                                               "Interference",
+                                               "Tunneling"
+                                           ],
+                               "correct":  "Collapse"
+                           },
+                           {
+                               "question":  "What allows particles to be correlated instantly?",
+                               "choices":  [
+                                               "Superposition",
+                                               "Entanglement",
+                                               "Collapse",
+                                               "Uncertainty"
+                                           ],
+                               "correct":  "Entanglement"
+                           },
+                           {
+                               "question":  "What are possible measurement results?",
+                               "choices":  [
+                                               "Wavefunctions",
+                                               "Eigenvalues",
+                                               "Operators",
+                                               "Superpositions"
+                                           ],
+                               "correct":  "Eigenvalues"
+                           },
+                           {
+                               "question":  "What did Einstein question about entanglement?",
+                               "choices":  [
+                                               "Energy",
+                                               "Locality",
+                                               "Time",
+                                               "Mass"
+                                           ],
+                               "correct":  "Locality"
+                           },
+                           {
+                               "question":  "What equation uses Hamiltonian?",
+                               "choices":  [
+                                               "Einstein",
+                                               "Newton",
+                                               "Schrodinger",
+                                               "Maxwell"
+                                           ],
+                               "correct":  "Schrodinger"
+                           },
+                           {
+                               "question":  "What state can particle be in before measurement?",
+                               "choices":  [
+                                               "Single definite",
+                                               "Collapsed",
+                                               "Superposition",
+                                               "Classical"
+                                           ],
+                               "correct":  "Superposition"
+                           },
+                           {
+                               "question":  "What is NOT affected by measurement?",
+                               "choices":  [
+                                               "Wave function",
+                                               "Superposition",
+                                               "Eigenvalue",
+                                               "State"
+                                           ],
+                               "correct":  "Eigenvalue"
+                           },
+                           {
+                               "question":  "What phenomenon challenges classical locality?",
+                               "choices":  [
+                                               "Interference",
+                                               "Tunneling",
+                                               "Entanglement",
+                                               "Decay"
+                                           ],
+                               "correct":  "Entanglement"
+                           },
+                           {
+                               "question":  "What determines allowed energy values?",
+                               "choices":  [
+                                               "Mass",
+                                               "Charge",
+                                               "Hamiltonian",
+                                               "Momentum"
+                                           ],
+                               "correct":  "Hamiltonian"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "Particles in multiple states show quantum _____.",
+                               "expectedAny":  [
+                                                   "superposition",
+                                                   "superposition principle",
+                                                   "multiple states"
+                                               ]
+                           },
+                           {
+                               "question":  "Wave function _____ occurs upon measurement.",
+                               "expectedAny":  [
+                                                   "collapse",
+                                                   "collapses",
+                                                   "reduction"
+                                               ]
+                           },
+                           {
+                               "question":  "Quantum _____ correlates distant particles.",
+                               "expectedAny":  [
+                                                   "entanglement",
+                                                   "correlation",
+                                                   "nonlocality"
+                                               ]
+                           },
+                           {
+                               "question":  "The _____ operator represents total energy.",
+                               "expectedAny":  [
+                                                   "Hamiltonian",
+                                                   "energy",
+                                                   "H"
+                                               ]
+                           },
+                           {
+                               "question":  "Measurement yields an _____.",
+                               "expectedAny":  [
+                                                   "eigenvalue",
+                                                   "observable",
+                                                   "value"
+                                               ]
+                           },
+                           {
+                               "question":  "Before measurement, particles exist in _____.",
+                               "expectedAny":  [
+                                                   "superposition",
+                                                   "multiple states",
+                                                   "quantum state"
+                                               ]
+                           },
+                           {
+                               "question":  "Einstein called entanglement _____ action at a distance.",
+                               "expectedAny":  [
+                                                   "spooky",
+                                                   "spooky action",
+                                                   "instantaneous"
+                                               ]
+                           },
+                           {
+                               "question":  "Eigenstates have definite _____.",
+                               "expectedAny":  [
+                                                   "eigenvalues",
+                                                   "values",
+                                                   "measurements"
+                                               ]
+                           },
+                           {
+                               "question":  "The _____ equation uses the Hamiltonian operator.",
+                               "expectedAny":  [
+                                                   "Schrodinger",
+                                                   "Schrodinger\u0027s",
+                                                   "quantum"
+                                               ]
+                           },
+                           {
+                               "question":  "Superposition _____ when observed.",
+                               "expectedAny":  [
+                                                   "collapses",
+                                                   "ends",
+                                                   "reduces"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "Explain wave function collapse.",
+                            "expectedAny":  [
+                                                "reduction of quantum superposition to definite state upon measurement",
+                                                "when measurement forces system into single eigenstate",
+                                                "transition from probability to certainty when observed"
+                                            ]
+                        },
+                        {
+                            "question":  "What is quantum superposition?",
+                            "expectedAny":  [
+                                                "principle that particles exist in multiple states simultaneously until measured",
+                                                "system being in all possible states at once",
+                                                "linear combination of quantum states"
+                                            ]
+                        },
+                        {
+                            "question":  "Describe quantum entanglement.",
+                            "expectedAny":  [
+                                                "phenomenon where particles remain correlated regardless of distance",
+                                                "quantum correlation between separated particles",
+                                                "when measuring one instantly affects the other"
+                                            ]
+                        },
+                        {
+                            "question":  "What is the Hamiltonian operator?",
+                            "expectedAny":  [
+                                                "mathematical operator representing total energy in quantum systems",
+                                                "operator in Schrodinger equation describing energy",
+                                                "sum of kinetic and potential energy operators"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain eigenvalues in quantum mechanics.",
+                            "expectedAny":  [
+                                                "specific measurable values of quantum observables",
+                                                "possible outcomes when measuring a quantum property",
+                                                "values you get when operator acts on eigenstate"
+                                            ]
+                        },
+                        {
+                            "question":  "What are the implications of quantum entanglement?",
+                            "expectedAny":  [
+                                                "challenges classical locality allows quantum communication",
+                                                "instantaneous correlation over any distance",
+                                                "basis for quantum computing and cryptography"
+                                            ]
+                        },
+                        {
+                            "question":  "Why is measurement important in quantum mechanics?",
+                            "expectedAny":  [
+                                                "causes wave function collapse determines definite state",
+                                                "transitions system from superposition to single outcome",
+                                                "fundamentally affects the quantum system"
+                                            ]
+                        },
+                        {
+                            "question":  "How does superposition differ from classical uncertainty?",
+                            "expectedAny":  [
+                                                "particle actually in all states not just unknown",
+                                                "ontological not epistemic uncertainty",
+                                                "states interfere quantum mechanically"
+                                            ]
+                        },
+                        {
+                            "question":  "What is the measurement problem?",
+                            "expectedAny":  [
+                                                "why and how does collapse occur",
+                                                "transition from quantum to classical behavior",
+                                                "what constitutes a measurement"
+                                            ]
+                        },
+                        {
+                            "question":  "How does Hamiltonian relate to Schrodinger equation?",
+                            "expectedAny":  [
+                                                "Hamiltonian operator appears in time evolution equation",
+                                                "describes how quantum state changes over time",
+                                                "H operating on wavefunction gives energy times wavefunction"
+                                            ]
+                        }
+                    ]
 }

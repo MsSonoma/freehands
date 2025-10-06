@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Explain why the Articles failed and how this led to the Constitutional Convention. Compare to later constitution.",
-  "sample": {
-    "question": "What was America's first constitution?",
-    "expectedAny": [
-      "Articles of Confederation",
-      "first constitution",
-      "original constitution",
-      "confederation articles"
-    ]
-  },
-  "truefalse": {
-    "question": "The Articles of Confederation created a strong central government.",
-    "expectedAny": [
-      "false",
-      "no",
-      "f",
-      "incorrect"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What event showed the weakness of the Articles?",
-    "expectedAny": [
-      "Shays' Rebellion",
-      "farmers' revolt",
-      "Massachusetts uprising",
-      "debt rebellion"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A loose alliance of independent states is called a ________.",
-    "expectedAny": [
-      "confederation",
-      "alliance",
-      "league",
-      "union"
-    ]
-  },
-  "shortanswer": {
-    "question": "What was the main weakness of the Articles of Confederation?",
-    "expectedAny": [
-      "weak central government",
-      "couldn't tax or enforce laws",
-      "no power to govern effectively"
-    ]
-  }
+  "sample": [
+    { "question": "What was America's first constitution?", "expectedAny": ["Articles of Confederation", "first government document", "original constitution"] },
+    { "question": "What is loose alliance?", "choices": ["Strong union", "Confederation", "Dictatorship", "Monarchy"], "correct": 1, "expectedAny": ["confederation"] },
+    { "question": "Central government of nation is ________.", "expectedAny": ["federal government"] },
+    { "question": "Farmers' revolt was ________.", "expectedAny": ["Shays' Rebellion"] },
+    { "question": "Meeting to revise Articles was ________.", "expectedAny": ["Constitutional Convention"] },
+    { "question": "What was first constitution?", "choices": ["Constitution", "Articles of Confederation", "Bill of Rights", "Declaration"], "correct": 1, "expectedAny": ["Articles of Confederation"] },
+    { "question": "Independent states alliance is ________.", "expectedAny": ["confederation"] },
+    { "question": "What is central government?", "choices": ["State", "Federal government", "Local", "County"], "correct": 1, "expectedAny": ["federal government"] },
+    { "question": "Revolt showing weakness was ________.", "expectedAny": ["Shays' Rebellion"] },
+    { "question": "Revision meeting was ________.", "expectedAny": ["Constitutional Convention"] }
+  ],
+  "truefalse": [
+    { "question": "The Articles of Confederation created a strong central government.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Articles were first constitution.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Confederation is loose alliance.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Federal government is weak.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Shays' Rebellion showed weakness.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Constitutional Convention supported Articles.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Articles created weak government.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Confederation is strong union.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Federal government is central.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Articles worked well.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What event showed the weakness of the Articles?", "choices": ["Revolution", "Shays' Rebellion", "Tea Party", "Independence"], "correct": 1, "expectedAny": ["Shays' Rebellion"] },
+    { "question": "What was first constitution?", "choices": ["Constitution", "Articles of Confederation", "Bill of Rights", "Declaration"], "correct": 1, "expectedAny": ["Articles of Confederation"] },
+    { "question": "What is loose alliance?", "choices": ["Strong union", "Confederation", "Dictatorship", "Monarchy"], "correct": 1, "expectedAny": ["confederation"] },
+    { "question": "What is central government?", "choices": ["State", "Federal government", "Local", "County"], "correct": 1, "expectedAny": ["federal government"] },
+    { "question": "What was revision meeting?", "choices": ["Tea Party", "Constitutional Convention", "Revolution", "Independence"], "correct": 1, "expectedAny": ["Constitutional Convention"] },
+    { "question": "Farmers' revolt was?", "choices": ["Revolution", "Shays' Rebellion", "Tea Party", "War"], "correct": 1, "expectedAny": ["Shays' Rebellion"] },
+    { "question": "Original constitution was?", "choices": ["Current one", "Articles of Confederation", "Bill", "Amendment"], "correct": 1, "expectedAny": ["Articles of Confederation"] },
+    { "question": "Independent states form?", "choices": ["Strong union", "Confederation", "Empire", "Kingdom"], "correct": 1, "expectedAny": ["confederation"] },
+    { "question": "Nation government is?", "choices": ["State", "Federal", "Local", "Town"], "correct": 1, "expectedAny": ["federal"] },
+    { "question": "Meeting for new constitution was?", "choices": ["Party", "Constitutional Convention", "Rally", "Protest"], "correct": 1, "expectedAny": ["Constitutional Convention"] }
+  ],
+  "fillintheblank": [
+    { "question": "A loose alliance of independent states is called a ________.", "expectedAny": ["confederation"] },
+    { "question": "________ of Confederation was first constitution.", "expectedAny": ["Articles"] },
+    { "question": "________ government is central government.", "expectedAny": ["federal"] },
+    { "question": "________' Rebellion showed weakness.", "expectedAny": ["Shays"] },
+    { "question": "________ Convention revised Articles.", "expectedAny": ["Constitutional"] },
+    { "question": "Articles of ________ was first.", "expectedAny": ["Confederation"] },
+    { "question": "A ________ is loose alliance.", "expectedAny": ["confederation"] },
+    { "question": "Federal ________ is central.", "expectedAny": ["government"] },
+    { "question": "Shays' ________ was revolt.", "expectedAny": ["Rebellion"] },
+    { "question": "Constitutional ________ met.", "expectedAny": ["Convention"] }
+  ],
+  "shortanswer": [
+    { "question": "What was the main weakness of the Articles of Confederation?", "expectedAny": ["weak central government", "couldn't tax or enforce laws"] },
+    { "question": "What are Articles of Confederation?", "expectedAny": ["America's first constitution", "weak central government document"] },
+    { "question": "What is confederation?", "expectedAny": ["loose alliance of independent states", "weak union"] },
+    { "question": "What is federal government?", "expectedAny": ["central government of nation", "national government"] },
+    { "question": "What is Shays' Rebellion?", "expectedAny": ["farmers' revolt showing Articles weakness", "uprising"] },
+    { "question": "What is Constitutional Convention?", "expectedAny": ["meeting held to revise Articles", "convention for new constitution"] },
+    { "question": "Why Articles fail?", "expectedAny": ["too weak", "couldn't govern effectively"] },
+    { "question": "What Shays' Rebellion show?", "expectedAny": ["Articles too weak", "need stronger government"] },
+    { "question": "Why need Constitutional Convention?", "expectedAny": ["Articles failed", "need new government"] },
+    { "question": "Difference Articles and Constitution?", "expectedAny": ["Articles weak, Constitution stronger", "power difference"] }
+  ]
 }

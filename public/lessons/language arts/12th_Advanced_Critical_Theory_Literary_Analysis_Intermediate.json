@@ -1,74 +1,459 @@
-{
-  "id": "12th_Advanced_Critical_Theory_Literary_Analysis_Intermediate",
-  "title": "Advanced Critical Theory and Literary Analysis",
-  "grade": "12th",
-  "difficulty": "Intermediate",
-  "vocab": [
-    {
-      "term": "deconstruction",
-      "definition": "Critical approach revealing contradictions and instability in texts"
-    },
-    {
-      "term": "psychoanalytic criticism",
-      "definition": "Analysis using psychological theories to interpret literature"
-    },
-    {
-      "term": "intertextuality",
-      "definition": "Relationship between texts through references and influences"
-    },
-    {
-      "term": "marxist criticism",
-      "definition": "Analysis examining class struggle and economic forces in literature"
-    },
-    {
-      "term": "binary opposition",
-      "definition": "Contrasting pairs of concepts that structure meaning"
-    }
-  ],
-  "teachingNotes": "Explore complex theoretical approaches. Analyze how different theories reveal different meanings in same text.",
-  "sample": {
-    "question": "What critical approach reveals contradictions in texts?",
-    "expectedAny": [
-      "deconstruction",
-      "deconstructive criticism",
-      "poststructuralism",
-      "textual deconstruction"
-    ]
-  },
-  "truefalse": {
-    "question": "Intertextuality describes relationship between texts through references.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What criticism examines class struggle and economic forces?",
-    "expectedAny": [
-      "marxist criticism",
-      "marxist analysis",
-      "economic criticism",
-      "class-based analysis"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Contrasting pairs structuring meaning are ________ oppositions.",
-    "expectedAny": [
-      "binary",
-      "polar",
-      "opposing",
-      "dualistic"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does psychoanalytic criticism interpret character behavior?",
-    "expectedAny": [
-      "unconscious desires",
-      "psychological motives",
-      "repressed conflicts",
-      "mental processes"
-    ]
-  }
+﻿{
+    "id":  "12th_Advanced_Critical_Theory_Literary_Analysis_Intermediate",
+    "title":  "Advanced Critical Theory and Literary Analysis",
+    "grade":  "12th",
+    "difficulty":  "Intermediate",
+    "vocab":  [
+                  {
+                      "term":  "postcolonial theory",
+                      "definition":  "Analysis of colonialism effects on literature"
+                  },
+                  {
+                      "term":  "feminist criticism",
+                      "definition":  "Examining gender representation in texts"
+                  },
+                  {
+                      "term":  "Marxist criticism",
+                      "definition":  "Analyzing class and economic structures in literature"
+                  },
+                  {
+                      "term":  "psychoanalytic criticism",
+                      "definition":  "Applying psychology to literary analysis"
+                  },
+                  {
+                      "term":  "New Historicism",
+                      "definition":  "Examining texts in historical and cultural context"
+                  }
+              ],
+    "teachingNotes":  "Explore advanced theoretical frameworks for analyzing literature. Apply critical lenses to diverse texts.",
+    "sample":  [
+                   {
+                       "question":  "What examines power structures?",
+                       "expectedAny":  [
+                                           "critical theory",
+                                           "critical analysis",
+                                           "power analysis",
+                                           "examining power",
+                                           "structural criticism",
+                                           "ideology critique"
+                                       ]
+                   },
+                   {
+                       "question":  "What studies literature?",
+                       "expectedAny":  [
+                                           "literary criticism",
+                                           "criticism",
+                                           "lit criticism",
+                                           "evaluating literature",
+                                           "literary evaluation",
+                                           "analyzing texts"
+                                       ]
+                   },
+                   {
+                       "question":  "What is close examination?",
+                       "expectedAny":  [
+                                           "textual analysis",
+                                           "analysis",
+                                           "close reading",
+                                           "text examination",
+                                           "analyzing text",
+                                           "text study"
+                                       ]
+                   },
+                   {
+                       "question":  "What explains meaning?",
+                       "expectedAny":  [
+                                           "interpretation",
+                                           "explanation",
+                                           "meaning making",
+                                           "explaining texts",
+                                           "finding meaning",
+                                           "analyzing meaning"
+                                       ]
+                   },
+                   {
+                       "question":  "What conveys meaning?",
+                       "expectedAny":  [
+                                           "literary device",
+                                           "device",
+                                           "technique",
+                                           "writing device",
+                                           "literary technique",
+                                           "stylistic device"
+                                       ]
+                   },
+                   {
+                       "question":  "What analyzes colonialism effects?",
+                       "expectedAny":  [
+                                           "postcolonial theory",
+                                           "postcolonialism"
+                                       ]
+                   },
+                   {
+                       "question":  "What examines gender?",
+                       "expectedAny":  [
+                                           "feminist criticism",
+                                           "feminism"
+                                       ]
+                   },
+                   {
+                       "question":  "What analyzes class?",
+                       "expectedAny":  [
+                                           "Marxist criticism",
+                                           "Marxism"
+                                       ]
+                   },
+                   {
+                       "question":  "What applies psychology?",
+                       "expectedAny":  [
+                                           "psychoanalytic criticism",
+                                           "psychoanalysis"
+                                       ]
+                   },
+                   {
+                       "question":  "What examines historical context?",
+                       "expectedAny":  [
+                                           "New Historicism",
+                                           "historicism"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Critical theory examines power.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Literary criticism ignores literature.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Textual analysis requires close reading.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Interpretation has one correct answer.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Literary devices convey meaning.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Postcolonial theory examines colonialism.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Feminist criticism ignores gender.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Marxist criticism analyzes class.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "New Historicism ignores context.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Psychoanalytic criticism uses psychology.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What examines power structures?",
+                               "choices":  [
+                                               "Grammar",
+                                               "Critical theory",
+                                               "Spelling",
+                                               "Vocabulary"
+                                           ],
+                               "correct":  "Critical theory"
+                           },
+                           {
+                               "question":  "What evaluates literature?",
+                               "choices":  [
+                                               "Math",
+                                               "Science",
+                                               "Literary criticism",
+                                               "History"
+                                           ],
+                               "correct":  "Literary criticism"
+                           },
+                           {
+                               "question":  "What is close reading?",
+                               "choices":  [
+                                               "Skimming",
+                                               "Textual analysis",
+                                               "Ignoring",
+                                               "Forgetting"
+                                           ],
+                               "correct":  "Textual analysis"
+                           },
+                           {
+                               "question":  "What explains meaning?",
+                               "choices":  [
+                                               "Memorization",
+                                               "Copying",
+                                               "Interpretation",
+                                               "Deletion"
+                                           ],
+                               "correct":  "Interpretation"
+                           },
+                           {
+                               "question":  "What are metaphors?",
+                               "choices":  [
+                                               "Math formulas",
+                                               "Literary devices",
+                                               "Chemical compounds",
+                                               "Historical dates"
+                                           ],
+                               "correct":  "Literary devices"
+                           },
+                           {
+                               "question":  "What analyzes colonialism?",
+                               "choices":  [
+                                               "Grammar theory",
+                                               "Postcolonial theory",
+                                               "Spelling rules",
+                                               "Math theory"
+                                           ],
+                               "correct":  "Postcolonial theory"
+                           },
+                           {
+                               "question":  "What examines gender representation?",
+                               "choices":  [
+                                               "Marxist",
+                                               "Feminist",
+                                               "Formalist",
+                                               "Structuralist"
+                                           ],
+                               "correct":  "Feminist"
+                           },
+                           {
+                               "question":  "What analyzes class structures?",
+                               "choices":  [
+                                               "Feminist",
+                                               "Psychoanalytic",
+                                               "Marxist",
+                                               "Formalist"
+                                           ],
+                               "correct":  "Marxist"
+                           },
+                           {
+                               "question":  "What uses Freud?",
+                               "choices":  [
+                                               "Marxist",
+                                               "Feminist",
+                                               "Psychoanalytic",
+                                               "Formalist"
+                                           ],
+                               "correct":  "Psychoanalytic"
+                           },
+                           {
+                               "question":  "What examines historical context?",
+                               "choices":  [
+                                               "Formalism",
+                                               "New Criticism",
+                                               "New Historicism",
+                                               "Structuralism"
+                                           ],
+                               "correct":  "New Historicism"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "_____ theory examines power structures.",
+                               "expectedAny":  [
+                                                   "critical",
+                                                   "Critical"
+                                               ]
+                           },
+                           {
+                               "question":  "Literary _____ evaluates literature.",
+                               "expectedAny":  [
+                                                   "criticism",
+                                                   "analysis"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ analysis requires close reading.",
+                               "expectedAny":  [
+                                                   "textual",
+                                                   "text"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ explains literary meaning.",
+                               "expectedAny":  [
+                                                   "interpretation",
+                                                   "analysis"
+                                               ]
+                           },
+                           {
+                               "question":  "Literary _____ convey meaning.",
+                               "expectedAny":  [
+                                                   "devices",
+                                                   "techniques"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ theory analyzes colonialism.",
+                               "expectedAny":  [
+                                                   "postcolonial",
+                                                   "Postcolonial"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ criticism examines gender.",
+                               "expectedAny":  [
+                                                   "feminist",
+                                                   "Feminist"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ criticism analyzes class.",
+                               "expectedAny":  [
+                                                   "Marxist",
+                                                   "Marxist"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ criticism applies psychology.",
+                               "expectedAny":  [
+                                                   "psychoanalytic",
+                                                   "Psychoanalytic"
+                                               ]
+                           },
+                           {
+                               "question":  "New _____ examines historical context.",
+                               "expectedAny":  [
+                                                   "Historicism",
+                                                   "historicism"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "What is critical theory?",
+                            "expectedAny":  [
+                                                "analysis examining power structures in texts",
+                                                "framework for questioning assumptions",
+                                                "challenges dominant ideologies"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain literary criticism.",
+                            "expectedAny":  [
+                                                "study and evaluation of literature",
+                                                "applying theoretical frameworks to texts",
+                                                "interpretive practice"
+                                            ]
+                        },
+                        {
+                            "question":  "What is textual analysis?",
+                            "expectedAny":  [
+                                                "close examination of written work",
+                                                "analyzing language structure and meaning",
+                                                "detailed reading practice"
+                                            ]
+                        },
+                        {
+                            "question":  "Describe interpretation.",
+                            "expectedAny":  [
+                                                "explaining meaning of literary work",
+                                                "constructing understanding from text",
+                                                "subjective yet grounded reading"
+                                            ]
+                        },
+                        {
+                            "question":  "What are literary devices?",
+                            "expectedAny":  [
+                                                "techniques used to convey meaning",
+                                                "tools like metaphor simile symbolism",
+                                                "craft elements enhancing expression"
+                                            ]
+                        },
+                        {
+                            "question":  "What is postcolonial theory?",
+                            "expectedAny":  [
+                                                "analysis of colonialism effects on literature",
+                                                "examining representation of colonized peoples",
+                                                "challenging Eurocentrism"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain feminist criticism.",
+                            "expectedAny":  [
+                                                "examining gender representation in texts",
+                                                "analyzing patriarchal structures",
+                                                "questioning gender assumptions"
+                                            ]
+                        },
+                        {
+                            "question":  "What is Marxist criticism?",
+                            "expectedAny":  [
+                                                "analyzing class and economic structures",
+                                                "examining material conditions in literature",
+                                                "critiquing capitalism"
+                                            ]
+                        },
+                        {
+                            "question":  "Describe psychoanalytic criticism.",
+                            "expectedAny":  [
+                                                "applying psychology to literary analysis",
+                                                "examining unconscious motivations",
+                                                "using Freud Jung concepts"
+                                            ]
+                        },
+                        {
+                            "question":  "What is New Historicism?",
+                            "expectedAny":  [
+                                                "examining texts in historical and cultural context",
+                                                "viewing literature as cultural product",
+                                                "relating text to power structures"
+                                            ]
+                        }
+                    ]
 }

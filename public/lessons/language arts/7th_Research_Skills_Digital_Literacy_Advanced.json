@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Emphasize the importance of evaluating sources for credibility. Teach proper citation formats and how to avoid plagiarism.",
-  "sample": {
-    "question": "What is an original document from the time period being studied?",
-    "expectedAny": [
-      "primary source",
-      "firsthand account",
-      "original document",
-      "contemporary source"
-    ]
-  },
-  "truefalse": {
-    "question": "Secondary sources analyze or interpret primary sources.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is using someone's ideas without giving credit?",
-    "expectedAny": [
-      "plagiarism",
-      "stealing ideas",
-      "academic dishonesty",
-      "copying"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Giving credit to sources is called ________.",
-    "expectedAny": [
-      "citation",
-      "citing",
-      "attribution",
-      "crediting"
-    ]
-  },
-  "shortanswer": {
-    "question": "How can you evaluate if an online source is credible?",
-    "expectedAny": [
-      "check author, publication date, website domain",
-      "look for expert authors and reliable sites",
-      "verify accuracy and authority"
-    ]
-  }
+  "sample": [
+    { "question": "What is an original document from the time period being studied?", "expectedAny": ["primary source"] },
+    { "question": "Which analyzes primary sources?", "choices": ["Primary source", "Secondary source", "Citation", "Plagiarism"], "correct": 1, "expectedAny": ["secondary source"] },
+    { "question": "Using ideas without credit is ________.", "expectedAny": ["plagiarism"] },
+    { "question": "Giving credit to sources is ________.", "expectedAny": ["citation"] },
+    { "question": "Using digital technologies effectively is ________.", "expectedAny": ["digital literacy"] },
+    { "question": "What is firsthand account?", "choices": ["Secondary source", "Primary source", "Citation", "Plagiarism"], "correct": 1, "expectedAny": ["primary source"] },
+    { "question": "Sources that interpret are ________.", "expectedAny": ["secondary sources"] },
+    { "question": "Stealing ideas is ________.", "expectedAny": ["plagiarism"] },
+    { "question": "Which gives credit?", "choices": ["Plagiarism", "Citation", "Copying", "Stealing"], "correct": 1, "expectedAny": ["citation"] },
+    { "question": "Evaluating online info is ________.", "expectedAny": ["digital literacy"] }
+  ],
+  "truefalse": [
+    { "question": "Secondary sources analyze or interpret primary sources.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Plagiarism is acceptable.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Primary sources are original documents.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Citation is unnecessary.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Digital literacy helps evaluate online information.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All online sources are credible.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Secondary sources interpret information.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Plagiarism gives proper credit.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Primary sources are firsthand accounts.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Digital literacy is unimportant.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is using someone's ideas without giving credit?", "choices": ["Citation", "Plagiarism", "Research", "Writing"], "correct": 1, "expectedAny": ["plagiarism"] },
+    { "question": "What is an original document?", "choices": ["Secondary source", "Primary source", "Citation", "Plagiarism"], "correct": 1, "expectedAny": ["primary source"] },
+    { "question": "What analyzes primary sources?", "choices": ["Primary source", "Secondary source", "Citation", "Plagiarism"], "correct": 1, "expectedAny": ["secondary source"] },
+    { "question": "What gives credit?", "choices": ["Plagiarism", "Citation", "Copying", "Stealing"], "correct": 1, "expectedAny": ["citation"] },
+    { "question": "What evaluates digital information?", "choices": ["Plagiarism", "Digital literacy", "Copying", "Guessing"], "correct": 1, "expectedAny": ["digital literacy"] },
+    { "question": "What is firsthand account?", "choices": ["Secondary", "Primary source", "Citation", "Copy"], "correct": 1, "expectedAny": ["primary source"] },
+    { "question": "What interprets sources?", "choices": ["Primary", "Secondary source", "Citation", "Copy"], "correct": 1, "expectedAny": ["secondary source"] },
+    { "question": "What is academic dishonesty?", "choices": ["Citation", "Research", "Plagiarism", "Writing"], "correct": 2, "expectedAny": ["plagiarism"] },
+    { "question": "What acknowledges sources?", "choices": ["Plagiarism", "Copying", "Citation", "Stealing"], "correct": 2, "expectedAny": ["citation"] },
+    { "question": "What uses digital technologies?", "choices": ["Plagiarism", "Citation", "Digital literacy", "Copying"], "correct": 2, "expectedAny": ["digital literacy"] }
+  ],
+  "fillintheblank": [
+    { "question": "Giving credit to sources is called ________.", "expectedAny": ["citation"] },
+    { "question": "An original document is a ________.", "expectedAny": ["primary source"] },
+    { "question": "Sources that analyze are ________.", "expectedAny": ["secondary sources"] },
+    { "question": "Using ideas without credit is ________.", "expectedAny": ["plagiarism"] },
+    { "question": "Evaluating online info is ________.", "expectedAny": ["digital literacy"] },
+    { "question": "A ________ is a firsthand account.", "expectedAny": ["primary source"] },
+    { "question": "A ________ interprets primary sources.", "expectedAny": ["secondary source"] },
+    { "question": "________ is stealing ideas.", "expectedAny": ["plagiarism"] },
+    { "question": "________ gives proper credit.", "expectedAny": ["citation"] },
+    { "question": "________ helps evaluate digital sources.", "expectedAny": ["digital literacy"] }
+  ],
+  "shortanswer": [
+    { "question": "How can you evaluate if an online source is credible?", "expectedAny": ["check author, publication date, website domain", "look for expert authors and reliable sites"] },
+    { "question": "What is a primary source?", "expectedAny": ["original document", "firsthand account", "original source", "direct source", "from the time"] },
+    { "question": "What is a secondary source?", "expectedAny": ["source that analyzes primary sources", "interprets information", "source about primary sources", "explains primary sources", "secondhand source"] },
+    { "question": "What is plagiarism?", "expectedAny": ["using ideas without credit", "stealing someone's work", "copying without credit", "taking someone's ideas", "not giving credit"] },
+    { "question": "What is citation?", "expectedAny": ["giving credit to sources", "acknowledging sources"] },
+    { "question": "What is digital literacy?", "expectedAny": ["using digital technologies effectively", "evaluating online information"] },
+    { "question": "Give an example of a primary source.", "expectedAny": ["diary", "original letter", "photograph from event"] },
+    { "question": "Give an example of a secondary source.", "expectedAny": ["textbook", "encyclopedia", "biography"] },
+    { "question": "Why is citation important?", "expectedAny": ["gives credit", "avoids plagiarism"] },
+    { "question": "How do you avoid plagiarism?", "expectedAny": ["cite sources", "give proper credit"] }
+  ]
 }

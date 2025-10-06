@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "9th_Poetry_Analysis_Figurative_Language_Beginner",
   "title": "Poetry Analysis: Figurative Language and Imagery",
   "grade": "9th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "figurative language",
-      "definition": "Language that uses figures of speech for effect, not literal meaning"
-    },
-    {
-      "term": "metaphor",
-      "definition": "Direct comparison between two unlike things without using 'like' or 'as'"
-    },
-    {
-      "term": "simile",
-      "definition": "Comparison using 'like' or 'as' to connect two unlike things"
-    },
-    {
-      "term": "imagery",
-      "definition": "Vivid descriptive language that appeals to the senses"
-    },
-    {
-      "term": "personification",
-      "definition": "Giving human characteristics to non-human things"
-    }
+    {"term": "figurative language", "definition": "Language that uses figures of speech for effect, not literal meaning"},
+    {"term": "metaphor", "definition": "Direct comparison between two unlike things without using like or as"},
+    {"term": "simile", "definition": "Comparison using like or as to connect two unlike things"},
+    {"term": "imagery", "definition": "Vivid descriptive language that appeals to the senses"},
+    {"term": "personification", "definition": "Giving human characteristics to non-human things"}
   ],
   "teachingNotes": "Use accessible poems to identify figurative language. Practice explaining how literary devices contribute to meaning and mood.",
-  "sample": {
-    "question": "What is language that uses figures of speech for effect?",
-    "expectedAny": [
-      "figurative language",
-      "non-literal language",
-      "literary language",
-      "poetic language"
-    ]
-  },
-  "truefalse": {
-    "question": "A simile uses 'like' or 'as' to make comparisons.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What gives human characteristics to non-human things?",
-    "expectedAny": [
-      "personification",
-      "humanization",
-      "anthropomorphism",
-      "human qualities"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Vivid descriptive language that appeals to senses is called ________.",
-    "expectedAny": [
-      "imagery",
-      "sensory language",
-      "descriptive language",
-      "vivid description"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does figurative language enhance poetry?",
-    "expectedAny": [
-      "creates vivid images",
-      "adds emotional impact",
-      "makes abstract concepts concrete"
-    ]
-  }
+  "sample": [
+    {"question": "What is figurative language?", "expectedAny": ["language that uses figures of speech", "non-literal language", "poetic language for effect"]},
+    {"question": "What is a metaphor?", "expectedAny": ["direct comparison without like or as", "comparing two unlike things directly", "saying one thing is another", "comparison saying one thing is another"]},
+    {"question": "What is a simile?", "expectedAny": ["comparison using like or as", "comparison with like or as", "comparing with like or as"]},
+    {"question": "What is imagery?", "expectedAny": ["vivid descriptive language", "language appealing to senses", "sensory details"]},
+    {"question": "What is personification?", "expectedAny": ["giving human traits to non-human things", "making objects act human", "humanizing non-human things", "giving life to objects"]},
+    {"question": "Give an example of a simile.", "expectedAny": ["as brave as a lion", "like a red rose", "runs like the wind", "any comparison with like or as"]},
+    {"question": "Give an example of a metaphor.", "expectedAny": ["time is money", "she is a star", "life is a journey", "any direct comparison"]},
+    {"question": "Give an example of personification.", "expectedAny": ["wind whispered", "sun smiled", "flowers danced", "any object with human actions"]},
+    {"question": "What senses does imagery appeal to?", "expectedAny": ["sight, sound, touch, taste, smell", "five senses", "all senses"]},
+    {"question": "Why do poets use figurative language?", "expectedAny": ["create vivid images", "add emotional impact", "make ideas concrete", "enhance meaning"]}
+  ],
+  "truefalse": [
+    {"question": "A simile uses like or as to make comparisons. (True or False)", "correct": true},
+    {"question": "A metaphor uses like or as. (True or False)", "correct": false},
+    {"question": "Figurative language is always literal. (True or False)", "correct": false},
+    {"question": "Imagery appeals to the senses. (True or False)", "correct": true},
+    {"question": "Personification gives human traits to objects. (True or False)", "correct": true},
+    {"question": "Simile and metaphor both compare unlike things. (True or False)", "correct": true},
+    {"question": "Figurative language has no effect on poetry. (True or False)", "correct": false},
+    {"question": "Imagery creates vivid mental pictures. (True or False)", "correct": true},
+    {"question": "Metaphors always use like or as. (True or False)", "correct": false},
+    {"question": "Personification can make poetry more engaging. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What gives human characteristics to non-human things?", "choices": [{"letter": "A", "text": "Metaphor"}, {"letter": "B", "text": "Simile"}, {"letter": "C", "text": "Personification"}, {"letter": "D", "text": "Imagery"}], "correct": "C"},
+    {"question": "Which uses like or as?", "choices": [{"letter": "A", "text": "Metaphor"}, {"letter": "B", "text": "Simile"}, {"letter": "C", "text": "Personification"}, {"letter": "D", "text": "Alliteration"}], "correct": "B"},
+    {"question": "What is a direct comparison without like or as?", "choices": [{"letter": "A", "text": "Simile"}, {"letter": "B", "text": "Metaphor"}, {"letter": "C", "text": "Imagery"}, {"letter": "D", "text": "Personification"}], "correct": "B"},
+    {"question": "What appeals to the senses?", "choices": [{"letter": "A", "text": "Grammar"}, {"letter": "B", "text": "Punctuation"}, {"letter": "C", "text": "Imagery"}, {"letter": "D", "text": "Spelling"}], "correct": "C"},
+    {"question": "Which is an example of personification?", "choices": [{"letter": "A", "text": "As quiet as a mouse"}, {"letter": "B", "text": "The wind whispered"}, {"letter": "C", "text": "Time is money"}, {"letter": "D", "text": "Bright blue sky"}], "correct": "B"},
+    {"question": "Which is a simile?", "choices": [{"letter": "A", "text": "Life is a journey"}, {"letter": "B", "text": "Stars danced"}, {"letter": "C", "text": "Brave as a lion"}, {"letter": "D", "text": "The cold night"}], "correct": "C"},
+    {"question": "Which is a metaphor?", "choices": [{"letter": "A", "text": "Like a diamond"}, {"letter": "B", "text": "Her smile is sunshine"}, {"letter": "C", "text": "As fast as lightning"}, {"letter": "D", "text": "Trees swaying"}], "correct": "B"},
+    {"question": "Figurative language is:", "choices": [{"letter": "A", "text": "Always literal"}, {"letter": "B", "text": "Non-literal for effect"}, {"letter": "C", "text": "Only in prose"}, {"letter": "D", "text": "Never in poetry"}], "correct": "B"},
+    {"question": "What creates vivid mental pictures?", "choices": [{"letter": "A", "text": "Boring descriptions"}, {"letter": "B", "text": "Imagery"}, {"letter": "C", "text": "Incomplete sentences"}, {"letter": "D", "text": "Weak verbs"}], "correct": "B"},
+    {"question": "Why use figurative language in poetry?", "choices": [{"letter": "A", "text": "To confuse readers"}, {"letter": "B", "text": "To enhance meaning and emotion"}, {"letter": "C", "text": "To make it longer"}, {"letter": "D", "text": "To avoid clarity"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "Vivid descriptive language that appeals to senses is called _____.", "expectedAny": ["imagery", "sensory language"]},
+    {"question": "A direct comparison without like or as is a _____.", "expectedAny": ["metaphor"]},
+    {"question": "A comparison using like or as is a _____.", "expectedAny": ["simile"]},
+    {"question": "Giving human traits to objects is _____.", "expectedAny": ["personification"]},
+    {"question": "Language that is not literal is _____ language.", "expectedAny": ["figurative", "non-literal"]},
+    {"question": "Imagery appeals to the five _____.", "expectedAny": ["senses"]},
+    {"question": "The wind whispered is an example of _____.", "expectedAny": ["personification"]},
+    {"question": "As brave as a lion is an example of a _____.", "expectedAny": ["simile"]},
+    {"question": "Time is money is an example of a _____.", "expectedAny": ["metaphor"]},
+    {"question": "Figurative language adds _____ impact to poetry.", "expectedAny": ["emotional", "dramatic", "powerful"]}
+  ],
+  "shortanswer": [
+    {"question": "How does figurative language enhance poetry?", "keyTerms": ["vivid", "images", "emotional", "meaning"], "expectedAny": ["It creates vivid images and adds emotional impact", "Figurative language makes abstract concepts concrete and engaging", "It enhances meaning and helps readers visualize and feel"]},
+    {"question": "What is the difference between a simile and a metaphor?", "keyTerms": ["simile", "like", "as", "metaphor", "direct"], "expectedAny": ["Similes use like or as while metaphors make direct comparisons", "A simile compares with like or as but a metaphor says one thing is another", "Metaphors are direct comparisons while similes use like or as"]},
+    {"question": "How does imagery affect the reader?", "keyTerms": ["senses", "visualize", "experience", "vivid"], "expectedAny": ["It helps readers visualize and experience the poem through their senses", "Imagery creates vivid mental pictures that engage the reader", "It appeals to senses making the poem more real and memorable"]},
+    {"question": "Give an example of personification and explain it.", "keyTerms": ["human", "non-human", "characteristics", "traits"], "expectedAny": ["The wind whispered gives wind the human ability to whisper", "Stars danced makes stars perform a human action", "Any example giving human traits to non-human things"]},
+    {"question": "Why do poets use metaphors?", "keyTerms": ["comparison", "meaning", "understanding", "creative"], "expectedAny": ["To make creative comparisons that deepen meaning", "Metaphors help readers understand ideas in new ways", "They create powerful connections between unlike things"]},
+    {"question": "How can imagery appeal to different senses?", "keyTerms": ["sight", "sound", "touch", "taste", "smell"], "expectedAny": ["Through descriptions of sights, sounds, textures, tastes, and smells", "Imagery can describe what you see, hear, feel, taste, or smell", "Poets use sensory details for all five senses"]},
+    {"question": "What makes figurative language effective?", "keyTerms": ["creative", "vivid", "emotional", "memorable"], "expectedAny": ["It is creative, vivid, and emotionally powerful", "Figurative language makes ideas memorable and engaging", "It creates strong images and feelings in readers"]},
+    {"question": "How does personification bring poetry to life?", "keyTerms": ["human", "relatable", "engaging", "alive"], "expectedAny": ["It makes non-human things relatable by giving them human qualities", "Personification makes objects seem alive and engaging", "By humanizing things it creates connections with readers"]},
+    {"question": "Why is it important to identify figurative language in poetry?", "keyTerms": ["understand", "meaning", "appreciation", "deeper"], "expectedAny": ["It helps understand deeper meanings and appreciate the craft", "Identifying devices reveals how poets create effects", "It leads to better comprehension and analysis of poetry"]},
+    {"question": "How do similes help readers understand comparisons?", "keyTerms": ["clear", "like", "as", "connect"], "expectedAny": ["Similes make comparisons clear using like or as", "They help readers connect familiar things to new ideas", "The words like and as signal the comparison clearly"]}
+  ]
 }

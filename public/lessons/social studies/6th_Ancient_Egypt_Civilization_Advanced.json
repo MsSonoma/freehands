@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Use maps to show the Nile River's importance. Discuss how geography influenced Egyptian culture. Compare Egyptian achievements to other ancient civilizations.",
-  "sample": {
-    "question": "What river was essential to ancient Egyptian civilization?",
-    "expectedAny": [
-      "Nile River",
-      "the Nile",
-      "Nile",
-      "river Nile"
-    ]
-  },
-  "truefalse": {
-    "question": "Ancient Egyptians believed their pharaoh was a god.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What was the writing system of ancient Egypt called?",
-    "expectedAny": [
-      "hieroglyphics",
-      "hieroglyphs",
-      "Egyptian writing",
-      "picture writing"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Large stone tombs built for pharaohs were called ________.",
-    "expectedAny": [
-      "pyramids",
-      "pyramid tombs",
-      "Egyptian pyramids",
-      "stone pyramids"
-    ]
-  },
-  "shortanswer": {
-    "question": "How did the Nile River help Egyptian civilization develop?",
-    "expectedAny": [
-      "provided water and fertile soil",
-      "flooding left rich soil",
-      "transportation and farming",
-      "water for crops and trade"
-    ]
-  }
+  "sample": [
+    { "question": "What river was essential to ancient Egyptian civilization?", "expectedAny": ["Nile River"] },
+    { "question": "Which was built for pharaohs?", "choices": ["Castle", "Pyramid", "Palace", "Bridge"], "correct": 1, "expectedAny": ["pyramid"] },
+    { "question": "Egyptian picture writing is ________.", "expectedAny": ["hieroglyphics"] },
+    { "question": "The Egyptian king was a ________.", "expectedAny": ["pharaoh"] },
+    { "question": "An advanced culture is a ________.", "expectedAny": ["civilization"] },
+    { "question": "What river helped Egypt?", "choices": ["Amazon", "Nile", "Mississippi", "Tigris"], "correct": 1, "expectedAny": ["Nile"] },
+    { "question": "Pharaohs were buried in ________.", "expectedAny": ["pyramids"] },
+    { "question": "Egypt used ________.", "expectedAny": ["hieroglyphics"] },
+    { "question": "Who ruled Egypt?", "choices": ["President", "Pharaoh", "King", "Emperor"], "correct": 1, "expectedAny": ["pharaoh"] },
+    { "question": "Egypt was an advanced ________.", "expectedAny": ["civilization"] }
+  ],
+  "truefalse": [
+    { "question": "Ancient Egyptians believed their pharaoh was a god.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The Nile River was unimportant.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Hieroglyphics used pictures and symbols.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Pyramids were built for farmers.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Egypt was an advanced civilization.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The Nile never flooded.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Pharaohs ruled ancient Egypt.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Egypt had no writing system.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The Nile provided water for farming.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Pyramids were small buildings.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What was the writing system of ancient Egypt called?", "choices": ["Cuneiform", "Hieroglyphics", "Alphabet", "Morse code"], "correct": 1, "expectedAny": ["hieroglyphics"] },
+    { "question": "What river was essential to Egypt?", "choices": ["Amazon", "Nile", "Mississippi", "Tigris"], "correct": 1, "expectedAny": ["Nile"] },
+    { "question": "What were built for pharaohs?", "choices": ["Castles", "Pyramids", "Bridges", "Roads"], "correct": 1, "expectedAny": ["pyramids"] },
+    { "question": "Who ruled ancient Egypt?", "choices": ["President", "Pharaoh", "King", "Emperor"], "correct": 1, "expectedAny": ["pharaoh"] },
+    { "question": "What is an advanced culture?", "choices": ["Village", "Civilization", "Farm", "Market"], "correct": 1, "expectedAny": ["civilization"] },
+    { "question": "What did hieroglyphics use?", "choices": ["Numbers only", "Pictures and symbols", "Letters only", "Nothing"], "correct": 1, "expectedAny": ["pictures and symbols"] },
+    { "question": "What provided water for Egypt?", "choices": ["Lake", "Ocean", "Nile River", "Well"], "correct": 2, "expectedAny": ["Nile"] },
+    { "question": "What were pyramids?", "choices": ["Houses", "Tombs", "Markets", "Roads"], "correct": 1, "expectedAny": ["tombs"] },
+    { "question": "Who was considered a god?", "choices": ["Farmer", "Pharaoh", "Soldier", "Merchant"], "correct": 1, "expectedAny": ["pharaoh"] },
+    { "question": "What did Egypt have?", "choices": ["No culture", "Advanced civilization", "No cities", "No government"], "correct": 1, "expectedAny": ["advanced civilization"] }
+  ],
+  "fillintheblank": [
+    { "question": "Large stone tombs built for pharaohs were called ________.", "expectedAny": ["pyramids"] },
+    { "question": "The ________ provided water for Egypt.", "expectedAny": ["Nile River"] },
+    { "question": "Egyptian writing was ________.", "expectedAny": ["hieroglyphics"] },
+    { "question": "The king of Egypt was a ________.", "expectedAny": ["pharaoh"] },
+    { "question": "An advanced culture is a ________.", "expectedAny": ["civilization"] },
+    { "question": "________ were tombs for pharaohs.", "expectedAny": ["pyramids"] },
+    { "question": "The Nile ________ was essential.", "expectedAny": ["River"] },
+    { "question": "Egypt used ________.", "expectedAny": ["hieroglyphics"] },
+    { "question": "A ________ ruled Egypt.", "expectedAny": ["pharaoh"] },
+    { "question": "Egypt was a great ________.", "expectedAny": ["civilization"] }
+  ],
+  "shortanswer": [
+    { "question": "How did the Nile River help Egyptian civilization develop?", "expectedAny": ["provided water and fertile soil", "flooding left rich soil", "transportation and farming", "water for crops"] },
+    { "question": "What is a civilization?", "expectedAny": ["advanced culture with cities", "society with government and writing", "organized society"] },
+    { "question": "What is a pharaoh?", "expectedAny": ["king of ancient Egypt", "Egyptian ruler considered a god", "ruler of Egypt", "king", "Egyptian king"] },
+    { "question": "What are hieroglyphics?", "expectedAny": ["Egyptian writing system", "writing with pictures and symbols", "picture writing"] },
+    { "question": "What are pyramids?", "expectedAny": ["large stone tombs", "tombs for pharaohs", "giant tombs"] },
+    { "question": "Why was the Nile important?", "expectedAny": ["provided water and farming", "flooding brought fertile soil", "water source"] },
+    { "question": "What did Egyptians believe about pharaohs?", "expectedAny": ["pharaohs were gods", "rulers were divine", "pharaohs were like gods", "pharaohs were god-kings"] },
+    { "question": "How did geography help Egypt?", "expectedAny": ["Nile provided water", "river helped farming"] },
+    { "question": "What was Egyptian writing?", "expectedAny": ["hieroglyphics", "picture symbols"] },
+    { "question": "Name two Egyptian achievements.", "expectedAny": ["pyramids and hieroglyphics", "writing and architecture"] }
+  ]
 }

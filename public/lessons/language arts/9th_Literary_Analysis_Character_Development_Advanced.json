@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "9th_Literary_Analysis_Character_Development_Advanced",
   "title": "Literary Analysis: Character Development and Motivation",
   "grade": "9th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "character development",
-      "definition": "The process by which characters change and grow throughout a story"
-    },
-    {
-      "term": "motivation",
-      "definition": "The reasons behind a character's actions and decisions"
-    },
-    {
-      "term": "dynamic character",
-      "definition": "A character who undergoes significant internal change"
-    },
-    {
-      "term": "static character",
-      "definition": "A character who remains essentially unchanged"
-    },
-    {
-      "term": "character foil",
-      "definition": "A character who contrasts with another to highlight their qualities"
-    }
+    {"term": "character development", "definition": "The process by which characters change and grow throughout a story"},
+    {"term": "motivation", "definition": "The reasons behind a character's actions and decisions"},
+    {"term": "dynamic character", "definition": "A character who undergoes significant internal change"},
+    {"term": "static character", "definition": "A character who remains essentially unchanged"},
+    {"term": "character foil", "definition": "A character who contrasts with another to highlight their qualities"}
   ],
   "teachingNotes": "Use complex literary texts to analyze character motivations. Practice writing analytical paragraphs with textual evidence.",
-  "sample": {
-    "question": "What is the process by which characters change throughout a story?",
-    "expectedAny": [
-      "character development",
-      "character growth",
-      "character change",
-      "character evolution"
-    ]
-  },
-  "truefalse": {
-    "question": "A dynamic character undergoes significant internal change.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is a character who contrasts with another called?",
-    "expectedAny": [
-      "character foil",
-      "foil",
-      "contrasting character",
-      "opposing character"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The reasons behind a character's actions are their ________.",
-    "expectedAny": [
-      "motivation",
-      "motives",
-      "driving force",
-      "reasons"
-    ]
-  },
-  "shortanswer": {
-    "question": "How do authors reveal character motivation to readers?",
-    "expectedAny": [
-      "through dialogue and actions",
-      "internal thoughts",
-      "interactions with others",
-      "response to conflict"
-    ]
-  }
+  "sample": [
+    {"question": "What is character development?", "expectedAny": ["process by which characters change", "character growth throughout story", "how characters evolve", "character growth", "how characters change over time"]},
+    {"question": "What is motivation?", "expectedAny": ["reasons behind actions", "why characters act", "driving force for decisions", "why they do things", "character reasons"]},
+    {"question": "What is a dynamic character?", "expectedAny": ["character who undergoes internal change", "character who changes significantly", "evolving character"]},
+    {"question": "What is a static character?", "expectedAny": ["character who remains unchanged", "character without growth", "unchanging character"]},
+    {"question": "What is a character foil?", "expectedAny": ["character who contrasts with another", "contrasting character highlighting qualities", "opposing character"]},
+    {"question": "How do authors reveal motivation?", "expectedAny": ["through dialogue and actions", "internal thoughts", "interactions with others", "response to conflict"]},
+    {"question": "Give an example of character development.", "expectedAny": ["character learns lesson", "character grows wiser", "character changes beliefs", "any change example"]},
+    {"question": "Why are dynamic characters important?", "expectedAny": ["create interesting stories", "show growth", "drive plot", "engage readers"]},
+    {"question": "Why use character foils?", "expectedAny": ["highlight differences", "emphasize qualities", "create contrast", "deepen understanding"]},
+    {"question": "What drives character actions?", "expectedAny": ["motivation", "goals", "desires", "beliefs", "conflicts"]}
+  ],
+  "truefalse": [
+    {"question": "A dynamic character undergoes significant internal change. (True or False)", "correct": true},
+    {"question": "A static character changes throughout the story. (True or False)", "correct": false},
+    {"question": "Motivation explains why characters act. (True or False)", "correct": true},
+    {"question": "Character foils are identical to each other. (True or False)", "correct": false},
+    {"question": "Character development involves growth and change. (True or False)", "correct": true},
+    {"question": "All characters in stories are dynamic. (True or False)", "correct": false},
+    {"question": "Authors reveal motivation through actions and dialogue. (True or False)", "correct": true},
+    {"question": "Static characters never serve important purposes. (True or False)", "correct": false},
+    {"question": "Character foils highlight contrasting qualities. (True or False)", "correct": true},
+    {"question": "Motivation is irrelevant to understanding characters. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "What is a character who contrasts with another called?", "choices": [{"letter": "A", "text": "Static character"}, {"letter": "B", "text": "Character foil"}, {"letter": "C", "text": "Protagonist"}, {"letter": "D", "text": "Antagonist"}], "correct": "B"},
+    {"question": "What type of character undergoes internal change?", "choices": [{"letter": "A", "text": "Static"}, {"letter": "B", "text": "Flat"}, {"letter": "C", "text": "Dynamic"}, {"letter": "D", "text": "Minor"}], "correct": "C"},
+    {"question": "What explains why a character acts?", "choices": [{"letter": "A", "text": "Setting"}, {"letter": "B", "text": "Motivation"}, {"letter": "C", "text": "Theme"}, {"letter": "D", "text": "Plot"}], "correct": "B"},
+    {"question": "A character who remains unchanged is:", "choices": [{"letter": "A", "text": "Dynamic"}, {"letter": "B", "text": "Developed"}, {"letter": "C", "text": "Static"}, {"letter": "D", "text": "Complex"}], "correct": "C"},
+    {"question": "Character development involves:", "choices": [{"letter": "A", "text": "No change"}, {"letter": "B", "text": "Growth throughout story"}, {"letter": "C", "text": "Remaining the same"}, {"letter": "D", "text": "Avoiding conflict"}], "correct": "B"},
+    {"question": "How do authors reveal motivation?", "choices": [{"letter": "A", "text": "Only through dialogue"}, {"letter": "B", "text": "Through actions and thoughts"}, {"letter": "C", "text": "Never explicitly"}, {"letter": "D", "text": "Only at the end"}], "correct": "B"},
+    {"question": "Why use character foils?", "choices": [{"letter": "A", "text": "To confuse readers"}, {"letter": "B", "text": "To highlight contrasts"}, {"letter": "C", "text": "To duplicate characters"}, {"letter": "D", "text": "To slow the plot"}], "correct": "B"},
+    {"question": "Dynamic characters are important because they:", "choices": [{"letter": "A", "text": "Never change"}, {"letter": "B", "text": "Create engaging stories"}, {"letter": "C", "text": "Are always simple"}, {"letter": "D", "text": "Avoid conflict"}], "correct": "B"},
+    {"question": "What drives character actions?", "choices": [{"letter": "A", "text": "Random chance"}, {"letter": "B", "text": "Nothing"}, {"letter": "C", "text": "Motivation and goals"}, {"letter": "D", "text": "Author's preference"}], "correct": "C"},
+    {"question": "Character development shows:", "choices": [{"letter": "A", "text": "How characters remain static"}, {"letter": "B", "text": "How characters change and grow"}, {"letter": "C", "text": "Physical descriptions"}, {"letter": "D", "text": "Setting details"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "The reasons behind a character's actions are their _____.", "expectedAny": ["motivation", "motives"]},
+    {"question": "A character who changes significantly is a _____ character.", "expectedAny": ["dynamic"]},
+    {"question": "A character who remains unchanged is a _____ character.", "expectedAny": ["static"]},
+    {"question": "A character who contrasts with another is a character _____.", "expectedAny": ["foil"]},
+    {"question": "The process of characters changing is character _____.", "expectedAny": ["development", "growth"]},
+    {"question": "Authors reveal motivation through dialogue, actions, and _____ thoughts.", "expectedAny": ["internal", "inner"]},
+    {"question": "Character _____ highlights contrasting qualities.", "expectedAny": ["foils", "foil"]},
+    {"question": "Dynamic characters undergo _____ change.", "expectedAny": ["internal", "significant", "major"]},
+    {"question": "Understanding _____ helps explain why characters act.", "expectedAny": ["motivation", "motives"]},
+    {"question": "Static characters show little or no _____.", "expectedAny": ["change", "development", "growth"]}
+  ],
+  "shortanswer": [
+    {"question": "How do authors reveal character motivation to readers?", "keyTerms": ["dialogue", "actions", "thoughts", "interactions"], "expectedAny": ["Through dialogue, actions, internal thoughts, and interactions", "Authors show motivation via what characters say, do, and think", "By revealing character thoughts, actions, and responses to conflict"]},
+    {"question": "What is the difference between dynamic and static characters?", "keyTerms": ["dynamic", "change", "static", "unchanged"], "expectedAny": ["Dynamic characters change significantly while static remain unchanged", "Dynamic characters grow but static characters stay the same", "Dynamic undergo internal change; static do not"]},
+    {"question": "Why is understanding character motivation important?", "keyTerms": ["understand", "actions", "decisions", "why"], "expectedAny": ["It helps understand why characters make decisions and act", "Motivation explains character actions and makes them believable", "Understanding motivation reveals character depth and purpose"]},
+    {"question": "How does a character foil enhance a story?", "keyTerms": ["contrast", "highlight", "qualities", "emphasize"], "expectedAny": ["Foils contrast with characters to highlight their qualities", "By contrasting, foils emphasize important character traits", "Foils make main character qualities more obvious through contrast"]},
+    {"question": "What are signs of character development?", "keyTerms": ["change", "growth", "beliefs", "actions"], "expectedAny": ["Changes in beliefs, actions, or understanding over time", "Character learns lessons and grows throughout the story", "Shifts in perspective, behavior, or values"]},
+    {"question": "How do conflicts reveal character motivation?", "keyTerms": ["choices", "conflicts", "reveal", "values"], "expectedAny": ["Conflicts force choices that reveal what characters value", "How characters respond to conflict shows their motivations", "Conflicts test characters and expose their true goals"]},
+    {"question": "Why might an author use a static character?", "keyTerms": ["contrast", "stability", "foil", "support"], "expectedAny": ["To provide contrast to dynamic characters or stability", "Static characters can serve as foils or support main plot", "They highlight change in others or maintain consistency"]},
+    {"question": "How does character development affect plot?", "keyTerms": ["drives", "plot", "change", "growth"], "expectedAny": ["Character development drives plot forward through growth", "Changes in characters create new conflicts and resolutions", "Character growth shapes how events unfold"]},
+    {"question": "What makes a character's motivation believable?", "keyTerms": ["consistent", "logical", "clear", "understandable"], "expectedAny": ["Motivation that is consistent, logical, and clear", "When reasons for actions match character background and values", "Believable motivation is understandable and well-developed"]},
+    {"question": "How can internal thoughts reveal character depth?", "keyTerms": ["internal", "conflicts", "desires", "complexity"], "expectedAny": ["Internal thoughts show inner conflicts and desires", "They reveal complexity and true motivations beyond actions", "Inner thoughts expose character struggles and real feelings"]}
+  ]
 }

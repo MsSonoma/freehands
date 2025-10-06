@@ -5,12 +5,16 @@
   "difficulty": "Intermediate",
   "featured": false,
   "vocab": [
-    { "term": "government", "definition": "People who make and enforce laws for a community" },
-    { "term": "mayor", "definition": "The elected leader of a city or town" },
-    { "term": "citizen", "definition": "A person who belongs to a community or country" },
-    { "term": "vote", "definition": "To choose a leader or decide on an issue" },
-    { "term": "democracy", "definition": "A government where people vote for their leaders" },
-    { "term": "constitution", "definition": "A written plan for how government should work" }
+    {"word": "government", "kid_friendly_definition": "People who make and enforce laws for a community."},
+    {"word": "mayor", "kid_friendly_definition": "The elected leader of a city or town."},
+    {"word": "citizen", "kid_friendly_definition": "A person who belongs to a community or country."},
+    {"word": "vote", "kid_friendly_definition": "To choose a leader or decide on an issue."},
+    {"word": "democracy", "kid_friendly_definition": "A government where people vote for their leaders."},
+    {"word": "constitution", "kid_friendly_definition": "A written plan for how government should work."},
+    {"word": "amendments", "kid_friendly_definition": "Changes or additions to the Constitution."},
+    {"word": "judicial", "kid_friendly_definition": "The part of government with judges and courts."},
+    {"word": "executive", "kid_friendly_definition": "The part of government that carries out laws, led by the President."},
+    {"word": "legislative", "kid_friendly_definition": "The part of government that makes laws, called Congress."}
   ],
   "teachingNotes": "Connect to school rules and class rules. Discuss voting in simple terms. Use examples from local government when possible.",
   "sample": [
@@ -23,67 +27,74 @@
     { "question": "What does a mayor do?", "expectedAny": ["leads city", "makes decisions", "helps community"] }
   ],
   "truefalse": [
-    { "question": "Children can vote in elections.", "answer": false },
-    { "question": "Rules help keep everyone safe.", "answer": true },
-    { "question": "The President lives in the White House.", "answer": true },
-    { "question": "Only adults have rights.", "answer": false },
-    { "question": "Laws are the same in every country.", "answer": false },
-    { "question": "Citizens have responsibilities.", "answer": true },
-    { "question": "Everyone must follow laws.", "answer": true }
+    { "question": "Children can vote in elections.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "must be 18"] },
+    { "question": "Rules help keep everyone safe.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "keep safe"] },
+    { "question": "The President lives in the White House.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "White House"] },
+    { "question": "Only adults have rights.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "kids have rights too"] },
+    { "question": "Laws are the same in every country.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "laws vary by country"] },
+    { "question": "Citizens have responsibilities.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "responsibilities"] },
+    { "question": "Everyone must follow laws.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "everyone follows laws"] }
   ],
   "multiplechoice": [
     {
       "question": "Who leads a city?",
       "choices": ["Governor", "Mayor", "President", "Judge"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "Mayor"]
     },
     {
       "question": "What age can people vote?",
       "choices": ["16", "17", "18", "21"],
-      "correct": 2
+      "correct": 2,
+      "expectedAny": ["c", "C", "3", "18", "eighteen"]
     },
     {
       "question": "What is the highest law in our country?",
       "choices": ["Bill of Rights", "Constitution", "Declaration", "Amendment"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "Constitution"]
     },
     {
       "question": "Who enforces laws?",
       "choices": ["Teachers", "Police", "Doctors", "Firefighters"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "Police", "police officers"]
     },
     {
       "question": "How long is a President's term?",
       "choices": ["2 years", "4 years", "6 years", "8 years"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "4 years", "four years"]
     },
     {
       "question": "What is a democracy?",
       "choices": ["no rules", "one leader decides", "people vote", "no government"],
-      "correct": 2
+      "correct": 2,
+      "expectedAny": ["c", "C", "3", "people vote", "people choose leaders"]
     },
     {
       "question": "Who can become President?",
-      "choices": ["any citizen", "born in America", "35 years old", "all of these"],
-      "correct": 3
+      "choices": ["any citizen", "natural-born citizen", "at least 35 years old", "natural-born citizen and at least 35 years old"],
+      "correct": 3,
+      "expectedAny": ["d", "D", "4", "natural-born citizen and at least 35 years old", "natural born and 35"]
     }
   ],
   "fillintheblank": [
-    { "question": "People who are 18 or older can ___.", "expectedAny": ["vote"] },
-    { "question": "The ___ is the leader of our country.", "expectedAny": ["President"] },
-    { "question": "Citizens have rights and ___.", "expectedAny": ["responsibilities"] },
+    { "question": "People who are 18 or older can ___.", "expectedAny": ["vote", "vote in elections"] },
+    { "question": "The ___ is the leader of our country.", "expectedAny": ["President", "the President"] },
+    { "question": "Citizens have rights and ___.", "expectedAny": ["responsibilities", "duties"] },
     { "question": "___ help keep our community safe and fair.", "expectedAny": ["Laws", "Rules"] },
-    { "question": "We live in a ___ where people vote.", "expectedAny": ["democracy"] },
-    { "question": "The ___ is our country's highest law.", "expectedAny": ["Constitution"] },
-    { "question": "___ enforce laws in our community.", "expectedAny": ["Police"] }
+    { "question": "We live in a ___ where people vote.", "expectedAny": ["democracy", "a democracy"] },
+    { "question": "The ___ is our country's highest law.", "expectedAny": ["Constitution", "the Constitution"] },
+    { "question": "___ enforce laws in our community.", "expectedAny": ["Police", "police officers"] }
   ],
   "shortanswer": [
-    { "question": "What are three rights that citizens have?", "expectedAny": ["freedom of speech", "vote", "fair trial", "practice religion"] },
-    { "question": "How do people choose their leaders?", "expectedAny": ["voting", "elections", "democratic process"] },
-    { "question": "What responsibilities do citizens have?", "expectedAny": ["follow laws", "vote", "help community", "pay taxes"] },
-    { "question": "Why is the Constitution important?", "expectedAny": ["sets up government", "protects rights", "highest law"] },
-    { "question": "What would happen without laws?", "expectedAny": ["chaos", "unfairness", "no order", "people could be hurt"] },
-    { "question": "How can kids be good citizens?", "expectedAny": ["follow rules", "help others", "be respectful", "learn about government"] },
-    { "question": "What is the difference between local and national government?", "expectedAny": ["local serves city", "national serves whole country", "different responsibilities"] }
+    {"question": "What are three rights that citizens have?", "expectedAny": ["freedom of speech", "vote", "fair trial", "practice religion", "free speech", "religion"]},
+    {"question": "How do people choose their leaders?", "expectedAny": ["voting", "elections", "democratic process", "vote for them", "elect them"]},
+    {"question": "What responsibilities do citizens have?", "expectedAny": ["follow laws", "vote", "help community", "pay taxes", "be good citizens", "obey laws"]},
+    {"question": "Why is the Constitution important?", "expectedAny": ["sets up government", "protects rights", "highest law", "our main law", "gives rights"]},
+    {"question": "What would happen without laws?", "expectedAny": ["chaos", "unfairness", "no order", "people could be hurt", "messy", "no rules"]},
+    {"question": "How can kids be good citizens?", "expectedAny": ["follow rules", "help others", "be respectful", "learn about government", "be kind", "help community"]},
+    {"question": "What is the difference between local and national government?", "expectedAny": ["local serves city", "national serves whole country", "different responsibilities", "local is closer", "national for everyone"]}
   ]
 }

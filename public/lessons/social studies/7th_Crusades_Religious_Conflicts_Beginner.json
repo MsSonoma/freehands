@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Explain religious motivations for the Crusades. Discuss both positive and negative consequences, including cultural exchange and conflict.",
-  "sample": {
-    "question": "What were the religious wars between Christians and Muslims called?",
-    "expectedAny": [
-      "Crusades",
-      "Holy Wars",
-      "Religious Wars",
-      "Medieval conflicts"
-    ]
-  },
-  "truefalse": {
-    "question": "The Crusades were fought for control of the Holy Land.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What city was at the center of the Holy Land?",
-    "expectedAny": [
-      "Jerusalem",
-      "Bethlehem",
-      "holy city",
-      "sacred city"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A religious journey to a sacred place is called a ________.",
-    "expectedAny": [
-      "pilgrimage",
-      "religious journey",
-      "sacred trip",
-      "holy journey"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why did Christians want to control the Holy Land?",
-    "expectedAny": [
-      "religious significance",
-      "sacred to Christianity",
-      "important holy sites"
-    ]
-  }
+  "sample": [
+    { "question": "What were the religious wars between Christians and Muslims called?", "expectedAny": ["Crusades"] },
+    { "question": "Which is sacred region?", "choices": ["America", "Holy Land", "Antarctica", "Australia"], "correct": 1, "expectedAny": ["Holy Land"] },
+    { "question": "Religious journey is ________.", "expectedAny": ["pilgrimage"] },
+    { "question": "Warrior on horseback is ________.", "expectedAny": ["knight"] },
+    { "question": "Surrounding city to capture is ________.", "expectedAny": ["siege"] },
+    { "question": "What were holy wars?", "choices": ["Olympics", "Crusades", "Trade", "Peace"], "correct": 1, "expectedAny": ["Crusades"] },
+    { "question": "Sacred region around Jerusalem is ________.", "expectedAny": ["Holy Land"] },
+    { "question": "Sacred trip is a ________.", "expectedAny": ["pilgrimage"] },
+    { "question": "Which fought Crusades?", "choices": ["Farmers", "Knights", "Merchants", "Sailors"], "correct": 1, "expectedAny": ["knights"] },
+    { "question": "Attack on city is ________.", "expectedAny": ["siege"] }
+  ],
+  "truefalse": [
+    { "question": "The Crusades were fought for control of the Holy Land.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Crusades were trade wars.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Jerusalem is in Holy Land.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Pilgrimages are military attacks.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Knights fought in Crusades.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Sieges are peaceful.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Crusades were religious wars.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Holy Land is unimportant.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Pilgrimage is religious journey.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Knights were farmers.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What city was at the center of the Holy Land?", "choices": ["Rome", "Jerusalem", "Athens", "Cairo"], "correct": 1, "expectedAny": ["Jerusalem"] },
+    { "question": "What were holy wars?", "choices": ["Olympics", "Crusades", "Trade", "Peace"], "correct": 1, "expectedAny": ["Crusades"] },
+    { "question": "What is sacred region?", "choices": ["America", "Holy Land", "Antarctica", "Australia"], "correct": 1, "expectedAny": ["Holy Land"] },
+    { "question": "What is religious journey?", "choices": ["War", "Pilgrimage", "Trade", "Siege"], "correct": 1, "expectedAny": ["pilgrimage"] },
+    { "question": "Who fought Crusades?", "choices": ["Farmers", "Knights", "Merchants", "Sailors"], "correct": 1, "expectedAny": ["knights"] },
+    { "question": "What is surrounding city?", "choices": ["Trade", "Siege", "Peace", "Festival"], "correct": 1, "expectedAny": ["siege"] },
+    { "question": "Crusades were between?", "choices": ["Countries", "Christians and Muslims", "Cities", "Families"], "correct": 1, "expectedAny": ["Christians and Muslims"] },
+    { "question": "Holy Land is sacred to?", "choices": ["One religion", "Three religions", "No religions", "Five religions"], "correct": 1, "expectedAny": ["three religions"] },
+    { "question": "Knights rode?", "choices": ["Camels", "Horses", "Elephants", "Boats"], "correct": 1, "expectedAny": ["horses"] },
+    { "question": "Crusades fought for?", "choices": ["Trade", "Holy Land", "Gold", "Spices"], "correct": 1, "expectedAny": ["Holy Land"] }
+  ],
+  "fillintheblank": [
+    { "question": "A religious journey to a sacred place is called a ________.", "expectedAny": ["pilgrimage"] },
+    { "question": "Religious wars between Christians and Muslims were ________.", "expectedAny": ["Crusades"] },
+    { "question": "The sacred region around Jerusalem is the ________.", "expectedAny": ["Holy Land"] },
+    { "question": "A warrior on horseback was a ________.", "expectedAny": ["knight"] },
+    { "question": "Surrounding a city to capture it is a ________.", "expectedAny": ["siege"] },
+    { "question": "The ________ were religious wars.", "expectedAny": ["Crusades"] },
+    { "question": "The Holy ________ was around Jerusalem.", "expectedAny": ["Land"] },
+    { "question": "A ________ is religious journey.", "expectedAny": ["pilgrimage"] },
+    { "question": "A ________ fought on horseback.", "expectedAny": ["knight"] },
+    { "question": "A ________ surrounds a city.", "expectedAny": ["siege"] }
+  ],
+  "shortanswer": [
+    { "question": "Why did Christians want to control the Holy Land?", "expectedAny": ["religious significance", "sacred to Christianity"] },
+    { "question": "What were Crusades?", "expectedAny": ["religious wars", "wars between Christians and Muslims", "holy wars", "religious conflicts"] },
+    { "question": "What is Holy Land?", "expectedAny": ["region around Jerusalem", "sacred region", "area around Jerusalem", "sacred area"] },
+    { "question": "What is pilgrimage?", "expectedAny": ["religious journey", "trip to sacred place", "journey to holy place", "sacred journey"] },
+    { "question": "What is knight?", "expectedAny": ["warrior on horseback", "crusader fighter"] },
+    { "question": "What is siege?", "expectedAny": ["surrounding city to capture", "attack on fortress"] },
+    { "question": "Why fight for Holy Land?", "expectedAny": ["religious importance", "sacred sites"] },
+    { "question": "What city was central?", "expectedAny": ["Jerusalem"] },
+    { "question": "Who fought?", "expectedAny": ["Christians and Muslims"] },
+    { "question": "What did knights do?", "expectedAny": ["fought in Crusades", "warriors on horseback"] }
+  ]
 }

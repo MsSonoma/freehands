@@ -5,12 +5,20 @@
   "difficulty": "Advanced",
   "featured": false,
   "vocab": [
-    { "term": "geography", "definition": "The study of Earth's features, places, and how people use the land" },
-    { "term": "compass rose", "definition": "A symbol on maps that shows the four main directions" },
-    { "term": "landmark", "definition": "An important or easily recognized feature of a place" },
-    { "term": "scale", "definition": "Shows how distances on a map relate to real distances" },
-    { "term": "latitude", "definition": "Lines that run east-west and measure distance from the equator" },
-    { "term": "longitude", "definition": "Lines that run north-south and measure distance from the Prime Meridian" }
+    {"word": "geography", "kid_friendly_definition": "The study of Earth's features, places, and how people use the land."},
+    {"word": "compass rose", "kid_friendly_definition": "A symbol on maps that shows the four main directions."},
+    {"word": "landmark", "kid_friendly_definition": "An important or easily recognized feature of a place."},
+    {"word": "scale", "kid_friendly_definition": "Shows how distances on a map relate to real distances."},
+    {"word": "latitude", "kid_friendly_definition": "Lines that run east-west and measure distance from the equator."},
+    {"word": "longitude", "kid_friendly_definition": "Lines that run north-south and measure distance from the Prime Meridian."},
+    {"word": "legend", "kid_friendly_definition": "A key that explains symbols on a map."},
+    {"word": "equator", "kid_friendly_definition": "An imaginary line circling Earth at 0 degrees latitude."},
+    {"word": "Prime Meridian", "kid_friendly_definition": "An imaginary line at 0 degrees longitude."},
+    {"word": "hemisphere", "kid_friendly_definition": "Half of the Earth, like Northern or Southern."},
+    {"word": "peninsula", "kid_friendly_definition": "Land surrounded by water on three sides."},
+    {"word": "continent", "kid_friendly_definition": "One of the seven large land masses on Earth."},
+    {"word": "ocean", "kid_friendly_definition": "A very large body of salt water."},
+    {"word": "coordinates", "kid_friendly_definition": "Numbers that show an exact location using latitude and longitude."}
   ],
   "teachingNotes": "Use actual maps and compasses. Practice reading school and neighborhood maps. Create simple maps of classroom or playground.",
   "sample": [
@@ -23,67 +31,74 @@
     { "question": "What does a compass rose show?", "expectedAny": ["directions", "north south east west", "cardinal directions"] }
   ],
   "truefalse": [
-    { "question": "The equator divides Earth into Northern and Southern hemispheres.", "answer": true },
-    { "question": "A map legend explains symbols on the map.", "answer": true },
-    { "question": "Northeast is a cardinal direction.", "answer": false },
-    { "question": "Lines of latitude run north and south.", "answer": false },
-    { "question": "A compass always points north.", "answer": true },
-    { "question": "Islands are completely surrounded by water.", "answer": true },
-    { "question": "All maps show the same information.", "answer": false }
+    { "question": "The equator divides Earth into Northern and Southern hemispheres.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "equator splits hemispheres"] },
+    { "question": "A map legend explains symbols on the map.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "legend explains symbols"] },
+    { "question": "Northeast is a cardinal direction.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "northeast is intermediate"] },
+    { "question": "Lines of latitude run north and south.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "latitude runs east west"] },
+    { "question": "A compass always points north.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "compass points north"] },
+    { "question": "Islands are completely surrounded by water.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "surrounded by water"] },
+    { "question": "All maps show the same information.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "different types of maps"] }
   ],
   "multiplechoice": [
     {
       "question": "Which is an intermediate direction?",
       "choices": ["North", "South", "Northwest", "West"],
-      "correct": 2
+      "correct": 2,
+      "expectedAny": ["c", "C", "3", "Northwest"]
     },
     {
       "question": "Lines that run east-west are called ___.",
       "choices": ["longitude", "latitude", "equator", "meridian"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "latitude"]
     },
     {
       "question": "The Prime Meridian is at ___ degrees.",
       "choices": ["0", "90", "180", "360"],
-      "correct": 0
+      "correct": 0,
+      "expectedAny": ["a", "A", "1", "0", "zero"]
     },
     {
       "question": "A gulf is ___.",
       "choices": ["a mountain", "a large body of water partly enclosed by land", "a desert", "a forest"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "a large body of water partly enclosed by land", "partly enclosed water"]
     },
     {
       "question": "Which continent is also a country?",
       "choices": ["Africa", "Europe", "Australia", "Asia"],
-      "correct": 2
+      "correct": 2,
+      "expectedAny": ["c", "C", "3", "Australia"]
     },
     {
       "question": "Elevation shows ___.",
       "choices": ["temperature", "height above sea level", "population", "rainfall"],
-      "correct": 1
+      "correct": 1,
+      "expectedAny": ["b", "B", "2", "height above sea level", "altitude"]
     },
     {
       "question": "The opposite of north is ___.",
       "choices": ["east", "west", "south", "northeast"],
-      "correct": 2
+      "correct": 2,
+      "expectedAny": ["c", "C", "3", "south"]
     }
   ],
   "fillintheblank": [
-    { "question": "The ___ divides Earth at 0 degrees latitude.", "expectedAny": ["equator"] },
-    { "question": "A ___ rose shows directions on a map.", "expectedAny": ["compass"] },
-    { "question": "Lines of ___ run north to south.", "expectedAny": ["longitude"] },
-    { "question": "The ___ explains map symbols.", "expectedAny": ["legend"] },
-    { "question": "A ___ is land with water on three sides.", "expectedAny": ["peninsula"] },
-    { "question": "There are ___ continents on Earth.", "expectedAny": ["seven"] },
-    { "question": "The ___ Meridian is at 0 degrees longitude.", "expectedAny": ["Prime"] }
+    { "question": "The ___ divides Earth at 0 degrees latitude.", "expectedAny": ["equator", "the equator", "0 degrees latitude"] },
+    { "question": "A ___ rose shows directions on a map.", "expectedAny": ["compass", "compass rose", "compass symbol"] },
+    { "question": "Lines of ___ run north to south.", "expectedAny": ["longitude", "lines of longitude", "meridians"] },
+    { "question": "The ___ explains map symbols.", "expectedAny": ["legend", "map legend", "key"] },
+    { "question": "A ___ is land with water on three sides.", "expectedAny": ["peninsula", "a peninsula"] },
+    { "question": "There are ___ continents on Earth.", "expectedAny": ["seven", "7", "seven continents"] },
+    { "question": "The ___ Meridian is at 0 degrees longitude.", "expectedAny": ["Prime", "Prime Meridian", "the Prime Meridian"] }
   ],
   "shortanswer": [
-    { "question": "Why are maps useful?", "expectedAny": ["show location", "help navigate", "plan routes", "understand geography"] },
-    { "question": "How do you use a map scale?", "expectedAny": ["measure distance", "convert map distance to real distance"] },
-    { "question": "Name the seven continents.", "expectedAny": ["Asia, Africa, North America, South America, Antarctica, Europe, Australia"] },
-    { "question": "What's the difference between a bay and a gulf?", "expectedAny": ["gulf is larger", "both are water surrounded by land"] },
-    { "question": "How do latitude and longitude help?", "expectedAny": ["find exact location", "coordinate system", "pinpoint places"] },
-    { "question": "What types of maps are there?", "expectedAny": ["political", "physical", "road", "weather", "topographic"] },
-    { "question": "How has GPS changed navigation?", "expectedAny": ["easier", "more accurate", "don't need paper maps", "instant location"] }
+    {"question": "Why are maps useful?", "expectedAny": ["show location", "help navigate", "plan routes", "understand geography", "find places", "know where to go"]},
+    {"question": "How do you use a map scale?", "expectedAny": ["measure distance", "use a ruler to measure", "convert map distance to real distance", "find real distance", "tells how far"]},
+    {"question": "Name the seven continents.", "expectedAny": ["Asia, Africa, North America, South America, Antarctica, Europe, Australia", "Asia; Africa; North America; South America; Antarctica; Europe; Australia", "Asia Africa North America South America Antarctica Europe Australia", "all seven"]},
+    {"question": "What's the difference between a bay and a gulf?", "expectedAny": ["gulf is larger", "bay is smaller", "both are water surrounded by land", "size difference", "gulf bigger"]},
+    {"question": "How do latitude and longitude help?", "expectedAny": ["find exact location", "coordinate system", "pinpoint places", "find places", "exact spot"]},
+    {"question": "What types of maps are there?", "expectedAny": ["political", "physical", "road", "weather", "topographic", "many kinds"]},
+    {"question": "How has GPS changed navigation?", "expectedAny": ["easier", "more accurate", "don't need paper maps", "instant location", "tells where you are", "better directions"]}
   ]
 }

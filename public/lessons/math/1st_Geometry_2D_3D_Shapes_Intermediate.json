@@ -9,6 +9,12 @@
     {"term": "3D shape", "definition": "A solid shape that takes up space like a ball or cube"},
     {"term": "face", "definition": "The flat side of a 3D shape"},
     {"term": "edge", "definition": "Where two faces of a 3D shape meet"}
+    ,
+    {"term": "roll", "definition": "To move by turning over and over"}
+    ,
+    {"term": "stack", "definition": "To put things on top of each other"}
+    ,
+    {"term": "cone", "definition": "A 3D shape with a point and a round base"}
   ],
   "teachingNotes": "Use real objects and shape manipulatives. Compare 2D shapes to faces of 3D shapes. Go on shape hunts in classroom.",
   "sample": [
@@ -35,20 +41,20 @@
     {"question": "Which is a face of a cube?", "choices": ["circle", "square", "triangle", "sphere"], "correct": 1, "expectedAny": ["square"]}
   ],
   "fillintheblank": [
-    {"question": "A _____ is a 3D shape that looks like a box.", "expectedAny": ["cube", "rectangular prism"]},
-    {"question": "A triangle has ___ sides.", "expectedAny": ["3"]},
-    {"question": "A square has ___ corners.", "expectedAny": ["4"]},
-    {"question": "A circle has ___ corners.", "expectedAny": ["0", "none"]},
-    {"question": "A cylinder can ___ (roll/stack).", "expectedAny": ["roll", "stack depending on orientation"]},
-    {"question": "A cone often looks like an ice cream ___ .", "expectedAny": ["cone"]}
+    {"question": "A _____ is a 3D shape that looks like a box.", "expectedAny": ["cube", "rectangular prism", "box"]},
+  {"question": "A triangle has ___ sides.", "expectedAny": ["3", "three", "3 sides", "three sides"]},
+  {"question": "A square has ___ corners.", "expectedAny": ["4", "four", "4 corners", "four corners"]},
+    {"question": "A circle has ___ corners.", "expectedAny": ["0", "none", "zero", "no corners", "zero corners"]},
+    {"question": "A cylinder can ___ (roll/stack).", "expectedAny": ["roll", "stack", "roll and stack", "roll or stack"]},
+    {"question": "A cone often looks like an ice cream ___ .", "expectedAny": ["cone", "cone shape"]}
   ],
   "shortanswer": [
-    {"question": "Name something in your classroom that is shaped like a cylinder.", "expectedAny": ["can, cup, pencil holder"]},
-    {"question": "How can you tell if an object is 3D?", "expectedAny": ["it has depth and you can hold it"]},
-    {"question": "Give an example of a 2D shape from a book.", "expectedAny": ["circle, square, triangle"]},
-    {"question": "Why doesn't a circle have corners?", "expectedAny": ["it is curved all around"]},
-    {"question": "What is a face on a 3D shape?", "expectedAny": ["a flat side"]},
-    {"question": "How many faces does a cube have?", "expectedAny": ["6"]}
+    {"question": "Name something in your classroom that is shaped like a cylinder.", "expectedAny": ["can", "cup", "pencil holder", "marker", "bottle", "paper towel roll"]},
+    {"question": "How can you tell if an object is 3D?", "expectedAny": ["it has depth and you can hold it", "it is solid, not flat", "it takes up space", "not flat", "you can pick it up", "has thickness", "is solid"]},
+    {"question": "Give an example of a 2D shape from a book.", "expectedAny": ["circle", "square", "triangle", "rectangle", "oval", "heart"]},
+    {"question": "Why doesn't a circle have corners?", "expectedAny": ["it is curved all around", "no straight sides meet", "it has no angles", "round", "all curved", "no pointy parts", "no straight lines"]},
+    {"question": "What is a face on a 3D shape?", "expectedAny": ["a flat side", "flat surface", "part you can touch", "the sides", "flat part"]},
+    {"question": "How many faces does a cube have?", "expectedAny": ["6", "six", "six faces", "6 faces"]}
   ],
   "wordProblems": [
     {"question": "Sam has 2 boxes (cubes) and 3 balls (spheres). How many solid objects does he have?", "expectedAny": ["5"]},

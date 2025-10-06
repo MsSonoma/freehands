@@ -20,56 +20,103 @@
     {
       "term": "decomposer",
       "definition": "An organism that breaks down dead plants and animals"
+    },
+    {
+      "term": "consumer",
+      "definition": "An organism that gets energy by eating other organisms"
+    },
+    {
+      "term": "herbivore",
+      "definition": "A consumer that eats only plants"
+    },
+    {
+      "term": "carnivore",
+      "definition": "A consumer that eats only animals"
+    },
+    {
+      "term": "omnivore",
+      "definition": "A consumer that eats both plants and animals"
+    },
+    {
+      "term": "primary consumer",
+      "definition": "A consumer that eats producers (often herbivores)"
+    },
+    {
+      "term": "secondary consumer",
+      "definition": "A consumer that eats primary consumers"
+    },
+    {
+      "term": "predator",
+      "definition": "An animal that hunts and eats other animals"
+    },
+    {
+      "term": "prey",
+      "definition": "An animal that is hunted and eaten by a predator"
+    },
+    {
+      "term": "trophic level",
+      "definition": "A step in a food chain or web that shows feeding position"
     }
   ],
   "teachingNotes": "Use diagrams to show energy flow. Discuss human impact on ecosystems. Connect to local environments students know.",
-  "sample": {
-    "question": "What would happen to an ecosystem if all the producers disappeared?",
-    "expectedAny": [
-      "ecosystem would collapse",
-      "consumers would have no food source"
-    ]
-  },
+  "sample": [
+    { "question": "What would happen to an ecosystem if all the producers disappeared?", "expectedAny": ["collapse", "no energy for consumers"] },
+    { "question": "Define producer.", "expectedAny": ["makes own food"] },
+    { "question": "Define consumer.", "expectedAny": ["eats other organisms"] },
+    { "question": "Define decomposer.", "expectedAny": ["breaks down dead matter"] },
+    { "question": "What is a food web?", "expectedAny": ["many connected food chains"] },
+    { "question": "Why are producers the base of food webs?", "expectedAny": ["provide energy from sun"] },
+    { "question": "Give an example of a primary consumer.", "expectedAny": ["rabbit", "deer"] },
+    { "question": "Give an example of a secondary consumer.", "expectedAny": ["hawk", "fox"] },
+    { "question": "Why are decomposers important?", "expectedAny": ["recycle nutrients"] },
+    { "question": "How can removing one species affect others?", "expectedAny": ["chain reactions", "imbalance"] }
+  ],
   "truefalse": [
-    {
-      "question": "Energy in a food web always flows from producers to consumers to decomposers.",
-      "answer": false,
-      "expectedAny": [
-        "decomposers break down all organism levels"
-      ]
-    }
+    { "question": "Energy flows from producers to consumers.", "expectedAny": ["true"] },
+    { "question": "Decomposers only break down producers.", "expectedAny": ["false"] },
+    { "question": "A food web is simpler than a food chain.", "expectedAny": ["false"] },
+    { "question": "Producers use energy from sunlight to make food.", "expectedAny": ["true"] },
+    { "question": "Removing one species can impact many others.", "expectedAny": ["true"] },
+    { "question": "All consumers are predators.", "expectedAny": ["false"] },
+    { "question": "Herbivores eat plants.", "expectedAny": ["true"] },
+    { "question": "Decomposers recycle nutrients.", "expectedAny": ["true"] },
+    { "question": "Producers depend on decomposers for nutrients.", "expectedAny": ["true"] },
+    { "question": "Energy in ecosystems comes mainly from the sun.", "expectedAny": ["true"] }
   ],
   "multiplechoice": [
-    {
-      "question": "In a forest ecosystem, which organism is a primary consumer?",
-      "choices": [
-        "oak tree",
-        "rabbit",
-        "hawk",
-        "mushroom"
-      ],
-      "correct": 1,
-      "expectedAny": [
-        "rabbit eats plants (producers)"
-      ]
-    }
+    { "question": "In a forest ecosystem, which organism is a primary consumer?", "choices": ["oak tree", "rabbit", "hawk", "mushroom"], "correct": 1, "expectedAny": ["rabbit"] },
+    { "question": "Which is a producer?", "choices": ["grass", "wolf", "mushroom", "hawk"], "correct": 0, "expectedAny": ["grass"] },
+    { "question": "Which is a decomposer?", "choices": ["rabbit", "oak tree", "mushroom", "hawk"], "correct": 2, "expectedAny": ["mushroom"] },
+    { "question": "Which best describes a food web?", "choices": ["single chain", "network of food chains", "random list", "energy circle"], "correct": 1, "expectedAny": ["network of food chains"] },
+    { "question": "If producers decrease, then consumers likely:", "choices": ["increase", "decrease", "no change", "become producers"], "correct": 1, "expectedAny": ["decrease"] },
+    { "question": "Which animal is an herbivore?", "choices": ["lion", "rabbit", "hawk", "snake"], "correct": 1, "expectedAny": ["rabbit"] },
+    { "question": "Which statement is true?", "choices": ["energy flows from consumers to producers", "energy flows from producers to consumers", "decomposers create energy", "energy cycles without loss"], "correct": 1, "expectedAny": ["producers to consumers"] },
+    { "question": "Which organism could be at the top of a food web?", "choices": ["grass", "deer", "wolf", "fungus"], "correct": 2, "expectedAny": ["wolf"] },
+    { "question": "Which adds nutrients back to soil?", "choices": ["producers", "consumers", "decomposers", "predators"], "correct": 2, "expectedAny": ["decomposers"] },
+    { "question": "What is a primary source of energy for most ecosystems?", "choices": ["moon", "sun", "wind", "rocks"], "correct": 1, "expectedAny": ["sun"] }
   ],
   "fillintheblank": [
-    {
-      "question": "The _____ level of a food web contains organisms that make their own food.",
-      "expectedAny": [
-        "producer",
-        "first"
-      ]
-    }
+    { "question": "The _____ level of a food web contains organisms that make their own food.", "expectedAny": ["producer", "producers", "producer level", "base level"] },
+    { "question": "Organisms that eat plants are called ________.", "expectedAny": ["herbivores", "herbivore", "plant eaters", "plant-eaters"] },
+    { "question": "Organisms that eat other animals are ________.", "expectedAny": ["carnivores", "carnivore", "meat eaters", "meat-eaters"] },
+    { "question": "Organisms that eat both plants and animals are ________.", "expectedAny": ["omnivores", "omnivore", "eat plants and animals"] },
+    { "question": "A network of food chains is a food ________.", "expectedAny": ["web", "food web", "network"] },
+    { "question": "Dead matter is broken down by ________.", "expectedAny": ["decomposers", "decomposer", "fungi", "bacteria"] },
+    { "question": "Energy for producers comes from the ________.", "expectedAny": ["sun", "the sun", "sunlight", "solar energy"] },
+    { "question": "A rabbit eating grass is a ________ consumer.", "expectedAny": ["primary", "first", "1st"] },
+    { "question": "A hawk eating a rabbit is a ________ consumer.", "expectedAny": ["secondary", "second", "2nd"] },
+    { "question": "Nutrients return to soil thanks to ________.", "expectedAny": ["decomposers", "decomposition", "bacteria and fungi"] }
   ],
   "shortanswer": [
-    {
-      "question": "Explain why food webs are more realistic than simple food chains.",
-      "expectedAny": [
-        "animals eat multiple food sources",
-        "shows complex relationships"
-      ]
-    }
+    { "question": "Explain why food webs are more realistic than simple food chains.", "expectedAny": ["animals eat multiple foods", "organisms have many links", "complex relationships", "many connections between species"] },
+    { "question": "What might happen if decomposers disappeared?", "expectedAny": ["waste build-up", "nutrient shortage", "dead matter piles up", "soil loses nutrients"] },
+    { "question": "How might removing a top predator affect a food web?", "expectedAny": ["prey overpopulate", "too many herbivores", "imbalance", "trophic cascade"] },
+    { "question": "Give one example of human impact on a food web.", "expectedAny": ["pollution", "overfishing", "habitat loss", "invasive species"] },
+    { "question": "Why are producers essential in ecosystems?", "expectedAny": ["base of energy", "make food", "start of energy pyramid", "use sunlight to make food"] },
+    { "question": "Describe the role of decomposers.", "expectedAny": ["recycle nutrients", "break down dead material", "return nutrients to soil"] },
+    { "question": "What happens if a disease kills many producers?", "expectedAny": ["consumer decline", "less energy for consumers", "fewer herbivores"] },
+    { "question": "Give an example of an omnivore and its foods.", "expectedAny": ["bear eats plants and fish", "humans eat plants and meat", "raccoon eats fruits and insects"] },
+    { "question": "How do seasonal changes affect food webs?", "expectedAny": ["availability changes", "less food in winter", "migration or hibernation"] },
+    { "question": "Explain energy flow direction in food webs.", "expectedAny": ["from producers to consumers", "sun to producers to consumers", "one-way flow of energy"] }
   ]
 }

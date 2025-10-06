@@ -59,7 +59,9 @@
     {
       "question": "When you want to learn about something, you do _____.",
       "expectedAny": [
-        "research"
+        "research",
+        "do research",
+        "research it"
       ]
     }
   ],
@@ -67,7 +69,9 @@
     {
       "question": "What is one fact you learned from an information book?",
       "expectedAny": [
-        "any factual information from nonfiction books"
+        "elephants have trunks",
+        "dinosaurs lived long ago",
+        "the sun is a star"
       ]
     }
   ]

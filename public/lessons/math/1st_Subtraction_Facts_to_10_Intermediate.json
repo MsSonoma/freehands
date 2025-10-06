@@ -13,7 +13,7 @@
   "teachingNotes": "Use crossing out and manipulatives. Connect to real-life situations like eating cookies or losing toys. Practice fact families.",
   "sample": {
     "question": "What is 8 - 3?",
-    "expectedAny": ["5", "five"]
+    "expectedAny": ["5", "five", "the answer is 5"]
   },
   "truefalse": [
     {"question": "10 - 4 equals 6.", "answer": true, "expectedAny": ["10 take away 4 leaves 6"]}
@@ -25,9 +25,9 @@
     {"question": "9 - _____ = 4", "expectedAny": ["5", "five"]}
   ],
   "shortanswer": [
-    {"question": "If you know that 3 + 4 = 7, what subtraction facts can you make?", "expectedAny": ["7 - 3 = 4", "7 - 4 = 3"]}
+    {"question": "If you know that 3 + 4 = 7, what subtraction facts can you make?", "expectedAny": ["7 - 3 = 4", "7 - 4 = 3", "fact family: 3 + 4 = 7", "7 minus 3", "7 minus 4"]}
   ],
   "wordProblems": [
-    {"question": "There were 9 birds in a tree. 5 birds flew away. How many birds are still in the tree?", "expectedAny": ["4 birds", "9 - 5 = 4"]}
+    {"question": "There were 9 birds in a tree. 5 birds flew away. How many birds are still in the tree?", "expectedAny": ["4 birds", "9 - 5 = 4", "4", "four"]}
   ]
 }

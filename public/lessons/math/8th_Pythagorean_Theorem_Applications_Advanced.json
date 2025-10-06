@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Use real-world applications like construction and navigation. Practice identifying when to use the theorem.",
-  "sample": {
-    "question": "What theorem states that a² + b² = c² in right triangles?",
-    "expectedAny": ["Pythagorean theorem", "Pythagoras theorem", "right triangle theorem", "a² + b² = c²"]
-  },
-  "truefalse": {
-    "question": "The hypotenuse is always the longest side of a right triangle.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "In a right triangle, what are the two shorter sides called?",
-    "expectedAny": ["legs", "sides", "adjacent sides", "shorter sides"]
-  },
-  "fillintheblank": {
-    "question": "The longest side of a right triangle is the ________.",
-    "expectedAny": ["hypotenuse", "longest side", "opposite side", "c side"]
-  },
-  "shortanswer": {
-    "question": "Find the hypotenuse of a right triangle with legs 3 and 4.",
-    "expectedAny": ["5", "5 units", "√(3² + 4²) = 5", "five"]
-  },
-  "wordProblems": {
-    "question": "A ladder leans against a wall. The ladder is 13 feet long and the bottom is 5 feet from the wall. How high up the wall does the ladder reach?",
-    "expectedAny": ["12 feet", "12", "√(13² - 5²) = 12", "twelve feet"]
-  }
+  "sample": [
+    { "question": "What theorem states that a² + b² = c² in right triangles?", "expectedAny": ["Pythagorean theorem"] },
+    { "question": "Which is longest side?", "choices": ["Leg", "Hypotenuse", "Base", "Height"], "correct": 1, "expectedAny": ["hypotenuse"] },
+    { "question": "Two shorter sides are ________.", "expectedAny": ["legs"] },
+    { "question": "Triangle with 90 degrees is ________.", "expectedAny": ["right triangle"] },
+    { "question": "Number times itself gives original is ________.", "expectedAny": ["square root"] },
+    { "question": "What is a² + b² = c²?", "choices": ["Addition", "Pythagorean theorem", "Subtraction", "Division"], "correct": 1, "expectedAny": ["Pythagorean theorem"] },
+    { "question": "Opposite right angle side is ________.", "expectedAny": ["hypotenuse"] },
+    { "question": "What are shorter sides?", "choices": ["Hypotenuse", "Legs", "Angles", "Vertices"], "correct": 1, "expectedAny": ["legs"] },
+    { "question": "90-degree triangle is ________.", "expectedAny": ["right triangle"] },
+    { "question": "√ symbol means ________.", "expectedAny": ["square root"] }
+  ],
+  "truefalse": [
+    { "question": "The hypotenuse is always the longest side of a right triangle.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Pythagorean theorem is a² - b² = c².", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Legs are shorter sides.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Right triangle has no 90 degrees.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Hypotenuse is opposite right angle.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Square root reverses squaring.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Pythagorean theorem works on all triangles.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Legs form right angle.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Hypotenuse is shortest side.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "a² + b² = c² only for right triangles.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "In a right triangle, what are the two shorter sides called?", "choices": ["Hypotenuse", "Legs", "Angles", "Vertices"], "correct": 1, "expectedAny": ["legs"] },
+    { "question": "What is a² + b² = c²?", "choices": ["Addition", "Pythagorean theorem", "Subtraction", "Division"], "correct": 1, "expectedAny": ["Pythagorean theorem"] },
+    { "question": "What is longest side?", "choices": ["Leg", "Hypotenuse", "Base", "Height"], "correct": 1, "expectedAny": ["hypotenuse"] },
+    { "question": "What is 90-degree triangle?", "choices": ["Acute", "Right triangle", "Obtuse", "Equilateral"], "correct": 1, "expectedAny": ["right triangle"] },
+    { "question": "What is √?", "choices": ["Addition", "Square root", "Subtraction", "Division"], "correct": 1, "expectedAny": ["square root"] },
+    { "question": "Pythagorean theorem uses?", "choices": ["Addition only", "Squares", "Subtraction only", "Division"], "correct": 1, "expectedAny": ["squares"] },
+    { "question": "Hypotenuse is opposite?", "choices": ["Leg", "Right angle", "Acute angle", "Nothing"], "correct": 1, "expectedAny": ["right angle"] },
+    { "question": "Legs meet at?", "choices": ["Hypotenuse", "Right angle", "Acute angle", "Nothing"], "correct": 1, "expectedAny": ["right angle"] },
+    { "question": "c in a² + b² = c² is?", "choices": ["Leg", "Hypotenuse", "Angle", "Height"], "correct": 1, "expectedAny": ["hypotenuse"] },
+    { "question": "Square root of 9 is?", "choices": ["81", "3", "18", "27"], "correct": 1, "expectedAny": ["3"] }
+  ],
+  "fillintheblank": [
+    { "question": "The longest side of a right triangle is the ________.", "expectedAny": ["hypotenuse"] },
+    { "question": "The ________ theorem is a² + b² = c².", "expectedAny": ["Pythagorean"] },
+    { "question": "The two shorter sides are ________.", "expectedAny": ["legs"] },
+    { "question": "A ________ triangle has 90 degrees.", "expectedAny": ["right"] },
+    { "question": "________ root reverses squaring.", "expectedAny": ["square"] },
+    { "question": "The ________ is opposite right angle.", "expectedAny": ["hypotenuse"] },
+    { "question": "________ are shorter sides.", "expectedAny": ["legs"] },
+    { "question": "a² + b² = c² is ________ theorem.", "expectedAny": ["Pythagorean"] },
+    { "question": "Right ________ has 90 degrees.", "expectedAny": ["triangle"] },
+    { "question": "√ is ________ root symbol.", "expectedAny": ["square"] }
+  ],
+  "shortanswer": [
+    { "question": "Find the hypotenuse of a right triangle with legs 3 and 4.", "expectedAny": ["5", "5 units"] },
+    { "question": "What is Pythagorean theorem?", "expectedAny": ["a² + b² = c²", "right triangle formula", "a squared plus b squared equals c squared", "leg squared plus leg squared equals hypotenuse squared"] },
+    { "question": "What is hypotenuse?", "expectedAny": ["longest side", "opposite right angle", "side across from right angle", "longest side of right triangle"] },
+    { "question": "What are legs?", "expectedAny": ["two shorter sides", "sides forming right angle"] },
+    { "question": "If legs are 6 and 8, find hypotenuse.", "expectedAny": ["10", "10 units"] },
+    { "question": "What is right triangle?", "expectedAny": ["triangle with 90 degrees", "90-degree triangle"] },
+    { "question": "What is square root?", "expectedAny": ["number times itself gives original", "inverse of squaring"] },
+    { "question": "If legs are 5 and 12, find hypotenuse.", "expectedAny": ["13", "13 units"] },
+    { "question": "When use Pythagorean theorem?", "expectedAny": ["right triangles", "finding unknown side"] },
+    { "question": "What is √16?", "expectedAny": ["4", "four"] }
+  ],
+  "wordProblems": [
+    { "question": "A ladder leans against a wall. The ladder is 13 feet long and the bottom is 5 feet from the wall. How high up the wall does the ladder reach?", "expectedAny": ["12 feet", "12"] },
+    { "question": "A ramp is 15 m long with horizontal distance 9 m. Find vertical height.", "expectedAny": ["12 m", "12"] },
+    { "question": "Walk 8 blocks north, 6 blocks east. Direct distance?", "expectedAny": ["10 blocks", "10"] },
+    { "question": "TV diagonal is 25 inches, width 20 inches. Find height.", "expectedAny": ["15 inches", "15"] },
+    { "question": "Ladder reaches 12 ft high, 5 ft from wall. Ladder length?", "expectedAny": ["13 ft", "13"] },
+    { "question": "Baseball diamond is square 90 ft sides. Distance home to second?", "expectedAny": ["127.3 ft", "about 127 ft"] },
+    { "question": "Flagpole casts 15 ft shadow, wire from top 25 ft long. Pole height?", "expectedAny": ["20 ft", "20"] },
+    { "question": "Legs of triangle are 9 and 12. Find hypotenuse.", "expectedAny": ["15", "15 units"] },
+    { "question": "Boat sails 20 km east, 21 km north. Distance from start?", "expectedAny": ["29 km", "29"] },
+    { "question": "Rectangle is 16 by 12. Find diagonal.", "expectedAny": ["20", "20 units"] }
+  ]
 }

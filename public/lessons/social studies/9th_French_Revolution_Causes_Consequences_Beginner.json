@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "9th_French_Revolution_Causes_Consequences_Beginner",
   "title": "French Revolution: Causes and Consequences",
   "grade": "9th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "french revolution",
-      "definition": "Political upheaval in France (1789-1799) that overthrew monarchy"
-    },
-    {
-      "term": "estates system",
-      "definition": "French social hierarchy dividing society into three classes"
-    },
-    {
-      "term": "declaration of rights",
-      "definition": "Document asserting fundamental human rights and freedoms"
-    },
-    {
-      "term": "reign of terror",
-      "definition": "Period of violence during French Revolution with mass executions"
-    },
-    {
-      "term": "nationalism",
-      "definition": "Strong identification with and devotion to one's nation"
-    }
+    {"term": "french revolution", "definition": "Political upheaval in France (1789-1799) that overthrew monarchy"},
+    {"term": "estates system", "definition": "French social hierarchy dividing society into three classes"},
+    {"term": "declaration of rights", "definition": "Document asserting fundamental human rights and freedoms"},
+    {"term": "reign of terror", "definition": "Period of violence during French Revolution with mass executions"},
+    {"term": "nationalism", "definition": "Strong identification with and devotion to one's nation"}
   ],
   "teachingNotes": "Analyze economic and social causes of revolution. Discuss how revolutionary ideas spread across Europe and influenced other movements.",
-  "sample": {
-    "question": "What political upheaval overthrew the French monarchy?",
-    "expectedAny": [
-      "French Revolution",
-      "revolution in France",
-      "French political revolution",
-      "overthrow of monarchy"
-    ]
-  },
-  "truefalse": {
-    "question": "The Estates System divided French society into three classes.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What was the period of mass executions called?",
-    "expectedAny": [
-      "Reign of Terror",
-      "Terror",
-      "revolutionary terror",
-      "period of violence"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Strong devotion to one's nation is called ________.",
-    "expectedAny": [
-      "nationalism",
-      "patriotism",
-      "national pride",
-      "national identity"
-    ]
-  },
-  "shortanswer": {
-    "question": "What were the main causes of the French Revolution?",
-    "expectedAny": [
-      "financial crisis",
-      "social inequality",
-      "political grievances",
-      "Enlightenment ideas"
-    ]
-  }
+  "sample": [
+    {"question": "What political upheaval overthrew the French monarchy?", "expectedAny": ["French Revolution", "revolution in France", "1789 revolution", "revolution of France"]},
+    {"question": "What is the estates system?", "expectedAny": ["French social hierarchy", "three class system", "social division", "three estates"]},
+    {"question": "What is the Declaration of Rights?", "expectedAny": ["document of human rights", "rights and freedoms document", "revolutionary declaration", "rights document"]},
+    {"question": "What is the Reign of Terror?", "expectedAny": ["period of violence", "mass executions", "revolutionary violence", "time of terror"]},
+    {"question": "What is nationalism?", "expectedAny": ["identification with nation", "devotion to country", "national pride", "love of country"]},
+    {"question": "When was the French Revolution?", "expectedAny": ["1789-1799", "late 18th century", "1789"]},
+    {"question": "What did the revolution overthrow?", "expectedAny": ["monarchy", "French king", "royal government"]},
+    {"question": "How many estates were there?", "expectedAny": ["three", "3", "three classes"]},
+    {"question": "What did the Declaration assert?", "expectedAny": ["human rights", "fundamental freedoms", "rights of man"]},
+    {"question": "What happened in Reign of Terror?", "expectedAny": ["mass executions", "violence", "guillotine executions"]}
+  ],
+  "truefalse": [
+    {"question": "The Estates System divided French society into three classes. (True or False)", "correct": true},
+    {"question": "The French Revolution occurred in 1789-1799. (True or False)", "correct": true},
+    {"question": "The Reign of Terror was peaceful. (True or False)", "correct": false},
+    {"question": "The French Revolution overthrew the monarchy. (True or False)", "correct": true},
+    {"question": "The Declaration of Rights asserted human freedoms. (True or False)", "correct": true},
+    {"question": "Nationalism means devotion to one's nation. (True or False)", "correct": true},
+    {"question": "The estates system had no social hierarchy. (True or False)", "correct": false},
+    {"question": "The Revolution had no causes. (True or False)", "correct": false},
+    {"question": "Revolutionary ideas spread across Europe. (True or False)", "correct": true},
+    {"question": "The Reign of Terror involved executions. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What overthrew the French monarchy?", "choices": [{"letter": "A", "text": "Crusades"}, {"letter": "B", "text": "French Revolution"}, {"letter": "C", "text": "Reformation"}, {"letter": "D", "text": "Renaissance"}], "correct": "B"},
+    {"question": "How many classes in estates system?", "choices": [{"letter": "A", "text": "Two"}, {"letter": "B", "text": "Three"}, {"letter": "C", "text": "Four"}, {"letter": "D", "text": "Five"}], "correct": "B"},
+    {"question": "What asserted human rights?", "choices": [{"letter": "A", "text": "Code Napoleon"}, {"letter": "B", "text": "Declaration of Rights"}, {"letter": "C", "text": "Estates document"}, {"letter": "D", "text": "Royal decree"}], "correct": "B"},
+    {"question": "What was the period of violence?", "choices": [{"letter": "A", "text": "Renaissance"}, {"letter": "B", "text": "Enlightenment"}, {"letter": "C", "text": "Reign of Terror"}, {"letter": "D", "text": "Empire"}], "correct": "C"},
+    {"question": "What is devotion to one's nation?", "choices": [{"letter": "A", "text": "Feudalism"}, {"letter": "B", "text": "Nationalism"}, {"letter": "C", "text": "Imperialism"}, {"letter": "D", "text": "Capitalism"}], "correct": "B"},
+    {"question": "When was the Revolution?", "choices": [{"letter": "A", "text": "1689-1699"}, {"letter": "B", "text": "1789-1799"}, {"letter": "C", "text": "1889-1899"}, {"letter": "D", "text": "1589-1599"}], "correct": "B"},
+    {"question": "What did France overthrow?", "choices": [{"letter": "A", "text": "Republic"}, {"letter": "B", "text": "Monarchy"}, {"letter": "C", "text": "Democracy"}, {"letter": "D", "text": "Empire"}], "correct": "B"},
+    {"question": "What divided French society?", "choices": [{"letter": "A", "text": "Religion"}, {"letter": "B", "text": "Estates system"}, {"letter": "C", "text": "Language"}, {"letter": "D", "text": "Region"}], "correct": "B"},
+    {"question": "What spread across Europe?", "choices": [{"letter": "A", "text": "Disease"}, {"letter": "B", "text": "Revolutionary ideas"}, {"letter": "C", "text": "Trade"}, {"letter": "D", "text": "Art"}], "correct": "B"},
+    {"question": "What characterized Reign of Terror?", "choices": [{"letter": "A", "text": "Peace"}, {"letter": "B", "text": "Mass executions"}, {"letter": "C", "text": "Democracy"}, {"letter": "D", "text": "Harmony"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "The _____ Revolution overthrew the French monarchy.", "expectedAny": ["French"]},
+    {"question": "The _____ system divided society into three classes.", "expectedAny": ["estates", "Estates"]},
+    {"question": "The Declaration of _____ asserted human freedoms.", "expectedAny": ["Rights", "rights"]},
+    {"question": "The _____ of Terror was a period of violence.", "expectedAny": ["Reign", "reign"]},
+    {"question": "_____ is strong devotion to one's nation.", "expectedAny": ["nationalism", "Nationalism"]},
+    {"question": "The Revolution occurred from _____ to _____.", "expectedAny": ["1789-1799", "1789 to 1799"]},
+    {"question": "The Revolution overthrew the _____.", "expectedAny": ["monarchy", "king"]},
+    {"question": "France had _____ estates.", "expectedAny": ["three", "3"]},
+    {"question": "The Declaration asserted _____ rights.", "expectedAny": ["human", "fundamental"]},
+    {"question": "Revolutionary _____ spread across Europe.", "expectedAny": ["ideas", "ideals"]}
+  ],
+  "shortanswer": [
+    {"question": "What was the French Revolution?", "keyTerms": ["political", "upheaval", "France", "overthrew monarchy"], "expectedAny": ["Political upheaval in France from 1789-1799 that overthrew monarchy", "Revolution that ended French monarchy", "Transformation of French government"]},
+    {"question": "What was the estates system?", "keyTerms": ["French", "social hierarchy", "three", "classes"], "expectedAny": ["French social hierarchy dividing society into three classes", "Three-tier social structure in France", "System with clergy nobility and commoners"]},
+    {"question": "What was the Declaration of Rights?", "keyTerms": ["document", "human rights", "freedoms", "fundamental"], "expectedAny": ["Document asserting fundamental human rights and freedoms", "Revolutionary statement of rights", "Declaration of basic human rights"]},
+    {"question": "What was the Reign of Terror?", "keyTerms": ["period", "violence", "French Revolution", "executions"], "expectedAny": ["Period of violence during French Revolution with mass executions", "Time of revolutionary violence and guillotine", "Radical phase with executions"]},
+    {"question": "What is nationalism?", "keyTerms": ["strong", "identification", "devotion", "nation"], "expectedAny": ["Strong identification with and devotion to one's nation", "Pride and loyalty to country", "National identity and allegiance"]},
+    {"question": "What caused the Revolution?", "keyTerms": ["economic", "inequality", "social", "injustice"], "expectedAny": ["Economic inequality and social injustice in estates system", "Financial crisis and unfair taxation", "Wealth gap and oppression"]},
+    {"question": "What did the Revolution achieve?", "keyTerms": ["ended", "monarchy", "established", "rights"], "expectedAny": ["Ended monarchy and established rights and freedoms", "Transformed French government and society", "Created republic and declared human rights"]},
+    {"question": "Why was the Reign of Terror significant?", "keyTerms": ["radical", "phase", "violence", "executions"], "expectedAny": ["Radical phase showing revolution's violence and extremism", "Demonstrated dangers of revolutionary fervor", "Period of intense political purges"]},
+    {"question": "How did revolutionary ideas spread?", "keyTerms": ["across", "Europe", "influenced", "movements"], "expectedAny": ["Spread across Europe and influenced other movements", "Inspired revolutions in other countries", "Ideas of rights and equality spread"]},
+    {"question": "What is the significance of nationalism?", "keyTerms": ["national", "identity", "unity", "movements"], "expectedAny": ["Created national identity and unity movements", "Inspired people to unite around shared nationality", "Basis for modern nation-states"]}
+  ]
 }

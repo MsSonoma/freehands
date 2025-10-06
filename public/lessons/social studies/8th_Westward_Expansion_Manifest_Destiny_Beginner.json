@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "8th_Westward_Expansion_Manifest_Destiny_Beginner",
   "title": "Westward Expansion and Manifest Destiny",
   "grade": "8th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "Manifest Destiny",
-      "definition": "The belief that America was meant to expand across the continent"
-    },
-    {
-      "term": "frontier",
-      "definition": "The edge of settled territory"
-    },
-    {
-      "term": "pioneer",
-      "definition": "A person who settles in a new territory"
-    },
-    {
-      "term": "Oregon Trail",
-      "definition": "A route used by settlers traveling west"
-    },
-    {
-      "term": "Gold Rush",
-      "definition": "A rapid movement of people to areas where gold was discovered"
-    }
+    {"term": "Manifest Destiny", "definition": "The belief that America was meant to expand across the continent"},
+    {"term": "frontier", "definition": "The edge of settled territory"},
+    {"term": "pioneer", "definition": "A person who settles in a new territory"},
+    {"term": "Oregon Trail", "definition": "A route used by settlers traveling west"},
+    {"term": "Gold Rush", "definition": "A rapid movement of people to areas where gold was discovered"}
   ],
   "teachingNotes": "Explain motivations for westward movement. Discuss impact on Native Americans and Mexican territories.",
-  "sample": {
-    "question": "What was the belief that America should expand across the continent?",
-    "expectedAny": [
-      "Manifest Destiny",
-      "westward expansion belief",
-      "continental expansion",
-      "destiny belief"
-    ]
-  },
-  "truefalse": {
-    "question": "The Oregon Trail was a route used by settlers traveling west.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is a person who settles in new territory called?",
-    "expectedAny": [
-      "pioneer",
-      "settler",
-      "frontiersman",
-      "colonist"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The edge of settled territory is called the ________.",
-    "expectedAny": [
-      "frontier",
-      "boundary",
-      "edge",
-      "border"
-    ]
-  },
-  "shortanswer": {
-    "question": "What motivated people to move west?",
-    "expectedAny": [
-      "land, gold, opportunity",
-      "better life, resources",
-      "economic opportunities"
-    ]
-  }
+  "sample": [
+    {"question": "What was Manifest Destiny?", "expectedAny": ["belief America should expand across continent", "idea of continental expansion", "destiny to spread from coast to coast", "destiny to expand", "belief in expansion"]},
+    {"question": "What is the frontier?", "expectedAny": ["edge of settled territory", "boundary of settlement", "western boundary"]},
+    {"question": "What is a pioneer?", "expectedAny": ["person who settles new territory", "early settler", "someone who moves west"]},
+    {"question": "What was the Oregon Trail?", "expectedAny": ["route used by settlers traveling west", "western travel route", "path to Oregon"]},
+    {"question": "What was the Gold Rush?", "expectedAny": ["rapid movement to areas where gold was discovered", "rush to find gold", "mass migration to gold fields"]},
+    {"question": "Why did people move west?", "expectedAny": ["land, gold, opportunity", "better life", "economic opportunities", "to find resources"]},
+    {"question": "Where did the Oregon Trail lead?", "expectedAny": ["Oregon", "Pacific Northwest", "west coast"]},
+    {"question": "What attracted people during the Gold Rush?", "expectedAny": ["gold", "wealth", "riches", "fortune"]},
+    {"question": "What did Manifest Destiny justify?", "expectedAny": ["westward expansion", "taking western lands", "continental expansion"]},
+    {"question": "Who traveled the Oregon Trail?", "expectedAny": ["pioneers", "settlers", "families moving west"]}
+  ],
+  "truefalse": [
+    {"question": "Manifest Destiny was the belief America should expand across the continent. (True or False)", "correct": true},
+    {"question": "The Oregon Trail was a route used by settlers traveling west. (True or False)", "correct": true},
+    {"question": "The frontier is the center of settled territory. (True or False)", "correct": false},
+    {"question": "A pioneer is someone who settles in new territory. (True or False)", "correct": true},
+    {"question": "The Gold Rush happened because silver was discovered. (True or False)", "correct": false},
+    {"question": "People moved west seeking land and opportunity. (True or False)", "correct": true},
+    {"question": "The Oregon Trail led to the Atlantic Ocean. (True or False)", "correct": false},
+    {"question": "Manifest Destiny encouraged westward expansion. (True or False)", "correct": true},
+    {"question": "The Gold Rush caused rapid movement to gold areas. (True or False)", "correct": true},
+    {"question": "No one wanted to move west in the 1800s. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "What is a person who settles in new territory called?", "choices": [{"letter": "A", "text": "Tourist"}, {"letter": "B", "text": "Pioneer"}, {"letter": "C", "text": "Merchant"}, {"letter": "D", "text": "Soldier"}], "correct": "B"},
+    {"question": "What was Manifest Destiny?", "choices": [{"letter": "A", "text": "A law about land"}, {"letter": "B", "text": "A treaty with Mexico"}, {"letter": "C", "text": "Belief America should expand west"}, {"letter": "D", "text": "A religious movement"}], "correct": "C"},
+    {"question": "What is the frontier?", "choices": [{"letter": "A", "text": "The capital city"}, {"letter": "B", "text": "Edge of settled territory"}, {"letter": "C", "text": "A military base"}, {"letter": "D", "text": "The Atlantic coast"}], "correct": "B"},
+    {"question": "What was the Oregon Trail?", "choices": [{"letter": "A", "text": "A railroad"}, {"letter": "B", "text": "A river"}, {"letter": "C", "text": "A route for western settlers"}, {"letter": "D", "text": "A mountain range"}], "correct": "C"},
+    {"question": "What caused the Gold Rush?", "choices": [{"letter": "A", "text": "Discovery of oil"}, {"letter": "B", "text": "Discovery of gold"}, {"letter": "C", "text": "New farming methods"}, {"letter": "D", "text": "Railroad construction"}], "correct": "B"},
+    {"question": "Why did pioneers move west?", "choices": [{"letter": "A", "text": "To visit family"}, {"letter": "B", "text": "For vacations"}, {"letter": "C", "text": "For land and opportunity"}, {"letter": "D", "text": "To avoid taxes"}], "correct": "C"},
+    {"question": "Where did the Oregon Trail lead?", "choices": [{"letter": "A", "text": "Texas"}, {"letter": "B", "text": "Florida"}, {"letter": "C", "text": "Oregon"}, {"letter": "D", "text": "New York"}], "correct": "C"},
+    {"question": "What did Manifest Destiny promote?", "choices": [{"letter": "A", "text": "Staying in eastern cities"}, {"letter": "B", "text": "Continental expansion"}, {"letter": "C", "text": "Returning to Europe"}, {"letter": "D", "text": "Building factories"}], "correct": "B"},
+    {"question": "What was discovered that caused rapid migration?", "choices": [{"letter": "A", "text": "Diamonds"}, {"letter": "B", "text": "Oil"}, {"letter": "C", "text": "Gold"}, {"letter": "D", "text": "Coal"}], "correct": "C"},
+    {"question": "Who traveled west on the Oregon Trail?", "choices": [{"letter": "A", "text": "Only soldiers"}, {"letter": "B", "text": "Pioneers and families"}, {"letter": "C", "text": "Government officials"}, {"letter": "D", "text": "Native Americans"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "The edge of settled territory is called the _____.", "expectedAny": ["frontier"]},
+    {"question": "_____ Destiny was the belief America should expand west.", "expectedAny": ["Manifest"]},
+    {"question": "A person who settles new territory is a _____.", "expectedAny": ["pioneer"]},
+    {"question": "The _____ Trail was used by settlers going west.", "expectedAny": ["Oregon"]},
+    {"question": "The _____ Rush brought people to areas where gold was found.", "expectedAny": ["Gold"]},
+    {"question": "Pioneers traveled west seeking land and _____.", "expectedAny": ["opportunity", "wealth", "fortune"]},
+    {"question": "Manifest Destiny encouraged _____ expansion.", "expectedAny": ["westward", "continental"]},
+    {"question": "The Oregon Trail led to the _____ coast.", "expectedAny": ["west", "western", "Pacific"]},
+    {"question": "The frontier moved _____ as settlers expanded.", "expectedAny": ["west", "westward"]},
+    {"question": "During the Gold Rush, people sought _____.", "expectedAny": ["gold", "wealth", "riches", "fortune"]}
+  ],
+  "shortanswer": [
+    {"question": "What motivated people to move west?", "keyTerms": ["land", "gold", "opportunity", "better"], "expectedAny": ["Land, gold, and opportunity motivated westward movement", "People wanted better lives and economic opportunities", "Settlers sought land, resources, and wealth in the west"]},
+    {"question": "What was Manifest Destiny and why was it important?", "keyTerms": ["belief", "expand", "continent", "justified"], "expectedAny": ["The belief America should expand across the continent which justified westward expansion", "It was the idea that America's destiny was to spread from coast to coast", "Manifest Destiny promoted and justified continental expansion"]},
+    {"question": "What challenges did pioneers face on the Oregon Trail?", "keyTerms": ["journey", "difficult", "hardship", "distance"], "expectedAny": ["Long difficult journey with many hardships and dangers", "Distance, weather, disease, and lack of supplies", "Harsh conditions and difficult terrain over thousands of miles"]},
+    {"question": "How did the Gold Rush affect western settlement?", "keyTerms": ["rapid", "migration", "population", "growth"], "expectedAny": ["It caused rapid migration and population growth in the west", "The Gold Rush brought thousands of people west quickly", "It accelerated western settlement with massive population movement"]},
+    {"question": "What role did the frontier play in American expansion?", "keyTerms": ["edge", "settlement", "moved", "west"], "expectedAny": ["The frontier was the edge of settlement that moved west as America expanded", "It marked the boundary of settled territory that kept moving westward", "The frontier represented the advancing edge of American settlement"]},
+    {"question": "How did westward expansion impact Native Americans?", "keyTerms": ["land", "lost", "forced", "removed"], "expectedAny": ["Native Americans lost land and were forced to move", "They were removed from their lands as settlers moved west", "Westward expansion took Native American lands and displaced tribes"]},
+    {"question": "Why was the Oregon Trail important?", "keyTerms": ["route", "settlers", "west", "thousands"], "expectedAny": ["It was the main route thousands of settlers used to reach the west", "The Oregon Trail allowed pioneers to travel to Oregon and the west coast", "It provided a path for mass migration to western territories"]},
+    {"question": "What resources attracted people west?", "keyTerms": ["land", "gold", "farming", "minerals"], "expectedAny": ["Land for farming, gold, and other minerals attracted settlers", "Natural resources like gold, land, and opportunities for farming", "Rich soil, gold deposits, and abundant land drew people west"]},
+    {"question": "How did Manifest Destiny justify expansion?", "keyTerms": ["belief", "destiny", "right", "meant"], "expectedAny": ["The belief it was America's destiny and right to expand west", "It claimed America was meant to spread across the continent", "Manifest Destiny made expansion seem like a natural right and duty"]},
+    {"question": "What were the effects of westward expansion on America?", "keyTerms": ["growth", "territory", "nation", "larger"], "expectedAny": ["America grew much larger with new territories and states", "The nation expanded from coast to coast becoming much bigger", "Westward expansion made America a continental nation with vast territory"]}
+  ]
 }

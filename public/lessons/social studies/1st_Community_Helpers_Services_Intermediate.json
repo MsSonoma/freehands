@@ -6,8 +6,8 @@
   "featured": false,
   "vocab": [
     {
-      "term": "community helper",
-      "definition": "A person whose job helps make the community better"
+      "term": "helper",
+      "definition": "A person whose job helps people in the community"
     },
     {
       "term": "service",
@@ -20,7 +20,19 @@
     {
       "term": "uniform",
       "definition": "Special clothes that show what job someone has"
+    },
+    {
+      "term": "library",
+      "definition": "A place where you borrow books and read"
     }
+    ,
+    {"term": "firefighter", "definition": "A person who puts out fires and rescues people"},
+    {"term": "doctor", "definition": "A person who helps sick or hurt people get better"},
+    {"term": "nurse", "definition": "A person who cares for sick people and helps doctors"},
+    {"term": "mail carrier", "definition": "A person who delivers letters and packages"},
+    {"term": "police officer", "definition": "A person who helps keep people safe and enforces laws"},
+    {"term": "veterinarian", "definition": "A person who cares for animals"},
+    {"term": "librarian", "definition": "A person who helps people find books and information"}
   ],
   "teachingNotes": "Invite community workers to speak to class. Use dramatic play to act out different jobs. Discuss when to call for help.",
   "sample": [
@@ -51,21 +63,21 @@
     {"question": "Who helps fix teeth?", "choices": ["dentist", "nurse", "baker", "builder"], "correct": 0, "expectedAny": ["dentist"]}
   ],
   "fillintheblank": [
-    {"question": "A _____ helps sick people feel better.", "expectedAny": ["doctor", "nurse"]},
-    {"question": "A _____ brings letters and packages.", "expectedAny": ["mail carrier", "postal worker"]},
-    {"question": "In an emergency, call _____.", "expectedAny": ["911"]},
-    {"question": "A _____ keeps people safe and follows laws.", "expectedAny": ["police officer"]},
-    {"question": "A person who fights fires is a _____.", "expectedAny": ["firefighter"]},
-    {"question": "A _____ helps find books in a library.", "expectedAny": ["librarian"]},
-    {"question": "A person who cares for animals is a _____.", "expectedAny": ["veterinarian", "vet"]}
+    {"question": "A _____ helps sick people feel better.", "expectedAny": ["doctor", "nurse", "a doctor", "a nurse"]},
+    {"question": "A _____ brings letters and packages.", "expectedAny": ["mail carrier", "postal worker", "mailman"]},
+  {"question": "In an emergency, call _____.", "expectedAny": ["911", "nine-one-one", "9-1-1"]},
+  {"question": "A _____ keeps people safe and follows laws.", "expectedAny": ["police officer", "officer", "policeman", "police"]},
+  {"question": "A person who fights fires is a _____.", "expectedAny": ["firefighter", "fire fighter", "fireman"]},
+  {"question": "A _____ helps find books in a library.", "expectedAny": ["librarian", "library worker", "library person"]},
+    {"question": "A person who cares for animals is a _____.", "expectedAny": ["veterinarian", "vet", "animal doctor"]}
   ],
   "shortanswer": [
-    {"question": "How do teachers help the community?", "expectedAny": ["teach children", "help kids learn", "prepare students for the future"]},
-    {"question": "Name three community services you know.", "expectedAny": ["police", "fire department", "hospital", "post office", "library"]},
-    {"question": "Why is it important to know when to call 911?", "expectedAny": ["for emergencies", "to get help fast"]},
-    {"question": "Draw a picture of a community helper doing their job.", "expectedAny": ["drawing with tools/setting"]},
-    {"question": "How do police officers keep people safe?", "expectedAny": ["help with traffic", "enforce laws", "help in emergencies"]},
-    {"question": "What does a librarian help you do?", "expectedAny": ["find books", "learn how to use the library"]},
-    {"question": "How do veterinarians help pets?", "expectedAny": ["keep them healthy", "care when sick"]}
+    {"question": "How do teachers help the community?", "expectedAny": ["teach children", "help kids learn", "teach new skills", "teach us", "help us learn", "teach things"]},
+    {"question": "Name three community services you know.", "expectedAny": ["police", "fire department", "hospital", "post office", "library", "police fire hospital", "police library post office", "fire police library"]},
+    {"question": "Why is it important to know when to call 911?", "expectedAny": ["for emergencies", "to get help fast", "to get the right help", "when you need help", "get help quick", "in emergencies"]},
+  {"question": "Draw a picture of a community helper doing their job.", "expectedAny": ["labeled drawing", "drawing with tools/setting", "drawing with labels", "picture with label", "drawing of helper"]},
+    {"question": "How do police officers keep people safe?", "expectedAny": ["help with traffic", "enforce laws", "help in emergencies", "stop bad guys", "help people", "keep us safe", "follow laws"]},
+    {"question": "What does a librarian help you do?", "expectedAny": ["find books", "learn how to use the library", "pick books", "look for books", "get books", "find good books"]},
+    {"question": "How do veterinarians help pets?", "expectedAny": ["keep them healthy", "care when sick", "give medicine", "make them better", "help animals", "fix animals"]}
   ]
 }

@@ -20,27 +20,44 @@
     {
       "term": "vowel",
       "definition": "The letters A, E, I, O, U that make special sounds"
+    },
+    {
+      "term": "consonant",
+      "definition": "Letters that are not vowels, like B, C, D"
+    },
+    {
+      "term": "fish",
+      "definition": "An animal that swims; used here to hear the /f/ sound"
+    },
+    {
+      "term": "zipper",
+      "definition": "A thing that opens and closes clothes; starts with /z/"
     }
   ],
   "teachingNotes": "Practice letter recognition and phonics daily. Use songs, games, and movement. Connect letters to familiar words and names.",
   "sample": [
-    {"question": "What sound does the letter 'B' make?", "expectedAny": ["/b/", "buh", "like in ball"]},
-    {"question": "Show the sound 'T' makes.", "expectedAny": ["/t/", "tuh"]},
-    {"question": "Which letter makes the /s/ sound?", "expectedAny": ["S"]},
-    {"question": "Say the sound for letter 'M'.", "expectedAny": ["/m/"]},
-    {"question": "What sound does 'F' make?", "expectedAny": ["/f/"]},
-    {"question": "Which letter makes the /r/ sound?", "expectedAny": ["R"]},
-    {"question": "Point to the letter that makes the /k/ sound.", "expectedAny": ["K"]
-    }
+    {"question": "What sound does the letter 'B' make?", "expectedAny": ["/b/", "buh", "b sound", "like in ball", "like in boy", "bbb"]},
+    {"question": "Show the sound 'T' makes.", "expectedAny": ["/t/", "tuh", "t sound", "like in top", "ttt"]},
+    {"question": "Which letter makes the /s/ sound?", "expectedAny": ["S", "s", "letter S"]},
+    {"question": "Say the sound for letter 'M'.", "expectedAny": ["/m/", "mmm", "m sound", "like in mom"]},
+    {"question": "What sound does 'F' make?", "expectedAny": ["/f/", "fff", "f sound", "like in fish"]},
+    {"question": "Which letter makes the /r/ sound?", "expectedAny": ["R", "r", "letter R"]},
+    {"question": "Point to the letter that makes the /k/ sound.", "expectedAny": ["K", "k", "letter K", "C", "c"]},
+    {"question": "What sound does 'P' make?", "expectedAny": ["/p/", "puh", "p sound", "like in pig"]},
+    {"question": "Which letter makes the /d/ sound?", "expectedAny": ["D", "d", "letter D"]},
+    {"question": "Say the sound for letter 'N'.", "expectedAny": ["/n/", "nnn", "n sound", "like in nose"]}
   ],
   "truefalse": [
-    {"question": "The letter 'A' is a vowel.", "answer": true, "expectedAny": ["true"]},
-    {"question": "Every letter makes the same sound.", "answer": false, "expectedAny": ["false"]},
-    {"question": "The letter 'B' makes a /b/ sound.", "answer": true, "expectedAny": ["true"]},
-    {"question": "There are 10 vowels in the alphabet.", "answer": false, "expectedAny": ["false"]},
-    {"question": "You use your mouth to make letter sounds.", "answer": true, "expectedAny": ["true"]},
-    {"question": "All letters are vowels.", "answer": false, "expectedAny": ["false"]},
-    {"question": "The letter 'P' makes a /p/ sound.", "answer": true, "expectedAny": ["true"]}
+    {"question": "The letter 'A' is a vowel.", "answer": true, "expectedAny": ["true", "yes", "correct", "right", "t"]},
+    {"question": "Every letter makes the same sound.", "answer": false, "expectedAny": ["false", "no", "incorrect", "wrong", "f"]},
+    {"question": "The letter 'B' makes a /b/ sound.", "answer": true, "expectedAny": ["true", "yes", "correct", "right", "t"]},
+    {"question": "There are 10 vowels in the alphabet.", "answer": false, "expectedAny": ["false", "no", "incorrect", "wrong", "f"]},
+    {"question": "You use your mouth to make letter sounds.", "answer": true, "expectedAny": ["true", "yes", "correct", "right", "t"]},
+    {"question": "All letters are vowels.", "answer": false, "expectedAny": ["false", "no", "incorrect", "wrong", "f"]},
+    {"question": "The letter 'P' makes a /p/ sound.", "answer": true, "expectedAny": ["true", "yes", "correct", "right", "t"]},
+    {"question": "There are 5 vowels.", "answer": true, "expectedAny": ["true", "yes", "correct", "right", "t"]},
+    {"question": "The letter 'S' makes a /t/ sound.", "answer": false, "expectedAny": ["false", "no", "incorrect", "wrong", "f"]},
+    {"question": "Letters make sounds when we say them.", "answer": true, "expectedAny": ["true", "yes", "correct", "right", "t"]}
   ],
   "multiplechoice": [
     {"question": "Which letter makes the /m/ sound?", "choices": ["N", "M", "W", "H"], "correct": 1, "expectedAny": ["M"]},
@@ -52,22 +69,22 @@
     {"question": "Which letter makes the /h/ sound?", "choices": ["G", "H", "J", "K"], "correct": 1, "expectedAny": ["H"]}
   ],
   "fillintheblank": [
-    {"question": "The word 'cat' starts with the letter _____.", "expectedAny": ["C"]},
-    {"question": "The sound /b/ is made by the letter _____.", "expectedAny": ["B"]},
-    {"question": "Dog starts with the _____ sound.", "expectedAny": ["/d/"]},
-    {"question": "The five vowels are A, E, I, O, and _____.", "expectedAny": ["U"]},
-    {"question": "Sun begins with the _____ sound.", "expectedAny": ["/s/"]},
-    {"question": "The letter that makes /l/ is _____.", "expectedAny": ["L"]},
-    {"question": "Mom starts with the _____ sound.", "expectedAny": ["/m/"]}
+    {"question": "The word 'cat' starts with the letter _____..", "expectedAny": ["C", "c", "letter C"]},
+    {"question": "The sound /b/ is made by the letter _____..", "expectedAny": ["B", "b", "letter B"]},
+    {"question": "Dog starts with the _____ sound.", "expectedAny": ["/d/", "d sound", "duh", "like in dog"]},
+    {"question": "The five vowels are A, E, I, O, and _____..", "expectedAny": ["U", "u", "letter U"]},
+    {"question": "Sun begins with the _____ sound.", "expectedAny": ["/s/", "s sound", "sss", "like in sun"]},
+    {"question": "The letter that makes /l/ is _____..", "expectedAny": ["L", "l", "letter L"]},
+    {"question": "Mom starts with the _____ sound.", "expectedAny": ["/m/", "m sound", "mmm", "like in mom"]}
   ],
   "shortanswer": [
-    {"question": "Say the sound that 'S' makes.", "expectedAny": ["/s/"]},
-    {"question": "What sounds do the vowels make?", "expectedAny": ["/a/, /e/, /i/, /o/, /u/"]},
-    {"question": "Name three letters that are not vowels.", "expectedAny": ["B, C, D"]},
-    {"question": "What sound do you hear first in 'fish'?", "expectedAny": ["/f/"]},
-    {"question": "Tell me the sound each letter makes: P, T, N", "expectedAny": ["/p/, /t/, /n/"]},
-    {"question": "What letters make sounds like animals?", "expectedAny": ["S sounds like snake", "B sounds like bee"]},
-    {"question": "Which sound is at the beginning of 'zipper'?", "expectedAny": ["/z/"]}
+    {"question": "Say the sound that 'S' makes.", "expectedAny": ["/s/", "s sound", "sss", "like in sun", "like in snake", "like in see"]},
+    {"question": "What sounds do the vowels make?", "expectedAny": ["/a/ /e/ /i/ /o/ /u/", "/a/, /e/, /i/, /o/, /u/", "a e i o u", "the vowel sounds", "aaa eee iii ooo uuu"]},
+    {"question": "Name a letter that is not a vowel.", "expectedAny": ["B","b","C","c","D","d","F","f","G","g","H","h","J","j","K","k","L","l","M","m","N","n","P","p","Q","q","R","r","S","s","T","t","V","v","W","w","X","x","Y","y","Z","z", "letter B", "letter C", "letter D"]},
+    {"question": "What sound do you hear first in 'fish'?", "expectedAny": ["/f/", "f sound", "fff", "like in fish", "f"]},
+    {"question": "Tell me the sound each letter makes: P, T, N", "expectedAny": ["/p/ /t/ /n/", "/p/, /t/, /n/", "puh, tuh, nnn", "p t n sounds", "p sound, t sound, n sound", "ppp ttt nnn"]},
+    {"question": "Which letter starts the word 'bee'?", "expectedAny": ["B", "b", "letter B", "the letter B"]},
+    {"question": "Which sound is at the beginning of 'zipper'?", "expectedAny": ["/z/", "z sound", "zzz", "like in zipper", "z"]}
   ],
   "wordProblems": [
     {"question": "Maya knows the sounds for 8 letters. If there are 26 letters total, how many sounds does she still need to learn?", "expectedAny": ["18 sounds"]},

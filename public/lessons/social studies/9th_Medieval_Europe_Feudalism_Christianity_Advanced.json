@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "9th_Medieval_Europe_Feudalism_Christianity_Advanced",
   "title": "Medieval Europe: Feudalism and Christianity",
   "grade": "9th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "feudalism",
-      "definition": "Social system based on land ownership and personal loyalty"
-    },
-    {
-      "term": "manor",
-      "definition": "Self-sufficient estate including lord's residence and peasant villages"
-    },
-    {
-      "term": "chivalry",
-      "definition": "Code of conduct for knights emphasizing honor and courtesy"
-    },
-    {
-      "term": "crusades",
-      "definition": "Religious wars between Christians and Muslims for Holy Land"
-    },
-    {
-      "term": "guild",
-      "definition": "Association of craftsmen or merchants in medieval towns"
-    }
+    {"term": "feudalism", "definition": "Social system based on land ownership and personal loyalty"},
+    {"term": "manor", "definition": "Self-sufficient estate including lord's residence and peasant villages"},
+    {"term": "chivalry", "definition": "Code of conduct for knights emphasizing honor and courtesy"},
+    {"term": "crusades", "definition": "Religious wars between Christians and Muslims for Holy Land"},
+    {"term": "guild", "definition": "Association of craftsmen or merchants in medieval towns"}
   ],
   "teachingNotes": "Analyze the social hierarchy of feudalism. Discuss the role of the Catholic Church in medieval society and politics.",
-  "sample": {
-    "question": "What was the social system based on land ownership and loyalty?",
-    "expectedAny": [
-      "feudalism",
-      "feudal system",
-      "manorialism",
-      "medieval hierarchy"
-    ]
-  },
-  "truefalse": {
-    "question": "Chivalry was a code of conduct for knights.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What were the religious wars for the Holy Land called?",
-    "expectedAny": [
-      "crusades",
-      "holy wars",
-      "Christian wars",
-      "religious crusades"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A self-sufficient estate with lord's residence and villages was a ________.",
-    "expectedAny": [
-      "manor",
-      "manorial estate",
-      "feudal estate",
-      "medieval estate"
-    ]
-  },
-  "shortanswer": {
-    "question": "How did the Catholic Church influence medieval European society?",
-    "expectedAny": [
-      "provided education and healthcare",
-      "unified culture and law",
-      "controlled politics and economics"
-    ]
-  }
+  "sample": [
+    {"question": "What was the social system based on land ownership and loyalty?", "expectedAny": ["feudalism", "feudal system", "manorialism", "land-based system"]},
+    {"question": "What is a manor?", "expectedAny": ["self-sufficient estate", "lord's estate", "feudal estate", "lord's land"]},
+    {"question": "What is chivalry?", "expectedAny": ["code of conduct for knights", "knight's honor code", "knightly conduct", "knight's code"]},
+    {"question": "What were the crusades?", "expectedAny": ["religious wars", "wars for Holy Land", "Christian-Muslim wars", "holy wars"]},
+    {"question": "What is a guild?", "expectedAny": ["association of craftsmen", "merchant group", "trade organization", "craftsmen group"]},
+    {"question": "What defined feudalism?", "expectedAny": ["land ownership and loyalty", "hierarchical system", "lord-vassal relationships"]},
+    {"question": "What was a manor's purpose?", "expectedAny": ["self-sufficient estate", "economic unit", "lord's domain"]},
+    {"question": "What did chivalry emphasize?", "expectedAny": ["honor and courtesy", "knightly virtue", "noble behavior"]},
+    {"question": "Why were crusades fought?", "expectedAny": ["control of Holy Land", "religious reasons", "Christian expansion"]},
+    {"question": "What did guilds do?", "expectedAny": ["organized craftsmen", "regulated trades", "protected members"]}
+  ],
+  "truefalse": [
+    {"question": "Chivalry was a code of conduct for knights. (True or False)", "correct": true},
+    {"question": "Feudalism was based on land ownership and loyalty. (True or False)", "correct": true},
+    {"question": "A manor was a small apartment. (True or False)", "correct": false},
+    {"question": "The crusades were religious wars. (True or False)", "correct": true},
+    {"question": "Guilds were associations of craftsmen. (True or False)", "correct": true},
+    {"question": "Feudalism had no hierarchy. (True or False)", "correct": false},
+    {"question": "Manors were self-sufficient. (True or False)", "correct": true},
+    {"question": "Chivalry emphasized honor. (True or False)", "correct": true},
+    {"question": "Crusades were fought for the Holy Land. (True or False)", "correct": true},
+    {"question": "Guilds ignored craftsmen. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "What system was based on land and loyalty?", "choices": [{"letter": "A", "text": "Democracy"}, {"letter": "B", "text": "Feudalism"}, {"letter": "C", "text": "Capitalism"}, {"letter": "D", "text": "Socialism"}], "correct": "B"},
+    {"question": "What was a self-sufficient estate?", "choices": [{"letter": "A", "text": "Castle"}, {"letter": "B", "text": "Manor"}, {"letter": "C", "text": "Village"}, {"letter": "D", "text": "Town"}], "correct": "B"},
+    {"question": "What was the knight's code?", "choices": [{"letter": "A", "text": "Law"}, {"letter": "B", "text": "Chivalry"}, {"letter": "C", "text": "Religion"}, {"letter": "D", "text": "Trade"}], "correct": "B"},
+    {"question": "What were religious wars called?", "choices": [{"letter": "A", "text": "Battles"}, {"letter": "B", "text": "Crusades"}, {"letter": "C", "text": "Conquests"}, {"letter": "D", "text": "Sieges"}], "correct": "B"},
+    {"question": "What organized craftsmen?", "choices": [{"letter": "A", "text": "Armies"}, {"letter": "B", "text": "Churches"}, {"letter": "C", "text": "Guilds"}, {"letter": "D", "text": "Courts"}], "correct": "C"},
+    {"question": "What defined feudal relationships?", "choices": [{"letter": "A", "text": "Money"}, {"letter": "B", "text": "Land and loyalty"}, {"letter": "C", "text": "Religion"}, {"letter": "D", "text": "Trade"}], "correct": "B"},
+    {"question": "Where did lords live?", "choices": [{"letter": "A", "text": "Cities"}, {"letter": "B", "text": "Manors"}, {"letter": "C", "text": "Monasteries"}, {"letter": "D", "text": "Markets"}], "correct": "B"},
+    {"question": "What emphasized honor?", "choices": [{"letter": "A", "text": "Trade"}, {"letter": "B", "text": "Chivalry"}, {"letter": "C", "text": "Farming"}, {"letter": "D", "text": "Religion"}], "correct": "B"},
+    {"question": "Where were crusades fought?", "choices": [{"letter": "A", "text": "England"}, {"letter": "B", "text": "France"}, {"letter": "C", "text": "Holy Land"}, {"letter": "D", "text": "Spain"}], "correct": "C"},
+    {"question": "Who belonged to guilds?", "choices": [{"letter": "A", "text": "Nobles"}, {"letter": "B", "text": "Craftsmen and merchants"}, {"letter": "C", "text": "Peasants"}, {"letter": "D", "text": "Clergy"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ was a social system based on land and loyalty.", "expectedAny": ["feudalism"]},
+    {"question": "A _____ was a self-sufficient estate.", "expectedAny": ["manor"]},
+    {"question": "_____ was the code of conduct for knights.", "expectedAny": ["chivalry"]},
+    {"question": "The _____ were religious wars for the Holy Land.", "expectedAny": ["crusades", "Crusades"]},
+    {"question": "A _____ was an association of craftsmen.", "expectedAny": ["guild"]},
+    {"question": "Feudalism was based on _____ ownership.", "expectedAny": ["land"]},
+    {"question": "Manors included the lord's residence and _____ villages.", "expectedAny": ["peasant"]},
+    {"question": "Chivalry emphasized _____ and courtesy.", "expectedAny": ["honor"]},
+    {"question": "Crusades were fought between Christians and _____.", "expectedAny": ["Muslims"]},
+    {"question": "Guilds regulated _____ and crafts.", "expectedAny": ["trades", "trade"]}
+  ],
+  "shortanswer": [
+    {"question": "What was feudalism?", "keyTerms": ["social", "system", "land ownership", "loyalty"], "expectedAny": ["Social system based on land ownership and personal loyalty", "Hierarchical system of lords and vassals", "Medieval land-based social structure"]},
+    {"question": "What was a manor?", "keyTerms": ["self-sufficient", "estate", "lord", "peasants"], "expectedAny": ["Self-sufficient estate including lord's residence and peasant villages", "Economic unit of feudal system", "Lord's estate with workers"]},
+    {"question": "What was chivalry?", "keyTerms": ["code", "conduct", "knights", "honor"], "expectedAny": ["Code of conduct for knights emphasizing honor and courtesy", "Knightly ideals of behavior", "System of knightly virtues"]},
+    {"question": "What were the crusades?", "keyTerms": ["religious", "wars", "Christians", "Muslims", "Holy Land"], "expectedAny": ["Religious wars between Christians and Muslims for Holy Land", "Military campaigns to control sacred sites", "Christian expeditions to Middle East"]},
+    {"question": "What were guilds?", "keyTerms": ["association", "craftsmen", "merchants", "medieval towns"], "expectedAny": ["Associations of craftsmen or merchants in medieval towns", "Organizations regulating trades and crafts", "Groups protecting worker interests"]},
+    {"question": "How did feudalism work?", "keyTerms": ["lord", "vassal", "land", "service", "protection"], "expectedAny": ["Lords granted land to vassals in exchange for service and loyalty", "Hierarchical system of mutual obligations", "Land for protection and service"]},
+    {"question": "What was life on a manor?", "keyTerms": ["self-sufficient", "agricultural", "lord", "peasants"], "expectedAny": ["Self-sufficient agricultural life with lord and peasants", "Manor produced everything needed", "Isolated farming community"]},
+    {"question": "Why was chivalry important?", "keyTerms": ["knight", "behavior", "honor", "society"], "expectedAny": ["Defined proper knight behavior and honor in society", "Set standards for noble conduct", "Created ideal of knightly virtue"]},
+    {"question": "What impact did crusades have?", "keyTerms": ["cultural", "exchange", "trade", "conflict"], "expectedAny": ["Increased cultural exchange and trade despite conflict", "Brought European contact with Middle East", "Mixed religious war with economic effects"]},
+    {"question": "What did guilds control?", "keyTerms": ["quality", "prices", "training", "membership"], "expectedAny": ["Controlled quality prices training and membership in trades", "Regulated craft standards and competition", "Set rules for trade practices"]}
+  ]
 }

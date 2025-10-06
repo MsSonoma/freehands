@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Teach the structure of argumentative essays. Emphasize the importance of addressing counterarguments and providing strong evidence.",
-  "sample": {
-    "question": "What is writing that presents a position and supports it with evidence?",
-    "expectedAny": [
-      "argumentative writing",
-      "persuasive writing",
-      "argument essay",
-      "position paper"
-    ]
-  },
-  "truefalse": {
-    "question": "A claim is a statement that can be supported or refuted.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What are facts, statistics, or examples that support a claim?",
-    "expectedAny": [
-      "evidence",
-      "support",
-      "proof",
-      "backing"
-    ]
-  },
-  "fillintheblank": {
-    "question": "An opposing viewpoint to your main argument is a ________.",
-    "expectedAny": [
-      "counterargument",
-      "opposing view",
-      "contradiction",
-      "alternative"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why should you address counterarguments in argumentative writing?",
-    "expectedAny": [
-      "shows understanding of other views",
-      "strengthens your argument",
-      "demonstrates thorough thinking"
-    ]
-  }
+  "sample": [
+    { "question": "What is writing that presents a position and supports it with evidence?", "expectedAny": ["argumentative writing"] },
+    { "question": "Which is supportable statement?", "choices": ["Opinion", "Claim", "Feeling", "Guess"], "correct": 1, "expectedAny": ["claim"] },
+    { "question": "Supporting facts are ________.", "expectedAny": ["evidence"] },
+    { "question": "Opposing viewpoint is ________.", "expectedAny": ["counterargument"] },
+    { "question": "Response disproving opposition is ________.", "expectedAny": ["rebuttal"] },
+    { "question": "What is position writing?", "choices": ["Story", "Argumentative writing", "Poem", "Journal"], "correct": 1, "expectedAny": ["argumentative writing"] },
+    { "question": "Statement you support is ________.", "expectedAny": ["claim"] },
+    { "question": "What supports claim?", "choices": ["Feelings", "Evidence", "Guesses", "Wishes"], "correct": 1, "expectedAny": ["evidence"] },
+    { "question": "Opposite view is ________.", "expectedAny": ["counterargument"] },
+    { "question": "Disproving response is ________.", "expectedAny": ["rebuttal"] }
+  ],
+  "truefalse": [
+    { "question": "A claim is a statement that can be supported or refuted.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Argumentative writing ignores evidence.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Evidence supports claims.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Counterarguments should be ignored.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Rebuttal disproves counterargument.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Claims need no support.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Argumentative writing presents position.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Evidence is unnecessary.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Counterarguments strengthen essays.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Rebuttal supports counterargument.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What are facts, statistics, or examples that support a claim?", "choices": ["Feelings", "Evidence", "Guesses", "Wishes"], "correct": 1, "expectedAny": ["evidence"] },
+    { "question": "What is position writing?", "choices": ["Story", "Argumentative writing", "Poem", "Journal"], "correct": 1, "expectedAny": ["argumentative writing"] },
+    { "question": "What is supportable statement?", "choices": ["Opinion", "Claim", "Feeling", "Guess"], "correct": 1, "expectedAny": ["claim"] },
+    { "question": "What is opposing view?", "choices": ["Agreement", "Counterargument", "Support", "Praise"], "correct": 1, "expectedAny": ["counterargument"] },
+    { "question": "What disproves opposition?", "choices": ["Agreement", "Rebuttal", "Praise", "Acceptance"], "correct": 1, "expectedAny": ["rebuttal"] },
+    { "question": "Argumentative writing needs?", "choices": ["Nothing", "Evidence", "Poetry", "Jokes"], "correct": 1, "expectedAny": ["evidence"] },
+    { "question": "Claims are?", "choices": ["Feelings", "Supportable statements", "Guesses", "Wishes"], "correct": 1, "expectedAny": ["supportable statements"] },
+    { "question": "What strengthens argument?", "choices": ["Ignoring opposition", "Addressing counterarguments", "Avoiding facts", "Making up evidence"], "correct": 1, "expectedAny": ["addressing counterarguments"] },
+    { "question": "Evidence includes?", "choices": ["Feelings", "Facts and statistics", "Guesses", "Wishes"], "correct": 1, "expectedAny": ["facts and statistics"] },
+    { "question": "Rebuttal does what?", "choices": ["Agrees", "Disproves counterargument", "Ignores", "Praises"], "correct": 1, "expectedAny": ["disproves counterargument"] }
+  ],
+  "fillintheblank": [
+    { "question": "An opposing viewpoint to your main argument is a ________.", "expectedAny": ["counterargument"] },
+    { "question": "Writing that presents position with support is ________.", "expectedAny": ["argumentative writing"] },
+    { "question": "A supportable statement is a ________.", "expectedAny": ["claim"] },
+    { "question": "Facts supporting claims are ________.", "expectedAny": ["evidence"] },
+    { "question": "Response disproving counterargument is ________.", "expectedAny": ["rebuttal"] },
+    { "question": "A ________ can be supported or refuted.", "expectedAny": ["claim"] },
+    { "question": "________ writing presents position.", "expectedAny": ["argumentative"] },
+    { "question": "________ supports claims.", "expectedAny": ["evidence"] },
+    { "question": "A ________ is opposing view.", "expectedAny": ["counterargument"] },
+    { "question": "A ________ disproves opposition.", "expectedAny": ["rebuttal"] }
+  ],
+  "shortanswer": [
+    { "question": "Why should you address counterarguments in argumentative writing?", "expectedAny": ["shows understanding of other views", "strengthens your argument"] },
+    { "question": "What is argumentative writing?", "expectedAny": ["writing presenting position with evidence", "supported argument"] },
+    { "question": "What is claim?", "expectedAny": ["supportable statement", "statement that can be proven", "main argument", "your position"] },
+    { "question": "What is evidence?", "expectedAny": ["facts supporting claim", "statistics and examples", "proof", "support for argument"] },
+    { "question": "What is counterargument?", "expectedAny": ["opposing viewpoint", "opposite view", "other side", "opposing argument"] },
+    { "question": "What is rebuttal?", "expectedAny": ["response disproving counterargument", "disproving response"] },
+    { "question": "Why use evidence?", "expectedAny": ["supports claims", "proves position"] },
+    { "question": "What makes strong argument?", "expectedAny": ["evidence and addressing counterarguments"] },
+    { "question": "How to disprove opposition?", "expectedAny": ["use rebuttal", "provide counter-evidence"] },
+    { "question": "Why address other views?", "expectedAny": ["shows understanding", "strengthens argument"] }
+  ]
 }

@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Use everyday examples to explain Newton's laws. Demonstrate with simple experiments like rolling balls or pushing objects.",
-  "sample": {
-    "question": "What is a push or pull that can change an object's motion?",
-    "expectedAny": [
-      "force",
-      "applied force",
-      "external force",
-      "push or pull"
-    ]
-  },
-  "truefalse": {
-    "question": "An object at rest will stay at rest unless a force acts on it.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which force opposes motion?",
-    "expectedAny": [
-      "friction",
-      "frictional force",
-      "resistance",
-      "drag"
-    ]
-  },
-  "fillintheblank": {
-    "question": "An object's tendency to resist changes in motion is called ________.",
-    "expectedAny": [
-      "inertia",
-      "resistance to change",
-      "tendency to resist",
-      "momentum"
-    ]
-  },
-  "shortanswer": {
-    "question": "What happens when you push harder on an object?",
-    "expectedAny": [
-      "it accelerates more",
-      "moves faster",
-      "increases acceleration",
-      "changes motion more"
-    ]
-  }
+  "sample": [
+    { "question": "What is a push or pull that can change an object's motion?", "expectedAny": ["force"] },
+    { "question": "Which is position change?", "choices": ["Force", "Motion", "Inertia", "Friction"], "correct": 1, "expectedAny": ["motion"] },
+    { "question": "Resistance to change is ________.", "expectedAny": ["inertia"] },
+    { "question": "Velocity change rate is ________.", "expectedAny": ["acceleration"] },
+    { "question": "Force opposing motion is ________.", "expectedAny": ["friction"] },
+    { "question": "What is push or pull?", "choices": ["Motion", "Force", "Speed", "Distance"], "correct": 1, "expectedAny": ["force"] },
+    { "question": "Position changing over time is ________.", "expectedAny": ["motion"] },
+    { "question": "Tendency to resist change is ________.", "expectedAny": ["inertia"] },
+    { "question": "Which is speeding up?", "choices": ["Inertia", "Acceleration", "Friction", "Mass"], "correct": 1, "expectedAny": ["acceleration"] },
+    { "question": "Rubbing surfaces create ________.", "expectedAny": ["friction"] }
+  ],
+  "truefalse": [
+    { "question": "An object at rest will stay at rest unless a force acts on it.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Motion happens without force.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Inertia resists changes in motion.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Friction helps motion.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Acceleration is change in velocity.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Force cannot change motion.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Objects in motion stay in motion.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Friction increases motion.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Force is push or pull.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Inertia speeds up objects.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which force opposes motion?", "choices": ["Gravity", "Friction", "Magnetism", "Electricity"], "correct": 1, "expectedAny": ["friction"] },
+    { "question": "What is push or pull?", "choices": ["Motion", "Force", "Speed", "Distance"], "correct": 1, "expectedAny": ["force"] },
+    { "question": "What is position change?", "choices": ["Force", "Motion", "Inertia", "Mass"], "correct": 1, "expectedAny": ["motion"] },
+    { "question": "What resists change?", "choices": ["Force", "Inertia", "Motion", "Speed"], "correct": 1, "expectedAny": ["inertia"] },
+    { "question": "What is velocity change?", "choices": ["Force", "Acceleration", "Inertia", "Friction"], "correct": 1, "expectedAny": ["acceleration"] },
+    { "question": "What opposes motion?", "choices": ["Inertia", "Friction", "Acceleration", "Mass"], "correct": 1, "expectedAny": ["friction"] },
+    { "question": "What changes motion?", "choices": ["Inertia", "Force", "Mass", "Volume"], "correct": 1, "expectedAny": ["force"] },
+    { "question": "First law is about?", "choices": ["Friction", "Inertia", "Gravity", "Magnetism"], "correct": 1, "expectedAny": ["inertia"] },
+    { "question": "Slowing down is?", "choices": ["Speed", "Negative acceleration", "Inertia", "Friction"], "correct": 1, "expectedAny": ["negative acceleration"] },
+    { "question": "More force causes?", "choices": ["Less motion", "More acceleration", "No change", "Less speed"], "correct": 1, "expectedAny": ["more acceleration"] }
+  ],
+  "fillintheblank": [
+    { "question": "An object's tendency to resist changes in motion is called ________.", "expectedAny": ["inertia"] },
+    { "question": "A push or pull is a ________.", "expectedAny": ["force"] },
+    { "question": "Change in position over time is ________.", "expectedAny": ["motion"] },
+    { "question": "Rate of velocity change is ________.", "expectedAny": ["acceleration"] },
+    { "question": "Force opposing motion is ________.", "expectedAny": ["friction"] },
+    { "question": "________ is push or pull.", "expectedAny": ["force"] },
+    { "question": "________ is position change.", "expectedAny": ["motion"] },
+    { "question": "________ resists change.", "expectedAny": ["inertia"] },
+    { "question": "________ is speeding up.", "expectedAny": ["acceleration"] },
+    { "question": "________ opposes motion.", "expectedAny": ["friction"] }
+  ],
+  "shortanswer": [
+    { "question": "What happens when you push harder on an object?", "expectedAny": ["it accelerates more", "moves faster"] },
+    { "question": "What is force?", "expectedAny": ["push or pull", "changes motion", "push or a pull", "makes things move"] },
+    { "question": "What is motion?", "expectedAny": ["position change over time", "object moving"] },
+    { "question": "What is inertia?", "expectedAny": ["resistance to change", "tendency to resist motion change", "wants to stay same", "resists changing motion"] },
+    { "question": "What is acceleration?", "expectedAny": ["velocity change rate", "speeding up or slowing down", "change in speed", "changing velocity"] },
+    { "question": "What is friction?", "expectedAny": ["force opposing motion", "resistance between surfaces"] },
+    { "question": "What is Newton's first law?", "expectedAny": ["objects resist change", "inertia"] },
+    { "question": "How does force affect motion?", "expectedAny": ["changes motion", "causes acceleration"] },
+    { "question": "What stops motion?", "expectedAny": ["friction", "opposing force"] },
+    { "question": "What causes acceleration?", "expectedAny": ["force", "push or pull"] }
+  ]
 }

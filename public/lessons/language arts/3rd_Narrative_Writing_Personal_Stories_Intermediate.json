@@ -5,22 +5,15 @@
   "difficulty": "Intermediate",
   "featured": false,
   "vocab": [
-    {
-      "term": "narrative",
-      "definition": "A story that tells about events in order"
-    },
-    {
-      "term": "beginning",
-      "definition": "The start of a story that introduces characters and setting"
-    },
-    {
-      "term": "middle",
-      "definition": "The part of a story where the main events happen"
-    },
-    {
-      "term": "ending",
-      "definition": "The conclusion of a story that wraps up the events"
-    }
+    {"word": "narrative", "kid_friendly_definition": "A story that tells about events in order."},
+    {"word": "beginning", "kid_friendly_definition": "The start of a story that introduces characters and setting."},
+    {"word": "ending", "kid_friendly_definition": "The conclusion of a story that wraps up the events."},
+    {"word": "dialogue", "kid_friendly_definition": "Words that characters say in a story."},
+    {"word": "setting", "kid_friendly_definition": "Where and when a story happens."},
+    {"word": "character", "kid_friendly_definition": "A person, animal, or figure in a story."},
+    {"word": "middle", "kid_friendly_definition": "The main part of a story where events happen."},
+    {"word": "sensory details", "kid_friendly_definition": "Words that describe what you see, hear, smell, taste, or touch."},
+    {"word": "first person", "kid_friendly_definition": "Writing that uses words like I, me, and my."}
   ],
   "teachingNotes": "Use personal experiences as story starters. Create story maps with beginning, middle, end. Practice using descriptive words.",
   "sample": {
@@ -29,7 +22,12 @@
       "who was there",
       "where it happened",
       "when it happened",
-      "introduce the main characters"
+      "introduce the main characters",
+      "who is in the story",
+      "who was in it",
+      "the setting",
+      "time and place",
+      "when and where"
     ]
   },
   "truefalse": [
@@ -37,7 +35,14 @@
       "question": "A good narrative tells events in the order they happened.",
       "answer": true,
       "expectedAny": [
-        "chronological order helps readers follow the story"
+        "chronological order helps readers follow the story",
+        "events are told in order",
+        "sequence helps the reader",
+        "true",
+        "t",
+        "yes",
+        "y",
+        "correct"
       ]
     }
   ],
@@ -52,7 +57,18 @@
       ],
       "correct": 1,
       "expectedAny": [
-        "descriptive details help readers picture what's happening"
+        "descriptive details help readers picture what's happening",
+        "details help readers visualize",
+        "description paints a picture",
+        "b",
+        "B",
+        "2",
+        "adding descriptive details",
+        "descriptive details",
+        "add descriptive details",
+        "use descriptive details",
+        "add description",
+        "descriptive words and details"
       ]
     }
   ],
@@ -61,7 +77,9 @@
       "question": "In the _____ of your story, you should solve the problem or tell how things ended.",
       "expectedAny": [
         "ending",
-        "conclusion"
+        "conclusion",
+        "resolution",
+        "the end"
       ]
     }
   ],
@@ -71,9 +89,20 @@
       "expectedAny": [
         "use descriptive words",
         "include dialogue",
+        "add conversation",
         "describe feelings",
+        "tell how it felt",
         "add interesting details",
-        "show don't just tell"
+        "use sensory details",
+        "show don't just tell",
+        "show, not tell",
+        "use vivid words",
+        "use strong verbs",
+        "add action",
+        "use vivid details",
+        "make it sound real",
+        "tell what you saw and heard",
+        "use good words"
       ]
     }
   ]

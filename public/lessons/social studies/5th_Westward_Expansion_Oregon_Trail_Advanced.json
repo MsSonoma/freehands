@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Discuss the challenges of pioneer life and the impact on Native Americans. Emphasize the determination and hardships of westward travelers.",
-  "sample": {
-    "question": "What was the main route pioneers used to travel to Oregon?",
-    "expectedAny": [
-      "Oregon Trail",
-      "the Oregon Trail",
-      "Oregon pioneer trail",
-      "western trail to Oregon"
-    ]
-  },
-  "truefalse": {
-    "question": "The Oregon Trail was about 2,000 miles long.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What belief encouraged Americans to expand westward?",
-    "expectedAny": [
-      "manifest destiny",
-      "Manifest Destiny",
-      "destiny to expand",
-      "right to expand west"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Pioneers traveled west in ________ wagons covered with canvas.",
-    "expectedAny": [
-      "covered",
-      "covered wagons",
-      "canvas-covered",
-      "wagon trains"
-    ]
-  },
-  "shortanswer": {
-    "question": "What were three challenges pioneers faced on the Oregon Trail?",
-    "expectedAny": [
-      "disease, weather, river crossings",
-      "illness, harsh weather, dangerous rivers",
-      "sickness, storms, difficult terrain"
-    ]
-  }
+  "sample": [
+    { "question": "What was the main route pioneers used to travel to Oregon?", "expectedAny": ["Oregon Trail", "the Oregon Trail"] },
+    { "question": "What belief encouraged Americans to expand westward?", "expectedAny": ["Manifest Destiny", "manifest destiny"] },
+    { "question": "What type of wagon did pioneers often use?", "expectedAny": ["covered wagon"] },
+    { "question": "How long was the Oregon Trail?", "expectedAny": ["about 2,000 miles", "2,000 miles", "two thousand miles"] },
+    { "question": "Name one challenge pioneers faced.", "expectedAny": ["disease", "river crossings", "storms", "difficult terrain"] },
+    { "question": "What animal often pulled pioneer wagons?", "expectedAny": ["oxen", "ox"] },
+    { "question": "What did families pack for the journey?", "expectedAny": ["food", "clothes", "tools"] },
+    { "question": "What was a common endpoint region for travelers?", "expectedAny": ["Oregon", "Willamette Valley"] },
+    { "question": "Name one river pioneers had to cross.", "expectedAny": ["Platte", "Snake", "Columbia"] },
+    { "question": "What group was affected by westward expansion?", "expectedAny": ["Native Americans"] }
+  ],
+  "truefalse": [
+    { "question": "The Oregon Trail was about 2,000 miles long.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Manifest Destiny was the belief that expansion was America's right.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Pioneers traveled by airplane to the West.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Oxen often pulled the covered wagons.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Pioneers faced no dangers on the trail.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Rivers and mountains made the journey harder.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Westward expansion had no impact on Native Americans.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Many families packed food, tools, and clothing.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The Willamette Valley was a destination in Oregon.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The Oregon Trail was only 200 miles long.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What belief encouraged Americans to expand westward?", "choices": ["Isolationism", "Manifest Destiny", "Neutrality", "Federalism"], "correct": 1, "expectedAny": ["Manifest Destiny"] },
+    { "question": "What type of wagon did pioneers use?", "choices": ["sports car", "covered wagon", "train car", "bicycle"], "correct": 1, "expectedAny": ["covered wagon"] },
+    { "question": "Which animals often pulled wagons?", "choices": ["horses", "oxen", "zebras", "camels"], "correct": 1, "expectedAny": ["oxen"] },
+    { "question": "About how long was the Oregon Trail?", "choices": ["200 miles", "2,000 miles", "20,000 miles", "200,000 miles"], "correct": 1, "expectedAny": ["2,000 miles"] },
+    { "question": "Which was a common destination in Oregon?", "choices": ["Great Salt Lake", "Willamette Valley", "Grand Canyon", "Yellowstone"], "correct": 1, "expectedAny": ["Willamette Valley"] },
+    { "question": "Which obstacle made travel dangerous?", "choices": ["plains", "rivers and mountains", "smooth highways", "subways"], "correct": 1, "expectedAny": ["rivers", "mountains"] },
+    { "question": "Which supply was essential to pack?", "choices": ["video games", "food and tools", "televisions", "modern phones"], "correct": 1, "expectedAny": ["food", "tools"] },
+    { "question": "Which group was greatly affected by expansion?", "choices": ["astronauts", "Native Americans", "pirates", "tourists"], "correct": 1, "expectedAny": ["Native Americans"] },
+    { "question": "Which river might travelers cross?", "choices": ["Nile", "Platte", "Thames", "Yangtze"], "correct": 1, "expectedAny": ["Platte"] },
+    { "question": "Which reason motivated some to move west?", "choices": ["gold and land", "snow and ice", "shorter school days", "less travel"], "correct": 0, "expectedAny": ["gold", "land"] }
+  ],
+  "fillintheblank": [
+    { "question": "The ________ Trail led pioneers west.", "expectedAny": ["Oregon"] },
+    { "question": "The belief in expansion was called ________ ________.", "expectedAny": ["Manifest Destiny"] },
+    { "question": "Pioneers used ________ wagons.", "expectedAny": ["covered"] },
+    { "question": "The trail was about ________ miles long.", "expectedAny": ["2,000", "two thousand"] },
+    { "question": "Wagons were often pulled by ________.", "expectedAny": ["oxen"] },
+    { "question": "Travelers packed food, ________, and clothing.", "expectedAny": ["tools"] },
+    { "question": "A destination in Oregon was the ________ Valley.", "expectedAny": ["Willamette"] },
+    { "question": "Crossing ________ made the trip dangerous.", "expectedAny": ["rivers", "mountains"] },
+    { "question": "Westward expansion affected ________ Americans.", "expectedAny": ["Native"] },
+    { "question": "People moved west seeking ________ and ________.", "expectedAny": ["land", "gold"] }
+  ],
+  "shortanswer": [
+    { "question": "Name three challenges pioneers faced.", "expectedAny": ["disease", "river crossings", "storms", "lack of food", "difficult terrain"] },
+    { "question": "How did Manifest Destiny influence expansion?", "expectedAny": ["belief justified moving west", "right to expand"] },
+    { "question": "How were Native Americans affected?", "expectedAny": ["loss of land", "conflict", "forced relocation"] },
+    { "question": "What supplies were important for the journey?", "expectedAny": ["food", "tools", "clothing", "medicine"] },
+    { "question": "Why did families choose the Oregon Trail?", "expectedAny": ["land", "better life", "opportunity"] },
+    { "question": "How did rivers and mountains impact travel?", "expectedAny": ["dangerous crossings", "slow travel"] },
+    { "question": "What animals were used and why?", "expectedAny": ["oxen strong and steady"] },
+    { "question": "Name one common stopping point or landmark.", "expectedAny": ["Independence", "Fort Laramie", "Chimney Rock"] },
+    { "question": "How did pioneers navigate the trail?", "expectedAny": ["maps", "guides", "followed rivers", "trails"] },
+    { "question": "Why was the Willamette Valley attractive?", "expectedAny": ["fertile land", "good farming"] }
+  ]
 }

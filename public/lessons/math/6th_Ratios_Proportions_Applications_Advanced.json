@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Use real-world examples like recipes, maps, and unit prices. Practice setting up and solving proportions. Emphasize the relationship between ratios and fractions.",
-  "sample": {
-    "question": "What is a comparison of two quantities using division?",
-    "expectedAny": ["ratio", "mathematical ratio", "numerical ratio", "comparison ratio"]
-  },
-  "truefalse": {
-    "question": "A proportion is an equation that states two ratios are equal.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "If a car travels 120 miles in 3 hours, what is the unit rate?",
-    "expectedAny": ["40 miles per hour", "40 mph", "40 miles/hour", "40 mi/hr"]
-  },
-  "fillintheblank": {
-    "question": "A rate with a denominator of 1 is called a ________ rate.",
-    "expectedAny": ["unit", "unit rate", "single unit", "one unit"]
-  },
-  "shortanswer": {
-    "question": "How do you solve a proportion using cross multiplication?",
-    "expectedAny": ["multiply diagonally across", "cross multiply then divide", "multiply opposite corners", "multiply across the equal sign"]
-  },
-  "wordProblems": {
-    "question": "If 3 pounds of apples cost $4.50, how much would 8 pounds of apples cost?",
-    "expectedAny": ["$12.00", "$12", "twelve dollars", "3:4.50 = 8:12"]
-  }
+  "sample": [
+    { "question": "What is a comparison of two quantities using division?", "expectedAny": ["ratio"] },
+    { "question": "Which compares two ratios?", "choices": ["Rate", "Proportion", "Unit", "Total"], "correct": 1, "expectedAny": ["proportion"] },
+    { "question": "A ratio with denominator 1 is ________.", "expectedAny": ["unit rate"] },
+    { "question": "Two equal ratios form a ________.", "expectedAny": ["proportion"] },
+    { "question": "Miles per hour is a ________.", "expectedAny": ["rate", "unit rate"] },
+    { "question": "Which shows a ratio?", "choices": ["5", "5+3", "5:3", "5-3"], "correct": 2, "expectedAny": ["5:3"] },
+    { "question": "Cross ________ solves proportions.", "expectedAny": ["multiplication", "multiply"] },
+    { "question": "A rate compares different ________.", "expectedAny": ["units"] },
+    { "question": "The ratio 4 to 8 simplifies to ________.", "expectedAny": ["1:2", "1 to 2", "1/2"] },
+    { "question": "Unit rate has denominator ________.", "expectedAny": ["1", "one"] }
+  ],
+  "truefalse": [
+    { "question": "A proportion is an equation that states two ratios are equal.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All ratios are also rates.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A ratio compares two quantities.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Unit rate always has denominator of 2.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Cross multiplication helps solve proportions.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Ratios and fractions are unrelated.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A rate compares quantities with different units.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Proportions can never be solved.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Unit rates make comparisons easier.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All rates are unit rates.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "If a car travels 120 miles in 3 hours, what is the unit rate?", "choices": ["30 mph", "40 mph", "60 mph", "120 mph"], "correct": 1, "expectedAny": ["40 mph", "40"] },
+    { "question": "What is the ratio 6:9 simplified?", "choices": ["1:2", "2:3", "3:4", "6:9"], "correct": 1, "expectedAny": ["2:3", "2 to 3", "2/3"] },
+    { "question": "If 2 pencils cost $1, what is the unit price?", "choices": ["$0.25", "$0.50", "$1.00", "$2.00"], "correct": 1, "expectedAny": ["$0.50", "50 cents"] },
+    { "question": "Which is a proportion?", "choices": ["3+5=8", "3/5 = 6/10", "3×5=15", "3-5=-2"], "correct": 1, "expectedAny": ["3/5 = 6/10"] },
+    { "question": "What is the ratio of 10 to 15?", "choices": ["2:3", "3:2", "1:2", "10:15"], "correct": 0, "expectedAny": ["2:3"] },
+    { "question": "If 4:x = 8:12, what is x?", "choices": ["4", "6", "8", "12"], "correct": 1, "expectedAny": ["6"] },
+    { "question": "Which compares different units?", "choices": ["Ratio", "Rate", "Fraction", "Total"], "correct": 1, "expectedAny": ["rate"] },
+    { "question": "What is 100 miles in 2 hours as a unit rate?", "choices": ["25 mph", "50 mph", "75 mph", "100 mph"], "correct": 1, "expectedAny": ["50 mph", "50"] },
+    { "question": "Simplify 12:18.", "choices": ["1:2", "2:3", "3:4", "4:5"], "correct": 1, "expectedAny": ["2:3"] },
+    { "question": "If 5/x = 10/20, what is x?", "choices": ["5", "10", "15", "20"], "correct": 1, "expectedAny": ["10"] }
+  ],
+  "fillintheblank": [
+    { "question": "A rate with a denominator of 1 is called a ________ rate.", "expectedAny": ["unit"] },
+    { "question": "A ________ compares two quantities using division.", "expectedAny": ["ratio"] },
+    { "question": "An equation with two equal ratios is a ________.", "expectedAny": ["proportion"] },
+    { "question": "A ________ compares quantities with different units.", "expectedAny": ["rate"] },
+    { "question": "To solve proportions, use cross ________.", "expectedAny": ["multiplication", "multiply"] },
+    { "question": "The ratio 8:4 simplifies to ________.", "expectedAny": ["2:1", "2 to 1", "2/1"] },
+    { "question": "Miles per hour is an example of a ________.", "expectedAny": ["unit rate", "rate"] },
+    { "question": "Ratios can be written with a ________ or as fractions.", "expectedAny": ["colon", ":"] },
+    { "question": "A ________ has denominator of 1.", "expectedAny": ["unit rate"] },
+    { "question": "Two ratios that are equal form a ________.", "expectedAny": ["proportion"] }
+  ],
+  "shortanswer": [
+    { "question": "How do you solve a proportion using cross multiplication?", "expectedAny": ["multiply diagonally", "cross multiply", "multiply across equals"] },
+    { "question": "What is the relationship between ratios and fractions?", "expectedAny": ["ratios can be written as fractions", "they are similar", "both show division"] },
+    { "question": "Simplify the ratio 20:30.", "expectedAny": ["2:3", "2 to 3", "2/3"] },
+    { "question": "What is a unit rate?", "expectedAny": ["rate with denominator 1", "rate per one unit"] },
+    { "question": "How do rates differ from ratios?", "expectedAny": ["rates have different units", "rates compare different quantities"] },
+    { "question": "Solve 3/5 = x/15 for x.", "expectedAny": ["9", "x=9"] },
+    { "question": "Why are unit rates useful?", "expectedAny": ["easier to compare", "standardizes comparison", "shows per one"] },
+    { "question": "Write 6 to 9 as a simplified ratio.", "expectedAny": ["2:3", "2 to 3", "2/3"] },
+    { "question": "How do you find unit price?", "expectedAny": ["divide price by quantity", "price per one item"] },
+    { "question": "Is 4/6 = 2/3 a proportion?", "expectedAny": ["yes", "true", "it is"] }
+  ],
+  "wordProblems": [
+    { "question": "If 3 pounds of apples cost $4.50, how much would 8 pounds of apples cost?", "expectedAny": ["$12.00", "$12", "12"] },
+    { "question": "A recipe uses 2 cups flour for 12 cookies. How much flour for 30 cookies?", "expectedAny": ["5 cups", "5"] },
+    { "question": "A car goes 150 miles on 5 gallons. What is the unit rate?", "expectedAny": ["30 mpg", "30 miles per gallon", "30"] },
+    { "question": "If 4 tickets cost $28, how much for 7 tickets?", "expectedAny": ["$49", "49"] },
+    { "question": "On a map, 2 inches = 50 miles. What does 5 inches represent?", "expectedAny": ["125 miles", "125"] },
+    { "question": "A runner covers 12 miles in 2 hours. What is the unit rate?", "expectedAny": ["6 mph", "6 miles per hour", "6"] },
+    { "question": "If 5 books cost $35, what is the unit price?", "expectedAny": ["$7", "7 dollars", "7"] },
+    { "question": "A recipe serves 4 using 3 eggs. How many eggs for 12 servings?", "expectedAny": ["9 eggs", "9"] },
+    { "question": "Paint covers 200 sq ft with 2 gallons. How many gallons for 500 sq ft?", "expectedAny": ["5 gallons", "5"] },
+    { "question": "If 6:8 = 9:x, what is x?", "expectedAny": ["12", "x=12"] }
+  ]
 }

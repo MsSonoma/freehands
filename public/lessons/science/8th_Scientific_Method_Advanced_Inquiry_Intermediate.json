@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Practice designing controlled experiments. Emphasize the difference between correlation and causation.",
-  "sample": {
-    "question": "What is the factor that is changed in an experiment?",
-    "expectedAny": [
-      "independent variable",
-      "manipulated variable",
-      "test variable",
-      "experimental variable"
-    ]
-  },
-  "truefalse": {
-    "question": "Peer review helps ensure scientific accuracy.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is measured in an experiment?",
-    "expectedAny": [
-      "dependent variable",
-      "response variable",
-      "outcome variable",
-      "measured variable"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A relationship between two variables is called a ________.",
-    "expectedAny": [
-      "correlation",
-      "relationship",
-      "connection",
-      "association"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why are controlled variables important in experiments?",
-    "expectedAny": [
-      "ensure fair test",
-      "eliminate other factors",
-      "isolate the variable being tested"
-    ]
-  }
+  "sample": [
+    { "question": "What is the factor that is changed in an experiment?", "expectedAny": ["independent variable", "changed factor", "what you change"] },
+    { "question": "What is measured?", "choices": ["Independent", "Dependent variable", "Controlled", "Constant"], "correct": 1, "expectedAny": ["dependent variable", "measured factor", "what you measure"] },
+    { "question": "Kept same factors are ________.", "expectedAny": ["controlled variable", "same factors", "constants"] },
+    { "question": "Variable relationship is ________.", "expectedAny": ["correlation"] },
+    { "question": "Scientists checking work is ________.", "expectedAny": ["peer review"] },
+    { "question": "What is changed factor?", "choices": ["Dependent", "Independent variable", "Controlled", "Measured"], "correct": 1, "expectedAny": ["independent variable"] },
+    { "question": "Outcome factor is ________.", "expectedAny": ["dependent variable"] },
+    { "question": "What stays same?", "choices": ["Independent", "Controlled variable", "Dependent", "Changed"], "correct": 1, "expectedAny": ["controlled variable"] },
+    { "question": "Two variable connection is ________.", "expectedAny": ["correlation"] },
+    { "question": "Work checking is ________.", "expectedAny": ["peer review"] }
+  ],
+  "truefalse": [
+    { "question": "Peer review helps ensure scientific accuracy.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Independent variable is measured.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Dependent variable is measured.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Controlled variables change.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Correlation shows relationship.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Peer review is unnecessary.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Independent variable is changed.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Dependent variable is changed.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Controlled variables ensure fairness.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Correlation proves causation.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is measured in an experiment?", "choices": ["Independent", "Dependent variable", "Controlled", "Constant"], "correct": 1, "expectedAny": ["dependent variable"] },
+    { "question": "What is changed factor?", "choices": ["Dependent", "Independent variable", "Controlled", "Measured"], "correct": 1, "expectedAny": ["independent variable"] },
+    { "question": "What stays same?", "choices": ["Independent", "Controlled variable", "Dependent", "Changed"], "correct": 1, "expectedAny": ["controlled variable"] },
+    { "question": "What is variable relationship?", "choices": ["Causation", "Correlation", "Independence", "Control"], "correct": 1, "expectedAny": ["correlation"] },
+    { "question": "What checks accuracy?", "choices": ["Nothing", "Peer review", "Guessing", "Random"], "correct": 1, "expectedAny": ["peer review"] },
+    { "question": "Test factor is?", "choices": ["Dependent", "Independent", "Controlled", "None"], "correct": 1, "expectedAny": ["independent"] },
+    { "question": "Result factor is?", "choices": ["Independent", "Dependent", "Controlled", "None"], "correct": 1, "expectedAny": ["dependent"] },
+    { "question": "Fair test uses?", "choices": ["No controls", "Controlled variables", "Random", "Nothing"], "correct": 1, "expectedAny": ["controlled variables"] },
+    { "question": "Connection between variables is?", "choices": ["Nothing", "Correlation", "Random", "Chaos"], "correct": 1, "expectedAny": ["correlation"] },
+    { "question": "Scientists check each other through?", "choices": ["Nothing", "Peer review", "Guessing", "Random"], "correct": 1, "expectedAny": ["peer review"] }
+  ],
+  "fillintheblank": [
+    { "question": "A relationship between two variables is called a ________.", "expectedAny": ["correlation"] },
+    { "question": "The ________ variable is changed.", "expectedAny": ["independent"] },
+    { "question": "The ________ variable is measured.", "expectedAny": ["dependent"] },
+    { "question": "________ variables stay same.", "expectedAny": ["controlled"] },
+    { "question": "________ review checks accuracy.", "expectedAny": ["peer"] },
+    { "question": "Independent ________ is changed.", "expectedAny": ["variable"] },
+    { "question": "Dependent ________ is measured.", "expectedAny": ["variable"] },
+    { "question": "Controlled ________ stay same.", "expectedAny": ["variables"] },
+    { "question": "________ is variable relationship.", "expectedAny": ["correlation"] },
+    { "question": "Peer ________ ensures accuracy.", "expectedAny": ["review"] }
+  ],
+  "shortanswer": [
+    { "question": "Why are controlled variables important in experiments?", "expectedAny": ["ensure fair test", "eliminate other factors"] },
+    { "question": "What is independent variable?", "expectedAny": ["factor that is changed in experiment", "test variable"] },
+    { "question": "What is dependent variable?", "expectedAny": ["factor that is measured in experiment", "outcome variable"] },
+    { "question": "What is controlled variable?", "expectedAny": ["factors kept same for fair test", "constants"] },
+    { "question": "What is correlation?", "expectedAny": ["relationship between two variables", "variable connection"] },
+    { "question": "What is peer review?", "expectedAny": ["scientists checking each other's work", "accuracy check"] },
+    { "question": "Why change independent variable?", "expectedAny": ["to test effect", "see what happens"] },
+    { "question": "Why measure dependent variable?", "expectedAny": ["see effect of change", "record results"] },
+    { "question": "Difference correlation and causation?", "expectedAny": ["correlation shows relationship, causation shows cause", "connection vs cause"] },
+    { "question": "Why important peer review?", "expectedAny": ["ensures accuracy", "catches errors"] }
+  ]
 }

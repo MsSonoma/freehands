@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Explain the hierarchy of feudal society. Discuss how the system provided protection and organization during uncertain times.",
-  "sample": {
-    "question": "What was the medieval system where land was exchanged for loyalty and service?",
-    "expectedAny": [
-      "feudalism",
-      "feudal system",
-      "manorialism",
-      "medieval system"
-    ]
-  },
-  "truefalse": {
-    "question": "Serfs were free to leave their lord's land whenever they wanted.",
-    "expectedAny": [
-      "false",
-      "no",
-      "f",
-      "incorrect"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Who was at the top of the feudal hierarchy?",
-    "expectedAny": [
-      "king",
-      "monarch",
-      "ruler",
-      "sovereign"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A peasant bound to work on a lord's land was called a ________.",
-    "expectedAny": [
-      "serf",
-      "peasant",
-      "bound worker",
-      "feudal worker"
-    ]
-  },
-  "shortanswer": {
-    "question": "What did knights promise to their lords in exchange for land?",
-    "expectedAny": [
-      "loyalty and military service",
-      "protection and service",
-      "fighting and loyalty"
-    ]
-  }
+  "sample": [
+    { "question": "What was the medieval system where land was exchanged for loyalty and service?", "expectedAny": ["feudalism"] },
+    { "question": "Which is large estate?", "choices": ["Castle", "Manor", "Church", "Village"], "correct": 1, "expectedAny": ["manor"] },
+    { "question": "Bound peasant is ________.", "expectedAny": ["serf"] },
+    { "question": "Knight code of honor is ________.", "expectedAny": ["chivalry"] },
+    { "question": "Person receiving land for loyalty is ________.", "expectedAny": ["vassal"] },
+    { "question": "What was land for loyalty?", "choices": ["Democracy", "Feudalism", "Republic", "Capitalism"], "correct": 1, "expectedAny": ["feudalism"] },
+    { "question": "Large estate with farmland is ________.", "expectedAny": ["manor"] },
+    { "question": "What is bound worker?", "choices": ["Freeman", "Serf", "Noble", "Merchant"], "correct": 1, "expectedAny": ["serf"] },
+    { "question": "Knight honor code is ________.", "expectedAny": ["chivalry"] },
+    { "question": "Land receiver is ________.", "expectedAny": ["vassal"] }
+  ],
+  "truefalse": [
+    { "question": "Serfs were free to leave their lord's land whenever they wanted.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Feudalism exchanged land for loyalty.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Manor was small hut.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Chivalry was knight code.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Vassals received nothing.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Serfs were bound to land.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "King was at bottom.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Feudalism organized society.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Manor had no farmland.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Knights followed chivalry.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "Who was at the top of the feudal hierarchy?", "choices": ["Peasant", "King", "Serf", "Merchant"], "correct": 1, "expectedAny": ["king"] },
+    { "question": "What system exchanged land?", "choices": ["Democracy", "Feudalism", "Republic", "Capitalism"], "correct": 1, "expectedAny": ["feudalism"] },
+    { "question": "What is large estate?", "choices": ["Castle", "Manor", "Church", "Village"], "correct": 1, "expectedAny": ["manor"] },
+    { "question": "What is bound peasant?", "choices": ["Freeman", "Serf", "Noble", "Merchant"], "correct": 1, "expectedAny": ["serf"] },
+    { "question": "What is knight code?", "choices": ["Law", "Chivalry", "War", "Trade"], "correct": 1, "expectedAny": ["chivalry"] },
+    { "question": "Who received land?", "choices": ["Nobody", "Vassal", "Stranger", "Enemy"], "correct": 1, "expectedAny": ["vassal"] },
+    { "question": "Feudalism was about?", "choices": ["Money", "Land and loyalty", "Democracy", "Trade"], "correct": 1, "expectedAny": ["land and loyalty"] },
+    { "question": "Who worked manor?", "choices": ["Knights", "Serfs", "Kings", "Merchants"], "correct": 1, "expectedAny": ["serfs"] },
+    { "question": "Knights followed?", "choices": ["Nothing", "Chivalry", "Democracy", "Trade"], "correct": 1, "expectedAny": ["chivalry"] },
+    { "question": "Vassal owed?", "choices": ["Nothing", "Loyalty", "Money", "Art"], "correct": 1, "expectedAny": ["loyalty"] }
+  ],
+  "fillintheblank": [
+    { "question": "A peasant bound to work on a lord's land was called a ________.", "expectedAny": ["serf"] },
+    { "question": "The medieval system of land for loyalty was ________.", "expectedAny": ["feudalism"] },
+    { "question": "A large estate with farmland was a ________.", "expectedAny": ["manor"] },
+    { "question": "The knight code of honor was ________.", "expectedAny": ["chivalry"] },
+    { "question": "A person receiving land for loyalty was a ________.", "expectedAny": ["vassal"] },
+    { "question": "A ________ worked the land.", "expectedAny": ["serf"] },
+    { "question": "________ exchanged land for service.", "expectedAny": ["feudalism"] },
+    { "question": "A ________ was large estate.", "expectedAny": ["manor"] },
+    { "question": "________ was knight honor code.", "expectedAny": ["chivalry"] },
+    { "question": "A ________ owed loyalty.", "expectedAny": ["vassal"] }
+  ],
+  "shortanswer": [
+    { "question": "What did knights promise to their lords in exchange for land?", "expectedAny": ["loyalty and military service", "protection and service"] },
+    { "question": "What was feudalism?", "expectedAny": ["system of land for loyalty", "medieval system", "land for service system", "hierarchy system"] },
+    { "question": "What was manor?", "expectedAny": ["large estate with farmland", "lord's estate"] },
+    { "question": "What was serf?", "expectedAny": ["bound peasant", "worker on lord's land", "tied to land", "couldn't leave land"] },
+    { "question": "What was chivalry?", "expectedAny": ["knight code of honor", "knight behavior code"] },
+    { "question": "What was vassal?", "expectedAny": ["person receiving land for loyalty", "land holder"] },
+    { "question": "Who was at top?", "expectedAny": ["king", "monarch"] },
+    { "question": "What did vassals owe?", "expectedAny": ["loyalty and service"] },
+    { "question": "Could serfs leave?", "expectedAny": ["no", "bound to land"] },
+    { "question": "What did feudalism provide?", "expectedAny": ["protection and organization", "order"] }
+  ]
 }

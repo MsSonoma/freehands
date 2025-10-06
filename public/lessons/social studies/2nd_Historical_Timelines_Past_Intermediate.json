@@ -40,20 +40,20 @@
   ],
   "fillintheblank": [
     {"question": "Things that happened before today are called the ________.", "expectedAny": ["past", "history"]},
-    {"question": "A line that shows events in order is a ________.", "expectedAny": ["timeline"]},
-    {"question": "The time happening now is the ________.", "expectedAny": ["present"]},
-    {"question": "The time that has not happened yet is the ________.", "expectedAny": ["future"]},
-    {"question": "We put events in ________ order on a timeline.", "expectedAny": ["chronological", "time"]},
-    {"question": "A personal ________ can include your birthday.", "expectedAny": ["timeline"]},
-    {"question": "Old and new pictures help show ________ over time.", "expectedAny": ["change"]}
+    {"question": "A line that shows events in order is a ________.", "expectedAny": ["timeline", "time line"]},
+    {"question": "The time happening now is the ________.", "expectedAny": ["present", "now"]},
+    {"question": "The time that has not happened yet is the ________.", "expectedAny": ["future", "tomorrow"]},
+    {"question": "We put events in ________ order on a timeline.", "expectedAny": ["chronological", "time", "chronological order"]},
+    {"question": "A personal ________ can include your birthday.", "expectedAny": ["timeline", "personal timeline"]},
+    {"question": "Old and new pictures help show ________ over time.", "expectedAny": ["change", "how things changed"]}
   ],
   "shortanswer": [
-    {"question": "How have cars changed from the past to today?", "expectedAny": ["more modern", "new technology", "safer", "faster"]},
-    {"question": "Name two events you could put on your own timeline.", "expectedAny": ["birth", "first day of school", "moving", "starting a sport"]},
-    {"question": "Why is it helpful to see events in order?", "expectedAny": ["makes sense of stories", "see cause and effect"]},
-    {"question": "How have phones changed from past to present?", "expectedAny": ["bigger to smaller to smartphones", "touchscreens"]},
-    {"question": "What is one way families can record their history?", "expectedAny": ["photos", "journals", "timelines"]},
-    {"question": "What could you add to a class timeline this year?", "expectedAny": ["field trip", "school events"]},
-    {"question": "What did people use for light in the past vs now?", "expectedAny": ["candles/lamps vs electricity"]}
+    {"question": "How have cars changed from the past to today?", "expectedAny": ["more modern", "new safety features", "faster engines", "electric or cleaner fuels"]},
+    {"question": "Name two events you could put on your own timeline.", "expectedAny": ["birth and first day of school", "moving and starting a sport", "first steps and losing a tooth", "first day of kindergarten and a family trip"]},
+    {"question": "Why is it helpful to see events in order?", "expectedAny": ["makes sense of stories", "see cause and effect", "helps remember when things happened"]},
+    {"question": "How have phones changed from past to present?", "expectedAny": ["bigger to smaller to smartphones", "touchscreens instead of buttons", "more features like cameras"]},
+    {"question": "What is one way families can record their history?", "expectedAny": ["photos", "journals", "timelines", "oral stories"]},
+    {"question": "What could you add to a class timeline this year?", "expectedAny": ["field trip", "school events", "class party"]},
+    {"question": "What did people use for light in the past vs now?", "expectedAny": ["candles vs electric lights", "oil lamps vs electric bulbs", "torches vs light bulbs"]}
   ]
 }

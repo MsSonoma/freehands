@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "9th_Stoichiometry_Mole_Calculations_Intermediate",
   "title": "Stoichiometry and Mole Calculations",
   "grade": "9th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "stoichiometry",
-      "definition": "Calculation of quantities in chemical reactions"
-    },
-    {
-      "term": "mole",
-      "definition": "Unit measuring amount of substance (6.022 × 10²³ particles)"
-    },
-    {
-      "term": "molar mass",
-      "definition": "Mass of one mole of a substance in grams"
-    },
-    {
-      "term": "balanced equation",
-      "definition": "Chemical equation with equal atoms on both sides"
-    },
-    {
-      "term": "limiting reagent",
-      "definition": "Reactant that is completely consumed and limits product formation"
-    }
+    {"term": "stoichiometry", "definition": "Calculation of quantities in chemical reactions"},
+    {"term": "mole", "definition": "Unit measuring amount of substance (6.022  10 particles)"},
+    {"term": "molar mass", "definition": "Mass of one mole of a substance in grams"},
+    {"term": "balanced equation", "definition": "Chemical equation with equal atoms on both sides"},
+    {"term": "limiting reagent", "definition": "Reactant that is completely consumed and limits product formation"}
   ],
   "teachingNotes": "Emphasize step-by-step problem solving approach. Practice converting between moles, mass, and particles using dimensional analysis.",
-  "sample": {
-    "question": "What is the calculation of quantities in chemical reactions called?",
-    "expectedAny": [
-      "stoichiometry",
-      "chemical calculations",
-      "reaction calculations",
-      "quantitative chemistry"
-    ]
-  },
-  "truefalse": {
-    "question": "A mole contains 6.022 × 10²³ particles.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the mass of one mole of a substance called?",
-    "expectedAny": [
-      "molar mass",
-      "molecular mass",
-      "formula mass",
-      "atomic mass"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The reactant that limits product formation is the ________ reagent.",
-    "expectedAny": [
-      "limiting",
-      "limiting reactant",
-      "rate-limiting",
-      "constraining"
-    ]
-  },
-  "shortanswer": {
-    "question": "How do you determine the limiting reagent in a reaction?",
-    "expectedAny": [
-      "calculate moles of each reactant",
-      "compare to stoichiometric ratios",
-      "find which produces less product"
-    ]
-  }
+  "sample": [
+    {"question": "What is the calculation of quantities in chemical reactions called?", "expectedAny": ["stoichiometry", "chemical calculations", "reaction calculations", "reaction math"]},
+    {"question": "What is a mole?", "expectedAny": ["6.022  10 particles", "unit of amount", "Avogadro's number", "6.02 times 10 to the 23"]},
+    {"question": "What is molar mass?", "expectedAny": ["mass of one mole", "grams per mole", "molecular weight in grams", "mass per mole"]},
+    {"question": "What is a balanced equation?", "expectedAny": ["equal atoms both sides", "conserves atoms", "balanced chemical equation", "same atoms on each side"]},
+    {"question": "What is the limiting reagent?", "expectedAny": ["reactant consumed first", "limits product", "runs out first", "used up first"]},
+    {"question": "What is Avogadro's number?", "expectedAny": ["6.022  10", "particles per mole", "6.02  10"]},
+    {"question": "What unit measures amount of substance?", "expectedAny": ["mole", "mol"]},
+    {"question": "How do you find molar mass?", "expectedAny": ["add atomic masses", "from periodic table", "sum of masses"]},
+    {"question": "Why balance equations?", "expectedAny": ["conserve atoms", "law of conservation", "atoms not created or destroyed"]},
+    {"question": "What determines limiting reagent?", "expectedAny": ["runs out first", "smallest amount", "consumed completely"]}
+  ],
+  "truefalse": [
+    {"question": "A mole contains 6.022  10 particles. (True or False)", "correct": true},
+    {"question": "Molar mass is measured in liters. (True or False)", "correct": false},
+    {"question": "A balanced equation has equal atoms on both sides. (True or False)", "correct": true},
+    {"question": "The limiting reagent limits product formation. (True or False)", "correct": true},
+    {"question": "Stoichiometry calculates reaction quantities. (True or False)", "correct": true},
+    {"question": "Molar mass is the mass of one mole. (True or False)", "correct": true},
+    {"question": "Avogadro's number is 6.022  10. (True or False)", "correct": true},
+    {"question": "Equations must be balanced. (True or False)", "correct": true},
+    {"question": "All reactants are consumed equally. (True or False)", "correct": false},
+    {"question": "The mole measures amount of substance. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is the mass of one mole of a substance called?", "choices": [{"letter": "A", "text": "Atomic mass"}, {"letter": "B", "text": "Molar mass"}, {"letter": "C", "text": "Volume"}, {"letter": "D", "text": "Density"}], "correct": "B"},
+    {"question": "What is 6.022  10 called?", "choices": [{"letter": "A", "text": "Planck's constant"}, {"letter": "B", "text": "Avogadro's number"}, {"letter": "C", "text": "Speed of light"}, {"letter": "D", "text": "Pi"}], "correct": "B"},
+    {"question": "What limits product formation?", "choices": [{"letter": "A", "text": "Excess reagent"}, {"letter": "B", "text": "Limiting reagent"}, {"letter": "C", "text": "Product"}, {"letter": "D", "text": "Catalyst"}], "correct": "B"},
+    {"question": "What must chemical equations be?", "choices": [{"letter": "A", "text": "Unbalanced"}, {"letter": "B", "text": "Balanced"}, {"letter": "C", "text": "Complex"}, {"letter": "D", "text": "Simple"}], "correct": "B"},
+    {"question": "What calculates reaction quantities?", "choices": [{"letter": "A", "text": "Algebra"}, {"letter": "B", "text": "Geometry"}, {"letter": "C", "text": "Stoichiometry"}, {"letter": "D", "text": "Calculus"}], "correct": "C"},
+    {"question": "What unit measures amount?", "choices": [{"letter": "A", "text": "Gram"}, {"letter": "B", "text": "Liter"}, {"letter": "C", "text": "Mole"}, {"letter": "D", "text": "Meter"}], "correct": "C"},
+    {"question": "How many particles in a mole?", "choices": [{"letter": "A", "text": "1000"}, {"letter": "B", "text": "1 million"}, {"letter": "C", "text": "6.022  10"}, {"letter": "D", "text": "100"}], "correct": "C"},
+    {"question": "What do you use molar mass for?", "choices": [{"letter": "A", "text": "Convert moles to grams"}, {"letter": "B", "text": "Measure volume"}, {"letter": "C", "text": "Find density"}, {"letter": "D", "text": "Calculate speed"}], "correct": "A"},
+    {"question": "What runs out first?", "choices": [{"letter": "A", "text": "Excess reagent"}, {"letter": "B", "text": "Product"}, {"letter": "C", "text": "Limiting reagent"}, {"letter": "D", "text": "Catalyst"}], "correct": "C"},
+    {"question": "What must be conserved in reactions?", "choices": [{"letter": "A", "text": "Energy only"}, {"letter": "B", "text": "Atoms"}, {"letter": "C", "text": "Electrons only"}, {"letter": "D", "text": "Volume"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "The reactant that limits product formation is the _____ reagent.", "expectedAny": ["limiting"]},
+    {"question": "A _____ contains 6.022  10 particles.", "expectedAny": ["mole", "mol"]},
+    {"question": "The mass of one mole is the _____ mass.", "expectedAny": ["molar"]},
+    {"question": "A _____ equation has equal atoms on both sides.", "expectedAny": ["balanced"]},
+    {"question": "_____ calculates quantities in reactions.", "expectedAny": ["stoichiometry"]},
+    {"question": "6.022  10 is _____'s number.", "expectedAny": ["Avogadro", "Avogadro's"]},
+    {"question": "The _____ measures amount of substance.", "expectedAny": ["mole", "mol"]},
+    {"question": "Molar mass is measured in _____ per mole.", "expectedAny": ["grams", "g"]},
+    {"question": "The reagent that runs out first is the _____ reagent.", "expectedAny": ["limiting"]},
+    {"question": "Chemical equations must be _____.", "expectedAny": ["balanced"]}
+  ],
+  "shortanswer": [
+    {"question": "What is stoichiometry?", "keyTerms": ["calculation", "quantities", "chemical reactions", "amounts"], "expectedAny": ["Calculation of quantities in reactions", "Figuring out amounts in chemistry", "Math of chemical reactions"]},
+    {"question": "What is a mole?", "keyTerms": ["unit", "6.022  10", "amount", "particles"], "expectedAny": ["Unit measuring amount with 6.022  10 particles", "6.022  10 particles", "Avogadro's number of particles"]},
+    {"question": "How do you find molar mass?", "keyTerms": ["add", "atomic masses", "periodic table", "sum"], "expectedAny": ["Add atomic masses from periodic table", "Sum of atomic masses", "Add masses of all atoms"]},
+    {"question": "Why must equations be balanced?", "keyTerms": ["conserve", "atoms", "not created", "not destroyed"], "expectedAny": ["Atoms must be conserved", "Atoms not created or destroyed", "Law of conservation of mass"]},
+    {"question": "What is the limiting reagent?", "keyTerms": ["reactant", "consumed first", "limits", "product"], "expectedAny": ["Reactant consumed first that limits product", "Runs out first and stops reaction", "Limits how much product forms"]},
+    {"question": "How do you convert moles to grams?", "keyTerms": ["multiply", "molar mass", "grams per mole"], "expectedAny": ["Multiply moles by molar mass", "Use molar mass to convert", "Moles times grams per mole"]},
+    {"question": "How do you convert grams to moles?", "keyTerms": ["divide", "molar mass", "grams per mole"], "expectedAny": ["Divide grams by molar mass", "Use molar mass to convert", "Grams divided by grams per mole"]},
+    {"question": "What is Avogadro's number?", "keyTerms": ["6.022  10", "particles", "per mole"], "expectedAny": ["6.022  10 particles per mole", "Number of particles in a mole", "6.02  10"]},
+    {"question": "Why use stoichiometry?", "keyTerms": ["predict", "amounts", "products", "reactants"], "expectedAny": ["To predict amounts of products or reactants", "Calculate how much you need or get", "Find quantities in reactions"]},
+    {"question": "What is the excess reagent?", "keyTerms": ["left over", "not consumed", "more than needed"], "expectedAny": ["Reactant left over after reaction", "Not completely consumed", "Remains after limiting reagent is gone"]}
+  ]
 }

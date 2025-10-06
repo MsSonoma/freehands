@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Explain how the Byzantine Empire preserved Roman traditions. Discuss Constantinople's strategic location between Europe and Asia.",
-  "sample": {
-    "question": "What empire was the eastern continuation of Rome?",
-    "expectedAny": [
-      "Byzantine Empire",
-      "Eastern Roman Empire",
-      "Byzantine",
-      "Eastern Empire"
-    ]
-  },
-  "truefalse": {
-    "question": "Constantinople was located at the crossroads between Europe and Asia.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What religion was practiced in the Byzantine Empire?",
-    "expectedAny": [
-      "Orthodox Christianity",
-      "Eastern Orthodox",
-      "Greek Orthodox",
-      "Byzantine Christianity"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The capital of the Byzantine Empire was ________.",
-    "expectedAny": [
-      "Constantinople",
-      "Byzantium",
-      "Istanbul",
-      "the capital"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why was Constantinople's location important for trade?",
-    "expectedAny": [
-      "between Europe and Asia",
-      "connected different continents",
-      "crossroads of trade routes"
-    ]
-  }
+  "sample": [
+    { "question": "What empire was the eastern continuation of Rome?", "expectedAny": ["Byzantine Empire"] },
+    { "question": "Which was capital city?", "choices": ["Rome", "Constantinople", "Athens", "Alexandria"], "correct": 1, "expectedAny": ["Constantinople"] },
+    { "question": "Byzantine religion was ________.", "expectedAny": ["Orthodox Christianity"] },
+    { "question": "Byzantine ruler was ________.", "expectedAny": ["emperor"] },
+    { "question": "Merchant meeting place is ________.", "expectedAny": ["trade center"] },
+    { "question": "What continued Rome?", "choices": ["Greece", "Byzantine Empire", "Egypt", "Persia"], "correct": 1, "expectedAny": ["Byzantine Empire"] },
+    { "question": "Capital between continents was ________.", "expectedAny": ["Constantinople"] },
+    { "question": "Eastern Christianity is ________.", "expectedAny": ["Orthodox", "Orthodox Christianity"] },
+    { "question": "Which ruled empire?", "choices": ["King", "Emperor", "President", "Senator"], "correct": 1, "expectedAny": ["emperor"] },
+    { "question": "Trading location is ________.", "expectedAny": ["trade center"] }
+  ],
+  "truefalse": [
+    { "question": "Constantinople was located at the crossroads between Europe and Asia.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Byzantine Empire fell when Rome fell.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Constantinople was Byzantine capital.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Byzantine practiced Western Christianity.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Emperors ruled Byzantine Empire.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Constantinople was unimportant.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Byzantine preserved Roman traditions.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Constantinople was in Africa.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Orthodox Christianity was practiced.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Byzantine had no trade.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What religion was practiced in the Byzantine Empire?", "choices": ["Islam", "Orthodox Christianity", "Hinduism", "Buddhism"], "correct": 1, "expectedAny": ["Orthodox Christianity"] },
+    { "question": "What continued Rome?", "choices": ["Greece", "Byzantine Empire", "Egypt", "Persia"], "correct": 1, "expectedAny": ["Byzantine Empire"] },
+    { "question": "What was the capital?", "choices": ["Rome", "Constantinople", "Athens", "Alexandria"], "correct": 1, "expectedAny": ["Constantinople"] },
+    { "question": "Who ruled?", "choices": ["King", "Emperor", "President", "Senator"], "correct": 1, "expectedAny": ["emperor"] },
+    { "question": "What was Constantinople?", "choices": ["Village", "Trade center", "Desert", "Mountain"], "correct": 1, "expectedAny": ["trade center"] },
+    { "question": "Where was Constantinople?", "choices": ["Only Europe", "Between Europe and Asia", "Only Asia", "Africa"], "correct": 1, "expectedAny": ["between Europe and Asia"] },
+    { "question": "What did Byzantine preserve?", "choices": ["Nothing", "Roman traditions", "Egyptian traditions", "Greek traditions"], "correct": 1, "expectedAny": ["Roman traditions"] },
+    { "question": "Byzantine was part of?", "choices": ["Greece", "Roman Empire", "Egypt", "Persia"], "correct": 1, "expectedAny": ["Roman Empire"] },
+    { "question": "What Christianity?", "choices": ["Western", "Orthodox", "Protestant", "None"], "correct": 1, "expectedAny": ["Orthodox"] },
+    { "question": "Constantinople connected?", "choices": ["Nothing", "Continents", "Oceans", "Deserts"], "correct": 1, "expectedAny": ["continents"] }
+  ],
+  "fillintheblank": [
+    { "question": "The capital of the Byzantine Empire was ________.", "expectedAny": ["Constantinople"] },
+    { "question": "The eastern continuation of Rome was ________.", "expectedAny": ["Byzantine Empire"] },
+    { "question": "Byzantine practiced ________ Christianity.", "expectedAny": ["Orthodox"] },
+    { "question": "The ruler was called an ________.", "expectedAny": ["emperor"] },
+    { "question": "A merchant meeting place is a ________.", "expectedAny": ["trade center"] },
+    { "question": "________ was the Byzantine capital.", "expectedAny": ["Constantinople"] },
+    { "question": "The ________ Empire continued Rome.", "expectedAny": ["Byzantine"] },
+    { "question": "________ Christianity was practiced.", "expectedAny": ["Orthodox"] },
+    { "question": "An ________ ruled the empire.", "expectedAny": ["emperor"] },
+    { "question": "A trade ________ is for merchants.", "expectedAny": ["center"] }
+  ],
+  "shortanswer": [
+    { "question": "Why was Constantinople's location important for trade?", "expectedAny": ["between Europe and Asia", "connected continents"] },
+    { "question": "What was Byzantine Empire?", "expectedAny": ["eastern continuation of Rome", "Eastern Roman Empire", "eastern Rome", "continuation of Roman Empire"] },
+    { "question": "What was Constantinople?", "expectedAny": ["Byzantine capital", "city between Europe and Asia", "capital of Byzantine", "crossroads city"] },
+    { "question": "What is Orthodox Christianity?", "expectedAny": ["Byzantine religion", "Eastern Christianity", "Eastern Christian Church", "Byzantine Christian faith"] },
+    { "question": "What was emperor?", "expectedAny": ["Byzantine ruler", "ruler of empire"] },
+    { "question": "What is trade center?", "expectedAny": ["place for merchants", "trading location"] },
+    { "question": "Why was Constantinople strategic?", "expectedAny": ["between continents", "crossroads of trade"] },
+    { "question": "What did Byzantine preserve?", "expectedAny": ["Roman traditions"] },
+    { "question": "Where was Constantinople?", "expectedAny": ["between Europe and Asia", "crossroads"] },
+    { "question": "What happened to western Rome?", "expectedAny": ["fell", "collapsed"] }
+  ]
 }

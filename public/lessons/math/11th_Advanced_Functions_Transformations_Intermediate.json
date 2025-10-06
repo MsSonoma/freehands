@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "11th_Advanced_Functions_Transformations_Intermediate",
   "title": "Advanced Functions and Transformations",
   "grade": "11th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "composition of functions",
-      "definition": "Operation where output of one function becomes input of another"
-    },
-    {
-      "term": "inverse function",
-      "definition": "Function that reverses operations of original function"
-    },
-    {
-      "term": "domain restriction",
-      "definition": "Limiting input values to ensure function properties"
-    },
-    {
-      "term": "piecewise function",
-      "definition": "Function defined by different expressions over different intervals"
-    },
-    {
-      "term": "rational function",
-      "definition": "Function expressed as ratio of polynomial functions"
-    }
+    {"term": "composition of functions", "definition": "Operation where output of one function becomes input of another"},
+    {"term": "inverse function", "definition": "Function that reverses operations of original function"},
+    {"term": "domain restriction", "definition": "Limiting input values to ensure function properties"},
+    {"term": "piecewise function", "definition": "Function defined by different expressions over different intervals"},
+    {"term": "rational function", "definition": "Function expressed as ratio of polynomial functions"}
   ],
   "teachingNotes": "Emphasize function relationships and operations. Practice finding inverse functions and their domains.",
-  "sample": {
-    "question": "What operation uses output of one function as input of another?",
-    "expectedAny": ["composition of functions", "function composition", "composite function", "function operation"]
-  },
-  "truefalse": {
-    "question": "An inverse function reverses the operations of the original function.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is a function expressed as a ratio of polynomials?",
-    "expectedAny": ["rational function", "polynomial ratio", "fractional function", "ratio function"]
-  },
-  "fillintheblank": {
-    "question": "A function defined by different expressions over intervals is a ________ function.",
-    "expectedAny": ["piecewise", "segmented", "split", "conditional"]
-  },
-  "shortanswer": {
-    "question": "How do you verify that two functions are inverses?",
-    "expectedAny": ["compose both ways", "f(g(x)) = x", "g(f(x)) = x", "composition equals identity"]
-  },
-  "wordProblems": {
-    "question": "If f(x) = 2x + 1 and g(x) = x², what is (g ∘ f)(3)?",
-    "expectedAny": ["49", "forty-nine", "(2·3+1)² = 7² = 49", "g(f(3)) = g(7) = 49"]
-  }
+  "sample": [
+    {"question": "What operation uses output of one function as input of another?", "expectedAny": ["composition of functions", "function composition", "composite function", "function operation"]},
+    {"question": "What function reverses operations of the original?", "expectedAny": ["inverse function", "inverse", "reverse function", "inverted function"]},
+    {"question": "What limits input values to ensure properties?", "expectedAny": ["domain restriction", "restricted domain", "domain limitation", "input restriction"]},
+    {"question": "What function has different expressions over intervals?", "expectedAny": ["piecewise function", "piecewise", "split function", "interval function"]},
+    {"question": "What function is a ratio of polynomials?", "expectedAny": ["rational function", "polynomial ratio", "fractional function", "quotient function"]},
+    {"question": "What is f(g(x)) called?", "expectedAny": ["composition", "function composition", "composite function", "composed function"]},
+    {"question": "What undoes a function's operations?", "expectedAny": ["inverse function", "inverse", "reverse function", "opposite function"]},
+    {"question": "What constrains the domain?", "expectedAny": ["domain restriction", "restriction", "domain limit", "input constraint"]},
+    {"question": "What function changes formula by intervals?", "expectedAny": ["piecewise function", "piecewise", "segmented function", "conditional function"]},
+    {"question": "What has polynomials in numerator and denominator?", "expectedAny": ["rational function", "rational", "polynomial fraction", "quotient function"]}
+  ],
+  "truefalse": [
+    {"question": "An inverse function reverses the operations of the original function.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Function composition is commutative.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Piecewise functions have different rules for different intervals.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "All functions have inverses.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Rational functions can have asymptotes.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Domain restriction is never necessary.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Composition notation is f(g(x)).", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Inverse functions are always linear.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Piecewise functions can be continuous.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Rational functions are always defined everywhere.", "expectedAny": ["false", "no", "f", "incorrect"]}
+  ],
+  "multiplechoice": [
+    {"question": "What is f(g(x))?", "choices": ["Sum", "Product", "Composition", "Inverse"], "correct": "Composition"},
+    {"question": "What undoes f(x)?", "choices": ["f(x) + 1", "f(x)", "f(x)", "2f(x)"], "correct": "f(x)"},
+    {"question": "What is P(x)/Q(x)?", "choices": ["Linear", "Quadratic", "Rational", "Exponential"], "correct": "Rational"},
+    {"question": "What changes by interval?", "choices": ["Linear", "Piecewise", "Constant", "Exponential"], "correct": "Piecewise"},
+    {"question": "What limits input values?", "choices": ["Range", "Domain restriction", "Output", "Slope"], "correct": "Domain restriction"},
+    {"question": "If f(x) = x + 2 and g(x) = 3x, what is f(g(x))?", "choices": ["3x + 2", "3x + 6", "x + 6", "5x"], "correct": "3x + 2"},
+    {"question": "What does f(f(x)) equal?", "choices": ["0", "1", "x", "2x"], "correct": "x"},
+    {"question": "What creates vertical asymptotes?", "choices": ["Numerator zeros", "Denominator zeros", "Domain", "Range"], "correct": "Denominator zeros"},
+    {"question": "What notation shows composition?", "choices": ["f + g", "f  g", "f  g", "f/g"], "correct": "f  g"},
+    {"question": "What must be one-to-one for an inverse?", "choices": ["Range", "Domain", "Original function", "Slope"], "correct": "Original function"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ of functions uses one output as another input.", "expectedAny": ["composition", "composing", "combining", "function composition", "composite", "nested functions"]},
+    {"question": "An _____ function reverses the original operations.", "expectedAny": ["inverse", "inverted", "opposite", "reverse", "inverse function", "reversed"]},
+    {"question": "A _____ function has different rules for different intervals.", "expectedAny": ["piecewise", "split", "segmented", "by parts", "conditional", "split function"]},
+    {"question": "A _____ function is a ratio of polynomials.", "expectedAny": ["rational", "fractional", "quotient", "ratio", "fraction function", "polynomial ratio"]},
+    {"question": "_____ restriction limits the input values.", "expectedAny": ["domain", "input", "x", "domain restriction", "input restriction", "x restriction"]},
+    {"question": "The notation f(g(x)) represents _____.", "expectedAny": ["composition", "composite function", "function composition"]},
+    {"question": "If f and g are inverses, then f(g(x)) = _____.", "expectedAny": ["x", "the identity", "input"]},
+    {"question": "Rational functions have _____ where denominator equals zero.", "expectedAny": ["asymptotes", "discontinuities", "undefined points"]},
+    {"question": "A function must be _____-to-one to have an inverse.", "expectedAny": ["one", "1", "one to one"]},
+    {"question": "_____ functions can model different behaviors in different regions.", "expectedAny": ["piecewise", "split", "conditional"]}
+  ],
+  "shortanswer": [
+    {"question": "Explain what function composition means and give an example.", "expectedAny": ["composition uses output of one function as input of another like f(g(x))", "combining functions where inner function evaluates first", "if f(x) = x and g(x) = x + 1 then f(g(x)) = (x + 1)"]},
+    {"question": "How do you find the inverse of a function?", "expectedAny": ["swap x and y then solve for y", "switch domain and range and reverse operations", "replace f(x) with y switch x and y then solve for y"]},
+    {"question": "Why might you need to restrict the domain of a function?", "expectedAny": ["to ensure the function is one-to-one for an inverse", "to avoid undefined values or make function properties work", "to create an inverse or avoid division by zero"]},
+    {"question": "Describe what makes a function piecewise.", "expectedAny": ["different formulas apply to different intervals of the domain", "the function is defined by multiple expressions for different input ranges", "it has different rules for different parts of the domain"]},
+    {"question": "What causes vertical asymptotes in rational functions?", "expectedAny": ["zeros of the denominator that are not canceled by numerator", "values where denominator equals zero", "when the denominator is zero but numerator is not"]},
+    {"question": "If f(x) = 2x + 3, find f(x) and verify.", "expectedAny": ["f(x) = (x - 3)/2 and f(f(x)) = x", "inverse is (x - 3)/2 which reverses the operations", "subtract 3 then divide by 2 gives (x - 3)/2"]},
+    {"question": "Explain why f(g(x))  g(f(x)) in general.", "expectedAny": ["composition is not commutative order matters", "the order of applying functions changes the result", "different functions applied in different order give different outputs"]},
+    {"question": "How do you determine the domain of a rational function?", "expectedAny": ["exclude values that make the denominator zero", "find where denominator equals zero and exclude those", "all real numbers except where denominator is zero"]},
+    {"question": "Give an example of a piecewise function and explain it.", "expectedAny": ["f(x) = x if x  0 and -x if x < 0 which is absolute value", "different formulas for different intervals like taxes or shipping costs", "a function that changes formula at specific boundary points"]},
+    {"question": "What is the relationship between a function and its inverse graphically?", "expectedAny": ["they are reflections across the line y = x", "symmetric about the line y = x", "mirror images over the identity line"]}
+  ],
+  "wordProblems": [
+    {"question": "A store applies a 20% discount then adds $5 shipping. If d(x) = 0.8x and s(x) = x + 5, what is the final price function s(d(x))?", "expectedAny": ["s(d(x)) = 0.8x + 5", "0.8x + 5", "eighty percent of x plus 5"]},
+    {"question": "Temperature conversion: C(F) = (5/9)(F - 32) converts Fahrenheit to Celsius. Find F(C) to convert back.", "expectedAny": ["F(C) = (9/5)C + 32", "nine fifths C plus 32", "1.8C + 32"]},
+    {"question": "A company charges $50 for up to 10 items and $3 per item after that. Write this as a piecewise function.", "expectedAny": ["C(n) = 50 if n  10 and 50 + 3(n - 10) if n > 10", "50 for first 10 then 50 plus 3 times quantity over 10", "flat 50 up to 10 items then 3 per additional item"]},
+    {"question": "If f(x) represents miles driven and g(x) = 0.25x is cost per mile, what does g(f(x)) represent?", "expectedAny": ["total cost based on miles driven", "composition gives total driving cost", "cost as a function of miles"]},
+    {"question": "A rational function R(x) = (x - 2)/(x + 3) has what vertical asymptote?", "expectedAny": ["x = -3", "vertical asymptote at x = -3", "at negative 3"]},
+    {"question": "Profit P(x) = R(x) - C(x) where R(x) = 50x and C(x) = 20x + 1000. Is P(x) invertible and what does it mean?", "expectedAny": ["P(x) = 30x - 1000 is invertible and inverse gives units needed for target profit", "yes invertible means you can find units from profit", "linear so has inverse that finds required sales"]},
+    {"question": "Compose h(x) = x and k(x) = x - 3 both ways. What are h(k(x)) and k(h(x))?", "expectedAny": ["h(k(x)) = (x - 3) and k(h(x)) = x - 3", "(x - 3) and x - 3", "squared after subtracting vs squared then subtracting"]},
+    {"question": "A piecewise tax function is T(i) = 0 if i  10000 and 0.15(i - 10000) if i > 10000. Find tax on $15,000.", "expectedAny": ["750 dollars", "$750", "0.15 times 5000 equals 750"]},
+    {"question": "The domain of f(x) = x is restricted to x  0. Why is this necessary?", "expectedAny": ["square roots of negative numbers are not real", "to keep outputs real valued", "negative inputs give non-real results"]},
+    {"question": "If g(f(x)) = x and f(x) = 3x - 6, find g(x).", "expectedAny": ["g(x) = (x + 6)/3", "g is inverse so (x + 6)/3", "add 6 and divide by 3"]}
+  ]
 }

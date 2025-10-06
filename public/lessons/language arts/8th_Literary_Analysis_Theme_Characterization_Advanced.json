@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Analyze complex texts for multiple themes. Compare how different authors develop similar themes through characterization.",
-  "sample": {
-    "question": "What is the central message or universal truth in a literary work?",
-    "expectedAny": [
-      "theme",
-      "central message",
-      "main idea",
-      "universal truth"
-    ]
-  },
-  "truefalse": {
-    "question": "A dynamic character changes throughout the story.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What are the methods an author uses to develop characters?",
-    "expectedAny": [
-      "characterization",
-      "character development",
-      "character methods",
-      "character techniques"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A character who remains the same throughout is called ________.",
-    "expectedAny": [
-      "static character",
-      "static",
-      "unchanging character",
-      "flat character"
-    ]
-  },
-  "shortanswer": {
-    "question": "How can authors reveal character traits indirectly?",
-    "expectedAny": [
-      "through actions, dialogue, thoughts",
-      "show don't tell",
-      "character behavior and speech"
-    ]
-  }
+  "sample": [
+    { "question": "What is the central message or universal truth in a literary work?", "expectedAny": ["theme"] },
+    { "question": "Which is author character methods?", "choices": ["Plot", "Characterization", "Setting", "Conflict"], "correct": 1, "expectedAny": ["characterization"] },
+    { "question": "Character who changes is ________.", "expectedAny": ["dynamic character"] },
+    { "question": "Character staying same is ________.", "expectedAny": ["static character"] },
+    { "question": "Theme applying to all is ________.", "expectedAny": ["universal theme"] },
+    { "question": "What is central message?", "choices": ["Plot", "Theme", "Setting", "Character"], "correct": 1, "expectedAny": ["theme"] },
+    { "question": "Developing characters is ________.", "expectedAny": ["characterization"] },
+    { "question": "What is changing character?", "choices": ["Static", "Dynamic character", "Flat", "Minor"], "correct": 1, "expectedAny": ["dynamic character"] },
+    { "question": "Unchanging character is ________.", "expectedAny": ["static character"] },
+    { "question": "Cross-cultural theme is ________.", "expectedAny": ["universal theme"] }
+  ],
+  "truefalse": [
+    { "question": "A dynamic character changes throughout the story.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Theme is the plot.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Characterization develops characters.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Static characters change.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Universal themes apply to everyone.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Dynamic characters stay same.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Theme is central message.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Characterization is setting.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Static characters remain same.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Universal themes are culture-specific.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What are the methods an author uses to develop characters?", "choices": ["Plot", "Characterization", "Setting", "Conflict"], "correct": 1, "expectedAny": ["characterization"] },
+    { "question": "What is central message?", "choices": ["Plot", "Theme", "Setting", "Character"], "correct": 1, "expectedAny": ["theme"] },
+    { "question": "What is changing character?", "choices": ["Static", "Dynamic character", "Flat", "Minor"], "correct": 1, "expectedAny": ["dynamic character"] },
+    { "question": "What is unchanging character?", "choices": ["Dynamic", "Static character", "Round", "Major"], "correct": 1, "expectedAny": ["static character"] },
+    { "question": "What applies to all?", "choices": ["Plot", "Universal theme", "Setting", "Character"], "correct": 1, "expectedAny": ["universal theme"] },
+    { "question": "Author develops characters through?", "choices": ["Plot", "Characterization", "Only dialogue", "Only description"], "correct": 1, "expectedAny": ["characterization"] },
+    { "question": "Universal truth is?", "choices": ["Plot", "Theme", "Setting", "Character"], "correct": 1, "expectedAny": ["theme"] },
+    { "question": "Character who grows is?", "choices": ["Static", "Dynamic", "Flat", "Minor"], "correct": 1, "expectedAny": ["dynamic"] },
+    { "question": "Character who doesn't change is?", "choices": ["Dynamic", "Static", "Round", "Major"], "correct": 1, "expectedAny": ["static"] },
+    { "question": "Theme crossing cultures is?", "choices": ["Specific", "Universal", "Local", "Personal"], "correct": 1, "expectedAny": ["universal"] }
+  ],
+  "fillintheblank": [
+    { "question": "A character who remains the same throughout is called ________.", "expectedAny": ["static character"] },
+    { "question": "The central message in literary work is ________.", "expectedAny": ["theme"] },
+    { "question": "Methods to develop characters are ________.", "expectedAny": ["characterization"] },
+    { "question": "A character who changes is ________.", "expectedAny": ["dynamic character"] },
+    { "question": "Theme applying to all people is ________.", "expectedAny": ["universal theme"] },
+    { "question": "A ________ is central message.", "expectedAny": ["theme"] },
+    { "question": "________ develops characters.", "expectedAny": ["characterization"] },
+    { "question": "A ________ character changes.", "expectedAny": ["dynamic"] },
+    { "question": "A ________ character stays same.", "expectedAny": ["static"] },
+    { "question": "A ________ theme applies to all.", "expectedAny": ["universal"] }
+  ],
+  "shortanswer": [
+    { "question": "How can authors reveal character traits indirectly?", "expectedAny": ["through actions, dialogue, thoughts", "show don't tell"] },
+    { "question": "What is theme?", "expectedAny": ["central message", "universal truth", "main idea", "lesson of story"] },
+    { "question": "What is characterization?", "expectedAny": ["methods to develop characters", "character development", "showing character traits", "revealing character"] },
+    { "question": "What is dynamic character?", "expectedAny": ["character who changes", "changing character", "character that grows", "character that develops"] },
+    { "question": "What is static character?", "expectedAny": ["character who stays same", "unchanging character"] },
+    { "question": "What is universal theme?", "expectedAny": ["theme applying to all people", "cross-cultural theme"] },
+    { "question": "How reveal traits?", "expectedAny": ["actions dialogue thoughts", "indirect characterization"] },
+    { "question": "What makes character dynamic?", "expectedAny": ["changes throughout story", "undergoes change"] },
+    { "question": "What makes character static?", "expectedAny": ["stays same throughout", "no change"] },
+    { "question": "Why use characterization?", "expectedAny": ["develop characters", "reveal character traits"] }
+  ]
 }

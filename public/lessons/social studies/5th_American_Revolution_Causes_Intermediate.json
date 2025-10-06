@@ -23,51 +23,87 @@
     {
       "term": "Patriots",
       "definition": "Colonists who wanted independence from Britain"
+    },
+    {
+      "term": "Loyalists",
+      "definition": "Colonists who remained loyal to Britain during the Revolution"
+    },
+    {
+      "term": "Stamp Act",
+      "definition": "A 1765 law that taxed paper goods in the colonies"
+    },
+    {
+      "term": "Intolerable Acts",
+      "definition": "Punitive laws passed in 1774 to punish Boston after the Tea Party"
+    },
+    {
+      "term": "Declaration of Independence",
+      "definition": "The 1776 document announcing the colonies' separation from Britain"
+    },
+    {
+      "term": "First Continental Congress",
+      "definition": "A 1774 meeting of colonial delegates to coordinate a response to British policies"
     }
   ],
   "teachingNotes": "Explain how unfair treatment led to the desire for independence. Connect to concepts of fairness and representation in government.",
-  "sample": {
-    "question": "What famous phrase described the colonists' complaint about British taxes?",
-    "expectedAny": [
-      "taxation without representation",
-      "no taxation without representation",
-      "taxed without representation"
-    ]
-  },
-  "truefalse": {
-    "question": "The Boston Tea Party was a celebration with tea and cake.",
-    "expectedAny": [
-      "false",
-      "no",
-      "f",
-      "incorrect"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What were colonists called who wanted independence from Britain?",
-    "expectedAny": [
-      "Patriots",
-      "American Patriots",
-      "colonial Patriots",
-      "independence supporters"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The colonists were angry because they had to pay ________ but could not vote on them.",
-    "expectedAny": [
-      "taxes",
-      "British taxes",
-      "unfair taxes",
-      "taxation"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why did the colonists dump tea into Boston Harbor?",
-    "expectedAny": [
-      "protest tea tax",
-      "angry about taxes",
-      "Boston Tea Party protest",
-      "protest British control"
-    ]
-  }
+  "sample": [
+    { "question": "What famous phrase described the colonists' complaint about British taxes?", "expectedAny": ["taxation without representation", "no taxation without representation", "taxed without representation"] },
+    { "question": "What protest involved dumping tea into Boston Harbor?", "expectedAny": ["Boston Tea Party", "the Boston Tea Party"] },
+    { "question": "Which act taxed newspapers and legal documents?", "expectedAny": ["Stamp Act"] },
+    { "question": "What were colonists called who supported independence?", "expectedAny": ["Patriots"] },
+    { "question": "Which acts punished Boston by closing its harbor?", "expectedAny": ["Intolerable Acts", "Coercive Acts"] },
+    { "question": "Where were the first shots of the Revolution fired?", "expectedAny": ["Lexington and Concord", "Lexington", "Concord"] },
+    { "question": "Who wrote the pamphlet Common Sense?", "expectedAny": ["Thomas Paine", "Paine"] },
+    { "question": "Which congress met to coordinate colonial resistance?", "expectedAny": ["First Continental Congress", "Continental Congress"] },
+    { "question": "What document announced separation from Britain in 1776?", "expectedAny": ["Declaration of Independence", "the Declaration of Independence"] },
+    { "question": "What were colonists who remained loyal to Britain called?", "expectedAny": ["Loyalists", "Tories"] }
+  ],
+  "truefalse": [
+    { "question": "The Boston Tea Party was a celebration with tea and cake.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The slogan 'No taxation without representation' complained about taxes without a voice.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The Stamp Act placed taxes on paper goods.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Patriots wanted to remain loyal to the British king.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The Intolerable Acts were seen as punishment for the Boston Tea Party.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Lexington and Concord are known as the first battles of the war.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Thomas Paine argued that colonies should stay under British rule.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The Declaration of Independence was signed in 1776.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Loyalists supported independence from Britain.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The First Continental Congress met to plan a response to British policies.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "What were colonists called who wanted independence from Britain?", "choices": ["Patriots", "Loyalists", "Redcoats", "Tories"], "correct": 0, "expectedAny": ["Patriots"] },
+    { "question": "Which act taxed newspapers and paper goods?", "choices": ["Tea Act", "Stamp Act", "Townshend Acts", "Sugar Act"], "correct": 1, "expectedAny": ["Stamp Act"] },
+    { "question": "Which event protested a tax by dumping cargo into a harbor?", "choices": ["Boston Tea Party", "Boston Massacre", "Lexington and Concord", "Intolerable Acts"], "correct": 0, "expectedAny": ["Boston Tea Party"] },
+    { "question": "Which laws closed Boston Harbor as punishment?", "choices": ["Coercive/Intolerable Acts", "Navigation Acts", "Proclamation of 1763", "Quartering Act"], "correct": 0, "expectedAny": ["Intolerable Acts"] },
+    { "question": "Who wrote Common Sense?", "choices": ["Thomas Paine", "George Washington", "Samuel Adams", "Benjamin Franklin"], "correct": 0, "expectedAny": ["Thomas Paine"] },
+    { "question": "Where were the first shots of the American Revolution?", "choices": ["Yorktown", "Lexington and Concord", "Saratoga", "Bunker Hill"], "correct": 1, "expectedAny": ["Lexington and Concord"] },
+    { "question": "Colonists who stayed loyal to Britain were called?", "choices": ["Patriots", "Loyalists", "Minutemen", "Sons of Liberty"], "correct": 1, "expectedAny": ["Loyalists"] },
+    { "question": "Which document announced independence in 1776?", "choices": ["Articles of Confederation", "Bill of Rights", "Declaration of Independence", "Mayflower Compact"], "correct": 2, "expectedAny": ["Declaration of Independence"] },
+    { "question": "What was the main complaint behind 'no taxation without representation'?", "choices": ["Taxes were too low", "No colonies in Parliament", "Wanted more British soldiers", "Opposed trade"], "correct": 1, "expectedAny": ["no representation", "no voice in Parliament"] },
+    { "question": "Which group organized resistance and later independence?", "choices": ["First Continental Congress", "House of Commons", "British Parliament", "French Assembly"], "correct": 0, "expectedAny": ["First Continental Congress"] }
+  ],
+  "fillintheblank": [
+    { "question": "The colonists were angry because they had to pay ________ but could not vote on them.", "expectedAny": ["taxes", "British taxes", "unfair taxes", "taxation"] },
+    { "question": "The protest where tea was dumped into the harbor was the ________ ________ ________.", "expectedAny": ["Boston Tea Party", "tea party"] },
+  { "question": "The ________ Act placed a tax on paper goods.", "expectedAny": ["Stamp", "Stamp Act"] },
+    { "question": "Punishment laws that closed Boston Harbor were called the ________ Acts.", "expectedAny": ["Intolerable", "Coercive"] },
+  { "question": "The first battles of the war were at ________ and ________.", "expectedAny": ["Lexington", "Concord", "Lexington and Concord"] },
+  { "question": "Thomas ________ wrote Common Sense.", "expectedAny": ["Paine", "Thomas Paine"] },
+    { "question": "Colonists loyal to Britain were called ________.", "expectedAny": ["Loyalists", "Tories"] },
+  { "question": "The ________ of ________ announced independence in 1776.", "expectedAny": ["Declaration", "Independence", "Declaration of Independence"] },
+  { "question": "The idea of ________ and ________ means citizens should have a voice in taxes.", "expectedAny": ["representation", "consent", "consent of the governed"] },
+    { "question": "Groups of citizen soldiers ready at a minute's notice were called ________.", "expectedAny": ["Minutemen", "minute men"] }
+  ],
+  "shortanswer": [
+    { "question": "Why did colonists object to British taxes?", "expectedAny": ["no representation", "no voice in Parliament", "unfair taxes"] },
+    { "question": "What happened at the Boston Tea Party?", "expectedAny": ["dumped tea", "protest tea tax", "threw tea into harbor"] },
+    { "question": "How did the Intolerable Acts change life in Boston?", "expectedAny": ["closed harbor", "punished Boston", "limited self-government"] },
+    { "question": "Why was Common Sense important?", "expectedAny": ["encouraged independence", "persuaded colonists", "argued for self-government"] },
+    { "question": "What was decided by the First Continental Congress?", "expectedAny": ["organize boycott", "petition king", "plan resistance"] },
+    { "question": "Who were Loyalists and who were Patriots?", "expectedAny": ["loyal to Britain vs independence", "sides in colonies", "support British vs support independence"] },
+    { "question": "What sparked fighting at Lexington and Concord?", "expectedAny": ["British tried to seize weapons", "shots fired", "attempt to take colonial arms"] },
+    { "question": "Why did colonists want independence?", "expectedAny": ["self-government", "rights", "freedom from British control"] },
+    { "question": "How did protests and boycotts put pressure on Britain?", "expectedAny": ["hurt trade", "forced repeal", "economic pressure"] },
+    { "question": "Name one cause that led directly to the Revolution.", "expectedAny": ["taxes", "Intolerable Acts", "lack of representation"] }
+  ]
 }

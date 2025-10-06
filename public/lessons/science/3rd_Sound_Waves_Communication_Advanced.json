@@ -5,12 +5,15 @@
   "difficulty": "Advanced",
   "featured": false,
   "vocab": [
-    { "term": "sound wave", "definition": "Invisible vibrations that travel through materials and carry sound" },
-    { "term": "pitch", "definition": "How high or low a sound is" },
-    { "term": "volume", "definition": "How loud or soft a sound is" },
-    { "term": "vibration", "definition": "A back-and-forth movement that creates sound" },
-    { "term": "communication", "definition": "Sharing information or messages with others" },
-    { "term": "medium", "definition": "The material (like air or water) that a sound travels through" }
+    {"word": "sound wave", "kid_friendly_definition": "Invisible vibrations that travel through materials and carry sound."},
+    {"word": "pitch", "kid_friendly_definition": "How high or low a sound is."},
+    {"word": "volume", "kid_friendly_definition": "How loud or soft a sound is."},
+    {"word": "vibration", "kid_friendly_definition": "A back-and-forth movement that creates sound."},
+    {"word": "communication", "kid_friendly_definition": "Sharing information or messages with others."},
+    {"word": "medium", "kid_friendly_definition": "The material like air or water that a sound travels through."},
+    {"word": "frequency", "kid_friendly_definition": "How fast something vibrates, which affects pitch."},
+    {"word": "amplitude", "kid_friendly_definition": "The size of a vibration, which affects volume."},
+    {"word": "echolocation", "kid_friendly_definition": "Using echoes and sound to find things, like bats and dolphins do."}
   ],
   "teachingNotes": "Use musical instruments and sound experiments. Demonstrate how sound travels through different materials. Connect to animal communication.",
   "sample": [
@@ -23,39 +26,39 @@
     { "question": "Does sound travel in a vacuum (empty space)?", "expectedAny": ["no"] }
   ],
   "truefalse": [
-    { "question": "Sound needs air or another material to travel through.", "answer": true },
-    { "question": "Tighter strings usually make higher-pitched sounds.", "answer": true },
-    { "question": "Volume and pitch are the same thing.", "answer": false },
-    { "question": "Animals use sound to warn others of danger.", "answer": true },
-    { "question": "Sound cannot travel through water.", "answer": false },
-    { "question": "Whales communicate using sound in the ocean.", "answer": true },
-    { "question": "A louder sound has a smaller vibration.", "answer": false }
+    { "question": "Sound needs air or another material to travel through.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "needs a medium"] },
+    { "question": "Tighter strings usually make higher-pitched sounds.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "higher pitch"] },
+    { "question": "Volume and pitch are the same thing.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "different: loudness vs high/low"] },
+    { "question": "Animals use sound to warn others of danger.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "warn of danger"] },
+    { "question": "Sound cannot travel through water.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "sound travels in water"] },
+    { "question": "Whales communicate using sound in the ocean.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "whales communicate"] },
+    { "question": "A louder sound has a smaller vibration.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "louder = bigger vibration"] }
   ],
   "multiplechoice": [
-    { "question": "Which would make a sound with higher pitch?", "choices": ["Large drum", "Small bell", "Deep voice", "Bass guitar"], "correct": 1 },
-    { "question": "What increases volume?", "choices": ["Gently tapping", "Hitting harder", "Tightening string", "Shortening string"], "correct": 1 },
-    { "question": "Which is a medium for sound?", "choices": ["Air", "Water", "Metal", "All of these"], "correct": 3 },
-    { "question": "Two cans with a string between them can carry sound because the string:", "choices": ["Glows", "Vibrates", "Holds air", "Bends light"], "correct": 1 },
-    { "question": "Which best helps animals communicate over long distances?", "choices": ["Whispering", "High-pitched chirps", "Loud, low sounds", "Silence"], "correct": 2 },
-    { "question": "Which change will likely increase the pitch of a guitar string?", "choices": ["Loosening it", "Tightening it", "Making it thicker", "Making it longer"], "correct": 1 },
-    { "question": "Which is true about sound in space?", "choices": ["It travels faster", "It can’t travel without a medium", "It is louder", "It shines"], "correct": 1 }
+    { "question": "Which would make a sound with higher pitch?", "choices": ["Large drum", "Small bell", "Deep voice", "Bass guitar"], "correct": 1, "expectedAny": ["b", "B", "2", "Small bell"] },
+    { "question": "What increases volume?", "choices": ["Gently tapping", "Hitting harder", "Tightening string", "Shortening string"], "correct": 1, "expectedAny": ["b", "B", "2", "Hitting harder", "hit harder"] },
+    { "question": "Which is a medium for sound?", "choices": ["Air", "Water", "Metal", "All of these"], "correct": 3, "expectedAny": ["d", "D", "4", "All of these", "all"] },
+    { "question": "Two cans with a string between them can carry sound because the string:", "choices": ["Glows", "Vibrates", "Holds air", "Bends light"], "correct": 1, "expectedAny": ["b", "B", "2", "Vibrates", "vibrates"] },
+    { "question": "Which best helps animals communicate over long distances?", "choices": ["Whispering", "High-pitched chirps", "Loud, low sounds", "Silence"], "correct": 2, "expectedAny": ["c", "C", "3", "Loud, low sounds", "low loud sounds"] },
+    { "question": "Which change will likely increase the pitch of a guitar string?", "choices": ["Loosening it", "Tightening it", "Making it thicker", "Making it longer"], "correct": 1, "expectedAny": ["b", "B", "2", "Tightening it", "tighten"] },
+    { "question": "Which is true about sound in space?", "choices": ["It travels faster", "It can’t travel without a medium", "It is louder", "It shines"], "correct": 1, "expectedAny": ["b", "B", "2", "It can’t travel without a medium", "needs a medium"] }
   ],
   "fillintheblank": [
-    { "question": "When you pluck a guitar string tighter, the _____ of the sound becomes higher.", "expectedAny": ["pitch"] },
-    { "question": "Sound is made by _____.", "expectedAny": ["vibrations"] },
-    { "question": "The loudness of sound is called _____.", "expectedAny": ["volume"] },
-    { "question": "Sound needs a _____ like air or water to travel.", "expectedAny": ["medium"] },
-    { "question": "A dolphin uses sound to _____.", "expectedAny": ["communicate"] },
+    { "question": "When you pluck a guitar string tighter, the _____ of the sound becomes higher.", "expectedAny": ["pitch", "pitch level"] },
+    { "question": "Sound is made by _____.", "expectedAny": ["vibrations", "vibration"] },
+    { "question": "The loudness of sound is called _____.", "expectedAny": ["volume", "loudness"] },
+    { "question": "Sound needs a _____ like air or water to travel.", "expectedAny": ["medium", "material"] },
+    { "question": "A dolphin uses sound to _____.", "expectedAny": ["communicate", "send messages", "communicate with others"] },
     { "question": "A louder sound has a _____ vibration.", "expectedAny": ["bigger", "stronger"] },
     { "question": "Whales can communicate across long distances in the _____.", "expectedAny": ["ocean", "water"] }
   ],
   "shortanswer": [
-    { "question": "How do animals use sound to communicate?", "expectedAny": ["warn of danger", "find mates", "locate family", "mark territory"] },
-    { "question": "Explain why sound cannot travel in a vacuum.", "expectedAny": ["no medium for vibrations to move through"] },
-    { "question": "Describe two ways to make a sound louder.", "expectedAny": ["hit harder", "use more energy", "get closer to the listener"] },
-    { "question": "How does tightening a string change its sound?", "expectedAny": ["higher pitch"] },
-    { "question": "Give an example of a sound used for communication in your life.", "expectedAny": ["school bell", "alarm", "phone ring"] },
-    { "question": "Why can we hear better through some materials than others?", "expectedAny": ["sound travels differently", "some carry vibrations well"] },
-    { "question": "What safety messages might animals send with sound?", "expectedAny": ["danger call", "warning", "territory warning"] }
+    {"question": "How do animals use sound to communicate?", "expectedAny": ["warn of danger", "find mates", "locate family", "mark territory", "tell other animals things", "make sounds to talk"]},
+    {"question": "Explain why sound cannot travel in a vacuum.", "expectedAny": ["no medium for vibrations to move through", "there is no air or material", "nothing to carry the vibrations", "space is empty", "no air"]},
+    {"question": "Describe two ways to make a sound louder.", "expectedAny": ["hit harder", "use more energy", "get closer to the listener", "make bigger vibrations", "use more force"]},
+    {"question": "How does tightening a string change its sound?", "expectedAny": ["higher pitch", "raises the pitch", "the pitch goes up", "sounds higher", "makes it higher"]},
+    {"question": "Give an example of a sound used for communication in your life.", "expectedAny": ["school bell", "alarm", "phone ring", "doorbell", "voice", "talking"]},
+    {"question": "Why can we hear better through some materials than others?", "expectedAny": ["sound travels differently", "some carry vibrations well", "some block or absorb sound less", "solids can carry vibrations well", "different materials"]},
+    {"question": "What safety messages might animals send with sound?", "expectedAny": ["danger call", "warning", "territory warning", "watch out", "stay away"]}
   ]
 }

@@ -41,9 +41,9 @@
   "fillintheblank": [
     { "question": "The ________ of a story tells what happens from beginning to end.", "expectedAny": ["plot", "story line", "events", "what happens"] },
     { "question": "The ________ tells us where and when a story happens.", "expectedAny": ["setting", "place and time"] },
-    { "question": "A person or animal in a story is a ________.", "expectedAny": ["character"] },
+    { "question": "A person or animal in a story is a ________.", "expectedAny": ["character", "story person"] },
     { "question": "The beginning should ________ the characters and setting.", "expectedAny": ["introduce", "present"] },
-    { "question": "The ________ is where the main events happen.", "expectedAny": ["middle"] },
+    { "question": "The ________ is where the main events happen.", "expectedAny": ["middle", "the middle"] },
     { "question": "The ending should ________ the problem.", "expectedAny": ["solve", "fix"] },
     { "question": "Good writers use ________ words to help readers imagine.", "expectedAny": ["descriptive", "detail"] }
   ],
@@ -54,6 +54,6 @@
     { "question": "How could that problem be solved in the end?", "expectedAny": ["find help", "use clues", "work together"] },
     { "question": "Give one example of a descriptive word for a forest.", "expectedAny": ["dark", "quiet", "mossy", "tall trees"] },
     { "question": "What is one way to make characters interesting?", "expectedAny": ["give them goals", "show how they feel", "use dialogue"] },
-    { "question": "Write one sentence that could be the beginning of a story.", "expectedAny": ["any reasonable story start", "introduces character or setting"] }
+    { "question": "Write one sentence that could be the beginning of a story.", "expectedAny": ["On a windy day, Leo found a map.", "At sunrise, Maya packed her bag.", "The classroom buzzed on the first day."] }
   ]
 }

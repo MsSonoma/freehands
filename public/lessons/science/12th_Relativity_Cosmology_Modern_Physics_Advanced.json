@@ -32,7 +32,9 @@
       "spacetime curvature",
       "gravitational curvature",
       "geometric warping",
-      "spacetime distortion"
+      "spacetime distortion",
+      "spacetime bending",
+      "gravitational warping"
     ]
   },
   "truefalse": {

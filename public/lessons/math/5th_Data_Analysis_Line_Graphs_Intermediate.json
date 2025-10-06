@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Practice reading line graphs showing changes over time. Teach students to identify increasing and decreasing trends. Emphasize the importance of reading titles and labels.",
-  "sample": {
-    "question": "What type of graph is best for showing temperature changes throughout a day?",
-    "expectedAny": ["line graph", "line chart", "graph with lines", "time graph"]
-  },
-  "truefalse": {
-    "question": "A line graph can show how data changes over time.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "If a line on a graph slopes upward from left to right, what does this show?",
-    "expectedAny": ["increasing", "going up", "rising", "data is increasing"]
-  },
-  "fillintheblank": {
-    "question": "To understand a graph, you should first read the ________ and labels.",
-    "expectedAny": ["title", "heading", "graph title", "main title"]
-  },
-  "shortanswer": {
-    "question": "Look at a line graph showing plant height over 6 weeks. If the line goes up steadily, what does this tell you?",
-    "expectedAny": ["plant is growing", "height is increasing", "plant gets taller", "steady growth"]
-  },
-  "wordProblems": {
-    "question": "A line graph shows school enrollment from 2019 to 2023: 2019=200, 2020=250, 2021=300, 2022=280, 2023=320. What is the overall trend?",
-    "expectedAny": ["increasing", "going up", "growth", "enrollment is rising"]
-  }
+  "sample": [
+    { "question": "What type of graph is best for showing temperature changes throughout a day?", "expectedAny": ["line graph", "line chart", "graph with lines", "time graph"] },
+    { "question": "A ________ connects points to show change over time.", "expectedAny": ["line graph"] },
+    { "question": "The numbers along the axes are the ________.", "expectedAny": ["scale"] },
+    { "question": "A pattern that goes up or down is a ________.", "expectedAny": ["trend"] },
+    { "question": "When the line goes down, the data is ________.", "expectedAny": ["decreasing"] },
+    { "question": "When the line is flat, the data is ________.", "expectedAny": ["staying the same", "constant"] },
+    { "question": "The title tells what the graph is ________.", "expectedAny": ["about", "showing"] },
+    { "question": "The ________ axis usually shows time.", "expectedAny": ["x", "x-axis"] },
+    { "question": "The ________ axis shows the measured values.", "expectedAny": ["y", "y-axis"] },
+    { "question": "You should always read the ________ and labels first.", "expectedAny": ["title"] }
+  ],
+  "truefalse": [
+    { "question": "A line graph can show how data changes over time.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A downward-sloping line shows an increase.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A flat line means the values are constant.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The x-axis is usually vertical.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The y-axis shows the measured values.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The scale helps you read exact values.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A graph without labels is still easy to understand.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Trends can be increasing, decreasing, or constant.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Connecting points on a line graph is optional.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A good title should describe the data.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "If a line on a graph slopes upward from left to right, what does this show?", "choices": ["decreasing", "increasing", "constant", "random"], "correct": 1, "expectedAny": ["increasing", "going up", "rising", "data is increasing"] },
+    { "question": "Which axis commonly shows time?", "choices": ["y-axis", "x-axis", "z-axis", "none"], "correct": 1, "expectedAny": ["x-axis"] },
+    { "question": "What does a flat line mean?", "choices": ["increase", "decrease", "no change", "random"], "correct": 2, "expectedAny": ["constant"] },
+    { "question": "Which part of the graph tells you what the data is about?", "choices": ["labels", "title", "scale", "grid"], "correct": 1, "expectedAny": ["title"] },
+    { "question": "If points are at 2, 4, 6, 8 over four days, the trend is ________.", "choices": ["decreasing", "increasing", "constant", "random"], "correct": 1, "expectedAny": ["increasing"] },
+    { "question": "Which helps you read the size of changes?", "choices": ["title", "scale", "color", "shape"], "correct": 1, "expectedAny": ["scale"] },
+    { "question": "If Day 1=10 and Day 2=7, the graph shows a ________.", "choices": ["rise", "drop", "flat", "spike"], "correct": 1, "expectedAny": ["decrease"] },
+    { "question": "Before reading a graph, you should check the ________.", "choices": ["title and labels", "grid color", "font", "border"], "correct": 0, "expectedAny": ["title", "labels"] },
+    { "question": "What is the y-value at x=3 if the points are (1,2), (2,4), (3,6)?", "choices": ["2", "3", "6", "1"], "correct": 2, "expectedAny": ["6"] },
+    { "question": "If the scale on y-axis skips by 5, what comes after 20?", "choices": ["21", "25", "22", "30"], "correct": 1, "expectedAny": ["25"] }
+  ],
+  "fillintheblank": [
+    { "question": "To understand a graph, you should first read the ________ and labels.", "expectedAny": ["title", "heading", "graph title", "main title", "chart title"] },
+    { "question": "A pattern that shows up or down is a ________.", "expectedAny": ["trend", "pattern", "overall direction"] },
+    { "question": "The numbers marked on the axes are the ________.", "expectedAny": ["scale", "number scale", "units"] },
+    { "question": "The horizontal axis is the ________ axis.", "expectedAny": ["x", "x-axis", "x axis", "horizontal"] },
+    { "question": "The vertical axis is the ________ axis.", "expectedAny": ["y", "y-axis", "y axis", "vertical"] },
+    { "question": "Points are connected by ________.", "expectedAny": ["lines", "line segments"] },
+    { "question": "A line going down shows the data is ________.", "expectedAny": ["decreasing", "going down", "declining"] },
+    { "question": "A line staying flat shows ________ change.", "expectedAny": ["no", "no change", "zero"] },
+    { "question": "The title should describe the ________.", "expectedAny": ["data", "information", "what the graph shows"] },
+    { "question": "The ________ axis often shows time.", "expectedAny": ["x", "x-axis"] }
+  ],
+  "shortanswer": [
+    { "question": "Look at a line graph showing plant height over 6 weeks. If the line goes up steadily, what does this tell you?", "expectedAny": ["plant is growing", "height is increasing", "plant gets taller", "steady growth", "consistent increase"] },
+    { "question": "Explain how to tell if data is increasing or decreasing on a line graph.", "expectedAny": ["slope up or down", "line direction", "upward slope means increase", "downward slope means decrease"] },
+    { "question": "Describe why reading the scale matters.", "expectedAny": ["read exact values", "understand size of change", "know the units"] },
+    { "question": "What should you read first on a graph and why?", "expectedAny": ["title and labels", "know what data is", "title explains what the data is about"] },
+    { "question": "If the line goes up then down, describe the trend.", "expectedAny": ["increase then decrease", "up then down", "rises then falls"] },
+    { "question": "How can you estimate values between two points?", "expectedAny": ["interpolate", "estimate between points", "read between the points"] },
+    { "question": "If two lines cross, what does that tell you?", "expectedAny": ["values equal at that point", "same y-value at that x"] },
+    { "question": "What does a steep slope mean compared to a gentle slope?", "expectedAny": ["faster change", "greater change rate", "changes more quickly"] },
+    { "question": "Give a real-world example where a line graph is useful.", "expectedAny": ["weather", "sports scores", "population", "temperature over time", "stock prices"] },
+    { "question": "Explain how you would find the difference between two data points.", "expectedAny": ["subtract y-values", "subtract the values", "find the change by subtraction"] }
+  ],
+  "wordProblems": [
+    { "question": "A line graph shows school enrollment from 2019 to 2023: 2019=200, 2020=250, 2021=300, 2022=280, 2023=320. What is the overall trend?", "expectedAny": ["increasing", "going up", "growth", "enrollment is rising"] },
+    { "question": "Weekly steps: 5k, 6k, 7k, 8k. What does the line show?", "expectedAny": ["increasing", "more steps each week"] },
+    { "question": "Temperature at noon: 60, 65, 70, 68, 72. Describe the trend.", "expectedAny": ["mostly increasing with a small dip"] },
+    { "question": "Rainfall per month: 3, 2, 4, 5. Which month had the least?", "expectedAny": ["2", "second month"] },
+    { "question": "Class score average: 70, 75, 80, 78, 82. Overall trend?", "expectedAny": ["increasing overall"] },
+    { "question": "Heart rate during exercise: 90→120→140→130. What happened?", "expectedAny": ["increased then decreased"] },
+    { "question": "Track time (min): 15, 14, 13, 13. What does the flat part show?", "expectedAny": ["no change", "constant"] },
+    { "question": "Sales: 10, 12, 9, 11. Which segment shows a decrease?", "expectedAny": ["12 to 9"] },
+    { "question": "Population: 100, 100, 105, 110. What is the first change?", "expectedAny": ["constant then increase"] },
+    { "question": "Distance traveled: 1, 3, 6, 10. Is the increase steady?", "expectedAny": ["no", "growing faster"] }
+  ]
 }

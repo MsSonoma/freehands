@@ -1,6 +1,6 @@
 {
   "id": "6th_Grammar_Sentence_Structure_Beginner",
-  "title": "Grammar: Advanced Sentence Structure and Mechanics",
+  "title": "Grammar: Sentence Structure and Mechanics",
   "grade": "6th",
   "difficulty": "Beginner",
   "vocab": [
@@ -11,6 +11,14 @@
     {
       "term": "phrase",
       "definition": "A group of words that works together but lacks a subject or predicate"
+    },
+    {
+      "term": "subject",
+      "definition": "Who or what the sentence is about"
+    },
+    {
+      "term": "predicate",
+      "definition": "The part of the sentence that tells what the subject does or is"
     },
     {
       "term": "run-on sentence",
@@ -26,49 +34,64 @@
     }
   ],
   "teachingNotes": "Practice identifying and fixing sentence errors. Use sentence combining activities. Emphasize the difference between phrases and clauses.",
-  "sample": {
-    "question": "What do we call a group of words with a subject and predicate?",
-    "expectedAny": [
-      "clause",
-      "sentence clause",
-      "grammatical clause",
-      "complete clause"
-    ]
-  },
-  "truefalse": {
-    "question": "A phrase contains both a subject and a predicate.",
-    "expectedAny": [
-      "false",
-      "no",
-      "f",
-      "incorrect"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is wrong with this sentence: 'Running through the park.'?",
-    "expectedAny": [
-      "it's a fragment",
-      "missing subject",
-      "incomplete sentence",
-      "needs a complete thought"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Words like 'and,' 'but,' and 'or' are called ________ conjunctions.",
-    "expectedAny": [
-      "coordinating",
-      "coordinate",
-      "connecting",
-      "joining"
-    ]
-  },
-  "shortanswer": {
-    "question": "How can you fix a run-on sentence?",
-    "expectedAny": [
-      "add punctuation",
-      "split into two sentences",
-      "add comma and conjunction",
-      "use semicolon or period"
-    ]
-  }
+  "sample": [
+  { "question": "What do we call a group of words with a subject and predicate?", "expectedAny": ["clause", "sentence clause", "grammatical clause", "complete clause", "independent clause", "dependent clause"] },
+    { "question": "Which is a coordinating conjunction?", "choices": ["because", "and", "although", "when"], "correct": 1, "expectedAny": ["and"] },
+    { "question": "A sentence without a subject or predicate is a ________.", "expectedAny": ["fragment", "sentence fragment"] },
+    { "question": "A group of words without both subject and predicate is a ________.", "expectedAny": ["phrase"] },
+    { "question": "Which is a run-on sentence?", "choices": ["We went home.", "I like pizza and pasta.", "She ran he walked.", "Although it rained, we played."], "correct": 2, "expectedAny": ["she ran he walked"] },
+  { "question": "What punctuation can separate two complete thoughts?", "expectedAny": ["period", "a period", "semicolon", "a semicolon", "comma with conjunction", "comma and conjunction"] },
+    { "question": "A ________ joins equal parts of a sentence.", "expectedAny": ["coordinating conjunction", "conjunction"] },
+    { "question": "Which word is NOT a coordinating conjunction?", "choices": ["and", "but", "because", "or"], "correct": 2, "expectedAny": ["because"] },
+  { "question": "Combine: 'I read.' 'I write.' using 'and'.", "expectedAny": ["I read and I write", "I read and write", "I read, and I write"] },
+  { "question": "What type of error is 'Running fast'?", "expectedAny": ["fragment", "sentence fragment", "incomplete sentence", "fragment sentence"] }
+  ],
+  "truefalse": [
+    { "question": "A phrase contains both a subject and a predicate.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A clause has a subject and predicate.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "'Running through the park' is a complete sentence.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Coordinating conjunctions connect equal parts.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A run-on sentence needs proper punctuation.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Every fragment can stand alone as a sentence.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "'And,' 'but,' and 'or' are coordinating conjunctions.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A comma alone can fix a run-on sentence.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Phrases work together as a unit in sentences.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All clauses are complete sentences.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is wrong with this sentence: 'Running through the park.'?", "choices": ["It's a run-on", "It's a fragment", "It's perfect", "Wrong punctuation"], "correct": 1, "expectedAny": ["it's a fragment", "fragment"] },
+    { "question": "Which is a coordinating conjunction?", "choices": ["because", "although", "but", "when"], "correct": 2, "expectedAny": ["but"] },
+    { "question": "How can you fix: 'I read I write'?", "choices": ["Add comma", "Add period or conjunction", "Add question mark", "It's correct"], "correct": 1, "expectedAny": ["add period or conjunction"] },
+    { "question": "Which is a complete sentence?", "choices": ["Running fast", "The big dog", "She sings beautifully", "After the game"], "correct": 2, "expectedAny": ["she sings beautifully"] },
+    { "question": "Which is a phrase, not a clause?", "choices": ["She ran", "In the morning", "They played", "We walked"], "correct": 1, "expectedAny": ["in the morning"] },
+    { "question": "Which fixes: 'I was tired I went to bed'?", "choices": ["I was tired, I went to bed.", "I was tired, so I went to bed.", "I was tired I, went to bed.", "I was tired I went, to bed."], "correct": 1, "expectedAny": ["I was tired, so I went to bed."] },
+    { "question": "Which is NOT a fragment?", "choices": ["After lunch", "When it rained", "The bright sun", "We played games"], "correct": 3, "expectedAny": ["we played games"] },
+    { "question": "Which conjunction shows contrast?", "choices": ["and", "but", "or", "nor"], "correct": 1, "expectedAny": ["but"] },
+    { "question": "What is 'with a smile'?", "choices": ["Clause", "Phrase", "Fragment", "Run-on"], "correct": 1, "expectedAny": ["phrase"] },
+    { "question": "Which sentence is correct?", "choices": ["We ran, and jumped.", "We ran and we jumped.", "We ran, we jumped.", "We ran we jumped."], "correct": 1, "expectedAny": ["we ran and we jumped"] }
+  ],
+  "fillintheblank": [
+    { "question": "Words like 'and,' 'but,' and 'or' are called ________ conjunctions.", "expectedAny": ["coordinating", "coordinate"] },
+  { "question": "A sentence that joins two thoughts without punctuation is a ________ sentence.", "expectedAny": ["run-on", "run on", "runon"] },
+    { "question": "An incomplete sentence is called a ________.", "expectedAny": ["fragment", "sentence fragment"] },
+    { "question": "A ________ has a subject and predicate.", "expectedAny": ["clause"] },
+    { "question": "A ________ lacks a subject or predicate.", "expectedAny": ["phrase"] },
+  { "question": "To fix a run-on, add a ________ or conjunction.", "expectedAny": ["period", "a period", "semicolon", "a semicolon"] },
+    { "question": "The word '________' is a coordinating conjunction meaning contrast.", "expectedAny": ["but", "yet"] },
+    { "question": "A group of words that works together is a ________.", "expectedAny": ["phrase"] },
+    { "question": "A comma plus a ________ can separate two complete thoughts.", "expectedAny": ["coordinating conjunction", "conjunction"] },
+    { "question": "To combine equal ideas, use a ________ conjunction.", "expectedAny": ["coordinating"] }
+  ],
+  "shortanswer": [
+  { "question": "How can you fix a run-on sentence?", "expectedAny": ["add punctuation", "split into two sentences", "add comma and conjunction", "use semicolon or period", "use a period", "use a semicolon", "use a coordinating conjunction"] },
+  { "question": "Explain the difference between a phrase and a clause.", "expectedAny": ["phrase lacks subject or predicate", "clause has both subject and predicate", "clause is complete, phrase is not", "a phrase has no subject-verb pair; a clause does"] },
+    { "question": "Combine: 'I like pizza.' 'I like pasta.' using 'and'.", "expectedAny": ["I like pizza and pasta", "I like pizza and I like pasta"] },
+    { "question": "Fix this fragment: 'Running through the park.'", "expectedAny": ["She was running through the park", "I was running through the park", "add subject and verb"] },
+    { "question": "Why is 'She ran he walked' incorrect?", "expectedAny": ["run-on sentence", "needs punctuation", "two complete thoughts without separator"] },
+    { "question": "Name three coordinating conjunctions.", "expectedAny": ["and, but, or", "for, and, nor", "but, or, yet"] },
+    { "question": "Fix: 'The dog barked the cat ran.'", "expectedAny": ["The dog barked, and the cat ran", "The dog barked. The cat ran."] },
+    { "question": "Give an example of a phrase about school.", "expectedAny": ["in the classroom", "after lunch", "with my friends"] },
+    { "question": "Write a sentence using 'but' to show contrast.", "expectedAny": ["I wanted to play, but it rained", "She studied hard, but failed"] },
+    { "question": "Explain what makes a clause different from a fragment.", "expectedAny": ["clause has subject and predicate", "clause is complete", "fragment is incomplete"] }
+  ]
 }

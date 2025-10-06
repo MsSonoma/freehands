@@ -14,23 +14,123 @@
       "definition": "Natural features of Earth's surface like mountains, plains, and valleys"
     },
     {
+      "term": "river",
+      "definition": "A large flowing body of water that moves toward a lake or ocean"
+    },
+    {
+      "term": "lake",
+      "definition": "A large body of water that is surrounded by land"
+    },
+    {
+      "term": "mountain range",
+      "definition": "A line or group of connected mountains"
+    },
+    {
+      "term": "canyon",
+      "definition": "A deep, narrow valley with steep sides, often carved by a river"
+    },
+    {
+      "term": "plateau",
+      "definition": "A large, flat area of high land"
+    },
+    {
+      "term": "plain",
+      "definition": "A wide area of flat or gently rolling land"
+    },
+    {
+      "term": "valley",
+      "definition": "A low area of land between hills or mountains"
+    },
+    {
+      "term": "desert",
+      "definition": "A dry region with little rainfall and few plants"
+    },
+    {
+      "term": "coastline",
+      "definition": "The edge where land meets the ocean or sea"
+    },
+    {
+      "term": "peninsula",
+      "definition": "Land almost surrounded by water but still connected to the mainland"
+    },
+    {
+      "term": "gulf",
+      "definition": "A large area of the ocean that cuts into the land"
+    },
+    {
+      "term": "bay",
+      "definition": "A part of a sea or lake partly surrounded by land"
+    },
+    {
+      "term": "waterfall",
+      "definition": "Water that falls from a higher place to a lower place in a river"
+    },
+    {
       "term": "natural resource",
       "definition": "Materials from nature that people use, like water, oil, or forests"
     },
     {
       "term": "economy",
       "definition": "The way people in a place make, sell, and buy goods and services"
+    },
+    {
+      "term": "population density",
+      "definition": "How many people live in a certain area"
+    },
+    {
+      "term": "urban",
+      "definition": "A city area with many people and buildings"
+    },
+    {
+      "term": "rural",
+      "definition": "Countryside areas with farms and small towns"
+    },
+    {
+      "term": "landmark",
+      "definition": "A famous or important place people recognize"
+    },
+    {
+      "term": "Niagara Falls",
+      "definition": "A large waterfall on the border between the United States and Canada"
+    },
+    {
+      "term": "liberty",
+      "definition": "Freedom and rights, often symbolized by the Statue of Liberty"
+    },
+    {
+      "term": "national park",
+      "definition": "Protected land set aside for nature and people to enjoy"
+    },
+    {
+      "term": "climate zone",
+      "definition": "An area with similar weather patterns"
+    },
+    {
+      "term": "tourism",
+      "definition": "Travel for fun that brings money to a place"
+    },
+    {
+      "term": "agriculture",
+      "definition": "Farming and raising animals"
+    },
+    {
+      "term": "industry",
+      "definition": "Businesses that make goods in factories"
+    },
+    {
+      "term": "metropolitan area",
+      "definition": "A big city and the towns around it"
     }
   ],
   "teachingNotes": "Use U.S. maps to identify regions. Compare and contrast different regions' characteristics. Discuss how geography affects how people live.",
   "sample": [
-    {"question": "Name two characteristics that make the Southwest region unique.", "expectedAny": ["desert climate", "hot temperatures", "Spanish influence"]},
-    {"question": "What region do you live in?", "expectedAny": []},
-    {"question": "Name three major US rivers.", "expectedAny": ["Mississippi", "Missouri", "Colorado", "Ohio"]},
+    {"question": "Name two characteristics that make the Southwest region unique.", "expectedAny": ["desert climate", "hot temperatures", "Spanish influence", "arid", "canyons", "Grand Canyon", "dry", "saguaro cacti", "plateaus"]},
+    {"question": "What region do you live in?", "expectedAny": ["Northeast", "Southeast", "Midwest", "Southwest", "West"]},
+    {"question": "Name three major US rivers.", "expectedAny": ["Mississippi", "Missouri", "Colorado", "Ohio", "Rio Grande", "Columbia", "the Mississippi River", "the Missouri River", "the Colorado River", "the Ohio River", "the Rio Grande", "the Columbia River"]},
     {"question": "What are the Great Lakes?", "expectedAny": ["Huron", "Ontario", "Michigan", "Erie", "Superior"]},
-    {"question": "Where is the Grand Canyon?", "expectedAny": ["Arizona", "Southwest"]},
-    {"question": "What landmarks are in Washington, D.C.?", "expectedAny": ["White House", "Capitol", "Washington Monument"]},
-    {"question": "Which region has the Rocky Mountains?", "expectedAny": ["West"]}
+    {"question": "Where is the Grand Canyon?", "expectedAny": ["Arizona", "Arizona, USA", "Arizona state", "Southwest", "the West"]},
+    {"question": "What landmarks are in Washington, D.C.?", "expectedAny": ["White House", "Capitol", "Washington Monument", "Lincoln Memorial", "Jefferson Memorial", "Smithsonian"]},
+    {"question": "Which region has the Rocky Mountains?", "expectedAny": ["West", "the West", "Western region"]}
   ],
   "truefalse": [
     {"question": "All regions of the United States have the same climate.", "answer": false},
@@ -51,21 +151,25 @@
     {"question": "Yellowstone National Park is mostly in:", "choices": ["California", "Wyoming", "Colorado", "Montana"], "correct": 1}
   ],
   "fillintheblank": [
-    {"question": "The five US regions are Northeast, Southeast, Midwest, Southwest, and ____.", "expectedAny": ["West"]},
-    {"question": "The ____ River is one of the longest in the US.", "expectedAny": ["Missouri", "Mississippi"]},
-    {"question": "The ____ of Liberty welcomes visitors to America.", "expectedAny": ["Statue"]},
-    {"question": "Mount ____ shows four presidents' faces.", "expectedAny": ["Rushmore"]},
-    {"question": "The ____ Lakes are between the US and Canada.", "expectedAny": ["Great"]},
-    {"question": "The ____ Canyon is in Arizona.", "expectedAny": ["Grand"]},
-    {"question": "Niagara ____ is on the US-Canada border.", "expectedAny": ["Falls"]}
+    {"question": "The five US regions are Northeast, Southeast, Midwest, Southwest, and ____.", "expectedAny": ["West", "the West", "Western", "West region"]},
+    {"question": "The ____ River is one of the longest in the US.", "expectedAny": ["Missouri", "Mississippi", "Missouri River", "Mississippi River", "the Mississippi", "the Missouri", "the Mississippi River", "the Missouri River"]},
+    {"question": "The ____ of Liberty welcomes visitors to America.", "expectedAny": ["Statue", "Statue of Liberty", "the Statue of Liberty"]},
+    {"question": "Mount ____ shows four presidents' faces.", "expectedAny": ["Rushmore", "Mount Rushmore", "Mt. Rushmore", "Mt Rushmore"]},
+    {"question": "The ____ Lakes are between the US and Canada.", "expectedAny": ["Great", "Great Lakes", "the Great Lakes"]},
+  {"question": "The Grand Canyon is in ____.", "expectedAny": ["Arizona", "AZ", "Arizona, USA", "the state of Arizona"]},
+    {"question": "Niagara ____ is on the US-Canada border.", "expectedAny": ["Falls", "Niagara Falls", "the Falls"]},
+    {"question": "A crowded city has high population ____.", "expectedAny": ["density", "population density"]},
+  {"question": "Farming is part of a region's ____.", "expectedAny": ["agriculture", "economy", "economic activity"]},
+    {"question": "A famous place people visit is a ____.", "expectedAny": ["landmark", "monument", "attraction"]},
+    {"question": "A big city and nearby towns form a ____ area.", "expectedAny": ["metropolitan", "metro", "metropolitan area"]}
   ],
   "shortanswer": [
-    {"question": "How do regions differ from each other?", "expectedAny": ["climate", "landforms", "resources", "culture"]},
-    {"question": "What makes your region unique?", "expectedAny": ["features", "landmarks"]},
-    {"question": "How do landmarks represent America?", "expectedAny": ["history", "values", "nature"]},
-    {"question": "Why do people visit national parks?", "expectedAny": ["nature", "recreation", "education"]},
-    {"question": "How does climate affect regional activities?", "expectedAny": ["farming", "skiing", "beaches"]},
-    {"question": "Compare two different regions.", "expectedAny": ["differences in climate and culture"]},
-    {"question": "What landmark would you like to visit and why?", "expectedAny": []}
+    {"question": "How do regions differ from each other?", "expectedAny": ["climate", "weather", "landforms", "resources", "natural resources", "culture", "economy", "location", "jobs", "industries", "population density"]},
+    {"question": "What makes your region unique?", "expectedAny": ["features", "landmarks", "climate", "landforms", "culture", "traditions", "food", "festivals", "music", "sports teams"]},
+    {"question": "How do landmarks represent America?", "expectedAny": ["history", "values", "nature", "government", "freedom", "democracy", "heritage", "important events"]},
+    {"question": "Why do people visit national parks?", "expectedAny": ["nature", "recreation", "education", "wildlife", "scenery", "protection of animals and plants", "conservation"]},
+    {"question": "How does climate affect regional activities?", "expectedAny": ["farming", "skiing", "beaches", "clothing", "housing", "outdoor sports", "tourism"]},
+    {"question": "Compare two different regions.", "expectedAny": ["differences in climate and culture", "different landforms and jobs", "how people live and work", "transportation and resources"]},
+  {"question": "What landmark would you like to visit and why?", "expectedAny": ["Statue of Liberty", "Yellowstone", "Mount Rushmore", "Niagara Falls", "Yosemite", "Washington Monument", "Golden Gate Bridge", "Liberty Bell", "history", "nature", "views", "wildlife"]}
   ]
 }

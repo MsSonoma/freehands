@@ -5,29 +5,29 @@
   "difficulty": "Advanced",
   "featured": false,
   "vocab": [
-    {
-      "term": "genre",
-      "definition": "A category or type of writing, like fiction, poetry, or biography"
-    },
-    {
-      "term": "fiction",
-      "definition": "Stories that are made up or imagined"
-    },
-    {
-      "term": "nonfiction",
-      "definition": "Writing about real people, places, events, or facts"
-    },
-    {
-      "term": "biography",
-      "definition": "A true story about a real person's life"
-    }
+    {"word": "genre", "kid_friendly_definition": "A category or type of writing, like fiction, poetry, or biography."},
+    {"word": "fiction", "kid_friendly_definition": "Stories that are made up or imagined."},
+    {"word": "nonfiction", "kid_friendly_definition": "Writing about real people, places, events, or facts."},
+    {"word": "biography", "kid_friendly_definition": "A true story about a real person's life."},
+    {"word": "informational text", "kid_friendly_definition": "Nonfiction writing that teaches facts or explains how to do something."},
+    {"word": "how-to", "kid_friendly_definition": "Step-by-step writing that shows how to do something."},
+    {"word": "fairy tale", "kid_friendly_definition": "A make-believe story with magical characters or events."},
+    {"word": "autobiography", "kid_friendly_definition": "A true story someone writes about their own life."},
+    {"word": "poetry collection", "kid_friendly_definition": "A book that has many poems together."},
+    {"word": "fable", "kid_friendly_definition": "A short story that teaches a lesson, often with talking animals."},
+    {"word": "myth", "kid_friendly_definition": "An old story that explains something about the world or teaches a belief."},
+    {"word": "legend", "kid_friendly_definition": "A very old story based on history but may have made-up parts."}
   ],
   "teachingNotes": "Compare different types of texts. Create a classroom library organized by genre. Discuss features that help identify genres.",
   "sample": {
     "question": "Is a book about dinosaur facts fiction or nonfiction?",
     "expectedAny": [
       "nonfiction",
-      "it contains real facts and information"
+      "non-fiction",
+      "it's nonfiction",
+      "informational text",
+      "it contains real facts and information",
+      "it has real facts so it's nonfiction"
     ]
   },
   "truefalse": [
@@ -35,7 +35,13 @@
       "question": "A fairy tale is an example of fiction because it tells a made-up story.",
       "answer": true,
       "expectedAny": [
-        "fairy tales are imaginary stories"
+        "true",
+        "yes",
+        "t",
+        "correct",
+        "fairy tales are imaginary stories",
+        "fairy tales are made up",
+        "fairy tales are make-believe"
       ]
     }
   ],
@@ -50,7 +56,11 @@
       ],
       "correct": 1,
       "expectedAny": [
-        "biographies are about real people's lives"
+        "biography",
+        "biographies are about real people's lives",
+        "a biography tells a real person's life",
+        "biography is a true life story",
+        "true story of a person's life"
       ]
     }
   ],
@@ -58,7 +68,15 @@
     {
       "question": "A book about how to care for pets would be classified as _____.",
       "expectedAny": [
-        "nonfiction"
+        "nonfiction",
+        "non-fiction",
+        "informational",
+        "informational text",
+        "how-to",
+        "how to",
+        "instructional",
+        "how-to book",
+        "instruction book"
       ]
     }
   ],
@@ -70,7 +88,14 @@
         "read the back",
         "check the title",
         "see if it says fiction or nonfiction",
-        "look for clues about real vs. imaginary"
+        "look for clues about real vs. imaginary",
+        "look for step-by-step pages (how-to)",
+        "check pictures and headings for facts",
+        "cover tells you",
+        "back says what it is",
+        "title hints at the type",
+        "pictures show real or made up",
+        "ask someone"
       ]
     }
   ]

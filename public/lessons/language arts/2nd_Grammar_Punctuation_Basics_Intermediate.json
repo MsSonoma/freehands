@@ -7,8 +7,10 @@
     { "term": "noun", "definition": "A word that names a person, place, or thing" },
     { "term": "verb", "definition": "A word that shows action or tells what someone does" },
     { "term": "adjective", "definition": "A word that describes a noun" },
+    { "term": "adverb", "definition": "A word that describes a verb, telling how, when, or where" },
     { "term": "sentence", "definition": "A group of words that tells a complete thought" },
-    { "term": "period", "definition": "A punctuation mark (.) that ends a sentence" }
+    { "term": "period", "definition": "A punctuation mark (.) that ends a sentence" },
+    { "term": "question mark", "definition": "A punctuation mark (?) that ends a question" }
   ],
   "teachingNotes": "Use concrete examples to teach parts of speech. Practice identifying nouns, verbs, and adjectives in simple sentences. Emphasize proper sentence structure with capital letters and ending punctuation.",
   "sample": [
@@ -40,20 +42,20 @@
   ],
   "fillintheblank": [
     { "question": "Every sentence should end with a ________ or other punctuation mark.", "expectedAny": ["period", ".", "punctuation", "end mark"] },
-    { "question": "A word that shows action is a ________.", "expectedAny": ["verb"] },
-    { "question": "A word that names a person, place, or thing is a ________.", "expectedAny": ["noun"] },
-    { "question": "A word that describes a noun is an ________.", "expectedAny": ["adjective"] },
-    { "question": "A group of words that tells a complete thought is a ________.", "expectedAny": ["sentence"] },
-    { "question": "End a question with a ________ mark.", "expectedAny": ["question"] },
+    { "question": "A word that shows action is a ________.", "expectedAny": ["verb", "action word"] },
+    { "question": "A word that names a person, place, or thing is a ________.", "expectedAny": ["noun", "naming word"] },
+    { "question": "A word that describes a noun is an ________.", "expectedAny": ["adjective", "describing word"] },
+    { "question": "A group of words that tells a complete thought is a ________.", "expectedAny": ["sentence", "complete thought"] },
+    { "question": "End a question with a ________ mark.", "expectedAny": ["question", "question mark", "?"] },
     { "question": "Start a sentence with a ________ letter.", "expectedAny": ["capital", "uppercase"] }
   ],
   "shortanswer": [
-    { "question": "Write a sentence using a noun and a verb.", "expectedAny": ["The cat runs", "Dogs bark", "any complete sentence", "subject and action"] },
-    { "question": "Underline the adjective in: 'The tall tree sways.'", "expectedAny": ["tall"] },
-    { "question": "Circle the noun in: 'Birds sing.'", "expectedAny": ["Birds", "bird"] },
-    { "question": "What punctuation belongs at the end: 'Where is my book'", "expectedAny": ["question mark", "?"] },
-    { "question": "Fix the sentence: 'the dog runs' (add what is missing)", "expectedAny": ["capital letter and period", "The dog runs."] },
-    { "question": "Name one adjective to describe a flower.", "expectedAny": ["red", "pretty", "smelly", "tall"] },
-    { "question": "Write a verb that shows action.", "expectedAny": ["run", "jump", "swim", "read"] }
+  { "question": "Write a sentence using a noun and a verb.", "expectedAny": ["The cat runs.", "Dogs bark.", "Birds sing.", "drawing"] },
+    { "question": "Underline the adjective in: 'The tall tree sways.'", "expectedAny": ["tall", "the word tall", "tall (adjective)", "tall is the adjective"] },
+    { "question": "Circle the noun in: 'Birds sing.'", "expectedAny": ["Birds", "bird", "the word birds", "birds is the noun"] },
+    { "question": "What punctuation belongs at the end: 'Where is my book'", "expectedAny": ["question mark", "?", "a question mark"] },
+    { "question": "Fix the sentence: 'the dog runs' (add what is missing)", "expectedAny": ["capital letter and period", "The dog runs.", "capital and period", "capital T and a period"] },
+    { "question": "Name one adjective to describe a flower.", "expectedAny": ["red", "pretty", "smelly", "tall", "beautiful", "colorful"] },
+    { "question": "Write a verb that shows action.", "expectedAny": ["run", "jump", "swim", "read", "walk", "talk"] }
   ]
 }

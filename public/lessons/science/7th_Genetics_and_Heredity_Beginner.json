@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Use family trait examples like eye color or height. Explain that offspring get traits from both parents. Keep genetics simple and observable.",
-  "sample": {
-    "question": "What is the study of how traits are passed from parents to offspring?",
-    "expectedAny": [
-      "genetics",
-      "heredity",
-      "inheritance",
-      "genetic study"
-    ]
-  },
-  "truefalse": {
-    "question": "Children get traits from both their mother and father.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is a characteristic that can be inherited?",
-    "expectedAny": [
-      "trait",
-      "characteristic",
-      "feature",
-      "genetic characteristic"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A section of DNA that controls a specific trait is called a ________.",
-    "expectedAny": [
-      "gene",
-      "genetic unit",
-      "DNA segment",
-      "hereditary unit"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why do children often look like their parents?",
-    "expectedAny": [
-      "they inherit traits",
-      "genes passed from parents",
-      "heredity makes them similar"
-    ]
-  }
+  "sample": [
+    { "question": "What is the study of how traits are passed from parents to offspring?", "expectedAny": ["genetics"] },
+    { "question": "Which is inherited feature?", "choices": ["Skill", "Trait", "Hobby", "Choice"], "correct": 1, "expectedAny": ["trait"] },
+    { "question": "DNA section controlling trait is ________.", "expectedAny": ["gene"] },
+    { "question": "Passing traits is ________.", "expectedAny": ["heredity"] },
+    { "question": "Structure with many genes is ________.", "expectedAny": ["chromosome"] },
+    { "question": "What studies trait passing?", "choices": ["Ecology", "Genetics", "Chemistry", "Physics"], "correct": 1, "expectedAny": ["genetics"] },
+    { "question": "Inherited characteristic is ________.", "expectedAny": ["trait"] },
+    { "question": "Trait controller is a ________.", "expectedAny": ["gene"] },
+    { "question": "Which is trait passing?", "choices": ["Learning", "Heredity", "Teaching", "Training"], "correct": 1, "expectedAny": ["heredity"] },
+    { "question": "Gene container is ________.", "expectedAny": ["chromosome"] }
+  ],
+  "truefalse": [
+    { "question": "Children get traits from both their mother and father.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Genes control all learned behaviors.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Traits can be inherited.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Chromosomes have no genes.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Heredity passes traits.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Skills are always inherited.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Genes are sections of DNA.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All traits skip generations.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Genetics studies inheritance.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Chromosomes are outside cells.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is a characteristic that can be inherited?", "choices": ["Skill", "Trait", "Hobby", "Memory"], "correct": 1, "expectedAny": ["trait"] },
+    { "question": "What studies inheritance?", "choices": ["Ecology", "Genetics", "Chemistry", "Physics"], "correct": 1, "expectedAny": ["genetics"] },
+    { "question": "What controls traits?", "choices": ["Skill", "Gene", "Hobby", "Learning"], "correct": 1, "expectedAny": ["gene"] },
+    { "question": "What is trait passing?", "choices": ["Learning", "Heredity", "Teaching", "Training"], "correct": 1, "expectedAny": ["heredity"] },
+    { "question": "What contains genes?", "choices": ["Skill", "Chromosome", "Memory", "Thought"], "correct": 1, "expectedAny": ["chromosome"] },
+    { "question": "What is inherited?", "choices": ["Skills", "Traits", "Hobbies", "Memories"], "correct": 1, "expectedAny": ["traits"] },
+    { "question": "What is DNA section?", "choices": ["Cell", "Gene", "Tissue", "Organ"], "correct": 1, "expectedAny": ["gene"] },
+    { "question": "Eye color is a?", "choices": ["Skill", "Trait", "Choice", "Hobby"], "correct": 1, "expectedAny": ["trait"] },
+    { "question": "Parents pass?", "choices": ["Skills", "Traits", "Memories", "Thoughts"], "correct": 1, "expectedAny": ["traits"] },
+    { "question": "Genetics studies?", "choices": ["Weather", "Inheritance", "Rocks", "Stars"], "correct": 1, "expectedAny": ["inheritance"] }
+  ],
+  "fillintheblank": [
+    { "question": "A section of DNA that controls a specific trait is called a ________.", "expectedAny": ["gene"] },
+    { "question": "Study of trait passing is ________.", "expectedAny": ["genetics"] },
+    { "question": "An inherited characteristic is a ________.", "expectedAny": ["trait"] },
+    { "question": "Passing traits is called ________.", "expectedAny": ["heredity"] },
+    { "question": "A structure with many genes is a ________.", "expectedAny": ["chromosome"] },
+    { "question": "________ studies inheritance.", "expectedAny": ["genetics"] },
+    { "question": "A ________ can be inherited.", "expectedAny": ["trait"] },
+    { "question": "A ________ controls a trait.", "expectedAny": ["gene"] },
+    { "question": "________ passes traits.", "expectedAny": ["heredity"] },
+    { "question": "A ________ contains genes.", "expectedAny": ["chromosome"] }
+  ],
+  "shortanswer": [
+    { "question": "Why do children often look like their parents?", "expectedAny": ["they inherit traits", "genes passed from parents"] },
+    { "question": "What is genetics?", "expectedAny": ["study of trait passing", "study of inheritance"] },
+    { "question": "What is a trait?", "expectedAny": ["inherited characteristic", "feature from parents"] },
+    { "question": "What is a gene?", "expectedAny": ["DNA section controlling trait", "unit of heredity", "controls traits", "piece of DNA"] },
+    { "question": "What is heredity?", "expectedAny": ["passing traits", "inheritance from parents", "traits passed down", "getting traits from parents"] },
+    { "question": "What is a chromosome?", "expectedAny": ["structure with genes", "contains many genes"] },
+    { "question": "Give example of trait.", "expectedAny": ["eye color", "hair color", "height"] },
+    { "question": "Where are genes found?", "expectedAny": ["chromosomes", "DNA"] },
+    { "question": "How many parents pass traits?", "expectedAny": ["two", "both"] },
+    { "question": "What do genes do?", "expectedAny": ["control traits", "determine characteristics"] }
+  ]
 }

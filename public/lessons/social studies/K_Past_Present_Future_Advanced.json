@@ -49,13 +49,13 @@
     {"question": "What might happen in the future?", "choices": ["dinosaurs come back", "flying cars", "yesterday happens again", "the past changes"], "correct": 1, "expectedAny": ["flying cars might be invented"]}
   ],
   "fillintheblank": [
-    {"question": "Tomorrow is in the _____.", "expectedAny": ["future"]},
-    {"question": "Something that already happened is in the _____.", "expectedAny": ["past"]},
-    {"question": "What is happening right now is the _____.", "expectedAny": ["present"]},
-    {"question": "When you were little, that was in the _____.", "expectedAny": ["past"]},
-    {"question": "Next week will happen in the _____.", "expectedAny": ["future"]},
-    {"question": "Long ago, people lived in the _____.", "expectedAny": ["past"]},
-    {"question": "Things _____ over time.", "expectedAny": ["change"]}
+    {"question": "Tomorrow is in the _____.", "expectedAny": ["future", "the future"]},
+    {"question": "Something that already happened is in the _____.", "expectedAny": ["past", "the past"]},
+    {"question": "What is happening right now is the _____.", "expectedAny": ["present", "the present"]},
+  {"question": "When you were little, that was in the _____.", "expectedAny": ["past", "the past"]},
+  {"question": "Next week will happen in the _____.", "expectedAny": ["future", "the future"]},
+  {"question": "Long ago, people lived in the _____.", "expectedAny": ["past", "the past"]},
+    {"question": "Things _____ over time.", "expectedAny": ["change", "change slowly"]}
   ],
   "shortanswer": [
     {"question": "How have you changed since you were a baby?", "expectedAny": ["got bigger", "learned to walk", "learned to talk", "can do more things"]},

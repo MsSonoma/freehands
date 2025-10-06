@@ -1,74 +1,485 @@
-{
-  "id": "11th_Quantum_Mechanics_Atomic_Structure_Beginner",
-  "title": "Quantum Mechanics and Atomic Structure",
-  "grade": "11th",
-  "difficulty": "Beginner",
-  "vocab": [
-    {
-      "term": "quantum",
-      "definition": "Smallest discrete unit of energy or matter"
-    },
-    {
-      "term": "electron shell",
-      "definition": "Energy level where electrons orbit around the nucleus"
-    },
-    {
-      "term": "orbital",
-      "definition": "Region around nucleus where electron is likely to be found"
-    },
-    {
-      "term": "quantum number",
-      "definition": "Number describing properties of atomic orbitals and electrons"
-    },
-    {
-      "term": "energy level",
-      "definition": "Fixed energy state that electrons can occupy in atoms"
-    }
-  ],
-  "teachingNotes": "Use visual models to explain atomic structure. Connect quantum concepts to observable phenomena.",
-  "sample": {
-    "question": "What is the smallest discrete unit of energy called?",
-    "expectedAny": [
-      "quantum",
-      "energy quantum",
-      "discrete unit",
-      "quantum unit"
-    ]
-  },
-  "truefalse": {
-    "question": "Electrons orbit the nucleus in fixed energy levels.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What describes the region where an electron is likely found?",
-    "expectedAny": [
-      "orbital",
-      "electron orbital",
-      "probability region",
-      "electron cloud"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Numbers describing electron properties are called quantum ________.",
-    "expectedAny": [
-      "numbers",
-      "quantum numbers",
-      "descriptors",
-      "identifiers"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are the main types of atomic orbitals?",
-    "expectedAny": [
-      "s orbital",
-      "p orbital",
-      "d orbital",
-      "f orbital"
-    ]
-  }
+﻿{
+    "id":  "11th_Quantum_Mechanics_Atomic_Structure_Beginner",
+    "title":  "Quantum Mechanics and Atomic Structure",
+    "grade":  "11th",
+    "difficulty":  "Beginner",
+    "vocab":  [
+                  {
+                      "term":  "quantum",
+                      "definition":  "Smallest discrete unit of energy or matter"
+                  },
+                  {
+                      "term":  "electron shell",
+                      "definition":  "Energy level where electrons orbit around the nucleus"
+                  },
+                  {
+                      "term":  "orbital",
+                      "definition":  "Region around nucleus where electron is likely to be found"
+                  },
+                  {
+                      "term":  "quantum number",
+                      "definition":  "Number describing properties of atomic orbitals and electrons"
+                  },
+                  {
+                      "term":  "energy level",
+                      "definition":  "Fixed energy state that electrons can occupy in atoms"
+                  }
+              ],
+    "teachingNotes":  "Use visual models to explain atomic structure. Connect quantum concepts to observable phenomena.",
+    "sample":  [
+                   {
+                       "question":  "What is the smallest discrete unit of energy?",
+                       "expectedAny":  [
+                                           "quantum",
+                                           "energy quantum",
+                                           "discrete unit",
+                                           "quantum unit",
+                                           "energy packet",
+                                           "discrete energy"
+                                       ]
+                   },
+                   {
+                       "question":  "Where do electrons orbit the nucleus?",
+                       "expectedAny":  [
+                                           "electron shell",
+                                           "shell",
+                                           "energy level",
+                                           "electron orbit",
+                                           "orbital shell",
+                                           "electron layer"
+                                       ]
+                   },
+                   {
+                       "question":  "What region contains an electron?",
+                       "expectedAny":  [
+                                           "orbital",
+                                           "electron orbital",
+                                           "orbital region",
+                                           "electron cloud",
+                                           "probability region",
+                                           "electron region"
+                                       ]
+                   },
+                   {
+                       "question":  "What number describes orbital properties?",
+                       "expectedAny":  [
+                                           "quantum number",
+                                           "quantum",
+                                           "orbital number",
+                                           "electron number"
+                                       ]
+                   },
+                   {
+                       "question":  "What fixed state can electrons occupy?",
+                       "expectedAny":  [
+                                           "energy level",
+                                           "energy state",
+                                           "shell",
+                                           "orbital level"
+                                       ]
+                   },
+                   {
+                       "question":  "What is the discrete packet of energy?",
+                       "expectedAny":  [
+                                           "quantum",
+                                           "energy quantum",
+                                           "packet",
+                                           "discrete unit"
+                                       ]
+                   },
+                   {
+                       "question":  "What are the layers around a nucleus?",
+                       "expectedAny":  [
+                                           "electron shells",
+                                           "shells",
+                                           "energy levels",
+                                           "electron layers"
+                                       ]
+                   },
+                   {
+                       "question":  "What defines where electrons are found?",
+                       "expectedAny":  [
+                                           "orbital",
+                                           "electron orbital",
+                                           "probability region",
+                                           "electron cloud"
+                                       ]
+                   },
+                   {
+                       "question":  "What values specify electron configuration?",
+                       "expectedAny":  [
+                                           "quantum numbers",
+                                           "quantum values",
+                                           "orbital numbers",
+                                           "electron numbers"
+                                       ]
+                   },
+                   {
+                       "question":  "What are the allowed energies for electrons?",
+                       "expectedAny":  [
+                                           "energy levels",
+                                           "energy states",
+                                           "shells",
+                                           "quantized levels"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Electrons orbit in fixed energy levels.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Energy can take any continuous value in atoms.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Orbitals describe probable electron locations.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "All electrons have the same energy.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Quantum numbers specify electron properties.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Electrons can exist between energy levels.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Shells are numbered from nucleus outward.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Orbitals have exact boundaries.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Energy is quantized in atoms.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "All orbitals have the same shape.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What describes probable electron location?",
+                               "choices":  [
+                                               "Shell",
+                                               "Orbital",
+                                               "Nucleus",
+                                               "Proton"
+                                           ],
+                               "correct":  "Orbital"
+                           },
+                           {
+                               "question":  "What is the smallest energy unit?",
+                               "choices":  [
+                                               "Atom",
+                                               "Quantum",
+                                               "Photon",
+                                               "Electron"
+                                           ],
+                               "correct":  "Quantum"
+                           },
+                           {
+                               "question":  "What describes electron properties?",
+                               "choices":  [
+                                               "Mass number",
+                                               "Atomic number",
+                                               "Quantum number",
+                                               "Valence"
+                                           ],
+                               "correct":  "Quantum number"
+                           },
+                           {
+                               "question":  "What are fixed energy states?",
+                               "choices":  [
+                                               "Orbitals",
+                                               "Energy levels",
+                                               "Particles",
+                                               "Waves"
+                                           ],
+                               "correct":  "Energy levels"
+                           },
+                           {
+                               "question":  "What orbits the nucleus?",
+                               "choices":  [
+                                               "Protons",
+                                               "Neutrons",
+                                               "Electrons",
+                                               "Quarks"
+                                           ],
+                               "correct":  "Electrons"
+                           },
+                           {
+                               "question":  "What is another name for energy level?",
+                               "choices":  [
+                                               "Orbital",
+                                               "Shell",
+                                               "Nucleus",
+                                               "Atom"
+                                           ],
+                               "correct":  "Shell"
+                           },
+                           {
+                               "question":  "How many electrons in first shell?",
+                               "choices":  [
+                                               "1",
+                                               "2",
+                                               "4",
+                                               "8"
+                                           ],
+                               "correct":  "2"
+                           },
+                           {
+                               "question":  "What shape is an s orbital?",
+                               "choices":  [
+                                               "Spherical",
+                                               "Dumbbell",
+                                               "Clover",
+                                               "Ring"
+                                           ],
+                               "correct":  "Spherical"
+                           },
+                           {
+                               "question":  "What must electrons do to change levels?",
+                               "choices":  [
+                                               "Spin",
+                                               "Absorb or emit energy",
+                                               "Split",
+                                               "Merge"
+                                           ],
+                               "correct":  "Absorb or emit energy"
+                           },
+                           {
+                               "question":  "What determines an element\u0027s identity?",
+                               "choices":  [
+                                               "Electrons",
+                                               "Neutrons",
+                                               "Protons",
+                                               "Shells"
+                                           ],
+                               "correct":  "Protons"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "The smallest unit of energy is a _____.",
+                               "expectedAny":  [
+                                                   "quantum",
+                                                   "discrete unit",
+                                                   "packet"
+                                               ]
+                           },
+                           {
+                               "question":  "Electrons orbit in _____ shells.",
+                               "expectedAny":  [
+                                                   "energy",
+                                                   "electron",
+                                                   "fixed"
+                                               ]
+                           },
+                           {
+                               "question":  "An _____ is the region where electrons are found.",
+                               "expectedAny":  [
+                                                   "orbital",
+                                                   "electron orbital",
+                                                   "probability region"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ numbers describe electron properties.",
+                               "expectedAny":  [
+                                                   "quantum",
+                                                   "orbital",
+                                                   "electron"
+                                               ]
+                           },
+                           {
+                               "question":  "Energy _____ are fixed states for electrons.",
+                               "expectedAny":  [
+                                                   "levels",
+                                                   "states",
+                                                   "shells"
+                                               ]
+                           },
+                           {
+                               "question":  "Energy in atoms is _____.",
+                               "expectedAny":  [
+                                                   "quantized",
+                                                   "discrete",
+                                                   "fixed"
+                                               ]
+                           },
+                           {
+                               "question":  "The first shell holds _____ electrons.",
+                               "expectedAny":  [
+                                                   "2",
+                                                   "two",
+                                                   "a pair"
+                                               ]
+                           },
+                           {
+                               "question":  "Orbitals describe _____ electron locations.",
+                               "expectedAny":  [
+                                                   "probable",
+                                                   "likely",
+                                                   "possible"
+                                               ]
+                           },
+                           {
+                               "question":  "Electrons _____ energy to change levels.",
+                               "expectedAny":  [
+                                                   "absorb or emit",
+                                                   "gain or lose",
+                                                   "take or release"
+                                               ]
+                           },
+                           {
+                               "question":  "An s orbital is _____ shaped.",
+                               "expectedAny":  [
+                                                   "spherical",
+                                                   "sphere",
+                                                   "round"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "Explain what a quantum is.",
+                            "expectedAny":  [
+                                                "smallest discrete unit of energy or matter",
+                                                "indivisible packet of energy",
+                                                "minimum amount of energy that can be transferred"
+                                            ]
+                        },
+                        {
+                            "question":  "What is an electron shell?",
+                            "expectedAny":  [
+                                                "energy level where electrons orbit around nucleus",
+                                                "fixed distance from nucleus with specific energy",
+                                                "layer surrounding nucleus containing electrons"
+                                            ]
+                        },
+                        {
+                            "question":  "Describe an orbital.",
+                            "expectedAny":  [
+                                                "region around nucleus where electron is likely found",
+                                                "probability cloud for electron location",
+                                                "three-dimensional space where electron exists"
+                                            ]
+                        },
+                        {
+                            "question":  "What do quantum numbers tell us?",
+                            "expectedAny":  [
+                                                "describe properties of orbitals and electrons",
+                                                "specify energy level shape orientation and spin",
+                                                "identify electron configuration in atoms"
+                                            ]
+                        },
+                        {
+                            "question":  "Why are energy levels important?",
+                            "expectedAny":  [
+                                                "electrons can only exist at specific energies",
+                                                "determine chemical properties and bonding",
+                                                "explain atomic spectra and behavior"
+                                            ]
+                        },
+                        {
+                            "question":  "How do electrons move between energy levels?",
+                            "expectedAny":  [
+                                                "absorb energy to move up or emit energy to move down",
+                                                "gain photon to jump up or release photon to drop",
+                                                "require specific energy amounts to transition"
+                                            ]
+                        },
+                        {
+                            "question":  "What is the difference between shell and orbital?",
+                            "expectedAny":  [
+                                                "shell is energy level orbital is region within shell",
+                                                "shell is broader orbital is specific location",
+                                                "shell contains multiple orbitals"
+                                            ]
+                        },
+                        {
+                            "question":  "Why is energy quantized in atoms?",
+                            "expectedAny":  [
+                                                "electrons can only occupy specific discrete states",
+                                                "wave nature restricts allowed energies",
+                                                "only certain standing waves fit around nucleus"
+                                            ]
+                        },
+                        {
+                            "question":  "How many electrons fit in the second shell?",
+                            "expectedAny":  [
+                                                "8 electrons",
+                                                "eight",
+                                                "maximum of 8"
+                                            ]
+                        },
+                        {
+                            "question":  "What determines an atom\u0027s chemical behavior?",
+                            "expectedAny":  [
+                                                "electron configuration especially valence electrons",
+                                                "number and arrangement of outer electrons",
+                                                "electrons in outermost shell"
+                                            ]
+                        }
+                    ]
 }

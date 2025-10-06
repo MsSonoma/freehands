@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Explore how understanding word origins helps with meaning and spelling. Connect English words to Latin and Greek roots.",
-  "sample": {
-    "question": "What is the origin and history of words called?",
-    "expectedAny": [
-      "etymology",
-      "word history",
-      "word origin",
-      "linguistic history"
-    ]
-  },
-  "truefalse": {
-    "question": "Understanding etymology can help with spelling and meaning.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the basic part of a word that carries the main meaning?",
-    "expectedAny": [
-      "root word",
-      "root",
-      "base word",
-      "stem"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A prefix or suffix added to a root word is called an ________.",
-    "expectedAny": [
-      "affix",
-      "addition",
-      "attachment",
-      "modification"
-    ]
-  },
-  "shortanswer": {
-    "question": "How can knowing that 'bio' means life help you understand new words?",
-    "expectedAny": [
-      "biology, biography relate to life",
-      "helps decode meaning",
-      "provides meaning clues"
-    ]
-  }
+  "sample": [
+    { "question": "What is the origin and history of words called?", "expectedAny": ["etymology"] },
+    { "question": "Which is basic word part?", "choices": ["Ending", "Root word", "Prefix", "Letter"], "correct": 1, "expectedAny": ["root word"] },
+    { "question": "Prefix or suffix is ________.", "expectedAny": ["affix"] },
+    { "question": "Words sharing common origin are ________.", "expectedAny": ["cognate"] },
+    { "question": "Group of related words is ________.", "expectedAny": ["semantic field"] },
+    { "question": "What is word history?", "choices": ["Definition", "Etymology", "Spelling", "Grammar"], "correct": 1, "expectedAny": ["etymology"] },
+    { "question": "Main meaning part is ________.", "expectedAny": ["root word"] },
+    { "question": "What is added part?", "choices": ["Base", "Affix", "Core", "Center"], "correct": 1, "expectedAny": ["affix"] },
+    { "question": "Common origin words are ________.", "expectedAny": ["cognate"] },
+    { "question": "Related meaning words are ________.", "expectedAny": ["semantic field"] }
+  ],
+  "truefalse": [
+    { "question": "Understanding etymology can help with spelling and meaning.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Etymology is word spelling.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Root word carries main meaning.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Affix is complete word.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Cognates share common origin.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Semantic field is random words.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Etymology studies word history.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Root word is suffix.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Affixes modify meaning.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Cognates are unrelated.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is the basic part of a word that carries the main meaning?", "choices": ["Ending", "Root word", "Prefix", "Letter"], "correct": 1, "expectedAny": ["root word"] },
+    { "question": "What is word history?", "choices": ["Definition", "Etymology", "Spelling", "Grammar"], "correct": 1, "expectedAny": ["etymology"] },
+    { "question": "What is added part?", "choices": ["Base", "Affix", "Core", "Center"], "correct": 1, "expectedAny": ["affix"] },
+    { "question": "What is shared origin?", "choices": ["Synonym", "Cognate", "Antonym", "Homonym"], "correct": 1, "expectedAny": ["cognate"] },
+    { "question": "What is related meaning?", "choices": ["Random words", "Semantic field", "Alphabet", "Dictionary"], "correct": 1, "expectedAny": ["semantic field"] },
+    { "question": "Etymology helps with?", "choices": ["Nothing", "Spelling and meaning", "Only pronunciation", "Only length"], "correct": 1, "expectedAny": ["spelling and meaning"] },
+    { "question": "Root word is?", "choices": ["Ending", "Basic meaning part", "Prefix", "Letter"], "correct": 1, "expectedAny": ["basic meaning part"] },
+    { "question": "Affix includes?", "choices": ["Nothing", "Prefix and suffix", "Only vowels", "Only consonants"], "correct": 1, "expectedAny": ["prefix and suffix"] },
+    { "question": "Cognates exist in?", "choices": ["One language", "Different languages", "Only English", "No languages"], "correct": 1, "expectedAny": ["different languages"] },
+    { "question": "Semantic field groups?", "choices": ["Random words", "Related meaning words", "Only verbs", "Only nouns"], "correct": 1, "expectedAny": ["related meaning words"] }
+  ],
+  "fillintheblank": [
+    { "question": "A prefix or suffix added to a root word is called an ________.", "expectedAny": ["affix"] },
+    { "question": "The origin and history of words is ________.", "expectedAny": ["etymology"] },
+    { "question": "The basic meaning part is ________.", "expectedAny": ["root word"] },
+    { "question": "Words sharing common origin are ________.", "expectedAny": ["cognate"] },
+    { "question": "Group of related words is ________.", "expectedAny": ["semantic field"] },
+    { "question": "________ studies word history.", "expectedAny": ["etymology"] },
+    { "question": "________ word carries main meaning.", "expectedAny": ["root"] },
+    { "question": "An ________ modifies root.", "expectedAny": ["affix"] },
+    { "question": "A ________ shares origin.", "expectedAny": ["cognate"] },
+    { "question": "________ field groups related words.", "expectedAny": ["semantic"] }
+  ],
+  "shortanswer": [
+    { "question": "How can knowing that 'bio' means life help you understand new words?", "expectedAny": ["biology, biography relate to life", "helps decode meaning"] },
+    { "question": "What is etymology?", "expectedAny": ["word origin and history", "study of word origins", "word history", "where words come from"] },
+    { "question": "What is root word?", "expectedAny": ["basic part carrying main meaning", "word base", "main part of word", "core meaning part"] },
+    { "question": "What is affix?", "expectedAny": ["prefix or suffix", "added word part", "part added to root", "word attachment"] },
+    { "question": "What is cognate?", "expectedAny": ["words sharing common origin", "related words in languages"] },
+    { "question": "What is semantic field?", "expectedAny": ["group of related meaning words", "word meaning group"] },
+    { "question": "Why study etymology?", "expectedAny": ["helps with meaning and spelling", "understand word origins"] },
+    { "question": "How do roots help?", "expectedAny": ["decode new words", "understand meaning"] },
+    { "question": "What do affixes do?", "expectedAny": ["modify root meaning", "change word meaning"] },
+    { "question": "Give root example?", "expectedAny": ["bio means life", "graph means write"] }
+  ]
 }

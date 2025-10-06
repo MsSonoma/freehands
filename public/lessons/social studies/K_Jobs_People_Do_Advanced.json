@@ -21,14 +21,19 @@
       "term": "helper",
       "definition": "Someone who does things to make life better for others"
     }
+    ,
+    {
+      "term": "makes",
+      "definition": "Creates or helps to create something"
+    }
   ],
   "teachingNotes": "Invite community workers to visit. Use dramatic play area for job role-playing. Discuss how jobs help the community.",
   "sample": [
-    {"question": "What does a firefighter do?", "expectedAny": ["puts out fires", "helps people", "keeps people safe", "saves people"]},
-    {"question": "Where does a teacher work?", "expectedAny": ["school", "classroom"]},
-    {"question": "What does a doctor use to listen to your heart?", "expectedAny": ["stethoscope"]},
-    {"question": "Who helps you check out books at the library?", "expectedAny": ["librarian"]},
-    {"question": "What does a baker make?", "expectedAny": ["bread", "cakes", "cookies", "food"]}
+    {"question": "What does a firefighter do?", "expectedAny": ["puts out fires", "helps people", "keeps people safe", "saves people", "fights fires"]},
+    {"question": "Where does a teacher work?", "expectedAny": ["school", "classroom", "at school"]},
+    {"question": "What does a doctor use to listen to your heart?", "expectedAny": ["stethoscope", "a stethoscope"]},
+    {"question": "Who helps you check out books at the library?", "expectedAny": ["librarian", "the librarian", "library worker"]},
+    {"question": "What does a baker make?", "expectedAny": ["bread", "cakes", "cookies", "food", "treats"]}
   ],
   "truefalse": [
     {"question": "A mail carrier brings letters to your house.", "answer": true, "expectedAny": ["mail carriers deliver mail to homes"]},
@@ -49,22 +54,22 @@
     {"question": "Who cuts hair?", "choices": ["farmer", "barber", "dentist", "librarian"], "correct": 1, "expectedAny": ["barbers cut hair"]}
   ],
   "fillintheblank": [
-    {"question": "A _____ grows food for people to eat.", "expectedAny": ["farmer"]},
-    {"question": "A _____ fixes teeth.", "expectedAny": ["dentist"]},
-    {"question": "A _____ paints pictures and makes art.", "expectedAny": ["artist"]},
-    {"question": "A _____ drives a bus.", "expectedAny": ["bus driver"]},
-    {"question": "A _____ takes care of sick animals.", "expectedAny": ["veterinarian", "vet"]},
+    {"question": "A _____ grows food for people to eat.", "expectedAny": ["farmer", "a farmer"]},
+    {"question": "A _____ fixes teeth.", "expectedAny": ["dentist", "a dentist"]},
+    {"question": "A _____ paints pictures and makes art.", "expectedAny": ["artist", "an artist", "painter"]},
+    {"question": "A _____ drives a bus.", "expectedAny": ["bus driver", "a bus driver", "driver"]},
+    {"question": "A _____ takes care of sick animals.", "expectedAny": ["veterinarian", "vet", "animal doctor"]},
     {"question": "A _____ serves food at restaurants.", "expectedAny": ["waiter", "waitress", "server"]},
-    {"question": "A _____ plays music for people to enjoy.", "expectedAny": ["musician"]}
+    {"question": "A _____ plays music for people to enjoy.", "expectedAny": ["musician", "a musician"]}
   ],
   "shortanswer": [
-    {"question": "What job would you like to have when you grow up? Why?", "expectedAny": ["any job with reasonable explanation", "teacher to help kids", "doctor to help sick people"]},
-    {"question": "How do jobs help our community?", "expectedAny": ["provide services", "help people", "make life better", "meet needs"]},
-    {"question": "What tools does a firefighter use?", "expectedAny": ["hose", "ladder", "fire truck", "helmet"]},
-    {"question": "How do teachers help children?", "expectedAny": ["teach them", "help them learn", "show them new things"]},
-    {"question": "What would happen if we didn't have jobs?", "expectedAny": ["no one to help", "community wouldn't work", "no services"]},
-    {"question": "How do farmers help everyone?", "expectedAny": ["grow food", "feed people", "provide what we need to eat"]},
-    {"question": "What makes a job important?", "expectedAny": ["helps others", "provides service", "makes community better", "meets people's needs"]}
+    {"question": "What job would you like to have when you grow up? Why?", "expectedAny": ["teacher to help kids", "doctor to help sick people", "firefighter to keep people safe", "vet to help animals", "police to protect people"]},
+    {"question": "How do jobs help our community?", "expectedAny": ["provide services", "help people", "make life better", "meet needs", "do important things"]},
+    {"question": "What tools does a firefighter use?", "expectedAny": ["hose", "ladder", "fire truck", "helmet", "water", "axe"]},
+    {"question": "How do teachers help children?", "expectedAny": ["teach them", "help them learn", "show them new things", "help with work"]},
+    {"question": "What would happen if we didn't have jobs?", "expectedAny": ["no one to help", "community wouldn't work", "no services", "nothing would get done"]},
+    {"question": "How do farmers help everyone?", "expectedAny": ["grow food", "feed people", "provide what we need to eat", "make food"]},
+    {"question": "What makes a job important?", "expectedAny": ["helps others", "provides service", "makes community better", "meets people's needs", "does useful things"]}
   ],
   "wordProblems": [
     {"question": "Dr. Smith saw 8 patients in the morning and 5 patients in the afternoon. How many patients did she see total?", "expectedAny": ["13 patients", "8 + 5 = 13"]},

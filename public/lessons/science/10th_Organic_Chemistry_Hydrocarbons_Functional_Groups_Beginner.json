@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "10th_Organic_Chemistry_Hydrocarbons_Functional_Groups_Beginner",
   "title": "Organic Chemistry: Hydrocarbons and Functional Groups",
   "grade": "10th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "organic chemistry",
-      "definition": "Study of carbon-containing compounds and their properties"
-    },
-    {
-      "term": "hydrocarbon",
-      "definition": "Compound containing only carbon and hydrogen atoms"
-    },
-    {
-      "term": "functional group",
-      "definition": "Specific arrangement of atoms that determines chemical properties"
-    },
-    {
-      "term": "alkane",
-      "definition": "Saturated hydrocarbon with single bonds only"
-    },
-    {
-      "term": "isomer",
-      "definition": "Compounds with same molecular formula but different structures"
-    }
+    {"term": "organic chemistry", "definition": "Study of carbon compounds and their structures"},
+    {"term": "hydrocarbon", "definition": "Compound containing only carbon and hydrogen atoms"},
+    {"term": "functional group", "definition": "Specific arrangement of atoms that determines chemical properties"},
+    {"term": "alkane", "definition": "Saturated hydrocarbon with all single carbon carbon bonds"},
+    {"term": "isomer", "definition": "Compounds with same molecular formula but different structures"}
   ],
-  "teachingNotes": "Use molecular models to show 3D structures. Emphasize the role of carbon's bonding capacity in organic diversity.",
-  "sample": {
-    "question": "What is the study of carbon-containing compounds called?",
-    "expectedAny": [
-      "organic chemistry",
-      "carbon chemistry",
-      "study of organic compounds",
-      "carbon-based chemistry"
-    ]
-  },
-  "truefalse": {
-    "question": "Hydrocarbons contain only carbon and hydrogen atoms.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What determines the chemical properties of organic molecules?",
-    "expectedAny": [
-      "functional group",
-      "functional groups",
-      "reactive groups",
-      "chemical groups"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Compounds with the same molecular formula but different structures are called ________.",
-    "expectedAny": [
-      "isomers",
-      "structural isomers",
-      "molecular isomers",
-      "chemical isomers"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why is carbon important in organic chemistry?",
-    "expectedAny": [
-      "forms four bonds",
-      "creates diverse structures",
-      "bonds with many elements",
-      "makes long chains"
-    ]
-  }
+  "teachingNotes": "Build models to visualize structures. Emphasize functional groups determine reactivity. Practice naming conventions.",
+  "sample": [
+    {"question": "What is carbon compound study?", "expectedAny": ["organic chemistry", "organic", "carbon chemistry", "carbon compound study", "organic compounds", "carbon study"]},
+    {"question": "What has only carbon hydrogen?", "expectedAny": ["hydrocarbon", "alkane", "carbon hydrogen compound", "CH compound", "hydrocarbon compound", "hydrogen carbon"]},
+    {"question": "What determines properties?", "expectedAny": ["functional group", "group", "reactive group", "chemical group", "atom group", "functional groups"]},
+    {"question": "What has single bonds?", "expectedAny": ["alkane", "saturated", "single bond compound", "saturated hydrocarbon", "alkane hydrocarbon", "saturated compound"]},
+    {"question": "What has same formula different structure?", "expectedAny": ["isomer", "isomers", "structural isomer", "same formula", "different structure", "isomeric compound"]},
+    {"question": "What is carbon study?", "expectedAny": ["organic chemistry", "chemistry", "organic", "carbon chemistry", "carbon compound study", "carbon study"]},
+    {"question": "What is CH compound?", "expectedAny": ["hydrocarbon", "molecule", "carbon hydrogen compound", "CH compound", "hydrocarbon compound", "hydrogen carbon"]},
+    {"question": "What is atom arrangement?", "expectedAny": ["functional group", "structure", "reactive group", "chemical group", "atom group", "functional groups"]},
+    {"question": "What is saturated?", "expectedAny": ["alkane", "hydrocarbon", "single bond compound", "saturated hydrocarbon", "saturated compound", "alkane hydrocarbon"]},
+    {"question": "What has different arrangement?", "expectedAny": ["isomer", "structural isomer", "isomers", "same formula", "different structure", "isomeric compound"]}
+  ],
+  "truefalse": [
+    {"question": "Organic chemistry studies carbon. (True or False)", "correct": true},
+    {"question": "Hydrocarbons have nitrogen. (True or False)", "correct": false},
+    {"question": "Functional groups determine properties. (True or False)", "correct": true},
+    {"question": "Alkanes have double bonds. (True or False)", "correct": false},
+    {"question": "Isomers have same formula. (True or False)", "correct": true},
+    {"question": "Carbon compounds are organic. (True or False)", "correct": true},
+    {"question": "Hydrocarbons have only CH. (True or False)", "correct": true},
+    {"question": "Groups determine reactivity. (True or False)", "correct": true},
+    {"question": "Alkanes are saturated. (True or False)", "correct": true},
+    {"question": "Isomers have different structures. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is carbon study?", "choices": [{"letter": "A", "text": "Inorganic"}, {"letter": "B", "text": "Organic chemistry"}, {"letter": "C", "text": "Physics"}, {"letter": "D", "text": "Biology"}], "correct": "B"},
+    {"question": "What has CH only?", "choices": [{"letter": "A", "text": "Protein"}, {"letter": "B", "text": "Hydrocarbon"}, {"letter": "C", "text": "Salt"}, {"letter": "D", "text": "Metal"}], "correct": "B"},
+    {"question": "What determines properties?", "choices": [{"letter": "A", "text": "Mass"}, {"letter": "B", "text": "Functional group"}, {"letter": "C", "text": "Color"}, {"letter": "D", "text": "Volume"}], "correct": "B"},
+    {"question": "What has single bonds?", "choices": [{"letter": "A", "text": "Alkene"}, {"letter": "B", "text": "Alkane"}, {"letter": "C", "text": "Alkyne"}, {"letter": "D", "text": "Aromatic"}], "correct": "B"},
+    {"question": "What has same formula different structure?", "choices": [{"letter": "A", "text": "Isotope"}, {"letter": "B", "text": "Isomer"}, {"letter": "C", "text": "Ion"}, {"letter": "D", "text": "Allotrope"}], "correct": "B"},
+    {"question": "What is organic?", "choices": [{"letter": "A", "text": "Metal"}, {"letter": "B", "text": "Carbon compound"}, {"letter": "C", "text": "Salt"}, {"letter": "D", "text": "Noble gas"}], "correct": "B"},
+    {"question": "What is methane?", "choices": [{"letter": "A", "text": "Alkene"}, {"letter": "B", "text": "Hydrocarbon"}, {"letter": "C", "text": "Salt"}, {"letter": "D", "text": "Acid"}], "correct": "B"},
+    {"question": "What is OH?", "choices": [{"letter": "A", "text": "Alkane"}, {"letter": "B", "text": "Functional group"}, {"letter": "C", "text": "Isomer"}, {"letter": "D", "text": "Carbon"}], "correct": "B"},
+    {"question": "What is saturated?", "choices": [{"letter": "A", "text": "Double bond"}, {"letter": "B", "text": "Alkane"}, {"letter": "C", "text": "Triple bond"}, {"letter": "D", "text": "Aromatic"}], "correct": "B"},
+    {"question": "What has different connectivity?", "choices": [{"letter": "A", "text": "Isotope"}, {"letter": "B", "text": "Isomer"}, {"letter": "C", "text": "Ion"}, {"letter": "D", "text": "Element"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ chemistry studies carbon.", "expectedAny": ["organic", "Organic"]},
+    {"question": "_____ has only CH.", "expectedAny": ["hydrocarbon", "Hydrocarbon"]},
+    {"question": "_____ group determines properties.", "expectedAny": ["functional", "Functional"]},
+    {"question": "_____ has single bonds.", "expectedAny": ["alkane", "Alkane"]},
+    {"question": "_____ has same formula different structure.", "expectedAny": ["isomer", "Isomer"]},
+    {"question": "Carbon compounds are _____.", "expectedAny": ["organic"]},
+    {"question": "CH4 is a _____.", "expectedAny": ["hydrocarbon"]},
+    {"question": "OH is a _____ group.", "expectedAny": ["functional"]},
+    {"question": "Saturated means all _____ bonds.", "expectedAny": ["single"]},
+    {"question": "Butane and isobutane are _____.", "expectedAny": ["isomers"]}
+  ],
+  "shortanswer": [
+    {"question": "What is organic chemistry?", "keyTerms": ["study", "carbon", "compounds", "structures"], "expectedAny": ["Study of carbon compounds and their structures", "Carbon chemistry", "Study of carbon molecules"]},
+    {"question": "What is hydrocarbon?", "keyTerms": ["compound", "containing", "carbon", "hydrogen", "atoms"], "expectedAny": ["Compound containing only carbon and hydrogen atoms", "CH compound", "Carbon hydrogen molecule"]},
+    {"question": "What is functional group?", "keyTerms": ["specific", "arrangement", "atoms", "determines", "chemical", "properties"], "expectedAny": ["Specific arrangement of atoms that determines chemical properties", "Reactive group", "Property determiner"]},
+    {"question": "What is alkane?", "keyTerms": ["saturated", "hydrocarbon", "single", "carbon", "bonds"], "expectedAny": ["Saturated hydrocarbon with all single carbon carbon bonds", "Single bond hydrocarbon", "CnH2n+2"]},
+    {"question": "What is isomer?", "keyTerms": ["compounds", "same", "molecular", "formula", "different", "structures"], "expectedAny": ["Compounds with same molecular formula but different structures", "Same formula different structure", "Structural variants"]},
+    {"question": "Give example of hydrocarbon.", "keyTerms": ["methane", "ethane", "propane", "butane", "CH4"], "expectedAny": ["Methane CH4", "Ethane", "Propane", "Any alkane"]},
+    {"question": "What is alcohol functional group?", "keyTerms": ["OH", "hydroxyl", "group"], "expectedAny": ["OH hydroxyl group", "Hydroxyl", "OH group"]},
+    {"question": "Why are alkanes saturated?", "keyTerms": ["all", "single", "bonds", "no", "double", "triple"], "expectedAny": ["All single bonds, no double or triple bonds", "Maximum hydrogen", "Only single bonds"]},
+    {"question": "Give example of isomers.", "keyTerms": ["butane", "isobutane", "C4H10", "same formula"], "expectedAny": ["Butane and isobutane", "C4H10 variants", "Structural isomers"]},
+    {"question": "Why study organic chemistry?", "keyTerms": ["carbon", "basis", "life", "many", "compounds"], "expectedAny": ["Carbon is basis of life and many compounds", "Understand living things", "Carbon versatility"]}
+  ]
 }

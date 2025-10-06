@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "9th_Exponential_Functions_Growth_Decay_Intermediate",
   "title": "Exponential Functions: Growth and Decay",
   "grade": "9th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "exponential function",
-      "definition": "Function in the form f(x) = ab^x where b > 0, b ≠ 1"
-    },
-    {
-      "term": "exponential growth",
-      "definition": "Increase following exponential pattern with base > 1"
-    },
-    {
-      "term": "exponential decay",
-      "definition": "Decrease following exponential pattern with 0 < base < 1"
-    },
-    {
-      "term": "initial value",
-      "definition": "Starting amount when x = 0 (parameter a)"
-    },
-    {
-      "term": "growth factor",
-      "definition": "Base of exponential function (parameter b)"
-    }
+    {"term": "exponential function", "definition": "Function in the form f(x) = ab^x where b > 0, b  1"},
+    {"term": "exponential growth", "definition": "Increase following exponential pattern with base > 1"},
+    {"term": "exponential decay", "definition": "Decrease following exponential pattern with 0 < base < 1"},
+    {"term": "initial value", "definition": "Starting amount when x = 0 (parameter a)"},
+    {"term": "growth factor", "definition": "Base of exponential function (parameter b)"}
   ],
   "teachingNotes": "Use real-world examples like population growth and radioactive decay. Emphasize the rapid change in exponential functions.",
-  "sample": {
-    "question": "What is a function in the form f(x) = ab^x called?",
-    "expectedAny": ["exponential function", "exponential", "exponential equation", "power function"]
-  },
-  "truefalse": {
-    "question": "Exponential growth occurs when the base is greater than 1.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "In f(x) = ab^x, what does 'a' represent?",
-    "expectedAny": ["initial value", "starting amount", "y-intercept", "beginning value"]
-  },
-  "fillintheblank": {
-    "question": "When 0 < b < 1, the function shows exponential ________.",
-    "expectedAny": ["decay", "decrease", "decline", "reduction"]
-  },
-  "shortanswer": {
-    "question": "How does exponential growth differ from linear growth?",
-    "expectedAny": ["exponential grows faster", "exponential has constant ratio", "linear has constant difference"]
-  },
-  "wordProblems": {
-    "question": "If a population starts at 100 and grows by 20% each year, what is the exponential function?",
-    "expectedAny": ["f(x) = 100(1.2)^x", "100 times 1.2 to the x", "f(x) = 100(1.20)^x", "P = 100(1.2)^t"]
-  }
+  "sample": [
+    {"question": "What is a function in the form f(x) = ab^x called?", "expectedAny": ["exponential function", "exponential", "power function", "exponential growth or decay function"]},
+    {"question": "What is exponential growth?", "expectedAny": ["increase with base > 1", "exponential increase", "rapid growth", "gets bigger faster and faster"]},
+    {"question": "What is exponential decay?", "expectedAny": ["decrease with 0 < base < 1", "exponential decrease", "rapid decline", "gets smaller faster and faster"]},
+    {"question": "What is the initial value?", "expectedAny": ["starting amount", "value when x = 0", "parameter a", "beginning value", "where it starts"]},
+    {"question": "What is the growth factor?", "expectedAny": ["base of function", "parameter b", "multiplier", "what you multiply by"]},
+    {"question": "When does exponential growth occur?", "expectedAny": ["when base > 1", "when b > 1", "base greater than 1"]},
+    {"question": "When does exponential decay occur?", "expectedAny": ["when 0 < base < 1", "when b < 1", "base between 0 and 1"]},
+    {"question": "In f(x) = ab^x, what is a?", "expectedAny": ["initial value", "starting amount", "y-intercept"]},
+    {"question": "In f(x) = ab^x, what is b?", "expectedAny": ["growth factor", "base", "multiplier"]},
+    {"question": "Give an example of exponential growth.", "expectedAny": ["population growth", "compound interest", "bacteria growth"]}
+  ],
+  "truefalse": [
+    {"question": "Exponential growth occurs when the base is greater than 1. (True or False)", "correct": true},
+    {"question": "Exponential decay has a base greater than 1. (True or False)", "correct": false},
+    {"question": "The initial value is when x = 0. (True or False)", "correct": true},
+    {"question": "f(x) = ab^x is an exponential function. (True or False)", "correct": true},
+    {"question": "Linear functions grow faster than exponential functions. (True or False)", "correct": false},
+    {"question": "The growth factor is parameter b. (True or False)", "correct": true},
+    {"question": "Exponential decay decreases rapidly. (True or False)", "correct": true},
+    {"question": "In exponential functions, b can equal 1. (True or False)", "correct": false},
+    {"question": "Compound interest is exponential growth. (True or False)", "correct": true},
+    {"question": "Exponential functions have a constant rate of change. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "In f(x) = ab^x, what does a represent?", "choices": [{"letter": "A", "text": "Growth factor"}, {"letter": "B", "text": "Initial value"}, {"letter": "C", "text": "Exponent"}, {"letter": "D", "text": "Base"}], "correct": "B"},
+    {"question": "When is it exponential growth?", "choices": [{"letter": "A", "text": "b < 1"}, {"letter": "B", "text": "b = 1"}, {"letter": "C", "text": "b > 1"}, {"letter": "D", "text": "b < 0"}], "correct": "C"},
+    {"question": "When is it exponential decay?", "choices": [{"letter": "A", "text": "0 < b < 1"}, {"letter": "B", "text": "b > 1"}, {"letter": "C", "text": "b = 1"}, {"letter": "D", "text": "b < 0"}], "correct": "A"},
+    {"question": "What is the base in f(x) = 3(2)^x?", "choices": [{"letter": "A", "text": "3"}, {"letter": "B", "text": "2"}, {"letter": "C", "text": "x"}, {"letter": "D", "text": "f"}], "correct": "B"},
+    {"question": "What is the initial value in f(x) = 5(1.1)^x?", "choices": [{"letter": "A", "text": "1.1"}, {"letter": "B", "text": "5"}, {"letter": "C", "text": "x"}, {"letter": "D", "text": "0"}], "correct": "B"},
+    {"question": "Which shows exponential decay?", "choices": [{"letter": "A", "text": "f(x) = 2^x"}, {"letter": "B", "text": "f(x) = (0.5)^x"}, {"letter": "C", "text": "f(x) = 3^x"}, {"letter": "D", "text": "f(x) = 1^x"}], "correct": "B"},
+    {"question": "Which shows exponential growth?", "choices": [{"letter": "A", "text": "f(x) = (0.9)^x"}, {"letter": "B", "text": "f(x) = (0.5)^x"}, {"letter": "C", "text": "f(x) = 1.5^x"}, {"letter": "D", "text": "f(x) = 1^x"}], "correct": "C"},
+    {"question": "What is f(0) in f(x) = 4(2)^x?", "choices": [{"letter": "A", "text": "0"}, {"letter": "B", "text": "2"}, {"letter": "C", "text": "4"}, {"letter": "D", "text": "8"}], "correct": "C"},
+    {"question": "How do exponential functions change?", "choices": [{"letter": "A", "text": "Constant rate"}, {"letter": "B", "text": "Variable rate"}, {"letter": "C", "text": "No change"}, {"letter": "D", "text": "Linear"}], "correct": "B"},
+    {"question": "What is an example of exponential growth?", "choices": [{"letter": "A", "text": "Linear increase"}, {"letter": "B", "text": "Population growth"}, {"letter": "C", "text": "Constant value"}, {"letter": "D", "text": "Arithmetic sequence"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "When 0 < b < 1, the function shows exponential _____.", "expectedAny": ["decay", "decrease", "decline"]},
+    {"question": "When b > 1, the function shows exponential _____.", "expectedAny": ["growth", "increase"]},
+    {"question": "In f(x) = ab^x, a is the _____ value.", "expectedAny": ["initial", "starting"]},
+    {"question": "In f(x) = ab^x, b is the _____ factor.", "expectedAny": ["growth", "base"]},
+    {"question": "The form f(x) = ab^x is an _____ function.", "expectedAny": ["exponential"]},
+    {"question": "Population growth is an example of exponential _____.", "expectedAny": ["growth", "increase"]},
+    {"question": "Radioactive decay is an example of exponential _____.", "expectedAny": ["decay", "decrease"]},
+    {"question": "When x = 0, f(x) equals the _____ value.", "expectedAny": ["initial", "starting"]},
+    {"question": "Exponential functions change at a _____ rate.", "expectedAny": ["variable", "changing", "non-constant"]},
+    {"question": "The parameter b cannot equal _____.", "expectedAny": ["1", "one"]}
+  ],
+  "shortanswer": [
+    {"question": "How does exponential growth differ from linear growth?", "keyTerms": ["exponential", "faster", "constant ratio", "variable"], "expectedAny": ["Exponential grows faster with constant ratio", "Exponential has variable rate, linear has constant rate", "Exponential multiplies, linear adds"]},
+    {"question": "What does the growth factor tell you?", "keyTerms": ["how much", "multiplies", "each step", "base"], "expectedAny": ["How much the function multiplies each step", "The multiplication factor for each unit increase", "What the function is multiplied by"]},
+    {"question": "Why is f(0) = a in f(x) = ab^x?", "keyTerms": ["b^0", "equals 1", "any number", "initial"], "expectedAny": ["Because b^0 = 1, so f(0) = a(1) = a", "Any number to the zero power is 1", "b^0 equals 1, leaving just a"]},
+    {"question": "How do you identify exponential decay?", "keyTerms": ["base", "between 0 and 1", "less than 1", "decreasing"], "expectedAny": ["Base is between 0 and 1", "When 0 < b < 1", "Base less than 1 but positive"]},
+    {"question": "How do you identify exponential growth?", "keyTerms": ["base", "greater than 1", "increasing", "multiplying"], "expectedAny": ["Base is greater than 1", "When b > 1", "Base exceeds 1"]},
+    {"question": "What happens as x increases in exponential growth?", "keyTerms": ["increases", "rapidly", "gets bigger", "accelerates"], "expectedAny": ["Function increases rapidly", "Values get bigger faster and faster", "Growth accelerates"]},
+    {"question": "What happens as x increases in exponential decay?", "keyTerms": ["decreases", "approaches zero", "gets smaller", "declines"], "expectedAny": ["Function decreases toward zero", "Values get smaller and approach zero", "Declines rapidly at first"]},
+    {"question": "What is compound interest an example of?", "keyTerms": ["exponential", "growth", "increasing", "multiplying"], "expectedAny": ["Exponential growth", "Exponential increase", "Growth that compounds"]},
+    {"question": "In f(x) = 100(1.2)^x, what is the initial value?", "keyTerms": ["100", "initial", "starting", "a"], "expectedAny": ["100", "The initial value is 100", "100 is the starting amount"]},
+    {"question": "In f(x) = 50(0.8)^x, is this growth or decay?", "keyTerms": ["decay", "0.8", "less than 1", "decreasing"], "expectedAny": ["Decay because 0.8 < 1", "Exponential decay", "Decay since base is less than 1"]}
+  ],
+  "wordProblems": [
+    {"question": "If a population starts at 100 and grows by 20% each year, what is the exponential function?", "expectedAny": ["f(x) = 100(1.2)^x", "100 times 1.2 to the x", "P = 100(1.2)^t"]},
+    {"question": "A car worth $20,000 depreciates 15% per year. What is the function?", "expectedAny": ["f(x) = 20000(0.85)^x", "20000 times 0.85 to the x", "V = 20000(0.85)^t"]},
+    {"question": "In f(x) = 50(2)^x, what is f(0)?", "expectedAny": ["50", "fifty"]},
+    {"question": "In f(x) = 80(1.5)^x, what is f(0)?", "expectedAny": ["80", "eighty"]},
+    {"question": "If bacteria double every hour starting at 100, what is the function?", "expectedAny": ["f(x) = 100(2)^x", "100 times 2 to the x", "B = 100(2)^t"]},
+    {"question": "Does f(x) = 200(1.1)^x show growth or decay?", "expectedAny": ["growth", "exponential growth", "increase"]},
+    {"question": "Does f(x) = 300(0.9)^x show growth or decay?", "expectedAny": ["decay", "exponential decay", "decrease"]},
+    {"question": "In f(x) = 40(3)^x, what is the growth factor?", "expectedAny": ["3", "three"]},
+    {"question": "In f(x) = 60(0.7)^x, what is the decay factor?", "expectedAny": ["0.7", "zero point seven", "seven tenths"]},
+    {"question": "If f(x) = 100(2)^x, what is f(1)?", "expectedAny": ["200", "two hundred", "100 times 2"]}
+  ]
 }

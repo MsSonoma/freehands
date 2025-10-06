@@ -26,49 +26,59 @@
     }
   ],
   "teachingNotes": "Use examples from classic and contemporary literature. Focus on identifying character changes and analyzing their significance.",
-  "sample": {
-    "question": "What do we call how a character changes throughout a story?",
-    "expectedAny": [
-      "character development",
-      "character growth",
-      "character evolution",
-      "character arc"
-    ]
-  },
-  "truefalse": {
-    "question": "A dynamic character undergoes significant change during the story.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the main character in a literary work called?",
-    "expectedAny": [
-      "protagonist",
-      "main character",
-      "hero",
-      "central character"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The reasons behind a character's actions are called character ________.",
-    "expectedAny": [
-      "motivation",
-      "motives",
-      "reasons",
-      "drives"
-    ]
-  },
-  "shortanswer": {
-    "question": "How can authors show character development?",
-    "expectedAny": [
-      "through actions",
-      "dialogue changes",
-      "internal thoughts",
-      "reactions to events"
-    ]
-  }
+  "sample": [
+    {"question": "What is growth and change in a character?", "expectedAny": ["character development", "growth", "evolution", "character growth", "character evolution", "character change", "character progression", "character transformation"]},
+    {"question": "Who is the main character?", "expectedAny": ["protagonist", "main character", "lead", "hero", "central character", "lead character", "principal character"]},
+    {"question": "Who opposes the main character?", "expectedAny": ["antagonist", "opponent", "villain", "opposing force", "enemy", "adversary"]},
+    {"question": "What drives actions and decisions?", "expectedAny": ["character motivation", "motivation", "drive", "character desires", "character drives", "character reasons", "character goals"]},
+    {"question": "What is a character who changes?", "expectedAny": ["dynamic character", "changing character", "evolving character", "developing character", "transforming character", "growing character"]},
+    {"question": "What happens as characters change?", "expectedAny": ["character development", "development", "growth", "character growth", "character evolution", "character change", "character progression"]},
+    {"question": "Who leads the story?", "expectedAny": ["protagonist", "main character", "hero", "central character", "lead", "lead character"]},
+    {"question": "Who creates conflict?", "expectedAny": ["antagonist", "villain", "opponent", "opposing force", "enemy", "adversary"]},
+    {"question": "What explains character actions?", "expectedAny": ["character motivation", "motivation", "reasons", "character desires", "character drives", "character reasons", "drive"]},
+    {"question": "What changes throughout the story?", "expectedAny": ["dynamic character", "changing character", "evolving character", "developing character", "transforming character", "growing character"]}
+  ],
+  "truefalse": [
+    {"question": "A dynamic character undergoes significant change during the story. (True or False)", "correct": true},
+    {"question": "The protagonist is the main character. (True or False)", "correct": true},
+    {"question": "The antagonist supports the protagonist. (True or False)", "correct": false},
+    {"question": "Character motivation explains actions. (True or False)", "correct": true},
+    {"question": "Character development shows change. (True or False)", "correct": true},
+    {"question": "Dynamic characters remain the same. (True or False)", "correct": false},
+    {"question": "The protagonist drives the story. (True or False)", "correct": true},
+    {"question": "Antagonists create conflict. (True or False)", "correct": true},
+    {"question": "Motivation drives character actions. (True or False)", "correct": true},
+    {"question": "Character development can be subtle. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is the main character called?", "choices": [{"letter": "A", "text": "Antagonist"}, {"letter": "B", "text": "Protagonist"}, {"letter": "C", "text": "Narrator"}, {"letter": "D", "text": "Author"}], "correct": "B"},
+    {"question": "What character changes significantly?", "choices": [{"letter": "A", "text": "Static"}, {"letter": "B", "text": "Dynamic"}, {"letter": "C", "text": "Flat"}, {"letter": "D", "text": "Minor"}], "correct": "B"},
+    {"question": "What explains character actions?", "choices": [{"letter": "A", "text": "Setting"}, {"letter": "B", "text": "Motivation"}, {"letter": "C", "text": "Plot"}, {"letter": "D", "text": "Theme"}], "correct": "B"},
+    {"question": "Who opposes the protagonist?", "choices": [{"letter": "A", "text": "Hero"}, {"letter": "B", "text": "Antagonist"}, {"letter": "C", "text": "Narrator"}, {"letter": "D", "text": "Author"}], "correct": "B"},
+    {"question": "What shows character growth?", "choices": [{"letter": "A", "text": "Setting"}, {"letter": "B", "text": "Character development"}, {"letter": "C", "text": "Plot twist"}, {"letter": "D", "text": "Symbolism"}], "correct": "B"},
+    {"question": "What is a changing character?", "choices": [{"letter": "A", "text": "Static"}, {"letter": "B", "text": "Dynamic"}, {"letter": "C", "text": "Flat"}, {"letter": "D", "text": "Round"}], "correct": "B"},
+    {"question": "What drives character decisions?", "choices": [{"letter": "A", "text": "Theme"}, {"letter": "B", "text": "Motivation"}, {"letter": "C", "text": "Conflict"}, {"letter": "D", "text": "Setting"}], "correct": "B"},
+    {"question": "Who leads the narrative?", "choices": [{"letter": "A", "text": "Antagonist"}, {"letter": "B", "text": "Protagonist"}, {"letter": "C", "text": "Minor character"}, {"letter": "D", "text": "Narrator"}], "correct": "B"},
+    {"question": "What creates opposition?", "choices": [{"letter": "A", "text": "Protagonist"}, {"letter": "B", "text": "Antagonist"}, {"letter": "C", "text": "Setting"}, {"letter": "D", "text": "Theme"}], "correct": "B"},
+    {"question": "What evolves over time?", "choices": [{"letter": "A", "text": "Setting"}, {"letter": "B", "text": "Character development"}, {"letter": "C", "text": "Title"}, {"letter": "D", "text": "Genre"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "The ________ is the main character who drives the story.", "expectedAny": ["protagonist", "main character", "hero", "lead"]},
+    {"question": "A ________ character undergoes significant change.", "expectedAny": ["dynamic", "changing", "evolving", "developing"]},
+    {"question": "Character ________ explains why characters act as they do.", "expectedAny": ["motivation", "motives", "reasons", "drives"]},
+    {"question": "The ________ opposes the protagonist.", "expectedAny": ["antagonist", "villain", "opponent", "enemy"]},
+    {"question": "________ shows how characters change over time.", "expectedAny": ["character development", "development", "growth", "evolution"]},
+    {"question": "Characters change through ________ throughout the story.", "expectedAny": ["development", "growth", "evolution", "change"]},
+    {"question": "The ________ creates conflict for the protagonist.", "expectedAny": ["antagonist", "villain", "opponent", "opposing force"]},
+    {"question": "________ drives character actions and decisions.", "expectedAny": ["motivation", "motives", "desires", "reasons"]},
+    {"question": "A ________ character evolves during the narrative.", "expectedAny": ["dynamic", "changing", "developing", "evolving"]},
+    {"question": "The ________ leads the story forward.", "expectedAny": ["protagonist", "main character", "hero", "lead"]}
+  ],
+  "shortanswer": [
+    {"question": "How can authors show character development?", "expectedAny": ["through actions", "dialogue changes", "internal thoughts", "reactions to events", "character choices", "behavioral changes"]},
+    {"question": "Why is the protagonist important?", "expectedAny": ["drives the story", "main focus", "readers follow them", "creates connection", "central to plot", "audience identifies with them"]},
+    {"question": "What makes an effective antagonist?", "expectedAny": ["creates conflict", "opposes protagonist", "challenges hero", "has clear motives", "provides obstacles", "drives plot tension"]},
+    {"question": "How does motivation affect characters?", "expectedAny": ["drives actions", "explains decisions", "creates purpose", "guides behavior", "influences choices", "provides direction"]},
+    {"question": "What indicates a dynamic character?", "expectedAny": ["shows change", "grows over time", "evolves throughout story", "learns from experiences", "transforms", "develops new traits"]}
+  ]
 }

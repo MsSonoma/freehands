@@ -21,6 +21,11 @@
       "term": "pattern",
       "definition": "Something that happens the same way over and over"
     }
+    ,
+    {
+      "term": "fall",
+      "definition": "Another word for autumn, when leaves fall"
+    }
   ],
   "teachingNotes": "Use weather chart for daily observations. Discuss clothing for different weather. Create seasonal books with pictures.",
   "sample": [
@@ -49,13 +54,13 @@
     {"question": "What weather tool measures temperature?", "choices": ["ruler", "clock", "thermometer", "scale"], "correct": 2, "expectedAny": ["thermometer measures temperature"]}
   ],
   "fillintheblank": [
-    {"question": "In winter, the weather is usually _____.", "expectedAny": ["cold", "snowy", "chilly"]},
-    {"question": "The _____ shines bright on sunny days.", "expectedAny": ["sun"]},
-    {"question": "Weather _____ help us know what weather to expect.", "expectedAny": ["patterns"]},
+    {"question": "In winter, the weather is usually _____.", "expectedAny": ["cold", "snowy", "chilly", "very cold"]},
+    {"question": "The _____ shines bright on sunny days.", "expectedAny": ["sun", "sunshine"]},
+    {"question": "Weather _____ help us know what weather to expect.", "expectedAny": ["patterns", "weather patterns"]},
     {"question": "In _____, leaves fall from trees.", "expectedAny": ["fall", "autumn"]},
-    {"question": "When it's hot outside, we say the _____ is high.", "expectedAny": ["temperature"]},
-    {"question": "_____ falls from clouds when it's cold enough.", "expectedAny": ["Snow"]},
-    {"question": "We see _____ in the sky before it rains.", "expectedAny": ["clouds"]}
+    {"question": "When it's hot outside, we say the _____ is high.", "expectedAny": ["temperature", "temp"]},
+    {"question": "_____ falls from clouds when it's cold enough.", "expectedAny": ["Snow", "snow"]},
+    {"question": "We see _____ in the sky before it rains.", "expectedAny": ["clouds", "dark clouds"]}
   ],
   "shortanswer": [
     {"question": "How does the weather change from summer to fall?", "expectedAny": ["gets cooler", "leaves change colors", "less hot", "becomes cold"]},

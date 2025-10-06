@@ -7,52 +7,54 @@
   "vocab": [
     {"term": "main idea", "definition": "What a piece of writing is mostly about."},
     {"term": "supporting details", "definition": "Facts, examples, or information that explain or support the main idea."},
-    {"term": "summary", "definition": "A short statement of the most important points of a text."}
+    {"term": "summary", "definition": "A short statement of the most important points of a text."},
+    {"term": "evidence", "definition": "Text information that helps prove or support the main idea."},
+    {"term": "topic sentence", "definition": "A sentence that often states the main idea of a paragraph."}
   ],
   "teachingNotes": "Teach students to look for the 'who' or 'what' the text is about and what the most important thing about that 'who' or 'what' is. Use graphic organizers to visually separate the main idea from the details.",
   "sample": [
-    {"question": "After reading a short paragraph, what is the main idea?", "expectedAny": ["The central point of the paragraph."]},
-    {"question": "Which detail from the text best supports the main idea that dogs are helpful animals?", "expectedAny": ["A specific example of a dog helping someone."]},
-    {"question": "What is this passage mostly about?", "expectedAny": ["The main topic."]},
-    {"question": "Which sentence from the text best summarizes the entire passage?", "expectedAny": ["The sentence that captures the main idea."]},
-    {"question": "Find three details in the text that support the main idea.", "expectedAny": ["Three specific facts or examples from the text."]},
-    {"question": "Based on the main idea, what would be another good title for this passage?", "expectedAny": ["A title that reflects the main idea."]},
-    {"question": "Which of these facts from the text does not belong with the main idea?", "expectedAny": ["An irrelevant detail."]}
+    {"question": "After reading a short paragraph, what is the main idea?", "expectedAny": ["the central point of the paragraph", "what the text is mostly about", "the big idea"]},
+    {"question": "Which detail from the text best supports the main idea that dogs are helpful animals?", "expectedAny": ["a specific example of a dog helping someone", "a fact that shows dogs help", "evidence that dogs are helpful"]},
+    {"question": "What is this passage mostly about?", "expectedAny": ["the main topic", "what it is mostly about", "the central idea"]},
+    {"question": "Which sentence from the text best summarizes the entire passage?", "expectedAny": ["the sentence that captures the main idea", "the best overall summary sentence", "a sentence that tells the big idea"]},
+    {"question": "Find three details in the text that support the main idea.", "expectedAny": ["three specific facts or examples from the text", "three supporting details", "three pieces of evidence"]},
+    {"question": "Based on the main idea, what would be another good title for this passage?", "expectedAny": ["a title that reflects the main idea", "a title that matches the big idea", "a clear title about the topic"]},
+    {"question": "Which of these facts from the text does not belong with the main idea?", "expectedAny": ["an irrelevant detail", "a detail that does not support the main idea", "an off-topic fact"]}
   ],
   "truefalse": [
-    {"question": "The main idea of a text tells what it is mostly about.", "answer": true},
-    {"question": "Supporting details are small pieces of information that explain more about the main idea.", "answer": true},
-    {"question": "Every sentence in a paragraph is equally important.", "answer": false},
-    {"question": "The main idea is always the very first sentence of a paragraph.", "answer": false},
-    {"question": "Details give specific information, like facts, reasons, or examples.", "answer": true},
-    {"question": "A summary should include every single detail from the text.", "answer": false},
-    {"question": "The title of a book or article often gives a clue about the main idea.", "answer": true}
+    {"question": "The main idea of a text tells what it is mostly about.", "answer": true, "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Supporting details are small pieces of information that explain more about the main idea.", "answer": true, "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Every sentence in a paragraph is equally important.", "answer": false, "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "The main idea is always the very first sentence of a paragraph.", "answer": false, "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Details give specific information, like facts, reasons, or examples.", "answer": true, "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "A summary should include every single detail from the text.", "answer": false, "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "The title of a book or article often gives a clue about the main idea.", "answer": true, "expectedAny": ["true", "yes", "t", "correct"]}
   ],
   "multiplechoice": [
-    {"question": "The main idea is the ___ point of the text.", "choices": ["least important", "most important", "first", "last"], "correct": 1},
-    {"question": "Supporting details ___ the main idea.", "choices": ["confuse", "explain and support", "hide", "remove"], "correct": 1},
-    {"question": "A good title for a text is usually ___.", "choices": ["very long and complicated", "unrelated to the topic", "clear and related to the main idea", "confusing"], "correct": 2},
-    {"question": "To find the main idea, a good reader looks for ___.", "choices": ["ideas that are repeated or talked about the most", "the page numbers", "the pictures only", "the punctuation marks"], "correct": 0},
-    {"question": "Details in a well-written paragraph should always ___.", "choices": ["change the topic", "support the main idea", "be unrelated to the topic", "be confusing"], "correct": 1},
-    {"question": "A summary is a ___ retelling of the main points.", "choices": ["word-for-word", "brief", "new", "opinionated"], "correct": 1},
-    {"question": "A topic sentence is a sentence that often ___.", "choices": ["ends the paragraph", "states the main idea of a paragraph", "gives a minor detail", "asks a question"], "correct": 1}
+    {"question": "The main idea is the ___ point of the text.", "choices": ["least important", "most important", "first", "last"], "correct": 1, "expectedAny": ["most important", "the big idea", "the central point"]},
+    {"question": "Supporting details ___ the main idea.", "choices": ["confuse", "explain and support", "hide", "remove"], "correct": 1, "expectedAny": ["explain and support", "support the main idea", "explain the big idea"]},
+    {"question": "A good title for a text is usually ___.", "choices": ["very long and complicated", "unrelated to the topic", "clear and related to the main idea", "confusing"], "correct": 2, "expectedAny": ["clear and related to the main idea", "a clear title about the main idea", "a title that matches the topic"]},
+    {"question": "To find the main idea, a good reader looks for ___.", "choices": ["ideas that are repeated or talked about the most", "the page numbers", "the pictures only", "the punctuation marks"], "correct": 0, "expectedAny": ["ideas that are repeated or talked about the most", "repeated ideas", "what is talked about the most"]},
+    {"question": "Details in a well-written paragraph should always ___.", "choices": ["change the topic", "support the main idea", "be unrelated to the topic", "be confusing"], "correct": 1, "expectedAny": ["support the main idea", "match the main idea", "support the topic"]},
+    {"question": "A summary is a ___ retelling of the main points.", "choices": ["word-for-word", "brief", "new", "opinionated"], "correct": 1, "expectedAny": ["brief", "short", "concise"]},
+    {"question": "A topic sentence is a sentence that often ___.", "choices": ["ends the paragraph", "states the main idea of a paragraph", "gives a minor detail", "asks a question"], "correct": 1, "expectedAny": ["states the main idea of a paragraph", "tells the main idea", "states the big idea"]}
   ],
   "fillintheblank": [
-    {"question": "The ___ idea tells what the text is mostly about.", "expectedAny": ["main"]},
-    {"question": "Supporting ___ give more information and examples about the main idea.", "expectedAny": ["details"]},
-    {"question": "A ___ is a short retelling of the most important points.", "expectedAny": ["summary"]},
-    {"question": "The ___ of a passage often gives a clue to the main idea.", "expectedAny": ["title"]},
+    {"question": "The ___ idea tells what the text is mostly about.", "expectedAny": ["main", "central", "main idea", "big"]},
+    {"question": "Supporting ___ give more information and examples about the main idea.", "expectedAny": ["details", "supporting details"]},
+    {"question": "A ___ is a short retelling of the most important points.", "expectedAny": ["summary", "short summary", "brief summary"]},
+    {"question": "The ___ of a passage often gives a clue to the main idea.", "expectedAny": ["title", "the title"]},
     {"question": "Irrelevant details are ones that do not ___ to the main idea.", "expectedAny": ["relate", "connect"]},
-    {"question": "Authors use facts, examples, and reasons as ___ to support their main idea.", "expectedAny": ["details", "evidence"]},
-    {"question": "Often, each paragraph in a text has its own ___ idea.", "expectedAny": ["main"]}
+    {"question": "Authors use facts, examples, and reasons as ___ to support their main idea.", "expectedAny": ["details", "evidence", "support"]},
+    {"question": "Often, each paragraph in a text has its own ___ idea.", "expectedAny": ["main", "central"]}
   ],
   "shortanswer": [
-    {"question": "What is a good strategy to find the main idea of a text?", "expectedAny": ["Look for ideas that are mentioned most often or read the first and last sentences of the paragraph."]},
-    {"question": "Explain the difference between a main idea and a supporting detail.", "expectedAny": ["The main idea is the big picture, while supporting details are the specific facts and examples that explain it."]},
-    {"question": "Why are supporting details important in a text?", "expectedAny": ["They provide evidence and explanation to help the reader understand the main idea."]},
-    {"question": "How do you write a good summary of a paragraph?", "expectedAny": ["You identify the main idea and the most important details and write them in your own words."]},
-    {"question": "What makes a good title for a story or article?", "expectedAny": ["A good title is short, interesting, and clearly tells what the text will be about."]},
-    {"question": "Give an example of a main idea with three supporting details.", "expectedAny": ["Main Idea: Dogs make good pets. Details: They are loyal, they can be trained, and they are playful."]},
-    {"question": "How can you tell if a detail is important or just interesting?", "expectedAny": ["An important detail directly explains or proves the main idea."]}
+    {"question": "What is a good strategy to find the main idea of a text?", "expectedAny": ["look for ideas repeated the most", "check the topic sentence", "summarize the paragraph in your own words", "the most important part", "what it's mainly about", "the key point", "what they talk about most"]},
+    {"question": "Explain the difference between a main idea and a supporting detail.", "expectedAny": ["main idea is the big point; details support it", "main idea is what it's mostly about; details tell more", "details are facts/examples that explain the main idea", "main idea is the topic; details give information", "big idea vs small facts"]},
+    {"question": "Why are supporting details important in a text?", "expectedAny": ["they support the main idea", "they give evidence and examples", "they help explain the main idea clearly", "prove the main idea", "make it clearer", "give more information"]},
+    {"question": "How do you write a good summary of a paragraph?", "expectedAny": ["identify main idea and key details", "retell only the most important points", "use your own words and be brief", "say the big idea and key facts", "short version of main points"]},
+    {"question": "What makes a good title for a story or article?", "expectedAny": ["short and clear", "matches the main idea", "tells what the text is about", "clear and related to topic", "describes the topic"]},
+    {"question": "Give an example of a main idea with three supporting details.", "expectedAny": ["Main Idea: Dogs make good pets. Details: They are loyal; they can be trained; they are playful.", "Main Idea: Exercise is healthy. Details: strengthens your heart; builds muscles; boosts energy.", "Main Idea: Reading helps you learn. Details: teaches new words; grows knowledge; improves focus.", "any main idea with three supporting facts"]},
+    {"question": "How can you tell if a detail is important or just interesting?", "expectedAny": ["important details explain or prove the main idea", "ask if it supports the main idea", "interesting details do not help explain the main idea", "does it relate to the main idea", "is it about the topic"]}
   ]
 }

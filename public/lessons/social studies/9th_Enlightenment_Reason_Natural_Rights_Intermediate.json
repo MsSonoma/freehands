@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "9th_Enlightenment_Reason_Natural_Rights_Intermediate",
   "title": "Enlightenment: Reason and Natural Rights",
   "grade": "9th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "enlightenment",
-      "definition": "18th century intellectual movement emphasizing reason and science"
-    },
-    {
-      "term": "natural rights",
-      "definition": "Rights believed to be inherent to all humans by nature"
-    },
-    {
-      "term": "social contract",
-      "definition": "Agreement between people and government defining rights and duties"
-    },
-    {
-      "term": "separation of powers",
-      "definition": "Division of government into legislative, executive, and judicial branches"
-    },
-    {
-      "term": "philosophe",
-      "definition": "French Enlightenment thinker who applied reason to social problems"
-    }
+    {"term": "enlightenment", "definition": "18th century intellectual movement emphasizing reason and science"},
+    {"term": "natural rights", "definition": "Rights believed to be inherent to all humans by nature"},
+    {"term": "social contract", "definition": "Agreement between people and government defining rights and duties"},
+    {"term": "separation of powers", "definition": "Division of government into legislative, executive, and judicial branches"},
+    {"term": "philosophe", "definition": "French Enlightenment thinker who applied reason to social problems"}
   ],
   "teachingNotes": "Connect Enlightenment ideas to American and French revolutions. Analyze how these concepts influenced modern democratic government.",
-  "sample": {
-    "question": "What 18th century movement emphasized reason and science?",
-    "expectedAny": [
-      "enlightenment",
-      "age of reason",
-      "intellectual enlightenment",
-      "age of enlightenment"
-    ]
-  },
-  "truefalse": {
-    "question": "Natural rights are believed to be inherent to all humans.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What divides government into three branches?",
-    "expectedAny": [
-      "separation of powers",
-      "checks and balances",
-      "power division",
-      "governmental separation"
-    ]
-  },
-  "fillintheblank": {
-    "question": "An agreement between people and government is a ________ contract.",
-    "expectedAny": [
-      "social",
-      "governmental",
-      "political",
-      "civic"
-    ]
-  },
-  "shortanswer": {
-    "question": "How did Enlightenment ideas influence the American Revolution?",
-    "expectedAny": [
-      "justified resistance to tyranny",
-      "provided natural rights theory",
-      "supported democratic principles"
-    ]
-  }
+  "sample": [
+    {"question": "What 18th century movement emphasized reason and science?", "expectedAny": ["enlightenment", "age of reason", "age of enlightenment", "era of reason"]},
+    {"question": "What are natural rights?", "expectedAny": ["inherent human rights", "rights by nature", "innate rights", "born with rights"]},
+    {"question": "What is the social contract?", "expectedAny": ["agreement between people and government", "government-people agreement", "political contract", "citizen-government deal"]},
+    {"question": "What is separation of powers?", "expectedAny": ["division of government branches", "three branches", "legislative executive judicial", "dividing government power"]},
+    {"question": "What is a philosophe?", "expectedAny": ["French Enlightenment thinker", "French philosopher", "Enlightenment intellectual", "French thinker"]},
+    {"question": "When was the Enlightenment?", "expectedAny": ["18th century", "1700s", "Age of Reason"]},
+    {"question": "What did the Enlightenment emphasize?", "expectedAny": ["reason and science", "rational thinking", "logic and evidence"]},
+    {"question": "What rights are inherent?", "expectedAny": ["natural rights", "human rights", "fundamental rights"]},
+    {"question": "What defines government-people relationship?", "expectedAny": ["social contract", "political agreement", "compact"]},
+    {"question": "What branches separate power?", "expectedAny": ["legislative executive judicial", "three branches", "government branches"]}
+  ],
+  "truefalse": [
+    {"question": "Natural rights are believed to be inherent to all humans. (True or False)", "correct": true},
+    {"question": "The Enlightenment emphasized reason and science. (True or False)", "correct": true},
+    {"question": "The social contract ignores government duties. (True or False)", "correct": false},
+    {"question": "Separation of powers divides government into branches. (True or False)", "correct": true},
+    {"question": "Philosophes applied reason to social problems. (True or False)", "correct": true},
+    {"question": "The Enlightenment occurred in the 18th century. (True or False)", "correct": true},
+    {"question": "Natural rights are given by government. (True or False)", "correct": false},
+    {"question": "The social contract defines rights and duties. (True or False)", "correct": true},
+    {"question": "Separation of powers concentrates authority. (True or False)", "correct": false},
+    {"question": "Enlightenment ideas influenced revolutions. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What movement emphasized reason?", "choices": [{"letter": "A", "text": "Renaissance"}, {"letter": "B", "text": "Enlightenment"}, {"letter": "C", "text": "Reformation"}, {"letter": "D", "text": "Crusades"}], "correct": "B"},
+    {"question": "What rights are inherent?", "choices": [{"letter": "A", "text": "Legal rights"}, {"letter": "B", "text": "Natural rights"}, {"letter": "C", "text": "Civil rights"}, {"letter": "D", "text": "Property rights"}], "correct": "B"},
+    {"question": "What is the government-people agreement?", "choices": [{"letter": "A", "text": "Treaty"}, {"letter": "B", "text": "Constitution"}, {"letter": "C", "text": "Social contract"}, {"letter": "D", "text": "Law"}], "correct": "C"},
+    {"question": "What divides government power?", "choices": [{"letter": "A", "text": "Monarchy"}, {"letter": "B", "text": "Separation of powers"}, {"letter": "C", "text": "Democracy"}, {"letter": "D", "text": "Republic"}], "correct": "B"},
+    {"question": "What were French Enlightenment thinkers?", "choices": [{"letter": "A", "text": "Nobles"}, {"letter": "B", "text": "Philosophes"}, {"letter": "C", "text": "Clergy"}, {"letter": "D", "text": "Peasants"}], "correct": "B"},
+    {"question": "When was the Enlightenment?", "choices": [{"letter": "A", "text": "16th century"}, {"letter": "B", "text": "18th century"}, {"letter": "C", "text": "20th century"}, {"letter": "D", "text": "14th century"}], "correct": "B"},
+    {"question": "What did Enlightenment value?", "choices": [{"letter": "A", "text": "Tradition"}, {"letter": "B", "text": "Reason and science"}, {"letter": "C", "text": "Authority"}, {"letter": "D", "text": "Religion only"}], "correct": "B"},
+    {"question": "What are rights by nature?", "choices": [{"letter": "A", "text": "Legal"}, {"letter": "B", "text": "Natural"}, {"letter": "C", "text": "Civil"}, {"letter": "D", "text": "Political"}], "correct": "B"},
+    {"question": "What branches exist?", "choices": [{"letter": "A", "text": "Two"}, {"letter": "B", "text": "Three"}, {"letter": "C", "text": "Four"}, {"letter": "D", "text": "Five"}], "correct": "B"},
+    {"question": "Who applied reason to society?", "choices": [{"letter": "A", "text": "Kings"}, {"letter": "B", "text": "Philosophes"}, {"letter": "C", "text": "Soldiers"}, {"letter": "D", "text": "Merchants"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "The _____ emphasized reason and science.", "expectedAny": ["Enlightenment", "enlightenment"]},
+    {"question": "_____ rights are inherent to all humans.", "expectedAny": ["Natural", "natural"]},
+    {"question": "The _____ _____ is an agreement between people and government.", "expectedAny": ["social contract"]},
+    {"question": "_____ of powers divides government into branches.", "expectedAny": ["Separation", "separation"]},
+    {"question": "A _____ was a French Enlightenment thinker.", "expectedAny": ["philosophe"]},
+    {"question": "The Enlightenment occurred in the _____ century.", "expectedAny": ["18th", "eighteenth"]},
+    {"question": "Enlightenment valued _____ and science.", "expectedAny": ["reason"]},
+    {"question": "Natural rights are believed _____ to humans.", "expectedAny": ["inherent", "innate"]},
+    {"question": "The social contract defines rights and _____.", "expectedAny": ["duties", "responsibilities"]},
+    {"question": "Government has _____ branches.", "expectedAny": ["three", "3"]}
+  ],
+  "shortanswer": [
+    {"question": "What was the Enlightenment?", "keyTerms": ["18th century", "intellectual", "movement", "reason", "science"], "expectedAny": ["18th century intellectual movement emphasizing reason and science", "Age of Reason focusing on rational thought", "Period valuing logic and evidence"]},
+    {"question": "What are natural rights?", "keyTerms": ["rights", "inherent", "humans", "nature"], "expectedAny": ["Rights believed to be inherent to all humans by nature", "Fundamental rights all people have", "Innate human rights"]},
+    {"question": "What is the social contract?", "keyTerms": ["agreement", "people", "government", "rights", "duties"], "expectedAny": ["Agreement between people and government defining rights and duties", "Compact establishing government-citizen relationship", "Political agreement on mutual obligations"]},
+    {"question": "What is separation of powers?", "keyTerms": ["division", "government", "legislative", "executive", "judicial"], "expectedAny": ["Division of government into legislative executive and judicial branches", "Three-branch system preventing power concentration", "Balanced government structure"]},
+    {"question": "Who were philosophes?", "keyTerms": ["French", "Enlightenment", "thinkers", "reason", "social problems"], "expectedAny": ["French Enlightenment thinkers who applied reason to social problems", "Philosophers analyzing society rationally", "Enlightenment intellectuals"]},
+    {"question": "What did Enlightenment thinkers value?", "keyTerms": ["reason", "science", "evidence", "rational thought"], "expectedAny": ["Reason science and evidence over tradition and authority", "Rational thought and empirical observation", "Logic and scientific method"]},
+    {"question": "Why are natural rights important?", "keyTerms": ["inherent", "universal", "protect", "individuals"], "expectedAny": ["They are inherent and universal protecting all individuals", "Fundamental to human dignity and freedom", "Basis for modern human rights"]},
+    {"question": "How does social contract work?", "keyTerms": ["people", "consent", "government", "protection", "rights"], "expectedAny": ["People consent to government in exchange for protection of rights", "Citizens and government have mutual obligations", "Agreement defines power and limits"]},
+    {"question": "Why separate powers?", "keyTerms": ["prevent", "tyranny", "concentration", "checks", "balances"], "expectedAny": ["To prevent tyranny by checking and balancing power", "Stops concentration of authority", "Creates system of mutual oversight"]},
+    {"question": "What impact did Enlightenment have?", "keyTerms": ["influenced", "revolutions", "democratic", "government"], "expectedAny": ["Influenced American and French revolutions and democratic government", "Foundation for modern political thought", "Inspired movements for rights and freedom"]}
+  ]
 }

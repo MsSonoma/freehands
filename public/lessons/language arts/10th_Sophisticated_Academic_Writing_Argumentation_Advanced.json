@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "10th_Sophisticated_Academic_Writing_Argumentation_Advanced",
   "title": "Sophisticated Academic Writing: Argumentation",
   "grade": "10th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "dialectical reasoning",
-      "definition": "Examining opposing ideas to reach a deeper understanding"
-    },
-    {
-      "term": "synthesis",
-      "definition": "Combining different ideas or arguments to create a new understanding"
-    },
-    {
-      "term": "epistemological stance",
-      "definition": "One's position on how knowledge is acquired and validated"
-    },
-    {
-      "term": "rhetorical situation",
-      "definition": "The context, audience, and purpose that shape communication"
-    },
-    {
-      "term": "warrant",
-      "definition": "The underlying assumption that connects evidence to a claim"
-    }
+    {"term": "dialectical reasoning", "definition": "Examining opposing ideas to reach a deeper understanding"},
+    {"term": "synthesis", "definition": "Combining different ideas or arguments to create a new understanding"},
+    {"term": "epistemological stance", "definition": "One's position on how knowledge is acquired and validated"},
+    {"term": "rhetorical situation", "definition": "The context, audience, and purpose that shape communication"},
+    {"term": "warrant", "definition": "The underlying assumption that connects evidence to a claim"}
   ],
   "teachingNotes": "Explore sophisticated argumentative structures and philosophical foundations of reasoning. Analyze complex rhetorical situations.",
-  "sample": {
-    "question": "What is examining opposing ideas to reach deeper understanding called?",
-    "expectedAny": [
-      "dialectical reasoning",
-      "dialectical thinking",
-      "thesis-antithesis synthesis",
-      "oppositional analysis"
-    ]
-  },
-  "truefalse": {
-    "question": "A warrant is the underlying assumption connecting evidence to a claim.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What combines different ideas to create new understanding?",
-    "expectedAny": [
-      "synthesis",
-      "integration",
-      "fusion",
-      "combination"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The context, audience, and purpose that shape communication form the rhetorical ________.",
-    "expectedAny": [
-      "situation",
-      "context",
-      "framework",
-      "environment"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does understanding epistemology improve argumentation?",
-    "expectedAny": [
-      "clarifies assumptions",
-      "examines knowledge sources",
-      "strengthens reasoning",
-      "improves validity"
-    ]
-  }
+  "sample": [
+    {"question": "What examines opposing ideas for deeper understanding?", "expectedAny": ["dialectical reasoning", "dialectical thinking", "oppositional analysis", "dialectical method", "examining opposing ideas", "oppositional thinking"]},
+    {"question": "What combines ideas to create new understanding?", "expectedAny": ["synthesis", "combining ideas", "integration", "merging ideas", "combination", "integrating concepts"]},
+    {"question": "What is position on knowledge acquisition?", "expectedAny": ["epistemological stance", "knowledge position", "epistemic view", "knowledge theory", "epistemic position", "epistemological view"]},
+    {"question": "What shapes communication?", "expectedAny": ["rhetorical situation", "context and purpose", "communication context", "rhetorical context", "communication setting", "audience and purpose"]},
+    {"question": "What connects evidence to claim?", "expectedAny": ["warrant", "underlying assumption", "connection", "connecting assumption", "bridge", "link"]},
+    {"question": "What examines opposing views?", "expectedAny": ["dialectical reasoning", "dialectical method", "oppositional thinking", "dialectical thinking", "oppositional analysis", "examining opposing ideas"]},
+    {"question": "What creates new understanding?", "expectedAny": ["synthesis", "integration", "combination", "combining ideas", "merging ideas", "integrating concepts"]},
+    {"question": "What is your knowledge view?", "expectedAny": ["epistemological stance", "epistemic position", "knowledge theory", "knowledge position", "epistemic view", "epistemological view"]},
+    {"question": "What includes audience and purpose?", "expectedAny": ["rhetorical situation", "rhetorical context", "communication setting", "context and purpose", "communication context", "audience and purpose"]},
+    {"question": "What is underlying assumption?", "expectedAny": ["warrant", "connecting assumption", "bridge", "underlying assumption", "connection", "link"]}
+  ],
+  "truefalse": [
+    {"question": "Dialectical reasoning examines opposing ideas. (True or False)", "correct": true},
+    {"question": "Synthesis separates ideas. (True or False)", "correct": false},
+    {"question": "Epistemological stance is about knowledge. (True or False)", "correct": true},
+    {"question": "Rhetorical situation ignores audience. (True or False)", "correct": false},
+    {"question": "A warrant connects evidence to claims. (True or False)", "correct": true},
+    {"question": "Dialectical thinking reaches deeper understanding. (True or False)", "correct": true},
+    {"question": "Synthesis creates new understanding. (True or False)", "correct": true},
+    {"question": "Epistemological stance is about emotions. (True or False)", "correct": false},
+    {"question": "Rhetorical situation includes context. (True or False)", "correct": true},
+    {"question": "Warrants are underlying assumptions. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What examines opposing ideas?", "choices": [{"letter": "A", "text": "Synthesis"}, {"letter": "B", "text": "Dialectical reasoning"}, {"letter": "C", "text": "Warrant"}, {"letter": "D", "text": "Stance"}], "correct": "B"},
+    {"question": "What combines ideas?", "choices": [{"letter": "A", "text": "Dialectical"}, {"letter": "B", "text": "Synthesis"}, {"letter": "C", "text": "Warrant"}, {"letter": "D", "text": "Situation"}], "correct": "B"},
+    {"question": "What is about knowledge?", "choices": [{"letter": "A", "text": "Rhetorical"}, {"letter": "B", "text": "Epistemological stance"}, {"letter": "C", "text": "Synthesis"}, {"letter": "D", "text": "Warrant"}], "correct": "B"},
+    {"question": "What includes audience and purpose?", "choices": [{"letter": "A", "text": "Stance"}, {"letter": "B", "text": "Rhetorical situation"}, {"letter": "C", "text": "Synthesis"}, {"letter": "D", "text": "Dialectical"}], "correct": "B"},
+    {"question": "What connects evidence to claim?", "choices": [{"letter": "A", "text": "Synthesis"}, {"letter": "B", "text": "Warrant"}, {"letter": "C", "text": "Stance"}, {"letter": "D", "text": "Situation"}], "correct": "B"},
+    {"question": "What reaches deeper understanding?", "choices": [{"letter": "A", "text": "Warrant"}, {"letter": "B", "text": "Dialectical reasoning"}, {"letter": "C", "text": "Situation"}, {"letter": "D", "text": "Stance"}], "correct": "B"},
+    {"question": "What creates new understanding?", "choices": [{"letter": "A", "text": "Dialectical"}, {"letter": "B", "text": "Synthesis"}, {"letter": "C", "text": "Warrant"}, {"letter": "D", "text": "Stance"}], "correct": "B"},
+    {"question": "What validates knowledge?", "choices": [{"letter": "A", "text": "Synthesis"}, {"letter": "B", "text": "Epistemological stance"}, {"letter": "C", "text": "Warrant"}, {"letter": "D", "text": "Situation"}], "correct": "B"},
+    {"question": "What shapes communication?", "choices": [{"letter": "A", "text": "Warrant"}, {"letter": "B", "text": "Rhetorical situation"}, {"letter": "C", "text": "Synthesis"}, {"letter": "D", "text": "Stance"}], "correct": "B"},
+    {"question": "What is underlying assumption?", "choices": [{"letter": "A", "text": "Synthesis"}, {"letter": "B", "text": "Warrant"}, {"letter": "C", "text": "Dialectical"}, {"letter": "D", "text": "Situation"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ reasoning examines opposing ideas.", "expectedAny": ["dialectical", "Dialectical"]},
+    {"question": "_____ combines ideas.", "expectedAny": ["synthesis", "Synthesis"]},
+    {"question": "_____ stance is about knowledge.", "expectedAny": ["epistemological", "Epistemological"]},
+    {"question": "_____ situation shapes communication.", "expectedAny": ["rhetorical", "Rhetorical"]},
+    {"question": "A _____ connects evidence to claims.", "expectedAny": ["warrant"]},
+    {"question": "_____ thinking reaches deeper understanding.", "expectedAny": ["dialectical", "Dialectical"]},
+    {"question": "_____ creates new understanding.", "expectedAny": ["synthesis", "Synthesis"]},
+    {"question": "_____ is your knowledge position.", "expectedAny": ["epistemological", "Epistemological", "stance"]},
+    {"question": "_____ includes audience and purpose.", "expectedAny": ["rhetorical", "Rhetorical", "situation"]},
+    {"question": "_____ are underlying assumptions.", "expectedAny": ["warrants", "Warrants"]}
+  ],
+  "shortanswer": [
+    {"question": "What is dialectical reasoning?", "keyTerms": ["examining", "opposing", "ideas", "deeper", "understanding"], "expectedAny": ["Examining opposing ideas to reach a deeper understanding", "Oppositional thinking", "Thesis-antithesis synthesis"]},
+    {"question": "What is synthesis?", "keyTerms": ["combining", "different", "ideas", "arguments", "new understanding"], "expectedAny": ["Combining different ideas or arguments to create a new understanding", "Integration of ideas", "Merged thinking"]},
+    {"question": "What is epistemological stance?", "keyTerms": ["position", "knowledge", "acquired", "validated"], "expectedAny": ["One's position on how knowledge is acquired and validated", "Knowledge theory view", "Epistemic position"]},
+    {"question": "What is rhetorical situation?", "keyTerms": ["context", "audience", "purpose", "shape", "communication"], "expectedAny": ["The context, audience, and purpose that shape communication", "Communication context", "Rhetorical context"]},
+    {"question": "What is a warrant?", "keyTerms": ["underlying", "assumption", "connects", "evidence", "claim"], "expectedAny": ["The underlying assumption that connects evidence to a claim", "Connecting assumption", "Bridge between evidence and claim"]},
+    {"question": "How does dialectical work?", "keyTerms": ["examines", "opposing", "synthesizes", "deeper", "understanding"], "expectedAny": ["Examines opposing views and synthesizes for deeper understanding", "Oppositional analysis", "Thesis and antithesis"]},
+    {"question": "Why use synthesis?", "keyTerms": ["combine", "create", "new", "comprehensive", "understanding"], "expectedAny": ["Combine ideas to create new comprehensive understanding", "Build on multiple sources", "Integrate perspectives"]},
+    {"question": "Why consider epistemology?", "keyTerms": ["understand", "knowledge", "claims", "validity", "foundation"], "expectedAny": ["Understand knowledge claims validity and foundation", "Assess how we know", "Evaluate knowledge basis"]},
+    {"question": "Why analyze rhetorical situation?", "keyTerms": ["adapt", "audience", "purpose", "context", "effective"], "expectedAny": ["Adapt to audience, purpose, and context for effective communication", "Shape message appropriately", "Consider context"]},
+    {"question": "Why identify warrants?", "keyTerms": ["understand", "assumptions", "strengthen", "argument", "logic"], "expectedAny": ["Understand assumptions to strengthen argument logic", "Reveal hidden assumptions", "Connect evidence to claims"]}
+  ]
 }

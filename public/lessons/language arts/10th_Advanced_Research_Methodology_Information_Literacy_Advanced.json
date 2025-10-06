@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "10th_Advanced_Research_Methodology_Information_Literacy_Advanced",
   "title": "Advanced Research Methodology and Information Literacy",
   "grade": "10th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "meta-analysis",
-      "definition": "Statistical analysis combining results from multiple studies"
-    },
-    {
-      "term": "empirical evidence",
-      "definition": "Information obtained through observation and experimentation"
-    },
-    {
-      "term": "epistemological framework",
-      "definition": "Theory about how knowledge is acquired and validated"
-    },
-    {
-      "term": "triangulation",
-      "definition": "Using multiple sources or methods to verify findings"
-    },
-    {
-      "term": "systematic review",
-      "definition": "Comprehensive, methodical examination of all relevant studies"
-    }
+    {"term": "meta-analysis", "definition": "Statistical analysis combining results from multiple studies"},
+    {"term": "empirical evidence", "definition": "Information obtained through observation and experimentation"},
+    {"term": "epistemological framework", "definition": "Theory about how knowledge is acquired and validated"},
+    {"term": "triangulation", "definition": "Using multiple sources or methods to verify findings"},
+    {"term": "systematic review", "definition": "Comprehensive, methodical examination of all relevant studies"}
   ],
   "teachingNotes": "Explore sophisticated research methodologies and evaluation techniques. Discuss philosophical foundations of knowledge.",
-  "sample": {
-    "question": "What combines statistical results from multiple studies?",
-    "expectedAny": [
-      "meta-analysis",
-      "statistical synthesis",
-      "quantitative review",
-      "combined analysis"
-    ]
-  },
-  "truefalse": {
-    "question": "Empirical evidence is obtained through observation and experimentation.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What uses multiple sources to verify findings?",
-    "expectedAny": [
-      "triangulation",
-      "cross-verification",
-      "multiple validation",
-      "source convergence"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A theory about how knowledge is acquired is an epistemological ________.",
-    "expectedAny": [
-      "framework",
-      "theory",
-      "model",
-      "approach"
-    ]
-  },
-  "shortanswer": {
-    "question": "What distinguishes systematic reviews from regular literature reviews?",
-    "expectedAny": [
-      "comprehensive methodology",
-      "exhaustive search",
-      "strict criteria",
-      "replicable process"
-    ]
-  }
+  "sample": [
+    {"question": "What combines results from multiple studies?", "expectedAny": ["meta-analysis", "statistical synthesis", "combined analysis", "statistical combination", "quantitative synthesis", "study combination"]},
+    {"question": "What is obtained through observation and experimentation?", "expectedAny": ["empirical evidence", "observational data", "experimental data", "observed evidence", "experimental evidence", "data from observation"]},
+    {"question": "What is theory about knowledge acquisition?", "expectedAny": ["epistemological framework", "knowledge theory", "epistemic framework", "knowledge framework", "epistemic theory", "theory of knowledge"]},
+    {"question": "What uses multiple sources to verify findings?", "expectedAny": ["triangulation", "cross-verification", "multi-source validation", "multi-method verification", "cross-checking", "multiple verification"]},
+    {"question": "What is comprehensive examination of studies?", "expectedAny": ["systematic review", "methodical review", "comprehensive analysis", "comprehensive review", "methodical examination", "thorough review"]},
+    {"question": "What statistically combines studies?", "expectedAny": ["meta-analysis", "statistical combination", "quantitative synthesis", "statistical synthesis", "combined analysis", "study combination"]},
+    {"question": "What comes from observation?", "expectedAny": ["empirical evidence", "observational evidence", "experimental evidence", "observational data", "experimental data", "observed evidence"]},
+    {"question": "What validates knowledge?", "expectedAny": ["epistemological framework", "knowledge framework", "epistemic theory", "knowledge theory", "epistemic framework", "theory of knowledge"]},
+    {"question": "What verifies through multiple methods?", "expectedAny": ["triangulation", "multi-method verification", "cross-checking", "cross-verification", "multi-source validation", "multiple verification"]},
+    {"question": "What examines all relevant studies?", "expectedAny": ["systematic review", "comprehensive review", "methodical examination", "methodical review", "comprehensive analysis", "thorough review"]}
+  ],
+  "truefalse": [
+    {"question": "Meta-analysis combines multiple studies. (True or False)", "correct": true},
+    {"question": "Empirical evidence is theoretical. (True or False)", "correct": false},
+    {"question": "Epistemological frameworks address knowledge. (True or False)", "correct": true},
+    {"question": "Triangulation uses one source. (True or False)", "correct": false},
+    {"question": "Systematic reviews are comprehensive. (True or False)", "correct": true},
+    {"question": "Meta-analysis is statistical. (True or False)", "correct": true},
+    {"question": "Empirical evidence requires observation. (True or False)", "correct": true},
+    {"question": "Epistemological means knowledge-related. (True or False)", "correct": true},
+    {"question": "Triangulation verifies findings. (True or False)", "correct": true},
+    {"question": "Systematic reviews are methodical. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What combines multiple studies?", "choices": [{"letter": "A", "text": "Triangulation"}, {"letter": "B", "text": "Meta-analysis"}, {"letter": "C", "text": "Review"}, {"letter": "D", "text": "Framework"}], "correct": "B"},
+    {"question": "What requires observation?", "choices": [{"letter": "A", "text": "Theory"}, {"letter": "B", "text": "Empirical evidence"}, {"letter": "C", "text": "Framework"}, {"letter": "D", "text": "Review"}], "correct": "B"},
+    {"question": "What addresses knowledge acquisition?", "choices": [{"letter": "A", "text": "Meta-analysis"}, {"letter": "B", "text": "Epistemological framework"}, {"letter": "C", "text": "Triangulation"}, {"letter": "D", "text": "Evidence"}], "correct": "B"},
+    {"question": "What uses multiple sources?", "choices": [{"letter": "A", "text": "Evidence"}, {"letter": "B", "text": "Triangulation"}, {"letter": "C", "text": "Framework"}, {"letter": "D", "text": "Meta-analysis"}], "correct": "B"},
+    {"question": "What examines all studies?", "choices": [{"letter": "A", "text": "Triangulation"}, {"letter": "B", "text": "Systematic review"}, {"letter": "C", "text": "Framework"}, {"letter": "D", "text": "Evidence"}], "correct": "B"},
+    {"question": "What is statistical synthesis?", "choices": [{"letter": "A", "text": "Review"}, {"letter": "B", "text": "Meta-analysis"}, {"letter": "C", "text": "Triangulation"}, {"letter": "D", "text": "Framework"}], "correct": "B"},
+    {"question": "What comes from experimentation?", "choices": [{"letter": "A", "text": "Theory"}, {"letter": "B", "text": "Empirical evidence"}, {"letter": "C", "text": "Framework"}, {"letter": "D", "text": "Review"}], "correct": "B"},
+    {"question": "What validates knowledge?", "choices": [{"letter": "A", "text": "Evidence"}, {"letter": "B", "text": "Epistemological framework"}, {"letter": "C", "text": "Triangulation"}, {"letter": "D", "text": "Meta-analysis"}], "correct": "B"},
+    {"question": "What cross-verifies findings?", "choices": [{"letter": "A", "text": "Evidence"}, {"letter": "B", "text": "Triangulation"}, {"letter": "C", "text": "Framework"}, {"letter": "D", "text": "Review"}], "correct": "B"},
+    {"question": "What is methodical examination?", "choices": [{"letter": "A", "text": "Triangulation"}, {"letter": "B", "text": "Systematic review"}, {"letter": "C", "text": "Framework"}, {"letter": "D", "text": "Meta-analysis"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ combines multiple studies.", "expectedAny": ["meta-analysis", "Meta-analysis"]},
+    {"question": "_____ evidence requires observation.", "expectedAny": ["empirical", "Empirical"]},
+    {"question": "_____ framework addresses knowledge.", "expectedAny": ["epistemological", "Epistemological"]},
+    {"question": "_____ uses multiple sources.", "expectedAny": ["triangulation", "Triangulation"]},
+    {"question": "_____ review is comprehensive.", "expectedAny": ["systematic", "Systematic"]},
+    {"question": "_____ is statistical synthesis.", "expectedAny": ["meta-analysis", "Meta-analysis"]},
+    {"question": "_____ comes from experimentation.", "expectedAny": ["empirical", "Empirical", "evidence"]},
+    {"question": "_____ validates knowledge.", "expectedAny": ["epistemological", "Epistemological", "framework"]},
+    {"question": "_____ verifies findings.", "expectedAny": ["triangulation", "Triangulation"]},
+    {"question": "_____ examines all studies.", "expectedAny": ["systematic", "Systematic", "review"]}
+  ],
+  "shortanswer": [
+    {"question": "What is meta-analysis?", "keyTerms": ["statistical", "analysis", "combining", "results", "multiple studies"], "expectedAny": ["Statistical analysis combining results from multiple studies", "Quantitative synthesis", "Statistical combination"]},
+    {"question": "What is empirical evidence?", "keyTerms": ["information", "obtained", "observation", "experimentation"], "expectedAny": ["Information obtained through observation and experimentation", "Observational data", "Experimental findings"]},
+    {"question": "What is epistemological framework?", "keyTerms": ["theory", "knowledge", "acquired", "validated"], "expectedAny": ["Theory about how knowledge is acquired and validated", "Knowledge theory", "Epistemic framework"]},
+    {"question": "What is triangulation?", "keyTerms": ["using", "multiple", "sources", "methods", "verify findings"], "expectedAny": ["Using multiple sources or methods to verify findings", "Cross-verification", "Multi-source validation"]},
+    {"question": "What is systematic review?", "keyTerms": ["comprehensive", "methodical", "examination", "relevant studies"], "expectedAny": ["Comprehensive, methodical examination of all relevant studies", "Complete review", "Thorough analysis"]},
+    {"question": "Why use meta-analysis?", "keyTerms": ["combine", "results", "stronger", "conclusions", "patterns"], "expectedAny": ["Combine results for stronger conclusions and patterns", "Increase statistical power", "Synthesize findings"]},
+    {"question": "Why is empirical important?", "keyTerms": ["based", "observation", "verifiable", "testable", "reliable"], "expectedAny": ["Based on observation, verifiable, testable, and reliable", "Grounded in reality", "Observable evidence"]},
+    {"question": "Why have epistemological framework?", "keyTerms": ["understand", "knowledge", "validity", "foundation", "methods"], "expectedAny": ["Understand knowledge validity, foundation, and methods", "Guide research approach", "Validate claims"]},
+    {"question": "Why use triangulation?", "keyTerms": ["verify", "increase", "reliability", "reduce", "bias"], "expectedAny": ["Verify findings, increase reliability, and reduce bias", "Cross-check results", "Strengthen validity"]},
+    {"question": "Why conduct systematic review?", "keyTerms": ["comprehensive", "overview", "all evidence", "unbiased", "complete"], "expectedAny": ["Comprehensive overview of all evidence, unbiased and complete", "Synthesize all research", "Complete picture"]}
+  ]
 }

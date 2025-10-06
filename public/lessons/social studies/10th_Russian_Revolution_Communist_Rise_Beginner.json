@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "10th_Russian_Revolution_Communist_Rise_Beginner",
   "title": "Russian Revolution and the Rise of Communism",
   "grade": "10th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "revolution",
-      "definition": "Sudden, radical change in government or social conditions"
-    },
-    {
-      "term": "bolsheviks",
-      "definition": "Russian revolutionary group led by Vladimir Lenin"
-    },
-    {
-      "term": "communism",
-      "definition": "Political system where property is publicly owned and controlled"
-    },
-    {
-      "term": "soviet union",
-      "definition": "Communist state formed after Russian Revolution (1922-1991)"
-    },
-    {
-      "term": "totalitarianism",
-      "definition": "System where government has total control over all aspects of life"
-    }
+    {"term": "revolution", "definition": "Sudden radical change in government or social conditions"},
+    {"term": "bolsheviks", "definition": "Russian revolutionary group led by Vladimir Lenin"},
+    {"term": "communism", "definition": "Political system where property is publicly owned and controlled"},
+    {"term": "soviet union", "definition": "Communist state formed after Russian Revolution (1922-1991)"},
+    {"term": "totalitarianism", "definition": "System where government has total control over all aspects of life"}
   ],
   "teachingNotes": "Analyze the social and economic conditions that led to revolution. Compare different revolutionary phases and outcomes.",
-  "sample": {
-    "question": "What is sudden, radical change in government called?",
-    "expectedAny": [
-      "revolution",
-      "political revolution",
-      "governmental overthrow",
-      "regime change"
-    ]
-  },
-  "truefalse": {
-    "question": "The Bolsheviks were led by Vladimir Lenin.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What political system has publicly owned property?",
-    "expectedAny": [
-      "communism",
-      "communist system",
-      "socialist system",
-      "collective ownership"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A system with total government control is called ________.",
-    "expectedAny": [
-      "totalitarianism",
-      "totalitarian state",
-      "total control",
-      "authoritarianism"
-    ]
-  },
-  "shortanswer": {
-    "question": "What conditions led to the Russian Revolution?",
-    "expectedAny": [
-      "economic hardship",
-      "military defeats",
-      "social inequality",
-      "war casualties"
-    ]
-  }
+  "sample": [
+    {"question": "What is government change?", "expectedAny": ["revolution", "regime change", "radical change", "overthrow", "political upheaval", "revolutionary change"]},
+    {"question": "Who led Russian revolutionaries?", "expectedAny": ["bolsheviks", "Lenin group", "communists", "red army", "lenin party", "revolutionary party"]},
+    {"question": "What is public ownership?", "expectedAny": ["communism", "communist system", "marxism", "socialist system", "collective ownership", "state ownership"]},
+    {"question": "What formed in 1922?", "expectedAny": ["soviet union", "USSR", "union of soviet socialist republics", "soviet state", "soviet russia", "ussr"]},
+    {"question": "What is total control?", "expectedAny": ["totalitarianism", "total control", "authoritarian rule", "absolute control", "dictatorship", "totalitarian state"]},
+    {"question": "What is radical change?", "expectedAny": ["revolution", "overthrow", "regime change", "radical change", "political upheaval", "revolutionary change"]},
+    {"question": "Who followed Lenin?", "expectedAny": ["bolsheviks", "communists", "Lenin group", "red army", "lenin party", "revolutionary party"]},
+    {"question": "What controls property?", "expectedAny": ["communism", "communist state", "marxism", "socialist system", "collective ownership", "state ownership"]},
+    {"question": "What was USSR?", "expectedAny": ["soviet union", "communist state", "union of soviet socialist republics", "soviet state", "soviet russia", "ussr"]},
+    {"question": "What is complete control?", "expectedAny": ["totalitarianism", "dictatorship", "authoritarian rule", "absolute control", "total control", "totalitarian state"]}
+  ],
+  "truefalse": [
+    {"question": "Revolution is radical change. (True or False)", "correct": true},
+    {"question": "Bolsheviks opposed Lenin. (True or False)", "correct": false},
+    {"question": "Communism has public property. (True or False)", "correct": true},
+    {"question": "Soviet Union formed in 1922. (True or False)", "correct": true},
+    {"question": "Totalitarianism limits freedom. (True or False)", "correct": true},
+    {"question": "Revolution is sudden change. (True or False)", "correct": true},
+    {"question": "Lenin led Bolsheviks. (True or False)", "correct": true},
+    {"question": "Communism is private ownership. (True or False)", "correct": false},
+    {"question": "Soviet Union was communist. (True or False)", "correct": true},
+    {"question": "Totalitarianism controls all life. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is radical change?", "choices": [{"letter": "A", "text": "Evolution"}, {"letter": "B", "text": "Revolution"}, {"letter": "C", "text": "Reform"}, {"letter": "D", "text": "Tradition"}], "correct": "B"},
+    {"question": "Who led revolutionaries?", "choices": [{"letter": "A", "text": "Mensheviks"}, {"letter": "B", "text": "Bolsheviks"}, {"letter": "C", "text": "Czarists"}, {"letter": "D", "text": "Nobles"}], "correct": "B"},
+    {"question": "What is public ownership?", "choices": [{"letter": "A", "text": "Capitalism"}, {"letter": "B", "text": "Communism"}, {"letter": "C", "text": "Feudalism"}, {"letter": "D", "text": "Monarchy"}], "correct": "B"},
+    {"question": "What formed in 1922?", "choices": [{"letter": "A", "text": "Russian Empire"}, {"letter": "B", "text": "Soviet Union"}, {"letter": "C", "text": "Germany"}, {"letter": "D", "text": "France"}], "correct": "B"},
+    {"question": "What is total control?", "choices": [{"letter": "A", "text": "Democracy"}, {"letter": "B", "text": "Totalitarianism"}, {"letter": "C", "text": "Anarchy"}, {"letter": "D", "text": "Republic"}], "correct": "B"},
+    {"question": "What is government overthrow?", "choices": [{"letter": "A", "text": "Election"}, {"letter": "B", "text": "Revolution"}, {"letter": "C", "text": "Reform"}, {"letter": "D", "text": "Treaty"}], "correct": "B"},
+    {"question": "Who was Vladimir Lenin?", "choices": [{"letter": "A", "text": "Czar"}, {"letter": "B", "text": "Bolshevik leader"}, {"letter": "C", "text": "Menshevik"}, {"letter": "D", "text": "Noble"}], "correct": "B"},
+    {"question": "What controls economy?", "choices": [{"letter": "A", "text": "Capitalism"}, {"letter": "B", "text": "Communism"}, {"letter": "C", "text": "Feudalism"}, {"letter": "D", "text": "Monarchy"}], "correct": "B"},
+    {"question": "What was USSR?", "choices": [{"letter": "A", "text": "Empire"}, {"letter": "B", "text": "Soviet Union"}, {"letter": "C", "text": "Kingdom"}, {"letter": "D", "text": "Republic"}], "correct": "B"},
+    {"question": "What limits all freedom?", "choices": [{"letter": "A", "text": "Democracy"}, {"letter": "B", "text": "Totalitarianism"}, {"letter": "C", "text": "Republic"}, {"letter": "D", "text": "Anarchy"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ is radical change.", "expectedAny": ["revolution", "Revolution"]},
+    {"question": "_____ led revolutionaries.", "expectedAny": ["bolsheviks", "Bolsheviks"]},
+    {"question": "_____ has public property.", "expectedAny": ["communism", "Communism"]},
+    {"question": "_____ Union formed in 1922.", "expectedAny": ["soviet", "Soviet"]},
+    {"question": "_____ controls all life.", "expectedAny": ["totalitarianism", "Totalitarianism"]},
+    {"question": "Government _____ is revolution.", "expectedAny": ["change"]},
+    {"question": "_____ was Bolshevik leader.", "expectedAny": ["lenin", "Lenin"]},
+    {"question": "_____ owns property in communism.", "expectedAny": ["state", "government", "public"]},
+    {"question": "USSR is _____ Union.", "expectedAny": ["soviet", "Soviet"]},
+    {"question": "Total _____ is totalitarianism.", "expectedAny": ["control"]}
+  ],
+  "shortanswer": [
+    {"question": "What is revolution?", "keyTerms": ["sudden", "radical", "change", "government", "social", "conditions"], "expectedAny": ["Sudden radical change in government or social conditions", "Government overthrow", "Radical change"]},
+    {"question": "What are Bolsheviks?", "keyTerms": ["russian", "revolutionary", "group", "led", "vladimir", "lenin"], "expectedAny": ["Russian revolutionary group led by Vladimir Lenin", "Lenin's group", "Communist revolutionaries"]},
+    {"question": "What is communism?", "keyTerms": ["political", "system", "property", "publicly", "owned", "controlled"], "expectedAny": ["Political system where property is publicly owned and controlled", "Public ownership", "State controlled economy"]},
+    {"question": "What is Soviet Union?", "keyTerms": ["communist", "state", "formed", "russian", "revolution", "1922-1991"], "expectedAny": ["Communist state formed after Russian Revolution (1922-1991)", "USSR", "Communist Russia"]},
+    {"question": "What is totalitarianism?", "keyTerms": ["system", "government", "total", "control", "all", "aspects", "life"], "expectedAny": ["System where government has total control over all aspects of life", "Total control", "Complete government control"]},
+    {"question": "What caused Russian Revolution?", "keyTerms": ["poverty", "inequality", "war", "czar", "discontent"], "expectedAny": ["Poverty, inequality, war, czar's failures", "Social discontent", "Economic hardship"]},
+    {"question": "When did revolution occur?", "keyTerms": ["1917", "february", "october"], "expectedAny": ["1917", "February and October 1917", "1917 revolutions"]},
+    {"question": "Who was Lenin?", "keyTerms": ["bolshevik", "leader", "revolutionary", "communist"], "expectedAny": ["Bolshevik leader", "Communist revolutionary", "First Soviet leader"]},
+    {"question": "What replaced Russian Empire?", "keyTerms": ["soviet union", "USSR", "communist state"], "expectedAny": ["Soviet Union", "USSR", "Communist state"]},
+    {"question": "How did Stalin rule?", "keyTerms": ["totalitarian", "dictator", "total control", "terror"], "expectedAny": ["Totalitarian dictatorship", "Total control with terror", "Brutal totalitarian rule"]}
+  ]
 }

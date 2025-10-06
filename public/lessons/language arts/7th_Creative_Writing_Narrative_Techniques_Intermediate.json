@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Practice writing from different points of view. Emphasize the importance of realistic dialogue and vivid setting descriptions.",
-  "sample": {
-    "question": "What is the perspective from which a story is told?",
-    "expectedAny": [
-      "narrative voice",
-      "point of view",
-      "narrator perspective",
-      "storytelling voice"
-    ]
-  },
-  "truefalse": {
-    "question": "Dialogue is conversation between characters.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What includes both time and place in a story?",
-    "expectedAny": [
-      "setting",
-      "backdrop",
-      "story location",
-      "time and place"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The organized sequence of events in a story is the ________ structure.",
-    "expectedAny": [
-      "plot",
-      "story",
-      "narrative",
-      "event"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are the main parts of plot structure?",
-    "expectedAny": [
-      "exposition, rising action, climax, falling action, resolution",
-      "beginning, middle, end",
-      "setup, conflict, resolution"
-    ]
-  }
+  "sample": [
+    { "question": "What is the perspective from which a story is told?", "expectedAny": ["narrative voice"] },
+    { "question": "Which is conversation?", "choices": ["Setting", "Dialogue", "Plot", "Theme"], "correct": 1, "expectedAny": ["dialogue"] },
+    { "question": "Time and place are the ________.", "expectedAny": ["setting"] },
+    { "question": "Position of narrator is ________.", "expectedAny": ["point of view"] },
+    { "question": "Sequence of events is ________.", "expectedAny": ["plot structure"] },
+    { "question": "What tells the story?", "choices": ["Setting", "Narrative voice", "Dialogue", "Plot"], "correct": 1, "expectedAny": ["narrative voice"] },
+    { "question": "Characters talking is ________.", "expectedAny": ["dialogue"] },
+    { "question": "Where and when is the ________.", "expectedAny": ["setting"] },
+    { "question": "Which is narrator position?", "choices": ["Setting", "Point of view", "Dialogue", "Theme"], "correct": 1, "expectedAny": ["point of view"] },
+    { "question": "Event organization is ________.", "expectedAny": ["plot structure"] }
+  ],
+  "truefalse": [
+    { "question": "Dialogue is conversation between characters.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Setting is only the place.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Narrative voice is the storytelling perspective.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All stories use first person.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Plot structure organizes events.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Point of view and narrative voice are unrelated.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Setting includes time and place.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Dialogue is description.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Plot has a structure.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Narrative voice never changes.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What includes both time and place in a story?", "choices": ["Dialogue", "Setting", "Plot", "Character"], "correct": 1, "expectedAny": ["setting"] },
+    { "question": "What is conversation between characters?", "choices": ["Setting", "Dialogue", "Plot", "Theme"], "correct": 1, "expectedAny": ["dialogue"] },
+    { "question": "What is the storytelling perspective?", "choices": ["Setting", "Narrative voice", "Dialogue", "Plot"], "correct": 1, "expectedAny": ["narrative voice"] },
+    { "question": "What is narrator position?", "choices": ["Setting", "Point of view", "Dialogue", "Theme"], "correct": 1, "expectedAny": ["point of view"] },
+    { "question": "What organizes events?", "choices": ["Dialogue", "Plot structure", "Setting", "Character"], "correct": 1, "expectedAny": ["plot structure"] },
+    { "question": "What is time and place?", "choices": ["Plot", "Setting", "Dialogue", "Theme"], "correct": 1, "expectedAny": ["setting"] },
+    { "question": "What shows character speech?", "choices": ["Setting", "Dialogue", "Plot", "Theme"], "correct": 1, "expectedAny": ["dialogue"] },
+    { "question": "What tells from a perspective?", "choices": ["Setting", "Narrative voice", "Dialogue", "Plot"], "correct": 1, "expectedAny": ["narrative voice"] },
+    { "question": "What is the narrator's position?", "choices": ["Setting", "Dialogue", "Point of view", "Theme"], "correct": 2, "expectedAny": ["point of view"] },
+    { "question": "What has exposition, climax, resolution?", "choices": ["Setting", "Plot structure", "Dialogue", "Character"], "correct": 1, "expectedAny": ["plot structure"] }
+  ],
+  "fillintheblank": [
+    { "question": "The organized sequence of events in a story is the ________ structure.", "expectedAny": ["plot"] },
+    { "question": "The perspective telling a story is ________.", "expectedAny": ["narrative voice"] },
+    { "question": "Time and place are the ________.", "expectedAny": ["setting"] },
+    { "question": "Conversation between characters is ________.", "expectedAny": ["dialogue"] },
+    { "question": "The narrator's position is ________.", "expectedAny": ["point of view"] },
+    { "question": "________ organizes story events.", "expectedAny": ["plot structure"] },
+    { "question": "________ is the storytelling perspective.", "expectedAny": ["narrative voice"] },
+    { "question": "The ________ includes when and where.", "expectedAny": ["setting"] },
+    { "question": "________ shows characters talking.", "expectedAny": ["dialogue"] },
+    { "question": "________ determines who tells the story.", "expectedAny": ["point of view"] }
+  ],
+  "shortanswer": [
+    { "question": "What are the main parts of plot structure?", "expectedAny": ["exposition, rising action, climax, falling action, resolution", "beginning, middle, end", "intro, conflict, climax, resolution"] },
+    { "question": "What is narrative voice?", "expectedAny": ["perspective telling story", "storytelling viewpoint"] },
+    { "question": "What is point of view?", "expectedAny": ["narrator position", "perspective of narration"] },
+    { "question": "What is dialogue?", "expectedAny": ["conversation between characters", "character speech", "characters talking", "conversation"] },
+    { "question": "What is setting?", "expectedAny": ["time and place", "when and where story occurs"] },
+    { "question": "What is plot structure?", "expectedAny": ["organized sequence of events", "story organization"] },
+    { "question": "Name two points of view.", "expectedAny": ["first person and third person", "first and second person"] },
+    { "question": "Why is dialogue important?", "expectedAny": ["shows character personality", "advances plot"] },
+    { "question": "Give an example of setting.", "expectedAny": ["New York in 2020", "medieval castle"] },
+    { "question": "What is the climax in plot structure?", "expectedAny": ["highest point of action", "turning point"] }
+  ]
 }

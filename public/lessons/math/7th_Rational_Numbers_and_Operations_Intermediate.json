@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Show connections between fractions, decimals, and percents. Practice converting between forms. Use visual models when possible.",
-  "sample": {
-    "question": "What is a number that can be written as a fraction?",
-    "expectedAny": ["rational number", "fraction", "rational", "fractional number"]
-  },
-  "truefalse": {
-    "question": "0.5 and 1/2 are equivalent.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is 3/4 as a percent?",
-    "expectedAny": ["75%", "75 percent", "seventy-five percent", "0.75 = 75%"]
-  },
-  "fillintheblank": {
-    "question": "A decimal that ends is called a ________ decimal.",
-    "expectedAny": ["terminating", "ending", "finite", "terminal"]
-  },
-  "shortanswer": {
-    "question": "Convert 0.25 to a fraction in simplest form.",
-    "expectedAny": ["1/4", "one fourth", "25/100 = 1/4", "¼"]
-  },
-  "wordProblems": {
-    "question": "In a class of 20 students, 15 passed the test. What percent passed?",
-    "expectedAny": ["75%", "75 percent", "15/20 = 0.75 = 75%", "seventy-five percent"]
-  }
+  "sample": [
+    { "question": "What is a number that can be written as a fraction?", "expectedAny": ["rational number"] },
+    { "question": "Which decimal ends?", "choices": ["Repeating", "Terminating", "Irrational", "Complex"], "correct": 1, "expectedAny": ["terminating"] },
+    { "question": "A decimal that repeats is ________.", "expectedAny": ["repeating decimal"] },
+    { "question": "A ratio to 100 is a ________.", "expectedAny": ["percent"] },
+    { "question": "Same value, different form is ________.", "expectedAny": ["equivalent"] },
+    { "question": "What is a fraction?", "choices": ["Irrational", "Rational number", "Complex", "Imaginary"], "correct": 1, "expectedAny": ["rational number"] },
+    { "question": "A decimal ending is ________.", "expectedAny": ["terminating"] },
+    { "question": "Digits repeating forever are ________.", "expectedAny": ["repeating decimal"] },
+    { "question": "Which compares to 100?", "choices": ["Fraction", "Percent", "Decimal", "Integer"], "correct": 1, "expectedAny": ["percent"] },
+    { "question": "Same value means ________.", "expectedAny": ["equivalent"] }
+  ],
+  "truefalse": [
+    { "question": "0.5 and 1/2 are equivalent.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All decimals are terminating.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A rational number can be written as a fraction.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Percent means per thousand.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Repeating decimals never end.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "50% equals 1/2.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Terminating decimals repeat.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "All fractions are rational numbers.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "0.75 equals 75%.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Equivalent means different value.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is 3/4 as a percent?", "choices": ["25%", "50%", "75%", "100%"], "correct": 2, "expectedAny": ["75%"] },
+    { "question": "What can be written as fraction?", "choices": ["Irrational", "Rational", "Complex", "Imaginary"], "correct": 1, "expectedAny": ["rational"] },
+    { "question": "Which decimal ends?", "choices": ["Repeating", "Terminating", "Infinite", "Irrational"], "correct": 1, "expectedAny": ["terminating"] },
+    { "question": "Which repeats forever?", "choices": ["Terminating", "Repeating", "Ending", "Finite"], "correct": 1, "expectedAny": ["repeating"] },
+    { "question": "What is ratio to 100?", "choices": ["Fraction", "Percent", "Decimal", "Integer"], "correct": 1, "expectedAny": ["percent"] },
+    { "question": "What is 1/2 as decimal?", "choices": ["0.25", "0.5", "0.75", "1.0"], "correct": 1, "expectedAny": ["0.5"] },
+    { "question": "What is 0.25 as fraction?", "choices": ["1/2", "1/4", "3/4", "1/8"], "correct": 1, "expectedAny": ["1/4"] },
+    { "question": "What is 50% as fraction?", "choices": ["1/4", "1/2", "3/4", "1/8"], "correct": 1, "expectedAny": ["1/2"] },
+    { "question": "Same value is?", "choices": ["Different", "Equivalent", "Unequal", "Opposite"], "correct": 1, "expectedAny": ["equivalent"] },
+    { "question": "What is 1/4 as percent?", "choices": ["20%", "25%", "50%", "75%"], "correct": 1, "expectedAny": ["25%"] }
+  ],
+  "fillintheblank": [
+    { "question": "A decimal that ends is called a ________ decimal.", "expectedAny": ["terminating"] },
+    { "question": "A number written as fraction is ________.", "expectedAny": ["rational", "rational number"] },
+    { "question": "A decimal with repeating digits is ________.", "expectedAny": ["repeating", "repeating decimal"] },
+    { "question": "A ratio to 100 is a ________.", "expectedAny": ["percent"] },
+    { "question": "Same value, different form is ________.", "expectedAny": ["equivalent"] },
+    { "question": "A ________ decimal ends.", "expectedAny": ["terminating"] },
+    { "question": "A ________ number is a fraction.", "expectedAny": ["rational"] },
+    { "question": "A ________ decimal repeats.", "expectedAny": ["repeating"] },
+    { "question": "________ compares to 100.", "expectedAny": ["percent"] },
+    { "question": "________ means same value.", "expectedAny": ["equivalent"] }
+  ],
+  "shortanswer": [
+    { "question": "Convert 0.25 to a fraction in simplest form.", "expectedAny": ["1/4"] },
+    { "question": "What is a rational number?", "expectedAny": ["number written as fraction", "fraction form"] },
+    { "question": "What is a terminating decimal?", "expectedAny": ["decimal that ends", "ending decimal"] },
+    { "question": "What is a repeating decimal?", "expectedAny": ["decimal that repeats", "digits repeat forever"] },
+    { "question": "What is a percent?", "expectedAny": ["ratio to 100", "per hundred"] },
+    { "question": "What does equivalent mean?", "expectedAny": ["same value", "equal value"] },
+    { "question": "Convert 3/5 to decimal.", "expectedAny": ["0.6", "0.60", ".6"] },
+    { "question": "Convert 0.75 to fraction.", "expectedAny": ["3/4", "75/100"] },
+    { "question": "Convert 1/2 to percent.", "expectedAny": ["50%"] },
+    { "question": "Convert 40% to fraction.", "expectedAny": ["2/5"] }
+  ],
+  "wordProblems": [
+    { "question": "In a class of 20 students, 15 passed the test. What percent passed?", "expectedAny": ["75%", "75"] },
+    { "question": "A store has a 25% off sale. What fraction is this?", "expectedAny": ["1/4"] },
+    { "question": "You completed 0.6 of your homework. What percent did you complete?", "expectedAny": ["60%", "60"] },
+    { "question": "3/4 of students like pizza. What decimal is this?", "expectedAny": ["0.75", "0.750", ".75"] },
+    { "question": "A shirt costs $40 and is 50% off. What is the discount?", "expectedAny": ["$20", "20"] },
+    { "question": "0.8 of a book is read. What fraction is read?", "expectedAny": ["4/5"] },
+    { "question": "2/5 of students walk to school. What percent is this?", "expectedAny": ["40%", "40"] },
+    { "question": "A test has 100 points. You scored 85. What percent?", "expectedAny": ["85%", "85"] },
+    { "question": "1/10 of a pizza is left. What decimal is this?", "expectedAny": ["0.1"] },
+    { "question": "You saved 30% of $50. How much did you save?", "expectedAny": ["$15", "15"] }
+  ]
 }

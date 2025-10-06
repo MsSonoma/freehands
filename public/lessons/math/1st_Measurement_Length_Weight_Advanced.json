@@ -9,6 +9,10 @@
     {"term": "weight", "definition": "How heavy something is"},
     {"term": "measure", "definition": "To find out how big, long, or heavy something is"},
     {"term": "unit", "definition": "A standard amount used for measuring, like inches or pounds"}
+    ,
+    {"term": "ruler", "definition": "A tool used to measure length"}
+    ,
+    {"term": "blocks", "definition": "Small cubes used to measure by lining up"}
   ],
   "teachingNotes": "Use non-standard units like paperclips or blocks first. Compare objects directly before using tools. Practice with classroom objects.",
   "sample": [
@@ -33,18 +37,18 @@
     {"question": "If one pencil is 8 paperclips long and another is 5, how much longer is the first?", "choices": ["3", "13", "5", "8"], "correct": 0, "expectedAny": ["3"]}
   ],
   "fillintheblank": [
-    {"question": "If you line up 5 paperclips end to end, your crayon might be _____ paperclips long.", "expectedAny": ["5", "about 5"]},
-    {"question": "A book might be ___ than a pencil.", "expectedAny": ["longer"]},
-    {"question": "A rock is usually ___ than a feather.", "expectedAny": ["heavier"]},
-    {"question": "We measure length with a ___.", "expectedAny": ["ruler", "tape measure"]},
-    {"question": "Weight tells us how ___ something is.", "expectedAny": ["heavy"]}
+    {"question": "If you line up 5 paperclips end to end, your crayon might be _____ paperclips long.", "expectedAny": ["5", "about 5", "five", "around 5"]},
+  {"question": "A book might be ___ than a pencil.", "expectedAny": ["longer", "bigger", "more long", "more"]},
+  {"question": "A rock is usually ___ than a feather.", "expectedAny": ["heavier", "more heavy", "weighs more", "bigger"]},
+  {"question": "We measure length with a ___.", "expectedAny": ["ruler", "a ruler", "tape measure", "yardstick", "measuring tool"]},
+    {"question": "Weight tells us how ___ something is.", "expectedAny": ["heavy", "much it weighs", "big", "much"]}
   ],
   "shortanswer": [
-    {"question": "How could you find out which of two books is heavier without using a scale?", "expectedAny": ["hold one in each hand", "compare by lifting them"]},
-    {"question": "Why might you use paperclips to measure instead of a ruler?", "expectedAny": ["if a ruler isn't available, to estimate"]},
-    {"question": "Describe how you would measure the length of a table using blocks.", "expectedAny": ["line blocks end to end and count them"]},
-    {"question": "What does it mean if one object is heavier than another?", "expectedAny": ["it has more weight"]},
-    {"question": "Give an example of something very light.", "expectedAny": ["feather, tissue"]}
+    {"question": "How could you find out which of two books is heavier without using a scale?", "expectedAny": ["hold one in each hand", "compare by lifting them", "use a balance made with a hanger", "pick them up", "feel which is heavier", "one hand each", "lift both"]},
+    {"question": "Why might you use paperclips to measure instead of a ruler?", "expectedAny": ["if a ruler isn't available", "to estimate length", "non-standard units are handy", "no ruler", "don't have a ruler", "easier", "just to see how long"]},
+    {"question": "Describe how you would measure the length of a table using blocks.", "expectedAny": ["line blocks end to end and count them", "keep blocks with no gaps", "use same size blocks", "put blocks along it", "count how many blocks", "no spaces", "line them up"]},
+    {"question": "What does it mean if one object is heavier than another?", "expectedAny": ["it has more weight", "it weighs more", "it is not lighter", "weighs more", "heavier weight", "more heavy", "bigger weight"]},
+    {"question": "Give an example of something very light.", "expectedAny": ["feather", "tissue", "paper", "cotton ball", "balloon", "leaf"]}
   ],
   "wordProblems": [
     {"question": "Tom's pencil is 6 blocks long and Amy's pencil is 4 blocks long. How much longer is Tom's pencil?", "expectedAny": ["2 blocks longer", "2"]},

@@ -6,6 +6,7 @@
   "featured": false,
   "vocab": [
     {"term": "number", "definition": "A symbol that tells us how many things we have"},
+    {"term": "number word", "definition": "The word we say for a number, like 'five' for 5"},
     {"term": "count", "definition": "To say numbers in order to find out how many"},
     {"term": "more", "definition": "A bigger amount"},
     {"term": "less", "definition": "A smaller amount"},
@@ -18,7 +19,7 @@
     {"question": "Point to the number 7 on the number line.", "expectedAny": ["correctly identifies 7", "points to seven"]},
     {"question": "Show me 4 fingers.", "expectedAny": ["holds up 4 fingers", "demonstrates 4"]},
     {"question": "Count these blocks and tell me how many.", "expectedAny": ["counts correctly", "gives correct total"]},
-    {"question": "What number comes before 6?", "expectedAny": ["5", "five"]}
+    {"question": "What number comes before 6?", "expectedAny": ["5", "five", "the number 5", "five comes before"]}
   ],
   "truefalse": [
     {"question": "The number 5 comes after 4.", "answer": true, "expectedAny": ["correct number sequence"]},
@@ -39,22 +40,22 @@
     {"question": "How many wheels does a tricycle have?", "choices": ["2", "3", "4", "5"], "correct": 1, "expectedAny": ["3 wheels"]}
   ],
   "fillintheblank": [
-    {"question": "After 3 comes _____.", "expectedAny": ["4", "four"]},
-    {"question": "Before 8 comes _____.", "expectedAny": ["7", "seven"]},
+    {"question": "After 3 comes _____.", "expectedAny": ["4", "four", "the number 4"]},
+    {"question": "Before 8 comes _____.", "expectedAny": ["7", "seven", "the number 7"]},
     {"question": "1, 2, 3, _____, 5", "expectedAny": ["4", "four"]},
     {"question": "6, 7, _____, 9, 10", "expectedAny": ["8", "eight"]},
-    {"question": "_____ comes before 1.", "expectedAny": ["0", "zero"]},
+    {"question": "_____ comes before 1.", "expectedAny": ["0", "zero", "nothing"]},
     {"question": "2, _____, 4, 5", "expectedAny": ["3", "three"]},
     {"question": "The number after 9 is _____.", "expectedAny": ["10", "ten"]}
   ],
   "shortanswer": [
-    {"question": "Count to 5 out loud.", "expectedAny": ["1, 2, 3, 4, 5"]},
-    {"question": "Count backwards from 5 to 1.", "expectedAny": ["5, 4, 3, 2, 1"]},
-    {"question": "Count to 10 using your fingers.", "expectedAny": ["counts with fingers", "uses all 10 fingers"]},
-    {"question": "Tell me three numbers that are bigger than 5.", "expectedAny": ["6, 7, 8", "any three numbers > 5"]},
-    {"question": "What numbers come between 3 and 7?", "expectedAny": ["4, 5, 6"]},
-    {"question": "Count by saying every other number: 2, 4, 6...", "expectedAny": ["2, 4, 6, 8, 10"]},
-    {"question": "Name a number that is less than 4.", "expectedAny": ["1", "2", "3", "any number < 4"]}
+    {"question": "Count to 5 out loud.", "expectedAny": ["1, 2, 3, 4, 5", "1 2 3 4 5", "one two three four five"]},
+    {"question": "Count backwards from 5 to 1.", "expectedAny": ["5, 4, 3, 2, 1", "5 4 3 2 1", "five four three two one"]},
+    {"question": "How many fingers are on both hands?", "expectedAny": ["10", "ten", "ten fingers"]},
+    {"question": "Tell me three numbers that are bigger than 5.", "expectedAny": ["6, 7, 8", "7, 8, 9", "8, 9, 10", "6 7 8", "7 8 9", "8 9 10", "six seven eight", "seven eight nine", "eight nine ten"]},
+    {"question": "What numbers come between 3 and 7?", "expectedAny": ["4, 5, 6", "4 5 6", "four, five, six", "four five six"]},
+    {"question": "Count by saying every other number: 2, 4, 6...", "expectedAny": ["2, 4, 6, 8, 10", "2 4 6 8 10", "two, four, six, eight, ten", "two four six eight ten"]},
+    {"question": "Name a number that is less than 4.", "expectedAny": ["1", "2", "3", "one", "two", "three"]}
   ],
   "wordProblems": [
     {"question": "If you have 3 toys and get 2 more, how many do you have?", "expectedAny": ["5 toys", "3 + 2 = 5"]},

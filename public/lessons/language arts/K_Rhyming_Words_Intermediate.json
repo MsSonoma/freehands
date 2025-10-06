@@ -10,6 +10,10 @@
       "definition": "Words that end with the same sound, like cat and hat"
     },
     {
+      "term": "word family",
+      "definition": "A group of words that rhyme and have the same ending sound"
+    },
+    {
       "term": "word",
       "definition": "A group of sounds that means something"
     },
@@ -24,11 +28,11 @@
   ],
   "teachingNotes": "Use nursery rhymes and songs. Practice identifying and creating rhymes. Use picture cards for rhyming games.",
   "sample": [
-    {"question": "What rhymes with 'dog'?", "expectedAny": ["log", "frog", "hog"]},
-    {"question": "Name a word that sounds like 'cat'.", "expectedAny": ["bat", "hat", "rat", "mat"]},
-    {"question": "What word rhymes with 'tree'?", "expectedAny": ["bee", "see", "me", "free"]},
-    {"question": "Tell me something that rhymes with 'car'.", "expectedAny": ["far", "star", "jar"]},
-    {"question": "What sounds like 'book'?", "expectedAny": ["look", "took", "cook"]}
+    {"question": "What rhymes with 'dog'?", "expectedAny": ["log", "frog", "hog", "jog", "fog", "clog", "blog"]},
+    {"question": "Name a word that sounds like 'cat'.", "expectedAny": ["bat", "hat", "rat", "mat", "sat", "fat", "pat", "flat", "that", "chat"]},
+    {"question": "What word rhymes with 'tree'?", "expectedAny": ["bee", "see", "me", "free", "three", "knee", "we", "she", "he", "tea", "key"]},
+    {"question": "Tell me something that rhymes with 'car'.", "expectedAny": ["far", "star", "jar", "bar", "are", "tar"]},
+    {"question": "What sounds like 'book'?", "expectedAny": ["look", "took", "cook", "hook", "shook", "brook"]}
   ],
   "truefalse": [
     {"question": "Cat and bat rhyme.", "answer": true, "expectedAny": ["both end in -at"]},
@@ -49,22 +53,22 @@
     {"question": "Which word rhymes with 'play'?", "choices": ["game", "day", "fun", "run"], "correct": 1, "expectedAny": ["day rhymes with play"]}
   ],
   "fillintheblank": [
-    {"question": "Fish and _____ rhyme.", "expectedAny": ["dish", "wish"]},
-    {"question": "Cat, bat, _____", "expectedAny": ["hat", "mat", "rat"]},
-    {"question": "Big and _____ rhyme.", "expectedAny": ["pig", "dig", "wig"]},
-    {"question": "Run, fun, _____", "expectedAny": ["sun", "bun"]},
-    {"question": "Duck and _____ rhyme.", "expectedAny": ["truck", "luck", "stuck"]},
-    {"question": "Box and _____ rhyme.", "expectedAny": ["fox", "socks"]},
-    {"question": "Green and _____ rhyme.", "expectedAny": ["seen", "bean", "queen"]}
+    {"question": "Fish and _____ rhyme.", "expectedAny": ["dish", "wish", "swish"]},
+    {"question": "Cat, bat, _____", "expectedAny": ["hat", "mat", "rat", "sat", "fat", "pat", "flat", "that"]},
+    {"question": "Big and _____ rhyme.", "expectedAny": ["pig", "dig", "wig", "fig", "jig"]},
+    {"question": "Run, fun, _____", "expectedAny": ["sun", "bun", "done", "one"]},
+    {"question": "Duck and _____ rhyme.", "expectedAny": ["truck", "luck", "stuck", "buck", "muck", "tuck"]},
+    {"question": "Box and _____ rhyme.", "expectedAny": ["fox", "socks", "rocks", "locks"]},
+    {"question": "Green and _____ rhyme.", "expectedAny": ["seen", "bean", "queen", "clean", "mean", "teen"]}
   ],
   "shortanswer": [
-    {"question": "Think of a word that rhymes with 'ball'.", "expectedAny": ["call", "fall", "tall", "wall"]},
-    {"question": "Name two words that rhyme with 'bear'.", "expectedAny": ["hair and chair", "care and share"]},
-    {"question": "What makes words rhyme?", "expectedAny": ["same ending sound", "sound alike at the end"]},
-    {"question": "Tell me words that rhyme with your name.", "expectedAny": ["varies by student name"]},
-    {"question": "Can you make up a short rhyme?", "expectedAny": ["simple rhyming phrases"]},
-    {"question": "What words rhyme with colors you know?", "expectedAny": ["red/bed", "blue/true", "green/seen"]},
-    {"question": "Name some rhyming words from nursery rhymes.", "expectedAny": ["Humpty Dumpty: wall/fall", "Jack and Jill: hill/spill"]}
+    {"question": "Think of a word that rhymes with 'ball'.", "expectedAny": ["call", "fall", "tall", "wall", "hall", "small", "all", "mall"]},
+    {"question": "Name two words that rhyme with 'bear'.", "expectedAny": ["hair and chair", "care and share", "fair and chair", "hair and care", "pair and share", "chair and hair"]},
+    {"question": "What makes words rhyme?", "expectedAny": ["same ending sound", "sound alike at the end", "same ending sounds", "they end the same", "endings sound the same"]},
+    {"question": "Tell me two words that rhyme with 'Ben'.", "expectedAny": ["pen and hen", "ten and pen", "hen and ten", "den and hen", "pen and ten", "men and hen"]},
+    {"question": "Think of two words that rhyme with 'sun'.", "expectedAny": ["fun and run", "bun and run", "fun and bun", "done and run", "one and fun", "run and done"]},
+    {"question": "What words rhyme with colors you know?", "expectedAny": ["red/bed", "blue/true", "green/seen", "red and bed", "blue and true", "green and seen"]},
+    {"question": "Name some rhyming words from nursery rhymes.", "expectedAny": ["Humpty Dumpty: wall/fall", "Jack and Jill: hill/spill", "Twinkle Twinkle: star/far", "wall and fall", "hill and spill", "star and far"]}
   ],
   "wordProblems": [
     {"question": "Mary knows 3 words that rhyme with 'cat'. If she learns 2 more rhyming words, how many rhyming words will she know?", "expectedAny": ["5 words", "3 + 2 = 5"]},

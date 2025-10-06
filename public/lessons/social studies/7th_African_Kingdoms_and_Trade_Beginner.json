@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Emphasize the wealth and sophistication of African kingdoms. Discuss how trade connected Africa to the wider world.",
-  "sample": {
-    "question": "What was a wealthy West African kingdom known for gold trade?",
-    "expectedAny": [
-      "Mali",
-      "Ghana",
-      "Songhai",
-      "West African kingdom"
-    ]
-  },
-  "truefalse": {
-    "question": "Mansa Musa was one of the richest rulers in history.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What city was an important center of learning in Africa?",
-    "expectedAny": [
-      "Timbuktu",
-      "Gao",
-      "Djenne",
-      "trading city"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A group of traders traveling together was called a ________.",
-    "expectedAny": [
-      "caravan",
-      "trade group",
-      "merchant group",
-      "trading party"
-    ]
-  },
-  "shortanswer": {
-    "question": "What two valuable resources made West African kingdoms wealthy?",
-    "expectedAny": [
-      "gold and salt",
-      "salt and gold",
-      "precious metals and salt"
-    ]
-  }
+  "sample": [
+    { "question": "What was a wealthy West African kingdom known for gold trade?", "expectedAny": ["Mali"] },
+    { "question": "Which was famous ruler?", "choices": ["Julius Caesar", "Mansa Musa", "Napoleon", "Alexander"], "correct": 1, "expectedAny": ["Mansa Musa"] },
+    { "question": "Trade across Sahara is ________.", "expectedAny": ["trans-Saharan trade"] },
+    { "question": "Learning center city was ________.", "expectedAny": ["Timbuktu"] },
+    { "question": "Group traveling together is ________.", "expectedAny": ["caravan"] },
+    { "question": "What is gold kingdom?", "choices": ["Egypt", "Mali", "Rome", "Greece"], "correct": 1, "expectedAny": ["Mali"] },
+    { "question": "Wealthy pilgrim ruler was ________.", "expectedAny": ["Mansa Musa"] },
+    { "question": "Sahara trade routes are ________.", "expectedAny": ["trans-Saharan trade"] },
+    { "question": "Which was learning city?", "choices": ["Rome", "Timbuktu", "Athens", "Cairo"], "correct": 1, "expectedAny": ["Timbuktu"] },
+    { "question": "Traders together are a ________.", "expectedAny": ["caravan"] }
+  ],
+  "truefalse": [
+    { "question": "Mansa Musa was one of the richest rulers in history.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Mali was poor.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Timbuktu was a learning center.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Trans-Saharan trade was easy.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Caravans traveled for safety.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Africa had no wealthy kingdoms.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Gold made Mali wealthy.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Mansa Musa was poor.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Salt was valuable in trade.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Timbuktu was unimportant.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What city was an important center of learning in Africa?", "choices": ["Rome", "Timbuktu", "Athens", "Cairo"], "correct": 1, "expectedAny": ["Timbuktu"] },
+    { "question": "What is gold kingdom?", "choices": ["Egypt", "Mali", "Rome", "Greece"], "correct": 1, "expectedAny": ["Mali"] },
+    { "question": "Who was wealthy ruler?", "choices": ["Julius Caesar", "Mansa Musa", "Napoleon", "Alexander"], "correct": 1, "expectedAny": ["Mansa Musa"] },
+    { "question": "What crossed Sahara?", "choices": ["Rivers", "Trade routes", "Mountains", "Oceans"], "correct": 1, "expectedAny": ["trade routes"] },
+    { "question": "What traveled together?", "choices": ["Armies", "Caravans", "Navies", "Cities"], "correct": 1, "expectedAny": ["caravans"] },
+    { "question": "What made Mali rich?", "choices": ["Silver", "Gold", "Copper", "Iron"], "correct": 1, "expectedAny": ["gold"] },
+    { "question": "Where was learning?", "choices": ["Rome", "Timbuktu", "Athens", "Cairo"], "correct": 1, "expectedAny": ["Timbuktu"] },
+    { "question": "What was traded?", "choices": ["Ice", "Salt", "Snow", "Rain"], "correct": 1, "expectedAny": ["salt"] },
+    { "question": "Trans-Saharan means?", "choices": ["Under desert", "Across desert", "Around desert", "Above desert"], "correct": 1, "expectedAny": ["across desert"] },
+    { "question": "Mansa Musa traveled for?", "choices": ["War", "Pilgrimage", "Trade", "Conquest"], "correct": 1, "expectedAny": ["pilgrimage"] }
+  ],
+  "fillintheblank": [
+    { "question": "A group of traders traveling together was called a ________.", "expectedAny": ["caravan"] },
+    { "question": "________ was a wealthy West African kingdom.", "expectedAny": ["Mali"] },
+    { "question": "________ Musa was famous for his wealth.", "expectedAny": ["Mansa"] },
+    { "question": "Trade across the Sahara is ________.", "expectedAny": ["trans-Saharan trade", "trans-Saharan"] },
+    { "question": "________ was an important learning city.", "expectedAny": ["Timbuktu"] },
+    { "question": "A ________ traveled together for safety.", "expectedAny": ["caravan"] },
+    { "question": "________ traded gold and salt.", "expectedAny": ["Mali"] },
+    { "question": "Mansa ________ was very wealthy.", "expectedAny": ["Musa"] },
+    { "question": "________ trade crossed the desert.", "expectedAny": ["trans-Saharan"] },
+    { "question": "________ was a center of learning.", "expectedAny": ["Timbuktu"] }
+  ],
+  "shortanswer": [
+    { "question": "What two valuable resources made West African kingdoms wealthy?", "expectedAny": ["gold and salt"] },
+    { "question": "What was Mali?", "expectedAny": ["wealthy West African kingdom", "gold trading kingdom", "West African empire", "rich African kingdom"] },
+    { "question": "Who was Mansa Musa?", "expectedAny": ["wealthy ruler of Mali", "famous rich king"] },
+    { "question": "What is trans-Saharan trade?", "expectedAny": ["trade across Sahara", "desert trade routes", "trade across desert", "crossing Sahara for trade"] },
+    { "question": "What was Timbuktu?", "expectedAny": ["trading and learning city", "center of learning"] },
+    { "question": "What is a caravan?", "expectedAny": ["group of traders", "traders traveling together", "group traveling together", "merchants traveling together"] },
+    { "question": "Why travel in caravans?", "expectedAny": ["for safety", "protection"] },
+    { "question": "What did Mali trade?", "expectedAny": ["gold and salt"] },
+    { "question": "Why was Mali wealthy?", "expectedAny": ["gold trade", "gold and salt"] },
+    { "question": "What was Timbuktu known for?", "expectedAny": ["learning", "center of learning and trade"] }
+  ]
 }

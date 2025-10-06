@@ -1,74 +1,471 @@
-{
-  "id": "11th_Nuclear_Physics_Radioactivity_Intermediate",
-  "title": "Nuclear Physics and Radioactivity",
-  "grade": "11th",
-  "difficulty": "Intermediate",
-  "vocab": [
-    {
-      "term": "nuclear fission",
-      "definition": "Splitting of heavy atomic nuclei into lighter fragments"
-    },
-    {
-      "term": "nuclear fusion",
-      "definition": "Combining of light atomic nuclei to form heavier nuclei"
-    },
-    {
-      "term": "binding energy",
-      "definition": "Energy required to separate nucleus into individual nucleons"
-    },
-    {
-      "term": "mass defect",
-      "definition": "Difference between sum of nucleon masses and actual nuclear mass"
-    },
-    {
-      "term": "critical mass",
-      "definition": "Minimum amount of fissile material needed for sustained reaction"
-    }
-  ],
-  "teachingNotes": "Explain Einstein's mass-energy equivalence in nuclear processes. Discuss applications in energy production.",
-  "sample": {
-    "question": "What is the splitting of heavy nuclei called?",
-    "expectedAny": [
-      "nuclear fission",
-      "fission",
-      "nuclear splitting",
-      "atom splitting"
-    ]
-  },
-  "truefalse": {
-    "question": "Nuclear fusion combines light nuclei to form heavier ones.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the difference between nucleon masses and actual nuclear mass?",
-    "expectedAny": [
-      "mass defect",
-      "nuclear mass defect",
-      "binding mass",
-      "mass difference"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The minimum amount of fissile material for sustained reaction is ________ mass.",
-    "expectedAny": [
-      "critical",
-      "minimum critical",
-      "threshold",
-      "reaction critical"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does binding energy relate to nuclear stability?",
-    "expectedAny": [
-      "higher binding energy",
-      "more stable nucleus",
-      "energy per nucleon",
-      "stability correlation"
-    ]
-  }
+﻿{
+    "id":  "11th_Nuclear_Physics_Radioactivity_Intermediate",
+    "title":  "Nuclear Physics and Radioactivity",
+    "grade":  "11th",
+    "difficulty":  "Intermediate",
+    "vocab":  [
+                  {
+                      "term":  "nuclear fission",
+                      "definition":  "Splitting of heavy nucleus into lighter nuclei releasing energy"
+                  },
+                  {
+                      "term":  "nuclear fusion",
+                      "definition":  "Combining light nuclei to form heavier nucleus with energy release"
+                  },
+                  {
+                      "term":  "decay chain",
+                      "definition":  "Series of successive radioactive decays"
+                  },
+                  {
+                      "term":  "activity",
+                      "definition":  "Rate of radioactive decay measured in becquerels"
+                  },
+                  {
+                      "term":  "isotope",
+                      "definition":  "Atoms of same element with different numbers of neutrons"
+                  }
+              ],
+    "teachingNotes":  "Connect nuclear reactions to energy production. Discuss applications and risks.",
+    "sample":  [
+                   {
+                       "question":  "What splits heavy nucleus?",
+                       "expectedAny":  [
+                                           "nuclear fission",
+                                           "fission",
+                                           "splitting",
+                                           "nucleus splitting",
+                                           "atomic splitting",
+                                           "nuclear splitting"
+                                       ]
+                   },
+                   {
+                       "question":  "What combines light nuclei?",
+                       "expectedAny":  [
+                                           "nuclear fusion",
+                                           "fusion",
+                                           "combining",
+                                           "nucleus combining",
+                                           "atomic fusion",
+                                           "nuclear combining"
+                                       ]
+                   },
+                   {
+                       "question":  "What is series of decays?",
+                       "expectedAny":  [
+                                           "decay chain",
+                                           "chain reaction",
+                                           "decay series",
+                                           "radioactive series",
+                                           "successive decays",
+                                           "decay sequence"
+                                       ]
+                   },
+                   {
+                       "question":  "What measures decay rate?",
+                       "expectedAny":  [
+                                           "activity",
+                                           "decay activity",
+                                           "radioactivity level"
+                                       ]
+                   },
+                   {
+                       "question":  "What atoms have different neutrons?",
+                       "expectedAny":  [
+                                           "isotope",
+                                           "isotopes",
+                                           "nuclear isotope"
+                                       ]
+                   },
+                   {
+                       "question":  "What releases energy from splitting?",
+                       "expectedAny":  [
+                                           "fission",
+                                           "nuclear fission",
+                                           "atom splitting"
+                                       ]
+                   },
+                   {
+                       "question":  "What powers the sun?",
+                       "expectedAny":  [
+                                           "fusion",
+                                           "nuclear fusion",
+                                           "hydrogen fusion"
+                                       ]
+                   },
+                   {
+                       "question":  "What is successive decay process?",
+                       "expectedAny":  [
+                                           "decay chain",
+                                           "radioactive chain",
+                                           "series decay"
+                                       ]
+                   },
+                   {
+                       "question":  "What is becquerel unit?",
+                       "expectedAny":  [
+                                           "activity",
+                                           "radioactivity",
+                                           "decay rate"
+                                       ]
+                   },
+                   {
+                       "question":  "What are carbon-12 and carbon-14?",
+                       "expectedAny":  [
+                                           "isotopes",
+                                           "carbon isotopes",
+                                           "different isotopes"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Fission splits heavy nuclei.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Fusion splits atoms apart.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Decay chains involve multiple steps.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Activity measures nucleus size.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Isotopes have same atomic number.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Fission requires high temperature.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Fusion releases more energy than fission.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "All isotopes are radioactive.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Decay chains end in stable isotope.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Activity increases over time.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What splits uranium-235?",
+                               "choices":  [
+                                               "Fusion",
+                                               "Fission",
+                                               "Decay",
+                                               "Ionization"
+                                           ],
+                               "correct":  "Fission"
+                           },
+                           {
+                               "question":  "What powers stars?",
+                               "choices":  [
+                                               "Fission",
+                                               "Fusion",
+                                               "Decay",
+                                               "Combustion"
+                                           ],
+                               "correct":  "Fusion"
+                           },
+                           {
+                               "question":  "What is activity unit?",
+                               "choices":  [
+                                               "Joule",
+                                               "Becquerel",
+                                               "Hertz",
+                                               "Newton"
+                                           ],
+                               "correct":  "Becquerel"
+                           },
+                           {
+                               "question":  "What differs in isotopes?",
+                               "choices":  [
+                                               "Protons",
+                                               "Electrons",
+                                               "Neutrons",
+                                               "Charge"
+                                           ],
+                               "correct":  "Neutrons"
+                           },
+                           {
+                               "question":  "What is uranium-238 to uranium-235?",
+                               "choices":  [
+                                               "Isotopes",
+                                               "Ions",
+                                               "Isomers",
+                                               "Isobars"
+                                           ],
+                               "correct":  "Isotopes"
+                           },
+                           {
+                               "question":  "What releases most energy per mass?",
+                               "choices":  [
+                                               "Chemical",
+                                               "Fission",
+                                               "Fusion",
+                                               "Combustion"
+                                           ],
+                               "correct":  "Fusion"
+                           },
+                           {
+                               "question":  "What starts fission chain reaction?",
+                               "choices":  [
+                                               "Proton",
+                                               "Neutron",
+                                               "Electron",
+                                               "Photon"
+                                           ],
+                               "correct":  "Neutron"
+                           },
+                           {
+                               "question":  "What is decay series?",
+                               "choices":  [
+                                               "Chain reaction",
+                                               "Decay chain",
+                                               "Fission",
+                                               "Fusion"
+                                           ],
+                               "correct":  "Decay chain"
+                           },
+                           {
+                               "question":  "What combines hydrogen isotopes?",
+                               "choices":  [
+                                               "Fission",
+                                               "Fusion",
+                                               "Decay",
+                                               "Bonding"
+                                           ],
+                               "correct":  "Fusion"
+                           },
+                           {
+                               "question":  "What decreases with half-life?",
+                               "choices":  [
+                                               "Mass",
+                                               "Activity",
+                                               "Neutrons",
+                                               "Protons"
+                                           ],
+                               "correct":  "Activity"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "Nuclear _____ splits heavy atoms.",
+                               "expectedAny":  [
+                                                   "fission",
+                                                   "splitting"
+                                               ]
+                           },
+                           {
+                               "question":  "Nuclear _____ combines light atoms.",
+                               "expectedAny":  [
+                                                   "fusion",
+                                                   "combining"
+                                               ]
+                           },
+                           {
+                               "question":  "A _____ chain is successive decays.",
+                               "expectedAny":  [
+                                                   "decay",
+                                                   "radioactive"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ measures decay rate.",
+                               "expectedAny":  [
+                                                   "activity",
+                                                   "radioactivity"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ have different neutron numbers.",
+                               "expectedAny":  [
+                                                   "isotopes",
+                                                   "nuclear isotopes"
+                                               ]
+                           },
+                           {
+                               "question":  "Fission is used in nuclear _____.",
+                               "expectedAny":  [
+                                                   "reactors",
+                                                   "power",
+                                                   "energy"
+                                               ]
+                           },
+                           {
+                               "question":  "Fusion requires high _____.",
+                               "expectedAny":  [
+                                                   "temperature",
+                                                   "heat",
+                                                   "energy"
+                                               ]
+                           },
+                           {
+                               "question":  "Activity is measured in _____.",
+                               "expectedAny":  [
+                                                   "becquerels",
+                                                   "Bq",
+                                                   "becquerel"
+                                               ]
+                           },
+                           {
+                               "question":  "Uranium-235 and uranium-238 are _____.",
+                               "expectedAny":  [
+                                                   "isotopes",
+                                                   "uranium isotopes"
+                                               ]
+                           },
+                           {
+                               "question":  "Decay chains end in _____ isotopes.",
+                               "expectedAny":  [
+                                                   "stable",
+                                                   "non-radioactive"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "What is nuclear fission?",
+                            "expectedAny":  [
+                                                "splitting heavy nucleus into lighter nuclei releasing energy",
+                                                "breaking apart large atoms",
+                                                "process used in nuclear reactors"
+                                            ]
+                        },
+                        {
+                            "question":  "What is nuclear fusion?",
+                            "expectedAny":  [
+                                                "combining light nuclei to form heavier nucleus with energy release",
+                                                "joining small atoms together",
+                                                "process powering the sun"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain decay chain.",
+                            "expectedAny":  [
+                                                "series of successive radioactive decays until stable",
+                                                "multiple decay steps to reach stability",
+                                                "one decay product decays to another"
+                                            ]
+                        },
+                        {
+                            "question":  "What is activity?",
+                            "expectedAny":  [
+                                                "rate of radioactive decay measured in becquerels",
+                                                "number of decays per second",
+                                                "measure of how radioactive sample is"
+                                            ]
+                        },
+                        {
+                            "question":  "Define isotope.",
+                            "expectedAny":  [
+                                                "atoms of same element with different neutron numbers",
+                                                "same protons different neutrons",
+                                                "variants of an element"
+                                            ]
+                        },
+                        {
+                            "question":  "Compare fission and fusion.",
+                            "expectedAny":  [
+                                                "fission splits heavy atoms fusion combines light atoms",
+                                                "fission for power fusion for stars",
+                                                "both release nuclear energy"
+                                            ]
+                        },
+                        {
+                            "question":  "Why is fusion difficult to achieve?",
+                            "expectedAny":  [
+                                                "requires extremely high temperature and pressure",
+                                                "nuclei repel each other",
+                                                "needs conditions like in stars"
+                                            ]
+                        },
+                        {
+                            "question":  "How does fission chain reaction work?",
+                            "expectedAny":  [
+                                                "neutron splits atom releasing more neutrons that split more atoms",
+                                                "self-sustaining if each fission causes another",
+                                                "controlled in reactors uncontrolled in bombs"
+                                            ]
+                        },
+                        {
+                            "question":  "Give example of decay chain.",
+                            "expectedAny":  [
+                                                "uranium-238 decays through thorium to lead-206",
+                                                "any radioactive series ending in stable isotope",
+                                                "multiple alpha and beta decays"
+                                            ]
+                        },
+                        {
+                            "question":  "Why do isotopes behave chemically similar?",
+                            "expectedAny":  [
+                                                "same number of protons and electrons",
+                                                "same atomic number means same chemical properties",
+                                                "electron configuration is identical"
+                                            ]
+                        }
+                    ]
 }

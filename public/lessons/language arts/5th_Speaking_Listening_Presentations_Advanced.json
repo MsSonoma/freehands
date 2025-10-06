@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Practice presentation skills with low-stakes topics. Teach active listening strategies and respectful audience behavior. Emphasize clear speaking and organization.",
-  "sample": {
-    "question": "What do we call paying full attention to what someone is saying?",
-    "expectedAny": [
-      "active listening",
-      "good listening",
-      "attentive listening",
-      "focused listening"
-    ]
-  },
-  "truefalse": {
-    "question": "Eye contact helps you connect with your audience during a presentation.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What are pictures or charts used in presentations called?",
-    "expectedAny": [
-      "visual aids",
-      "visual helpers",
-      "presentation aids",
-      "visual tools"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The people who listen to your presentation are called your ________.",
-    "expectedAny": [
-      "audience",
-      "listeners",
-      "viewers",
-      "attendees"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are three important things to remember when giving a presentation?",
-    "expectedAny": [
-      "speak clearly, make eye contact, organize ideas",
-      "loud voice, look at audience, stay organized",
-      "clear speech, good posture, visual aids"
-    ]
-  }
+  "sample": [
+    { "question": "What do we call paying full attention to what someone is saying?", "expectedAny": ["active listening", "good listening", "attentive listening", "focused listening"] },
+    { "question": "Looking directly at people while speaking is called ________.", "expectedAny": ["eye contact"] },
+    { "question": "Pictures or charts used to explain ideas are ________.", "expectedAny": ["visual aids", "visuals"] },
+    { "question": "Standing tall and relaxed shows good ________.", "expectedAny": ["posture"] },
+    { "question": "Taking turns and not interrupting shows ________.", "expectedAny": ["respect", "courtesy"] },
+    { "question": "A short list of your talk's main points is an ________.", "expectedAny": ["outline"] },
+    { "question": "The people who listen to you are the ________.", "expectedAny": ["audience", "listeners"] },
+    { "question": "The speed of your voice is your ________.", "expectedAny": ["pace", "rate"] },
+  { "question": "Changing how loud or soft you speak is ________.", "expectedAny": ["volume control", "projection", "volume"] },
+    { "question": "Explaining something clearly is ________.", "expectedAny": ["clarity", "being clear"] }
+  ],
+  "truefalse": [
+    { "question": "Eye contact helps you connect with your audience during a presentation.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Reading every word from your slides is the best way to present.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Active listening includes nodding and asking questions.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Speaking in a monotone keeps the audience engaged.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Visual aids should be clear and easy to see.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Interrupting a speaker shows you are interested.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Practicing your talk can improve confidence.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Facing away from the audience helps them hear you better.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Questions at the end can check understanding.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Good posture and pacing help presentations.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "What are pictures or charts used in presentations called?", "choices": ["Scripts", "Visual aids", "Notes", "Stories"], "correct": 1, "expectedAny": ["visual aids", "visual helpers", "presentation aids", "visual tools"] },
+  { "question": "Which behavior shows active listening?", "choices": ["Interrupting", "Looking away", "Nodding and taking notes", "Texting"], "correct": 2, "expectedAny": ["nodding", "notes", "taking notes", "eye contact"] },
+    { "question": "Which tip helps your voice be heard?", "choices": ["Face the wall", "Mumble quietly", "Project your voice", "Cover your mouth"], "correct": 2, "expectedAny": ["project", "speak clearly"] },
+    { "question": "Which slide is best?", "choices": ["Paragraph of tiny text", "One key point with a large image", "No text or images", "All caps in red"], "correct": 1, "expectedAny": ["one key point", "large image"] },
+    { "question": "Which is respectful audience behavior?", "choices": ["Talking over the speaker", "Clapping randomly", "Listening quietly", "Walking around"], "correct": 2, "expectedAny": ["listening quietly"] },
+  { "question": "Which is the best opening?", "choices": ["Hi.", "I'm talking now.", "A short story or question", "I forgot"], "correct": 2, "expectedAny": ["hook", "attention grabber"] },
+    { "question": "Which gesture helps engagement?", "choices": ["Staring at the floor", "Natural hand movements", "Hands in pockets", "Arms crossed"], "correct": 1, "expectedAny": ["gestures"] },
+    { "question": "Which question checks understanding?", "choices": ["Are you bored?", "Does that make sense?", "Ready to leave?", "What time is it?"], "correct": 1, "expectedAny": ["checks understanding"] },
+    { "question": "Which is a good way to handle a tough question?", "choices": ["Make something up", "Get angry", "Say you'll find out and follow up", "Ignore it"], "correct": 2, "expectedAny": ["follow up"] },
+    { "question": "Which is best for ending?", "choices": ["Just say bye", "Repeat the title", "Summarize key points and thank the audience", "Start again"], "correct": 2, "expectedAny": ["summary", "thank you"] }
+  ],
+  "fillintheblank": [
+    { "question": "The people who listen to your presentation are called your ________.", "expectedAny": ["audience", "listeners", "viewers", "attendees", "crowd"] },
+    { "question": "Paying full attention to a speaker is ________ listening.", "expectedAny": ["active", "active listening"] },
+    { "question": "Looking at people while speaking is ________ contact.", "expectedAny": ["eye", "eye contact"] },
+    { "question": "Pictures or charts used during a talk are ________ aids.", "expectedAny": ["visual", "visual aids"] },
+    { "question": "Speaking at a steady speed is good ________.", "expectedAny": ["pacing", "pace", "rate"] },
+    { "question": "Standing tall shows good ________.", "expectedAny": ["posture", "body posture"] },
+    { "question": "A short plan of your talk is an ________.", "expectedAny": ["outline", "speaking outline"] },
+    { "question": "Changing how loud you speak is ________ control.", "expectedAny": ["volume", "volume control"] },
+    { "question": "Listening without interrupting shows ________.", "expectedAny": ["respect", "courtesy"] },
+    { "question": "Asking questions to learn more shows ________.", "expectedAny": ["curiosity", "engagement", "interest"] }
+  ],
+  "shortanswer": [
+    { "question": "What are three important things to remember when giving a presentation?", "expectedAny": ["speak clearly, make eye contact, organize ideas", "loud voice, look at audience, stay organized", "clear speech, good posture, visual aids", "engage the audience, clear structure, practice"] },
+    { "question": "Give one way to reduce nervousness before speaking.", "expectedAny": ["practice", "deep breaths", "prepare notes", "positive self-talk", "visualize"] },
+    { "question": "Write one respectful question you could ask a classmate after their talk.", "expectedAny": ["can you explain", "what did you mean", "how did you", "could you give an example", "what evidence supports"] },
+    { "question": "Name one sign of active listening.", "expectedAny": ["eye contact", "nodding", "taking notes", "paraphrasing", "asking clarifying questions"] },
+  { "question": "Write a strong opening sentence for a presentation about oceans.", "expectedAny": ["hook", "question", "surprising fact", "fun fact", "attention grabber", "interesting statistic"] },
+    { "question": "Give one tip for using slides well.", "expectedAny": ["few words", "big images", "readable text", "large font", "high contrast"] },
+  { "question": "Write a clear summary sentence to end a talk.", "expectedAny": ["in summary", "we learned", "thank you", "to conclude", "in conclusion", "to sum up"] },
+    { "question": "Name one way to handle a tough question.", "expectedAny": ["stay calm", "ask to follow up", "admit not sure", "repeat the question", "ask for clarification"] },
+    { "question": "Give one example of helpful body language.", "expectedAny": ["open stance", "gestures", "smile", "eye contact", "upright posture"] },
+    { "question": "Write one sentence that gives credit to a source you used.", "expectedAny": ["according to", "source says", "research shows", "as reported by", "in a study by"] }
+  ]
 }

@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Show maps of Roman expansion. Discuss how Romans influenced law, language, and architecture. Compare Roman republic to modern governments.",
-  "sample": {
-    "question": "What do we call a large territory with many peoples under one ruler?",
-    "expectedAny": [
-      "empire",
-      "large empire",
-      "territorial empire",
-      "ruling empire"
-    ]
-  },
-  "truefalse": {
-    "question": "Rome was first a republic before it became an empire.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What did Romans build to transport water?",
-    "expectedAny": [
-      "aqueducts",
-      "water aqueducts",
-      "Roman aqueducts",
-      "water systems"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A government where people elect representatives is called a ________.",
-    "expectedAny": [
-      "republic",
-      "republican government",
-      "representative government",
-      "elected government"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are two things Romans are known for building or creating?",
-    "expectedAny": [
-      "roads and aqueducts",
-      "buildings and laws",
-      "Colosseum and roads",
-      "architecture and engineering"
-    ]
-  }
+  "sample": [
+    { "question": "What do we call a large territory with many peoples under one ruler?", "expectedAny": ["empire"] },
+    { "question": "Which elects representatives?", "choices": ["Empire", "Republic", "Kingdom", "Dynasty"], "correct": 1, "expectedAny": ["republic"] },
+    { "question": "The supreme ruler is the ________.", "expectedAny": ["emperor"] },
+    { "question": "A person with rights in a country is a ________.", "expectedAny": ["citizen"] },
+    { "question": "Romans built ________ to transport water.", "expectedAny": ["aqueducts"] },
+    { "question": "What has one ruler over many peoples?", "choices": ["City", "Empire", "Town", "Village"], "correct": 1, "expectedAny": ["empire"] },
+    { "question": "Elected government is a ________.", "expectedAny": ["republic"] },
+    { "question": "The ruler of an empire is an ________.", "expectedAny": ["emperor"] },
+    { "question": "What carries water long distances?", "choices": ["Road", "Bridge", "Aqueduct", "Wall"], "correct": 2, "expectedAny": ["aqueduct"] },
+    { "question": "Someone belonging to a country is a ________.", "expectedAny": ["citizen"] }
+  ],
+  "truefalse": [
+    { "question": "Rome was first a republic before it became an empire.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "An emperor is elected by the people.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Aqueducts transported water.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A republic has no elected representatives.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Citizens have rights and responsibilities.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "An empire is ruled by many leaders.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Rome influenced law and architecture.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Republics never have representatives.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Romans built roads and aqueducts.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Citizens have no responsibilities.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What did Romans build to transport water?", "choices": ["Roads", "Aqueducts", "Bridges", "Walls"], "correct": 1, "expectedAny": ["aqueducts"] },
+    { "question": "What is a large territory under one ruler?", "choices": ["City", "Town", "Empire", "Village"], "correct": 2, "expectedAny": ["empire"] },
+    { "question": "Who rules an empire?", "choices": ["President", "Emperor", "Mayor", "Senator"], "correct": 1, "expectedAny": ["emperor"] },
+    { "question": "What has elected representatives?", "choices": ["Empire", "Kingdom", "Republic", "Dynasty"], "correct": 2, "expectedAny": ["republic"] },
+    { "question": "Who belongs to a country?", "choices": ["Tourist", "Citizen", "Visitor", "Guest"], "correct": 1, "expectedAny": ["citizen"] },
+    { "question": "What came before the Roman Empire?", "choices": ["Kingdom", "Republic", "Democracy", "Dictatorship"], "correct": 1, "expectedAny": ["republic"] },
+    { "question": "What transported water?", "choices": ["Bridges", "Roads", "Aqueducts", "Walls"], "correct": 2, "expectedAny": ["aqueducts"] },
+    { "question": "What rules many peoples?", "choices": ["City", "Empire", "Town", "Village"], "correct": 1, "expectedAny": ["empire"] },
+    { "question": "What is the supreme ruler?", "choices": ["Citizen", "Senator", "Emperor", "Mayor"], "correct": 2, "expectedAny": ["emperor"] },
+    { "question": "What government elects leaders?", "choices": ["Republic", "Empire", "Kingdom", "Dynasty"], "correct": 0, "expectedAny": ["republic"] }
+  ],
+  "fillintheblank": [
+    { "question": "A government where people elect representatives is called a ________.", "expectedAny": ["republic"] },
+    { "question": "A large territory under one ruler is an ________.", "expectedAny": ["empire"] },
+    { "question": "The supreme ruler of an empire is the ________.", "expectedAny": ["emperor"] },
+    { "question": "A person who belongs to a country is a ________.", "expectedAny": ["citizen"] },
+    { "question": "Romans built ________ to carry water.", "expectedAny": ["aqueducts"] },
+    { "question": "Rome started as a ________ before becoming an empire.", "expectedAny": ["republic"] },
+    { "question": "An ________ rules over many different peoples.", "expectedAny": ["empire", "emperor"] },
+    { "question": "________ have rights and responsibilities.", "expectedAny": ["citizens"] },
+    { "question": "Water systems built by Romans are ________.", "expectedAny": ["aqueducts"] },
+    { "question": "A ________ has elected representatives.", "expectedAny": ["republic"] }
+  ],
+  "shortanswer": [
+    { "question": "What are two things Romans are known for building or creating?", "expectedAny": ["roads and aqueducts", "buildings and laws", "roads and buildings", "aqueducts and laws"] },
+    { "question": "What is an empire?", "expectedAny": ["large territory under one ruler", "many peoples under one leader", "big kingdom"] },
+    { "question": "What is a republic?", "expectedAny": ["government with elected representatives", "people elect leaders", "voting for leaders"] },
+    { "question": "What is an emperor?", "expectedAny": ["supreme ruler of empire", "ruler of empire", "king of empire", "top leader"] },
+    { "question": "What is a citizen?", "expectedAny": ["person who belongs to a country", "has rights and responsibilities", "member of a nation"] },
+    { "question": "What were aqueducts used for?", "expectedAny": ["transporting water", "carrying water long distances", "water supply"] },
+    { "question": "How did Rome change from republic to empire?", "expectedAny": ["became ruled by emperor", "one ruler instead of representatives", "got an emperor"] },
+    { "question": "Name a Roman achievement.", "expectedAny": ["aqueducts", "roads", "laws", "architecture", "Colosseum", "buildings"] },
+    { "question": "What rights do citizens have?", "expectedAny": ["vote", "participate in government", "protection", "freedoms"] },
+    { "question": "Why were aqueducts important?", "expectedAny": ["brought water to cities", "provided clean water", "water supply"] }
+  ]
 }

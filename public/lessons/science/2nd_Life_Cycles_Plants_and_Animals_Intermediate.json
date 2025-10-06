@@ -20,6 +20,22 @@
     {
       "term": "metamorphosis",
       "definition": "The process of changing from one form to another as an animal grows"
+    },
+    {
+      "term": "egg",
+      "definition": "The first stage in the life of many animals"
+    },
+    {
+      "term": "caterpillar",
+      "definition": "The larva stage of a butterfly or moth"
+    },
+    {
+      "term": "chrysalis",
+      "definition": "The protective covering where a caterpillar changes into a butterfly"
+    },
+    {
+      "term": "adult",
+      "definition": "A fully grown living thing"
     }
   ],
   "teachingNotes": "Use visual diagrams and real examples when possible. Compare different life cycles. Plant seeds in class to observe growth.",
@@ -51,21 +67,21 @@
     {"question": "Frogs lay eggs in ___", "choices": ["Trees", "Water", "Sky", "Desert"], "correct": 1}
   ],
   "fillintheblank": [
-    {"question": "A ___ grows into a butterfly", "expectedAny": ["caterpillar"]},
+    {"question": "A ___ grows into a butterfly", "expectedAny": ["caterpillar", "larva"]},
     {"question": "Plants need water, soil, and ___", "expectedAny": ["sunlight", "sun"]},
-    {"question": "A baby cat is called a ___", "expectedAny": ["kitten"]},
-    {"question": "Seeds grow ___ first", "expectedAny": ["roots"]},
-    {"question": "A ___ is a baby frog", "expectedAny": ["tadpole"]},
+    {"question": "A baby cat is called a ___", "expectedAny": ["kitten", "kitty"]},
+    {"question": "Seeds grow ___ first", "expectedAny": ["roots", "root"]},
+  {"question": "A ___ is a baby frog", "expectedAny": ["tadpole", "young frog"]},
     {"question": "The butterfly life cycle has ___ stages", "expectedAny": ["four", "4"]},
-    {"question": "Plants make their own ___", "expectedAny": ["food"]}
+    {"question": "Plants make their own ___", "expectedAny": ["food", "sugar"]}
   ],
   "shortanswer": [
-    {"question": "What are the stages of a plant's life?", "expectedAny": ["seed", "sprout", "plant", "flower", "makes seeds"]},
-    {"question": "How does a caterpillar become a butterfly?", "expectedAny": ["eats and grows", "makes chrysalis", "changes inside", "emerges"]},
-    {"question": "What do seeds need to grow?", "expectedAny": ["water", "sunlight", "soil", "air", "warmth"]},
-    {"question": "How are baby animals like their parents?", "expectedAny": ["same kind", "similar features", "smaller"]},
-    {"question": "Why do living things have life cycles?", "expectedAny": ["to grow", "reproduce"]},
-    {"question": "What happens if a plant doesn't get water?", "expectedAny": ["wilts", "turns brown", "dies"]},
-    {"question": "Name three animals that hatch from eggs.", "expectedAny": ["birds", "turtles", "frogs", "fish"]}
+    {"question": "What are the stages of a plant's life?", "expectedAny": ["seed", "sprout", "plant", "flower", "makes seeds", "seed sprout plant flower"]},
+    {"question": "How does a caterpillar become a butterfly?", "expectedAny": ["eats and grows", "makes chrysalis", "changes inside", "emerges", "chrysalis stage"]},
+    {"question": "What do seeds need to grow?", "expectedAny": ["water", "sunlight", "soil", "air", "warmth", "water and sun"]},
+    {"question": "How are baby animals like their parents?", "expectedAny": ["same kind", "similar features", "smaller", "look alike"]},
+    {"question": "Why do living things have life cycles?", "expectedAny": ["to grow", "reproduce", "make more of their kind", "to have babies"]},
+    {"question": "What happens if a plant doesn't get water?", "expectedAny": ["wilts", "turns brown", "dies", "dries up"]},
+    {"question": "Name three animals that hatch from eggs.", "expectedAny": ["birds", "turtles", "frogs", "fish", "snakes", "chickens"]}
   ]
 }

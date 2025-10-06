@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "10th_Polynomial_Functions_Graphing_Analysis_Advanced",
   "title": "Polynomial Functions: Graphing and Analysis",
   "grade": "10th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "polynomial function",
-      "definition": "Function consisting of variables and coefficients with non-negative integer exponents"
-    },
-    {
-      "term": "degree",
-      "definition": "Highest power of the variable in a polynomial"
-    },
-    {
-      "term": "leading coefficient",
-      "definition": "Coefficient of the term with the highest degree"
-    },
-    {
-      "term": "end behavior",
-      "definition": "How function values behave as x approaches positive or negative infinity"
-    },
-    {
-      "term": "turning point",
-      "definition": "Point where a function changes from increasing to decreasing or vice versa"
-    }
+    {"term": "polynomial function", "definition": "Function consisting of variables and coefficients with non-negative integer exponents"},
+    {"term": "degree", "definition": "Highest power of the variable in a polynomial"},
+    {"term": "leading coefficient", "definition": "Coefficient of the term with the highest degree"},
+    {"term": "end behavior", "definition": "How function values behave as x approaches positive or negative infinity"},
+    {"term": "turning point", "definition": "Point where a function changes from increasing to decreasing or vice versa"}
   ],
   "teachingNotes": "Use graphing technology to explore polynomial behavior. Emphasize the relationship between degree and number of turning points.",
-  "sample": {
-    "question": "What is a function with variables and coefficients using non-negative integer exponents?",
-    "expectedAny": ["polynomial function", "polynomial", "polynomial equation", "algebraic polynomial"]
-  },
-  "truefalse": {
-    "question": "The degree of a polynomial is the highest power of the variable.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What determines the end behavior of a polynomial?",
-    "expectedAny": ["degree and leading coefficient", "highest term", "leading term", "dominant term"]
-  },
-  "fillintheblank": {
-    "question": "A point where a function changes from increasing to decreasing is a ________ point.",
-    "expectedAny": ["turning", "critical", "maximum or minimum", "vertex"]
-  },
-  "shortanswer": {
-    "question": "How many turning points can a polynomial of degree n have at most?",
-    "expectedAny": ["n - 1", "one less than the degree", "degree minus one", "n-1"]
-  },
-  "wordProblems": {
-    "question": "If f(x) = 2x³ - 5x² + 3x - 1, what is the degree and leading coefficient?",
-    "expectedAny": ["degree 3, leading coefficient 2", "3rd degree, coefficient 2", "cubic with leading 2"]
-  }
+  "sample": [
+    {"question": "What has variables and coefficients?", "expectedAny": ["polynomial function", "polynomial", "polynomial expression", "algebraic function", "polynomial equation", "poly function"]},
+    {"question": "What is highest power?", "expectedAny": ["degree", "highest exponent", "highest power", "maximum power", "degree of polynomial", "order"]},
+    {"question": "What is coefficient of highest term?", "expectedAny": ["leading coefficient", "leading term", "first coefficient", "highest coefficient", "leading number", "front coefficient"]},
+    {"question": "What is behavior at infinity?", "expectedAny": ["end behavior", "limit behavior", "behavior at ends", "long-run behavior", "infinite behavior", "tail behavior"]},
+    {"question": "What is increasing to decreasing change?", "expectedAny": ["turning point", "critical point", "direction change", "extremum", "local maximum", "local minimum"]},
+    {"question": "What is algebraic function?", "expectedAny": ["polynomial", "polynomial function", "polynomial expression", "algebraic function", "polynomial equation", "poly function"]},
+    {"question": "What is highest degree?", "expectedAny": ["degree", "power", "highest power", "highest exponent", "maximum power", "order"]},
+    {"question": "What leads polynomial?", "expectedAny": ["leading coefficient", "first coefficient", "highest coefficient", "leading term", "leading number", "front coefficient"]},
+    {"question": "What happens as x grows?", "expectedAny": ["end behavior", "limit", "behavior at infinity", "long-run behavior", "infinite behavior", "tail behavior"]},
+    {"question": "What is direction change point?", "expectedAny": ["turning point", "extremum", "critical point", "direction change", "local maximum", "local minimum"]}
+  ],
+  "truefalse": [
+    {"question": "Polynomial has integer exponents. (True or False)", "correct": true},
+    {"question": "Degree is highest power. (True or False)", "correct": true},
+    {"question": "Leading coefficient is constant term. (True or False)", "correct": false},
+    {"question": "End behavior depends on degree. (True or False)", "correct": true},
+    {"question": "Turning point is direction change. (True or False)", "correct": true},
+    {"question": "Polynomials use variables. (True or False)", "correct": true},
+    {"question": "Degree determines end behavior. (True or False)", "correct": true},
+    {"question": "Leading coefficient affects graph. (True or False)", "correct": true},
+    {"question": "All polynomials have turning points. (True or False)", "correct": false},
+    {"question": "Degree n has at most n-1 turning points. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What uses integer exponents?", "choices": [{"letter": "A", "text": "Exponential"}, {"letter": "B", "text": "Polynomial"}, {"letter": "C", "text": "Logarithmic"}, {"letter": "D", "text": "Rational"}], "correct": "B"},
+    {"question": "What is highest power?", "choices": [{"letter": "A", "text": "Coefficient"}, {"letter": "B", "text": "Degree"}, {"letter": "C", "text": "Constant"}, {"letter": "D", "text": "Variable"}], "correct": "B"},
+    {"question": "What is highest term coefficient?", "choices": [{"letter": "A", "text": "Constant"}, {"letter": "B", "text": "Leading coefficient"}, {"letter": "C", "text": "Degree"}, {"letter": "D", "text": "Intercept"}], "correct": "B"},
+    {"question": "What determines end behavior?", "choices": [{"letter": "A", "text": "Constant"}, {"letter": "B", "text": "Degree and leading coefficient"}, {"letter": "C", "text": "Intercept"}, {"letter": "D", "text": "Middle terms"}], "correct": "B"},
+    {"question": "What is direction change?", "choices": [{"letter": "A", "text": "Intercept"}, {"letter": "B", "text": "Turning point"}, {"letter": "C", "text": "Asymptote"}, {"letter": "D", "text": "End"}], "correct": "B"},
+    {"question": "What has non-negative exponents?", "choices": [{"letter": "A", "text": "Rational"}, {"letter": "B", "text": "Polynomial"}, {"letter": "C", "text": "Exponential"}, {"letter": "D", "text": "Logarithmic"}], "correct": "B"},
+    {"question": "What is highest degree?", "choices": [{"letter": "A", "text": "Coefficient"}, {"letter": "B", "text": "Degree"}, {"letter": "C", "text": "Variable"}, {"letter": "D", "text": "Constant"}], "correct": "B"},
+    {"question": "What affects end behavior?", "choices": [{"letter": "A", "text": "Constant"}, {"letter": "B", "text": "Leading coefficient"}, {"letter": "C", "text": "Intercept"}, {"letter": "D", "text": "Middle"}], "correct": "B"},
+    {"question": "What is limit behavior?", "choices": [{"letter": "A", "text": "Intercept"}, {"letter": "B", "text": "End behavior"}, {"letter": "C", "text": "Constant"}, {"letter": "D", "text": "Degree"}], "correct": "B"},
+    {"question": "What is maximum or minimum?", "choices": [{"letter": "A", "text": "Intercept"}, {"letter": "B", "text": "Turning point"}, {"letter": "C", "text": "Degree"}, {"letter": "D", "text": "Coefficient"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ function has integer exponents.", "expectedAny": ["polynomial", "Polynomial"]},
+    {"question": "_____ is highest power.", "expectedAny": ["degree", "Degree"]},
+    {"question": "_____ coefficient is of highest term.", "expectedAny": ["leading", "Leading"]},
+    {"question": "_____ behavior is at infinity.", "expectedAny": ["end", "End"]},
+    {"question": "_____ point is direction change.", "expectedAny": ["turning", "Turning"]},
+    {"question": "_____ have variables and coefficients.", "expectedAny": ["polynomials", "Polynomials"]},
+    {"question": "_____ determines end behavior.", "expectedAny": ["degree", "Degree"]},
+    {"question": "_____ affects graph direction.", "expectedAny": ["leading", "Leading", "coefficient"]},
+    {"question": "_____ are local extrema.", "expectedAny": ["turning points", "Turning points"]},
+    {"question": "Degree n has at most _____ turning points.", "expectedAny": ["n-1", "n minus 1"]}
+  ],
+  "shortanswer": [
+    {"question": "What is polynomial function?", "keyTerms": ["function", "variables", "coefficients", "non-negative", "integer", "exponents"], "expectedAny": ["Function consisting of variables and coefficients with non-negative integer exponents", "Sum of power terms", "Algebraic expression"]},
+    {"question": "What is degree?", "keyTerms": ["highest", "power", "variable", "polynomial"], "expectedAny": ["Highest power of the variable in a polynomial", "Largest exponent", "Maximum power"]},
+    {"question": "What is leading coefficient?", "keyTerms": ["coefficient", "term", "highest", "degree"], "expectedAny": ["Coefficient of the term with the highest degree", "First coefficient", "Highest term coefficient"]},
+    {"question": "What is end behavior?", "keyTerms": ["function", "values", "behave", "approaches", "infinity"], "expectedAny": ["How function values behave as x approaches positive or negative infinity", "Limit behavior", "Infinity behavior"]},
+    {"question": "What is turning point?", "keyTerms": ["point", "function", "changes", "increasing", "decreasing"], "expectedAny": ["Point where a function changes from increasing to decreasing or vice versa", "Direction change", "Local extremum"]},
+    {"question": "How many turning points for degree n?", "keyTerms": ["n-1", "at most", "one less"], "expectedAny": ["At most n - 1", "One less than degree", "n minus 1"]},
+    {"question": "What determines end behavior?", "keyTerms": ["degree", "leading", "coefficient"], "expectedAny": ["Degree and leading coefficient", "Highest term", "Leading term"]},
+    {"question": "If leading coefficient positive and degree even?", "keyTerms": ["up", "both ends", "positive"], "expectedAny": ["Goes up at both ends", "Both ends positive", "Positive infinity both sides"]},
+    {"question": "If leading coefficient negative and degree odd?", "keyTerms": ["up", "left", "down", "right"], "expectedAny": ["Goes up left and down right", "Left positive right negative", "Opposite directions"]},
+    {"question": "What is f(x) = x - 4x + x - 1 degree?", "keyTerms": ["3", "three", "cubic"], "expectedAny": ["3", "three", "degree 3"]}
+  ],
+  "wordProblems": [
+    {"question": "If f(x) = 2x - 5x + 3x - 1, what is degree and leading coefficient?", "keyTerms": ["degree 3", "2"], "expectedAny": ["degree 3 leading coefficient 2", "3 and 2", "cubic with 2"]},
+    {"question": "Polynomial f(x) = -x + 2x - 1. Describe end behavior.", "keyTerms": ["down", "both ends", "negative"], "expectedAny": ["Goes down at both ends", "Both ends negative", "Down both sides"]},
+    {"question": "How many turning points can f(x) = x - 3x + 2x have at most?", "keyTerms": ["4", "four"], "expectedAny": ["4", "four", "at most 4"]},
+    {"question": "If f(x) = 3x - 6x + 2, what is degree?", "keyTerms": ["2", "two", "quadratic"], "expectedAny": ["2", "two", "degree 2"]},
+    {"question": "For f(x) = x + 2x, what is leading coefficient?", "keyTerms": ["1", "one"], "expectedAny": ["1", "one", "leading is 1"]},
+    {"question": "Degree 6 polynomial. Maximum turning points?", "keyTerms": ["5", "five"], "expectedAny": ["5", "five", "at most 5"]},
+    {"question": "f(x) = -2x. End behavior?", "keyTerms": ["up", "left", "down", "right"], "expectedAny": ["Up left down right", "Opposite ends", "Left positive right negative"]},
+    {"question": "Is f(x) = x + 1 a polynomial?", "keyTerms": ["no", "negative exponent"], "expectedAny": ["no", "not polynomial", "negative exponent"]},
+    {"question": "Volume box: V(x) = x(10-2x)(8-2x). What degree?", "keyTerms": ["3", "cubic"], "expectedAny": ["3", "three", "degree 3"]},
+    {"question": "f(x) = 4x - x. End behavior?", "keyTerms": ["up", "both"], "expectedAny": ["Up both ends", "Both positive", "Positive infinity both"]}
+  ]
 }

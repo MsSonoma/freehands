@@ -1,0 +1,46 @@
+{
+  "timestamp": "2025-10-05T21:53:38.561Z",
+  "stats": {
+    "filesScanned": 12,
+    "totalIssues": 2,
+    "issuesByType": {
+      "missingVocab": 0,
+      "insufficientSynonyms": 0,
+      "gradeLevel": 2,
+      "potentialAccuracy": 0
+    },
+    "issuesByGrade": {
+      "4th": 2
+    },
+    "issuesBySubject": {
+      "language arts": 2
+    }
+  },
+  "issues": [
+    {
+      "file": "language arts\\4th_Grammar_Mechanics_Complex_Sentences_Advanced.json",
+      "grade": "4th",
+      "subject": "language arts",
+      "difficulty": "Advanced",
+      "title": "Grammar and Mechanics: Complex Sentences",
+      "issues": [
+        {
+          "type": "gradeLevel",
+          "severity": "medium",
+          "section": "vocab",
+          "index": 5,
+          "term": "subordinating conjunction",
+          "message": "Vocab term \"subordinating conjunction\" may be too complex for 4th (25 chars)"
+        },
+        {
+          "type": "gradeLevel",
+          "severity": "medium",
+          "section": "vocab",
+          "index": 6,
+          "term": "subordinate clause marker",
+          "message": "Vocab term \"subordinate clause marker\" may be too complex for 4th (25 chars)"
+        }
+      ]
+    }
+  ]
+}

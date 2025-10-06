@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Start with graphical solutions, then introduce algebraic methods. Use real-world problems involving two unknowns.",
-  "sample": {
-    "question": "What are two or more equations with the same variables called?",
-    "expectedAny": ["system of equations", "equation system", "simultaneous equations", "linear system"]
-  },
-  "truefalse": {
-    "question": "The solution to a system is where the lines intersect.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What happens when you solve by elimination?",
-    "expectedAny": ["eliminate a variable", "remove one variable", "cancel out a variable", "subtract variables"]
-  },
-  "fillintheblank": {
-    "question": "Lines that never intersect are called ________ lines.",
-    "expectedAny": ["parallel", "non-intersecting", "same slope", "equivalent"]
-  },
-  "shortanswer": {
-    "question": "Solve the system: x + y = 5 and x - y = 1",
-    "expectedAny": ["x = 3, y = 2", "(3, 2)", "x=3, y=2", "3 and 2"]
-  },
-  "wordProblems": {
-    "question": "Two numbers add to 12 and their difference is 4. What are the numbers?",
-    "expectedAny": ["8 and 4", "4 and 8", "x=8, y=4", "eight and four"]
-  }
+  "sample": [
+    { "question": "What are two or more equations with the same variables called?", "expectedAny": ["system of equations"] },
+    { "question": "Where do lines meet?", "choices": ["Origin", "Solution", "Vertex", "Edge"], "correct": 1, "expectedAny": ["solution"] },
+    { "question": "Replacing variable with expression is ________.", "expectedAny": ["substitution"] },
+    { "question": "Removing variable by adding equations is ________.", "expectedAny": ["elimination"] },
+    { "question": "Lines that never meet are ________.", "expectedAny": ["parallel lines"] },
+    { "question": "What is two equations?", "choices": ["Single", "System of equations", "Parallel", "None"], "correct": 1, "expectedAny": ["system of equations"] },
+    { "question": "Intersection point is ________.", "expectedAny": ["solution"] },
+    { "question": "What replaces variable?", "choices": ["Elimination", "Substitution", "Graphing", "Nothing"], "correct": 1, "expectedAny": ["substitution"] },
+    { "question": "Canceling variable is ________.", "expectedAny": ["elimination"] },
+    { "question": "Never intersecting lines are ________.", "expectedAny": ["parallel lines"] }
+  ],
+  "truefalse": [
+    { "question": "The solution to a system is where the lines intersect.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All systems have solutions.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "System has same variables.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Parallel lines intersect.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Elimination removes variable.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Substitution never works.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Solution is intersection point.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "System needs different variables.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Parallel lines have no solution.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Elimination adds or subtracts equations.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "What happens when you solve by elimination?", "choices": ["Nothing", "Eliminate a variable", "Add variables", "Multiply"], "correct": 1, "expectedAny": ["eliminate a variable"] },
+    { "question": "What are two equations?", "choices": ["Single", "System of equations", "Parallel", "Random"], "correct": 1, "expectedAny": ["system of equations"] },
+    { "question": "Where lines meet is?", "choices": ["Origin", "Solution", "Vertex", "Nothing"], "correct": 1, "expectedAny": ["solution"] },
+    { "question": "What replaces variable?", "choices": ["Elimination", "Substitution", "Graphing", "Division"], "correct": 1, "expectedAny": ["substitution"] },
+    { "question": "Never meeting lines are?", "choices": ["Intersecting", "Parallel", "Perpendicular", "Same"], "correct": 1, "expectedAny": ["parallel"] },
+    { "question": "What removes variable?", "choices": ["Substitution", "Elimination", "Graphing", "Nothing"], "correct": 1, "expectedAny": ["elimination"] },
+    { "question": "System has?", "choices": ["Different variables", "Same variables", "No variables", "Random"], "correct": 1, "expectedAny": ["same variables"] },
+    { "question": "Solution is?", "choices": ["Random", "Intersection point", "Origin", "Edge"], "correct": 1, "expectedAny": ["intersection point"] },
+    { "question": "Parallel lines have?", "choices": ["One solution", "No solution", "Infinite solutions", "Two solutions"], "correct": 1, "expectedAny": ["no solution"] },
+    { "question": "What cancels variable?", "choices": ["Substitution", "Elimination", "Graphing", "Nothing"], "correct": 1, "expectedAny": ["elimination"] }
+  ],
+  "fillintheblank": [
+    { "question": "Lines that never intersect are called ________ lines.", "expectedAny": ["parallel"] },
+    { "question": "A ________ of equations has same variables.", "expectedAny": ["system"] },
+    { "question": "The ________ is where lines meet.", "expectedAny": ["solution"] },
+    { "question": "________ replaces variable with expression.", "expectedAny": ["substitution"] },
+    { "question": "________ removes variable.", "expectedAny": ["elimination"] },
+    { "question": "System of ________ has same variables.", "expectedAny": ["equations"] },
+    { "question": "________ is intersection point.", "expectedAny": ["solution"] },
+    { "question": "________ substitutes equation.", "expectedAny": ["substitution"] },
+    { "question": "________ cancels variable.", "expectedAny": ["elimination"] },
+    { "question": "________ lines never meet.", "expectedAny": ["parallel"] }
+  ],
+  "shortanswer": [
+    { "question": "Solve the system: x + y = 5 and x - y = 1", "expectedAny": ["x = 3, y = 2", "(3, 2)"] },
+    { "question": "What is system of equations?", "expectedAny": ["two or more equations with same variables", "equations with same variables"] },
+    { "question": "What is solution?", "expectedAny": ["point where lines intersect", "intersection point"] },
+    { "question": "What is substitution?", "expectedAny": ["replacing one variable with expression", "substituting variable"] },
+    { "question": "What is elimination?", "expectedAny": ["adding or subtracting to remove variable", "removing variable"] },
+    { "question": "What are parallel lines?", "expectedAny": ["lines that never intersect", "no solution lines"] },
+    { "question": "Solve: x + y = 10, x - y = 2", "expectedAny": ["x = 6, y = 4", "(6, 4)"] },
+    { "question": "When has system no solution?", "expectedAny": ["parallel lines", "lines never meet"] },
+    { "question": "Solve: x + y = 8, x - y = 4", "expectedAny": ["x = 6, y = 2", "(6, 2)"] },
+    { "question": "How find solution graphically?", "expectedAny": ["find where lines cross", "intersection point"] }
+  ],
+  "wordProblems": [
+    { "question": "Two numbers add to 12 and their difference is 4. What are the numbers?", "expectedAny": ["8 and 4", "4 and 8"] },
+    { "question": "Sum is 15, difference is 3. Find numbers.", "expectedAny": ["9 and 6", "6 and 9"] },
+    { "question": "Two numbers add to 20, one is twice other. Find smaller.", "expectedAny": ["6.67", "about 7"] },
+    { "question": "Pencils $1, pens $2. Bought 10 items for $15. How many pencils?", "expectedAny": ["5 pencils", "5"] },
+    { "question": "Sum is 18, difference is 6. Find larger.", "expectedAny": ["12", "larger is 12"] },
+    { "question": "Age sum is 30, one is 4 years older. Find younger.", "expectedAny": ["13", "younger is 13"] },
+    { "question": "Two numbers add to 25, difference is 5. Find numbers.", "expectedAny": ["15 and 10", "10 and 15"] },
+    { "question": "Hot dogs $3, burgers $5. Bought 8 for $30. How many hot dogs?", "expectedAny": ["5 hot dogs", "5"] },
+    { "question": "Sum is 22, one is 8 more than other. Find smaller.", "expectedAny": ["7", "smaller is 7"] },
+    { "question": "Two numbers add to 14, difference is 2. What are they?", "expectedAny": ["8 and 6", "6 and 8"] }
+  ]
 }

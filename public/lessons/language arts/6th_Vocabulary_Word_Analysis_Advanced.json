@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Practice breaking down complex words into parts. Teach common Greek and Latin roots. Show how understanding word parts helps with meaning and spelling.",
-  "sample": {
-    "question": "What do we call the study of word origins and history?",
-    "expectedAny": [
-      "etymology",
-      "word etymology",
-      "etymological study",
-      "word history"
-    ]
-  },
-  "truefalse": {
-    "question": "A prefix is added to the beginning of a root word.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "In the word 'unhappy,' what is the prefix?",
-    "expectedAny": [
-      "un-",
-      "un",
-      "the prefix un",
-      "un- prefix"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The main part of a word that carries the basic meaning is the ________ word.",
-    "expectedAny": [
-      "root",
-      "base",
-      "core",
-      "main"
-    ]
-  },
-  "shortanswer": {
-    "question": "How can knowing prefixes and suffixes help you understand new words?",
-    "expectedAny": [
-      "break down meaning of parts",
-      "figure out definitions",
-      "understand word families",
-      "decode unfamiliar words"
-    ]
-  }
+  "sample": [
+    { "question": "What do we call the study of word origins and history?", "expectedAny": ["etymology", "word etymology", "etymological study"] },
+    { "question": "Which is a prefix?", "choices": ["-ing", "un-", "-ed", "-ness"], "correct": 1, "expectedAny": ["un-"] },
+    { "question": "The main part of a word is the ________ word.", "expectedAny": ["root", "base"] },
+    { "question": "A word part at the end is a ________.", "expectedAny": ["suffix"] },
+    { "question": "In 'replay,' what is the prefix?", "choices": ["play", "re-", "-ay", "rep"], "correct": 1, "expectedAny": ["re-"] },
+    { "question": "The study of word formation is ________.", "expectedAny": ["morphology"] },
+    { "question": "A ________ is added to the beginning of a root.", "expectedAny": ["prefix"] },
+    { "question": "What is '-ful' in 'helpful'?", "choices": ["Prefix", "Suffix", "Root", "Verb"], "correct": 1, "expectedAny": ["suffix"] },
+    { "question": "Break down 'unfriendly' into parts.", "expectedAny": ["un- friend -ly", "prefix root suffix"] },
+    { "question": "What carries the basic word meaning?", "expectedAny": ["root word", "root", "base word"] }
+  ],
+  "truefalse": [
+    { "question": "A prefix is added to the beginning of a root word.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A suffix goes at the start of a word.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Etymology studies word origins.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The root word has no meaning.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Morphology is the study of word formation.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All words have both prefixes and suffixes.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Understanding word parts helps with meaning.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Prefixes and suffixes never change word meaning.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Greek and Latin roots appear in English.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Etymology is useless for understanding words.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "In the word 'unhappy,' what is the prefix?", "choices": ["-py", "un-", "happy", "-y"], "correct": 1, "expectedAny": ["un-"] },
+    { "question": "What is the root in 'teacher'?", "choices": ["tea", "teach", "-er", "cher"], "correct": 1, "expectedAny": ["teach"] },
+    { "question": "Which is a suffix?", "choices": ["re-", "un-", "-ness", "pre-"], "correct": 2, "expectedAny": ["-ness"] },
+    { "question": "What does etymology study?", "choices": ["Animals", "Word origins", "Math", "Plants"], "correct": 1, "expectedAny": ["word origins"] },
+    { "question": "In 'preview,' what is 're-'?", "choices": ["Suffix", "Prefix", "Root", "Nothing"], "correct": 1, "expectedAny": ["prefix"] },
+    { "question": "Which carries the main meaning?", "choices": ["Prefix", "Suffix", "Root word", "Ending"], "correct": 2, "expectedAny": ["root word"] },
+    { "question": "What is morphology?", "choices": ["Study of animals", "Study of word formation", "Study of space", "Study of art"], "correct": 1, "expectedAny": ["study of word formation"] },
+    { "question": "In 'rebuilt,' what is the root?", "choices": ["re-", "built", "build", "-t"], "correct": 2, "expectedAny": ["build"] },
+    { "question": "Which adds meaning to a root?", "choices": ["Spaces", "Prefixes and suffixes", "Punctuation", "Colors"], "correct": 1, "expectedAny": ["prefixes and suffixes"] },
+    { "question": "What is '-less' in 'hopeless'?", "choices": ["Prefix", "Root", "Suffix", "Verb"], "correct": 2, "expectedAny": ["suffix"] }
+  ],
+  "fillintheblank": [
+  { "question": "The main part of a word that carries the basic meaning is the ________ word.", "expectedAny": ["root", "base", "root/base"] },
+  { "question": "A word part added to the beginning is a ________.", "expectedAny": ["prefix", "prefix (at start)"] },
+  { "question": "A word part added to the end is a ________.", "expectedAny": ["suffix", "suffix (at end)"] },
+  { "question": "The study of word origins is ________.", "expectedAny": ["etymology", "word etymology"] },
+  { "question": "The study of word formation is ________.", "expectedAny": ["morphology", "word morphology"] },
+  { "question": "In 'undo,' '________' is the prefix.", "expectedAny": ["un", "un-", "un (prefix)"] },
+  { "question": "In 'careless,' '________' is the suffix.", "expectedAny": ["-less", "less", "less (suffix)"] },
+  { "question": "The ________ carries the main word meaning.", "expectedAny": ["root", "root word", "base word"] },
+  { "question": "Breaking words into parts helps understand ________.", "expectedAny": ["meaning", "definitions", "word meaning"] },
+    { "question": "Many English words have ________ and Latin roots.", "expectedAny": ["Greek"] }
+  ],
+  "shortanswer": [
+    { "question": "How can knowing prefixes and suffixes help you understand new words?", "expectedAny": ["break down meaning", "figure out definitions", "understand word parts"] },
+    { "question": "What is the root word in 'unhappiness'?", "expectedAny": ["happy", "happ"] },
+    { "question": "Name two common prefixes.", "expectedAny": ["un- and re-", "pre- and dis-", "mis- and non-"] },
+    { "question": "Name two common suffixes.", "expectedAny": ["-ing and -ed", "-ly and -ness", "-ful and -less"] },
+    { "question": "Explain what etymology is.", "expectedAny": ["study of word origins", "history of words", "where words come from"] },
+    { "question": "Break 'disagreement' into its parts.", "expectedAny": ["dis- agree -ment", "prefix root suffix"] },
+    { "question": "What does the prefix 're-' usually mean?", "expectedAny": ["again", "back", "repeat"] },
+    { "question": "What does the suffix '-ful' usually mean?", "expectedAny": ["full of", "having"] },
+    { "question": "Why are Greek and Latin roots important?", "expectedAny": ["many English words use them", "help understand meanings", "common in academic words"] },
+    { "question": "How does morphology help with vocabulary?", "expectedAny": ["understand word structure", "learn word families", "decode new words"] }
+  ]
 }

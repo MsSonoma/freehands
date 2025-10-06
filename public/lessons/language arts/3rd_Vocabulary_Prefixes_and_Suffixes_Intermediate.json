@@ -5,54 +5,57 @@
   "difficulty": "Intermediate",
   "featured": false,
   "vocab": [
-    {"term": "prefix", "definition": "A word part added to the beginning of a root word to change its meaning."},
-    {"term": "suffix", "definition": "A word part added to the end of a root word to change its meaning."},
-    {"term": "root word", "definition": "The main part of a word that contains the basic meaning."}
+    {"word": "prefix", "kid_friendly_definition": "A word part added to the beginning of a root word to change its meaning."},
+    {"word": "suffix", "kid_friendly_definition": "A word part added to the end of a root word to change its meaning."},
+    {"word": "root word", "kid_friendly_definition": "The main part of a word that contains the basic meaning."},
+    {"word": "base word", "kid_friendly_definition": "A word you can add prefixes or suffixes to."},
+    {"word": "affix", "kid_friendly_definition": "A prefix or suffix added to a word."},
+    {"word": "compound word", "kid_friendly_definition": "Two words joined together to make a new word, like sunflower."}
   ],
   "teachingNotes": "Explain that prefixes and suffixes are like building blocks for words. Use charts and examples to show how common affixes like 'un-', 're-', '-ful,' and '-less' change a root word's meaning.",
   "sample": [
-    {"question": "What does the prefix 'un-' mean in the word 'unhappy'?", "expectedAny": ["not"]},
-    {"question": "What does the suffix '-ful' mean in the word 'careful'?", "expectedAny": ["full of"]},
+    {"question": "What does the prefix 'un-' mean in the word 'unhappy'?", "expectedAny": ["not", "the opposite of", "means not"]},
+    {"question": "What does the suffix '-ful' mean in the word 'careful'?", "expectedAny": ["full of", "full", "filled with"]},
     {"question": "What is the root word in 'replay'?", "expectedAny": ["play"]},
-    {"question": "Add a prefix to the word 'possible' to make it mean the opposite.", "expectedAny": ["impossible"]},
-    {"question": "What does the prefix 'pre-' mean in the word 'preview'?", "expectedAny": ["before"]},
-    {"question": "What suffix can you add to 'teach' to make it a person who teaches?", "expectedAny": ["-er"]},
-    {"question": "What does the prefix 'dis-' mean in the word 'disagree'?", "expectedAny": ["not", "opposite of"]}
+    {"question": "Add a prefix to the word 'possible' to make it mean the opposite.", "expectedAny": ["impossible", "it becomes impossible"]},
+    {"question": "What does the prefix 'pre-' mean in the word 'preview'?", "expectedAny": ["before", "earlier", "in advance", "ahead of time"]},
+    {"question": "What suffix can you add to 'teach' to make it a person who teaches?", "expectedAny": ["-er", "er"]},
+    {"question": "What does the prefix 'dis-' mean in the word 'disagree'?", "expectedAny": ["not", "opposite of", "reverse/undo"]}
   ],
   "truefalse": [
-    {"question": "A prefix comes at the beginning of a word.", "answer": true},
-    {"question": "A suffix comes at the end of a word.", "answer": true},
-    {"question": "The prefix 're-' means to do something again.", "answer": true},
-    {"question": "The suffix '-less' means 'full of something'.", "answer": false},
-    {"question": "The prefix 'un-' often changes a word to its opposite meaning.", "answer": true},
-    {"question": "Root words cannot stand alone as their own word.", "answer": false},
-    {"question": "The suffix '-er' can mean 'more' (like in 'taller') or 'a person who does something' (like in 'teacher').", "answer": true}
+    {"question": "A prefix comes at the beginning of a word.", "answer": true, "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "A suffix comes at the end of a word.", "answer": true, "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "The prefix 're-' means to do something again.", "answer": true, "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "The suffix '-less' means 'full of something'.", "answer": false, "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "The prefix 'un-' often changes a word to its opposite meaning.", "answer": true, "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Root words cannot stand alone as their own word.", "answer": false, "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "The suffix '-er' can mean 'more' (like in 'taller') or 'a person who does something' (like in 'teacher').", "answer": true, "expectedAny": ["true", "yes", "t", "correct"]}
   ],
   "multiplechoice": [
-    {"question": "The word 'rewrite' means to ___.", "choices": ["write again", "not write", "write before", "write after"], "correct": 0},
-    {"question": "The word 'careful' means to be ___.", "choices": ["without care", "full of care", "not caring", "caring again"], "correct": 1},
-    {"question": "The prefix in the word 'disappear' means ___.", "choices": ["again", "before", "not or opposite", "after"], "correct": 2},
-    {"question": "The word 'teacher' uses the suffix ___ to mean 'a person who does the action'.", "choices": ["-ed", "-ing", "-er", "-est"], "correct": 2},
-    {"question": "The word 'preview' means to ___.", "choices": ["view after", "view again", "not view", "view before"], "correct": 3},
-    {"question": "The word 'careless' means to be ___.", "choices": ["full of care", "without care", "more careful", "caring again"], "correct": 1},
-    {"question": "What is the root word of 'unhelpful'?", "choices": ["un", "help", "ful", "helpful"], "correct": 1}
+    {"question": "The word 'rewrite' means to ___", "choices": ["write again", "not write", "write before", "write after"], "correct": 0, "expectedAny": ["write again", "to write again", "write it again"]},
+    {"question": "The word 'careful' means to be ___", "choices": ["without care", "full of care", "not caring", "caring again"], "correct": 1, "expectedAny": ["full of care", "filled with care", "having a lot of care"]},
+    {"question": "The prefix in the word 'disappear' means ___", "choices": ["again", "before", "not or opposite", "after"], "correct": 2, "expectedAny": ["not or opposite", "means not", "opposite meaning"]},
+    {"question": "The word 'teacher' uses the suffix ___ to mean 'a person who does the action'", "choices": ["-ed", "-ing", "-er", "-est"], "correct": 2, "expectedAny": ["-er", "er", "suffix -er"]},
+    {"question": "The word 'preview' means to ___", "choices": ["view after", "view again", "not view", "view before"], "correct": 3, "expectedAny": ["view before", "see before", "look before"]},
+    {"question": "The word 'careless' means to be ___", "choices": ["full of care", "without care", "more careful", "caring again"], "correct": 1, "expectedAny": ["without care", "no care", "not careful"]},
+    {"question": "What is the root word of 'unhelpful'?", "choices": ["un", "help", "ful", "helpful"], "correct": 1, "expectedAny": ["help"]}
   ],
   "fillintheblank": [
-    {"question": "The prefix 're-' in the word 'reread' means to read ___.", "expectedAny": ["again"]},
-    {"question": "The suffix '-ful' in the word 'joyful' means ___ of joy.", "expectedAny": ["full"]},
-    {"question": "To make the word 'happy' mean the opposite, you add the prefix 'un-' to get ___.", "expectedAny": ["unhappy"]},
-    {"question": "The root word of 'singer' is ___.", "expectedAny": ["sing"]},
-    {"question": "The suffix '-less' in the word 'fearless' means ___ fear.", "expectedAny": ["without"]},
-    {"question": "The prefix 'pre-' in 'preheat' means to heat ___.", "expectedAny": ["before"]},
-    {"question": "A person who paints is called a ___.", "expectedAny": ["painter"]}
+    {"question": "The prefix 're-' in the word 'reread' means to read ___.", "expectedAny": ["again", "one more time", "over"]},
+    {"question": "The suffix '-ful' in the word 'joyful' means ___ of joy.", "expectedAny": ["full", "full of"]},
+    {"question": "To make the word 'happy' mean the opposite, you add the prefix 'un-' to get ___.", "expectedAny": ["unhappy", "not happy"]},
+    {"question": "The root word of 'singer' is ___.", "expectedAny": ["sing", "the word 'sing'"]},
+    {"question": "The suffix '-less' in the word 'fearless' means ___ fear.", "expectedAny": ["without", "no"]},
+    {"question": "The prefix 'pre-' in 'preheat' means to heat ___.", "expectedAny": ["before", "ahead of time", "in advance"]},
+    {"question": "A person who paints is called a ___.", "expectedAny": ["painter", "a painter"]}
   ],
   "shortanswer": [
-    {"question": "How do prefixes change the meaning of a root word?", "expectedAny": ["They add meaning to the beginning of the word, such as 'not', 'again', or 'before'."]},
-    {"question": "List three common prefixes and their meanings.", "expectedAny": ["un- (not), re- (again), pre- (before)"]},
-    {"question": "How do suffixes change a root word?", "expectedAny": ["They change the word's meaning or its part of speech (e.g., from a verb to a noun)."]},
-    {"question": "What is the difference in meaning between 'helpful' and 'helpless'?", "expectedAny": ["'Helpful' means providing help, while 'helpless' means being without help."]},
-    {"question": "Create a new word using the prefix 'dis-' and explain its meaning.", "expectedAny": ["Disagree, which means to not agree."]},
-    {"question": "How can knowing about prefixes and suffixes help you when you are reading?", "expectedAny": ["It can help you figure out the meaning of new and unfamiliar words."]},
-    {"question": "Create three different words using the root word 'play'.", "expectedAny": ["Replay, player, playful, playing"]}
+    {"question": "How do prefixes change the meaning of a root word?", "expectedAny": ["added at the beginning to change meaning", "can mean not/again/before", "change the meaning at the start", "they add meaning", "change what the word means", "put before the root"]},
+    {"question": "List three common prefixes and their meanings.", "expectedAny": ["un- (not)", "re- (again)", "pre- (before)", "dis- (not/opposite)", "un means not", "re means again", "pre means before"]},
+    {"question": "How do suffixes change a root word?", "expectedAny": ["added to the end of a word", "change meaning or part of speech", "can change tense or comparison", "they add ending meaning", "go at the end", "change the word type"]},
+    {"question": "What is the difference in meaning between 'helpful' and 'helpless'?", "expectedAny": ["helpful = full of help; helpless = without help", "helpful gives help; helpless cannot help", "full of help vs without help", "helpful has help, helpless has none", "ful means full, less means without"]},
+    {"question": "Create a new word using the prefix 'dis-' and explain its meaning.", "expectedAny": ["disagree — not agree", "dislike — not like", "disappear — go away", "dishonest", "distrust", "disrespect"]},
+    {"question": "How can knowing about prefixes and suffixes help you when you are reading?", "expectedAny": ["figure out meanings of new words", "break apart words to infer meaning", "use word parts as clues", "guess what words mean", "understand big words", "find clues in the word"]},
+    {"question": "Create three different words using the root word 'play'.", "expectedAny": ["replay", "player", "playful", "playing", "playground", "plays", "played"]}
   ]
 }

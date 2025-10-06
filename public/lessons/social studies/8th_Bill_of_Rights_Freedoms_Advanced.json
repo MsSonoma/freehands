@@ -25,49 +25,64 @@
       "definition": "Rights that belong to each person"
     }
   ],
-  "teachingNotes": "Focus on key freedoms in the First Amendment. Discuss how the Bill of Rights protects minority rights.",
-  "sample": {
-    "question": "What are the first ten amendments called?",
-    "expectedAny": [
-      "Bill of Rights",
-      "first ten amendments",
-      "individual rights",
-      "constitutional rights"
-    ]
-  },
-  "truefalse": {
-    "question": "The Bill of Rights protects individual freedoms from government interference.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the right to fair treatment under the law?",
-    "expectedAny": [
-      "due process",
-      "fair trial",
-      "legal protection",
-      "procedural rights"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A change or addition to the Constitution is called an ________.",
-    "expectedAny": [
-      "amendment",
-      "change",
-      "addition",
-      "modification"
-    ]
-  },
-  "shortanswer": {
-    "question": "What five freedoms does the First Amendment protect?",
-    "expectedAny": [
-      "speech, religion, press, assembly, petition",
-      "expression, worship, media, gathering, complaint",
-      "basic freedoms"
-    ]
-  }
+  "sample": [
+    {"question": "What does the First Amendment protect?", "expectedAny": ["freedom of speech", "freedom of religion", "freedom of press", "freedom of assembly", "right to petition"]},
+    {"question": "What is the Bill of Rights?", "expectedAny": ["first ten amendments", "amendments protecting individual rights", "rights in the Constitution", "first ten rights", "rights amendments"]},
+    {"question": "What does freedom of speech allow you to do?", "expectedAny": ["express opinions", "speak without government interference", "share ideas freely", "speak freely", "say what you think"]},
+    {"question": "What is an amendment?", "expectedAny": ["change to the Constitution", "addition to the Constitution", "modification of the Constitution"]},
+    {"question": "What does due process guarantee?", "expectedAny": ["fair treatment under law", "legal rights", "fair legal procedures"]},
+    {"question": "What are individual rights?", "expectedAny": ["rights belonging to each person", "personal freedoms", "rights of citizens"]},
+    {"question": "Which amendment protects freedom of religion?", "expectedAny": ["First Amendment", "the first one", "Amendment One"]},
+    {"question": "What does freedom of press protect?", "expectedAny": ["right to publish information", "media freedom", "reporting without censorship"]},
+    {"question": "What is the right to petition?", "expectedAny": ["ask government to change something", "request government action", "appeal to government"]},
+    {"question": "What does freedom of assembly allow?", "expectedAny": ["gather peacefully", "meet in groups", "peaceful protest"]}
+  ],
+  "truefalse": [
+    {"question": "The First Amendment protects five freedoms. (True or False)", "correct": true},
+    {"question": "The Bill of Rights is the first ten amendments to the Constitution. (True or False)", "correct": true},
+    {"question": "Freedom of speech means you can say anything without consequences. (True or False)", "correct": false},
+    {"question": "Due process guarantees fair treatment under the law. (True or False)", "correct": true},
+    {"question": "The Bill of Rights only protects government officials. (True or False)", "correct": false},
+    {"question": "An amendment is a change or addition to the Constitution. (True or False)", "correct": true},
+    {"question": "Freedom of religion means the government can choose your religion. (True or False)", "correct": false},
+    {"question": "Individual rights belong to each person in the nation. (True or False)", "correct": true},
+    {"question": "The Bill of Rights was added after the Constitution was written. (True or False)", "correct": true},
+    {"question": "Freedom of assembly means you cannot gather in groups. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "Which freedom allows people to express their opinions without government interference?", "choices": [{"letter": "A", "text": "Freedom of speech"}, {"letter": "B", "text": "Freedom of press"}, {"letter": "C", "text": "Freedom of religion"}, {"letter": "D", "text": "Freedom of assembly"}], "correct": "A"},
+    {"question": "What are the first ten amendments to the Constitution called?", "choices": [{"letter": "A", "text": "The Preamble"}, {"letter": "B", "text": "The Bill of Rights"}, {"letter": "C", "text": "The Articles"}, {"letter": "D", "text": "The Declaration"}], "correct": "B"},
+    {"question": "Which amendment protects freedom of speech, religion, and press?", "choices": [{"letter": "A", "text": "Second Amendment"}, {"letter": "B", "text": "Fourth Amendment"}, {"letter": "C", "text": "First Amendment"}, {"letter": "D", "text": "Fifth Amendment"}], "correct": "C"},
+    {"question": "What does due process guarantee?", "choices": [{"letter": "A", "text": "Free healthcare"}, {"letter": "B", "text": "Fair treatment under law"}, {"letter": "C", "text": "Government jobs"}, {"letter": "D", "text": "Free education"}], "correct": "B"},
+    {"question": "What is an amendment?", "choices": [{"letter": "A", "text": "A law passed by Congress"}, {"letter": "B", "text": "A court decision"}, {"letter": "C", "text": "A change to the Constitution"}, {"letter": "D", "text": "A presidential order"}], "correct": "C"},
+    {"question": "Which freedom protects the right to publish information?", "choices": [{"letter": "A", "text": "Freedom of assembly"}, {"letter": "B", "text": "Freedom of religion"}, {"letter": "C", "text": "Freedom of press"}, {"letter": "D", "text": "Freedom of petition"}], "correct": "C"},
+    {"question": "What are individual rights?", "choices": [{"letter": "A", "text": "Rights only for government"}, {"letter": "B", "text": "Rights belonging to each person"}, {"letter": "C", "text": "Rights for states only"}, {"letter": "D", "text": "Rights for businesses"}], "correct": "B"},
+    {"question": "Which freedom allows people to gather peacefully?", "choices": [{"letter": "A", "text": "Freedom of speech"}, {"letter": "B", "text": "Freedom of religion"}, {"letter": "C", "text": "Freedom of assembly"}, {"letter": "D", "text": "Freedom of press"}], "correct": "C"},
+    {"question": "What is the right to petition?", "choices": [{"letter": "A", "text": "Right to vote"}, {"letter": "B", "text": "Right to ask government for changes"}, {"letter": "C", "text": "Right to run for office"}, {"letter": "D", "text": "Right to own property"}], "correct": "B"},
+    {"question": "Which freedom protects your choice of religion?", "choices": [{"letter": "A", "text": "Freedom of speech"}, {"letter": "B", "text": "Freedom of religion"}, {"letter": "C", "text": "Freedom of assembly"}, {"letter": "D", "text": "Freedom of press"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "The _____ Amendment protects freedom of speech, religion, press, assembly, and petition.", "expectedAny": ["First", "1st", "one"]},
+    {"question": "The first ten amendments to the Constitution are called the Bill of _____.", "expectedAny": ["Rights"]},
+    {"question": "Freedom of _____ allows people to express their opinions without government interference.", "expectedAny": ["speech"]},
+    {"question": "An _____ is a change or addition to the Constitution.", "expectedAny": ["amendment"]},
+    {"question": "Due _____ guarantees fair treatment under the law.", "expectedAny": ["process"]},
+    {"question": "_____ rights are rights that belong to each person.", "expectedAny": ["Individual", "Personal"]},
+    {"question": "Freedom of _____ protects the right to publish information without censorship.", "expectedAny": ["press", "the press"]},
+    {"question": "The right to _____ allows citizens to ask the government for changes.", "expectedAny": ["petition"]},
+    {"question": "Freedom of _____ protects your choice of religious beliefs.", "expectedAny": ["religion"]},
+    {"question": "Freedom of _____ allows people to gather peacefully in groups.", "expectedAny": ["assembly"]}
+  ],
+  "shortanswer": [
+    {"question": "Why are the freedoms in the Bill of Rights important for citizens?", "keyTerms": ["protect", "individual", "rights", "government"], "expectedAny": ["They protect individual rights from government interference", "They guarantee personal freedoms and limit government power", "They ensure citizens have basic rights and protections"]},
+    {"question": "How does freedom of speech benefit a democratic society?", "keyTerms": ["express", "opinions", "ideas", "discuss"], "expectedAny": ["It allows people to express opinions and share ideas freely", "It enables open discussion of important issues", "It lets citizens discuss problems and solutions openly"]},
+    {"question": "Why did the founders add the Bill of Rights to the Constitution?", "keyTerms": ["protect", "individual", "rights", "limit"], "expectedAny": ["To protect individual rights from government power", "To guarantee certain freedoms would be protected", "To limit government power and ensure personal freedoms"]},
+    {"question": "What is the purpose of due process?", "keyTerms": ["fair", "treatment", "law", "rights"], "expectedAny": ["To guarantee fair treatment under the law", "To protect legal rights of individuals", "To ensure fair procedures in legal matters"]},
+    {"question": "How does freedom of religion protect citizens?", "keyTerms": ["choose", "beliefs", "government", "religion"], "expectedAny": ["It allows people to choose their own religious beliefs", "It prevents government from controlling religion", "It protects the right to practice any religion or none"]},
+    {"question": "Why is freedom of press important in America?", "keyTerms": ["inform", "public", "government", "information"], "expectedAny": ["It allows media to inform the public about government actions", "It ensures people can publish information freely", "It helps citizens stay informed about important issues"]},
+    {"question": "What does the right to petition allow citizens to do?", "keyTerms": ["ask", "government", "change", "address"], "expectedAny": ["It allows citizens to ask government for changes", "It lets people request government action on issues", "It enables citizens to address grievances with government"]},
+    {"question": "How does freedom of assembly support democracy?", "keyTerms": ["gather", "peacefully", "groups", "express"], "expectedAny": ["It allows people to gather peacefully in groups", "It lets citizens meet to express views together", "It enables peaceful protest and collective expression"]},
+    {"question": "Why are individual rights important in a free society?", "keyTerms": ["protect", "freedom", "person", "government"], "expectedAny": ["They protect personal freedom from government control", "They guarantee each person has certain protections", "They ensure individual liberty and limit government power"]},
+    {"question": "What makes the Bill of Rights different from the original Constitution?", "keyTerms": ["amendments", "specific", "rights", "protections"], "expectedAny": ["It lists specific individual rights and protections", "It provides amendments focused on personal freedoms", "It guarantees certain rights not in the original document"]}
+  ]
 }

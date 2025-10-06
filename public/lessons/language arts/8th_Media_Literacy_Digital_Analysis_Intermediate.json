@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Teach students to critically evaluate online sources. Practice identifying bias and checking facts from multiple sources.",
-  "sample": {
-    "question": "What is the ability to analyze and evaluate media messages?",
-    "expectedAny": [
-      "media literacy",
-      "critical media analysis",
-      "media evaluation",
-      "digital literacy"
-    ]
-  },
-  "truefalse": {
-    "question": "All information found online is equally credible.",
-    "expectedAny": [
-      "false",
-      "no",
-      "f",
-      "incorrect"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What means prejudice in an unfair way?",
-    "expectedAny": [
-      "bias",
-      "prejudice",
-      "unfair opinion",
-      "slanted view"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Verifying the accuracy of information is called ________-checking.",
-    "expectedAny": [
-      "fact",
-      "truth",
-      "accuracy",
-      "source"
-    ]
-  },
-  "shortanswer": {
-    "question": "How can you determine if a digital source is credible?",
-    "expectedAny": [
-      "check the author",
-      "verify with other sources",
-      "look for publication date",
-      "check domain"
-    ]
-  }
+  "sample": [
+    { "question": "What is the ability to analyze and evaluate media messages?", "expectedAny": ["media literacy"] },
+    { "question": "Which is online information?", "choices": ["Books", "Digital source", "Magazines", "Newspapers"], "correct": 1, "expectedAny": ["digital source"] },
+    { "question": "Being trusted and believed is ________.", "expectedAny": ["credibility"] },
+    { "question": "Unfair prejudice is ________.", "expectedAny": ["bias"] },
+    { "question": "Verifying information accuracy is ________.", "expectedAny": ["fact-checking"] },
+    { "question": "What is analyzing media?", "choices": ["Ignoring", "Media literacy", "Accepting all", "Guessing"], "correct": 1, "expectedAny": ["media literacy"] },
+    { "question": "Electronic information is ________.", "expectedAny": ["digital source"] },
+    { "question": "What is trustworthiness?", "choices": ["Bias", "Credibility", "Prejudice", "Falsehood"], "correct": 1, "expectedAny": ["credibility"] },
+    { "question": "Unfair slant is ________.", "expectedAny": ["bias"] },
+    { "question": "Checking accuracy is ________.", "expectedAny": ["fact-checking"] }
+  ],
+  "truefalse": [
+    { "question": "All information found online is equally credible.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Media literacy helps evaluate messages.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Digital sources are always wrong.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Credibility means trustworthiness.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Bias is always fair.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Fact-checking verifies accuracy.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All online sources are credible.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Media literacy is important skill.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Bias is unfair prejudice.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Fact-checking is unnecessary.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What means prejudice in an unfair way?", "choices": ["Truth", "Bias", "Fact", "Evidence"], "correct": 1, "expectedAny": ["bias"] },
+    { "question": "What is analyzing media?", "choices": ["Ignoring", "Media literacy", "Accepting all", "Guessing"], "correct": 1, "expectedAny": ["media literacy"] },
+    { "question": "What is online information?", "choices": ["Books", "Digital source", "Magazines", "Newspapers"], "correct": 1, "expectedAny": ["digital source"] },
+    { "question": "What is trustworthiness?", "choices": ["Bias", "Credibility", "Prejudice", "Falsehood"], "correct": 1, "expectedAny": ["credibility"] },
+    { "question": "What verifies accuracy?", "choices": ["Guessing", "Fact-checking", "Ignoring", "Assuming"], "correct": 1, "expectedAny": ["fact-checking"] },
+    { "question": "Media literacy helps?", "choices": ["Accept everything", "Evaluate critically", "Ignore sources", "Guess"], "correct": 1, "expectedAny": ["evaluate critically"] },
+    { "question": "Digital sources are?", "choices": ["Only books", "Electronic information", "Only magazines", "Only newspapers"], "correct": 1, "expectedAny": ["electronic information"] },
+    { "question": "Credible sources are?", "choices": ["Untrustworthy", "Trustworthy", "Always biased", "Never useful"], "correct": 1, "expectedAny": ["trustworthy"] },
+    { "question": "Bias shows?", "choices": ["Fairness", "Unfair prejudice", "Truth", "Accuracy"], "correct": 1, "expectedAny": ["unfair prejudice"] },
+    { "question": "Fact-checking involves?", "choices": ["Guessing", "Verifying accuracy", "Ignoring", "Assuming"], "correct": 1, "expectedAny": ["verifying accuracy"] }
+  ],
+  "fillintheblank": [
+    { "question": "Verifying the accuracy of information is called ________-checking.", "expectedAny": ["fact"] },
+    { "question": "Ability to evaluate media is ________.", "expectedAny": ["media literacy"] },
+    { "question": "Online information is ________.", "expectedAny": ["digital source"] },
+    { "question": "Trustworthiness is ________.", "expectedAny": ["credibility"] },
+    { "question": "Unfair prejudice is ________.", "expectedAny": ["bias"] },
+    { "question": "________ literacy evaluates media.", "expectedAny": ["media"] },
+    { "question": "________ source is electronic.", "expectedAny": ["digital"] },
+    { "question": "________ means trustworthy.", "expectedAny": ["credibility"] },
+    { "question": "________ is unfair slant.", "expectedAny": ["bias"] },
+    { "question": "________-checking verifies accuracy.", "expectedAny": ["fact"] }
+  ],
+  "shortanswer": [
+    { "question": "How can you determine if a digital source is credible?", "expectedAny": ["check the author", "verify with other sources"] },
+    { "question": "What is media literacy?", "expectedAny": ["ability to analyze media", "evaluating media messages", "understanding media", "critical media analysis"] },
+    { "question": "What is digital source?", "expectedAny": ["online information", "electronic information"] },
+    { "question": "What is credibility?", "expectedAny": ["trustworthiness", "being believed", "reliability", "how trustworthy"] },
+    { "question": "What is bias?", "expectedAny": ["unfair prejudice", "slanted view", "one-sided view", "unfair slant"] },
+    { "question": "What is fact-checking?", "expectedAny": ["verifying accuracy", "checking information"] },
+    { "question": "Why check sources?", "expectedAny": ["determine credibility", "verify accuracy"] },
+    { "question": "How identify bias?", "expectedAny": ["look for unfair slant", "check multiple sources"] },
+    { "question": "Why media literacy important?", "expectedAny": ["evaluate information critically", "avoid misinformation"] },
+    { "question": "How verify information?", "expectedAny": ["fact-checking", "check multiple sources"] }
+  ]
 }

@@ -56,10 +56,10 @@
   "fillintheblank": [
     {"question": "When we treat others with kindness, we show ________.", "expectedAny": ["respect", "caring", "kindness"]},
     {"question": "A job or duty you should do is a ____________.", "expectedAny": ["responsibility", "duty", "job"]},
-    {"question": "A person who belongs to a country is a __________.", "expectedAny": ["citizen"]},
-    {"question": "Rules help keep people ________.", "expectedAny": ["safe"]},
-    {"question": "A right at school is the right to ________.", "expectedAny": ["learn", "be safe"]},
-    {"question": "We should always ________ to others when they speak.", "expectedAny": ["listen"]},
+  {"question": "A person who belongs to a country is a __________.", "expectedAny": ["citizen", "member of a country"]},
+  {"question": "Rules help keep people ________.", "expectedAny": ["safe", "protected"]},
+  {"question": "A right at school is the right to ________.", "expectedAny": ["learn", "be safe"]},
+  {"question": "We should always ________ to others when they speak.", "expectedAny": ["listen", "pay attention"]},
     {"question": "Picking up trash shows you are being ________.", "expectedAny": ["responsible", "helpful"]}
   ],
   "shortanswer": [

@@ -5,12 +5,16 @@
   "difficulty": "Intermediate",
   "featured": false,
   "vocab": [
-    { "term": "simple machine", "definition": "A basic tool that makes work easier" },
-    { "term": "lever", "definition": "A bar that moves on a fixed point to lift things" },
-    { "term": "inclined plane", "definition": "A ramp or slope that makes lifting easier" },
-    { "term": "pulley", "definition": "A wheel with a rope that helps lift heavy objects" },
-    { "term": "wheel and axle", "definition": "Two parts that turn together to reduce friction and move things" },
-    { "term": "wedge", "definition": "A tool with a pointed edge that splits or cuts things" }
+    {"word": "simple machine", "kid_friendly_definition": "A basic tool that makes work easier."},
+    {"word": "lever", "kid_friendly_definition": "A bar that moves on a fixed point to lift things."},
+    {"word": "inclined plane", "kid_friendly_definition": "A ramp or slope that makes lifting easier."},
+    {"word": "pulley", "kid_friendly_definition": "A wheel with a rope that helps lift heavy objects."},
+    {"word": "wheel and axle", "kid_friendly_definition": "Two parts that turn together to reduce friction and move things."},
+    {"word": "wedge", "kid_friendly_definition": "A tool with a pointed edge that splits or cuts things."},
+    {"word": "screw", "kid_friendly_definition": "An inclined plane wrapped around a rod that holds things together or lifts."},
+    {"word": "fulcrum", "kid_friendly_definition": "The fixed point a lever turns on."},
+    {"word": "friction", "kid_friendly_definition": "A force that slows motion when surfaces rub."},
+    {"word": "mechanical advantage", "kid_friendly_definition": "How a machine multiplies force or changes direction to make work easier."}
   ],
   "teachingNotes": "Use classroom examples like scissors (lever), ramps (inclined plane), and flagpoles (pulley). Let students identify simple machines around school.",
   "sample": [
@@ -23,39 +27,39 @@
     { "question": "If a ramp is longer, how does that affect the force needed?", "expectedAny": ["less force needed"] }
   ],
   "truefalse": [
-    { "question": "A seesaw is an example of a lever.", "answer": true },
-    { "question": "A pulley changes the direction of a force.", "answer": true },
-    { "question": "A wedge can be used to split wood.", "answer": true },
-    { "question": "An inclined plane always makes you use more force.", "answer": false },
-    { "question": "Wheel and axle reduce friction.", "answer": true },
-    { "question": "Simple machines only work at playgrounds.", "answer": false },
-    { "question": "A longer ramp usually requires less force to move an object up.", "answer": true }
+    { "question": "A seesaw is an example of a lever.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "lever with fulcrum"] },
+    { "question": "A pulley changes the direction of a force.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "changes direction"] },
+    { "question": "A wedge can be used to split wood.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "split wood"] },
+    { "question": "An inclined plane always makes you use more force.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "longer ramp reduces force"] },
+    { "question": "Wheel and axle reduce friction.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "reduce friction"] },
+    { "question": "Simple machines only work at playgrounds.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "used everywhere"] },
+    { "question": "A longer ramp usually requires less force to move an object up.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "less force"] }
   ],
   "multiplechoice": [
-    { "question": "Which simple machine would best help you lift a heavy box to the second floor?", "choices": ["Lever", "Inclined plane", "Wheel", "Wedge"], "correct": 1 },
-    { "question": "Which tool is a lever?", "choices": ["Hammer head", "Screwdriver used to pry", "Pulley", "Ramp"], "correct": 1 },
-    { "question": "Which simple machine is in a door hinge?", "choices": ["Pulley", "Wheel and axle", "Wedge", "Inclined plane"], "correct": 1 },
-    { "question": "Which simple machine splits things apart?", "choices": ["Wheel and axle", "Pulley", "Wedge", "Lever"], "correct": 2 },
-    { "question": "A flagpole uses which simple machine?", "choices": ["Pulley", "Lever", "Wedge", "Screw"], "correct": 0 },
-    { "question": "Which change can make a ramp easier to use?", "choices": ["Make it steeper", "Make it longer", "Add weight", "Make it bumpy"], "correct": 1 },
-    { "question": "What is the main purpose of a simple machine?", "choices": ["Make work easier", "Make things heavier", "Create more friction", "Make things louder"], "correct": 0 }
+    { "question": "Which simple machine would best help you lift a heavy box to the second floor?", "choices": ["Lever", "Inclined plane", "Wheel", "Wedge"], "correct": 1, "expectedAny": ["b", "B", "2", "Inclined plane", "ramp"] },
+    { "question": "Which tool is a lever?", "choices": ["Hammer head", "Screwdriver used to pry", "Pulley", "Ramp"], "correct": 1, "expectedAny": ["b", "B", "2", "Screwdriver used to pry", "screwdriver lever"] },
+    { "question": "Which simple machine is in a door hinge?", "choices": ["Pulley", "Wheel and axle", "Wedge", "Inclined plane"], "correct": 1, "expectedAny": ["b", "B", "2", "Wheel and axle", "axle"] },
+    { "question": "Which simple machine splits things apart?", "choices": ["Wheel and axle", "Pulley", "Wedge", "Lever"], "correct": 2, "expectedAny": ["c", "C", "3", "Wedge"] },
+    { "question": "A flagpole uses which simple machine?", "choices": ["Pulley", "Lever", "Wedge", "Screw"], "correct": 0, "expectedAny": ["a", "A", "1", "Pulley"] },
+    { "question": "Which change can make a ramp easier to use?", "choices": ["Make it steeper", "Make it longer", "Add weight", "Make it bumpy"], "correct": 1, "expectedAny": ["b", "B", "2", "Make it longer", "longer ramp"] },
+    { "question": "What is the main purpose of a simple machine?", "choices": ["Make work easier", "Make things heavier", "Create more friction", "Make things louder"], "correct": 0, "expectedAny": ["a", "A", "1", "Make work easier", "make work easier"] }
   ],
   "fillintheblank": [
-    { "question": "A _____ uses a rope and wheel to make lifting easier.", "expectedAny": ["pulley"] },
-    { "question": "A ramp is also called an _____ _____.", "expectedAny": ["inclined", "plane"] },
-    { "question": "The _____ and _____ help wheels turn.", "expectedAny": ["wheel", "axle"] },
-    { "question": "A _____ can be used to split wood.", "expectedAny": ["wedge"] },
-    { "question": "A seesaw is a type of _____.", "expectedAny": ["lever"] },
-    { "question": "Simple machines change the _____ or amount of force.", "expectedAny": ["direction"] },
-    { "question": "A longer ramp usually needs _____ force.", "expectedAny": ["less"] }
+    { "question": "A _____ uses a rope and wheel to make lifting easier.", "expectedAny": ["pulley", "pulley system"] },
+    { "question": "A ramp is also called an _____ _____.", "expectedAny": ["inclined plane", "ramp", "inclined", "plane"] },
+    { "question": "The _____ and _____ help wheels turn.", "expectedAny": ["wheel and axle", "wheel & axle", "wheel", "axle"] },
+    { "question": "A _____ can be used to split wood.", "expectedAny": ["wedge", "wedge tool"] },
+    { "question": "A seesaw is a type of _____.", "expectedAny": ["lever", "simple machine"] },
+    { "question": "Simple machines change the _____ or amount of force.", "expectedAny": ["direction", "direction of force"] },
+    { "question": "A longer ramp usually needs _____ force.", "expectedAny": ["less", "lower", "reduced"] }
   ],
   "shortanswer": [
-    { "question": "How does an inclined plane make work easier?", "expectedAny": ["spreads the work over a longer distance", "less force needed"] },
-    { "question": "Describe a simple machine you used this week.", "expectedAny": ["answers vary: scissors/lever", "ramp/inclined plane"] },
-    { "question": "Why do bicycles use wheels and axles?", "expectedAny": ["reduce friction", "move easier"] },
-    { "question": "How does a pulley help lift a heavy object?", "expectedAny": ["changes direction of force", "can reduce force needed with more pulleys"] },
-    { "question": "Give an example of how a wedge is used in everyday life.", "expectedAny": ["cutting with a knife", "splitting wood"] },
-    { "question": "Explain how a lever can lift a heavy rock.", "expectedAny": ["use a fulcrum", "longer lever arm gives advantage"] },
-    { "question": "What could happen if a ramp is too steep?", "expectedAny": ["harder to push", "object may roll back"] }
+    {"question": "How does an inclined plane make work easier?", "expectedAny": ["spreads the work over a longer distance", "less force needed", "trades force for distance", "ramps make it easier", "longer path is easier"]},
+    {"question": "Describe a simple machine you used this week.", "expectedAny": ["scissors (lever)", "ramp (inclined plane)", "knife (wedge)", "door (wheel and axle)", "any reasonable machine"]},
+    {"question": "Why do bicycles use wheels and axles?", "expectedAny": ["reduce friction", "move easier", "roll with less effort", "easier to move", "helps wheels turn"]},
+    {"question": "How does a pulley help lift a heavy object?", "expectedAny": ["changes direction of force", "can reduce force needed with more pulleys", "adds mechanical advantage", "easier to pull down", "makes lifting easier"]},
+    {"question": "Give an example of how a wedge is used in everyday life.", "expectedAny": ["cutting with a knife", "splitting wood", "holding a door with a doorstop", "axe", "knife for cutting"]},
+    {"question": "Explain how a lever can lift a heavy rock.", "expectedAny": ["use a fulcrum", "longer lever arm gives advantage", "move fulcrum closer to the load", "use a bar and pivot point", "bar and fixed point"]},
+    {"question": "What could happen if a ramp is too steep?", "expectedAny": ["harder to push", "object may roll back", "it can be unsafe or slippery", "too hard", "needs more force"]}
   ]
 }

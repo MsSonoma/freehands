@@ -1,0 +1,463 @@
+﻿{
+    "id":  "12th_Molecular_Genetics_DNA_Technology_Advanced",
+    "title":  "Molecular Genetics and DNA Technology",
+    "grade":  "12th",
+    "difficulty":  "Advanced",
+    "vocab":  [
+                  {
+                      "term":  "CRISPR",
+                      "definition":  "Gene editing technology using Cas9 enzyme"
+                  },
+                  {
+                      "term":  "genome sequencing",
+                      "definition":  "Determining complete DNA sequence"
+                  },
+                  {
+                      "term":  "transgenic organism",
+                      "definition":  "Organism with genes from another species"
+                  },
+                  {
+                      "term":  "gene therapy",
+                      "definition":  "Treating disease by modifying genes"
+                  },
+                  {
+                      "term":  "epigenetics",
+                      "definition":  "Heritable changes not altering DNA sequence"
+                  }
+              ],
+    "teachingNotes":  "Explore molecular genetics and biotechnology. Examine DNA structure, function, and manipulation.",
+    "sample":  [
+                   {
+                       "question":  "What carries genetic information?",
+                       "expectedAny":  [
+                                           "DNA",
+                                           "deoxyribonucleic acid",
+                                           "genetic material",
+                                           "hereditary material",
+                                           "genetic code",
+                                           "nucleic acid"
+                                       ]
+                   },
+                   {
+                       "question":  "What codes for traits?",
+                       "expectedAny":  [
+                                           "gene",
+                                           "genes",
+                                           "genetic unit",
+                                           "hereditary unit",
+                                           "DNA segment",
+                                           "genetic factor"
+                                       ]
+                   },
+                   {
+                       "question":  "What contains DNA?",
+                       "expectedAny":  [
+                                           "chromosome",
+                                           "chromosomes",
+                                           "DNA structure",
+                                           "genetic structure",
+                                           "chromatin",
+                                           "DNA package"
+                                       ]
+                   },
+                   {
+                       "question":  "What changes DNA?",
+                       "expectedAny":  [
+                                           "mutation",
+                                           "mutations",
+                                           "genetic change",
+                                           "DNA change",
+                                           "genetic alteration",
+                                           "DNA alteration"
+                                       ]
+                   },
+                   {
+                       "question":  "What copies DNA?",
+                       "expectedAny":  [
+                                           "replication",
+                                           "copying",
+                                           "DNA replication",
+                                           "DNA copying",
+                                           "DNA duplication",
+                                           "duplication"
+                                       ]
+                   },
+                   {
+                       "question":  "What manipulates genes?",
+                       "expectedAny":  [
+                                           "genetic engineering",
+                                           "engineering",
+                                           "gene manipulation",
+                                           "biotechnology",
+                                           "genetic modification",
+                                           "gene editing"
+                                       ]
+                   },
+                   {
+                       "question":  "What combines DNA sources?",
+                       "expectedAny":  [
+                                           "recombinant DNA",
+                                           "recombinant"
+                                       ]
+                   },
+                   {
+                       "question":  "What is bacterial DNA?",
+                       "expectedAny":  [
+                                           "plasmid",
+                                           "plasmids"
+                                       ]
+                   },
+                   {
+                       "question":  "What cuts DNA?",
+                       "expectedAny":  [
+                                           "restriction enzyme",
+                                           "enzyme"
+                                       ]
+                   },
+                   {
+                       "question":  "What amplifies DNA?",
+                       "expectedAny":  [
+                                           "PCR",
+                                           "polymerase chain reaction"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "DNA carries genetic information.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Genes are entire chromosomes.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Chromosomes contain DNA.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Mutations never occur naturally.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Replication copies DNA.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Genetic engineering manipulates genes.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Recombinant DNA is from one source.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Plasmids are in bacteria.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Restriction enzymes build DNA.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "PCR amplifies DNA.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What carries genes?",
+                               "choices":  [
+                                               "Protein",
+                                               "DNA",
+                                               "Lipid",
+                                               "Carbohydrate"
+                                           ],
+                               "correct":  "DNA"
+                           },
+                           {
+                               "question":  "What is DNA segment?",
+                               "choices":  [
+                                               "Chromosome",
+                                               "Gene",
+                                               "Protein",
+                                               "Lipid"
+                                           ],
+                               "correct":  "Gene"
+                           },
+                           {
+                               "question":  "What contains many genes?",
+                               "choices":  [
+                                               "Nucleotide",
+                                               "Base",
+                                               "Gene",
+                                               "Chromosome"
+                                           ],
+                               "correct":  "Chromosome"
+                           },
+                           {
+                               "question":  "What alters DNA?",
+                               "choices":  [
+                                               "Replication",
+                                               "Mutation",
+                                               "Translation",
+                                               "Transcription"
+                                           ],
+                               "correct":  "Mutation"
+                           },
+                           {
+                               "question":  "What duplicates DNA?",
+                               "choices":  [
+                                               "Translation",
+                                               "Transcription",
+                                               "Replication",
+                                               "Mutation"
+                                           ],
+                               "correct":  "Replication"
+                           },
+                           {
+                               "question":  "What directly changes genes?",
+                               "choices":  [
+                                               "Natural selection",
+                                               "Genetic engineering",
+                                               "Evolution",
+                                               "Adaptation"
+                                           ],
+                               "correct":  "Genetic engineering"
+                           },
+                           {
+                               "question":  "What is combined DNA?",
+                               "choices":  [
+                                               "Native",
+                                               "Pure",
+                                               "Recombinant",
+                                               "Original"
+                                           ],
+                               "correct":  "Recombinant"
+                           },
+                           {
+                               "question":  "What is circular bacterial DNA?",
+                               "choices":  [
+                                               "Chromosome",
+                                               "Plasmid",
+                                               "Virus",
+                                               "Protein"
+                                           ],
+                               "correct":  "Plasmid"
+                           },
+                           {
+                               "question":  "What cuts specific sequences?",
+                               "choices":  [
+                                               "Ligase",
+                                               "Restriction enzyme",
+                                               "Polymerase",
+                                               "Helicase"
+                                           ],
+                               "correct":  "Restriction enzyme"
+                           },
+                           {
+                               "question":  "What copies DNA segments?",
+                               "choices":  [
+                                               "Translation",
+                                               "Transcription",
+                                               "PCR",
+                                               "Mutation"
+                                           ],
+                               "correct":  "PCR"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "_____ carries genetic information.",
+                               "expectedAny":  [
+                                                   "DNA",
+                                                   "Deoxyribonucleic acid"
+                                               ]
+                           },
+                           {
+                               "question":  "A _____ codes for a trait.",
+                               "expectedAny":  [
+                                                   "gene",
+                                                   "Gene"
+                                               ]
+                           },
+                           {
+                               "question":  "A _____ contains DNA.",
+                               "expectedAny":  [
+                                                   "chromosome",
+                                                   "Chromosome"
+                                               ]
+                           },
+                           {
+                               "question":  "A _____ changes DNA sequence.",
+                               "expectedAny":  [
+                                                   "mutation",
+                                                   "Mutation"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ copies DNA.",
+                               "expectedAny":  [
+                                                   "replication",
+                                                   "Replication"
+                                               ]
+                           },
+                           {
+                               "question":  "Genetic _____ manipulates genes.",
+                               "expectedAny":  [
+                                                   "engineering",
+                                                   "Engineering"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ DNA combines sources.",
+                               "expectedAny":  [
+                                                   "recombinant",
+                                                   "Recombinant"
+                                               ]
+                           },
+                           {
+                               "question":  "A _____ is bacterial DNA.",
+                               "expectedAny":  [
+                                                   "plasmid",
+                                                   "Plasmid"
+                                               ]
+                           },
+                           {
+                               "question":  "Restriction _____ cut DNA.",
+                               "expectedAny":  [
+                                                   "enzymes",
+                                                   "enzyme"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ amplifies DNA sequences.",
+                               "expectedAny":  [
+                                                   "PCR",
+                                                   "Polymerase chain reaction"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "What is DNA?",
+                            "expectedAny":  [
+                                                "molecule carrying genetic information",
+                                                "double helix of nucleotides",
+                                                "deoxyribonucleic acid with hereditary instructions"
+                                            ]
+                        },
+                        {
+                            "question":  "Define gene.",
+                            "expectedAny":  [
+                                                "segment of DNA coding for trait",
+                                                "unit of heredity",
+                                                "sequence producing protein or RNA"
+                                            ]
+                        },
+                        {
+                            "question":  "What is chromosome?",
+                            "expectedAny":  [
+                                                "structure containing DNA in cells",
+                                                "condensed DNA and proteins",
+                                                "humans have 23 pairs"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain mutation.",
+                            "expectedAny":  [
+                                                "change in DNA sequence",
+                                                "can be beneficial harmful or neutral",
+                                                "source of genetic variation"
+                                            ]
+                        },
+                        {
+                            "question":  "What is replication?",
+                            "expectedAny":  [
+                                                "process of copying DNA",
+                                                "occurs before cell division",
+                                                "semiconservative each strand is template"
+                                            ]
+                        },
+                        {
+                            "question":  "What is genetic engineering?",
+                            "expectedAny":  [
+                                                "directly manipulating organism genes",
+                                                "biotechnology changing DNA",
+                                                "used in medicine agriculture research"
+                                            ]
+                        },
+                        {
+                            "question":  "Define recombinant DNA.",
+                            "expectedAny":  [
+                                                "DNA from multiple sources combined",
+                                                "created in lab for research",
+                                                "used to produce insulin and vaccines"
+                                            ]
+                        },
+                        {
+                            "question":  "What is plasmid?",
+                            "expectedAny":  [
+                                                "small circular DNA in bacteria",
+                                                "used as vector in genetic engineering",
+                                                "can carry foreign genes"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain restriction enzyme.",
+                            "expectedAny":  [
+                                                "protein cutting DNA at specific sequences",
+                                                "molecular scissors for genetic engineering",
+                                                "produces sticky ends for joining DNA"
+                                            ]
+                        },
+                        {
+                            "question":  "What is PCR?",
+                            "expectedAny":  [
+                                                "technique amplifying DNA sequences",
+                                                "polymerase chain reaction copies DNA millions of times",
+                                                "used in forensics diagnostics research"
+                                            ]
+                        }
+                    ]
+}

@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Practice using context clues to determine meanings. Discuss how word choice affects tone and meaning in writing.",
-  "sample": {
-    "question": "What are hints in text that help determine word meanings?",
-    "expectedAny": [
-      "context clues",
-      "text clues",
-      "surrounding hints",
-      "contextual hints"
-    ]
-  },
-  "truefalse": {
-    "question": "Connotation refers to a word's emotional feeling or association.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the literal dictionary definition of a word?",
-    "expectedAny": [
-      "denotation",
-      "definition",
-      "literal meaning",
-      "dictionary meaning"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The origin and development of a word is its ________.",
-    "expectedAny": [
-      "etymology",
-      "word history",
-      "origin",
-      "linguistic history"
-    ]
-  },
-  "shortanswer": {
-    "question": "How do connotation and denotation differ?",
-    "expectedAny": [
-      "connotation is emotional, denotation is literal",
-      "feeling vs dictionary meaning",
-      "association vs definition"
-    ]
-  }
+  "sample": [
+    { "question": "What are hints in text that help determine word meanings?", "expectedAny": ["context clues"] },
+    { "question": "Which is emotional feeling?", "choices": ["Denotation", "Connotation", "Etymology", "Definition"], "correct": 1, "expectedAny": ["connotation"] },
+    { "question": "The literal definition is ________.", "expectedAny": ["denotation"] },
+    { "question": "Word origin is ________.", "expectedAny": ["etymology"] },
+    { "question": "A comparison showing relationship is ________.", "expectedAny": ["analogy"] },
+    { "question": "What helps determine meanings?", "choices": ["Guessing", "Context clues", "Ignoring", "Skipping"], "correct": 1, "expectedAny": ["context clues"] },
+    { "question": "Emotional association is ________.", "expectedAny": ["connotation"] },
+    { "question": "Dictionary meaning is ________.", "expectedAny": ["denotation"] },
+    { "question": "Which is word history?", "choices": ["Context", "Etymology", "Analogy", "Synonym"], "correct": 1, "expectedAny": ["etymology"] },
+    { "question": "Comparing relationships uses ________.", "expectedAny": ["analogy"] }
+  ],
+  "truefalse": [
+    { "question": "Connotation refers to a word's emotional feeling or association.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Denotation is emotional meaning.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Context clues help determine meanings.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Etymology is emotional feeling.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Analogy compares relationships.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Denotation and connotation are the same.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Context clues are in surrounding text.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Etymology is literal definition.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Connotation includes feelings.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Denotation is subjective.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is the literal dictionary definition of a word?", "choices": ["Connotation", "Denotation", "Etymology", "Analogy"], "correct": 1, "expectedAny": ["denotation"] },
+    { "question": "What are hints in text?", "choices": ["Guesses", "Context clues", "Definitions", "Synonyms"], "correct": 1, "expectedAny": ["context clues"] },
+    { "question": "What is emotional meaning?", "choices": ["Denotation", "Connotation", "Etymology", "Definition"], "correct": 1, "expectedAny": ["connotation"] },
+    { "question": "What is word origin?", "choices": ["Context", "Etymology", "Analogy", "Synonym"], "correct": 1, "expectedAny": ["etymology"] },
+    { "question": "What compares relationships?", "choices": ["Context", "Analogy", "Etymology", "Synonym"], "correct": 1, "expectedAny": ["analogy"] },
+    { "question": "What is literal meaning?", "choices": ["Connotation", "Feeling", "Denotation", "Association"], "correct": 2, "expectedAny": ["denotation"] },
+    { "question": "What helps understand words?", "choices": ["Ignoring", "Context clues", "Guessing", "Skipping"], "correct": 1, "expectedAny": ["context clues"] },
+    { "question": "What is feeling and association?", "choices": ["Denotation", "Connotation", "Etymology", "Definition"], "correct": 1, "expectedAny": ["connotation"] },
+    { "question": "What is word history?", "choices": ["Context", "Analogy", "Etymology", "Synonym"], "correct": 2, "expectedAny": ["etymology"] },
+    { "question": "What shows relationships?", "choices": ["Etymology", "Analogy", "Context", "Synonym"], "correct": 1, "expectedAny": ["analogy"] }
+  ],
+  "fillintheblank": [
+    { "question": "The origin and development of a word is its ________.", "expectedAny": ["etymology"] },
+    { "question": "Hints in text are ________.", "expectedAny": ["context clues"] },
+    { "question": "Emotional feeling is ________.", "expectedAny": ["connotation"] },
+    { "question": "Literal definition is ________.", "expectedAny": ["denotation"] },
+    { "question": "A comparison of relationships is ________.", "expectedAny": ["analogy"] },
+    { "question": "________ are hints that help meanings.", "expectedAny": ["context clues"] },
+    { "question": "________ is emotional association.", "expectedAny": ["connotation"] },
+    { "question": "________ is dictionary meaning.", "expectedAny": ["denotation"] },
+    { "question": "Word origin is ________.", "expectedAny": ["etymology"] },
+    { "question": "An ________ compares relationships.", "expectedAny": ["analogy"] }
+  ],
+  "shortanswer": [
+    { "question": "How do connotation and denotation differ?", "expectedAny": ["connotation is emotional, denotation is literal", "feeling vs dictionary meaning", "connotation has feeling, denotation is exact", "emotional meaning vs literal meaning"] },
+    { "question": "What are context clues?", "expectedAny": ["hints in text", "surrounding text hints", "clues from context", "hints from words around it", "text hints"] },
+    { "question": "What is connotation?", "expectedAny": ["emotional feeling", "word associations"] },
+    { "question": "What is denotation?", "expectedAny": ["literal definition", "dictionary meaning"] },
+    { "question": "What is etymology?", "expectedAny": ["word origin", "word development", "word history", "where word comes from", "how word developed"] },
+    { "question": "What is analogy?", "expectedAny": ["comparison of relationships", "showing how things relate"] },
+    { "question": "Give an example of connotation.", "expectedAny": ["home feels warm", "house is neutral"] },
+    { "question": "How do you use context clues?", "expectedAny": ["read surrounding text", "look for hints"] },
+    { "question": "Give an example of analogy.", "expectedAny": ["happy is to sad as hot is to cold", "comparing relationships"] },
+    { "question": "Why is word choice important?", "expectedAny": ["affects tone and meaning", "connotation matters"] }
+  ]
 }

@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "9th_Systems_Linear_Equations_Substitution_Intermediate",
   "title": "Systems of Linear Equations: Substitution Method",
   "grade": "9th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "system of equations",
-      "definition": "Set of two or more equations with the same variables"
-    },
-    {
-      "term": "substitution method",
-      "definition": "Solving systems by replacing one variable with an expression"
-    },
-    {
-      "term": "solution",
-      "definition": "Ordered pair that satisfies all equations in the system"
-    },
-    {
-      "term": "consistent system",
-      "definition": "System that has at least one solution"
-    },
-    {
-      "term": "inconsistent system",
-      "definition": "System that has no solution"
-    }
+    {"term": "system of equations", "definition": "Set of two or more equations with the same variables"},
+    {"term": "substitution method", "definition": "Solving systems by replacing one variable with an expression"},
+    {"term": "solution", "definition": "Ordered pair that satisfies all equations in the system"},
+    {"term": "consistent system", "definition": "System that has at least one solution"},
+    {"term": "inconsistent system", "definition": "System that has no solution"}
   ],
   "teachingNotes": "Practice step-by-step substitution process. Emphasize checking solutions in both original equations.",
-  "sample": {
-    "question": "What is a set of equations with the same variables called?",
-    "expectedAny": ["system of equations", "equation system", "simultaneous equations", "linear system"]
-  },
-  "truefalse": {
-    "question": "A consistent system has at least one solution.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What method replaces one variable with an expression?",
-    "expectedAny": ["substitution method", "substitution", "replacement method", "variable replacement"]
-  },
-  "fillintheblank": {
-    "question": "A system with no solution is called ________.",
-    "expectedAny": ["inconsistent", "impossible", "contradictory", "unsolvable"]
-  },
-  "shortanswer": {
-    "question": "How do you check if (2,3) is a solution to a system?",
-    "expectedAny": ["substitute into both equations", "verify both equations are true", "check if both are satisfied"]
-  },
-  "wordProblems": {
-    "question": "Solve: x + y = 7 and x - y = 1. What is x?",
-    "expectedAny": ["4", "x = 4", "four", "x equals 4"]
-  }
+  "sample": [
+    {"question": "What is a set of equations with the same variables called?", "expectedAny": ["system of equations", "equation system", "simultaneous equations", "set of equations"]},
+    {"question": "What is the substitution method?", "expectedAny": ["replacing variable with expression", "substituting one variable", "replacement method", "plugging in for a variable"]},
+    {"question": "What is a solution to a system?", "expectedAny": ["ordered pair satisfying all equations", "values that work in all", "pair that solves both", "x and y that work"]},
+    {"question": "What is a consistent system?", "expectedAny": ["system with at least one solution", "system that has solutions", "solvable system", "system that works"]},
+    {"question": "What is an inconsistent system?", "expectedAny": ["system with no solution", "unsolvable system", "contradictory system", "system with no answer"]},
+    {"question": "How do you check a solution?", "expectedAny": ["substitute into both equations", "verify in all equations", "check if both are true"]},
+    {"question": "What does (2,3) represent in a system?", "expectedAny": ["ordered pair solution", "x = 2 and y = 3", "point of intersection"]},
+    {"question": "When do you use substitution?", "expectedAny": ["to solve systems", "when one variable is isolated", "to find solutions"]},
+    {"question": "What is the first step in substitution?", "expectedAny": ["solve for one variable", "isolate a variable", "express one variable"]},
+    {"question": "Give an example of a system.", "expectedAny": ["x + y = 5 and x - y = 1", "any two equations", "two linear equations"]}
+  ],
+  "truefalse": [
+    {"question": "A consistent system has at least one solution. (True or False)", "correct": true},
+    {"question": "An inconsistent system has many solutions. (True or False)", "correct": false},
+    {"question": "The substitution method replaces a variable with an expression. (True or False)", "correct": true},
+    {"question": "A solution must satisfy all equations in the system. (True or False)", "correct": true},
+    {"question": "Systems always have exactly one solution. (True or False)", "correct": false},
+    {"question": "You should check solutions in both equations. (True or False)", "correct": true},
+    {"question": "Substitution works for any system. (True or False)", "correct": true},
+    {"question": "An ordered pair is written (x, y). (True or False)", "correct": true},
+    {"question": "Inconsistent systems have no solution. (True or False)", "correct": true},
+    {"question": "Parallel lines represent consistent systems. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "What method replaces one variable with an expression?", "choices": [{"letter": "A", "text": "Graphing"}, {"letter": "B", "text": "Substitution"}, {"letter": "C", "text": "Addition"}, {"letter": "D", "text": "Multiplication"}], "correct": "B"},
+    {"question": "What is a system with no solution called?", "choices": [{"letter": "A", "text": "Consistent"}, {"letter": "B", "text": "Dependent"}, {"letter": "C", "text": "Inconsistent"}, {"letter": "D", "text": "Independent"}], "correct": "C"},
+    {"question": "What is a system with at least one solution called?", "choices": [{"letter": "A", "text": "Inconsistent"}, {"letter": "B", "text": "Consistent"}, {"letter": "C", "text": "Impossible"}, {"letter": "D", "text": "Undefined"}], "correct": "B"},
+    {"question": "What satisfies all equations in a system?", "choices": [{"letter": "A", "text": "Variable"}, {"letter": "B", "text": "Expression"}, {"letter": "C", "text": "Solution"}, {"letter": "D", "text": "Constant"}], "correct": "C"},
+    {"question": "What is a set of equations with same variables?", "choices": [{"letter": "A", "text": "Function"}, {"letter": "B", "text": "System"}, {"letter": "C", "text": "Expression"}, {"letter": "D", "text": "Inequality"}], "correct": "B"},
+    {"question": "In (3, 5), what is y?", "choices": [{"letter": "A", "text": "3"}, {"letter": "B", "text": "5"}, {"letter": "C", "text": "8"}, {"letter": "D", "text": "2"}], "correct": "B"},
+    {"question": "In (4, 2), what is x?", "choices": [{"letter": "A", "text": "2"}, {"letter": "B", "text": "4"}, {"letter": "C", "text": "6"}, {"letter": "D", "text": "8"}], "correct": "B"},
+    {"question": "How do you check (2,3) is a solution?", "choices": [{"letter": "A", "text": "Graph it"}, {"letter": "B", "text": "Substitute into both equations"}, {"letter": "C", "text": "Add them"}, {"letter": "D", "text": "Multiply them"}], "correct": "B"},
+    {"question": "What is the first step in substitution?", "choices": [{"letter": "A", "text": "Solve for one variable"}, {"letter": "B", "text": "Graph both equations"}, {"letter": "C", "text": "Add equations"}, {"letter": "D", "text": "Multiply equations"}], "correct": "A"},
+    {"question": "Parallel lines represent what type of system?", "choices": [{"letter": "A", "text": "Consistent"}, {"letter": "B", "text": "Inconsistent"}, {"letter": "C", "text": "Dependent"}, {"letter": "D", "text": "Independent"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "A system with no solution is called _____.", "expectedAny": ["inconsistent", "impossible"]},
+    {"question": "A system with at least one solution is called _____.", "expectedAny": ["consistent", "solvable"]},
+    {"question": "The _____ method replaces a variable with an expression.", "expectedAny": ["substitution", "replacement"]},
+    {"question": "An ordered _____ satisfies all equations.", "expectedAny": ["pair", "solution"]},
+    {"question": "A set of equations with same variables is a _____.", "expectedAny": ["system"]},
+    {"question": "In (5, 3), x equals _____.", "expectedAny": ["5", "five"]},
+    {"question": "In (2, 7), y equals _____.", "expectedAny": ["7", "seven"]},
+    {"question": "To verify a solution, _____ into both equations.", "expectedAny": ["substitute", "plug in", "check"]},
+    {"question": "The first step in substitution is to _____ for one variable.", "expectedAny": ["solve", "isolate"]},
+    {"question": "_____ lines have no solution.", "expectedAny": ["parallel", "non-intersecting"]}
+  ],
+  "shortanswer": [
+    {"question": "How do you check if (2,3) is a solution to a system?", "keyTerms": ["substitute", "both", "equations", "verify"], "expectedAny": ["Substitute into both equations and verify both are true", "Check if both equations are satisfied", "Plug in 2 for x and 3 for y in both"]},
+    {"question": "What is the first step in substitution?", "keyTerms": ["solve", "one", "variable", "isolate"], "expectedAny": ["Solve one equation for one variable", "Isolate a variable in one equation", "Express one variable in terms of another"]},
+    {"question": "Why is a system inconsistent?", "keyTerms": ["no", "solution", "parallel", "contradictory"], "expectedAny": ["It has no solution", "The lines are parallel", "The equations contradict each other"]},
+    {"question": "Why is a system consistent?", "keyTerms": ["has", "solution", "intersect", "at least one"], "expectedAny": ["It has at least one solution", "The lines intersect", "Solutions exist"]},
+    {"question": "How do you substitute in a system?", "keyTerms": ["replace", "variable", "expression", "other equation"], "expectedAny": ["Replace a variable with an expression in the other equation", "Substitute the expression into the second equation", "Put the expression in place of the variable"]},
+    {"question": "What does (4, 5) mean as a solution?", "keyTerms": ["x = 4", "y = 5", "ordered pair", "satisfies"], "expectedAny": ["x equals 4 and y equals 5", "The ordered pair that satisfies both equations", "x is 4, y is 5"]},
+    {"question": "Can a system have more than one solution?", "keyTerms": ["yes", "infinitely many", "same line", "dependent"], "expectedAny": ["Yes, if lines are the same", "Yes, infinitely many if dependent", "Yes, when equations represent same line"]},
+    {"question": "What happens when you substitute x = 2y into x + y = 9?", "keyTerms": ["2y + y", "3y = 9", "y = 3"], "expectedAny": ["You get 2y + y = 9, so 3y = 9", "Becomes 3y = 9, so y = 3", "Substituting gives 3y = 9"]},
+    {"question": "Why check solutions in both equations?", "keyTerms": ["verify", "both", "correct", "satisfies"], "expectedAny": ["To verify the solution satisfies both", "To ensure it is correct for both equations", "To confirm it works in the entire system"]},
+    {"question": "What is an ordered pair?", "keyTerms": ["(x, y)", "two", "values", "coordinates"], "expectedAny": ["Two values written as (x, y)", "Coordinates representing x and y", "Pair of numbers in order"]}
+  ],
+  "wordProblems": [
+    {"question": "Solve: x + y = 7 and x - y = 1. What is x?", "expectedAny": ["4", "x = 4", "four"]},
+    {"question": "Solve: x + y = 7 and x - y = 1. What is y?", "expectedAny": ["3", "y = 3", "three"]},
+    {"question": "Solve: y = 2x and x + y = 6. What is x?", "expectedAny": ["2", "x = 2", "two"]},
+    {"question": "Solve: y = 2x and x + y = 6. What is y?", "expectedAny": ["4", "y = 4", "four"]},
+    {"question": "Solve: x = y + 1 and x + y = 5. What is x?", "expectedAny": ["3", "x = 3", "three"]},
+    {"question": "Solve: x = y + 1 and x + y = 5. What is y?", "expectedAny": ["2", "y = 2", "two"]},
+    {"question": "Is (2, 3) a solution to x + y = 5 and x - y = -1?", "expectedAny": ["yes", "true", "it is"]},
+    {"question": "Is (1, 1) a solution to x + y = 3?", "expectedAny": ["no", "false", "it is not"]},
+    {"question": "Solve: y = x and x + y = 10. What is x?", "expectedAny": ["5", "x = 5", "five"]},
+    {"question": "Solve: x = 3 and x + y = 8. What is y?", "expectedAny": ["5", "y = 5", "five"]}
+  ]
 }

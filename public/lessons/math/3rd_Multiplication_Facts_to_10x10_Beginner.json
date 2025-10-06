@@ -9,61 +9,63 @@
 		{"term": "product", "definition": "The answer to a multiplication problem"},
 		{"term": "factor", "definition": "A number being multiplied"},
 		{"term": "times table", "definition": "Facts that show products of numbers"},
-		{"term": "array", "definition": "A set of objects arranged in rows and columns"}
+		{"term": "array", "definition": "A set of objects arranged in rows and columns"},
+		{"term": "commutative property", "definition": "Changing the order of factors does not change the product (a×b = b×a)"},
+		{"term": "square number", "definition": "A number made by multiplying a whole number by itself (e.g., 3×3 = 9)"}
 	],
 	"teachingNotes": "Practice 0–10 facts with skip counting, arrays, and number lines. Emphasize the commutative property (a×b=b×a) and patterns (×0, ×1, ×2, ×5, ×10).",
 	"sample": [
-		{"question": "What is 3 × 4?", "expectedAny": ["12"]},
-		{"question": "What is 5 × 6?", "expectedAny": ["30"]},
-		{"question": "What is 7 × 8?", "expectedAny": ["56"]},
-		{"question": "What is 9 × 2?", "expectedAny": ["18"]},
-		{"question": "What is 4 × 4?", "expectedAny": ["16"]},
-		{"question": "What is 6 × 7?", "expectedAny": ["42"]},
-		{"question": "What is 8 × 3?", "expectedAny": ["24"]}
+		{"question": "What is 3 × 4?", "expectedAny": ["12", "twelve"]},
+		{"question": "What is 5 × 6?", "expectedAny": ["30", "thirty"]},
+		{"question": "What is 7 × 8?", "expectedAny": ["56", "fifty-six"]},
+		{"question": "What is 9 × 2?", "expectedAny": ["18", "eighteen"]},
+		{"question": "What is 4 × 4?", "expectedAny": ["16", "sixteen"]},
+		{"question": "What is 6 × 7?", "expectedAny": ["42", "forty-two"]},
+		{"question": "What is 8 × 3?", "expectedAny": ["24", "twenty-four"]}
 	],
 	"truefalse": [
-		{"question": "5 × 3 = 15", "answer": true},
-		{"question": "6 × 4 = 24", "answer": true},
-		{"question": "7 × 7 = 48", "answer": false},
-		{"question": "8 × 5 = 40", "answer": true},
-		{"question": "9 × 9 = 81", "answer": true},
-		{"question": "3 × 8 = 32", "answer": false},
-		{"question": "10 × 6 = 60", "answer": true}
+		{"question": "5 × 3 = 15", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "15"]},
+		{"question": "6 × 4 = 24", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "24"]},
+		{"question": "7 × 7 = 48", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "7×7=49"]},
+		{"question": "8 × 5 = 40", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "40"]},
+		{"question": "9 × 9 = 81", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "81"]},
+		{"question": "3 × 8 = 32", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "3×8=24"]},
+		{"question": "10 × 6 = 60", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "60"]}
 	],
 	"multiplechoice": [
-		{"question": "4 × 7 = ?", "choices": ["24", "26", "28", "30"], "correct": 2},
-		{"question": "9 × 6 = ?", "choices": ["52", "54", "56", "58"], "correct": 1},
-		{"question": "8 × 8 = ?", "choices": ["62", "64", "66", "68"], "correct": 1},
-		{"question": "5 × 9 = ?", "choices": ["43", "44", "45", "46"], "correct": 2},
-		{"question": "7 × 6 = ?", "choices": ["40", "41", "42", "43"], "correct": 2},
-		{"question": "3 × 9 = ?", "choices": ["25", "26", "27", "28"], "correct": 2},
-		{"question": "10 × 10 = ?", "choices": ["90", "100", "110", "120"], "correct": 1}
+		{"question": "4 × 7 = ?", "choices": ["24", "26", "28", "30"], "correct": 2, "expectedAny": ["c", "C", "3", "28"]},
+		{"question": "9 × 6 = ?", "choices": ["52", "54", "56", "58"], "correct": 1, "expectedAny": ["b", "B", "2", "54"]},
+		{"question": "8 × 8 = ?", "choices": ["62", "64", "66", "68"], "correct": 1, "expectedAny": ["b", "B", "2", "64"]},
+		{"question": "5 × 9 = ?", "choices": ["43", "44", "45", "46"], "correct": 2, "expectedAny": ["c", "C", "3", "45"]},
+		{"question": "7 × 6 = ?", "choices": ["40", "41", "42", "43"], "correct": 2, "expectedAny": ["c", "C", "3", "42"]},
+		{"question": "3 × 9 = ?", "choices": ["25", "26", "27", "28"], "correct": 2, "expectedAny": ["c", "C", "3", "27"]},
+		{"question": "10 × 10 = ?", "choices": ["90", "100", "110", "120"], "correct": 1, "expectedAny": ["b", "B", "2", "100"]}
 	],
 	"fillintheblank": [
-		{"question": "6 × 8 = ___", "expectedAny": ["48"]},
-		{"question": "7 × 5 = ___", "expectedAny": ["35"]},
-		{"question": "4 × 9 = ___", "expectedAny": ["36"]},
-		{"question": "8 × 7 = ___", "expectedAny": ["56"]},
-		{"question": "5 × 5 = ___", "expectedAny": ["25"]},
-		{"question": "9 × 4 = ___", "expectedAny": ["36"]},
-		{"question": "6 × 6 = ___", "expectedAny": ["36"]}
+		{"question": "6 × 8 = ___", "expectedAny": ["48", "forty-eight"]},
+		{"question": "7 × 5 = ___", "expectedAny": ["35", "thirty-five"]},
+		{"question": "4 × 9 = ___", "expectedAny": ["36", "thirty-six"]},
+		{"question": "8 × 7 = ___", "expectedAny": ["56", "fifty-six"]},
+		{"question": "5 × 5 = ___", "expectedAny": ["25", "twenty-five"]},
+		{"question": "9 × 4 = ___", "expectedAny": ["36", "thirty-six"]},
+		{"question": "6 × 6 = ___", "expectedAny": ["36", "thirty-six", "square number"]}
 	],
 	"shortanswer": [
-		{"question": "What pattern do you see in the 5s times table?", "expectedAny": ["ends in 0 or 5"]},
-		{"question": "How are 3×4 and 4×3 related?", "expectedAny": ["commutative property", "same product"]},
-		{"question": "What's a trick for multiplying by 9?", "expectedAny": ["fingers method", "digits sum to 9"]},
-		{"question": "Why is 10 easy to multiply?", "expectedAny": ["add a zero", "times ten rule"]},
-		{"question": "Name three square numbers up to 10×10.", "expectedAny": ["1", "4", "9", "16", "25", "36", "49", "64", "81", "100"]},
-		{"question": "Use 5×6 to find 6×6.", "expectedAny": ["30+6=36"]},
-		{"question": "What is always true about multiplying even numbers?", "expectedAny": ["product is even"]}
+		{"question": "What pattern do you see in the 5s times table?", "expectedAny": ["ends in 0 or 5", "ones digit alternates 5 and 0", "skip count by 5s", "multiples of 5 end with 0 or 5", "always 0 or 5 at the end", "five ten fifteen twenty"]},
+		{"question": "How are 3×4 and 4×3 related?", "expectedAny": ["commutative property", "same product", "order doesn't matter", "a×b = b×a", "factors can switch", "same answer", "equal"]},
+		{"question": "What's a trick for multiplying by 9?", "expectedAny": ["fingers method", "digits sum to 9", "10×n minus n", "use 9 facts pattern", "use your fingers", "subtract from 10 times"]},
+		{"question": "Why is 10 easy to multiply?", "expectedAny": ["add a zero", "times ten rule", "shift place value one to the left", "multiply by 10 shifts digits", "just add zero", "add 0 at the end"]},
+		{"question": "Name three square numbers up to 10×10.", "expectedAny": ["1, 4, 9", "16, 25, 36", "49, 64, 81", "4, 9, 16", "25, 36, 49", "1, 4, 9 are squares", "1 4 9", "16 25 36"]},
+		{"question": "Use 5×6 to find 6×6.", "expectedAny": ["5×6=30 then add 6", "30 + 6 = 36", "use 30 and add one more 6", "add another group of 6", "add 6 more"]},
+		{"question": "What is always true about multiplying even numbers?", "expectedAny": ["product is even", "the result is an even number", "ends in 0,2,4,6,8", "even × even = even", "always even", "even answer"]}
 	],
 	"wordProblems": [
-		{"question": "There are 6 boxes with 7 cookies each. How many cookies total?", "expectedAny": ["42"]},
-		{"question": "A classroom has 5 rows of 8 desks. How many desks?", "expectedAny": ["40"]},
-		{"question": "Each pizza has 8 slices. How many slices in 9 pizzas?", "expectedAny": ["72"]},
-		{"question": "Books come in packs of 4. How many books in 7 packs?", "expectedAny": ["28"]},
-		{"question": "A parking lot has 6 rows with 9 spaces each. Total spaces?", "expectedAny": ["54"]},
-		{"question": "Each child has 10 fingers. How many fingers do 8 children have?", "expectedAny": ["80"]},
-		{"question": "There are 7 days in a week. How many days in 6 weeks?", "expectedAny": ["42"]}
+		{"question": "There are 6 boxes with 7 cookies each. How many cookies total?", "expectedAny": ["42", "forty-two"]},
+		{"question": "A classroom has 5 rows of 8 desks. How many desks?", "expectedAny": ["40", "forty"]},
+		{"question": "Each pizza has 8 slices. How many slices in 9 pizzas?", "expectedAny": ["72", "seventy-two"]},
+		{"question": "Books come in packs of 4. How many books in 7 packs?", "expectedAny": ["28", "twenty-eight"]},
+		{"question": "A parking lot has 6 rows with 9 spaces each. Total spaces?", "expectedAny": ["54", "fifty-four"]},
+		{"question": "Each child has 10 fingers. How many fingers do 8 children have?", "expectedAny": ["80", "eighty"]},
+		{"question": "There are 7 days in a week. How many days in 6 weeks?", "expectedAny": ["42", "forty-two"]}
 	]
 }

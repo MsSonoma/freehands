@@ -5,63 +5,66 @@
 	"difficulty": "Advanced",
 	"featured": false,
 	"vocab": [
-		{"term": "elapsed time", "definition": "How much time passes between start and end"},
-		{"term": "interval", "definition": "A span of time"},
-		{"term": "am/pm", "definition": "Morning/afternoon notation"}
+		{"word": "elapsed time", "kid_friendly_definition": "How much time passes between start and end."},
+		{"word": "interval", "kid_friendly_definition": "A span of time."},
+		{"word": "am/pm", "kid_friendly_definition": "Morning/afternoon notation."},
+		{"word": "duration", "kid_friendly_definition": "How long something lasts."},
+		{"word": "regrouping", "kid_friendly_definition": "Borrowing or carrying when adding or subtracting time."},
+		{"word": "time zones", "kid_friendly_definition": "Different times in different places around the world."}
 	],
 	"teachingNotes": "Use number lines and clock faces. Mix start-time, end-time, and duration problems.",
 	"sample": [
-		{"question": "Start 2:15 pm, end 3:45 pm. Elapsed time?", "expectedAny": ["1 hour 30 minutes", "1:30"]},
-		{"question": "Movie is 95 minutes. Start 6:20 pm. End time?", "expectedAny": ["7:55 pm"]},
-		{"question": "From 11:40 am to 12:05 pm is ___ minutes.", "expectedAny": ["25"]},
-		{"question": "Add 2 hours 15 minutes to 8:10 am.", "expectedAny": ["10:25 am"]},
-		{"question": "Subtract 35 minutes from 4:20 pm.", "expectedAny": ["3:45 pm"]},
-		{"question": "Start 9:55, end 10:20. Elapsed?", "expectedAny": ["25 minutes"]},
+		{"question": "Start 2:15 pm, end 3:45 pm. Elapsed time?", "expectedAny": ["1 hour 30 minutes", "1 hr 30 min", "1:30"]},
+		{"question": "Movie is 95 minutes. Start 6:20 pm. End time?", "expectedAny": ["7:55 pm", "7:55"]},
+		{"question": "From 11:40 am to 12:05 pm is ___ minutes.", "expectedAny": ["25", "25 min", "25 minutes"]},
+		{"question": "Add 2 hours 15 minutes to 8:10 am.", "expectedAny": ["10:25 am", "10:25"]},
+		{"question": "Subtract 35 minutes from 4:20 pm.", "expectedAny": ["3:45 pm", "3:45"]},
+		{"question": "Start 9:55, end 10:20. Elapsed?", "expectedAny": ["25 minutes", "25", "25 min"]},
 		{"question": "Start 7:48, add 1 hr 12 min.", "expectedAny": ["9:00"]}
 	],
 	"truefalse": [
-		{"question": "There are 60 minutes in an hour.", "answer": true},
-		{"question": "From 3:50 to 4:05 is 10 minutes.", "answer": false},
-		{"question": "Elapsed time can cross from am to pm.", "answer": true},
-		{"question": "From 12:00 pm to 12:30 pm is 20 minutes.", "answer": false},
-		{"question": "90 minutes equals 1 hour 30 minutes.", "answer": true},
-		{"question": "From 11:45 to 12:15 is 40 minutes.", "answer": true},
-		{"question": "From 2:10 to 2:40 is 20 minutes.", "answer": false}
+		{"question": "There are 60 minutes in an hour.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "60 minutes in an hour"]},
+		{"question": "From 3:50 to 4:05 is 10 minutes.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "it's 15 minutes"]},
+		{"question": "Elapsed time can cross from am to pm.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "across am to pm"]},
+		{"question": "From 12:00 pm to 12:30 pm is 20 minutes.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "it's 30 minutes"]},
+		{"question": "90 minutes equals 1 hour 30 minutes.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "1 hour 30 minutes"]},
+		{"question": "From 11:45 to 12:15 is 40 minutes.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "it's 30 minutes"]},
+		{"question": "From 2:10 to 2:40 is 20 minutes.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "it's 30 minutes"]}
 	],
 	"multiplechoice": [
-		{"question": "Start 1:35 pm, add 50 minutes:", "choices": ["1:45 pm", "2:05 pm", "2:25 pm", "2:35 pm"], "correct": 2},
-		{"question": "End 9:15 am after 1 hr 20 min. Start?", "choices": ["7:55 am", "8:05 am", "7:45 am", "7:55 pm"], "correct": 0},
-		{"question": "From 10:50 to 12:05 is:", "choices": ["1:05", "1:15", "1:30", "2:05"], "correct": 1},
-		{"question": "Game lasts 85 minutes. Start 3:40. End?", "choices": ["4:55", "5:00", "5:05", "5:15"], "correct": 2},
-		{"question": "Bus leaves 7:25, arrives 8:10. Elapsed?", "choices": ["35m", "40m", "45m", "50m"], "correct": 2},
-		{"question": "From 11:58 to 12:17 is:", "choices": ["17m", "18m", "19m", "20m"], "correct": 2},
-		{"question": "Start 2:55, end 4:10:", "choices": ["1:05", "1:10", "1:15", "1:20"], "correct": 2}
+		{"question": "Start 1:35 pm, add 50 minutes:", "choices": ["1:45 pm", "2:05 pm", "2:25 pm", "2:35 pm"], "correct": 2, "expectedAny": ["c", "C", "3", "2:25 pm", "2:25"]},
+		{"question": "End 9:15 am after 1 hr 20 min. Start?", "choices": ["7:55 am", "8:05 am", "7:45 am", "7:55 pm"], "correct": 0, "expectedAny": ["a", "A", "1", "7:55 am", "7:55"]},
+		{"question": "From 10:50 to 12:05 is:", "choices": ["1:05", "1:15", "1:30", "2:05"], "correct": 1, "expectedAny": ["b", "B", "2", "1:15"]},
+		{"question": "Game lasts 85 minutes. Start 3:40. End?", "choices": ["4:55", "5:00", "5:05", "5:15"], "correct": 2, "expectedAny": ["c", "C", "3", "5:05"]},
+		{"question": "Bus leaves 7:25, arrives 8:10. Elapsed?", "choices": ["35m", "40m", "45m", "50m"], "correct": 2, "expectedAny": ["c", "C", "3", "45m", "45 minutes", "45 min"]},
+		{"question": "From 11:58 to 12:17 is:", "choices": ["17m", "18m", "19m", "20m"], "correct": 2, "expectedAny": ["c", "C", "3", "19m", "19", "19 minutes", "19 min"]},
+		{"question": "Start 2:55, end 4:10:", "choices": ["1:05", "1:10", "1:15", "1:20"], "correct": 2, "expectedAny": ["c", "C", "3", "1:15", "1 hr 15 min", "1 hour 15 minutes"]}
 	],
 	"fillintheblank": [
-		{"question": "From 6:45 to 7:30 is ___ minutes", "expectedAny": ["45"]},
-		{"question": "Add 1 hr 25 min to 9:10 am → ___", "expectedAny": ["10:35 am"]},
-		{"question": "From 12:50 pm back 40 min → ___", "expectedAny": ["12:10 pm"]},
-		{"question": "There are ___ minutes in 3 hours", "expectedAny": ["180"]},
-		{"question": "From 4:59 to 5:15 is ___ minutes", "expectedAny": ["16"]},
-		{"question": "Start 10:05, end 10:50 → ___ minutes", "expectedAny": ["45"]},
-		{"question": "11:35 am + 2 hr 30 min → ___", "expectedAny": ["2:05 pm"]}
+		{"question": "From 6:45 to 7:30 is ___ minutes", "expectedAny": ["45", "45 min", "45 minutes"]},
+		{"question": "Add 1 hr 25 min to 9:10 am → ___", "expectedAny": ["10:35 am", "10:35"]},
+		{"question": "From 12:50 pm back 40 min → ___", "expectedAny": ["12:10 pm", "12:10"]},
+		{"question": "There are ___ minutes in 3 hours", "expectedAny": ["180", "180 min", "180 minutes"]},
+		{"question": "From 4:59 to 5:15 is ___ minutes", "expectedAny": ["16", "16 min", "16 minutes"]},
+		{"question": "Start 10:05, end 10:50 → ___ minutes", "expectedAny": ["45", "45 min", "45 minutes"]},
+		{"question": "11:35 am + 2 hr 30 min → ___", "expectedAny": ["2:05 pm", "2:05"]}
 	],
 	"shortanswer": [
-		{"question": "Explain using a number line to find elapsed time.", "expectedAny": ["mark start, add hours then minutes"]},
-		{"question": "Why regroup minutes to hours sometimes?", "expectedAny": ["60 minutes equal 1 hour"]},
-		{"question": "How to handle am/pm transitions?", "expectedAny": ["note noon/midnight and continue counting"]},
-		{"question": "Strategy for subtracting times like 4:10 − 2:55?", "expectedAny": ["borrow 1 hour = 60 minutes"]},
-		{"question": "Create an elapsed time word problem.", "expectedAny": ["student-generated"]},
-		{"question": "Check work when end < start?", "expectedAny": ["recalculate or consider next day"]},
-		{"question": "Tools to measure time?", "expectedAny": ["clock, timer, stopwatch"]}
+		{"question": "Explain using a number line to find elapsed time.", "expectedAny": ["mark the start time", "jump hours then minutes", "count the hops to get total time", "draw start and end", "count jumps", "add up all the jumps"]},
+		{"question": "Why regroup minutes to hours sometimes?", "expectedAny": ["60 minutes equals 1 hour", "to borrow or carry across 60", "so minutes over 60 turn into hours", "60 min is 1 hour", "change 60 to 1 hour"]},
+		{"question": "How to handle am/pm transitions?", "expectedAny": ["note when you pass 12:00", "switch am to pm or pm to am", "continue counting across noon or midnight", "goes from am to pm at noon", "watch for noon or midnight"]},
+		{"question": "Strategy for subtracting times like 4:10 − 2:55?", "expectedAny": ["borrow 1 hour as 60 minutes", "regroup then subtract minutes", "use a number line and count up", "borrow from hours", "regroup and subtract"]},
+		{"question": "How do you check an elapsed time answer?", "expectedAny": ["add the elapsed back to start to get end", "work backwards from end", "estimate to see if it is reasonable", "add it back", "check by adding", "work backwards"]},
+		{"question": "Check work when end < start?", "expectedAny": ["consider if it goes to the next hour or day", "recalculate on a number line", "add 24 hours if crossing midnight", "check if it crosses midnight", "goes to next day"]},
+		{"question": "Tools to measure time?", "expectedAny": ["clock", "timer", "stopwatch", "watch", "phone"]}
 	],
 	"wordProblems": [
-		{"question": "Practice starts 5:20 pm and ends 6:55 pm. How long?", "expectedAny": ["1 hour 35 minutes", "95 minutes"]},
-		{"question": "Movie is 1 hr 40 min. It starts 2:25 pm. When does it end?", "expectedAny": ["4:05 pm"]},
-		{"question": "Bus rides 28 minutes. Leaves 7:47 am. Arrival time?", "expectedAny": ["8:15 am"]},
-		{"question": "From 10:58 to 12:07 is how long?", "expectedAny": ["1 hour 9 minutes", "69 minutes"]},
-		{"question": "Start 11:35 am, add 2 hr 45 min.", "expectedAny": ["2:20 pm"]},
+		{"question": "Practice starts 5:20 pm and ends 6:55 pm. How long?", "expectedAny": ["1 hour 35 minutes", "1 hr 35 min", "1:35", "95 minutes"]},
+		{"question": "Movie is 1 hr 40 min. It starts 2:25 pm. When does it end?", "expectedAny": ["4:05 pm", "4:05"]},
+		{"question": "Bus rides 28 minutes. Leaves 7:47 am. Arrival time?", "expectedAny": ["8:15 am", "8:15"]},
+		{"question": "From 10:58 to 12:07 is how long?", "expectedAny": ["1 hour 9 minutes", "1 hr 9 min", "1:09", "69 minutes"]},
+		{"question": "Start 11:35 am, add 2 hr 45 min.", "expectedAny": ["2:20 pm", "2:20"]},
 		{"question": "A race begins at 9:50 and lasts 55 minutes. Finish time?", "expectedAny": ["10:45"]},
-		{"question": "Class starts 12:15 pm and ends 1:05 pm. Elapsed?", "expectedAny": ["50 minutes"]}
+		{"question": "Class starts 12:15 pm and ends 1:05 pm. Elapsed?", "expectedAny": ["50 minutes", "50 min", "50"]}
 	]
 }

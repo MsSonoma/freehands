@@ -5,12 +5,16 @@
   "difficulty": "Intermediate",
   "featured": false,
   "vocab": [
-    { "term": "structure", "definition": "The parts of something and how they are arranged" },
-    { "term": "function", "definition": "The job or purpose that something does" },
-    { "term": "roots", "definition": "The parts of a plant that grow underground and take in water and minerals" },
-    { "term": "stem", "definition": "The part that holds the plant up and carries water and food" },
-    { "term": "leaves", "definition": "Flat green parts where photosynthesis happens" },
-    { "term": "flower", "definition": "The part of the plant that makes seeds" }
+    {"word": "structure", "kid_friendly_definition": "The parts of something and how they are arranged."},
+    {"word": "function", "kid_friendly_definition": "The job or purpose that something does."},
+    {"word": "roots", "kid_friendly_definition": "The parts of a plant that grow underground and take in water and minerals."},
+    {"word": "stem", "kid_friendly_definition": "The part that holds the plant up and carries water and food."},
+    {"word": "leaves", "kid_friendly_definition": "Flat green parts where photosynthesis happens."},
+    {"word": "flower", "kid_friendly_definition": "The part of the plant that makes seeds."},
+    {"word": "photosynthesis", "kid_friendly_definition": "The process where plants use sunlight to make their own food."},
+    {"word": "chlorophyll", "kid_friendly_definition": "The green stuff in leaves that captures sunlight for photosynthesis."},
+    {"word": "xylem", "kid_friendly_definition": "The tubes inside plants that carry water from roots to leaves."},
+    {"word": "phloem", "kid_friendly_definition": "The tubes inside plants that carry food from leaves to other parts."}
   ],
   "teachingNotes": "Examine real plants or detailed pictures. Connect structure to function. Use hands-on activities to show how different parts help plants survive.",
   "sample": [
@@ -23,39 +27,39 @@
     { "question": "Name one thing plants get from the soil.", "expectedAny": ["water", "minerals", "nutrients"] }
   ],
   "truefalse": [
-    { "question": "Each part of a plant has a specific job that helps the plant survive.", "answer": true },
-    { "question": "Leaves only help plants by making flowers.", "answer": false },
-    { "question": "Roots absorb water and minerals from the soil.", "answer": true },
-    { "question": "The stem helps move water and food around the plant.", "answer": true },
-    { "question": "Flowers are only for decoration.", "answer": false, "expectedAny": ["flowers make seeds"] },
-    { "question": "All plants have the exact same structures.", "answer": false },
-    { "question": "Leaves are usually green because of chlorophyll.", "answer": true }
+    { "question": "Each part of a plant has a specific job that helps the plant survive.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "each part has a job"] },
+    { "question": "Leaves only help plants by making flowers.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "leaves make food"] },
+    { "question": "Roots absorb water and minerals from the soil.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "absorb water and minerals"] },
+    { "question": "The stem helps move water and food around the plant.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "stem moves water and food"] },
+    { "question": "Flowers are only for decoration.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "flowers make seeds"] },
+    { "question": "All plants have the exact same structures.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "plant structures vary"] },
+    { "question": "Leaves are usually green because of chlorophyll.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "chlorophyll"] }
   ],
   "multiplechoice": [
-    { "question": "Which plant part is responsible for making food?", "choices": ["Roots", "Stem", "Leaves", "Flowers"], "correct": 2 },
-    { "question": "Which carries water from roots to leaves?", "choices": ["Roots", "Stem", "Flower", "Fruit"], "correct": 1 },
-    { "question": "What do flowers usually make?", "choices": ["Seeds", "Soil", "Rain", "Rocks"], "correct": 0 },
-    { "question": "Which structure helps a plant stand upright?", "choices": ["Stem", "Leaf", "Root hair", "Petal"], "correct": 0 },
-    { "question": "Which part mostly takes in water?", "choices": ["Leaves", "Roots", "Stem", "Flower"], "correct": 1 },
-    { "question": "Photosynthesis uses light, water, and _____.", "choices": ["Sand", "Carbon dioxide", "Salt", "Metal"], "correct": 1 },
-    { "question": "Seeds grow into:", "choices": ["Flowers only", "New plants", "Food", "Rocks"], "correct": 1 }
+    { "question": "Which plant part is responsible for making food?", "choices": ["Roots", "Stem", "Leaves", "Flowers"], "correct": 2, "expectedAny": ["c", "C", "3", "Leaves"] },
+    { "question": "Which carries water from roots to leaves?", "choices": ["Roots", "Stem", "Flower", "Fruit"], "correct": 1, "expectedAny": ["b", "B", "2", "Stem"] },
+    { "question": "What do flowers usually make?", "choices": ["Seeds", "Soil", "Rain", "Rocks"], "correct": 0, "expectedAny": ["a", "A", "1", "Seeds"] },
+    { "question": "Which structure helps a plant stand upright?", "choices": ["Stem", "Leaf", "Root hair", "Petal"], "correct": 0, "expectedAny": ["a", "A", "1", "Stem"] },
+    { "question": "Which part mostly takes in water?", "choices": ["Leaves", "Roots", "Stem", "Flower"], "correct": 1, "expectedAny": ["b", "B", "2", "Roots"] },
+    { "question": "Photosynthesis uses light, water, and _____.", "choices": ["Sand", "Carbon dioxide", "Salt", "Metal"], "correct": 1, "expectedAny": ["b", "B", "2", "Carbon dioxide", "CO2"] },
+    { "question": "Seeds grow into:", "choices": ["Flowers only", "New plants", "Food", "Rocks"], "correct": 1, "expectedAny": ["b", "B", "2", "New plants"] }
   ],
   "fillintheblank": [
-    { "question": "_____ carry water from roots to leaves, while _____ make food for the plant.", "expectedAny": ["stems", "leaves"] },
-    { "question": "The green parts of plants that capture sunlight are called _____.", "expectedAny": ["leaves"] },
-    { "question": "Roots take in water and _____ from the soil.", "expectedAny": ["minerals", "nutrients"] },
-    { "question": "The part of a plant that makes seeds is the _____.", "expectedAny": ["flower"] },
-    { "question": "Plants make their own food through a process called _____.", "expectedAny": ["photosynthesis"] },
-    { "question": "The _____ holds the plant up.", "expectedAny": ["stem"] },
-    { "question": "Leaves also help plants exchange _____ with the air.", "expectedAny": ["gases"] }
+    { "question": "_____ carry water from roots to leaves, while _____ make food for the plant.", "expectedAny": ["stems", "leaves", "stems carry; leaves make food"] },
+    { "question": "The green parts of plants that capture sunlight are called _____.", "expectedAny": ["leaves", "leaf blades"] },
+    { "question": "Roots take in water and _____ from the soil.", "expectedAny": ["minerals", "nutrients", "minerals and nutrients"] },
+    { "question": "The part of a plant that makes seeds is the _____.", "expectedAny": ["flower", "blossom"] },
+    { "question": "Plants make their own food through a process called _____.", "expectedAny": ["photosynthesis", "photo synthesis"] },
+    { "question": "The _____ holds the plant up.", "expectedAny": ["stem", "stalk"] },
+    { "question": "Leaves also help plants exchange _____ with the air.", "expectedAny": ["gases", "gas"] }
   ],
   "shortanswer": [
-    { "question": "How do the structure and function of leaves help a plant survive?", "expectedAny": ["flat shape catches sunlight", "chlorophyll for photosynthesis", "gas exchange"] },
-    { "question": "Why are roots important during a windstorm?", "expectedAny": ["anchor plant", "hold in place"] },
-    { "question": "Describe how water gets from the roots to the leaves.", "expectedAny": ["through the stem", "vascular tissues carry water"] },
-    { "question": "Give an example of a plant part and its function.", "expectedAny": ["flower makes seeds", "roots absorb water"] },
-    { "question": "Why are many leaves thin and flat?", "expectedAny": ["to catch more light", "to allow gas exchange"] },
-    { "question": "What might happen if a plant has very few roots?", "expectedAny": ["can't get enough water", "falls over easily"] },
-    { "question": "How do flowers help plants make more plants?", "expectedAny": ["produce seeds", "reproduction"] }
+    {"question": "How do the structure and function of leaves help a plant survive?", "expectedAny": ["flat shape catches sunlight", "chlorophyll for photosynthesis", "gas exchange through tiny openings", "catch sun", "make food"]},
+    {"question": "Why are roots important during a windstorm?", "expectedAny": ["anchor the plant", "hold it in place", "prevent tipping over", "keep it from falling", "hold it down"]},
+    {"question": "Describe how water gets from the roots to the leaves.", "expectedAny": ["through the stem", "vascular tissues carry water", "xylem moves water upward", "stem carries it up", "moves through tubes"]},
+    {"question": "Give an example of a plant part and its function.", "expectedAny": ["flower makes seeds", "roots absorb water", "stem holds plant up", "leaves make food", "any part and job"]},
+    {"question": "Why are many leaves thin and flat?", "expectedAny": ["to catch more light", "to allow gas exchange", "to spread a wide surface area", "catch sunlight", "wide surface"]},
+    {"question": "What might happen if a plant has very few roots?", "expectedAny": ["can't get enough water", "falls over easily", "dries out quickly", "not enough water", "might fall"]},
+    {"question": "How do flowers help plants make more plants?", "expectedAny": ["produce seeds", "help with reproduction", "make fruits that hold seeds", "make seeds", "grow new plants"]}
   ]
 }

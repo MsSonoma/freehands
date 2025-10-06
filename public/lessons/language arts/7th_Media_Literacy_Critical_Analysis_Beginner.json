@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Use current examples from advertisements, news, and social media. Teach students to question what they see and hear in media.",
-  "sample": {
-    "question": "What is the ability to analyze and evaluate media messages?",
-    "expectedAny": [
-      "media literacy",
-      "critical thinking",
-      "media analysis",
-      "information literacy"
-    ]
-  },
-  "truefalse": {
-    "question": "All media messages are created for specific audiences.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is information designed to influence opinions?",
-    "expectedAny": [
-      "propaganda",
-      "persuasive media",
-      "biased information",
-      "influential messaging"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A prejudice or unfair preference is called ________.",
-    "expectedAny": [
-      "bias",
-      "prejudice",
-      "unfairness",
-      "one-sidedness"
-    ]
-  },
-  "shortanswer": {
-    "question": "What questions should you ask when evaluating media?",
-    "expectedAny": [
-      "who made it, why, who is the audience",
-      "purpose, author, accuracy",
-      "source, bias, target audience"
-    ]
-  }
+  "sample": [
+    { "question": "What is the ability to analyze and evaluate media messages?", "expectedAny": ["media literacy"] },
+    { "question": "Which is unfair preference?", "choices": ["Fact", "Bias", "Truth", "Evidence"], "correct": 1, "expectedAny": ["bias"] },
+    { "question": "Information influencing opinions is ________.", "expectedAny": ["propaganda"] },
+    { "question": "The intended audience is the ________.", "expectedAny": ["target audience"] },
+    { "question": "How trustworthy a source is called ________.", "expectedAny": ["credibility"] },
+    { "question": "What evaluates media?", "choices": ["Ignoring", "Media literacy", "Believing", "Copying"], "correct": 1, "expectedAny": ["media literacy"] },
+    { "question": "A prejudice is ________.", "expectedAny": ["bias"] },
+    { "question": "Persuasive information is ________.", "expectedAny": ["propaganda"] },
+    { "question": "Who is the message for?", "choices": ["Everyone", "Target audience", "Nobody", "Animals"], "correct": 1, "expectedAny": ["target audience"] },
+    { "question": "Source reliability is ________.", "expectedAny": ["credibility"] }
+  ],
+  "truefalse": [
+    { "question": "All media messages are created for specific audiences.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Bias is always fair.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Propaganda tries to influence opinions.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All media sources are credible.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Media literacy helps evaluate information.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Target audience means everyone.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Credibility measures trustworthiness.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All advertisements are unbiased.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Media messages have purposes.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "You should believe all media.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is information designed to influence opinions?", "choices": ["Facts", "Propaganda", "Truth", "Science"], "correct": 1, "expectedAny": ["propaganda"] },
+    { "question": "What analyzes media?", "choices": ["Ignoring", "Believing", "Media literacy", "Copying"], "correct": 2, "expectedAny": ["media literacy"] },
+    { "question": "What is unfair preference?", "choices": ["Fact", "Bias", "Truth", "Evidence"], "correct": 1, "expectedAny": ["bias"] },
+    { "question": "What measures trustworthiness?", "choices": ["Bias", "Propaganda", "Credibility", "Audience"], "correct": 2, "expectedAny": ["credibility"] },
+    { "question": "Who is a message for?", "choices": ["Nobody", "Target audience", "Animals", "Everyone"], "correct": 1, "expectedAny": ["target audience"] },
+    { "question": "What influences people?", "choices": ["Facts only", "Propaganda", "Truth only", "Science only"], "correct": 1, "expectedAny": ["propaganda"] },
+    { "question": "What evaluates sources?", "choices": ["Media literacy", "Guessing", "Ignoring", "Copying"], "correct": 0, "expectedAny": ["media literacy"] },
+    { "question": "What is prejudice?", "choices": ["Fairness", "Bias", "Truth", "Evidence"], "correct": 1, "expectedAny": ["bias"] },
+    { "question": "What shows reliability?", "choices": ["Bias", "Credibility", "Propaganda", "Audience"], "correct": 1, "expectedAny": ["credibility"] },
+    { "question": "What is the intended group?", "choices": ["Nobody", "Everyone", "Target audience", "Animals"], "correct": 2, "expectedAny": ["target audience"] }
+  ],
+  "fillintheblank": [
+    { "question": "A prejudice or unfair preference is called ________.", "expectedAny": ["bias"] },
+    { "question": "Analyzing media is ________.", "expectedAny": ["media literacy"] },
+    { "question": "Information influencing opinions is ________.", "expectedAny": ["propaganda"] },
+    { "question": "The intended audience is the ________.", "expectedAny": ["target audience"] },
+    { "question": "How trustworthy a source is called ________.", "expectedAny": ["credibility"] },
+    { "question": "Unfair preference is ________.", "expectedAny": ["bias"] },
+    { "question": "________ helps evaluate media.", "expectedAny": ["media literacy"] },
+    { "question": "Persuasive information is ________.", "expectedAny": ["propaganda"] },
+    { "question": "A ________ is the specific group intended.", "expectedAny": ["target audience"] },
+    { "question": "________ measures trustworthiness.", "expectedAny": ["credibility"] }
+  ],
+  "shortanswer": [
+    { "question": "What questions should you ask when evaluating media?", "expectedAny": ["who made it, why, who is the audience", "purpose, author, accuracy"] },
+    { "question": "What is media literacy?", "expectedAny": ["ability to analyze media", "evaluating media messages"] },
+    { "question": "What is bias?", "expectedAny": ["unfair preference", "prejudice for one side", "one-sided view", "favoring one side", "not fair"] },
+    { "question": "What is propaganda?", "expectedAny": ["information influencing opinions", "persuasive messages", "trying to change minds", "persuasive information", "messages to convince"] },
+    { "question": "What is target audience?", "expectedAny": ["specific group intended", "who message is for"] },
+    { "question": "What is credibility?", "expectedAny": ["trustworthiness of source", "how reliable", "how trustworthy", "if you can trust it", "source reliability"] },
+    { "question": "Why is media literacy important?", "expectedAny": ["helps evaluate information", "understand media messages"] },
+    { "question": "How can you identify bias?", "expectedAny": ["look for one-sided views", "check for unfair preference"] },
+    { "question": "Give an example of propaganda.", "expectedAny": ["political ads", "persuasive advertising"] },
+    { "question": "How do you check credibility?", "expectedAny": ["verify source", "check author and accuracy"] }
+  ]
 }

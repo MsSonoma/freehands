@@ -26,47 +26,64 @@
     }
   ],
   "teachingNotes": "Use family photos to show inherited traits. Distinguish between inherited and acquired traits with clear examples. Keep genetics concepts age-appropriate.",
-  "sample": {
-    "question": "What is the passing of traits from parents to offspring called?",
-    "expectedAny": [
-      "heredity",
-      "inheritance",
-      "genetic inheritance",
-      "trait inheritance"
-    ]
-  },
-  "truefalse": {
-    "question": "Eye color is an example of an inherited trait.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which is an acquired trait?",
-    "expectedAny": [
-      "learning to ride a bike",
-      "getting a scar",
-      "learning language",
-      "muscle strength from exercise"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The basic unit of heredity that determines traits is called a ________.",
-    "expectedAny": [
-      "gene",
-      "genetic unit",
-      "heredity unit",
-      "genetic factor"
-    ]
-  },
-  "shortanswer": {
-    "question": "Give two examples of inherited traits and two examples of acquired traits.",
-    "expectedAny": [
-      "inherited: eye color, height; acquired: scars, learned skills",
-      "inherited: hair color, blood type; acquired: language, calluses"
-    ]
-  }
+  "sample": [
+    { "question": "What is the passing of traits from parents to offspring called?", "expectedAny": ["heredity"] },
+    { "question": "Which passes traits?", "choices": ["Food", "Genes", "Water", "Air"], "correct": 1, "expectedAny": ["genes"] },
+    { "question": "Traits from parents are ________.", "expectedAny": ["inherited"] },
+    { "question": "Learned skills are ________ traits.", "expectedAny": ["acquired"] },
+    { "question": "The unit of heredity is a ________.", "expectedAny": ["gene"] },
+    { "question": "Which is inherited?", "choices": ["Scar", "Eye color", "Haircut", "Language"], "correct": 1, "expectedAny": ["eye color"] },
+    { "question": "Passing traits is ________.", "expectedAny": ["heredity"] },
+    { "question": "A characteristic is a ________.", "expectedAny": ["trait"] },
+    { "question": "Which is acquired?", "choices": ["Height", "Blood type", "Scar", "Hair color"], "correct": 2, "expectedAny": ["scar"] },
+    { "question": "Parents pass ________ to offspring.", "expectedAny": ["traits", "genes"] }
+  ],
+  "truefalse": [
+    { "question": "Eye color is an example of an inherited trait.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All traits are inherited.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Genes determine inherited traits.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "You can inherit a scar.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Heredity involves passing traits.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Learning to read is an inherited trait.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Parents pass genes to offspring.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All acquired traits come from genes.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Height is an inherited trait.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "You inherit your language.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which is an acquired trait?", "choices": ["Eye color", "Scar", "Blood type", "Height"], "correct": 1, "expectedAny": ["scar"] },
+    { "question": "What determines inherited traits?", "choices": ["Practice", "Genes", "Learning", "Exercise"], "correct": 1, "expectedAny": ["genes"] },
+    { "question": "Which is inherited?", "choices": ["Tan", "Hair color", "Scar", "Callus"], "correct": 1, "expectedAny": ["hair color"] },
+    { "question": "What is heredity?", "choices": ["Learning", "Growing", "Passing traits", "Eating"], "correct": 2, "expectedAny": ["passing traits"] },
+    { "question": "Which is acquired?", "choices": ["Eye color", "Learning bike", "Blood type", "Face shape"], "correct": 1, "expectedAny": ["learning bike"] },
+    { "question": "What do genes determine?", "choices": ["Weather", "Traits", "Time", "Food"], "correct": 1, "expectedAny": ["traits"] },
+    { "question": "Which is NOT inherited?", "choices": ["Height", "Haircut", "Eye color", "Blood type"], "correct": 1, "expectedAny": ["haircut"] },
+    { "question": "What passes from parents?", "choices": ["Money", "Genes", "Books", "Clothes"], "correct": 1, "expectedAny": ["genes"] },
+    { "question": "Which is inherited?", "choices": ["Language", "Blood type", "Skills", "Scars"], "correct": 1, "expectedAny": ["blood type"] },
+    { "question": "What determines acquired traits?", "choices": ["Genes", "Parents", "Experience", "DNA"], "correct": 2, "expectedAny": ["experience"] }
+  ],
+  "fillintheblank": [
+    { "question": "The basic unit of heredity that determines traits is called a ________.", "expectedAny": ["gene"] },
+    { "question": "Passing traits from parents to offspring is ________.", "expectedAny": ["heredity"] },
+    { "question": "A characteristic is called a ________.", "expectedAny": ["trait"] },
+    { "question": "Traits passed through genes are ________.", "expectedAny": ["inherited"] },
+    { "question": "Traits gained during life are ________.", "expectedAny": ["acquired"] },
+    { "question": "Eye color is an ________ trait.", "expectedAny": ["inherited"] },
+    { "question": "Learning to ride a bike is an ________ trait.", "expectedAny": ["acquired"] },
+    { "question": "________ determine inherited traits.", "expectedAny": ["genes"] },
+    { "question": "Parents pass ________ to their children.", "expectedAny": ["traits", "genes"] },
+    { "question": "The passing of traits is called ________.", "expectedAny": ["heredity"] }
+  ],
+  "shortanswer": [
+    { "question": "Give two examples of inherited traits and two examples of acquired traits.", "expectedAny": ["inherited: eye color, height; acquired: scars, learned skills", "eye color and height; scars and skills"] },
+    { "question": "What is heredity?", "expectedAny": ["passing traits from parents to offspring", "inheritance of traits", "traits passed down", "getting traits from parents"] },
+    { "question": "What is a gene?", "expectedAny": ["unit of heredity", "determines traits", "basic heredity unit", "trait carrier"] },
+    { "question": "How are inherited and acquired traits different?", "expectedAny": ["inherited from genes, acquired from experience", "inherited passed down, acquired learned", "born with vs learned"] },
+    { "question": "Name three inherited traits.", "expectedAny": ["eye color, hair color, height", "blood type, face shape, skin color", "any three inherited"] },
+    { "question": "Name three acquired traits.", "expectedAny": ["scars, language, skills", "tan, calluses, knowledge", "any three acquired"] },
+    { "question": "Why can't you inherit a scar?", "expectedAny": ["scars happen during life", "not in genes", "acquired not inherited", "not genetic"] },
+    { "question": "What do parents pass to children?", "expectedAny": ["genes", "traits", "genetic information", "DNA"] },
+    { "question": "Is eye color inherited or acquired?", "expectedAny": ["inherited", "genetic"] },
+    { "question": "Give an example of an acquired trait.", "expectedAny": ["scar", "language", "skill", "tan", "callus", "any learned trait"] }
+  ]
 }

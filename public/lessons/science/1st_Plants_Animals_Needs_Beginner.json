@@ -20,6 +20,22 @@
     {
       "term": "water",
       "definition": "A liquid that all living things need to survive"
+    },
+    {
+      "term": "air",
+      "definition": "What we breathe to stay alive"
+    },
+    {
+      "term": "shelter",
+      "definition": "A safe place where animals can live"
+    },
+    {
+      "term": "sunlight",
+      "definition": "Light from the sun that helps plants grow"
+    },
+    {
+      "term": "energy",
+      "definition": "The power to move and grow that comes from food"
     }
   ],
   "teachingNotes": "Use real plants and classroom pets if available. Discuss daily care routines. Connect to students' own needs for food and water.",
@@ -51,21 +67,21 @@
     {"question": "Which gives us air to breathe?", "choices": ["plants", "rocks", "cars", "books"], "correct": 0, "expectedAny": ["plants"]}
   ],
   "fillintheblank": [
-    {"question": "Just like you, animals need _____ and water every day.", "expectedAny": ["food"]},
+    {"question": "Just like you, animals need _____ and water every day.", "expectedAny": ["food", "meals"]},
     {"question": "Plants need sunlight, water, air, and _____.", "expectedAny": ["soil", "nutrients"]},
     {"question": "A safe place to live is called _____.", "expectedAny": ["shelter", "a habitat"]},
-    {"question": "Food gives living things _____.", "expectedAny": ["energy"]},
+    {"question": "Food gives living things _____.", "expectedAny": ["energy", "fuel"]},
     {"question": "Roots take in water from the _____.", "expectedAny": ["soil", "ground"]},
     {"question": "We breathe in _____.", "expectedAny": ["air", "oxygen"]},
-    {"question": "Leaves help plants make _____.", "expectedAny": ["food"]}
+    {"question": "Leaves help plants make _____.", "expectedAny": ["food", "plant food"]}
   ],
   "shortanswer": [
-    {"question": "How are your needs similar to a plant's needs?", "expectedAny": ["both need water", "both need air", "both need care"]},
-    {"question": "Name 3 needs that animals have.", "expectedAny": ["food", "water", "air", "shelter"]},
-    {"question": "What happens if a plant doesn't get water?", "expectedAny": ["it wilts", "it dries up", "it can die"]},
-    {"question": "Why do animals look for shelter?", "expectedAny": ["stay safe", "stay dry", "stay warm"]},
-    {"question": "How do people take care of pets' needs?", "expectedAny": ["feed them", "give water", "provide shelter"]},
-    {"question": "Name a place where a plant can get sunlight.", "expectedAny": ["window", "outside", "garden"]},
-    {"question": "Draw a living thing and label its needs.", "expectedAny": ["drawing with labels: food, water, air, shelter"]}
+    {"question": "How are your needs similar to a plant's needs?", "expectedAny": ["both need water", "both need air", "both need care", "we both need water", "we both need air"]},
+    {"question": "Name 3 needs that animals have.", "expectedAny": ["food", "water", "air", "shelter", "food water air", "food water shelter"]},
+    {"question": "What happens if a plant doesn't get water?", "expectedAny": ["it wilts", "it dries up", "it can die", "dies", "it dies"]},
+    {"question": "Why do animals look for shelter?", "expectedAny": ["stay safe", "stay dry", "stay warm", "to stay safe", "for safety"]},
+    {"question": "How do people take care of pets' needs?", "expectedAny": ["feed them", "give water", "provide shelter", "take to the vet", "give food and water"]},
+    {"question": "Name a place where a plant can get sunlight.", "expectedAny": ["window", "outside", "garden", "balcony", "by the window", "in the yard"]},
+    {"question": "Draw a living thing and label its needs.", "expectedAny": ["drawing with labels: food, water, air, shelter", "labeled drawing", "picture with labels", "drawing"]}
   ]
 }

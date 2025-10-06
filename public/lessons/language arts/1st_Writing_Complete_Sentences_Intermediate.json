@@ -6,8 +6,8 @@
   "featured": false,
   "vocab": [
     {
-      "term": "complete sentence",
-      "definition": "A group of words that tells a whole thought and makes sense"
+      "term": "sentence",
+      "definition": "Words that tell a whole thought and make sense"
     },
     {
       "term": "subject",
@@ -20,6 +20,22 @@
     {
       "term": "punctuation",
       "definition": "Marks like periods and question marks that help us read sentences"
+    },
+    {
+      "term": "capital letter",
+      "definition": "A big letter used at the beginning of sentences"
+    },
+    {
+      "term": "period",
+      "definition": "A dot (.) that goes at the end of telling sentences"
+    },
+    {
+      "term": "question mark",
+      "definition": "A mark (?) that goes at the end of asking sentences"
+    },
+    {
+      "term": "complete",
+      "definition": "Having all the parts; finished"
     }
   ],
   "teachingNotes": "Start with simple subject-predicate combinations. Use picture prompts and guided practice. Focus on complete thoughts and proper punctuation.",
@@ -27,7 +43,9 @@
     "question": "Turn these words into a complete sentence: dog, runs, the",
     "expectedAny": [
       "The dog runs.",
-      "complete sentence with subject and predicate"
+      "The dog runs",
+      "complete sentence with subject and predicate",
+      "dog runs"
     ]
   },
   "truefalse": [
@@ -59,7 +77,10 @@
       "question": "In the sentence 'Birds fly high,' the subject is _____ and the predicate is _____.",
       "expectedAny": [
         "Birds",
-        "fly high"
+        "birds",
+        "fly high",
+        "Birds, fly high",
+        "birds, fly high"
       ]
     }
   ],
@@ -67,7 +88,12 @@
     {
       "question": "What makes a sentence complete?",
       "expectedAny": [
-        "subject, predicate, complete thought, punctuation"
+        "has a subject and predicate",
+        "tells a complete thought",
+        "ends with punctuation",
+        "has a capital letter and period",
+        "it makes sense",
+        "tells who and what they do"
       ]
     }
   ]

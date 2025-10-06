@@ -1,4 +1,4 @@
-{
+﻿{
   "id": "11th_Limits_Introduction_Calculus_Beginner",
   "title": "Limits and Introduction to Calculus",
   "grade": "11th",
@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Use graphical and numerical approaches to introduce limit concept. Emphasize intuitive understanding.",
-  "sample": {
-    "question": "What value does a function approach as input nears a specific value?",
-    "expectedAny": ["limit", "limiting value", "approached value", "function limit"]
-  },
-  "truefalse": {
-    "question": "A continuous function has no breaks or jumps in its graph.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is the limit from the negative direction called?",
-    "expectedAny": ["left-hand limit", "left limit", "negative approach", "left side limit"]
-  },
-  "fillintheblank": {
-    "question": "Getting arbitrarily close to a value is called ________ that value.",
-    "expectedAny": ["approaching", "nearing", "converging to", "tending toward"]
-  },
-  "shortanswer": {
-    "question": "When does a limit exist at a point?",
-    "expectedAny": ["left and right limits equal", "both one-sided limits exist", "approaches same value", "limit is unique"]
-  },
-  "wordProblems": {
-    "question": "If f(x) = (x² - 4)/(x - 2), what is lim(x→2) f(x)?",
-    "expectedAny": ["4", "four", "x + 2 at x = 2", "limit equals 4"]
-  }
+  "sample": [
+    {"question": "What value does a function approach as input nears a specific value?", "expectedAny": ["limit", "limiting value", "approached value", "function limit", "limit value", "target value"]},
+    {"question": "What function has no breaks or jumps?", "expectedAny": ["continuous function", "continuous", "unbroken function", "smooth function", "connected function", "no breaks function"]},
+    {"question": "What means getting arbitrarily close to a value?", "expectedAny": ["approaching", "nearing", "getting close", "converging", "tending toward", "moving toward"]},
+    {"question": "What is the limit from the negative direction?", "expectedAny": ["left-hand limit", "left limit", "negative approach", "left side limit", "from left", "negative side limit"]},
+    {"question": "What is the limit from the positive direction?", "expectedAny": ["right-hand limit", "right limit", "positive approach", "right side limit", "from right", "positive side limit"]},
+    {"question": "What concept describes where a function heads?", "expectedAny": ["limit", "limiting behavior", "approached value", "tendency"]},
+    {"question": "What type of function has no holes?", "expectedAny": ["continuous", "continuous function", "unbroken", "smooth"]},
+    {"question": "What describes motion toward a value?", "expectedAny": ["approaching", "nearing", "converging", "tending toward"]},
+    {"question": "What limit comes from the left side?", "expectedAny": ["left-hand limit", "left limit", "left approach", "negative side limit"]},
+    {"question": "What limit comes from the right side?", "expectedAny": ["right-hand limit", "right limit", "right approach", "positive side limit"]}
+  ],
+  "truefalse": [
+    {"question": "A continuous function has no breaks or jumps in its graph.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "A limit must always equal the function value at that point.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Approaching means getting arbitrarily close to a value.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Left-hand and right-hand limits are always equal.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "A limit exists if left and right limits are equal.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Continuous functions can have jumps.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "A function can approach a value without reaching it.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "All functions have limits at every point.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "The left-hand limit approaches from negative direction.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Limits are only used in calculus.", "expectedAny": ["false", "no", "f", "incorrect"]}
+  ],
+  "multiplechoice": [
+    {"question": "What is approaching from the left called?", "choices": ["Right-hand limit", "Left-hand limit", "Two-sided limit", "No limit"], "correct": "Left-hand limit"},
+    {"question": "What function has no breaks?", "choices": ["Discontinuous", "Continuous", "Undefined", "Piecewise"], "correct": "Continuous"},
+    {"question": "What does a limit describe?", "choices": ["Where function is", "Where function goes", "Function domain", "Function range"], "correct": "Where function goes"},
+    {"question": "When does a limit exist?", "choices": ["Always", "Left equals right", "Function defined", "Graph smooth"], "correct": "Left equals right"},
+    {"question": "What is approaching from right called?", "choices": ["Left limit", "Right-hand limit", "No limit", "Both limits"], "correct": "Right-hand limit"},
+    {"question": "What can have holes?", "choices": ["Continuous function", "Discontinuous function", "All functions", "No functions"], "correct": "Discontinuous function"},
+    {"question": "What means getting close?", "choices": ["Reaching", "Approaching", "Equaling", "Touching"], "correct": "Approaching"},
+    {"question": "What direction is left-hand?", "choices": ["Positive", "Negative", "Up", "Down"], "correct": "Negative"},
+    {"question": "What requires matching left and right?", "choices": ["Continuity", "Limit existence", "Function value", "Domain"], "correct": "Limit existence"},
+    {"question": "What is the limit concept?", "choices": ["Final value", "Approached value", "Starting value", "Middle value"], "correct": "Approached value"}
+  ],
+  "fillintheblank": [
+    {"question": "A _____ is the value a function approaches.", "expectedAny": ["limit", "limiting value", "approached value"]},
+    {"question": "A _____ function has no breaks or jumps.", "expectedAny": ["continuous", "unbroken", "smooth"]},
+    {"question": "_____ means getting arbitrarily close to a value.", "expectedAny": ["approaching", "nearing", "converging"]},
+    {"question": "The _____-hand limit approaches from the left.", "expectedAny": ["left", "negative"]},
+    {"question": "The _____-hand limit approaches from the right.", "expectedAny": ["right", "positive"]},
+    {"question": "A limit exists when left and right limits _____.", "expectedAny": ["match", "are equal", "agree"]},
+    {"question": "A _____ function can have holes or jumps.", "expectedAny": ["discontinuous", "broken", "non-continuous"]},
+    {"question": "The limit describes where the function _____.", "expectedAny": ["goes", "heads", "approaches"]},
+    {"question": "As x approaches a value, we examine the _____.", "expectedAny": ["limit", "behavior", "tendency"]},
+    {"question": "_____ functions can be drawn without lifting the pencil.", "expectedAny": ["continuous", "smooth", "unbroken"]}
+  ],
+  "shortanswer": [
+    {"question": "Explain what a limit represents in calculus.", "expectedAny": ["a limit is the value a function approaches as the input gets close to a specific value", "it describes where a function heads as x nears a particular point", "the limiting behavior of a function near a point"]},
+    {"question": "What is the difference between a limit and a function value?", "expectedAny": ["a limit is where the function approaches while the value is where it actually is", "limits describe tendency while function values are actual outputs", "a limit can exist even when the function is undefined at that point"]},
+    {"question": "Why do we need both left-hand and right-hand limits?", "expectedAny": ["to determine if the limit exists from both directions", "the function might approach different values from each side", "a limit only exists when both one-sided limits agree"]},
+    {"question": "Describe what makes a function continuous.", "expectedAny": ["a function is continuous if it has no breaks jumps or holes", "continuous means you can draw the graph without lifting your pencil", "the function is defined and the limit equals the function value at all points"]},
+    {"question": "Give an example where a limit exists but the function is undefined.", "expectedAny": ["f(x) = (x - 1)/(x - 1) has a limit of 2 as x approaches 1 but is undefined at x = 1", "a removable discontinuity where the hole can be filled", "when a function has a hole the limit exists at that point"]},
+    {"question": "What does it mean for a function to approach a value?", "expectedAny": ["the function gets arbitrarily close to that value as x nears a point", "the outputs tend toward a specific number", "the function heads toward a value without necessarily reaching it"]},
+    {"question": "How can you tell if a limit does not exist?", "expectedAny": ["if left and right limits are different", "if the function oscillates or goes to infinity", "when approaching from different directions gives different values"]},
+    {"question": "Why is the limit concept important in calculus?", "expectedAny": ["limits are the foundation for derivatives and integrals", "they allow us to analyze behavior at points where functions may be undefined", "limits formalize the concept of instantaneous rate of change"]},
+    {"question": "What is a one-sided limit?", "expectedAny": ["a limit approached from only one direction either left or right", "examining what the function approaches from one side only", "left-hand or right-hand limit"]},
+    {"question": "How does continuity relate to limits?", "expectedAny": ["a function is continuous if the limit equals the function value", "continuity requires the limit to exist and match the actual value", "for continuity the limit from both sides must equal f(a)"]}
+  ],
+  "wordProblems": [
+    {"question": "A car's position is given by s(t) = t where t is time. What value does the position approach as t approaches 3?", "expectedAny": ["9", "the limit is 9", "approaches 9 as t nears 3"]},
+    {"question": "The temperature T(x) = 2x + 10 describes temperature at distance x. As x approaches 5, what does the temperature approach?", "expectedAny": ["20 degrees", "the limit is 20", "approaches 2(5) + 10 = 20"]},
+    {"question": "A function f(x) = (x - 2)/(x - 2) is undefined at x = 2. What does the limit approach as x nears 2?", "expectedAny": ["1", "the limit is 1", "simplifies to 1 for all x except 2"]},
+    {"question": "The cost C(n) = 5n + 100 gives cost for n items. What does the cost approach as n approaches 10?", "expectedAny": ["150 dollars", "the limit is 150", "5(10) + 100 = 150"]},
+    {"question": "A piecewise function is f(x) = x for x < 2 and f(x) = x + 1 for x > 2. Does the limit exist at x = 2?", "expectedAny": ["no the limit does not exist", "left limit is 2 and right limit is 3 so they differ", "the one-sided limits are different"]},
+    {"question": "The height h(t) = -16t + 64t gives a ball's height. What height does it approach as t approaches 2?", "expectedAny": ["64 feet", "the limit is 64", "-16(4) + 128 = 64"]},
+    {"question": "A function has a hole at x = 3 but the limit is 7. Is the function continuous at x = 3?", "expectedAny": ["no it is not continuous", "continuity requires the function to be defined", "there is a removable discontinuity"]},
+    {"question": "The velocity v(t) = 10t describes velocity over time. What value does velocity approach as t approaches 4?", "expectedAny": ["40 units per time", "the limit is 40", "10(4) = 40"]},
+    {"question": "If f(x) approaches 5 from the left and 8 from the right as x approaches 2, does the limit exist?", "expectedAny": ["no the limit does not exist", "left and right limits must match", "the one-sided limits are different"]},
+    {"question": "A continuous function f(x) has f(3) = 12. What is the limit as x approaches 3?", "expectedAny": ["12", "the limit equals the function value for continuous functions", "continuity means limit equals f(3)"]}
+  ]
 }

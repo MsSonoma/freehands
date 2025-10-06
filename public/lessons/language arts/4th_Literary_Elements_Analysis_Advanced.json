@@ -20,6 +20,46 @@
     {
       "term": "point of view",
       "definition": "Who is telling the story (first person, third person, etc.)"
+    },
+    {
+      "term": "character",
+      "definition": "A person, animal, or figure in a story"
+    },
+    {
+      "term": "conflict",
+      "definition": "The main problem or struggle in a story"
+    },
+    {
+      "term": "rising action",
+      "definition": "Events that build tension and lead to the climax"
+    },
+    {
+      "term": "climax",
+      "definition": "The most exciting or important turning point in the story"
+    },
+    {
+      "term": "falling action",
+      "definition": "Events after the climax that lead toward the resolution"
+    },
+    {
+      "term": "resolution",
+      "definition": "How the story's problem is solved or wrapped up"
+    },
+    {
+      "term": "narrator",
+      "definition": "The voice that tells the story"
+    },
+    {
+      "term": "exposition",
+      "definition": "The beginning of a story that introduces characters, setting, and background"
+    },
+    {
+      "term": "choice",
+      "definition": "A decision a character makes that can affect the plot"
+    },
+    {
+      "term": "plot parts",
+      "definition": "The stages of a story: exposition, rising action, climax, falling action, resolution"
     }
   ],
   "teachingNotes": "Use graphic organizers to map story elements. Practice with various text types. Encourage evidence-based responses about themes.",
@@ -33,39 +73,39 @@
     {"question": "How can setting affect plot?", "expectedAny": ["influences events", "creates challenges"]}
   ],
   "truefalse": [
-    {"question": "The theme of a story is always stated directly by the author.", "answer": false, "expectedAny": ["false"]},
-    {"question": "Setting is only the place, not the time.", "answer": false, "expectedAny": ["false"]},
-    {"question": "Point of view can change how we understand a story.", "answer": true, "expectedAny": ["true"]},
-    {"question": "Plot is the sequence of events in a story.", "answer": true, "expectedAny": ["true"]},
-    {"question": "A story can have more than one theme.", "answer": true, "expectedAny": ["true"]},
-    {"question": "Characters never affect the plot.", "answer": false, "expectedAny": ["false"]},
-    {"question": "The resolution comes before the rising action.", "answer": false, "expectedAny": ["false"]}
+    {"question": "The theme of a story is always stated directly by the author.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "Setting is only the place, not the time.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "Point of view can change how we understand a story.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Plot is the sequence of events in a story.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "A story can have more than one theme.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Characters never affect the plot.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "The resolution comes before the rising action.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]}
   ],
   "multiplechoice": [
-    {"question": "If a story is told using 'I' and 'me,' what point of view is it?", "choices": ["First person", "Second person", "Third person", "No point of view"], "correct": 0, "expectedAny": ["first person"]},
-    {"question": "Which element most directly shows the lesson of a story?", "choices": ["Plot", "Theme", "Setting", "Point of view"], "correct": 1, "expectedAny": ["theme"]},
-    {"question": "Which best describes setting?", "choices": ["The events", "The characters", "The time and place", "The lesson"], "correct": 2, "expectedAny": ["time and place"]},
-    {"question": "Which could change if the point of view changes?", "choices": ["The author", "What details we learn", "The title", "The genre"], "correct": 1, "expectedAny": ["details we learn"]},
-    {"question": "What comes after the climax?", "choices": ["Exposition", "Rising action", "Falling action", "Title"], "correct": 2, "expectedAny": ["falling action"]},
-    {"question": "Which element includes the problem and solution?", "choices": ["Theme", "Plot", "Setting", "Point of view"], "correct": 1, "expectedAny": ["plot"]},
-    {"question": "Which detail best supports a theme of honesty?", "choices": ["The character tells the truth even when it's hard", "The weather is sunny", "The dog barks", "The story starts"], "correct": 0, "expectedAny": ["tells the truth"]}
+    {"question": "If a story is told using 'I' and 'me,' what point of view is it?", "choices": ["First person", "Second person", "Third person", "No point of view"], "correct": 0, "expectedAny": ["first person", "a", "1", "first"]},
+    {"question": "Which element most directly shows the lesson of a story?", "choices": ["Plot", "Theme", "Setting", "Point of view"], "correct": 1, "expectedAny": ["theme", "b", "2", "second"]},
+    {"question": "Which best describes setting?", "choices": ["The events", "The characters", "The time and place", "The lesson"], "correct": 2, "expectedAny": ["the time and place", "time and place", "c", "3", "third"]},
+    {"question": "Which could change if the point of view changes?", "choices": ["The author", "What details we learn", "The title", "The genre"], "correct": 1, "expectedAny": ["what details we learn", "details we learn", "b", "2", "second"]},
+    {"question": "What comes after the climax?", "choices": ["Exposition", "Rising action", "Falling action", "Title"], "correct": 2, "expectedAny": ["falling action", "c", "3", "third"]},
+    {"question": "Which element includes the problem and solution?", "choices": ["Theme", "Plot", "Setting", "Point of view"], "correct": 1, "expectedAny": ["plot", "b", "2", "second"]},
+    {"question": "Which detail best supports a theme of honesty?", "choices": ["The character tells the truth even when it's hard", "The weather is sunny", "The dog barks", "The story starts"], "correct": 0, "expectedAny": ["the character tells the truth even when it's hard", "tells the truth", "a", "1", "first"]}
   ],
   "fillintheblank": [
-    {"question": "The _____ tells us when and where the story happens, while the _____ is the lesson we learn.", "expectedAny": ["setting", "theme"]},
-    {"question": "The sequence of events is the ________.", "expectedAny": ["plot"]},
-    {"question": "The most exciting part is the ________.", "expectedAny": ["climax"]},
-    {"question": "After the climax comes the ________ action.", "expectedAny": ["falling"]},
-    {"question": "The story wraps up in the ________.", "expectedAny": ["resolution"]},
-    {"question": "A message like 'be kind' is a ________.", "expectedAny": ["theme"]},
-    {"question": "Who tells the story is the ________ of view.", "expectedAny": ["point"]}
+    {"question": "The _____ tells us when and where the story happens, while the _____ is the lesson we learn.", "expectedAny": ["setting", "theme", "time and place", "message", "the setting", "the theme"]},
+    {"question": "The sequence of events is the ________.", "expectedAny": ["plot", "story events", "events in order"]},
+    {"question": "The most exciting part is the ________.", "expectedAny": ["climax", "turning point", "high point"]},
+    {"question": "After the climax comes the ________ action.", "expectedAny": ["falling", "falling action", "events after the climax"]},
+    {"question": "The story wraps up in the ________.", "expectedAny": ["resolution", "ending", "wrap-up"]},
+    {"question": "A message like 'be kind' is a ________.", "expectedAny": ["theme", "message", "lesson", "big idea"]},
+    {"question": "Who tells the story is the ________ of view.", "expectedAny": ["point", "point of", "point of view"]}
   ],
   "shortanswer": [
-    {"question": "How can you figure out the theme of a story if it's not directly stated?", "expectedAny": ["what characters learn", "how the problem is solved"]},
-    {"question": "Explain how setting can affect plot.", "expectedAny": ["weather, time, place can cause problems or help solutions"]},
-    {"question": "Describe a story where point of view changed your understanding.", "expectedAny": ["varies"]},
-    {"question": "Give two details that support a theme of perseverance.", "expectedAny": ["varies"]},
-    {"question": "Identify the plot parts in a story you know (exposition to resolution).", "expectedAny": ["varies"]},
-    {"question": "How do character choices drive the plot?", "expectedAny": ["decisions lead to events and outcomes"]},
-    {"question": "State a theme and support it with evidence from text.", "expectedAny": ["varies"]}
+    {"question": "How can you figure out the theme of a story if it's not directly stated?", "expectedAny": ["look at what characters learn", "look at how the problem is solved", "how characters change", "what keeps repeating", "what message the character learns"]},
+    {"question": "Explain how setting can affect plot.", "expectedAny": ["weather, time, place can cause problems or help solutions", "setting creates obstacles or opportunities", "setting changes what can happen"]},
+    {"question": "Describe a story where point of view changed your understanding.", "expectedAny": ["first person showed only one view", "third person showed more info", "switching POV revealed new details", "POV affects what we know"]},
+    {"question": "Give two details that support a theme of perseverance.", "expectedAny": ["tries again after failing", "keeps working toward a goal", "doesn't give up despite challenges", "works hard after mistakes"]},
+    {"question": "Identify the plot parts in a story you know (exposition to resolution).", "expectedAny": ["exposition, rising action, climax, falling action, resolution", "beginning, middle, climax, ending", "story mountain parts"]},
+    {"question": "How do character choices drive the plot?", "expectedAny": ["decisions lead to events and outcomes", "choices cause consequences that move the story", "their choices create the next events"]},
+    {"question": "State a theme and support it with evidence from text.", "expectedAny": ["honesty: tells truth even when hard", "friendship: help each other", "perseverance: keeps trying", "kindness: helps others without reward"]}
   ]
 }

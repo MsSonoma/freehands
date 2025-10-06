@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Compare Athens and Sparta to show different types of government. Discuss Greek contributions to modern democracy and learning. Use maps to show Greek geography.",
-  "sample": {
-    "question": "What type of government gives people power through voting?",
-    "expectedAny": [
-      "democracy",
-      "democratic government",
-      "people's government",
-      "rule by people"
-    ]
-  },
-  "truefalse": {
-    "question": "Athens developed the first democracy in the ancient world.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which Greek city-state was known for its strong military?",
-    "expectedAny": [
-      "Sparta",
-      "city-state of Sparta",
-      "Spartan city-state",
-      "military Sparta"
-    ]
-  },
-  "fillintheblank": {
-    "question": "An independent city with its own government is called a ________.",
-    "expectedAny": [
-      "city-state",
-      "city state",
-      "independent city",
-      "Greek city-state"
-    ]
-  },
-  "shortanswer": {
-    "question": "How was Athenian democracy different from modern democracy?",
-    "expectedAny": [
-      "only male citizens could vote",
-      "women and slaves couldn't participate",
-      "limited to certain people",
-      "not all people included"
-    ]
-  }
+  "sample": [
+    { "question": "What type of government gives people power through voting?", "expectedAny": ["democracy"] },
+    { "question": "Which had the first democracy?", "choices": ["Sparta", "Athens", "Rome", "Egypt"], "correct": 1, "expectedAny": ["Athens"] },
+    { "question": "An independent city with government is a ________.", "expectedAny": ["city-state"] },
+    { "question": "The study of wisdom is ________.", "expectedAny": ["philosophy"] },
+    { "question": "The military city-state was ________.", "expectedAny": ["Sparta"] },
+    { "question": "What gives people voting power?", "choices": ["Kingdom", "Democracy", "Empire", "Dynasty"], "correct": 1, "expectedAny": ["democracy"] },
+    { "question": "Athens developed ________.", "expectedAny": ["democracy"] },
+    { "question": "A city with its own government is a ________.", "expectedAny": ["city-state"] },
+    { "question": "Which was known for military?", "choices": ["Athens", "Sparta", "Rome", "Egypt"], "correct": 1, "expectedAny": ["Sparta"] },
+    { "question": "Greeks studied ________.", "expectedAny": ["philosophy"] }
+  ],
+  "truefalse": [
+    { "question": "Athens developed the first democracy in the ancient world.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Sparta was known for democracy.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A city-state has its own government.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All ancient Greeks could vote.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Philosophy is the study of wisdom.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Democracy has no voting.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Sparta had a strong military.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Athens and Sparta were the same.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Greece contributed to modern democracy.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "City-states had no independence.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which Greek city-state was known for its strong military?", "choices": ["Athens", "Sparta", "Troy", "Corinth"], "correct": 1, "expectedAny": ["Sparta"] },
+    { "question": "What government has voting?", "choices": ["Kingdom", "Democracy", "Empire", "Dynasty"], "correct": 1, "expectedAny": ["democracy"] },
+    { "question": "Which developed democracy?", "choices": ["Sparta", "Athens", "Rome", "Egypt"], "correct": 1, "expectedAny": ["Athens"] },
+    { "question": "What is an independent city?", "choices": ["Empire", "Kingdom", "City-state", "Village"], "correct": 2, "expectedAny": ["city-state"] },
+    { "question": "What is study of wisdom?", "choices": ["History", "Philosophy", "Geography", "Science"], "correct": 1, "expectedAny": ["philosophy"] },
+    { "question": "Which city-state had democracy?", "choices": ["Sparta", "Athens", "Troy", "Thebes"], "correct": 1, "expectedAny": ["Athens"] },
+    { "question": "What gives people power?", "choices": ["Empire", "Democracy", "Kingdom", "Dynasty"], "correct": 1, "expectedAny": ["democracy"] },
+    { "question": "Which was military focused?", "choices": ["Athens", "Sparta", "Rome", "Egypt"], "correct": 1, "expectedAny": ["Sparta"] },
+    { "question": "What has own government?", "choices": ["Village", "City-state", "Farm", "Road"], "correct": 1, "expectedAny": ["city-state"] },
+    { "question": "Greeks studied what?", "choices": ["Nothing", "Philosophy", "Cars", "Planes"], "correct": 1, "expectedAny": ["philosophy"] }
+  ],
+  "fillintheblank": [
+    { "question": "An independent city with its own government is called a ________.", "expectedAny": ["city-state"] },
+    { "question": "Government where people vote is ________.", "expectedAny": ["democracy"] },
+    { "question": "________ developed the first democracy.", "expectedAny": ["Athens"] },
+    { "question": "The study of wisdom is ________.", "expectedAny": ["philosophy"] },
+    { "question": "________ was known for its military.", "expectedAny": ["Sparta"] },
+    { "question": "A ________ has its own government.", "expectedAny": ["city-state"] },
+    { "question": "People have power in a ________.", "expectedAny": ["democracy"] },
+    { "question": "The Greek city-state Athens had ________.", "expectedAny": ["democracy"] },
+    { "question": "________ is the study of knowledge.", "expectedAny": ["philosophy"] },
+    { "question": "Sparta focused on ________.", "expectedAny": ["military"] }
+  ],
+  "shortanswer": [
+    { "question": "How was Athenian democracy different from modern democracy?", "expectedAny": ["only male citizens could vote", "women and slaves couldn't participate", "not everyone could vote", "limited voting"] },
+    { "question": "What is democracy?", "expectedAny": ["government where people vote", "people have power", "rule by the people", "people decide"] },
+    { "question": "What is a city-state?", "expectedAny": ["independent city with government", "city with own government", "independent city"] },
+    { "question": "What is philosophy?", "expectedAny": ["study of wisdom", "study of knowledge", "thinking about life"] },
+    { "question": "What was Athens known for?", "expectedAny": ["democracy", "first democracy", "democratic government"] },
+    { "question": "What was Sparta known for?", "expectedAny": ["strong military", "military power", "warriors", "soldiers"] },
+    { "question": "How were Athens and Sparta different?", "expectedAny": ["Athens had democracy, Sparta had military", "different governments", "Athens voted, Sparta fought"] },
+    { "question": "Who could vote in Athens?", "expectedAny": ["male citizens", "not all people", "only men", "men only"] },
+    { "question": "What did Greece contribute?", "expectedAny": ["democracy", "philosophy", "learning", "democracy and philosophy"] },
+    { "question": "Name a Greek city-state.", "expectedAny": ["Athens", "Sparta", "athens", "sparta"] }
+  ]
 }

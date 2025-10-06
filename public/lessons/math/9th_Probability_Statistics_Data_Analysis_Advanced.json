@@ -1,33 +1,86 @@
-{
-  "id": "probability-statistics-data-advanced",
+﻿{
+  "id": "9th_Probability_Statistics_Data_Analysis_Advanced",
   "title": "Probability and Statistics with Data Analysis",
   "grade": "9th",
   "difficulty": "Advanced",
-  "featured": false,
   "vocab": [
     {"term": "probability", "definition": "The likelihood that an event will occur, expressed as a number between 0 and 1"},
     {"term": "sample space", "definition": "All possible outcomes of a probability experiment"},
     {"term": "independent events", "definition": "Events where the outcome of one does not affect the outcome of another"},
+    {"term": "mean", "definition": "Average of a data set"},
     {"term": "standard deviation", "definition": "A measure of how spread out data points are from the mean"}
   ],
   "teachingNotes": "Use real data sets and technology. Connect to real-world decision making. Emphasize the difference between theoretical and experimental probability.",
-  "sample": {
-    "question": "If you flip a fair coin twice, what is the probability of getting exactly one head?",
-    "expectedAny": ["1/2 or 0.5", "HT and TH are 2 out of 4 equally likely outcomes"]
-  },
+  "sample": [
+    {"question": "What is probability?", "expectedAny": ["likelihood of event", "chance between 0 and 1", "how likely something is", "odds of something happening"]},
+    {"question": "What is sample space?", "expectedAny": ["all possible outcomes", "set of outcomes", "all results", "every possible result"]},
+    {"question": "What are independent events?", "expectedAny": ["events that don't affect each other", "outcomes don't influence", "separate events", "events that have no effect on each other"]},
+    {"question": "What is the mean?", "expectedAny": ["average", "sum divided by count", "center value", "add them up and divide"]},
+    {"question": "What is standard deviation?", "expectedAny": ["spread from mean", "measure of variation", "how spread out", "how far from average"]},
+    {"question": "What is the probability of a certain event?", "expectedAny": ["1", "100%", "one"]},
+    {"question": "What is the probability of an impossible event?", "expectedAny": ["0", "0%", "zero"]},
+    {"question": "How do you find probability?", "expectedAny": ["favorable outcomes over total outcomes", "successes divided by total", "part over whole"]},
+    {"question": "What is experimental probability?", "expectedAny": ["based on actual trials", "from experiments", "observed outcomes"]},
+    {"question": "What is theoretical probability?", "expectedAny": ["based on theory", "calculated probability", "expected outcomes"]}
+  ],
   "truefalse": [
-    {"question": "Independent events do not affect each other's outcomes.", "answer": true, "expectedAny": ["by definition, independent events don't influence each other"]}
+    {"question": "Independent events do not affect each other's outcomes. (True or False)", "correct": true},
+    {"question": "Probability ranges from 0 to 1. (True or False)", "correct": true},
+    {"question": "The mean is the same as average. (True or False)", "correct": true},
+    {"question": "Standard deviation measures spread. (True or False)", "correct": true},
+    {"question": "Sample space includes impossible outcomes. (True or False)", "correct": false},
+    {"question": "A probability of 1 means certain. (True or False)", "correct": true},
+    {"question": "A probability of 0 means impossible. (True or False)", "correct": true},
+    {"question": "Dependent events affect each other. (True or False)", "correct": true},
+    {"question": "The mean is always in the data set. (True or False)", "correct": false},
+    {"question": "You can have a probability greater than 1. (True or False)", "correct": false}
   ],
   "multiplechoice": [
-    {"question": "A data set has values: 2, 4, 6, 8, 10. What is the mean?", "choices": ["4", "6", "8", "10"], "correct": 1, "expectedAny": ["(2+4+6+8+10) ÷ 5 = 30 ÷ 5 = 6"]}
+    {"question": "What is the mean of 2, 4, 6, 8, 10?", "choices": [{"letter": "A", "text": "4"}, {"letter": "B", "text": "6"}, {"letter": "C", "text": "8"}, {"letter": "D", "text": "10"}], "correct": "B"},
+    {"question": "What does probability range from?", "choices": [{"letter": "A", "text": "-1 to 1"}, {"letter": "B", "text": "0 to 1"}, {"letter": "C", "text": "1 to 10"}, {"letter": "D", "text": "0 to 100"}], "correct": "B"},
+    {"question": "What is all possible outcomes called?", "choices": [{"letter": "A", "text": "Event"}, {"letter": "B", "text": "Sample space"}, {"letter": "C", "text": "Probability"}, {"letter": "D", "text": "Outcome"}], "correct": "B"},
+    {"question": "What measures spread from the mean?", "choices": [{"letter": "A", "text": "Median"}, {"letter": "B", "text": "Mode"}, {"letter": "C", "text": "Standard deviation"}, {"letter": "D", "text": "Range"}], "correct": "C"},
+    {"question": "Events that don't affect each other are?", "choices": [{"letter": "A", "text": "Dependent"}, {"letter": "B", "text": "Independent"}, {"letter": "C", "text": "Impossible"}, {"letter": "D", "text": "Certain"}], "correct": "B"},
+    {"question": "What is the probability of rolling a 3 on a six-sided die?", "choices": [{"letter": "A", "text": "1/3"}, {"letter": "B", "text": "1/6"}, {"letter": "C", "text": "1/2"}, {"letter": "D", "text": "3/6"}], "correct": "B"},
+    {"question": "What is the probability of flipping heads on a fair coin?", "choices": [{"letter": "A", "text": "1/4"}, {"letter": "B", "text": "1/3"}, {"letter": "C", "text": "1/2"}, {"letter": "D", "text": "1"}], "correct": "C"},
+    {"question": "If P(A) = 0.3 and P(B) = 0.4, and A and B are independent, what is P(A and B)?", "choices": [{"letter": "A", "text": "0.7"}, {"letter": "B", "text": "0.12"}, {"letter": "C", "text": "0.1"}, {"letter": "D", "text": "0.34"}], "correct": "B"},
+    {"question": "What is another word for average?", "choices": [{"letter": "A", "text": "Median"}, {"letter": "B", "text": "Mode"}, {"letter": "C", "text": "Mean"}, {"letter": "D", "text": "Range"}], "correct": "C"},
+    {"question": "A probability of 1 means?", "choices": [{"letter": "A", "text": "Impossible"}, {"letter": "B", "text": "Unlikely"}, {"letter": "C", "text": "Likely"}, {"letter": "D", "text": "Certain"}], "correct": "D"}
   ],
   "fillintheblank": [
-    {"question": "If P(A) = 0.3 and P(B) = 0.4, and A and B are independent, then P(A and B) = _____.", "expectedAny": ["0.12"]}
+    {"question": "The _____ is the average of a data set.", "expectedAny": ["mean", "average"]},
+    {"question": "All possible outcomes form the sample _____.", "expectedAny": ["space", "set"]},
+    {"question": "Events that don't affect each other are _____.", "expectedAny": ["independent"]},
+    {"question": "_____ measures how spread out data is from the mean.", "expectedAny": ["standard deviation", "deviation"]},
+    {"question": "Probability ranges from 0 to _____.", "expectedAny": ["1", "one"]},
+    {"question": "A probability of _____ means the event is certain.", "expectedAny": ["1", "one", "100%"]},
+    {"question": "A probability of _____ means the event is impossible.", "expectedAny": ["0", "zero"]},
+    {"question": "For independent events, multiply _____.", "expectedAny": ["probabilities", "individual probabilities"]},
+    {"question": "The _____ of an event is its likelihood.", "expectedAny": ["probability", "chance"]},
+    {"question": "If you roll a die, the sample space has _____ outcomes.", "expectedAny": ["6", "six"]}
   ],
   "shortanswer": [
-    {"question": "Explain why a larger sample size generally gives more accurate probability estimates.", "expectedAny": ["law of large numbers", "reduces effect of random variation", "approaches theoretical probability"]}
+    {"question": "How do you find the mean of a data set?", "keyTerms": ["add", "sum", "divide", "count"], "expectedAny": ["Add all values and divide by the count", "Sum divided by number of values", "Total of all values divided by how many"]},
+    {"question": "What does standard deviation tell you?", "keyTerms": ["spread", "variation", "from mean", "dispersed"], "expectedAny": ["How spread out data is from the mean", "Amount of variation from average", "How dispersed values are"]},
+    {"question": "How do you find probability?", "keyTerms": ["favorable", "total", "divide", "outcomes"], "expectedAny": ["Favorable outcomes divided by total outcomes", "Number of successes over total possibilities", "Desired results divided by all results"]},
+    {"question": "What is the difference between independent and dependent events?", "keyTerms": ["independent", "don't affect", "dependent", "influence"], "expectedAny": ["Independent don't affect each other, dependent do", "Independent are separate, dependent influence each other", "Independent outcomes don't change, dependent do"]},
+    {"question": "Why does larger sample size improve probability estimates?", "keyTerms": ["law of large numbers", "more accurate", "approaches", "reduces variation"], "expectedAny": ["Law of large numbers: approaches theoretical probability", "Reduces random variation effects", "More trials give more accurate estimates"]},
+    {"question": "What is sample space?", "keyTerms": ["all", "possible", "outcomes", "results"], "expectedAny": ["All possible outcomes of an experiment", "Set of all results that can occur", "Every outcome that could happen"]},
+    {"question": "For two independent events A and B, how do you find P(A and B)?", "keyTerms": ["multiply", "probabilities", "P(A)  P(B)"], "expectedAny": ["Multiply the probabilities: P(A)  P(B)", "Multiply P(A) times P(B)", "Product of individual probabilities"]},
+    {"question": "What does a probability of 0.5 mean?", "keyTerms": ["50%", "half", "equally likely", "even chance"], "expectedAny": ["50% chance or equally likely", "Half the time or even odds", "50-50 chance"]},
+    {"question": "If you flip a coin twice, what is the sample space?", "keyTerms": ["HH", "HT", "TH", "TT", "four"], "expectedAny": ["HH, HT, TH, TT", "Four outcomes: heads-heads, heads-tails, tails-heads, tails-tails", "All combinations of two flips"]},
+    {"question": "What is experimental probability?", "keyTerms": ["based on", "actual", "trials", "observed"], "expectedAny": ["Probability based on actual experiments", "From observed trials or tests", "Results from real experiments"]}
   ],
   "wordProblems": [
-    {"question": "A quality control inspector finds 3 defective items in a sample of 50. Based on this data, estimate the probability that a randomly selected item is defective.", "expectedAny": ["0.06 or 6%", "3/50 = 0.06"]}
+    {"question": "If you flip a fair coin twice, what is the probability of getting exactly one head?", "expectedAny": ["1/2", "0.5", "50%", "two out of four"]},
+    {"question": "A quality control inspector finds 3 defective items in a sample of 50. Estimate the probability that a randomly selected item is defective.", "expectedAny": ["0.06", "6%", "3/50"]},
+    {"question": "Find the mean of 5, 10, 15, 20, 25.", "expectedAny": ["15", "fifteen"]},
+    {"question": "What is the probability of rolling a 4 on a standard die?", "expectedAny": ["1/6", "one sixth"]},
+    {"question": "If P(A) = 0.5 and P(B) = 0.6, and A and B are independent, find P(A and B).", "expectedAny": ["0.3", "0.30", "30%"]},
+    {"question": "What is the probability of drawing a heart from a standard deck of 52 cards?", "expectedAny": ["1/4", "13/52", "0.25", "25%"]},
+    {"question": "Find the mean of 8, 12, 16.", "expectedAny": ["12", "twelve"]},
+    {"question": "A bag has 3 red and 7 blue marbles. What is the probability of drawing a red marble?", "expectedAny": ["3/10", "0.3", "30%"]},
+    {"question": "If you roll two dice, how many outcomes are in the sample space?", "expectedAny": ["36", "thirty-six"]},
+    {"question": "What is the probability of getting tails on a fair coin flip?", "expectedAny": ["1/2", "0.5", "50%"]}
   ]
 }

@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Use demonstrations like melting ice (physical) vs burning paper (chemical). Emphasize that chemical changes are usually irreversible.",
-  "sample": {
-    "question": "What type of change creates one or more new substances?",
-    "expectedAny": [
-      "chemical change",
-      "chemical reaction",
-      "chemical transformation",
-      "chemical process"
-    ]
-  },
-  "truefalse": {
-    "question": "Melting ice is an example of a chemical change.",
-    "expectedAny": [
-      "false",
-      "no",
-      "f",
-      "incorrect"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which is an example of a physical change?",
-    "expectedAny": [
-      "cutting paper",
-      "melting ice",
-      "crushing glass",
-      "mixing sand and water"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A substance that enters into a chemical reaction is called a ________.",
-    "expectedAny": [
-      "reactant",
-      "starting material",
-      "initial substance",
-      "reacting substance"
-    ]
-  },
-  "shortanswer": {
-    "question": "How can you tell if a chemical change has occurred?",
-    "expectedAny": [
-      "new substance formed",
-      "color change, gas produced, temperature change",
-      "evidence of new properties"
-    ]
-  }
+  "sample": [
+    { "question": "What type of change creates one or more new substances?", "expectedAny": ["chemical change"] },
+    { "question": "Which doesn't make new substance?", "choices": ["Chemical", "Physical", "Reaction", "Product"], "correct": 1, "expectedAny": ["physical"] },
+    { "question": "Process forming new substances is ________.", "expectedAny": ["chemical reaction"] },
+    { "question": "Substance entering reaction is ________.", "expectedAny": ["reactant"] },
+    { "question": "Substance formed in reaction is ________.", "expectedAny": ["product"] },
+    { "question": "What makes new substances?", "choices": ["Physical", "Chemical", "Melting", "Freezing"], "correct": 1, "expectedAny": ["chemical"] },
+    { "question": "No new substance is ________.", "expectedAny": ["physical change"] },
+    { "question": "A process making new things is ________.", "expectedAny": ["chemical reaction"] },
+    { "question": "Which starts the reaction?", "choices": ["Product", "Reactant", "Result", "Outcome"], "correct": 1, "expectedAny": ["reactant"] },
+    { "question": "What is formed is a ________.", "expectedAny": ["product"] }
+  ],
+  "truefalse": [
+    { "question": "Melting ice is an example of a chemical change.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Burning paper is a chemical change.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Chemical changes make new substances.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Physical changes make new substances.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A reactant enters a reaction.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A product starts a reaction.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Cutting paper is physical change.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Rusting is physical change.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Melting is physical change.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Chemical reactions are always reversible.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which is an example of a physical change?", "choices": ["Burning", "Cutting paper", "Rusting", "Cooking"], "correct": 1, "expectedAny": ["cutting paper"] },
+    { "question": "What creates new substances?", "choices": ["Physical", "Chemical", "Melting", "Freezing"], "correct": 1, "expectedAny": ["chemical"] },
+    { "question": "What doesn't make new substances?", "choices": ["Burning", "Physical", "Rusting", "Cooking"], "correct": 1, "expectedAny": ["physical"] },
+    { "question": "What is a process making new substances?", "choices": ["Melting", "Chemical reaction", "Freezing", "Cutting"], "correct": 1, "expectedAny": ["chemical reaction"] },
+    { "question": "What enters reaction?", "choices": ["Product", "Reactant", "Result", "Outcome"], "correct": 1, "expectedAny": ["reactant"] },
+    { "question": "What forms in reaction?", "choices": ["Reactant", "Product", "Start", "Input"], "correct": 1, "expectedAny": ["product"] },
+    { "question": "Which is chemical change?", "choices": ["Melting", "Burning", "Cutting", "Freezing"], "correct": 1, "expectedAny": ["burning"] },
+    { "question": "Which is physical change?", "choices": ["Rusting", "Melting ice", "Cooking", "Burning"], "correct": 1, "expectedAny": ["melting ice"] },
+    { "question": "Sign of chemical change?", "choices": ["Shape change", "Color change", "Size change", "State change"], "correct": 1, "expectedAny": ["color change"] },
+    { "question": "Which is chemical?", "choices": ["Boiling", "Rusting", "Melting", "Freezing"], "correct": 1, "expectedAny": ["rusting"] }
+  ],
+  "fillintheblank": [
+    { "question": "A substance that enters into a chemical reaction is called a ________.", "expectedAny": ["reactant"] },
+    { "question": "A change creating new substances is ________.", "expectedAny": ["chemical", "chemical change"] },
+    { "question": "A change not making new substances is ________.", "expectedAny": ["physical", "physical change"] },
+    { "question": "A process forming new substances is ________.", "expectedAny": ["chemical reaction", "reaction"] },
+    { "question": "A substance formed in reaction is ________.", "expectedAny": ["product"] },
+    { "question": "________ changes make new substances.", "expectedAny": ["chemical"] },
+    { "question": "________ changes don't make new substances.", "expectedAny": ["physical"] },
+    { "question": "A ________ enters the reaction.", "expectedAny": ["reactant"] },
+    { "question": "A ________ is formed in reaction.", "expectedAny": ["product"] },
+    { "question": "A chemical ________ forms new substances.", "expectedAny": ["reaction", "change"] }
+  ],
+  "shortanswer": [
+    { "question": "How can you tell if a chemical change has occurred?", "expectedAny": ["new substance formed", "color change, gas produced, temperature change"] },
+    { "question": "What is a physical change?", "expectedAny": ["change not making new substance", "no new substance", "no new material", "same substance different form"] },
+    { "question": "What is a chemical change?", "expectedAny": ["change making new substances", "creates new substance", "new material formed", "makes different substance"] },
+    { "question": "What is a chemical reaction?", "expectedAny": ["process forming new substances", "substances interact to form new"] },
+    { "question": "What is a reactant?", "expectedAny": ["substance entering reaction", "starting substance", "what you start with", "goes into reaction"] },
+    { "question": "What is a product?", "expectedAny": ["substance formed in reaction", "result of reaction"] },
+    { "question": "Give an example of physical change.", "expectedAny": ["melting ice", "cutting paper", "crushing glass"] },
+    { "question": "Give an example of chemical change.", "expectedAny": ["burning paper", "rusting metal", "cooking egg"] },
+    { "question": "Are chemical changes reversible?", "expectedAny": ["usually not", "no", "irreversible"] },
+    { "question": "What is a sign of chemical change?", "expectedAny": ["color change", "gas produced", "temperature change"] }
+  ]
 }

@@ -23,52 +23,75 @@
     {
       "term": "antonym",
       "definition": "A word that means the opposite of another word"
+    },
+    {
+      "term": "contrast",
+      "definition": "A difference between ideas or words often signaled by words like 'but' or 'however'"
+    },
+    {
+      "term": "signal words",
+      "definition": "Words and phrases like 'such as', 'or', and 'however' that hint at the type of context clue"
     }
   ],
   "teachingNotes": "Practice with sentences that have clear context clues. Teach students to look before and after unknown words for hints. Use graphic organizers to identify clue types.",
-  "sample": {
-    "question": "What are hints in the text that help you understand unknown words?",
-    "expectedAny": [
-      "context clues",
-      "text clues",
-      "word clues",
-      "reading clues"
-    ]
-  },
-  "truefalse": {
-    "question": "Context clues are always found in the same sentence as the unknown word.",
-    "expectedAny": [
-      "false",
-      "no",
-      "f",
-      "incorrect"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What type of context clue gives examples to help explain a word?",
-    "expectedAny": [
-      "example clue",
-      "examples",
-      "example context clue",
-      "example hint"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A word that means the opposite of another word is called an ________.",
-    "expectedAny": [
-      "antonym",
-      "opposite",
-      "opposite word",
-      "contrasting word"
-    ]
-  },
-  "shortanswer": {
-    "question": "In the sentence 'The ancient ruins were very old and crumbling,' what does 'ancient' probably mean?",
-    "expectedAny": [
-      "very old",
-      "old",
-      "from long ago",
-      "not new"
-    ]
-  }
+  "sample": [
+    { "question": "What are hints in the text that help you understand unknown words?", "expectedAny": ["context clues", "text clues", "word clues", "reading clues"] },
+    { "question": "Which clue directly defines a word in the sentence?", "choices": ["Example clue", "Definition clue", "Antonym clue", "Tone clue"], "correct": 1, "expectedAny": ["definition clue", "definition"] },
+    { "question": "Which clue gives a word with similar meaning?", "choices": ["Synonym clue", "Antonym clue", "Example clue", "Definition clue"], "correct": 0, "expectedAny": ["synonym clue", "synonym"] },
+    { "question": "'Unlike' often signals which clue type?", "choices": ["Synonym", "Antonym", "Example", "Definition"], "correct": 1, "expectedAny": ["antonym", "contrast"] },
+    { "question": "Words like 'such as' signal an ________ clue.", "expectedAny": ["example", "example clue"] },
+    { "question": "If a sentence says 'gregarious, or very sociable,' which clue is used?", "expectedAny": ["definition", "definition clue"] },
+    { "question": "Context clues can appear in the next sentence.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A synonym clue uses a word with a similar meaning.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "An antonym clue uses a word with the opposite meaning.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A tone clue uses the writer's feeling to hint at meaning.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "truefalse": [
+    { "question": "Context clues are always found in the same sentence as the unknown word.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Synonym clues use a similar word to help explain meaning.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Antonym clues can be signaled by words like 'but' or 'however'.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Definition clues sometimes use commas or dashes to add meaning.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Example clues may use phrases like 'such as' or 'for instance'.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "You should ignore the sentences around an unknown word.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Pictures or diagrams can also provide context clues.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A tone clue might show if a word is positive or negative.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Context clues only appear in fiction.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "An antonym clue gives the same meaning.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What type of context clue gives examples to help explain a word?", "choices": ["Definition", "Antonym", "Example", "Synonym"], "correct": 2, "expectedAny": ["example", "example clue"] },
+    { "question": "Which signal phrase often shows a definition clue?", "choices": ["such as", "or", "unlike", "however"], "correct": 1, "expectedAny": ["or", "means", "is"] },
+    { "question": "Which pair shows an antonym clue?", "choices": ["happy and joyful", "silent and quiet", "brave but timid", "rough and bumpy"], "correct": 2, "expectedAny": ["brave but timid", "antonym"] },
+    { "question": "Which clue is used: 'The arboreal creature, or tree-dwelling animal, leaped.'", "choices": ["Example", "Definition", "Synonym", "Antonym"], "correct": 1, "expectedAny": ["definition"] },
+    { "question": "Which phrase signals an example clue?", "choices": ["or", "is", "such as", "unlike"], "correct": 2, "expectedAny": ["such as"] },
+    { "question": "Which is most helpful first when meeting an unknown word?", "choices": ["Look it up immediately", "Skip the word", "Use context clues", "Guess randomly"], "correct": 2, "expectedAny": ["use context clues"] },
+    { "question": "Which sentence contains a synonym clue?", "choices": ["He was elated, or very sad.", "She was content, or happy.", "The flower was unlike a rose.", "They listed items such as apples."], "correct": 1, "expectedAny": ["content or happy", "synonym"] },
+    { "question": "Which word could be the unknown word if examples follow?", "choices": ["fruits", "tools", "vehicles", "utensils"], "correct": 3, "expectedAny": ["utensils", "such as forks and spoons"] },
+    { "question": "Which clue helps most with 'benevolent' in 'Her benevolent teacher kindly helped'?", "choices": ["Antonym", "Synonym", "Definition", "Example"], "correct": 1, "expectedAny": ["synonym", "kindly helped"] },
+    { "question": "Which signal shows contrast?", "choices": ["and", "also", "however", "such as"], "correct": 2, "expectedAny": ["however", "contrast"] }
+  ],
+  "fillintheblank": [
+    { "question": "A word that means the opposite of another word is called an ________.", "expectedAny": ["antonym", "opposite", "opposite word"] },
+    { "question": "A word that means the same or nearly the same is a ________.", "expectedAny": ["synonym", "same meaning word", "similar word"] },
+  { "question": "Phrases like 'such as' often signal an ________ clue.", "expectedAny": ["example", "example clue", "examples clue", "for example clue"] },
+  { "question": "The writer's feeling or attitude can be a ________ clue.", "expectedAny": ["tone", "tone clue", "attitude clue", "mood clue"] },
+    { "question": "A clue that directly explains the word is a ________ clue.", "expectedAny": ["definition", "definition clue", "meaning clue"] },
+  { "question": "'But' and 'however' can signal a ________ clue.", "expectedAny": ["contrast", "antonym", "opposite meaning", "contrast clue"] },
+  { "question": "Words that come before and after the unknown word are the ________.", "expectedAny": ["context", "surrounding words", "nearby words", "context around the word"] },
+    { "question": "A list of items after a word can be an ________ clue.", "expectedAny": ["example", "example clue", "list clue"] },
+    { "question": "A helpful hint inside the sentence is a ________ clue.", "expectedAny": ["context", "context clue", "in-sentence clue"] },
+    { "question": "A picture in a textbook can also give ________ clues.", "expectedAny": ["context", "visual", "picture"] }
+  ],
+  "shortanswer": [
+    { "question": "In 'The ancient ruins were very old and crumbling,' what does 'ancient' probably mean?", "expectedAny": ["very old", "old", "from long ago", "not new", "ages old"] },
+    { "question": "Explain one way to find the meaning of 'parched' in 'After hours in the sun, we were parched.'", "expectedAny": ["use context", "very thirsty", "dry and thirsty", "look at surrounding clues", "check other sentences"] },
+    { "question": "Give an antonym you might see for 'fragile' in a sentence.", "expectedAny": ["sturdy", "strong", "tough", "durable"] },
+    { "question": "What signal words would tell you a definition is coming?", "expectedAny": ["or", "means", "is", "that is", "also called"] },
+    { "question": "Provide a sentence that uses a synonym clue for 'rapid'.", "expectedAny": ["fast", "quick", "speedy", "swift", "rapid means fast"] },
+    { "question": "Give a short example sentence that uses an example clue for 'utensils'.", "expectedAny": ["such as forks and spoons", "for example, a fork", "like spoons and forks", "utensils like forks"] },
+    { "question": "What should you check after guessing a word's meaning from context?", "expectedAny": ["see if it fits", "check if it makes sense", "verify meaning", "reread the sentence"] },
+    { "question": "Name one punctuation mark that can set off a definition.", "expectedAny": ["comma", "dash", "parentheses", "colon", "brackets"] },
+    { "question": "Give a context clue you might use for 'nocturnal'.", "expectedAny": ["awake at night", "active at night", "night animal", "sleeps during day", "stays up at night"] },
+    { "question": "Write a quick antonym clue sentence for 'scarce'.", "expectedAny": ["not plenty", "not common", "unlike plentiful", "the opposite of plentiful"] }
+  ]
 }

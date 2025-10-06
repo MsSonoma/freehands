@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "9th_Reading_Comprehension_Inferential_Critical_Intermediate",
   "title": "Reading Comprehension: Inferential and Critical Reading",
   "grade": "9th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "inference",
-      "definition": "Logical conclusion drawn from textual evidence and reasoning"
-    },
-    {
-      "term": "implicit meaning",
-      "definition": "Meaning that is suggested but not directly stated"
-    },
-    {
-      "term": "critical reading",
-      "definition": "Analyzing and evaluating text for bias, logic, and credibility"
-    },
-    {
-      "term": "textual evidence",
-      "definition": "Specific details from text that support interpretations"
-    },
-    {
-      "term": "author's purpose",
-      "definition": "Writer's intended goal: to inform, persuade, entertain, or explain"
-    }
+    {"term": "inference", "definition": "Logical conclusion drawn from textual evidence and reasoning"},
+    {"term": "implicit meaning", "definition": "Meaning that is suggested but not directly stated"},
+    {"term": "critical reading", "definition": "Analyzing and evaluating text for bias, logic, and credibility"},
+    {"term": "textual evidence", "definition": "Specific details from text that support interpretations"},
+    {"term": "author's purpose", "definition": "Writer's intended goal: to inform, persuade, entertain, or explain"}
   ],
   "teachingNotes": "Practice making inferences from complex texts. Teach students to support interpretations with specific textual evidence.",
-  "sample": {
-    "question": "What is a logical conclusion drawn from evidence and reasoning?",
-    "expectedAny": [
-      "inference",
-      "logical conclusion",
-      "deduction",
-      "reasoning"
-    ]
-  },
-  "truefalse": {
-    "question": "Implicit meaning is directly stated in the text.",
-    "expectedAny": [
-      "false",
-      "no",
-      "f",
-      "incorrect"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What involves analyzing text for bias and credibility?",
-    "expectedAny": [
-      "critical reading",
-      "analytical reading",
-      "evaluative reading",
-      "critical analysis"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Specific details that support interpretations are ________ evidence.",
-    "expectedAny": [
-      "textual",
-      "text",
-      "written",
-      "literary"
-    ]
-  },
-  "shortanswer": {
-    "question": "How do readers make valid inferences from text?",
-    "expectedAny": [
-      "combine text clues with prior knowledge",
-      "use evidence and reasoning",
-      "connect details logically"
-    ]
-  }
+  "sample": [
+    {"question": "What is an inference?", "expectedAny": ["logical conclusion from evidence", "conclusion drawn from reasoning", "educated guess from clues", "reading between lines", "drawing conclusions"]},
+    {"question": "What is implicit meaning?", "expectedAny": ["meaning suggested but not stated", "implied meaning", "hidden meaning"]},
+    {"question": "What is critical reading?", "expectedAny": ["analyzing text for bias and credibility", "evaluating text logic", "questioning and analyzing text"]},
+    {"question": "What is textual evidence?", "expectedAny": ["specific details from text", "proof from the text", "quotes and details"]},
+    {"question": "What is author's purpose?", "expectedAny": ["writer's intended goal", "reason for writing", "to inform, persuade, entertain, or explain"]},
+    {"question": "How do you make an inference?", "expectedAny": ["use clues plus prior knowledge", "combine evidence and reasoning", "read between the lines"]},
+    {"question": "Why is textual evidence important?", "expectedAny": ["supports interpretations", "proves your point", "backs up claims"]},
+    {"question": "What are common author's purposes?", "expectedAny": ["inform, persuade, entertain, explain", "to teach, convince, or amuse"]},
+    {"question": "What is explicit meaning?", "expectedAny": ["directly stated", "clear and obvious", "stated outright"]},
+    {"question": "Why read critically?", "expectedAny": ["to evaluate credibility", "to avoid bias", "to understand deeply"]}
+  ],
+  "truefalse": [
+    {"question": "Implicit meaning is directly stated in the text. (True or False)", "correct": false},
+    {"question": "Inferences combine text clues with prior knowledge. (True or False)", "correct": true},
+    {"question": "Critical reading involves analyzing for bias. (True or False)", "correct": true},
+    {"question": "Textual evidence supports interpretations. (True or False)", "correct": true},
+    {"question": "Author's purpose is always to entertain. (True or False)", "correct": false},
+    {"question": "Implicit meaning is suggested but not stated. (True or False)", "correct": true},
+    {"question": "You never need evidence for interpretations. (True or False)", "correct": false},
+    {"question": "Critical readers evaluate credibility. (True or False)", "correct": true},
+    {"question": "All texts are equally credible. (True or False)", "correct": false},
+    {"question": "Inferences require reasoning. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What involves analyzing text for bias and credibility?", "choices": [{"letter": "A", "text": "Skimming"}, {"letter": "B", "text": "Critical reading"}, {"letter": "C", "text": "Speed reading"}, {"letter": "D", "text": "Casual reading"}], "correct": "B"},
+    {"question": "What is a logical conclusion from evidence?", "choices": [{"letter": "A", "text": "Guess"}, {"letter": "B", "text": "Inference"}, {"letter": "C", "text": "Opinion"}, {"letter": "D", "text": "Assumption"}], "correct": "B"},
+    {"question": "What is meaning that is suggested not stated?", "choices": [{"letter": "A", "text": "Explicit"}, {"letter": "B", "text": "Obvious"}, {"letter": "C", "text": "Implicit"}, {"letter": "D", "text": "Direct"}], "correct": "C"},
+    {"question": "What supports your interpretations?", "choices": [{"letter": "A", "text": "Guesses"}, {"letter": "B", "text": "Opinions"}, {"letter": "C", "text": "Textual evidence"}, {"letter": "D", "text": "Assumptions"}], "correct": "C"},
+    {"question": "What is the writer's intended goal?", "choices": [{"letter": "A", "text": "Author's purpose"}, {"letter": "B", "text": "Reader's opinion"}, {"letter": "C", "text": "Text structure"}, {"letter": "D", "text": "Genre"}], "correct": "A"},
+    {"question": "How do you make valid inferences?", "choices": [{"letter": "A", "text": "Random guessing"}, {"letter": "B", "text": "Using text clues and reasoning"}, {"letter": "C", "text": "Ignoring evidence"}, {"letter": "D", "text": "Making assumptions"}], "correct": "B"},
+    {"question": "Which is an author's purpose?", "choices": [{"letter": "A", "text": "To confuse"}, {"letter": "B", "text": "To inform"}, {"letter": "C", "text": "To bore"}, {"letter": "D", "text": "To complicate"}], "correct": "B"},
+    {"question": "Critical reading helps you identify:", "choices": [{"letter": "A", "text": "Bias and credibility"}, {"letter": "B", "text": "Page numbers"}, {"letter": "C", "text": "Font styles"}, {"letter": "D", "text": "Book covers"}], "correct": "A"},
+    {"question": "Textual evidence is:", "choices": [{"letter": "A", "text": "Your opinion"}, {"letter": "B", "text": "What you think"}, {"letter": "C", "text": "Details from the text"}, {"letter": "D", "text": "Random facts"}], "correct": "C"},
+    {"question": "Implicit meaning requires:", "choices": [{"letter": "A", "text": "No thinking"}, {"letter": "B", "text": "Inference and interpretation"}, {"letter": "C", "text": "Just reading"}, {"letter": "D", "text": "Speed reading"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "Specific details that support interpretations are _____ evidence.", "expectedAny": ["textual", "text"]},
+    {"question": "A logical conclusion from evidence is an _____.", "expectedAny": ["inference"]},
+    {"question": "Meaning that is suggested but not stated is _____ meaning.", "expectedAny": ["implicit", "implied"]},
+    {"question": "Analyzing text for bias is _____ reading.", "expectedAny": ["critical"]},
+    {"question": "The writer's intended goal is the author's _____.", "expectedAny": ["purpose"]},
+    {"question": "Inferences combine text clues with _____ knowledge.", "expectedAny": ["prior", "background"]},
+    {"question": "Critical readers evaluate text for _____ and logic.", "expectedAny": ["bias", "credibility"]},
+    {"question": "Author's purposes include inform, persuade, entertain, and _____.", "expectedAny": ["explain"]},
+    {"question": "Meaning that is directly stated is _____ meaning.", "expectedAny": ["explicit"]},
+    {"question": "To support interpretations, you need textual _____.", "expectedAny": ["evidence", "proof"]}
+  ],
+  "shortanswer": [
+    {"question": "How do readers make valid inferences from text?", "keyTerms": ["clues", "evidence", "knowledge", "reasoning"], "expectedAny": ["Combine text clues with prior knowledge and reasoning", "Use evidence from text plus what you already know", "Connect textual details logically with background knowledge"]},
+    {"question": "What is the difference between explicit and implicit meaning?", "keyTerms": ["explicit", "stated", "implicit", "suggested"], "expectedAny": ["Explicit is directly stated while implicit is suggested", "Explicit meaning is obvious but implicit requires inference", "Explicit is clear and stated; implicit is implied and inferred"]},
+    {"question": "Why is critical reading important?", "keyTerms": ["bias", "credibility", "evaluate", "analyze"], "expectedAny": ["It helps evaluate bias, credibility, and logic in texts", "Critical reading prevents accepting false or biased information", "It allows readers to analyze and question what they read"]},
+    {"question": "How does textual evidence support interpretations?", "keyTerms": ["specific", "details", "prove", "support"], "expectedAny": ["Specific details from text prove and support your interpretations", "Textual evidence provides concrete proof for claims", "Evidence from the text backs up your understanding"]},
+    {"question": "What are the main author's purposes?", "keyTerms": ["inform", "persuade", "entertain", "explain"], "expectedAny": ["To inform, persuade, entertain, or explain", "Authors write to teach, convince, amuse, or clarify", "The main purposes are informing, persuading, entertaining, and explaining"]},
+    {"question": "How do you identify implicit meaning?", "keyTerms": ["infer", "clues", "implied", "not stated"], "expectedAny": ["Look for clues and infer what is implied but not stated", "Read between the lines using context and reasoning", "Find suggested meaning through inference from details"]},
+    {"question": "What makes textual evidence strong?", "keyTerms": ["specific", "relevant", "credible", "supports"], "expectedAny": ["It is specific, relevant, and directly supports your point", "Strong evidence is credible and clearly backs up claims", "Good textual evidence is detailed and pertinent to the interpretation"]},
+    {"question": "How does critical reading differ from casual reading?", "keyTerms": ["analyze", "evaluate", "question", "deeper"], "expectedAny": ["Critical reading analyzes and evaluates while casual just reads", "It questions and examines text more deeply", "Critical readers actively evaluate credibility and logic"]},
+    {"question": "Why do readers need to make inferences?", "keyTerms": ["understand", "deeper", "implicit", "meaning"], "expectedAny": ["To understand deeper and implicit meaning not directly stated", "Inferences help grasp the full meaning of texts", "They reveal implied ideas and enhance comprehension"]},
+    {"question": "How can you identify author's purpose?", "keyTerms": ["tone", "content", "structure", "goal"], "expectedAny": ["Examine tone, content, and structure to find the goal", "Look at what the author emphasizes and how they write", "Consider the message and techniques to determine intent"]}
+  ]
 }

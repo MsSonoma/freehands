@@ -28,7 +28,7 @@
   "teachingNotes": "Practice integration techniques and applications. Distinguish between area and net area calculations.",
   "sample": {
     "question": "What integration technique uses variable substitution?",
-    "expectedAny": ["substitution method", "u-substitution", "variable substitution", "substitution rule"]
+    "expectedAny": ["substitution method", "u-substitution", "variable substitution", "substitution rule", "u sub", "substitution technique"]
   },
   "truefalse": {
     "question": "Integration by parts is based on the product rule.",

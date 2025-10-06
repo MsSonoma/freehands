@@ -8,15 +8,15 @@
     {"term": "place value", "definition": "The value of a digit based on where it sits in a number"},
     {"term": "tens", "definition": "Groups of 10 ones; the left digit in a two-digit number"},
     {"term": "ones", "definition": "Single units; the right digit in a two-digit number"},
-    {"term": "digit", "definition": "The symbols 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 used to write numbers"}
+    {"term": "digit", "definition": "A number symbol like 0–9"}
   ],
   "teachingNotes": "Use base-10 blocks and bundling activities. Practice with numbers 11-20 first, then expand. Show how 10 ones make 1 ten.",
   "sample": [
-    {"question": "In the number 15, which digit is in the tens place?", "expectedAny": ["1", "the 1"]},
-    {"question": "How many tens are in 40?", "expectedAny": ["4"]},
-    {"question": "Which number has 2 tens and 5 ones?", "expectedAny": ["25"]},
-    {"question": "Is 10 made of 1 ten and 0 ones?", "expectedAny": ["Yes"]},
-    {"question": "What number is 3 tens and 7 ones?", "expectedAny": ["37"]}
+    {"question": "In the number 15, which digit is in the tens place?", "expectedAny": ["1", "the 1", "one"]},
+    {"question": "How many tens are in 40?", "expectedAny": ["4", "four"]},
+    {"question": "Which number has 2 tens and 5 ones?", "expectedAny": ["25", "twenty-five", "twenty five"]},
+    {"question": "Is 10 made of 1 ten and 0 ones?", "expectedAny": ["Yes", "yes", "true"]},
+    {"question": "What number is 3 tens and 7 ones?", "expectedAny": ["37", "thirty-seven", "thirty seven"]}
   ],
   "truefalse": [
     {"question": "The number 23 has 2 tens and 3 ones.", "answer": true, "expectedAny": ["true"]},
@@ -33,24 +33,24 @@
     {"question": "Which is equal to 2 tens?", "choices": ["20", "2", "200", "12"], "correct": 0, "expectedAny": ["20"]}
   ],
   "fillintheblank": [
-    {"question": "The number 36 has _____ tens and _____ ones.", "expectedAny": ["3", "6", "3, 6"]},
-    {"question": "__ tens and 4 ones makes 24.", "expectedAny": ["2"]},
-    {"question": "10 ones is the same as ___ ten.", "expectedAny": ["1"]},
-    {"question": "The number 58 has ___ tens.", "expectedAny": ["5"]},
-    {"question": "If a number has 0 tens and 7 ones, the number is ___.", "expectedAny": ["7"]}
+    {"question": "The number 36 has _____ tens and _____ ones.", "expectedAny": ["3", "6", "3 and 6", "three", "six", "three and six"]},
+    {"question": "__ tens and 4 ones makes 24.", "expectedAny": ["2", "two"]},
+    {"question": "10 ones is the same as ___ ten.", "expectedAny": ["1", "one"]},
+    {"question": "The number 58 has ___ tens.", "expectedAny": ["5", "five"]},
+    {"question": "If a number has 0 tens and 7 ones, the number is ___.", "expectedAny": ["7", "seven"]}
   ],
   "shortanswer": [
-    {"question": "How many ones are in 2 tens?", "expectedAny": ["20 ones", "2 tens = 20 ones"]},
-    {"question": "Explain why 10 ones make 1 ten.", "expectedAny": ["because ten single units grouped become one group of ten"]},
-    {"question": "How do you read the number 34?", "expectedAny": ["thirty-four", "3 tens and 4 ones"]},
-    {"question": "If you trade 10 ones for 1 ten, what happens to the ones place?", "expectedAny": ["it becomes 0 and the tens increases by 1"]},
-    {"question": "Describe the place value of the digits in 89.", "expectedAny": ["8 tens and 9 ones"]}
+    {"question": "How many ones are in 2 tens?", "expectedAny": ["20 ones", "2 tens = 20 ones", "twenty", "20"]},
+    {"question": "Explain why 10 ones make 1 ten.", "expectedAny": ["ten ones make a ten", "grouping ten singles", "bundle to make a ten", "10 ones equals 1 ten", "you bundle them"]},
+    {"question": "How do you read the number 34?", "expectedAny": ["thirty-four", "3 tens and 4 ones", "thirty four", "three tens and four ones"]},
+    {"question": "If you trade 10 ones for 1 ten, what happens to the ones place?", "expectedAny": ["it becomes 0", "ones go to zero", "tens goes up by 1", "no ones left", "ones become zero"]},
+    {"question": "Describe the place value of the digits in 89.", "expectedAny": ["8 tens and 9 ones", "eighty-nine", "eight tens, nine ones", "80 and 9"]}
   ],
   "wordProblems": [
-    {"question": "Emma counts her stickers in groups of 10. She has 3 full groups and 4 extra stickers. How many stickers does she have?", "expectedAny": ["34 stickers", "3 tens and 4 ones = 34"]},
-    {"question": "Liam has 2 tens and 6 ones of blocks. How many blocks does he have?", "expectedAny": ["26"]},
-    {"question": "Sara had 10 ones and traded them for 1 ten. If she started with 12 ones, how many tens and ones does she have now?", "expectedAny": ["1 ten and 2 ones", "12 = 1 ten and 2 ones"]},
-    {"question": "Noah collects 5 tens of stickers and 3 extra stickers. How many stickers in total?", "expectedAny": ["53"]},
-    {"question": "A teacher puts 4 tens and 7 ones of counters into a jar. How many counters are there?", "expectedAny": ["47"]}
+    {"question": "Emma counts her stickers in groups of 10. She has 3 full groups and 4 extra stickers. How many stickers does she have?", "expectedAny": ["34 stickers", "3 tens and 4 ones = 34", "34", "thirty-four"]},
+    {"question": "Liam has 2 tens and 6 ones of blocks. How many blocks does he have?", "expectedAny": ["26", "twenty-six", "26 blocks"]},
+    {"question": "Sara had 10 ones and traded them for 1 ten. If she started with 12 ones, how many tens and ones does she have now?", "expectedAny": ["1 ten and 2 ones", "12 = 1 ten and 2 ones", "1 ten, 2 ones"]},
+    {"question": "Noah collects 5 tens of stickers and 3 extra stickers. How many stickers in total?", "expectedAny": ["53", "fifty-three", "53 stickers"]},
+    {"question": "A teacher puts 4 tens and 7 ones of counters into a jar. How many counters are there?", "expectedAny": ["47", "forty-seven", "47 counters"]}
   ]
 }

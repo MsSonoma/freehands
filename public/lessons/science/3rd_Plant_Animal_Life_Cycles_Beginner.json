@@ -5,12 +5,11 @@
   "difficulty": "Beginner",
   "featured": false,
   "vocab": [
-    { "term": "life cycle", "definition": "All the stages a living thing goes through as it grows" },
-    { "term": "seed", "definition": "The part of a plant that can grow into a new plant" },
-    { "term": "seedling", "definition": "A young plant that has just started growing from a seed" },
-    { "term": "adult", "definition": "A fully grown living thing that can have babies" },
-    { "term": "metamorphosis", "definition": "A big change in form during an animal's life cycle" },
-    { "term": "pupa", "definition": "A stage in some insects when they change into adults (chrysalis)" }
+    {"word": "life cycle", "kid_friendly_definition": "The stages a living thing goes through from birth to death."},
+    {"word": "metamorphosis", "kid_friendly_definition": "A big change in body form as an animal grows, like a caterpillar becoming a butterfly."},
+    {"word": "pollination", "kid_friendly_definition": "When pollen moves from one flower to another so seeds can form."},
+    {"word": "germination", "kid_friendly_definition": "When a seed starts to sprout and grow into a new plant."},
+    {"word": "embryo", "kid_friendly_definition": "The tiny baby plant inside a seed or the early stage of an animal before birth."}
   ],
   "teachingNotes": "Use real plants and pictures of animal life cycles. Plant seeds in class. Focus on basic stages and vocabulary.",
   "sample": [
@@ -23,39 +22,39 @@
     { "question": "Name one animal that has metamorphosis.", "expectedAny": ["butterfly", "frog"] }
   ],
   "truefalse": [
-    { "question": "All living things have a life cycle.", "answer": true },
-    { "question": "A seedling is a baby plant.", "answer": true },
-    { "question": "Metamorphosis is when a plant makes seeds.", "answer": false },
-    { "question": "A frog does not change shape as it grows.", "answer": false, "expectedAny": ["tadpole to frog"] },
-    { "question": "Adult animals can usually have babies.", "answer": true },
-    { "question": "A chrysalis is another word for pupa in butterflies.", "answer": true },
-    { "question": "Plants do not have life cycles.", "answer": false }
+    { "question": "All living things have a life cycle.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "have a life cycle"] },
+    { "question": "A seedling is a baby plant.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "baby plant"] },
+    { "question": "Metamorphosis is when a plant makes seeds.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "metamorphosis is big change"] },
+    { "question": "A frog does not change shape as it grows.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "tadpole to frog"] },
+    { "question": "Adult animals can usually have babies.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "adults can reproduce"] },
+    { "question": "A chrysalis is another word for pupa in butterflies.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "pupa"] },
+    { "question": "Plants do not have life cycles.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "plants have life cycles"] }
   ],
   "multiplechoice": [
-    { "question": "What comes after a seed in a plant's life cycle?", "choices": ["Flower", "Adult plant", "Seedling", "Fruit"], "correct": 2 },
-    { "question": "Which shows a correct order for a butterfly?", "choices": ["Egg → Caterpillar → Pupa → Adult", "Egg → Adult → Caterpillar", "Pupa → Egg → Caterpillar", "Caterpillar → Egg → Adult"], "correct": 0 },
-    { "question": "Which is NOT a plant life cycle part?", "choices": ["Seed", "Seedling", "Adult", "Metamorphosis"], "correct": 3 },
-    { "question": "A tadpole grows legs and becomes a frog. This is called:", "choices": ["Hibernation", "Migration", "Metamorphosis", "Germination"], "correct": 2 },
-    { "question": "Seeds often grow inside:", "choices": ["Flowers and fruit", "Rocks", "Clouds", "Sand"], "correct": 0 },
-    { "question": "A baby animal is called:", "choices": ["Seed", "Offspring", "Plant", "Pupa"], "correct": 1 },
-    { "question": "Which stage comes before adult in many animals?", "choices": ["Egg", "Pupa", "Seedling", "Rock"], "correct": 1 }
+    { "question": "What comes after a seed in a plant's life cycle?", "choices": ["Flower", "Adult plant", "Seedling", "Fruit"], "correct": 2, "expectedAny": ["c", "C", "3", "Seedling"] },
+    { "question": "Which shows a correct order for a butterfly?", "choices": ["Egg → Caterpillar → Pupa → Adult", "Egg → Adult → Caterpillar", "Pupa → Egg → Caterpillar", "Caterpillar → Egg → Adult"], "correct": 0, "expectedAny": ["a", "A", "1", "Egg → Caterpillar → Pupa → Adult", "egg to adult"] },
+    { "question": "Which is NOT a plant life cycle part?", "choices": ["Seed", "Seedling", "Adult", "Metamorphosis"], "correct": 3, "expectedAny": ["d", "D", "4", "Metamorphosis"] },
+    { "question": "A tadpole grows legs and becomes a frog. This is called:", "choices": ["Hibernation", "Migration", "Metamorphosis", "Germination"], "correct": 2, "expectedAny": ["c", "C", "3", "Metamorphosis"] },
+    { "question": "Seeds often grow inside:", "choices": ["Flowers and fruit", "Rocks", "Clouds", "Sand"], "correct": 0, "expectedAny": ["a", "A", "1", "Flowers and fruit", "fruit"] },
+    { "question": "A baby animal is called:", "choices": ["Seed", "Offspring", "Plant", "Pupa"], "correct": 1, "expectedAny": ["b", "B", "2", "Offspring", "baby"] },
+    { "question": "Which stage comes before adult in many animals?", "choices": ["Egg", "Pupa", "Seedling", "Rock"], "correct": 1, "expectedAny": ["b", "B", "2", "Pupa"] }
   ],
   "fillintheblank": [
-    { "question": "A butterfly starts as an _____, becomes a caterpillar, then a chrysalis, then an adult _____.", "expectedAny": ["egg", "butterfly"] },
-    { "question": "A young plant is called a _____.", "expectedAny": ["seedling"] },
-    { "question": "The process when a seed starts growing is called _____.", "expectedAny": ["germination"] },
-    { "question": "A frog begins life as a _____.", "expectedAny": ["tadpole"] },
-    { "question": "Adult plants make _____ to start new plants.", "expectedAny": ["seeds"] },
-    { "question": "A chrysalis is the _____ stage in butterflies.", "expectedAny": ["pupa"] },
-    { "question": "A life cycle shows how living things _____ and change.", "expectedAny": ["grow"] }
+    { "question": "A butterfly starts as an _____, becomes a caterpillar, then a chrysalis, then an adult _____.", "expectedAny": ["egg", "butterfly", "adult butterfly"] },
+    { "question": "A young plant is called a _____.", "expectedAny": ["seedling", "sprout"] },
+    { "question": "The process when a seed starts growing is called _____.", "expectedAny": ["germination", "sprouting"] },
+    { "question": "A frog begins life as a _____.", "expectedAny": ["tadpole", "larva"] },
+    { "question": "Adult plants make _____ to start new plants.", "expectedAny": ["seeds", "seed"] },
+    { "question": "A chrysalis is the _____ stage in butterflies.", "expectedAny": ["pupa", "pupal"] },
+    { "question": "A life cycle shows how living things _____ and change.", "expectedAny": ["grow", "develop"] }
   ],
   "shortanswer": [
-    { "question": "How are plant and animal life cycles similar?", "expectedAny": ["both have stages", "both grow and reproduce"] },
-    { "question": "Name the stages of a butterfly's life.", "expectedAny": ["egg", "caterpillar", "pupa/chrysalis", "adult"] },
-    { "question": "What does a seed need to start growing?", "expectedAny": ["water", "air", "warmth", "soil"] },
-    { "question": "How does a tadpole change as it becomes a frog?", "expectedAny": ["grows legs", "loses tail", "lungs develop"] },
-    { "question": "Why do plants make seeds?", "expectedAny": ["to reproduce", "to make new plants"] },
-    { "question": "Give an example of an animal that does not have metamorphosis.", "expectedAny": ["human", "dog", "bird"] },
-    { "question": "What stage is a plant when it first grows leaves?", "expectedAny": ["seedling"] }
+    {"question": "How are plant and animal life cycles similar?", "expectedAny": ["both have stages", "both grow and reproduce", "both start small and become adults", "they both grow", "both have life stages", "all living things grow"]},
+    {"question": "Name the stages of a butterfly's life.", "expectedAny": ["egg", "caterpillar", "pupa/chrysalis", "adult", "larva as caterpillar", "egg caterpillar pupa butterfly", "egg then caterpillar then cocoon then butterfly"]},
+    {"question": "What does a seed need to start growing?", "expectedAny": ["water", "air", "warmth", "soil", "light for some plants", "water and sun", "water air warmth"]},
+    {"question": "How does a tadpole change as it becomes a frog?", "expectedAny": ["grows legs", "loses tail", "lungs develop", "body changes to live on land", "gets legs and loses tail", "grows legs loses tail"]},
+    {"question": "Why do plants make seeds?", "expectedAny": ["to reproduce", "to make new plants", "to grow the next generation", "make more plants", "grow new plants", "for babies"]},
+    {"question": "Give an example of an animal that does not have metamorphosis.", "expectedAny": ["human", "dog", "bird", "cat", "cow", "horse", "any mammal"]},
+    {"question": "What stage is a plant when it first grows leaves?", "expectedAny": ["seedling", "young plant", "sprout", "baby plant"]}
   ]
 }

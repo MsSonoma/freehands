@@ -1,0 +1,532 @@
+﻿{
+    "id":  "12th_Advanced_Statistics_Probability_Analysis_Advanced",
+    "title":  "Advanced Statistics and Probability Analysis",
+    "grade":  "12th",
+    "difficulty":  "Advanced",
+    "vocab":  [
+                  {
+                      "term":  "chi-square test",
+                      "definition":  "Test for categorical data independence"
+                  },
+                  {
+                      "term":  "ANOVA",
+                      "definition":  "Analysis of variance comparing multiple means"
+                  },
+                  {
+                      "term":  "Type I error",
+                      "definition":  "Rejecting true null hypothesis"
+                  },
+                  {
+                      "term":  "Type II error",
+                      "definition":  "Failing to reject false null hypothesis"
+                  },
+                  {
+                      "term":  "statistical power",
+                      "definition":  "Probability of detecting true effect"
+                  }
+              ],
+    "teachingNotes":  "Master advanced statistical methods and probability. Apply inferential statistics to real data.",
+    "sample":  [
+                   {
+                       "question":  "What analyzes data?",
+                       "expectedAny":  [
+                                           "statistics",
+                                           "stats",
+                                           "data science",
+                                           "data analysis",
+                                           "statistical analysis",
+                                           "statistical methods"
+                                       ]
+                   },
+                   {
+                       "question":  "What is event likelihood?",
+                       "expectedAny":  [
+                                           "probability",
+                                           "chance",
+                                           "likelihood",
+                                           "odds",
+                                           "event probability",
+                                           "p value"
+                                       ]
+                   },
+                   {
+                       "question":  "What is average?",
+                       "expectedAny":  [
+                                           "mean",
+                                           "average",
+                                           "arithmetic average",
+                                           "arithmetic mean",
+                                           "central value",
+                                           "expected value"
+                                       ]
+                   },
+                   {
+                       "question":  "What measures spread?",
+                       "expectedAny":  [
+                                           "standard deviation",
+                                           "deviation",
+                                           "SD",
+                                           "spread measure",
+                                           "dispersion",
+                                           "variability"
+                                       ]
+                   },
+                   {
+                       "question":  "What is bell-shaped?",
+                       "expectedAny":  [
+                                           "normal distribution",
+                                           "normal"
+                                       ]
+                   },
+                   {
+                       "question":  "What tests claims?",
+                       "expectedAny":  [
+                                           "hypothesis testing",
+                                           "testing"
+                                       ]
+                   },
+                   {
+                       "question":  "What is parameter range?",
+                       "expectedAny":  [
+                                           "confidence interval",
+                                           "interval"
+                                       ]
+                   },
+                   {
+                       "question":  "What finds variable relationships?",
+                       "expectedAny":  [
+                                           "regression analysis",
+                                           "regression"
+                                       ]
+                   },
+                   {
+                       "question":  "What measures linear relationship?",
+                       "expectedAny":  [
+                                           "correlation coefficient",
+                                           "correlation"
+                                       ]
+                   },
+                   {
+                       "question":  "What is statistics distribution?",
+                       "expectedAny":  [
+                                           "sampling distribution",
+                                           "sampling"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Statistics analyzes data.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Probability is certainty.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Mean is average.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Standard deviation measures center.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Normal distribution is bell-shaped.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Hypothesis testing tests claims.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Confidence interval is single value.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Regression finds relationships.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Correlation proves causation.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Sampling distribution uses samples.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What is data science?",
+                               "choices":  [
+                                               "Chemistry",
+                                               "Statistics",
+                                               "Biology",
+                                               "Physics"
+                                           ],
+                               "correct":  "Statistics"
+                           },
+                           {
+                               "question":  "What is likelihood?",
+                               "choices":  [
+                                               "Certainty",
+                                               "Probability",
+                                               "Impossibility",
+                                               "Guarantee"
+                                           ],
+                               "correct":  "Probability"
+                           },
+                           {
+                               "question":  "What is average?",
+                               "choices":  [
+                                               "Mode",
+                                               "Median",
+                                               "Mean",
+                                               "Range"
+                                           ],
+                               "correct":  "Mean"
+                           },
+                           {
+                               "question":  "What measures variability?",
+                               "choices":  [
+                                               "Mean",
+                                               "Median",
+                                               "Mode",
+                                               "Standard deviation"
+                                           ],
+                               "correct":  "Standard deviation"
+                           },
+                           {
+                               "question":  "What shape is normal distribution?",
+                               "choices":  [
+                                               "Flat",
+                                               "Bell",
+                                               "Skewed",
+                                               "Uniform"
+                                           ],
+                               "correct":  "Bell"
+                           },
+                           {
+                               "question":  "What tests statistical claims?",
+                               "choices":  [
+                                               "Guessing",
+                                               "Hypothesis testing",
+                                               "Assuming",
+                                               "Ignoring"
+                                           ],
+                               "correct":  "Hypothesis testing"
+                           },
+                           {
+                               "question":  "What gives parameter range?",
+                               "choices":  [
+                                               "Point estimate",
+                                               "Confidence interval",
+                                               "Single value",
+                                               "Exact answer"
+                                           ],
+                               "correct":  "Confidence interval"
+                           },
+                           {
+                               "question":  "What finds variable relationships?",
+                               "choices":  [
+                                               "Addition",
+                                               "Subtraction",
+                                               "Regression",
+                                               "Division"
+                                           ],
+                               "correct":  "Regression"
+                           },
+                           {
+                               "question":  "What measures linear association?",
+                               "choices":  [
+                                               "Mean",
+                                               "Correlation",
+                                               "Mode",
+                                               "Median"
+                                           ],
+                               "correct":  "Correlation"
+                           },
+                           {
+                               "question":  "What distributes sample statistics?",
+                               "choices":  [
+                                               "Population",
+                                               "Sampling distribution",
+                                               "Parameter",
+                                               "Census"
+                                           ],
+                               "correct":  "Sampling distribution"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "_____ is science of analyzing data.",
+                               "expectedAny":  [
+                                                   "statistics",
+                                                   "Statistics"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ is event likelihood.",
+                               "expectedAny":  [
+                                                   "probability",
+                                                   "Probability"
+                                               ]
+                           },
+                           {
+                               "question":  "The _____ is the average.",
+                               "expectedAny":  [
+                                                   "mean",
+                                                   "Mean"
+                                               ]
+                           },
+                           {
+                               "question":  "Standard _____ measures spread.",
+                               "expectedAny":  [
+                                                   "deviation",
+                                                   "Deviation"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ distribution is bell-shaped.",
+                               "expectedAny":  [
+                                                   "normal",
+                                                   "Normal"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ testing tests claims.",
+                               "expectedAny":  [
+                                                   "hypothesis",
+                                                   "Hypothesis"
+                                               ]
+                           },
+                           {
+                               "question":  "Confidence _____ gives parameter range.",
+                               "expectedAny":  [
+                                                   "interval",
+                                                   "Interval"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ analysis finds relationships.",
+                               "expectedAny":  [
+                                                   "regression",
+                                                   "Regression"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ coefficient measures linear relationship.",
+                               "expectedAny":  [
+                                                   "correlation",
+                                                   "Correlation"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ distribution uses samples.",
+                               "expectedAny":  [
+                                                   "sampling",
+                                                   "Sampling"
+                                               ]
+                           }
+                       ],
+    "wordProblems":  [
+                         {
+                             "question":  "Find mean of 2, 4, 6, 8, 10.",
+                             "expectedAny":  [
+                                                 "6",
+                                                 "six"
+                                             ]
+                         },
+                         {
+                             "question":  "What is probability of rolling a 3 on die?",
+                             "expectedAny":  [
+                                                 "1/6",
+                                                 "one sixth",
+                                                 "one over six"
+                                             ]
+                         },
+                         {
+                             "question":  "If mean is 50 and standard deviation is 10, what is z-score for 60?",
+                             "expectedAny":  [
+                                                 "1",
+                                                 "one"
+                                             ]
+                         },
+                         {
+                             "question":  "In normal distribution, what percent is within 1 standard deviation?",
+                             "expectedAny":  [
+                                                 "68",
+                                                 "68 percent",
+                                                 "sixty-eight"
+                                             ]
+                         },
+                         {
+                             "question":  "If p-value is 0.03 and alpha is 0.05, do we reject null?",
+                             "expectedAny":  [
+                                                 "yes",
+                                                 "reject",
+                                                 "true"
+                                             ]
+                         },
+                         {
+                             "question":  "What is 95 percent confidence interval if mean is 50 with margin of error 5?",
+                             "expectedAny":  [
+                                                 "45 to 55",
+                                                 "(45, 55)",
+                                                 "45 - 55"
+                                             ]
+                         },
+                         {
+                             "question":  "If correlation is negative 0.9, is relationship strong?",
+                             "expectedAny":  [
+                                                 "yes",
+                                                 "strong",
+                                                 "true"
+                                             ]
+                         },
+                         {
+                             "question":  "Calculate mean of sample: 10, 20, 30.",
+                             "expectedAny":  [
+                                                 "20",
+                                                 "twenty"
+                                             ]
+                         },
+                         {
+                             "question":  "If probability of A is 0.3 and B is 0.4 and independent, what is P(A and B)?",
+                             "expectedAny":  [
+                                                 "0.12",
+                                                 "twelve hundredths"
+                                             ]
+                         },
+                         {
+                             "question":  "What is variance if standard deviation is 5?",
+                             "expectedAny":  [
+                                                 "25",
+                                                 "twenty-five"
+                                             ]
+                         }
+                     ],
+    "shortanswer":  [
+                        {
+                            "question":  "What is statistics?",
+                            "expectedAny":  [
+                                                "science of collecting and analyzing data",
+                                                "using data to make inferences",
+                                                "descriptive and inferential analysis"
+                                            ]
+                        },
+                        {
+                            "question":  "Define probability.",
+                            "expectedAny":  [
+                                                "likelihood of an event occurring",
+                                                "number between 0 and 1",
+                                                "ratio of favorable to total outcomes"
+                                            ]
+                        },
+                        {
+                            "question":  "What is mean?",
+                            "expectedAny":  [
+                                                "average of a data set",
+                                                "sum divided by count",
+                                                "measure of center"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain standard deviation.",
+                            "expectedAny":  [
+                                                "measure of spread in data",
+                                                "average distance from mean",
+                                                "square root of variance"
+                                            ]
+                        },
+                        {
+                            "question":  "What is normal distribution?",
+                            "expectedAny":  [
+                                                "bell-shaped symmetric distribution",
+                                                "mean median mode equal",
+                                                "68-95-99.7 rule applies"
+                                            ]
+                        },
+                        {
+                            "question":  "What is hypothesis testing?",
+                            "expectedAny":  [
+                                                "statistical method for testing claims",
+                                                "comparing null and alternative hypotheses",
+                                                "using p-value to make decision"
+                                            ]
+                        },
+                        {
+                            "question":  "Define confidence interval.",
+                            "expectedAny":  [
+                                                "range likely containing true parameter",
+                                                "provides estimate with margin of error",
+                                                "captures true value with given confidence"
+                                            ]
+                        },
+                        {
+                            "question":  "What is regression analysis?",
+                            "expectedAny":  [
+                                                "finding relationship between variables",
+                                                "predicting dependent from independent",
+                                                "fitting line or curve to data"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain correlation coefficient.",
+                            "expectedAny":  [
+                                                "measure of linear relationship strength",
+                                                "ranges from negative 1 to positive 1",
+                                                "zero means no linear relationship"
+                                            ]
+                        },
+                        {
+                            "question":  "What is sampling distribution?",
+                            "expectedAny":  [
+                                                "distribution of sample statistics",
+                                                "shows variability of estimates",
+                                                "foundation for inference"
+                                            ]
+                        }
+                    ]
+}

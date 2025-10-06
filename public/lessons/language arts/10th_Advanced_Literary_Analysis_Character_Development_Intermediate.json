@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "10th_Advanced_Literary_Analysis_Character_Development_Intermediate",
   "title": "Advanced Literary Analysis: Character Development",
   "grade": "10th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "character foil",
-      "definition": "A character who contrasts with another to highlight particular qualities"
-    },
-    {
-      "term": "static character",
-      "definition": "A character who remains essentially unchanged throughout the story"
-    },
-    {
-      "term": "round character",
-      "definition": "A complex character with multiple personality traits and motivations"
-    },
-    {
-      "term": "flat character",
-      "definition": "A simple character with only one or two defining traits"
-    },
-    {
-      "term": "character archetype",
-      "definition": "A universal character type that appears across cultures and literature"
-    }
+    {"term": "character foil", "definition": "A character who contrasts with another to highlight particular qualities"},
+    {"term": "static character", "definition": "A character who remains essentially unchanged throughout the story"},
+    {"term": "round character", "definition": "A complex character with multiple personality traits and motivations"},
+    {"term": "flat character", "definition": "A simple character with only one or two defining traits"},
+    {"term": "character archetype", "definition": "A universal character type that appears across cultures and literature"}
   ],
   "teachingNotes": "Compare different character types and their functions. Analyze how authors use foils and archetypes to enhance themes.",
-  "sample": {
-    "question": "What is a character who contrasts with another to highlight qualities?",
-    "expectedAny": [
-      "character foil",
-      "foil character",
-      "contrasting character",
-      "opposing character"
-    ]
-  },
-  "truefalse": {
-    "question": "A round character has complex, multiple personality traits.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What type of character remains essentially unchanged?",
-    "expectedAny": [
-      "static character",
-      "unchanging character",
-      "fixed character",
-      "stable character"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A universal character type that appears across cultures is an ________.",
-    "expectedAny": [
-      "archetype",
-      "archetypal character",
-      "universal character",
-      "character pattern"
-    ]
-  },
-  "shortanswer": {
-    "question": "What is the purpose of using character foils in literature?",
-    "expectedAny": [
-      "highlight contrasts",
-      "emphasize traits",
-      "clarify themes",
-      "create tension"
-    ]
-  }
+  "sample": [
+    {"question": "What is a character who contrasts with another to highlight qualities?", "expectedAny": ["character foil", "foil", "contrasting character", "opposing character", "contrast character", "highlighting character"]},
+    {"question": "What is a static character?", "expectedAny": ["unchanging character", "character who stays same", "no change character", "fixed character", "stable character", "constant character", "unevolving character"]},
+    {"question": "What is a round character?", "expectedAny": ["complex character", "multi-dimensional character", "character with depth", "three-dimensional character", "fully developed character", "multifaceted character", "realistic character"]},
+    {"question": "What is a flat character?", "expectedAny": ["simple character", "one-dimensional", "character with few traits", "basic character", "undeveloped character", "stock character"]},
+    {"question": "What is a character archetype?", "expectedAny": ["universal character type", "typical character", "common character pattern", "universal pattern", "character model", "character type"]},
+    {"question": "What highlights qualities through contrast?", "expectedAny": ["foil", "character foil", "contrasting character", "opposing character", "contrast character", "highlighting character"]},
+    {"question": "What character doesn't change?", "expectedAny": ["static", "static character", "unchanging", "unchanging character", "fixed character", "stable character"]},
+    {"question": "What character is complex?", "expectedAny": ["round", "round character", "multi-dimensional", "complex character", "three-dimensional character", "fully developed character"]},
+    {"question": "What character is simple?", "expectedAny": ["flat", "flat character", "one-dimensional", "simple character", "basic character", "undeveloped character"]},
+    {"question": "What appears across cultures?", "expectedAny": ["archetype", "character archetype", "universal type", "universal character type", "typical character", "common character pattern"]}
+  ],
+  "truefalse": [
+    {"question": "A character foil contrasts with another character. (True or False)", "correct": true},
+    {"question": "Static characters change significantly. (True or False)", "correct": false},
+    {"question": "Round characters are complex. (True or False)", "correct": true},
+    {"question": "Flat characters have many traits. (True or False)", "correct": false},
+    {"question": "Archetypes are universal character types. (True or False)", "correct": true},
+    {"question": "Foils highlight qualities through contrast. (True or False)", "correct": true},
+    {"question": "Static means unchanging. (True or False)", "correct": true},
+    {"question": "Round characters are simple. (True or False)", "correct": false},
+    {"question": "Flat characters are one-dimensional. (True or False)", "correct": true},
+    {"question": "Archetypes appear across cultures. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What contrasts to highlight qualities?", "choices": [{"letter": "A", "text": "Protagonist"}, {"letter": "B", "text": "Character foil"}, {"letter": "C", "text": "Narrator"}, {"letter": "D", "text": "Author"}], "correct": "B"},
+    {"question": "What character doesn't change?", "choices": [{"letter": "A", "text": "Dynamic"}, {"letter": "B", "text": "Static"}, {"letter": "C", "text": "Round"}, {"letter": "D", "text": "Protagonist"}], "correct": "B"},
+    {"question": "What character is complex?", "choices": [{"letter": "A", "text": "Flat"}, {"letter": "B", "text": "Round"}, {"letter": "C", "text": "Static"}, {"letter": "D", "text": "Simple"}], "correct": "B"},
+    {"question": "What character is simple?", "choices": [{"letter": "A", "text": "Round"}, {"letter": "B", "text": "Flat"}, {"letter": "C", "text": "Dynamic"}, {"letter": "D", "text": "Complex"}], "correct": "B"},
+    {"question": "What is a universal character type?", "choices": [{"letter": "A", "text": "Foil"}, {"letter": "B", "text": "Archetype"}, {"letter": "C", "text": "Static"}, {"letter": "D", "text": "Flat"}], "correct": "B"},
+    {"question": "What highlights through contrast?", "choices": [{"letter": "A", "text": "Theme"}, {"letter": "B", "text": "Foil"}, {"letter": "C", "text": "Plot"}, {"letter": "D", "text": "Setting"}], "correct": "B"},
+    {"question": "What remains unchanged?", "choices": [{"letter": "A", "text": "Dynamic"}, {"letter": "B", "text": "Static"}, {"letter": "C", "text": "Round"}, {"letter": "D", "text": "Evolving"}], "correct": "B"},
+    {"question": "What has multiple traits?", "choices": [{"letter": "A", "text": "Flat"}, {"letter": "B", "text": "Round"}, {"letter": "C", "text": "Simple"}, {"letter": "D", "text": "Static"}], "correct": "B"},
+    {"question": "What has few traits?", "choices": [{"letter": "A", "text": "Round"}, {"letter": "B", "text": "Flat"}, {"letter": "C", "text": "Complex"}, {"letter": "D", "text": "Dynamic"}], "correct": "B"},
+    {"question": "What appears universally?", "choices": [{"letter": "A", "text": "Unique character"}, {"letter": "B", "text": "Archetype"}, {"letter": "C", "text": "Foil"}, {"letter": "D", "text": "Static"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "A character _____ contrasts to highlight qualities.", "expectedAny": ["foil"]},
+    {"question": "A _____ character doesn't change.", "expectedAny": ["static"]},
+    {"question": "A _____ character is complex.", "expectedAny": ["round"]},
+    {"question": "A _____ character is simple.", "expectedAny": ["flat"]},
+    {"question": "A character _____ is a universal type.", "expectedAny": ["archetype"]},
+    {"question": "_____ highlight qualities through contrast.", "expectedAny": ["foils", "Foils"]},
+    {"question": "_____ characters remain unchanged.", "expectedAny": ["static", "Static"]},
+    {"question": "_____ characters have depth.", "expectedAny": ["round", "Round"]},
+    {"question": "_____ characters are one-dimensional.", "expectedAny": ["flat", "Flat"]},
+    {"question": "_____ appear across cultures.", "expectedAny": ["archetypes", "Archetypes"]}
+  ],
+  "shortanswer": [
+    {"question": "What is a character foil?", "keyTerms": ["character", "contrasts", "highlight", "qualities"], "expectedAny": ["A character who contrasts with another to highlight particular qualities", "Contrasting character", "Character used for comparison"]},
+    {"question": "What is a static character?", "keyTerms": ["character", "unchanged", "throughout", "story"], "expectedAny": ["A character who remains essentially unchanged throughout the story", "Unchanging character", "Character without development"]},
+    {"question": "What is a round character?", "keyTerms": ["complex", "character", "multiple", "traits"], "expectedAny": ["A complex character with multiple personality traits and motivations", "Multi-dimensional character", "Character with depth"]},
+    {"question": "What is a flat character?", "keyTerms": ["simple", "character", "one", "two traits"], "expectedAny": ["A simple character with only one or two defining traits", "One-dimensional character", "Character without complexity"]},
+    {"question": "What is a character archetype?", "keyTerms": ["universal", "character", "type", "cultures"], "expectedAny": ["A universal character type that appears across cultures and literature", "Common character pattern", "Typical character model"]},
+    {"question": "How do foils work?", "keyTerms": ["contrast", "highlight", "differences", "qualities"], "expectedAny": ["They contrast with main characters to highlight differences and qualities", "Through comparison and opposition", "By showing contrasts"]},
+    {"question": "Why use static characters?", "keyTerms": ["stability", "contrast", "dynamic", "support"], "expectedAny": ["For stability and to contrast with dynamic characters", "To support main characters", "Provide consistency"]},
+    {"question": "Why are round characters important?", "keyTerms": ["realistic", "complex", "interesting", "development"], "expectedAny": ["They are realistic complex and interesting with development", "Add depth to story", "Create believable characters"]},
+    {"question": "When use flat characters?", "keyTerms": ["minor", "roles", "simple", "functions"], "expectedAny": ["For minor roles with simple functions", "Supporting cast", "Background characters"]},
+    {"question": "What are common archetypes?", "keyTerms": ["hero", "mentor", "villain", "universal"], "expectedAny": ["Hero mentor villain and other universal types", "Common patterns like wise old man", "Typical character roles"]}
+  ]
 }

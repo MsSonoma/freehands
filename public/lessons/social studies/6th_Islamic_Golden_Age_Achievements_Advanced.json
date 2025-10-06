@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Emphasize Islamic contributions to science, mathematics, and medicine. Discuss how Islamic scholars preserved Greek and Roman knowledge. Show the geographic spread of Islamic civilization.",
-  "sample": {
-    "question": "What period of great Islamic learning lasted from the 8th-13th centuries?",
-    "expectedAny": [
-      "Islamic Golden Age",
-      "Golden Age of Islam",
-      "Islamic renaissance",
-      "Islamic scholarly period"
-    ]
-  },
-  "truefalse": {
-    "question": "Islamic scholars developed the branch of mathematics called algebra.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What was the famous library and research center in Baghdad called?",
-    "expectedAny": [
-      "House of Wisdom",
-      "Baghdad library",
-      "Wisdom House",
-      "Islamic library"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The political and religious leader of the Islamic community was called a ________.",
-    "expectedAny": [
-      "caliph",
-      "Islamic caliph",
-      "religious caliph",
-      "Muslim caliph"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are two contributions Islamic scholars made to learning?",
-    "expectedAny": [
-      "algebra and medicine",
-      "preserving Greek texts and astronomy",
-      "mathematics and science",
-      "medicine and philosophy"
-    ]
-  }
+  "sample": [
+    { "question": "What period of great Islamic learning lasted from the 8th-13th centuries?", "expectedAny": ["Islamic Golden Age"] },
+    { "question": "Which was the center of learning?", "choices": ["Rome", "House of Wisdom", "Athens", "London"], "correct": 1, "expectedAny": ["House of Wisdom"] },
+    { "question": "A Muslim worship building is a ________.", "expectedAny": ["mosque"] },
+    { "question": "The Islamic leader was a ________.", "expectedAny": ["caliph"] },
+    { "question": "Islamic scholars developed ________.", "expectedAny": ["algebra"] },
+    { "question": "What period had great learning?", "choices": ["Dark Ages", "Islamic Golden Age", "Stone Age", "Ice Age"], "correct": 1, "expectedAny": ["Islamic Golden Age"] },
+    { "question": "The library in Baghdad was ________.", "expectedAny": ["House of Wisdom"] },
+    { "question": "Muslims worship at a ________.", "expectedAny": ["mosque"] },
+    { "question": "Who led the Islamic community?", "choices": ["King", "Caliph", "Emperor", "President"], "correct": 1, "expectedAny": ["caliph"] },
+    { "question": "A branch of math is ________.", "expectedAny": ["algebra"] }
+  ],
+  "truefalse": [
+    { "question": "Islamic scholars developed the branch of mathematics called algebra.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The Islamic Golden Age was in the 1800s.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The House of Wisdom was in Baghdad.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A mosque is a market.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A caliph led the Islamic community.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Islamic scholars made no contributions.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The Islamic Golden Age advanced science.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Algebra was developed in America.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Islamic scholars preserved Greek knowledge.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The House of Wisdom was a school only.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What was the famous library and research center in Baghdad called?", "choices": ["House of Wisdom", "Library of Alexandria", "Vatican Library", "British Museum"], "correct": 0, "expectedAny": ["House of Wisdom"] },
+    { "question": "What period lasted 8th-13th centuries?", "choices": ["Dark Ages", "Renaissance", "Islamic Golden Age", "Stone Age"], "correct": 2, "expectedAny": ["Islamic Golden Age"] },
+    { "question": "Where do Muslims worship?", "choices": ["Temple", "Mosque", "Church", "Synagogue"], "correct": 1, "expectedAny": ["mosque"] },
+    { "question": "What did Islamic scholars develop?", "choices": ["Nothing", "Algebra", "Cars", "Planes"], "correct": 1, "expectedAny": ["algebra"] },
+    { "question": "Who was the Islamic leader?", "choices": ["King", "President", "Caliph", "Emperor"], "correct": 2, "expectedAny": ["caliph"] },
+    { "question": "What was in Baghdad?", "choices": ["Colosseum", "House of Wisdom", "Parthenon", "Great Wall"], "correct": 1, "expectedAny": ["House of Wisdom"] },
+    { "question": "What is algebra?", "choices": ["Art", "Music", "Mathematics", "Dance"], "correct": 2, "expectedAny": ["mathematics"] },
+    { "question": "What was a center of learning?", "choices": ["Mosque", "Market", "Farm", "Road"], "correct": 0, "expectedAny": ["mosque"] },
+    { "question": "What did scholars preserve?", "choices": ["Nothing", "Greek knowledge", "Cars", "Planes"], "correct": 1, "expectedAny": ["Greek knowledge"] },
+    { "question": "When was the Golden Age?", "choices": ["1800s", "8th-13th centuries", "2000s", "500 BC"], "correct": 1, "expectedAny": ["8th-13th centuries"] }
+  ],
+  "fillintheblank": [
+    { "question": "The political and religious leader of the Islamic community was called a ________.", "expectedAny": ["caliph"] },
+    { "question": "The great period of learning was the ________.", "expectedAny": ["Islamic Golden Age"] },
+    { "question": "Muslims worship at a ________.", "expectedAny": ["mosque"] },
+    { "question": "Islamic scholars developed ________.", "expectedAny": ["algebra"] },
+    { "question": "The ________ was a library in Baghdad.", "expectedAny": ["House of Wisdom"] },
+    { "question": "A ________ led the Islamic community.", "expectedAny": ["caliph"] },
+    { "question": "The Islamic Golden Age was from the ________ to 13th centuries.", "expectedAny": ["8th"] },
+    { "question": "________ is a branch of mathematics.", "expectedAny": ["algebra"] },
+    { "question": "A ________ is a Muslim worship building.", "expectedAny": ["mosque"] },
+    { "question": "Baghdad had the ________.", "expectedAny": ["House of Wisdom"] }
+  ],
+  "shortanswer": [
+    { "question": "What are two contributions Islamic scholars made to learning?", "expectedAny": ["algebra and medicine", "preserving Greek texts and astronomy", "mathematics and science"] },
+    { "question": "What is the Islamic Golden Age?", "expectedAny": ["period of great learning 8th-13th centuries", "time of Islamic achievement"] },
+    { "question": "What is a mosque?", "expectedAny": ["Muslim worship building", "place of prayer"] },
+    { "question": "What is a caliph?", "expectedAny": ["Islamic political and religious leader", "leader of Islamic community"] },
+    { "question": "What is algebra?", "expectedAny": ["branch of mathematics", "math developed by Islamic scholars"] },
+    { "question": "What was the House of Wisdom?", "expectedAny": ["library and research center", "learning center in Baghdad"] },
+    { "question": "What knowledge did Islamic scholars preserve?", "expectedAny": ["Greek and Roman knowledge", "ancient texts"] },
+    { "question": "When was the Islamic Golden Age?", "expectedAny": ["8th to 13th centuries", "medieval period"] },
+    { "question": "What sciences did Islamic scholars advance?", "expectedAny": ["mathematics and medicine", "astronomy and science"] },
+    { "question": "Where was the House of Wisdom?", "expectedAny": ["Baghdad", "Islamic capital"] }
+  ]
 }

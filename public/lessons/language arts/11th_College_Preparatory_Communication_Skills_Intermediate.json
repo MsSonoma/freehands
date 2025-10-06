@@ -1,4 +1,4 @@
-{
+﻿{
   "id": "11th_College_Preparatory_Communication_Skills_Intermediate",
   "title": "College Preparatory Communication Skills",
   "grade": "11th",
@@ -26,49 +26,224 @@
     }
   ],
   "teachingNotes": "Emphasize research skills and academic integrity. Practice multiple citation formats and source evaluation.",
-  "sample": {
-    "question": "What is combining multiple sources to create new understanding?",
-    "expectedAny": [
-      "synthesis",
-      "source synthesis",
-      "integrative analysis",
-      "combined understanding"
-    ]
-  },
-  "truefalse": {
-    "question": "Plagiarism involves using others' ideas without proper attribution.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is a peer-reviewed academic publication?",
-    "expectedAny": [
-      "scholarly source",
-      "academic source",
-      "peer-reviewed source",
-      "expert publication"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Critical notes and summaries of sources are called ________.",
-    "expectedAny": [
-      "annotations",
-      "source notes",
-      "critical summaries",
-      "research notes"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why is proper citation important in academic writing?",
-    "expectedAny": [
-      "avoids plagiarism",
-      "gives credit",
-      "enables verification",
-      "shows credibility"
-    ]
-  }
+  "sample": [
+    {
+      "question": "What is combining multiple sources to create new understanding?",
+      "expectedAny": ["synthesis", "source synthesis", "integrative analysis", "combined understanding", "synthesizing sources", "source integration"]
+    },
+    {
+      "question": "What are critical notes on source materials?",
+      "expectedAny": ["annotation", "annotations", "critical notes", "source notes", "annotated notes", "critical commentary"]
+    },
+    {
+      "question": "What is using others' ideas without attribution?",
+      "expectedAny": ["plagiarism", "academic dishonesty", "improper citation", "theft of ideas", "uncredited use", "intellectual theft"]
+    },
+    {
+      "question": "What is a standardized format for crediting sources?",
+      "expectedAny": ["citation style", "citation format", "reference style", "documentation style", "citation method", "referencing format"]
+    },
+    {
+      "question": "What is a peer-reviewed academic publication?",
+      "expectedAny": ["scholarly source", "academic source", "peer-reviewed source", "expert publication", "scholarly publication", "academic journal"]
+    },
+    {
+      "question": "What process combines sources into new insights?",
+      "expectedAny": ["synthesis", "integrative analysis", "source integration", "combined analysis"]
+    },
+    {
+      "question": "What helps track source information?",
+      "expectedAny": ["annotation", "annotations", "notes", "source documentation"]
+    },
+    {
+      "question": "What academic violation involves stealing ideas?",
+      "expectedAny": ["plagiarism", "academic dishonesty", "intellectual theft", "improper citation"]
+    },
+    {
+      "question": "What includes MLA and APA formats?",
+      "expectedAny": ["citation style", "citation styles", "reference formats", "documentation systems"]
+    },
+    {
+      "question": "What type of source has expert credibility?",
+      "expectedAny": ["scholarly source", "academic source", "peer-reviewed publication", "expert source"]
+    }
+  ],
+  "truefalse": [
+    {
+      "question": "Plagiarism involves using others' ideas without proper attribution.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Synthesis means copying sources word for word.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Annotation includes critical notes on sources.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Citation style is optional in academic writing.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Scholarly sources are peer-reviewed publications.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Synthesis requires no original thinking.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Annotation helps track source information.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Plagiarism is acceptable if sources are hard to find.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "MLA and APA are citation styles.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "All internet sources are scholarly.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "What combines multiple sources?",
+      "choices": ["Plagiarism", "Synthesis", "Copying", "Deletion"],
+      "correct": "Synthesis"
+    },
+    {
+      "question": "What are critical source notes?",
+      "choices": ["Plagiarism", "Synthesis", "Annotation", "Citation"],
+      "correct": "Annotation"
+    },
+    {
+      "question": "What is academic dishonesty?",
+      "choices": ["Citation", "Annotation", "Plagiarism", "Research"],
+      "correct": "Plagiarism"
+    },
+    {
+      "question": "What is MLA?",
+      "choices": ["A book", "Citation style", "Database", "Website"],
+      "correct": "Citation style"
+    },
+    {
+      "question": "What is peer-reviewed?",
+      "choices": ["Blog", "Scholarly source", "Magazine", "Social media"],
+      "correct": "Scholarly source"
+    },
+    {
+      "question": "What creates new understanding?",
+      "choices": ["Copying", "Synthesis", "Deleting", "Ignoring"],
+      "correct": "Synthesis"
+    },
+    {
+      "question": "What includes summaries?",
+      "choices": ["Plagiarism", "Citation", "Annotation", "Error"],
+      "correct": "Annotation"
+    },
+    {
+      "question": "What must be avoided?",
+      "choices": ["Research", "Plagiarism", "Writing", "Reading"],
+      "correct": "Plagiarism"
+    },
+    {
+      "question": "What format credits sources?",
+      "choices": ["Paragraph", "Citation style", "Summary", "Title"],
+      "correct": "Citation style"
+    },
+    {
+      "question": "What has expert credibility?",
+      "choices": ["Blog", "Scholarly source", "Opinion", "Rumor"],
+      "correct": "Scholarly source"
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "_____ combines multiple sources to create new understanding.",
+      "expectedAny": ["synthesis", "source synthesis", "integration"]
+    },
+    {
+      "question": "_____ includes critical notes and summaries.",
+      "expectedAny": ["annotation", "annotations", "source notes"]
+    },
+    {
+      "question": "_____ is using ideas without proper attribution.",
+      "expectedAny": ["plagiarism", "academic dishonesty", "theft"]
+    },
+    {
+      "question": "_____ style provides standardized source formats.",
+      "expectedAny": ["citation", "reference", "documentation"]
+    },
+    {
+      "question": "A _____ source is peer-reviewed and credible.",
+      "expectedAny": ["scholarly", "academic", "expert"]
+    },
+    {
+      "question": "Effective research requires _____ of sources.",
+      "expectedAny": ["synthesis", "integration", "combination"]
+    },
+    {
+      "question": "Good researchers use _____ to track sources.",
+      "expectedAny": ["annotation", "annotations", "notes"]
+    },
+    {
+      "question": "Academic integrity prohibits _____.",
+      "expectedAny": ["plagiarism", "cheating", "dishonesty"]
+    },
+    {
+      "question": "MLA and APA are _____ styles.",
+      "expectedAny": ["citation", "reference", "documentation"]
+    },
+    {
+      "question": "_____ sources have expert credibility.",
+      "expectedAny": ["scholarly", "academic", "peer-reviewed"]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Explain what synthesis means in academic writing.",
+      "expectedAny": ["synthesis combines multiple sources to create new insights and understanding", "integrating different sources to develop original arguments and perspectives", "blending source information to form cohesive new analysis"]
+    },
+    {
+      "question": "Why is annotation important for research?",
+      "expectedAny": ["annotation helps track source information and critical insights for later use", "taking notes ensures you remember key points and can cite accurately", "critical annotations improve understanding and prevent plagiarism"]
+    },
+    {
+      "question": "What are the consequences of plagiarism?",
+      "expectedAny": ["plagiarism can result in failing grades expulsion and damaged reputation", "academic dishonesty undermines learning and violates ethical standards", "consequences include loss of credibility and academic penalties"]
+    },
+    {
+      "question": "Why use standardized citation styles?",
+      "expectedAny": ["citation styles ensure consistent crediting of sources across academic work", "standardized formats help readers locate sources and verify information", "citation conventions demonstrate professionalism and academic integrity"]
+    },
+    {
+      "question": "How can you identify scholarly sources?",
+      "expectedAny": ["scholarly sources are peer-reviewed with expert authors and academic publishers", "look for citations bibliography academic language and research methodology", "scholarly sources include journal articles and academic press books"]
+    },
+    {
+      "question": "What makes synthesis different from summary?",
+      "expectedAny": ["synthesis combines sources to create new understanding while summary restates one source", "synthesis requires original analysis connecting multiple perspectives", "summary reports information while synthesis generates new insights"]
+    },
+    {
+      "question": "Give an example of effective annotation.",
+      "expectedAny": ["noting main arguments key evidence and personal reactions to sources", "summarizing each paragraph and identifying how it supports your thesis", "recording publication details important quotes and critical questions"]
+    },
+    {
+      "question": "How can students avoid accidental plagiarism?",
+      "expectedAny": ["by carefully tracking sources and using proper citation for all borrowed ideas", "taking detailed notes that distinguish personal thoughts from source material", "using quotation marks for exact words and paraphrasing with attribution"]
+    },
+    {
+      "question": "Compare MLA and APA citation styles.",
+      "expectedAny": ["MLA emphasizes author and page while APA emphasizes author and date", "MLA is used in humanities and APA in social sciences", "both require in-text citations and reference lists with different formatting"]
+    },
+    {
+      "question": "Why are scholarly sources preferred in academic writing?",
+      "expectedAny": ["scholarly sources provide peer-reviewed credible expert information", "academic sources undergo rigorous review ensuring accuracy and reliability", "scholarly publications maintain high standards and contribute to knowledge"]
+    }
+  ]
 }

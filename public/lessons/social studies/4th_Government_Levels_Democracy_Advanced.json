@@ -23,17 +23,73 @@
     {
       "term": "representative",
       "definition": "Someone chosen to speak and act for a group of people"
+    },
+    {
+      "term": "legislative branch",
+      "definition": "The branch of government that makes laws"
+    },
+    {
+      "term": "executive branch",
+      "definition": "The branch of government that carries out and enforces laws"
+    },
+    {
+      "term": "judicial branch",
+      "definition": "The branch of government that interprets laws and runs the courts"
+    },
+    {
+      "term": "governor",
+      "definition": "The elected leader of a state"
+    },
+    {
+      "term": "mayor",
+      "definition": "The elected leader of a city or town"
+    },
+    {
+      "term": "constitution",
+      "definition": "The highest law that sets up government and protects rights"
+    },
+    {
+      "term": "federalism",
+      "definition": "The system where power is shared by national and state governments"
+    },
+    {
+      "term": "separation of powers",
+      "definition": "Dividing government power among three branches"
+    },
+    {
+      "term": "checks and balances",
+      "definition": "Ways each branch can limit the others so no branch becomes too strong"
+    },
+    {
+      "term": "amendment",
+      "definition": "A change or addition to the Constitution"
+    },
+    {
+      "term": "Bill of Rights",
+      "definition": "The first ten amendments that list many individual rights"
+    },
+    {
+      "term": "veto",
+      "definition": "When a leader refuses to approve a law"
+    },
+    {
+      "term": "ordinance",
+      "definition": "A local law made by a city or town"
+    },
+    {
+      "term": "jurisdiction",
+      "definition": "The area or kinds of cases a government or court has power over"
     }
   ],
   "teachingNotes": "Explain the three levels of government and their different responsibilities. Discuss how democratic elections work and why voting is important. Compare roles of different government officials.",
   "sample": [
-    {"question": "What are the three levels of government in the United States?", "expectedAny": ["federal", "state", "local"]},
-    {"question": "Who leads the executive branch at the federal level?", "expectedAny": ["President"]},
+    {"question": "What are the three levels of government in the United States?", "expectedAny": ["federal", "state", "local", "national, state, local"]},
+    {"question": "Who leads the executive branch at the federal level?", "expectedAny": ["President", "the President", "President of the United States"]},
     {"question": "Who leads a state government?", "expectedAny": ["Governor"]},
     {"question": "Who leads a city government?", "expectedAny": ["Mayor"]},
-    {"question": "What does the legislative branch do?", "expectedAny": ["makes laws"]},
-    {"question": "What does the judicial branch do?", "expectedAny": ["interprets laws"]},
-    {"question": "Why are elections important?", "expectedAny": ["people choose leaders"]}
+    {"question": "What does the legislative branch do?", "expectedAny": ["makes laws", "writes laws", "passes laws", "creates laws"]},
+    {"question": "What does the judicial branch do?", "expectedAny": ["interprets laws", "decides what laws mean", "reviews laws", "decides if laws follow the Constitution"]},
+    {"question": "Why are elections important?", "expectedAny": ["people choose leaders", "voice in government", "choose representatives", "hold leaders accountable"]}
   ],
   "truefalse": [
     {"question": "In a democracy, people vote to choose their leaders.", "answer": true},
@@ -54,21 +110,28 @@
     {"question": "Which level manages national parks?", "choices": ["Federal", "State", "Local", "County"], "correct": 0}
   ],
   "fillintheblank": [
-    {"question": "Someone chosen to speak for a group of people is a ____.", "expectedAny": ["representative"]},
-    {"question": "The ____ government makes laws for the whole country.", "expectedAny": ["federal"]},
-    {"question": "A city is run by a ____.", "expectedAny": ["mayor"]},
-    {"question": "A state is led by a ____.", "expectedAny": ["governor"]},
-    {"question": "People ____ to choose leaders in a democracy.", "expectedAny": ["vote"]},
-    {"question": "Courts are part of the ____ branch.", "expectedAny": ["judicial"]},
-    {"question": "Congress is part of the ____ branch.", "expectedAny": ["legislative"]}
+    {"question": "Someone chosen to speak for a group of people is a ____.", "expectedAny": ["representative", "rep", "delegate"]},
+    {"question": "The ____ government makes laws for the whole country.", "expectedAny": ["federal", "national", "central"]},
+    {"question": "A city is run by a ____.", "expectedAny": ["mayor", "city mayor", "town mayor"]},
+    {"question": "A state is led by a ____.", "expectedAny": ["governor", "state governor", "state's governor"]},
+    {"question": "People ____ to choose leaders in a democracy.", "expectedAny": ["vote", "cast ballots", "elect", "cast votes"]},
+    {"question": "Courts are part of the ____ branch.", "expectedAny": ["judicial", "court", "judiciary"]},
+    {"question": "Congress is part of the ____ branch.", "expectedAny": ["legislative", "law-making", "legislature", "lawmaking"]},
+    {"question": "Dividing power among three branches is called ____.", "expectedAny": ["separation of powers", "separation"]},
+    {"question": "When branches can limit each other it is called ____.", "expectedAny": ["checks and balances", "checks & balances"]},
+    {"question": "Sharing power between national and state governments is ____.", "expectedAny": ["federalism", "federal system", "federal structure"]},
+    {"question": "A change to the Constitution is an ____.", "expectedAny": ["amendment", "constitutional amendment", "amendment to the Constitution"]},
+    {"question": "The first ten amendments are called the ____.", "expectedAny": ["Bill of Rights", "the Bill of Rights"]},
+    {"question": "A local law made by a city is an ____.", "expectedAny": ["ordinance", "city ordinance", "municipal ordinance"]}
   ],
   "shortanswer": [
-    {"question": "Why is voting important in a democracy?", "expectedAny": ["people choose leaders", "voice in government"]},
-    {"question": "Give an example of a federal responsibility.", "expectedAny": ["national defense", "printing money"]},
-    {"question": "Give an example of a state responsibility.", "expectedAny": ["driver's licenses", "state roads"]},
-    {"question": "Give an example of a local responsibility.", "expectedAny": ["trash collection", "local schools"]},
-    {"question": "How do the three levels of government work together?", "expectedAny": ["share powers", "different responsibilities"]},
-    {"question": "How can citizens influence government decisions?", "expectedAny": ["vote", "contact officials", "attend meetings"]},
-    {"question": "Why is having different levels of government helpful?", "expectedAny": ["handle local and national needs"]}
+    {"question": "Why is voting important in a democracy?", "expectedAny": ["people choose leaders", "voice in government", "have a say in decisions", "hold leaders accountable", "influence policies", "choose representatives"]},
+    {"question": "Give an example of a federal responsibility.", "expectedAny": ["national defense", "printing money", "postal service", "immigration", "foreign policy", "armed forces", "coining money"]},
+    {"question": "Give an example of a state responsibility.", "expectedAny": ["driver's licenses", "state roads", "state elections", "state parks", "state police", "public universities"]},
+    {"question": "Give an example of a local responsibility.", "expectedAny": ["trash collection", "local schools", "police and fire services", "water services", "zoning", "local parks", "ordinances"]},
+  {"question": "How do the three levels of government work together?", "expectedAny": ["share powers", "different responsibilities", "cooperate on projects", "coordinate", "collaborate", "grants", "funding", "joint programs"]},
+    {"question": "How can citizens influence government decisions?", "expectedAny": ["vote", "contact officials", "attend meetings", "petition", "public comment", "peaceful protest", "serve on a jury", "run for office"]},
+    {"question": "Why is having different levels of government helpful?", "expectedAny": ["handle local and national needs", "solve problems at the right level", "serve communities better", "closer to the people", "specialize", "faster local decisions"]},
+    {"question": "Give one example of checks and balances.", "expectedAny": ["President can veto a bill", "veto", "courts can review laws", "judicial review", "Senate confirms appointments", "Congress can override a veto"]}
   ]
 }

@@ -51,21 +51,21 @@
     {"question": "Which is NOT a cardinal direction?", "choices": ["North", "Up", "East", "South"], "correct": 1}
   ],
   "fillintheblank": [
-    {"question": "The four main directions are north, south, _____, and _____.", "expectedAny": ["east", "west"]},
-    {"question": "A drawing that shows places from above is a ___.", "expectedAny": ["map"]},
-    {"question": "A very large area of land is a ________.", "expectedAny": ["continent"]},
-    {"question": "A very large body of salt water is an ________.", "expectedAny": ["ocean"]},
-    {"question": "A ________ shows directions on a map.", "expectedAny": ["compass rose"]},
+    {"question": "The four main directions are north, south, _____, and _____.", "expectedAny": ["east", "west", "east and west"]},
+    {"question": "A drawing that shows places from above is a ___.", "expectedAny": ["map", "map drawing"]},
+    {"question": "A very large area of land is a ________.", "expectedAny": ["continent", "big land area"]},
+    {"question": "A very large body of salt water is an ________.", "expectedAny": ["ocean", "sea"]},
+    {"question": "A ________ shows directions on a map.", "expectedAny": ["compass rose", "compass"]},
     {"question": "The map ________ explains symbols.", "expectedAny": ["key", "legend"]},
-    {"question": "A round model of Earth is a ________.", "expectedAny": ["globe"]}
+    {"question": "A round model of Earth is a ________.", "expectedAny": ["globe", "round model"]}
   ],
   "shortanswer": [
-    {"question": "Why do we use maps instead of just looking around us?", "expectedAny": ["show large areas", "help find places"]},
-    {"question": "Name two continents.", "expectedAny": ["any two of the seven"]},
-    {"question": "How can a compass help you?", "expectedAny": ["shows direction", "helps navigate"]},
-    {"question": "Describe one difference between a map and a globe.", "expectedAny": ["map is flat, globe is round"]},
-    {"question": "What symbols might you put on a map of your classroom?", "expectedAny": ["desk", "door", "window"]},
-    {"question": "How would you explain a map key to a friend?", "expectedAny": ["explains symbols"]},
-    {"question": "Give directions from the front door to the office using cardinal directions.", "expectedAny": ["student uses N/S/E/W or left/right"]}
+    {"question": "Why do we use maps instead of just looking around us?", "expectedAny": ["show large areas", "help find places", "see where things are on a big area", "plan a route"]},
+    {"question": "Name two continents.", "expectedAny": ["Asia and Europe", "Africa and North America", "South America and Australia", "Antarctica and Europe"]},
+    {"question": "How can a compass help you?", "expectedAny": ["shows direction", "helps navigate", "shows north so you know which way to go"]},
+    {"question": "Describe one difference between a map and a globe.", "expectedAny": ["map is flat, globe is round", "map shows a small area, globe shows whole Earth", "map is flat for one area, globe is round and shows all places"]},
+    {"question": "What symbols might you put on a map of your classroom?", "expectedAny": ["desk", "door", "window", "teacher's desk"]},
+    {"question": "How would you explain a map key to a friend?", "expectedAny": ["explains symbols", "tells what pictures stand for", "shows what each symbol means"]},
+    {"question": "Give directions from the front door to the office using cardinal directions.", "expectedAny": ["walk north two steps then east", "go north past the coat hooks then turn east", "head north then turn east at the hallway"]}
   ]
 }

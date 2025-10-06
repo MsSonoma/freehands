@@ -23,52 +23,110 @@
     {
       "term": "decomposer",
       "definition": "An organism that breaks down dead plants and animals"
-    }
+    },
+    {
+      "term": "food web",
+      "definition": "A network of many connected food chains in an ecosystem"
+    },
+    {
+      "term": "herbivore",
+      "definition": "A consumer that eats only plants"
+    },
+    {
+      "term": "carnivore",
+      "definition": "A consumer that eats other animals"
+    },
+    {
+      "term": "omnivore",
+      "definition": "A consumer that eats both plants and animals"
+    },
+    {
+      "term": "prey",
+      "definition": "An animal that is hunted and eaten by a predator"
+    },
+    {
+      "term": "predator",
+      "definition": "An animal that hunts and eats other animals"
+    },
+    {
+      "term": "energy flow",
+      "definition": "How energy moves from the sun to producers and then to consumers"
+    },
+    {
+      "term": "photosynthesis",
+      "definition": "The process plants use to make food using sunlight, water, and carbon dioxide"
+    },
+    {
+      "term": "autotroph",
+      "definition": "An organism that makes its own food (producer)"
+    },
+    {
+      "term": "heterotroph",
+      "definition": "An organism that must eat other organisms for energy (consumer)"
+    },
+    {
+      "term": "trophic level",
+      "definition": "A level in a food chain or web (producer, consumer types)"
+    },
+    {
+      "term": "primary/secondary/tertiary consumer",
+      "definition": "Consumer levels based on how far they are from producers"
+    },
+    {
+      "term": "scavenger",
+      "definition": "An animal that eats dead animals it did not kill"
+    },
+    {"term": "matter", "definition": "Anything that has mass and takes up space; material in organisms and the environment"},
+    {"term": "feeding relationship", "definition": "Who eats whom in an ecosystem"},
+    {"term": "path", "definition": "A route or sequence, like a step in a food chain"},
+  {"term": "network", "definition": "A set of many connections, like a food web"},
+  {"term": "protect", "definition": "To keep safe from harm or damage"},
+    {"term": "biodiversity", "definition": "The variety of living things in an ecosystem"}
   ],
   "teachingNotes": "Use diagrams and real examples to show food chains. Discuss the flow of energy from sun to producers to consumers. Explore local ecosystems and identify the roles of different organisms.",
   "sample": [
-    {"question": "What role do producers play in a food chain?", "expectedAny": ["make their own food", "start the chain"]},
-    {"question": "Define consumer.", "expectedAny": ["gets energy by eating others"]},
-    {"question": "What do decomposers do?", "expectedAny": ["break down dead organisms"]},
-    {"question": "What is a food chain?", "expectedAny": ["path of energy", "who eats whom"]},
-    {"question": "Where does energy in most food chains come from?", "expectedAny": ["the sun"]},
-    {"question": "What is a herbivore?", "expectedAny": ["plant eater", "primary consumer"]},
-    {"question": "What is a food web?", "expectedAny": ["connected food chains"]}
+    {"question": "What role do producers play in a food chain?", "expectedAny": ["make their own food", "start the chain", "use sunlight to make food", "photosynthesis"]},
+    {"question": "Define consumer.", "expectedAny": ["gets energy by eating others", "organism that eats for energy", "heterotroph"]},
+    {"question": "What do decomposers do?", "expectedAny": ["break down dead organisms", "recycle nutrients", "return nutrients to the soil"]},
+    {"question": "What is a food chain?", "expectedAny": ["path of energy", "who eats whom", "single feeding path", "how energy moves from producers to consumers"]},
+    {"question": "Where does energy in most food chains come from?", "expectedAny": ["the sun", "sunlight"]},
+    {"question": "What is a herbivore?", "expectedAny": ["plant eater", "primary consumer", "eats plants only"]},
+    {"question": "What is a food web?", "expectedAny": ["connected food chains", "many food chains linked", "network of feeding relationships"]}
   ],
   "truefalse": [
-    {"question": "Decomposers are important because they recycle nutrients back into the soil.", "answer": true},
-    {"question": "Energy flows both ways in a food chain.", "answer": false},
-    {"question": "Producers use sunlight to make food.", "answer": true},
-    {"question": "Carnivores eat only plants.", "answer": false},
-    {"question": "Omnivores eat both plants and animals.", "answer": true},
-    {"question": "Removing a species can affect an entire ecosystem.", "answer": true},
-    {"question": "Food webs are simpler than food chains.", "answer": false}
+    {"question": "Decomposers are important because they recycle nutrients back into the soil.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Energy flows both ways in a food chain.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "Producers use sunlight to make food.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Carnivores eat only plants.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "Omnivores eat both plants and animals.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Removing a species can affect an entire ecosystem.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Food webs are simpler than food chains.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]}
   ],
   "multiplechoice": [
-    {"question": "In a food chain, what comes after the producer?", "choices": ["Primary consumer", "Secondary consumer", "Decomposer", "Sun"], "correct": 0},
-    {"question": "Which is a decomposer?", "choices": ["Grass", "Rabbit", "Mushroom", "Hawk"], "correct": 2},
-    {"question": "What do herbivores eat?", "choices": ["Animals", "Plants", "Bacteria", "Rocks"], "correct": 1},
-    {"question": "Which term describes an animal that eats both plants and animals?", "choices": ["Herbivore", "Carnivore", "Omnivore", "Producer"], "correct": 2},
-    {"question": "Energy for most food chains comes from:", "choices": ["Water", "Soil", "Sun", "Air"], "correct": 2},
-    {"question": "Which shows many feeding relationships?", "choices": ["Food chain", "Food web", "Food string", "Energy loop"], "correct": 1},
-    {"question": "A hawk that eats a snake that ate a mouse is a:", "choices": ["Producer", "Primary consumer", "Secondary consumer", "Tertiary consumer"], "correct": 3}
+    {"question": "In a food chain, what comes after the producer?", "choices": ["Primary consumer", "Secondary consumer", "Decomposer", "Sun"], "correct": 0, "expectedAny": ["primary consumer", "a", "1", "first"]},
+    {"question": "Which is a decomposer?", "choices": ["Grass", "Rabbit", "Mushroom", "Hawk"], "correct": 2, "expectedAny": ["mushroom", "fungus", "c", "3", "third"]},
+    {"question": "What do herbivores eat?", "choices": ["Animals", "Plants", "Bacteria", "Rocks"], "correct": 1, "expectedAny": ["plants", "plant matter", "b", "2", "second"]},
+    {"question": "Which term describes an animal that eats both plants and animals?", "choices": ["Herbivore", "Carnivore", "Omnivore", "Producer"], "correct": 2, "expectedAny": ["omnivore", "c", "3", "third"]},
+    {"question": "Energy for most food chains comes from:", "choices": ["Water", "Soil", "Sun", "Air"], "correct": 2, "expectedAny": ["sun", "the sun", "c", "3", "third"]},
+    {"question": "Which shows many feeding relationships?", "choices": ["Food chain", "Food web", "Food string", "Energy loop"], "correct": 1, "expectedAny": ["food web", "b", "2", "second"]},
+    {"question": "A hawk that eats a snake that ate a mouse is a:", "choices": ["Producer", "Primary consumer", "Secondary consumer", "Tertiary consumer"], "correct": 3, "expectedAny": ["tertiary consumer", "third-level consumer", "d", "4", "fourth"]}
   ],
   "fillintheblank": [
-    {"question": "All the living and non-living things that interact in an environment make up an ________.", "expectedAny": ["ecosystem"]},
-    {"question": "Animals that eat only plants are called ________.", "expectedAny": ["herbivores"]},
-    {"question": "Animals that eat only other animals are called ________.", "expectedAny": ["carnivores"]},
-    {"question": "Organisms that make their own food are called ________.", "expectedAny": ["producers"]},
-    {"question": "Organisms that break down dead matter are ________.", "expectedAny": ["decomposers"]},
-    {"question": "A series of who-eats-whom is a food ________.", "expectedAny": ["chain"]},
-    {"question": "A network of many feeding paths is a food ________.", "expectedAny": ["web"]}
+    {"question": "All the living and non-living things that interact in an environment make up an ________.", "expectedAny": ["ecosystem", "an ecosystem", "ecosystem system", "ecological system"]},
+    {"question": "Animals that eat only plants are called ________.", "expectedAny": ["herbivores", "herbivore", "plant eaters", "plant-eaters", "primary consumers"]},
+    {"question": "Animals that eat only other animals are called ________.", "expectedAny": ["carnivores", "carnivore", "meat eaters", "meat-eaters", "predators"]},
+    {"question": "Organisms that make their own food are called ________.", "expectedAny": ["producers", "producer", "primary producers", "autotrophs", "plants"]},
+    {"question": "Organisms that break down dead matter are ________.", "expectedAny": ["decomposers", "decomposer", "break down dead matter", "organisms that recycle nutrients", "fungi or bacteria"]},
+    {"question": "A series of who-eats-whom is a food ________.", "expectedAny": ["chain", "food chain", "single feeding path", "feeding chain"]},
+    {"question": "A network of many feeding paths is a food ________.", "expectedAny": ["web", "food web", "network", "network of food chains", "interconnected chains"]}
   ],
   "shortanswer": [
-    {"question": "What would happen to a food chain if all the producers disappeared?", "expectedAny": ["collapse", "no energy source"]},
-    {"question": "Why are decomposers important?", "expectedAny": ["recycle nutrients"]},
-    {"question": "Give an example of a simple food chain with 4 organisms.", "expectedAny": ["sun→grass→rabbit→hawk"]},
-    {"question": "How can pollution affect a food web?", "expectedAny": ["toxins build up", "harm organisms"]},
-    {"question": "What is biodiversity and why does it matter?", "expectedAny": ["variety of life", "stability"]},
-    {"question": "How do plants and animals depend on each other?", "expectedAny": ["food", "oxygen/CO2"]},
-    {"question": "How can humans protect ecosystems?", "expectedAny": ["reduce pollution", "protect habitats"]}
+    {"question": "What would happen to a food chain if all the producers disappeared?", "expectedAny": ["collapse", "no energy source", "consumers would die", "food web would break down", "energy flow would stop", "no photosynthesis so energy stops"]},
+    {"question": "Why are decomposers important?", "expectedAny": ["recycle nutrients", "return nutrients to soil", "break down dead matter", "help plants grow by returning nutrients", "prevent waste from building up"]},
+    {"question": "Give an example of a simple food chain with 4 organisms.", "expectedAny": ["sun→grass→rabbit→hawk", "sun→grass→grasshopper→frog", "sun→plant→insect→bird", "sun to plant to insect to bird", "sun->plant->insect->bird"]},
+    {"question": "How can pollution affect a food web?", "expectedAny": ["toxins build up", "harm organisms", "bioaccumulation causes sickness", "reduces populations", "poisons move up the food chain", "biomagnification"]},
+    {"question": "What is biodiversity and why does it matter?", "expectedAny": ["variety of life", "more kinds of organisms", "increases stability", "helps ecosystems stay balanced", "diversity of species improves resilience"]},
+    {"question": "How do plants and animals depend on each other?", "expectedAny": ["food", "oxygen/co2", "habitat", "pollination", "shelter and seeds spread", "oxygen and carbon dioxide exchange"]},
+    {"question": "How can humans protect ecosystems?", "expectedAny": ["reduce pollution", "protect habitats", "conserve resources", "plant trees", "restore habitats", "reduce habitat fragmentation"]}
   ]
 }

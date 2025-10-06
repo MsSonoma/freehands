@@ -23,31 +23,91 @@
     {
       "term": "place value",
       "definition": "The value of a digit based on its position in a number"
+    },
+    {
+      "term": "thousandths",
+      "definition": "The third place to the right of the decimal point"
+    },
+    {
+      "term": "trailing zero",
+      "definition": "A zero at the end of a decimal that does not change its value but helps alignment"
+    },
+    {
+      "term": "regrouping",
+      "definition": "Rearranging value across place values when adding or subtracting (also called borrowing)"
     }
   ],
   "teachingNotes": "Emphasize aligning decimal points when adding and subtracting. Use place value charts and visual models. Connect decimals to money for real-world applications.",
-  "sample": {
-    "question": "What is 3.45 + 2.37?",
-    "expectedAny": ["5.82", "five and eighty-two hundredths", "5.82 total"]
-  },
-  "truefalse": {
-    "question": "When adding decimals, you must line up the decimal points.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is 7.6 - 3.28?",
-    "expectedAny": ["4.32", "four and thirty-two hundredths", "4.32 difference"]
-  },
-  "fillintheblank": {
-    "question": "In the number 45.67, the digit 6 is in the ________ place.",
-    "expectedAny": ["tenths", "tenths place", "first decimal place", "0.1 place"]
-  },
-  "shortanswer": {
-    "question": "How do you add 2.5 + 1.75?",
-    "expectedAny": ["line up decimal points", "2.50 + 1.75 = 4.25", "align and add", "4.25"]
-  },
-  "wordProblems": {
-    "question": "Sarah bought a book for $12.75 and a pen for $3.49. How much did she spend in total?",
-    "expectedAny": ["$16.24", "16.24", "sixteen dollars and twenty-four cents", "$16.24 total"]
-  }
+  "sample": [
+    { "question": "What is 3.45 + 2.37?", "expectedAny": ["5.82", "five and eighty-two hundredths", "5.82 total"] },
+    { "question": "What is 6.2 + 1.35?", "expectedAny": ["7.55", "seven and fifty-five hundredths"] },
+    { "question": "What is 5.00 - 0.75?", "expectedAny": ["4.25", "four and twenty-five hundredths"] },
+    { "question": "Add: 0.6 + 0.14", "expectedAny": ["0.74", "seventy-four hundredths"] },
+    { "question": "Subtract: 8.1 - 2.06", "expectedAny": ["6.04", "six and four hundredths"] },
+    { "question": "Add: 2.50 + 3.5", "expectedAny": ["6.00", "6", "six"] },
+    { "question": "Subtract: 10 - 3.45", "expectedAny": ["6.55", "six and fifty-five hundredths"] },
+    { "question": "Add: 7.07 + 1.03", "expectedAny": ["8.10", "8.1"] },
+    { "question": "Add: 9.9 + 0.11", "expectedAny": ["10.01", "ten and one hundredth"] },
+    { "question": "Subtract: 12.3 - 0.3", "expectedAny": ["12.0", "12"] }
+  ],
+  "truefalse": [
+    { "question": "When adding decimals, you must line up the decimal points.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "0.50 and 0.5 have the same value.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "When subtracting decimals, you should also align decimal points.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Hundredths place is to the left of the tenths place.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Adding zeros to the right of a decimal can help line up places.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "3.4 + 2.06 = 5.0", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Regrouping may be needed when subtracting decimals.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "0.7 is the same as 0.70.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The place value to the right of hundredths is thousandths.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "You should ignore the decimal point when adding.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is 7.6 - 3.28?", "choices": ["4.18", "4.32", "3.68", "4.52"], "correct": 1, "expectedAny": ["4.32", "four and thirty-two hundredths", "4.32 difference"] },
+    { "question": "What is 2.45 + 1.6?", "choices": ["3.05", "4.05", "4.15", "3.95"], "correct": 1, "expectedAny": ["4.05"] },
+  { "question": "What is 9.03 + 0.7?", "choices": ["9.10", "9.73", "9.7", "9.13"], "correct": 1, "expectedAny": ["9.73", "nine and seventy-three hundredths", "9.730"] },
+    { "question": "What is 5.0 - 2.45?", "choices": ["2.55", "3.55", "2.45", "2.65"], "correct": 0, "expectedAny": ["2.55"] },
+    { "question": "Which shows correct alignment for 3.4 + 2.06?", "choices": ["3.40 + 2.06", "3.4 + 2.06", "3.40 + 2.6", "3.4 + 2.6"], "correct": 0, "expectedAny": ["3.40 + 2.06"] },
+    { "question": "What is 0.25 + 0.75?", "choices": ["1.00", "0.95", "0.85", "1.10"], "correct": 0, "expectedAny": ["1", "1.00"] },
+  { "question": "What is 10 - 9.09?", "choices": ["0.90", "0.91", "0.89", "0.901"], "correct": 1, "expectedAny": ["0.91", "ninety-one hundredths"] },
+  { "question": "What is 4.2 + 3.08?", "choices": ["7.10", "7.18", "7.28", "7.12"], "correct": 2, "expectedAny": ["7.28", "seven and twenty-eight hundredths", "7.280"] },
+  { "question": "What is 6.50 - 1.5?", "choices": ["5.00", "4.90", "5.10", "4.00"], "correct": 0, "expectedAny": ["5", "5.00", "five"] },
+    { "question": "What is 3.33 + 0.67?", "choices": ["4.00", "3.90", "4.10", "3.96"], "correct": 0, "expectedAny": ["4", "4.00"] }
+  ],
+  "fillintheblank": [
+    { "question": "In the number 45.67, the digit 6 is in the ________ place.", "expectedAny": ["tenths", "tenths place", "first decimal place", "0.1 place", "tenths digit"] },
+    { "question": "In 2.349, the 9 is in the ________ place.", "expectedAny": ["thousandths", "0.001 place", "thousandths place", "third decimal place"] },
+    { "question": "To add decimals, ________ the decimal points.", "expectedAny": ["line up", "align", "match", "line them up"] },
+    { "question": "Write 0.7 as ________ hundredths.", "expectedAny": ["70", "seventy", "70 hundredths"] },
+    { "question": "Add a ________ to 3.4 to make 3.40 before adding.", "expectedAny": ["zero", "trailing zero", "0"] },
+    { "question": "When subtracting, you may need to ________ from the next place.", "expectedAny": ["borrow", "regroup", "trade"] },
+  { "question": "0.25 is equal to ________ hundredths.", "expectedAny": ["25", "twenty five", "twenty-five", "25 hundredths"] },
+  { "question": "The place to the right of tenths is ________.", "expectedAny": ["hundredths", "hundredths place"] },
+    { "question": "Decimal points separate whole numbers from the ________ part.", "expectedAny": ["fractional", "decimal", "part of a whole"] },
+    { "question": "0.50 is the same value as ________.", "expectedAny": ["0.5", "one half", "1/2", "0.500"] }
+  ],
+  "shortanswer": [
+    { "question": "How do you add 2.5 + 1.75?", "expectedAny": ["line up decimal points", "2.50 + 1.75 = 4.25", "align and add", "4.25", "add by place value", "carry if needed", "align decimals then add"] },
+    { "question": "Explain why 0.7 and 0.70 are equal.", "expectedAny": ["trailing zero", "same value", "place value", "adding a zero at the end doesn't change value", "zero at the end doesn't matter", "both are 7 tenths"] },
+    { "question": "Show the steps for 3.40 - 2.06.", "expectedAny": ["borrow/regroup", "1.34", "align decimals", "subtract by place", "rewrite 3.40 then borrow from tenths", "line up and subtract"] },
+    { "question": "Give a real-world example of adding decimals with money.", "expectedAny": ["dollars", "cents", "purchase total", "receipt", "prices", "buying things", "shopping", "adding prices"] },
+    { "question": "Estimate 4.9 + 5.2 by rounding.", "expectedAny": ["about 10", "10", "approximately 10", "round to 5 and 5", "close to 10"] },
+    { "question": "Explain when you would add a trailing zero before adding decimals.", "expectedAny": ["align places", "same number of digits", "line up decimals", "use placeholders", "to make them line up"] },
+    { "question": "Compute 1.99 + 0.01 exactly.", "expectedAny": ["2.00", "2", "2.0", "2.000", "two"] },
+    { "question": "Explain how place value helps in decimal subtraction.", "expectedAny": ["align places", "borrow by place", "use place value columns", "subtract digit by digit", "keep decimal places lined up"] },
+    { "question": "Show why 6.5 - 1.05 requires regrouping.", "expectedAny": ["borrow", "5.45", "need to borrow from tenths", "rewrite 6.50 then subtract", "can't subtract 5 from 0"] },
+    { "question": "Write a number sentence that equals 7.00 using two decimals.", "expectedAny": ["3.5 + 3.5", "2.25 + 4.75", "1.2 + 5.8", "6.3 + 0.7", "4.4 + 2.6", "any two that add to 7"] }
+  ],
+  "wordProblems": [
+    { "question": "Sarah bought a book for $12.75 and a pen for $3.49. How much did she spend in total?", "expectedAny": ["$16.24", "16.24", "sixteen dollars and twenty-four cents", "$16.24 total"] },
+    { "question": "Diego had $20.00 and spent $7.85 on lunch. How much money does he have left?", "expectedAny": ["$12.15", "12.15"] },
+  { "question": "A rope is 4.75 m long. You add another piece 2.3 m long. How long is the rope now?", "expectedAny": ["7.05 m", "7.05"] },
+    { "question": "A recipe needs 1.25 cups of milk and 0.5 cups of oil. How many cups in total?", "expectedAny": ["1.75", "1.75 cups"] },
+    { "question": "A runner jogged 3.2 km in the morning and 4.85 km in the afternoon. Total distance?", "expectedAny": ["8.05 km", "8.05"] },
+    { "question": "A board is 2.5 m. You cut off 0.65 m. How much remains?", "expectedAny": ["1.85 m", "1.85"] },
+    { "question": "Your bill is $15.60. You pay $20.00. What is the change?", "expectedAny": ["$4.40", "4.40"] },
+    { "question": "A bottle has 0.75 L. You add 0.40 L. How much now?", "expectedAny": ["1.15 L", "1.15"] },
+    { "question": "A toy costs $6.99. A game costs $12.50. Total cost?", "expectedAny": ["$19.49", "19.49"] },
+    { "question": "A taxi fare was $13.80. You had $20.00. How much left?", "expectedAny": ["$6.20", "6.20"] }
+  ]
 }

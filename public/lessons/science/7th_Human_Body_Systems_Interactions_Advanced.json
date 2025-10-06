@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Emphasize how body systems work together and depend on each other. Use diagrams to show system interactions. Discuss how the body maintains homeostasis.",
-  "sample": {
-    "question": "What is the body's ability to maintain stable internal conditions called?",
-    "expectedAny": [
-      "homeostasis",
-      "internal balance",
-      "biological balance",
-      "physiological equilibrium"
-    ]
-  },
-  "truefalse": {
-    "question": "The circulatory and respiratory systems work together to deliver oxygen to cells.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which system is responsible for breaking down food?",
-    "expectedAny": [
-      "digestive system",
-      "digestive",
-      "gastrointestinal system",
-      "alimentary system"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A group of organs that work together is called a body ________.",
-    "expectedAny": [
-      "system",
-      "organ system",
-      "biological system",
-      "physiological system"
-    ]
-  },
-  "shortanswer": {
-    "question": "How do the circulatory and respiratory systems work together?",
-    "expectedAny": [
-      "lungs add oxygen to blood, heart pumps it",
-      "respiratory provides oxygen, circulatory transports it",
-      "gas exchange and circulation"
-    ]
-  }
+  "sample": [
+    { "question": "What is the body's ability to maintain stable internal conditions called?", "expectedAny": ["homeostasis"] },
+    { "question": "Which transports blood?", "choices": ["Respiratory", "Circulatory", "Digestive", "Nervous"], "correct": 1, "expectedAny": ["circulatory"] },
+    { "question": "System for breathing is ________.", "expectedAny": ["respiratory"] },
+    { "question": "Organs working together are ________.", "expectedAny": ["body system"] },
+    { "question": "Tissues working together form ________.", "expectedAny": ["organ"] },
+    { "question": "What is stable conditions?", "choices": ["Growth", "Homeostasis", "Digestion", "Circulation"], "correct": 1, "expectedAny": ["homeostasis"] },
+    { "question": "Blood transport system is ________.", "expectedAny": ["circulatory", "circulatory system"] },
+    { "question": "Gas exchange system is ________.", "expectedAny": ["respiratory", "respiratory system"] },
+    { "question": "Which is organs together?", "choices": ["Cell", "Body system", "Tissue", "Molecule"], "correct": 1, "expectedAny": ["body system"] },
+    { "question": "Tissues together form ________.", "expectedAny": ["organ"] }
+  ],
+  "truefalse": [
+    { "question": "The circulatory and respiratory systems work together to deliver oxygen to cells.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Body systems work independently.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Homeostasis maintains stability.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The circulatory system breaks down food.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The respiratory system exchanges gases.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All organs work alone.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Body systems interact.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Homeostasis means unstable.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Organs are made of tissues.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Body has only one system.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which system is responsible for breaking down food?", "choices": ["Circulatory", "Digestive", "Respiratory", "Nervous"], "correct": 1, "expectedAny": ["digestive"] },
+    { "question": "What is stable conditions?", "choices": ["Growth", "Homeostasis", "Digestion", "Breathing"], "correct": 1, "expectedAny": ["homeostasis"] },
+    { "question": "What transports blood?", "choices": ["Respiratory", "Circulatory", "Digestive", "Nervous"], "correct": 1, "expectedAny": ["circulatory"] },
+    { "question": "What exchanges gases?", "choices": ["Digestive", "Respiratory", "Circulatory", "Nervous"], "correct": 1, "expectedAny": ["respiratory"] },
+    { "question": "What is organs together?", "choices": ["Cell", "Body system", "Tissue", "Molecule"], "correct": 1, "expectedAny": ["body system"] },
+    { "question": "What is tissues together?", "choices": ["Cell", "Organ", "System", "Molecule"], "correct": 1, "expectedAny": ["organ"] },
+    { "question": "Heart is part of?", "choices": ["Digestive", "Circulatory", "Respiratory", "Nervous"], "correct": 1, "expectedAny": ["circulatory"] },
+    { "question": "Lungs are part of?", "choices": ["Circulatory", "Respiratory", "Digestive", "Nervous"], "correct": 1, "expectedAny": ["respiratory"] },
+    { "question": "Stomach is part of?", "choices": ["Respiratory", "Digestive", "Circulatory", "Nervous"], "correct": 1, "expectedAny": ["digestive"] },
+    { "question": "Systems do what?", "choices": ["Separate", "Work together", "Fight", "Ignore"], "correct": 1, "expectedAny": ["work together"] }
+  ],
+  "fillintheblank": [
+    { "question": "A group of organs that work together is called a body ________.", "expectedAny": ["system"] },
+    { "question": "Maintaining stable conditions is ________.", "expectedAny": ["homeostasis"] },
+    { "question": "The ________ system transports blood.", "expectedAny": ["circulatory"] },
+    { "question": "The ________ system exchanges gases.", "expectedAny": ["respiratory"] },
+    { "question": "Tissues together form an ________.", "expectedAny": ["organ"] },
+    { "question": "A body ________ is organs together.", "expectedAny": ["system"] },
+    { "question": "________ means stable conditions.", "expectedAny": ["homeostasis"] },
+    { "question": "Blood moves in ________ system.", "expectedAny": ["circulatory"] },
+    { "question": "Breathing is ________ system.", "expectedAny": ["respiratory"] },
+    { "question": "An ________ is tissues together.", "expectedAny": ["organ"] }
+  ],
+  "shortanswer": [
+    { "question": "How do the circulatory and respiratory systems work together?", "expectedAny": ["lungs add oxygen to blood, heart pumps it", "respiratory provides oxygen, circulatory transports it"] },
+    { "question": "What is homeostasis?", "expectedAny": ["maintaining stable conditions", "body balance", "keeping body stable", "staying balanced"] },
+    { "question": "What is circulatory system?", "expectedAny": ["transports blood", "moves blood and oxygen", "blood system", "pumps blood"] },
+    { "question": "What is respiratory system?", "expectedAny": ["breathing and gas exchange", "exchanges oxygen and carbon dioxide"] },
+    { "question": "What is a body system?", "expectedAny": ["organs working together", "group of organs", "organs with common job", "organs that work together"] },
+    { "question": "What is an organ?", "expectedAny": ["tissues working together", "structure with function"] },
+    { "question": "What does digestive system do?", "expectedAny": ["breaks down food", "processes nutrients"] },
+    { "question": "Why do systems work together?", "expectedAny": ["body needs cooperation", "maintain homeostasis"] },
+    { "question": "Give example of organ.", "expectedAny": ["heart", "lungs", "stomach"] },
+    { "question": "How is oxygen delivered?", "expectedAny": ["respiratory and circulatory together", "lungs and blood"] }
+  ]
 }

@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "10th_Rational_Functions_Asymptotes_Discontinuities_Intermediate",
   "title": "Rational Functions: Asymptotes and Discontinuities",
   "grade": "10th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "rational function",
-      "definition": "Function that is the ratio of two polynomial functions"
-    },
-    {
-      "term": "vertical asymptote",
-      "definition": "Vertical line that the graph approaches but never touches"
-    },
-    {
-      "term": "horizontal asymptote",
-      "definition": "Horizontal line that the graph approaches as x approaches infinity"
-    },
-    {
-      "term": "discontinuity",
-      "definition": "Point where a function is not continuous or defined"
-    },
-    {
-      "term": "domain restriction",
-      "definition": "Values of x for which the function is undefined"
-    }
+    {"term": "rational function", "definition": "Function that is the ratio of two polynomial functions"},
+    {"term": "vertical asymptote", "definition": "Vertical line that the graph approaches but never touches"},
+    {"term": "horizontal asymptote", "definition": "Horizontal line that the graph approaches as x approaches infinity"},
+    {"term": "discontinuity", "definition": "Point where a function is not continuous or defined"},
+    {"term": "domain restriction", "definition": "Values of x for which the function is undefined"}
   ],
   "teachingNotes": "Practice finding asymptotes and holes in rational functions. Emphasize the behavior near discontinuities.",
-  "sample": {
-    "question": "What is a function that is the ratio of two polynomials?",
-    "expectedAny": ["rational function", "ratio function", "fractional function", "quotient function"]
-  },
-  "truefalse": {
-    "question": "A vertical asymptote occurs where the denominator equals zero.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is a point where a function is not continuous called?",
-    "expectedAny": ["discontinuity", "break", "gap", "undefined point"]
-  },
-  "fillintheblank": {
-    "question": "A horizontal line that the graph approaches as x approaches infinity is a ________ asymptote.",
-    "expectedAny": ["horizontal", "flat", "level", "x-axis"]
-  },
-  "shortanswer": {
-    "question": "How do you find the vertical asymptotes of a rational function?",
-    "expectedAny": ["set denominator equal to zero", "find zeros of denominator", "where denominator is undefined"]
-  },
-  "wordProblems": {
-    "question": "For f(x) = (x+1)/(x-3), what is the vertical asymptote?",
-    "expectedAny": ["x = 3", "vertical line x = 3", "at x equals 3", "x = 3"]
-  }
+  "sample": [
+    {"question": "What is ratio of two polynomials?", "expectedAny": ["rational function", "ratio function", "fraction function", "polynomial ratio", "rational expression", "fraction of polynomials"]},
+    {"question": "What vertical line graph approaches?", "expectedAny": ["vertical asymptote", "vertical line", "vertical boundary", "vertical limit", "asymptote line", "vertical approach"]},
+    {"question": "What horizontal line graph approaches?", "expectedAny": ["horizontal asymptote", "horizontal line", "horizontal boundary", "horizontal limit", "horizontal approach", "end behavior line"]},
+    {"question": "What is point not continuous?", "expectedAny": ["discontinuity", "break", "gap", "hole", "break point", "point of discontinuity"]},
+    {"question": "What are undefined x values?", "expectedAny": ["domain restriction", "restrictions", "excluded values", "undefined values", "domain limits", "restricted values"]},
+    {"question": "What is polynomial ratio?", "expectedAny": ["rational function", "ratio function", "fraction function", "polynomial ratio", "rational expression", "fraction of polynomials"]},
+    {"question": "What is vertical line limit?", "expectedAny": ["vertical asymptote", "vertical line", "vertical boundary", "vertical limit", "asymptote line", "vertical approach"]},
+    {"question": "What is horizontal line limit?", "expectedAny": ["horizontal asymptote", "horizontal line", "horizontal boundary", "horizontal limit", "horizontal approach", "end behavior line"]},
+    {"question": "What is break in function?", "expectedAny": ["discontinuity", "break", "gap", "hole", "break point", "point of discontinuity"]},
+    {"question": "What limits domain?", "expectedAny": ["domain restriction", "restriction", "excluded values", "undefined values", "domain limits", "restricted values"]}
+  ],
+  "truefalse": [
+    {"question": "Rational function is polynomial ratio. (True or False)", "correct": true},
+    {"question": "Vertical asymptote where denominator zero. (True or False)", "correct": true},
+    {"question": "Horizontal asymptote is vertical line. (True or False)", "correct": false},
+    {"question": "Discontinuity is break in function. (True or False)", "correct": true},
+    {"question": "Domain restrictions are undefined values. (True or False)", "correct": true},
+    {"question": "Graph touches vertical asymptote. (True or False)", "correct": false},
+    {"question": "Graph approaches horizontal asymptote. (True or False)", "correct": true},
+    {"question": "Functions continuous everywhere. (True or False)", "correct": false},
+    {"question": "Denominator zero causes problem. (True or False)", "correct": true},
+    {"question": "All functions have asymptotes. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "What is polynomial ratio?", "choices": [{"letter": "A", "text": "Linear"}, {"letter": "B", "text": "Rational function"}, {"letter": "C", "text": "Exponential"}, {"letter": "D", "text": "Logarithmic"}], "correct": "B"},
+    {"question": "What is vertical line approached?", "choices": [{"letter": "A", "text": "Horizontal"}, {"letter": "B", "text": "Vertical asymptote"}, {"letter": "C", "text": "Intercept"}, {"letter": "D", "text": "Domain"}], "correct": "B"},
+    {"question": "What is horizontal line approached?", "choices": [{"letter": "A", "text": "Vertical"}, {"letter": "B", "text": "Horizontal asymptote"}, {"letter": "C", "text": "Intercept"}, {"letter": "D", "text": "Range"}], "correct": "B"},
+    {"question": "What is not continuous?", "choices": [{"letter": "A", "text": "Linear"}, {"letter": "B", "text": "Discontinuity"}, {"letter": "C", "text": "Polynomial"}, {"letter": "D", "text": "Constant"}], "correct": "B"},
+    {"question": "What are undefined values?", "choices": [{"letter": "A", "text": "Range"}, {"letter": "B", "text": "Domain restriction"}, {"letter": "C", "text": "Intercept"}, {"letter": "D", "text": "Asymptote"}], "correct": "B"},
+    {"question": "What has polynomials?", "choices": [{"letter": "A", "text": "Linear"}, {"letter": "B", "text": "Rational function"}, {"letter": "C", "text": "Exponential"}, {"letter": "D", "text": "Logarithmic"}], "correct": "B"},
+    {"question": "What where denominator zero?", "choices": [{"letter": "A", "text": "Horizontal"}, {"letter": "B", "text": "Vertical asymptote"}, {"letter": "C", "text": "Intercept"}, {"letter": "D", "text": "Maximum"}], "correct": "B"},
+    {"question": "What as x approaches infinity?", "choices": [{"letter": "A", "text": "Vertical"}, {"letter": "B", "text": "Horizontal asymptote"}, {"letter": "C", "text": "Domain"}, {"letter": "D", "text": "Range"}], "correct": "B"},
+    {"question": "What is function break?", "choices": [{"letter": "A", "text": "Continuous"}, {"letter": "B", "text": "Discontinuity"}, {"letter": "C", "text": "Asymptote"}, {"letter": "D", "text": "Intercept"}], "correct": "B"},
+    {"question": "What limits x values?", "choices": [{"letter": "A", "text": "Range"}, {"letter": "B", "text": "Domain restriction"}, {"letter": "C", "text": "Asymptote"}, {"letter": "D", "text": "Intercept"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ function is polynomial ratio.", "expectedAny": ["rational", "Rational"]},
+    {"question": "_____ asymptote is vertical line.", "expectedAny": ["vertical", "Vertical"]},
+    {"question": "_____ asymptote is horizontal line.", "expectedAny": ["horizontal", "Horizontal"]},
+    {"question": "_____ is function break.", "expectedAny": ["discontinuity", "Discontinuity"]},
+    {"question": "Domain _____ are undefined values.", "expectedAny": ["restriction", "restrictions"]},
+    {"question": "_____ is ratio of polynomials.", "expectedAny": ["rational", "Rational"]},
+    {"question": "_____ line graph approaches vertically.", "expectedAny": ["vertical", "Vertical", "asymptote"]},
+    {"question": "_____ line graph approaches horizontally.", "expectedAny": ["horizontal", "Horizontal", "asymptote"]},
+    {"question": "_____ are breaks in functions.", "expectedAny": ["discontinuities", "Discontinuities"]},
+    {"question": "_____ limit domain.", "expectedAny": ["restrictions", "Restrictions"]}
+  ],
+  "shortanswer": [
+    {"question": "What is rational function?", "keyTerms": ["function", "ratio", "two", "polynomial"], "expectedAny": ["Function that is the ratio of two polynomial functions", "Polynomial ratio", "Quotient of polynomials"]},
+    {"question": "What is vertical asymptote?", "keyTerms": ["vertical", "line", "graph", "approaches", "never", "touches"], "expectedAny": ["Vertical line that the graph approaches but never touches", "Vertical boundary", "Vertical limit line"]},
+    {"question": "What is horizontal asymptote?", "keyTerms": ["horizontal", "line", "graph", "approaches", "infinity"], "expectedAny": ["Horizontal line that the graph approaches as x approaches infinity", "Horizontal boundary", "End behavior line"]},
+    {"question": "What is discontinuity?", "keyTerms": ["point", "function", "not", "continuous", "defined"], "expectedAny": ["Point where a function is not continuous or defined", "Break in function", "Gap or hole"]},
+    {"question": "What is domain restriction?", "keyTerms": ["values", "x", "function", "undefined"], "expectedAny": ["Values of x for which the function is undefined", "Excluded x values", "Where function doesn't exist"]},
+    {"question": "How find vertical asymptotes?", "keyTerms": ["set", "denominator", "equal", "zero"], "expectedAny": ["Set denominator equal to zero", "Find zeros of denominator", "Where denominator is zero"]},
+    {"question": "How find horizontal asymptotes?", "keyTerms": ["compare", "degrees", "numerator", "denominator"], "expectedAny": ["Compare degrees of numerator and denominator", "Look at leading coefficients", "Analyze end behavior"]},
+    {"question": "What causes vertical asymptote?", "keyTerms": ["denominator", "zero", "undefined"], "expectedAny": ["Denominator equals zero making function undefined", "Zero in denominator", "Division by zero"]},
+    {"question": "What is f(x) = 1/x asymptotes?", "keyTerms": ["x", "0", "y", "vertical", "horizontal"], "expectedAny": ["Vertical at x=0 horizontal at y=0", "Both axes", "x-axis and y-axis"]},
+    {"question": "Why study asymptotes?", "keyTerms": ["understand", "behavior", "graph", "limits"], "expectedAny": ["Understand behavior and limits of graph", "Show end behavior", "Describe function limits"]}
+  ],
+  "wordProblems": [
+    {"question": "For f(x) = (x+1)/(x-3), what is vertical asymptote?", "keyTerms": ["x", "3"], "expectedAny": ["x = 3", "x equals 3", "vertical at 3"]},
+    {"question": "For f(x) = (2x+1)/(x+2), find vertical asymptote", "keyTerms": ["x", "-2"], "expectedAny": ["x = -2", "x equals negative 2", "vertical at -2"]},
+    {"question": "For f(x) = (3x)/(x+1), find horizontal asymptote", "keyTerms": ["y", "3"], "expectedAny": ["y = 3", "y equals 3", "horizontal at 3"]},
+    {"question": "For f(x) = (x+2)/(x-4), what are domain restrictions?", "keyTerms": ["2", "-2", "except"], "expectedAny": ["x  2 and x  -2", "except 2 and -2", "all except 2"]},
+    {"question": "For f(x) = (x-1)/(x-1), what happens at x=1?", "keyTerms": ["hole", "removable"], "expectedAny": ["hole or removable discontinuity", "hole at x=1", "removable discontinuity"]},
+    {"question": "For f(x) = 5/(x+4), find vertical asymptote", "keyTerms": ["x", "-4"], "expectedAny": ["x = -4", "x equals negative 4", "vertical at -4"]},
+    {"question": "For f(x) = (x+1)/(x), find horizontal asymptote", "keyTerms": ["y", "1"], "expectedAny": ["y = 1", "y equals 1", "horizontal at 1"]},
+    {"question": "For f(x) = x/(x-5), what is domain?", "keyTerms": ["all", "except", "5"], "expectedAny": ["all real numbers except 5", "x  5", "domain excludes 5"]},
+    {"question": "Cost per person C(n) = 500/n for party. What happens as n increases?", "keyTerms": ["approaches", "0", "decreases"], "expectedAny": ["approaches 0", "cost decreases", "approaches zero"]},
+    {"question": "For f(x) = (2x)/(x-1), what is horizontal asymptote?", "keyTerms": ["y", "2"], "expectedAny": ["y = 2", "y equals 2", "horizontal at 2"]}
+  ]
 }

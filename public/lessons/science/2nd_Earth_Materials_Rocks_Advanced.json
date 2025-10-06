@@ -4,26 +4,12 @@
   "grade": "2nd",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "minerals",
-      "definition": "Natural materials found in the Earth that make up rocks"
-    },
-    {
-      "term": "rock",
-      "definition": "Hard material made up of one or more minerals"
-    },
-    {
-      "term": "soil",
-      "definition": "The loose top layer of Earth where plants grow"
-    },
-    {
-      "term": "erosion",
-      "definition": "When wind, water, or ice wears away rocks and soil"
-    },
-    {
-      "term": "sediment",
-      "definition": "Small pieces of rock, sand, and dirt that settle in layers"
-    }
+    {"term": "minerals", "definition": "Natural materials found in the Earth that make up rocks"},
+    {"term": "rock", "definition": "Hard material made up of one or more minerals"},
+    {"term": "soil", "definition": "The loose top layer of Earth where plants grow"},
+    {"term": "erosion", "definition": "When wind, water, or ice wears away rocks and soil"},
+    {"term": "sediment", "definition": "Small pieces of rock, sand, and dirt that settle in layers"},
+    {"term": "rough", "definition": "A texture that feels bumpy or not smooth"}
   ],
   "teachingNotes": "Bring in rock samples for students to observe and compare. Discuss how rocks are formed and changed over time. Show examples of erosion and sediment formation through simple demonstrations with sand and water.",
   "sample": [
@@ -54,21 +40,21 @@
     {"question": "Soil is made from ___", "choices": ["Only water", "Broken rocks and dead plants", "Only air", "Metal"], "correct": 1}
   ],
   "fillintheblank": [
-    {"question": "Plants grow in ___", "expectedAny": ["soil"]},
-    {"question": "___ are hard materials from Earth", "expectedAny": ["Rocks"]},
-    {"question": "Water ___ when it gets hot", "expectedAny": ["evaporates"]},
-    {"question": "Soil has ___ that help plants", "expectedAny": ["nutrients"]},
-    {"question": "Some rocks are ___ and some are rough", "expectedAny": ["smooth"]},
-    {"question": "___ is frozen water", "expectedAny": ["Ice"]},
-    {"question": "Earthworms live in ___", "expectedAny": ["soil"]}
+    {"question": "Plants grow in ___", "expectedAny": ["soil", "dirt"]},
+    {"question": "___ are hard materials from Earth", "expectedAny": ["Rocks", "stones"]},
+    {"question": "Water ___ when it gets hot", "expectedAny": ["evaporates", "turns to steam"]},
+    {"question": "Soil has ___ that help plants", "expectedAny": ["nutrients", "minerals"]},
+    {"question": "Some rocks are ___ and some are rough", "expectedAny": ["smooth", "not rough"]},
+    {"question": "___ is frozen water", "expectedAny": ["Ice", "solid water"]},
+    {"question": "Earthworms live in ___", "expectedAny": ["soil", "the ground"]}
   ],
   "shortanswer": [
-    {"question": "How is soil made?", "expectedAny": ["rocks break down; dead plants decay"]},
-    {"question": "Why do we need water?", "expectedAny": ["drinking", "plants", "cleaning"]},
-    {"question": "How can you sort rocks?", "expectedAny": ["size", "color", "texture"]},
-    {"question": "What's erosion?", "expectedAny": ["wearing away by wind and water"]},
-    {"question": "Why is soil important?", "expectedAny": ["plants grow in it"]},
-    {"question": "Describe different types of rocks.", "expectedAny": ["smooth/rough", "different colors"]},
-    {"question": "How do we keep water clean?", "expectedAny": ["don't pollute"]}
+    {"question": "How is soil made?", "expectedAny": ["rocks break down", "dead plants decay", "mixing over time makes soil"]},
+    {"question": "Why do we need water?", "expectedAny": ["for drinking", "for plants to grow", "for cleaning"]},
+    {"question": "How can you sort rocks?", "expectedAny": ["by size", "by color", "by texture"]},
+    {"question": "What's erosion?", "expectedAny": ["wearing away by wind and water", "movement of soil and sand by water", "wind or water carries bits away"]},
+    {"question": "Why is soil important?", "expectedAny": ["plants grow in it", "homes for insects", "holds water and nutrients"]},
+    {"question": "Describe different types of rocks.", "expectedAny": ["smooth or rough", "light or dark colors", "big or small pieces"]},
+    {"question": "How do we keep water clean?", "expectedAny": ["don't pollute", "throw trash away", "use filters"]}
   ]
 }

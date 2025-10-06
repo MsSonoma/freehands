@@ -640,6 +640,179 @@
 				"build"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Build Next.js for sanity",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build Next.js for validation (ad-hoc)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build Next.js for validation (ad-hoc)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Validate 5th language arts",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"scripts/validate-5th-language-arts.mjs"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$eslint-stylish"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Validate 5th language arts",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"scripts/validate-5th-language-arts.mjs"
+			]
+		},
+		{
+			"label": "Validate 4th social studies",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"scripts/validate-4th-social-studies.mjs"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Validate lesson quality: 4th social studies",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"scripts/validate-lesson-quality.mjs",
+				"4th",
+				"social studies"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Re-validate lesson quality: 4th social studies",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"scripts/validate-lesson-quality.mjs",
+				"4th",
+				"social studies"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Re-validate after Grand Canyon change",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"scripts/validate-lesson-quality.mjs",
+				"4th",
+				"social studies"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Final re-validate 4th social studies",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"scripts/validate-lesson-quality.mjs",
+				"4th",
+				"social studies"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Re-validate after gov basics fix",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"scripts/validate-lesson-quality.mjs",
+				"4th",
+				"social studies"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Validate 4th social studies",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"scripts/validate-lesson-quality.mjs",
+				"4th",
+				"social studies"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Re-validate lesson quality: 4th social studies (confirm Entrepreneurs)",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"scripts/validate-lesson-quality.mjs",
+				"4th",
+				"social studies"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Final re-validate 4th social studies (Entrepreneurs clean)",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"scripts/validate-lesson-quality.mjs",
+				"4th",
+				"social studies"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Re-validate lesson quality: 4th social studies (Cultural Diversity pass)",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"scripts/validate-lesson-quality.mjs",
+				"4th",
+				"social studies"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Final re-validate 4th social studies (Cultural Diversity cleaned)",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"scripts/validate-lesson-quality.mjs",
+				"4th",
+				"social studies"
+			],
+			"group": "build"
 		}
 	]
 }

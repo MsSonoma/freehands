@@ -24,15 +24,23 @@
     {
       "term": "touch",
       "definition": "Using your skin to feel things"
+    },
+    {
+      "term": "ears",
+      "definition": "Body parts we use to hear"
+    },
+    {
+      "term": "eyes",
+      "definition": "Body parts we use to see"
     }
   ],
   "teachingNotes": "Use sensory exploration activities. Taste and smell safely with supervision. Connect senses to body parts. Practice describing sensations.",
   "sample": [
-    {"question": "Which sense do you use to see a rainbow?", "expectedAny": ["sight", "eyes", "seeing"]},
-    {"question": "What body part do you use to hear?", "expectedAny": ["ears"]},
-    {"question": "How do you know if something smells good?", "expectedAny": ["use your nose", "smell it"]},
-    {"question": "What sense tells you if food tastes sweet?", "expectedAny": ["taste", "tongue"]},
-    {"question": "How can you tell if something is rough or smooth?", "expectedAny": ["touch it", "feel it with hands"]}
+    {"question": "Which sense do you use to see a rainbow?", "expectedAny": ["sight", "eyes", "seeing", "my eyes", "I use my eyes"]},
+    {"question": "What body part do you use to hear?", "expectedAny": ["ears", "my ears", "our ears"]},
+    {"question": "How do you know if something smells good?", "expectedAny": ["use your nose", "smell it", "with my nose", "by smelling"]},
+    {"question": "What sense tells you if food tastes sweet?", "expectedAny": ["taste", "tongue", "tasting", "my tongue"]},
+    {"question": "How can you tell if something is rough or smooth?", "expectedAny": ["touch it", "feel it with hands", "by touching", "use your hands"]}
   ],
   "truefalse": [
     {"question": "We use our nose to smell.", "answer": true, "expectedAny": ["nose for smelling"]},
@@ -53,22 +61,22 @@
     {"question": "Which sense do you use to see colors?", "choices": ["touch", "smell", "sight", "hearing"], "correct": 2, "expectedAny": ["sight sees colors"]}
   ],
   "fillintheblank": [
-    {"question": "We use our _____ to taste food.", "expectedAny": ["tongue", "mouth"]},
-    {"question": "Our _____ help us see things around us.", "expectedAny": ["eyes"]},
-    {"question": "We smell with our _____.", "expectedAny": ["nose"]},
-    {"question": "_____ and _____ help us hear sounds.", "expectedAny": ["ears"]},
-    {"question": "When we _____ something, we learn how it feels.", "expectedAny": ["touch", "feel"]},
-    {"question": "The five senses are sight, hearing, smell, taste, and _____.", "expectedAny": ["touch"]},
-    {"question": "Your _____ can tell you if something tastes good.", "expectedAny": ["tongue", "mouth"]}
+    {"question": "We use our _____ to taste food.", "expectedAny": ["tongue", "mouth", "our tongue"]},
+    {"question": "Our _____ help us see things around us.", "expectedAny": ["eyes", "our eyes", "two eyes"]},
+    {"question": "We smell with our _____.", "expectedAny": ["nose", "our nose", "noses"]},
+    {"question": "Our _____ help us hear sounds.", "expectedAny": ["ears", "our ears", "two ears"]},
+    {"question": "When we _____ something, we learn how it feels.", "expectedAny": ["touch", "feel", "touch it"]},
+    {"question": "The five senses are sight, hearing, smell, taste, and _____.", "expectedAny": ["touch", "feeling", "touching"]},
+    {"question": "Your _____ can tell you if something tastes good.", "expectedAny": ["tongue", "mouth", "taste buds"]}
   ],
   "shortanswer": [
-    {"question": "Name something you can touch that feels soft.", "expectedAny": ["pillow", "stuffed animal", "cotton", "fur"]},
-    {"question": "What sounds do you like to hear?", "expectedAny": ["music", "birds singing", "mom's voice"]},
-    {"question": "Describe something that smells good to you.", "expectedAny": ["cookies", "flowers", "pizza"]},
-    {"question": "What is your favorite thing to look at?", "expectedAny": ["rainbows", "pictures", "family"]},
-    {"question": "Name a food that tastes sweet.", "expectedAny": ["candy", "fruit", "cookies"]},
-    {"question": "How do your senses help you every day?", "expectedAny": ["see where to go", "hear warnings", "taste food"]},
-    {"question": "Which sense would you use to enjoy a garden?", "expectedAny": ["all senses", "see flowers", "smell flowers", "touch leaves"]}
+    {"question": "Name something you can touch that feels soft.", "expectedAny": ["pillow", "stuffed animal", "cotton", "fur", "blanket", "teddy bear"]},
+    {"question": "What sounds do you like to hear?", "expectedAny": ["music", "birds singing", "mom's voice", "songs", "laughter"]},
+    {"question": "Describe something that smells good to you.", "expectedAny": ["cookies", "flowers", "pizza", "perfume", "bread"]},
+    {"question": "What is your favorite thing to look at?", "expectedAny": ["rainbows", "pictures", "family", "toys", "sky"]},
+    {"question": "Name a food that tastes sweet.", "expectedAny": ["candy", "fruit", "cookies", "cake", "ice cream", "apple"]},
+    {"question": "How do your senses help you every day?", "expectedAny": ["see where to go", "hear warnings", "taste food", "they help me learn", "I use them all the time"]},
+    {"question": "Which sense would you use to enjoy a garden?", "expectedAny": ["all senses", "see flowers", "smell flowers", "touch leaves", "sight and smell"]}
   ],
   "wordProblems": [
     {"question": "Sarah uses 3 senses when she eats an apple: she sees it, tastes it, and feels it. How many senses is she using?", "expectedAny": ["3 senses"]},

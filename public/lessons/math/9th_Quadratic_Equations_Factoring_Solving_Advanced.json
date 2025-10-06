@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "9th_Quadratic_Equations_Factoring_Solving_Advanced",
   "title": "Quadratic Equations: Factoring and Solving",
   "grade": "9th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "quadratic equation",
-      "definition": "Equation in the form ax² + bx + c = 0"
-    },
-    {
-      "term": "standard form",
-      "definition": "Quadratic written as ax² + bx + c = 0"
-    },
-    {
-      "term": "zero product property",
-      "definition": "If ab = 0, then a = 0 or b = 0"
-    },
-    {
-      "term": "quadratic formula",
-      "definition": "x = (-b ± √(b² - 4ac)) / (2a)"
-    },
-    {
-      "term": "discriminant",
-      "definition": "Expression b² - 4ac that determines number of solutions"
-    }
+    {"term": "quadratic equation", "definition": "Equation in the form ax + bx + c = 0"},
+    {"term": "standard form", "definition": "Quadratic written as ax² + bx + c = 0"},
+    {"term": "zero product property", "definition": "If ab = 0, then a = 0 or b = 0"},
+    {"term": "quadratic formula", "definition": "x = (-b  (b - 4ac)) / (2a)"},
+    {"term": "discriminant", "definition": "Expression b - 4ac that determines number of solutions"}
   ],
   "teachingNotes": "Teach multiple solving methods: factoring, quadratic formula, and completing the square. Emphasize when to use each method.",
-  "sample": {
-    "question": "What is an equation in the form ax² + bx + c = 0?",
-    "expectedAny": ["quadratic equation", "second degree equation", "quadratic", "parabolic equation"]
-  },
-  "truefalse": {
-    "question": "The zero product property states that if ab = 0, then a = 0 or b = 0.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What determines the number of solutions in a quadratic?",
-    "expectedAny": ["discriminant", "b² - 4ac", "discriminant value", "under the radical"]
-  },
-  "fillintheblank": {
-    "question": "The quadratic formula is x = (-b ± √(b² - 4ac)) / ________.",
-    "expectedAny": ["2a", "(2a)", "two a", "2 times a"]
-  },
-  "shortanswer": {
-    "question": "When is factoring the best method to solve a quadratic?",
-    "expectedAny": ["when it factors easily", "when factors are integers", "when trinomial is factorable"]
-  },
-  "wordProblems": {
-    "question": "Solve x² - 5x + 6 = 0 by factoring. What are the solutions?",
-    "expectedAny": ["x = 2, 3", "2 and 3", "x = 2 or x = 3", "solutions are 2, 3"]
-  }
+  "sample": [
+    {"question": "What is an equation in the form ax + bx + c = 0?", "expectedAny": ["quadratic equation", "second degree equation", "quadratic", "parabola equation"]},
+    {"question": "What is standard form for quadratics?", "expectedAny": ["ax + bx + c = 0", "quadratic standard form", "a x squared plus b x plus c equals zero", "ax squared plus bx plus c"]},
+    {"question": "What is the zero product property?", "expectedAny": ["if ab = 0 then a = 0 or b = 0", "product zero means factor zero", "zero product rule", "if product is zero one factor is zero"]},
+    {"question": "What is the quadratic formula?", "expectedAny": ["x = (-b  (b - 4ac)) / (2a)", "negative b plus or minus square root", "quadratic formula"]},
+    {"question": "What is the discriminant?", "expectedAny": ["b - 4ac", "expression under radical", "determines number of solutions"]},
+    {"question": "When do you use factoring?", "expectedAny": ["when it factors easily", "when factors are integers", "simple trinomials"]},
+    {"question": "When do you use quadratic formula?", "expectedAny": ["when can't factor", "any quadratic", "always works"]},
+    {"question": "What does discriminant tell you?", "expectedAny": ["number of solutions", "type of solutions", "how many roots"]},
+    {"question": "Give an example of a quadratic.", "expectedAny": ["x + 5x + 6 = 0", "any second degree equation", "x - 4 = 0"]},
+    {"question": "What is the highest power in a quadratic?", "expectedAny": ["2", "squared", "second power"]}
+  ],
+  "truefalse": [
+    {"question": "The zero product property states that if ab = 0, then a = 0 or b = 0. (True or False)", "correct": true},
+    {"question": "A quadratic has degree 3. (True or False)", "correct": false},
+    {"question": "The discriminant is b - 4ac. (True or False)", "correct": true},
+    {"question": "Standard form is ax + bx + c = 0. (True or False)", "correct": true},
+    {"question": "Quadratics can have 0, 1, or 2 real solutions. (True or False)", "correct": true},
+    {"question": "The quadratic formula works for all quadratics. (True or False)", "correct": true},
+    {"question": "If discriminant is negative, there are no real solutions. (True or False)", "correct": true},
+    {"question": "If discriminant is zero, there is one solution. (True or False)", "correct": true},
+    {"question": "If discriminant is positive, there are two solutions. (True or False)", "correct": true},
+    {"question": "Factoring always works on quadratics. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "What determines the number of solutions in a quadratic?", "choices": [{"letter": "A", "text": "a"}, {"letter": "B", "text": "b"}, {"letter": "C", "text": "c"}, {"letter": "D", "text": "Discriminant"}], "correct": "D"},
+    {"question": "What is the form ax + bx + c = 0?", "choices": [{"letter": "A", "text": "Vertex form"}, {"letter": "B", "text": "Standard form"}, {"letter": "C", "text": "Slope-intercept"}, {"letter": "D", "text": "Point-slope"}], "correct": "B"},
+    {"question": "What is the discriminant?", "choices": [{"letter": "A", "text": "b + 4ac"}, {"letter": "B", "text": "b - 4ac"}, {"letter": "C", "text": "-b  b"}, {"letter": "D", "text": "2a"}], "correct": "B"},
+    {"question": "If discriminant is 0, how many solutions?", "choices": [{"letter": "A", "text": "0"}, {"letter": "B", "text": "1"}, {"letter": "C", "text": "2"}, {"letter": "D", "text": "3"}], "correct": "B"},
+    {"question": "If discriminant is positive, how many real solutions?", "choices": [{"letter": "A", "text": "0"}, {"letter": "B", "text": "1"}, {"letter": "C", "text": "2"}, {"letter": "D", "text": "3"}], "correct": "C"},
+    {"question": "If discriminant is negative, how many real solutions?", "choices": [{"letter": "A", "text": "0"}, {"letter": "B", "text": "1"}, {"letter": "C", "text": "2"}, {"letter": "D", "text": "Infinite"}], "correct": "A"},
+    {"question": "What property says if ab = 0 then a = 0 or b = 0?", "choices": [{"letter": "A", "text": "Distributive"}, {"letter": "B", "text": "Commutative"}, {"letter": "C", "text": "Zero product"}, {"letter": "D", "text": "Associative"}], "correct": "C"},
+    {"question": "What is the highest degree in a quadratic?", "choices": [{"letter": "A", "text": "1"}, {"letter": "B", "text": "2"}, {"letter": "C", "text": "3"}, {"letter": "D", "text": "4"}], "correct": "B"},
+    {"question": "Which always works to solve quadratics?", "choices": [{"letter": "A", "text": "Factoring only"}, {"letter": "B", "text": "Graphing only"}, {"letter": "C", "text": "Quadratic formula"}, {"letter": "D", "text": "Guessing"}], "correct": "C"},
+    {"question": "Factor x - 9. What form is it?", "choices": [{"letter": "A", "text": "(x - 3)(x - 3)"}, {"letter": "B", "text": "(x + 3)(x + 3)"}, {"letter": "C", "text": "(x - 3)(x + 3)"}, {"letter": "D", "text": "(x + 9)(x - 1)"}], "correct": "C"}
+  ],
+  "fillintheblank": [
+    {"question": "The quadratic formula is x = (-b  (b - 4ac)) / _____.", "expectedAny": ["2a", "(2a)", "two a"]},
+    {"question": "The _____ is b - 4ac.", "expectedAny": ["discriminant"]},
+    {"question": "Standard form for quadratics is ax + bx + c = _____.", "expectedAny": ["0", "zero"]},
+    {"question": "If ab = 0, then a = 0 or b = 0 is the _____ property.", "expectedAny": ["zero product"]},
+    {"question": "A quadratic has degree _____.", "expectedAny": ["2", "two", "second"]},
+    {"question": "If discriminant is _____, there is one solution.", "expectedAny": ["0", "zero"]},
+    {"question": "If discriminant is _____, there are two solutions.", "expectedAny": ["positive", "greater than zero", "> 0"]},
+    {"question": "If discriminant is _____, there are no real solutions.", "expectedAny": ["negative", "less than zero", "< 0"]},
+    {"question": "To solve by factoring, use the _____ product property.", "expectedAny": ["zero"]},
+    {"question": "The _____ formula works for all quadratics.", "expectedAny": ["quadratic"]}
+  ],
+  "shortanswer": [
+    {"question": "When is factoring the best method to solve a quadratic?", "keyTerms": ["factors easily", "integers", "simple", "factorable"], "expectedAny": ["When it factors easily into integers", "When the trinomial is factorable", "When factors are simple integers"]},
+    {"question": "What does the discriminant tell you?", "keyTerms": ["number", "solutions", "type", "how many"], "expectedAny": ["Number of real solutions", "How many solutions exist", "Type and count of solutions"]},
+    {"question": "How do you use the zero product property?", "keyTerms": ["factor", "set each", "equal to zero", "solve"], "expectedAny": ["Factor, then set each factor equal to zero", "After factoring, set each part to zero and solve", "Factor and solve each factor equals zero"]},
+    {"question": "Why does the quadratic formula always work?", "keyTerms": ["derived", "any", "completing the square", "always"], "expectedAny": ["It was derived for any quadratic", "Works by completing the square for general form", "Derived to work on all quadratics"]},
+    {"question": "What are the three ways to solve quadratics?", "keyTerms": ["factoring", "quadratic formula", "completing the square"], "expectedAny": ["Factoring, quadratic formula, completing the square", "Factor, use formula, or complete square", "Three methods: factoring, formula, completing square"]},
+    {"question": "If discriminant is 16, what does that tell you?", "keyTerms": ["positive", "two", "real solutions"], "expectedAny": ["Positive, so two real solutions", "Two real solutions exist", "There are two solutions"]},
+    {"question": "If discriminant is -4, what does that tell you?", "keyTerms": ["negative", "no", "real solutions"], "expectedAny": ["Negative, so no real solutions", "No real solutions exist", "There are no real solutions"]},
+    {"question": "Solve x - 4 = 0 by factoring. What are the steps?", "keyTerms": ["(x-2)(x+2)", "x = 2", "x = -2", "difference of squares"], "expectedAny": ["Factor as (x-2)(x+2), so x = 2 or x = -2", "Difference of squares: x = 2", "(x-2)(x+2) = 0, so x = 2 or -2"]},
+    {"question": "In ax + bx + c = 0, what is a, b, and c called?", "keyTerms": ["coefficients", "constants", "parameters"], "expectedAny": ["Coefficients or constants", "Parameters of the equation", "The coefficients"]},
+    {"question": "Why must a quadratic equal zero to use zero product property?", "keyTerms": ["property", "works", "zero", "factor equals"], "expectedAny": ["Property only works when product equals zero", "Zero product property requires zero", "Can only set factors to zero if product is zero"]}
+  ],
+  "wordProblems": [
+    {"question": "Solve x - 5x + 6 = 0 by factoring. What are the solutions?", "expectedAny": ["x = 2, 3", "2 and 3", "x = 2 or x = 3"]},
+    {"question": "Solve x - 9 = 0. What are the solutions?", "expectedAny": ["x = 3, -3", "x = 3", "3 and -3"]},
+    {"question": "What is the discriminant of x + 5x + 6 = 0?", "expectedAny": ["1", "one"]},
+    {"question": "What is the discriminant of x + 2x + 1 = 0?", "expectedAny": ["0", "zero"]},
+    {"question": "What is the discriminant of x + x + 1 = 0?", "expectedAny": ["-3", "negative 3", "negative three"]},
+    {"question": "How many solutions does x + 4x + 4 = 0 have?", "expectedAny": ["1", "one", "one solution"]},
+    {"question": "How many real solutions does x + 2x + 5 = 0 have?", "expectedAny": ["0", "none", "zero"]},
+    {"question": "Solve (x - 3)(x + 2) = 0. What are the solutions?", "expectedAny": ["x = 3, -2", "3 and -2", "x = 3 or x = -2"]},
+    {"question": "Factor x + 7x + 12. What is the factored form?", "expectedAny": ["(x + 3)(x + 4)", "(x + 4)(x + 3)"]},
+    {"question": "Solve x = 16. What are the solutions?", "expectedAny": ["x = 4, -4", "x = 4", "4 and -4"]}
+  ]
 }

@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Practice analyzing how text structure supports meaning. Compare how different authors approach similar topics.",
-  "sample": {
-    "question": "What is how information is organized in a text?",
-    "expectedAny": [
-      "text structure",
-      "organizational structure",
-      "information organization",
-      "text organization"
-    ]
-  },
-  "truefalse": {
-    "question": "Author's purpose is the reason why an author writes.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the feeling or atmosphere created by a text?",
-    "expectedAny": [
-      "mood",
-      "atmosphere",
-      "feeling",
-      "emotional tone"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The author's attitude toward the subject is called ________.",
-    "expectedAny": [
-      "tone",
-      "attitude",
-      "perspective",
-      "viewpoint"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does comparing multiple sources improve understanding?",
-    "expectedAny": [
-      "provides different perspectives",
-      "shows bias",
-      "creates complete picture"
-    ]
-  }
+  "sample": [
+    { "question": "What is how information is organized in a text?", "expectedAny": ["text structure"] },
+    { "question": "Which is writer reason?", "choices": ["Plot", "Author's purpose", "Character", "Setting"], "correct": 1, "expectedAny": ["author's purpose"] },
+    { "question": "Author attitude toward subject is ________.", "expectedAny": ["tone"] },
+    { "question": "Feeling or atmosphere created is ________.", "expectedAny": ["mood"] },
+    { "question": "Combining multiple sources is ________.", "expectedAny": ["synthesis"] },
+    { "question": "What is text organization?", "choices": ["Theme", "Text structure", "Character", "Setting"], "correct": 1, "expectedAny": ["text structure"] },
+    { "question": "Reason for writing is ________.", "expectedAny": ["author's purpose"] },
+    { "question": "What is writer attitude?", "choices": ["Plot", "Tone", "Character", "Setting"], "correct": 1, "expectedAny": ["tone"] },
+    { "question": "Text atmosphere is ________.", "expectedAny": ["mood"] },
+    { "question": "Merging information is ________.", "expectedAny": ["synthesis"] }
+  ],
+  "truefalse": [
+    { "question": "Author's purpose is the reason why an author writes.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Text structure is character development.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Tone is author's attitude.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Mood is same as tone.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Synthesis combines sources.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Text structure is random.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Author's purpose is writing reason.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Tone is reader's feeling.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Mood creates atmosphere.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Synthesis uses one source.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is the feeling or atmosphere created by a text?", "choices": ["Tone", "Mood", "Theme", "Plot"], "correct": 1, "expectedAny": ["mood"] },
+    { "question": "What is text organization?", "choices": ["Theme", "Text structure", "Character", "Setting"], "correct": 1, "expectedAny": ["text structure"] },
+    { "question": "What is writer reason?", "choices": ["Plot", "Author's purpose", "Character", "Setting"], "correct": 1, "expectedAny": ["author's purpose"] },
+    { "question": "What is writer attitude?", "choices": ["Plot", "Tone", "Character", "Setting"], "correct": 1, "expectedAny": ["tone"] },
+    { "question": "What combines sources?", "choices": ["Plot", "Synthesis", "Theme", "Character"], "correct": 1, "expectedAny": ["synthesis"] },
+    { "question": "Text structure affects?", "choices": ["Nothing", "Meaning", "Only length", "Only font"], "correct": 1, "expectedAny": ["meaning"] },
+    { "question": "Author's purpose could be?", "choices": ["Nothing", "Inform or persuade", "Confuse", "Hide meaning"], "correct": 1, "expectedAny": ["inform or persuade"] },
+    { "question": "Tone shows?", "choices": ["Nothing", "Author's attitude", "Plot", "Setting"], "correct": 1, "expectedAny": ["author's attitude"] },
+    { "question": "Mood affects?", "choices": ["Nothing", "Reader feeling", "Only words", "Only length"], "correct": 1, "expectedAny": ["reader feeling"] },
+    { "question": "Synthesis requires?", "choices": ["One source", "Multiple sources", "No sources", "Only opinion"], "correct": 1, "expectedAny": ["multiple sources"] }
+  ],
+  "fillintheblank": [
+    { "question": "The author's attitude toward the subject is called ________.", "expectedAny": ["tone"] },
+    { "question": "How information is organized is ________.", "expectedAny": ["text structure"] },
+    { "question": "Reason for writing is ________.", "expectedAny": ["author's purpose"] },
+    { "question": "Feeling or atmosphere is ________.", "expectedAny": ["mood"] },
+    { "question": "Combining sources is ________.", "expectedAny": ["synthesis"] },
+    { "question": "________ structure organizes text.", "expectedAny": ["text"] },
+    { "question": "Author's ________ is writing reason.", "expectedAny": ["purpose"] },
+    { "question": "________ is author's attitude.", "expectedAny": ["tone"] },
+    { "question": "________ is text atmosphere.", "expectedAny": ["mood"] },
+    { "question": "________ combines information.", "expectedAny": ["synthesis"] }
+  ],
+  "shortanswer": [
+    { "question": "How does comparing multiple sources improve understanding?", "expectedAny": ["provides different perspectives", "shows bias"] },
+    { "question": "What is text structure?", "expectedAny": ["how information is organized", "text organization"] },
+    { "question": "What is author's purpose?", "expectedAny": ["reason for writing", "why author writes", "what author wants to do", "writing goal"] },
+    { "question": "What is tone?", "expectedAny": ["author's attitude", "writer attitude toward subject", "feeling toward topic", "how author feels"] },
+    { "question": "What is mood?", "expectedAny": ["feeling or atmosphere", "text atmosphere"] },
+    { "question": "What is synthesis?", "expectedAny": ["combining multiple sources", "merging information", "putting sources together", "combining ideas"] },
+    { "question": "Why analyze text structure?", "expectedAny": ["understand meaning", "see organization"] },
+    { "question": "How identify tone?", "expectedAny": ["analyze word choice", "author's attitude"] },
+    { "question": "Why compare sources?", "expectedAny": ["get different perspectives", "complete picture"] },
+    { "question": "What does synthesis create?", "expectedAny": ["complete understanding", "combined information"] }
+  ]
 }

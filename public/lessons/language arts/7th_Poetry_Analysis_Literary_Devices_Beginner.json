@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Use examples from age-appropriate poems. Practice identifying literary devices and discussing their effects on meaning and mood.",
-  "sample": {
-    "question": "What is a comparison between unlike things without 'like' or 'as'?",
-    "expectedAny": [
-      "metaphor",
-      "direct comparison",
-      "figurative comparison",
-      "poetic comparison"
-    ]
-  },
-  "truefalse": {
-    "question": "A simile uses 'like' or 'as' to make comparisons.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the repetition of beginning consonant sounds?",
-    "expectedAny": [
-      "alliteration",
-      "consonance",
-      "sound repetition",
-      "repeated sounds"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A group of lines in a poem is called a ________.",
-    "expectedAny": [
-      "stanza",
-      "verse",
-      "paragraph",
-      "section"
-    ]
-  },
-  "shortanswer": {
-    "question": "Identify the literary device: 'The stars danced in the sky.'",
-    "expectedAny": [
-      "personification",
-      "metaphor",
-      "giving human qualities",
-      "stars can't really dance"
-    ]
-  }
+  "sample": [
+    { "question": "What is a comparison between unlike things without 'like' or 'as'?", "expectedAny": ["metaphor"] },
+    { "question": "Which uses 'like' or 'as'?", "choices": ["Metaphor", "Simile", "Alliteration", "Stanza"], "correct": 1, "expectedAny": ["simile"] },
+    { "question": "Repeated beginning sounds are ________.", "expectedAny": ["alliteration"] },
+    { "question": "A pattern of rhymes is a ________.", "expectedAny": ["rhyme scheme"] },
+    { "question": "A group of lines is a ________.", "expectedAny": ["stanza"] },
+    { "question": "What is direct comparison?", "choices": ["Simile", "Metaphor", "Rhyme", "Stanza"], "correct": 1, "expectedAny": ["metaphor"] },
+    { "question": "'Fast as lightning' is a ________.", "expectedAny": ["simile"] },
+    { "question": "Repeating consonant sounds is ________.", "expectedAny": ["alliteration"] },
+    { "question": "Which organizes rhymes?", "choices": ["Stanza", "Rhyme scheme", "Metaphor", "Simile"], "correct": 1, "expectedAny": ["rhyme scheme"] },
+    { "question": "A verse is a ________.", "expectedAny": ["stanza"] }
+  ],
+  "truefalse": [
+    { "question": "A simile uses 'like' or 'as' to make comparisons.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A metaphor uses 'like' or 'as'.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Alliteration repeats beginning sounds.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A stanza is one line.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Rhyme scheme shows rhyme patterns.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Metaphors and similes are the same.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Alliteration uses consonant sounds.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All poems have rhyme schemes.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A stanza is a group of lines.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Similes make direct comparisons.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is the repetition of beginning consonant sounds?", "choices": ["Rhyme", "Alliteration", "Metaphor", "Simile"], "correct": 1, "expectedAny": ["alliteration"] },
+    { "question": "Which uses 'like' or 'as'?", "choices": ["Metaphor", "Simile", "Stanza", "Rhyme"], "correct": 1, "expectedAny": ["simile"] },
+    { "question": "What compares without 'like' or 'as'?", "choices": ["Simile", "Metaphor", "Alliteration", "Stanza"], "correct": 1, "expectedAny": ["metaphor"] },
+    { "question": "What is a group of lines?", "choices": ["Sentence", "Stanza", "Word", "Letter"], "correct": 1, "expectedAny": ["stanza"] },
+    { "question": "What is a rhyme pattern?", "choices": ["Metaphor", "Simile", "Rhyme scheme", "Alliteration"], "correct": 2, "expectedAny": ["rhyme scheme"] },
+    { "question": "Which is 'busy as a bee'?", "choices": ["Metaphor", "Simile", "Rhyme", "Stanza"], "correct": 1, "expectedAny": ["simile"] },
+    { "question": "Which is 'Peter Piper picked'?", "choices": ["Rhyme", "Alliteration", "Metaphor", "Simile"], "correct": 1, "expectedAny": ["alliteration"] },
+    { "question": "What is 'time is money'?", "choices": ["Simile", "Metaphor", "Rhyme", "Stanza"], "correct": 1, "expectedAny": ["metaphor"] },
+    { "question": "What organizes poem lines?", "choices": ["Stanza", "Sentence", "Word", "Letter"], "correct": 0, "expectedAny": ["stanza"] },
+    { "question": "What shows rhyme organization?", "choices": ["Metaphor", "Rhyme scheme", "Simile", "Alliteration"], "correct": 1, "expectedAny": ["rhyme scheme"] }
+  ],
+  "fillintheblank": [
+    { "question": "A group of lines in a poem is called a ________.", "expectedAny": ["stanza"] },
+    { "question": "A comparison using 'like' or 'as' is a ________.", "expectedAny": ["simile"] },
+    { "question": "A comparison without 'like' or 'as' is a ________.", "expectedAny": ["metaphor"] },
+    { "question": "Repeated beginning sounds are ________.", "expectedAny": ["alliteration"] },
+    { "question": "The pattern of rhymes is a ________.", "expectedAny": ["rhyme scheme"] },
+    { "question": "A ________ is a verse.", "expectedAny": ["stanza"] },
+    { "question": "'Quick as a fox' is a ________.", "expectedAny": ["simile"] },
+    { "question": "'Life is a journey' is a ________.", "expectedAny": ["metaphor"] },
+    { "question": "________ repeats consonant sounds.", "expectedAny": ["alliteration"] },
+    { "question": "A ________ shows rhyme patterns.", "expectedAny": ["rhyme scheme"] }
+  ],
+  "shortanswer": [
+    { "question": "Identify the literary device: 'The stars danced in the sky.'", "expectedAny": ["personification", "metaphor"] },
+    { "question": "What is a metaphor?", "expectedAny": ["comparison without like or as", "direct comparison", "comparing two things directly", "saying something is something else"] },
+    { "question": "What is a simile?", "expectedAny": ["comparison using like or as", "indirect comparison", "comparing with like or as", "comparing two things with like or as"] },
+    { "question": "What is alliteration?", "expectedAny": ["repeating beginning sounds", "consonant repetition", "same starting sounds", "repeated first sounds", "starting sounds repeat"] },
+    { "question": "What is a stanza?", "expectedAny": ["group of lines", "verse"] },
+    { "question": "What is rhyme scheme?", "expectedAny": ["pattern of rhymes", "rhyme organization"] },
+    { "question": "Give an example of a simile.", "expectedAny": ["brave as a lion", "fast as lightning"] },
+    { "question": "Give an example of a metaphor.", "expectedAny": ["time is money", "life is a journey"] },
+    { "question": "Give an example of alliteration.", "expectedAny": ["Peter Piper picked", "she sells seashells"] },
+    { "question": "Why do poets use literary devices?", "expectedAny": ["create meaning and mood", "enhance poetry"] }
+  ]
 }

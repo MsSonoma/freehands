@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Use input-output tables and machines to explain functions. Practice reading and writing function notation.",
-  "sample": {
-    "question": "What is a relationship where each input has exactly one output?",
-    "expectedAny": ["function", "mathematical function", "input-output relationship", "functional relationship"]
-  },
-  "truefalse": {
-    "question": "In function notation, f(x) means f times x.",
-    "expectedAny": ["false", "no", "f", "incorrect"]
-  },
-  "multiplechoice": {
-    "question": "What are all possible input values called?",
-    "expectedAny": ["domain", "input set", "x-values", "independent values"]
-  },
-  "fillintheblank": {
-    "question": "The value that comes out of a function is the ________.",
-    "expectedAny": ["output", "result", "y-value", "dependent variable"]
-  },
-  "shortanswer": {
-    "question": "If f(x) = 2x + 3, what is f(4)?",
-    "expectedAny": ["11", "f(4) = 11", "2(4) + 3 = 11", "eleven"]
-  },
-  "wordProblems": {
-    "question": "A function charges $5 plus $2 per hour for bike rental. Write this as f(h) where h is hours.",
-    "expectedAny": ["f(h) = 2h + 5", "f(h) = 5 + 2h", "2h + 5", "5 + 2h"]
-  }
+  "sample": [
+    { "question": "What is a relationship where each input has exactly one output?", "expectedAny": ["function"] },
+    { "question": "Which goes into function?", "choices": ["Output", "Input", "Result", "Answer"], "correct": 1, "expectedAny": ["input"] },
+    { "question": "What comes out of function is ________.", "expectedAny": ["output"] },
+    { "question": "Using f(x) is ________.", "expectedAny": ["function notation"] },
+    { "question": "All possible input values are ________.", "expectedAny": ["domain"] },
+    { "question": "What has one output per input?", "choices": ["Random", "Function", "Multiple", "None"], "correct": 1, "expectedAny": ["function"] },
+    { "question": "Value going in is ________.", "expectedAny": ["input"] },
+    { "question": "What is result value?", "choices": ["Input", "Output", "Domain", "Function"], "correct": 1, "expectedAny": ["output"] },
+    { "question": "Writing f(x) is ________.", "expectedAny": ["function notation"] },
+    { "question": "Input set is ________.", "expectedAny": ["domain"] }
+  ],
+  "truefalse": [
+    { "question": "In function notation, f(x) means f times x.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Function has one output per input.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Input goes into function.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Output goes into function.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Domain is all inputs.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Function can have multiple outputs per input.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "f(x) uses function notation.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Input is same as output.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Domain is possible inputs.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Output is result.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "What are all possible input values called?", "choices": ["Output", "Domain", "Result", "Answer"], "correct": 1, "expectedAny": ["domain"] },
+    { "question": "What has one output per input?", "choices": ["Random", "Function", "Multiple", "None"], "correct": 1, "expectedAny": ["function"] },
+    { "question": "What goes in?", "choices": ["Output", "Input", "Result", "Answer"], "correct": 1, "expectedAny": ["input"] },
+    { "question": "What comes out?", "choices": ["Input", "Output", "Domain", "Function"], "correct": 1, "expectedAny": ["output"] },
+    { "question": "What is f(x)?", "choices": ["Multiplication", "Function notation", "Addition", "Division"], "correct": 1, "expectedAny": ["function notation"] },
+    { "question": "Function rule gives?", "choices": ["Multiple outputs", "One output per input", "No outputs", "Random outputs"], "correct": 1, "expectedAny": ["one output per input"] },
+    { "question": "Domain contains?", "choices": ["Outputs", "Inputs", "Results", "Answers"], "correct": 1, "expectedAny": ["inputs"] },
+    { "question": "Input is also called?", "choices": ["Output", "X-value", "Result", "Answer"], "correct": 1, "expectedAny": ["x-value"] },
+    { "question": "Output is also called?", "choices": ["Input", "Y-value", "Domain", "Function"], "correct": 1, "expectedAny": ["y-value"] },
+    { "question": "f(3) means?", "choices": ["f times 3", "Output when input is 3", "f plus 3", "f divided by 3"], "correct": 1, "expectedAny": ["output when input is 3"] }
+  ],
+  "fillintheblank": [
+    { "question": "The value that comes out of a function is the ________.", "expectedAny": ["output"] },
+    { "question": "A ________ has one output per input.", "expectedAny": ["function"] },
+    { "question": "The value going in is the ________.", "expectedAny": ["input"] },
+    { "question": "Using f(x) is ________.", "expectedAny": ["function notation"] },
+    { "question": "All possible inputs are the ________.", "expectedAny": ["domain"] },
+    { "question": "An ________ goes into function.", "expectedAny": ["input"] },
+    { "question": "An ________ comes out of function.", "expectedAny": ["output"] },
+    { "question": "________ notation uses f(x).", "expectedAny": ["function"] },
+    { "question": "The ________ is input set.", "expectedAny": ["domain"] },
+    { "question": "Each input has one ________.", "expectedAny": ["output"] }
+  ],
+  "shortanswer": [
+    { "question": "If f(x) = 2x + 3, what is f(4)?", "expectedAny": ["11", "f(4) = 11"] },
+    { "question": "What is function?", "expectedAny": ["one output per input", "input-output relationship", "each input has one output", "rule matching inputs to outputs"] },
+    { "question": "What is input?", "expectedAny": ["value going in", "x-value", "what you put in", "independent variable"] },
+    { "question": "What is output?", "expectedAny": ["value coming out", "y-value"] },
+    { "question": "If f(x) = x + 5, find f(3).", "expectedAny": ["8", "f(3) = 8"] },
+    { "question": "What is domain?", "expectedAny": ["all possible inputs", "input set"] },
+    { "question": "What does f(x) mean?", "expectedAny": ["function notation", "function of x"] },
+    { "question": "If f(x) = 3x, find f(2).", "expectedAny": ["6", "f(2) = 6"] },
+    { "question": "Can function have two outputs for one input?", "expectedAny": ["no", "only one output"] },
+    { "question": "If f(x) = x - 1, find f(5).", "expectedAny": ["4", "f(5) = 4"] }
+  ],
+  "wordProblems": [
+    { "question": "A function charges $5 plus $2 per hour for bike rental. Write this as f(h) where h is hours.", "expectedAny": ["f(h) = 2h + 5", "f(h) = 5 + 2h"] },
+    { "question": "If f(x) = 3x + 1, find cost when x = 4.", "expectedAny": ["13", "f(4) = 13"] },
+    { "question": "Movie tickets cost $10 each. Write function for total cost.", "expectedAny": ["f(x) = 10x", "10x"] },
+    { "question": "If f(x) = 2x - 3, find f(5).", "expectedAny": ["7", "f(5) = 7"] },
+    { "question": "Parking costs $3 plus $1 per hour. Write function.", "expectedAny": ["f(h) = h + 3", "f(h) = 3 + h"] },
+    { "question": "If f(x) = 4x, how much for 3 items?", "expectedAny": ["12", "f(3) = 12"] },
+    { "question": "Pizza costs $8 plus $2 per topping. Write function.", "expectedAny": ["f(t) = 2t + 8", "f(t) = 8 + 2t"] },
+    { "question": "If f(x) = x + 7, find f(6).", "expectedAny": ["13", "f(6) = 13"] },
+    { "question": "Bus fare is $2 plus $0.50 per mile. Write function.", "expectedAny": ["f(m) = 0.5m + 2", "f(m) = 2 + 0.5m"] },
+    { "question": "If f(x) = 5x - 2, find f(3).", "expectedAny": ["13", "f(3) = 13"] }
+  ]
 }

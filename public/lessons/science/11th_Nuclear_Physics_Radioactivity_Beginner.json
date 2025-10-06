@@ -1,74 +1,485 @@
-{
-  "id": "11th_Nuclear_Physics_Radioactivity_Beginner",
-  "title": "Nuclear Physics and Radioactivity",
-  "grade": "11th",
-  "difficulty": "Beginner",
-  "vocab": [
-    {
-      "term": "radioactivity",
-      "definition": "Spontaneous emission of radiation from unstable atomic nuclei"
-    },
-    {
-      "term": "alpha particle",
-      "definition": "Helium nucleus consisting of two protons and two neutrons"
-    },
-    {
-      "term": "beta particle",
-      "definition": "High-energy electron or positron emitted from nucleus"
-    },
-    {
-      "term": "gamma ray",
-      "definition": "High-energy electromagnetic radiation from nuclear transitions"
-    },
-    {
-      "term": "half-life",
-      "definition": "Time required for half of radioactive nuclei to decay"
-    }
-  ],
-  "teachingNotes": "Emphasize safety aspects of radiation. Use decay curves to illustrate half-life concepts.",
-  "sample": {
-    "question": "What is spontaneous emission of radiation from nuclei called?",
-    "expectedAny": [
-      "radioactivity",
-      "radioactive decay",
-      "nuclear decay",
-      "radiation emission"
-    ]
-  },
-  "truefalse": {
-    "question": "Alpha particles consist of two protons and two neutrons.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is high-energy electromagnetic radiation from nuclei?",
-    "expectedAny": [
-      "gamma ray",
-      "gamma radiation",
-      "nuclear radiation",
-      "high-energy photon"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The time for half of radioactive nuclei to decay is the ________.",
-    "expectedAny": [
-      "half-life",
-      "half life",
-      "decay time",
-      "radioactive half-life"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are the three main types of nuclear radiation?",
-    "expectedAny": [
-      "alpha particles",
-      "beta particles",
-      "gamma rays",
-      "nuclear emissions"
-    ]
-  }
+﻿{
+    "id":  "11th_Nuclear_Physics_Radioactivity_Beginner",
+    "title":  "Nuclear Physics and Radioactivity",
+    "grade":  "11th",
+    "difficulty":  "Beginner",
+    "vocab":  [
+                  {
+                      "term":  "radioactivity",
+                      "definition":  "Spontaneous emission of radiation from unstable atomic nuclei"
+                  },
+                  {
+                      "term":  "alpha particle",
+                      "definition":  "Helium nucleus consisting of two protons and two neutrons"
+                  },
+                  {
+                      "term":  "beta particle",
+                      "definition":  "High-energy electron or positron emitted from nucleus"
+                  },
+                  {
+                      "term":  "gamma ray",
+                      "definition":  "High-energy electromagnetic radiation from nuclear transitions"
+                  },
+                  {
+                      "term":  "half-life",
+                      "definition":  "Time required for half of radioactive nuclei to decay"
+                  }
+              ],
+    "teachingNotes":  "Emphasize safety aspects of radiation. Use decay curves to illustrate half-life concepts.",
+    "sample":  [
+                   {
+                       "question":  "What is spontaneous emission of radiation from nuclei?",
+                       "expectedAny":  [
+                                           "radioactivity",
+                                           "radioactive decay",
+                                           "nuclear decay",
+                                           "radiation emission",
+                                           "spontaneous decay",
+                                           "nuclear radiation"
+                                       ]
+                   },
+                   {
+                       "question":  "What consists of two protons and two neutrons?",
+                       "expectedAny":  [
+                                           "alpha particle",
+                                           "alpha",
+                                           "helium nucleus",
+                                           "alpha radiation",
+                                           "helium core",
+                                           "2 protons 2 neutrons"
+                                       ]
+                   },
+                   {
+                       "question":  "What high-energy electron comes from nucleus?",
+                       "expectedAny":  [
+                                           "beta particle",
+                                           "beta",
+                                           "beta radiation",
+                                           "nuclear electron",
+                                           "high energy electron",
+                                           "beta emission"
+                                       ]
+                   },
+                   {
+                       "question":  "What is high-energy electromagnetic radiation from nuclei?",
+                       "expectedAny":  [
+                                           "gamma ray",
+                                           "gamma",
+                                           "gamma radiation",
+                                           "gamma photon"
+                                       ]
+                   },
+                   {
+                       "question":  "What time does half the sample decay?",
+                       "expectedAny":  [
+                                           "half-life",
+                                           "half life",
+                                           "decay half-life",
+                                           "radioactive half-life"
+                                       ]
+                   },
+                   {
+                       "question":  "What process emits radiation spontaneously?",
+                       "expectedAny":  [
+                                           "radioactivity",
+                                           "radioactive decay",
+                                           "nuclear decay",
+                                           "decay"
+                                       ]
+                   },
+                   {
+                       "question":  "What particle is a helium nucleus?",
+                       "expectedAny":  [
+                                           "alpha particle",
+                                           "alpha",
+                                           "alpha ray",
+                                           "helium core"
+                                       ]
+                   },
+                   {
+                       "question":  "What particle has negative charge from nucleus?",
+                       "expectedAny":  [
+                                           "beta particle",
+                                           "beta",
+                                           "beta minus",
+                                           "electron emission"
+                                       ]
+                   },
+                   {
+                       "question":  "What radiation has no mass or charge?",
+                       "expectedAny":  [
+                                           "gamma ray",
+                                           "gamma",
+                                           "gamma radiation",
+                                           "electromagnetic"
+                                       ]
+                   },
+                   {
+                       "question":  "What measures decay rate?",
+                       "expectedAny":  [
+                                           "half-life",
+                                           "decay constant",
+                                           "half life period",
+                                           "decay time"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Alpha particles consist of two protons and two neutrons.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Beta particles are protons emitted from nucleus.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Gamma rays are electromagnetic radiation.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Half-life is when all atoms decay.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Radioactivity is spontaneous process.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Alpha particles penetrate deeply through matter.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Gamma rays have highest penetrating power.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Beta particles are helium nuclei.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Half-life is constant for each isotope.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "All radiation is equally dangerous.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What is helium nucleus emission?",
+                               "choices":  [
+                                               "Alpha",
+                                               "Beta",
+                                               "Gamma",
+                                               "Neutron"
+                                           ],
+                               "correct":  "Alpha"
+                           },
+                           {
+                               "question":  "What is electron emission from nucleus?",
+                               "choices":  [
+                                               "Alpha",
+                                               "Beta",
+                                               "Gamma",
+                                               "Proton"
+                                           ],
+                               "correct":  "Beta"
+                           },
+                           {
+                               "question":  "What has no mass or charge?",
+                               "choices":  [
+                                               "Alpha",
+                                               "Beta",
+                                               "Gamma",
+                                               "Neutron"
+                                           ],
+                               "correct":  "Gamma"
+                           },
+                           {
+                               "question":  "What measures decay time?",
+                               "choices":  [
+                                               "Mass number",
+                                               "Half-life",
+                                               "Atomic number",
+                                               "Energy"
+                                           ],
+                               "correct":  "Half-life"
+                           },
+                           {
+                               "question":  "What is spontaneous radiation emission?",
+                               "choices":  [
+                                               "Fission",
+                                               "Fusion",
+                                               "Radioactivity",
+                                               "Ionization"
+                                           ],
+                               "correct":  "Radioactivity"
+                           },
+                           {
+                               "question":  "What stops alpha particles?",
+                               "choices":  [
+                                               "Paper",
+                                               "Aluminum",
+                                               "Lead",
+                                               "Concrete"
+                                           ],
+                               "correct":  "Paper"
+                           },
+                           {
+                               "question":  "What has charge of +2?",
+                               "choices":  [
+                                               "Alpha",
+                                               "Beta minus",
+                                               "Gamma",
+                                               "Neutron"
+                                           ],
+                               "correct":  "Alpha"
+                           },
+                           {
+                               "question":  "What penetrates most deeply?",
+                               "choices":  [
+                                               "Alpha",
+                                               "Beta",
+                                               "Gamma",
+                                               "All equal"
+                                           ],
+                               "correct":  "Gamma"
+                           },
+                           {
+                               "question":  "After one half-life, what fraction remains?",
+                               "choices":  [
+                                               "1/4",
+                                               "1/2",
+                                               "1/3",
+                                               "0"
+                                           ],
+                               "correct":  "1/2"
+                           },
+                           {
+                               "question":  "What is unstable nucleus process?",
+                               "choices":  [
+                                               "Bonding",
+                                               "Decay",
+                                               "Fusion",
+                                               "Combustion"
+                                           ],
+                               "correct":  "Decay"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "_____ is spontaneous emission of radiation.",
+                               "expectedAny":  [
+                                                   "radioactivity",
+                                                   "radioactive decay",
+                                                   "decay"
+                                               ]
+                           },
+                           {
+                               "question":  "An _____ particle is a helium nucleus.",
+                               "expectedAny":  [
+                                                   "alpha",
+                                                   "α",
+                                                   "alpha radiation"
+                                               ]
+                           },
+                           {
+                               "question":  "A _____ particle is a high-energy electron.",
+                               "expectedAny":  [
+                                                   "beta",
+                                                   "β",
+                                                   "beta radiation"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ rays are electromagnetic radiation.",
+                               "expectedAny":  [
+                                                   "gamma",
+                                                   "γ",
+                                                   "gamma radiation"
+                                               ]
+                           },
+                           {
+                               "question":  "_____-life is time for half to decay.",
+                               "expectedAny":  [
+                                                   "half",
+                                                   "decay half",
+                                                   "radioactive half"
+                                               ]
+                           },
+                           {
+                               "question":  "Alpha particles have _____ protons.",
+                               "expectedAny":  [
+                                                   "2",
+                                                   "two",
+                                                   "a pair of"
+                                               ]
+                           },
+                           {
+                               "question":  "Beta particles are _____ from nucleus.",
+                               "expectedAny":  [
+                                                   "electrons",
+                                                   "e-",
+                                                   "negative particles"
+                                               ]
+                           },
+                           {
+                               "question":  "Gamma has no _____ or charge.",
+                               "expectedAny":  [
+                                                   "mass",
+                                                   "matter",
+                                                   "particles"
+                                               ]
+                           },
+                           {
+                               "question":  "After two half-lives, _____ remains.",
+                               "expectedAny":  [
+                                                   "1/4",
+                                                   "25%",
+                                                   "quarter"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ nuclei emit radiation.",
+                               "expectedAny":  [
+                                                   "unstable",
+                                                   "radioactive",
+                                                   "decaying"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "What is radioactivity?",
+                            "expectedAny":  [
+                                                "spontaneous emission of radiation from unstable atomic nuclei",
+                                                "process where unstable atoms emit particles or energy",
+                                                "natural decay of radioactive elements"
+                                            ]
+                        },
+                        {
+                            "question":  "Describe an alpha particle.",
+                            "expectedAny":  [
+                                                "helium nucleus with two protons and two neutrons",
+                                                "particle with +2 charge and mass 4",
+                                                "largest but least penetrating radiation"
+                                            ]
+                        },
+                        {
+                            "question":  "What is a beta particle?",
+                            "expectedAny":  [
+                                                "high-energy electron or positron emitted from nucleus",
+                                                "electron from nuclear decay",
+                                                "particle with -1 or +1 charge from nucleus"
+                                            ]
+                        },
+                        {
+                            "question":  "Describe gamma rays.",
+                            "expectedAny":  [
+                                                "high-energy electromagnetic radiation from nuclear transitions",
+                                                "photons emitted during nuclear decay",
+                                                "most penetrating form of radiation"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain half-life.",
+                            "expectedAny":  [
+                                                "time required for half of radioactive nuclei to decay",
+                                                "constant time for 50% decay of sample",
+                                                "measure of decay rate for isotope"
+                                            ]
+                        },
+                        {
+                            "question":  "Compare penetrating power of alpha beta and gamma.",
+                            "expectedAny":  [
+                                                "alpha stopped by paper beta by aluminum gamma needs lead",
+                                                "gamma most penetrating alpha least",
+                                                "penetration increases from alpha to gamma"
+                                            ]
+                        },
+                        {
+                            "question":  "Why is radioactivity spontaneous?",
+                            "expectedAny":  [
+                                                "unstable nuclei decay naturally without external cause",
+                                                "inherent property of radioactive atoms",
+                                                "occurs randomly without input energy"
+                                            ]
+                        },
+                        {
+                            "question":  "How much remains after three half-lives?",
+                            "expectedAny":  [
+                                                "1/8 or 12.5%",
+                                                "one eighth of original",
+                                                "three halvings gives 1/8"
+                                            ]
+                        },
+                        {
+                            "question":  "What makes a nucleus radioactive?",
+                            "expectedAny":  [
+                                                "unstable ratio of protons to neutrons",
+                                                "too many or too few neutrons",
+                                                "nucleus has excess energy"
+                                            ]
+                        },
+                        {
+                            "question":  "Why are gamma rays dangerous?",
+                            "expectedAny":  [
+                                                "penetrate deeply and ionize tissue",
+                                                "high energy damages cells",
+                                                "can pass through body causing internal damage"
+                                            ]
+                        }
+                    ]
 }

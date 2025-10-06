@@ -48,12 +48,12 @@
     {"question": "0 + _____ = 1", "expectedAny": ["1"]}
   ],
   "shortanswer": [
-    {"question": "Tell an addition story about toys.", "expectedAny": ["story with addition context"]},
+    {"question": "Tell an addition story about toys.", "expectedAny": ["I had 2 cars and got 3 more. Now I have 5.", "I had 1 doll and got 1 more. Now I have 2.", "I had 4 blocks and got 1 more. Now I have 5."]},
     {"question": "How many different ways can you make the number 4?", "expectedAny": ["0+4, 1+3, 2+2, 3+1, 4+0"]},
     {"question": "Explain what the + sign means.", "expectedAny": ["means add", "put together", "plus"]},
-    {"question": "Show me 3 + 1 with your fingers.", "expectedAny": ["holds up 4 fingers total"]},
+  {"question": "Show me 3 + 1 with your fingers.", "expectedAny": ["4 fingers", "four fingers", "shows four"]},
     {"question": "What's the difference between 2 + 3 and 3 + 2?", "expectedAny": ["same answer", "no difference", "both equal 5"]},
-    {"question": "Tell a story about adding animals.", "expectedAny": ["story with animal addition"]},
+  {"question": "Tell a story about adding animals.", "expectedAny": ["I saw 2 cats and 1 more cat. That makes 3.", "There were 3 birds and 2 more came. That makes 5.", "I had 1 dog and got 1 more dog. That makes 2."]},
     {"question": "What happens when you add 0 to a number?", "expectedAny": ["stays the same", "no change", "number doesn't change"]}
   ],
   "wordProblems": [

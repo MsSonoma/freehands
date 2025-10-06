@@ -1,74 +1,459 @@
-{
-  "id": "12th_World_Literature_Postcolonial_Perspectives_Advanced",
-  "title": "World Literature and Postcolonial Perspectives",
-  "grade": "12th",
-  "difficulty": "Advanced",
-  "vocab": [
-    {
-      "term": "epistemic violence",
-      "definition": "Suppression of marginalized ways of knowing through dominant discourse"
-    },
-    {
-      "term": "testimonial literature",
-      "definition": "First-person narrative bearing witness to social injustice"
-    },
-    {
-      "term": "creolization",
-      "definition": "Process creating new cultural forms from multiple traditions"
-    },
-    {
-      "term": "ambivalence",
-      "definition": "Simultaneous attraction and repulsion in colonial relationships"
-    },
-    {
-      "term": "decolonizing methodology",
-      "definition": "Research approaches challenging Western academic frameworks"
-    }
-  ],
-  "teachingNotes": "Explore complex theoretical frameworks in postcolonial studies. Connect literature to broader social justice issues.",
-  "sample": {
-    "question": "What describes suppression of marginalized ways of knowing?",
-    "expectedAny": [
-      "epistemic violence",
-      "knowledge colonization",
-      "intellectual oppression",
-      "cognitive imperialism"
-    ]
-  },
-  "truefalse": {
-    "question": "Ambivalence describes only negative feelings toward colonizers.",
-    "expectedAny": [
-      "false",
-      "no",
-      "f",
-      "incorrect"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What describes first-person narrative bearing witness to injustice?",
-    "expectedAny": [
-      "testimonial literature",
-      "witness narrative",
-      "testimony writing",
-      "social justice memoir"
-    ]
-  },
-  "fillintheblank": {
-    "question": "________ methodology challenges Western academic frameworks.",
-    "expectedAny": [
-      "decolonizing",
-      "indigenous",
-      "alternative",
-      "non-Western"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does testimonial literature function as resistance?",
-    "expectedAny": [
-      "reclaiming narrative",
-      "challenging silence",
-      "documenting truth",
-      "empowering voice"
-    ]
-  }
+﻿{
+    "id":  "12th_World_Literature_Postcolonial_Perspectives_Advanced",
+    "title":  "World Literature and Postcolonial Perspectives",
+    "grade":  "12th",
+    "difficulty":  "Advanced",
+    "vocab":  [
+                  {
+                      "term":  "colonial discourse",
+                      "definition":  "Language and ideas justifying colonial domination"
+                  },
+                  {
+                      "term":  "Othering",
+                      "definition":  "Defining group as fundamentally different or alien"
+                  },
+                  {
+                      "term":  "nationalist literature",
+                      "definition":  "Writing promoting national identity and independence"
+                  },
+                  {
+                      "term":  "transnationalism",
+                      "definition":  "Processes extending beyond national boundaries"
+                  },
+                  {
+                      "term":  "cosmopolitanism",
+                      "definition":  "Global citizenship transcending national allegiances"
+                  }
+              ],
+    "teachingNotes":  "Explore global literature through postcolonial lens. Examine diverse cultural perspectives and colonial legacy.",
+    "sample":  [
+                   {
+                       "question":  "What is global literature?",
+                       "expectedAny":  [
+                                           "world literature",
+                                           "global works",
+                                           "international literature",
+                                           "global writing",
+                                           "world writing",
+                                           "literature worldwide"
+                                       ]
+                   },
+                   {
+                       "question":  "What examines colonialism effects?",
+                       "expectedAny":  [
+                                           "postcolonial",
+                                           "postcolonialism",
+                                           "postcolonial theory",
+                                           "after colonialism",
+                                           "colonial aftermath",
+                                           "decolonization studies"
+                                       ]
+                   },
+                   {
+                       "question":  "What is cultural belonging?",
+                       "expectedAny":  [
+                                           "cultural identity",
+                                           "identity",
+                                           "sense of belonging",
+                                           "cultural self",
+                                           "ethnic identity",
+                                           "who we are"
+                                       ]
+                   },
+                   {
+                       "question":  "What is scattered population?",
+                       "expectedAny":  [
+                                           "diaspora",
+                                           "dispersed people",
+                                           "scattered community",
+                                           "migration",
+                                           "displaced population",
+                                           "spread population"
+                                       ]
+                   },
+                   {
+                       "question":  "What are spoken stories?",
+                       "expectedAny":  [
+                                           "oral tradition",
+                                           "oral literature",
+                                           "spoken stories",
+                                           "storytelling tradition",
+                                           "verbal tradition",
+                                           "spoken narrative"
+                                       ]
+                   },
+                   {
+                       "question":  "What mixes cultures?",
+                       "expectedAny":  [
+                                           "hybridity",
+                                           "cultural mixing"
+                                       ]
+                   },
+                   {
+                       "question":  "What stereotypes East?",
+                       "expectedAny":  [
+                                           "orientalism",
+                                           "Eastern stereotypes"
+                                       ]
+                   },
+                   {
+                       "question":  "What is native literature?",
+                       "expectedAny":  [
+                                           "indigenous literature",
+                                           "indigenous works"
+                                       ]
+                   },
+                   {
+                       "question":  "What is inappropriate adoption?",
+                       "expectedAny":  [
+                                           "cultural appropriation",
+                                           "appropriation"
+                                       ]
+                   },
+                   {
+                       "question":  "What mixes reality and magic?",
+                       "expectedAny":  [
+                                           "magical realism",
+                                           "magic realism"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "World literature includes diverse cultures.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Postcolonial ignores colonialism.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Cultural identity is belonging.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Diaspora means staying home.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Oral tradition uses speech.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Hybridity mixes cultural elements.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Orientalism respects Eastern cultures.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Indigenous literature is by native peoples.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Cultural appropriation is always appropriate.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Magical realism includes magic.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What includes diverse global works?",
+                               "choices":  [
+                                               "Only English",
+                                               "Only American",
+                                               "World literature",
+                                               "Only European"
+                                           ],
+                               "correct":  "World literature"
+                           },
+                           {
+                               "question":  "What examines colonial effects?",
+                               "choices":  [
+                                               "Precolonial",
+                                               "Postcolonial",
+                                               "Colonial",
+                                               "Neocolonial"
+                                           ],
+                               "correct":  "Postcolonial"
+                           },
+                           {
+                               "question":  "What is cultural belonging?",
+                               "choices":  [
+                                               "Cultural identity",
+                                               "Cultural theft",
+                                               "Cultural war",
+                                               "Cultural void"
+                                           ],
+                               "correct":  "Cultural identity"
+                           },
+                           {
+                               "question":  "What is scattered population?",
+                               "choices":  [
+                                               "Gathering",
+                                               "Diaspora",
+                                               "Concentration",
+                                               "Consolidation"
+                                           ],
+                               "correct":  "Diaspora"
+                           },
+                           {
+                               "question":  "What uses speech?",
+                               "choices":  [
+                                               "Written tradition",
+                                               "Oral tradition",
+                                               "Digital tradition",
+                                               "Silent tradition"
+                                           ],
+                               "correct":  "Oral tradition"
+                           },
+                           {
+                               "question":  "What mixes cultures?",
+                               "choices":  [
+                                               "Purity",
+                                               "Separation",
+                                               "Hybridity",
+                                               "Isolation"
+                                           ],
+                               "correct":  "Hybridity"
+                           },
+                           {
+                               "question":  "What stereotypes East?",
+                               "choices":  [
+                                               "Occidentalism",
+                                               "Orientalism",
+                                               "Nationalism",
+                                               "Regionalism"
+                                           ],
+                               "correct":  "Orientalism"
+                           },
+                           {
+                               "question":  "Who writes indigenous literature?",
+                               "choices":  [
+                                               "Colonizers",
+                                               "Native peoples",
+                                               "Foreigners",
+                                               "Tourists"
+                                           ],
+                               "correct":  "Native peoples"
+                           },
+                           {
+                               "question":  "What is inappropriate cultural adoption?",
+                               "choices":  [
+                                               "Appropriation",
+                                               "Appreciation",
+                                               "Respect",
+                                               "Understanding"
+                                           ],
+                               "correct":  "Appropriation"
+                           },
+                           {
+                               "question":  "What mixes reality and magic?",
+                               "choices":  [
+                                               "Pure realism",
+                                               "Magical realism",
+                                               "Pure fantasy",
+                                               "Science fiction"
+                                           ],
+                               "correct":  "Magical realism"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "_____ literature includes global cultures.",
+                               "expectedAny":  [
+                                                   "world",
+                                                   "World"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ examines colonialism effects.",
+                               "expectedAny":  [
+                                                   "postcolonial",
+                                                   "Postcolonial"
+                                               ]
+                           },
+                           {
+                               "question":  "Cultural _____ is sense of belonging.",
+                               "expectedAny":  [
+                                                   "identity",
+                                                   "Identity"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ is scattered population.",
+                               "expectedAny":  [
+                                                   "diaspora",
+                                                   "Diaspora"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ tradition uses speech.",
+                               "expectedAny":  [
+                                                   "oral",
+                                                   "Oral"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ mixes cultural elements.",
+                               "expectedAny":  [
+                                                   "hybridity",
+                                                   "Hybridity"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ stereotypes Eastern cultures.",
+                               "expectedAny":  [
+                                                   "orientalism",
+                                                   "Orientalism"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ literature is by native peoples.",
+                               "expectedAny":  [
+                                                   "indigenous",
+                                                   "Indigenous"
+                                               ]
+                           },
+                           {
+                               "question":  "Cultural _____ is inappropriate adoption.",
+                               "expectedAny":  [
+                                                   "appropriation",
+                                                   "Appropriation"
+                                               ]
+                           },
+                           {
+                               "question":  "Magical _____ mixes reality and magic.",
+                               "expectedAny":  [
+                                                   "realism",
+                                                   "Realism"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "What is world literature?",
+                            "expectedAny":  [
+                                                "literary works from diverse global cultures",
+                                                "writing beyond Western canon",
+                                                "includes African Asian Latin American literature"
+                                            ]
+                        },
+                        {
+                            "question":  "Define postcolonial.",
+                            "expectedAny":  [
+                                                "after colonialism examining its lasting effects",
+                                                "studying impact of imperial rule",
+                                                "voices of formerly colonized peoples"
+                                            ]
+                        },
+                        {
+                            "question":  "What is cultural identity?",
+                            "expectedAny":  [
+                                                "sense of belonging to particular culture",
+                                                "shared values beliefs practices",
+                                                "how groups define themselves"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain diaspora.",
+                            "expectedAny":  [
+                                                "scattered population from original homeland",
+                                                "displaced communities maintaining connections",
+                                                "Jewish African Armenian diasporas"
+                                            ]
+                        },
+                        {
+                            "question":  "What is oral tradition?",
+                            "expectedAny":  [
+                                                "stories passed down through speech",
+                                                "verbal transmission of culture",
+                                                "folklore myths legends told aloud"
+                                            ]
+                        },
+                        {
+                            "question":  "What is hybridity?",
+                            "expectedAny":  [
+                                                "mixing of different cultural elements",
+                                                "blended identities in postcolonial contexts",
+                                                "neither purely colonizer nor colonized"
+                                            ]
+                        },
+                        {
+                            "question":  "Define orientalism.",
+                            "expectedAny":  [
+                                                "Western stereotypical representation of Eastern cultures",
+                                                "Said concept of exotic other",
+                                                "distorted view supporting imperialism"
+                                            ]
+                        },
+                        {
+                            "question":  "What is indigenous literature?",
+                            "expectedAny":  [
+                                                "works by native peoples of colonized lands",
+                                                "First Nations Aboriginal Maori writing",
+                                                "voices of original inhabitants"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain cultural appropriation.",
+                            "expectedAny":  [
+                                                "adopting elements from another culture inappropriately",
+                                                "taking without understanding or respect",
+                                                "often from marginalized by dominant culture"
+                                            ]
+                        },
+                        {
+                            "question":  "What is magical realism?",
+                            "expectedAny":  [
+                                                "realistic fiction with magical elements",
+                                                "treats supernatural as ordinary",
+                                                "Garcia Marquez Allende Latin American tradition"
+                                            ]
+                        }
+                    ]
 }

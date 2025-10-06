@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "9th_Energy_Conservation_Transformations_Beginner",
   "title": "Energy Conservation and Transformations",
   "grade": "9th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "energy conservation",
-      "definition": "Principle that energy cannot be created or destroyed, only transformed"
-    },
-    {
-      "term": "kinetic energy",
-      "definition": "Energy of motion"
-    },
-    {
-      "term": "potential energy",
-      "definition": "Stored energy due to position or condition"
-    },
-    {
-      "term": "mechanical energy",
-      "definition": "Sum of kinetic and potential energy in a system"
-    },
-    {
-      "term": "energy transformation",
-      "definition": "Process of changing energy from one form to another"
-    }
+    {"term": "energy conservation", "definition": "Principle that energy cannot be created or destroyed, only transformed"},
+    {"term": "kinetic energy", "definition": "Energy of motion"},
+    {"term": "potential energy", "definition": "Stored energy due to position or condition"},
+    {"term": "mechanical energy", "definition": "Sum of kinetic and potential energy in a system"},
+    {"term": "energy transformation", "definition": "Process of changing energy from one form to another"}
   ],
   "teachingNotes": "Use everyday examples of energy transformations. Emphasize that total energy remains constant in isolated systems.",
-  "sample": {
-    "question": "What principle states that energy cannot be created or destroyed?",
-    "expectedAny": [
-      "energy conservation",
-      "conservation of energy",
-      "first law of thermodynamics",
-      "energy conservation law"
-    ]
-  },
-  "truefalse": {
-    "question": "Kinetic energy is the energy of motion.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is stored energy due to position called?",
-    "expectedAny": [
-      "potential energy",
-      "stored energy",
-      "positional energy",
-      "gravitational energy"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The sum of kinetic and potential energy is called ________ energy.",
-    "expectedAny": [
-      "mechanical",
-      "total mechanical",
-      "system",
-      "combined"
-    ]
-  },
-  "shortanswer": {
-    "question": "Give an example of energy transformation in everyday life.",
-    "expectedAny": [
-      "battery to electrical to light",
-      "food to muscle movement",
-      "falling water to electricity"
-    ]
-  }
+  "sample": [
+    {"question": "What principle states that energy cannot be created or destroyed?", "expectedAny": ["energy conservation", "conservation of energy", "first law", "energy stays constant"]},
+    {"question": "What is kinetic energy?", "expectedAny": ["energy of motion", "moving energy", "energy when moving", "motion energy"]},
+    {"question": "What is potential energy?", "expectedAny": ["stored energy", "energy due to position", "positional energy", "saved energy"]},
+    {"question": "What is mechanical energy?", "expectedAny": ["sum of kinetic and potential", "total energy in system", "KE plus PE", "motion plus stored energy"]},
+    {"question": "What is energy transformation?", "expectedAny": ["changing energy form", "converting energy", "energy changing type", "energy form change"]},
+    {"question": "Give an example of kinetic energy.", "expectedAny": ["moving car", "rolling ball", "flying bird", "any moving object"]},
+    {"question": "Give an example of potential energy.", "expectedAny": ["book on shelf", "raised object", "stretched spring", "any stored energy"]},
+    {"question": "Can energy be created?", "expectedAny": ["no", "cannot be created", "only transformed"]},
+    {"question": "Can energy be destroyed?", "expectedAny": ["no", "cannot be destroyed", "only transformed"]},
+    {"question": "What happens to total energy in isolated system?", "expectedAny": ["stays constant", "remains same", "is conserved"]}
+  ],
+  "truefalse": [
+    {"question": "Kinetic energy is the energy of motion. (True or False)", "correct": true},
+    {"question": "Energy can be created. (True or False)", "correct": false},
+    {"question": "Energy can be destroyed. (True or False)", "correct": false},
+    {"question": "Potential energy is stored energy. (True or False)", "correct": true},
+    {"question": "Mechanical energy is KE plus PE. (True or False)", "correct": true},
+    {"question": "Energy transformations change energy form. (True or False)", "correct": true},
+    {"question": "Total energy changes in isolated systems. (True or False)", "correct": false},
+    {"question": "Energy conservation means energy is constant. (True or False)", "correct": true},
+    {"question": "A moving object has kinetic energy. (True or False)", "correct": true},
+    {"question": "A raised object has potential energy. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is stored energy due to position called?", "choices": [{"letter": "A", "text": "Kinetic"}, {"letter": "B", "text": "Potential"}, {"letter": "C", "text": "Thermal"}, {"letter": "D", "text": "Chemical"}], "correct": "B"},
+    {"question": "What is energy of motion called?", "choices": [{"letter": "A", "text": "Potential"}, {"letter": "B", "text": "Kinetic"}, {"letter": "C", "text": "Stored"}, {"letter": "D", "text": "Chemical"}], "correct": "B"},
+    {"question": "What principle says energy cannot be created or destroyed?", "choices": [{"letter": "A", "text": "Newton's law"}, {"letter": "B", "text": "Energy conservation"}, {"letter": "C", "text": "Gravity"}, {"letter": "D", "text": "Motion law"}], "correct": "B"},
+    {"question": "What is KE + PE called?", "choices": [{"letter": "A", "text": "Total energy"}, {"letter": "B", "text": "Thermal energy"}, {"letter": "C", "text": "Mechanical energy"}, {"letter": "D", "text": "Chemical energy"}], "correct": "C"},
+    {"question": "What is changing energy from one form to another?", "choices": [{"letter": "A", "text": "Energy creation"}, {"letter": "B", "text": "Energy destruction"}, {"letter": "C", "text": "Energy transformation"}, {"letter": "D", "text": "Energy conservation"}], "correct": "C"},
+    {"question": "A rolling ball has what type of energy?", "choices": [{"letter": "A", "text": "Potential only"}, {"letter": "B", "text": "Kinetic only"}, {"letter": "C", "text": "Neither"}, {"letter": "D", "text": "No energy"}], "correct": "B"},
+    {"question": "A book on a shelf has what type of energy?", "choices": [{"letter": "A", "text": "Kinetic"}, {"letter": "B", "text": "Potential"}, {"letter": "C", "text": "Thermal"}, {"letter": "D", "text": "No energy"}], "correct": "B"},
+    {"question": "What happens to total energy in isolated system?", "choices": [{"letter": "A", "text": "Increases"}, {"letter": "B", "text": "Decreases"}, {"letter": "C", "text": "Stays constant"}, {"letter": "D", "text": "Becomes zero"}], "correct": "C"},
+    {"question": "Energy can be?", "choices": [{"letter": "A", "text": "Created"}, {"letter": "B", "text": "Destroyed"}, {"letter": "C", "text": "Transformed"}, {"letter": "D", "text": "Lost forever"}], "correct": "C"},
+    {"question": "Which has kinetic energy?", "choices": [{"letter": "A", "text": "Stationary rock"}, {"letter": "B", "text": "Book on shelf"}, {"letter": "C", "text": "Moving car"}, {"letter": "D", "text": "Stretched spring"}], "correct": "C"}
+  ],
+  "fillintheblank": [
+    {"question": "The sum of kinetic and potential energy is called _____ energy.", "expectedAny": ["mechanical", "total mechanical"]},
+    {"question": "Energy of motion is _____ energy.", "expectedAny": ["kinetic"]},
+    {"question": "Stored energy due to position is _____ energy.", "expectedAny": ["potential"]},
+    {"question": "Energy cannot be created or destroyed, only _____.", "expectedAny": ["transformed", "changed", "converted"]},
+    {"question": "The principle that energy is constant is energy _____.", "expectedAny": ["conservation"]},
+    {"question": "Changing energy from one form to another is energy _____.", "expectedAny": ["transformation"]},
+    {"question": "A moving object has _____ energy.", "expectedAny": ["kinetic"]},
+    {"question": "A raised object has _____ energy.", "expectedAny": ["potential"]},
+    {"question": "In an isolated system, total energy remains _____.", "expectedAny": ["constant", "same", "conserved"]},
+    {"question": "KE plus PE equals _____ energy.", "expectedAny": ["mechanical"]}
+  ],
+  "shortanswer": [
+    {"question": "What does energy conservation mean?", "keyTerms": ["cannot", "created", "destroyed", "only transformed"], "expectedAny": ["Energy cannot be created or destroyed, only transformed", "Total energy stays constant", "Energy is conserved"]},
+    {"question": "What is the difference between kinetic and potential energy?", "keyTerms": ["kinetic", "motion", "potential", "stored"], "expectedAny": ["Kinetic is motion, potential is stored", "Kinetic is moving energy, potential is position energy", "KE is motion, PE is position"]},
+    {"question": "What is mechanical energy?", "keyTerms": ["sum", "kinetic", "potential", "total"], "expectedAny": ["Sum of kinetic and potential energy", "KE plus PE", "Total mechanical energy"]},
+    {"question": "Give an example of energy transformation.", "keyTerms": ["changing", "one form", "another", "converts"], "expectedAny": ["Electrical to light in bulb", "Chemical to kinetic in car", "Any energy type changing"]},
+    {"question": "What happens to energy when a ball rolls down a hill?", "keyTerms": ["potential", "kinetic", "converts", "transforms"], "expectedAny": ["Potential converts to kinetic", "PE becomes KE", "Energy transforms from potential to kinetic"]},
+    {"question": "What happens to energy when you lift a book?", "keyTerms": ["kinetic", "potential", "stored", "increases"], "expectedAny": ["Gains potential energy", "PE increases", "Energy stored as potential"]},
+    {"question": "Why is energy conservation important?", "keyTerms": ["total", "constant", "isolated", "system"], "expectedAny": ["Shows total energy is constant", "Energy cannot be lost", "Total stays same in isolated system"]},
+    {"question": "What forms can energy take?", "keyTerms": ["kinetic", "potential", "thermal", "many forms"], "expectedAny": ["Kinetic, potential, thermal, chemical, and more", "Many forms like motion, heat, light", "Various types including mechanical, thermal"]},
+    {"question": "In a pendulum, what energy transformations occur?", "keyTerms": ["potential", "kinetic", "back and forth", "transforms"], "expectedAny": ["PE and KE transform back and forth", "Potential to kinetic and back", "Energy alternates between PE and KE"]},
+    {"question": "What is an isolated system?", "keyTerms": ["no", "energy", "enters", "leaves"], "expectedAny": ["System where no energy enters or leaves", "Closed system with no energy exchange", "No energy transfer with surroundings"]}
+  ]
 }

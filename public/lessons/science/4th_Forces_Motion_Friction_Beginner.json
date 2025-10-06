@@ -23,52 +23,108 @@
     {
       "term": "speed",
       "definition": "How fast something moves"
+    },
+    {
+      "term": "air resistance",
+      "definition": "A type of friction from air that slows moving objects"
+    },
+    {
+      "term": "distance-time graph",
+      "definition": "A graph that shows how distance changes over time to describe motion"
+    },
+    {
+      "term": "balanced forces",
+      "definition": "Forces that are equal in size and opposite in direction; they do not change motion"
+    },
+    {
+      "term": "unbalanced forces",
+      "definition": "Forces that are not equal; they cause a change in motion (speed up, slow down, or change direction)"
+    },
+    {
+      "term": "magnetism",
+      "definition": "A non-contact force that can push or pull certain metals and magnets"
+    },
+    {
+      "term": "traction",
+      "definition": "Friction that helps tires or shoes grip a surface so you do not slip"
+    },
+    {
+      "term": "direction",
+      "definition": "Which way an object moves (like forward, left, up)"
+    },
+    {
+      "term": "position",
+      "definition": "Where an object is located"
+    },
+    {
+      "term": "mass",
+      "definition": "How much matter is in an object"
+    },
+    {
+      "term": "acceleration",
+      "definition": "How an object's speed or direction changes"
+    },
+    {
+      "term": "net force",
+      "definition": "The overall push or pull when all forces are combined"
+    },
+    {
+      "term": "lubricant",
+      "definition": "A substance like oil or grease that reduces friction"
+    },
+    {
+      "term": "contact force",
+      "definition": "A force that happens when objects touch (like friction or a push)"
+    },
+    {
+      "term": "floor",
+      "definition": "The flat surface you stand or move on; often used when describing friction examples"
     }
   ],
   "teachingNotes": "Use hands-on activities to demonstrate different forces. Have students push and pull objects on different surfaces to experience friction. Drop objects to show gravity's effect.",
   "sample": [
-    {"question": "What is a force?", "expectedAny": ["push or pull"]},
-    {"question": "Give one example of friction.", "expectedAny": ["rubbing surfaces", "brakes slowing a bike"]},
-    {"question": "What force pulls objects toward Earth?", "expectedAny": ["gravity"]},
-    {"question": "What do we call how fast something moves?", "expectedAny": ["speed"]},
-    {"question": "Name one way to reduce friction.", "expectedAny": ["use wheels", "lubricate"]},
-    {"question": "What can change an object's motion?", "expectedAny": ["a force"]},
-    {"question": "What tool measures speed over time on a graph?", "expectedAny": ["distance-time graph"]}
+    {"question": "What is a force?", "expectedAny": ["push or pull", "a push or a pull", "push and pull", "a push or a pull on an object"]},
+    {"question": "Give one example of friction.", "expectedAny": ["rubbing surfaces", "brakes slowing a bike", "tires gripping the road", "hands warming when rubbed", "shoes on the floor", "rubbing your hands together", "sliding a box"]},
+    {"question": "What force pulls objects toward Earth?", "expectedAny": ["gravity", "gravitational pull", "gravity force", "force of gravity"]},
+    {"question": "What do we call how fast something moves?", "expectedAny": ["speed", "rate of motion", "speed of motion", "how fast it moves"]},
+    {"question": "Name one way to reduce friction.", "expectedAny": ["use wheels", "lubricate", "add oil", "use rollers", "use ball bearings", "wax it", "make the surface smoother"]},
+    {"question": "What can change an object's motion?", "expectedAny": ["a force", "force", "an unbalanced force", "a push or a pull"]},
+    {"question": "What tool measures speed over time on a graph?", "expectedAny": ["distance-time graph", "distance vs time graph", "d-t graph", "distance time chart"]}
   ],
   "truefalse": [
-    {"question": "Friction always slows down moving objects.", "answer": true},
-    {"question": "Gravity pushes objects up.", "answer": false},
-    {"question": "A stronger push can make something speed up more.", "answer": true},
-    {"question": "If no forces act, an object changes its motion on its own.", "answer": false},
-    {"question": "Wheels reduce friction compared to sliding.", "answer": true},
-    {"question": "Rough surfaces usually have more friction than smooth ones.", "answer": true},
-    {"question": "Air resistance is a type of friction.", "answer": true}
+    {"question": "Friction always slows down moving objects.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Gravity pushes objects up.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "A stronger push can make something speed up more.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "If no forces act, an object changes its motion on its own.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "Wheels reduce friction compared to sliding.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Rough surfaces usually have more friction than smooth ones.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Air resistance is a type of friction.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]}
   ],
   "multiplechoice": [
-    {"question": "What force pulls objects toward the ground?", "choices": ["Friction", "Magnetism", "Gravity", "Electricity"], "correct": 2},
-    {"question": "Which has the most friction?", "choices": ["Ice", "Oiled wood", "Sandpaper", "Glass"], "correct": 2},
-    {"question": "Which reduces friction?", "choices": ["Sand", "Oil", "Rough surface", "More weight"], "correct": 1},
-    {"question": "A push or pull is called:", "choices": ["Speed", "Force", "Friction", "Mass"], "correct": 1},
-    {"question": "What measures how fast something moves?", "choices": ["Mass", "Speed", "Force", "Friction"], "correct": 1},
-    {"question": "Which would slow a falling object the most?", "choices": ["No air", "Thin air", "Thick air", "Space"], "correct": 2},
-    {"question": "Which surface would a ball roll farthest on?", "choices": ["Carpet", "Gravel", "Ice", "Sand"], "correct": 2}
+    {"question": "What force pulls objects toward the ground?", "choices": ["Friction", "Magnetism", "Gravity", "Electricity"], "correct": 2, "expectedAny": ["gravity", "c", "3", "third"]},
+    {"question": "Which has the most friction?", "choices": ["Ice", "Oiled wood", "Sandpaper", "Glass"], "correct": 2, "expectedAny": ["sandpaper", "c", "3", "third"]},
+    {"question": "Which reduces friction?", "choices": ["Sand", "Oil", "Rough surface", "More weight"], "correct": 1, "expectedAny": ["oil", "lubricant", "b", "2", "second"]},
+    {"question": "A push or pull is called:", "choices": ["Speed", "Force", "Friction", "Mass"], "correct": 1, "expectedAny": ["force", "b", "2", "second"]},
+    {"question": "What measures how fast something moves?", "choices": ["Mass", "Speed", "Force", "Friction"], "correct": 1, "expectedAny": ["speed", "b", "2", "second"]},
+    {"question": "Which would slow a falling object the most?", "choices": ["No air", "Thin air", "Thick air", "Space"], "correct": 2, "expectedAny": ["thick air", "c", "3", "third"]},
+    {"question": "Which surface would a ball roll farthest on?", "choices": ["Carpet", "Gravel", "Ice", "Sand"], "correct": 2, "expectedAny": ["ice", "c", "3", "third"]}
   ],
   "fillintheblank": [
-    {"question": "When you slide a book across a table, ________ slows it down.", "expectedAny": ["friction"]},
-    {"question": "A push or pull on an object is a ________.", "expectedAny": ["force"]},
-    {"question": "The force pulling objects toward Earth is ________.", "expectedAny": ["gravity"]},
-    {"question": "How fast something moves is called ________.", "expectedAny": ["speed"]},
-    {"question": "Wheels help reduce ________.", "expectedAny": ["friction"]},
-    {"question": "Air that slows falling objects is called air ________.", "expectedAny": ["resistance"]},
-    {"question": "Smoother surfaces have ________ friction.", "expectedAny": ["less"]}
+    {"question": "When you slide a book across a table, ________ slows it down.", "expectedAny": ["friction", "force of friction", "surface friction", "friction force"]},
+    {"question": "A push or pull on an object is a ________.", "expectedAny": ["force", "a force", "push or pull", "unbalanced force", "contact force"]},
+    {"question": "The force pulling objects toward Earth is ________.", "expectedAny": ["gravity", "gravitational force", "gravitational pull", "force of gravity"]},
+    {"question": "How fast something moves is called ________.", "expectedAny": ["speed", "rate", "rate of motion", "speed of motion"]},
+    {"question": "Wheels help reduce ________.", "expectedAny": ["friction", "sliding friction", "contact friction", "surface friction"]},
+    {"question": "Air that slows falling objects is called air ________.", "expectedAny": ["resistance", "drag", "air drag", "friction"]},
+    {"question": "Smoother surfaces have ________ friction.", "expectedAny": ["less", "lower", "reduced", "smaller"]}
   ],
   "shortanswer": [
-    {"question": "How can you reduce friction when moving a heavy box?", "expectedAny": ["use wheels", "lubricate"]},
-    {"question": "Why do car tires have treads?", "expectedAny": ["increase friction for grip"]},
-    {"question": "How does gravity affect a thrown ball?", "expectedAny": ["pulls it downward"]},
-    {"question": "Give an example where friction is helpful.", "expectedAny": ["walking", "braking"]},
-    {"question": "Give an example where friction is not helpful.", "expectedAny": ["overheating parts"]},
-    {"question": "What happens to speed if you push harder on a cart?", "expectedAny": ["increases"]},
-    {"question": "Why does a ball eventually stop rolling on the floor?", "expectedAny": ["friction and air resistance"]}
+    {"question": "How can you reduce friction when moving a heavy box?", "expectedAny": ["use wheels", "lubricate", "put it on rollers", "use ball bearings", "put it on a sled with sliders", "add wax or oil", "make the surface smoother"]},
+    {"question": "Why do car tires have treads?", "expectedAny": ["increase friction for grip", "better traction", "prevent slipping", "channel water to keep contact", "so tires grip the road"]},
+    {"question": "How does gravity affect a thrown ball?", "expectedAny": ["pulls it downward", "pulls toward Earth", "makes it fall back down", "makes the path curve down", "it accelerates downward"]},
+    {"question": "Give an example where friction is helpful.", "expectedAny": ["walking", "braking", "holding objects without slipping", "writing with a pencil", "gripping sports equipment"]},
+    {"question": "Give an example where friction is not helpful.", "expectedAny": ["overheating parts", "wearing out shoes", "wasting energy as heat", "parts wearing down", "slows machines and wastes energy"]},
+    {"question": "What happens to speed if you push harder on a cart?", "expectedAny": ["increases", "goes faster", "speed goes up", "it accelerates more", "it speeds up more"]},
+    {"question": "Why does a ball eventually stop rolling on the floor?", "expectedAny": ["friction and air resistance", "friction with the floor slows it", "air drag plus friction", "unbalanced forces oppose the motion", "because friction takes away its motion"]}
   ]
 }

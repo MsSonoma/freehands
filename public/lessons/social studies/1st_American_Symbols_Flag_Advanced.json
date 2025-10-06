@@ -21,16 +21,20 @@
       "term": "pledge",
       "definition": "A promise you make"
     }
+    ,
+    {"term": "star", "definition": "A small white shape on the flag that represents a state"},
+    {"term": "stripe", "definition": "A long colored band on the flag"},
+    {"term": "respect", "definition": "To treat something as important and worthy of honor"}
   ],
   "teachingNotes": "Practice the Pledge of Allegiance. Show pictures of American symbols. Discuss respectful behavior during flag ceremonies.",
   "sample": [
-    {"question": "What colors are on the American flag?", "expectedAny": ["red", "white", "blue"]},
-    {"question": "How many stars are on the flag?", "expectedAny": ["50"]},
-    {"question": "How many stripes are on the flag?", "expectedAny": ["13"]},
-    {"question": "What do the stars stand for?", "expectedAny": ["states", "50 states"]},
-    {"question": "What do the stripes stand for?", "expectedAny": ["13 colonies"]},
-    {"question": "Where do you see the flag?", "expectedAny": ["school", "buildings", "homes"]},
-    {"question": "How do we show respect for the flag?", "expectedAny": ["stand", "be quiet", "hand over heart"]}
+  {"question": "What colors are on the American flag?", "expectedAny": ["red", "white", "blue", "red white blue", "red white and blue"]},
+  {"question": "How many stars are on the flag?", "expectedAny": ["50", "fifty"]},
+  {"question": "How many stripes are on the flag?", "expectedAny": ["13", "thirteen"]},
+    {"question": "What do the stars stand for?", "expectedAny": ["states", "50 states", "the states"]},
+    {"question": "What do the stripes stand for?", "expectedAny": ["13 colonies", "the colonies", "original colonies"]},
+    {"question": "Where do you see the flag?", "expectedAny": ["school", "buildings", "homes", "parks", "at school"]},
+    {"question": "How do we show respect for the flag?", "expectedAny": ["stand", "be quiet", "hand over heart", "remove hat", "standing"]}
   ],
   "truefalse": [
     {"question": "The American flag has stars and stripes.", "answer": true, "expectedAny": ["true"]},
@@ -51,21 +55,21 @@
     {"question": "Where might you see the flag?", "choices": ["school", "parks", "government buildings", "all of these"], "correct": 3, "expectedAny": ["all of these"]}
   ],
   "fillintheblank": [
-    {"question": "The American _____ is a symbol of our country.", "expectedAny": ["flag"]},
-    {"question": "The flag has _____ stars.", "expectedAny": ["50"]},
-    {"question": "The flag has _____ stripes.", "expectedAny": ["13"]},
-    {"question": "The stripes stand for the 13 _____ colonies.", "expectedAny": ["original"]},
+    {"question": "The American _____ is a symbol of our country.", "expectedAny": ["flag", "United States flag"]},
+    {"question": "The flag has _____ stars.", "expectedAny": ["50", "fifty"]},
+    {"question": "The flag has _____ stripes.", "expectedAny": ["13", "thirteen"]},
+    {"question": "The stripes stand for the 13 _____ colonies.", "expectedAny": ["original", "first"]},
     {"question": "The colors are _____, _____, and _____.", "expectedAny": ["red", "white", "blue"]},
-    {"question": "We show _____ for the flag by standing.", "expectedAny": ["respect"]},
-    {"question": "We place our hand over our ____ during the Pledge.", "expectedAny": ["heart"]}
+    {"question": "We show _____ for the flag by standing.", "expectedAny": ["respect", "respect for the flag", "honor"]},
+    {"question": "We place our hand over our ____ during the Pledge.", "expectedAny": ["heart", "our heart"]}
   ],
   "shortanswer": [
-    {"question": "Why is it important to respect the American flag?", "expectedAny": ["represents our country", "patriotism", "honors America"]},
-    {"question": "Draw the American flag with stars and stripes.", "expectedAny": ["drawing"]},
-    {"question": "Where do you see the American flag?", "expectedAny": ["school", "home", "parks"]},
-    {"question": "What do the stars and stripes stand for?", "expectedAny": ["states", "colonies"]},
-    {"question": "How do we act during the Pledge?", "expectedAny": ["stand", "be quiet", "hand over heart"]},
-    {"question": "Why do we have symbols like the flag?", "expectedAny": ["represent our country", "show unity"]},
-    {"question": "What special days do you see many flags?", "expectedAny": ["Independence Day", "Memorial Day", "Veterans Day"]}
+  {"question": "Why is it important to respect the American flag?", "expectedAny": ["represents our country", "shows patriotism", "honors America", "it is our country's symbol"]},
+    {"question": "Draw the American flag with stars and stripes.", "expectedAny": ["drawing", "labeled drawing", "drawing with labels"]},
+    {"question": "Where do you see the American flag?", "expectedAny": ["school", "home", "parks", "at school", "outside buildings"]},
+    {"question": "What do the stars and stripes stand for?", "expectedAny": ["states", "colonies", "50 states and 13 colonies", "the states and colonies"]},
+    {"question": "How do we act during the Pledge?", "expectedAny": ["stand", "be quiet", "hand over heart", "stand up quietly"]},
+    {"question": "Why do we have symbols like the flag?", "expectedAny": ["represent our country", "show unity", "help us remember", "they stand for America"]},
+    {"question": "What special days do you see many flags?", "expectedAny": ["Independence Day", "Memorial Day", "Veterans Day", "Flag Day", "July 4th"]}
   ]
 }

@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Use simple examples like lemonade stands or toy sales. Explain how prices change when there's more or less of something available.",
-  "sample": {
-    "question": "What do we call the amount of goods available for people to buy?",
-    "expectedAny": [
-      "supply",
-      "product supply",
-      "available goods",
-      "goods supply"
-    ]
-  },
-  "truefalse": {
-    "question": "If many people want something but there's not much available, the price usually goes up.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is a person called who starts their own business?",
-    "expectedAny": [
-      "entrepreneur",
-      "business owner",
-      "business starter",
-      "businessperson"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The exchange of goods and services between people is called ________.",
-    "expectedAny": [
-      "trade",
-      "trading",
-      "business trade",
-      "economic trade"
-    ]
-  },
-  "shortanswer": {
-    "question": "What happens to the price of ice cream on a very hot day when the ice cream truck runs low?",
-    "expectedAny": [
-      "price goes up",
-      "becomes more expensive",
-      "costs more",
-      "high demand, low supply raises price"
-    ]
-  }
+  "sample": [
+    { "question": "What do we call the amount of goods available for people to buy?", "expectedAny": ["supply", "product supply", "available goods", "goods supply"] },
+    { "question": "What do we call how much people want to buy a good?", "expectedAny": ["demand"] },
+    { "question": "What is the exchange of goods and services called?", "expectedAny": ["trade"] },
+    { "question": "Who starts a business and takes risks?", "expectedAny": ["entrepreneur"] },
+    { "question": "If supply is low and demand is high, what happens to price?", "expectedAny": ["price goes up", "increases"] },
+    { "question": "If supply is high and demand is low, price usually...", "expectedAny": ["goes down", "decreases"] },
+    { "question": "What do we call goods and services people want?", "expectedAny": ["demand"] },
+    { "question": "What do we call the total amount sellers offer?", "expectedAny": ["supply"] },
+    { "question": "What is money a business earns after costs?", "expectedAny": ["profit"] },
+    { "question": "What is the cost of making or buying a product called?", "expectedAny": ["cost", "expense"] }
+  ],
+  "truefalse": [
+    { "question": "If many people want something but there's not much available, the price usually goes up.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "When there is a lot of supply and little demand, prices go up.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Trade is the exchange of goods and services.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "An entrepreneur is someone who starts a business.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Profit is the same as cost.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "If demand increases and supply stays the same, prices may rise.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A sale price often means demand is higher than supply.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Businesses set prices without thinking about supply and demand.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Trade can happen between people or countries.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Demand means how much is available to buy.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is a person called who starts their own business?", "choices": ["manager", "employee", "entrepreneur", "customer"], "correct": 2, "expectedAny": ["entrepreneur"] },
+    { "question": "When supply is low and demand is high, price usually...", "choices": ["goes down", "stays the same", "goes up", "disappears"], "correct": 2, "expectedAny": ["goes up"] },
+    { "question": "What do we call the exchange of goods and services?", "choices": ["save", "trade", "store", "invest"], "correct": 1, "expectedAny": ["trade"] },
+    { "question": "What is the money left after costs?", "choices": ["loss", "profit", "revenue", "tax"], "correct": 1, "expectedAny": ["profit"] },
+    { "question": "What happens to price if demand falls and supply stays the same?", "choices": ["price rises", "price falls", "price unchanged", "price doubles"], "correct": 1, "expectedAny": ["falls"] },
+    { "question": "Which best describes demand?", "choices": ["how much people want to buy", "how much is produced", "how much is stored", "how much is shipped"], "correct": 0, "expectedAny": ["how much people want"] },
+    { "question": "Which best describes supply?", "choices": ["desire to buy", "amount available", "cost to make", "store size"], "correct": 1, "expectedAny": ["amount available"] },
+    { "question": "Why would a store put items on sale?", "choices": ["demand too high", "increase demand", "increase costs", "reduce profit"], "correct": 1, "expectedAny": ["increase demand"] },
+    { "question": "What might an entrepreneur do to increase profit?", "choices": ["raise costs", "reduce quality", "set a smart price", "ignore customers"], "correct": 2, "expectedAny": ["set a smart price", "lower costs"] },
+    { "question": "Which example shows high demand and low supply?", "choices": ["plenty of umbrellas on a sunny day", "few game consoles near holidays", "many water bottles during winter", "extra snow shovels in summer"], "correct": 1, "expectedAny": ["few game consoles near holidays"] }
+  ],
+  "fillintheblank": [
+    { "question": "The amount available to buy is called ________.", "expectedAny": ["supply"] },
+    { "question": "How much people want to buy is ________.", "expectedAny": ["demand"] },
+    { "question": "Money earned after costs is called ________.", "expectedAny": ["profit"] },
+    { "question": "The exchange of goods and services is ________.", "expectedAny": ["trade"] },
+    { "question": "When demand rises and supply is low, prices usually ________.", "expectedAny": ["increase", "go up"] },
+    { "question": "When demand falls and supply is high, prices usually ________.", "expectedAny": ["decrease", "go down"] },
+    { "question": "A person who starts a business is an ________.", "expectedAny": ["entrepreneur"] },
+    { "question": "The price at which buyers and sellers agree is the ________ price.", "expectedAny": ["market"] },
+    { "question": "If a store has extra stock, it might have a ________ to increase demand.", "expectedAny": ["sale"] },
+    { "question": "The cost to make a product is called ________.", "expectedAny": ["cost", "expense"] }
+  ],
+  "shortanswer": [
+    { "question": "What happens to prices when demand increases but supply stays the same?", "expectedAny": ["prices rise", "increase"] },
+    { "question": "How can a business increase demand for a product?", "expectedAny": ["lower price", "advertise", "improve quality"] },
+    { "question": "Give an example of high demand and low supply.", "expectedAny": ["new console at holidays", "popular toy shortage"] },
+    { "question": "What does an entrepreneur do?", "expectedAny": ["starts business", "takes risks", "earns profit"] },
+    { "question": "Why do stores put items on sale?", "expectedAny": ["increase demand", "clear inventory"] },
+    { "question": "What is profit and how is it different from revenue?", "expectedAny": ["profit = revenue minus costs"] },
+    { "question": "What might happen if a competing store lowers prices?", "expectedAny": ["demand shifts", "must adjust price"] },
+    { "question": "Explain how supply and demand affect lemonade stand pricing.", "expectedAny": ["hot day increases demand", "price changes"] },
+    { "question": "How can lowering production costs help profit?", "expectedAny": ["profit increases when costs drop"] },
+    { "question": "Why is understanding demand useful to a business?", "expectedAny": ["set prices", "stock right amount"] }
+  ]
 }

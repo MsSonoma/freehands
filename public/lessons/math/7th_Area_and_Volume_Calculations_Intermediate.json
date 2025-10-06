@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Use real objects to demonstrate 3D concepts. Practice with rectangles, triangles, circles, and rectangular prisms.",
-  "sample": {
-    "question": "What is the amount of space inside a 2D shape?",
-    "expectedAny": ["area", "surface area", "2D space", "flat space"]
-  },
-  "truefalse": {
-    "question": "Volume is measured in cubic units.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is the area of a rectangle with length 6 and width 4?",
-    "expectedAny": ["24", "24 square units", "6 × 4 = 24", "twenty-four"]
-  },
-  "fillintheblank": {
-    "question": "The distance around a circle is its ________.",
-    "expectedAny": ["circumference", "perimeter", "boundary", "edge"]
-  },
-  "shortanswer": {
-    "question": "Find the volume of a rectangular prism: length 5, width 3, height 2.",
-    "expectedAny": ["30", "30 cubic units", "5 × 3 × 2 = 30", "thirty"]
-  },
-  "wordProblems": {
-    "question": "A circular garden has a radius of 4 meters. What is its area? (Use π ≈ 3.14)",
-    "expectedAny": ["50.24 square meters", "about 50 square meters", "π × 4² ≈ 50.24", "50.24 m²"]
-  }
+  "sample": [
+    { "question": "What is the amount of space inside a 2D shape?", "expectedAny": ["area"] },
+    { "question": "Which is 3D space?", "choices": ["Area", "Volume", "Perimeter", "Length"], "correct": 1, "expectedAny": ["volume"] },
+    { "question": "Total area of all faces is ________.", "expectedAny": ["surface area"] },
+    { "question": "Distance around a circle is ________.", "expectedAny": ["circumference"] },
+    { "question": "Distance from center to edge is ________.", "expectedAny": ["radius"] },
+    { "question": "What is 2D space?", "choices": ["Volume", "Area", "Height", "Width"], "correct": 1, "expectedAny": ["area"] },
+    { "question": "Space in 3D shapes is ________.", "expectedAny": ["volume"] },
+    { "question": "All face areas combined are ________.", "expectedAny": ["surface area"] },
+    { "question": "Which is circle perimeter?", "choices": ["Radius", "Circumference", "Diameter", "Area"], "correct": 1, "expectedAny": ["circumference"] },
+    { "question": "Center to edge is ________.", "expectedAny": ["radius"] }
+  ],
+  "truefalse": [
+    { "question": "Volume is measured in cubic units.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Area is measured in cubic units.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Surface area is the total of all faces.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Radius is longer than diameter.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Circumference is distance around a circle.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Volume applies to 2D shapes.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Area uses square units.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Surface area is only one face.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Radius connects center to edge.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Circumference is measured in cubic units.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is the area of a rectangle with length 6 and width 4?", "choices": ["10", "24", "20", "22"], "correct": 1, "expectedAny": ["24"] },
+    { "question": "Which measures 2D space?", "choices": ["Volume", "Area", "Height", "Depth"], "correct": 1, "expectedAny": ["area"] },
+    { "question": "Which measures 3D space?", "choices": ["Area", "Volume", "Perimeter", "Length"], "correct": 1, "expectedAny": ["volume"] },
+    { "question": "What is distance around circle?", "choices": ["Radius", "Circumference", "Diameter", "Area"], "correct": 1, "expectedAny": ["circumference"] },
+    { "question": "What is center to edge?", "choices": ["Diameter", "Radius", "Circumference", "Area"], "correct": 1, "expectedAny": ["radius"] },
+    { "question": "What is all face areas?", "choices": ["Volume", "Surface area", "Perimeter", "Length"], "correct": 1, "expectedAny": ["surface area"] },
+    { "question": "Volume of 2×3×4 box?", "choices": ["9", "24", "14", "12"], "correct": 1, "expectedAny": ["24"] },
+    { "question": "Area uses what units?", "choices": ["Cubic", "Square", "Linear", "None"], "correct": 1, "expectedAny": ["square"] },
+    { "question": "Volume uses what units?", "choices": ["Square", "Cubic", "Linear", "None"], "correct": 1, "expectedAny": ["cubic"] },
+    { "question": "Rectangle area formula?", "choices": ["l + w", "l × w", "2l + 2w", "l × w × h"], "correct": 1, "expectedAny": ["l × w"] }
+  ],
+  "fillintheblank": [
+    { "question": "The distance around a circle is its ________.", "expectedAny": ["circumference"] },
+    { "question": "Space inside a 2D shape is ________.", "expectedAny": ["area"] },
+    { "question": "Space inside a 3D shape is ________.", "expectedAny": ["volume"] },
+    { "question": "Center to edge is the ________.", "expectedAny": ["radius"] },
+    { "question": "All face areas is ________ area.", "expectedAny": ["surface"] },
+    { "question": "________ is measured in square units.", "expectedAny": ["area"] },
+    { "question": "________ is measured in cubic units.", "expectedAny": ["volume"] },
+    { "question": "A circle's perimeter is its ________.", "expectedAny": ["circumference"] },
+    { "question": "Half the diameter is the ________.", "expectedAny": ["radius"] },
+    { "question": "Total of all faces is ________ area.", "expectedAny": ["surface"] }
+  ],
+  "shortanswer": [
+    { "question": "Find the volume of a rectangular prism: length 5, width 3, height 2.", "expectedAny": ["30", "30 cubic units"] },
+    { "question": "What is area?", "expectedAny": ["space inside 2D shape", "2D measurement", "how much space inside", "flat space"] },
+    { "question": "What is volume?", "expectedAny": ["space inside 3D shape", "3D measurement", "how much fits inside", "space an object takes up"] },
+    { "question": "What is surface area?", "expectedAny": ["total area of all faces", "sum of face areas"] },
+    { "question": "What is circumference?", "expectedAny": ["distance around circle", "circle perimeter", "perimeter of circle", "around the circle"] },
+    { "question": "What is radius?", "expectedAny": ["center to edge", "half diameter"] },
+    { "question": "Find area of rectangle 8 by 5.", "expectedAny": ["40", "40 square units"] },
+    { "question": "Find volume of cube with side 3.", "expectedAny": ["27", "27 cubic units"] },
+    { "question": "What units for area?", "expectedAny": ["square units", "squared"] },
+    { "question": "What units for volume?", "expectedAny": ["cubic units", "cubed"] }
+  ],
+  "wordProblems": [
+    { "question": "A circular garden has a radius of 4 meters. What is its area? (Use π ≈ 3.14)", "expectedAny": ["50.24", "about 50"] },
+    { "question": "A box is 6 cm long, 4 cm wide, and 3 cm tall. What is its volume?", "expectedAny": ["72", "72 cubic cm"] },
+    { "question": "A room is 12 feet by 10 feet. What is the area of the floor?", "expectedAny": ["120", "120 square feet"] },
+    { "question": "A rectangular prism is 5 by 5 by 5. What is its volume?", "expectedAny": ["125", "125 cubic units"] },
+    { "question": "A circle has diameter 10. What is its radius?", "expectedAny": ["5", "5 units"] },
+    { "question": "A square has side 7. What is its area?", "expectedAny": ["49", "49 square units"] },
+    { "question": "A cube has side length 4. What is its volume?", "expectedAny": ["64", "64 cubic units"] },
+    { "question": "A rectangular garden is 15 m by 8 m. What is its area?", "expectedAny": ["120", "120 square meters"] },
+    { "question": "A box has dimensions 10×6×2. What is its volume?", "expectedAny": ["120", "120 cubic units"] },
+    { "question": "A triangle has base 6 and height 4. What is its area? (A = 1/2 × b × h)", "expectedAny": ["12", "12 square units"] }
+  ]
 }

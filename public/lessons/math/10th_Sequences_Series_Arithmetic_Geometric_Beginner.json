@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "10th_Sequences_Series_Arithmetic_Geometric_Beginner",
   "title": "Sequences and Series: Arithmetic and Geometric",
   "grade": "10th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "sequence",
-      "definition": "Ordered list of numbers following a specific pattern"
-    },
-    {
-      "term": "arithmetic sequence",
-      "definition": "Sequence where consecutive terms have a common difference"
-    },
-    {
-      "term": "geometric sequence",
-      "definition": "Sequence where consecutive terms have a common ratio"
-    },
-    {
-      "term": "series",
-      "definition": "Sum of the terms in a sequence"
-    },
-    {
-      "term": "common difference",
-      "definition": "Constant value added to each term in an arithmetic sequence"
-    }
+    {"term": "sequence", "definition": "Ordered list of numbers following a specific pattern"},
+    {"term": "arithmetic sequence", "definition": "Sequence where consecutive terms have a common difference"},
+    {"term": "geometric sequence", "definition": "Sequence where consecutive terms have a common ratio"},
+    {"term": "series", "definition": "Sum of the terms in a sequence"},
+    {"term": "common difference", "definition": "Constant value added to each term in an arithmetic sequence"}
   ],
   "teachingNotes": "Start with simple patterns and progress to formulas. Practice identifying sequence types and finding specific terms.",
-  "sample": {
-    "question": "What is an ordered list of numbers following a pattern?",
-    "expectedAny": ["sequence", "number sequence", "ordered list", "mathematical sequence"]
-  },
-  "truefalse": {
-    "question": "In an arithmetic sequence, consecutive terms have a common difference.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is the sum of terms in a sequence called?",
-    "expectedAny": ["series", "sum", "total", "sequence sum"]
-  },
-  "fillintheblank": {
-    "question": "In a geometric sequence, consecutive terms have a common ________.",
-    "expectedAny": ["ratio", "multiplier", "factor", "quotient"]
-  },
-  "shortanswer": {
-    "question": "What is the formula for the nth term of an arithmetic sequence?",
-    "expectedAny": ["aₙ = a₁ + (n-1)d", "a + (n-1)d", "first term plus (n-1) times difference"]
-  },
-  "wordProblems": {
-    "question": "In the arithmetic sequence 3, 7, 11, 15, ..., what is the 10th term?",
-    "expectedAny": ["39", "a₁₀ = 3 + (10-1)×4 = 39", "thirty-nine", "39"]
-  }
+  "sample": [
+    {"question": "What is ordered list following a pattern?", "expectedAny": ["sequence", "number sequence", "ordered list", "pattern", "number pattern", "ordered series"]},
+    {"question": "What has common difference?", "expectedAny": ["arithmetic sequence", "arithmetic", "linear sequence", "arithmetic progression", "linear pattern", "constant difference sequence"]},
+    {"question": "What has common ratio?", "expectedAny": ["geometric sequence", "geometric", "ratio sequence", "geometric progression", "exponential pattern", "constant ratio sequence"]},
+    {"question": "What is sum of sequence terms?", "expectedAny": ["series", "sum", "total", "summation", "sum of terms", "sequence sum"]},
+    {"question": "What is constant value added?", "expectedAny": ["common difference", "difference", "constant", "constant difference", "d", "constant added"]},
+    {"question": "What follows a pattern?", "expectedAny": ["sequence", "ordered list", "pattern", "number sequence", "number pattern", "ordered series"]},
+    {"question": "What adds same value each time?", "expectedAny": ["arithmetic sequence", "arithmetic", "common difference", "arithmetic progression", "linear sequence", "constant difference sequence"]},
+    {"question": "What multiplies by same value?", "expectedAny": ["geometric sequence", "geometric", "common ratio", "geometric progression", "ratio sequence", "constant ratio sequence"]},
+    {"question": "What is summing terms?", "expectedAny": ["series", "summation", "total", "sum", "sum of terms", "sequence sum"]},
+    {"question": "What is d in arithmetic?", "expectedAny": ["common difference", "difference", "constant added", "constant difference", "d", "constant"]}
+  ],
+  "truefalse": [
+    {"question": "A sequence is an ordered list. (True or False)", "correct": true},
+    {"question": "Arithmetic sequences have a common ratio. (True or False)", "correct": false},
+    {"question": "Geometric sequences have a common ratio. (True or False)", "correct": true},
+    {"question": "A series is the sum of terms. (True or False)", "correct": true},
+    {"question": "Common difference is constant. (True or False)", "correct": true},
+    {"question": "Sequences follow patterns. (True or False)", "correct": true},
+    {"question": "Arithmetic adds same value. (True or False)", "correct": true},
+    {"question": "Geometric adds same value. (True or False)", "correct": false},
+    {"question": "Series sum sequence terms. (True or False)", "correct": true},
+    {"question": "Common difference varies. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "What is ordered list with pattern?", "choices": [{"letter": "A", "text": "Series"}, {"letter": "B", "text": "Sequence"}, {"letter": "C", "text": "Function"}, {"letter": "D", "text": "Graph"}], "correct": "B"},
+    {"question": "What has common difference?", "choices": [{"letter": "A", "text": "Geometric"}, {"letter": "B", "text": "Arithmetic sequence"}, {"letter": "C", "text": "Series"}, {"letter": "D", "text": "Pattern"}], "correct": "B"},
+    {"question": "What has common ratio?", "choices": [{"letter": "A", "text": "Arithmetic"}, {"letter": "B", "text": "Geometric sequence"}, {"letter": "C", "text": "Series"}, {"letter": "D", "text": "Linear"}], "correct": "B"},
+    {"question": "What is sum of terms?", "choices": [{"letter": "A", "text": "Sequence"}, {"letter": "B", "text": "Series"}, {"letter": "C", "text": "Pattern"}, {"letter": "D", "text": "Term"}], "correct": "B"},
+    {"question": "What is constant added?", "choices": [{"letter": "A", "text": "Ratio"}, {"letter": "B", "text": "Common difference"}, {"letter": "C", "text": "Term"}, {"letter": "D", "text": "Sum"}], "correct": "B"},
+    {"question": "What follows pattern?", "choices": [{"letter": "A", "text": "Sum"}, {"letter": "B", "text": "Sequence"}, {"letter": "C", "text": "Difference"}, {"letter": "D", "text": "Ratio"}], "correct": "B"},
+    {"question": "What type adds constant?", "choices": [{"letter": "A", "text": "Geometric"}, {"letter": "B", "text": "Arithmetic"}, {"letter": "C", "text": "Series"}, {"letter": "D", "text": "Random"}], "correct": "B"},
+    {"question": "What type multiplies constant?", "choices": [{"letter": "A", "text": "Arithmetic"}, {"letter": "B", "text": "Geometric"}, {"letter": "C", "text": "Series"}, {"letter": "D", "text": "Linear"}], "correct": "B"},
+    {"question": "What sums sequence?", "choices": [{"letter": "A", "text": "Pattern"}, {"letter": "B", "text": "Series"}, {"letter": "C", "text": "Term"}, {"letter": "D", "text": "Difference"}], "correct": "B"},
+    {"question": "What is d?", "choices": [{"letter": "A", "text": "Ratio"}, {"letter": "B", "text": "Common difference"}, {"letter": "C", "text": "Sum"}, {"letter": "D", "text": "Term"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "A _____ is an ordered list.", "expectedAny": ["sequence"]},
+    {"question": "_____ sequences have common difference.", "expectedAny": ["arithmetic", "Arithmetic"]},
+    {"question": "_____ sequences have common ratio.", "expectedAny": ["geometric", "Geometric"]},
+    {"question": "A _____ is the sum of terms.", "expectedAny": ["series"]},
+    {"question": "Common _____ is constant added.", "expectedAny": ["difference"]},
+    {"question": "_____ follow patterns.", "expectedAny": ["sequences", "Sequences"]},
+    {"question": "Arithmetic adds _____ value.", "expectedAny": ["same", "constant", "common"]},
+    {"question": "Geometric has _____ ratio.", "expectedAny": ["common", "constant", "same"]},
+    {"question": "_____ sum sequence terms.", "expectedAny": ["series", "Series"]},
+    {"question": "_____ is d in arithmetic.", "expectedAny": ["difference", "Difference", "common difference"]}
+  ],
+  "shortanswer": [
+    {"question": "What is a sequence?", "keyTerms": ["ordered", "list", "numbers", "pattern"], "expectedAny": ["Ordered list of numbers following a specific pattern", "Number pattern", "Ordered pattern"]},
+    {"question": "What is arithmetic sequence?", "keyTerms": ["sequence", "consecutive", "common", "difference"], "expectedAny": ["Sequence where consecutive terms have a common difference", "Adding pattern", "Linear sequence"]},
+    {"question": "What is geometric sequence?", "keyTerms": ["sequence", "consecutive", "common", "ratio"], "expectedAny": ["Sequence where consecutive terms have a common ratio", "Multiplying pattern", "Ratio sequence"]},
+    {"question": "What is a series?", "keyTerms": ["sum", "terms", "sequence"], "expectedAny": ["Sum of the terms in a sequence", "Sequence sum", "Total of terms"]},
+    {"question": "What is common difference?", "keyTerms": ["constant", "value", "added", "arithmetic"], "expectedAny": ["Constant value added to each term in an arithmetic sequence", "Constant added", "Fixed difference"]},
+    {"question": "How find next term arithmetic?", "keyTerms": ["add", "common", "difference", "previous"], "expectedAny": ["Add common difference to previous term", "Add d", "Previous plus difference"]},
+    {"question": "How find next term geometric?", "keyTerms": ["multiply", "common", "ratio", "previous"], "expectedAny": ["Multiply previous term by common ratio", "Multiply by r", "Previous times ratio"]},
+    {"question": "What is 2, 5, 8, 11?", "keyTerms": ["arithmetic", "sequence", "difference", "3"], "expectedAny": ["Arithmetic sequence with difference 3", "Arithmetic d=3", "Adding 3 each time"]},
+    {"question": "What is 3, 6, 12, 24?", "keyTerms": ["geometric", "sequence", "ratio", "2"], "expectedAny": ["Geometric sequence with ratio 2", "Geometric r=2", "Multiplying by 2"]},
+    {"question": "What is formula for nth term arithmetic?", "keyTerms": ["a", "n", "d", "first", "term"], "expectedAny": ["a = a + (n-1)d", "a + (n-1)d", "first plus n-1 times d"]}
+  ],
+  "wordProblems": [
+    {"question": "In sequence 3, 7, 11, 15, what is 10th term?", "keyTerms": ["39", "arithmetic", "difference", "4"], "expectedAny": ["39", "thirty-nine", "3 + 94 = 39"]},
+    {"question": "First term is 5, difference is 3. What is 8th term?", "keyTerms": ["26", "arithmetic", "formula"], "expectedAny": ["26", "twenty-six", "5 + 73 = 26"]},
+    {"question": "In sequence 2, 6, 18, 54, what is 6th term?", "keyTerms": ["486", "geometric", "ratio", "3"], "expectedAny": ["486", "four hundred eighty-six", "23 = 486"]},
+    {"question": "First term 100, ratio 0.5. What is 5th term?", "keyTerms": ["6.25", "geometric", "half"], "expectedAny": ["6.25", "six point two five", "100(0.5) = 6.25"]},
+    {"question": "Find sum: 2 + 5 + 8 + 11 + 14", "keyTerms": ["40", "arithmetic", "series"], "expectedAny": ["40", "forty", "sum equals 40"]},
+    {"question": "Arithmetic: 10, 15, 20. What is common difference?", "keyTerms": ["5", "five", "difference"], "expectedAny": ["5", "five", "d = 5"]},
+    {"question": "Geometric: 4, 12, 36. What is common ratio?", "keyTerms": ["3", "three", "ratio"], "expectedAny": ["3", "three", "r = 3"]},
+    {"question": "7th term is 22, difference is 3. What is first term?", "keyTerms": ["4", "arithmetic", "formula"], "expectedAny": ["4", "four", "22 - 63 = 4"]},
+    {"question": "A ball bounces 80% of previous height. Start 100cm. What is 4th bounce height?", "keyTerms": ["51.2", "geometric", "ratio", "0.8"], "expectedAny": ["51.2", "fifty-one point two", "100(0.8) = 51.2"]},
+    {"question": "Theater rows: 20, 22, 24, 26 seats. How many in 15th row?", "keyTerms": ["48", "arithmetic", "difference", "2"], "expectedAny": ["48", "forty-eight", "20 + 142 = 48"]}
+  ]
 }

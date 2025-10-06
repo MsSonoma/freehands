@@ -5,54 +5,64 @@
   "difficulty": "Intermediate",
   "featured": false,
   "vocab": [
-    {"term": "plural", "definition": "More than one of something."},
-    {"term": "syllable", "definition": "A part of a word that contains a single vowel sound."},
-    {"term": "CVC pattern", "definition": "A word pattern of Consonant-Vowel-Consonant, like 'hop' or 'run'."}
+    {"word": "plural", "kid_friendly_definition": "More than one of something."},
+    {"word": "syllable", "kid_friendly_definition": "A part of a word that contains a single vowel sound."},
+    {"word": "CVC pattern", "kid_friendly_definition": "A word pattern of Consonant-Vowel-Consonant, like 'hop' or 'run'."},
+    {"word": "suffix", "kid_friendly_definition": "A word part added to the end of a base word, like -ing or -ed."},
+    {"word": "silent e", "kid_friendly_definition": "An e at the end of a word that is not pronounced but can change the vowel sound."},
+    {"word": "CVCe pattern", "kid_friendly_definition": "A pattern with silent e that makes the vowel long, like 'hope'."},
+    {"word": "irregular plural", "kid_friendly_definition": "Plural forms that do not just add -s or -es, like children or mice."},
+    {"word": "vowel team", "kid_friendly_definition": "Two vowels together that make one sound, like ai or oa."},
+    {"word": "doubling rule", "kid_friendly_definition": "When a one-syllable CVC word adds a vowel suffix, double the final consonant."},
+    {"word": "i before e rule", "kid_friendly_definition": "A common rule: i before e, except after c (with exceptions)."},
+    {"word": "y to i rule", "kid_friendly_definition": "Change y to i when adding some suffixes after a consonant (not before -ing)."},
+    {"word": "final ck", "kid_friendly_definition": "Use ck after a short vowel at the end of a syllable/word (like duck)."},
+    {"word": "exception", "kid_friendly_definition": "A word that does not follow the usual spelling rule."}
   ],
   "teachingNotes": "Focus on common, high-impact spelling rules: plurals (-s, -es, y to i), doubling the consonant (CVC rule), and dropping the silent 'e'. Use word sorts and pattern hunts to make learning interactive.",
   "sample": [
-    {"question": "How do you make the word 'cat' plural?", "expectedAny": ["Add -s", "cats"]},
-    {"question": "What happens to the final consonant when adding '-ing' to the word 'hop'?", "expectedAny": ["It is doubled."]},
-    {"question": "Spell the plural form of the word 'baby'.", "expectedAny": ["babies"]},
-    {"question": "When spelling a one-syllable word, when do we usually use 'ck' at the end instead of just 'k'?", "expectedAny": ["After a short vowel sound, like in 'duck'."]},
-    {"question": "How do you correctly add the '-ed' suffix to the word 'cry'?", "expectedAny": ["cried"]},
-    {"question": "When adding a suffix like '-ing' or '-ed', when do we double the final consonant of a word?", "expectedAny": ["When it has a CVC pattern with a short vowel."]},
-    {"question": "What is the basic 'i before e' spelling rule?", "expectedAny": ["I before E, except after C."]}
+    {"question": "How do you make the word 'cat' plural?", "expectedAny": ["Add -s", "cats", "you add s", "cat + s = cats"]},
+    {"question": "What happens to the final consonant when adding '-ing' to the word 'hop'?", "expectedAny": ["It is doubled.", "double the p", "hop → hopping"]},
+    {"question": "Spell the plural form of the word 'baby'.", "expectedAny": ["babies", "change y to i and add es", "baby → babies"]},
+    {"question": "When spelling a one-syllable word, when do we usually use 'ck' at the end instead of just 'k'?", "expectedAny": ["After a short vowel sound, like in 'duck'.", "after a short vowel", "short vowel + ck"]},
+    {"question": "How do you correctly add the '-ed' suffix to the word 'cry'?", "expectedAny": ["cried", "change y to i and add ed", "cry → cried"]},
+    {"question": "When adding a suffix like '-ing' or '-ed', when do we double the final consonant of a word?", "expectedAny": ["When it has a CVC pattern with a short vowel.", "one-syllable CVC with short vowel", "double the final consonant in CVC words"]},
+    {"question": "What is the basic 'i before e' spelling rule?", "expectedAny": ["I before E, except after C.", "i before e except after c", "i before e rule"]}
   ],
   "truefalse": [
-    {"question": "To make most nouns plural, you just add an '-s' to the end.", "answer": true},
-    {"question": "You should always double the final consonant of a word before adding '-ing'.", "answer": false},
-    {"question": "When a word ends in a consonant followed by 'y', you change the 'y' to an 'i' before adding '-es'.", "answer": true},
-    {"question": "The rule 'i before e, except after c' has some exceptions.", "answer": true},
-    {"question": "When a word ends with a silent 'e', you usually drop the 'e' before adding '-ing'.", "answer": true},
-    {"question": "The CVC (consonant-vowel-consonant) pattern often requires you to double the final consonant before adding a suffix.", "answer": true},
-    {"question": "All plural words are formed by simply adding '-s'.", "answer": false}
+    {"question": "To make most nouns plural, you just add an '-s' to the end.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "most take s"]},
+    {"question": "You should always double the final consonant of a word before adding '-ing'.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "not always only CVC"]},
+    {"question": "When a word ends in a consonant followed by 'y', you change the 'y' to an 'i' before adding '-es'.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "y to i before es"]},
+    {"question": "The rule 'i before e, except after c' has some exceptions.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "there are exceptions"]},
+    {"question": "When a word ends with a silent 'e', you usually drop the 'e' before adding '-ing'.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "drop the e before ing"]},
+    {"question": "The CVC (consonant-vowel-consonant) pattern often requires you to double the final consonant before adding a suffix.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "double after CVC"]},
+    {"question": "All plural words are formed by simply adding '-s'.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "irregular plurals exist"]}
   ],
   "multiplechoice": [
-    {"question": "What is the correct plural form of 'box'?", "choices": ["boxs", "boxes", "boxies", "box"], "correct": 1},
-    {"question": "How do you correctly spell 'run' + '-ing'?", "choices": ["runing", "running", "runnning", "runeing"], "correct": 1},
-    {"question": "What is the correct plural form of 'city'?", "choices": ["citys", "cities", "cityes", "city"], "correct": 1},
-    {"question": "How do you correctly spell 'bake' + '-ing'?", "choices": ["bakeing", "bakking", "baking", "bakinging"], "correct": 2},
-    {"question": "How do you correctly spell 'happy' + '-er'?", "choices": ["happyer", "happier", "happyier", "happir"], "correct": 1},
-    {"question": "What is the correct plural form of 'leaf'?", "choices": ["leafs", "leaves", "leafes", "leaf"], "correct": 1},
-    {"question": "How do you correctly spell 'big' + '-est'?", "choices": ["bigest", "biggest", "bigiest", "biger"], "correct": 1}
+    {"question": "What is the correct plural form of 'box'?", "choices": ["boxs", "boxes", "boxies", "box"], "correct": 1, "expectedAny": ["b", "B", "2", "boxes"]},
+    {"question": "How do you correctly spell 'run' + '-ing'?", "choices": ["runing", "running", "runnning", "runeing"], "correct": 1, "expectedAny": ["b", "B", "2", "running"]},
+    {"question": "What is the correct plural form of 'city'?", "choices": ["citys", "cities", "cityes", "city"], "correct": 1, "expectedAny": ["b", "B", "2", "cities"]},
+    {"question": "How do you correctly spell 'bake' + '-ing'?", "choices": ["bakeing", "bakking", "baking", "bakinging"], "correct": 2, "expectedAny": ["c", "C", "3", "baking"]},
+    {"question": "How do you correctly spell 'happy' + '-er'?", "choices": ["happyer", "happier", "happyier", "happir"], "correct": 1, "expectedAny": ["b", "B", "2", "happier"]},
+    {"question": "What is the correct plural form of 'leaf'?", "choices": ["leafs", "leaves", "leafes", "leaf"], "correct": 1, "expectedAny": ["b", "B", "2", "leaves"]},
+    {"question": "How do you correctly spell 'big' + '-est'?", "choices": ["bigest", "biggest", "bigiest", "biger"], "correct": 1, "expectedAny": ["b", "B", "2", "biggest"]}
   ],
   "fillintheblank": [
-    {"question": "The plural of the word 'child' is ___.", "expectedAny": ["children"]},
-    {"question": "To spell 'hope' + '-ing', you drop the 'e' to get ___.", "expectedAny": ["hoping"]},
-    {"question": "The plural of the word 'mouse' is ___.", "expectedAny": ["mice"]},
-    {"question": "To spell 'stop' + '-ed', you double the 'p' to get ___.", "expectedAny": ["stopped"]},
-    {"question": "To spell 'fly' + '-ing', you keep the 'y' to get ___.", "expectedAny": ["flying"]},
-    {"question": "The plural of the word 'tooth' is ___.", "expectedAny": ["teeth"]},
-    {"question": "To spell 'happy' + '-ness', you change the 'y' to 'i' to get ___.", "expectedAny": ["happiness"]}
+    {"question": "The plural of the word 'child' is ___", "expectedAny": ["children", "the plural is children", "child → children"]},
+    {"question": "To spell 'hope' + '-ing', you drop the 'e' to get ___.", "expectedAny": ["hoping", "drop the e and add ing", "hope + ing = hoping"]},
+    {"question": "The plural of the word 'mouse' is ___", "expectedAny": ["mice", "the plural is mice", "mouse → mice"]},
+    {"question": "To spell 'stop' + '-ed', you double the 'p' to get ___.", "expectedAny": ["stopped", "double the p then add ed", "stop + ed = stopped"]},
+    {"question": "To spell 'fly' + '-ing', you keep the 'y' to get ___.", "expectedAny": ["flying", "keep the y and add ing", "fly + ing = flying"]},
+    {"question": "The plural of the word 'tooth' is ___", "expectedAny": ["teeth", "the plural is teeth", "tooth → teeth"]},
+    {"question": "To spell 'happy' + '-ness', you change the 'y' to 'i' to get ___.", "expectedAny": ["happiness", "change y to i and add ness", "happy + ness = happiness"]}
   ],
   "shortanswer": [
-    {"question": "Explain the rule for when to double the final consonant before adding a suffix.", "expectedAny": ["For a short word with a CVC (consonant-vowel-consonant) pattern, you double the last consonant."]},
-    {"question": "What is the rule for changing 'y' to 'i' when adding a suffix?", "expectedAny": ["If a word ends in a consonant and then 'y', change the 'y' to 'i' before adding the suffix (unless the suffix is '-ing')."]},
-    {"question": "List three examples of irregular plurals.", "expectedAny": ["Children, mice, feet, teeth, geese"]},
-    {"question": "What is the 'silent e' rule when adding a suffix that starts with a vowel?", "expectedAny": ["You usually drop the silent 'e' before adding a suffix like '-ing' or '-ed'."]},
-    {"question": "How do you typically make words that end in -f or -fe plural?", "expectedAny": ["You often change the 'f' or 'fe' to 'v' and add '-es' (e.g., leaf becomes leaves)."]},
-    {"question": "Give an example of a word that follows the 'i before e' rule and one that is an exception.", "expectedAny": ["Follows: believe, achieve. Exception: weird, height."]},
-    {"question": "What are some common spelling patterns you have learned?", "expectedAny": ["CVC (hop), CVCe (hope), double letters (look), vowel teams (boat)"]}
+    {"question": "Explain the rule for when to double the final consonant before adding a suffix.", "expectedAny": ["double the final consonant in a one-syllable CVC word", "short vowel + single final consonant → double it", "hop → hopping, stop → stopped", "CVC + vowel suffix → double"]},
+    {"question": "What is the rule for changing 'y' to 'i' when adding a suffix?", "expectedAny": ["consonant + y → change y to i", "don't change y before -ing", "happy → happier/happiest", "city → cities"]},
+    {"question": "List three examples of irregular plurals.", "expectedAny": ["children, mice, teeth", "men, women, people", "geese, feet, teeth", "tooth → teeth, mouse → mice, child → children"]},
+    {"question": "What is the 'silent e' rule when adding a suffix that starts with a vowel?", "expectedAny": ["drop the silent e before a vowel suffix", "hope + ing = hoping", "bake + ed = baked", "make + er = maker"]},
+    {"question": "How do you typically make words that end in -f or -fe plural?", "expectedAny": ["change f/fe to v and add -es", "leaf → leaves, knife → knives", "there are exceptions like roofs", "wolf → wolves"]},
+    {"question": "Give an example of a word that follows the 'i before e' rule and one that is an exception.", "expectedAny": ["believe follows it", "achieve follows it", "weird is an exception", "height is an exception", "neighbor/weigh are exceptions to simple rule"]},
+    {"question": "What are some common spelling patterns you have learned?", "expectedAny": ["CVC pattern", "CVCe (silent e)", "double letters", "vowel teams (ai, oa)", "final ck", "y to i"]}
   ]
 }

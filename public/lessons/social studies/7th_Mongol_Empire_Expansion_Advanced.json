@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Discuss both the destruction and positive effects of Mongol rule. Emphasize how the empire facilitated trade and cultural exchange.",
-  "sample": {
-    "question": "Who founded the Mongol Empire?",
-    "expectedAny": [
-      "Genghis Khan",
-      "Temujin",
-      "Khan",
-      "Mongol leader"
-    ]
-  },
-  "truefalse": {
-    "question": "The Mongol Empire was the largest land empire in history.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What were the Mongols before they built their empire?",
-    "expectedAny": [
-      "nomads",
-      "herders",
-      "nomadic people",
-      "tribal peoples"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The trade routes connecting Asia and Europe were called the ________ Road.",
-    "expectedAny": [
-      "Silk",
-      "trade",
-      "Asian",
-      "commercial"
-    ]
-  },
-  "shortanswer": {
-    "question": "How did the Mongol Empire promote trade?",
-    "expectedAny": [
-      "protected trade routes",
-      "created safe passage",
-      "encouraged commerce across empire"
-    ]
-  }
+  "sample": [
+    { "question": "Who founded the Mongol Empire?", "expectedAny": ["Genghis Khan"] },
+    { "question": "Which is largest land empire?", "choices": ["Roman", "Mongol Empire", "British", "Persian"], "correct": 1, "expectedAny": ["Mongol Empire"] },
+    { "question": "People who move with animals are ________.", "expectedAny": ["nomads"] },
+    { "question": "Trade routes connecting Asia and Europe are ________.", "expectedAny": ["Silk Road"] },
+    { "question": "Sharing ideas between peoples is ________.", "expectedAny": ["cultural exchange"] },
+    { "question": "Who founded Mongols?", "choices": ["Caesar", "Genghis Khan", "Alexander", "Napoleon"], "correct": 1, "expectedAny": ["Genghis Khan"] },
+    { "question": "Largest empire was ________.", "expectedAny": ["Mongol Empire"] },
+    { "question": "What is moving people?", "choices": ["Farmers", "Nomads", "Merchants", "Sailors"], "correct": 1, "expectedAny": ["nomads"] },
+    { "question": "Asian trade routes are ________.", "expectedAny": ["Silk Road"] },
+    { "question": "Idea sharing is ________.", "expectedAny": ["cultural exchange"] }
+  ],
+  "truefalse": [
+    { "question": "The Mongol Empire was the largest land empire in history.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Genghis Khan founded nothing.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Mongols were nomads.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Silk Road was ocean route.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Mongols facilitated trade.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Cultural exchange means isolation.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Mongol Empire covered large area.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Nomads stay in one place.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Mongols protected trade routes.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Silk Road was unimportant.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What were the Mongols before they built their empire?", "choices": ["Farmers", "Nomads", "Merchants", "Sailors"], "correct": 1, "expectedAny": ["nomads"] },
+    { "question": "Who founded empire?", "choices": ["Caesar", "Genghis Khan", "Alexander", "Napoleon"], "correct": 1, "expectedAny": ["Genghis Khan"] },
+    { "question": "What was largest empire?", "choices": ["Roman", "Mongol Empire", "British", "Persian"], "correct": 1, "expectedAny": ["Mongol Empire"] },
+    { "question": "What connected Asia Europe?", "choices": ["Ocean", "Silk Road", "River", "Mountain"], "correct": 1, "expectedAny": ["Silk Road"] },
+    { "question": "What is idea sharing?", "choices": ["War", "Cultural exchange", "Isolation", "Conquest"], "correct": 1, "expectedAny": ["cultural exchange"] },
+    { "question": "Mongols were originally?", "choices": ["City dwellers", "Nomadic herders", "Farmers", "Merchants"], "correct": 1, "expectedAny": ["nomadic herders"] },
+    { "question": "Empire facilitated?", "choices": ["Nothing", "Trade", "War only", "Isolation"], "correct": 1, "expectedAny": ["trade"] },
+    { "question": "Silk Road was?", "choices": ["Ocean", "Trade routes", "Mountain", "Desert"], "correct": 1, "expectedAny": ["trade routes"] },
+    { "question": "Genghis Khan founded?", "choices": ["Rome", "Mongol Empire", "China", "Persia"], "correct": 1, "expectedAny": ["Mongol Empire"] },
+    { "question": "Empire spread?", "choices": ["Nothing", "Culture and ideas", "Only war", "Disease only"], "correct": 1, "expectedAny": ["culture and ideas"] }
+  ],
+  "fillintheblank": [
+    { "question": "The trade routes connecting Asia and Europe were called the ________ Road.", "expectedAny": ["Silk"] },
+    { "question": "The founder of Mongol Empire was ________.", "expectedAny": ["Genghis Khan"] },
+    { "question": "The largest land empire was ________.", "expectedAny": ["Mongol Empire"] },
+    { "question": "People who move with animals are ________.", "expectedAny": ["nomads"] },
+    { "question": "Sharing ideas and customs is ________.", "expectedAny": ["cultural exchange"] },
+    { "question": "The ________ Empire was largest.", "expectedAny": ["Mongol"] },
+    { "question": "________ Khan founded empire.", "expectedAny": ["Genghis"] },
+    { "question": "________ move from place to place.", "expectedAny": ["nomads"] },
+    { "question": "________ Road connected Asia Europe.", "expectedAny": ["Silk"] },
+    { "question": "________ exchange shares ideas.", "expectedAny": ["cultural"] }
+  ],
+  "shortanswer": [
+    { "question": "How did the Mongol Empire promote trade?", "expectedAny": ["protected trade routes", "created safe passage"] },
+    { "question": "Who founded Mongol Empire?", "expectedAny": ["Genghis Khan"] },
+    { "question": "What was Mongol Empire?", "expectedAny": ["largest land empire", "huge empire", "biggest land empire", "massive empire"] },
+    { "question": "What were nomads?", "expectedAny": ["people who move with animals", "moving herders", "traveling people", "people who wander"] },
+    { "question": "What was Silk Road?", "expectedAny": ["trade routes connecting Asia Europe", "trade routes"] },
+    { "question": "What is cultural exchange?", "expectedAny": ["sharing ideas and customs", "idea sharing", "sharing cultures", "exchanging ideas"] },
+    { "question": "What did Mongols protect?", "expectedAny": ["trade routes", "Silk Road"] },
+    { "question": "How large was empire?", "expectedAny": ["largest land empire", "very large"] },
+    { "question": "What did Mongols facilitate?", "expectedAny": ["trade and cultural exchange"] },
+    { "question": "What were Mongols before empire?", "expectedAny": ["nomads", "nomadic herders"] }
+  ]
 }

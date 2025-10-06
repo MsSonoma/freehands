@@ -21,14 +21,19 @@
       "term": "ocean",
       "definition": "A very big body of salty water where fish live"
     }
+    ,
+    {
+      "term": "hole",
+      "definition": "An opening or space in the ground"
+    }
   ],
   "teachingNotes": "Use picture books about animals and their homes. Create habitat dioramas. Match animals to their homes activity.",
   "sample": [
-    {"question": "Where do fish live?", "expectedAny": ["water", "ocean", "pond", "lake"]},
-    {"question": "What do birds build to live in?", "expectedAny": ["nests"]},
-    {"question": "Where would you find a lion?", "expectedAny": ["jungle", "Africa", "savanna"]},
-    {"question": "What is a bear's home called?", "expectedAny": ["den", "cave"]},
-    {"question": "Where do pets like dogs and cats live?", "expectedAny": ["houses", "homes", "with families"]}
+    {"question": "Where do fish live?", "expectedAny": ["water", "ocean", "pond", "lake", "in water", "in the water"]},
+    {"question": "What do birds build to live in?", "expectedAny": ["nests", "a nest", "nest"]},
+    {"question": "Where would you find a lion?", "expectedAny": ["jungle", "Africa", "savanna", "wild", "grassland"]},
+    {"question": "What is a bear's home called?", "expectedAny": ["den", "cave", "a den"]},
+    {"question": "Where do pets like dogs and cats live?", "expectedAny": ["houses", "homes", "with families", "inside", "with people"]}
   ],
   "truefalse": [
     {"question": "Birds build nests in trees.", "answer": true, "expectedAny": ["many birds make nests in trees"]},
@@ -49,22 +54,22 @@
     {"question": "Where do farm animals live?", "choices": ["ocean", "farm", "forest", "desert"], "correct": 1, "expectedAny": ["farm animals live on farms"]}
   ],
   "fillintheblank": [
-    {"question": "A rabbit lives in a hole called a _____.", "expectedAny": ["burrow", "hole"]},
-    {"question": "Birds build _____ to live in.", "expectedAny": ["nests"]},
-    {"question": "Fish live in the _____.", "expectedAny": ["water", "ocean"]},
-    {"question": "Bees live in a _____.", "expectedAny": ["hive"]},
-    {"question": "A bear's home is called a _____.", "expectedAny": ["den"]},
-    {"question": "Dogs and cats live in _____ with people.", "expectedAny": ["houses", "homes"]},
-    {"question": "A _____ is where an animal finds food and shelter.", "expectedAny": ["habitat"]}
+    {"question": "A rabbit lives in a hole called a _____.", "expectedAny": ["burrow", "hole", "a burrow"]},
+    {"question": "Birds build _____ to live in.", "expectedAny": ["nests", "nest", "a nest"]},
+    {"question": "Fish live in the _____.", "expectedAny": ["water", "ocean", "sea", "pond"]},
+    {"question": "Bees live in a _____.", "expectedAny": ["hive", "beehive", "bee hive"]},
+    {"question": "A bear's home is called a _____.", "expectedAny": ["den", "cave", "a den"]},
+    {"question": "Dogs and cats live in _____ with people.", "expectedAny": ["houses", "homes", "a house"]},
+    {"question": "A _____ is where an animal finds food and shelter.", "expectedAny": ["habitat", "home", "place"]}
   ],
   "shortanswer": [
-    {"question": "Name two animals and where they live.", "expectedAny": ["fish in water", "birds in nests", "dogs in houses", "cats in homes"]},
-    {"question": "Why do animals need homes?", "expectedAny": ["to be safe", "to stay warm", "to raise babies", "protection"]},
-    {"question": "What makes a good habitat for an animal?", "expectedAny": ["food", "water", "shelter", "safety"]},
-    {"question": "Where do you live and what animals might live near you?", "expectedAny": ["varies by location", "birds, squirrels, dogs, cats"]},
-    {"question": "How are animal homes different from people homes?", "expectedAny": ["animals build with natural materials", "different shapes and sizes"]},
-    {"question": "What animals live in cold places?", "expectedAny": ["penguins", "polar bears", "seals"]},
-    {"question": "Name three different types of animal homes.", "expectedAny": ["nest", "den", "hive", "burrow", "cave"]}
+    {"question": "Name two animals and where they live.", "expectedAny": ["fish in water", "birds in nests", "dogs in houses", "cats in homes", "bears in caves", "rabbits in burrows"]},
+    {"question": "Why do animals need homes?", "expectedAny": ["to be safe", "to stay warm", "to raise babies", "protection", "keep them safe"]},
+    {"question": "What makes a good habitat for an animal?", "expectedAny": ["food", "water", "shelter", "safety", "place to sleep"]},
+    {"question": "Where do you live and what animals might live near you?", "expectedAny": ["house with birds nearby", "apartment with squirrels nearby", "farm with cows nearby", "suburb with dogs and cats nearby", "house and I see birds", "birds and squirrels"]},
+    {"question": "How are animal homes different from people homes?", "expectedAny": ["animals build with natural materials", "different shapes and sizes", "animals don't live in houses", "animals use sticks and leaves", "we build with wood"]},
+    {"question": "What animals live in cold places?", "expectedAny": ["penguins", "polar bears", "seals", "arctic animals"]},
+    {"question": "Name three different types of animal homes.", "expectedAny": ["nest", "den", "hive", "burrow", "cave", "nest den hive"]}
   ],
   "wordProblems": [
     {"question": "In the forest, there are 3 bears and each bear has 1 den. How many dens are there?", "expectedAny": ["3 dens"]},

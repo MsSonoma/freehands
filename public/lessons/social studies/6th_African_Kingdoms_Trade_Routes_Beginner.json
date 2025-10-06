@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Use maps to show trade routes across the Sahara. Discuss the importance of gold and salt in trade. Emphasize Africa's rich history and civilizations.",
-  "sample": {
-    "question": "What is a path used by merchants to transport goods called?",
-    "expectedAny": [
-      "trade route",
-      "trading route",
-      "merchant route",
-      "commercial route"
-    ]
-  },
-  "truefalse": {
-    "question": "Ancient African kingdoms became wealthy through trade.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which African kingdom was famous for its ruler Mansa Musa?",
-    "expectedAny": [
-      "Mali",
-      "Kingdom of Mali",
-      "Mali Empire",
-      "West African Mali"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Trade routes crossed the ________ Desert to reach African kingdoms.",
-    "expectedAny": [
-      "Sahara",
-      "Sahara Desert",
-      "African Sahara",
-      "great desert"
-    ]
-  },
-  "shortanswer": {
-    "question": "What two valuable resources did West African kingdoms trade?",
-    "expectedAny": [
-      "gold and salt",
-      "salt and gold",
-      "precious metals and salt",
-      "gold and mineral salt"
-    ]
-  }
+  "sample": [
+    { "question": "What is a path used by merchants to transport goods called?", "expectedAny": ["trade route"] },
+    { "question": "Which kingdom had Mansa Musa?", "choices": ["Egypt", "Mali", "Ghana", "Rome"], "correct": 1, "expectedAny": ["Mali"] },
+    { "question": "A country ruled by a king is a ________.", "expectedAny": ["kingdom"] },
+    { "question": "Trade routes crossed the ________ Desert.", "expectedAny": ["Sahara"] },
+    { "question": "________ controlled gold and salt trade.", "expectedAny": ["Ghana"] },
+    { "question": "What do merchants use?", "choices": ["Army", "Trade route", "Castle", "Temple"], "correct": 1, "expectedAny": ["trade route"] },
+    { "question": "A ruler of a kingdom is a ________.", "expectedAny": ["king", "queen"] },
+    { "question": "Mali was famous for its ________.", "expectedAny": ["wealth"] },
+    { "question": "Which desert is in North Africa?", "choices": ["Gobi", "Mojave", "Sahara", "Antarctic"], "correct": 2, "expectedAny": ["Sahara"] },
+    { "question": "African kingdoms traded ________ and salt.", "expectedAny": ["gold"] }
+  ],
+  "truefalse": [
+    { "question": "Ancient African kingdoms became wealthy through trade.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The Sahara Desert is in South America.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Ghana controlled gold and salt trade.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Mansa Musa ruled Ghana.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Trade routes crossed the Sahara.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "African kingdoms had no wealth.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Mali was a West African kingdom.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Trade routes were not important.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Gold and salt were valuable.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Africa had no ancient civilizations.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which African kingdom was famous for its ruler Mansa Musa?", "choices": ["Ghana", "Mali", "Egypt", "Songhai"], "correct": 1, "expectedAny": ["Mali"] },
+    { "question": "What is a path for transporting goods?", "choices": ["River", "Trade route", "Mountain", "Forest"], "correct": 1, "expectedAny": ["trade route"] },
+    { "question": "Which desert did trade routes cross?", "choices": ["Gobi", "Sahara", "Mojave", "Kalahari"], "correct": 1, "expectedAny": ["Sahara"] },
+    { "question": "What is ruled by a king or queen?", "choices": ["Republic", "Democracy", "Kingdom", "Empire"], "correct": 2, "expectedAny": ["kingdom"] },
+    { "question": "Which kingdom controlled gold and salt?", "choices": ["Ghana", "Rome", "China", "Greece"], "correct": 0, "expectedAny": ["Ghana"] },
+    { "question": "What made kingdoms wealthy?", "choices": ["War", "Trade", "Farming", "Hunting"], "correct": 1, "expectedAny": ["trade"] },
+    { "question": "Where is the Sahara?", "choices": ["Asia", "Europe", "Africa", "America"], "correct": 2, "expectedAny": ["Africa"] },
+    { "question": "What did Mali trade?", "choices": ["Ice", "Gold", "Wood", "Cotton"], "correct": 1, "expectedAny": ["gold"] },
+    { "question": "Who used trade routes?", "choices": ["Soldiers", "Merchants", "Farmers", "Students"], "correct": 1, "expectedAny": ["merchants"] },
+    { "question": "What was valuable in trade?", "choices": ["Sand", "Salt", "Dirt", "Rocks"], "correct": 1, "expectedAny": ["salt"] }
+  ],
+  "fillintheblank": [
+    { "question": "Trade routes crossed the ________ Desert to reach African kingdoms.", "expectedAny": ["Sahara"] },
+    { "question": "A path used by merchants is a ________.", "expectedAny": ["trade route"] },
+    { "question": "A country ruled by a king is a ________.", "expectedAny": ["kingdom"] },
+    { "question": "________ was famous for Mansa Musa.", "expectedAny": ["Mali"] },
+    { "question": "________ controlled gold and salt trade.", "expectedAny": ["Ghana"] },
+    { "question": "African kingdoms became wealthy through ________.", "expectedAny": ["trade"] },
+    { "question": "The ________ is a large North African desert.", "expectedAny": ["Sahara"] },
+    { "question": "Gold and ________ were valuable resources.", "expectedAny": ["salt"] },
+    { "question": "________ transported goods on trade routes.", "expectedAny": ["merchants"] },
+    { "question": "West African ________ controlled trade.", "expectedAny": ["kingdoms"] }
+  ],
+  "shortanswer": [
+    { "question": "What two valuable resources did West African kingdoms trade?", "expectedAny": ["gold and salt", "salt and gold"] },
+    { "question": "What is a trade route?", "expectedAny": ["path for transporting goods", "merchant path"] },
+    { "question": "What is a kingdom?", "expectedAny": ["country ruled by king or queen", "ruled by monarch"] },
+    { "question": "Who was Mansa Musa?", "expectedAny": ["ruler of Mali", "wealthy Mali king"] },
+    { "question": "What is the Sahara?", "expectedAny": ["large desert in Africa", "North African desert"] },
+    { "question": "How did African kingdoms become wealthy?", "expectedAny": ["through trade", "trading gold and salt"] },
+    { "question": "What did Ghana control?", "expectedAny": ["gold and salt trade", "trade routes"] },
+    { "question": "Why was salt valuable?", "expectedAny": ["preserved food", "scarce resource", "needed for health"] },
+    { "question": "Where did trade routes go?", "expectedAny": ["across Sahara", "between kingdoms"] },
+    { "question": "Name an African kingdom.", "expectedAny": ["Ghana", "Mali", "Songhai"] }
+  ]
 }

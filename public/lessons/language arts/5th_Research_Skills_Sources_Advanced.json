@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Teach students to evaluate website credibility and distinguish between fact and opinion. Practice paraphrasing and citing sources appropriately for their grade level.",
-  "sample": {
-    "question": "What do we call a source that provides accurate, trustworthy information?",
-    "expectedAny": [
-      "reliable source",
-      "trustworthy source",
-      "credible source",
-      "good source"
-    ]
-  },
-  "truefalse": {
-    "question": "It's okay to use someone else's exact words without saying where you found them.",
-    "expectedAny": [
-      "false",
-      "no",
-      "f",
-      "incorrect"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What should you always do when you use information from a source?",
-    "expectedAny": [
-      "cite the source",
-      "give credit",
-      "show where it came from",
-      "include citation"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Using someone else's words without giving credit is called ________.",
-    "expectedAny": [
-      "plagiarism",
-      "stealing ideas",
-      "copying",
-      "not giving credit"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are two questions you should ask to determine if a source is reliable?",
-    "expectedAny": [
-      "Who wrote it? When was it written?",
-      "Is the author an expert? Is it recent?",
-      "Who published it? Is it factual?"
-    ]
-  }
+  "sample": [
+    { "question": "What do we call a source that provides accurate, trustworthy information?", "expectedAny": ["reliable source", "trustworthy source", "credible source", "good source"] },
+    { "question": "Giving credit to the source is called a ________.", "expectedAny": ["citation", "cite", "reference"] },
+    { "question": "A place where information comes from is a ________.", "expectedAny": ["source"] },
+    { "question": "A website's last update date helps check if it is ________.", "expectedAny": ["current", "recent", "up to date"] },
+    { "question": "Using your own words to explain information is ________.", "expectedAny": ["paraphrasing", "paraphrase"] },
+    { "question": "Information checked by experts before publishing is ________-reviewed.", "expectedAny": ["peer", "peer-reviewed"] },
+    { "question": "The list of all sources you used is the ________.", "expectedAny": ["bibliography", "works cited", "references"] },
+    { "question": "A short exact copy of text with quotes is a ________.", "expectedAny": ["quotation", "quote"] },
+    { "question": "A source that is fair and balanced is ________.", "expectedAny": ["unbiased", "objective"] },
+    { "question": "A website ending in .edu is often from an ________.", "expectedAny": ["education", "university", "school"] }
+  ],
+  "truefalse": [
+    { "question": "It's okay to use someone else's exact words without saying where you found them.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A reliable source has accurate, current information.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "An author's credentials can help you judge credibility.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All .com websites are always reliable.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Paraphrasing still requires a citation.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Statistics never need to be cited.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A bibliography lists the sources you used.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Bias means a source is completely neutral.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Quotes must use quotation marks and citations.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Recent information is sometimes more reliable than very old information.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "What should you always do when you use information from a source?", "choices": ["Change the facts", "Ignore it", "Cite the source", "Delete it"], "correct": 2, "expectedAny": ["cite the source", "give credit", "show where it came from", "include citation"] },
+    { "question": "Which website is most likely reliable?", "choices": ["Unknown blog with no author", "University site ending in .edu", "Random video with no date", "Ad-heavy clickbait"], "correct": 1, "expectedAny": [".edu", "university"] },
+    { "question": "Which is an example of a primary source?", "choices": ["Textbook summary", "Original interview", "Encyclopedia article", "Opinion blog"], "correct": 1, "expectedAny": ["interview", "primary"] },
+    { "question": "Which question checks for bias?", "choices": ["Is it fun?", "Who paid for it?", "Is it colorful?", "Does it rhyme?"], "correct": 1, "expectedAny": ["who paid", "sponsor"] },
+    { "question": "Which is the best way to paraphrase?", "choices": ["Change a few words", "Rewrite in your own words and cite", "Copy and paste", "Skip it"], "correct": 1, "expectedAny": ["own words", "cite"] },
+    { "question": "Which detail should you record for a book citation?", "choices": ["Author and title", "Favorite quote", "Book color", "Price only"], "correct": 0, "expectedAny": ["author", "title", "publisher", "year"] },
+    { "question": "Which is NOT a reliable clue?", "choices": ["Clear author name", "Recent update date", "Many pop-up ads", "References listed"], "correct": 2, "expectedAny": ["ads"] },
+    { "question": "Which shows a proper quotation?", "choices": ["Said the article: education matters.", "\"Education matters,\" the author writes (Lee, 2021).", "Education matters, the author writes.", "Education matters"], "correct": 1, "expectedAny": ["quotes", "citation"] },
+    { "question": "Which is a secondary source?", "choices": ["Diary entry", "Biography book", "Photograph", "Interview audio"], "correct": 1, "expectedAny": ["secondary", "biography"] },
+    { "question": "Which domain is most often used by non-profits?", "choices": [".gov", ".com", ".org", ".net"], "correct": 2, "expectedAny": [".org"] }
+  ],
+  "fillintheblank": [
+    { "question": "Using someone else's words without giving credit is called ________.", "expectedAny": ["plagiarism", "stealing ideas", "copying", "not giving credit", "academic dishonesty"] },
+  { "question": "Giving credit to the source is called a ________.", "expectedAny": ["citation", "reference", "cite", "citation entry", "bibliographic citation"] },
+  { "question": "A source with accurate information is ________.", "expectedAny": ["reliable", "credible", "trustworthy", "dependable", "valid"] },
+  { "question": "Changing information into your own words is ________.", "expectedAny": ["paraphrasing", "paraphrase", "putting into your own words", "restating in your own words"] },
+    { "question": "A list of sources at the end is a ________.", "expectedAny": ["bibliography", "works cited", "references", "reference list", "sources list"] },
+    { "question": "Information created at the time of an event is a ________ source.", "expectedAny": ["primary", "firsthand"] },
+    { "question": "A book or article that explains a topic using other sources is a ________ source.", "expectedAny": ["secondary", "secondhand"] },
+    { "question": "When a source favors one side, it has ________.", "expectedAny": ["bias", "favoring one side"] },
+    { "question": "The name of the person who wrote the source is the ________.", "expectedAny": ["author", "writer"] },
+    { "question": "The year the source was published is the ________ date.", "expectedAny": ["publication", "published", "publish", "date of publication"] }
+  ],
+  "shortanswer": [
+    { "question": "What are two questions you should ask to determine if a source is reliable?", "expectedAny": ["Who wrote it? When was it written?", "Is the author an expert? Is it recent?", "Who published it? Is it factual?", "Are sources cited? Is there evidence?"] },
+    { "question": "Name one detail to include in a website citation.", "expectedAny": ["url", "title", "author", "date accessed", "site name", "publisher", "publication date"] },
+    { "question": "Give one example of paraphrasing a fact about rain forests.", "expectedAny": ["own words", "paraphrase", "put into own words"] },
+    { "question": "Write a sentence that uses a short quotation with quotation marks.", "expectedAny": ["\"...\"", "quoted text", "According to ..."] },
+    { "question": "Explain one reason a page with many pop-up ads may not be reliable.", "expectedAny": ["ads", "profit", "clickbait", "not credible", "trying to sell"] },
+    { "question": "Give one example of a primary source for a historical event.", "expectedAny": ["diary", "letter", "photo", "interview", "artifact"] },
+    { "question": "Give one example of a secondary source for that event.", "expectedAny": ["textbook", "biography", "article", "encyclopedia"] },
+    { "question": "Provide one way to avoid plagiarism while taking notes.", "expectedAny": ["use bullet points", "paraphrase", "add citation", "use quotation marks", "track sources"] },
+    { "question": "Name one sign an author may be an expert.", "expectedAny": ["degree", "experience", "works at university", "credentials", "published research"] },
+    { "question": "Write a concluding sentence that reminds the reader to cite sources.", "expectedAny": ["remember to cite", "give credit", "always include a bibliography", "cite your sources"] }
+  ]
 }

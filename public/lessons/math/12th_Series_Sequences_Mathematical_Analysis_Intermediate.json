@@ -28,7 +28,7 @@
   "teachingNotes": "Introduce convergence tests and their applications. Practice determining convergence for various series types.",
   "sample": {
     "question": "What is a series with unlimited number of terms?",
-    "expectedAny": ["infinite series", "endless series", "unlimited series", "infinite sum"]
+    "expectedAny": ["infinite series", "endless series", "unlimited series", "infinite sum", "unbounded series", "limitless series"]
   },
   "truefalse": {
     "question": "A partial sum includes the first n terms of a series.",

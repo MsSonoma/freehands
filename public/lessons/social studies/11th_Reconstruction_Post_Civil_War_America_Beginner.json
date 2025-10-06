@@ -1,74 +1,479 @@
-{
-  "id": "11th_Reconstruction_Post_Civil_War_America_Beginner",
-  "title": "Reconstruction and Post-Civil War America",
-  "grade": "11th",
-  "difficulty": "Beginner",
-  "vocab": [
-    {
-      "term": "Reconstruction",
-      "definition": "Period after Civil War when Southern states were rebuilt and readmitted"
-    },
-    {
-      "term": "Freedmen's Bureau",
-      "definition": "Government agency that helped former slaves after Civil War"
-    },
-    {
-      "term": "Jim Crow laws",
-      "definition": "State laws that enforced racial segregation in the South"
-    },
-    {
-      "term": "sharecropping",
-      "definition": "System where farmers worked land in exchange for share of crops"
-    },
-    {
-      "term": "carpetbagger",
-      "definition": "Northerner who moved to South during Reconstruction"
-    }
-  ],
-  "teachingNotes": "Focus on economic and social changes after Civil War. Discuss both progress and setbacks for African Americans.",
-  "sample": {
-    "question": "What was the period of rebuilding after the Civil War called?",
-    "expectedAny": [
-      "Reconstruction",
-      "Reconstruction Era",
-      "Post-Civil War Reconstruction",
-      "rebuilding period"
-    ]
-  },
-  "truefalse": {
-    "question": "The Freedmen's Bureau helped former slaves after the Civil War.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What laws enforced racial segregation in the South?",
-    "expectedAny": [
-      "Jim Crow laws",
-      "segregation laws",
-      "racial laws",
-      "discrimination statutes"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The farming system where workers received a share of crops was ________.",
-    "expectedAny": [
-      "sharecropping",
-      "crop sharing",
-      "tenant farming",
-      "share tenancy"
-    ]
-  },
-  "shortanswer": {
-    "question": "What were the main goals of Reconstruction?",
-    "expectedAny": [
-      "rebuild South",
-      "integrate freed slaves",
-      "reunify nation",
-      "restore economy"
-    ]
-  }
+﻿{
+    "id":  "11th_Reconstruction_Post_Civil_War_America_Beginner",
+    "title":  "Reconstruction and Post-Civil War America",
+    "grade":  "11th",
+    "difficulty":  "Beginner",
+    "vocab":  [
+                  {
+                      "term":  "Reconstruction",
+                      "definition":  "Period after Civil War when Southern states were rebuilt and readmitted"
+                  },
+                  {
+                      "term":  "Freedmen\u0027s Bureau",
+                      "definition":  "Government agency that helped former slaves after Civil War"
+                  },
+                  {
+                      "term":  "Jim Crow laws",
+                      "definition":  "State laws that enforced racial segregation in the South"
+                  },
+                  {
+                      "term":  "sharecropping",
+                      "definition":  "System where farmers worked land in exchange for share of crops"
+                  },
+                  {
+                      "term":  "carpetbagger",
+                      "definition":  "Northerner who moved to South during Reconstruction"
+                  }
+              ],
+    "teachingNotes":  "Focus on economic and social changes after Civil War. Discuss both progress and setbacks for African Americans.",
+    "sample":  [
+                   {
+                       "question":  "What was rebuilding period after Civil War?",
+                       "expectedAny":  [
+                                           "Reconstruction",
+                                           "Reconstruction Era",
+                                           "rebuilding period",
+                                           "postwar rebuilding",
+                                           "reconstruction period",
+                                           "post civil war era"
+                                       ]
+                   },
+                   {
+                       "question":  "What agency helped former slaves?",
+                       "expectedAny":  [
+                                           "Freedmen\u0027s Bureau",
+                                           "Freedmen Bureau",
+                                           "Bureau",
+                                           "Freedmens Bureau",
+                                           "freedmen agency",
+                                           "refugee bureau"
+                                       ]
+                   },
+                   {
+                       "question":  "What laws enforced segregation?",
+                       "expectedAny":  [
+                                           "Jim Crow laws",
+                                           "Jim Crow",
+                                           "segregation laws",
+                                           "racial segregation laws",
+                                           "discrimination laws",
+                                           "southern segregation"
+                                       ]
+                   },
+                   {
+                       "question":  "What system shared crops for land use?",
+                       "expectedAny":  [
+                                           "sharecropping",
+                                           "share cropping",
+                                           "tenant farming",
+                                           "crop sharing",
+                                           "sharecrop system",
+                                           "share tenancy"
+                                       ]
+                   },
+                   {
+                       "question":  "What were Northerners in South called?",
+                       "expectedAny":  [
+                                           "carpetbaggers",
+                                           "carpetbagger",
+                                           "Northern opportunists",
+                                           "carpet baggers",
+                                           "northern migrants",
+                                           "yankee opportunists"
+                                       ]
+                   },
+                   {
+                       "question":  "What era followed Civil War?",
+                       "expectedAny":  [
+                                           "Reconstruction",
+                                           "Reconstruction period",
+                                           "rebuilding"
+                                       ]
+                   },
+                   {
+                       "question":  "What federal bureau aided freedmen?",
+                       "expectedAny":  [
+                                           "Freedmen\u0027s Bureau",
+                                           "Bureau",
+                                           "federal agency"
+                                       ]
+                   },
+                   {
+                       "question":  "What restricted African American rights?",
+                       "expectedAny":  [
+                                           "Jim Crow laws",
+                                           "Jim Crow",
+                                           "racist laws"
+                                       ]
+                   },
+                   {
+                       "question":  "What replaced slavery economically?",
+                       "expectedAny":  [
+                                           "sharecropping",
+                                           "tenant farming",
+                                           "crop sharing"
+                                       ]
+                   },
+                   {
+                       "question":  "What term described Northern migrants?",
+                       "expectedAny":  [
+                                           "carpetbaggers",
+                                           "opportunists",
+                                           "Northern movers"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Reconstruction rebuilt Southern states.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Freedmen\u0027s Bureau helped plantation owners.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Jim Crow laws enforced segregation.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Sharecropping freed former slaves economically.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Carpetbaggers came from the North.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Reconstruction was universally successful.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Freedmen\u0027s Bureau provided education.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Jim Crow laws promoted equality.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Sharecropping often created debt.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "All Southerners welcomed carpetbaggers.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What period rebuilt the South?",
+                               "choices":  [
+                                               "Revolution",
+                                               "Reconstruction",
+                                               "Reformation",
+                                               "Renaissance"
+                                           ],
+                               "correct":  "Reconstruction"
+                           },
+                           {
+                               "question":  "What helped former slaves?",
+                               "choices":  [
+                                               "Freedmen\u0027s Bureau",
+                                               "War Department",
+                                               "Treasury",
+                                               "Congress"
+                                           ],
+                               "correct":  "Freedmen\u0027s Bureau"
+                           },
+                           {
+                               "question":  "What enforced segregation?",
+                               "choices":  [
+                                               "Bill of Rights",
+                                               "Jim Crow laws",
+                                               "Emancipation",
+                                               "Constitution"
+                                           ],
+                               "correct":  "Jim Crow laws"
+                           },
+                           {
+                               "question":  "What system trapped farmers in debt?",
+                               "choices":  [
+                                               "Factory work",
+                                               "Sharecropping",
+                                               "Mining",
+                                               "Railroad"
+                                           ],
+                               "correct":  "Sharecropping"
+                           },
+                           {
+                               "question":  "What were Northern migrants called?",
+                               "choices":  [
+                                               "Scalawags",
+                                               "Carpetbaggers",
+                                               "Yankees",
+                                               "Abolitionists"
+                                           ],
+                               "correct":  "Carpetbaggers"
+                           },
+                           {
+                               "question":  "When was Reconstruction?",
+                               "choices":  [
+                                               "1850s",
+                                               "1860s-1870s",
+                                               "1880s",
+                                               "1890s"
+                                           ],
+                               "correct":  "1860s-1870s"
+                           },
+                           {
+                               "question":  "What did Freedmen\u0027s Bureau NOT provide?",
+                               "choices":  [
+                                               "Education",
+                                               "Food",
+                                               "Land ownership",
+                                               "Medical care"
+                                           ],
+                               "correct":  "Land ownership"
+                           },
+                           {
+                               "question":  "What was Jim Crow named after?",
+                               "choices":  [
+                                               "President",
+                                               "Stereotype",
+                                               "City",
+                                               "Law"
+                                           ],
+                               "correct":  "Stereotype"
+                           },
+                           {
+                               "question":  "Who benefited least from sharecropping?",
+                               "choices":  [
+                                               "Landowners",
+                                               "Merchants",
+                                               "Sharecroppers",
+                                               "All equal"
+                                           ],
+                               "correct":  "Sharecroppers"
+                           },
+                           {
+                               "question":  "What Southern group resented carpetbaggers?",
+                               "choices":  [
+                                               "Freedmen",
+                                               "Former Confederates",
+                                               "Everyone",
+                                               "No one"
+                                           ],
+                               "correct":  "Former Confederates"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "_____ rebuilt the South after war.",
+                               "expectedAny":  [
+                                                   "Reconstruction",
+                                                   "rebuilding"
+                                               ]
+                           },
+                           {
+                               "question":  "The _____\u0027s Bureau helped former slaves.",
+                               "expectedAny":  [
+                                                   "Freedmen",
+                                                   "Freedman"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ Crow laws segregated the South.",
+                               "expectedAny":  [
+                                                   "Jim",
+                                                   "James"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ trapped farmers in debt cycles.",
+                               "expectedAny":  [
+                                                   "sharecropping",
+                                                   "share cropping"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ were Northerners in the South.",
+                               "expectedAny":  [
+                                                   "carpetbaggers",
+                                                   "carpetbagger"
+                                               ]
+                           },
+                           {
+                               "question":  "Reconstruction lasted about _____ years.",
+                               "expectedAny":  [
+                                                   "12",
+                                                   "twelve",
+                                                   "a dozen"
+                                               ]
+                           },
+                           {
+                               "question":  "The Bureau provided education and _____.",
+                               "expectedAny":  [
+                                                   "food",
+                                                   "medical care",
+                                                   "assistance"
+                                               ]
+                           },
+                           {
+                               "question":  "Jim Crow enforced _____segregation.",
+                               "expectedAny":  [
+                                                   "racial",
+                                                   "race",
+                                                   "ethnic"
+                                               ]
+                           },
+                           {
+                               "question":  "Sharecroppers paid with _____ of crop.",
+                               "expectedAny":  [
+                                                   "share",
+                                                   "portion",
+                                                   "part"
+                                               ]
+                           },
+                           {
+                               "question":  "Carpetbaggers sought economic _____.",
+                               "expectedAny":  [
+                                                   "opportunity",
+                                                   "gain",
+                                                   "profit"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "What was Reconstruction?",
+                            "expectedAny":  [
+                                                "period after Civil War when Southern states were rebuilt and readmitted",
+                                                "era of rebuilding and reunification",
+                                                "federal effort to reintegrate South"
+                                            ]
+                        },
+                        {
+                            "question":  "What did Freedmen\u0027s Bureau do?",
+                            "expectedAny":  [
+                                                "helped former slaves with education food and medical care",
+                                                "provided assistance to freedmen",
+                                                "government agency supporting transition to freedom"
+                                            ]
+                        },
+                        {
+                            "question":  "Describe Jim Crow laws.",
+                            "expectedAny":  [
+                                                "state laws enforcing racial segregation in South",
+                                                "legal system of discrimination",
+                                                "separated facilities by race"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain sharecropping.",
+                            "expectedAny":  [
+                                                "system where farmers worked land for share of crops",
+                                                "tenant farming arrangement",
+                                                "often trapped workers in debt"
+                                            ]
+                        },
+                        {
+                            "question":  "Who were carpetbaggers?",
+                            "expectedAny":  [
+                                                "Northerners who moved to South during Reconstruction",
+                                                "Northern opportunists seeking profit",
+                                                "migrants from North resented by Southerners"
+                                            ]
+                        },
+                        {
+                            "question":  "Why did Reconstruction end?",
+                            "expectedAny":  [
+                                                "political compromise and Northern fatigue",
+                                                "Compromise of 1877 withdrew federal troops",
+                                                "loss of political will to enforce change"
+                                            ]
+                        },
+                        {
+                            "question":  "How did Jim Crow affect African Americans?",
+                            "expectedAny":  [
+                                                "enforced second-class citizenship",
+                                                "restricted rights and opportunities",
+                                                "legalized discrimination"
+                                            ]
+                        },
+                        {
+                            "question":  "Why was sharecropping problematic?",
+                            "expectedAny":  [
+                                                "created debt cycles and economic dependence",
+                                                "little better than slavery",
+                                                "landowners controlled prices and credit"
+                                            ]
+                        },
+                        {
+                            "question":  "What challenges did Reconstruction face?",
+                            "expectedAny":  [
+                                                "Southern resistance and violence",
+                                                "lack of land reform",
+                                                "political opposition"
+                                            ]
+                        },
+                        {
+                            "question":  "How did Freedmen\u0027s Bureau help education?",
+                            "expectedAny":  [
+                                                "established schools for African Americans",
+                                                "provided teachers and resources",
+                                                "helped create black colleges"
+                                            ]
+                        }
+                    ]
 }

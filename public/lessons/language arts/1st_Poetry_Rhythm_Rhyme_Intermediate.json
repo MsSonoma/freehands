@@ -60,7 +60,8 @@
     {
       "question": "Roses are red, violets are blue, sugar is sweet, and so are _____.",
       "expectedAny": [
-        "you"
+        "you",
+        "u"
       ]
     }
   ],
@@ -68,7 +69,9 @@
     {
       "question": "Make up two lines that rhyme about your favorite animal.",
       "expectedAny": [
-        "any two rhyming lines about animals"
+        "The cat wore a hat.",
+        "The dog sat on a log.",
+        "The fish had a dish."
       ]
     }
   ]

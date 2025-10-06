@@ -1,4 +1,4 @@
-{
+﻿{
   "id": "11th_College_Preparatory_Communication_Skills_Advanced",
   "title": "College Preparatory Communication Skills",
   "grade": "11th",
@@ -26,49 +26,224 @@
     }
   ],
   "teachingNotes": "Explore advanced concepts in communication theory. Prepare students for discipline-specific writing expectations.",
-  "sample": {
-    "question": "What is a group sharing common communication practices?",
-    "expectedAny": [
-      "discourse community",
-      "communication community",
-      "academic community",
-      "professional community"
-    ]
-  },
-  "truefalse": {
-    "question": "Metacognition involves awareness of one's own thinking.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What uses multiple modes like text, images, and sound?",
-    "expectedAny": [
-      "multimodal composition",
-      "multimedia communication",
-      "mixed media",
-      "integrated communication"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Established forms within writing types are ________ conventions.",
-    "expectedAny": [
-      "genre",
-      "writing",
-      "formal",
-      "structural"
-    ]
-  },
-  "shortanswer": {
-    "question": "How do discourse communities shape communication expectations?",
-    "expectedAny": [
-      "establish norms",
-      "define standards",
-      "create conventions",
-      "set expectations"
-    ]
-  }
+  "sample": [
+    {
+      "question": "What is a group sharing common communication practices?",
+      "expectedAny": ["discourse community", "communication community", "academic community", "professional community", "shared discourse group", "communicative community"]
+    },
+    {
+      "question": "What is awareness of one's own thought processes?",
+      "expectedAny": ["metacognition", "self-awareness", "thinking about thinking", "cognitive awareness", "reflective thinking", "self reflection"]
+    },
+    {
+      "question": "What are established forms within specific writing types?",
+      "expectedAny": ["genre conventions", "writing conventions", "genre rules", "formal expectations", "genre expectations", "stylistic conventions"]
+    },
+    {
+      "question": "What legal concept protects original ideas?",
+      "expectedAny": ["intellectual property", "IP", "creative rights", "idea protection", "copyright", "creative ownership"]
+    },
+    {
+      "question": "What uses multiple modes like text and images?",
+      "expectedAny": ["multimodal composition", "multimedia communication", "mixed mode composition", "integrated media", "multimodal text", "multimedia writing"]
+    },
+    {
+      "question": "What community shares language and communication goals?",
+      "expectedAny": ["discourse community", "communication group", "professional community", "academic discourse group"]
+    },
+    {
+      "question": "What helps you understand your own thinking?",
+      "expectedAny": ["metacognition", "self-reflection", "cognitive awareness", "thinking awareness"]
+    },
+    {
+      "question": "What guides expectations in specific writing types?",
+      "expectedAny": ["genre conventions", "writing rules", "format expectations", "genre standards"]
+    },
+    {
+      "question": "What protects creative and original works?",
+      "expectedAny": ["intellectual property", "IP law", "copyright", "creative protection"]
+    },
+    {
+      "question": "What combines text images and sound?",
+      "expectedAny": ["multimodal composition", "multimedia work", "mixed media", "integrated composition"]
+    }
+  ],
+  "truefalse": [
+    {
+      "question": "Metacognition involves awareness of one's own thinking.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Discourse communities have no shared practices.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Genre conventions guide expectations for specific writing types.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Intellectual property does not protect creative works.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Multimodal composition uses multiple communication modes.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Discourse communities share common goals and language.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Metacognition means ignoring your thought processes.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Genre conventions vary by writing type.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "All ideas are free to use without permission.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Multimodal work combines text images and sound.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "What shares communication practices?",
+      "choices": ["Random group", "Discourse community", "Isolated individuals", "Strangers"],
+      "correct": "Discourse community"
+    },
+    {
+      "question": "What is thinking about thinking?",
+      "choices": ["Confusion", "Metacognition", "Distraction", "Ignorance"],
+      "correct": "Metacognition"
+    },
+    {
+      "question": "What guides genre expectations?",
+      "choices": ["Random rules", "Conventions", "Chaos", "Confusion"],
+      "correct": "Conventions"
+    },
+    {
+      "question": "What protects creative works?",
+      "choices": ["Nothing", "Intellectual property", "Luck", "Hope"],
+      "correct": "Intellectual property"
+    },
+    {
+      "question": "What uses multiple modes?",
+      "choices": ["Simple text", "Multimodal composition", "Single image", "Audio only"],
+      "correct": "Multimodal composition"
+    },
+    {
+      "question": "What defines academic groups?",
+      "choices": ["Random meetings", "Discourse communities", "Accidents", "Confusion"],
+      "correct": "Discourse communities"
+    },
+    {
+      "question": "What improves learning?",
+      "choices": ["Ignoring thoughts", "Metacognition", "Avoiding reflection", "Confusion"],
+      "correct": "Metacognition"
+    },
+    {
+      "question": "What shapes writing forms?",
+      "choices": ["Randomness", "Genre conventions", "Chaos", "Accidents"],
+      "correct": "Genre conventions"
+    },
+    {
+      "question": "What includes copyright?",
+      "choices": ["Free use", "Intellectual property", "Stealing", "Copying"],
+      "correct": "Intellectual property"
+    },
+    {
+      "question": "What integrates media types?",
+      "choices": ["Text only", "Multimodal composition", "Image only", "Sound only"],
+      "correct": "Multimodal composition"
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "A _____ community shares communication practices.",
+      "expectedAny": ["discourse", "communication", "professional"]
+    },
+    {
+      "question": "_____ is awareness of your own thinking.",
+      "expectedAny": ["metacognition", "self-awareness", "reflection"]
+    },
+    {
+      "question": "_____ conventions guide specific writing types.",
+      "expectedAny": ["genre", "writing", "format"]
+    },
+    {
+      "question": "_____ property protects creative works.",
+      "expectedAny": ["intellectual", "creative", "original"]
+    },
+    {
+      "question": "_____ composition uses multiple communication modes.",
+      "expectedAny": ["multimodal", "multimedia", "mixed-mode"]
+    },
+    {
+      "question": "Academic writers belong to _____ communities.",
+      "expectedAny": ["discourse", "professional", "scholarly"]
+    },
+    {
+      "question": "_____ helps you monitor your learning.",
+      "expectedAny": ["metacognition", "self-awareness", "reflection"]
+    },
+    {
+      "question": "Lab reports follow scientific _____ conventions.",
+      "expectedAny": ["genre", "writing", "format"]
+    },
+    {
+      "question": "Copyright is a form of _____ property.",
+      "expectedAny": ["intellectual", "creative", "legal"]
+    },
+    {
+      "question": "Videos are _____ compositions.",
+      "expectedAny": ["multimodal", "multimedia", "mixed-media"]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Explain what a discourse community is and give an example.",
+      "expectedAny": ["a discourse community shares language goals and practices like academic disciplines or professional fields", "groups with common communication conventions such as scientists or lawyers", "communities defined by shared genres vocabulary and communication purposes"]
+    },
+    {
+      "question": "How does metacognition improve academic performance?",
+      "expectedAny": ["metacognition helps students monitor understanding and adjust learning strategies", "awareness of thinking allows identification of strengths and weaknesses", "reflecting on thought processes improves problem-solving and retention"]
+    },
+    {
+      "question": "Why are genre conventions important for writers?",
+      "expectedAny": ["conventions help readers know what to expect and navigate texts efficiently", "following genre rules demonstrates competence within discourse communities", "conventions facilitate communication by providing shared frameworks"]
+    },
+    {
+      "question": "What is intellectual property and why does it matter?",
+      "expectedAny": ["intellectual property protects original ideas and creative works from theft", "IP law ensures creators receive credit and compensation for their work", "protecting ideas encourages innovation and respects creative effort"]
+    },
+    {
+      "question": "How does multimodal composition enhance communication?",
+      "expectedAny": ["combining modes like text images and sound reaches diverse audiences", "multiple modes reinforce messages and engage different learning styles", "multimodal work creates richer more nuanced communication"]
+    },
+    {
+      "question": "How do you join a new discourse community?",
+      "expectedAny": ["by learning the community's language conventions and shared practices", "through reading analyzing and practicing the genres used", "developing familiarity with vocabulary goals and communication norms"]
+    },
+    {
+      "question": "Give an example of metacognitive strategy.",
+      "expectedAny": ["self-questioning while reading to check comprehension", "monitoring which study methods work best for you", "reflecting on why you made errors and adjusting approach"]
+    },
+    {
+      "question": "Compare genre conventions in two different types of writing.",
+      "expectedAny": ["lab reports require objective tone and structured sections while personal essays allow subjective voice", "business emails demand professional brevity while academic essays need detailed analysis", "scientific papers use passive voice while journalism prefers active constructions"]
+    },
+    {
+      "question": "How can students avoid violating intellectual property?",
+      "expectedAny": ["by properly citing all sources and seeking permission for copyrighted material", "understanding fair use and giving credit to original creators", "never presenting others' work as your own and respecting creative rights"]
+    },
+    {
+      "question": "What makes a composition effectively multimodal?",
+      "expectedAny": ["when each mode contributes meaningfully and modes work together coherently", "effective integration where text images and sound reinforce the message", "purposeful use of multiple modes that enhance rather than distract"]
+    }
+  ]
 }

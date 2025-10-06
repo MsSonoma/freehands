@@ -23,6 +23,10 @@
     {
       "term": "estimate",
       "definition": "A good guess about how much or how many"
+    },
+    {
+      "term": "temperature",
+      "definition": "How hot or cold something is"
     }
   ],
   "teachingNotes": "Use rulers and measuring tapes to measure classroom objects. Compare lengths of different items. Practice estimating before measuring. Introduce centimeters as well as inches.",
@@ -55,21 +59,21 @@
   ],
   "fillintheblank": [
     {"question": "Before you measure something, you should make an ________.", "expectedAny": ["estimate", "guess", "prediction", "estimation"]},
-    {"question": "There are ________ inches in a foot.", "expectedAny": ["12"]},
-    {"question": "There are ________ feet in a yard.", "expectedAny": ["3"]},
-    {"question": "A meter has ________ centimeters.", "expectedAny": ["100"]},
-    {"question": "Use a ________ to measure long distances in a room.", "expectedAny": ["measuring tape", "tape measure"]},
-    {"question": "We measure weight with a ________.", "expectedAny": ["scale"]},
-    {"question": "We measure temperature with a ________.", "expectedAny": ["thermometer"]}
+    {"question": "There are ________ inches in a foot.", "expectedAny": ["12", "twelve"]},
+    {"question": "There are ________ feet in a yard.", "expectedAny": ["3", "three"]},
+    {"question": "A meter has ________ centimeters.", "expectedAny": ["100", "one hundred"]},
+    {"question": "Use a ________ to measure long distances in a room.", "expectedAny": ["measuring tape", "tape measure", "tape"]},
+    {"question": "We measure weight with a ________.", "expectedAny": ["scale", "weighing scale"]},
+    {"question": "We measure temperature with a ________.", "expectedAny": ["thermometer", "temperature thermometer"]}
   ],
   "shortanswer": [
     {"question": "How would you measure the height of your classroom door?", "expectedAny": ["use measuring tape", "use yardstick", "measure in feet", "use long ruler"]},
-    {"question": "Why is estimating helpful before measuring?", "expectedAny": ["to plan and choose the right tool", "to check if the answer makes sense"]},
-    {"question": "When would you use centimeters instead of inches?", "expectedAny": ["for smaller or metric measurements"]},
-    {"question": "How can you compare two lengths?", "expectedAny": ["measure both and subtract", "line them up and see the difference"]},
-    {"question": "What tool would you choose to measure a playground?", "expectedAny": ["measuring tape", "meter wheel"]},
-    {"question": "Explain the relationship between inches and feet.", "expectedAny": ["12 inches in 1 foot"]},
-    {"question": "How do you avoid measurement mistakes?", "expectedAny": ["start at zero", "keep the tool straight"]}
+    {"question": "Why is estimating helpful before measuring?", "expectedAny": ["to plan and choose the right tool", "to check if the answer makes sense", "to make a quick close guess first"]},
+    {"question": "When would you use centimeters instead of inches?", "expectedAny": ["for smaller or metric measurements", "for metric tools", "when measuring small objects carefully"]},
+    {"question": "How can you compare two lengths?", "expectedAny": ["measure both and subtract", "line them up and see the difference", "use a ruler to see which is longer"]},
+    {"question": "What tool would you choose to measure a playground?", "expectedAny": ["measuring tape", "meter wheel", "long tape measure"]},
+    {"question": "Explain the relationship between inches and feet.", "expectedAny": ["12 inches in 1 foot", "one foot equals twelve inches", "twelve inches make a foot"]},
+    {"question": "How do you avoid measurement mistakes?", "expectedAny": ["start at zero", "keep the tool straight", "don’t bend the tape"]}
   ],
   "wordProblems": [
     {"question": "A pencil is 6 inches long and a crayon is 4 inches long. How much longer is the pencil?", "expectedAny": ["2 inches", "2 inches longer", "two inches", "two inches longer"]},

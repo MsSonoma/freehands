@@ -1,33 +1,86 @@
-{
-  "id": "polynomial-functions-operations-advanced",
+﻿{
+  "id": "11th_Polynomial_Functions_Operations_Advanced",
   "title": "Polynomial Functions and Operations",
   "grade": "11th",
   "difficulty": "Advanced",
-  "featured": false,
   "vocab": [
-    {"term": "polynomial", "definition": "An expression consisting of variables and coefficients with non-negative integer exponents"},
+    {"term": "polynomial", "definition": "Expression with variables and coefficients having non-negative integer exponents"},
     {"term": "degree", "definition": "The highest power of the variable in a polynomial"},
     {"term": "leading coefficient", "definition": "The coefficient of the term with the highest degree"},
-    {"term": "end behavior", "definition": "How a function behaves as x approaches positive or negative infinity"}
+    {"term": "end behavior", "definition": "How function behaves as x approaches positive or negative infinity"},
+    {"term": "multiplicity", "definition": "Number of times a factor appears in a polynomial"}
   ],
   "teachingNotes": "Use graphing technology to explore polynomial behavior. Connect to real-world modeling situations. Emphasize relationship between degree and graph shape.",
-  "sample": {
-    "question": "What is the degree and leading coefficient of f(x) = -3x⁴ + 2x² - 7x + 1?",
-    "expectedAny": ["degree 4, leading coefficient -3", "highest power is 4, coefficient is -3"]
-  },
+  "sample": [
+    {"question": "What is the degree of -3x + 2x - 7x + 1?", "expectedAny": ["4", "four", "fourth degree", "degree 4"]},
+    {"question": "What is the leading coefficient of -3x + 2x?", "expectedAny": ["-3", "negative 3", "negative three", "minus 3"]},
+    {"question": "What describes behavior as x approaches infinity?", "expectedAny": ["end behavior", "long-term behavior", "tail behavior", "asymptotic behavior"]},
+    {"question": "What is an expression with non-negative integer exponents?", "expectedAny": ["polynomial", "polynomial function", "polynomial expression", "algebraic polynomial"]},
+    {"question": "What is the number of times a factor repeats?", "expectedAny": ["multiplicity", "repeated factor", "factor count", "root multiplicity"]},
+    {"question": "What is the highest exponent in a polynomial?", "expectedAny": ["degree", "polynomial degree", "order", "highest power"]},
+    {"question": "What coefficient leads the polynomial?", "expectedAny": ["leading coefficient", "first coefficient", "highest degree coefficient", "leading term coefficient"]},
+    {"question": "What determines if ends go up or down?", "expectedAny": ["leading coefficient and degree", "end behavior", "sign and parity", "coefficient and degree"]},
+    {"question": "What causes a graph to bounce at a zero?", "expectedAny": ["even multiplicity", "repeated root", "double root", "even factor"]},
+    {"question": "What is 3x - 2x + 5?", "expectedAny": ["polynomial", "cubic polynomial", "third degree polynomial", "polynomial function"]}
+  ],
   "truefalse": [
-    {"question": "A polynomial of degree n can have at most n real zeros.", "answer": true, "expectedAny": ["fundamental theorem of algebra limits number of zeros"]}
+    {"question": "A polynomial of degree n can have at most n real zeros.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "The degree is always the sum of all exponents.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "End behavior is determined by leading term.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "All polynomials have at least one real zero.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Even multiplicity causes the graph to bounce.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Odd degree polynomials have opposite end behaviors.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Leading coefficient determines left end behavior only.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Polynomials are continuous everywhere.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "A zero with multiplicity 3 crosses the x-axis.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "All polynomials are defined for all real numbers.", "expectedAny": ["true", "yes", "t", "correct"]}
   ],
   "multiplechoice": [
-    {"question": "What is the end behavior of f(x) = -2x³ + 5x - 1?", "choices": ["Both ends go up", "Both ends go down", "Left up, right down", "Left down, right up"], "correct": 2, "expectedAny": ["negative leading coefficient with odd degree"]}
+    {"question": "What is end behavior of f(x) = -2x + 5x - 1?", "choices": ["Both up", "Both down", "Left up right down", "Left down right up"], "correct": "Left down right up"},
+    {"question": "What is degree of (x + 3)(x - 2x + 4)?", "choices": ["2", "3", "5", "6"], "correct": "3"},
+    {"question": "What is leading coefficient of 5 - 2x + 4x?", "choices": ["5", "-2", "4", "0"], "correct": "4"},
+    {"question": "How many zeros can a degree 5 polynomial have?", "choices": ["Exactly 5", "At most 5", "At least 5", "More than 5"], "correct": "At most 5"},
+    {"question": "What does even multiplicity cause?", "choices": ["Cross", "Bounce", "Vertical asymptote", "Hole"], "correct": "Bounce"},
+    {"question": "What is f(x) = x - 3x + 2?", "choices": ["Linear", "Quadratic", "Cubic", "Quartic"], "correct": "Quartic"},
+    {"question": "Which has degree 0?", "choices": ["x", "5", "x + 5", "x"], "correct": "5"},
+    {"question": "What is (x - 2) multiplicity at x = 2?", "choices": ["1", "2", "3", "4"], "correct": "3"},
+    {"question": "Even degree positive lead coefficient?", "choices": ["Both up", "Both down", "Left up right down", "Left down right up"], "correct": "Both up"},
+    {"question": "What is (x + 1)(x - 3) expanded?", "choices": ["x - 2x - 3", "x + 2x - 3", "x - 2x + 3", "x + 2x + 3"], "correct": "x - 2x - 3"}
   ],
   "fillintheblank": [
-    {"question": "When multiplying (x + 3)(x² - 2x + 4), the degree of the resulting polynomial is _____.", "expectedAny": ["3"]}
+    {"question": "When multiplying (x + 3)(x - 2x + 4), the degree is _____.", "expectedAny": ["3", "three", "third", "degree 3", "degree three", "cubic"]},
+    {"question": "The _____ coefficient determines end behavior.", "expectedAny": ["leading", "first", "highest", "leading coefficient", "top", "highest degree"]},
+    {"question": "A polynomial of degree n has at most _____ real zeros.", "expectedAny": ["n", "n zeros", "degree n", "n real zeros", "degree", "same as degree"]},
+    {"question": "_____ behavior describes polynomial tails.", "expectedAny": ["end", "asymptotic", "tail", "end behavior", "limit behavior", "far behavior"]},
+    {"question": "Even _____ causes the graph to bounce.", "expectedAny": ["multiplicity", "factor", "root", "even multiplicity", "repeated root", "double root"]},
+    {"question": "The highest exponent is the _____.", "expectedAny": ["degree", "order", "power", "highest degree", "top power", "maximum exponent"]},
+    {"question": "Polynomials are _____ for all real numbers.", "expectedAny": ["continuous", "defined", "smooth"]},
+    {"question": "Odd degree polynomials have _____ end behaviors.", "expectedAny": ["opposite", "different", "contrary"]},
+    {"question": "A zero with multiplicity 2 causes a _____.", "expectedAny": ["bounce", "touch", "tangent"]},
+    {"question": "f(x) = 3x has degree _____.", "expectedAny": ["4", "four", "fourth"]}
   ],
   "shortanswer": [
-    {"question": "Explain how the leading coefficient affects the end behavior of a polynomial function.", "expectedAny": ["determines if ends go up or down", "positive leads to up for even degree, negative leads to down"]}
+    {"question": "Explain how the leading coefficient affects end behavior.", "expectedAny": ["positive leads up for even degree and down-to-up for odd while negative is opposite", "determines if function rises or falls at extremes", "sign controls whether ends go up or down combined with degree parity"]},
+    {"question": "What does multiplicity tell you about a zero?", "expectedAny": ["how many times the factor appears and whether graph crosses or bounces", "even multiplicity bounces odd crosses", "number of repeated roots affects graph behavior at that point"]},
+    {"question": "Why can a degree n polynomial have at most n zeros?", "expectedAny": ["fundamental theorem of algebra limits zeros to degree", "each zero corresponds to a linear factor maximum n factors", "polynomial factorization gives at most n linear terms"]},
+    {"question": "Describe end behavior of f(x) = 2x - 5x + 1.", "expectedAny": ["both ends go up because even degree with positive leading coefficient", "fourth degree positive so both tails rise", "as x approaches  function approaches +"]},
+    {"question": "How do you find the degree of a product of polynomials?", "expectedAny": ["add the degrees of the factors", "multiply highest powers so degrees sum", "degree of product equals sum of individual degrees"]},
+    {"question": "Explain the difference between a bounce and a cross.", "expectedAny": ["bounce has even multiplicity and touches axis while cross has odd and goes through", "even multiplicity tangent odd multiplicity intersects", "bounce at double root cross at single root"]},
+    {"question": "Why are all polynomials continuous?", "expectedAny": ["defined by smooth operations addition and multiplication no breaks", "no division or undefined points", "algebraic structure ensures no jumps or holes"]},
+    {"question": "How does degree affect the shape of a polynomial graph?", "expectedAny": ["higher degree allows more turns and complexity", "degree n can have up to n-1 turning points", "determines maximum number of direction changes"]},
+    {"question": "What is the relationship between zeros and factors?", "expectedAny": ["each zero r corresponds to factor (x - r)", "zeros are roots of factors", "factored form shows zeros directly"]},
+    {"question": "Explain what a quartic polynomial is.", "expectedAny": ["polynomial of degree 4", "fourth degree polynomial", "highest power is x"]}
   ],
   "wordProblems": [
-    {"question": "A company's profit function is P(x) = -0.5x³ + 12x² - 50x + 200, where x is thousands of units sold. What is the maximum degree of this profit function, and what does this suggest about long-term behavior?", "expectedAny": ["degree 3, negative leading coefficient means profit eventually decreases", "cubic with negative lead coefficient"]}
+    {"question": "Company profit is P(x) = -0.5x + 12x - 50x + 200 where x is thousands. What is degree and long-term behavior?", "expectedAny": ["degree 3 negative lead coefficient so profit eventually decreases", "cubic with negative coefficient means losses at high production", "third degree negative leading term ends down"]},
+    {"question": "If f(x) has zeros at x = -2, 1, and 3 with multiplicities 2, 1, and 1, what is minimum degree?", "expectedAny": ["4", "minimum degree is 4", "sum of multiplicities gives 4"]},
+    {"question": "A polynomial g(x) = ax + bx + c. If both ends go down, what is true about a?", "expectedAny": ["a is negative", "a < 0", "leading coefficient negative"]},
+    {"question": "Volume of a box is V(x) = x(10 - 2x)(8 - 2x). What is the degree?", "expectedAny": ["3", "cubic", "third degree after expansion"]},
+    {"question": "Polynomial p(x) crosses x-axis at x = 2 and bounces at x = -1. Write possible form.", "expectedAny": ["p(x) = a(x - 2)(x + 1)", "(x - 2)(x + 1) times constant", "linear factor at 2 squared factor at -1"]},
+    {"question": "If h(x) = 2x - 6x + 4x, factor completely.", "expectedAny": ["2x(x - 3x + 2) = 2x(x - 1)(x - 2)", "2x(x - 1)(x - 2)", "factored form shows zeros at 0, 1, and 2"]},
+    {"question": "Population model P(t) = -t + 8t + 100. What happens long-term?", "expectedAny": ["population decreases without bound", "negative x dominates so both ends go down", "eventually becomes negative and unrealistic"]},
+    {"question": "Find degree of (x + 1)(x - 2x + 5)(x - 7).", "expectedAny": ["6", "sum degrees 2 + 3 + 1 = 6", "sixth degree"]},
+    {"question": "If polynomial has end behavior both up and zero at x = 3 with multiplicity 2, write simplest form.", "expectedAny": ["(x - 3)", "x - 6x + 9", "squared factor at 3"]},
+    {"question": "Revenue R(x) = -2x + 20x - 50x. How many turning points possible?", "expectedAny": ["at most 3", "degree 4 allows up to 3 turns", "up to n-1 = 3 turning points"]}
   ]
 }

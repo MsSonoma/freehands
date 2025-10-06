@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "11th_Trigonometric_Identities_Applications_Advanced",
   "title": "Trigonometric Identities and Applications",
   "grade": "11th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "power reduction formula",
-      "definition": "Identity expressing higher powers of trig functions in terms of first powers"
-    },
-    {
-      "term": "trigonometric substitution",
-      "definition": "Method using trig identities to simplify algebraic expressions"
-    },
-    {
-      "term": "harmonic analysis",
-      "definition": "Decomposing complex waves into simpler trigonometric components"
-    },
-    {
-      "term": "Fourier series",
-      "definition": "Representation of function as infinite sum of trigonometric functions"
-    },
-    {
-      "term": "complex exponential form",
-      "definition": "Expression of trigonometric functions using Euler's formula"
-    }
+    {"term": "half-angle formula", "definition": "Express trig function of θ/2 in terms of θ"},
+    {"term": "product-to-sum formulas", "definition": "Convert products of trig functions to sums"},
+    {"term": "sum-to-product formulas", "definition": "Convert sums of trig functions to products"},
+    {"term": "trigonometric proof", "definition": "Verification of identity using known identities"},
+    {"term": "bearing", "definition": "Direction measured clockwise from north"}
   ],
-  "teachingNotes": "Explore advanced applications of trigonometry in calculus and engineering. Introduce Fourier analysis concepts.",
-  "sample": {
-    "question": "What expresses higher powers of trig functions in terms of first powers?",
-    "expectedAny": ["power reduction formula", "power formula", "reduction identity", "power identity"]
-  },
-  "truefalse": {
-    "question": "Fourier series represents functions as sums of trigonometric functions.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What method uses trig identities to simplify algebraic expressions?",
-    "expectedAny": ["trigonometric substitution", "trig substitution", "trigonometric method", "substitution method"]
-  },
-  "fillintheblank": {
-    "question": "Decomposing complex waves into simpler components is ________ analysis.",
-    "expectedAny": ["harmonic", "frequency", "wave", "spectral"]
-  },
-  "shortanswer": {
-    "question": "How does Euler's formula relate trigonometry to complex numbers?",
-    "expectedAny": ["e^(iθ) = cos θ + i sin θ", "exponential form", "complex representation", "Euler's identity"]
-  },
-  "wordProblems": {
-    "question": "Using power reduction, what is cos⁴x in terms of multiple angles?",
-    "expectedAny": ["(3 + 4cos2x + cos4x)/8", "3/8 + cos2x/2 + cos4x/8", "trigonometric polynomial"]
-  }
+  "teachingNotes": "Master advanced identities and rigorous proofs. Apply to navigation problems.",
+  "sample": [
+    {"question": "What formula expresses sin(θ/2)?", "expectedAny": ["half-angle formula", "half angle identity", "sine half angle", "θ/2 formula"]},
+    {"question": "What converts sinA sinB to a sum?", "expectedAny": ["product-to-sum formula", "product to sum identity", "multiplication to addition", "product conversion"]},
+    {"question": "What converts sinA + sinB to a product?", "expectedAny": ["sum-to-product formula", "sum to product identity", "addition to multiplication", "sum conversion"]},
+    {"question": "What verifies an identity?", "expectedAny": ["trigonometric proof", "trig proof", "identity verification", "proving identity"]},
+    {"question": "What direction measure uses north as reference?", "expectedAny": ["bearing", "compass bearing", "azimuth", "navigation angle"]},
+    {"question": "What handles angles like 15 from 30?", "expectedAny": ["half-angle formula", "half angle identity", "angle bisection", "dividing angle"]},
+    {"question": "What formula turns products into sums?", "expectedAny": ["product-to-sum", "product to sum formulas", "multiplication identities", "product conversion"]},
+    {"question": "What formula turns sums into products?", "expectedAny": ["sum-to-product", "sum to product formulas", "addition identities", "sum conversion"]},
+    {"question": "What demonstrates identity truth?", "expectedAny": ["proof", "trigonometric proof", "verification", "mathematical proof"]},
+    {"question": "What navigation angle starts at north?", "expectedAny": ["bearing", "compass heading", "azimuth", "directional bearing"]}
+  ],
+  "truefalse": [
+    {"question": "Half-angle formulas involve square roots.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Product-to-sum formulas only work for sine.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Sum-to-product formulas simplify some expressions.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Trigonometric proofs require starting with the conclusion.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Bearing is measured clockwise from north.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "sin(θ/2) = (1 - cosθ)/2.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "All trig identities can be proven from Pythagorean identity alone.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Product formulas help integrate trig functions.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Bearing of 90 means west.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Proofs work from one side to match the other.", "expectedAny": ["true", "yes", "t", "correct"]}
+  ],
+  "multiplechoice": [
+    {"question": "What is sin(θ/2) in terms of cosθ?", "choices": ["[(1 + cosθ)/2]", "[(1 - cosθ)/2]", "(1 - cosθ)/2", "(1 + cosθ)/2"], "correct": "[(1 - cosθ)/2]"},
+    {"question": "What is sinA cosB?", "choices": ["[sin(A+B) + sin(A-B)]/2", "[cos(A+B) + cos(A-B)]/2", "sin(A+B)", "cos(A-B)"], "correct": "[sin(A+B) + sin(A-B)]/2"},
+    {"question": "What is sinA + sinB?", "choices": ["2sin[(A+B)/2]cos[(A-B)/2]", "2cos[(A+B)/2]sin[(A-B)/2]", "sin(A+B)", "cos(A-B)"], "correct": "2sin[(A+B)/2]cos[(A-B)/2]"},
+    {"question": "What proves identities?", "choices": ["Guessing", "Algebraic manipulation", "Graphing", "Testing values"], "correct": "Algebraic manipulation"},
+    {"question": "Bearing of 180 means?", "choices": ["North", "East", "South", "West"], "correct": "South"},
+    {"question": "What is cos(θ/2)?", "choices": ["(1 + cosθ)/2", "(1 - cosθ)/2", "1 + cosθ", "1 - cosθ"], "correct": "(1 + cosθ)/2"},
+    {"question": "Which converts products?", "choices": ["Double-angle", "Half-angle", "Product-to-sum", "Pythagorean"], "correct": "Product-to-sum"},
+    {"question": "Bearing 045 is what direction?", "choices": ["North", "Northeast", "East", "Southeast"], "correct": "Northeast"},
+    {"question": "What is sin15 using half-angle?", "choices": ["[(1 - cos30)/2]", "[(1 + cos30)/2]", "sin30/2", "cos30/2"], "correct": "[(1 - cos30)/2]"},
+    {"question": "What simplifies 2sinθcosφ?", "choices": ["sin(θ+φ) + sin(θ-φ)", "cos(θ+φ) + cos(θ-φ)", "sin(θ+φ)", "cos(θ-φ)"], "correct": "sin(θ+φ) + sin(θ-φ)"}
+  ],
+  "fillintheblank": [
+    {"question": "_____-angle formulas express sin(θ/2).", "expectedAny": ["half", "1/2", "bisection", "half angle", "bisector", "semi angle"]},
+    {"question": "_____-to-sum formulas convert multiplication.", "expectedAny": ["product", "products", "multiplication", "product to sum", "multiply to add", "factor to sum"]},
+    {"question": "Sum-to-_____ formulas convert addition.", "expectedAny": ["product", "products", "multiplication", "sum to product", "addition to product", "sum to multiply"]},
+    {"question": "A _____ verifies an identity step by step.", "expectedAny": ["proof", "verification", "demonstration", "identity proof", "derivation", "justification"]},
+    {"question": "_____ measures direction from north clockwise.", "expectedAny": ["bearing", "azimuth", "heading", "compass bearing", "direction", "navigational bearing"]},
+    {"question": "sin(θ/2) = (1 - _____)/2.", "expectedAny": ["cosθ", "cos θ", "cosine θ"]},
+    {"question": "sinA sinB = [cos(A-B) - cos(A+B)]/_____.", "expectedAny": ["2", "two", "half"]},
+    {"question": "Bearing 270 points _____.", "expectedAny": ["west", "W", "westward"]},
+    {"question": "To prove an identity, start with the more _____ side.", "expectedAny": ["complex", "complicated", "difficult"]},
+    {"question": "cos(θ/2) = (1 + cosθ)/_____.", "expectedAny": ["2", "two", "half"]}
+  ],
+  "shortanswer": [
+    {"question": "Derive sin(θ/2) using the half-angle formula.", "expectedAny": ["start with cos(2α) = 1 - 2sinα and substitute α = θ/2 to get sin(θ/2) = [(1 - cosθ)/2]", "use double angle formula in reverse", "from 1 - 2sin(θ/2) = cosθ solve for sin(θ/2)"]},
+    {"question": "Prove the identity sinθ + cosθ = 1 using the unit circle.", "expectedAny": ["on unit circle x + y = 1 and x = cosθ, y = sinθ so cosθ + sinθ = 1", "unit circle definition gives the Pythagorean identity", "coordinates on unit circle satisfy x + y = 1"]},
+    {"question": "Use product-to-sum to simplify 2sinθcosφ.", "expectedAny": ["2sinθcosφ = sin(θ + φ) + sin(θ - φ)", "equals sum of sines using product formula", "sin(θ + φ) + sin(θ - φ)"]},
+    {"question": "Convert sin5θ + sin3θ to product form.", "expectedAny": ["2sin(4θ)cos(θ) using sum-to-product formula", "2sin[(5θ + 3θ)/2]cos[(5θ - 3θ)/2] = 2sin(4θ)cos(θ)", "equals 2sin4θcosθ"]},
+    {"question": "Explain what bearing 135 means.", "expectedAny": ["135 degrees clockwise from north which is southeast", "southeast direction or 45 degrees south of east", "SE or 45 degrees past east toward south"]},
+    {"question": "Prove tanθ = sinθ/cosθ.", "expectedAny": ["from unit circle tanθ is y/x and sinθ/cosθ is also y/x", "definitions from right triangle opposite/adjacent equals opposite/hypotenuse divided by adjacent/hypotenuse", "cancel hypotenuse to get opposite/adjacent"]},
+    {"question": "Find sin15 exactly using half-angle formula.", "expectedAny": ["sin15 = sin(30/2) = [(1 - cos30)/2] = [(1 - 3/2)/2] = [(2 - 3)/4]", "use θ = 30 in half angle formula", "equals ((2 - 3))/2"]},
+    {"question": "Why are half-angle formulas useful?", "expectedAny": ["find exact values for angles like 15 or 22.5 not on unit circle", "compute non-standard angles from known values", "evaluate trig functions at half the known angle"]},
+    {"question": "Prove 1 + tanθ = secθ.", "expectedAny": ["divide sinθ + cosθ = 1 by cosθ to get tanθ + 1 = secθ", "Pythagorean identity divided by cosθ", "from fundamental identity dividing by cos squared"]},
+    {"question": "What is the bearing from A to B if B is northwest of A?", "expectedAny": ["315 degrees or between 270 and 360", "northwest is 315 clockwise from north", "315 bearing"]}
+  ],
+  "wordProblems": [
+    {"question": "A ship sails on bearing 060 for 50 km. How far east has it traveled?", "expectedAny": ["about 43.3 km", "50sin(60) = 50(3/2)", "approximately 43 kilometers east"]},
+    {"question": "Verify the identity (sinθ + cosθ) = 1 + sin(2θ).", "expectedAny": ["expand to sinθ + 2sinθcosθ + cosθ = 1 + sin(2θ) which is true", "left side equals 1 + 2sinθcosθ and 2sinθcosθ = sin(2θ)", "proven using Pythagorean and double-angle identities"]},
+    {"question": "Find cos22.5 using half-angle formula.", "expectedAny": ["cos22.5 = [(1 + cos45)/2] = [(1 + 2/2)/2]", "equals [(2 + 2)/4]", "approximately 0.924"]},
+    {"question": "Use sum-to-product to solve sin5x + sin3x = 0.", "expectedAny": ["2sin4xcosx = 0 so sin4x = 0 or cosx = 0", "4x = nπ or x = π/2 + nπ", "solutions at multiples of π/4 and odd multiples of π/2"]},
+    {"question": "Two ships leave port on bearings 030 and 120. What angle is between their paths?", "expectedAny": ["90 degrees", "120 - 30 = 90", "perpendicular paths 90 apart"]},
+    {"question": "Prove sinθ = (3sinθ - sin3θ)/4.", "expectedAny": ["use triple angle formula and algebra to show equivalence", "expand sin3θ and manipulate to isolate sinθ", "triple angle identity rearranged"]},
+    {"question": "A plane flies 200 km on bearing 225. How far south?", "expectedAny": ["about 141 km", "200sin(45) = 200(2/2)", "approximately 141 kilometers south"]},
+    {"question": "Simplify cosAcosB - sinAsinB.", "expectedAny": ["cos(A + B)", "angle sum formula for cosine", "equals cos(A + B)"]},
+    {"question": "Find exact value of tan(22.5) using half-angle.", "expectedAny": ["tan(22.5) = [(1 - cos45)/(1 + cos45)] = 2 - 1", "equals root 2 minus 1", "approximately 0.414"]},
+    {"question": "Prove the identity sinθ/(1 + cosθ) = (1 - cosθ)/sinθ.", "expectedAny": ["multiply first fraction by (1 - cosθ)/(1 - cosθ) to get (1 - cosθ)/(sin θ(1 + cosθ)) = sinθ/(sinθ(1 + cosθ)) cancel to get result", "use difference of squares and Pythagorean identity", "cross multiply and use sinθ = 1 - cosθ"]}
+  ]
 }

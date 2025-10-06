@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Use real data sets that students can relate to. Practice creating different types of graphs. Discuss when each measure of central tendency is most useful.",
-  "sample": {
-    "question": "What is the middle number in an ordered set of data called?",
-    "expectedAny": ["median", "middle value", "central value", "middle number"]
-  },
-  "truefalse": {
-    "question": "The mean is found by adding all values and dividing by the number of values.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is the mode of this data set: 3, 5, 7, 5, 9, 5, 2?",
-    "expectedAny": ["5", "five", "the number 5", "5 appears most"]
-  },
-  "fillintheblank": {
-    "question": "The difference between the highest and lowest values is the ________.",
-    "expectedAny": ["range", "data range", "value range", "spread"]
-  },
-  "shortanswer": {
-    "question": "Find the mean of these test scores: 85, 92, 78, 95, 90.",
-    "expectedAny": ["88", "88 points", "(85+92+78+95+90)÷5 = 88", "average is 88"]
-  },
-  "wordProblems": {
-    "question": "A basketball player scored these points in 5 games: 12, 18, 15, 21, 14. What is the range of his scores?",
-    "expectedAny": ["9 points", "9", "21-12=9", "range is 9"]
-  }
+  "sample": [
+    { "question": "What is the middle number in an ordered set of data called?", "expectedAny": ["median", "middle value", "middle number"] },
+    { "question": "Which is a measure of center?", "choices": ["Range", "Mean", "Data", "Graph"], "correct": 1, "expectedAny": ["mean"] },
+    { "question": "The average is also called the ________.", "expectedAny": ["mean"] },
+    { "question": "The most frequent number is the ________.", "expectedAny": ["mode", "most common", "most frequent"] },
+    { "question": "What is the range of 2, 8, 5, 3?", "choices": ["3", "5", "6", "8"], "correct": 2, "expectedAny": ["6"] },
+    { "question": "Collecting and analyzing data is ________.", "expectedAny": ["statistics"] },
+    { "question": "The difference between high and low is ________.", "expectedAny": ["range"] },
+    { "question": "Which measures center?", "choices": ["Range", "Median", "Spread", "Graph"], "correct": 1, "expectedAny": ["median"] },
+    { "question": "Find the mean of 10, 20, 30.", "expectedAny": ["20"] },
+    { "question": "What appears most often?", "expectedAny": ["mode", "most common", "most frequent"] }
+  ],
+  "truefalse": [
+    { "question": "The mean is found by adding all values and dividing by the number of values.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The mode is always the largest number.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The median is the middle value when data is ordered.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Range is the sum of all values.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The mean is also called the average.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Data sets always have a mode.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Statistics involves analyzing data.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The median and mean are always equal.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Range shows spread of data.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Mode is the least frequent value.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is the mode of this data set: 3, 5, 7, 5, 9, 5, 2?", "choices": ["3", "5", "7", "9"], "correct": 1, "expectedAny": ["5"] },
+    { "question": "What is the mean of 4, 6, 8?", "choices": ["4", "6", "8", "18"], "correct": 1, "expectedAny": ["6"] },
+    { "question": "What is the median of 2, 5, 8?", "choices": ["2", "5", "8", "15"], "correct": 1, "expectedAny": ["5"] },
+    { "question": "What is the range of 10, 15, 20?", "choices": ["5", "10", "15", "20"], "correct": 1, "expectedAny": ["10"] },
+    { "question": "Which is a measure of central tendency?", "choices": ["Range", "Median", "Data", "Total"], "correct": 1, "expectedAny": ["median"] },
+    { "question": "What is the mode of 1, 2, 2, 3, 4?", "choices": ["1", "2", "3", "4"], "correct": 1, "expectedAny": ["2"] },
+    { "question": "The mean of 5 and 15 is:", "choices": ["5", "10", "15", "20"], "correct": 1, "expectedAny": ["10"] },
+    { "question": "What is the range of 3, 7, 12, 5?", "choices": ["5", "7", "9", "12"], "correct": 2, "expectedAny": ["9"] },
+    { "question": "Which shows the average?", "choices": ["Mode", "Mean", "Range", "Data"], "correct": 1, "expectedAny": ["mean"] },
+    { "question": "The median of 1, 3, 5, 7, 9 is:", "choices": ["1", "3", "5", "9"], "correct": 2, "expectedAny": ["5"] }
+  ],
+  "fillintheblank": [
+    { "question": "The difference between the highest and lowest values is the ________.", "expectedAny": ["range"] },
+    { "question": "The average of data is called the ________.", "expectedAny": ["mean", "average"] },
+    { "question": "The middle value when ordered is the ________.", "expectedAny": ["median", "middle number", "middle value"] },
+    { "question": "The most frequent value is the ________.", "expectedAny": ["mode", "most common", "most frequent"] },
+    { "question": "Analyzing data is called ________.", "expectedAny": ["statistics"] },
+    { "question": "To find mean, add values and ________ by count.", "expectedAny": ["divide"] },
+    { "question": "The ________ shows how spread out data is.", "expectedAny": ["range"] },
+    { "question": "Mean, median, and mode are measures of ________.", "expectedAny": ["center", "central tendency"] },
+    { "question": "The ________ is found by ordering data and finding the middle.", "expectedAny": ["median"] },
+    { "question": "If a value appears most, it is the ________.", "expectedAny": ["mode", "most common", "most frequent"] }
+  ],
+  "shortanswer": [
+    { "question": "Find the mean of these test scores: 85, 92, 78, 95, 90.", "expectedAny": ["88", "(85+92+78+95+90)÷5 = 88"] },
+    { "question": "Explain how to find the median.", "expectedAny": ["order the data, find middle", "arrange in order, pick middle value"] },
+    { "question": "What is the mode of 4, 7, 4, 9, 4?", "expectedAny": ["4"] },
+    { "question": "Find the range of 12, 18, 15, 21.", "expectedAny": ["9", "21-12=9"] },
+    { "question": "Calculate the mean of 10, 20, 30, 40.", "expectedAny": ["25", "(10+20+30+40)÷4=25"] },
+    { "question": "Why is mean called the average?", "expectedAny": ["it averages all values", "distributes total equally", "balances the data", "adds all and divides"] },
+    { "question": "Find the median of 3, 7, 5, 9, 1.", "expectedAny": ["5", "order: 1,3,5,7,9; middle is 5"] },
+    { "question": "What if there's no mode?", "expectedAny": ["no repeated value", "all appear once", "no most frequent"] },
+    { "question": "Calculate the range of 5, 15, 10, 20.", "expectedAny": ["15", "20-5=15"] },
+    { "question": "When is median better than mean?", "expectedAny": ["with outliers", "when data is skewed", "extreme values present"] }
+  ],
+  "wordProblems": [
+    { "question": "A basketball player scored these points in 5 games: 12, 18, 15, 21, 14. What is the range of his scores?", "expectedAny": ["9", "21-12=9"] },
+    { "question": "Test scores are 78, 85, 90, 82, 85. What is the mode?", "expectedAny": ["85"] },
+    { "question": "Temperatures were 65°, 70°, 75°. What is the mean temperature?", "expectedAny": ["70", "(65+70+75)÷3=70"] },
+    { "question": "Heights in cm: 150, 155, 160. What is the median?", "expectedAny": ["155"] },
+    { "question": "Sales were $20, $30, $40, $50. What is the range?", "expectedAny": ["30", "$30", "50-20=30"] },
+    { "question": "Quiz scores: 8, 9, 10, 8, 9, 8. What is the mode?", "expectedAny": ["8"] },
+    { "question": "Ages are 10, 12, 14, 16. What is the mean age?", "expectedAny": ["13", "(10+12+14+16)÷4=13"] },
+    { "question": "Prices: $5, $10, $15. What is the median price?", "expectedAny": ["$10", "10"] },
+    { "question": "Distances: 2 mi, 5 mi, 8 mi, 3 mi. What is the range?", "expectedAny": ["6", "6 mi", "8-2=6"] },
+    { "question": "Weights: 100 lb, 120 lb, 110 lb, 120 lb. What is the mode?", "expectedAny": ["120", "120 lb"] }
+  ]
 }

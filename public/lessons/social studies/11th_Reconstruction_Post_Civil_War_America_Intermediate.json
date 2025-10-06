@@ -1,74 +1,455 @@
-{
-  "id": "11th_Reconstruction_Post_Civil_War_America_Intermediate",
-  "title": "Reconstruction and Post-Civil War America",
-  "grade": "11th",
-  "difficulty": "Intermediate",
-  "vocab": [
-    {
-      "term": "Radical Reconstruction",
-      "definition": "Congressional plan for strict control and transformation of the South"
-    },
-    {
-      "term": "Fifteenth Amendment",
-      "definition": "Constitutional amendment prohibiting denial of voting rights based on race"
-    },
-    {
-      "term": "Compromise of 1877",
-      "definition": "Agreement that ended Reconstruction in exchange for electoral victory"
-    },
-    {
-      "term": "Ku Klux Klan",
-      "definition": "White supremacist organization that terrorized African Americans"
-    },
-    {
-      "term": "scalawag",
-      "definition": "Southern white who supported Republican Reconstruction policies"
-    }
-  ],
-  "teachingNotes": "Analyze competing Reconstruction plans and their consequences. Examine resistance to change and long-term effects.",
-  "sample": {
-    "question": "What was the Congressional plan for strict Southern control?",
-    "expectedAny": [
-      "Radical Reconstruction",
-      "Congressional Reconstruction",
-      "Radical Republican plan",
-      "strict Reconstruction"
-    ]
-  },
-  "truefalse": {
-    "question": "The Fifteenth Amendment prohibited denial of voting rights based on race.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What agreement ended Reconstruction?",
-    "expectedAny": [
-      "Compromise of 1877",
-      "1877 Compromise",
-      "Electoral Compromise",
-      "Hayes Compromise"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Southern whites who supported Republican policies were called ________.",
-    "expectedAny": [
-      "scalawags",
-      "Republican sympathizers",
-      "Southern Republicans",
-      "collaborators"
-    ]
-  },
-  "shortanswer": {
-    "question": "How did the Compromise of 1877 affect African Americans?",
-    "expectedAny": [
-      "ended federal protection",
-      "allowed segregation",
-      "withdrew troops",
-      "reversed progress"
-    ]
-  }
+﻿{
+    "id":  "11th_Reconstruction_Post_Civil_War_America_Intermediate",
+    "title":  "Reconstruction and Post-Civil War America",
+    "grade":  "11th",
+    "difficulty":  "Intermediate",
+    "vocab":  [
+                  {
+                      "term":  "Radical Reconstruction",
+                      "definition":  "Congressional plan for strict Southern reform"
+                  },
+                  {
+                      "term":  "13th 14th 15th Amendments",
+                      "definition":  "Constitutional amendments abolishing slavery and granting rights"
+                  },
+                  {
+                      "term":  "Black Codes",
+                      "definition":  "Laws restricting freedmen rights immediately after war"
+                  },
+                  {
+                      "term":  "Ku Klux Klan",
+                      "definition":  "Terrorist organization targeting African Americans"
+                  },
+                  {
+                      "term":  "scalawag",
+                      "definition":  "Southern white Republican during Reconstruction"
+                  }
+              ],
+    "teachingNotes":  "Analyze political and social complexities of Reconstruction. Examine long-term impacts.",
+    "sample":  [
+                   {
+                       "question":  "What was strict Congressional plan?",
+                       "expectedAny":  [
+                                           "Radical Reconstruction",
+                                           "Congressional Reconstruction",
+                                           "radical plan",
+                                           "strict reconstruction",
+                                           "congressional plan",
+                                           "radical program"
+                                       ]
+                   },
+                   {
+                       "question":  "What amendments granted rights?",
+                       "expectedAny":  [
+                                           "13th 14th 15th",
+                                           "Reconstruction Amendments",
+                                           "13th 14th 15th amendments",
+                                           "civil war amendments",
+                                           "reconstruction era amendments",
+                                           "thirteenth fourteenth fifteenth"
+                                       ]
+                   },
+                   {
+                       "question":  "What restricted freedmen rights?",
+                       "expectedAny":  [
+                                           "Black Codes",
+                                           "restrictive laws",
+                                           "discriminatory laws",
+                                           "freedmen restrictions",
+                                           "post slavery laws",
+                                           "southern black codes"
+                                       ]
+                   },
+                   {
+                       "question":  "What terrorist group emerged?",
+                       "expectedAny":  [
+                                           "Ku Klux Klan",
+                                           "KKK",
+                                           "Klan",
+                                           "white supremacist group",
+                                           "terrorist organization",
+                                           "ku klux klan"
+                                       ]
+                   },
+                   {
+                       "question":  "What were Southern white Republicans?",
+                       "expectedAny":  [
+                                           "scalawags",
+                                           "scalawag"
+                                       ]
+                   },
+                   {
+                       "question":  "What divided South into districts?",
+                       "expectedAny":  [
+                                           "Military Reconstruction Act",
+                                           "Military Reconstruction"
+                                       ]
+                   },
+                   {
+                       "question":  "What ended Reconstruction?",
+                       "expectedAny":  [
+                                           "Compromise of 1877",
+                                           "Hayes compromise"
+                                       ]
+                   },
+                   {
+                       "question":  "What system between slavery and ownership?",
+                       "expectedAny":  [
+                                           "tenant farming",
+                                           "tenancy"
+                                       ]
+                   },
+                   {
+                       "question":  "Who ended Reconstruction policies?",
+                       "expectedAny":  [
+                                           "Redeemers",
+                                           "Southern Democrats"
+                                       ]
+                   },
+                   {
+                       "question":  "What established separate but equal?",
+                       "expectedAny":  [
+                                           "Plessy v Ferguson",
+                                           "Plessy"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Radical Reconstruction was strict.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Black Codes protected freedmen.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "KKK used violence and terror.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "All Southerners opposed Reconstruction.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Military Reconstruction divided South.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Compromise of 1877 strengthened Reconstruction.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "14th Amendment granted citizenship.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Redeemers supported civil rights.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Plessy allowed segregation.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "15th Amendment ended all discrimination.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "Who led Radical Reconstruction?",
+                               "choices":  [
+                                               "President",
+                                               "Congress",
+                                               "Courts",
+                                               "Military"
+                                           ],
+                               "correct":  "Congress"
+                           },
+                           {
+                               "question":  "What abolished slavery?",
+                               "choices":  [
+                                               "12th",
+                                               "13th",
+                                               "14th",
+                                               "15th"
+                                           ],
+                               "correct":  "13th"
+                           },
+                           {
+                               "question":  "What restricted freedmen?",
+                               "choices":  [
+                                               "Jim Crow",
+                                               "Black Codes",
+                                               "Both",
+                                               "Neither"
+                                           ],
+                               "correct":  "Black Codes"
+                           },
+                           {
+                               "question":  "What was KKK goal?",
+                               "choices":  [
+                                               "Integration",
+                                               "Intimidation",
+                                               "Education",
+                                               "Economic"
+                                           ],
+                               "correct":  "Intimidation"
+                           },
+                           {
+                               "question":  "What ended Reconstruction?",
+                               "choices":  [
+                                               "War",
+                                               "Compromise of 1877",
+                                               "Amendment",
+                                               "Court"
+                                           ],
+                               "correct":  "Compromise of 1877"
+                           },
+                           {
+                               "question":  "What granted citizenship?",
+                               "choices":  [
+                                               "13th",
+                                               "14th",
+                                               "15th",
+                                               "16th"
+                                           ],
+                               "correct":  "14th"
+                           },
+                           {
+                               "question":  "What granted voting rights?",
+                               "choices":  [
+                                               "13th",
+                                               "14th",
+                                               "15th",
+                                               "16th"
+                                           ],
+                               "correct":  "15th"
+                           },
+                           {
+                               "question":  "Who were Redeemers?",
+                               "choices":  [
+                                               "Republicans",
+                                               "Democrats",
+                                               "Freedmen",
+                                               "Carpetbaggers"
+                                           ],
+                               "correct":  "Democrats"
+                           },
+                           {
+                               "question":  "What upheld segregation?",
+                               "choices":  [
+                                               "Brown",
+                                               "Plessy",
+                                               "Dred Scott",
+                                               "Marbury"
+                                           ],
+                               "correct":  "Plessy"
+                           },
+                           {
+                               "question":  "What required new constitutions?",
+                               "choices":  [
+                                               "Compromise",
+                                               "Military Act",
+                                               "Black Codes",
+                                               "Jim Crow"
+                                           ],
+                               "correct":  "Military Act"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "_____ Reconstruction was Congressional plan.",
+                               "expectedAny":  [
+                                                   "Radical",
+                                                   "Congressional"
+                                               ]
+                           },
+                           {
+                               "question":  "The _____ Amendment abolished slavery.",
+                               "expectedAny":  [
+                                                   "13th",
+                                                   "Thirteenth"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ Codes restricted freedmen.",
+                               "expectedAny":  [
+                                                   "Black",
+                                                   "racial"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ Klan terrorized African Americans.",
+                               "expectedAny":  [
+                                                   "Ku Klux",
+                                                   "KKK"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ were Southern white Republicans.",
+                               "expectedAny":  [
+                                                   "scalawags",
+                                                   "scalawag"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ of 1877 ended Reconstruction.",
+                               "expectedAny":  [
+                                                   "Compromise",
+                                                   "Deal"
+                                               ]
+                           },
+                           {
+                               "question":  "The _____ Amendment granted citizenship.",
+                               "expectedAny":  [
+                                                   "14th",
+                                                   "Fourteenth"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ restored Southern Democratic control.",
+                               "expectedAny":  [
+                                                   "Redeemers",
+                                                   "Democrats"
+                                               ]
+                           },
+                           {
+                               "question":  "Plessy established separate but _____.",
+                               "expectedAny":  [
+                                                   "equal",
+                                                   "equality"
+                                               ]
+                           },
+                           {
+                               "question":  "Military _____ Act divided South.",
+                               "expectedAny":  [
+                                                   "Reconstruction",
+                                                   "occupation"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "What was Radical Reconstruction?",
+                            "expectedAny":  [
+                                                "Congressional plan for strict Southern reform",
+                                                "harsh requirements for readmission",
+                                                "military occupation and new constitutions"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain Reconstruction Amendments.",
+                            "expectedAny":  [
+                                                "13th abolished slavery 14th citizenship 15th voting",
+                                                "three amendments granting rights",
+                                                "constitutional protection for freedmen"
+                                            ]
+                        },
+                        {
+                            "question":  "What were Black Codes?",
+                            "expectedAny":  [
+                                                "laws restricting freedmen rights after war",
+                                                "Southern attempt to control African Americans",
+                                                "precursor to Jim Crow"
+                                            ]
+                        },
+                        {
+                            "question":  "Describe KKK activities.",
+                            "expectedAny":  [
+                                                "terrorist organization using violence and intimidation",
+                                                "targeted African Americans and Republicans",
+                                                "wore robes and burned crosses"
+                                            ]
+                        },
+                        {
+                            "question":  "Who were scalawags?",
+                            "expectedAny":  [
+                                                "Southern white Republicans during Reconstruction",
+                                                "Southerners supporting Reconstruction",
+                                                "resented by former Confederates"
+                                            ]
+                        },
+                        {
+                            "question":  "What was Military Reconstruction Act?",
+                            "expectedAny":  [
+                                                "divided South into military districts",
+                                                "required new state constitutions",
+                                                "enforced by federal troops"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain Compromise of 1877.",
+                            "expectedAny":  [
+                                                "deal ending Reconstruction and withdrawing troops",
+                                                "Hayes became president",
+                                                "abandoned federal protection"
+                                            ]
+                        },
+                        {
+                            "question":  "Compare tenant farming and sharecropping.",
+                            "expectedAny":  [
+                                                "both agricultural systems tenant has more independence",
+                                                "between slavery and ownership",
+                                                "exploitative labor arrangements"
+                                            ]
+                        },
+                        {
+                            "question":  "Who were Redeemers?",
+                            "expectedAny":  [
+                                                "Southern Democrats ending Reconstruction policies",
+                                                "restored white supremacy",
+                                                "reversed reforms"
+                                            ]
+                        },
+                        {
+                            "question":  "What did Plessy v Ferguson establish?",
+                            "expectedAny":  [
+                                                "separate but equal doctrine",
+                                                "legalized segregation",
+                                                "upheld Jim Crow laws"
+                                            ]
+                        }
+                    ]
 }

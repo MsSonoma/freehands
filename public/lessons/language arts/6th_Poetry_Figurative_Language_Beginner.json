@@ -1,6 +1,6 @@
 {
   "id": "6th_Poetry_Figurative_Language_Beginner",
-  "title": "Poetry and Advanced Figurative Language",
+  "title": "Poetry and Figurative Language",
   "grade": "6th",
   "difficulty": "Beginner",
   "vocab": [
@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Read poems aloud to emphasize rhythm and sound. Practice identifying different types of figurative language. Encourage students to write their own poems using these devices.",
-  "sample": {
-    "question": "What do we call giving human qualities to non-human things?",
-    "expectedAny": [
-      "personification",
-      "human characteristics",
-      "humanizing",
-      "giving human traits"
-    ]
-  },
-  "truefalse": {
-    "question": "'The thunder roared angrily' is an example of personification.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What type of figurative language is 'I'm so hungry I could eat a horse'?",
-    "expectedAny": [
-      "hyperbole",
-      "exaggeration",
-      "overstatement",
-      "extreme exaggeration"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Words that imitate sounds they represent are called ________.",
-    "expectedAny": [
-      "onomatopoeia",
-      "sound words",
-      "imitative words",
-      "sound effects"
-    ]
-  },
-  "shortanswer": {
-    "question": "Give an example of onomatopoeia.",
-    "expectedAny": [
-      "buzz, crash, bang",
-      "meow, woof, hiss",
-      "pop, sizzle, splash",
-      "any sound-imitating word"
-    ]
-  }
+  "sample": [
+    { "question": "What do we call giving human qualities to non-human things?", "expectedAny": ["personification", "human characteristics", "humanizing"] },
+    { "question": "Which is an example of hyperbole?", "choices": ["The sun is bright.", "I'm so tired I could sleep forever.", "It's raining.", "She smiled."], "correct": 1, "expectedAny": ["I'm so tired I could sleep forever"] },
+    { "question": "Language that uses words creatively is ________ language.", "expectedAny": ["figurative"] },
+    { "question": "Words that imitate sounds are called ________.", "expectedAny": ["onomatopoeia", "sound words"] },
+    { "question": "Which is personification?", "choices": ["The big tree", "The wind whispered", "A loud sound", "Running fast"], "correct": 1, "expectedAny": ["the wind whispered"] },
+    { "question": "The pattern of stressed syllables is called ________.", "expectedAny": ["rhythm"] },
+    { "question": "'Buzz' and 'hiss' are examples of ________.", "expectedAny": ["onomatopoeia"] },
+    { "question": "Which shows hyperbole?", "choices": ["I'm hungry.", "I could eat a million pizzas.", "I like food.", "Dinner is ready."], "correct": 1, "expectedAny": ["I could eat a million pizzas"] },
+    { "question": "Write a personification about the moon.", "expectedAny": ["the moon smiled", "the moon danced", "the moon watched"] },
+    { "question": "What type of figurative language exaggerates?", "expectedAny": ["hyperbole", "exaggeration"] }
+  ],
+  "truefalse": [
+    { "question": "'The thunder roared angrily' is an example of personification.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Hyperbole uses exact, literal language.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Onomatopoeia words imitate sounds.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "'I'm so hungry I could eat a horse' is literal.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Rhythm is the pattern of sounds in poetry.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Figurative language always means exactly what it says.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "'The stars danced' gives human qualities to stars.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "'Crash' is an example of onomatopoeia.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All poetry must have perfect rhythm.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Personification can make writing more vivid.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "What type of figurative language is 'I'm so hungry I could eat a horse'?", "choices": ["Personification", "Hyperbole", "Onomatopoeia", "Rhythm"], "correct": 1, "expectedAny": ["hyperbole", "exaggeration"] },
+    { "question": "Which is an example of personification?", "choices": ["The car is red.", "The clouds cried.", "It was hot.", "We walked home."], "correct": 1, "expectedAny": ["the clouds cried"] },
+    { "question": "Which word is onomatopoeia?", "choices": ["beautiful", "sizzle", "happy", "green"], "correct": 1, "expectedAny": ["sizzle"] },
+    { "question": "What does hyperbole do?", "choices": ["States facts", "Exaggerates greatly", "Imitates sounds", "Describes colors"], "correct": 1, "expectedAny": ["exaggerates greatly"] },
+    { "question": "Which shows personification?", "choices": ["The tall building", "Time flies", "A blue sky", "Fast running"], "correct": 1, "expectedAny": ["time flies"] },
+    { "question": "Which is NOT onomatopoeia?", "choices": ["buzz", "splash", "quiet", "boom"], "correct": 2, "expectedAny": ["quiet"] },
+    { "question": "What type is 'The flowers nodded in the breeze'?", "choices": ["Hyperbole", "Personification", "Onomatopoeia", "None"], "correct": 1, "expectedAny": ["personification"] },
+    { "question": "Which is hyperbole?", "choices": ["I'm a little tired.", "I haven't slept in years.", "I slept well.", "I need rest."], "correct": 1, "expectedAny": ["I haven't slept in years"] },
+    { "question": "Rhythm in poetry relates to:", "choices": ["Color", "Sound pattern", "Size", "Temperature"], "correct": 1, "expectedAny": ["sound pattern"] },
+    { "question": "Which is onomatopoeia?", "choices": ["The dog barked loudly.", "The dog went woof.", "The dog is big.", "The dog ran."], "correct": 1, "expectedAny": ["the dog went woof"] }
+  ],
+  "fillintheblank": [
+  { "question": "Words that imitate sounds they represent are called ________.", "expectedAny": ["onomatopoeia", "sound words", "sound-imitating words"] },
+  { "question": "Giving human qualities to things is ________.", "expectedAny": ["personification", "humanization", "human-like description"] },
+  { "question": "An extreme exaggeration is called ________.", "expectedAny": ["hyperbole", "exaggeration", "overstatement"] },
+  { "question": "Language used creatively is ________ language.", "expectedAny": ["figurative", "nonliteral", "imaginative"] },
+  { "question": "The pattern of stressed syllables is ________.", "expectedAny": ["rhythm", "beat", "meter"] },
+  { "question": "'The wind howled' is an example of ________.", "expectedAny": ["personification", "figurative language"] },
+  { "question": "'I'm starving to death' uses ________.", "expectedAny": ["hyperbole", "exaggeration", "overstatement"] },
+    { "question": "'Meow' and 'buzz' are examples of ________.", "expectedAny": ["onomatopoeia", "sound words"] },
+  { "question": "Figurative language creates vivid ________.", "expectedAny": ["images", "pictures", "descriptions", "mental pictures"] },
+  { "question": "'The sun smiled down' gives the sun ________ qualities.", "expectedAny": ["human", "human-like", "person-like"] }
+  ],
+  "shortanswer": [
+    { "question": "Give an example of onomatopoeia.", "expectedAny": ["buzz", "crash", "bang", "meow", "woof", "pop", "sizzle", "splash"] },
+    { "question": "Write a sentence using personification about the wind.", "expectedAny": ["the wind whispered", "the wind danced", "the wind howled", "the wind sang"] },
+  { "question": "Explain what hyperbole means.", "expectedAny": ["extreme exaggeration", "exaggerating for effect", "overstating", "saying more than literal", "an exaggeration that is not meant literally"] },
+    { "question": "Give an example of hyperbole about being tired.", "expectedAny": ["I could sleep for a year", "I'm dead tired", "I haven't slept in ages", "I could sleep forever"] },
+  { "question": "Why do poets use figurative language?", "expectedAny": ["to create vivid images", "to make writing interesting", "to show creativity", "to express ideas clearly", "to add emotion and tone"] },
+    { "question": "Write personification about the moon.", "expectedAny": ["the moon smiled", "the moon watched", "the moon danced", "the moon winked"] },
+    { "question": "Name three onomatopoeia words.", "expectedAny": ["buzz, crash, pop", "meow, woof, hiss", "splash, sizzle, boom", "clang, clap, thud"] },
+    { "question": "What is the difference between literal and figurative language?", "expectedAny": ["literal means exactly what it says", "figurative is creative", "literal is direct, figurative is imaginative", "literal is exact; figurative is not literal"] },
+    { "question": "Create a hyperbole about homework.", "expectedAny": ["I have a million pages", "this homework takes forever", "I'll be doing this for years", "it will take me a lifetime"] },
+    { "question": "Explain how personification works.", "expectedAny": ["gives human qualities to non-human things", "makes objects act like people", "humanizes things", "human traits to non-humans"] }
+  ]
 }

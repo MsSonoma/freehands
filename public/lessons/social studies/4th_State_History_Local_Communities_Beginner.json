@@ -23,6 +23,74 @@
     {
       "term": "local history",
       "definition": "The story of what happened in your town or area"
+    },
+    {
+      "term": "governor",
+      "definition": "The elected leader of a state"
+    },
+    {
+      "term": "capitol",
+      "definition": "The building where a state government meets"
+    },
+    {
+      "term": "capital",
+      "definition": "The city where the state government is located"
+    },
+    {
+      "term": "county",
+      "definition": "A smaller part of a state used for local government"
+    },
+    {
+      "term": "flag",
+      "definition": "A cloth with symbols and colors that stand for a state or country"
+    },
+    {
+      "term": "seal",
+      "definition": "An official picture or design that stands for a state"
+    },
+    {
+      "term": "landform",
+      "definition": "A natural feature on Earth's surface like a mountain or river"
+    },
+    {
+      "term": "geography",
+      "definition": "The study of places, land, and how people use them"
+    },
+    {
+      "term": "natural resource",
+      "definition": "Something useful found in nature, like water, trees, or minerals"
+    },
+    {
+      "term": "region",
+      "definition": "An area with common features, like the West or Midwest"
+    },
+    {
+      "term": "landmark",
+      "definition": "A well-known place or object that helps identify a location"
+    },
+    {
+      "term": "city council",
+      "definition": "A group of elected people who make local rules for a city"
+    },
+    {
+      "term": "ordinance",
+      "definition": "A local law made by a city or town"
+    },
+    {
+      "term": "public services",
+      "definition": "Things a community provides like libraries, parks, water, and trash pickup"
+    },
+    {
+      "term": "volunteer",
+      "definition": "A person who helps others without being paid"
+    },
+    {
+      "term": "census",
+      "definition": "A count of how many people live in a place"
+    },
+    {
+      "term": "history museum",
+      "definition": "A place that shows objects and stories from the past"
     }
   ],
   "teachingNotes": "Focus on the student's own state and local community. Research when the area was first settled, who the important founders were, and major events in local history. Create timelines of local development.",
@@ -55,20 +123,23 @@
   ],
   "fillintheblank": [
     {"question": "The United States has ___ states.", "expectedAny": ["50", "fifty"]},
-    {"question": "Your state's leader is called the ___.", "expectedAny": ["governor"]},
-    {"question": "The ___ is where the state government meets.", "expectedAny": ["capitol", "capital"]},
-    {"question": "States are divided into smaller areas called ___.", "expectedAny": ["counties"]},
-    {"question": "A ___ shows a state's official symbols.", "expectedAny": ["flag", "seal"]},
-    {"question": "Natural features like mountains and rivers are called ___.", "expectedAny": ["landforms", "geography"]},
-    {"question": "Each state has its own special ___ and traditions.", "expectedAny": ["symbols", "customs"]}
+    {"question": "Your state's leader is called the ___.", "expectedAny": ["governor", "state governor"]},
+    {"question": "The ___ is where the state government meets.", "expectedAny": ["capitol", "capitol building", "statehouse", "state capitol"]},
+    {"question": "States are divided into smaller areas called ___.", "expectedAny": ["counties", "parishes", "boroughs"]},
+    {"question": "A ___ shows a state's official symbols.", "expectedAny": ["flag", "state flag", "seal", "state seal"]},
+    {"question": "Natural features like mountains and rivers are called ___.", "expectedAny": ["landforms", "physical features", "natural features"]},
+    {"question": "Each state has its own special ___ and traditions.", "expectedAny": ["symbols", "customs", "culture"]},
+  {"question": "A local law made by a city is an ___.", "expectedAny": ["ordinance", "city ordinance", "local ordinance"]},
+    {"question": "People who help without pay are called ___.", "expectedAny": ["volunteers", "volunteer"]},
+    {"question": "A count of people in a place is a ___.", "expectedAny": ["census", "population count", "official count"]}
   ],
   "shortanswer": [
-    {"question": "Describe your state's location in the US.", "expectedAny": ["region", "neighboring states"]},
-    {"question": "What makes your state unique?", "expectedAny": ["history", "culture", "resources", "landmarks"]},
-    {"question": "How does geography affect how people live in your state?", "expectedAny": ["climate affects crops", "landforms affect travel"]},
-    {"question": "Why do states have capitals?", "expectedAny": ["government center"]},
-    {"question": "What are your state's major industries?", "expectedAny": ["agriculture", "technology", "tourism", "manufacturing"]},
-    {"question": "How has your local community changed over time?", "expectedAny": ["population", "transportation", "buildings"]},
-    {"question": "What would you show a visitor to your state?", "expectedAny": ["landmarks", "parks", "historical sites"]}
+    {"question": "Describe your state's location in the US.", "expectedAny": ["region", "neighboring states", "direction on map", "north/south/east/west", "compass directions", "near oceans or mountains"]},
+    {"question": "What makes your state unique?", "expectedAny": ["history", "culture", "resources", "landmarks", "state symbols", "traditions", "famous people", "special foods"]},
+  {"question": "How does your state's geography shape daily life?", "expectedAny": ["climate affects crops", "mountains make travel slower", "rivers support trade", "weather changes outdoor activities", "storms or drought change plans"]},
+    {"question": "Why do states have capitals?", "expectedAny": ["government center", "place for state government", "where laws are made", "administrative center", "meet to make decisions"]},
+    {"question": "What are your state's major industries?", "expectedAny": ["agriculture", "technology", "tourism", "manufacturing", "mining", "energy", "services"]},
+    {"question": "How has your local community changed over time?", "expectedAny": ["population", "transportation", "buildings", "jobs", "new neighborhoods", "new schools or parks"]},
+    {"question": "What would you show a visitor to your state?", "expectedAny": ["landmarks", "parks", "historical sites", "state capitol", "museums", "festivals", "state fair"]}
   ]
 }

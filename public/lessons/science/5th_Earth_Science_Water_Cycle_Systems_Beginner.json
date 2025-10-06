@@ -23,52 +23,87 @@
     {
       "term": "groundwater",
       "definition": "Water that soaks into the ground and is stored underground"
+    },
+    {
+      "term": "runoff",
+      "definition": "Water that flows over land into rivers, lakes, and oceans"
+    },
+    {
+      "term": "infiltration",
+      "definition": "Water soaking into the ground and moving through soil"
+    },
+    {
+      "term": "transpiration",
+      "definition": "When plants release water vapor through their leaves"
+    },
+    {
+      "term": "water vapor",
+      "definition": "Water in its gas form (an invisible gas in the air)"
+    },
+    {
+      "term": "accumulation",
+      "definition": "Water collecting in oceans, lakes, and rivers after precipitation"
     }
   ],
   "teachingNotes": "Use diagrams and hands-on models to demonstrate the water cycle. Connect the water cycle to weather patterns and emphasize its importance for all life on Earth.",
-  "sample": {
-    "question": "What drives the water cycle?",
-    "expectedAny": [
-      "the sun",
-      "solar energy",
-      "heat from sun",
-      "sun's energy"
-    ]
-  },
-  "truefalse": {
-    "question": "The water cycle only happens over oceans.",
-    "expectedAny": [
-      "false",
-      "no",
-      "f",
-      "incorrect"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What happens during evaporation?",
-    "expectedAny": [
-      "liquid becomes vapor",
-      "water turns to gas",
-      "heating changes state",
-      "vaporization"
-    ]
-  },
-  "fillintheblank": {
-    "question": "When water vapor in the air cools down, it goes through ________.",
-    "expectedAny": [
-      "condensation",
-      "cooling",
-      "cloud formation",
-      "vapor to liquid"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does water get back to the oceans after it falls as rain?",
-    "expectedAny": [
-      "rivers and streams",
-      "surface runoff",
-      "flows downhill",
-      "drainage systems"
-    ]
-  }
+  "sample": [
+    { "question": "What drives the water cycle?", "expectedAny": ["the sun", "solar energy", "heat from sun", "sun's energy"] },
+    { "question": "Name two main processes in the water cycle.", "expectedAny": ["evaporation and condensation"] },
+    { "question": "What forms when water vapor condenses?", "expectedAny": ["clouds"] },
+    { "question": "Give an example of precipitation.", "expectedAny": ["rain", "snow", "sleet", "hail"] },
+    { "question": "Where does groundwater come from?", "expectedAny": ["water soaking into the ground", "infiltration"] },
+    { "question": "What is runoff?", "expectedAny": ["water flowing over land to rivers/lakes"] },
+    { "question": "What is transpiration?", "expectedAny": ["water vapor released from plants"] },
+    { "question": "Name a place where evaporation happens a lot.", "expectedAny": ["oceans", "lakes", "puddles"] },
+    { "question": "Why is the water cycle important?", "expectedAny": ["moves water", "supports life", "weather"] },
+    { "question": "What powers evaporation?", "expectedAny": ["heat", "sunlight"] }
+  ],
+  "truefalse": [
+    { "question": "The water cycle only happens over oceans.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Condensation forms clouds.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Precipitation can be rain or snow.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Groundwater is water stored underground.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Evaporation happens faster on cold days.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Transpiration is when plants release water vapor.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Runoff flows uphill to mountains.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The sun provides energy for evaporation.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Snow is not part of the water cycle.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Condensation turns gas into liquid.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "What happens during evaporation?", "choices": ["liquid becomes vapor", "vapor becomes liquid", "ice forms", "rain falls"], "correct": 0, "expectedAny": ["liquid becomes vapor", "water turns to gas"] },
+    { "question": "Which is NOT precipitation?", "choices": ["rain", "snow", "fog", "hail"], "correct": 2, "expectedAny": ["fog"] },
+    { "question": "What forms clouds?", "choices": ["evaporation", "condensation", "precipitation", "runoff"], "correct": 1, "expectedAny": ["condensation"] },
+    { "question": "Water flowing on land to rivers is called:", "choices": ["runoff", "infiltration", "transpiration", "precipitation"], "correct": 0, "expectedAny": ["runoff"] },
+    { "question": "Water soaking into soil is called:", "choices": ["runoff", "condensation", "infiltration", "evaporation"], "correct": 2, "expectedAny": ["infiltration"] },
+    { "question": "Which source evaporates the most water?", "choices": ["oceans", "forests", "glaciers", "deserts"], "correct": 0, "expectedAny": ["oceans"] },
+    { "question": "Plants release water vapor by:", "choices": ["respiration", "transpiration", "precipitation", "filtration"], "correct": 1, "expectedAny": ["transpiration"] },
+  { "question": "Which best describes groundwater?", "choices": ["water in clouds", "water underground", "water in rivers", "water in oceans"], "correct": 1, "expectedAny": ["underground water", "water stored underground", "water below ground"] },
+    { "question": "Which process directly creates rain?", "choices": ["evaporation", "transpiration", "condensation", "runoff"], "correct": 2, "expectedAny": ["condensation"] },
+    { "question": "Main energy source for the water cycle:", "choices": ["wind", "the sun", "earth's core", "gravity"], "correct": 1, "expectedAny": ["sun"] }
+  ],
+  "fillintheblank": [
+    { "question": "When water vapor in the air cools down, it goes through ________.", "expectedAny": ["condensation", "vapor to liquid", "gas to liquid", "condensing", "cooling into liquid"] },
+    { "question": "Water that falls from clouds is called ________.", "expectedAny": ["precipitation", "rainfall", "rain or snow"] },
+    { "question": "Water moving over the land is called ________.", "expectedAny": ["runoff", "surface runoff", "overland flow", "water flowing downhill"] },
+    { "question": "Water soaking into the ground is ________.", "expectedAny": ["infiltration", "percolation", "soaking in", "seeping into soil"] },
+    { "question": "Plants release water vapor by ________.", "expectedAny": ["transpiration", "plant transpiration", "release from leaves", "give off water vapor"] },
+    { "question": "Liquid water changing to gas is ________.", "expectedAny": ["evaporation", "liquid to gas", "vaporization", "water turning to vapor"] },
+    { "question": "Water stored underground is ________.", "expectedAny": ["groundwater", "water underground", "water under the ground"] },
+    { "question": "Clouds are formed by ________ of water vapor.", "expectedAny": ["condensation", "cooling and condensing", "gas turning to tiny droplets"] },
+    { "question": "Snow, rain, and hail are types of ________.", "expectedAny": ["precipitation", "rain or snow", "frozen or liquid fall"] },
+    { "question": "The water cycle is powered by the ________.", "expectedAny": ["sun", "the sun", "solar energy", "heat from the sun"] }
+  ],
+  "shortanswer": [
+    { "question": "How does water get back to the oceans after it falls as rain?", "expectedAny": ["rivers and streams", "surface runoff", "flows downhill", "flows back to the ocean"] },
+    { "question": "Describe one way humans affect the water cycle.", "expectedAny": ["deforestation changes transpiration", "paving increases runoff", "urbanization reduces infiltration", "pollution changes water quality"] },
+    { "question": "Explain why condensation happens high in the sky.", "expectedAny": ["air is cooler", "cooling causes vapor to condense", "lower temperatures at altitude", "cold air makes vapor turn to droplets"] },
+    { "question": "Give an example of where groundwater is used.", "expectedAny": ["wells", "drinking water", "irrigation", "farm wells"] },
+    { "question": "Why does evaporation happen faster on hot, windy days?", "expectedAny": ["more energy and moving air remove vapor", "higher temperature and wind increase evaporation", "heat adds energy and wind carries vapor away", "sun heats water and wind helps it evaporate"] },
+    { "question": "What happens to snow in spring as part of the water cycle?", "expectedAny": ["melts to runoff", "becomes river water", "melts and infiltrates into groundwater", "melts into streams"] },
+    { "question": "Name one place water is stored in the water cycle.", "expectedAny": ["oceans", "lakes", "glaciers", "groundwater", "rivers"] },
+    { "question": "How do plants contribute to the water cycle?", "expectedAny": ["transpiration", "release water vapor", "through leaves", "give off water to the air"] },
+    { "question": "Why is the water cycle called a cycle?", "expectedAny": ["repeats continuously", "goes around and around", "it repeats over and over", "happens again and again"] },
+    { "question": "How can pollution affect precipitation or runoff?", "expectedAny": ["acid rain", "contaminated runoff", "pollutants wash into rivers", "dirty water carries chemicals"] }
+  ]
 }

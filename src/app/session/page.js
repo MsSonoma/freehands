@@ -9,14 +9,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { jsPDF } from "jspdf";
 import { loadRuntimeVariables } from "../lib/runtimeVariables";
 import { getSupabaseClient } from "../lib/supabaseClient";
-import { appendTranscriptSegment } from "../lib/transcriptsClient";
+import { appendTranscriptSegment, updateTranscriptLiveSegment } from "../lib/transcriptsClient";
 import { getLearner } from "@/app/facilitator/learners/clientApi";
 // SpinnerScreen removed here; reverting to in-panel overlay spinner
 import { generateOpening } from "../lib/opening";
 import { pickNextJoke, renderJoke } from "../lib/jokes";
 const { COMPREHENSION_INTROS, EXERCISE_INTROS, WORKSHEET_INTROS, TEST_INTROS } = require('./constants/phaseIntros.js');
-import { pickRandomRiddle } from "../lib/riddles";
+import { pickNextRiddle, renderRiddle } from "../lib/riddles";
 import { getStoredAssessments, saveAssessments, clearAssessments } from './assessment/assessmentStore';
+import { getStoredSnapshot, saveSnapshot, clearSnapshot, consolidateSnapshots } from './sessionSnapshotStore';
 import { upsertMedal, emojiForTier, tierForPercent } from '@/app/lib/medalsClient';
 
 export default function SessionPage(){
@@ -510,6 +511,8 @@ function SessionPageInner() {
   const [jokeUsedThisGate, setJokeUsedThisGate] = useState(false);
   const [riddleUsedThisGate, setRiddleUsedThisGate] = useState(false);
   const [poemUsedThisGate, setPoemUsedThisGate] = useState(false);
+  // Track when the current caption batch has fully displayed (end-of-captions signal)
+  const [captionsDone, setCaptionsDone] = useState(false);
   // Ad-hoc Q&A flow state
   // askState: 'inactive' | 'awaiting-input' | 'awaiting-confirmation'
   const [askState, setAskState] = useState('inactive');
@@ -549,6 +552,20 @@ function SessionPageInner() {
       setShowOpeningActions(true);
     }
   }, [isSpeaking, phase, subPhase, askState, riddleState, poemState]);
+
+  // Also reveal Opening actions when the captions finish (even if audio is still playing)
+  useEffect(() => {
+    if (
+      captionsDone &&
+      phase === 'discussion' &&
+      subPhase === 'awaiting-learner' &&
+      askState === 'inactive' &&
+      riddleState === 'inactive' &&
+      poemState === 'inactive'
+    ) {
+      setShowOpeningActions(true);
+    }
+  }, [captionsDone, phase, subPhase, askState, riddleState, poemState]);
 
   // If Ask, Riddle, or Poem becomes active, immediately hide Opening actions
   useEffect(() => {
@@ -592,9 +609,9 @@ function SessionPageInner() {
             setIsSpeaking(true);
             try { await playAudioFromBase64(b64, sentences, prevLen); } catch {}
           } else {
-            // No audio: approximate timing for captions
+            // No audio: drive via synthetic playback for consistent controls/video
             if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
-            try { if (typeof scheduleCaptionsForDuration === 'function') scheduleCaptionsForDuration(2.5, sentences, prevLen); } catch {}
+            try { await playAudioFromBase64('', sentences, prevLen); } catch {}
           }
         }
       } finally {
@@ -610,13 +627,23 @@ function SessionPageInner() {
   const speakFrontend = useCallback(async (text, opts = {}) => {
     try {
       const mcLayout = opts && typeof opts === 'object' ? (opts.mcLayout || 'inline') : 'inline';
+      const noCaptions = !!(opts && typeof opts === 'object' && opts.noCaptions);
       let sentences = splitIntoSentences(text);
       sentences = mergeMcChoiceFragments(sentences, mcLayout).map((s) => enforceNbspAfterMcLabels(s));
-      const prevLen = captionSentencesRef.current?.length || 0;
-      const nextAll = [...(captionSentencesRef.current || []), ...sentences];
-      captionSentencesRef.current = nextAll;
-      setCaptionSentences(nextAll);
-      setCaptionIndex(prevLen);
+      // When noCaptions is set (e.g., resume after refresh), do not mutate caption state
+      // so the transcript on screen does not duplicate. Still play TTS.
+      let startIndexForBatch = 0;
+      if (!noCaptions) {
+        const prevLen = captionSentencesRef.current?.length || 0;
+        const nextAll = [...(captionSentencesRef.current || []), ...sentences];
+        captionSentencesRef.current = nextAll;
+        setCaptionSentences(nextAll);
+        setCaptionIndex(prevLen);
+        startIndexForBatch = prevLen;
+      } else {
+        // Keep current caption index; batch will be empty so no scheduling occurs
+        try { startIndexForBatch = Number(captionIndexRef.current || 0); } catch { startIndexForBatch = 0; }
+      }
   let dec = false;
   try {
     setTtsLoadingCount((c) => c + 1);
@@ -625,17 +652,19 @@ function SessionPageInner() {
         try { await fetch('/api/tts', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(() => {}); } catch {}
         res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
       }
-      if (res.ok) {
+        if (res.ok) {
         const data = await res.json().catch(() => ({}));
         let b64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
         if (b64) b64 = normalizeBase64Audio(b64);
         if (b64) {
           if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
-          setIsSpeaking(true);
-          try { await playAudioFromBase64(b64, sentences, prevLen); } finally { setIsSpeaking(false); }
+          // Let the playback engine manage isSpeaking lifecycle
+          try { setIsSpeaking(true); } catch {}
+          try { await playAudioFromBase64(b64, noCaptions ? [] : sentences, startIndexForBatch); } catch {}
         } else {
           if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
-          try { if (typeof scheduleCaptionsForDuration === 'function') scheduleCaptionsForDuration(2.0, sentences, prevLen); } catch {}
+          // Use unified synthetic playback so video + isSpeaking behave consistently
+          try { await playAudioFromBase64('', noCaptions ? [] : sentences, startIndexForBatch); } catch {}
         }
       }
   } catch {}
@@ -796,17 +825,27 @@ function SessionPageInner() {
     } catch {}
   }, [phase, subPhase, speakFrontend]);
 
-  // Riddle: start and present one via TTS/captions
+  // Riddle: start and present one via TTS/captions (buttons-only; no text input)
   const handleTellRiddle = useCallback(async () => {
     try { setShowOpeningActions(false); } catch {}
     try { setRiddleUsedThisGate(true); } catch {}
-    const pick = pickRandomRiddle();
-    setCurrentRiddle(pick);
+    const pick = pickNextRiddle(subjectParam || 'math');
+    if (!pick) {
+      // fallback: nothing available for subject
+      setShowOpeningActions(true);
+      return;
+    }
+    const text = renderRiddle(pick) || '';
+    // Keep the existing shape expected by other handlers: { id, text, answer }
+    setCurrentRiddle({ ...pick, text, answer: pick.answer });
     setRiddleState('presented');
-    await speakFrontend(`Here is a riddle. ${pick.text}`);
-    setCanSend(true);
+    // Disable learner input during the riddle flow; controls are via buttons
+    setCanSend(false);
+    // Stop mic/STT if running so the input bar is fully inactive during riddles
+    try { setAbortKey((k) => k + 1); } catch {}
+    await speakFrontend(`Here is a riddle. ${text}`);
     setRiddleState('awaiting-solve');
-  }, [speakFrontend]);
+  }, [speakFrontend, subjectParam]);
 
   // Poem: start flow – ask for topic via frontend TTS and enable input
   const handlePoemStart = useCallback(async () => {
@@ -825,36 +864,10 @@ function SessionPageInner() {
   }, []);
 
 
-  // Riddle: judge learner's attempt (local leniency first, then model if needed)
-  const judgeRiddleAttempt = useCallback(async (attempt) => {
-    if (!currentRiddle) return { ok: false, text: '' };
-
-    // Local lenient acceptance using unified normalization
-    try {
-      const acceptable = expandRiddleAcceptables(currentRiddle.answer);
-      const okLocal = isAnswerCorrectLocal(attempt, acceptable, { type: 'short-answer' });
-      if (okLocal) {
-        return { ok: true, text: 'Correct. Nice solving.' };
-      }
-    } catch {}
-
-    // Fall back to model judging with bounded-leniency guidance
-    const instruction = [
-      'You are Ms. Sonoma. Judge if the learner solved the riddle correctly.',
-      `Riddle: "${currentRiddle.text}".`,
-      `Correct answer: "${currentRiddle.answer}".`,
-      `Learner attempt: "${attempt}".`,
-      JUDGING_LENIENCY_OPEN_ENDED,
-      'Reply in one short friendly line: say Correct with brief praise if they got it, or say Not correct with a tiny encouragement to try again. Do not reveal the answer.'
-    ].join(' ');
-    const result = await callMsSonoma(
-      instruction,
-      '',
-      { phase: 'discussion', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, step: 'riddle-judge' },
-      { fastReturn: true }
-    ).catch(() => null);
-    return result || { ok: false, text: '' };
-  }, [currentRiddle, subjectParam, difficultyParam, lessonParam]);
+  // Riddle: judging is disabled. We ignore text attempts and provide only Hint/Answer/Back.
+  const judgeRiddleAttempt = useCallback(async (_attempt) => {
+    return { ok: false, text: '' };
+  }, []);
 
   // Riddle: ask for a hint
   const requestRiddleHint = useCallback(async () => {
@@ -873,6 +886,7 @@ function SessionPageInner() {
     setCurrentRiddle(null);
     setRiddleState('inactive');
     setShowOpeningActions(true);
+    setCanSend(true);
   }, [currentRiddle, speakFrontend]);
 
   // Riddle: Back button — cancel riddle flow and return to opening actions
@@ -880,6 +894,7 @@ function SessionPageInner() {
     setCurrentRiddle(null);
     setRiddleState('inactive');
     try { setShowOpeningActions(true); } catch {}
+    try { setCanSend(true); } catch {}
   }, []);
 
   // (moved: handleStartLesson is defined after explicit Go handlers to avoid TDZ)
@@ -901,9 +916,12 @@ function SessionPageInner() {
 
   const [showBegin, setShowBegin] = useState(true);
   const sessionStartRef = useRef(null); // timestamp for current in-app session segment
+  // Track the starting caption index for the current transcript segment (so ledger appends don't duplicate)
+  const transcriptSegmentStartIndexRef = useRef(0);
   // isSpeaking/phase/subPhase defined earlier; do not redeclare here
   const [transcript, setTranscript] = useState("");
-  const [loading, setLoading] = useState(false);
+  // Start with loading=true so the existing overlay spinner shows during initial restore
+  const [loading, setLoading] = useState(true);
   // TTS overlay: track TTS fetch activity separately; overlay shows when either API or TTS is loading
   const [ttsLoadingCount, setTtsLoadingCount] = useState(0);
   const overlayLoading = loading || (ttsLoadingCount > 0);
@@ -1044,12 +1062,26 @@ function SessionPageInner() {
       return `${base}${suffix}`;
     } catch { return lessonParam || ''; }
   };
+  // Stable key for session snapshots (canonicalized without .json extension; scoped by learner in the store/API)
+  const getSnapshotStorageKey = (override) => {
+    try {
+      const d = override?.data ?? lessonData;
+      const m = override?.manifest ?? manifestInfo;
+      const p = override?.param ?? lessonParam;
+      let base = (d && d.id) || (m && m.file) || p || '';
+      // Canonicalize: strip trailing .json if present so we never fork keys by extension
+      base = String(base).replace(/\.json$/i, '');
+      return `${base}`;
+    } catch { return (lessonParam || '').replace(/\.json$/i, ''); }
+  };
   const [currentWorksheetIndex, setCurrentWorksheetIndex] = useState(0);
   // Sample-driven question pools (for comprehension & exercise)
   const [compPool, setCompPool] = useState([]); // remaining shuffled problems for comprehension
   const [exercisePool, setExercisePool] = useState([]); // remaining shuffled problems for exercise
   const [currentCompProblem, setCurrentCompProblem] = useState(null); // problem currently asked in comprehension awaiting learner answer
   const [currentExerciseProblem, setCurrentExerciseProblem] = useState(null); // problem currently asked in exercise awaiting learner answer
+
+  // (session snapshot hooks moved below test state initialization to avoid TDZ)
 
   // Comprehension input gating
   // - While in comprehension-start (pre-first-question), keep input disabled.
@@ -1411,6 +1443,8 @@ function SessionPageInner() {
   useEffect(() => {
     if (showBegin === false && !sessionStartRef.current) {
       sessionStartRef.current = new Date().toISOString();
+      // Start a fresh transcript segment at the current caption length
+      try { transcriptSegmentStartIndexRef.current = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current.length : 0; } catch {}
     }
   }, [showBegin]);
   // Track current caption batch boundaries for accurate resume scheduling
@@ -1458,6 +1492,67 @@ function SessionPageInner() {
   const preferHtmlAudioOnceRef = useRef(false);
   // Prevent multiple recovery attempts for the Opening playback
   const openingReattemptedRef = useRef(false);
+  // Guard: if audio stalls or never ends on mobile, auto-release the speaking lock so controls do not hang
+  const speechGuardTimerRef = useRef(null);
+  const clearSpeechGuard = useCallback(() => {
+    try {
+      if (speechGuardTimerRef.current) {
+        clearTimeout(speechGuardTimerRef.current);
+        speechGuardTimerRef.current = null;
+      }
+    } catch {}
+  }, []);
+  const forceStopSpeaking = useCallback((reason = 'timeout') => {
+    try { console.warn('[Session] Speech guard fired; forcing stop. reason=', reason); } catch {}
+    if (audioRef.current) {
+      try { audioRef.current.pause(); } catch {}
+      try { audioRef.current.src = ''; } catch {}
+      audioRef.current = null;
+    }
+    try { stopWebAudioSource(); } catch {}
+    if (videoRef.current) { try { videoRef.current.pause(); } catch {} }
+    try { setIsSpeaking(false); } catch {}
+    // Also surface Opening actions if we are in Discussion awaiting-learner
+    try {
+      if (
+        phase === 'discussion' &&
+        subPhase === 'awaiting-learner' &&
+        askState === 'inactive' &&
+        riddleState === 'inactive' &&
+        poemState === 'inactive'
+      ) {
+        setShowOpeningActions(true);
+      }
+    } catch {}
+    clearSpeechGuard();
+  }, [clearSpeechGuard]);
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+  // Track last arm time to avoid spamming guard while we get metadata/ticks
+  const lastGuardArmAtRef = useRef(0);
+  const computeHeuristicDuration = (sentences = []) => {
+    try {
+      const arr = Array.isArray(sentences) ? sentences : [];
+      if (!arr.length) return 3.5;
+      const totalWords = arr.reduce((sum, s) => sum + ((String(s).trim().split(/\s+/).filter(Boolean).length) || 1), 0) || arr.length;
+      const base = Math.max(totalWords / 3.6, Math.min(arr.length * 1.5, 12));
+      return clamp(base, 1.5, 300);
+    } catch { return 6; }
+  };
+  const armSpeechGuard = useCallback((seconds, label = '') => {
+    clearSpeechGuard();
+    const sec = Math.max(0, Number(seconds) || 0);
+    // No upper cap: allow long audio; add a small safety fudge
+    const ms = Math.max(1800, Math.floor(sec * 1000) + 3000);
+    try { console.info('[Session] Arming speech guard for ~', Math.round(ms/1000), 's', label ? `(${label})` : ''); } catch {}
+    speechGuardTimerRef.current = setTimeout(() => forceStopSpeaking('guard:' + (label || 'unknown')), ms);
+  }, [clearSpeechGuard, forceStopSpeaking]);
+  const armSpeechGuardThrottled = useCallback((seconds, label = '') => {
+    const now = Date.now();
+    if (!lastGuardArmAtRef.current || now - lastGuardArmAtRef.current >= 800) {
+      lastGuardArmAtRef.current = now;
+      armSpeechGuard(seconds, label);
+    }
+  }, [armSpeechGuard]);
   const lastSentencesRef = useRef([]);
   const lastStartIndexRef = useRef(0);
   // Test phase state
@@ -1513,6 +1608,8 @@ function SessionPageInner() {
     'Correct combo',
     'Answer sparkle'
   ], []);
+
+  // (Moved snapshot persistence hooks below state declarations to avoid TDZ)
 
   // Strong requirement text reused in both per-question and full test review instructions.
   // Purpose: ensure model ALWAYS outputs one (and only one) unique cue phrase for each correct answer so
@@ -1975,6 +2072,7 @@ function SessionPageInner() {
   const scheduleCaptionsForAudio = (audio, sentences, startIndex = 0) => {
     clearCaptionTimers();
     if (!sentences.length) return;
+    try { setCaptionsDone(false); } catch {}
 
     // Only schedule through the provided batch of sentences; caller passes in the new batch
     const totalWords = sentences.reduce((sum, s) => sum + (countWords(s) || 1), 0) || sentences.length;
@@ -1992,8 +2090,14 @@ function SessionPageInner() {
         const prevWords = countWords(sentences[i - 1]) || 1;
         const step = Math.max(minPerSentence, safeDuration * (prevWords / totalWords));
         elapsed += step;
+        const targetIndex = startIndex + i;
         const timer = window.setTimeout(() => {
-          setCaptionIndex(startIndex + i);
+          setCaptionIndex(targetIndex);
+          // If we reached the end-of-batch caption, mark captionsDone
+          try {
+            const end = captionBatchEndRef.current || (startIndex + sentences.length);
+            if (targetIndex >= end - 1) setCaptionsDone(true);
+          } catch {}
         }, Math.round(elapsed * 1000));
         captionTimersRef.current.push(timer);
       }
@@ -2023,6 +2127,7 @@ function SessionPageInner() {
   const scheduleCaptionsForDuration = (durationSeconds, sentences, startIndex = 0) => {
     clearCaptionTimers();
     if (!sentences || !sentences.length) return;
+    try { setCaptionsDone(false); } catch {}
 
     const totalWords = sentences.reduce((sum, s) => sum + (countWords(s) || 1), 0) || sentences.length;
     const safeDuration = durationSeconds && Number.isFinite(durationSeconds) && durationSeconds > 0
@@ -2036,7 +2141,14 @@ function SessionPageInner() {
       const prevWords = countWords(sentences[i - 1]) || 1;
       const step = Math.max(minPerSentence, safeDuration * (prevWords / totalWords));
       elapsed += step;
-      const timer = window.setTimeout(() => setCaptionIndex(startIndex + i), Math.round(elapsed * 1000));
+      const targetIndex = startIndex + i;
+      const timer = window.setTimeout(() => {
+        setCaptionIndex(targetIndex);
+        try {
+          const end = captionBatchEndRef.current || (startIndex + sentences.length);
+          if (targetIndex >= end - 1) setCaptionsDone(true);
+        } catch {}
+      }, Math.round(elapsed * 1000));
       captionTimersRef.current.push(timer);
     }
   };
@@ -2045,25 +2157,42 @@ function SessionPageInner() {
     clearCaptionTimers();
 
     if (!audioBase64) {
-      // Silent step: advance captions using a heuristic so it still feels paced
-      // Allow subtle background motion even without audio
-      try { if (videoRef.current && !userPaused) { videoRef.current.play?.().catch(() => {}); } } catch {}
-      const sentences = batchSentences || [];
-      if (sentences.length > 1) {
-        // Rough pacing with minimum per-sentence time
-        const totalWords = sentences.reduce((sum, s) => sum + (countWords(s) || 1), 0) || sentences.length;
-        const safeDuration = Math.max(totalWords / 3.6, Math.min(sentences.length * 1.5, 12));
-        const minPerSentence = 0.6; // seconds
-        let elapsed = 0;
-        setCaptionIndex(startIndex);
-        for (let i = 1; i < sentences.length; i += 1) {
-          const prevWords = countWords(sentences[i - 1]) || 1;
-          const step = Math.max(minPerSentence, safeDuration * (prevWords / totalWords));
-          elapsed += step;
-          const timer = window.setTimeout(() => setCaptionIndex(startIndex + i), Math.round(elapsed * 1000));
-          captionTimersRef.current.push(timer);
-        }
+      // Synthetic playback: drive captions + video without an audio asset
+      const sentences = Array.isArray(batchSentences) ? batchSentences : [];
+      // Track batch bounds for pause/resume
+      try {
+        const batchLen = sentences.length;
+        captionBatchStartRef.current = startIndex;
+        captionBatchEndRef.current = startIndex + batchLen;
+        lastAudioBase64Ref.current = '';
+        lastSentencesRef.current = sentences;
+        lastStartIndexRef.current = startIndex;
+      } catch {}
+      // Compute pacing and arm synthetic state
+      const totalWords = sentences.reduce((sum, s) => sum + (countWords(s) || 1), 0) || sentences.length || 1;
+      const safeDuration = Math.max(totalWords / 3.6, Math.min(sentences.length * 1.5, 12));
+      syntheticRef.current = { active: true, duration: safeDuration, elapsed: 0, startAtMs: 0, timerId: null };
+      const allowAuto = (!userPaused || forceNextPlaybackRef.current);
+      if (!allowAuto) {
+        // Defer until user explicitly resumes
+        return;
       }
+      try { setIsSpeaking(true); } catch {}
+      try { scheduleCaptionsForDuration(safeDuration, sentences, startIndex); } catch {}
+      try {
+        if (videoRef.current) {
+          const vp = videoRef.current.play();
+          if (vp && vp.catch) {
+            vp.catch(() => setTimeout(() => { try { videoRef.current && videoRef.current.play().catch(() => {}); } catch {} }, 250));
+          }
+        }
+      } catch {}
+      try {
+        syntheticRef.current.startAtMs = Date.now();
+        syntheticRef.current.timerId = setTimeout(finishSynthetic, Math.round(safeDuration * 1000) + 50);
+      } catch {}
+      // Guard as additional safety to prevent UI lock
+      try { armSpeechGuard(safeDuration, 'synthetic'); } catch {}
       return;
     }
 
@@ -2114,6 +2243,8 @@ function SessionPageInner() {
   // Apply latest mute state immediately
   audio.muted = Boolean(mutedRef.current);
   audio.volume = mutedRef.current ? 0 : 1;
+      // Arm a provisional guard immediately based on heuristic; refine once metadata is known
+      try { armSpeechGuard(computeHeuristicDuration(batchSentences), 'html:provisional'); } catch {}
   {
     const allowAuto = (!userPaused || forceNextPlaybackRef.current);
     if (allowAuto) {
@@ -2128,6 +2259,13 @@ function SessionPageInner() {
             }
           } catch {}
           scheduleCaptionsForAudio(audio, batchSentences || [], startIndex);
+              // Arm guard using precise remaining duration
+              try {
+                if (Number.isFinite(audio.duration) && audio.duration > 0) {
+                  const remaining = Math.max(0.1, (audio.duration || 0) - (audio.currentTime || 0));
+                  armSpeechGuard(remaining, 'html:loaded-resume');
+                }
+              } catch {}
         };
         if (Number.isFinite(audio.duration) && audio.duration > 0) {
           readyThenSchedule();
@@ -2140,7 +2278,23 @@ function SessionPageInner() {
           captionTimersRef.current.push(t);
         }
       } else {
+        // Track current caption batch boundaries for pause/resume and captions-done detection
+        try {
+          const batchLen = (batchSentences && batchSentences.length) || 0;
+          captionBatchStartRef.current = startIndex;
+          captionBatchEndRef.current = startIndex + batchLen;
+        } catch {}
         scheduleCaptionsForAudio(audio, batchSentences || [], startIndex);
+            const armOnLoaded = () => {
+              try {
+                if (Number.isFinite(audio.duration) && audio.duration > 0) {
+                  const remaining = Math.max(0.1, (audio.duration || 0) - (audio.currentTime || 0));
+                  armSpeechGuard(remaining, 'html:loaded');
+                }
+              } catch {}
+            };
+            audio.addEventListener('loadedmetadata', armOnLoaded, { once: true });
+            audio.addEventListener('canplay', armOnLoaded, { once: true });
       }
     }
   }
@@ -2154,27 +2308,89 @@ function SessionPageInner() {
         const cleanup = () => {
           try { URL.revokeObjectURL(url); } catch {}
           // Do not change caption on cleanup; keep the full text on screen
+          try {
+            audio.removeEventListener('loadedmetadata', onLoadedForGuard);
+            audio.removeEventListener('canplay', onLoadedForGuard);
+            audio.removeEventListener('timeupdate', onTimeUpdateGuard);
+            audio.removeEventListener('pause', onPauseGuard);
+          } catch {}
           audioRef.current = null;
           resolve();
         };
 
+        // Guard helpers bound to this audio instance
+        const onLoadedForGuard = () => {
+          try {
+            if (Number.isFinite(audio.duration) && audio.duration > 0) {
+              const remaining = Math.max(0.1, (audio.duration || 0) - (audio.currentTime || 0));
+              armSpeechGuard(remaining, 'html:loaded');
+            }
+          } catch {}
+        };
+        const onTimeUpdateGuard = () => {
+          // On some mobile browsers duration is undefined for a while; re-arm with a sliding window
+          try {
+            if (!(Number.isFinite(audio.duration) && audio.duration > 0)) {
+              armSpeechGuardThrottled(2.5, 'html:tick');
+            } else {
+              const remaining = Math.max(0.1, (audio.duration || 0) - (audio.currentTime || 0));
+              armSpeechGuardThrottled(remaining, 'html:tick-known');
+            }
+          } catch {}
+        };
+        const onPauseGuard = () => {
+          try { clearSpeechGuard(); } catch {}
+          // When HTMLAudio pauses, pause the video to stay in lockstep
+          try { if (videoRef.current) videoRef.current.pause(); } catch {}
+        };
+        audio.addEventListener('timeupdate', onTimeUpdateGuard);
+        audio.addEventListener('pause', onPauseGuard);
+
         audio.onplay = () => {
           try { setIsSpeaking(true); } catch {}
+          // When duration is known on play, re-arm guard precisely
+          try {
+            if (Number.isFinite(audio.duration) && audio.duration > 0) {
+              const remaining = Math.max(0.1, (audio.duration || 0) - (audio.currentTime || 0));
+              armSpeechGuard(remaining, 'html:onplay');
+            }
+          } catch {}
+          // Start the video when audio starts; retry once if needed (mobile quirk)
+          try {
+            if (videoRef.current) {
+              const vp = videoRef.current.play();
+              if (vp && vp.catch) {
+                vp.catch(() => setTimeout(() => { try { videoRef.current && videoRef.current.play().catch(() => {}); } catch {} }, 250));
+              }
+            }
+          } catch {}
         };
         audio.onended = () => {
           try {
             setIsSpeaking(false);
-            // Pause video when the TTS finishes unless the user explicitly resumed
-            if (videoRef.current && !userPaused) {
-              try { videoRef.current.pause(); } catch {}
-            }
+            // Pause video when the TTS finishes to surface controls
+            if (videoRef.current) { try { videoRef.current.pause(); } catch {} }
             // Clear HTMLAudio paused offset on natural end
             try { htmlAudioPausedAtRef.current = 0; } catch {}
+            // If we're in Discussion awaiting-learner, explicitly reveal Opening actions now
+            try {
+              if (
+                phase === 'discussion' &&
+                subPhase === 'awaiting-learner' &&
+                askState === 'inactive' &&
+                riddleState === 'inactive' &&
+                poemState === 'inactive'
+              ) {
+                setShowOpeningActions(true);
+              }
+            } catch {}
           } catch {}
+          clearSpeechGuard();
           cleanup();
         };
         audio.onerror = () => {
           try { setIsSpeaking(false); } catch {}
+          clearSpeechGuard();
           // Try WebAudio fallback if available
           (async () => {
             try {
@@ -2193,10 +2409,6 @@ function SessionPageInner() {
           try { console.info('[Session] HTMLAudio: allowAuto=', allowAuto, 'muted=', !!mutedRef.current, 'userPaused=', !!userPaused, 'forceNext=', !!forceNextPlaybackRef.current); } catch {}
           if (allowAuto) {
             playPromise = audio.play();
-            // Try to play the video to keep visuals in sync with speech
-            if (videoRef.current) {
-              try { videoRef.current.play().catch(() => {}); } catch {}
-            }
             // Reset the force flag after first autoplay attempt
             try { if (forceNextPlaybackRef.current) forceNextPlaybackRef.current = false; } catch {}
             // Clear the first-playback HTMLAudio preference after attempting
@@ -2206,12 +2418,47 @@ function SessionPageInner() {
             playPromise.catch((err) => {
               console.warn('[Session] Audio autoplay blocked or failed. Falling back to WebAudio.', err);
               try { setIsSpeaking(false); } catch {}
+              clearSpeechGuard();
               // If audio cannot start, pause the background video to avoid a perpetual "speaking" feel
               if (videoRef.current && (!userPaused || forceNextPlaybackRef.current)) {
                 try { videoRef.current.pause(); } catch {}
               }
-              // Attempt WebAudio fallback using the same payload
+              // If this is the first auto-play attempt after restore, try a brief silent WAV unmuted to grant autoplay.
               (async () => {
+                let retriedHtml = false;
+                try {
+                  const silentUrl = makeSilentWavDataUrl(120);
+                  if (silentUrl) {
+                    const a = new Audio(silentUrl);
+                    a.muted = false; // Needs to be audible (tiny blip) for some browsers to grant autoplay
+                    a.volume = 0.01; // inaudible to users but non-zero
+                    try { await a.play(); } catch {}
+                    try { a.pause(); } catch {}
+                    retriedHtml = true;
+                  }
+                } catch {}
+                if (retriedHtml) {
+                  try {
+                    // Retry HTMLAudio once after establishing permission
+                    const retry = new Audio(url);
+                    audioRef.current = retry;
+                    retry.muted = Boolean(mutedRef.current);
+                    retry.volume = mutedRef.current ? 0 : 1;
+                    scheduleCaptionsForAudio(retry, batchSentences || [], startIndex);
+                    await retry.play();
+                    return; // success; do not fall back further
+                  } catch {}
+                }
+                // If AudioContext cannot run without a gesture, surface prompt instead of futile fallback
+                try {
+                  const maybeCtx = ensureAudioContext();
+                  if (!maybeCtx || maybeCtx.state !== 'running') {
+                    try { showTipOverride('Tap Resume to start audio.', 4000); } catch {}
+                    try { setOfferResume(true); } catch {}
+                    return cleanup();
+                  }
+                } catch {}
+                // Attempt WebAudio fallback using the same payload
                 try {
                   try { console.info('[Session] HTMLAudio failed; retrying via WebAudio'); } catch {}
                   await playViaWebAudio(normalizedB64, batchSentences || [], startIndex);
@@ -2246,6 +2493,77 @@ function SessionPageInner() {
   const webAudioBufferRef = useRef(null);
   const webAudioStartedAtRef = useRef(0);
   const webAudioPausedAtRef = useRef(0);
+  // Synthetic playback (no audio asset) state
+  const syntheticRef = useRef({ active: false, duration: 0, elapsed: 0, startAtMs: 0, timerId: null });
+
+  const clearSynthetic = () => {
+    try { if (syntheticRef.current?.timerId) clearTimeout(syntheticRef.current.timerId); } catch {}
+    syntheticRef.current = { active: false, duration: 0, elapsed: 0, startAtMs: 0, timerId: null };
+  };
+
+  const finishSynthetic = () => {
+    try { setIsSpeaking(false); } catch {}
+    try { if (videoRef.current) videoRef.current.pause(); } catch {}
+    // If we're in Discussion awaiting-learner, explicitly reveal Opening actions now
+    try {
+      if (
+        phase === 'discussion' &&
+        subPhase === 'awaiting-learner' &&
+        askState === 'inactive' &&
+        riddleState === 'inactive' &&
+        poemState === 'inactive'
+      ) {
+        setShowOpeningActions(true);
+      }
+    } catch {}
+    clearSpeechGuard();
+    clearSynthetic();
+  };
+
+  const pauseSynthetic = () => {
+    const s = syntheticRef.current;
+    if (!s?.active) return;
+    try {
+      if (s.startAtMs) {
+        const now = Date.now();
+        const delta = Math.max(0, (now - s.startAtMs) / 1000);
+        s.elapsed = Math.max(0, (s.elapsed || 0) + delta);
+      }
+    } catch {}
+    try { if (s.timerId) clearTimeout(s.timerId); } catch {}
+    s.timerId = null;
+    s.startAtMs = 0;
+    try { if (videoRef.current) videoRef.current.pause(); } catch {}
+    try { clearCaptionTimers(); } catch {}
+  };
+
+  const resumeSynthetic = () => {
+    const s = syntheticRef.current;
+    if (!s?.active) return;
+    const total = Number(s.duration || 0);
+    const elapsed = Math.max(0, Number(s.elapsed || 0));
+    const remaining = Math.max(0.1, total - elapsed);
+    try {
+      const startAt = captionIndex;
+      const end = captionBatchEndRef.current || captionSentencesRef.current.length;
+      const slice = (captionSentencesRef.current || []).slice(startAt, end);
+      if (slice.length) scheduleCaptionsForDuration(remaining, slice, startAt);
+    } catch {}
+    try {
+      if (videoRef.current) {
+        const vp = videoRef.current.play();
+        if (vp && vp.catch) {
+          vp.catch(() => setTimeout(() => { try { videoRef.current && videoRef.current.play().catch(() => {}); } catch {} }, 250));
+        }
+      }
+    } catch {}
+    try { setIsSpeaking(true); } catch {}
+    try { if (speechGuardTimerRef?.current) clearTimeout(speechGuardTimerRef.current); } catch {}
+    try {
+      s.startAtMs = Date.now();
+      s.timerId = setTimeout(finishSynthetic, Math.round(remaining * 1000) + 50);
+    } catch {}
+  };
 
   const ensureAudioContext = () => {
     const Ctx = (typeof window !== 'undefined') && (window.AudioContext || window.webkitAudioContext);
@@ -2353,6 +2671,11 @@ function SessionPageInner() {
         try { console.info('[Session] WebAudio state before resume:', ctx?.state); } catch {}
         if (ctx.state === 'suspended') { await ctx.resume(); }
         try { console.info('[Session] WebAudio state after resume:', ctx?.state); } catch {}
+        // If the context is still not running (common after refresh without a user gesture),
+        // bail out so the caller can fall back to HTMLAudio or synthetic playback.
+        if (ctx.state !== 'running') {
+          throw new Error('WebAudio context not running');
+        }
       } catch {}
     const arr = base64ToArrayBuffer(b64);
     const buffer = await ctx.decodeAudioData(arr.slice(0));
@@ -2383,7 +2706,6 @@ function SessionPageInner() {
             captionBatchEndRef.current = (startIndex || 0) + batchLen;
           } catch {}
           try { scheduleCaptionsForDuration(buffer.duration, sentences || [], startIndex || 0); } catch {}
-          if (videoRef.current) { try { videoRef.current.play(); } catch {} }
           // Reset the force flag after first autoplay attempt
           try { if (forceNextPlaybackRef.current) forceNextPlaybackRef.current = false; } catch {}
         }
@@ -2393,17 +2715,42 @@ function SessionPageInner() {
         src.onended = () => {
           try {
             setIsSpeaking(false);
-            if (videoRef.current && (!userPaused || forceNextPlaybackRef.current)) { try { videoRef.current.pause(); } catch {} }
+            // Pause video when the TTS finishes to surface controls
+            if (videoRef.current) { try { videoRef.current.pause(); } catch {} }
+            // If we're in Discussion awaiting-learner, explicitly reveal Opening actions now
+            try {
+              if (
+                phase === 'discussion' &&
+                subPhase === 'awaiting-learner' &&
+                askState === 'inactive' &&
+                riddleState === 'inactive' &&
+                poemState === 'inactive'
+              ) {
+                setShowOpeningActions(true);
+              }
+            } catch {}
           } catch {}
           stopWebAudioSource();
           webAudioStartedAtRef.current = 0;
           webAudioPausedAtRef.current = 0;
+          clearSpeechGuard();
           resolve();
         };
         try {
           try { console.info('[Session] Starting WebAudio source now at', ctx?.currentTime); } catch {}
           webAudioStartedAtRef.current = ctx.currentTime;
           webAudioPausedAtRef.current = 0;
+          // Start video in response to audio start and arm guard with known duration
+          try {
+            if (videoRef.current) {
+              const vp = videoRef.current.play();
+              if (vp && vp.catch) {
+                vp.catch(() => setTimeout(() => { try { videoRef.current && videoRef.current.play().catch(() => {}); } catch {} }, 250));
+              }
+            }
+          } catch {}
+          // Arm guard with known duration for WebAudio
+          try { armSpeechGuard(buffer.duration || 0, 'webaudio:start'); } catch {}
           src.start(0);
         } catch (e) { console.warn('[Session] WebAudio start failed', e); resolve(); }
       });
@@ -2496,13 +2843,21 @@ function SessionPageInner() {
     } catch { micRequestInFlightRef.current = false; }
   }, [unlockAudioPlayback, isSafari, micAllowed]);
 
-  // Attempt audio and microphone setup immediately on page entry.
-  // - This proactively prompts for mic permission and preps AudioContext early.
-  // - Browsers may still require a user gesture for autoplay, but this reduces friction later.
+  // Prewarm AudioContext on page entry without changing the unlocked UI state.
+  // This does not attempt to play or mark audio as unlocked; it simply creates/resumes the context if possible.
+  const prewarmAudio = useCallback(() => {
+    try {
+      const ctx = ensureAudioContext();
+      if (ctx && ctx.state === 'suspended') {
+        // Best-effort resume; not a user gesture, so may be ignored
+        ctx.resume();
+      }
+    } catch {}
+  }, [ensureAudioContext]);
+
   useEffect(() => {
-    // On mount, only unlock audio. Do not auto-request mic for any browser.
-    try { unlockAudioPlayback(); } catch {}
-  }, [unlockAudioPlayback]);
+    prewarmAudio();
+  }, [prewarmAudio]);
 
   // Keep audioUnlocked state loosely synced with ref if one changes elsewhere
   useEffect(() => {
@@ -2536,10 +2891,14 @@ function SessionPageInner() {
       if (intent === 'pause') {
         try { if (audioRef.current) audioRef.current.pause(); } catch {}
         try { if (videoRef.current) videoRef.current.pause(); } catch {}
+        try { pauseSynthetic(); } catch {}
   clearCaptionTimers();
         // Ensure UI state reflects paused
         try { setUserPaused(true); } catch {}
       } else if (intent === 'play') {
+        if (syntheticRef.current?.active) {
+          try { resumeSynthetic(); } catch {}
+        }
         const a = audioRef.current;
         if (a) {
           try {
@@ -2553,142 +2912,203 @@ function SessionPageInner() {
             }
           } catch {}
         }
-        if (videoRef.current) {
-          try { videoRef.current.play(); } catch {}
-        }
+        // Do not directly play the video here; let audio.onplay (or synthetic resume) start it
         try { setUserPaused(false); } catch {}
       }
     }
   }, [loading, playbackIntent, captionIndex, scheduleCaptionsForAudio]);
 
-  // Play/pause handler affecting both audio + video
-  const togglePlayPause = () => {
-    setUserPaused((prev) => {
-      const next = !prev;
-      // If we are currently loading, defer actual media control to avoid DOMExceptions
-      // and race conditions. We still flip the UI state immediately so the button reflects intent.
-      if (loading) {
-        setPlaybackIntent(next ? 'pause' : 'play');
-        return next;
+  // Stable refs for state/functions used by the unified play/pause controller
+  const userPausedRef = useRef(userPaused);
+  useEffect(() => { userPausedRef.current = userPaused; }, [userPaused]);
+  const captionIndexRef = useRef(captionIndex);
+  useEffect(() => { captionIndexRef.current = captionIndex; }, [captionIndex]);
+  const scheduleCaptionsForAudioRef = useRef(scheduleCaptionsForAudio);
+  useEffect(() => { scheduleCaptionsForAudioRef.current = scheduleCaptionsForAudio; }, [scheduleCaptionsForAudio]);
+  const scheduleCaptionsForDurationRef = useRef(scheduleCaptionsForDuration);
+  useEffect(() => { scheduleCaptionsForDurationRef.current = scheduleCaptionsForDuration; }, [scheduleCaptionsForDuration]);
+  const computeHeuristicDurationRef = useRef(computeHeuristicDuration);
+  useEffect(() => { computeHeuristicDurationRef.current = computeHeuristicDuration; }, [computeHeuristicDuration]);
+  const armSpeechGuardRef = useRef(armSpeechGuard);
+  useEffect(() => { armSpeechGuardRef.current = armSpeechGuard; }, [armSpeechGuard]);
+  const playAudioFromBase64Ref = useRef(playAudioFromBase64);
+  useEffect(() => { playAudioFromBase64Ref.current = playAudioFromBase64; }, [playAudioFromBase64]);
+
+  // New unified pause implementation
+  const pauseAll = useCallback(() => {
+    try { pauseSynthetic(); } catch {}
+    if (audioRef.current) {
+      try {
+        try { htmlAudioPausedAtRef.current = Number(audioRef.current.currentTime || 0); } catch {}
+        audioRef.current.pause();
+      } catch {}
+    }
+    // Record WebAudio pause offset and stop source
+    try {
+      const ctx = audioCtxRef.current;
+      if (ctx && webAudioBufferRef.current && webAudioSourceRef.current) {
+        const elapsed = Math.max(0, (ctx.currentTime || 0) - (webAudioStartedAtRef.current || 0));
+        webAudioPausedAtRef.current = elapsed;
       }
-      if (next) {
-        // Pausing
-        if (audioRef.current) {
-          try {
-            // Save currentTime before pausing so long idle/GC can still resume
-            try { htmlAudioPausedAtRef.current = Number(audioRef.current.currentTime || 0); } catch {}
-            audioRef.current.pause();
-          } catch { /* ignore */ }
-        }
-        // Record WebAudio paused position before stopping source
+    } catch {}
+    try { stopWebAudioSource(); } catch {}
+    try { if (videoRef.current) videoRef.current.pause(); } catch {}
+    try { clearCaptionTimers(); } catch {}
+    try { clearSpeechGuard(); } catch {}
+  }, []);
+
+  // New unified resume implementation
+  const resumeAll = useCallback(() => {
+    // Synthetic
+    if (syntheticRef.current?.active) {
+      try { resumeSynthetic(); } catch {}
+    }
+    // HTMLAudio resume
+    if (audioRef.current) {
+      try {
         try {
-          const ctx = audioCtxRef.current;
-          if (ctx && webAudioBufferRef.current && webAudioSourceRef.current) {
-            const elapsed = Math.max(0, (ctx.currentTime || 0) - (webAudioStartedAtRef.current || 0));
-            webAudioPausedAtRef.current = elapsed;
+          const desired = Number(htmlAudioPausedAtRef.current || 0);
+          if (Number.isFinite(desired) && desired > 0) {
+            audioRef.current.currentTime = Math.max(0, desired);
           }
-        } catch { /* ignore */ }
-        // Stop any active WebAudio source as well
-        try { stopWebAudioSource(); } catch { /* ignore */ }
-        if (videoRef.current) {
-          try { videoRef.current.pause(); } catch { /* ignore */ }
+        } catch {}
+        const p = audioRef.current.play();
+        try { setIsSpeaking(true); } catch {}
+        // Captions
+        try {
+          const startAt = captionIndexRef.current;
+          const batchEnd = captionBatchEndRef.current || captionSentencesRef.current.length;
+          const slice = (captionSentencesRef.current || []).slice(startAt, batchEnd);
+          if (slice.length) {
+            scheduleCaptionsForAudioRef.current?.(audioRef.current, slice, startAt);
+          }
+        } catch {}
+        // Guard
+        try {
+          if (Number.isFinite(audioRef.current.duration) && audioRef.current.duration > 0) {
+            const remaining = Math.max(0.1, (audioRef.current.duration || 0) - (audioRef.current.currentTime || 0));
+            armSpeechGuardRef.current?.(remaining, 'html:resume');
+          } else {
+            const startAt = captionIndexRef.current;
+            const end = captionBatchEndRef.current || captionSentencesRef.current.length;
+            const slice = (captionSentencesRef.current || []).slice(startAt, end);
+            const est = computeHeuristicDurationRef.current?.(slice) || 2.0;
+            armSpeechGuardRef.current?.(est, 'html:resume-heur');
+          }
+        } catch {}
+        // Fallback reconstruct
+        if (p && p.catch) {
+          p.catch(() => {
+            const b64 = lastAudioBase64Ref.current;
+            if (b64) {
+              const startAt = lastStartIndexRef.current || captionIndexRef.current;
+              const sentences = Array.isArray(lastSentencesRef.current) && lastSentencesRef.current.length
+                ? lastSentencesRef.current
+                : (captionSentencesRef.current || []).slice(startAt, captionBatchEndRef.current || captionSentencesRef.current.length);
+              const offset = Number(htmlAudioPausedAtRef.current || 0) || 0;
+              try { playAudioFromBase64Ref.current?.(b64, sentences, startAt, { resumeAtSeconds: offset }).catch(() => {}); } catch {}
+            }
+          });
         }
-  // Stop caption progression while paused
-  clearCaptionTimers();
-      } else {
-        // Resuming
-        if (audioRef.current) {
-          try {
-            // Seek to the last paused offset if available before resuming
+      } catch {}
+    } else if (webAudioBufferRef.current) {
+      // WebAudio resume
+      try {
+        const ctx = ensureAudioContext();
+        if (ctx) {
+          stopWebAudioSource();
+          const src = ctx.createBufferSource();
+          src.buffer = webAudioBufferRef.current;
+          src.connect(webAudioGainRef.current || ctx.destination);
+          webAudioSourceRef.current = src;
+          const offset = Math.max(0, webAudioPausedAtRef.current || 0);
+          src.onended = () => {
+            try { setIsSpeaking(false); } catch {}
+            try { if (videoRef.current) videoRef.current.pause(); } catch {}
             try {
-              const desired = Number(htmlAudioPausedAtRef.current || 0);
-              if (Number.isFinite(desired) && desired > 0) {
-                audioRef.current.currentTime = Math.max(0, desired);
-              }
+              if (
+                phase === 'discussion' &&
+                subPhase === 'awaiting-learner' &&
+                askState === 'inactive' &&
+                riddleState === 'inactive' &&
+                poemState === 'inactive'
+              ) { setShowOpeningActions(true); }
             } catch {}
-            const p = audioRef.current.play();
-            setIsSpeaking(true);
-            // Re-schedule caption timers for the remainder of the current batch
-            try {
-              const startAt = captionIndex;
-              const batchEnd = captionBatchEndRef.current || captionSentencesRef.current.length;
-              const slice = (captionSentencesRef.current || []).slice(startAt, batchEnd);
-              if (slice.length) {
-                scheduleCaptionsForAudio(audioRef.current, slice, startAt);
-              }
-            } catch {/* ignore scheduling errors */}
-            // If resume play fails (e.g., element locked), attempt reconstruction from last payload
-            if (p && p.catch) {
-              p.catch(() => {
-                const b64 = lastAudioBase64Ref.current;
-                if (b64) {
-                  const startAt = lastStartIndexRef.current || captionIndex;
-                  const sentences = Array.isArray(lastSentencesRef.current) && lastSentencesRef.current.length
-                    ? lastSentencesRef.current
-                    : (captionSentencesRef.current || []).slice(startAt, captionBatchEndRef.current || captionSentencesRef.current.length);
-                  const offset = Number(htmlAudioPausedAtRef.current || 0) || 0;
-                  try {
-                    playAudioFromBase64(b64, sentences, startAt, { resumeAtSeconds: offset }).catch(() => {});
-                  } catch { /* ignore */ }
-                }
-              });
-            }
-          } catch { /* ignore */ }
-        } else if (webAudioBufferRef.current) {
-          // Resume WebAudio from paused offset
+            stopWebAudioSource();
+            webAudioStartedAtRef.current = 0;
+            webAudioPausedAtRef.current = 0;
+            clearSpeechGuard();
+          };
+          webAudioStartedAtRef.current = ctx.currentTime - offset;
+          try { setIsSpeaking(true); } catch {}
+          src.start(0, offset);
           try {
-            const ctx = ensureAudioContext();
-            if (ctx) {
-              stopWebAudioSource();
-              const src = ctx.createBufferSource();
-              src.buffer = webAudioBufferRef.current;
-              src.connect(webAudioGainRef.current || ctx.destination);
-              webAudioSourceRef.current = src;
-              const offset = Math.max(0, webAudioPausedAtRef.current || 0);
-              src.onended = () => {
-                try { setIsSpeaking(false); } catch {}
-                stopWebAudioSource();
-                webAudioStartedAtRef.current = 0;
-                webAudioPausedAtRef.current = 0;
-              };
-              webAudioStartedAtRef.current = ctx.currentTime - offset;
-              setIsSpeaking(true);
-              src.start(0, offset);
-              // Re-schedule captions for the remainder of the batch using remaining duration heuristic
-              const startAt = captionIndex;
-              const batchEnd = captionBatchEndRef.current || captionSentencesRef.current.length;
-              const slice = (captionSentencesRef.current || []).slice(startAt, batchEnd);
-              if (slice.length) {
-                const remaining = Math.max(0.1, (webAudioBufferRef.current.duration || 0) - offset);
-                scheduleCaptionsForDuration(remaining, slice, startAt);
+            if (videoRef.current) {
+              const vp = videoRef.current.play();
+              if (vp && vp.catch) {
+                vp.catch(() => setTimeout(() => { try { videoRef.current && videoRef.current.play().catch(() => {}); } catch {} }, 250));
               }
             }
-          } catch { /* ignore */ }
-        } else {
-          // No current audio; attempt to reconstruct from last payload near saved offset
-          const b64 = lastAudioBase64Ref.current;
-          if (b64) {
-            const startAt = lastStartIndexRef.current || captionIndex;
-            const sentences = Array.isArray(lastSentencesRef.current) && lastSentencesRef.current.length
-              ? lastSentencesRef.current
-              : (captionSentencesRef.current || []).slice(startAt, captionBatchEndRef.current || captionSentencesRef.current.length);
-            const offset = Number(htmlAudioPausedAtRef.current || 0) || 0;
-            try { setIsSpeaking(true); } catch {}
-            try { playAudioFromBase64(b64, sentences, startAt, { resumeAtSeconds: offset }).catch(() => {}); } catch {}
-          }
+          } catch {}
+          // Captions from remaining duration
+          try {
+            const startAt = captionIndexRef.current;
+            const batchEnd = captionBatchEndRef.current || captionSentencesRef.current.length;
+            const slice = (captionSentencesRef.current || []).slice(startAt, batchEnd);
+            if (slice.length) {
+              const remaining = Math.max(0.1, (webAudioBufferRef.current.duration || 0) - offset);
+              scheduleCaptionsForDurationRef.current?.(remaining, slice, startAt);
+            }
+          } catch {}
+          try { armSpeechGuardRef.current?.(Math.max(0.1, (webAudioBufferRef.current.duration || 0) - offset), 'webaudio:resume'); } catch {}
         }
-        if (videoRef.current) {
-          try { videoRef.current.play(); } catch { /* ignore */ }
+      } catch {}
+    } else {
+      // Reconstruct last playback
+      const b64 = lastAudioBase64Ref.current;
+      if (b64) {
+        const startAt = lastStartIndexRef.current || captionIndexRef.current;
+        const sentences = Array.isArray(lastSentencesRef.current) && lastSentencesRef.current.length
+          ? lastSentencesRef.current
+          : (captionSentencesRef.current || []).slice(startAt, captionBatchEndRef.current || captionSentencesRef.current.length);
+        const offset = Number(htmlAudioPausedAtRef.current || 0) || 0;
+        try { setIsSpeaking(true); } catch {}
+        try { playAudioFromBase64Ref.current?.(b64, sentences, startAt, { resumeAtSeconds: offset }).catch(() => {}); } catch {}
+      }
+    }
+    // Always try to start the video with user gesture
+    try {
+      if (videoRef.current) {
+        const vp = videoRef.current.play();
+        if (vp && vp.catch) {
+          vp.catch(() => setTimeout(() => { try { videoRef.current && videoRef.current.play().catch(() => {}); } catch {} }, 250));
         }
       }
-      return next;
-    });
-  };
+    } catch {}
+  }, [ensureAudioContext]);
+
+  // Brand-new toggle using unified controller; preserves look/placement
+  const togglePlayPause = useCallback(() => {
+    const willPause = !userPausedRef.current ? true : false;
+    if (loading) {
+      setPlaybackIntent(willPause ? 'pause' : 'play');
+      setUserPaused(willPause);
+      return;
+    }
+    if (willPause) {
+      pauseAll();
+      setUserPaused(true);
+    } else {
+      resumeAll();
+      setUserPaused(false);
+    }
+  }, [loading, pauseAll, resumeAll]);
 
   const toggleMute = () => setMuted((m) => !m);
 
   // Centralized abort/cleanup: stop audio, captions, mic/STT, and in-flight requests
-  const abortAllActivity = useCallback(() => {
+  // keepCaptions: when true, do NOT wipe captionSentences so on-screen transcript remains continuous across handoffs
+  const abortAllActivity = useCallback((keepCaptions = false) => {
     // Abort in-flight Ms. Sonoma
     try { if (sonomaAbortRef.current) sonomaAbortRef.current.abort('skip'); } catch {}
     // Stop audio playback
@@ -2701,16 +3121,20 @@ function SessionPageInner() {
     if (videoRef.current) {
       try { videoRef.current.pause(); } catch {}
     }
+    // Stop synthetic playback timers/state
+    try { clearSynthetic(); } catch {}
     // Clear any deferred playback intent so it does not apply after abort
     try { setPlaybackIntent(null); } catch {}
-    // Clear captions and indices
+    // Clear captions timers and optionally content
     try {
       clearCaptionTimers();
       captionBatchStartRef.current = 0;
       captionBatchEndRef.current = 0;
-      captionSentencesRef.current = [];
-      setCaptionSentences([]);
-      setCaptionIndex(0);
+      if (!keepCaptions) {
+        captionSentencesRef.current = [];
+        setCaptionSentences([]);
+        setCaptionIndex(0);
+      }
     } catch {}
     // Reset transcript, speaking state, and input
     setTranscript('');
@@ -3746,6 +4170,8 @@ function SessionPageInner() {
     };
   }, []);
 
+  
+
   const startDiscussionStep = async () => {
     try { console.info('[Opening] startDiscussionStep entered'); } catch {}
     try { console.info('[Opening] generateOpening typeof =', typeof generateOpening); } catch {}
@@ -3979,6 +4405,705 @@ function SessionPageInner() {
   // Three-stage teaching state and helpers
   const [teachingStage, setTeachingStage] = useState('idle'); // 'idle' | 'definitions' | 'explanation' | 'examples'
   const [stageRepeats, setStageRepeats] = useState({ definitions: 0, explanation: 0, examples: 0 });
+
+  // Session snapshot persistence (restore and save) — placed after state declarations to avoid TDZ
+  const restoredSnapshotRef = useRef(false);
+  const didRunRestoreRef = useRef(false); // ensure we attempt restore exactly once per mount
+  const restoreFoundRef = useRef(false);  // whether we actually applied a prior snapshot
+  const snapshotSaveTimerRef = useRef(null);
+  // Track a logical per-restart session id for per-session transcript files
+  const [transcriptSessionId, setTranscriptSessionId] = useState(null);
+  // Used to coalesce redundant saves: store a compact signature of the last saved meaningful state
+  const lastSavedSigRef = useRef(null);
+  // Retry budget for labeled saves when key is not yet ready
+  const pendingSaveRetriesRef = useRef({});
+  // When a snapshot is restored on mount, surface a Resume/Restart offer in the footer
+  const [offerResume, setOfferResume] = useState(false);
+  const scheduleSaveSnapshot = useCallback((label = '') => {
+    // Generally do not save until restore has run at least once to avoid clobbering, except for explicit user-driven labels
+    if (!restoredSnapshotRef.current && label === 'state-change') return;
+    try { if (snapshotSaveTimerRef.current) clearTimeout(snapshotSaveTimerRef.current); } catch {}
+    snapshotSaveTimerRef.current = setTimeout(async () => {
+      try {
+        // Double-guard inside timer as well
+        if (!restoredSnapshotRef.current && label === 'state-change') {
+          try { console.debug('[Snapshot] skip before restore', { label, at: new Date().toISOString() }); } catch {}
+          return;
+        }
+  const storedKey = getSnapshotStorageKey();
+  if (!storedKey) {
+          // If key not ready yet, retry labeled saves a few times
+          if (label !== 'state-change') {
+            const keyLbl = String(label || 'label');
+            const map = pendingSaveRetriesRef.current || {};
+            const used = Number.isFinite(map[keyLbl]) ? map[keyLbl] : 0;
+            if (used < 5) {
+              map[keyLbl] = used + 1;
+              pendingSaveRetriesRef.current = map;
+              try { console.debug('[Snapshot] key not ready; retry scheduled', { label, attempt: used + 1, at: new Date().toISOString() }); } catch {}
+              setTimeout(() => { try { scheduleSaveSnapshot(label); } catch {} }, 400);
+            } else {
+              try { console.debug('[Snapshot] key not ready; giving up after retries', { label, at: new Date().toISOString() }); } catch {}
+            }
+          } else {
+            try { console.debug('[Snapshot] save skipped (no key yet)', { label, at: new Date().toISOString() }); } catch {}
+          }
+          return;
+        }
+        const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
+        // Build a compact signature that only changes when a meaningful resume point changes
+        const sigObj = {
+          phase, subPhase,
+          teachingStage,
+          idx: { ci: currentCompIndex, ei: currentExIndex, wi: currentWorksheetIndex, ti: testActiveIndex },
+          gates: { qa: !!qaAnswersUnlocked, jk: !!jokeUsedThisGate, rd: !!riddleUsedThisGate, pm: !!poemUsedThisGate },
+          cur: {
+            c: currentCompProblem ? (currentCompProblem.id || currentCompProblem.key || currentCompProblem.question || currentCompProblem.prompt || '1') : null,
+            e: currentExerciseProblem ? (currentExerciseProblem.id || currentExerciseProblem.key || currentExerciseProblem.question || currentExerciseProblem.prompt || '1') : null,
+            q: (() => { try { return String(activeQuestionBodyRef.current || '').slice(0, 200); } catch { return ''; } })(),
+          },
+          test: {
+            aLen: Array.isArray(testUserAnswers) ? testUserAnswers.length : 0,
+            cLen: Array.isArray(testCorrectByIndex) ? testCorrectByIndex.length : 0,
+            fin: (typeof testFinalPercent === 'number' ? testFinalPercent : null),
+          },
+        };
+        const sig = JSON.stringify(sigObj);
+        // Skip redundant autosaves when nothing meaningful changed; allow explicit labels to force-save (e.g., restart/skip/jump)
+        if (label === 'state-change' && lastSavedSigRef.current === sig) {
+          return;
+        }
+        // Build normalized resume pointer (single authoritative progress state)
+        const resume = (() => {
+          // Teaching stage entrance
+          if (phase === 'teaching' && teachingStage && teachingStage !== 'idle') {
+            return { kind: 'teaching-stage', phase: 'teaching', stage: teachingStage };
+          }
+          // Phase entrances
+          if (
+            (phase === 'comprehension' && (subPhase === 'comprehension-start' || subPhase === 'comprehension-active') && !qaAnswersUnlocked) ||
+            (phase === 'exercise' && subPhase === 'exercise-awaiting-begin' && !qaAnswersUnlocked) ||
+            (phase === 'worksheet' && subPhase === 'worksheet-active' && !qaAnswersUnlocked) ||
+            (phase === 'test' && (subPhase === 'test-awaiting-begin' || subPhase === 'test-active') && !qaAnswersUnlocked)
+          ) {
+            return { kind: 'phase-entrance', phase, ticker: Number.isFinite(ticker) ? ticker : 0 };
+          }
+          // Question pointers (1-based index where possible)
+          if (phase === 'comprehension' && (currentCompProblem || currentCompIndex > 0)) {
+            const idx = Math.max(1, currentCompIndex || 1);
+            return { kind: 'question', phase: 'comprehension', index: idx, ticker: Number.isFinite(ticker) ? ticker : 0 };
+          }
+          if (phase === 'exercise' && (currentExerciseProblem || currentExIndex > 0)) {
+            const idx = Math.max(1, currentExIndex || 1);
+            return { kind: 'question', phase: 'exercise', index: idx, ticker: Number.isFinite(ticker) ? ticker : 0 };
+          }
+          if (phase === 'worksheet' && typeof currentWorksheetIndex === 'number') {
+            const idx = Math.max(1, (currentWorksheetIndex || 0) + 1);
+            return { kind: 'question', phase: 'worksheet', index: idx, ticker: Number.isFinite(ticker) ? ticker : 0 };
+          }
+          if (phase === 'test' && typeof testActiveIndex === 'number') {
+            const idx = Math.max(1, (testActiveIndex || 0) + 1);
+            return { kind: 'question', phase: 'test', index: idx, ticker: Number.isFinite(ticker) ? ticker : 0 };
+          }
+          // Default to current phase entrance
+          return { kind: 'phase-entrance', phase: phase || 'discussion', ticker: Number.isFinite(ticker) ? ticker : 0 };
+        })();
+
+        const payload = {
+          phase, subPhase, showBegin,
+          // ticker excluded from signature to avoid periodic noise; we still persist it opportunistically
+          ticker,
+          teachingStage,
+          stageRepeats,
+          qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate,
+          currentCompIndex, currentExIndex, currentWorksheetIndex,
+          testActiveIndex,
+          currentCompProblem, currentExerciseProblem,
+          testUserAnswers, testCorrectByIndex, testCorrectCount, testFinalPercent,
+          captionSentences: Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current : (Array.isArray(captionSentences) ? captionSentences : []),
+          captionIndex,
+          usedTestCuePhrases,
+          resume,
+        };
+        if (!storedKey || String(storedKey).trim().length === 0) {
+          try { console.debug('[Snapshot] save skipped (no key yet)', { learnerId: lid, phase, subPhase, label, at: new Date().toISOString() }); } catch {}
+          return;
+        }
+  try { console.debug('[Snapshot] save', { key: storedKey, learnerId: lid, phase, subPhase, label, restored: restoredSnapshotRef.current, at: new Date().toISOString() }); } catch {}
+        await saveSnapshot(storedKey, payload, { learnerId: lid });
+
+        // Also update live transcript segment to keep facilitator PDF in sync with the on-screen transcript
+        try {
+          const learnerId = (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null) || null;
+          const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || null;
+          const lessonId = String(lessonParam || '').replace(/\.json$/i, '');
+          if (learnerId && lessonId && Array.isArray(captionSentencesRef.current) && captionSentencesRef.current.length) {
+            const startedAt = sessionStartRef.current || new Date().toISOString();
+            await updateTranscriptLiveSegment({
+              learnerId,
+              learnerName,
+              lessonId,
+              lessonTitle: effectiveLessonTitle,
+              startedAt,
+              lines: captionSentencesRef.current,
+              sessionId: transcriptSessionId || undefined,
+            });
+          }
+        } catch {}
+        lastSavedSigRef.current = sig;
+      } catch {}
+    }, 200);
+  }, [phase, subPhase, showBegin, teachingStage, /*stageRepeats excluded from triggers*/, qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testCorrectCount, testFinalPercent, /*captionSentences excluded*/, /*captionIndex excluded*/, usedTestCuePhrases, getSnapshotStorageKey, lessonParam, effectiveLessonTitle, transcriptSessionId]);
+
+  // Memoized signature of meaningful resume-relevant state. Changes here will cause an autosave.
+  const snapshotSigMemo = useMemo(() => {
+    const sigObj = {
+      phase, subPhase,
+      teachingStage,
+      idx: { ci: currentCompIndex, ei: currentExIndex, wi: currentWorksheetIndex, ti: testActiveIndex },
+      gates: { qa: !!qaAnswersUnlocked, jk: !!jokeUsedThisGate, rd: !!riddleUsedThisGate, pm: !!poemUsedThisGate },
+      cur: {
+        c: currentCompProblem ? (currentCompProblem.id || currentCompProblem.key || currentCompProblem.question || currentCompProblem.prompt || '1') : null,
+        e: currentExerciseProblem ? (currentExerciseProblem.id || currentExerciseProblem.key || currentExerciseProblem.question || currentExerciseProblem.prompt || '1') : null,
+        q: (() => { try { return String(activeQuestionBodyRef.current || '').slice(0, 200); } catch { return ''; } })(),
+      },
+      test: {
+        aLen: Array.isArray(testUserAnswers) ? testUserAnswers.length : 0,
+        cLen: Array.isArray(testCorrectByIndex) ? testCorrectByIndex.length : 0,
+        fin: (typeof testFinalPercent === 'number' ? testFinalPercent : null),
+      },
+    };
+    try { return JSON.stringify(sigObj); } catch { return '' }
+  }, [phase, subPhase, teachingStage, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testFinalPercent, activeQuestionBodyRef.current]);
+
+  // Save on ticker change to support resume at each count increment (coalesced with timer)
+  useEffect(() => {
+    if (!restoredSnapshotRef.current) return;
+    try { scheduleSaveSnapshot('ticker-change'); } catch {}
+  }, [ticker]);
+
+  // Restore snapshot as early as possible (run once when a stable key can be derived)
+  useEffect(() => {
+    if (didRunRestoreRef.current || restoredSnapshotRef.current) return;
+    const doRestore = async () => {
+      // Ensure the overlay shows while we resolve snapshot and reconcile resume
+      try { setLoading(true); } catch {}
+      let attempted = false;
+      try {
+        const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
+        // Try multiple candidate keys in case different sources are available at different times
+        const candidates = [];
+        try { const k = getSnapshotStorageKey(); if (k) candidates.push(k); } catch {}
+        try { const k = getSnapshotStorageKey({ param: lessonParam }); if (k && !candidates.includes(k)) candidates.push(k); } catch {}
+        try { const k = getSnapshotStorageKey({ manifest: manifestInfo }); if (k && !candidates.includes(k)) candidates.push(k); } catch {}
+        try { if (lessonData?.id) { const k = getSnapshotStorageKey({ data: lessonData }); if (k && !candidates.includes(k)) candidates.push(k); } } catch {}
+
+        // Only proceed when we have at least one non-empty key; otherwise, postpone restore
+        const keys = candidates.filter((k) => typeof k === 'string' && k.trim().length > 0);
+        if (keys.length === 0) {
+          try { console.debug('[Snapshot] restore postponed (no key yet)', { at: new Date().toISOString() }); } catch {}
+          return; // do not mark didRunRestore/restored flags so we can try again when deps update
+        }
+
+  // We will mark didRun only when we actually finish attempting with all available sources
+  attempted = true;
+
+        // Collect all available snapshots among candidates and legacy variants, then pick the newest by savedAt
+        let snap = null;
+        let newestAt = 0;
+        const consider = async (keyLike, note = '') => {
+          try {
+            const s = await getStoredSnapshot(keyLike, { learnerId: lid });
+            if (s) {
+              const t = Date.parse(s.savedAt || '') || 0;
+              if (t >= newestAt) { snap = s; newestAt = t; }
+              try { console.debug('[Snapshot] candidate', { key: keyLike, note, at: new Date().toISOString(), savedAt: s.savedAt }); } catch {}
+            }
+          } catch { /* ignore */ }
+        };
+        for (const c of keys) {
+          // canonical key
+          await consider(c, 'canonical');
+          // extension variant (.json)
+          await consider(`${c}.json`, 'ext-variant');
+          // Remote legacy variants: append known target suffixes as previously used in assessments keying
+          const variants = [
+            `${c}:W15:T10`, `${c}:W20:T20`, `${c}:W${Number(WORKSHEET_TARGET) || 15}:T${Number(TEST_TARGET) || 10}`
+          ];
+          for (const v of variants) {
+            await consider(v, 'legacy');
+            await consider(`${v}.json`, 'legacy-ext');
+          }
+        }
+        if (snap) { try { console.debug('[Snapshot] restore hit', { key: 'NEWEST', learnerId: lid, at: new Date().toISOString(), savedAt: snap.savedAt }); } catch {} }
+        // If we didn't find a snapshot yet, decide whether to postpone based on source readiness
+        const sourcesReady = Boolean(lessonParam) && (Boolean(manifestInfo?.file) || Boolean(lessonData?.id));
+        if (!snap) {
+          if (!sourcesReady) {
+            // Postpone finalize; dependencies will change when manifest/data load, allowing another attempt
+            try { console.debug('[Snapshot] no snapshot yet; will retry when sources are ready', { at: new Date().toISOString() }); } catch {}
+            return;
+          }
+          // No snapshot and sources are ready: finalize restore as not-found so saving can begin
+          didRunRestoreRef.current = true;
+          restoreFoundRef.current = false;
+          try { setOfferResume(false); } catch {}
+          // Hide loading immediately in no-snapshot case so UI becomes interactive
+          try { setLoading(false); } catch {}
+          return;
+        }
+        // Found a snapshot: finalize
+        didRunRestoreRef.current = true;
+        // Apply core flow state first
+        try { setPhase(snap.phase || 'discussion'); } catch {}
+        try { setSubPhase(snap.subPhase || 'greeting'); } catch {}
+        // Never show the global Begin overlay outside the Discussion phase
+        try {
+          const sb = !!snap.showBegin;
+          if ((snap.phase || 'discussion') !== 'discussion' && sb) {
+            setShowBegin(false);
+          } else {
+            setShowBegin(sb);
+          }
+        } catch {}
+        try { setTicker(Number.isFinite(snap.ticker) ? snap.ticker : 0); } catch {}
+        // Gates and flags
+        try { setQaAnswersUnlocked(!!snap.qaAnswersUnlocked); } catch {}
+        try { setJokeUsedThisGate(!!snap.jokeUsedThisGate); } catch {}
+        try { setRiddleUsedThisGate(!!snap.riddleUsedThisGate); } catch {}
+        try { setPoemUsedThisGate(!!snap.poemUsedThisGate); } catch {}
+        // Three-stage teaching state
+        try { if (typeof snap.teachingStage === 'string') setTeachingStage(snap.teachingStage); } catch {}
+        try { if (snap.stageRepeats && typeof snap.stageRepeats === 'object') setStageRepeats({ definitions: Number.isFinite(snap.stageRepeats.definitions) ? snap.stageRepeats.definitions : 0, explanation: Number.isFinite(snap.stageRepeats.explanation) ? snap.stageRepeats.explanation : 0, examples: Number.isFinite(snap.stageRepeats.examples) ? snap.stageRepeats.examples : 0 }); } catch {}
+        // Indices and pointers
+        try { setCurrentCompIndex(Number.isFinite(snap.currentCompIndex) ? snap.currentCompIndex : 0); } catch {}
+        try { setCurrentExIndex(Number.isFinite(snap.currentExIndex) ? snap.currentExIndex : 0); } catch {}
+        try {
+          const wi = Number.isFinite(snap.currentWorksheetIndex) ? snap.currentWorksheetIndex : 0;
+          worksheetIndexRef.current = wi; setCurrentWorksheetIndex(wi);
+        } catch {}
+        try { setTestActiveIndex(Number.isFinite(snap.testActiveIndex) ? snap.testActiveIndex : 0); } catch {}
+        try { setCurrentCompProblem(snap.currentCompProblem || null); } catch {}
+        try { setCurrentExerciseProblem(snap.currentExerciseProblem || null); } catch {}
+        // Test arrays
+        try { Array.isArray(snap.testUserAnswers) && setTestUserAnswers(snap.testUserAnswers); } catch {}
+        try { Array.isArray(snap.testCorrectByIndex) && setTestCorrectByIndex(snap.testCorrectByIndex); } catch {}
+        try { typeof snap.testCorrectCount === 'number' && setTestCorrectCount(snap.testCorrectCount); } catch {}
+        try { (typeof snap.testFinalPercent === 'number' || snap.testFinalPercent === null) && setTestFinalPercent(snap.testFinalPercent); } catch {}
+        try { Array.isArray(snap.usedTestCuePhrases) && setUsedTestCuePhrases(snap.usedTestCuePhrases); } catch {}
+        // Captions/transcript
+        try {
+          const lines = Array.isArray(snap.captionSentences) ? snap.captionSentences : [];
+          captionSentencesRef.current = lines;
+          setCaptionSentences(lines.slice());
+          const ci = Number.isFinite(snap.captionIndex) ? snap.captionIndex : 0;
+          setCaptionIndex(Math.max(0, Math.min(ci, Math.max(0, lines.length - 1))));
+        } catch {}
+        restoreFoundRef.current = true;
+  try { console.debug('[Snapshot] restore applied', { phase: snap.phase, subPhase: snap.subPhase, teachingStage: snap.teachingStage, at: new Date().toISOString() }); } catch {}
+  // Defer clearing loading until the resume reconciliation effect completes
+        try { setTtsLoadingCount(0); } catch {}
+        try { setIsSpeaking(false); } catch {}
+        try {
+          // Minimal canSend heuristics on restore: enable only when in awaiting-begin or review or teaching stage prompts
+          const enable = (
+            (phase === 'discussion' && subPhase === 'awaiting-learner') ||
+            (phase === 'comprehension' && subPhase === 'comprehension-start') ||
+            (phase === 'exercise' && subPhase === 'exercise-awaiting-begin') ||
+            (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin') ||
+            (phase === 'test' && (subPhase === 'test-awaiting-begin' || subPhase === 'review-start')) ||
+            (phase === 'teaching' && subPhase === 'teaching-3stage')
+          );
+          setCanSend(!!enable);
+        } catch {}
+        try {
+          // Do not surface Resume/Restart when the snapshot is effectively the global beginning
+          const atGlobalStart = ((snap.phase || 'discussion') === 'discussion') && !!snap.showBegin;
+          setOfferResume(!atGlobalStart);
+        } catch {}
+      } finally {
+        // Whether or not a snapshot was found, mark restored so subsequent state changes start saving
+        if (attempted) {
+          restoredSnapshotRef.current = true;
+          try { console.debug('[Snapshot] restore attempt finished', { restored: restoreFoundRef.current, at: new Date().toISOString() }); } catch {}
+          // After first restore attempt, consolidate legacy keys in the background
+          try {
+            const k = getSnapshotStorageKey();
+            const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
+            if (k) consolidateSnapshots(k, { learnerId: lid });
+          } catch {}
+          // Safety: if reconciliation does not trigger a render (e.g., snapshot matches current defaults),
+          // clear the loading overlay now so the screen becomes interactive.
+          try { setLoading(false); } catch {}
+        }
+      }
+    };
+    doRestore();
+  }, [lessonParam, manifestInfo?.file, lessonData?.id]);
+
+  // Save snapshot when the meaningful signature changes; coalescing occurs inside scheduleSaveSnapshot
+  useEffect(() => {
+    if (!restoredSnapshotRef.current) return; // skip initial mount before restore
+    scheduleSaveSnapshot('state-change');
+    return () => { try { if (snapshotSaveTimerRef.current) clearTimeout(snapshotSaveTimerRef.current); } catch {} };
+  }, [snapshotSigMemo, scheduleSaveSnapshot]);
+
+  // After a restore, once assessments are ready, ensure we land on a valid resume point
+  const resumeAppliedRef = useRef(false);
+  useEffect(() => {
+    if (!restoredSnapshotRef.current || resumeAppliedRef.current === true) return;
+    // We only take action when we actually restored something earlier
+    if (!restoreFoundRef.current) { resumeAppliedRef.current = true; return; }
+
+    const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+    const ensureComprehension = () => {
+      if (subPhase === 'comprehension-active') {
+        // Treat active + locked answers as the phase entrance (after Begin, before Go)
+        if (!qaAnswersUnlocked) {
+          try { setShowOpeningActions(true); } catch {}
+          try { setCanSend(true); } catch {}
+          // Ensure the global Begin overlay stays hidden when resuming at an entrance
+          try { setShowBegin(false); } catch {}
+        } else if (!currentCompProblem) {
+          // If answers are unlocked but no current problem, fall back to opening
+          try { setSubPhase('comprehension-start'); } catch {}
+        }
+      } else if (subPhase !== 'comprehension-start') {
+        // Any other subPhase goes to opening resume point
+        try { setSubPhase('comprehension-start'); } catch {}
+      }
+    };
+    const ensureExercise = () => {
+      if (subPhase === 'exercise-start') {
+        // Phase entrance when answers are still locked
+        if (!qaAnswersUnlocked) {
+          try { setShowOpeningActions(true); } catch {}
+          try { setCanSend(true); } catch {}
+          try { setShowBegin(false); } catch {}
+        } else if (!currentExerciseProblem) {
+          try { setSubPhase('exercise-awaiting-begin'); } catch {}
+        }
+      } else if (subPhase !== 'exercise-awaiting-begin') {
+        try { setSubPhase('exercise-awaiting-begin'); } catch {}
+      }
+    };
+    const ensureWorksheet = () => {
+      if (Array.isArray(generatedWorksheet) && generatedWorksheet.length > 0) {
+        const i = clamp(Number(currentWorksheetIndex) || 0, 0, Math.max(0, generatedWorksheet.length - 1));
+        try { setCurrentWorksheetIndex(i); } catch {}
+        if (subPhase === 'worksheet-active') {
+          if (!qaAnswersUnlocked) {
+            try { setShowOpeningActions(true); } catch {}
+            try { setCanSend(true); } catch {}
+            try { setShowBegin(false); } catch {}
+          }
+        } else if (subPhase !== 'worksheet-active' && subPhase !== 'worksheet-awaiting-begin') {
+          try { setSubPhase('worksheet-awaiting-begin'); } catch {}
+        }
+      } else {
+        // No worksheet yet; ensure opening screen so we don't sit in an impossible active state
+        try { setSubPhase('worksheet-awaiting-begin'); } catch {}
+      }
+    };
+    const ensureTest = () => {
+      if (subPhase === 'review-start') {
+        // Allowed resume point; nothing to reconcile
+        return;
+      }
+      if (Array.isArray(generatedTest) && generatedTest.length > 0) {
+        const i = clamp(Number(testActiveIndex) || 0, 0, Math.max(0, generatedTest.length - 1));
+        try { setTestActiveIndex(i); } catch {}
+        if (subPhase === 'test-active') {
+          if (!qaAnswersUnlocked) {
+            try { setShowOpeningActions(true); } catch {}
+            try { setCanSend(true); } catch {}
+            try { setShowBegin(false); } catch {}
+          }
+        } else if (subPhase !== 'test-active' && subPhase !== 'test-awaiting-begin') {
+          try { setSubPhase('test-awaiting-begin'); } catch {}
+        }
+      } else {
+        try { setSubPhase('test-awaiting-begin'); } catch {}
+      }
+    };
+
+    try {
+      switch (phase) {
+        case 'comprehension':
+          ensureComprehension();
+          break;
+        case 'exercise':
+          ensureExercise();
+          break;
+        case 'worksheet':
+          ensureWorksheet();
+          break;
+        case 'test':
+          ensureTest();
+          break;
+        case 'teaching':
+          // Teaching: after a refresh, reconcile to the stage entry point but do not auto-play.
+          // We’ll surface the Resume tray; the facilitator/learner will click Resume to begin audio.
+          if (subPhase !== 'teaching-3stage') {
+            try { setSubPhase('teaching-3stage'); } catch {}
+          }
+          try { setCanSend(false); } catch {}
+          try { preferHtmlAudioOnceRef.current = true; } catch {}
+          // Ensure the footer shows Resume/Restart controls unless we are at the global beginning
+          try {
+            const atGlobalStart = (phase === 'discussion') && showBegin === true;
+            setOfferResume(!atGlobalStart);
+          } catch {}
+          break;
+        default:
+          break;
+      }
+    } finally {
+      // Mark as applied so we don't loop
+      resumeAppliedRef.current = true;
+      // Now that resume state is reconciled, hide the initial loading overlay
+      try { setLoading(false); } catch {}
+    }
+  }, [phase, subPhase, currentCompProblem, currentExerciseProblem, currentWorksheetIndex, testActiveIndex, generatedWorksheet, generatedTest, qaAnswersUnlocked, showBegin]);
+
+  // Footer actions: Resume current state (re-run the current part), or Restart entire lesson fresh
+  const handleResumeClick = useCallback(async () => {
+    try { setOfferResume(false); } catch {}
+    try { unlockAudioPlayback(); } catch {}
+    try { preferHtmlAudioOnceRef.current = true; } catch {}
+    try { forceNextPlaybackRef.current = true; } catch {}
+    // Decide what to resume based on phase/subPhase
+    try {
+      if (phase === 'discussion') {
+        // Re-run current discussion step if available
+        await startDiscussionStep();
+        return;
+      }
+      if (phase === 'teaching') {
+        // Restart the current teaching stage from the beginning
+        setSubPhase('teaching-3stage');
+        setCanSend(false);
+        if (teachingStage === 'definitions') { await teachDefinitions(false); await promptGateRepeat(); return; }
+        if (teachingStage === 'explanation') { await teachExplanation(false); await promptGateRepeat(); return; }
+        if (teachingStage === 'examples') { await teachExamples(false); await promptGateRepeat(); return; }
+        return;
+      }
+      if (phase === 'comprehension') {
+        // Phase entrance: Begin was clicked but Go has not been pressed yet
+        if (subPhase === 'comprehension-active' && !qaAnswersUnlocked) {
+          try {
+            const opener = COMPREHENSION_INTROS[Math.floor(Math.random() * COMPREHENSION_INTROS.length)];
+            await speakFrontend(opener);
+          } catch {}
+          try { setShowOpeningActions(true); } catch {}
+          try { setCanSend(true); } catch {}
+          return;
+        }
+        // If we were already on a question, re-ask that exact question; otherwise restart at the entrance
+        if (subPhase === 'comprehension-active' && currentCompProblem) {
+          try {
+            const formatted = ensureQuestionMark(formatQuestionForSpeech(currentCompProblem, { layout: 'multiline' }));
+            activeQuestionBodyRef.current = formatted;
+            setQaAnswersUnlocked(true);
+            setCanSend(false);
+            // Audible re-read without duplicating captions on screen
+            await speakFrontend(formatted, { mcLayout: 'multiline', noCaptions: true });
+          } catch {}
+          setCanSend(true);
+          return;
+        }
+        setSubPhase('comprehension-start');
+        await beginComprehensionPhase();
+        return;
+      }
+      if (phase === 'exercise') {
+        // Phase entrance: Begin was clicked but Go has not been pressed yet
+        if (subPhase === 'exercise-start' && !qaAnswersUnlocked) {
+          try {
+            const opener = EXERCISE_INTROS[Math.floor(Math.random() * EXERCISE_INTROS.length)];
+            await speakFrontend(opener);
+          } catch {}
+          try { setShowOpeningActions(true); } catch {}
+          try { setCanSend(true); } catch {}
+          return;
+        }
+        // If we were already on a question, re-ask that exact question; otherwise restart at the entrance
+        if (subPhase === 'exercise-start' && currentExerciseProblem) {
+          try {
+            const formatted = ensureQuestionMark(formatQuestionForSpeech(currentExerciseProblem, { layout: 'multiline' }));
+            activeQuestionBodyRef.current = formatted;
+            setQaAnswersUnlocked(true);
+            setCanSend(false);
+            await speakFrontend(formatted, { mcLayout: 'multiline', noCaptions: true });
+          } catch {}
+          setCanSend(true);
+          return;
+        }
+        setSubPhase('exercise-awaiting-begin');
+        await beginSkippedExercise();
+        return;
+      }
+      if (phase === 'worksheet') {
+        // Phase entrance: Begin was clicked but Go has not been pressed yet
+        if (subPhase === 'worksheet-active' && !qaAnswersUnlocked) {
+          try {
+            const opener = WORKSHEET_INTROS[Math.floor(Math.random() * WORKSHEET_INTROS.length)];
+            await speakFrontend(opener);
+          } catch {}
+          try { setShowOpeningActions(true); } catch {}
+          try { setCanSend(true); } catch {}
+          return;
+        }
+        // If already active on a worksheet question, re-ask the current one; otherwise restart at the entrance
+        if (subPhase === 'worksheet-active') {
+          const list = Array.isArray(generatedWorksheet) ? generatedWorksheet : [];
+          const idx = (typeof worksheetIndexRef !== 'undefined' && worksheetIndexRef && typeof worksheetIndexRef.current === 'number')
+            ? (worksheetIndexRef.current ?? 0)
+            : (typeof currentWorksheetIndex === 'number' ? currentWorksheetIndex : 0);
+          const item = list[idx] || null;
+          if (item) {
+            try {
+              const num = (typeof item.number === 'number' && item.number > 0) ? item.number : (idx + 1);
+              const formatted = ensureQuestionMark(`${num}. ${formatQuestionForSpeech(item, { layout: 'multiline' })}`);
+              activeQuestionBodyRef.current = formatted;
+              setQaAnswersUnlocked(true);
+              setCanSend(false);
+              await speakFrontend(formatted, { mcLayout: 'multiline', noCaptions: true });
+            } catch {}
+            setCanSend(true);
+            return;
+          }
+        }
+        setSubPhase('worksheet-awaiting-begin');
+        await beginWorksheetPhase();
+        return;
+      }
+      if (phase === 'test') {
+        // If in review, stay there; if on a question, re-ask it; otherwise restart at the entrance
+        if (typeof subPhase === 'string' && subPhase.startsWith('review')) {
+          // No TTS necessary here; review UI is already in control
+          setCanSend(false);
+          return;
+        }
+        // Phase entrance: Begin was clicked but Go has not been pressed yet
+        if (subPhase === 'test-active' && !qaAnswersUnlocked) {
+          try {
+            const opener = TEST_INTROS[Math.floor(Math.random() * TEST_INTROS.length)];
+            await speakFrontend(opener);
+          } catch {}
+          try { setShowOpeningActions(true); } catch {}
+          try { setCanSend(true); } catch {}
+          return;
+        }
+        if (subPhase === 'test-active') {
+          const list = Array.isArray(generatedTest) ? generatedTest : [];
+          const idx = (typeof testActiveIndex === 'number' ? testActiveIndex : 0);
+          const item = list[idx] || null;
+          if (item) {
+            try {
+              const num = (typeof item.number === 'number' && item.number > 0) ? item.number : (idx + 1);
+              const formatted = ensureQuestionMark(`${num}. ${formatQuestionForSpeech(item, { layout: 'multiline' })}`);
+              activeQuestionBodyRef.current = formatted;
+              setQaAnswersUnlocked(true);
+              setCanSend(false);
+              await speakFrontend(formatted, { mcLayout: 'multiline', noCaptions: true });
+            } catch {}
+            setCanSend(true);
+            return;
+          }
+        }
+        setSubPhase('test-awaiting-begin');
+        await beginTestPhase();
+        return;
+      }
+    } catch {}
+  }, [phase, teachingStage, startDiscussionStep, unlockAudioPlayback]);
+
+  const handleRestartClick = useCallback(async () => {
+    // Confirm irreversible action before proceeding
+    try {
+      const ans = typeof window !== 'undefined' ? window.prompt("Restart will clear saved progress and cannot be reversed. Type 'ok' to confirm.") : null;
+      if (!ans || String(ans).trim().toLowerCase() !== 'ok') { try { console.info('[Restart] cancelled by user'); } catch {} return; }
+    } catch {}
+    // Stop all activity and cut the current transcript segment so nothing is lost
+    try { abortAllActivity(); } catch {}
+    try {
+      const learnerId = (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null) || null;
+      const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || null;
+      const lessonId = String(lessonParam || '').replace(/\.json$/i, '');
+      const startIdx = Math.max(0, Number(transcriptSegmentStartIndexRef.current) || 0);
+      const all = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current : [];
+      const slice = all.slice(startIdx).filter((ln) => ln && typeof ln.text === 'string' && ln.text.trim().length > 0).map((ln) => ({ role: ln.role || 'assistant', text: ln.text }));
+      if (learnerId && learnerId !== 'demo' && slice.length > 0) {
+        await appendTranscriptSegment({
+          learnerId,
+          learnerName,
+          lessonId,
+          lessonTitle: effectiveLessonTitle,
+          segment: { startedAt: sessionStartRef.current || new Date().toISOString(), completedAt: new Date().toISOString(), lines: slice },
+          sessionId: transcriptSessionId || undefined,
+        });
+      }
+    } catch {}
+    // Clear snapshots (server + local) for all potential keys to begin a fresh session, and clear assessments cache
+    try {
+      const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
+      const keys = [];
+      try { const k = getSnapshotStorageKey(); if (k) keys.push(k); } catch {}
+      try { const k = getSnapshotStorageKey({ param: lessonParam }); if (k && !keys.includes(k)) keys.push(k); } catch {}
+      try { const k = getSnapshotStorageKey({ manifest: manifestInfo }); if (k && !keys.includes(k)) keys.push(k); } catch {}
+      try { if (lessonData?.id) { const k = getSnapshotStorageKey({ data: lessonData }); if (k && !keys.includes(k)) keys.push(k); } } catch {}
+      for (const key of keys) {
+        try { await clearSnapshot(key, { learnerId: lid }); } catch {}
+        // Clear known legacy variants as well
+        try {
+          const variants = [
+            `${key}:W15:T10`,
+            `${key}:W20:T20`,
+            `${key}:W${Number(WORKSHEET_TARGET) || 15}:T${Number(TEST_TARGET) || 10}`
+          ];
+          for (const v of variants) { try { await clearSnapshot(v, { learnerId: lid }); } catch {} }
+        } catch {}
+      }
+      const assessKey = getAssessmentStorageKey();
+      if (assessKey) { try { clearAssessments(assessKey, { learnerId: lid }); } catch {} }
+    } catch {}
+    // Reset transcript UI and start a brand new in-app segment
+    try { captionSentencesRef.current = []; setCaptionSentences([]); setCaptionIndex(0); } catch {}
+    try { sessionStartRef.current = new Date().toISOString(); } catch {}
+    try { transcriptSegmentStartIndexRef.current = 0; } catch {}
+    // Start a new per-restart transcript session id for per-session transcript files
+    try {
+      const newId = `r-${Date.now()}`;
+      setTranscriptSessionId(newId);
+      try { if (typeof window !== 'undefined') localStorage.setItem('current_transcript_session_id', newId); } catch {}
+    } catch {}
+    // Reset core session state to the very beginning
+    try {
+      setShowBegin(true);
+      setPhase('discussion');
+      setSubPhase('greeting');
+      setCanSend(false);
+      setGeneratedWorksheet(null);
+      setGeneratedTest(null);
+      setCurrentWorksheetIndex(0);
+      worksheetIndexRef.current = 0;
+      setCurrentCompProblem(null);
+      setCurrentExerciseProblem(null);
+      setTestUserAnswers([]);
+      setTestCorrectByIndex([]);
+      setTestCorrectCount(0);
+      setTestFinalPercent(null);
+      setQaAnswersUnlocked(false);
+      setJokeUsedThisGate(false);
+      setRiddleUsedThisGate(false);
+      setPoemUsedThisGate(false);
+      setTicker(0);
+      setOfferResume(false);
+    } catch {}
+    // Seed a fresh snapshot of the reset state
+    try { setTimeout(() => { try { scheduleSaveSnapshot('restart'); } catch {} }, 60); } catch {}
+  }, [lessonParam, effectiveLessonTitle, scheduleSaveSnapshot]);
 
   // Helper: gather vocab from multiple potential sources/keys
   const getAvailableVocab = useCallback((dataOverride = null) => {
@@ -4261,6 +5386,7 @@ function SessionPageInner() {
       console.info('[Teaching] Start: forcing definitions first; detectedVocabCount=', detectedCount);
     } catch {}
     setTeachingStage('definitions');
+    try { scheduleSaveSnapshot('begin-teaching-definitions'); } catch {}
     let ok = await teachDefinitions(false);
     if (ok) await promptGateRepeat();
   }, [ensureLessonDataReady, getAvailableVocab, teachDefinitions, promptGateRepeat]);
@@ -4364,10 +5490,9 @@ function SessionPageInner() {
   } catch {}
     finally { setTtsLoadingCount((c) => Math.max(0, c - 1)); }
     if (!transitioned) {
-      // no audio path: decrement before showing fallback timing
+      // no audio path: use synthetic playback for the cue for consistent behavior
       setTtsLoadingCount((c) => Math.max(0, c - 1));
-      try { if (typeof scheduleCaptionsForDuration === 'function') scheduleCaptionsForDuration(FALLBACK_SECS, sentences, prevLen); } catch {}
-      await new Promise(r => setTimeout(r, FALLBACK_SECS * 1000 + 150));
+      try { await playAudioFromBase64('', sentences, prevLen); } catch {}
       setPhase('comprehension');
       setSubPhase('comprehension-start');
       setCurrentCompProblem(null);
@@ -4380,6 +5505,7 @@ function SessionPageInner() {
     if (teachingStage === 'definitions') {
       // Advance to Explanation
       setTeachingStage('explanation');
+      try { scheduleSaveSnapshot('begin-teaching-explanation'); } catch {}
       const ok = await teachExplanation(false);
       if (ok) await promptGateRepeat();
       return;
@@ -4387,6 +5513,7 @@ function SessionPageInner() {
     if (teachingStage === 'explanation') {
       // Advance to Examples
       setTeachingStage('examples');
+      try { scheduleSaveSnapshot('begin-teaching-examples'); } catch {}
       const ok = await teachExamples(false);
       if (ok) await promptGateRepeat();
       return;
@@ -5020,7 +6147,7 @@ function SessionPageInner() {
     const ok = await ensurePinAllowed('refresh');
     if (!ok) return;
     // Clear persisted sets for this lesson
-    const key = getAssessmentStorageKey();
+  const key = getSnapshotStorageKey();
   if (key) { try { const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none'; await clearAssessments(key, { learnerId: lid }); } catch { /* ignore */ } }
     // Reset current worksheet/test state
     setGeneratedWorksheet(null);
@@ -5528,7 +6655,7 @@ function SessionPageInner() {
   const discussionButtonsVisible = (
     phase === 'discussion' &&
     subPhase === 'awaiting-learner' &&
-    !isSpeaking &&
+    (!isSpeaking || captionsDone) &&
     showOpeningActions &&
     askState === 'inactive' &&
     riddleState === 'inactive' &&
@@ -5809,8 +6936,8 @@ function SessionPageInner() {
 
   const beginSession = async () => {
     try { console.info('[Begin] Clicked: starting session'); } catch {}
-    // End any prior API/audio/mic activity before starting fresh
-    try { abortAllActivity(); } catch {}
+    // End any prior API/audio/mic activity before starting fresh; keep captions continuity at Discussion opening
+    try { abortAllActivity(true); } catch {}
     // Ensure audio and mic permissions are handled as part of Begin (in-gesture)
   // mic permission will be requested only when user starts recording
 
@@ -5820,6 +6947,7 @@ function SessionPageInner() {
     setPhaseGuardSent({});
     setSubPhase("unified-discussion");
     setCanSend(false);
+  try { scheduleSaveSnapshot('begin-discussion'); } catch {}
     try { console.info('[Begin] UI updated → discussion/unified-discussion'); } catch {}
 
     // Non-blocking: load targets and generate pools in the background
@@ -5897,7 +7025,7 @@ function SessionPageInner() {
 
   const beginWorksheetPhase = async () => {
     // End any prior API/audio/mic activity before starting fresh
-    try { abortAllActivity(); } catch {}
+    try { abortAllActivity(true); } catch {}
     // Ensure audio/mic unlocked via Begin
   // mic permission will be requested only when user starts recording
     // Ensure assessments exist if user arrived here via skip before they were generated
@@ -5941,7 +7069,7 @@ function SessionPageInner() {
 
   const beginTestPhase = async () => {
     // End any prior API/audio/mic activity before starting fresh
-    try { abortAllActivity(); } catch {}
+    try { abortAllActivity(true); } catch {}
     // Ensure audio/mic unlocked via Begin
   // mic permission will be requested only when user starts recording
     if (!generatedTest || !generatedTest.length) {
@@ -6080,7 +7208,7 @@ function SessionPageInner() {
   // Begin Comprehension manually when arriving at comprehension-start (e.g., via skip)
   const beginComprehensionPhase = async () => {
     // End any prior API/audio/mic activity before starting fresh
-    try { abortAllActivity(); } catch {}
+    try { abortAllActivity(true); } catch {}
     // Ensure audio/mic unlocked via Begin
   // mic permission will be requested only when user starts recording
     // Ensure session scaffolding exists
@@ -6094,6 +7222,9 @@ function SessionPageInner() {
   setJokeUsedThisGate(false);
   setRiddleUsedThisGate(false);
   setPoemUsedThisGate(false);
+    // Persist the entrance to comprehension-start immediately
+  // Persist the entrance to comprehension-start immediately (single-snapshot resume pointer)
+  try { scheduleSaveSnapshot('begin-comprehension'); } catch {}
     try { console.log('[Session] Begin Comprehension clicked', { phase, subPhase, currentCompIndex, compPoolLen: Array.isArray(compPool) ? compPool.length : 0 }); } catch {}
   setCanSend(false);
     // Try to pick a first comprehension problem in the same priority order used elsewhere
@@ -6146,6 +7277,8 @@ function SessionPageInner() {
       setCurrentCompProblem(firstComp);
       // Immediately enter active subPhase so the Begin button disappears right away
       setSubPhase('comprehension-active');
+  // Persist the transition to comprehension-active so resume lands on the five-button view
+  try { scheduleSaveSnapshot('comprehension-active'); } catch {}
       // New: Phase intro (random from pool); first question is gated behind Start the lesson
       const intro = COMPREHENSION_INTROS[Math.floor(Math.random() * COMPREHENSION_INTROS.length)];
       try {
@@ -6171,7 +7304,9 @@ function SessionPageInner() {
     try { setTestFinalPercent(safePercent); } catch {}
     setPhase('congrats');
     setSubPhase('congrats-done');
+  setTicker(0);
     setCanSend(false);
+  try { scheduleSaveSnapshot('begin-worksheet'); } catch {}
     // Auto-start congrats speech so captions immediately return to transcript
     try { setCongratsStarted(true); } catch {}
     // Persist medal on effect when congrats
@@ -6285,6 +7420,9 @@ function SessionPageInner() {
         upsertMedal(learnerId, lessonKey, safePercent);
       }
     } catch {}
+    setCanSend(true);
+    // Persist phase entrance
+    try { scheduleSaveSnapshot('begin-test'); } catch {}
   };
 
 
@@ -6292,10 +7430,50 @@ function SessionPageInner() {
   const skipForwardPhase = async () => {
     const ok = await ensurePinAllowed('skip');
     if (!ok) return;
+    // Confirm out-of-order move: skipping alters the lesson timeline irreversibly
+    try {
+      const ans = typeof window !== 'undefined' ? window.prompt("This will alter the lesson in a way that can't be reversed. Type 'ok' to proceed.") : null;
+      if (!ans || String(ans).trim().toLowerCase() !== 'ok') return;
+    } catch {}
     // Centralized abort/cleanup
     abortAllActivity();
     // Ensure overlays tied to !loading can render immediately (Begin buttons)
     setLoading(false);
+    // On any timeline skip, cut over transcript and clear prior resume snapshots
+    try {
+      const learnerId = (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null) || null;
+      const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || null;
+      const lessonId = String(lessonParam || '').replace(/\.json$/i, '');
+      // Append only the lines since the last segment start to avoid duplicating prior session text
+      const startIdx = Math.max(0, Number(transcriptSegmentStartIndexRef.current) || 0);
+      const all = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current : [];
+      const slice = all.slice(startIdx).filter((ln) => ln && typeof ln.text === 'string' && ln.text.trim().length > 0).map((ln) => ({ role: ln.role || 'assistant', text: ln.text }));
+      if (learnerId && learnerId !== 'demo' && slice.length > 0) {
+        await appendTranscriptSegment({
+          learnerId,
+          learnerName,
+          lessonId,
+          lessonTitle: effectiveLessonTitle,
+          segment: { startedAt: sessionStartRef.current || new Date().toISOString(), completedAt: new Date().toISOString(), lines: slice },
+          sessionId: transcriptSessionId || undefined,
+        });
+      }
+    } catch (e) { try { console.warn('[Skip] transcript append failed', e); } catch {} }
+    // Clear snapshot so the new position becomes the fresh baseline immediately
+    try {
+      const key = getSnapshotStorageKey();
+      if (key) {
+        const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
+        try { await clearSnapshot(key, { learnerId: lid }); } catch {}
+      }
+    } catch {}
+    // Start a new transcript segment window and seed a fresh snapshot save shortly
+    try {
+      sessionStartRef.current = new Date().toISOString();
+      transcriptSegmentStartIndexRef.current = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current.length : 0;
+      // Allow the phase/subPhase setters below to run, then seed a save
+      setTimeout(() => { try { scheduleSaveSnapshot('skip-forward'); } catch {} }, 50);
+    } catch {}
     // New behavior: skip only between MAJOR phases (discussion -> comprehension -> exercise -> worksheet -> test)
     // Teaching is grouped with discussion on the timeline; comprehension is its own major phase.
     if (!lessonData || lessonDataLoading) {
@@ -6346,6 +7524,7 @@ function SessionPageInner() {
       setWorksheetSkippedAwaitBegin(true);
       setTicker(0);
       setCanSend(false);
+      try { scheduleSaveSnapshot('skip-forward'); } catch {}
       return;
     }
     if (phase === 'worksheet') {
@@ -6353,6 +7532,7 @@ function SessionPageInner() {
       setSubPhase('test-awaiting-begin');
       setTicker(0);
       setCanSend(false);
+      try { scheduleSaveSnapshot('skip-forward'); } catch {}
       return;
     }
     if (phase === 'test') {
@@ -6365,9 +7545,44 @@ function SessionPageInner() {
   const skipBackwardPhase = async () => {
     const ok = await ensurePinAllowed('skip');
     if (!ok) return;
+    try {
+      const ans = typeof window !== 'undefined' ? window.prompt("This will alter the lesson in a way that can't be reversed. Type 'ok' to proceed.") : null;
+      if (!ans || String(ans).trim().toLowerCase() !== 'ok') return;
+    } catch {}
     abortAllActivity();
     // Ensure overlays tied to !loading can render immediately after back-skip
     setLoading(false);
+    // On any timeline skip back, also cut over transcript and clear snapshots
+    try {
+      const learnerId = (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null) || null;
+      const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || null;
+      const lessonId = String(lessonParam || '').replace(/\.json$/i, '');
+      const startIdx = Math.max(0, Number(transcriptSegmentStartIndexRef.current) || 0);
+      const all = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current : [];
+      const slice = all.slice(startIdx).filter((ln) => ln && typeof ln.text === 'string' && ln.text.trim().length > 0).map((ln) => ({ role: ln.role || 'assistant', text: ln.text }));
+      if (learnerId && learnerId !== 'demo' && slice.length > 0) {
+        await appendTranscriptSegment({
+          learnerId,
+          learnerName,
+          lessonId,
+          lessonTitle: effectiveLessonTitle,
+          segment: { startedAt: sessionStartRef.current || new Date().toISOString(), completedAt: new Date().toISOString(), lines: slice },
+          sessionId: transcriptSessionId || undefined,
+        });
+      }
+    } catch (e) { try { console.warn('[SkipBack] transcript append failed', e); } catch {} }
+    try {
+      const key = getSnapshotStorageKey();
+      if (key) {
+        const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
+        try { await clearSnapshot(key, { learnerId: lid }); } catch {}
+      }
+    } catch {}
+    try {
+      sessionStartRef.current = new Date().toISOString();
+      transcriptSegmentStartIndexRef.current = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current.length : 0;
+      setTimeout(() => { try { scheduleSaveSnapshot('skip-back'); } catch {} }, 50);
+    } catch {}
     if (phase === 'congrats') {
       setPhase('test');
       setSubPhase('test-awaiting-begin');
@@ -6378,6 +7593,7 @@ function SessionPageInner() {
       setPhase('worksheet');
       setSubPhase('worksheet-awaiting-begin');
       setCanSend(false);
+      try { scheduleSaveSnapshot('skip-back'); } catch {}
       return;
     }
     if (phase === 'worksheet') {
@@ -6385,6 +7601,7 @@ function SessionPageInner() {
       setSubPhase('exercise-awaiting-begin');
       try { exerciseAwaitingLockRef.current = true; setTimeout(() => { exerciseAwaitingLockRef.current = false; }, 800); } catch {}
       setCanSend(false);
+      try { scheduleSaveSnapshot('skip-back'); } catch {}
       return;
     }
     if (phase === 'exercise') {
@@ -6394,6 +7611,7 @@ function SessionPageInner() {
       try { comprehensionAwaitingLockRef.current = true; setTimeout(() => { comprehensionAwaitingLockRef.current = false; }, 800); } catch {}
       setCurrentCompProblem(null);
       setCanSend(false);
+      try { scheduleSaveSnapshot('skip-back'); } catch {}
       return;
     }
     if (phase === 'comprehension') {
@@ -6403,6 +7621,7 @@ function SessionPageInner() {
       setShowBegin(true);
       // When returning to the Discussion begin screen, lock input until Begin is pressed
       setCanSend(false);
+      try { scheduleSaveSnapshot('skip-back'); } catch {}
       return;
     }
     if (phase === 'teaching') {
@@ -6537,6 +7756,8 @@ function SessionPageInner() {
   setJokeUsedThisGate(false);
   setRiddleUsedThisGate(false);
   setPoemUsedThisGate(false);
+  // Persist phase entrance for Exercise
+  try { scheduleSaveSnapshot('begin-exercise'); } catch {}
     // Frontend-only: brief intro + first question via unified TTS/captions
     if (first) {
       const opener = EXERCISE_INTROS[Math.floor(Math.random() * EXERCISE_INTROS.length)];
@@ -6662,14 +7883,19 @@ function SessionPageInner() {
         }
       } catch { /* vocab optional */ }
       // Capture the current problem text shown when Ask was pressed, if any
+      // IMPORTANT: Do NOT include the current problem during Entrance state (before Go).
+      // Only send this context once Q&A answers are unlocked.
       let problemChunk = '';
       try {
-        let body = (askReturnBodyRef?.current || activeQuestionBodyRef?.current || '').toString();
-        if (body) {
-          // Normalize whitespace and trim; cap to avoid prompt bloat
-          body = body.replace(/\s+/g, ' ').trim();
-          if (body.length > 400) body = body.slice(0, 400) + '…';
-          problemChunk = `Current problem context (for reference, do not re-read): "${body}".`;
+        const canIncludeProblemContext = !!qaAnswersUnlocked; // Entrance guard
+        if (canIncludeProblemContext) {
+          let body = (askReturnBodyRef?.current || activeQuestionBodyRef?.current || '').toString();
+          if (body) {
+            // Normalize whitespace and trim; cap to avoid prompt bloat
+            body = body.replace(/\s+/g, ' ').trim();
+            if (body.length > 400) body = body.slice(0, 400) + '…';
+            problemChunk = `Current problem context (for reference, do not re-read): "${body}".`;
+          }
         }
       } catch { /* problem context optional */ }
       const persona = [
@@ -6680,7 +7906,8 @@ function SessionPageInner() {
         vocabChunk,
         // Provide the exact problem the learner is looking at
         problemChunk,
-        'Be encouraging, and keep focus on this lesson. Close with one gentle sentence that naturally returns us to the lesson topic. Do not ask a new question.'
+        // Absolute rule for Ask: Ms. Sonoma must not ask questions in her answer.
+        'Be encouraging, and keep focus on this lesson. Close with one gentle sentence that naturally returns us to the lesson topic. Do not ask any questions.'
       ].join(' ');
       const result = await callMsSonoma(
         persona,
@@ -6873,6 +8100,7 @@ function SessionPageInner() {
         } catch {}
         const celebration = CELEBRATE_CORRECT[Math.floor(Math.random() * CELEBRATE_CORRECT.length)];
         if (atTarget) {
+          try { scheduleSaveSnapshot('comprehension-complete'); } catch {}
           try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for comprehension. Now let's begin the exercise.`); } catch {}
           setPhase('exercise');
           setSubPhase('exercise-awaiting-begin');
@@ -6885,6 +8113,7 @@ function SessionPageInner() {
         setTicker(ticker + 1);
         if (!nearTarget && nextProblem) {
           setCurrentCompProblem(nextProblem);
+          try { scheduleSaveSnapshot('qa-correct-next'); } catch {}
           const nextQ = ensureQuestionMark(formatQuestionForSpeech(nextProblem, { layout: 'multiline' }));
           // Remember the exact next question spoken
           activeQuestionBodyRef.current = nextQ;
@@ -6893,8 +8122,9 @@ function SessionPageInner() {
           setCanSend(false);
           return;
         }
+        try { scheduleSaveSnapshot('qa-correct-progress'); } catch {}
         try { await speakFrontend(`${celebration}. ${progressPhrase}`); } catch {}
-        setCanSend(true);
+  setCanSend(true);
         return;
       }
 
@@ -7041,6 +8271,7 @@ function SessionPageInner() {
         } catch {}
         const celebration = CELEBRATE_CORRECT[Math.floor(Math.random() * CELEBRATE_CORRECT.length)];
         if (atTarget) {
+          try { scheduleSaveSnapshot('exercise-complete'); } catch {}
           try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for the exercise. Now let's move on to the worksheet.`); } catch {}
           setPhase('worksheet');
           setSubPhase('worksheet-awaiting-begin');
@@ -7052,6 +8283,7 @@ function SessionPageInner() {
         setTicker(ticker + 1);
         if (!nearTarget && nextProblem) {
           setCurrentExerciseProblem(nextProblem);
+          try { scheduleSaveSnapshot('qa-correct-next'); } catch {}
           const nextQ = ensureQuestionMark(formatQuestionForSpeech(nextProblem, { layout: 'multiline' }));
           // Remember the exact next exercise question spoken
           activeQuestionBodyRef.current = nextQ;
@@ -7060,8 +8292,9 @@ function SessionPageInner() {
           setCanSend(true);
           return;
         }
+        try { scheduleSaveSnapshot('qa-correct-progress'); } catch {}
         try { await speakFrontend(`${celebration}. ${progressPhrase}`); } catch {}
-        setCanSend(true);
+  setCanSend(true);
         return;
       }
 
@@ -7159,6 +8392,7 @@ function SessionPageInner() {
         } catch {}
         const celebration = CELEBRATE_CORRECT[Math.floor(Math.random() * CELEBRATE_CORRECT.length)];
         if (atTarget) {
+          try { scheduleSaveSnapshot('worksheet-complete'); } catch {}
           try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for the worksheet. Now let's begin the test.`); } catch {}
           setPhase('test');
           setSubPhase('test-awaiting-begin');
@@ -7171,6 +8405,7 @@ function SessionPageInner() {
         worksheetIndexRef.current = nextIdx;
         setCurrentWorksheetIndex(nextIdx);
         setTicker(ticker + 1);
+        try { scheduleSaveSnapshot('qa-correct-next'); } catch {}
   const nextObj = list[nextIdx];
   const numN = (typeof nextObj?.number === 'number' && nextObj.number > 0) ? nextObj.number : (nextIdx + 1);
   const nextQ = ensureQuestionMark(`${numN}. ${formatQuestionForSpeech(nextObj, { layout: 'multiline' })}`);
@@ -7280,6 +8515,7 @@ function SessionPageInner() {
             activeQuestionBodyRef.current = nextQ;
             try { await speakFrontend(`${speech} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
             setTestActiveIndex(nextIdx);
+            try { scheduleSaveSnapshot('test-advance'); } catch {}
             setCanSend(true);
             return;
           }
@@ -7297,6 +8533,7 @@ function SessionPageInner() {
           // Go directly to review; congrats is gated after Accept
           try { setCanSend(false); } catch {}
           try { setSubPhase('review-start'); } catch {}
+          try { scheduleSaveSnapshot('test-review-start'); } catch {}
           return;
         } catch {
           // Hard fallback: force facilitator review to avoid dead-ends (defer score to review phase)
@@ -7388,7 +8625,7 @@ function SessionPageInner() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [showBegin, phase, subPhase, loading, isSpeaking, beginSession, beginComprehensionPhase, beginSkippedExercise, beginWorksheetPhase, beginTestPhase, hotkeys]);
 
-  // Global hotkeys for skip left/right, mute toggle, and play/pause toggle
+  // Global hotkeys for skip left/right and mute toggle (play/pause removed)
   useEffect(() => {
     const onKeyDown = (e) => {
       const code = e.code || e.key;
@@ -7396,7 +8633,7 @@ function SessionPageInner() {
       if (isTextEntryTarget(target)) return; // don't steal keys while typing in inputs/textareas
       if (!hotkeys) return;
 
-      const { skipLeft, skipRight, muteToggle, playPauseToggle } = { ...DEFAULT_HOTKEYS, ...hotkeys };
+      const { skipLeft, skipRight, muteToggle } = { ...DEFAULT_HOTKEYS, ...hotkeys };
 
       if (skipLeft && code === skipLeft) {
         e.preventDefault();
@@ -7414,15 +8651,11 @@ function SessionPageInner() {
         toggleMute?.();
         return;
       }
-      if (playPauseToggle && code === playPauseToggle) {
-        e.preventDefault();
-        togglePlayPause?.();
-        return;
-      }
+      // play/pause hotkey removed per request
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [hotkeys, skipBackwardPhase, skipForwardPhase, toggleMute, togglePlayPause]);
+  }, [hotkeys, skipBackwardPhase, skipForwardPhase, toggleMute]);
 
   const renderDiscussionControls = () => {
     if (subPhase === "awaiting-learner") {
@@ -7483,6 +8716,7 @@ function SessionPageInner() {
       try {
         const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
         clearAssessments(key, { learnerId: lid });
+        try { clearSnapshot(key, { learnerId: lid }); } catch {}
       } catch { /* ignore */ }
     }
     // Persist transcript segment (append-only) to Supabase Storage
@@ -7492,9 +8726,11 @@ function SessionPageInner() {
       const lessonId = String(lessonParam || '').replace(/\.json$/i, '');
       const startedAt = sessionStartRef.current || new Date().toISOString();
       const completedAt = new Date().toISOString();
-      const lines = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current
+      const all = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current : [];
+      const startIdx = Math.max(0, Number(transcriptSegmentStartIndexRef.current) || 0);
+      const lines = all.slice(startIdx)
         .filter((ln) => ln && typeof ln.text === 'string' && ln.text.trim().length > 0)
-        .map((ln) => ({ role: ln.role || 'assistant', text: ln.text })) : [];
+        .map((ln) => ({ role: ln.role || 'assistant', text: ln.text }));
       if (learnerId && learnerId !== 'demo' && lines.length > 0) {
         await appendTranscriptSegment({
           learnerId,
@@ -7502,10 +8738,12 @@ function SessionPageInner() {
           lessonId,
           lessonTitle: effectiveLessonTitle,
           segment: { startedAt, completedAt, lines },
+          sessionId: transcriptSessionId || undefined,
         });
       }
     } catch (e) { console.warn('[Session] transcript append failed', e); }
     sessionStartRef.current = null;
+    try { transcriptSegmentStartIndexRef.current = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current.length : 0; } catch {}
     setShowBegin(true);
     setPhase('discussion');
     setSubPhase('greeting');
@@ -7565,10 +8803,50 @@ function SessionPageInner() {
     const handleJumpPhase = async (target) => {
       const ok = await ensurePinAllowed('timeline');
       if (!ok) return;
+      // Always confirm on any move (forward or backward) from the current phase
+      try {
+        const currentIdx = timelinePhases.indexOf(phase);
+        const targetIdx = timelinePhases.indexOf(target);
+        const isDifferent = targetIdx !== currentIdx;
+        if (isDifferent) {
+          const ans = typeof window !== 'undefined' ? window.prompt("This will alter the lesson in a way that can't be reversed. Type 'ok' to proceed.") : null;
+          if (!ans || String(ans).trim().toLowerCase() !== 'ok') return;
+        }
+      } catch {}
       // Jump directly to a major phase emulating skip button side-effects
       // This centralizes transitional resets so timeline navigation = skip navigation.
       try { abortAllActivity(); } catch {}
       setLoading(false); // allow overlays/buttons to show immediately
+      // On timeline jump, cut transcript segment and clear snapshots so resume starts fresh
+      try {
+        const learnerId = (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null) || null;
+        const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || null;
+        const lessonId = String(lessonParam || '').replace(/\.json$/i, '');
+        const startIdx = Math.max(0, Number(transcriptSegmentStartIndexRef.current) || 0);
+        const all = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current : [];
+        const slice = all.slice(startIdx).filter((ln) => ln && typeof ln.text === 'string' && ln.text.trim().length > 0).map((ln) => ({ role: ln.role || 'assistant', text: ln.text }));
+        if (learnerId && learnerId !== 'demo' && slice.length > 0) {
+          await appendTranscriptSegment({
+            learnerId,
+            learnerName,
+            lessonId,
+            lessonTitle: effectiveLessonTitle,
+            segment: { startedAt: sessionStartRef.current || new Date().toISOString(), completedAt: new Date().toISOString(), lines: slice },
+            sessionId: transcriptSessionId || undefined,
+          });
+        }
+      } catch (e) { try { console.warn('[TimelineJump] transcript append failed', e); } catch {} }
+      try {
+        const key = getSnapshotStorageKey();
+        if (key) {
+          const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
+          try { await clearSnapshot(key, { learnerId: lid }); } catch {}
+        }
+      } catch {}
+      try {
+        sessionStartRef.current = new Date().toISOString();
+        transcriptSegmentStartIndexRef.current = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current.length : 0;
+      } catch {}
 
       const goDiscussion = () => {
         setPhase('discussion');
@@ -7629,18 +8907,23 @@ function SessionPageInner() {
       switch (target) {
         case 'discussion':
           goDiscussion();
+          try { scheduleSaveSnapshot('jump-discussion'); } catch {}
           break;
         case 'comprehension':
           goComprehension();
+          try { scheduleSaveSnapshot('jump-comprehension'); } catch {}
           break;
         case 'exercise':
           goExercise();
+          try { scheduleSaveSnapshot('jump-exercise'); } catch {}
           break;
         case 'worksheet':
           goWorksheet();
+          try { scheduleSaveSnapshot('jump-worksheet'); } catch {}
           break;
         case 'test':
           goTest();
+          try { scheduleSaveSnapshot('jump-test'); } catch {}
           break;
         default:
           break;
@@ -7694,8 +8977,6 @@ function SessionPageInner() {
         onBeginWorksheet={beginWorksheetPhase}
         onBeginTest={beginTestPhase}
         onBeginSkippedExercise={beginSkippedExercise}
-        onPrev={skipBackwardPhase}
-        onNext={skipForwardPhase}
         subPhase={subPhase}
         testCorrectCount={testCorrectCount}
         testFinalPercent={testFinalPercent}
@@ -7704,7 +8985,6 @@ function SessionPageInner() {
         
         userPaused={userPaused}
         onToggleMute={toggleMute}
-    onTogglePlayPause={togglePlayPause}
   loading={loading}
   overlayLoading={overlayLoading}
         exerciseSkippedAwaitBegin={exerciseSkippedAwaitBegin}
@@ -7861,6 +9141,30 @@ function SessionPageInner() {
           transition: 'opacity 120ms linear'
         }}
       >
+        {/* Global Resume/Restart tray after a restore (visible across viewport sizes). While shown, hide other footer controls to avoid conflicts. */}
+        {offerResume && (
+          <div style={{
+            maxWidth: 900,
+            margin: '4px auto 8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            flexWrap: 'wrap'
+          }}>
+            <div style={{ color: '#991b1b', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '6px 10px', fontSize: 12 }}>
+              Restart clears saved progress and cannot be reversed.
+            </div>
+            <button type="button" onClick={handleResumeClick} style={{ padding: '8px 12px', background: '#111827', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, cursor: 'pointer' }}>
+              Resume
+            </button>
+            <button type="button" onClick={handleRestartClick} style={{ padding: '8px 12px', background: '#f43f5e', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, cursor: 'pointer' }}>
+              Restart
+            </button>
+          </div>
+        )}
+        {/* When Resume tray is visible, do not render any other footer controls */}
+  {offerResume ? null : (<>
           {/* When the screen height is very short, relocate video overlay controls into the footer. If a Begin row is present, controls join that row. */}
           {(() => {
             try {
@@ -8035,13 +9339,7 @@ function SessionPageInner() {
                         );
                       } catch { return null; }
                     })()}
-                    <button type="button" aria-label={userPaused ? 'Play' : 'Pause'} title={userPaused ? 'Play' : 'Pause'} onClick={togglePlayPause} style={btnBase}>
-                      {userPaused ? (
-                        <svg style={{ width:'55%', height:'55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 5v14l11-7z" /></svg>
-                      ) : (
-                        <svg style={{ width:'55%', height:'55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
-                      )}
-                    </button>
+                    {/* Play/Pause removed per request */}
                     <button type="button" aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'} onClick={toggleMute} style={btnBase}>
                       {muted ? (
                         <svg style={{ width:'60%', height:'60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
@@ -8151,6 +9449,7 @@ function SessionPageInner() {
               const inReview = (phase === 'test' && typeof subPhase === 'string' && subPhase.startsWith('review'));
               if (!inReview) return null;
               if (isShortHeight) return null; // submit appears in the relocated controls for short-height
+          
               const disabled = !!isSpeaking;
               const btnStyle = { background:'#c7442e', color:'#fff', borderRadius:10, padding:'10px 18px', fontWeight:800, fontSize:'clamp(1rem, 2.2vw, 1.125rem)', border:'none', boxShadow:'0 2px 12px rgba(199,68,46,0.28)', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 };
               return (
@@ -8185,7 +9484,7 @@ function SessionPageInner() {
               const canShow = (
                 phase === 'discussion' &&
                 subPhase === 'awaiting-learner' &&
-                !isSpeaking &&
+                (!isSpeaking || captionsDone) &&
                 showOpeningActions &&
                 askState === 'inactive' &&
                 riddleState === 'inactive' &&
@@ -8280,7 +9579,9 @@ function SessionPageInner() {
           {/* Riddle action row (inside fixed footer) */}
           {(() => {
             try {
-              const active = (phase === 'discussion' && subPhase === 'awaiting-learner' && riddleState && riddleState !== 'inactive');
+              // Show riddle controls whenever a riddle is active, regardless of phase/subPhase
+              // (previously gated to discussion/awaiting-learner, which hid buttons after the riddle was read)
+              const active = (riddleState && riddleState !== 'inactive');
               if (!active) return null;
               const wrap = { display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'6px 12px', flexWrap:'wrap' };
               const btnBase = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
@@ -8291,7 +9592,7 @@ function SessionPageInner() {
                 <div style={wrap} aria-label="Riddle actions">
                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                     <button type="button" style={hintBtn} onClick={requestRiddleHint}>Hint</button>
-                    <button type="button" style={answerBtn} onClick={revealRiddleAnswer}>Tell me the answer</button>
+                    <button type="button" style={answerBtn} onClick={revealRiddleAnswer}>Give me the answer</button>
                     <button type="button" style={backBtn} onClick={handleRiddleBack}>Back</button>
                   </div>
                 </div>
@@ -8460,6 +9761,7 @@ function SessionPageInner() {
             compact={isMobileLandscape}
             hotkeys={hotkeys}
           />
+        </>)}
         </div>
       </div>
   {/* Intentionally nothing rendered below the fixed footer */}
@@ -8586,7 +9888,7 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
   );
 }
 
-function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, onPrev, onNext, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, onTogglePlayPause, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, isLastWorksheetQuestion, onOpenReview }) {
+function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, isLastWorksheetQuestion, onOpenReview }) {
   // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
   // Remove horizontal clamp: let the video occupy the full available width of its column
   const containerMaxWidth = 'none';
@@ -8701,24 +10003,9 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
           </div>
         )}
         {/* Begin overlays removed intentionally */}
-  {/* Primary control cluster (play/pause + mute) */}
+  {/* Primary control cluster (mute only; play/pause removed per request) */}
   {!isShortHeight && (
   <div style={controlClusterStyle}>
-          <button
-            type="button"
-            onClick={onTogglePlayPause}
-            aria-label={userPaused ? 'Play' : 'Pause'}
-            title={userPaused ? 'Play' : 'Pause'}
-            style={{
-              ...controlButtonBase
-            }}
-          >
-            {userPaused ? (
-              <svg style={{ width: '55%', height: '55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 5v14l11-7z" /></svg>
-            ) : (
-              <svg style={{ width: '55%', height: '55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
-            )}
-          </button>
           <button type="button" onClick={onToggleMute} aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'} style={controlButtonBase}>
             {muted ? (
               <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
@@ -8728,34 +10015,7 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
           </button>
         </div>
   )}
-        {/* Paired skip controls at bottom-left */}
-  {!isShortHeight && (phase !== 'congrats') && (onPrev || onNext) && (
-          /* Mirror cluster: same bottom & edge offset (16) and same internal gap (12) to create symmetry */
-          <div style={{ position: 'absolute', bottom: 16, left: 16, display: 'flex', gap: 12 }}>
-            {onPrev && (
-              <button
-                type="button"
-                onClick={onPrev}
-                aria-label="Previous"
-                title="Previous"
-                style={{ ...controlButtonBase }}
-              >
-                <svg style={{ width: '55%', height: '55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-              </button>
-            )}
-            {onNext && (
-              <button
-                type="button"
-                onClick={onNext}
-                aria-label="Next"
-                title="Next"
-                style={{ ...controlButtonBase }}
-              >
-                <svg style={{ width: '55%', height: '55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-              </button>
-            )}
-          </div>
-        )}
+        {/* Skip controls in video overlay removed per requirements */}
         {skipPendingLessonLoad && (
           <div style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(31,41,55,0.85)', color: '#fff', padding: '6px 12px', borderRadius: 8, fontSize: 'clamp(0.75rem, 1.4vw, 0.9rem)', fontWeight: 600, letterSpacing: 0.4, boxShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>Loading lesson… skip will apply</div>
         )}

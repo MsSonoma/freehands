@@ -21,6 +21,11 @@
       "term": "solution",
       "definition": "How the problem gets fixed or solved in the story"
     }
+    ,
+    {
+      "term": "understand",
+      "definition": "To know what something means"
+    }
   ],
   "teachingNotes": "Use picture books with clear story elements. Practice retelling stories using story maps. Focus on identifying key story components.",
   "sample": {
@@ -67,7 +72,13 @@
     {
       "question": "Why is it important to understand story elements?",
       "expectedAny": [
-        "helps us understand and remember stories better"
+        "helps us remember what happens",
+        "helps find the problem and solution",
+        "helps tell the story back",
+        "understand the story",
+        "know who and where",
+        "remember better",
+        "makes sense of it"
       ]
     }
   ]

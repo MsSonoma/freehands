@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "10th_Sophisticated_Academic_Writing_Argumentation_Beginner",
   "title": "Sophisticated Academic Writing: Argumentation",
   "grade": "10th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "thesis statement",
-      "definition": "A clear statement that presents the main argument of an essay"
-    },
-    {
-      "term": "evidence",
-      "definition": "Facts, statistics, examples, or expert opinions that support an argument"
-    },
-    {
-      "term": "counterargument",
-      "definition": "An opposing viewpoint that challenges the main argument"
-    },
-    {
-      "term": "claim",
-      "definition": "A statement that asserts something to be true"
-    },
-    {
-      "term": "logical reasoning",
-      "definition": "Using facts and logic to support conclusions"
-    }
+    {"term": "thesis statement", "definition": "A clear statement that presents the main argument of an essay"},
+    {"term": "evidence", "definition": "Facts, statistics, examples, or expert opinions that support an argument"},
+    {"term": "counterargument", "definition": "An opposing viewpoint that challenges the main argument"},
+    {"term": "claim", "definition": "A statement that asserts something to be true"},
+    {"term": "logical reasoning", "definition": "Using facts and logic to support conclusions"}
   ],
   "teachingNotes": "Focus on constructing clear arguments with supporting evidence. Practice identifying and addressing counterarguments.",
-  "sample": {
-    "question": "What is a clear statement that presents the main argument called?",
-    "expectedAny": [
-      "thesis statement",
-      "main argument",
-      "central claim",
-      "primary thesis"
-    ]
-  },
-  "truefalse": {
-    "question": "Evidence includes facts, statistics, and expert opinions.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is an opposing viewpoint that challenges the main argument?",
-    "expectedAny": [
-      "counterargument",
-      "opposing view",
-      "alternative position",
-      "contrasting claim"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Using facts and logic to support conclusions is called ________ reasoning.",
-    "expectedAny": [
-      "logical",
-      "rational",
-      "sound",
-      "valid"
-    ]
-  },
-  "shortanswer": {
-    "question": "What makes a strong thesis statement?",
-    "expectedAny": [
-      "clear position",
-      "specific claim",
-      "debatable point",
-      "focused argument"
-    ]
-  }
+  "sample": [
+    {"question": "What is a clear statement that presents the main argument called?", "expectedAny": ["thesis statement", "main argument", "central claim", "thesis", "main claim", "primary argument"]},
+    {"question": "What supports an argument?", "expectedAny": ["evidence", "facts", "proof", "support", "supporting information", "supporting data"]},
+    {"question": "What is a counterargument?", "expectedAny": ["opposing viewpoint", "challenge to argument", "different perspective", "opposing view", "objection", "alternative view"]},
+    {"question": "What is a claim?", "expectedAny": ["statement asserting truth", "assertion", "position", "statement", "declaration", "proposition"]},
+    {"question": "What is logical reasoning?", "expectedAny": ["using facts and logic", "rational thinking", "sound argument", "logic", "logical thinking", "reasoned argument"]},
+    {"question": "What presents the main argument?", "expectedAny": ["thesis statement", "thesis", "main claim", "main argument", "central claim", "primary argument"]},
+    {"question": "What are facts and statistics?", "expectedAny": ["evidence", "support", "proof", "facts", "supporting information", "supporting data"]},
+    {"question": "What challenges your argument?", "expectedAny": ["counterargument", "opposing view", "objection", "opposing viewpoint", "challenge", "alternative view"]},
+    {"question": "What asserts something is true?", "expectedAny": ["claim", "statement", "assertion", "declaration", "position", "proposition"]},
+    {"question": "What uses facts to support conclusions?", "expectedAny": ["logical reasoning", "logic", "rational argument", "rational thinking", "logical thinking", "reasoned argument"]}
+  ],
+  "truefalse": [
+    {"question": "Evidence includes facts, statistics, and expert opinions. (True or False)", "correct": true},
+    {"question": "A thesis statement presents the main argument. (True or False)", "correct": true},
+    {"question": "Counterarguments support your main argument. (True or False)", "correct": false},
+    {"question": "A claim asserts something to be true. (True or False)", "correct": true},
+    {"question": "Logical reasoning uses facts and logic. (True or False)", "correct": true},
+    {"question": "Thesis statements are optional. (True or False)", "correct": false},
+    {"question": "Evidence supports arguments. (True or False)", "correct": true},
+    {"question": "Ignoring counterarguments strengthens essays. (True or False)", "correct": false},
+    {"question": "Claims need evidence. (True or False)", "correct": true},
+    {"question": "Logical reasoning is important in arguments. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is an opposing viewpoint that challenges the main argument?", "choices": [{"letter": "A", "text": "Evidence"}, {"letter": "B", "text": "Counterargument"}, {"letter": "C", "text": "Thesis"}, {"letter": "D", "text": "Claim"}], "correct": "B"},
+    {"question": "What presents the main argument?", "choices": [{"letter": "A", "text": "Evidence"}, {"letter": "B", "text": "Thesis statement"}, {"letter": "C", "text": "Counterargument"}, {"letter": "D", "text": "Example"}], "correct": "B"},
+    {"question": "What supports your argument?", "choices": [{"letter": "A", "text": "Opinions only"}, {"letter": "B", "text": "Evidence"}, {"letter": "C", "text": "Questions"}, {"letter": "D", "text": "Stories only"}], "correct": "B"},
+    {"question": "What asserts something is true?", "choices": [{"letter": "A", "text": "Question"}, {"letter": "B", "text": "Claim"}, {"letter": "C", "text": "Evidence"}, {"letter": "D", "text": "Example"}], "correct": "B"},
+    {"question": "What uses facts and logic?", "choices": [{"letter": "A", "text": "Emotional appeal"}, {"letter": "B", "text": "Logical reasoning"}, {"letter": "C", "text": "Random thoughts"}, {"letter": "D", "text": "Opinions"}], "correct": "B"},
+    {"question": "What includes statistics?", "choices": [{"letter": "A", "text": "Thesis"}, {"letter": "B", "text": "Evidence"}, {"letter": "C", "text": "Counterargument"}, {"letter": "D", "text": "Claim"}], "correct": "B"},
+    {"question": "What challenges your position?", "choices": [{"letter": "A", "text": "Evidence"}, {"letter": "B", "text": "Counterargument"}, {"letter": "C", "text": "Thesis"}, {"letter": "D", "text": "Support"}], "correct": "B"},
+    {"question": "What is the main argument statement?", "choices": [{"letter": "A", "text": "Evidence"}, {"letter": "B", "text": "Thesis"}, {"letter": "C", "text": "Example"}, {"letter": "D", "text": "Question"}], "correct": "B"},
+    {"question": "What makes assertions?", "choices": [{"letter": "A", "text": "Questions"}, {"letter": "B", "text": "Claims"}, {"letter": "C", "text": "Examples"}, {"letter": "D", "text": "Stories"}], "correct": "B"},
+    {"question": "What provides support?", "choices": [{"letter": "A", "text": "Evidence"}, {"letter": "B", "text": "Opinions only"}, {"letter": "C", "text": "Questions"}, {"letter": "D", "text": "Emotions"}], "correct": "A"}
+  ],
+  "fillintheblank": [
+    {"question": "A _____ statement presents the main argument.", "expectedAny": ["thesis"]},
+    {"question": "_____ includes facts and statistics.", "expectedAny": ["evidence"]},
+    {"question": "A _____ challenges the main argument.", "expectedAny": ["counterargument"]},
+    {"question": "A _____ asserts something is true.", "expectedAny": ["claim"]},
+    {"question": "_____ reasoning uses facts and logic.", "expectedAny": ["logical"]},
+    {"question": "The main argument is in the _____ statement.", "expectedAny": ["thesis"]},
+    {"question": "Facts and statistics are _____.", "expectedAny": ["evidence", "proof"]},
+    {"question": "An opposing viewpoint is a _____.", "expectedAny": ["counterargument"]},
+    {"question": "_____ support conclusions.", "expectedAny": ["evidence", "facts"]},
+    {"question": "Good arguments use _____ reasoning.", "expectedAny": ["logical", "sound"]}
+  ],
+  "shortanswer": [
+    {"question": "What is a thesis statement?", "keyTerms": ["clear", "statement", "main argument", "essay"], "expectedAny": ["A clear statement that presents the main argument of an essay", "Main point of essay", "Central claim"]},
+    {"question": "What is evidence?", "keyTerms": ["facts", "statistics", "examples", "support"], "expectedAny": ["Facts statistics examples or expert opinions that support an argument", "Proof for claims", "Supporting information"]},
+    {"question": "What is a counterargument?", "keyTerms": ["opposing", "viewpoint", "challenges", "argument"], "expectedAny": ["An opposing viewpoint that challenges the main argument", "Different perspective", "Objection to your claim"]},
+    {"question": "What is a claim?", "keyTerms": ["statement", "asserts", "true", "position"], "expectedAny": ["A statement that asserts something to be true", "Position you take", "Assertion"]},
+    {"question": "What is logical reasoning?", "keyTerms": ["using", "facts", "logic", "conclusions"], "expectedAny": ["Using facts and logic to support conclusions", "Rational thinking", "Sound argumentation"]},
+    {"question": "Why is a thesis statement important?", "keyTerms": ["guides", "essay", "main point", "focus"], "expectedAny": ["It guides the essay and states the main point", "Provides focus", "Tells reader your argument"]},
+    {"question": "How does evidence strengthen arguments?", "keyTerms": ["supports", "claims", "proof", "credibility"], "expectedAny": ["Evidence supports claims with proof and adds credibility", "Backs up assertions", "Makes arguments convincing"]},
+    {"question": "Why address counterarguments?", "keyTerms": ["strengthen", "essay", "show", "consideration"], "expectedAny": ["Addressing counterarguments strengthens essay and shows consideration", "Demonstrates thorough thinking", "Refutes objections"]},
+    {"question": "How do you support a claim?", "keyTerms": ["evidence", "facts", "examples", "reasoning"], "expectedAny": ["With evidence facts examples and reasoning", "Using proof and logic", "Providing support"]},
+    {"question": "What makes reasoning logical?", "keyTerms": ["facts", "logic", "sound", "conclusions"], "expectedAny": ["Using facts and logic to reach sound conclusions", "Rational connections", "Valid arguments"]}
+  ]
 }

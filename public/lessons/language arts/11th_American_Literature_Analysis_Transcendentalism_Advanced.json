@@ -1,4 +1,4 @@
-{
+﻿{
   "id": "11th_American_Literature_Analysis_Transcendentalism_Advanced",
   "title": "American Literature Analysis: Transcendentalism and Romanticism",
   "grade": "11th",
@@ -26,49 +26,224 @@
     }
   ],
   "teachingNotes": "Examine philosophical underpinnings and theological implications. Analyze how American literature reflects national identity formation.",
-  "sample": {
-    "question": "What is Emerson's concept of universal spirit connecting all beings?",
-    "expectedAny": [
-      "Oversoul",
-      "universal spirit",
-      "cosmic consciousness",
-      "transcendent unity"
-    ]
-  },
-  "truefalse": {
-    "question": "Psychological realism explores characters' internal mental states.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What challenges traditional ways of knowing truth?",
-    "expectedAny": [
-      "epistemological rebellion",
-      "knowledge challenge",
-      "truth rebellion",
-      "cognitive revolution"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Literary style reflecting Calvinist theology is the ________ aesthetic.",
-    "expectedAny": [
-      "Puritan",
-      "Calvinist",
-      "religious",
-      "theological"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does transcendentalism represent American intellectual independence?",
-    "expectedAny": [
-      "rejection of European authority",
-      "indigenous philosophy",
-      "democratic ideals",
-      "intellectual sovereignty"
-    ]
-  }
+  "sample": [
+    {
+      "question": "What is Emerson's concept of universal spirit connecting all beings?",
+      "expectedAny": ["Oversoul", "universal spirit", "cosmic consciousness", "transcendent unity", "universal mind", "divine spirit"]
+    },
+    {
+      "question": "What belief says moral law is unnecessary for the divinely guided?",
+      "expectedAny": ["antinomianism", "antinomian belief", "rejection of moral law", "divine grace doctrine", "grace over law", "anti-legalism"]
+    },
+    {
+      "question": "What technique explores characters' internal mental states?",
+      "expectedAny": ["psychological realism", "internal realism", "psychological technique", "mental state exploration", "consciousness exploration", "psychological depth"]
+    },
+    {
+      "question": "What literary style reflects Calvinist theology?",
+      "expectedAny": ["Puritan aesthetic", "Calvinist style", "Puritan literary style", "religious aesthetic", "theological aesthetic", "Calvinist aesthetic"]
+    },
+    {
+      "question": "What challenges traditional ways of knowing truth?",
+      "expectedAny": ["epistemological rebellion", "challenge to knowledge", "epistemic revolt", "intellectual rebellion", "questioning truth", "knowledge revolution"]
+    },
+    {
+      "question": "What connects all beings in Emerson's philosophy?",
+      "expectedAny": ["Oversoul", "universal spirit", "transcendent unity", "cosmic connection"]
+    },
+    {
+      "question": "What belief prioritizes divine grace over moral rules?",
+      "expectedAny": ["antinomianism", "antinomian doctrine", "grace over law", "divine guidance belief"]
+    },
+    {
+      "question": "What realism focuses on inner thoughts and feelings?",
+      "expectedAny": ["psychological realism", "internal psychological technique", "mental realism", "inner state exploration"]
+    },
+    {
+      "question": "What aesthetic shows moral severity and theology?",
+      "expectedAny": ["Puritan aesthetic", "Calvinist aesthetic", "religious literary style", "theological aesthetic"]
+    },
+    {
+      "question": "What rebellion questions how we know things?",
+      "expectedAny": ["epistemological rebellion", "epistemic challenge", "knowledge rebellion", "intellectual revolt"]
+    }
+  ],
+  "truefalse": [
+    {
+      "question": "Psychological realism explores characters' internal mental states.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "The Oversoul concept emphasizes individual isolation.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Antinomianism prioritizes divine grace over moral law.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Puritan aesthetic rejects religious themes.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Epistemological rebellion challenges traditional knowledge.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "The Oversoul represents universal spiritual connection.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Antinomianism emphasizes strict moral rules.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Psychological realism focuses on external actions only.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Puritan aesthetic reflects Calvinist theology.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Epistemological rebellion accepts traditional authority.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "What connects all beings?",
+      "choices": ["Oversoul", "Individual soul", "Physical body", "Material world"],
+      "correct": "Oversoul"
+    },
+    {
+      "question": "What rejects moral law?",
+      "choices": ["Conformity", "Antinomianism", "Tradition", "Authority"],
+      "correct": "Antinomianism"
+    },
+    {
+      "question": "What explores mental states?",
+      "choices": ["Physical description", "Psychological realism", "Action scenes", "Dialogue"],
+      "correct": "Psychological realism"
+    },
+    {
+      "question": "What reflects Calvinist theology?",
+      "choices": ["Romantic aesthetic", "Puritan aesthetic", "Modern style", "Postmodern form"],
+      "correct": "Puritan aesthetic"
+    },
+    {
+      "question": "What challenges traditional knowledge?",
+      "choices": ["Conformity", "Tradition", "Epistemological rebellion", "Authority"],
+      "correct": "Epistemological rebellion"
+    },
+    {
+      "question": "Who developed the Oversoul concept?",
+      "choices": ["Thoreau", "Emerson", "Hawthorne", "Melville"],
+      "correct": "Emerson"
+    },
+    {
+      "question": "What prioritizes divine grace?",
+      "choices": ["Legalism", "Antinomianism", "Formalism", "Ritualism"],
+      "correct": "Antinomianism"
+    },
+    {
+      "question": "What technique shows inner thoughts?",
+      "choices": ["External action", "Psychological realism", "Plot summary", "Setting description"],
+      "correct": "Psychological realism"
+    },
+    {
+      "question": "What style shows moral severity?",
+      "choices": ["Romantic", "Puritan", "Modern", "Postmodern"],
+      "correct": "Puritan"
+    },
+    {
+      "question": "What questions ways of knowing?",
+      "choices": ["Acceptance", "Epistemological rebellion", "Tradition", "Conformity"],
+      "correct": "Epistemological rebellion"
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "The _____ is Emerson's concept of universal spirit.",
+      "expectedAny": ["Oversoul", "Over-soul", "universal spirit"]
+    },
+    {
+      "question": "_____ rejects moral law for those with divine grace.",
+      "expectedAny": ["antinomianism", "antinomian belief", "the antinomian doctrine"]
+    },
+    {
+      "question": "_____ realism explores characters' mental states.",
+      "expectedAny": ["psychological", "internal", "mental"]
+    },
+    {
+      "question": "_____ aesthetic reflects Calvinist theology.",
+      "expectedAny": ["Puritan", "Calvinist", "religious"]
+    },
+    {
+      "question": "_____ rebellion challenges traditional knowledge.",
+      "expectedAny": ["epistemological", "epistemic", "intellectual"]
+    },
+    {
+      "question": "Emerson believed all beings connect through the _____.",
+      "expectedAny": ["Oversoul", "Over-soul", "universal spirit"]
+    },
+    {
+      "question": "_____ prioritizes grace over moral rules.",
+      "expectedAny": ["antinomianism", "antinomian belief", "divine grace"]
+    },
+    {
+      "question": "Hawthorne used _____ realism in his fiction.",
+      "expectedAny": ["psychological", "internal", "mental"]
+    },
+    {
+      "question": "The _____ aesthetic emphasizes moral severity.",
+      "expectedAny": ["Puritan", "Calvinist", "religious"]
+    },
+    {
+      "question": "Transcendentalists engaged in _____ rebellion.",
+      "expectedAny": ["epistemological", "epistemic", "intellectual"]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Explain Emerson's concept of the Oversoul.",
+      "expectedAny": ["the Oversoul is a universal spirit connecting all beings in transcendent unity", "Emerson's idea that all souls are part of one divine consciousness", "the concept that individuals share a cosmic spiritual connection"]
+    },
+    {
+      "question": "What is antinomianism and how did it appear in literature?",
+      "expectedAny": ["antinomianism is belief that divine grace makes moral law unnecessary which challenged Puritan orthodoxy", "the doctrine that those with grace need not follow moral rules appearing in works like The Scarlet Letter", "belief in spiritual freedom over law shown in characters who defy convention"]
+    },
+    {
+      "question": "How does psychological realism differ from earlier literary techniques?",
+      "expectedAny": ["psychological realism explores internal mental states rather than just external actions", "it focuses on characters' thoughts and feelings instead of only plot events", "realism reveals inner psychological complexity unlike simpler character types"]
+    },
+    {
+      "question": "Describe the Puritan aesthetic in American literature.",
+      "expectedAny": ["Puritan aesthetic reflects Calvinist theology with moral severity and religious symbolism", "literary style emphasizing sin guilt and divine judgment", "austere approach focused on moral lessons and theological themes"]
+    },
+    {
+      "question": "What is epistemological rebellion in transcendentalism?",
+      "expectedAny": ["challenge to traditional authority and empiricism favoring intuition and personal experience", "rejection of conventional knowledge systems for direct spiritual insight", "philosophical revolt against established ways of knowing truth"]
+    },
+    {
+      "question": "How does the Oversoul concept relate to transcendentalist philosophy?",
+      "expectedAny": ["the Oversoul embodies transcendentalist belief in universal spiritual connection", "it supports self-reliance by connecting individuals to divine source", "the concept unifies transcendentalist ideas about nature divinity and humanity"]
+    },
+    {
+      "question": "Why was antinomianism controversial in Puritan society?",
+      "expectedAny": ["it challenged Puritan emphasis on moral law and social order", "antinomianism threatened religious authority by prioritizing personal grace", "the doctrine could justify rejecting community standards and rules"]
+    },
+    {
+      "question": "Give an example of psychological realism in American literature.",
+      "expectedAny": ["Hawthorne's exploration of guilt in characters like Dimmesdale", "Melville revealing Ahab's obsessive internal state in Moby Dick", "examining complex motivations and inner conflicts of characters"]
+    },
+    {
+      "question": "How did Puritan aesthetic influence later American writers?",
+      "expectedAny": ["it established moral seriousness and symbolic complexity as literary values", "Puritan themes of sin and redemption persisted in American literature", "the aesthetic created tradition of examining conscience and morality"]
+    },
+    {
+      "question": "Why was epistemological rebellion important to American identity?",
+      "expectedAny": ["it asserted intellectual independence from European traditions", "challenging traditional knowledge supported democratic and individualistic values", "epistemological rebellion helped define distinctly American philosophy"]
+    }
+  ]
 }

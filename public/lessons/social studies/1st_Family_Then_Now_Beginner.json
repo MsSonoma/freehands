@@ -20,6 +20,18 @@
     {
       "term": "ancestor",
       "definition": "Family members who lived before you were born"
+    },
+    {
+      "term": "family",
+      "definition": "People who are related and care for each other"
+    },
+    {
+      "term": "love",
+      "definition": "Feeling of care and kindness for others"
+    },
+    {
+      "term": "families",
+      "definition": "More than one family; different groups of related people"
     }
   ],
   "teachingNotes": "Use family photos from different time periods. Compare how families lived long ago vs. today. Discuss family traditions.",
@@ -30,7 +42,7 @@
     {"question": "Name one thing families do together now.", "expectedAny": ["eat dinner", "play games", "watch TV"]},
     {"question": "Name one thing families did long ago.", "expectedAny": ["read stories", "play simple games", "farm work"]},
     {"question": "Who takes care of children in a family?", "expectedAny": ["parents", "grown-ups"]},
-    {"question": "Name a family tradition you have.", "expectedAny": ["varies", "holiday", "birthday"]}
+  {"question": "Name a family tradition you have.", "expectedAny": ["holiday", "birthday", "family meal", "visiting relatives"]}
   ],
   "truefalse": [
     {"question": "Your grandparents were children before you were born.", "answer": true, "expectedAny": ["true"]},
@@ -51,21 +63,21 @@
     {"question": "What is a family tradition?", "choices": ["a chore", "a rule", "something special you do each year", "a holiday only"], "correct": 2, "expectedAny": ["something special you do each year"]}
   ],
   "fillintheblank": [
-    {"question": "Long ago, people didn't have cars, so they traveled by _____ or on foot.", "expectedAny": ["horse", "wagon"]},
+    {"question": "Long ago, people didn't have cars, so they traveled by _____ or on foot.", "expectedAny": ["horse", "wagon", "horses and wagons"]},
     {"question": "Families share love and _____.", "expectedAny": ["care", "kindness"]},
-    {"question": "Today we keep food cold in a _____.", "expectedAny": ["refrigerator"]},
-    {"question": "A family ___ is something you do the same way each year.", "expectedAny": ["tradition"]},
-    {"question": "We talk to faraway family using the _____.", "expectedAny": ["phone", "computer"]},
-    {"question": "People who lived before you in your family are your _____.", "expectedAny": ["ancestors"]},
-    {"question": "People in a family who are about the same age are a _____.", "expectedAny": ["generation"]}
+  {"question": "Today we keep food cold in a _____.", "expectedAny": ["refrigerator", "fridge"]},
+  {"question": "A family ___ is something you do the same way each year.", "expectedAny": ["tradition", "special tradition"]},
+  {"question": "We talk to faraway family using the _____.", "expectedAny": ["phone", "computer", "internet"]},
+    {"question": "People who lived before you in your family are your _____.", "expectedAny": ["ancestors", "older family members"]},
+    {"question": "People in a family who are about the same age are a _____.", "expectedAny": ["generation", "age group"]}
   ],
   "shortanswer": [
-    {"question": "What is one way your family is the same as families long ago?", "expectedAny": ["parents take care of children", "families love each other", "families live together"]},
-    {"question": "How is your family different from families long ago?", "expectedAny": ["technology", "transportation", "jobs", "school"]},
-    {"question": "What is one special family tradition you have?", "expectedAny": ["varies"]},
-    {"question": "Draw your family doing something together.", "expectedAny": ["drawing"]},
-    {"question": "What chores do you help with at home?", "expectedAny": ["cleaning", "setting table", "feeding pets"]},
-    {"question": "What do you want to tell your future family about today?", "expectedAny": ["personal reflection"]},
-    {"question": "How do you show love to your family?", "expectedAny": ["be kind", "help out", "say I love you"]}
+    {"question": "What is one way your family is the same as families long ago?", "expectedAny": ["parents take care of children", "families love each other", "families live together", "we love each other"]},
+    {"question": "How is your family different from families long ago?", "expectedAny": ["technology", "transportation", "jobs", "school", "we have phones", "we have cars"]},
+  {"question": "What is one special family tradition you have?", "expectedAny": ["eat together", "visit family", "play games", "celebrate holidays"]},
+  {"question": "Draw your family doing something together.", "expectedAny": ["drawing", "labeled drawing", "picture with labels"]},
+    {"question": "What chores do you help with at home?", "expectedAny": ["cleaning", "setting table", "feeding pets", "pick up toys"]},
+  {"question": "What do you want to tell your future family about today?", "expectedAny": ["we use phones and computers", "we ride in cars and buses", "we learn at school", "we have technology"]},
+    {"question": "How do you show love to your family?", "expectedAny": ["be kind", "help out", "say I love you", "hugs"]}
   ]
 }

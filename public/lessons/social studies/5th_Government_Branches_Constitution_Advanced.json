@@ -23,52 +23,75 @@
     {
       "term": "checks and balances",
       "definition": "A system where each branch of government can limit the others' power"
+    },
+    {
+      "term": "separation of powers",
+      "definition": "The division of government responsibilities among branches to prevent concentration of power"
+    },
+    {
+      "term": "judicial review",
+      "definition": "The power of courts to decide whether laws or actions are constitutional"
     }
   ],
   "teachingNotes": "Explain how the three branches work together and check each other's power. Use examples of how laws are made, enforced, and interpreted.",
-  "sample": {
-    "question": "Which branch of government is led by the President?",
-    "expectedAny": [
-      "executive branch",
-      "executive",
-      "presidential branch",
-      "enforcement branch"
-    ]
-  },
-  "truefalse": {
-    "question": "The Constitution is the supreme law of the United States.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which branch of government makes laws?",
-    "expectedAny": [
-      "legislative branch",
-      "legislative",
-      "Congress",
-      "lawmaking branch"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The system that prevents any one branch from becoming too powerful is called ________ and ________.",
-    "expectedAny": [
-      "checks and balances",
-      "checks balances",
-      "balance of power",
-      "governmental checks"
-    ]
-  },
-  "shortanswer": {
-    "question": "What does the judicial branch do?",
-    "expectedAny": [
-      "interprets laws",
-      "decides what laws mean",
-      "judges court cases",
-      "explains the Constitution"
-    ]
-  }
+  "sample": [
+    { "question": "Which branch of government is led by the President?", "expectedAny": ["executive branch", "executive"] },
+    { "question": "Which branch makes laws?", "expectedAny": ["legislative branch", "legislative", "Congress"] },
+    { "question": "Which branch interprets laws?", "expectedAny": ["judicial branch", "judicial", "courts"] },
+    { "question": "What is the supreme law of the United States?", "expectedAny": ["the Constitution", "Constitution"] },
+    { "question": "What system prevents any one branch from becoming too powerful?", "expectedAny": ["checks and balances"] },
+    { "question": "How many branches of government are there?", "expectedAny": ["three", "3"] },
+    { "question": "Who is the head of the executive branch?", "expectedAny": ["the President", "President"] },
+    { "question": "What group makes up the legislative branch?", "expectedAny": ["Congress", "House and Senate"] },
+    { "question": "What does the judicial branch include?", "expectedAny": ["Supreme Court", "federal courts"] },
+    { "question": "What can the President do to a bill?", "expectedAny": ["sign or veto", "veto", "sign into law"] }
+  ],
+  "truefalse": [
+    { "question": "The Constitution is the supreme law of the United States.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The legislative branch enforces laws.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The judicial branch interprets laws.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Checks and balances means branches can limit each other.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The President is part of the executive branch.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Congress is part of the judicial branch.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "There are three branches of government.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The Supreme Court is the highest court in the U.S.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The President can veto a bill.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The legislative branch makes laws.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which branch makes laws?", "choices": ["executive", "legislative", "judicial", "military"], "correct": 1, "expectedAny": ["legislative"] },
+    { "question": "Which branch interprets laws?", "choices": ["executive", "legislative", "judicial", "press"], "correct": 2, "expectedAny": ["judicial"] },
+    { "question": "Which branch enforces laws?", "choices": ["executive", "legislative", "judicial", "treasury"], "correct": 0, "expectedAny": ["executive"] },
+    { "question": "What can the President do to a bill?", "choices": ["interpret it", "sign or veto", "write it", "ignore laws"], "correct": 1, "expectedAny": ["sign or veto"] },
+    { "question": "Who is part of the legislative branch?", "choices": ["President", "Congress", "Supreme Court", "Governors"], "correct": 1, "expectedAny": ["Congress"] },
+    { "question": "What is the supreme law of the land?", "choices": ["The Bill of Rights", "The Declaration", "The Constitution", "The Articles"], "correct": 2, "expectedAny": ["Constitution"] },
+    { "question": "How many branches are there?", "choices": ["2", "3", "4", "5"], "correct": 1, "expectedAny": ["3"] },
+    { "question": "Which branch reviews laws for constitutionality?", "choices": ["executive", "legislative", "judicial", "state"], "correct": 2, "expectedAny": ["judicial"] },
+    { "question": "Which concept lets branches limit each other?", "choices": ["separation", "checks and balances", "federalism", "popular sovereignty"], "correct": 1, "expectedAny": ["checks and balances"] },
+    { "question": "What group leads the judicial branch?", "choices": ["Congress", "Supreme Court", "Cabinet", "House of Representatives"], "correct": 1, "expectedAny": ["Supreme Court"] }
+  ],
+  "fillintheblank": [
+    { "question": "The ________ is the supreme law of the United States.", "expectedAny": ["Constitution", "U.S. Constitution"] },
+    { "question": "The ________ branch makes laws.", "expectedAny": ["legislative", "Congress"] },
+    { "question": "The ________ branch enforces laws.", "expectedAny": ["executive", "the executive"] },
+    { "question": "The ________ branch interprets laws.", "expectedAny": ["judicial", "the courts"] },
+    { "question": "The system of ________ and ________ limits branch power.", "expectedAny": ["checks", "balances", "checks and balances"] },
+    { "question": "The ________ can veto a bill.", "expectedAny": ["President", "the President"] },
+    { "question": "The ________ Court is the highest court.", "expectedAny": ["Supreme", "Supreme Court"] },
+    { "question": "________ makes up Congress.", "expectedAny": ["House and Senate", "Senate and House of Representatives", "House of Representatives and Senate"] },
+    { "question": "The President leads the ________ branch.", "expectedAny": ["executive", "executive branch"] },
+    { "question": "Courts belong to the ________ branch.", "expectedAny": ["judicial", "judicial branch"] }
+  ],
+  "shortanswer": [
+    { "question": "What does the judicial branch do?", "expectedAny": ["interprets laws", "explains Constitution", "judges cases", "reviews constitutionality"] },
+    { "question": "Give one example of checks and balances.", "expectedAny": ["President veto", "Court judicial review", "Congress overrides veto", "Senate confirms appointments"] },
+    { "question": "Why is separation of powers important?", "expectedAny": ["prevents tyranny", "limits power", "ensures no branch dominates"] },
+    { "question": "Who makes up the legislative branch?", "expectedAny": ["Congress", "House and Senate", "Senate and House of Representatives"] },
+    { "question": "What is the supreme law of the land?", "expectedAny": ["Constitution", "U.S. Constitution"] },
+    { "question": "How can a bill become law without the President's signature?", "expectedAny": ["Congress overrides veto", "two-thirds vote", "veto override"] },
+    { "question": "Who leads the executive branch?", "expectedAny": ["President", "the President"] },
+    { "question": "What does 'interpret' mean in a legal context?", "expectedAny": ["explain meaning", "decide if constitutional", "apply the law to cases"] },
+    { "question": "Name the three branches of government.", "expectedAny": ["executive, legislative, judicial", "legislative, executive, judicial"] },
+    { "question": "How does the Supreme Court check the other branches?", "expectedAny": ["judicial review", "strike down unconstitutional laws", "review executive actions"] }
+  ]
 }

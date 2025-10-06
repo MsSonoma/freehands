@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "10th_Advanced_Literary_Analysis_Character_Development_Advanced",
   "title": "Advanced Literary Analysis: Character Development",
   "grade": "10th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "characterization",
-      "definition": "The methods an author uses to develop and reveal character traits"
-    },
-    {
-      "term": "indirect characterization",
-      "definition": "Revealing character through actions, dialogue, and other characters' reactions"
-    },
-    {
-      "term": "direct characterization",
-      "definition": "Explicitly stating character traits through narration"
-    },
-    {
-      "term": "psychological realism",
-      "definition": "Literary technique that emphasizes characters' internal mental states"
-    },
-    {
-      "term": "character agency",
-      "definition": "A character's ability to make independent choices that drive the plot"
-    }
+    {"term": "characterization", "definition": "The methods an author uses to develop and reveal character traits"},
+    {"term": "indirect characterization", "definition": "Revealing character through actions, dialogue, and other characters' reactions"},
+    {"term": "direct characterization", "definition": "Explicitly stating character traits through narration"},
+    {"term": "psychological realism", "definition": "Literary technique that emphasizes characters' internal mental states"},
+    {"term": "character agency", "definition": "A character's ability to make independent choices that drive the plot"}
   ],
   "teachingNotes": "Evaluate sophisticated characterization techniques. Analyze how character development serves thematic purposes in complex literature.",
-  "sample": {
-    "question": "What are the methods an author uses to develop character traits called?",
-    "expectedAny": [
-      "characterization",
-      "character development methods",
-      "character creation techniques",
-      "character portrayal"
-    ]
-  },
-  "truefalse": {
-    "question": "Indirect characterization explicitly states character traits through narration.",
-    "expectedAny": [
-      "false",
-      "no",
-      "f",
-      "incorrect"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What technique emphasizes characters' internal mental states?",
-    "expectedAny": [
-      "psychological realism",
-      "internal focus",
-      "mental realism",
-      "psychological depth"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A character's ability to make independent choices is called character ________.",
-    "expectedAny": [
-      "agency",
-      "autonomy",
-      "independence",
-      "self-determination"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does character development serve thematic purposes?",
-    "expectedAny": [
-      "reinforces themes",
-      "embodies conflicts",
-      "represents ideas",
-      "demonstrates change"
-    ]
-  }
+  "sample": [
+    {"question": "What are methods to develop character traits?", "expectedAny": ["characterization", "character development", "character methods", "character portrayal", "character depiction", "development techniques"]},
+    {"question": "What reveals character through actions and dialogue?", "expectedAny": ["indirect characterization", "showing character", "implicit characterization", "action-based portrayal", "showing methods", "implicit portrayal"]},
+    {"question": "What explicitly states character traits?", "expectedAny": ["direct characterization", "telling character", "explicit characterization", "narrator description", "telling methods", "explicit description"]},
+    {"question": "What emphasizes internal mental states?", "expectedAny": ["psychological realism", "mental realism", "internal focus", "psychological depth", "realistic psychology", "psychological complexity"]},
+    {"question": "What is ability to make independent choices?", "expectedAny": ["character agency", "agency", "autonomy", "character power", "character independence", "character control"]},
+    {"question": "What develops and reveals traits?", "expectedAny": ["characterization", "character methods", "development techniques", "character portrayal", "character depiction", "character development"]},
+    {"question": "What shows through actions?", "expectedAny": ["indirect characterization", "showing", "implicit", "showing character", "action-based portrayal", "implicit characterization"]},
+    {"question": "What tells traits directly?", "expectedAny": ["direct characterization", "telling", "explicit", "telling character", "narrator description", "explicit characterization"]},
+    {"question": "What focuses on mental states?", "expectedAny": ["psychological realism", "internal psychology", "mental focus", "psychological depth", "mental realism", "realistic psychology"]},
+    {"question": "What drives plot through choices?", "expectedAny": ["character agency", "agency", "character autonomy", "character power", "character independence", "autonomy"]}
+  ],
+  "truefalse": [
+    {"question": "Characterization develops character traits. (True or False)", "correct": true},
+    {"question": "Indirect characterization explicitly states traits. (True or False)", "correct": false},
+    {"question": "Direct characterization tells traits through narration. (True or False)", "correct": true},
+    {"question": "Psychological realism ignores mental states. (True or False)", "correct": false},
+    {"question": "Character agency is independent choice-making. (True or False)", "correct": true},
+    {"question": "Authors use characterization techniques. (True or False)", "correct": true},
+    {"question": "Indirect shows through actions. (True or False)", "correct": true},
+    {"question": "Direct shows through actions. (True or False)", "correct": false},
+    {"question": "Psychological realism emphasizes internal states. (True or False)", "correct": true},
+    {"question": "Agency drives plot through choices. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What develops character traits?", "choices": [{"letter": "A", "text": "Plot"}, {"letter": "B", "text": "Characterization"}, {"letter": "C", "text": "Setting"}, {"letter": "D", "text": "Theme"}], "correct": "B"},
+    {"question": "What shows through actions?", "choices": [{"letter": "A", "text": "Direct"}, {"letter": "B", "text": "Indirect characterization"}, {"letter": "C", "text": "Narration"}, {"letter": "D", "text": "Exposition"}], "correct": "B"},
+    {"question": "What tells traits explicitly?", "choices": [{"letter": "A", "text": "Indirect"}, {"letter": "B", "text": "Direct characterization"}, {"letter": "C", "text": "Dialogue"}, {"letter": "D", "text": "Action"}], "correct": "B"},
+    {"question": "What emphasizes mental states?", "choices": [{"letter": "A", "text": "Realism"}, {"letter": "B", "text": "Psychological realism"}, {"letter": "C", "text": "Naturalism"}, {"letter": "D", "text": "Romanticism"}], "correct": "B"},
+    {"question": "What is independent choice-making?", "choices": [{"letter": "A", "text": "Plot"}, {"letter": "B", "text": "Character agency"}, {"letter": "C", "text": "Theme"}, {"letter": "D", "text": "Conflict"}], "correct": "B"},
+    {"question": "What are development methods?", "choices": [{"letter": "A", "text": "Plot"}, {"letter": "B", "text": "Characterization"}, {"letter": "C", "text": "Setting"}, {"letter": "D", "text": "Style"}], "correct": "B"},
+    {"question": "What reveals through dialogue?", "choices": [{"letter": "A", "text": "Direct"}, {"letter": "B", "text": "Indirect characterization"}, {"letter": "C", "text": "Summary"}, {"letter": "D", "text": "Exposition"}], "correct": "B"},
+    {"question": "What states traits through narration?", "choices": [{"letter": "A", "text": "Indirect"}, {"letter": "B", "text": "Direct characterization"}, {"letter": "C", "text": "Action"}, {"letter": "D", "text": "Dialogue"}], "correct": "B"},
+    {"question": "What focuses on internal psychology?", "choices": [{"letter": "A", "text": "Naturalism"}, {"letter": "B", "text": "Psychological realism"}, {"letter": "C", "text": "Romanticism"}, {"letter": "D", "text": "Minimalism"}], "correct": "B"},
+    {"question": "What drives plot?", "choices": [{"letter": "A", "text": "Setting"}, {"letter": "B", "text": "Character agency"}, {"letter": "C", "text": "Theme"}, {"letter": "D", "text": "Mood"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ develops character traits.", "expectedAny": ["characterization", "Characterization"]},
+    {"question": "_____ characterization shows through actions.", "expectedAny": ["indirect", "Indirect"]},
+    {"question": "_____ characterization tells traits explicitly.", "expectedAny": ["direct", "Direct"]},
+    {"question": "_____ realism emphasizes mental states.", "expectedAny": ["psychological", "Psychological"]},
+    {"question": "Character _____ is independent choice-making.", "expectedAny": ["agency"]},
+    {"question": "Authors use _____ techniques.", "expectedAny": ["characterization"]},
+    {"question": "_____ shows character implicitly.", "expectedAny": ["indirect", "Indirect"]},
+    {"question": "_____ states character explicitly.", "expectedAny": ["direct", "Direct"]},
+    {"question": "_____ focuses on internal states.", "expectedAny": ["psychological", "Psychological", "realism"]},
+    {"question": "_____ drives plot through choices.", "expectedAny": ["agency", "Agency"]}
+  ],
+  "shortanswer": [
+    {"question": "What is characterization?", "keyTerms": ["methods", "author", "develop", "reveal", "character traits"], "expectedAny": ["The methods an author uses to develop and reveal character traits", "Character development techniques", "Ways to create characters"]},
+    {"question": "What is indirect characterization?", "keyTerms": ["revealing", "character", "actions", "dialogue", "reactions"], "expectedAny": ["Revealing character through actions, dialogue, and other characters' reactions", "Showing character implicitly", "Character through behavior"]},
+    {"question": "What is direct characterization?", "keyTerms": ["explicitly", "stating", "character traits", "narration"], "expectedAny": ["Explicitly stating character traits through narration", "Telling character directly", "Stated character description"]},
+    {"question": "What is psychological realism?", "keyTerms": ["literary", "technique", "emphasizes", "internal", "mental states"], "expectedAny": ["Literary technique that emphasizes characters' internal mental states", "Focus on psychology", "Internal character focus"]},
+    {"question": "What is character agency?", "keyTerms": ["character", "ability", "independent", "choices", "drive plot"], "expectedAny": ["A character's ability to make independent choices that drive the plot", "Character autonomy", "Independent decision-making"]},
+    {"question": "How does indirect work?", "keyTerms": ["shows", "through", "actions", "dialogue", "behavior"], "expectedAny": ["Shows character through actions, dialogue, and behavior", "Implies traits", "Demonstrates personality"]},
+    {"question": "How does direct work?", "keyTerms": ["tells", "explicitly", "states", "narration", "description"], "expectedAny": ["Tells explicitly through narration and description", "States traits", "Direct description"]},
+    {"question": "Why use psychological realism?", "keyTerms": ["explore", "internal", "mental", "complexity", "depth"], "expectedAny": ["Explore internal mental complexity and depth", "Show psychology", "Create realistic minds"]},
+    {"question": "Why is agency important?", "keyTerms": ["drives", "plot", "choices", "active", "characters"], "expectedAny": ["Drives plot through character choices making active characters", "Creates action", "Enables development"]},
+    {"question": "What combines both types?", "keyTerms": ["mix", "indirect", "direct", "balanced", "characterization"], "expectedAny": ["Mix indirect and direct for balanced characterization", "Combined techniques", "Both methods together"]}
+  ]
 }

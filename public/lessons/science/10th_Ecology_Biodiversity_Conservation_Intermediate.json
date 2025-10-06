@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "10th_Ecology_Biodiversity_Conservation_Intermediate",
   "title": "Ecology: Biodiversity and Conservation Biology",
   "grade": "10th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "biodiversity",
-      "definition": "The variety of life forms in an ecosystem or on Earth"
-    },
-    {
-      "term": "ecosystem services",
-      "definition": "Benefits that humans derive from healthy ecosystems"
-    },
-    {
-      "term": "keystone species",
-      "definition": "Species that has disproportionately large impact on ecosystem structure"
-    },
-    {
-      "term": "habitat fragmentation",
-      "definition": "Breaking up of large habitats into smaller, isolated patches"
-    },
-    {
-      "term": "conservation biology",
-      "definition": "Scientific study of biodiversity protection and restoration"
-    }
+    {"term": "biodiversity", "definition": "Variety of life forms in an ecosystem or on Earth"},
+    {"term": "ecosystem services", "definition": "Benefits that humans derive from healthy ecosystems"},
+    {"term": "keystone species", "definition": "Species that has disproportionately large impact on ecosystem structure"},
+    {"term": "habitat fragmentation", "definition": "Breaking up of large habitats into smaller isolated patches"},
+    {"term": "conservation biology", "definition": "Scientific study of biodiversity protection and restoration"}
   ],
   "teachingNotes": "Connect to current environmental issues. Discuss human impact on biodiversity and conservation strategies.",
-  "sample": {
-    "question": "What is the variety of life forms in an ecosystem called?",
-    "expectedAny": [
-      "biodiversity",
-      "biological diversity",
-      "species diversity",
-      "ecological diversity"
-    ]
-  },
-  "truefalse": {
-    "question": "Keystone species have a large impact on ecosystem structure.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What are benefits that humans derive from healthy ecosystems?",
-    "expectedAny": [
-      "ecosystem services",
-      "ecological services",
-      "environmental benefits",
-      "natural services"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Breaking up large habitats into smaller patches is called habitat ________.",
-    "expectedAny": [
-      "fragmentation",
-      "division",
-      "separation",
-      "breaking"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why is biodiversity important for ecosystem stability?",
-    "expectedAny": [
-      "provides resilience to change",
-      "ensures ecosystem functions",
-      "supports food webs",
-      "maintains balance"
-    ]
-  }
+  "sample": [
+    {"question": "What is variety of life?", "expectedAny": ["biodiversity", "biological diversity", "life variety", "species diversity", "diversity of life", "bio diversity"]},
+    {"question": "What are ecosystem benefits?", "expectedAny": ["ecosystem services", "services", "ecosystem benefits", "environmental services", "nature benefits", "ecological services"]},
+    {"question": "What has large ecosystem impact?", "expectedAny": ["keystone species", "keystone", "critical species", "key species", "important species", "ecosystem engineer"]},
+    {"question": "What breaks up habitat?", "expectedAny": ["habitat fragmentation", "fragmentation", "habitat breaking", "habitat splitting", "breaking up habitat", "habitat division"]},
+    {"question": "What is biodiversity study?", "expectedAny": ["conservation biology", "conservation", "conservation science", "biodiversity conservation", "protection biology", "preservation science"]},
+    {"question": "What is life variety?", "expectedAny": ["biodiversity", "diversity", "biological diversity", "life variety", "species diversity", "bio diversity"]},
+    {"question": "What do humans derive from ecosystems?", "expectedAny": ["ecosystem services", "benefits", "ecosystem benefits", "environmental services", "nature benefits", "ecological services"]},
+    {"question": "What species affects structure greatly?", "expectedAny": ["keystone species", "keystone", "critical species", "key species", "important species", "ecosystem engineer"]},
+    {"question": "What isolates habitat patches?", "expectedAny": ["habitat fragmentation", "breaking up", "fragmentation", "habitat breaking", "habitat splitting", "habitat division"]},
+    {"question": "What is protection study?", "expectedAny": ["conservation biology", "conservation", "conservation science", "biodiversity conservation", "protection biology", "preservation science"]}
+  ],
+  "truefalse": [
+    {"question": "Biodiversity is variety of life. (True or False)", "correct": true},
+    {"question": "Ecosystem services harm humans. (True or False)", "correct": false},
+    {"question": "Keystone species have large impact. (True or False)", "correct": true},
+    {"question": "Fragmentation connects habitats. (True or False)", "correct": false},
+    {"question": "Conservation protects biodiversity. (True or False)", "correct": true},
+    {"question": "Biodiversity includes all organisms. (True or False)", "correct": true},
+    {"question": "Ecosystems provide benefits. (True or False)", "correct": true},
+    {"question": "Keystone species are unimportant. (True or False)", "correct": false},
+    {"question": "Fragmentation isolates patches. (True or False)", "correct": true},
+    {"question": "Conservation is scientific study. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is life variety?", "choices": [{"letter": "A", "text": "Fragmentation"}, {"letter": "B", "text": "Biodiversity"}, {"letter": "C", "text": "Keystone"}, {"letter": "D", "text": "Service"}], "correct": "B"},
+    {"question": "What are ecosystem benefits?", "choices": [{"letter": "A", "text": "Pollution"}, {"letter": "B", "text": "Ecosystem services"}, {"letter": "C", "text": "Extinction"}, {"letter": "D", "text": "Fragmentation"}], "correct": "B"},
+    {"question": "What has large impact?", "choices": [{"letter": "A", "text": "Extinct species"}, {"letter": "B", "text": "Keystone species"}, {"letter": "C", "text": "Invasive species"}, {"letter": "D", "text": "Rare species"}], "correct": "B"},
+    {"question": "What breaks up habitat?", "choices": [{"letter": "A", "text": "Conservation"}, {"letter": "B", "text": "Habitat fragmentation"}, {"letter": "C", "text": "Biodiversity"}, {"letter": "D", "text": "Service"}], "correct": "B"},
+    {"question": "What is protection study?", "choices": [{"letter": "A", "text": "Extinction"}, {"letter": "B", "text": "Conservation biology"}, {"letter": "C", "text": "Fragmentation"}, {"letter": "D", "text": "Pollution"}], "correct": "B"},
+    {"question": "What is species richness?", "choices": [{"letter": "A", "text": "Keystone"}, {"letter": "B", "text": "Biodiversity"}, {"letter": "C", "text": "Service"}, {"letter": "D", "text": "Fragmentation"}], "correct": "B"},
+    {"question": "What do ecosystems provide?", "choices": [{"letter": "A", "text": "Harm"}, {"letter": "B", "text": "Services"}, {"letter": "C", "text": "Extinction"}, {"letter": "D", "text": "Pollution"}], "correct": "B"},
+    {"question": "What maintains structure?", "choices": [{"letter": "A", "text": "Extinct"}, {"letter": "B", "text": "Keystone"}, {"letter": "C", "text": "Fragmented"}, {"letter": "D", "text": "Service"}], "correct": "B"},
+    {"question": "What isolates patches?", "choices": [{"letter": "A", "text": "Conservation"}, {"letter": "B", "text": "Fragmentation"}, {"letter": "C", "text": "Biodiversity"}, {"letter": "D", "text": "Service"}], "correct": "B"},
+    {"question": "What is restoration science?", "choices": [{"letter": "A", "text": "Extinction"}, {"letter": "B", "text": "Conservation"}, {"letter": "C", "text": "Fragmentation"}, {"letter": "D", "text": "Pollution"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ is variety of life.", "expectedAny": ["biodiversity", "Biodiversity"]},
+    {"question": "_____ services are ecosystem benefits.", "expectedAny": ["ecosystem", "Ecosystem"]},
+    {"question": "_____ species have large impact.", "expectedAny": ["keystone", "Keystone"]},
+    {"question": "Habitat _____ breaks up areas.", "expectedAny": ["fragmentation"]},
+    {"question": "_____ biology protects biodiversity.", "expectedAny": ["conservation", "Conservation"]},
+    {"question": "Life _____ is biodiversity.", "expectedAny": ["variety"]},
+    {"question": "Healthy ecosystems provide _____.", "expectedAny": ["services"]},
+    {"question": "_____ species affect structure.", "expectedAny": ["keystone"]},
+    {"question": "_____ isolates habitat patches.", "expectedAny": ["fragmentation", "Fragmentation"]},
+    {"question": "_____ studies protection.", "expectedAny": ["conservation", "Conservation"]}
+  ],
+  "shortanswer": [
+    {"question": "What is biodiversity?", "keyTerms": ["variety", "life", "forms", "ecosystem", "earth"], "expectedAny": ["Variety of life forms in an ecosystem or on Earth", "Life variety", "Species diversity"]},
+    {"question": "What are ecosystem services?", "keyTerms": ["benefits", "humans", "derive", "healthy", "ecosystems"], "expectedAny": ["Benefits that humans derive from healthy ecosystems", "Ecosystem benefits", "Natural services"]},
+    {"question": "What is keystone species?", "keyTerms": ["species", "disproportionately", "large", "impact", "ecosystem", "structure"], "expectedAny": ["Species that has disproportionately large impact on ecosystem structure", "Critical species", "Important species"]},
+    {"question": "What is habitat fragmentation?", "keyTerms": ["breaking", "large", "habitats", "smaller", "isolated", "patches"], "expectedAny": ["Breaking up of large habitats into smaller isolated patches", "Habitat division", "Habitat breaking"]},
+    {"question": "What is conservation biology?", "keyTerms": ["scientific", "study", "biodiversity", "protection", "restoration"], "expectedAny": ["Scientific study of biodiversity protection and restoration", "Conservation science", "Biodiversity study"]},
+    {"question": "Give example of ecosystem service.", "keyTerms": ["pollination", "clean water", "oxygen", "food"], "expectedAny": ["Pollination", "Clean water", "Oxygen production", "Any valid service"]},
+    {"question": "Give example of keystone species.", "keyTerms": ["sea otter", "wolf", "beaver", "elephant"], "expectedAny": ["Sea otter", "Gray wolf", "Beaver", "Any valid keystone"]},
+    {"question": "What causes habitat fragmentation?", "keyTerms": ["human", "development", "roads", "agriculture", "deforestation"], "expectedAny": ["Human development", "Roads", "Agriculture", "Deforestation"]},
+    {"question": "Why is biodiversity important?", "keyTerms": ["ecosystem", "stability", "resilience", "services", "health"], "expectedAny": ["Ecosystem stability and resilience", "Provides services", "Ecosystem health"]},
+    {"question": "How does conservation help?", "keyTerms": ["protects", "species", "habitats", "restores", "ecosystems"], "expectedAny": ["Protects species and habitats", "Restores ecosystems", "Preserves biodiversity"]}
+  ]
 }

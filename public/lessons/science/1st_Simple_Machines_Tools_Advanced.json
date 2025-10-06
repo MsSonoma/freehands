@@ -20,6 +20,14 @@
     {
       "term": "ramp",
       "definition": "A slanted surface that helps move things up or down"
+    },
+    {
+      "term": "lift",
+      "definition": "To raise something up"
+    },
+    {
+      "term": "screw",
+      "definition": "A simple machine with a spiral that turns to hold or lift"
     }
   ],
   "teachingNotes": "Show real tools like scissors, bottle openers, wheeled toys. Demonstrate how ramps make lifting easier. Safety focus.",
@@ -51,21 +59,21 @@
     {"question": "Which simple machine is a doorstop?", "choices": ["wedge", "pulley", "lever", "screw"], "correct": 0, "expectedAny": ["wedge"]}
   ],
   "fillintheblank": [
-    {"question": "A slanted surface is called an _____ _____.", "expectedAny": ["inclined plane"]},
-    {"question": "A _____ helps lift or pry using a fulcrum.", "expectedAny": ["lever"]},
-    {"question": "A wheel and _____ helps roll heavy objects.", "expectedAny": ["axle"]},
-    {"question": "A _____ changes the direction of a pull.", "expectedAny": ["pulley"]},
-    {"question": "A jar lid works like a _____.", "expectedAny": ["screw"]},
-    {"question": "A knife blade is a _____.", "expectedAny": ["wedge"]},
-    {"question": "A seesaw is an example of a _____.", "expectedAny": ["lever"]}
+    {"question": "A slanted surface is called an _____ _____.", "expectedAny": ["inclined plane", "a ramp"]},
+    {"question": "A _____ helps lift or pry using a fulcrum.", "expectedAny": ["lever", "a lever"]},
+    {"question": "A wheel and _____ helps roll heavy objects.", "expectedAny": ["axle", "an axle"]},
+    {"question": "A _____ changes the direction of a pull.", "expectedAny": ["pulley", "a pulley"]},
+    {"question": "A jar lid works like a _____.", "expectedAny": ["screw", "a screw"]},
+    {"question": "A knife blade is a _____.", "expectedAny": ["wedge", "a wedge"]},
+    {"question": "A seesaw is an example of a _____.", "expectedAny": ["lever", "a lever"]}
   ],
   "shortanswer": [
-    {"question": "How does a ramp make it easier to move a load?", "expectedAny": ["less force over longer distance", "easier than lifting straight up"]},
-    {"question": "Describe a tool that uses a lever.", "expectedAny": ["scissors", "crowbar", "pliers"]},
-    {"question": "Why do we use wheels?", "expectedAny": ["reduce friction", "roll heavy objects easily"]},
-    {"question": "How does a pulley help lift a bucket from a well?", "expectedAny": ["changes direction of force", "easier to pull down than lift up"]},
-    {"question": "Where do you see screws at home?", "expectedAny": ["jar lids", "screws in wood", "bottle caps"]},
-    {"question": "Draw a lever and label fulcrum, effort, and load.", "expectedAny": ["labeled drawing"]},
-    {"question": "Which simple machine would you use to split wood?", "expectedAny": ["wedge"]}
+    {"question": "How does a ramp make it easier to move a load?", "expectedAny": ["less force over longer distance", "easier than lifting straight up", "you can roll instead of lift"]},
+    {"question": "Describe a tool that uses a lever.", "expectedAny": ["scissors", "crowbar", "pliers", "seesaw"]},
+    {"question": "Why do we use wheels?", "expectedAny": ["reduce friction", "roll heavy objects easily", "to move things smoothly"]},
+    {"question": "How does a pulley help lift a bucket from a well?", "expectedAny": ["changes direction of force", "easier to pull down than lift up", "makes lifting easier"]},
+    {"question": "Where do you see screws at home?", "expectedAny": ["jar lids", "screws in wood", "bottle caps", "toys with screws"]},
+    {"question": "Draw a lever and label fulcrum, effort, and load.", "expectedAny": ["labeled drawing", "drawing with labels", "picture with labels"]},
+    {"question": "Which simple machine would you use to split wood?", "expectedAny": ["wedge", "an axe (wedge)", "a wedge tool"]}
   ]
 }

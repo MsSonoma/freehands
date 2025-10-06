@@ -7,7 +7,11 @@
   "vocab": [
     {"term": "ecosystem", "definition": "All living and nonliving things that interact in an area"},
     {"term": "food chain", "definition": "A model showing how energy moves from one organism to another"},
-    {"term": "decomposer", "definition": "An organism that breaks down dead matter and recycles nutrients"}
+    {"term": "decomposer", "definition": "An organism that breaks down dead matter and recycles nutrients"},
+    {"term": "producer", "definition": "A living thing that makes its own food using sunlight"},
+    {"term": "consumer", "definition": "A living thing that eats plants or animals for energy"},
+    {"term": "herbivore", "definition": "An animal that eats only plants"},
+    {"term": "carnivore", "definition": "An animal that eats other animals"}
   ],
   "teachingNotes": "Model food chains/webs and discuss producers, consumers, decomposers. Highlight how changes ripple through systems.",
   "sample": [
@@ -20,39 +24,39 @@
     {"question": "Why is the sun important to ecosystems?", "expectedAny": ["provides energy"]}
   ],
   "truefalse": [
-    {"question": "All living things in an ecosystem depend on each other.", "answer": true},
-    {"question": "Plants are producers because they make their own food.", "answer": true},
-    {"question": "Animals can make their own food like plants.", "answer": false},
-    {"question": "Decomposers break down dead things.", "answer": true},
-    {"question": "Removing one animal will never affect an ecosystem.", "answer": false},
-    {"question": "Herbivores eat only plants.", "answer": true},
-    {"question": "Energy flows through food chains.", "answer": true}
+    {"question": "All living things in an ecosystem depend on each other.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "living things depend"]},
+    {"question": "Plants are producers because they make their own food.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "producers make food"]},
+    {"question": "Animals can make their own food like plants.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "animals can't make food"]},
+    {"question": "Decomposers break down dead things.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "break down dead"]},
+    {"question": "Removing one animal will never affect an ecosystem.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "it can affect it"]},
+    {"question": "Herbivores eat only plants.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "eat only plants"]},
+    {"question": "Energy flows through food chains.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "energy flow"]}
   ],
   "multiplechoice": [
-    {"question": "Which is a producer?", "choices": ["Rabbit", "Grass", "Wolf", "Hawk"], "correct": 1},
-    {"question": "Decomposers include ___", "choices": ["Plants", "Herbivores", "Bacteria", "Carnivores"], "correct": 2},
-    {"question": "A food chain shows ___", "choices": ["Recipes", "Energy flow", "Water cycle", "Weather"], "correct": 1},
-    {"question": "Bees help plants by ___", "choices": ["Eating leaves", "Pollinating", "Making honey", "Drinking nectar"], "correct": 1},
-    {"question": "Carnivores eat ___", "choices": ["Plants", "Meat", "Seeds", "Sunlight"], "correct": 1},
-    {"question": "The sun provides ___ for ecosystems", "choices": ["Water", "Soil", "Energy", "Animals"], "correct": 2},
-    {"question": "Which breaks down dead logs?", "choices": ["Producers", "Consumers", "Decomposers", "Predators"], "correct": 2}
+    {"question": "Which is a producer?", "choices": ["Rabbit", "Grass", "Wolf", "Hawk"], "correct": 1, "expectedAny": ["b", "B", "2", "Grass"]},
+    {"question": "Decomposers include ___", "choices": ["Plants", "Herbivores", "Bacteria", "Carnivores"], "correct": 2, "expectedAny": ["c", "C", "3", "Bacteria"]},
+    {"question": "A food chain shows ___", "choices": ["Recipes", "Energy flow", "Water cycle", "Weather"], "correct": 1, "expectedAny": ["b", "B", "2", "Energy flow"]},
+    {"question": "Bees help plants by ___", "choices": ["Eating leaves", "Pollinating", "Making honey", "Drinking nectar"], "correct": 1, "expectedAny": ["b", "B", "2", "Pollinating", "pollination"]},
+    {"question": "Carnivores eat ___", "choices": ["Plants", "Meat", "Seeds", "Sunlight"], "correct": 1, "expectedAny": ["b", "B", "2", "Meat"]},
+    {"question": "The sun provides ___ for ecosystems", "choices": ["Water", "Soil", "Energy", "Animals"], "correct": 2, "expectedAny": ["c", "C", "3", "Energy"]},
+    {"question": "Which breaks down dead logs?", "choices": ["Producers", "Consumers", "Decomposers", "Predators"], "correct": 2, "expectedAny": ["c", "C", "3", "Decomposers"]}
   ],
   "fillintheblank": [
-    {"question": "Plants are called ___ because they make food.", "expectedAny": ["producers"]},
-    {"question": "Animals that eat plants are ___", "expectedAny": ["herbivores"]},
-    {"question": "A ___ shows who eats whom.", "expectedAny": ["food chain"]},
-    {"question": "___ break down dead plants and animals.", "expectedAny": ["Decomposers"]},
-    {"question": "Animals that eat other animals are ___", "expectedAny": ["carnivores"]},
-    {"question": "All living things need ___ to survive.", "expectedAny": ["energy"]},
-    {"question": "Plants and animals ___ on each other.", "expectedAny": ["depend"]}
+    {"question": "Plants are called ___ because they make food.", "expectedAny": ["producers", "producer"]},
+    {"question": "Animals that eat plants are ___", "expectedAny": ["herbivores", "herbivore", "plant-eaters"]},
+    {"question": "A ___ shows who eats whom.", "expectedAny": ["food chain", "energy chain", "feeding chain"]},
+    {"question": "___ break down dead plants and animals.", "expectedAny": ["Decomposers", "decomposer", "fungi and bacteria"]},
+    {"question": "Animals that eat other animals are ___", "expectedAny": ["carnivores", "carnivore", "predators"]},
+    {"question": "All living things need ___ to survive.", "expectedAny": ["energy", "energy to live"]},
+    {"question": "Plants and animals ___ on each other.", "expectedAny": ["depend", "rely"]}
   ],
   "shortanswer": [
-    {"question": "Describe a simple food chain.", "expectedAny": ["grass → rabbit → fox → decomposers"]},
-    {"question": "How do decomposers help ecosystems?", "expectedAny": ["recycle nutrients back to soil"]},
-    {"question": "What would happen without bees?", "expectedAny": ["less pollination, fewer fruits/seeds"]},
-    {"question": "Give two ways animals help plants.", "expectedAny": ["pollination", "seed dispersal"]},
-    {"question": "Why are producers important?", "expectedAny": ["base of food chains, provide energy"]},
-    {"question": "Give an example of interdependence.", "expectedAny": ["bees and flowers", "birds and trees"]},
-    {"question": "Name one human action that helps and one that harms ecosystems.", "expectedAny": ["protect habitats", "pollution"]}
+    {"question": "Describe a simple food chain.", "expectedAny": ["grass → rabbit → fox → decomposers", "plant → herbivore → carnivore → decomposer", "algae → small fish → heron → bacteria"]},
+    {"question": "How do decomposers help ecosystems?", "expectedAny": ["recycle nutrients back to soil", "break down dead matter", "return nutrients plants can use"]},
+    {"question": "What would happen without bees?", "expectedAny": ["less pollination, fewer fruits/seeds", "many plants would decline", "less food for animals and people"]},
+    {"question": "Give two ways animals help plants.", "expectedAny": ["pollination", "seed dispersal", "spreading seeds in droppings"]},
+    {"question": "Why are producers important?", "expectedAny": ["base of food chains, provide energy", "make food from sunlight", "support all other organisms"]},
+    {"question": "Give an example of interdependence.", "expectedAny": ["bees and flowers", "birds and trees", "wolves and deer"]},
+    {"question": "Name one human action that helps and one that harms ecosystems.", "expectedAny": ["protect habitats and pollution", "plant trees and littering", "clean rivers and overfishing"]}
   ]
 }

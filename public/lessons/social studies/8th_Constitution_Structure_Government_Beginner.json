@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "8th_Constitution_Structure_Government_Beginner",
   "title": "Constitution and Structure of Government",
   "grade": "8th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "Constitution",
-      "definition": "The supreme law of the United States"
-    },
-    {
-      "term": "separation of powers",
-      "definition": "Dividing government power among three branches"
-    },
-    {
-      "term": "checks and balances",
-      "definition": "Each branch of government can limit the others' power"
-    },
-    {
-      "term": "legislative branch",
-      "definition": "The branch that makes laws (Congress)"
-    },
-    {
-      "term": "executive branch",
-      "definition": "The branch that enforces laws (President)"
-    }
+    {"term": "Constitution", "definition": "The supreme law of the United States"},
+    {"term": "separation of powers", "definition": "Dividing government power among three branches"},
+    {"term": "checks and balances", "definition": "Each branch of government can limit the others' power"},
+    {"term": "legislative branch", "definition": "The branch that makes laws (Congress)"},
+    {"term": "executive branch", "definition": "The branch that enforces laws (President)"}
   ],
   "teachingNotes": "Explain the three branches and their functions. Show how checks and balances prevent any branch from becoming too powerful.",
-  "sample": {
-    "question": "What is the supreme law of the United States?",
-    "expectedAny": [
-      "Constitution",
-      "U.S. Constitution",
-      "supreme law",
-      "founding document"
-    ]
-  },
-  "truefalse": {
-    "question": "The Constitution divides government power among three branches.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which branch makes laws?",
-    "expectedAny": [
-      "legislative branch",
-      "Congress",
-      "legislative",
-      "law-making branch"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Each branch limiting the others' power is called ________ and balances.",
-    "expectedAny": [
-      "checks",
-      "checking",
-      "control",
-      "limiting"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are the three branches of government?",
-    "expectedAny": [
-      "legislative, executive, judicial",
-      "Congress, President, Courts",
-      "law-making, enforcing, interpreting"
-    ]
-  }
+  "sample": [
+    {"question": "What is the supreme law of the United States?", "expectedAny": ["Constitution", "U.S. Constitution", "supreme law", "highest law", "founding document"]},
+    {"question": "What is separation of powers?", "expectedAny": ["dividing government power among three branches", "splitting power between branches", "power divided among branches", "power split", "dividing power"]},
+    {"question": "What are checks and balances?", "expectedAny": ["each branch can limit others' power", "branches limit each other", "system preventing too much power"]},
+    {"question": "Which branch makes laws?", "expectedAny": ["legislative branch", "Congress", "legislative"]},
+    {"question": "Which branch enforces laws?", "expectedAny": ["executive branch", "President", "executive"]},
+    {"question": "Which branch interprets laws?", "expectedAny": ["judicial branch", "courts", "Supreme Court"]},
+    {"question": "What is Congress?", "expectedAny": ["the legislative branch", "law-making branch", "body that makes laws"]},
+    {"question": "What does the President do?", "expectedAny": ["enforces laws", "leads executive branch", "carries out laws"]},
+    {"question": "Why divide government into three branches?", "expectedAny": ["prevent too much power", "balance power", "avoid tyranny"]},
+    {"question": "How many branches of government are there?", "expectedAny": ["three", "3", "three branches"]}
+  ],
+  "truefalse": [
+    {"question": "The Constitution divides government power among three branches. (True or False)", "correct": true},
+    {"question": "The Constitution is the supreme law of the United States. (True or False)", "correct": true},
+    {"question": "All government power belongs to one branch. (True or False)", "correct": false},
+    {"question": "Checks and balances prevent any branch from becoming too powerful. (True or False)", "correct": true},
+    {"question": "The legislative branch enforces laws. (True or False)", "correct": false},
+    {"question": "Congress is part of the legislative branch. (True or False)", "correct": true},
+    {"question": "The President is part of the executive branch. (True or False)", "correct": true},
+    {"question": "Separation of powers divides government into four branches. (True or False)", "correct": false},
+    {"question": "The judicial branch interprets laws. (True or False)", "correct": true},
+    {"question": "Each branch can limit the power of the other branches. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "Which branch makes laws?", "choices": [{"letter": "A", "text": "Executive"}, {"letter": "B", "text": "Legislative"}, {"letter": "C", "text": "Judicial"}, {"letter": "D", "text": "Administrative"}], "correct": "B"},
+    {"question": "What is the supreme law of the United States?", "choices": [{"letter": "A", "text": "Bill of Rights"}, {"letter": "B", "text": "Declaration of Independence"}, {"letter": "C", "text": "Constitution"}, {"letter": "D", "text": "Articles of Confederation"}], "correct": "C"},
+    {"question": "Which branch enforces laws?", "choices": [{"letter": "A", "text": "Legislative"}, {"letter": "B", "text": "Judicial"}, {"letter": "C", "text": "Executive"}, {"letter": "D", "text": "Congressional"}], "correct": "C"},
+    {"question": "What is the system that prevents any branch from becoming too powerful?", "choices": [{"letter": "A", "text": "Democracy"}, {"letter": "B", "text": "Checks and balances"}, {"letter": "C", "text": "Federalism"}, {"letter": "D", "text": "Republicanism"}], "correct": "B"},
+    {"question": "Which branch interprets laws?", "choices": [{"letter": "A", "text": "Executive"}, {"letter": "B", "text": "Legislative"}, {"letter": "C", "text": "Judicial"}, {"letter": "D", "text": "Presidential"}], "correct": "C"},
+    {"question": "What is Congress?", "choices": [{"letter": "A", "text": "The executive branch"}, {"letter": "B", "text": "The legislative branch"}, {"letter": "C", "text": "The judicial branch"}, {"letter": "D", "text": "The President's cabinet"}], "correct": "B"},
+    {"question": "How many branches of government does the Constitution create?", "choices": [{"letter": "A", "text": "Two"}, {"letter": "B", "text": "Three"}, {"letter": "C", "text": "Four"}, {"letter": "D", "text": "Five"}], "correct": "B"},
+    {"question": "What is separation of powers?", "choices": [{"letter": "A", "text": "Giving all power to one branch"}, {"letter": "B", "text": "Dividing power among three branches"}, {"letter": "C", "text": "Sharing power with states"}, {"letter": "D", "text": "Limiting voting rights"}], "correct": "B"},
+    {"question": "Who leads the executive branch?", "choices": [{"letter": "A", "text": "Congress"}, {"letter": "B", "text": "Supreme Court"}, {"letter": "C", "text": "President"}, {"letter": "D", "text": "Senate"}], "correct": "C"},
+    {"question": "What prevents one branch from having too much power?", "choices": [{"letter": "A", "text": "Elections"}, {"letter": "B", "text": "Checks and balances"}, {"letter": "C", "text": "Term limits"}, {"letter": "D", "text": "Amendments"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "Each branch limiting the others' power is called _____ and balances.", "expectedAny": ["checks"]},
+    {"question": "The supreme law of the United States is the _____.", "expectedAny": ["Constitution"]},
+    {"question": "Dividing government power among three branches is called _____ of powers.", "expectedAny": ["separation"]},
+    {"question": "The _____ branch makes laws.", "expectedAny": ["legislative"]},
+    {"question": "The _____ branch enforces laws.", "expectedAny": ["executive"]},
+    {"question": "The _____ branch interprets laws.", "expectedAny": ["judicial"]},
+    {"question": "_____ is the law-making body of the legislative branch.", "expectedAny": ["Congress"]},
+    {"question": "The _____ leads the executive branch.", "expectedAny": ["President"]},
+    {"question": "The government is divided into _____ branches.", "expectedAny": ["three", "3"]},
+    {"question": "Checks and _____ prevent any branch from becoming too powerful.", "expectedAny": ["balances"]}
+  ],
+  "shortanswer": [
+    {"question": "What are the three branches of government?", "keyTerms": ["legislative", "executive", "judicial"], "expectedAny": ["legislative, executive, judicial", "Congress, President, Courts", "law-making, enforcing, interpreting"]},
+    {"question": "Why is the Constitution important?", "keyTerms": ["supreme", "law", "government", "rights"], "expectedAny": ["It is the supreme law establishing government structure and protecting rights", "It establishes the government and guarantees freedoms", "It is the highest law defining how government works"]},
+    {"question": "How do checks and balances work?", "keyTerms": ["branch", "limit", "power", "prevent"], "expectedAny": ["Each branch can limit the power of the other branches", "Branches check each other to prevent too much power", "One branch can stop another from abusing power"]},
+    {"question": "What does the legislative branch do?", "keyTerms": ["makes", "laws", "Congress", "legislation"], "expectedAny": ["It makes laws through Congress", "Congress creates and passes laws", "The legislative branch writes and approves legislation"]},
+    {"question": "What does the executive branch do?", "keyTerms": ["enforces", "laws", "President", "carries out"], "expectedAny": ["It enforces laws through the President", "The President carries out and enforces laws", "The executive branch executes and enforces legislation"]},
+    {"question": "What does the judicial branch do?", "keyTerms": ["interprets", "laws", "courts", "decides"], "expectedAny": ["It interprets laws through the courts", "Courts decide what laws mean and if they are constitutional", "The judicial branch interprets and applies laws"]},
+    {"question": "Why did the founders separate government powers?", "keyTerms": ["prevent", "tyranny", "power", "abuse"], "expectedAny": ["To prevent tyranny and abuse of power", "To stop any one branch from having too much power", "To protect against government becoming too powerful"]},
+    {"question": "How does separation of powers protect freedom?", "keyTerms": ["divides", "power", "prevents", "control"], "expectedAny": ["It divides power so no one controls everything", "Separating powers prevents total control by one group", "Division of power stops abuse and protects rights"]},
+    {"question": "What is the role of Congress?", "keyTerms": ["legislative", "makes", "laws", "represents"], "expectedAny": ["Congress makes laws and represents the people", "It is the legislative body that creates laws", "Congress writes and passes legislation for the nation"]},
+    {"question": "How do the three branches work together?", "keyTerms": ["cooperate", "check", "balance", "govern"], "expectedAny": ["They cooperate while checking and balancing each other", "Branches work together but can limit each other's power", "They share governing responsibilities with built-in controls"]}
+  ]
 }

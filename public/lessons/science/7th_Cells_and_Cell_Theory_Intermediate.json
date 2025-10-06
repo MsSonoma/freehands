@@ -26,47 +26,64 @@
     }
   ],
   "teachingNotes": "Review the three parts of cell theory. Compare unicellular and multicellular organisms. Discuss how microscopes help us study cells.",
-  "sample": {
-    "question": "What scientific theory states that all living things are made of cells?",
-    "expectedAny": [
-      "cell theory",
-      "cellular theory",
-      "theory of cells",
-      "cell principle"
-    ]
-  },
-  "truefalse": {
-    "question": "All living things are made of at least one cell.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which organism is unicellular?",
-    "expectedAny": [
-      "bacteria",
-      "amoeba",
-      "paramecium",
-      "yeast"
-    ]
-  },
-  "fillintheblank": {
-    "question": "An organism made of many cells is called ________.",
-    "expectedAny": [
-      "multicellular",
-      "multi-cellular",
-      "many-celled",
-      "complex organism"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are the three main parts of cell theory?",
-    "expectedAny": [
-      "all living things are cells, cells are basic unit, cells come from cells",
-      "made of cells, basic unit of life, come from existing cells"
-    ]
-  }
+  "sample": [
+    { "question": "What scientific theory states that all living things are made of cells?", "expectedAny": ["cell theory"] },
+    { "question": "Which has one cell?", "choices": ["Unicellular", "Multicellular", "Complex", "Tissue"], "correct": 0, "expectedAny": ["unicellular"] },
+    { "question": "Many cells make an organism ________.", "expectedAny": ["multicellular"] },
+    { "question": "Cell structure with specific function is ________.", "expectedAny": ["organelle"] },
+    { "question": "Tool to see tiny things is ________.", "expectedAny": ["microscope"] },
+    { "question": "What says all life is cells?", "choices": ["Evolution", "Cell theory", "Genetics", "Ecology"], "correct": 1, "expectedAny": ["cell theory"] },
+    { "question": "One cell organism is ________.", "expectedAny": ["unicellular"] },
+    { "question": "Many cell organism is ________.", "expectedAny": ["multicellular"] },
+    { "question": "Which is inside cells?", "choices": ["Tissue", "Organelle", "System", "Organ"], "correct": 1, "expectedAny": ["organelle"] },
+    { "question": "Seeing small things needs a ________.", "expectedAny": ["microscope"] }
+  ],
+  "truefalse": [
+    { "question": "All living things are made of at least one cell.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Cells come from non-living things.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Unicellular means one cell.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Multicellular means one cell.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Microscopes help us see cells.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Cell theory says non-living things have cells.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Organelles are inside cells.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All organisms are multicellular.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Cells are basic units of life.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Cells can be seen without microscope.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which organism is unicellular?", "choices": ["Dog", "Bacteria", "Tree", "Human"], "correct": 1, "expectedAny": ["bacteria"] },
+    { "question": "What says all life is cells?", "choices": ["Evolution", "Cell theory", "Genetics", "Ecology"], "correct": 1, "expectedAny": ["cell theory"] },
+    { "question": "Which has one cell?", "choices": ["Unicellular", "Multicellular", "Complex", "Tissue"], "correct": 0, "expectedAny": ["unicellular"] },
+    { "question": "Which has many cells?", "choices": ["Bacteria", "Multicellular", "Virus", "Atom"], "correct": 1, "expectedAny": ["multicellular"] },
+    { "question": "What is inside cells?", "choices": ["Tissue", "Organelle", "System", "Organ"], "correct": 1, "expectedAny": ["organelle"] },
+    { "question": "What sees tiny things?", "choices": ["Telescope", "Microscope", "Binoculars", "Magnifier"], "correct": 1, "expectedAny": ["microscope"] },
+    { "question": "Which is multicellular?", "choices": ["Yeast", "Human", "Bacteria", "Amoeba"], "correct": 1, "expectedAny": ["human"] },
+    { "question": "What are basic units of life?", "choices": ["Atoms", "Cells", "Molecules", "Organs"], "correct": 1, "expectedAny": ["cells"] },
+    { "question": "Which is unicellular?", "choices": ["Plant", "Amoeba", "Animal", "Fungus"], "correct": 1, "expectedAny": ["amoeba"] },
+    { "question": "Where do cells come from?", "choices": ["Non-living things", "Other cells", "Air", "Water"], "correct": 1, "expectedAny": ["other cells"] }
+  ],
+  "fillintheblank": [
+    { "question": "An organism made of many cells is called ________.", "expectedAny": ["multicellular"] },
+    { "question": "________ theory says all life is made of cells.", "expectedAny": ["cell"] },
+    { "question": "An organism with one cell is ________.", "expectedAny": ["unicellular"] },
+    { "question": "A cell structure with a job is an ________.", "expectedAny": ["organelle"] },
+    { "question": "A ________ helps us see cells.", "expectedAny": ["microscope"] },
+    { "question": "________ are the basic units of life.", "expectedAny": ["cells"] },
+    { "question": "A ________ organism has one cell.", "expectedAny": ["unicellular"] },
+    { "question": "A ________ organism has many cells.", "expectedAny": ["multicellular"] },
+    { "question": "________ are structures inside cells.", "expectedAny": ["organelles"] },
+    { "question": "Cells come from other ________.", "expectedAny": ["cells"] }
+  ],
+  "shortanswer": [
+    { "question": "What are the three main parts of cell theory?", "expectedAny": ["all living things are cells, cells are basic unit, cells come from cells"] },
+    { "question": "What is cell theory?", "expectedAny": ["all living things made of cells", "theory about cells", "all life is cells", "basic theory about life"] },
+    { "question": "What is unicellular?", "expectedAny": ["one cell organism", "made of one cell", "single cell", "only one cell"] },
+    { "question": "What is multicellular?", "expectedAny": ["many cells organism", "made of many cells"] },
+    { "question": "What is an organelle?", "expectedAny": ["cell structure with function", "part inside cell", "cell part", "structure in cell"] },
+    { "question": "What is a microscope?", "expectedAny": ["tool to see small things", "device for viewing cells"] },
+    { "question": "Name a unicellular organism.", "expectedAny": ["bacteria", "amoeba", "yeast"] },
+    { "question": "Name a multicellular organism.", "expectedAny": ["human", "plant", "animal"] },
+    { "question": "Where do cells come from?", "expectedAny": ["other cells", "existing cells"] },
+    { "question": "What are basic units of life?", "expectedAny": ["cells"] }
+  ]
 }

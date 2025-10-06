@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "10th_Quadratic_Functions_Analysis_Advanced",
   "title": "Quadratic Functions: Analysis and Applications",
   "grade": "10th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "quadratic function",
-      "definition": "A function of the form f(x) = ax² + bx + c where a ≠ 0"
-    },
-    {
-      "term": "vertex",
-      "definition": "The highest or lowest point on a parabola"
-    },
-    {
-      "term": "discriminant",
-      "definition": "The expression b² - 4ac that determines the nature of the roots"
-    },
-    {
-      "term": "axis of symmetry",
-      "definition": "The vertical line that divides a parabola into two mirror images"
-    },
-    {
-      "term": "parabola",
-      "definition": "The U-shaped graph of a quadratic function"
-    }
+    {"term": "quadratic function", "definition": "A function of the form f(x) = ax + bx + c where a  0"},
+    {"term": "vertex", "definition": "The highest or lowest point on a parabola"},
+    {"term": "discriminant", "definition": "The expression b - 4ac that determines the nature of the roots"},
+    {"term": "axis of symmetry", "definition": "The vertical line that divides a parabola into two mirror images"},
+    {"term": "parabola", "definition": "The U-shaped graph of a quadratic function"}
   ],
   "teachingNotes": "Use graphing technology to explore transformations. Connect to real-world applications like projectile motion and optimization problems.",
-  "sample": {
-    "question": "What is a function of the form f(x) = ax² + bx + c called?",
-    "expectedAny": ["quadratic function", "quadratic", "second degree function", "parabolic function"]
-  },
-  "truefalse": {
-    "question": "If the discriminant is negative, the parabola has no x-intercepts.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What determines the nature of the roots in a quadratic equation?",
-    "expectedAny": ["discriminant", "b² - 4ac", "discriminant value", "b squared minus 4ac"]
-  },
-  "fillintheblank": {
-    "question": "The highest or lowest point on a parabola is called the ________.",
-    "expectedAny": ["vertex", "turning point", "extremum", "maximum or minimum"]
-  },
-  "shortanswer": {
-    "question": "How do you find the vertex of f(x) = 2x² - 8x + 3?",
-    "expectedAny": ["use x = -b/2a, then substitute", "x = 8/4 = 2, f(2) = -5", "vertex is (2, -5)"]
-  },
-  "wordProblems": {
-    "question": "A ball's height is h(t) = -16t² + 48t + 6. Find the maximum height.",
-    "expectedAny": ["42 feet", "vertex at t = 1.5, h = 42", "maximum is 42 feet", "42"]
-  }
+  "sample": [
+    {"question": "What is f(x) = ax + bx + c?", "expectedAny": ["quadratic function", "quadratic", "second degree", "quadratic equation", "second degree function", "degree two"]},
+    {"question": "What is highest or lowest point?", "expectedAny": ["vertex", "turning point", "extremum", "maximum", "minimum", "peak"]},
+    {"question": "What is b - 4ac?", "expectedAny": ["discriminant", "delta", "b squared minus 4ac", "b squared minus four ac", "determinant", "discriminant formula"]},
+    {"question": "What divides parabola equally?", "expectedAny": ["axis of symmetry", "vertical line", "symmetry line", "symmetry axis", "line of symmetry", "central line"]},
+    {"question": "What is U-shaped graph?", "expectedAny": ["parabola", "quadratic graph", "U-curve", "quadratic curve", "U-shape", "curved graph"]},
+    {"question": "What is second degree function?", "expectedAny": ["quadratic function", "quadratic", "second degree", "quadratic equation", "degree two", "second degree function"]},
+    {"question": "What is maximum or minimum?", "expectedAny": ["vertex", "extremum", "turning point", "peak", "highest point", "lowest point"]},
+    {"question": "What determines root nature?", "expectedAny": ["discriminant", "b - 4ac", "delta", "b squared minus 4ac", "determinant", "discriminant formula"]},
+    {"question": "What is vertical symmetry?", "expectedAny": ["axis of symmetry", "symmetry axis", "vertical line", "line of symmetry", "symmetry line", "central line"]},
+    {"question": "What graphs quadratic?", "expectedAny": ["parabola", "curve", "U-curve", "quadratic graph", "quadratic curve", "U-shape"]}
+  ],
+  "truefalse": [
+    {"question": "Quadratic has form ax + bx + c. (True or False)", "correct": true},
+    {"question": "Vertex is highest or lowest point. (True or False)", "correct": true},
+    {"question": "Discriminant is b + 4ac. (True or False)", "correct": false},
+    {"question": "Axis of symmetry divides parabola. (True or False)", "correct": true},
+    {"question": "Parabola is U-shaped. (True or False)", "correct": true},
+    {"question": "Quadratic has degree 2. (True or False)", "correct": true},
+    {"question": "If discriminant negative, no real roots. (True or False)", "correct": true},
+    {"question": "Vertex is on axis of symmetry. (True or False)", "correct": true},
+    {"question": "Parabola is linear. (True or False)", "correct": false},
+    {"question": "If a is negative, parabola opens down. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is ax + bx + c?", "choices": [{"letter": "A", "text": "Linear"}, {"letter": "B", "text": "Quadratic function"}, {"letter": "C", "text": "Cubic"}, {"letter": "D", "text": "Exponential"}], "correct": "B"},
+    {"question": "What is highest or lowest?", "choices": [{"letter": "A", "text": "Intercept"}, {"letter": "B", "text": "Vertex"}, {"letter": "C", "text": "Asymptote"}, {"letter": "D", "text": "Domain"}], "correct": "B"},
+    {"question": "What determines root nature?", "choices": [{"letter": "A", "text": "Vertex"}, {"letter": "B", "text": "Discriminant"}, {"letter": "C", "text": "Axis"}, {"letter": "D", "text": "Intercept"}], "correct": "B"},
+    {"question": "What divides parabola?", "choices": [{"letter": "A", "text": "Vertex"}, {"letter": "B", "text": "Axis of symmetry"}, {"letter": "C", "text": "Intercept"}, {"letter": "D", "text": "Asymptote"}], "correct": "B"},
+    {"question": "What is U-shaped?", "choices": [{"letter": "A", "text": "Line"}, {"letter": "B", "text": "Parabola"}, {"letter": "C", "text": "Circle"}, {"letter": "D", "text": "Hyperbola"}], "correct": "B"},
+    {"question": "What is second degree?", "choices": [{"letter": "A", "text": "Linear"}, {"letter": "B", "text": "Quadratic"}, {"letter": "C", "text": "Constant"}, {"letter": "D", "text": "Cubic"}], "correct": "B"},
+    {"question": "What is b - 4ac?", "choices": [{"letter": "A", "text": "Vertex"}, {"letter": "B", "text": "Discriminant"}, {"letter": "C", "text": "Axis"}, {"letter": "D", "text": "Sum"}], "correct": "B"},
+    {"question": "What is turning point?", "choices": [{"letter": "A", "text": "Intercept"}, {"letter": "B", "text": "Vertex"}, {"letter": "C", "text": "Asymptote"}, {"letter": "D", "text": "End"}], "correct": "B"},
+    {"question": "What is vertical line through vertex?", "choices": [{"letter": "A", "text": "Intercept"}, {"letter": "B", "text": "Axis of symmetry"}, {"letter": "C", "text": "Asymptote"}, {"letter": "D", "text": "Tangent"}], "correct": "B"},
+    {"question": "What graphs f(x) = x?", "choices": [{"letter": "A", "text": "Line"}, {"letter": "B", "text": "Parabola"}, {"letter": "C", "text": "Circle"}, {"letter": "D", "text": "Ellipse"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ function has form ax + bx + c.", "expectedAny": ["quadratic", "Quadratic"]},
+    {"question": "The _____ is highest or lowest point.", "expectedAny": ["vertex"]},
+    {"question": "The _____ is b - 4ac.", "expectedAny": ["discriminant"]},
+    {"question": "_____ of symmetry divides parabola.", "expectedAny": ["axis", "Axis"]},
+    {"question": "A _____ is U-shaped graph.", "expectedAny": ["parabola"]},
+    {"question": "_____ has degree 2.", "expectedAny": ["quadratic", "Quadratic"]},
+    {"question": "_____ determines root nature.", "expectedAny": ["discriminant", "Discriminant"]},
+    {"question": "Vertex is on _____ of symmetry.", "expectedAny": ["axis"]},
+    {"question": "_____ graph quadratic function.", "expectedAny": ["parabolas", "Parabolas"]},
+    {"question": "If a negative, opens _____.", "expectedAny": ["down", "downward"]}
+  ],
+  "shortanswer": [
+    {"question": "What is quadratic function?", "keyTerms": ["function", "form", "ax", "bx", "c", "a0"], "expectedAny": ["A function of the form f(x) = ax + bx + c where a  0", "Second degree function", "Polynomial degree 2"]},
+    {"question": "What is vertex?", "keyTerms": ["highest", "lowest", "point", "parabola"], "expectedAny": ["The highest or lowest point on a parabola", "Turning point", "Maximum or minimum"]},
+    {"question": "What is discriminant?", "keyTerms": ["expression", "b", "4ac", "determines", "nature", "roots"], "expectedAny": ["The expression b - 4ac that determines the nature of the roots", "Root determiner", "b squared minus 4ac"]},
+    {"question": "What is axis of symmetry?", "keyTerms": ["vertical", "line", "divides", "parabola", "mirror"], "expectedAny": ["The vertical line that divides a parabola into two mirror images", "Line of symmetry", "Vertical divider"]},
+    {"question": "What is parabola?", "keyTerms": ["U-shaped", "graph", "quadratic", "function"], "expectedAny": ["The U-shaped graph of a quadratic function", "Quadratic curve", "U-shaped curve"]},
+    {"question": "How find vertex?", "keyTerms": ["x", "-b/2a", "substitute"], "expectedAny": ["Use x = -b/2a, then substitute to find y", "x equals -b over 2a", "Formula -b/2a"]},
+    {"question": "What if discriminant positive?", "keyTerms": ["two", "real", "roots", "solutions"], "expectedAny": ["Two real roots or solutions", "Two x-intercepts", "Two real solutions"]},
+    {"question": "What if discriminant zero?", "keyTerms": ["one", "real", "root", "repeated"], "expectedAny": ["One real root or repeated root", "One x-intercept", "Double root"]},
+    {"question": "What if discriminant negative?", "keyTerms": ["no", "real", "roots", "complex"], "expectedAny": ["No real roots only complex", "No x-intercepts", "Complex solutions"]},
+    {"question": "What is axis of symmetry formula?", "keyTerms": ["x", "-b/2a"], "expectedAny": ["x = -b/2a", "x equals -b over 2a", "negative b over 2a"]}
+  ],
+  "wordProblems": [
+    {"question": "Ball height h(t) = -16t + 48t + 6. Find maximum height.", "keyTerms": ["42", "feet"], "expectedAny": ["42", "42 feet", "forty-two feet"]},
+    {"question": "For f(x) = 2x - 8x + 3, find vertex", "keyTerms": ["2", "-5"], "expectedAny": ["(2, -5)", "2 comma -5", "vertex at 2, -5"]},
+    {"question": "For f(x) = x - 6x + 5, find discriminant", "keyTerms": ["16"], "expectedAny": ["16", "sixteen", "b-4ac = 16"]},
+    {"question": "For f(x) = 3x + 12x - 7, find axis of symmetry", "keyTerms": ["x", "-2"], "expectedAny": ["x = -2", "x equals -2", "axis at -2"]},
+    {"question": "Garden length 2 feet more than width. Area 48 sq ft. Find width.", "keyTerms": ["6", "feet"], "expectedAny": ["6", "6 feet", "six feet"]},
+    {"question": "For f(x) = -x + 4x + 5, does parabola open up or down?", "keyTerms": ["down", "negative"], "expectedAny": ["down", "opens down", "downward"]},
+    {"question": "Rocket height h(t) = -5t + 30t. When does it hit ground?", "keyTerms": ["6", "seconds"], "expectedAny": ["6", "6 seconds", "t = 6"]},
+    {"question": "For f(x) = x + 4x + 4, how many x-intercepts?", "keyTerms": ["one", "1"], "expectedAny": ["one", "1", "one intercept"]},
+    {"question": "Rectangle perimeter 40, one side x. Area A(x) = x(20-x). Maximum area?", "keyTerms": ["100"], "expectedAny": ["100", "one hundred", "100 square units"]},
+    {"question": "For f(x) = 2x - 3x + 5, are roots real?", "keyTerms": ["no", "negative", "discriminant"], "expectedAny": ["no", "no real roots", "discriminant negative"]}
+  ]
 }

@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Use coordinate grids to practice transformations. Show how transformations preserve shape and size.",
-  "sample": {
-    "question": "What is moving a shape to a new position called?",
-    "expectedAny": ["transformation", "geometric transformation", "shape movement", "position change"]
-  },
-  "truefalse": {
-    "question": "Congruent shapes have the same size and shape.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What transformation slides a shape without rotating it?",
-    "expectedAny": ["translation", "slide", "shift", "moving"]
-  },
-  "fillintheblank": {
-    "question": "Flipping a shape over a line is called a ________.",
-    "expectedAny": ["reflection", "flip", "mirror", "reflection transformation"]
-  },
-  "shortanswer": {
-    "question": "What happens to the size of a shape during transformations?",
-    "expectedAny": ["stays the same", "doesn't change", "remains constant", "size preserved"]
-  },
-  "wordProblems": {
-    "question": "A triangle at (1,2), (3,2), (2,4) is translated 3 units right and 2 units up. What are the new coordinates of (1,2)?",
-    "expectedAny": ["(4,4)", "4,4", "(1+3, 2+2) = (4,4)", "four comma four"]
-  }
+  "sample": [
+    { "question": "What is moving a shape to a new position called?", "expectedAny": ["transformation"] },
+    { "question": "What slides without rotating?", "choices": ["Rotation", "Translation", "Reflection", "Nothing"], "correct": 1, "expectedAny": ["translation"] },
+    { "question": "Turning around fixed point is ________.", "expectedAny": ["rotation"] },
+    { "question": "Flipping over a line is ________.", "expectedAny": ["reflection"] },
+    { "question": "Same size and shape means ________.", "expectedAny": ["congruent"] },
+    { "question": "What is shape movement?", "choices": ["Static", "Transformation", "Nothing", "Random"], "correct": 1, "expectedAny": ["transformation"] },
+    { "question": "Sliding shape is ________.", "expectedAny": ["translation"] },
+    { "question": "What is turning?", "choices": ["Translation", "Rotation", "Reflection", "Nothing"], "correct": 1, "expectedAny": ["rotation"] },
+    { "question": "Mirror image is ________.", "expectedAny": ["reflection"] },
+    { "question": "Equal shapes are ________.", "expectedAny": ["congruent"] }
+  ],
+  "truefalse": [
+    { "question": "Congruent shapes have the same size and shape.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Translation rotates shape.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Rotation turns shape around point.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Reflection slides shape.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Transformations preserve size.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Congruent shapes can be different sizes.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Translation is sliding.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Rotation flips shape.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Reflection creates mirror image.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Transformations change shape.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What transformation slides a shape without rotating it?", "choices": ["Rotation", "Translation", "Reflection", "Nothing"], "correct": 1, "expectedAny": ["translation"] },
+    { "question": "What is shape movement?", "choices": ["Static", "Transformation", "Nothing", "Random"], "correct": 1, "expectedAny": ["transformation"] },
+    { "question": "What turns shape?", "choices": ["Translation", "Rotation", "Reflection", "Nothing"], "correct": 1, "expectedAny": ["rotation"] },
+    { "question": "What flips shape?", "choices": ["Translation", "Rotation", "Reflection", "Nothing"], "correct": 1, "expectedAny": ["reflection"] },
+    { "question": "Same size and shape?", "choices": ["Similar", "Congruent", "Different", "Unequal"], "correct": 1, "expectedAny": ["congruent"] },
+    { "question": "What preserves shape?", "choices": ["Nothing", "Transformation", "Destruction", "Random"], "correct": 1, "expectedAny": ["transformation"] },
+    { "question": "Sliding is?", "choices": ["Rotation", "Translation", "Reflection", "Nothing"], "correct": 1, "expectedAny": ["translation"] },
+    { "question": "Turning around point is?", "choices": ["Translation", "Rotation", "Reflection", "Nothing"], "correct": 1, "expectedAny": ["rotation"] },
+    { "question": "Mirror image is?", "choices": ["Translation", "Rotation", "Reflection", "Nothing"], "correct": 1, "expectedAny": ["reflection"] },
+    { "question": "Equal shapes are?", "choices": ["Similar", "Congruent", "Different", "Random"], "correct": 1, "expectedAny": ["congruent"] }
+  ],
+  "fillintheblank": [
+    { "question": "Flipping a shape over a line is called a ________.", "expectedAny": ["reflection"] },
+    { "question": "Moving shape to new position is ________.", "expectedAny": ["transformation"] },
+    { "question": "Sliding without rotating is ________.", "expectedAny": ["translation"] },
+    { "question": "Turning around fixed point is ________.", "expectedAny": ["rotation"] },
+    { "question": "Same size and shape is ________.", "expectedAny": ["congruent"] },
+    { "question": "Shape movement is ________.", "expectedAny": ["transformation"] },
+    { "question": "________ is sliding.", "expectedAny": ["translation"] },
+    { "question": "________ is turning.", "expectedAny": ["rotation"] },
+    { "question": "________ is flipping.", "expectedAny": ["reflection"] },
+    { "question": "Equal shapes are ________.", "expectedAny": ["congruent"] }
+  ],
+  "shortanswer": [
+    { "question": "What happens to the size of a shape during transformations?", "expectedAny": ["stays the same", "doesn't change"] },
+    { "question": "What is transformation?", "expectedAny": ["moving a shape to new position", "shape movement"] },
+    { "question": "What is translation?", "expectedAny": ["sliding a shape without rotating", "sliding movement", "slide", "moving without turning"] },
+    { "question": "What is rotation?", "expectedAny": ["turning a shape around fixed point", "turning movement", "turn", "spinning around point"] },
+    { "question": "What is reflection?", "expectedAny": ["flipping a shape over a line", "mirror image", "flip", "mirroring"] },
+    { "question": "What is congruent?", "expectedAny": ["same size and shape", "equal shapes"] },
+    { "question": "Do transformations change shape?", "expectedAny": ["no", "they preserve shape"] },
+    { "question": "What preserved in transformation?", "expectedAny": ["size and shape", "both size and shape"] },
+    { "question": "Difference between translation and rotation?", "expectedAny": ["translation slides, rotation turns", "sliding vs turning"] },
+    { "question": "Are transformed shapes congruent to original?", "expectedAny": ["yes", "they are congruent"] }
+  ],
+  "wordProblems": [
+    { "question": "A triangle at (1,2), (3,2), (2,4) is translated 3 units right and 2 units up. What are the new coordinates of (1,2)?", "expectedAny": ["(4,4)", "4,4"] },
+    { "question": "Point (2,3) translated 5 right, 1 up. New coordinates?", "expectedAny": ["(7,4)", "7,4"] },
+    { "question": "Square at (0,0), (2,0), (2,2), (0,2) translated 3 left. New position of (2,0)?", "expectedAny": ["(-1,0)", "-1,0"] },
+    { "question": "Point (4,5) translated 2 left, 3 down. New coordinates?", "expectedAny": ["(2,2)", "2,2"] },
+    { "question": "Rectangle vertices at (1,1), (4,1), (4,3), (1,3). Translate 2 up. New position of (1,1)?", "expectedAny": ["(1,3)", "1,3"] },
+    { "question": "Point (3,2) translated 4 right. New coordinates?", "expectedAny": ["(7,2)", "7,2"] },
+    { "question": "Shape at (5,6) translated 3 left, 2 up. New coordinates?", "expectedAny": ["(2,8)", "2,8"] },
+    { "question": "Point (0,4) translated 5 right, 1 down. New coordinates?", "expectedAny": ["(5,3)", "5,3"] },
+    { "question": "Triangle corner at (2,1) translated 1 left, 4 up. New coordinates?", "expectedAny": ["(1,5)", "1,5"] },
+    { "question": "Point (6,3) translated 2 right, 2 down. New coordinates?", "expectedAny": ["(8,1)", "8,1"] }
+  ]
 }

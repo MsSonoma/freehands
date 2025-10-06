@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Focus on the reasons people came to America and the challenges they faced. Emphasize the importance of cooperation in early settlements.",
-  "sample": {
-    "question": "What was the first permanent English settlement in America?",
-    "expectedAny": [
-      "Jamestown",
-      "Jamestown Virginia",
-      "Jamestown settlement",
-      "Virginia colony"
-    ]
-  },
-  "truefalse": {
-    "question": "The Pilgrims came to America seeking religious freedom.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What ship brought the Pilgrims to America?",
-    "expectedAny": [
-      "Mayflower",
-      "the Mayflower",
-      "Mayflower ship",
-      "Pilgrim ship Mayflower"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The ________ was an agreement made by the Pilgrims to govern themselves.",
-    "expectedAny": [
-      "Mayflower Compact",
-      "compact",
-      "Mayflower agreement",
-      "Pilgrim compact"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why did many people come to the American colonies?",
-    "expectedAny": [
-      "religious freedom",
-      "better life",
-      "escape persecution",
-      "new opportunities"
-    ]
-  }
+  "sample": [
+    { "question": "What was the first permanent English settlement in America?", "expectedAny": ["Jamestown", "Jamestown Virginia", "Jamestown settlement", "Virginia colony"] },
+    { "question": "What ship brought the Pilgrims to America?", "expectedAny": ["Mayflower", "the Mayflower"] },
+    { "question": "In what year did the Pilgrims land at Plymouth?", "expectedAny": ["1620"] },
+    { "question": "What document set rules for Pilgrim self-government?", "expectedAny": ["Mayflower Compact"] },
+    { "question": "Which colony was founded in 1607?", "expectedAny": ["Jamestown"] },
+    { "question": "Who helped the Pilgrims grow corn?", "expectedAny": ["Squanto", "Tisquantum"] },
+    { "question": "Which group came for religious freedom?", "expectedAny": ["Pilgrims", "Puritans"] },
+    { "question": "What was the tough first winter called for Plymouth settlers?", "expectedAny": ["Starving Time", "hard winter"] },
+    { "question": "What did colonists often trade with Native Americans?", "expectedAny": ["furs", "fur", "beaver pelts"] },
+    { "question": "What did colonists build to defend settlements?", "expectedAny": ["fort", "palisade"] }
+  ],
+  "truefalse": [
+    { "question": "The Pilgrims came to America seeking religious freedom.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Jamestown was founded after Plymouth.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The Mayflower Compact was a plan for self-government.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All colonists came for the same reason.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Early settlers faced sickness and food shortages.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Colonists never traded with Native Americans.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Plymouth is in present-day Massachusetts.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Jamestown grew tobacco as a cash crop.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The Mayflower Compact was signed in 1620.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The Pilgrims landed in 1607.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What ship brought the Pilgrims to America?", "choices": ["Santa Maria", "Mayflower", "Discovery", "Endeavour"], "correct": 1, "expectedAny": ["Mayflower"] },
+    { "question": "Which settlement was founded in 1607?", "choices": ["Plymouth", "Roanoke", "Jamestown", "St. Augustine"], "correct": 2, "expectedAny": ["Jamestown"] },
+    { "question": "Why did many colonists come to America?", "choices": ["to avoid work", "religious freedom and opportunity", "to join the army", "for cold weather"], "correct": 1, "expectedAny": ["religious freedom", "opportunity"] },
+    { "question": "What did the Mayflower Compact create?", "choices": ["a trade company", "a self-government agreement", "a new colony in Virginia", "a peace treaty with Spain"], "correct": 1, "expectedAny": ["self-government"] },
+    { "question": "Which Native American helped the Pilgrims farm?", "choices": ["Pocahontas", "Squanto", "Sitting Bull", "Tecumseh"], "correct": 1, "expectedAny": ["Squanto"] },
+    { "question": "What crop helped Jamestown succeed?", "choices": ["corn", "wheat", "tobacco", "rice"], "correct": 2, "expectedAny": ["tobacco"] },
+    { "question": "Which colony is associated with the 'Starving Time'?", "choices": ["Plymouth", "Jamestown", "New York", "Boston"], "correct": 1, "expectedAny": ["Jamestown"] },
+    { "question": "Which group sought religious freedom?", "choices": ["Pilgrims/Puritans", "Conquistadors", "Traders", "Explorers"], "correct": 0, "expectedAny": ["Pilgrims", "Puritans"] },
+    { "question": "What is a colony?", "choices": ["independent country", "settlement ruled by a distant nation", "temporary camp", "religious group"], "correct": 1, "expectedAny": ["settlement ruled by another country"] },
+    { "question": "Which document did the Pilgrims sign in 1620?", "choices": ["Bill of Rights", "Mayflower Compact", "Declaration of Independence", "Articles of Confederation"], "correct": 1, "expectedAny": ["Mayflower Compact"] }
+  ],
+  "fillintheblank": [
+    { "question": "A settlement ruled by another country is a ________.", "expectedAny": ["colony"] },
+    { "question": "The ________ Compact set rules for the Plymouth colony.", "expectedAny": ["Mayflower"] },
+    { "question": "The Pilgrims landed in ________ (year).", "expectedAny": ["1620"] },
+    { "question": "The first permanent English settlement was ________.", "expectedAny": ["Jamestown"] },
+    { "question": "________ helped the Pilgrims learn to plant corn.", "expectedAny": ["Squanto", "Tisquantum"] },
+    { "question": "Colonists traded ________ with Native Americans.", "expectedAny": ["furs", "fur", "beaver"] },
+    { "question": "A ________ is a defensive structure around a settlement.", "expectedAny": ["fort", "palisade"] },
+    { "question": "Some colonists came for ________ freedom.", "expectedAny": ["religious"] },
+    { "question": "Jamestown grew ________ as a cash crop.", "expectedAny": ["tobacco"] },
+    { "question": "Plymouth is in present-day ________.", "expectedAny": ["Massachusetts"] }
+  ],
+  "shortanswer": [
+    { "question": "Why did the Pilgrims create the Mayflower Compact?", "expectedAny": ["to govern themselves fairly", "rules for the colony"] },
+    { "question": "Name two challenges early settlers faced.", "expectedAny": ["harsh winters", "disease", "lack of food", "conflicts"] },
+    { "question": "How did trade with Native Americans help colonists?", "expectedAny": ["provided furs and knowledge", "support for survival"] },
+    { "question": "Why did some colonists come to America?", "expectedAny": ["religious freedom", "opportunity", "escape persecution"] },
+    { "question": "How did tobacco change Jamestown?", "expectedAny": ["cash crop profit", "economic success"] },
+    { "question": "What was the 'Starving Time'?", "expectedAny": ["period of hunger at Jamestown", "hard winter"] },
+    { "question": "How did geography affect early settlements?", "expectedAny": ["near water routes", "fertile land helped farming"] },
+    { "question": "Give an example of cooperation between colonists and Native Americans.", "expectedAny": ["Squanto taught farming", "trade", "peace treaties"] },
+    { "question": "What did the Pilgrims hope to find in the New World?", "expectedAny": ["freedom and opportunity"] },
+    { "question": "Why do we still learn about the Mayflower Compact?", "expectedAny": ["early self-government", "influenced democracy"] }
+  ]
 }

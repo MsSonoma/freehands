@@ -10,7 +10,9 @@
     {"term": "same", "definition": "Things that are alike or equal"},
     {"term": "different", "definition": "Things that are not alike"},
     {"term": "repeat", "definition": "To do something again in the same way"},
-    {"term": "group", "definition": "Things that belong together"}
+    {"term": "group", "definition": "Things that belong together"},
+    {"term": "sequence", "definition": "The order things come in"},
+    {"term": "next", "definition": "What comes after"}
   ],
   "teachingNotes": "Use colored blocks, beads, or shapes for pattern activities. Practice AB, ABB, ABC patterns. Sort by color, size, shape.",
   "sample": [
@@ -48,13 +50,13 @@
     {"question": "Things that are the _____ can be grouped together.", "expectedAny": ["same", "alike"]}
   ],
   "shortanswer": [
-    {"question": "Make a pattern using two colors. What would your pattern be?", "expectedAny": ["red, yellow, red, yellow", "blue, green, blue, green", "any two-color pattern"]},
-    {"question": "How would you sort a box of different buttons?", "expectedAny": ["by color", "by size", "by shape", "by number of holes"]},
-    {"question": "Create an ABB pattern using body movements.", "expectedAny": ["clap, stomp, stomp, clap, stomp, stomp"]},
-    {"question": "What's the difference between AB and ABC patterns?", "expectedAny": ["AB has 2 parts", "ABC has 3 parts", "ABC is longer"]},
-    {"question": "Name three ways you could sort toy cars.", "expectedAny": ["by color, size, type"]},
-    {"question": "Explain what makes something a pattern.", "expectedAny": ["repeats", "same order again", "predictable"]},
-    {"question": "How do patterns help us?", "expectedAny": ["predict what's next", "organize things", "make sense of world"]}
+    {"question": "Make a pattern using two colors. What would your pattern be?", "expectedAny": ["red, yellow, red, yellow", "blue, green, blue, green", "red, blue, red, blue", "red yellow red yellow", "ABAB", "red and yellow", "two colors over and over"]},
+  {"question": "How would you sort a box of different buttons?", "expectedAny": ["by color", "by size", "by shape", "by number of holes", "put same colors together", "put same sizes together", "match them up"]},
+    {"question": "Create an ABB pattern using body movements.", "expectedAny": ["clap, stomp, stomp, clap, stomp, stomp", "clap stomp stomp", "one clap two stomps", "ABB"]},
+    {"question": "What's the difference between AB and ABC patterns?", "expectedAny": ["AB has 2 parts", "ABC has 3 parts", "ABC is longer", "AB uses 2 things", "ABC uses 3 things", "one more in ABC"]},
+  {"question": "Name three ways you could sort toy cars.", "expectedAny": ["by color", "by size", "by type", "color size type", "how big they are", "what color", "what kind"]},
+  {"question": "Explain what makes something a pattern.", "expectedAny": ["repeats", "same order again", "predictable", "it repeats", "comes again", "starts over", "goes the same way", "keeps going"]},
+    {"question": "How do patterns help us?", "expectedAny": ["predict what's next", "organize things", "make sense of the world", "know what comes next", "see what's coming", "helps us learn", "keeps things neat"]}
   ],
   "wordProblems": [
     {"question": "You have 6 blocks. You put 4 blocks in the red group and 2 blocks in the blue group. Did you sort all your blocks?", "expectedAny": ["yes", "4 + 2 = 6, so all blocks are sorted"]},

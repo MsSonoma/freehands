@@ -23,52 +23,277 @@
     {
       "term": "main idea",
       "definition": "The most important point or message of a story"
+    },
+    {
+      "term": "theme",
+      "definition": "The message or lesson the story teaches"
+    },
+    {
+      "term": "conflict",
+      "definition": "The problem or challenge a character faces"
+    },
+    {
+      "term": "climax",
+      "definition": "The turning point or most exciting moment"
+    },
+    {
+      "term": "resolution",
+      "definition": "How the main problem is solved at the end"
+    },
+    {
+      "term": "exposition",
+      "definition": "The beginning that introduces the setting and characters"
+    },
+    {
+      "term": "rising action",
+      "definition": "Events that build up to the climax"
+    },
+    {
+      "term": "falling action",
+      "definition": "Events after the climax that lead to the end"
+    },
+    {
+      "term": "point of view",
+      "definition": "Who is telling the story (like first person)"
     }
   ],
   "teachingNotes": "Practice identifying story elements. Use graphic organizers to help students track characters, setting, and plot. Encourage students to make predictions while reading.",
-  "sample": {
-    "question": "What do we call stories that are made up or imagined?",
-    "expectedAny": [
-      "fiction",
-      "fictional stories",
-      "made-up stories",
-      "imaginary stories"
-    ]
-  },
-  "truefalse": {
-    "question": "The setting tells us when and where a story happens.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the sequence of events in a story called?",
-    "expectedAny": [
-      "plot",
-      "story plot",
-      "sequence of events",
-      "story events"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The most important point or message of a story is the ________ idea.",
-    "expectedAny": [
-      "main",
-      "central",
-      "primary",
-      "key"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are the three main parts of any story?",
-    "expectedAny": [
-      "beginning, middle, end",
-      "start, middle, finish",
-      "introduction, body, conclusion",
-      "opening, development, ending"
-    ]
-  }
+  "sample": [
+    {
+      "question": "What do we call stories that are made up or imagined?",
+      "expectedAny": ["fiction", "fictional stories", "made-up stories", "imaginary stories"]
+    },
+    {
+      "question": "Which story part introduces the characters and setting?",
+      "choices": ["Climax", "Beginning", "Resolution", "Theme"],
+      "correct": 1,
+      "expectedAny": ["beginning", "introduction"]
+    },
+    {
+      "question": "The setting tells us when and where a story happens.",
+      "expectedAny": ["true", "yes", "t", "correct"]
+    },
+    {
+      "question": "The sequence of events in a story is called the ________.",
+      "expectedAny": ["plot", "story plot", "sequence of events", "story events"]
+    },
+    {
+      "question": "Which is most likely a theme?",
+      "choices": ["Sunny day", "Be kind to others", "Red backpack", "Tall mountain"],
+      "correct": 1,
+      "expectedAny": ["be kind to others", "kindness"]
+    },
+    {
+      "question": "A problem the character faces is called a ________.",
+      "expectedAny": ["conflict", "problem", "challenge"]
+    },
+    {
+      "question": "Whose point of view uses words like 'I' and 'me'?",
+      "choices": ["Third person", "First person", "Second person", "Omniscient"],
+      "correct": 1,
+      "expectedAny": ["first person", "first-person", "1st person"]
+    },
+    {
+      "question": "The ending of the story where the conflict is solved is the ________.",
+      "expectedAny": ["resolution", "ending", "denouement"]
+    },
+    {
+      "question": "In a story, the time and place are called the ________.",
+      "expectedAny": ["setting", "the setting", "story setting"]
+    },
+    {
+      "question": "Which event usually comes last in a plot?",
+      "choices": ["Rising action", "Climax", "Exposition", "Resolution"],
+      "correct": 3,
+      "expectedAny": ["resolution", "ending"]
+    }
+  ],
+  "truefalse": [
+    {
+      "question": "The setting tells us when and where a story happens.",
+      "expectedAny": ["true", "yes", "t", "correct"]
+    },
+    {
+      "question": "The plot is the list of characters in a story.",
+      "expectedAny": ["false", "no", "f", "incorrect"]
+    },
+    {
+      "question": "A theme is a message or lesson in the story.",
+      "expectedAny": ["true", "yes", "t", "correct"]
+    },
+    {
+      "question": "First-person point of view uses 'he' and 'she' to tell the story.",
+      "expectedAny": ["false", "no", "f", "incorrect"]
+    },
+    {
+      "question": "Characters can be people, animals, or even objects in a story.",
+      "expectedAny": ["true", "yes", "t", "correct"]
+    },
+    {
+      "question": "The climax usually happens at the beginning of the story.",
+      "expectedAny": ["false", "no", "f", "incorrect"]
+    },
+    {
+      "question": "Dialogue is what characters say to each other.",
+      "expectedAny": ["true", "yes", "t", "correct"]
+    },
+    {
+      "question": "The resolution is where new problems are introduced.",
+      "expectedAny": ["false", "no", "f", "incorrect"]
+    },
+    {
+      "question": "Setting can include the time period, like 'long ago' or 'the future'.",
+      "expectedAny": ["true", "yes", "t", "correct"]
+    },
+    {
+      "question": "The main character is always the narrator.",
+      "expectedAny": ["false", "no", "f", "incorrect"]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "What is the sequence of events in a story called?",
+      "choices": ["Setting", "Plot", "Theme", "Character"],
+      "correct": 1,
+      "expectedAny": ["plot", "story plot", "sequence of events", "story events"]
+    },
+    {
+      "question": "Which pair best shows a character and a setting?",
+      "choices": ["Forest and night", "Brave firefighter and city", "Happy and sad", "Climax and resolution"],
+      "correct": 1,
+      "expectedAny": ["brave firefighter and city"]
+    },
+    {
+      "question": "Which event is most likely the climax?",
+      "choices": ["Characters are introduced", "The biggest problem is faced", "Loose ends are tied up", "Hints about the setting"],
+      "correct": 1,
+      "expectedAny": ["the biggest problem is faced", "turning point"]
+    },
+    {
+      "question": "Which sentence is in first-person point of view?",
+      "choices": ["She ran to the bus.", "They waited at the corner.", "I opened the old door.", "The crowd cheered loudly."],
+      "correct": 2,
+      "expectedAny": ["I opened the old door.", "first person"]
+    },
+    {
+      "question": "Which detail best shows the setting?",
+      "choices": ["A loud crash", "In a small village at sunset", "I felt nervous", "He solved the puzzle"],
+      "correct": 1,
+      "expectedAny": ["in a small village at sunset", "time and place"]
+    },
+    {
+      "question": "Which is most likely a theme?",
+      "choices": ["Purple jacket", "A lost map", "Friendship matters", "Three cookies"],
+      "correct": 2,
+      "expectedAny": ["friendship matters", "friendship"]
+    },
+    {
+      "question": "Which event comes after the climax?",
+      "choices": ["Exposition", "Rising action", "Falling action", "New characters"],
+      "correct": 2,
+      "expectedAny": ["falling action"]
+    },
+    {
+      "question": "Which detail reveals character traits?",
+      "choices": ["It was snowing.", "The clock chimed.", "She shared her lunch.", "The house was red."],
+      "correct": 2,
+      "expectedAny": ["she shared her lunch", "kind", "generous"]
+    },
+    {
+      "question": "Which sentence hints at a conflict?",
+      "choices": ["The field was empty.", "He forgot his lines before the play.", "Birds sat on the fence.", "The sun shone brightly."],
+      "correct": 1,
+      "expectedAny": ["forgot his lines", "problem"]
+    },
+    {
+      "question": "Which part of the plot usually introduces the setting and characters?",
+      "choices": ["Climax", "Resolution", "Exposition", "Falling action"],
+      "correct": 2,
+      "expectedAny": ["exposition"]
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "The most important point or message of a story is the ________ idea.",
+      "expectedAny": ["main", "central", "primary", "key", "principal", "main idea"]
+    },
+    {
+      "question": "The person or animal in a story is a ________.",
+      "expectedAny": ["character", "person", "animal", "figure"]
+    },
+    {
+      "question": "The time and place of a story is the ________.",
+      "expectedAny": ["setting", "the setting", "story setting", "time and place"]
+    },
+    {
+      "question": "The turning point of the story is the ________.",
+      "expectedAny": ["climax", "the climax", "turning point"]
+    },
+    {
+      "question": "After the climax comes the ________ action.",
+      "expectedAny": ["falling", "falling action", "events after climax", "the falling action"]
+    },
+    {
+      "question": "The problem in the story is the ________.",
+      "expectedAny": ["conflict", "problem", "struggle"]
+    },
+    {
+      "question": "The end of the story is the ________.",
+      "expectedAny": ["resolution", "the resolution", "ending", "denouement", "solution"]
+    },
+    {
+      "question": "The events that build up to the climax are the ________ action.",
+      "expectedAny": ["rising", "rising action", "events leading up", "build-up"]
+    },
+    {
+      "question": "A lesson or message in a story is the ________.",
+      "expectedAny": ["theme", "message", "lesson", "moral"]
+    },
+    {
+      "question": "The beginning that introduces the setting and characters is the ________.",
+      "expectedAny": ["exposition", "beginning", "introduction", "intro"]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "What are the three main parts of any story?",
+      "expectedAny": ["beginning, middle, end", "start, middle, finish", "introduction, body, conclusion", "opening, development, ending", "start middle end"]
+    },
+    {
+      "question": "Name one detail that tells you the setting of a story.",
+      "expectedAny": ["time", "place", "time of day", "location", "season", "year", "weather"]
+    },
+    {
+      "question": "Give one example of a theme you might find in a story.",
+      "expectedAny": ["friendship", "honesty", "kindness", "courage", "perseverance", "responsibility"]
+    },
+    {
+      "question": "How can you tell a story is in first person?",
+      "expectedAny": ["uses I and me", "I/me words", "narrator says I", "uses I/me/my", "narrator is a character"]
+    },
+    {
+      "question": "What kind of problem might a character face in a school story?",
+      "expectedAny": ["lost homework", "nervous about a test", "argument with a friend", "missed bus", "late to class", "forgot locker combination"]
+    },
+    {
+      "question": "What does the climax usually feel like in a story?",
+      "expectedAny": ["most exciting", "biggest moment", "turning point", "most intense", "highest tension"]
+    },
+    {
+      "question": "Name one way an author shows a character is kind.",
+      "expectedAny": ["helps others", "shares", "speaks politely", "gives support", "helps classmates", "is generous"]
+    },
+    {
+      "question": "Give one clue that tells you the setting is in the past.",
+      "expectedAny": ["old-fashioned objects", "historical words", "long ago", "no modern technology", "no phones", "horse-drawn carriage"]
+    },
+    {
+      "question": "What is one question you can ask yourself to find the theme?",
+      "expectedAny": ["what did the character learn", "what lesson", "what message", "how did the character change", "what is the big idea"]
+    },
+    {
+      "question": "Name one detail that might appear in the resolution.",
+      "expectedAny": ["problem solved", "characters feel better", "story ends", "loose ends tied up", "solution found", "plan works"]
+    }
+  ]
 }

@@ -21,6 +21,14 @@
       "definition": "A flat surface on a 3D shape"
     },
     {
+      "term": "cube",
+      "definition": "A 3D shape with 6 equal square faces"
+    },
+    {
+      "term": "rectangular prism",
+      "definition": "A 3D box shape with rectangular faces"
+    },
+    {
       "term": "symmetry",
       "definition": "When one half of a shape matches the other half exactly"
     }
@@ -56,20 +64,20 @@
   "fillintheblank": [
     {"question": "A shape has ________ if you can fold it in half and both sides match exactly.", "expectedAny": ["symmetry", "line symmetry", "mirror symmetry", "balanced sides"]},
     {"question": "The straight sides of a polygon are called ________.", "expectedAny": ["edges", "sides"]},
-    {"question": "The corner point of a shape is a ________.", "expectedAny": ["vertex"]},
-    {"question": "A 3D shape with 6 equal square faces is a ________.", "expectedAny": ["cube"]},
-    {"question": "A shape with 5 sides is a ________.", "expectedAny": ["pentagon"]},
-    {"question": "A flat surface on a 3D shape is called a ________.", "expectedAny": ["face"]},
-    {"question": "A triangle has ________ sides.", "expectedAny": ["3"]}
+    {"question": "The corner point of a shape is a ________.", "expectedAny": ["vertex", "corner"]},
+    {"question": "A 3D shape with 6 equal square faces is a ________.", "expectedAny": ["cube", "regular hexahedron"]},
+    {"question": "A shape with 5 sides is a ________.", "expectedAny": ["pentagon", "5-gon"]},
+    {"question": "A flat surface on a 3D shape is called a ________.", "expectedAny": ["face", "flat face"]},
+    {"question": "A triangle has ________ sides.", "expectedAny": ["3", "three"]}
   ],
   "shortanswer": [
     {"question": "What is the difference between a 2D and 3D shape?", "expectedAny": ["2D is flat, 3D is solid", "3D has depth", "2D has no thickness", "3D shapes are solid"]},
-    {"question": "How can you check if a shape has a line of symmetry?", "expectedAny": ["fold it to see if halves match", "use a mirror"]},
-    {"question": "Name two shapes that have 4 sides.", "expectedAny": ["square and rectangle", "rhombus and square"]},
-    {"question": "How are a cube and a rectangular prism alike?", "expectedAny": ["both have faces, edges, vertices"]},
-    {"question": "How are a cube and a rectangular prism different?", "expectedAny": ["cube has all equal faces; rectangular prism does not"]},
-    {"question": "Describe a shape with 3 sides and 3 vertices.", "expectedAny": ["triangle"]},
-    {"question": "Give an example of a real-world object shaped like a cylinder.", "expectedAny": ["can", "paper towel roll"]}
+    {"question": "How can you check if a shape has a line of symmetry?", "expectedAny": ["fold it to see if halves match", "use a mirror", "draw a line to see matching halves"]},
+    {"question": "Name two shapes that have 4 sides.", "expectedAny": ["square and rectangle", "rhombus and square", "kite and rectangle"]},
+    {"question": "How are a cube and a rectangular prism alike?", "expectedAny": ["both have faces, edges, vertices", "both are prisms with flat faces", "both have 8 vertices and 12 edges"]},
+    {"question": "How are a cube and a rectangular prism different?", "expectedAny": ["cube has all equal faces; rectangular prism does not", "cube faces are squares; rectangular prism faces can be rectangles", "cube is a special rectangular prism with equal edges"]},
+    {"question": "Describe a shape with 3 sides and 3 vertices.", "expectedAny": ["triangle", "a triangle shape", "three-sided polygon"]},
+    {"question": "Give an example of a real-world object shaped like a cylinder.", "expectedAny": ["can", "paper towel roll", "soup can"]}
   ],
   "wordProblems": [
     {"question": "If you have 3 triangles and each triangle has 3 vertices, how many vertices are there in total?", "expectedAny": ["9", "9 vertices", "nine", "nine vertices"]},

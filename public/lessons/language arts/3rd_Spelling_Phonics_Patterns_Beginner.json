@@ -5,22 +5,17 @@
   "difficulty": "Beginner",
   "featured": false,
   "vocab": [
-    {
-      "term": "phonics",
-      "definition": "The relationship between letters and the sounds they make"
-    },
-    {
-      "term": "pattern",
-      "definition": "A repeated way that letters work together to make sounds"
-    },
-    {
-      "term": "syllable",
-      "definition": "A part of a word that has one vowel sound"
-    },
-    {
-      "term": "silent letter",
-      "definition": "A letter in a word that you don't say when speaking"
-    }
+    {"word": "phonics", "kid_friendly_definition": "The relationship between letters and the sounds they make."},
+    {"word": "pattern", "kid_friendly_definition": "A repeated way that letters work together to make sounds."},
+    {"word": "syllable", "kid_friendly_definition": "A part of a word that has one vowel sound."},
+    {"word": "silent letter", "kid_friendly_definition": "A letter in a word that you don't say when speaking."},
+    {"word": "rhyme", "kid_friendly_definition": "Words that end with the same sound."},
+    {"word": "word family", "kid_friendly_definition": "A group of words that share an ending pattern like -ight or -ake."},
+    {"word": "vowel team", "kid_friendly_definition": "Two vowels together that make one sound, like ai or ea."},
+    {"word": "blend", "kid_friendly_definition": "Two or more consonants that blend their sounds together, like bl in blue."},
+    {"word": "digraph", "kid_friendly_definition": "Two letters that make one sound, like sh or ch."},
+    {"word": "long vowel", "kid_friendly_definition": "A vowel that says its name, like the a in cake."},
+    {"word": "short vowel", "kid_friendly_definition": "A vowel with a quick sound, like the a in cat."}
   ],
   "teachingNotes": "Use word families and common spelling patterns. Practice clapping syllables. Create word walls with pattern examples.",
   "sample": {
@@ -28,7 +23,9 @@
     "expectedAny": [
       "3",
       "three",
-      "el-e-phant"
+      "el-e-phant",
+      "3 syllables",
+      "three syllables"
     ]
   },
   "truefalse": [
@@ -36,7 +33,12 @@
       "question": "Words that rhyme often have the same spelling pattern at the end.",
       "answer": true,
       "expectedAny": [
-        "rhyming words often share ending patterns like -ight, -ay, -ack"
+        "rhyming words often share ending patterns like -ight, -ay, -ack",
+        "true",
+        "t",
+        "yes",
+        "y",
+        "correct"
       ]
     }
   ],
@@ -51,7 +53,12 @@
       ],
       "correct": 1,
       "expectedAny": [
-        "light has the same -ight pattern as night"
+        "light has the same -ight pattern as night",
+        "b",
+        "B",
+        "2",
+        "light",
+        "same -ight pattern"
       ]
     }
   ],
@@ -59,7 +66,10 @@
     {
       "question": "In the word 'knee,' the letter 'k' is _____ because you don't say it.",
       "expectedAny": [
-        "silent"
+        "silent",
+        "a silent letter",
+        "not pronounced",
+        "silent letter"
       ]
     }
   ],
@@ -70,8 +80,16 @@
         "sound it out",
         "look for patterns",
         "break into syllables",
+        "clap the syllables",
         "think of similar words",
-        "use spelling rules"
+        "use spelling rules",
+        "use a word family",
+        "try a vowel team like ai or ea",
+        "check the dictionary",
+        "ask for help and then learn the pattern",
+        "try different ways",
+        "guess and check",
+        "listen to the sounds"
       ]
     }
   ]

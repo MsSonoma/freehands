@@ -5,31 +5,28 @@
   "difficulty": "Beginner",
   "featured": false,
   "vocab": [
-    {
-      "term": "comprehension",
-      "definition": "Understanding what you read"
-    },
-    {
-      "term": "main idea",
-      "definition": "The most important point in a story or paragraph"
-    },
-    {
-      "term": "detail",
-      "definition": "Small pieces of information that support the main idea"
-    },
-    {
-      "term": "prediction",
-      "definition": "A guess about what might happen next in a story"
-    }
+    {"word": "comprehension", "kid_friendly_definition": "Understanding what you read."},
+    {"word": "main idea", "kid_friendly_definition": "The most important point in a story or paragraph."},
+    {"word": "detail", "kid_friendly_definition": "Small pieces of information that support the main idea."},
+    {"word": "prediction", "kid_friendly_definition": "A guess about what might happen next in a story."},
+    {"word": "context clues", "kid_friendly_definition": "Hints in the words and sentences around an unknown word that help you figure out its meaning."},
+    {"word": "visualize", "kid_friendly_definition": "To make a picture in your mind while reading."},
+    {"word": "summarize", "kid_friendly_definition": "To tell the main points in a short way."},
+    {"word": "question", "kid_friendly_definition": "Asking who, what, when, where, why, or how while you read."}
   ],
   "teachingNotes": "Use simple stories and picture books. Practice asking 'who, what, when, where, why' questions. Model thinking aloud while reading.",
   "sample": {
     "question": "What should you do if you don't understand a word while reading?",
     "expectedAny": [
       "look for clues in the sentence",
+      "use context clues",
       "ask for help",
+      "ask a teacher",
       "look it up",
-      "try to sound it out"
+      "use a dictionary",
+      "reread the sentence",
+      "try to sound it out",
+      "break the word into parts"
     ]
   },
   "truefalse": [
@@ -37,6 +34,10 @@
       "question": "Good readers think about what they're reading as they read.",
       "answer": true,
       "expectedAny": [
+        "true",
+        "yes",
+        "t",
+        "correct",
         "active reading involves thinking about the text"
       ]
     }
@@ -52,6 +53,11 @@
       ],
       "correct": 2,
       "expectedAny": [
+        "a dog helps a cat",
+        "the dog helps the cat",
+        "dog helps cat",
+        "dog saves the cat",
+        "the dog rescues a cat",
         "the main action is the dog helping the cat"
       ]
     }
@@ -60,7 +66,11 @@
     {
       "question": "Before you read a story, you can look at the pictures to make a _____ about what might happen.",
       "expectedAny": [
-        "prediction"
+        "prediction",
+        "a prediction",
+        "educated guess",
+        "good guess",
+        "smart guess"
       ]
     }
   ],
@@ -72,7 +82,13 @@
         "ask questions",
         "look at pictures",
         "reread parts",
-        "think about the story"
+        "think about the story",
+        "use context clues",
+        "summarize what you read",
+        "identify the main idea",
+        "pay attention to key details",
+        "make predictions",
+        "visualize the story"
       ]
     }
   ]

@@ -59,7 +59,8 @@
     {
       "question": "To follow directions well, you need to _____ carefully.",
       "expectedAny": [
-        "listen"
+        "listen",
+        "pay attention"
       ]
     }
   ],

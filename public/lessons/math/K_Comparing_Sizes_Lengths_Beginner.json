@@ -48,13 +48,13 @@
     {"question": "A snake is _____ and thin.", "expectedAny": ["long", "very long"]}
   ],
   "shortanswer": [
-    {"question": "Name something that is shorter than you.", "expectedAny": ["chair", "table", "dog", "cat", "book"]},
-    {"question": "What is the biggest thing you can see right now?", "expectedAny": ["room", "building", "tree", "any large object"]},
+    {"question": "Name something that is shorter than you.", "expectedAny": ["chair", "book", "dog"]},
+    {"question": "What is the biggest thing you can see right now?", "expectedAny": ["room", "building", "tree"]},
     {"question": "Name two things that are about the same size.", "expectedAny": ["two books", "two chairs", "two apples"]},
-    {"question": "What is longer: your arm or your leg?", "expectedAny": ["leg", "legs are longer", "depends on person"]},
-    {"question": "Find something wider than it is tall.", "expectedAny": ["table", "book lying flat", "paper"]},
-    {"question": "Name the smallest thing in your backpack.", "expectedAny": ["eraser", "paperclip", "coin", "small item"]},
-    {"question": "What's the difference between big and tall?", "expectedAny": ["big is overall size", "tall is height", "different directions"]}
+  {"question": "What is longer: your arm or your leg?", "expectedAny": ["leg", "the leg is longer", "legs are longer"]},
+  {"question": "Find something wider than it is tall.", "expectedAny": ["table", "book", "paper"]},
+  {"question": "Name the smallest thing in your backpack.", "expectedAny": ["eraser", "paperclip", "coin"]},
+    {"question": "What's the difference between big and tall?", "expectedAny": ["big is overall size", "tall is height", "tall means height"]}
   ],
   "wordProblems": [
     {"question": "Tom has a short rope and a long rope. If the short rope is 2 feet and the long rope is 5 feet, which rope is longer?", "expectedAny": ["long rope", "5 feet is longer than 2 feet"]},

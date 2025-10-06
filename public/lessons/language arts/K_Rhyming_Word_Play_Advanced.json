@@ -10,6 +10,10 @@
       "definition": "Words that end with the same sound, like cat and hat"
     },
     {
+      "term": "rhyming",
+      "definition": "Using words that end with the same sound"
+    },
+    {
       "term": "word",
       "definition": "A group of sounds or letters that means something"
     },
@@ -20,6 +24,10 @@
     {
       "term": "poem",
       "definition": "Words that often rhyme and have a rhythm"
+    },
+    {
+      "term": "song",
+      "definition": "Music with words; songs can have rhymes"
     }
   ],
   "teachingNotes": "Use nursery rhymes and simple poems. Practice clapping syllables. Create class rhymes and word families.",
@@ -27,7 +35,7 @@
     {"question": "What word rhymes with 'cat'?", "expectedAny": ["hat", "bat", "mat", "rat", "sat"]},
     {"question": "Complete this rhyme: 'I like to play every _____'", "expectedAny": ["day"]},
     {"question": "What rhymes with 'moon' in the sky?", "expectedAny": ["spoon", "tune", "soon"]},
-    {"question": "Make up a word that sounds like 'king'.", "expectedAny": ["ring", "sing", "wing", "thing"]},
+  {"question": "Which word rhymes with 'king'?", "expectedAny": ["ring", "sing", "wing", "thing"]},
     {"question": "What word can rhyme with 'house'?", "expectedAny": ["mouse", "spouse"]}
   ],
   "truefalse": [
@@ -58,13 +66,11 @@
     {"question": "Row, row, row your boat gently down the _____.", "expectedAny": ["stream"]}
   ],
   "shortanswer": [
-    {"question": "Can you make up two words that rhyme?", "expectedAny": ["any two rhyming words", "bee-tree", "sun-fun", "car-star"]},
-    {"question": "What's your favorite nursery rhyme and why?", "expectedAny": ["varies by student preference"]},
-    {"question": "Create a silly sentence using words that rhyme.", "expectedAny": ["The cat wore a hat", "I see a bee in the tree"]},
-    {"question": "Name three words that rhyme with 'play'.", "expectedAny": ["day, say, way", "may, bay, hay"]},
-    {"question": "How do rhymes make stories more fun?", "expectedAny": ["they sound nice", "easy to remember", "fun to say"]},
-    {"question": "What rhyming words can you find in your favorite song?", "expectedAny": ["varies by song choice"]},
-    {"question": "Make up a short poem with two rhyming lines.", "expectedAny": ["simple two-line rhyming poems"]}
+    {"question": "Say two words that rhyme.", "expectedAny": ["bee tree", "sun fun", "car star", "cat hat", "dog log", "rain train"]},
+    {"question": "Make a sentence with two rhyming words.", "expectedAny": ["The cat wore a hat", "I see a bee in the tree", "The dog sat on a log"]},
+    {"question": "Name three words that rhyme with 'play'.", "expectedAny": ["day, say, way", "may, bay, hay", "clay, tray, gray"]},
+    {"question": "What do words do when they rhyme?", "expectedAny": ["they end with the same sound", "same ending sound"]},
+    {"question": "Which word rhymes with 'blue'?", "expectedAny": ["glue", "clue", "blew"]}
   ],
   "wordProblems": [
     {"question": "In 'Jack and Jill', there are 2 rhyming words: 'hill' and 'Jill'. If you add 2 more words that rhyme with them, how many rhyming words do you have?", "expectedAny": ["4 words", "2 + 2 = 4"]},

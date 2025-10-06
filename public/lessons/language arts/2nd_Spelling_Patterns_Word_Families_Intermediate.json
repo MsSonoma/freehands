@@ -8,7 +8,9 @@
     { "term": "word family", "definition": "A group of words that end with the same sounds and letters" },
     { "term": "rhyme", "definition": "Words that end with the same sound" },
     { "term": "consonant", "definition": "Letters that are not vowels (like b, c, d, f, g)" },
-    { "term": "vowel", "definition": "The letters a, e, i, o, u (and sometimes y)" }
+    { "term": "vowel", "definition": "The letters a, e, i, o, u (and sometimes y)" },
+    { "term": "spelling", "definition": "How letters go in order to write a word" },
+    { "term": "helps", "definition": "Makes something easier" }
   ],
   "teachingNotes": "Focus on common word families like -at, -an, -ing, -ed endings. Use word sorts and pattern activities. Help students recognize spelling patterns to decode new words and improve spelling accuracy.",
   "sample": [
@@ -40,20 +42,20 @@
   ],
   "fillintheblank": [
     { "question": "Cat, bat, and hat all belong to the ________ word family.", "expectedAny": ["-at", "at", "at family", "at word family"] },
-    { "question": "Words that end with the same sound are called ________ words.", "expectedAny": ["rhyming"] },
-    { "question": "The letters a, e, i, o, u are ________.", "expectedAny": ["vowels"] },
-    { "question": "B, c, d, f, and g are ________.", "expectedAny": ["consonants"] },
-    { "question": "'Turn' becomes 'turning' when we add ________.", "expectedAny": ["-ing"] },
-    { "question": "'Play' becomes 'played' when we add ________.", "expectedAny": ["-ed"] },
-    { "question": "Dog, fog, and log are in the ________ family.", "expectedAny": ["-og"] }
+    { "question": "Words that end with the same sound are called ________ words.", "expectedAny": ["rhyming", "rhymes"] },
+    { "question": "The letters a, e, i, o, u are ________.", "expectedAny": ["vowels", "vowel letters"] },
+    { "question": "B, c, d, f, and g are ________.", "expectedAny": ["consonants", "consonant letters"] },
+    { "question": "'Turn' becomes 'turning' when we add ________.", "expectedAny": ["-ing", "ing"] },
+    { "question": "'Play' becomes 'played' when we add ________.", "expectedAny": ["-ed", "ed"] },
+    { "question": "Dog, fog, and log are in the ________ family.", "expectedAny": ["-og", "og"] }
   ],
   "shortanswer": [
-    { "question": "Name three words that rhyme with 'king'.", "expectedAny": ["ring, sing, wing", "any three -ing words", "ring sing thing", "words ending in -ing"] },
+    { "question": "Name three words that rhyme with 'king'.", "expectedAny": ["ring, sing, wing", "ring sing thing", "bring swing string"] },
     { "question": "List two words that rhyme with 'cake'.", "expectedAny": ["bake", "lake", "make", "rake"] },
     { "question": "Name two words that use the -ed ending.", "expectedAny": ["jumped", "walked", "played"] },
     { "question": "Name two words in the -it family.", "expectedAny": ["sit", "fit", "kit"] },
     { "question": "Write one word in the -un family.", "expectedAny": ["sun", "fun", "run"] },
-    { "question": "Explain how knowing patterns helps with spelling.", "expectedAny": ["you know the ending", "repeatable spelling parts"] },
+    { "question": "Explain how knowing patterns helps with spelling.", "expectedAny": ["you know the ending", "repeatable spelling parts", "helps remember how to write words"] },
     { "question": "Give a pair of words that rhyme.", "expectedAny": ["boat/goat", "fish/dish", "moon/spoon"] }
   ]
 }

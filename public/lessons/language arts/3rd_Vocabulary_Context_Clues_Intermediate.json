@@ -20,6 +20,10 @@
     {
       "term": "synonym",
       "definition": "A word that means the same or almost the same as another word"
+    },
+    {
+      "term": "antonym",
+      "definition": "A word that means the opposite of another word"
     }
   ],
   "teachingNotes": "Practice using context clues in real texts. Create vocabulary journals. Use graphic organizers for new words.",
@@ -29,7 +33,9 @@
       "very big",
       "huge",
       "large",
-      "giant"
+      "giant",
+      "really big",
+      "very large"
     ]
   },
   "truefalse": [
@@ -37,6 +43,10 @@
       "question": "Context clues can help you understand words you've never seen before.",
       "answer": true,
       "expectedAny": [
+        "true",
+        "yes",
+        "t",
+        "correct",
         "surrounding words provide hints about unknown word meanings"
       ]
     }
@@ -52,7 +62,10 @@
       ],
       "correct": 1,
       "expectedAny": [
-        "happy and glad mean the same thing"
+        "happy and glad",
+        "happy and glad mean the same thing",
+        "they mean the same thing",
+        "they are synonyms"
       ]
     }
   ],
@@ -60,7 +73,12 @@
     {
       "question": "When you come to a word you don't know, look at the other words around it for _____ _____.",
       "expectedAny": [
-        "context clues"
+        "context clues",
+        "clues in the sentence",
+        "clues around the word",
+        "text clues",
+        "context",
+        "the context"
       ]
     }
   ],
@@ -72,7 +90,17 @@
         "look in dictionary",
         "ask someone",
         "break word into parts",
-        "look at pictures"
+        "look at pictures",
+        "use a synonym",
+        "look for an opposite word (antonym)",
+        "reread the sentence",
+        "use the glossary",
+        "I figured out from context",
+        "the clues showed me",
+        "context helped me understand",
+        "look at nearby words",
+        "check the definition",
+        "figure it out from the sentence"
       ]
     }
   ]

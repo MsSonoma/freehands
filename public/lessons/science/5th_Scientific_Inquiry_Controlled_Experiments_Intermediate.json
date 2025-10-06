@@ -21,54 +21,89 @@
       "definition": "The group in an experiment that doesn't receive the treatment"
     },
     {
+      "term": "controlled variable",
+      "definition": "A factor kept the same across all groups"
+    },
+    {
       "term": "data analysis",
       "definition": "Examining and interpreting the results of an experiment"
+    },
+    {
+      "term": "bias",
+      "definition": "An unfair leaning that can affect results"
+    },
+    {
+      "term": "trial",
+      "definition": "One complete run of an experiment"
+    },
+    {
+      "term": "replicate",
+      "definition": "Repeat of an experiment to check reliability"
+    },
+    {
+      "term": "fair test",
+      "definition": "An experiment where only the independent variable changes"
     }
   ],
   "teachingNotes": "Guide students through designing fair tests. Emphasize the importance of controlling variables and collecting reliable data. Practice identifying variables in different experimental scenarios.",
-  "sample": {
-    "question": "Why is it important to control variables in an experiment?",
-    "expectedAny": [
-      "to get accurate results",
-      "fair testing",
-      "isolate cause and effect",
-      "valid conclusions"
-    ]
-  },
-  "truefalse": {
-    "question": "In a controlled experiment, you should change as many variables as possible.",
-    "expectedAny": [
-      "false",
-      "no",
-      "f",
-      "incorrect"
-    ]
-  },
-  "multiplechoice": {
-    "question": "In an experiment testing plant growth with different fertilizers, what is the independent variable?",
-    "expectedAny": [
-      "type of fertilizer",
-      "fertilizer",
-      "what you change",
-      "treatment variable"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The group that doesn't receive the experimental treatment is called the ________ group.",
-    "expectedAny": [
-      "control",
-      "control group",
-      "comparison",
-      "standard"
-    ]
-  },
-  "shortanswer": {
-    "question": "What should you do after collecting data from an experiment?",
-    "expectedAny": [
-      "analyze the results",
-      "look for patterns",
-      "draw conclusions",
-      "interpret data"
-    ]
-  }
+  "sample": [
+    { "question": "Why is it important to control variables in an experiment?", "expectedAny": ["get accurate results", "isolate cause and effect"] },
+    { "question": "Define independent variable.", "expectedAny": ["what you change"] },
+    { "question": "Define dependent variable.", "expectedAny": ["what you measure"] },
+    { "question": "What is a control group?", "expectedAny": ["no treatment", "baseline"] },
+    { "question": "Why repeat trials?", "expectedAny": ["reliability", "reduce error"] },
+    { "question": "What is a hypothesis?", "expectedAny": ["testable prediction"] },
+    { "question": "What is data analysis?", "expectedAny": ["examining results"] },
+    { "question": "Name one way to reduce bias.", "expectedAny": ["blind test", "randomization"] },
+    { "question": "Why record procedures?", "expectedAny": ["repeatability", "replication"] },
+    { "question": "What is a variable?", "expectedAny": ["factor that can change"] }
+  ],
+  "truefalse": [
+    { "question": "In a controlled experiment, you should change as many variables as possible.", "expectedAny": ["false"] },
+    { "question": "The independent variable is the one you change.", "expectedAny": ["true"] },
+    { "question": "The dependent variable is what you measure.", "expectedAny": ["true"] },
+    { "question": "A control group receives the same treatment as the test group.", "expectedAny": ["false"] },
+    { "question": "Repeating trials improves reliability.", "expectedAny": ["true"] },
+    { "question": "A hypothesis must be testable.", "expectedAny": ["true"] },
+    { "question": "Randomization can reduce bias.", "expectedAny": ["true"] },
+    { "question": "You should hide or change data that doesn't fit your hypothesis.", "expectedAny": ["false"] },
+    { "question": "Clear procedures help others replicate results.", "expectedAny": ["true"] },
+    { "question": "Graphs are never useful in data analysis.", "expectedAny": ["false"] }
+  ],
+  "multiplechoice": [
+    { "question": "In a plant growth test with different fertilizers, the independent variable is:", "choices": ["amount of water", "type of fertilizer", "height of plants", "sunlight hours"], "correct": 1, "expectedAny": ["type of fertilizer"] },
+    { "question": "Which is a dependent variable?", "choices": ["temperature set", "time of day", "mass measured", "type of soil"], "correct": 2, "expectedAny": ["mass measured"] },
+    { "question": "What is the control group?", "choices": ["no fertilizer", "double fertilizer", "different soil", "more light"], "correct": 0, "expectedAny": ["no fertilizer"] },
+    { "question": "Why use repeated trials?", "choices": ["fewer data", "improve reliability", "save time", "change variables"], "correct": 1, "expectedAny": ["reliability"] },
+    { "question": "Which reduces bias?", "choices": ["randomization", "changing data", "stopping early", "ignoring errors"], "correct": 0, "expectedAny": ["randomization"] },
+    { "question": "A testable prediction is a:", "choices": ["procedure", "hypothesis", "graph", "variable"], "correct": 1, "expectedAny": ["hypothesis"] },
+    { "question": "Which is kept the same across groups?", "choices": ["controlled variable", "dependent variable", "independent variable", "random variable"], "correct": 0, "expectedAny": ["controlled variable"] },
+    { "question": "Which tool helps see patterns in data?", "choices": ["graph", "spoon", "glove", "ruler"], "correct": 0, "expectedAny": ["graph"] },
+    { "question": "What should be measured in a plant growth test?", "choices": ["plant height", "color of pot", "brand of ruler", "day of week"], "correct": 0, "expectedAny": ["height"] },
+    { "question": "Which belongs in a conclusion?", "choices": ["whether the hypothesis was supported", "the hypothesis itself", "random guesses", "list of groceries"], "correct": 0, "expectedAny": ["supported or not"] }
+  ],
+  "fillintheblank": [
+    { "question": "The group that doesn't receive the experimental treatment is called the ________ group.", "expectedAny": ["control", "control group"] },
+    { "question": "The variable you change is the ________ variable.", "expectedAny": ["independent", "independent variable"] },
+    { "question": "The variable you measure is the ________ variable.", "expectedAny": ["dependent", "dependent variable"] },
+    { "question": "Keeping conditions the same are called ________ variables.", "expectedAny": ["controlled", "constants", "control variables"] },
+    { "question": "A testable prediction is a ________.", "expectedAny": ["hypothesis", "testable prediction"] },
+    { "question": "Data are organized into tables and ________.", "expectedAny": ["graphs", "charts"] },
+    { "question": "Repeating a test increases ________.", "expectedAny": ["reliability", "confidence"] },
+    { "question": "Changing many variables at once makes results less ________.", "expectedAny": ["valid", "trustworthy"] },
+    { "question": "The steps of a test are the ________.", "expectedAny": ["procedure", "procedures", "steps"] },
+    { "question": "A group that gets the treatment is the ________ group.", "expectedAny": ["experimental", "experimental group"] }
+  ],
+  "shortanswer": [
+    { "question": "What should you do after collecting data from an experiment?", "expectedAny": ["analyze", "look for patterns", "draw conclusions", "graph the data"] },
+    { "question": "Explain independent vs dependent variables.", "expectedAny": ["change vs measure", "independent is changed, dependent is measured"] },
+    { "question": "Why is a control group useful?", "expectedAny": ["comparison baseline", "to compare with the treatment"] },
+    { "question": "How can you reduce bias in an experiment?", "expectedAny": ["randomize", "blind", "use a fair test"] },
+    { "question": "Why keep other conditions the same?", "expectedAny": ["fair test", "so results are valid", "so only one thing changes"] },
+    { "question": "What should a conclusion include?", "expectedAny": ["support for hypothesis", "evidence", "what the data show"] },
+    { "question": "When is a bar graph useful?", "expectedAny": ["compare categories", "compare groups"] },
+    { "question": "Why repeat a test multiple times?", "expectedAny": ["more reliable results", "to check consistency"] },
+    { "question": "Give an example of an independent variable in a plant test.", "expectedAny": ["fertilizer type", "amount of water", "hours of light"] },
+    { "question": "Give an example of a dependent variable in a plant test.", "expectedAny": ["height", "number of leaves", "mass of plant"] }
+  ]
 }

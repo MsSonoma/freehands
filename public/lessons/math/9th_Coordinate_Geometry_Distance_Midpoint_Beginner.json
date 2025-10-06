@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "9th_Coordinate_Geometry_Distance_Midpoint_Beginner",
   "title": "Coordinate Geometry: Distance and Midpoint",
   "grade": "9th",
   "difficulty": "Beginner",
   "vocab": [
-    {
-      "term": "coordinate plane",
-      "definition": "Two-dimensional plane formed by perpendicular x and y axes"
-    },
-    {
-      "term": "distance formula",
-      "definition": "d = √[(x₂-x₁)² + (y₂-y₁)²] for finding distance between points"
-    },
-    {
-      "term": "midpoint formula",
-      "definition": "((x₁+x₂)/2, (y₁+y₂)/2) for finding center point between two points"
-    },
-    {
-      "term": "ordered pair",
-      "definition": "Point written as (x, y) coordinates"
-    },
-    {
-      "term": "origin",
-      "definition": "Point (0, 0) where axes intersect"
-    }
+    {"term": "coordinate plane", "definition": "Two-dimensional plane formed by perpendicular x and y axes"},
+    {"term": "distance formula", "definition": "d = [(x-x) + (y-y)] for finding distance between points"},
+    {"term": "midpoint formula", "definition": "((x+x)/2, (y+y)/2) for finding center point between two points"},
+    {"term": "ordered pair", "definition": "Point written as (x, y) coordinates"},
+    {"term": "origin", "definition": "Point (0, 0) where axes intersect"}
   ],
   "teachingNotes": "Practice plotting points and using formulas. Emphasize the connection to the Pythagorean theorem in distance formula.",
-  "sample": {
-    "question": "What is the two-dimensional plane formed by perpendicular axes called?",
-    "expectedAny": ["coordinate plane", "cartesian plane", "xy-plane", "coordinate system"]
-  },
-  "truefalse": {
-    "question": "The origin is located at point (0, 0).",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What formula finds the center point between two points?",
-    "expectedAny": ["midpoint formula", "midpoint", "center formula", "average formula"]
-  },
-  "fillintheblank": {
-    "question": "A point written as (x, y) is called an ________ pair.",
-    "expectedAny": ["ordered", "coordinate", "point", "xy"]
-  },
-  "shortanswer": {
-    "question": "How is the distance formula related to the Pythagorean theorem?",
-    "expectedAny": ["uses same concept", "calculates hypotenuse", "based on right triangle", "applies a² + b² = c²"]
-  },
-  "wordProblems": {
-    "question": "Find the midpoint between (2, 4) and (8, 10).",
-    "expectedAny": ["(5, 7)", "5, 7", "point (5, 7)", "x=5, y=7"]
-  }
+  "sample": [
+    {"question": "What is a coordinate plane?", "expectedAny": ["two-dimensional plane with x and y axes", "plane formed by perpendicular axes", "cartesian plane", "graph with x and y"]},
+    {"question": "What is the distance formula?", "expectedAny": ["d = [(x-x) + (y-y)]", "formula to find distance between points", "square root of sum of squared differences", "pythagorean theorem for coordinates"]},
+    {"question": "What is the midpoint formula?", "expectedAny": ["((x+x)/2, (y+y)/2)", "formula to find center between points", "average of x and y coordinates", "halfway point formula"]},
+    {"question": "What is an ordered pair?", "expectedAny": ["point written as (x, y)", "coordinates (x, y)", "x and y values", "point on graph"]},
+    {"question": "What is the origin?", "expectedAny": ["point (0, 0)", "where axes intersect", "center of coordinate plane", "where x and y cross"]},
+    {"question": "How do you plot a point?", "expectedAny": ["use x and y coordinates", "move x then y", "locate on coordinate plane"]},
+    {"question": "What does the distance formula measure?", "expectedAny": ["distance between two points", "length between coordinates", "straight line distance"]},
+    {"question": "What does the midpoint represent?", "expectedAny": ["center point between two points", "halfway point", "middle of segment"]},
+    {"question": "Which axis is horizontal?", "expectedAny": ["x-axis", "horizontal axis"]},
+    {"question": "Which axis is vertical?", "expectedAny": ["y-axis", "vertical axis"]}
+  ],
+  "truefalse": [
+    {"question": "The origin is located at point (0, 0). (True or False)", "correct": true},
+    {"question": "The distance formula uses the Pythagorean theorem. (True or False)", "correct": true},
+    {"question": "The midpoint is always at the origin. (True or False)", "correct": false},
+    {"question": "An ordered pair is written as (x, y). (True or False)", "correct": true},
+    {"question": "The x-axis is vertical. (True or False)", "correct": false},
+    {"question": "The midpoint formula averages the coordinates. (True or False)", "correct": true},
+    {"question": "Distance can be negative. (True or False)", "correct": false},
+    {"question": "The coordinate plane has four quadrants. (True or False)", "correct": true},
+    {"question": "The y-axis is horizontal. (True or False)", "correct": false},
+    {"question": "The distance formula involves squaring and square roots. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What formula finds the center point between two points?", "choices": [{"letter": "A", "text": "Distance formula"}, {"letter": "B", "text": "Slope formula"}, {"letter": "C", "text": "Midpoint formula"}, {"letter": "D", "text": "Area formula"}], "correct": "C"},
+    {"question": "Where is the origin located?", "choices": [{"letter": "A", "text": "(1, 1)"}, {"letter": "B", "text": "(0, 0)"}, {"letter": "C", "text": "(-1, -1)"}, {"letter": "D", "text": "(0, 1)"}], "correct": "B"},
+    {"question": "What is the first coordinate in an ordered pair?", "choices": [{"letter": "A", "text": "y-coordinate"}, {"letter": "B", "text": "x-coordinate"}, {"letter": "C", "text": "z-coordinate"}, {"letter": "D", "text": "origin"}], "correct": "B"},
+    {"question": "Which formula uses square root?", "choices": [{"letter": "A", "text": "Midpoint"}, {"letter": "B", "text": "Slope"}, {"letter": "C", "text": "Distance"}, {"letter": "D", "text": "Y-intercept"}], "correct": "C"},
+    {"question": "What does (3, 5) represent?", "choices": [{"letter": "A", "text": "A line"}, {"letter": "B", "text": "An ordered pair"}, {"letter": "C", "text": "A formula"}, {"letter": "D", "text": "An equation"}], "correct": "B"},
+    {"question": "How do you find the midpoint?", "choices": [{"letter": "A", "text": "Add coordinates"}, {"letter": "B", "text": "Multiply coordinates"}, {"letter": "C", "text": "Average the coordinates"}, {"letter": "D", "text": "Subtract coordinates"}], "correct": "C"},
+    {"question": "What creates the coordinate plane?", "choices": [{"letter": "A", "text": "One axis"}, {"letter": "B", "text": "Two perpendicular axes"}, {"letter": "C", "text": "Three axes"}, {"letter": "D", "text": "Parallel lines"}], "correct": "B"},
+    {"question": "Distance is always:", "choices": [{"letter": "A", "text": "Negative"}, {"letter": "B", "text": "Zero"}, {"letter": "C", "text": "Positive or zero"}, {"letter": "D", "text": "A fraction"}], "correct": "C"},
+    {"question": "The distance formula comes from:", "choices": [{"letter": "A", "text": "Addition"}, {"letter": "B", "text": "Pythagorean theorem"}, {"letter": "C", "text": "Subtraction"}, {"letter": "D", "text": "Division"}], "correct": "B"},
+    {"question": "In (4, -2), what is the y-coordinate?", "choices": [{"letter": "A", "text": "4"}, {"letter": "B", "text": "-2"}, {"letter": "C", "text": "2"}, {"letter": "D", "text": "6"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "A point written as (x, y) is called an _____ pair.", "expectedAny": ["ordered"]},
+    {"question": "The point (0, 0) is called the _____.", "expectedAny": ["origin"]},
+    {"question": "The _____ formula finds distance between points.", "expectedAny": ["distance"]},
+    {"question": "The _____ formula finds the center point.", "expectedAny": ["midpoint"]},
+    {"question": "The horizontal axis is the _____-axis.", "expectedAny": ["x"]},
+    {"question": "The vertical axis is the _____-axis.", "expectedAny": ["y"]},
+    {"question": "The coordinate plane is formed by two _____ axes.", "expectedAny": ["perpendicular"]},
+    {"question": "Distance is always _____ or zero.", "expectedAny": ["positive"]},
+    {"question": "The distance formula uses the _____ theorem.", "expectedAny": ["Pythagorean"]},
+    {"question": "The midpoint is the _____ of coordinates.", "expectedAny": ["average", "mean"]}
+  ],
+  "shortanswer": [
+    {"question": "How is the distance formula related to the Pythagorean theorem?", "keyTerms": ["right triangle", "hypotenuse", "legs", "a + b = c"], "expectedAny": ["It calculates hypotenuse of right triangle formed by points", "Uses Pythagorean theorem with horizontal and vertical distances", "Based on a + b = c where differences are legs"]},
+    {"question": "How do you find the midpoint between two points?", "keyTerms": ["average", "add", "divide", "coordinates"], "expectedAny": ["Average the x-coordinates and y-coordinates separately", "Add both x values and divide by 2, same for y", "Use formula ((x+x)/2, (y+y)/2)"]},
+    {"question": "Why is it called an ordered pair?", "keyTerms": ["order", "matters", "x first", "y second"], "expectedAny": ["Because order matters: x comes before y", "The position (x first, y second) is specific", "Order determines location on the plane"]},
+    {"question": "What are the four quadrants of the coordinate plane?", "keyTerms": ["positive", "negative", "x", "y"], "expectedAny": ["I: (+,+), II: (-,+), III: (-,-), IV: (+,-)", "Four regions where x and y are positive or negative", "Regions formed by axes with different sign combinations"]},
+    {"question": "How do you plot point (3, -2)?", "keyTerms": ["right", "left", "up", "down"], "expectedAny": ["Move 3 right and 2 down from origin", "Go right 3 on x-axis, down 2 on y-axis", "Start at origin, right 3 units, down 2 units"]},
+    {"question": "What is the distance from (0,0) to (3,4)?", "keyTerms": ["3", "4", "5", "distance"], "expectedAny": ["5 units", "Use distance formula: (9+16) = 5", "It forms 3-4-5 right triangle, so 5"]},
+    {"question": "What is the midpoint of (2,6) and (8,4)?", "keyTerms": ["5", "average", "center"], "expectedAny": ["(5, 5)", "Average: (2+8)/2=5, (6+4)/2=5", "Point (5, 5) is the center"]},
+    {"question": "Why do we use coordinates?", "keyTerms": ["locate", "position", "precise", "describe"], "expectedAny": ["To locate points precisely on a plane", "Coordinates describe exact position", "They give precise location using two numbers"]},
+    {"question": "How does the origin help in plotting?", "keyTerms": ["starting", "reference", "center", "point"], "expectedAny": ["It is the starting reference point", "Origin is the center where we begin counting", "All points are measured from the origin"]},
+    {"question": "What happens if you reverse coordinates?", "keyTerms": ["different", "location", "point", "order"], "expectedAny": ["You get a different point", "Location changes because order matters", "(x,y) and (y,x) are usually different points"]}
+  ],
+  "wordProblems": [
+    {"question": "Find the midpoint between (2, 4) and (8, 10).", "expectedAny": ["(5, 7)", "5, 7", "point (5, 7)", "x=5, y=7"]},
+    {"question": "What is the distance between (0, 0) and (3, 4)?", "expectedAny": ["5", "5 units", "distance is 5"]},
+    {"question": "Find the midpoint of (1, 3) and (7, 9).", "expectedAny": ["(4, 6)", "4, 6", "point (4, 6)"]},
+    {"question": "What is the distance between (1, 2) and (4, 6)?", "expectedAny": ["5", "5 units", "distance is 5"]},
+    {"question": "Find the midpoint between (-2, 4) and (6, 8).", "expectedAny": ["(2, 6)", "2, 6", "point (2, 6)"]},
+    {"question": "What is the distance between (0, 0) and (5, 12)?", "expectedAny": ["13", "13 units", "distance is 13"]},
+    {"question": "Find the midpoint of (0, 0) and (10, 10).", "expectedAny": ["(5, 5)", "5, 5", "point (5, 5)"]},
+    {"question": "What is the distance between (2, 3) and (5, 7)?", "expectedAny": ["5", "5 units", "distance is 5"]},
+    {"question": "Find the midpoint between (3, 5) and (9, 11).", "expectedAny": ["(6, 8)", "6, 8", "point (6, 8)"]},
+    {"question": "What is the distance from (-3, -4) to (0, 0)?", "expectedAny": ["5", "5 units", "distance is 5"]}
+  ]
 }

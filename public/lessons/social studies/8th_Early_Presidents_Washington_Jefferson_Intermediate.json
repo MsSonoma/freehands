@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "8th_Early_Presidents_Washington_Jefferson_Intermediate",
   "title": "Early Presidents: Washington and Jefferson",
   "grade": "8th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "precedent",
-      "definition": "An example that becomes a standard for others to follow"
-    },
-    {
-      "term": "cabinet",
-      "definition": "A group of advisors to the president"
-    },
-    {
-      "term": "political party",
-      "definition": "A group of people with similar political beliefs"
-    },
-    {
-      "term": "Louisiana Purchase",
-      "definition": "The 1803 purchase of territory from France that doubled the nation's size"
-    },
-    {
-      "term": "neutrality",
-      "definition": "Not taking sides in conflicts between other nations"
-    }
+    {"term": "precedent", "definition": "An example that becomes a standard for others to follow"},
+    {"term": "cabinet", "definition": "A group of advisors to the president"},
+    {"term": "political party", "definition": "A group of people with similar political beliefs"},
+    {"term": "Louisiana Purchase", "definition": "The 1803 purchase of land from France that doubled the nation's size"},
+    {"term": "neutrality", "definition": "The policy of not taking sides in conflicts"}
   ],
-  "teachingNotes": "Explain how Washington and Jefferson established important precedents. Discuss early political divisions and westward expansion.",
-  "sample": {
-    "question": "What is an example that becomes a standard for others to follow?",
-    "expectedAny": [
-      "precedent",
-      "example",
-      "standard",
-      "model"
-    ]
-  },
-  "truefalse": {
-    "question": "The Louisiana Purchase doubled the size of the United States.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is a group of presidential advisors called?",
-    "expectedAny": [
-      "cabinet",
-      "advisory group",
-      "presidential advisors",
-      "executive council"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Not taking sides in conflicts between other nations is called ________.",
-    "expectedAny": [
-      "neutrality",
-      "neutral policy",
-      "non-involvement",
-      "staying neutral"
-    ]
-  },
-  "shortanswer": {
-    "question": "What important precedents did George Washington establish?",
-    "expectedAny": [
-      "two-term limit, cabinet system, farewell address",
-      "presidential traditions",
-      "executive precedents"
-    ]
-  }
+  "teachingNotes": "Emphasize precedents set by Washington and Jefferson's contributions. Discuss how early decisions shaped American government.",
+  "sample": [
+    {"question": "What is a precedent?", "expectedAny": ["an example that becomes standard", "example for others to follow", "standard set by example", "example to follow", "first example"]},
+    {"question": "What is the cabinet?", "expectedAny": ["group of presidential advisors", "president's advisors", "advisory council", "advisors to president", "presidential helpers"]},
+    {"question": "What is a political party?", "expectedAny": ["group with similar political beliefs", "political organization", "group sharing political views"]},
+    {"question": "What was the Louisiana Purchase?", "expectedAny": ["1803 purchase from France that doubled nation's size", "land purchase that doubled America", "buying Louisiana Territory from France"]},
+    {"question": "What is neutrality?", "expectedAny": ["policy of not taking sides", "staying neutral in conflicts", "not choosing sides in wars"]},
+    {"question": "Who was the first president?", "expectedAny": ["George Washington", "Washington"]},
+    {"question": "Who was the third president?", "expectedAny": ["Thomas Jefferson", "Jefferson"]},
+    {"question": "What precedent did Washington set about presidential terms?", "expectedAny": ["two-term limit", "serving only two terms", "not serving more than two terms"]},
+    {"question": "From which country did we buy Louisiana?", "expectedAny": ["France"]},
+    {"question": "What did Washington's Farewell Address warn about?", "expectedAny": ["political parties", "foreign alliances", "staying neutral", "avoiding permanent alliances"]}
+  ],
+  "truefalse": [
+    {"question": "George Washington was the first president. (True or False)", "correct": true},
+    {"question": "Thomas Jefferson was the second president. (True or False)", "correct": false},
+    {"question": "The Louisiana Purchase doubled the nation's size. (True or False)", "correct": true},
+    {"question": "Washington set the precedent of a two-term limit. (True or False)", "correct": true},
+    {"question": "The cabinet is a group of presidential advisors. (True or False)", "correct": true},
+    {"question": "Neutrality means taking sides in conflicts. (True or False)", "correct": false},
+    {"question": "The Louisiana Purchase happened in 1803. (True or False)", "correct": true},
+    {"question": "Political parties are groups with similar beliefs. (True or False)", "correct": true},
+    {"question": "We bought Louisiana from Spain. (True or False)", "correct": false},
+    {"question": "A precedent is an example for others to follow. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "Who was the first president of the United States?", "choices": [{"letter": "A", "text": "John Adams"}, {"letter": "B", "text": "Thomas Jefferson"}, {"letter": "C", "text": "George Washington"}, {"letter": "D", "text": "James Madison"}], "correct": "C"},
+    {"question": "What is a precedent?", "choices": [{"letter": "A", "text": "A law passed by Congress"}, {"letter": "B", "text": "An example that becomes standard"}, {"letter": "C", "text": "A presidential order"}, {"letter": "D", "text": "A court ruling"}], "correct": "B"},
+    {"question": "What did the Louisiana Purchase do?", "choices": [{"letter": "A", "text": "Added one small territory"}, {"letter": "B", "text": "Doubled the nation's size"}, {"letter": "C", "text": "Gave us access to the Pacific"}, {"letter": "D", "text": "Created new states immediately"}], "correct": "B"},
+    {"question": "From which country did we buy Louisiana?", "choices": [{"letter": "A", "text": "Spain"}, {"letter": "B", "text": "Britain"}, {"letter": "C", "text": "France"}, {"letter": "D", "text": "Mexico"}], "correct": "C"},
+    {"question": "What is the cabinet?", "choices": [{"letter": "A", "text": "The Supreme Court"}, {"letter": "B", "text": "Congress members"}, {"letter": "C", "text": "Presidential advisors"}, {"letter": "D", "text": "State governors"}], "correct": "C"},
+    {"question": "Who was the third president?", "choices": [{"letter": "A", "text": "George Washington"}, {"letter": "B", "text": "John Adams"}, {"letter": "C", "text": "Thomas Jefferson"}, {"letter": "D", "text": "James Madison"}], "correct": "C"},
+    {"question": "What does neutrality mean?", "choices": [{"letter": "A", "text": "Always taking sides"}, {"letter": "B", "text": "Not taking sides in conflicts"}, {"letter": "C", "text": "Supporting one side secretly"}, {"letter": "D", "text": "Declaring war"}], "correct": "B"},
+    {"question": "When did the Louisiana Purchase occur?", "choices": [{"letter": "A", "text": "1776"}, {"letter": "B", "text": "1789"}, {"letter": "C", "text": "1803"}, {"letter": "D", "text": "1812"}], "correct": "C"},
+    {"question": "What precedent did Washington set about terms?", "choices": [{"letter": "A", "text": "President for life"}, {"letter": "B", "text": "One-term limit"}, {"letter": "C", "text": "Two-term limit"}, {"letter": "D", "text": "Three-term limit"}], "correct": "C"},
+    {"question": "What is a political party?", "choices": [{"letter": "A", "text": "A government celebration"}, {"letter": "B", "text": "A group with similar political beliefs"}, {"letter": "C", "text": "A military organization"}, {"letter": "D", "text": "A state legislature"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "George _____ was the first president.", "expectedAny": ["Washington"]},
+    {"question": "Thomas _____ was the third president.", "expectedAny": ["Jefferson"]},
+    {"question": "The _____ Purchase doubled the nation's size.", "expectedAny": ["Louisiana"]},
+    {"question": "A _____ is an example that becomes standard.", "expectedAny": ["precedent"]},
+    {"question": "The president's advisors are called the _____.", "expectedAny": ["cabinet"]},
+    {"question": "A group with similar political beliefs is a political _____.", "expectedAny": ["party"]},
+    {"question": "_____ means not taking sides in conflicts.", "expectedAny": ["Neutrality"]},
+    {"question": "We bought Louisiana from _____ in 1803.", "expectedAny": ["France"]},
+    {"question": "Washington set the precedent of serving only _____ terms.", "expectedAny": ["two", "2"]},
+    {"question": "The Louisiana Purchase happened in _____.", "expectedAny": ["1803", "eighteen oh three"]}
+  ],
+  "shortanswer": [
+    {"question": "Why was George Washington important to American government?", "keyTerms": ["first", "president", "precedents", "example"], "expectedAny": ["He was the first president and set important precedents", "Washington established examples for future presidents to follow", "As first president he created standards for the office"]},
+    {"question": "What was the Louisiana Purchase and why was it significant?", "keyTerms": ["1803", "France", "doubled", "size"], "expectedAny": ["The 1803 purchase from France that doubled the nation's size", "Buying Louisiana Territory from France doubled America's size", "It was land bought from France in 1803 that made the country twice as large"]},
+    {"question": "What precedents did Washington set?", "keyTerms": ["two-term", "cabinet", "farewell", "neutrality"], "expectedAny": ["Two-term limit, cabinet system, and neutrality in foreign affairs", "He established the two-term tradition and created the cabinet", "Washington set examples like serving only two terms and using advisors"]},
+    {"question": "How did Thomas Jefferson expand the nation?", "keyTerms": ["Louisiana", "Purchase", "doubled", "1803"], "expectedAny": ["Through the Louisiana Purchase of 1803 which doubled the nation's size", "He bought Louisiana from France in 1803 doubling the country", "Jefferson purchased Louisiana Territory making the nation twice as large"]},
+    {"question": "What is the cabinet and why is it important?", "keyTerms": ["advisors", "president", "help", "decisions"], "expectedAny": ["The cabinet is presidential advisors who help make decisions", "A group of advisors that helps the president govern", "Presidential advisors who provide expertise and guidance"]},
+    {"question": "Why did Washington warn against political parties?", "keyTerms": ["division", "unity", "conflict", "nation"], "expectedAny": ["He feared they would divide the nation and create conflict", "Washington worried parties would harm national unity", "He believed parties would cause division instead of unity"]},
+    {"question": "What does neutrality mean in foreign policy?", "keyTerms": ["sides", "conflicts", "wars", "neutral"], "expectedAny": ["Not taking sides in foreign conflicts or wars", "Staying neutral and avoiding involvement in other nations' disputes", "The policy of not choosing sides in international conflicts"]},
+    {"question": "How did Washington's precedents affect future presidents?", "keyTerms": ["examples", "standards", "followed", "tradition"], "expectedAny": ["His examples became standards that future presidents followed", "Washington's precedents created traditions other presidents respected", "His actions established expectations for how presidents should serve"]},
+    {"question": "What role did early presidents play in shaping government?", "keyTerms": ["precedents", "traditions", "established", "foundation"], "expectedAny": ["They established precedents and traditions for the new government", "Early presidents created the foundation for how government would work", "They set standards and examples that shaped American democracy"]},
+    {"question": "Why was the two-term precedent important?", "keyTerms": ["limit", "power", "tradition", "peaceful"], "expectedAny": ["It limited presidential power and became an important tradition", "The two-term limit prevented presidents from having too much power", "It established peaceful transfer of power as a tradition"]}
+  ]
 }

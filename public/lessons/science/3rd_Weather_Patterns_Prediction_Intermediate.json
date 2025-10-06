@@ -5,12 +5,21 @@
   "difficulty": "Intermediate",
   "featured": false,
   "vocab": [
-    { "term": "weather pattern", "definition": "The way weather changes over time in a regular way" },
-    { "term": "meteorologist", "definition": "A scientist who studies and predicts weather" },
-    { "term": "precipitation", "definition": "Water that falls from the sky as rain, snow, sleet, or hail" },
-    { "term": "forecast", "definition": "A prediction about what the weather will be like" },
-    { "term": "temperature", "definition": "How hot or cold the air is" },
-    { "term": "wind", "definition": "Moving air" }
+    {"word": "weather pattern", "kid_friendly_definition": "The way weather changes over time in a regular way."},
+    {"word": "meteorologist", "kid_friendly_definition": "A scientist who studies and predicts weather."},
+    {"word": "precipitation", "kid_friendly_definition": "Water that falls from the sky as rain, snow, sleet, or hail."},
+    {"word": "forecast", "kid_friendly_definition": "A prediction about what the weather will be like."},
+    {"word": "temperature", "kid_friendly_definition": "How hot or cold the air is."},
+    {"word": "wind", "kid_friendly_definition": "Moving air."},
+    {"word": "thermometer", "kid_friendly_definition": "A tool that measures temperature."},
+    {"word": "barometer", "kid_friendly_definition": "A tool that measures air pressure."},
+    {"word": "rain gauge", "kid_friendly_definition": "A tool that measures how much rain falls."},
+    {"word": "anemometer", "kid_friendly_definition": "A tool that measures wind speed."},
+    {"word": "wind vane", "kid_friendly_definition": "A tool that shows wind direction."},
+    {"word": "wind sock", "kid_friendly_definition": "A cloth tube that shows wind direction and strength."},
+    {"word": "humidity", "kid_friendly_definition": "The amount of water vapor in the air."},
+    {"word": "front", "kid_friendly_definition": "The boundary where two air masses with different temperatures meet."},
+    {"word": "climate", "kid_friendly_definition": "The usual weather pattern in a place over many years."}
   ],
   "teachingNotes": "Keep a classroom weather chart. Use weather maps and tools. Discuss how weather affects daily activities and clothing choices.",
   "sample": [
@@ -23,39 +32,39 @@
     { "question": "What does a wind sock show?", "expectedAny": ["wind direction"] }
   ],
   "truefalse": [
-    { "question": "Weather patterns help us predict what weather might come next.", "answer": true },
-    { "question": "A forecast tells us exactly what will happen with no mistakes.", "answer": false },
-    { "question": "Rain and snow are types of precipitation.", "answer": true },
-    { "question": "Wind is still air.", "answer": false },
-    { "question": "Cloudy days always mean rain.", "answer": false },
-    { "question": "Meteorologists use maps to share weather information.", "answer": true },
-    { "question": "Weather can change quickly.", "answer": true }
+    { "question": "Weather patterns help us predict what weather might come next.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "predict what's next"] },
+    { "question": "A forecast tells us exactly what will happen with no mistakes.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "not exact"] },
+    { "question": "Rain and snow are types of precipitation.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "precipitation"] },
+    { "question": "Wind is still air.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "wind is moving air"] },
+    { "question": "Cloudy days always mean rain.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "clouds don't always mean rain"] },
+    { "question": "Meteorologists use maps to share weather information.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "weather maps"] },
+    { "question": "Weather can change quickly.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "changes quickly"] }
   ],
   "multiplechoice": [
-    { "question": "What type of weather usually brings cooler temperatures?", "choices": ["Sunny skies", "Rain clouds", "No wind", "Clear nights"], "correct": 1 },
-    { "question": "Which tool measures temperature?", "choices": ["Barometer", "Thermometer", "Rain gauge", "Wind sock"], "correct": 1 },
-    { "question": "Which tool measures rainfall?", "choices": ["Thermometer", "Anemometer", "Rain gauge", "Barometer"], "correct": 2 },
-    { "question": "A forecast is:", "choices": ["A weather map", "A prediction of weather", "A kind of cloud", "A wind"], "correct": 1 },
-    { "question": "Which shows wind direction?", "choices": ["Thermometer", "Barometer", "Wind vane", "Rain gauge"], "correct": 2 },
-    { "question": "Which is precipitation?", "choices": ["Fog", "Rain", "Sunshine", "Wind"], "correct": 1 },
-    { "question": "Meteorologists predict weather using:", "choices": ["Guesses only", "Tools and data", "Only TV", "Magic"], "correct": 1 }
+    { "question": "What type of weather usually brings cooler temperatures?", "choices": ["Sunny skies", "Rain clouds", "No wind", "Clear nights"], "correct": 1, "expectedAny": ["b", "B", "2", "Rain clouds", "rainy weather"] },
+    { "question": "Which tool measures temperature?", "choices": ["Barometer", "Thermometer", "Rain gauge", "Wind sock"], "correct": 1, "expectedAny": ["b", "B", "2", "Thermometer"] },
+    { "question": "Which tool measures rainfall?", "choices": ["Thermometer", "Anemometer", "Rain gauge", "Barometer"], "correct": 2, "expectedAny": ["c", "C", "3", "Rain gauge"] },
+    { "question": "A forecast is:", "choices": ["A weather map", "A prediction of weather", "A kind of cloud", "A wind"], "correct": 1, "expectedAny": ["b", "B", "2", "A prediction of weather", "prediction"] },
+    { "question": "Which shows wind direction?", "choices": ["Thermometer", "Barometer", "Wind vane", "Rain gauge"], "correct": 2, "expectedAny": ["c", "C", "3", "Wind vane"] },
+    { "question": "Which is precipitation?", "choices": ["Fog", "Rain", "Sunshine", "Wind"], "correct": 1, "expectedAny": ["b", "B", "2", "Rain"] },
+    { "question": "Meteorologists predict weather using:", "choices": ["Guesses only", "Tools and data", "Only TV", "Magic"], "correct": 1, "expectedAny": ["b", "B", "2", "Tools and data", "data and tools"] }
   ],
   "fillintheblank": [
-    { "question": "A _____ studies weather, and a _____ is a prediction about future weather.", "expectedAny": ["meteorologist", "forecast"] },
-    { "question": "Water that falls from clouds is called _____.", "expectedAny": ["precipitation"] },
-    { "question": "We measure how hot or cold it is using a _____.", "expectedAny": ["thermometer"] },
-    { "question": "Moving air is called _____.", "expectedAny": ["wind"] },
-    { "question": "A map that shows rain and storms is a weather _____.", "expectedAny": ["map"] },
-    { "question": "A forecast is a weather _____ for the future.", "expectedAny": ["prediction"] },
-    { "question": "An instrument that measures air pressure is a _____.", "expectedAny": ["barometer"] }
+    { "question": "A _____ studies weather, and a _____ is a prediction about future weather.", "expectedAny": ["meteorologist", "forecast", "weather scientist", "weather forecast"] },
+    { "question": "Water that falls from clouds is called _____.", "expectedAny": ["precipitation", "rain or snow"] },
+    { "question": "We measure how hot or cold it is using a _____.", "expectedAny": ["thermometer", "temperature gauge"] },
+    { "question": "Moving air is called _____.", "expectedAny": ["wind", "breeze"] },
+    { "question": "A map that shows rain and storms is a weather _____.", "expectedAny": ["map", "map of weather", "weather map"] },
+    { "question": "A forecast is a weather _____ for the future.", "expectedAny": ["prediction", "guess based on data"] },
+    { "question": "An instrument that measures air pressure is a _____.", "expectedAny": ["barometer", "pressure gauge"] }
   ],
   "shortanswer": [
-    { "question": "Why can't meteorologists predict weather perfectly?", "expectedAny": ["weather is complicated", "many factors", "can change quickly"] },
-    { "question": "How can weather patterns help you plan your day?", "expectedAny": ["choose clothing", "bring umbrella", "plan activities"] },
-    { "question": "Name two tools used to study weather and what they measure.", "expectedAny": ["thermometer: temperature", "rain gauge: rainfall", "barometer: air pressure", "anemometer: wind speed"] },
-    { "question": "How do clouds help predict rain?", "expectedAny": ["dark clouds often bring rain"] },
-    { "question": "What weather pattern do you notice in your area?", "expectedAny": ["answers vary"] },
-    { "question": "How do weather maps help people?", "expectedAny": ["see storms", "plan travel"] },
-    { "question": "What safety steps can you take when severe weather is forecast?", "expectedAny": ["stay inside", "seek shelter"] }
+    {"question": "Why can't meteorologists predict weather perfectly?", "expectedAny": ["weather is complicated", "many changing factors", "conditions can change quickly", "too many variables", "hard to predict"]},
+    {"question": "How can weather patterns help you plan your day?", "expectedAny": ["choose clothing", "bring an umbrella", "plan outdoor or indoor activities", "decide what to wear", "know if it will rain"]},
+    {"question": "Name two tools used to study weather and what they measure.", "expectedAny": ["thermometer measures temperature", "rain gauge measures rainfall", "barometer measures air pressure", "anemometer measures wind speed", "thermometer and rain gauge"]},
+    {"question": "How do clouds help predict rain?", "expectedAny": ["dark/thick clouds often bring rain", "cloud type can signal rain", "more clouds increase chance of rain", "dark clouds mean rain", "big clouds can rain"]},
+    {"question": "Give one example of a weather pattern in your area.", "expectedAny": ["rainy spring", "hot summers", "cold winters", "snowy winter", "any reasonable pattern"]},
+    {"question": "How do weather maps help people?", "expectedAny": ["see storms coming", "plan travel and safety", "know where rain or snow is", "see weather", "see what is coming"]},
+    {"question": "What safety steps can you take when severe weather is forecast?", "expectedAny": ["stay inside", "seek shelter", "follow safety alerts", "go indoors", "stay safe"]}
   ]
 }

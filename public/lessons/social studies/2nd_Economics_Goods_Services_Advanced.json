@@ -55,20 +55,20 @@
   ],
   "fillintheblank": [
     {"question": "A baker is a ________ because they make bread.", "expectedAny": ["producer", "maker"]},
-    {"question": "A person who buys things is a ________.", "expectedAny": ["consumer"]},
+    {"question": "A person who buys things is a ________.", "expectedAny": ["consumer", "buyer"]},
     {"question": "Services are ________ people do to help others.", "expectedAny": ["jobs", "work"]},
     {"question": "Goods are ________ you can buy and touch.", "expectedAny": ["things", "objects"]},
-    {"question": "To trade means to ________.", "expectedAny": ["exchange"]},
-    {"question": "A farmer who grows apples is a ________.", "expectedAny": ["producer"]},
-    {"question": "A person buying apples is a ________.", "expectedAny": ["consumer"]}
+    {"question": "To trade means to ________.", "expectedAny": ["exchange", "swap"]},
+    {"question": "A farmer who grows apples is a ________.", "expectedAny": ["producer", "farmer"]},
+    {"question": "A person buying apples is a ________.", "expectedAny": ["consumer", "buyer"]}
   ],
   "shortanswer": [
     {"question": "Give an example of trading goods or services.", "expectedAny": ["money for food", "work for pay", "toy for toy"]},
     {"question": "Name two services your family uses.", "expectedAny": ["haircut", "doctor", "bus", "restaurant"]},
-    {"question": "How are producers and consumers connected?", "expectedAny": ["producers make, consumers buy"]},
+    {"question": "How are producers and consumers connected?", "expectedAny": ["producers make, consumers buy", "producers make goods that consumers buy", "consumers buy goods from producers"]},
     {"question": "What goods do you use at school?", "expectedAny": ["pencils", "books", "paper"]},
     {"question": "What service helps keep you healthy?", "expectedAny": ["doctor", "nurse", "dentist"]},
-    {"question": "Why do people trade?", "expectedAny": ["to get what they need or want"]},
+    {"question": "Why do people trade?", "expectedAny": ["to get what they need or want", "to swap for needed items", "to exchange things"]},
     {"question": "What is one job that provides a service?", "expectedAny": ["teacher", "doctor", "firefighter"]}
   ]
 }

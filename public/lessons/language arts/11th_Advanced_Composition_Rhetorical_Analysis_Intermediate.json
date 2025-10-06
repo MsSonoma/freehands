@@ -1,4 +1,4 @@
-{
+﻿{
   "id": "11th_Advanced_Composition_Rhetorical_Analysis_Intermediate",
   "title": "Advanced Composition: Rhetorical Analysis",
   "grade": "11th",
@@ -26,49 +26,224 @@
     }
   ],
   "teachingNotes": "Analyze how authors use language choices strategically. Practice close reading of rhetorical techniques in speeches and essays.",
-  "sample": {
-    "question": "What is a deliberate technique used to achieve persuasive effect?",
-    "expectedAny": [
-      "rhetorical strategy",
-      "persuasive technique",
-      "rhetorical method",
-      "persuasive strategy"
-    ]
-  },
-  "truefalse": {
-    "question": "Diction refers to an author's choice of words.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the arrangement of words to create sentences?",
-    "expectedAny": [
-      "syntax",
-      "sentence structure",
-      "word arrangement",
-      "grammatical structure"
-    ]
-  },
-  "fillintheblank": {
-    "question": "An author's attitude toward subject or audience is called ________.",
-    "expectedAny": [
-      "tone",
-      "attitude",
-      "voice",
-      "perspective"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does syntax affect rhetorical impact?",
-    "expectedAny": [
-      "creates rhythm",
-      "emphasizes ideas",
-      "controls pace",
-      "affects clarity"
-    ]
-  }
+  "sample": [
+    {
+      "question": "What is a deliberate technique used to achieve persuasive effect?",
+      "expectedAny": ["rhetorical strategy", "persuasive technique", "rhetorical method", "persuasive strategy", "rhetorical approach", "persuasive method"]
+    },
+    {
+      "question": "What reveals the author's attitude toward the subject?",
+      "expectedAny": ["tone", "author tone", "attitude", "authorial tone", "writers tone", "attitudinal stance"]
+    },
+    {
+      "question": "What is an author's choice of words called?",
+      "expectedAny": ["diction", "word choice", "vocabulary selection", "lexical choice", "language choice", "word selection"]
+    },
+    {
+      "question": "What is the arrangement of words in sentences?",
+      "expectedAny": ["syntax", "sentence structure", "word arrangement", "sentence order", "grammatical structure", "word order"]
+    },
+    {
+      "question": "What literary technique enhances persuasive effect?",
+      "expectedAny": ["rhetorical device", "persuasive device", "literary device", "rhetorical technique", "persuasive technique", "stylistic device"]
+    },
+    {
+      "question": "What technique does a speaker use deliberately to persuade?",
+      "expectedAny": ["rhetorical strategy", "persuasive strategy", "rhetorical method", "persuasion technique"]
+    },
+    {
+      "question": "What conveys the author's feelings about a topic?",
+      "expectedAny": ["tone", "authorial tone", "attitude", "emotional stance"]
+    },
+    {
+      "question": "What term describes word selection in writing?",
+      "expectedAny": ["diction", "word choice", "vocabulary", "lexical selection"]
+    },
+    {
+      "question": "What creates sentence rhythm and emphasis?",
+      "expectedAny": ["syntax", "sentence structure", "word order", "grammatical arrangement"]
+    },
+    {
+      "question": "What tools help make arguments more compelling?",
+      "expectedAny": ["rhetorical devices", "persuasive devices", "literary techniques", "rhetorical tools"]
+    }
+  ],
+  "truefalse": [
+    {
+      "question": "Diction refers to an author's choice of words.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Syntax is the author's attitude toward the subject.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Rhetorical strategies are deliberate persuasive techniques.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Tone has no impact on rhetorical effect.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Rhetorical devices enhance persuasive effect.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Diction is the same as syntax.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Tone reveals the author's attitude.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Syntax refers only to spelling.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Rhetorical strategy involves deliberate planning.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Word choice is irrelevant to rhetoric.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "What is a deliberate persuasive technique?",
+      "choices": ["Strategy", "Accident", "Error", "Confusion"],
+      "correct": "Strategy"
+    },
+    {
+      "question": "What reveals author attitude?",
+      "choices": ["Tone", "Length", "Format", "Font"],
+      "correct": "Tone"
+    },
+    {
+      "question": "What is word choice called?",
+      "choices": ["Syntax", "Diction", "Grammar", "Spelling"],
+      "correct": "Diction"
+    },
+    {
+      "question": "What is word arrangement?",
+      "choices": ["Diction", "Tone", "Syntax", "Theme"],
+      "correct": "Syntax"
+    },
+    {
+      "question": "What enhances persuasive effect?",
+      "choices": ["Device", "Error", "Mistake", "Omission"],
+      "correct": "Device"
+    },
+    {
+      "question": "What do rhetoricians analyze?",
+      "choices": ["Strategies", "Accidents", "Mistakes", "Randomness"],
+      "correct": "Strategies"
+    },
+    {
+      "question": "What can be formal or informal?",
+      "choices": ["Tone", "Size", "Color", "Price"],
+      "correct": "Tone"
+    },
+    {
+      "question": "What includes vocabulary selection?",
+      "choices": ["Syntax", "Tone", "Diction", "Logic"],
+      "correct": "Diction"
+    },
+    {
+      "question": "What creates sentence variety?",
+      "choices": ["Diction", "Syntax", "Tone", "Theme"],
+      "correct": "Syntax"
+    },
+    {
+      "question": "What includes repetition and parallelism?",
+      "choices": ["Devices", "Errors", "Problems", "Flaws"],
+      "correct": "Devices"
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "A _____ strategy is a deliberate persuasive technique.",
+      "expectedAny": ["rhetorical", "persuasive", "communication"]
+    },
+    {
+      "question": "_____ reveals the author's attitude toward the subject.",
+      "expectedAny": ["tone", "authorial tone", "voice"]
+    },
+    {
+      "question": "_____ is the author's choice of words.",
+      "expectedAny": ["diction", "word choice", "vocabulary"]
+    },
+    {
+      "question": "_____ is the arrangement of words in sentences.",
+      "expectedAny": ["syntax", "sentence structure", "word order"]
+    },
+    {
+      "question": "A _____ device enhances persuasive effect.",
+      "expectedAny": ["rhetorical", "literary", "persuasive"]
+    },
+    {
+      "question": "Effective rhetoric requires deliberate _____.",
+      "expectedAny": ["strategy", "strategies", "planning"]
+    },
+    {
+      "question": "An angry _____ affects how readers respond.",
+      "expectedAny": ["tone", "attitude", "voice"]
+    },
+    {
+      "question": "Formal _____ uses elevated vocabulary.",
+      "expectedAny": ["diction", "language", "word choice"]
+    },
+    {
+      "question": "Varied _____ creates interesting prose.",
+      "expectedAny": ["syntax", "sentence structure", "sentences"]
+    },
+    {
+      "question": "Metaphors and similes are _____ devices.",
+      "expectedAny": ["rhetorical", "literary", "persuasive"]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Explain how rhetorical strategy differs from random word choice.",
+      "expectedAny": ["rhetorical strategy is deliberate and purposeful while random choice lacks intention", "strategy involves planned techniques to achieve specific persuasive effects", "rhetorical choices are intentional to influence audience response"]
+    },
+    {
+      "question": "How does tone affect a rhetorical argument?",
+      "expectedAny": ["tone shapes audience perception and emotional response to arguments", "the author's attitude influences how credible or appealing the message seems", "tone can enhance or undermine persuasive effectiveness"]
+    },
+    {
+      "question": "Give an example of how diction creates different effects.",
+      "expectedAny": ["formal diction creates authority while informal creates accessibility", "saying passed away versus died changes emotional impact", "elevated vocabulary signals sophistication while simple words ensure clarity"]
+    },
+    {
+      "question": "How can syntax emphasize key ideas?",
+      "expectedAny": ["placing important words at sentence beginnings or ends creates emphasis", "short sentences after long ones draw attention to key points", "parallel structure reinforces connections between ideas"]
+    },
+    {
+      "question": "What makes a rhetorical device effective?",
+      "expectedAny": ["effective devices support the argument and engage the audience", "devices work when they enhance clarity or emotional impact", "the best devices fit the context and purpose naturally"]
+    },
+    {
+      "question": "Why analyze an author's rhetorical strategies?",
+      "expectedAny": ["to understand how writers persuade and influence audiences", "analyzing strategies reveals the techniques behind effective communication", "understanding rhetoric helps evaluate arguments critically"]
+    },
+    {
+      "question": "How do tone and diction work together?",
+      "expectedAny": ["word choice creates and reinforces the author's tone", "diction determines whether tone feels formal informal angry or calm", "tone emerges from cumulative diction choices throughout a text"]
+    },
+    {
+      "question": "What is the relationship between syntax and meaning?",
+      "expectedAny": ["syntax shapes how ideas are emphasized and connected", "word arrangement affects clarity and interpretation of meaning", "sentence structure guides readers through complex arguments"]
+    },
+    {
+      "question": "How can rhetorical devices backfire?",
+      "expectedAny": ["overused devices seem manipulative or insincere", "inappropriate devices distract from the argument", "devices fail when they mismatch audience expectations or context"]
+    },
+    {
+      "question": "Why is close reading important in rhetorical analysis?",
+      "expectedAny": ["close reading reveals subtle strategic choices authors make", "careful analysis uncovers how language creates persuasive effects", "detailed examination shows the relationship between technique and impact"]
+    }
+  ]
 }

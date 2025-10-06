@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Use current events and science articles. Practice identifying different text structures. Teach students to distinguish between facts and opinions in nonfiction.",
-  "sample": {
-    "question": "What is the most important point of a text called?",
-    "expectedAny": [
-      "main idea",
-      "central idea",
-      "key point",
-      "primary message"
-    ]
-  },
-  "truefalse": {
-    "question": "An inference is a conclusion you reach using evidence and reasoning.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "If an author writes to convince you of something, what is their purpose?",
-    "expectedAny": [
-      "to persuade",
-      "persuade",
-      "convince",
-      "persuasion"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Facts and examples that support the main idea are called ________ details.",
-    "expectedAny": [
-      "supporting",
-      "support",
-      "backup",
-      "evidence"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are three common ways authors organize nonfiction texts?",
-    "expectedAny": [
-      "cause-effect, compare-contrast, sequence",
-      "chronological, problem-solution, description",
-      "time order, categories, main idea-details"
-    ]
-  }
+  "sample": [
+    { "question": "What is the most important point of a text called?", "expectedAny": ["main idea", "central idea", "key point"] },
+    { "question": "Which is an author's purpose?", "choices": ["To sleep", "To persuade", "To eat", "To walk"], "correct": 1, "expectedAny": ["to persuade"] },
+    { "question": "A conclusion using evidence is an ________.", "expectedAny": ["inference"] },
+    { "question": "Facts that support the main idea are ________ details.", "expectedAny": ["supporting"] },
+    { "question": "Which is a text structure?", "choices": ["Red", "Cause-and-effect", "Happy", "Loud"], "correct": 1, "expectedAny": ["cause-and-effect"] },
+    { "question": "The reason an author writes is the author's ________.", "expectedAny": ["purpose"] },
+    { "question": "How information is organized is the text ________.", "expectedAny": ["structure"] },
+    { "question": "Which purpose means to teach?", "choices": ["Entertain", "Inform", "Confuse", "Ignore"], "correct": 1, "expectedAny": ["inform"] },
+    { "question": "Make an inference: The ground is wet. What likely happened?", "expectedAny": ["it rained", "it was watered", "water spilled"] },
+    { "question": "What supports a main idea?", "expectedAny": ["details", "evidence", "examples", "facts"] }
+  ],
+  "truefalse": [
+    { "question": "An inference is a conclusion you reach using evidence and reasoning.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The main idea is always stated in the first sentence.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Supporting details help explain the main idea.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All nonfiction texts are organized the same way.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "An author's purpose can be to inform, persuade, or entertain.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Text structure never matters in nonfiction.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Cause-and-effect is a type of text structure.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Inferences require no evidence.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Supporting details include facts and examples.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The main idea and supporting details are unrelated.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "If an author writes to convince you of something, what is their purpose?", "choices": ["To inform", "To persuade", "To entertain", "To confuse"], "correct": 1, "expectedAny": ["to persuade"] },
+    { "question": "What is the central message of a text?", "choices": ["Supporting detail", "Main idea", "Random fact", "Page number"], "correct": 1, "expectedAny": ["main idea"] },
+    { "question": "Which is a text structure?", "choices": ["Compare-contrast", "Blue", "Loud", "Fast"], "correct": 0, "expectedAny": ["compare-contrast"] },
+    { "question": "What do you use to make an inference?", "choices": ["Guesses only", "Evidence and reasoning", "Nothing", "Random thoughts"], "correct": 1, "expectedAny": ["evidence and reasoning"] },
+    { "question": "Which purpose means to teach information?", "choices": ["Entertain", "Persuade", "Inform", "Confuse"], "correct": 2, "expectedAny": ["inform"] },
+    { "question": "What supports the main idea?", "choices": ["Random words", "Supporting details", "Pictures only", "Author's name"], "correct": 1, "expectedAny": ["supporting details"] },
+    { "question": "Which shows cause-and-effect?", "choices": ["It rained, so the ground is wet.", "Dogs and cats", "The sky is blue.", "I like pizza."], "correct": 0, "expectedAny": ["it rained, so the ground is wet"] },
+    { "question": "What is the author trying to do in a persuasive text?", "choices": ["Tell facts only", "Convince the reader", "List names", "Show pictures"], "correct": 1, "expectedAny": ["convince the reader"] },
+    { "question": "Which is NOT a text structure?", "choices": ["Sequence", "Problem-solution", "Purple", "Chronological"], "correct": 2, "expectedAny": ["purple"] },
+    { "question": "What makes a good supporting detail?", "choices": ["It's random", "It supports the main idea", "It changes the topic", "It's unrelated"], "correct": 1, "expectedAny": ["it supports the main idea"] }
+  ],
+  "fillintheblank": [
+  { "question": "Facts and examples that support the main idea are called ________ details.", "expectedAny": ["supporting", "support", "evidence", "key supporting"] },
+  { "question": "The most important point of a text is the ________ idea.", "expectedAny": ["main", "central", "central/main", "key"] },
+  { "question": "A conclusion using evidence is an ________.", "expectedAny": ["inference", "inferred conclusion", "evidence-based conclusion"] },
+  { "question": "The reason an author writes is the author's ________.", "expectedAny": ["purpose", "reason", "goal"] },
+  { "question": "How information is organized is called text ________.", "expectedAny": ["structure", "organization", "pattern"] },
+  { "question": "To ________ means to teach or give information.", "expectedAny": ["inform", "instruct", "educate"] },
+  { "question": "To ________ means to convince someone.", "expectedAny": ["persuade", "convince", "sway"] },
+  { "question": "________ and effect is one text structure.", "expectedAny": ["cause", "cause (cause-and-effect)", "cause- and effect"] },
+    { "question": "________ details help explain the main idea.", "expectedAny": ["supporting", "key supporting"] },
+  { "question": "When you figure something out from clues, you make an ________.", "expectedAny": ["inference", "informed guess", "educated guess"] }
+  ],
+  "shortanswer": [
+    { "question": "What are three common ways authors organize nonfiction texts?", "expectedAny": ["cause-effect, compare-contrast, sequence", "chronological, problem-solution, description", "order/sequence, cause-effect, compare-contrast"] },
+  { "question": "Explain what an inference is.", "expectedAny": ["a conclusion using evidence", "figuring something out from clues", "reasoning from facts", "evidence-based conclusion", "a conclusion drawn from text clues"] },
+    { "question": "Give an example of a supporting detail for: 'Dogs make great pets.'", "expectedAny": ["they are loyal", "they protect homes", "they provide companionship", "they help people feel safe"] },
+  { "question": "What is the difference between main idea and supporting details?", "expectedAny": ["main idea is the central point", "supporting details explain the main idea", "main idea is what it's about", "details prove or explain the main idea", "main idea = big idea; details = proof/examples"] },
+    { "question": "Name the three main author's purposes.", "expectedAny": ["inform, persuade, entertain", "persuade, inform, entertain", "to inform, to persuade, to entertain"] },
+  { "question": "How does text structure help readers?", "expectedAny": ["helps understand information", "shows how ideas connect", "makes reading easier", "organizes ideas", "guides expectations for how ideas unfold"] },
+    { "question": "Give an example of cause-and-effect.", "expectedAny": ["it rained so the ground is wet", "I studied so I passed", "she ate too much so felt sick", "I watered plants so they grew"] },
+    { "question": "What clues help you identify the main idea?", "expectedAny": ["repeated words", "topic sentences", "what the text focuses on", "headings and key sentences"] },
+    { "question": "Make an inference: The dog is barking and wagging its tail. How does it feel?", "expectedAny": ["happy", "excited", "playful", "friendly"] },
+    { "question": "Why are supporting details important?", "expectedAny": ["they prove the main idea", "they give evidence", "they explain and support", "they back up the main idea"] }
+  ]
 }

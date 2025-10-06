@@ -53,6 +53,14 @@ export async function POST(request){
     fs.mkdirSync(destDir, { recursive: true })
     // Use original filename to avoid re-mapping links
     const destPath = path.join(destDir, file)
+    
+    // Clear needsUpdate flag when approving/updating
+    if (js.needsUpdate) {
+      delete js.needsUpdate
+      // Also update the source file to clear the flag
+      fs.writeFileSync(srcPath, JSON.stringify(js, null, 2), 'utf8')
+    }
+    
     fs.writeFileSync(destPath, JSON.stringify(js, null, 2), 'utf8')
     return NextResponse.json({ ok:true, subject: subj, file })
   } catch (e) {

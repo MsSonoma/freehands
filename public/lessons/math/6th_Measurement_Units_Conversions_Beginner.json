@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Practice with both metric and customary units. Use real-world examples and measuring tools. Emphasize the importance of including units in answers.",
-  "sample": {
-    "question": "What measurement system is based on powers of 10?",
-    "expectedAny": ["metric system", "metric", "decimal system", "international system"]
-  },
-  "truefalse": {
-    "question": "There are 12 inches in 1 foot.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "How many centimeters are in 1 meter?",
-    "expectedAny": ["100", "100 centimeters", "one hundred", "100 cm"]
-  },
-  "fillintheblank": {
-    "question": "Changing from one unit of measurement to another is called unit ________.",
-    "expectedAny": ["conversion", "converting", "transformation", "change"]
-  },
-  "shortanswer": {
-    "question": "Convert 5 feet to inches.",
-    "expectedAny": ["60 inches", "60 in", "5 × 12 = 60", "sixty inches"]
-  },
-  "wordProblems": {
-    "question": "A recipe calls for 2.5 liters of water. How many milliliters is this?",
-    "expectedAny": ["2500 milliliters", "2500 mL", "2.5 × 1000 = 2500", "2500"]
-  }
+  "sample": [
+    { "question": "What measurement system is based on powers of 10?", "expectedAny": ["metric system", "metric"] },
+    { "question": "Which is a metric unit?", "choices": ["Inch", "Meter", "Foot", "Mile"], "correct": 1, "expectedAny": ["meter"] },
+    { "question": "Changing units is called unit ________.", "expectedAny": ["conversion"] },
+    { "question": "The US commonly uses the ________ system.", "expectedAny": ["customary"] },
+    { "question": "How many inches in a foot?", "choices": ["10", "12", "100", "3"], "correct": 1, "expectedAny": ["12"] },
+    { "question": "How exact a measurement is shows ________.", "expectedAny": ["precision"] },
+    { "question": "How many centimeters in a meter?", "expectedAny": ["100"] },
+    { "question": "Which is customary?", "choices": ["Meter", "Liter", "Inch", "Gram"], "correct": 2, "expectedAny": ["inch"] },
+    { "question": "Convert 2 feet to inches.", "expectedAny": ["24", "24 inches"] },
+    { "question": "What does measurement find?", "expectedAny": ["size", "length", "amount"] }
+  ],
+  "truefalse": [
+    { "question": "There are 12 inches in 1 foot.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The metric system uses powers of 2.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "100 centimeters equal 1 meter.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "There are 100 feet in a yard.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "1000 milliliters equal 1 liter.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Inches and feet are metric units.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Unit conversion changes one unit to another.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "There are 5 feet in 1 yard.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Meters and grams are metric units.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Precision means how exact a measurement is.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "How many centimeters are in 1 meter?", "choices": ["10", "100", "1000", "50"], "correct": 1, "expectedAny": ["100"] },
+    { "question": "How many feet are in 1 yard?", "choices": ["2", "3", "12", "10"], "correct": 1, "expectedAny": ["3"] },
+    { "question": "Which is a metric unit of length?", "choices": ["Inch", "Foot", "Meter", "Yard"], "correct": 2, "expectedAny": ["meter"] },
+    { "question": "How many inches are in 2 feet?", "choices": ["12", "24", "36", "20"], "correct": 1, "expectedAny": ["24"] },
+    { "question": "How many milliliters in 1 liter?", "choices": ["10", "100", "1000", "500"], "correct": 2, "expectedAny": ["1000"] },
+    { "question": "Which system uses feet and inches?", "choices": ["Metric", "Customary", "International", "European"], "correct": 1, "expectedAny": ["customary"] },
+    { "question": "How many meters in 500 centimeters?", "choices": ["5", "50", "0.5", "5000"], "correct": 0, "expectedAny": ["5"] },
+    { "question": "Which is larger?", "choices": ["1 inch", "1 centimeter", "Same size", "Cannot tell"], "correct": 0, "expectedAny": ["1 inch"] },
+    { "question": "How many feet in 36 inches?", "choices": ["2", "3", "4", "6"], "correct": 1, "expectedAny": ["3"] },
+    { "question": "What system is based on 10?", "choices": ["Customary", "Metric", "Imperial", "American"], "correct": 1, "expectedAny": ["metric"] }
+  ],
+  "fillintheblank": [
+    { "question": "Changing from one unit of measurement to another is called unit ________.", "expectedAny": ["conversion"] },
+    { "question": "The ________ system is based on powers of 10.", "expectedAny": ["metric"] },
+    { "question": "The US commonly uses the ________ system.", "expectedAny": ["customary"] },
+    { "question": "There are ________ inches in 1 foot.", "expectedAny": ["12"] },
+    { "question": "There are ________ centimeters in 1 meter.", "expectedAny": ["100"] },
+    { "question": "________ means how exact a measurement is.", "expectedAny": ["precision"] },
+    { "question": "There are ________ feet in 1 yard.", "expectedAny": ["3"] },
+    { "question": "1000 milliliters equal 1 ________.", "expectedAny": ["liter"] },
+    { "question": "Finding size or length is ________.", "expectedAny": ["measurement", "measuring"] },
+    { "question": "Meters and liters are ________ units.", "expectedAny": ["metric"] }
+  ],
+  "shortanswer": [
+    { "question": "Convert 5 feet to inches.", "expectedAny": ["60", "60 inches", "5 × 12 = 60"] },
+    { "question": "Convert 200 centimeters to meters.", "expectedAny": ["2", "2 meters", "200 ÷ 100 = 2"] },
+    { "question": "How many inches are in 3 feet?", "expectedAny": ["36", "36 inches", "3 × 12 = 36"] },
+    { "question": "Explain what unit conversion is.", "expectedAny": ["changing units", "converting measurement units", "changing one unit to another"] },
+    { "question": "Convert 4000 milliliters to liters.", "expectedAny": ["4", "4 liters", "4000 ÷ 1000 = 4"] },
+    { "question": "Name two customary units of length.", "expectedAny": ["inch and foot", "foot and yard", "inch and yard"] },
+    { "question": "Name two metric units of length.", "expectedAny": ["meter and centimeter", "millimeter and meter", "centimeter and kilometer"] },
+    { "question": "Convert 2 yards to feet.", "expectedAny": ["6", "6 feet", "2 × 3 = 6"] },
+    { "question": "How many centimeters in 3 meters?", "expectedAny": ["300", "300 centimeters", "3 × 100 = 300"] },
+    { "question": "Why is it important to include units?", "expectedAny": ["shows what you measured", "tells the type of measurement", "gives meaning to number"] }
+  ],
+  "wordProblems": [
+    { "question": "A recipe calls for 2.5 liters of water. How many milliliters is this?", "expectedAny": ["2500", "2500 milliliters", "2.5 × 1000 = 2500"] },
+    { "question": "A rope is 4 feet long. How many inches is this?", "expectedAny": ["48", "48 inches", "4 × 12 = 48"] },
+    { "question": "Tom ran 300 meters. How many centimeters is this?", "expectedAny": ["30000", "30000 centimeters", "300 × 100 = 30000"] },
+    { "question": "A board is 72 inches long. How many feet is this?", "expectedAny": ["6", "6 feet", "72 ÷ 12 = 6"] },
+    { "question": "Sarah has 5 liters of juice. How many milliliters is this?", "expectedAny": ["5000", "5000 milliliters", "5 × 1000 = 5000"] },
+    { "question": "A room is 9 feet wide. How many yards is this?", "expectedAny": ["3", "3 yards", "9 ÷ 3 = 3"] },
+    { "question": "A path is 500 centimeters. How many meters is this?", "expectedAny": ["5", "5 meters", "500 ÷ 100 = 5"] },
+    { "question": "Mike needs 36 inches of ribbon. How many feet should he buy?", "expectedAny": ["3", "3 feet", "36 ÷ 12 = 3"] },
+    { "question": "A pool holds 8000 milliliters. How many liters is this?", "expectedAny": ["8", "8 liters", "8000 ÷ 1000 = 8"] },
+    { "question": "A fence is 15 feet long. How many yards is this?", "expectedAny": ["5", "5 yards", "15 ÷ 3 = 5"] }
+  ]
 }

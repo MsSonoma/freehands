@@ -21,15 +21,18 @@
       "term": "respect",
       "definition": "Treating others with kindness and care"
     }
+    ,
+    {"term": "community", "definition": "A group of people who live or work together"},
+    {"term": "principal", "definition": "The leader of a school"}
   ],
   "teachingNotes": "Connect to classroom and school rules. Discuss how students can be good citizens. Use real examples from school life.",
   "sample": [
-    {"question": "What is one responsibility you have at school?", "expectedAny": ["follow rules", "be kind", "listen to teacher", "help others"]},
+  {"question": "What is one responsibility you have at school?", "expectedAny": ["follow rules", "be kind", "listen to teacher", "help others", "clean up"]},
     {"question": "What is a right you have at school?", "expectedAny": ["to learn", "to be safe", "to be respected"]},
     {"question": "What does being a good citizen mean?", "expectedAny": ["helping others", "following rules", "being respectful"]},
     {"question": "Name one classroom rule.", "expectedAny": ["raise hand", "walk inside", "share", "listen"]},
-    {"question": "Who helps keep our school safe?", "expectedAny": ["teachers", "principal", "helpers"]},
-    {"question": "What should you do if you make a mess?", "expectedAny": ["clean it up", "ask to help"]},
+  {"question": "Who helps keep our school safe?", "expectedAny": ["teachers", "principal", "school staff", "helpers"]},
+  {"question": "What should you do if you make a mess?", "expectedAny": ["clean it up", "ask to help", "tell a teacher"]},
     {"question": "How can you show respect?", "expectedAny": ["use kind words", "listen", "take turns"]}
   ],
   "truefalse": [
@@ -51,21 +54,21 @@
     {"question": "What can you do to help your community?", "choices": ["litter", "help clean a park", "be rude", "break rules"], "correct": 1, "expectedAny": ["help clean a park"]}
   ],
   "fillintheblank": [
-    {"question": "One right you have at school is to feel _____.", "expectedAny": ["safe"]},
-    {"question": "A responsibility is something you should _____.", "expectedAny": ["do"]},
-    {"question": "We show _____ by using kind words.", "expectedAny": ["respect"]},
-    {"question": "Follow the classroom _____.", "expectedAny": ["rules"]},
-    {"question": "Help others by being _____.", "expectedAny": ["kind", "helpful"]},
-    {"question": "We take turns and _____ our hands.", "expectedAny": ["raise"]},
-    {"question": "A good citizen tries to make the _____ better.", "expectedAny": ["community", "school"]}
+    {"question": "One right you have at school is to feel _____.", "expectedAny": ["safe", "safe at school"]},
+  {"question": "A responsibility is something you should _____.", "expectedAny": ["do", "help with"]},
+  {"question": "We show _____ by using kind words.", "expectedAny": ["respect", "kindness"]},
+  {"question": "Follow the classroom _____.", "expectedAny": ["rules", "class rules"]},
+  {"question": "Help others by being _____.", "expectedAny": ["kind", "helpful", "nice"]},
+  {"question": "We take turns and _____ our hands.", "expectedAny": ["raise", "raise up"]},
+    {"question": "A good citizen tries to make the _____ better.", "expectedAny": ["community", "school", "classroom"]}
   ],
   "shortanswer": [
     {"question": "How can you show respect for your classmates?", "expectedAny": ["be kind", "listen when they talk", "include everyone", "help them"]},
-    {"question": "Describe a time you helped your class.", "expectedAny": ["varies"]},
-    {"question": "What could you do if you see someone alone at recess?", "expectedAny": ["invite them", "play with them"]},
+  {"question": "Describe a time you helped your class.", "expectedAny": ["cleaned up", "shared supplies", "help a friend"]},
+    {"question": "What could you do if you see someone alone at recess?", "expectedAny": ["invite them", "play with them", "ask to join your game"]},
     {"question": "Why do we have rules?", "expectedAny": ["keep us safe", "help us learn", "be fair"]},
     {"question": "What is one way you can help your community?", "expectedAny": ["pick up trash", "donate", "be kind"]},
     {"question": "What should you do if you make a mistake?", "expectedAny": ["say sorry", "try again", "fix it"]},
-    {"question": "How can students be leaders in class?", "expectedAny": ["set a good example", "help others"]}
+    {"question": "How can students be leaders in class?", "expectedAny": ["set a good example", "help others", "follow rules first"]}
   ]
 }

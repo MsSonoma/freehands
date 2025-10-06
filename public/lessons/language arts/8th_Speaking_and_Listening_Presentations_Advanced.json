@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Practice presentation skills with peer feedback. Emphasize the importance of preparation and audience engagement.",
-  "sample": {
-    "question": "What is a formal speech given to an audience?",
-    "expectedAny": [
-      "presentation",
-      "formal speech",
-      "public speaking",
-      "oral presentation"
-    ]
-  },
-  "truefalse": {
-    "question": "Body language includes gestures and posture.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What involves changes in volume, pace, and tone?",
-    "expectedAny": [
-      "vocal variety",
-      "voice modulation",
-      "speech variation",
-      "vocal dynamics"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Looking directly at your audience is called ________ contact.",
-    "expectedAny": [
-      "eye",
-      "visual",
-      "direct",
-      "face"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why is audience awareness important in presentations?",
-    "expectedAny": [
-      "helps connect with listeners",
-      "improves communication",
-      "makes message relevant"
-    ]
-  }
+  "sample": [
+    { "question": "What is a formal speech given to an audience?", "expectedAny": ["presentation"] },
+    { "question": "Which is non-verbal communication?", "choices": ["Words", "Body language", "Writing", "Silence"], "correct": 1, "expectedAny": ["body language"] },
+    { "question": "Looking at audience is ________.", "expectedAny": ["eye contact"] },
+    { "question": "Changes in voice are ________.", "expectedAny": ["vocal variety"] },
+    { "question": "Understanding listeners is ________.", "expectedAny": ["audience awareness"] },
+    { "question": "What is formal speech?", "choices": ["Email", "Presentation", "Text", "Note"], "correct": 1, "expectedAny": ["presentation"] },
+    { "question": "Gestures and posture are ________.", "expectedAny": ["body language"] },
+    { "question": "What is direct looking?", "choices": ["Avoiding", "Eye contact", "Turning away", "Closing eyes"], "correct": 1, "expectedAny": ["eye contact"] },
+    { "question": "Voice modulation is ________.", "expectedAny": ["vocal variety"] },
+    { "question": "Adapting to listeners is ________.", "expectedAny": ["audience awareness"] }
+  ],
+  "truefalse": [
+    { "question": "Body language includes gestures and posture.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Presentations are informal chats.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Eye contact engages audience.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Vocal variety means monotone.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Audience awareness helps connection.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Body language is unimportant.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Preparation improves presentations.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Eye contact is rude.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Vocal variety adds interest.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Audience doesn't matter.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What involves changes in volume, pace, and tone?", "choices": ["Body language", "Vocal variety", "Eye contact", "Posture"], "correct": 1, "expectedAny": ["vocal variety"] },
+    { "question": "What is formal speech?", "choices": ["Email", "Presentation", "Text", "Note"], "correct": 1, "expectedAny": ["presentation"] },
+    { "question": "What is non-verbal?", "choices": ["Words", "Body language", "Writing", "Speech"], "correct": 1, "expectedAny": ["body language"] },
+    { "question": "What is direct looking?", "choices": ["Avoiding", "Eye contact", "Turning away", "Closing eyes"], "correct": 1, "expectedAny": ["eye contact"] },
+    { "question": "What is understanding listeners?", "choices": ["Ignoring", "Audience awareness", "Avoiding", "Dismissing"], "correct": 1, "expectedAny": ["audience awareness"] },
+    { "question": "Presentation requires?", "choices": ["Nothing", "Preparation", "Improvisation only", "Luck"], "correct": 1, "expectedAny": ["preparation"] },
+    { "question": "Body language shows?", "choices": ["Nothing", "Non-verbal communication", "Only words", "Only writing"], "correct": 1, "expectedAny": ["non-verbal communication"] },
+    { "question": "Eye contact creates?", "choices": ["Distance", "Connection", "Confusion", "Fear"], "correct": 1, "expectedAny": ["connection"] },
+    { "question": "Vocal variety uses?", "choices": ["Monotone", "Volume, pace, tone", "Silence only", "Whispering only"], "correct": 1, "expectedAny": ["volume, pace, tone"] },
+    { "question": "Audience awareness helps?", "choices": ["Nothing", "Adapt message", "Ignore listeners", "Confuse people"], "correct": 1, "expectedAny": ["adapt message"] }
+  ],
+  "fillintheblank": [
+    { "question": "Looking directly at your audience is called ________ contact.", "expectedAny": ["eye"] },
+    { "question": "A formal speech is a ________.", "expectedAny": ["presentation"] },
+    { "question": "Gestures and posture are ________.", "expectedAny": ["body language"] },
+    { "question": "Voice changes are ________.", "expectedAny": ["vocal variety"] },
+    { "question": "Understanding listeners is ________.", "expectedAny": ["audience awareness"] },
+    { "question": "A ________ is formal speech.", "expectedAny": ["presentation"] },
+    { "question": "________ language is non-verbal.", "expectedAny": ["body"] },
+    { "question": "________ contact engages audience.", "expectedAny": ["eye"] },
+    { "question": "________ variety uses tone and pace.", "expectedAny": ["vocal"] },
+    { "question": "________ awareness adapts to listeners.", "expectedAny": ["audience"] }
+  ],
+  "shortanswer": [
+    { "question": "Why is audience awareness important in presentations?", "expectedAny": ["helps connect with listeners", "improves communication"] },
+    { "question": "What is presentation?", "expectedAny": ["formal speech to audience", "oral presentation"] },
+    { "question": "What is body language?", "expectedAny": ["non-verbal communication", "gestures and posture", "physical communication", "how you move"] },
+    { "question": "What is eye contact?", "expectedAny": ["looking at audience", "direct eye connection"] },
+    { "question": "What is vocal variety?", "expectedAny": ["changes in volume, pace, tone", "voice modulation", "varying your voice", "voice changes"] },
+    { "question": "What is audience awareness?", "expectedAny": ["understanding listeners", "adapting to audience", "knowing your listeners", "reading the audience"] },
+    { "question": "Why use eye contact?", "expectedAny": ["engage audience", "create connection"] },
+    { "question": "Why use vocal variety?", "expectedAny": ["add interest", "emphasize points"] },
+    { "question": "How prepare presentation?", "expectedAny": ["practice and plan", "prepare content"] },
+    { "question": "What helps engagement?", "expectedAny": ["eye contact and body language", "audience awareness"] }
+  ]
 }

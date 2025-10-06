@@ -5,12 +5,15 @@
   "difficulty": "Beginner",
   "featured": false,
   "vocab": [
-    { "term": "trait", "definition": "A characteristic or feature of a living thing" },
-    { "term": "inherited", "definition": "Passed down from parents to their babies" },
-    { "term": "environment", "definition": "Everything around a living thing that affects how it lives" },
-    { "term": "learned", "definition": "Something an animal figures out or is taught" },
-    { "term": "offspring", "definition": "A baby or young of a plant or animal" },
-    { "term": "behavior", "definition": "The way an animal acts" }
+    {"word": "trait", "kid_friendly_definition": "A characteristic or feature of a living thing."},
+    {"word": "inherited", "kid_friendly_definition": "Passed down from parents to their babies."},
+    {"word": "environment", "kid_friendly_definition": "Everything around a living thing that affects how it lives."},
+    {"word": "learned", "kid_friendly_definition": "Something an animal figures out or is taught."},
+    {"word": "offspring", "kid_friendly_definition": "A baby or young of a plant or animal."},
+    {"word": "behavior", "kid_friendly_definition": "The way an animal acts."},
+    {"word": "genes", "kid_friendly_definition": "Tiny instructions inside cells that determine inherited traits."},
+    {"word": "instinct", "kid_friendly_definition": "A behavior an animal is born knowing how to do."},
+    {"word": "adaptation", "kid_friendly_definition": "A trait that helps a living thing survive in its environment."}
   ],
   "teachingNotes": "Compare family photos to show inherited traits. Discuss how environment affects growth. Use pet examples for learned vs inherited behaviors.",
   "sample": [
@@ -23,39 +26,39 @@
     { "question": "Give an example of a learned behavior in a pet.", "expectedAny": ["sit", "fetch", "roll over"] }
   ],
   "truefalse": [
-    { "question": "All traits are inherited from parents.", "answer": false, "expectedAny": ["some traits are learned", "environment changes traits"] },
-    { "question": "Siblings can look different even with the same parents.", "answer": true },
-    { "question": "Plants need environment factors like sunlight and water to grow well.", "answer": true },
-    { "question": "A bird knowing how to fly the first time is a learned behavior.", "answer": false, "expectedAny": ["instinct/inherited behavior"] },
-    { "question": "Eye color is a learned trait.", "answer": false },
-    { "question": "A dog's trick is an inherited behavior.", "answer": false },
-    { "question": "Good food can help an animal grow bigger than it would with poor food.", "answer": true }
+    { "question": "All traits are inherited from parents.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "some traits are learned", "environment changes traits"] },
+    { "question": "Siblings can look different even with the same parents.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "can look different"] },
+    { "question": "Plants need environment factors like sunlight and water to grow well.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "sunlight and water"] },
+    { "question": "A bird knowing how to fly the first time is a learned behavior.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "instinct", "inherited behavior"] },
+    { "question": "Eye color is a learned trait.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "inherited trait"] },
+    { "question": "A dog's trick is an inherited behavior.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "learned behavior"] },
+    { "question": "Good food can help an animal grow bigger than it would with poor food.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "food affects growth"] }
   ],
   "multiplechoice": [
-    { "question": "Which is an inherited trait?", "choices": ["Favorite game", "Eye color", "Handwriting", "Language"], "correct": 1 },
-    { "question": "Which is a learned behavior?", "choices": ["Fur color", "Blinking", "Reading", "Number of legs"], "correct": 2 },
-    { "question": "Which environment change could make a plant grow taller?", "choices": ["More sunlight", "Less water", "No soil", "Less air"], "correct": 0 },
-    { "question": "Offspring are:", "choices": ["Plant leaves", "Animal homes", "Babies of plants or animals", "Weather"], "correct": 2 },
-    { "question": "Which is most likely learned?", "choices": ["Having brown eyes", "Speaking Spanish", "Having a tail", "Number of toes"], "correct": 1 },
-    { "question": "Which factor is part of the environment?", "choices": ["Genes", "Sunlight", "Eye color", "Parents"], "correct": 1 },
-    { "question": "A child's height can be affected by:", "choices": ["Only genes", "Only exercise", "Genes and environment", "Neither"], "correct": 2 }
+    { "question": "Which is an inherited trait?", "choices": ["Favorite game", "Eye color", "Handwriting", "Language"], "correct": 1, "expectedAny": ["b", "B", "2", "Eye color"] },
+    { "question": "Which is a learned behavior?", "choices": ["Fur color", "Blinking", "Reading", "Number of legs"], "correct": 2, "expectedAny": ["c", "C", "3", "Reading"] },
+    { "question": "Which environment change could make a plant grow taller?", "choices": ["More sunlight", "Less water", "No soil", "Less air"], "correct": 0, "expectedAny": ["a", "A", "1", "More sunlight"] },
+    { "question": "Offspring are:", "choices": ["Plant leaves", "Animal homes", "Babies of plants or animals", "Weather"], "correct": 2, "expectedAny": ["c", "C", "3", "Babies of plants or animals", "babies"] },
+    { "question": "Which is most likely learned?", "choices": ["Having brown eyes", "Speaking Spanish", "Having a tail", "Number of toes"], "correct": 1, "expectedAny": ["b", "B", "2", "Speaking Spanish", "Spanish"] },
+    { "question": "Which factor is part of the environment?", "choices": ["Genes", "Sunlight", "Eye color", "Parents"], "correct": 1, "expectedAny": ["b", "B", "2", "Sunlight"] },
+    { "question": "A child's height can be affected by:", "choices": ["Only genes", "Only exercise", "Genes and environment", "Neither"], "correct": 2, "expectedAny": ["c", "C", "3", "Genes and environment"] }
   ],
   "fillintheblank": [
-    { "question": "Traits passed from parents to babies are called _____.", "expectedAny": ["inherited"] },
-    { "question": "Learning to ride a bike is a _____ behavior.", "expectedAny": ["learned"] },
-    { "question": "The babies of animals are called _____.", "expectedAny": ["offspring"] },
+  { "question": "Traits passed from parents to babies are called _____.", "expectedAny": ["inherited", "inherited traits"] },
+    { "question": "Learning to ride a bike is a _____ behavior.", "expectedAny": ["learned", "learned behavior", "trained"] },
+  { "question": "The babies of animals are called _____.", "expectedAny": ["offspring", "young"] },
     { "question": "A plant needs water, air, and _____ to grow.", "expectedAny": ["sunlight", "light"] },
-    { "question": "Eye color is an _____ trait.", "expectedAny": ["inherited"] },
-    { "question": "A dog's ability to sit on command is a _____ behavior.", "expectedAny": ["learned"] },
-    { "question": "A tree growing more leaves in bright light shows the effect of the _____.", "expectedAny": ["environment"] }
+  { "question": "Eye color is an _____ trait.", "expectedAny": ["inherited", "inborn"] },
+    { "question": "A dog's ability to sit on command is a _____ behavior.", "expectedAny": ["learned", "trained", "learned behavior"] },
+  { "question": "A tree growing more leaves in bright light shows the effect of the _____.", "expectedAny": ["environment", "surroundings"] }
   ],
   "shortanswer": [
-    { "question": "Explain the difference between a trait and a behavior.", "expectedAny": ["trait is a feature", "behavior is an action"] },
-    { "question": "Give one inherited trait and one learned behavior.", "expectedAny": ["inherited: eye color", "learned: reading"] },
-    { "question": "How can the environment change how a plant grows?", "expectedAny": ["more sunlight -> taller", "less water -> smaller"] },
-    { "question": "Why do puppies often look like their parents?", "expectedAny": ["inherit traits/genes"] },
-    { "question": "Describe a behavior you learned and who taught you.", "expectedAny": ["answers vary: parent/teacher"] },
-    { "question": "What might happen to a plant kept in the dark?", "expectedAny": ["turns pale", "grows slowly"] },
-    { "question": "Why might two cats from the same parents have different personalities?", "expectedAny": ["learned behaviors", "environment differences"] }
+  {"question": "Explain the difference between a trait and a behavior.", "expectedAny": ["a trait is a feature or characteristic", "a behavior is an action or something an animal does", "traits describe looks; behaviors describe actions", "trait is how you look", "behavior is what you do"]},
+  {"question": "Give one inherited trait and one learned behavior.", "expectedAny": ["inherited: eye color", "learned: reading", "inherited: hair color; learned: riding a bike", "eye color inherited", "reading learned"]},
+  {"question": "How can the environment change how a plant grows?", "expectedAny": ["more sunlight can make it taller", "less water can make it smaller", "poor soil can slow growth", "sunlight makes taller", "water affects growth"]},
+  {"question": "Why do puppies often look like their parents?", "expectedAny": ["they inherit traits from parents", "they get genes from parents", "traits pass from parent to offspring", "inherited from parents", "get genes"]},
+  {"question": "Describe a behavior you learned and who taught you.", "expectedAny": ["tying shoes taught by a parent", "reading taught by a teacher", "riding a bike taught by family", "any learned behavior", "any reasonable answer"]},
+  {"question": "What might happen to a plant kept in the dark?", "expectedAny": ["it turns pale or yellow", "it grows slowly or weak", "it may die without light", "turns yellow", "dies or gets weak"]},
+  {"question": "Why might two cats from the same parents have different personalities?", "expectedAny": ["different learned behaviors", "different environments", "they had different experiences", "learned different things", "different experiences"]}
   ]
 }

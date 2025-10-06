@@ -1,75 +1,469 @@
-{
-  "id": "11th_Electromagnetic_Waves_Light_Physics_Beginner",
-  "title": "Electromagnetic Waves and Light Physics",
-  "grade": "11th",
-  "difficulty": "Beginner",
-  "vocab": [
-    {
-      "term": "electromagnetic wave",
-      "definition": "Wave consisting of oscillating electric and magnetic fields"
-    },
-    {
-      "term": "frequency",
-      "definition": "Number of wave cycles per second, measured in hertz"
-    },
-    {
-      "term": "wavelength",
-      "definition": "Distance between two consecutive peaks of a wave"
-    },
-    {
-      "term": "electromagnetic spectrum",
-      "definition": "Range of all electromagnetic radiation frequencies"
-    },
-    {
-      "term": "photon",
-      "definition": "Particle of electromagnetic radiation carrying energy"
-    }
-  ],
-  "teachingNotes": "Connect wave properties to everyday examples like radio, microwaves, and visible light. Demonstrate wave-particle duality concepts.",
-  "sample": {
-    "question": "What consists of oscillating electric and magnetic fields?",
-    "expectedAny": [
-      "electromagnetic wave",
-      "EM wave",
-      "light wave",
-      "electromagnetic radiation"
-    ]
-  },
-  "truefalse": {
-    "question": "Frequency is measured in hertz.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is a particle of electromagnetic radiation?",
-    "expectedAny": [
-      "photon",
-      "light particle",
-      "quantum",
-      "energy packet"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The distance between two wave peaks is the ________.",
-    "expectedAny": [
-      "wavelength",
-      "wave length",
-      "peak distance",
-      "cycle length"
-    ]
-  },
-  "shortanswer": {
-    "question": "What types of radiation are in the electromagnetic spectrum?",
-    "expectedAny": [
-      "radio waves",
-      "microwaves",
-      "visible light",
-      "X-rays",
-      "gamma rays"
-    ]
-  }
+﻿{
+    "id":  "11th_Electromagnetic_Waves_Light_Physics_Beginner",
+    "title":  "Electromagnetic Waves and Light Physics",
+    "grade":  "11th",
+    "difficulty":  "Beginner",
+    "vocab":  [
+                  {
+                      "term":  "electromagnetic wave",
+                      "definition":  "Wave consisting of oscillating electric and magnetic fields"
+                  },
+                  {
+                      "term":  "frequency",
+                      "definition":  "Number of wave cycles per second measured in hertz"
+                  },
+                  {
+                      "term":  "wavelength",
+                      "definition":  "Distance between two consecutive peaks of a wave"
+                  },
+                  {
+                      "term":  "electromagnetic spectrum",
+                      "definition":  "Range of all electromagnetic radiation frequencies"
+                  },
+                  {
+                      "term":  "photon",
+                      "definition":  "Particle of electromagnetic radiation carrying energy"
+                  }
+              ],
+    "teachingNotes":  "Connect wave properties to everyday examples. Demonstrate wave-particle duality concepts.",
+    "sample":  [
+                   {
+                       "question":  "What oscillates in EM waves?",
+                       "expectedAny":  [
+                                           "electric and magnetic fields",
+                                           "fields",
+                                           "EM fields",
+                                           "electromagnetic fields",
+                                           "electric magnetic fields",
+                                           "oscillating fields"
+                                       ]
+                   },
+                   {
+                       "question":  "What is cycles per second?",
+                       "expectedAny":  [
+                                           "frequency",
+                                           "hertz",
+                                           "Hz",
+                                           "cycles per second",
+                                           "wave frequency",
+                                           "oscillation rate"
+                                       ]
+                   },
+                   {
+                       "question":  "What is distance between peaks?",
+                       "expectedAny":  [
+                                           "wavelength",
+                                           "wave length",
+                                           "lambda",
+                                           "peak to peak distance",
+                                           "wave distance",
+                                           "crest to crest"
+                                       ]
+                   },
+                   {
+                       "question":  "What is range of all EM radiation?",
+                       "expectedAny":  [
+                                           "electromagnetic spectrum",
+                                           "EM spectrum",
+                                           "spectrum"
+                                       ]
+                   },
+                   {
+                       "question":  "What is particle of light?",
+                       "expectedAny":  [
+                                           "photon",
+                                           "light particle",
+                                           "quantum"
+                                       ]
+                   },
+                   {
+                       "question":  "What fields oscillate together?",
+                       "expectedAny":  [
+                                           "electric and magnetic",
+                                           "EM fields",
+                                           "electromagnetic"
+                                       ]
+                   },
+                   {
+                       "question":  "What unit measures frequency?",
+                       "expectedAny":  [
+                                           "hertz",
+                                           "Hz",
+                                           "cycles per second"
+                                       ]
+                   },
+                   {
+                       "question":  "What determines wave color?",
+                       "expectedAny":  [
+                                           "wavelength",
+                                           "frequency",
+                                           "both"
+                                       ]
+                   },
+                   {
+                       "question":  "What includes radio to gamma?",
+                       "expectedAny":  [
+                                           "electromagnetic spectrum",
+                                           "EM spectrum",
+                                           "spectrum"
+                                       ]
+                   },
+                   {
+                       "question":  "What carries electromagnetic energy?",
+                       "expectedAny":  [
+                                           "photon",
+                                           "photons",
+                                           "light quanta"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "EM waves need no medium.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Frequency is measured in meters.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Wavelength and frequency are inversely related.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "All EM waves travel at different speeds in vacuum.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Photons carry energy.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Longer wavelength means higher frequency.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Light is electromagnetic radiation.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "EM spectrum includes only visible light.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "All EM waves travel at speed of light.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Radio waves have higher energy than gamma.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What consists of oscillating fields?",
+                               "choices":  [
+                                               "Sound",
+                                               "EM wave",
+                                               "Water wave",
+                                               "Seismic"
+                                           ],
+                               "correct":  "EM wave"
+                           },
+                           {
+                               "question":  "What is measured in hertz?",
+                               "choices":  [
+                                               "Wavelength",
+                                               "Frequency",
+                                               "Speed",
+                                               "Amplitude"
+                                           ],
+                               "correct":  "Frequency"
+                           },
+                           {
+                               "question":  "What is lambda symbol?",
+                               "choices":  [
+                                               "Frequency",
+                                               "Wavelength",
+                                               "Speed",
+                                               "Energy"
+                                           ],
+                               "correct":  "Wavelength"
+                           },
+                           {
+                               "question":  "What includes all EM radiation?",
+                               "choices":  [
+                                               "Visible spectrum",
+                                               "EM spectrum",
+                                               "Color spectrum",
+                                               "Sound spectrum"
+                                           ],
+                               "correct":  "EM spectrum"
+                           },
+                           {
+                               "question":  "What is quantum of light?",
+                               "choices":  [
+                                               "Electron",
+                                               "Proton",
+                                               "Photon",
+                                               "Neutron"
+                                           ],
+                               "correct":  "Photon"
+                           },
+                           {
+                               "question":  "What speed do EM waves travel?",
+                               "choices":  [
+                                               "Sound speed",
+                                               "Variable",
+                                               "Light speed",
+                                               "Infinite"
+                                           ],
+                               "correct":  "Light speed"
+                           },
+                           {
+                               "question":  "What has longest wavelength?",
+                               "choices":  [
+                                               "Gamma",
+                                               "X-ray",
+                                               "Visible",
+                                               "Radio"
+                                           ],
+                               "correct":  "Radio"
+                           },
+                           {
+                               "question":  "What determines photon energy?",
+                               "choices":  [
+                                               "Speed",
+                                               "Mass",
+                                               "Frequency",
+                                               "Amplitude"
+                                           ],
+                               "correct":  "Frequency"
+                           },
+                           {
+                               "question":  "What color has shortest wavelength?",
+                               "choices":  [
+                                               "Red",
+                                               "Green",
+                                               "Blue",
+                                               "Violet"
+                                           ],
+                               "correct":  "Violet"
+                           },
+                           {
+                               "question":  "What needs no medium?",
+                               "choices":  [
+                                               "Sound",
+                                               "Water waves",
+                                               "EM waves",
+                                               "Seismic"
+                                           ],
+                               "correct":  "EM waves"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "_____ waves have oscillating fields.",
+                               "expectedAny":  [
+                                                   "electromagnetic",
+                                                   "EM",
+                                                   "light"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ is cycles per second.",
+                               "expectedAny":  [
+                                                   "frequency",
+                                                   "hertz"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ is distance between peaks.",
+                               "expectedAny":  [
+                                                   "wavelength",
+                                                   "lambda"
+                                               ]
+                           },
+                           {
+                               "question":  "The EM _____ includes all radiation.",
+                               "expectedAny":  [
+                                                   "spectrum",
+                                                   "range"
+                                               ]
+                           },
+                           {
+                               "question":  "A _____ is a light particle.",
+                               "expectedAny":  [
+                                                   "photon",
+                                                   "quantum"
+                                               ]
+                           },
+                           {
+                               "question":  "EM waves travel at speed of _____.",
+                               "expectedAny":  [
+                                                   "light",
+                                                   "c"
+                                               ]
+                           },
+                           {
+                               "question":  "Higher frequency means _____ wavelength.",
+                               "expectedAny":  [
+                                                   "shorter",
+                                                   "smaller"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ waves have lowest frequency.",
+                               "expectedAny":  [
+                                                   "radio",
+                                                   "long"
+                                               ]
+                           },
+                           {
+                               "question":  "Photon energy depends on _____.",
+                               "expectedAny":  [
+                                                   "frequency",
+                                                   "wavelength"
+                                               ]
+                           },
+                           {
+                               "question":  "Visible light is _____ radiation.",
+                               "expectedAny":  [
+                                                   "electromagnetic",
+                                                   "EM"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "What is an electromagnetic wave?",
+                            "expectedAny":  [
+                                                "wave of oscillating electric and magnetic fields",
+                                                "self-propagating wave through space",
+                                                "transverse wave of fields"
+                                            ]
+                        },
+                        {
+                            "question":  "Define frequency.",
+                            "expectedAny":  [
+                                                "number of wave cycles per second",
+                                                "measured in hertz",
+                                                "how many waves pass per time"
+                                            ]
+                        },
+                        {
+                            "question":  "What is wavelength?",
+                            "expectedAny":  [
+                                                "distance between consecutive peaks",
+                                                "length of one complete wave cycle",
+                                                "measured peak to peak"
+                                            ]
+                        },
+                        {
+                            "question":  "Describe EM spectrum.",
+                            "expectedAny":  [
+                                                "range of all electromagnetic radiation frequencies",
+                                                "from radio to gamma rays",
+                                                "complete set of EM wave types"
+                                            ]
+                        },
+                        {
+                            "question":  "What is a photon?",
+                            "expectedAny":  [
+                                                "particle of electromagnetic radiation",
+                                                "quantum of light energy",
+                                                "discrete packet of EM energy"
+                                            ]
+                        },
+                        {
+                            "question":  "How are frequency and wavelength related?",
+                            "expectedAny":  [
+                                                "inversely related higher frequency means shorter wavelength",
+                                                "product equals wave speed",
+                                                "c = frequency times wavelength"
+                                            ]
+                        },
+                        {
+                            "question":  "Why can EM waves travel through vacuum?",
+                            "expectedAny":  [
+                                                "they are oscillating fields not requiring medium",
+                                                "self-sustaining electromagnetic oscillations",
+                                                "do not need particles to propagate"
+                                            ]
+                        },
+                        {
+                            "question":  "List parts of EM spectrum in order.",
+                            "expectedAny":  [
+                                                "radio microwave infrared visible ultraviolet x-ray gamma",
+                                                "increasing frequency from radio to gamma",
+                                                "decreasing wavelength from radio to gamma"
+                                            ]
+                        },
+                        {
+                            "question":  "What determines photon energy?",
+                            "expectedAny":  [
+                                                "frequency of the radiation",
+                                                "E equals h times frequency",
+                                                "higher frequency means more energy"
+                                            ]
+                        },
+                        {
+                            "question":  "Compare radio and gamma rays.",
+                            "expectedAny":  [
+                                                "radio has low frequency long wavelength low energy",
+                                                "gamma has high frequency short wavelength high energy",
+                                                "opposite ends of spectrum"
+                                            ]
+                        }
+                    ]
 }

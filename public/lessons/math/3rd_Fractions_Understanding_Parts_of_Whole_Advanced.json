@@ -13,57 +13,57 @@
 	],
 	"teachingNotes": "Use visual models (fraction bars, circles). Emphasize numerator/denominator roles, equivalence, and unit fractions.",
 	"sample": [
-		{"question": "What fraction is half of a pizza?", "expectedAny": ["1/2", "one-half"]},
-		{"question": "What does 3/4 mean?", "expectedAny": ["3 out of 4 equal parts"]},
-		{"question": "Which is bigger: 1/2 or 1/3?", "expectedAny": ["1/2"]},
-		{"question": "What is 2/4 simplified?", "expectedAny": ["1/2"]},
+		{"question": "What fraction is half of a pizza?", "expectedAny": ["1/2", "one-half", "1/2 of the pizza"]},
+		{"question": "What does 3/4 mean?", "expectedAny": ["3 out of 4 equal parts", "three out of four equal parts", "3 of 4 equal parts"]},
+		{"question": "Which is bigger: 1/2 or 1/3?", "expectedAny": ["1/2", "one-half", "1/2 is bigger"]},
+		{"question": "What is 2/4 simplified?", "expectedAny": ["1/2", "one-half"]},
 		{"question": "How many fourths make a whole?", "expectedAny": ["4", "four"]},
-		{"question": "What fraction is shaded if 3 of 5 parts are colored?", "expectedAny": ["3/5"]},
-		{"question": "What is 1/2 of 8?", "expectedAny": ["4"]}
+		{"question": "What fraction is shaded if 3 of 5 parts are colored?", "expectedAny": ["3/5", "three-fifths"]},
+		{"question": "What is 1/2 of 8?", "expectedAny": ["4", "four"]}
 	],
 	"truefalse": [
-		{"question": "1/2 means one out of two equal parts.", "answer": true},
-		{"question": "The bottom number is the numerator.", "answer": false},
-		{"question": "2/4 equals 1/2.", "answer": true},
-		{"question": "Fractions show parts of a whole.", "answer": true},
-		{"question": "1/3 is bigger than 1/2.", "answer": false},
-		{"question": "4/4 equals 1 whole.", "answer": true},
-		{"question": "The numerator tells how many parts we have.", "answer": true}
+		{"question": "1/2 means one out of two equal parts.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "one out of two"]},
+		{"question": "The bottom number is the numerator.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "the bottom is the denominator"]},
+		{"question": "2/4 equals 1/2.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "equivalent"]},
+		{"question": "Fractions show parts of a whole.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "parts of a whole"]},
+		{"question": "1/3 is bigger than 1/2.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "1/2 is bigger"]},
+		{"question": "4/4 equals 1 whole.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "one whole"]},
+		{"question": "The numerator tells how many parts we have.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "how many parts we have"]}
 	],
 	"multiplechoice": [
-		{"question": "Which equals 1/2?", "choices": ["2/3", "2/4", "2/5", "2/6"], "correct": 1},
-		{"question": "3/8 means ___ parts out of 8", "choices": ["3", "5", "8", "11"], "correct": 0},
-		{"question": "Which is largest?", "choices": ["1/4", "1/3", "1/2", "1/5"], "correct": 2},
-		{"question": "How many thirds make 1?", "choices": ["2", "3", "4", "5"], "correct": 1},
-		{"question": "1/2 of 10 = ?", "choices": ["3", "4", "5", "6"], "correct": 2},
-		{"question": "Which is smallest?", "choices": ["3/4", "1/4", "2/4", "4/4"], "correct": 1},
-		{"question": "2/3 + 1/3 = ?", "choices": ["3/6", "3/3", "2/3", "1/3"], "correct": 1}
+		{"question": "Which equals 1/2?", "choices": ["2/3", "2/4", "2/5", "2/6"], "correct": 1, "expectedAny": ["b", "B", "2", "2/4"]},
+		{"question": "3/8 means ___ parts out of 8", "choices": ["3", "5", "8", "11"], "correct": 0, "expectedAny": ["a", "A", "1", "3"]},
+		{"question": "Which is largest?", "choices": ["1/4", "1/3", "1/2", "1/5"], "correct": 2, "expectedAny": ["c", "C", "3", "1/2", "one-half"]},
+		{"question": "How many thirds make 1?", "choices": ["2", "3", "4", "5"], "correct": 1, "expectedAny": ["b", "B", "2", "3"]},
+		{"question": "1/2 of 10 = ?", "choices": ["3", "4", "5", "6"], "correct": 2, "expectedAny": ["c", "C", "3", "5"]},
+		{"question": "Which is smallest?", "choices": ["3/4", "1/4", "2/4", "4/4"], "correct": 1, "expectedAny": ["b", "B", "2", "1/4", "one-fourth"]},
+		{"question": "2/3 + 1/3 = ?", "choices": ["3/6", "3/3", "2/3", "1/3"], "correct": 1, "expectedAny": ["b", "B", "2", "3/3", "1"]}
 	],
 	"fillintheblank": [
-		{"question": "The top number of a fraction is the ___", "expectedAny": ["numerator"]},
-		{"question": "The bottom number is the ___", "expectedAny": ["denominator"]},
+		{"question": "The top number of a fraction is the ___", "expectedAny": ["numerator", "the numerator", "top number"]},
+		{"question": "The bottom number is the ___", "expectedAny": ["denominator", "the denominator", "bottom number"]},
 		{"question": "1/2 and 2/4 are ___ fractions", "expectedAny": ["equivalent", "equal"]},
 		{"question": "___ fourths equal one whole", "expectedAny": ["4", "four"]},
-		{"question": "1/2 of 12 = ___", "expectedAny": ["6"]},
+		{"question": "1/2 of 12 = ___", "expectedAny": ["6", "six"]},
 		{"question": "3/3 = ___", "expectedAny": ["1", "one"]},
-		{"question": "To compare fractions, they need the same ___", "expectedAny": ["denominator"]}
+		{"question": "To compare fractions, they need the same ___", "expectedAny": ["denominator", "same denominator", "denominators", "common denominator"]}
 	],
 	"shortanswer": [
-		{"question": "What does the numerator tell us?", "expectedAny": ["how many parts"]},
-		{"question": "What does the denominator tell us?", "expectedAny": ["how many equal parts total"]},
-		{"question": "How do you know if fractions are equivalent?", "expectedAny": ["simplify to same", "same amount"]},
-		{"question": "Give three examples of 1/2 in real life.", "expectedAny": ["half pizza", "half hour", "half dollar"]},
-		{"question": "How do you add fractions with same denominator?", "expectedAny": ["add numerators, keep denominator"]},
-		{"question": "Why is 5/5 equal to 1?", "expectedAny": ["all parts make whole"]},
-		{"question": "Is 2/6 equal to 1/3? Why?", "expectedAny": ["yes, simplified"]}
+		{"question": "What does the numerator tell us?", "expectedAny": ["how many parts", "how many parts are shaded/used", "the number of parts we have", "count of selected parts", "how many we have", "top number tells how many"]},
+		{"question": "What does the denominator tell us?", "expectedAny": ["how many equal parts total", "total number of equal parts", "how many parts make the whole", "size of the equal parts count", "how many parts total", "bottom number is total parts"]},
+		{"question": "How do you know if fractions are equivalent?", "expectedAny": ["simplify to same", "same amount", "both reduce to the same simplest form", "they show the same part of the whole", "cross-multiply to compare", "equal amounts", "reduce to same fraction"]},
+		{"question": "Give three examples of 1/2 in real life.", "expectedAny": ["half pizza", "half hour", "half dollar", "half a sandwich", "halfway", "in the middle", "split in two"]},
+		{"question": "How do you add fractions with same denominator?", "expectedAny": ["add numerators, keep denominator", "add the tops, keep the bottom", "denominator stays the same", "add the top numbers", "add tops", "bottom stays same"]},
+		{"question": "Why is 5/5 equal to 1?", "expectedAny": ["all parts make whole", "you have all the parts of the whole", "the fraction equals one whole", "numerator equals denominator", "five out of five", "have all pieces"]},
+		{"question": "Is 2/6 equal to 1/3? Why?", "expectedAny": ["yes, simplified", "they reduce to the same", "divide top and bottom by 2", "both simplify to one-third", "yes, same amount", "yes, equivalent"]}
 	],
 	"wordProblems": [
-		{"question": "A pizza cut into 8 slices. Tom ate 3 slices. What fraction?", "expectedAny": ["3/8"]},
-		{"question": "12 eggs in a carton. 4 are used. What fraction remains?", "expectedAny": ["8/12", "2/3"]},
-		{"question": "A cake divided into 6 pieces. 2 eaten. What fraction left?", "expectedAny": ["4/6", "2/3"]},
-		{"question": "30 students. 1/3 wear glasses. How many wear glasses?", "expectedAny": ["10"]},
-		{"question": "24 hours in a day. What fraction is 6 hours?", "expectedAny": ["6/24", "1/4"]},
-		{"question": "A jar has 20 marbles. 1/4 are red. How many red marbles?", "expectedAny": ["5"]},
-		{"question": "15 questions on a test. Sarah got 3/5 correct. How many correct?", "expectedAny": ["9"]}
+		{"question": "A pizza cut into 8 slices. Tom ate 3 slices. What fraction?", "expectedAny": ["3/8", "three-eighths"]},
+		{"question": "12 eggs in a carton. 4 are used. What fraction remains?", "expectedAny": ["8/12", "2/3", "two-thirds"]},
+		{"question": "A cake divided into 6 pieces. 2 eaten. What fraction left?", "expectedAny": ["4/6", "2/3", "two-thirds"]},
+		{"question": "30 students. 1/3 wear glasses. How many wear glasses?", "expectedAny": ["10", "ten"]},
+		{"question": "24 hours in a day. What fraction is 6 hours?", "expectedAny": ["6/24", "1/4", "one-fourth"]},
+		{"question": "A jar has 20 marbles. 1/4 are red. How many red marbles?", "expectedAny": ["5", "five"]},
+		{"question": "15 questions on a test. Sarah got 3/5 correct. How many correct?", "expectedAny": ["9", "nine"]}
 	]
 }

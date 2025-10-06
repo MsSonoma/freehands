@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "9th_Classical_Greece_Democracy_Philosophy_Intermediate",
   "title": "Classical Greece: Democracy and Philosophy",
   "grade": "9th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "democracy",
-      "definition": "Government by the people, especially rule of the majority"
-    },
-    {
-      "term": "city-state",
-      "definition": "Independent political unit consisting of a city and surrounding territory"
-    },
-    {
-      "term": "philosophy",
-      "definition": "Love of wisdom; systematic study of fundamental questions"
-    },
-    {
-      "term": "Socratic method",
-      "definition": "Teaching through questioning to stimulate critical thinking"
-    },
-    {
-      "term": "golden age",
-      "definition": "Period of great cultural and intellectual achievement"
-    }
+    {"term": "democracy", "definition": "Government by the people, especially rule of the majority"},
+    {"term": "city-state", "definition": "Independent political unit consisting of a city and surrounding territory"},
+    {"term": "philosophy", "definition": "Love of wisdom; systematic study of fundamental questions"},
+    {"term": "Socratic method", "definition": "Teaching through questioning to stimulate critical thinking"},
+    {"term": "golden age", "definition": "Period of great cultural and intellectual achievement"}
   ],
   "teachingNotes": "Emphasize Greek contributions to democracy and philosophy. Discuss the influence on modern government and thought.",
-  "sample": {
-    "question": "What is government by the people called?",
-    "expectedAny": [
-      "democracy",
-      "democratic government",
-      "rule by people",
-      "popular government"
-    ]
-  },
-  "truefalse": {
-    "question": "A city-state is an independent political unit with a city and surrounding territory.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What teaching method uses questioning to stimulate thinking?",
-    "expectedAny": [
-      "Socratic method",
-      "Socratic questioning",
-      "Socrates method",
-      "questioning method"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The systematic study of fundamental questions is called ________.",
-    "expectedAny": [
-      "philosophy",
-      "philosophical study",
-      "wisdom study",
-      "critical thinking"
-    ]
-  },
-  "shortanswer": {
-    "question": "How did Athenian democracy differ from modern democracy?",
-    "expectedAny": [
-      "only male citizens could vote",
-      "excluded women and slaves",
-      "direct rather than representative"
-    ]
-  }
+  "sample": [
+    {"question": "What is government by the people called?", "expectedAny": ["democracy", "democratic government", "rule by people", "people power"]},
+    {"question": "What is a city-state?", "expectedAny": ["independent political unit", "city and territory", "polis", "independent city"]},
+    {"question": "What is philosophy?", "expectedAny": ["love of wisdom", "study of fundamental questions", "systematic thinking", "pursuit of knowledge"]},
+    {"question": "What is the Socratic method?", "expectedAny": ["teaching through questioning", "critical thinking through questions", "questioning method", "learning by questions"]},
+    {"question": "What is a golden age?", "expectedAny": ["period of great achievement", "cultural peak", "intellectual flourishing", "time of excellence"]},
+    {"question": "Who rules in democracy?", "expectedAny": ["the people", "majority", "citizens"]},
+    {"question": "What did Greek city-states include?", "expectedAny": ["city and surrounding territory", "urban center and land", "polis and countryside"]},
+    {"question": "What does philosophy mean?", "expectedAny": ["love of wisdom", "pursuit of knowledge", "systematic inquiry"]},
+    {"question": "How does Socratic method work?", "expectedAny": ["through questioning", "asking questions", "dialogue and inquiry"]},
+    {"question": "What characterized the golden age?", "expectedAny": ["great achievements", "cultural excellence", "intellectual advances"]}
+  ],
+  "truefalse": [
+    {"question": "A city-state is an independent political unit with a city and surrounding territory. (True or False)", "correct": true},
+    {"question": "Democracy means government by the people. (True or False)", "correct": true},
+    {"question": "Philosophy means hatred of wisdom. (True or False)", "correct": false},
+    {"question": "The Socratic method uses questioning. (True or False)", "correct": true},
+    {"question": "A golden age is a period of decline. (True or False)", "correct": false},
+    {"question": "In democracy, the majority rules. (True or False)", "correct": true},
+    {"question": "City-states were dependent units. (True or False)", "correct": false},
+    {"question": "Philosophy studies fundamental questions. (True or False)", "correct": true},
+    {"question": "The Socratic method stimulates critical thinking. (True or False)", "correct": true},
+    {"question": "Greece had a golden age. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is government by the people?", "choices": [{"letter": "A", "text": "Monarchy"}, {"letter": "B", "text": "Democracy"}, {"letter": "C", "text": "Oligarchy"}, {"letter": "D", "text": "Tyranny"}], "correct": "B"},
+    {"question": "What is an independent political unit?", "choices": [{"letter": "A", "text": "Empire"}, {"letter": "B", "text": "City-state"}, {"letter": "C", "text": "Province"}, {"letter": "D", "text": "Colony"}], "correct": "B"},
+    {"question": "What is love of wisdom?", "choices": [{"letter": "A", "text": "Science"}, {"letter": "B", "text": "Mathematics"}, {"letter": "C", "text": "Philosophy"}, {"letter": "D", "text": "Art"}], "correct": "C"},
+    {"question": "What method uses questioning?", "choices": [{"letter": "A", "text": "Lecture"}, {"letter": "B", "text": "Socratic method"}, {"letter": "C", "text": "Memorization"}, {"letter": "D", "text": "Demonstration"}], "correct": "B"},
+    {"question": "What is a period of great achievement?", "choices": [{"letter": "A", "text": "Dark age"}, {"letter": "B", "text": "Golden age"}, {"letter": "C", "text": "Middle age"}, {"letter": "D", "text": "Bronze age"}], "correct": "B"},
+    {"question": "Who rules in democracy?", "choices": [{"letter": "A", "text": "King"}, {"letter": "B", "text": "The people"}, {"letter": "C", "text": "Nobles"}, {"letter": "D", "text": "Priests"}], "correct": "B"},
+    {"question": "What did city-states have?", "choices": [{"letter": "A", "text": "No independence"}, {"letter": "B", "text": "City and territory"}, {"letter": "C", "text": "Only city"}, {"letter": "D", "text": "Only land"}], "correct": "B"},
+    {"question": "What does philosophy study?", "choices": [{"letter": "A", "text": "Only science"}, {"letter": "B", "text": "Fundamental questions"}, {"letter": "C", "text": "Only math"}, {"letter": "D", "text": "Only history"}], "correct": "B"},
+    {"question": "What does Socratic method stimulate?", "choices": [{"letter": "A", "text": "Memory"}, {"letter": "B", "text": "Critical thinking"}, {"letter": "C", "text": "Obedience"}, {"letter": "D", "text": "Speed"}], "correct": "B"},
+    {"question": "What was Greece's golden age?", "choices": [{"letter": "A", "text": "Decline"}, {"letter": "B", "text": "Cultural achievement"}, {"letter": "C", "text": "War"}, {"letter": "D", "text": "Isolation"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ is government by the people.", "expectedAny": ["democracy", "Democracy"]},
+    {"question": "A _____-_____ is an independent political unit.", "expectedAny": ["city-state", "city state"]},
+    {"question": "_____ means love of wisdom.", "expectedAny": ["philosophy", "Philosophy"]},
+    {"question": "The _____ method teaches through questioning.", "expectedAny": ["Socratic", "socratic"]},
+    {"question": "A _____ age is a period of great achievement.", "expectedAny": ["golden", "Golden"]},
+    {"question": "In democracy, the _____ rules.", "expectedAny": ["people", "majority"]},
+    {"question": "City-states included a city and surrounding _____.", "expectedAny": ["territory", "land"]},
+    {"question": "Philosophy studies _____ questions.", "expectedAny": ["fundamental", "basic", "essential"]},
+    {"question": "The Socratic method stimulates _____ thinking.", "expectedAny": ["critical", "analytical"]},
+    {"question": "Greece had a _____ age of achievement.", "expectedAny": ["golden"]}
+  ],
+  "shortanswer": [
+    {"question": "What is democracy?", "keyTerms": ["government", "people", "majority", "rule"], "expectedAny": ["Government by the people especially rule of the majority", "System where people govern themselves", "Popular rule and citizen participation"]},
+    {"question": "What is a city-state?", "keyTerms": ["independent", "political", "unit", "city", "territory"], "expectedAny": ["Independent political unit consisting of a city and surrounding territory", "Self-governing city with its land", "Polis with political autonomy"]},
+    {"question": "What is philosophy?", "keyTerms": ["love", "wisdom", "study", "fundamental", "questions"], "expectedAny": ["Love of wisdom and systematic study of fundamental questions", "Pursuit of knowledge and understanding", "Examination of basic truths"]},
+    {"question": "What is the Socratic method?", "keyTerms": ["teaching", "questioning", "critical", "thinking"], "expectedAny": ["Teaching through questioning to stimulate critical thinking", "Learning by asking and answering questions", "Dialogue method for understanding"]},
+    {"question": "What was the golden age?", "keyTerms": ["period", "great", "cultural", "intellectual", "achievement"], "expectedAny": ["Period of great cultural and intellectual achievement", "Peak of Greek civilization", "Time of artistic and philosophical excellence"]},
+    {"question": "How did Greek democracy work?", "keyTerms": ["citizens", "vote", "participate", "decisions"], "expectedAny": ["Citizens voted and participated in government decisions", "Direct democracy with citizen involvement", "Popular assembly made laws"]},
+    {"question": "Why were city-states important?", "keyTerms": ["independent", "self-governing", "political", "units"], "expectedAny": ["They were independent self-governing political units", "Basis for Greek political life", "Centers of government and culture"]},
+    {"question": "What did Greek philosophers study?", "keyTerms": ["fundamental", "questions", "truth", "knowledge", "existence"], "expectedAny": ["Fundamental questions about truth knowledge and existence", "Nature of reality and ethics", "Basic questions of life and thought"]},
+    {"question": "Why use the Socratic method?", "keyTerms": ["encourage", "thinking", "questioning", "understanding"], "expectedAny": ["To encourage critical thinking through questioning", "Develops deeper understanding by examining ideas", "Stimulates analytical thought"]},
+    {"question": "What was Greece's legacy?", "keyTerms": ["democracy", "philosophy", "influenced", "modern"], "expectedAny": ["Democracy and philosophy that influenced modern civilization", "Foundation for Western government and thought", "Models for political and intellectual systems"]}
+  ]
 }

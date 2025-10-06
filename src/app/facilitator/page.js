@@ -181,6 +181,7 @@ export default function FacilitatorPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <Link href="/facilitator/account" style={cardStyle}>Account</Link>
           <Link href="/facilitator/learners" style={cardStyle}>Learners</Link>
+          <Link href="/facilitator/lessons" style={cardStyle}>Lessons</Link>
           <Link href="/facilitator/plan" style={cardStyle}>Plan</Link>
           <Link href="/facilitator/settings" style={cardStyle}>Settings</Link>
           <Link href="/facilitator/tools" style={cardStyle}>Tools</Link>

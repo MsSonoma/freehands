@@ -1,4 +1,4 @@
-{
+﻿{
   "id": "11th_American_Literature_Analysis_Transcendentalism_Intermediate",
   "title": "American Literature Analysis: Transcendentalism and Romanticism",
   "grade": "11th",
@@ -26,49 +26,224 @@
     }
   ],
   "teachingNotes": "Analyze philosophical differences between optimistic transcendentalists and darker romantics. Examine social criticism in literature.",
-  "sample": {
-    "question": "What is Thoreau's concept of principled resistance to unjust laws?",
-    "expectedAny": [
-      "civil disobedience",
-      "principled resistance",
-      "moral resistance",
-      "passive resistance"
-    ]
-  },
-  "truefalse": {
-    "question": "Dark romanticism explored human fallibility and evil.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is Emerson's philosophy of individual independence?",
-    "expectedAny": [
-      "self-reliance",
-      "individual independence",
-      "personal autonomy",
-      "individual authenticity"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Literary techniques creating mystery and horror are ________ elements.",
-    "expectedAny": [
-      "gothic",
-      "horror",
-      "dark",
-      "mysterious"
-    ]
-  },
-  "shortanswer": {
-    "question": "How do transcendentalists and dark romantics differ in worldview?",
-    "expectedAny": [
-      "optimism vs. pessimism",
-      "human goodness vs. evil",
-      "nature positive vs. negative",
-      "hope vs. despair"
-    ]
-  }
+  "sample": [
+    {
+      "question": "What is Thoreau's concept of principled resistance to unjust laws?",
+      "expectedAny": ["civil disobedience", "principled resistance", "moral resistance", "passive resistance", "nonviolent protest", "peaceful resistance"]
+    },
+    {
+      "question": "What is Emerson's philosophy of individual independence?",
+      "expectedAny": ["self-reliance", "self reliance", "individual independence", "personal autonomy", "self sufficiency", "personal independence"]
+    },
+    {
+      "question": "What movement explored human fallibility and evil?",
+      "expectedAny": ["dark romanticism", "gothic romanticism", "pessimistic romanticism", "darker romantic movement", "dark romantic literature", "gothic movement"]
+    },
+    {
+      "question": "What techniques create mystery and horror?",
+      "expectedAny": ["gothic elements", "gothic techniques", "dark literary elements", "horror techniques", "mystery devices", "atmospheric elements"]
+    },
+    {
+      "question": "What story illustrates ethical principles symbolically?",
+      "expectedAny": ["moral allegory", "ethical allegory", "allegorical moral tale", "symbolic moral story", "didactic allegory", "moral tale"]
+    },
+    {
+      "question": "What did Thoreau advocate in response to injustice?",
+      "expectedAny": ["civil disobedience", "peaceful resistance", "principled resistance", "moral protest"]
+    },
+    {
+      "question": "What concept emphasizes individual authenticity?",
+      "expectedAny": ["self-reliance", "self reliance", "personal independence", "individual autonomy"]
+    },
+    {
+      "question": "What literary movement was darker than transcendentalism?",
+      "expectedAny": ["dark romanticism", "gothic romanticism", "pessimistic romanticism", "darker romantic literature"]
+    },
+    {
+      "question": "What creates an atmosphere of mystery in literature?",
+      "expectedAny": ["gothic elements", "gothic techniques", "dark atmosphere", "mysterious elements"]
+    },
+    {
+      "question": "What type of allegory teaches ethical lessons?",
+      "expectedAny": ["moral allegory", "ethical allegory", "didactic allegory", "moral tale"]
+    }
+  ],
+  "truefalse": [
+    {
+      "question": "Dark romanticism explored human fallibility and evil.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Self-reliance means depending entirely on others.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Civil disobedience involves principled resistance to unjust laws.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Gothic elements create cheerful bright atmospheres.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Moral allegories illustrate ethical principles through symbols.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Dark romanticism was more optimistic than transcendentalism.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Emerson promoted self-reliance and individual independence.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Civil disobedience requires violent action.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Gothic elements include mystery and horror.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Self-reliance discourages personal authenticity.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "Who wrote about civil disobedience?",
+      "choices": ["Emerson", "Thoreau", "Poe", "Whitman"],
+      "correct": "Thoreau"
+    },
+    {
+      "question": "What did Emerson emphasize?",
+      "choices": ["Conformity", "Self-reliance", "Tradition", "Authority"],
+      "correct": "Self-reliance"
+    },
+    {
+      "question": "What explored human evil?",
+      "choices": ["Transcendentalism", "Dark romanticism", "Realism", "Naturalism"],
+      "correct": "Dark romanticism"
+    },
+    {
+      "question": "What creates mystery?",
+      "choices": ["Gothic elements", "Statistics", "Facts", "Logic"],
+      "correct": "Gothic elements"
+    },
+    {
+      "question": "What teaches ethical lessons?",
+      "choices": ["Moral allegory", "Biography", "Textbook", "Journal"],
+      "correct": "Moral allegory"
+    },
+    {
+      "question": "What is principled resistance?",
+      "choices": ["Violence", "Civil disobedience", "Compliance", "Silence"],
+      "correct": "Civil disobedience"
+    },
+    {
+      "question": "What promotes independence?",
+      "choices": ["Conformity", "Self-reliance", "Obedience", "Dependence"],
+      "correct": "Self-reliance"
+    },
+    {
+      "question": "Which author wrote dark romantic tales?",
+      "choices": ["Emerson", "Thoreau", "Hawthorne", "Whitman"],
+      "correct": "Hawthorne"
+    },
+    {
+      "question": "What includes horror and mystery?",
+      "choices": ["Comedy", "Gothic", "Romance", "Adventure"],
+      "correct": "Gothic"
+    },
+    {
+      "question": "What uses symbolic characters?",
+      "choices": ["Biography", "Essay", "Allegory", "Report"],
+      "correct": "Allegory"
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "_____ disobedience is principled resistance to unjust laws.",
+      "expectedAny": ["civil", "peaceful", "moral"]
+    },
+    {
+      "question": "_____-reliance emphasizes individual independence.",
+      "expectedAny": ["self", "personal", "individual"]
+    },
+    {
+      "question": "_____ romanticism explored human fallibility and evil.",
+      "expectedAny": ["dark", "gothic", "pessimistic"]
+    },
+    {
+      "question": "_____ elements create mystery and horror.",
+      "expectedAny": ["gothic", "dark", "mysterious"]
+    },
+    {
+      "question": "A _____ allegory illustrates ethical principles.",
+      "expectedAny": ["moral", "ethical", "didactic"]
+    },
+    {
+      "question": "Thoreau wrote about _____ disobedience.",
+      "expectedAny": ["civil", "peaceful", "principled"]
+    },
+    {
+      "question": "Emerson's essay promoted _____-reliance.",
+      "expectedAny": ["self", "personal", "individual"]
+    },
+    {
+      "question": "_____ romantic writers explored darker themes.",
+      "expectedAny": ["dark", "gothic", "pessimistic"]
+    },
+    {
+      "question": "Hawthorne used _____ elements in stories.",
+      "expectedAny": ["gothic", "dark", "allegorical"]
+    },
+    {
+      "question": "The Scarlet Letter is a _____ allegory.",
+      "expectedAny": ["moral", "ethical", "symbolic"]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Explain Thoreau's concept of civil disobedience.",
+      "expectedAny": ["civil disobedience is principled peaceful resistance to unjust laws based on conscience", "Thoreau argued individuals should refuse to support injustice even if it means breaking laws", "moral resistance to government policies that violate ethical principles"]
+    },
+    {
+      "question": "What does Emerson's self-reliance philosophy mean?",
+      "expectedAny": ["self-reliance means trusting personal judgment and being independent from conformity", "Emerson believed individuals should think for themselves and reject social pressure", "philosophy of individual authenticity and intellectual independence"]
+    },
+    {
+      "question": "How does dark romanticism differ from transcendentalism?",
+      "expectedAny": ["dark romanticism explores human evil while transcendentalism emphasizes goodness", "dark romantics were pessimistic about human nature unlike optimistic transcendentalists", "dark romanticism focuses on fallibility while transcendentalism celebrates potential"]
+    },
+    {
+      "question": "What are examples of gothic elements in literature?",
+      "expectedAny": ["darkness isolation supernatural events and psychological terror", "haunted settings mysterious atmospheres and threatening characters", "elements like shadows secrets madness and death"]
+    },
+    {
+      "question": "How does moral allegory teach lessons?",
+      "expectedAny": ["characters and events symbolically represent virtues and vices", "readers learn ethical principles by interpreting symbolic meanings", "allegory makes abstract moral concepts concrete through narrative"]
+    },
+    {
+      "question": "Why was civil disobedience important to social reform?",
+      "expectedAny": ["it provided a peaceful way to protest injustice and inspire change", "civil disobedience influenced movements like civil rights and anti-war protests", "principled resistance can expose unjust laws and build moral momentum"]
+    },
+    {
+      "question": "How did self-reliance challenge American society?",
+      "expectedAny": ["it questioned conformity and encouraged individual thinking", "self-reliance promoted independence from traditional authority and social norms", "Emerson challenged Americans to trust themselves over institutions"]
+    },
+    {
+      "question": "What themes do dark romantic works explore?",
+      "expectedAny": ["guilt sin madness and the darker aspects of human psychology", "dark romantics examined evil ambiguity and moral complexity", "themes of isolation fear and supernatural consequences of sin"]
+    },
+    {
+      "question": "How do gothic elements create mood?",
+      "expectedAny": ["darkness mystery and supernatural events create suspense and fear", "gothic techniques build atmosphere through setting imagery and tone", "elements like shadows secrets and isolation evoke unease"]
+    },
+    {
+      "question": "Give an example of moral allegory in American literature.",
+      "expectedAny": ["The Scarlet Letter where characters represent sin guilt and redemption", "Young Goodman Brown exploring loss of innocence and moral complexity", "The Minister's Black Veil examining secret sin and judgment"]
+    }
+  ]
 }

@@ -28,7 +28,7 @@
   "teachingNotes": "Explore advanced integration techniques and theoretical concepts. Discuss applications in physics and engineering.",
   "sample": {
     "question": "What method decomposes rational functions for integration?",
-    "expectedAny": ["partial fractions", "fraction decomposition", "rational decomposition", "partial fraction decomposition"]
+    "expectedAny": ["partial fractions", "fraction decomposition", "rational decomposition", "partial fraction decomposition", "fraction method", "rational fraction method"]
   },
   "truefalse": {
     "question": "Convergence means improper integrals have finite values.",

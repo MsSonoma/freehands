@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "10th_Decolonization_Independence_Movements_Intermediate",
   "title": "Decolonization and Independence Movements",
   "grade": "10th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "decolonization",
-      "definition": "Process of colonies gaining independence from imperial powers"
-    },
-    {
-      "term": "independence movement",
-      "definition": "Political campaign seeking freedom from colonial rule"
-    },
-    {
-      "term": "nationalism",
-      "definition": "Strong identification with and pride in one's nation"
-    },
-    {
-      "term": "partition",
-      "definition": "Division of a territory into separate political units"
-    },
-    {
-      "term": "non violent resistance",
-      "definition": "Method of protest that avoids physical violence"
-    }
+    {"term": "decolonization", "definition": "Process of colonies gaining independence from imperial powers"},
+    {"term": "independence movement", "definition": "Political campaign seeking freedom from colonial rule"},
+    {"term": "nationalism", "definition": "Strong identification with and pride in one's nation"},
+    {"term": "partition", "definition": "Division of a territory into separate political units"},
+    {"term": "non violent resistance", "definition": "Method of protest that avoids physical violence"}
   ],
   "teachingNotes": "Examine various paths to independence and their outcomes. Compare different colonial experiences and independence strategies.",
-  "sample": {
-    "question": "What is the process of colonies gaining independence?",
-    "expectedAny": [
-      "decolonization",
-      "independence process",
-      "colonial liberation",
-      "freedom movement"
-    ]
-  },
-  "truefalse": {
-    "question": "Nationalism involves strong identification with one's nation.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is protest that avoids physical violence?",
-    "expectedAny": [
-      "non-violent resistance",
-      "peaceful protest",
-      "passive resistance",
-      "civil disobedience"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Division of territory into separate units is called ________.",
-    "expectedAny": [
-      "partition",
-      "division",
-      "separation",
-      "splitting"
-    ]
-  },
-  "shortanswer": {
-    "question": "What factors contributed to decolonization after WWII?",
-    "expectedAny": [
-      "weakened colonial powers",
-      "nationalist movements",
-      "international pressure",
-      "economic costs"
-    ]
-  }
+  "sample": [
+    {"question": "What is gaining independence?", "expectedAny": ["decolonization", "independence process", "colonial freedom", "liberation", "end of colonialism", "independence"]},
+    {"question": "What seeks freedom from colonialism?", "expectedAny": ["independence movement", "freedom campaign", "liberation movement", "nationalist movement", "anti colonial movement", "freedom struggle"]},
+    {"question": "What is national pride?", "expectedAny": ["nationalism", "national identity", "patriotism", "national pride", "nation building", "national consciousness"]},
+    {"question": "What divides territory?", "expectedAny": ["partition", "division", "territorial division", "separation", "splitting territory", "territorial partition"]},
+    {"question": "What is peaceful protest?", "expectedAny": ["non violent resistance", "peaceful resistance", "civil disobedience", "passive resistance", "peaceful protest", "nonviolence"]},
+    {"question": "What is colonial freedom?", "expectedAny": ["decolonization", "independence", "colonial freedom", "liberation", "end of colonialism", "independence process"]},
+    {"question": "What campaigns for freedom?", "expectedAny": ["independence movement", "movement", "liberation movement", "nationalist movement", "anti colonial movement", "freedom struggle"]},
+    {"question": "What is nation identification?", "expectedAny": ["nationalism", "patriotism", "national identity", "national pride", "nation building", "national consciousness"]},
+    {"question": "What separates territory?", "expectedAny": ["partition", "territorial division", "division", "separation", "splitting territory", "territorial partition"]},
+    {"question": "What avoids violence?", "expectedAny": ["non violent resistance", "peaceful protest", "civil disobedience", "passive resistance", "peaceful resistance", "nonviolence"]}
+  ],
+  "truefalse": [
+    {"question": "Decolonization is gaining independence. (True or False)", "correct": true},
+    {"question": "Independence movements support colonialism. (True or False)", "correct": false},
+    {"question": "Nationalism is national pride. (True or False)", "correct": true},
+    {"question": "Partition unites territory. (True or False)", "correct": false},
+    {"question": "Non-violent resistance avoids violence. (True or False)", "correct": true},
+    {"question": "Colonies gained independence. (True or False)", "correct": true},
+    {"question": "Movements sought freedom. (True or False)", "correct": true},
+    {"question": "Nationalism involves pride. (True or False)", "correct": true},
+    {"question": "Partition divides. (True or False)", "correct": true},
+    {"question": "Resistance can be peaceful. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is gaining independence?", "choices": [{"letter": "A", "text": "Colonization"}, {"letter": "B", "text": "Decolonization"}, {"letter": "C", "text": "Imperialism"}, {"letter": "D", "text": "Expansion"}], "correct": "B"},
+    {"question": "What seeks freedom?", "choices": [{"letter": "A", "text": "Colonial rule"}, {"letter": "B", "text": "Independence movement"}, {"letter": "C", "text": "Imperialism"}, {"letter": "D", "text": "Empire"}], "correct": "B"},
+    {"question": "What is national pride?", "choices": [{"letter": "A", "text": "Imperialism"}, {"letter": "B", "text": "Nationalism"}, {"letter": "C", "text": "Colonialism"}, {"letter": "D", "text": "Globalism"}], "correct": "B"},
+    {"question": "What divides?", "choices": [{"letter": "A", "text": "Unity"}, {"letter": "B", "text": "Partition"}, {"letter": "C", "text": "Integration"}, {"letter": "D", "text": "Merger"}], "correct": "B"},
+    {"question": "What is peaceful?", "choices": [{"letter": "A", "text": "War"}, {"letter": "B", "text": "Non-violent resistance"}, {"letter": "C", "text": "Violence"}, {"letter": "D", "text": "Aggression"}], "correct": "B"},
+    {"question": "What frees colonies?", "choices": [{"letter": "A", "text": "Imperialism"}, {"letter": "B", "text": "Decolonization"}, {"letter": "C", "text": "Colonization"}, {"letter": "D", "text": "Expansion"}], "correct": "B"},
+    {"question": "What campaigns?", "choices": [{"letter": "A", "text": "Colonial rule"}, {"letter": "B", "text": "Independence movement"}, {"letter": "C", "text": "Empire"}, {"letter": "D", "text": "Imperialism"}], "correct": "B"},
+    {"question": "What shows pride?", "choices": [{"letter": "A", "text": "Colonialism"}, {"letter": "B", "text": "Nationalism"}, {"letter": "C", "text": "Imperialism"}, {"letter": "D", "text": "Globalism"}], "correct": "B"},
+    {"question": "What separates?", "choices": [{"letter": "A", "text": "Unity"}, {"letter": "B", "text": "Partition"}, {"letter": "C", "text": "Integration"}, {"letter": "D", "text": "Unification"}], "correct": "B"},
+    {"question": "What is Gandhi's method?", "choices": [{"letter": "A", "text": "War"}, {"letter": "B", "text": "Non-violent resistance"}, {"letter": "C", "text": "Violence"}, {"letter": "D", "text": "Aggression"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ is gaining independence.", "expectedAny": ["decolonization", "Decolonization"]},
+    {"question": "_____ movement seeks freedom.", "expectedAny": ["independence", "Independence"]},
+    {"question": "_____ is national pride.", "expectedAny": ["nationalism", "Nationalism"]},
+    {"question": "_____ divides territory.", "expectedAny": ["partition", "Partition"]},
+    {"question": "Non-_____ resistance is peaceful.", "expectedAny": ["violent"]},
+    {"question": "Colonies gained _____.", "expectedAny": ["independence"]},
+    {"question": "_____ movements sought freedom.", "expectedAny": ["independence", "Independence"]},
+    {"question": "_____ involves pride.", "expectedAny": ["nationalism", "Nationalism"]},
+    {"question": "India faced _____.", "expectedAny": ["partition"]},
+    {"question": "Gandhi used _____ resistance.", "expectedAny": ["non-violent", "nonviolent", "peaceful"]}
+  ],
+  "shortanswer": [
+    {"question": "What is decolonization?", "keyTerms": ["process", "colonies", "gaining", "independence", "imperial", "powers"], "expectedAny": ["Process of colonies gaining independence from imperial powers", "Colonial independence", "Freedom from empires"]},
+    {"question": "What is independence movement?", "keyTerms": ["political", "campaign", "seeking", "freedom", "colonial", "rule"], "expectedAny": ["Political campaign seeking freedom from colonial rule", "Freedom campaign", "Anti-colonial movement"]},
+    {"question": "What is nationalism?", "keyTerms": ["strong", "identification", "pride", "one's", "nation"], "expectedAny": ["Strong identification with and pride in one's nation", "National pride", "Patriotism"]},
+    {"question": "What is partition?", "keyTerms": ["division", "territory", "separate", "political", "units"], "expectedAny": ["Division of a territory into separate political units", "Territorial division", "Splitting territory"]},
+    {"question": "What is non-violent resistance?", "keyTerms": ["method", "protest", "avoids", "physical", "violence"], "expectedAny": ["Method of protest that avoids physical violence", "Peaceful protest", "Gandhi's method"]},
+    {"question": "Give example of decolonization.", "keyTerms": ["india", "africa", "1947", "1960s", "british", "french"], "expectedAny": ["India 1947", "African independence 1960s", "British or French colonies", "Any valid example"]},
+    {"question": "Who used non-violent resistance?", "keyTerms": ["gandhi", "martin luther king", "india", "civil rights"], "expectedAny": ["Gandhi in India", "Martin Luther King Jr", "Any valid example"]},
+    {"question": "What was India partition?", "keyTerms": ["1947", "india", "pakistan", "religious", "lines", "hindu", "muslim"], "expectedAny": ["1947 division into India and Pakistan along religious lines", "Hindu Muslim partition", "Created two nations"]},
+    {"question": "What caused decolonization?", "keyTerms": ["nationalism", "wwii", "weakened", "empires", "independence", "movements"], "expectedAny": ["Nationalism, WWII weakened empires, independence movements", "Post-war independence", "Colonial resistance"]},
+    {"question": "What were decolonization challenges?", "keyTerms": ["borders", "ethnic", "conflict", "economic", "problems", "violence"], "expectedAny": ["Border disputes, ethnic conflict, economic problems, violence", "Difficult transitions", "Post-colonial problems"]}
+  ]
 }

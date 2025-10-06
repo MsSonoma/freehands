@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "10th_Thermodynamics_Heat_Energy_Transfer_Intermediate",
   "title": "Thermodynamics: Heat and Energy Transfer",
   "grade": "10th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "thermodynamics",
-      "definition": "Study of heat, temperature, and energy transfer"
-    },
-    {
-      "term": "specific heat",
-      "definition": "Amount of energy needed to raise temperature of 1 gram by 1°C"
-    },
-    {
-      "term": "conduction",
-      "definition": "Heat transfer through direct contact between particles"
-    },
-    {
-      "term": "convection",
-      "definition": "Heat transfer through movement of fluids"
-    },
-    {
-      "term": "radiation",
-      "definition": "Heat transfer through electromagnetic waves"
-    }
+    {"term": "thermodynamics", "definition": "Study of heat, temperature, and energy transfer"},
+    {"term": "specific heat", "definition": "Amount of energy needed to raise temperature of 1 gram by 1C"},
+    {"term": "conduction", "definition": "Heat transfer through direct contact between particles"},
+    {"term": "convection", "definition": "Heat transfer through movement of fluids"},
+    {"term": "radiation", "definition": "Heat transfer through electromagnetic waves"}
   ],
   "teachingNotes": "Use calorimetry experiments to measure heat transfer. Demonstrate the three methods of heat transfer with practical examples.",
-  "sample": {
-    "question": "What is the study of heat, temperature, and energy transfer?",
-    "expectedAny": [
-      "thermodynamics",
-      "thermal physics",
-      "heat study",
-      "energy transfer study"
-    ]
-  },
-  "truefalse": {
-    "question": "Heat transfer can occur through conduction, convection, and radiation.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is heat transfer through direct contact called?",
-    "expectedAny": [
-      "conduction",
-      "thermal conduction",
-      "direct transfer",
-      "contact transfer"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Heat transfer through electromagnetic waves is called ________.",
-    "expectedAny": [
-      "radiation",
-      "thermal radiation",
-      "electromagnetic transfer",
-      "radiant heat"
-    ]
-  },
-  "shortanswer": {
-    "question": "Explain why metals feel cold to touch even at room temperature.",
-    "expectedAny": [
-      "metals conduct heat well",
-      "draw heat from your hand",
-      "high thermal conductivity"
-    ]
-  }
+  "sample": [
+    {"question": "What is heat study?", "expectedAny": ["thermodynamics", "thermal physics", "heat study", "energy study", "thermal science", "heat science"]},
+    {"question": "What is energy per gram degree?", "expectedAny": ["specific heat", "heat capacity", "specific heat capacity", "heat per degree", "thermal capacity", "energy per degree"]},
+    {"question": "What is direct contact transfer?", "expectedAny": ["conduction", "thermal conduction", "contact transfer", "direct transfer", "heat conduction", "particle transfer"]},
+    {"question": "What is fluid transfer?", "expectedAny": ["convection", "fluid movement", "fluid transfer", "air movement", "liquid movement", "thermal convection"]},
+    {"question": "What is wave transfer?", "expectedAny": ["radiation", "electromagnetic radiation", "radiant transfer", "wave transfer", "thermal radiation", "radiant energy"]},
+    {"question": "What is temperature study?", "expectedAny": ["thermodynamics", "heat study", "thermal physics", "energy study", "thermal science", "heat science"]},
+    {"question": "What is energy to raise temp?", "expectedAny": ["specific heat", "heat", "heat capacity", "specific heat capacity", "thermal capacity", "energy per degree"]},
+    {"question": "What is particle contact?", "expectedAny": ["conduction", "contact", "thermal conduction", "direct contact", "heat conduction", "particle transfer"]},
+    {"question": "What is air movement?", "expectedAny": ["convection", "fluid flow", "fluid movement", "air movement", "liquid movement", "thermal convection"]},
+    {"question": "What is no medium transfer?", "expectedAny": ["radiation", "waves", "electromagnetic radiation", "radiant transfer", "thermal radiation", "radiant energy"]}
+  ],
+  "truefalse": [
+    {"question": "Thermodynamics studies heat. (True or False)", "correct": true},
+    {"question": "Specific heat is same for all. (True or False)", "correct": false},
+    {"question": "Conduction needs direct contact. (True or False)", "correct": true},
+    {"question": "Convection occurs in solids. (True or False)", "correct": false},
+    {"question": "Radiation needs no medium. (True or False)", "correct": true},
+    {"question": "Thermodynamics studies energy. (True or False)", "correct": true},
+    {"question": "Water has high specific heat. (True or False)", "correct": true},
+    {"question": "Conduction transfers through particles. (True or False)", "correct": true},
+    {"question": "Convection occurs in fluids. (True or False)", "correct": true},
+    {"question": "Radiation is electromagnetic. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What is heat study?", "choices": [{"letter": "A", "text": "Chemistry"}, {"letter": "B", "text": "Thermodynamics"}, {"letter": "C", "text": "Biology"}, {"letter": "D", "text": "Mechanics"}], "correct": "B"},
+    {"question": "What is energy per degree?", "choices": [{"letter": "A", "text": "Mass"}, {"letter": "B", "text": "Specific heat"}, {"letter": "C", "text": "Volume"}, {"letter": "D", "text": "Pressure"}], "correct": "B"},
+    {"question": "What is contact transfer?", "choices": [{"letter": "A", "text": "Radiation"}, {"letter": "B", "text": "Conduction"}, {"letter": "C", "text": "Convection"}, {"letter": "D", "text": "Reflection"}], "correct": "B"},
+    {"question": "What is fluid transfer?", "choices": [{"letter": "A", "text": "Radiation"}, {"letter": "B", "text": "Convection"}, {"letter": "C", "text": "Conduction"}, {"letter": "D", "text": "Refraction"}], "correct": "B"},
+    {"question": "What is wave transfer?", "choices": [{"letter": "A", "text": "Conduction"}, {"letter": "B", "text": "Radiation"}, {"letter": "C", "text": "Convection"}, {"letter": "D", "text": "Diffusion"}], "correct": "B"},
+    {"question": "What is temperature study?", "choices": [{"letter": "A", "text": "Biology"}, {"letter": "B", "text": "Thermodynamics"}, {"letter": "C", "text": "Chemistry"}, {"letter": "D", "text": "Astronomy"}], "correct": "B"},
+    {"question": "What varies by material?", "choices": [{"letter": "A", "text": "Mass"}, {"letter": "B", "text": "Specific heat"}, {"letter": "C", "text": "Volume"}, {"letter": "D", "text": "Density"}], "correct": "B"},
+    {"question": "What occurs in metal spoon?", "choices": [{"letter": "A", "text": "Radiation"}, {"letter": "B", "text": "Conduction"}, {"letter": "C", "text": "Convection"}, {"letter": "D", "text": "Diffusion"}], "correct": "B"},
+    {"question": "What occurs in boiling water?", "choices": [{"letter": "A", "text": "Radiation"}, {"letter": "B", "text": "Convection"}, {"letter": "C", "text": "Conduction"}, {"letter": "D", "text": "Sublimation"}], "correct": "B"},
+    {"question": "What is from sun?", "choices": [{"letter": "A", "text": "Conduction"}, {"letter": "B", "text": "Radiation"}, {"letter": "C", "text": "Convection"}, {"letter": "D", "text": "Diffusion"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ studies heat.", "expectedAny": ["thermodynamics", "Thermodynamics"]},
+    {"question": "_____ heat is energy per degree.", "expectedAny": ["specific", "Specific"]},
+    {"question": "_____ is direct contact.", "expectedAny": ["conduction", "Conduction"]},
+    {"question": "_____ is fluid movement.", "expectedAny": ["convection", "Convection"]},
+    {"question": "_____ is electromagnetic waves.", "expectedAny": ["radiation", "Radiation"]},
+    {"question": "Heat _____ is energy movement.", "expectedAny": ["transfer"]},
+    {"question": "_____ varies by material.", "expectedAny": ["specific heat", "Specific heat"]},
+    {"question": "Metal _____ heat well.", "expectedAny": ["conducts"]},
+    {"question": "_____ currents carry heat.", "expectedAny": ["convection", "Convection"]},
+    {"question": "_____ needs no medium.", "expectedAny": ["radiation", "Radiation"]}
+  ],
+  "shortanswer": [
+    {"question": "What is thermodynamics?", "keyTerms": ["study", "heat", "temperature", "energy", "transfer"], "expectedAny": ["Study of heat, temperature, and energy transfer", "Heat study", "Energy transfer study"]},
+    {"question": "What is specific heat?", "keyTerms": ["amount", "energy", "needed", "raise", "temperature", "1 gram", "1C"], "expectedAny": ["Amount of energy needed to raise temperature of 1 gram by 1C", "Energy per degree", "Heat capacity"]},
+    {"question": "What is conduction?", "keyTerms": ["heat", "transfer", "direct", "contact", "particles"], "expectedAny": ["Heat transfer through direct contact between particles", "Contact transfer", "Particle to particle"]},
+    {"question": "What is convection?", "keyTerms": ["heat", "transfer", "movement", "fluids"], "expectedAny": ["Heat transfer through movement of fluids", "Fluid transfer", "Fluid circulation"]},
+    {"question": "What is radiation?", "keyTerms": ["heat", "transfer", "electromagnetic", "waves"], "expectedAny": ["Heat transfer through electromagnetic waves", "Wave transfer", "EM radiation"]},
+    {"question": "Give example of conduction.", "keyTerms": ["metal spoon", "touching", "hot plate", "contact"], "expectedAny": ["Metal spoon in hot liquid", "Touching hot stove", "Any contact example"]},
+    {"question": "Give example of convection.", "keyTerms": ["boiling water", "air rising", "ocean currents", "fluid"], "expectedAny": ["Boiling water", "Hot air rising", "Ocean currents", "Any fluid example"]},
+    {"question": "Give example of radiation.", "keyTerms": ["sun", "fire", "light bulb", "electromagnetic"], "expectedAny": ["Heat from sun", "Fire warmth", "Light bulb", "Any EM example"]},
+    {"question": "Which material has high specific heat?", "keyTerms": ["water", "liquid"], "expectedAny": ["Water", "Liquid water", "H2O"]},
+    {"question": "What is first law of thermodynamics?", "keyTerms": ["energy", "conserved", "cannot", "created", "destroyed"], "expectedAny": ["Energy is conserved", "Energy cannot be created or destroyed", "Conservation of energy"]}
+  ]
 }

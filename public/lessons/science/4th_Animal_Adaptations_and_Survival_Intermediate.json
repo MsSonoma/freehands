@@ -5,67 +5,63 @@
   "difficulty": "Intermediate",
   "featured": false,
   "vocab": [
-    {
-      "term": "adaptation",
-      "definition": "A special characteristic that helps an animal survive in its environment"
-    },
-    {
-      "term": "camouflage",
-      "definition": "An adaptation that helps animals blend in with their surroundings"
-    },
-    {
-      "term": "migration",
-      "definition": "The movement of animals from one place to another to find food or better living conditions"
-    },
-    {
-      "term": "hibernation",
-      "definition": "A deep sleep that helps animals survive winter when food is scarce"
-    }
+    { "term": "adaptation", "definition": "A special characteristic that helps an animal survive in its environment" },
+    { "term": "camouflage", "definition": "An adaptation that helps animals blend in with their surroundings" },
+    { "term": "migration", "definition": "The movement of animals from one place to another to find food or better living conditions" },
+    { "term": "hibernation", "definition": "A deep sleep that helps animals survive winter when food is scarce" },
+    { "term": "structural adaptation", "definition": "A body part or physical feature that helps survival" },
+    { "term": "behavioral adaptation", "definition": "An action or behavior that helps survival" },
+    { "term": "mimicry", "definition": "Looking or acting like another animal or object for protection" },
+    { "term": "blubber", "definition": "Thick layer of fat under the skin that keeps animals warm" },
+    { "term": "nocturnal", "definition": "Active at night and resting during the day" },
+    { "term": "diurnal", "definition": "Active during the day and resting at night" },
+    { "term": "countershading", "definition": "Dark on top and light underneath to help animals blend from above and below" },
+    { "term": "estivation", "definition": "A period of dormancy in hot, dry conditions to save water and energy" }
   ],
   "teachingNotes": "Use images and videos of animals in their habitats. Discuss how adaptations help with survival needs. Connect to local wildlife when possible.",
   "sample": [
-    {"question": "How does a polar bear's thick fur help it survive?", "expectedAny": ["keeps it warm", "insulation"]},
-    {"question": "Give an example of camouflage.", "expectedAny": ["stick insect", "snowshoe hare in winter"]},
-    {"question": "What is a behavioral adaptation?", "expectedAny": ["something an animal does", "migration", "hibernation"]},
-    {"question": "Why do birds migrate?", "expectedAny": ["find food", "warmer climate", "nesting"]},
-    {"question": "How do desert plants save water?", "expectedAny": ["waxy coating", "deep roots", "small leaves"]},
-    {"question": "What body part helps fish breathe underwater?", "expectedAny": ["gills"]},
-    {"question": "How do spines help a cactus survive?", "expectedAny": ["reduce water loss", "protect from animals"]}
+    {"question": "How does a polar bear's thick fur help it survive?", "expectedAny": ["keeps it warm", "insulation", "traps body heat", "keeps heat in"]},
+    {"question": "Give an example of camouflage.", "expectedAny": ["stick insect", "snowshoe hare in winter", "leaf insect", "flatfish on sand"]},
+    {"question": "What is a behavioral adaptation?", "expectedAny": ["something an animal does", "migration", "hibernation", "a behavior that helps survival"]},
+    {"question": "Why do birds migrate?", "expectedAny": ["find food", "warmer climate", "nesting", "to raise young where it is safe"]},
+    {"question": "How do desert plants save water?", "expectedAny": ["waxy coating", "deep roots", "small leaves", "store water in stems"]},
+    {"question": "What body part helps fish breathe underwater?", "expectedAny": ["gills", "gill"]},
+    {"question": "How do spines help a cactus survive?", "expectedAny": ["reduce water loss", "protect from animals", "shade the plant", "stop animals from eating it"]}
   ],
   "truefalse": [
-    {"question": "All animals have the same adaptations.", "answer": false},
-    {"question": "Hibernation is a behavioral adaptation.", "answer": true},
-    {"question": "Webbed feet help animals swim.", "answer": true},
-    {"question": "Camouflage only helps predators.", "answer": false},
-    {"question": "Gills are a structural adaptation.", "answer": true},
-    {"question": "All birds can fly.", "answer": false},
-    {"question": "Thick fur helps animals stay cool in deserts.", "answer": false}
+    {"question": "All animals have the same adaptations.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "Hibernation is a behavioral adaptation.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Webbed feet help animals swim.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "Camouflage only helps predators.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "Gills are a structural adaptation.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "All birds can fly.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "Thick fur helps animals stay cool in deserts.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]}
   ],
   "multiplechoice": [
-    {"question": "Which is an example of a behavioral adaptation?", "choices": ["Sharp claws", "Bird migration", "Thick fur", "Long neck"], "correct": 1},
-    {"question": "Cactus spines are modified:", "choices": ["roots", "stems", "leaves", "flowers"], "correct": 2},
-    {"question": "Animals active at night are called:", "choices": ["diurnal", "nocturnal", "hibernating", "migratory"], "correct": 1},
-    {"question": "An adaptation that helps an animal look like another dangerous animal is:", "choices": ["camouflage", "mimicry", "migration", "hibernation"], "correct": 1},
-    {"question": "Which helps a penguin stay warm?", "choices": ["thin fur", "blubber", "long legs", "gills"], "correct": 1},
-    {"question": "A long beak helps birds:", "choices": ["swim", "burrow", "reach nectar", "hibernate"], "correct": 2},
-    {"question": "Which is a structural adaptation?", "choices": ["learning", "hiding", "sharp teeth", "migrating"], "correct": 2}
+    {"question": "Which is an example of a behavioral adaptation?", "choices": ["Sharp claws", "Bird migration", "Thick fur", "Long neck"], "correct": 1, "expectedAny": ["bird migration", "migration", "b", "2", "second"]},
+    {"question": "Cactus spines are modified:", "choices": ["roots", "stems", "leaves", "flowers"], "correct": 2, "expectedAny": ["leaves", "c", "3", "third"]},
+    {"question": "Animals active at night are called:", "choices": ["diurnal", "nocturnal", "hibernating", "migratory"], "correct": 1, "expectedAny": ["nocturnal", "b", "2", "second"]},
+    {"question": "An adaptation that helps an animal look like another dangerous animal is:", "choices": ["camouflage", "mimicry", "migration", "hibernation"], "correct": 1, "expectedAny": ["mimicry", "b", "2", "second"]},
+    {"question": "Which helps a penguin stay warm?", "choices": ["thin fur", "blubber", "long legs", "gills"], "correct": 1, "expectedAny": ["blubber", "b", "2", "second"]},
+    {"question": "A long beak helps birds:", "choices": ["swim", "burrow", "reach nectar", "hibernate"], "correct": 2, "expectedAny": ["reach nectar", "c", "3", "third"]},
+    {"question": "Which is a structural adaptation?", "choices": ["learning", "hiding", "sharp teeth", "migrating"], "correct": 2, "expectedAny": ["sharp teeth", "c", "3", "third"]}
   ],
   "fillintheblank": [
-    {"question": "A chameleon's ability to change color is an example of _____.", "expectedAny": ["camouflage"]},
-    {"question": "Moving to a new place seasonally is called _____.", "expectedAny": ["migration"]},
-    {"question": "A deep sleep through winter is _____.", "expectedAny": ["hibernation"]},
-    {"question": "Body parts that help survival are _____ adaptations.", "expectedAny": ["structural", "physical"]},
-    {"question": "Actions that help survival are _____ adaptations.", "expectedAny": ["behavioral"]},
-    {"question": "Animals that blend into surroundings use _____.", "expectedAny": ["camouflage"]},
-    {"question": "Thick fat under the skin for warmth is called _____.", "expectedAny": ["blubber"]}
+    {"question": "A chameleon's ability to change color is an example of _____.", "expectedAny": ["camouflage", "camouflaging", "blending in", "concealment"]},
+    {"question": "Moving to a new place seasonally is called _____.", "expectedAny": ["migration", "migrating", "seasonal movement"]},
+    {"question": "A deep sleep through winter is _____.", "expectedAny": ["hibernation", "hibernating", "winter sleep"]},
+    {"question": "Body parts that help survival are _____ adaptations.", "expectedAny": ["structural", "physical", "body"]},
+    {"question": "Actions that help survival are _____ adaptations.", "expectedAny": ["behavioral", "behavior", "action"]},
+    {"question": "Animals that blend into surroundings use _____.", "expectedAny": ["camouflage", "camouflaging", "concealment", "cryptic coloration"]},
+    {"question": "Thick fat under the skin for warmth is called _____.", "expectedAny": ["blubber", "fat layer", "insulating fat", "fatty insulation"]}
   ],
   "shortanswer": [
-    {"question": "Explain why giraffes have long necks and how this helps them survive.", "expectedAny": ["reach high leaves"]},
-    {"question": "How do arctic animals stay warm?", "expectedAny": ["thick fur", "blubber"]},
-    {"question": "Give two examples of behavioral adaptations.", "expectedAny": ["migration", "hibernation", "nocturnal activity"]},
-    {"question": "How does camouflage protect animals?", "expectedAny": ["hide from predators", "sneak up on prey"]},
-    {"question": "How do plants in deserts conserve water?", "expectedAny": ["deep roots", "waxy leaves"]},
-    {"question": "Why do some birds have webbed feet?", "expectedAny": ["swimming"]},
-    {"question": "Describe one adaptation that helps animals find food.", "expectedAny": ["long beak", "sharp teeth"]}
+    {"question": "Explain why giraffes have long necks and how this helps them survive.", "expectedAny": ["reach high leaves", "reach tall branches", "eat leaves other animals cannot", "reach food above other animals"]},
+    {"question": "How do arctic animals stay warm?", "expectedAny": ["thick fur", "blubber", "insulation", "fat layer", "dense fur and fat"]},
+    {"question": "Give two examples of behavioral adaptations.", "expectedAny": ["migration", "hibernation", "nocturnal activity", "burrowing during heat", "building nests", "traveling in groups"]},
+    {"question": "How does camouflage protect animals?", "expectedAny": ["hide from predators", "sneak up on prey", "blend in to avoid being seen", "harder to be noticed"]},
+    {"question": "How do plants in deserts conserve water?", "expectedAny": ["deep roots", "waxy leaves", "small leaves", "store water in stems", "open stomata at night"]},
+    {"question": "Why do some birds have webbed feet?", "expectedAny": ["swimming", "paddle through water", "move faster in water", "push water better"]},
+    {"question": "Describe one adaptation that helps animals find food.", "expectedAny": ["long beak", "sharp teeth", "keen eyesight", "long tongue for nectar"]}
   ]
 }

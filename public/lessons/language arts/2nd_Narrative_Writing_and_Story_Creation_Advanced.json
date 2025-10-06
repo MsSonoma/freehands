@@ -8,7 +8,8 @@
     { "term": "narrative", "definition": "A story that tells about something that happened" },
     { "term": "beginning", "definition": "The start of a story that introduces characters and setting" },
     { "term": "middle", "definition": "The part of a story where the main events and problems happen" },
-    { "term": "ending", "definition": "The conclusion of a story that solves the problem" }
+    { "term": "ending", "definition": "The conclusion of a story that solves the problem" },
+    { "term": "order", "definition": "The arrangement of events from first to last" }
   ],
   "teachingNotes": "Use story maps and graphic organizers. Focus on sequence and story structure. Encourage creativity while maintaining clear organization.",
   "sample": [
@@ -39,21 +40,21 @@
     { "question": "Which detail is about setting?", "choices": ["It was a cold morning at the farm.", "He was nervous.", "She solved the puzzle.", "They were brave."], "correct": 0, "expectedAny": ["place and time detail"] }
   ],
   "fillintheblank": [
-    { "question": "In the _____ of a story, you meet the characters. In the _____, the problem gets solved.", "expectedAny": ["beginning", "ending"] },
-    { "question": "The main events usually happen in the ________ of the story.", "expectedAny": ["middle"] },
-    { "question": "The ________ is the place and time of the story.", "expectedAny": ["setting"] },
-    { "question": "The trouble the characters face is the ________.", "expectedAny": ["problem"] },
-    { "question": "Putting events in order makes good ________.", "expectedAny": ["sequence"] },
-    { "question": "A ________ map can help plan a story.", "expectedAny": ["story"] },
+    { "question": "In the _____ of a story, you meet the characters. In the _____, the problem gets solved.", "expectedAny": ["beginning", "start", "ending", "end"] },
+    { "question": "The main events usually happen in the ________ of the story.", "expectedAny": ["middle", "the middle"] },
+    { "question": "The ________ is the place and time of the story.", "expectedAny": ["setting", "where and when"] },
+    { "question": "The trouble the characters face is the ________.", "expectedAny": ["problem", "challenge"] },
+    { "question": "Putting events in order makes good ________.", "expectedAny": ["sequence", "order"] },
+    { "question": "A ________ map can help plan a story.", "expectedAny": ["story", "story map"] },
     { "question": "The ending shows how things are ________.", "expectedAny": ["solved", "fixed"] }
   ],
   "shortanswer": [
     { "question": "Why is it important to have a problem in the middle of your story?", "expectedAny": ["gives the story excitement", "makes readers want to know what happens", "creates the main action"] },
-    { "question": "Write one sentence that could begin a story about a lost cat.", "expectedAny": ["any reasonable opening", "introduces a character or setting"] },
+  { "question": "Write one sentence that could begin a story about a lost cat.", "expectedAny": ["One day, I couldn't find my cat.", "Mia searched the neighborhood.", "The park was quiet when the cat ran."] },
     { "question": "Describe a setting for a story that happens in winter.", "expectedAny": ["snowy park", "cold morning", "icy street"] },
     { "question": "What could be a problem for a story about friends at school?", "expectedAny": ["lost homework", "missed bus", "argument"] },
     { "question": "How could that problem be solved?", "expectedAny": ["ask for help", "work together", "use clues"] },
     { "question": "Name one detail you could add to help readers imagine the scene.", "expectedAny": ["sounds", "smells", "colors"] },
-    { "question": "What is one way to end your story?", "expectedAny": ["solve the problem", "show how the character changed"] }
+    { "question": "What is one way to end your story?", "expectedAny": ["solve the problem", "show how the character changed", "tell what happens after"] }
   ]
 }

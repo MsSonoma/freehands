@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "9th_Genetics_DNA_Replication_Transcription_Advanced",
   "title": "Genetics: DNA Replication and Transcription",
   "grade": "9th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "DNA replication",
-      "definition": "Process by which DNA makes an identical copy of itself"
-    },
-    {
-      "term": "transcription",
-      "definition": "Process of copying DNA information to make RNA"
-    },
-    {
-      "term": "DNA polymerase",
-      "definition": "Enzyme that synthesizes new DNA strands"
-    },
-    {
-      "term": "RNA polymerase",
-      "definition": "Enzyme that synthesizes RNA from DNA template"
-    },
-    {
-      "term": "template strand",
-      "definition": "DNA strand that serves as a pattern for synthesis"
-    }
+    {"term": "DNA replication", "definition": "Process of copying DNA before cell division"},
+    {"term": "transcription", "definition": "Process of copying DNA sequence into mRNA"},
+    {"term": "DNA polymerase", "definition": "Enzyme that synthesizes new DNA strands"},
+    {"term": "RNA polymerase", "definition": "Enzyme that synthesizes mRNA from DNA template"},
+    {"term": "complementary base pairing", "definition": "A pairs with T (or U), C pairs with G"}
   ],
-  "teachingNotes": "Emphasize the molecular mechanisms of DNA replication and transcription. Use diagrams to show enzyme functions and base pairing rules.",
-  "sample": {
-    "question": "What is the process by which DNA makes an identical copy of itself?",
-    "expectedAny": [
-      "DNA replication",
-      "replication",
-      "DNA copying",
-      "DNA duplication"
-    ]
-  },
-  "truefalse": {
-    "question": "Transcription is the process of copying DNA to make RNA.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which enzyme synthesizes new DNA strands during replication?",
-    "expectedAny": [
-      "DNA polymerase",
-      "polymerase",
-      "DNA synthesis enzyme",
-      "replication enzyme"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The DNA strand that serves as a pattern for synthesis is the ________ strand.",
-    "expectedAny": [
-      "template",
-      "parent",
-      "original",
-      "pattern"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why is DNA replication called semiconservative?",
-    "expectedAny": [
-      "each new DNA has one old and one new strand",
-      "half the original DNA is conserved",
-      "preserves one original strand"
-    ]
-  }
+  "teachingNotes": "Use diagrams showing base pairing. Emphasize differences between replication and transcription. Practice identifying base pairs.",
+  "sample": [
+    {"question": "What is DNA replication?", "expectedAny": ["copying DNA", "DNA duplication", "making DNA copy", "duplicating DNA"]},
+    {"question": "What is transcription?", "expectedAny": ["DNA to mRNA", "copying DNA to RNA", "making mRNA", "DNA to RNA"]},
+    {"question": "What enzyme copies DNA?", "expectedAny": ["DNA polymerase", "polymerase", "DNA copying enzyme"]},
+    {"question": "What enzyme makes mRNA?", "expectedAny": ["RNA polymerase", "polymerase", "RNA making enzyme"]},
+    {"question": "What is complementary base pairing?", "expectedAny": ["A with T, C with G", "base pair rules", "A-T and C-G pairing", "bases matching up"]},
+    {"question": "When does DNA replicate?", "expectedAny": ["before cell division", "S phase", "cell cycle"]},
+    {"question": "What does transcription produce?", "expectedAny": ["mRNA", "messenger RNA", "RNA"]},
+    {"question": "What pairs with adenine in DNA?", "expectedAny": ["thymine", "T"]},
+    {"question": "What pairs with cytosine?", "expectedAny": ["guanine", "G"]},
+    {"question": "What is DNA polymerase?", "expectedAny": ["enzyme that copies DNA", "makes new DNA", "DNA synthesis enzyme"]}
+  ],
+  "truefalse": [
+    {"question": "DNA replication copies DNA before cell division. (True or False)", "correct": true},
+    {"question": "Transcription makes proteins. (True or False)", "correct": false},
+    {"question": "Adenine pairs with thymine. (True or False)", "correct": true},
+    {"question": "DNA polymerase synthesizes DNA. (True or False)", "correct": true},
+    {"question": "RNA polymerase makes mRNA. (True or False)", "correct": true},
+    {"question": "Cytosine pairs with guanine. (True or False)", "correct": true},
+    {"question": "Transcription produces DNA. (True or False)", "correct": false},
+    {"question": "Complementary base pairing follows A-T and C-G rules. (True or False)", "correct": true},
+    {"question": "DNA replication occurs during transcription. (True or False)", "correct": false},
+    {"question": "RNA polymerase uses DNA as a template. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What process copies DNA?", "choices": [{"letter": "A", "text": "Translation"}, {"letter": "B", "text": "Transcription"}, {"letter": "C", "text": "Replication"}, {"letter": "D", "text": "Mutation"}], "correct": "C"},
+    {"question": "What enzyme makes mRNA?", "choices": [{"letter": "A", "text": "DNA polymerase"}, {"letter": "B", "text": "RNA polymerase"}, {"letter": "C", "text": "Ligase"}, {"letter": "D", "text": "Helicase"}], "correct": "B"},
+    {"question": "What pairs with adenine?", "choices": [{"letter": "A", "text": "Guanine"}, {"letter": "B", "text": "Cytosine"}, {"letter": "C", "text": "Thymine"}, {"letter": "D", "text": "Uracil"}], "correct": "C"},
+    {"question": "What does transcription produce?", "choices": [{"letter": "A", "text": "DNA"}, {"letter": "B", "text": "Proteins"}, {"letter": "C", "text": "mRNA"}, {"letter": "D", "text": "Lipids"}], "correct": "C"},
+    {"question": "What enzyme copies DNA?", "choices": [{"letter": "A", "text": "RNA polymerase"}, {"letter": "B", "text": "DNA polymerase"}, {"letter": "C", "text": "Helicase"}, {"letter": "D", "text": "Ribosome"}], "correct": "B"},
+    {"question": "What pairs with cytosine?", "choices": [{"letter": "A", "text": "Adenine"}, {"letter": "B", "text": "Thymine"}, {"letter": "C", "text": "Guanine"}, {"letter": "D", "text": "Uracil"}], "correct": "C"},
+    {"question": "When does DNA replicate?", "choices": [{"letter": "A", "text": "During translation"}, {"letter": "B", "text": "Before cell division"}, {"letter": "C", "text": "During transcription"}, {"letter": "D", "text": "Never"}], "correct": "B"},
+    {"question": "What is the template for transcription?", "choices": [{"letter": "A", "text": "mRNA"}, {"letter": "B", "text": "Protein"}, {"letter": "C", "text": "DNA"}, {"letter": "D", "text": "tRNA"}], "correct": "C"},
+    {"question": "What follows complementary base pairing?", "choices": [{"letter": "A", "text": "Random pairing"}, {"letter": "B", "text": "A-T and C-G"}, {"letter": "C", "text": "A-C and T-G"}, {"letter": "D", "text": "All same"}], "correct": "B"},
+    {"question": "What is copied during replication?", "choices": [{"letter": "A", "text": "RNA"}, {"letter": "B", "text": "Proteins"}, {"letter": "C", "text": "DNA"}, {"letter": "D", "text": "Lipids"}], "correct": "C"}
+  ],
+  "fillintheblank": [
+    {"question": "_____ replication copies DNA before cell division.", "expectedAny": ["DNA"]},
+    {"question": "_____ copies DNA into mRNA.", "expectedAny": ["transcription"]},
+    {"question": "DNA _____ synthesizes new DNA strands.", "expectedAny": ["polymerase"]},
+    {"question": "RNA _____ makes mRNA from DNA.", "expectedAny": ["polymerase"]},
+    {"question": "Adenine pairs with _____ in DNA.", "expectedAny": ["thymine", "T"]},
+    {"question": "Cytosine pairs with _____.", "expectedAny": ["guanine", "G"]},
+    {"question": "_____ base pairing follows A-T and C-G rules.", "expectedAny": ["complementary"]},
+    {"question": "Transcription produces _____.", "expectedAny": ["mRNA", "messenger RNA", "RNA"]},
+    {"question": "DNA replication occurs before _____ division.", "expectedAny": ["cell"]},
+    {"question": "RNA polymerase uses _____ as a template.", "expectedAny": ["DNA"]}
+  ],
+  "shortanswer": [
+    {"question": "What is DNA replication?", "keyTerms": ["copying", "DNA", "before", "cell division"], "expectedAny": ["Process of copying DNA before cell division", "Duplicating DNA for new cells", "Making DNA copy before division"]},
+    {"question": "What is transcription?", "keyTerms": ["copying", "DNA", "mRNA", "RNA"], "expectedAny": ["Process of copying DNA into mRNA", "Making mRNA from DNA", "DNA to RNA conversion"]},
+    {"question": "What does DNA polymerase do?", "keyTerms": ["synthesizes", "DNA", "enzyme", "new strands"], "expectedAny": ["Enzyme that synthesizes new DNA strands", "Makes DNA during replication", "Copies DNA"]},
+    {"question": "What does RNA polymerase do?", "keyTerms": ["synthesizes", "mRNA", "DNA template", "enzyme"], "expectedAny": ["Enzyme that makes mRNA from DNA template", "Synthesizes mRNA during transcription", "Copies DNA to mRNA"]},
+    {"question": "What is complementary base pairing?", "keyTerms": ["A pairs T", "C pairs G", "base pair rules"], "expectedAny": ["A pairs with T and C pairs with G", "Base pairing rules A-T and C-G", "Specific pairing between bases"]},
+    {"question": "When does DNA replicate?", "keyTerms": ["before", "cell division", "S phase", "cell cycle"], "expectedAny": ["Before cell division in S phase", "During cell cycle before division", "When cell prepares to divide"]},
+    {"question": "What is produced by transcription?", "keyTerms": ["mRNA", "messenger RNA", "RNA"], "expectedAny": ["mRNA or messenger RNA", "RNA copy of DNA", "Messenger RNA"]},
+    {"question": "How is transcription different from replication?", "keyTerms": ["transcription makes RNA", "replication makes DNA", "different products"], "expectedAny": ["Transcription makes RNA while replication makes DNA", "Different products RNA vs DNA", "Transcription uses RNA polymerase replication uses DNA polymerase"]},
+    {"question": "Why is base pairing important?", "keyTerms": ["accurate", "copying", "genetic information", "specificity"], "expectedAny": ["Ensures accurate copying of genetic information", "Maintains genetic code accuracy", "Allows precise DNA and RNA synthesis"]},
+    {"question": "What is the template for mRNA?", "keyTerms": ["DNA", "one strand", "template strand"], "expectedAny": ["DNA template strand", "One strand of DNA", "DNA serves as template"]}
+  ]
 }

@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Focus on complex character analysis. Help students identify how authors develop themes through character actions and conflicts.",
-  "sample": {
-    "question": "What is how a character changes throughout a story called?",
-    "expectedAny": [
-      "character development",
-      "character growth",
-      "character arc",
-      "character change"
-    ]
-  },
-  "truefalse": {
-    "question": "Internal conflict happens inside a character's mind.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the central message of a literary work?",
-    "expectedAny": [
-      "theme",
-      "main idea",
-      "central message",
-      "moral"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Using objects to represent deeper meanings is called ________.",
-    "expectedAny": [
-      "symbolism",
-      "symbolic representation",
-      "metaphor",
-      "symbolic meaning"
-    ]
-  },
-  "shortanswer": {
-    "question": "How can an author show character development?",
-    "expectedAny": [
-      "through actions and dialogue",
-      "showing character changes",
-      "character growth over time"
-    ]
-  }
+  "sample": [
+    { "question": "What is how a character changes throughout a story called?", "expectedAny": ["character development"] },
+    { "question": "Which is inside the mind?", "choices": ["External conflict", "Internal conflict", "Setting", "Plot"], "correct": 1, "expectedAny": ["internal conflict"] },
+    { "question": "Struggle with outside forces is ________.", "expectedAny": ["external conflict"] },
+    { "question": "The central message is the ________.", "expectedAny": ["theme"] },
+    { "question": "Using objects for deeper meanings is ________.", "expectedAny": ["symbolism"] },
+    { "question": "What shows character growth?", "choices": ["Setting", "Character development", "Plot", "Theme"], "correct": 1, "expectedAny": ["character development"] },
+    { "question": "Mental struggle is ________.", "expectedAny": ["internal conflict"] },
+    { "question": "Fighting outside forces is ________.", "expectedAny": ["external conflict"] },
+    { "question": "Which is the main message?", "choices": ["Plot", "Theme", "Setting", "Character"], "correct": 1, "expectedAny": ["theme"] },
+    { "question": "Deeper meanings use ________.", "expectedAny": ["symbolism"] }
+  ],
+  "truefalse": [
+    { "question": "Internal conflict happens inside a character's mind.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "External conflict is mental.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Character development shows growth.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Theme is a minor detail.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Symbolism uses objects for meaning.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All conflicts are external.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Characters can change in stories.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Internal conflict is with others.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Theme is the central message.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Symbolism is literal.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is the central message of a literary work?", "choices": ["Plot", "Theme", "Setting", "Character"], "correct": 1, "expectedAny": ["theme"] },
+    { "question": "What shows character growth?", "choices": ["Setting", "Character development", "Plot", "Theme"], "correct": 1, "expectedAny": ["character development"] },
+    { "question": "What is mental struggle?", "choices": ["External conflict", "Internal conflict", "Setting", "Plot"], "correct": 1, "expectedAny": ["internal conflict"] },
+    { "question": "What is struggle with outside forces?", "choices": ["Internal conflict", "External conflict", "Theme", "Setting"], "correct": 1, "expectedAny": ["external conflict"] },
+    { "question": "What uses objects for meaning?", "choices": ["Plot", "Symbolism", "Setting", "Character"], "correct": 1, "expectedAny": ["symbolism"] },
+    { "question": "What is the main message?", "choices": ["Detail", "Theme", "Plot", "Setting"], "correct": 1, "expectedAny": ["theme"] },
+    { "question": "What is character change?", "choices": ["Setting", "Development", "Plot", "Theme"], "correct": 1, "expectedAny": ["development"] },
+    { "question": "What is inside the mind?", "choices": ["External conflict", "Internal conflict", "Setting", "Plot"], "correct": 1, "expectedAny": ["internal conflict"] },
+    { "question": "What represents deeper meanings?", "choices": ["Plot", "Setting", "Symbolism", "Character"], "correct": 2, "expectedAny": ["symbolism"] },
+    { "question": "What is vs outside forces?", "choices": ["Internal", "External conflict", "Theme", "Setting"], "correct": 1, "expectedAny": ["external conflict"] }
+  ],
+  "fillintheblank": [
+    { "question": "Using objects to represent deeper meanings is called ________.", "expectedAny": ["symbolism"] },
+    { "question": "How a character changes is ________.", "expectedAny": ["character development"] },
+    { "question": "Mental struggle is ________.", "expectedAny": ["internal conflict"] },
+    { "question": "Struggle with outside forces is ________.", "expectedAny": ["external conflict"] },
+    { "question": "The central message is the ________.", "expectedAny": ["theme"] },
+    { "question": "________ shows character growth.", "expectedAny": ["character development"] },
+    { "question": "________ is a mental struggle.", "expectedAny": ["internal conflict"] },
+    { "question": "________ is fighting outside forces.", "expectedAny": ["external conflict"] },
+    { "question": "The ________ is the main message.", "expectedAny": ["theme"] },
+    { "question": "________ uses objects for meaning.", "expectedAny": ["symbolism"] }
+  ],
+  "shortanswer": [
+    { "question": "How can an author show character development?", "expectedAny": ["through actions and dialogue", "showing character changes"] },
+    { "question": "What is character development?", "expectedAny": ["how character changes", "character growth", "how the character changes", "transformation"] },
+    { "question": "What is internal conflict?", "expectedAny": ["struggle within mind", "mental struggle", "struggle inside character", "fighting with yourself"] },
+    { "question": "What is external conflict?", "expectedAny": ["struggle with outside forces", "fighting external forces", "conflict with others", "fighting outside things"] },
+    { "question": "What is theme?", "expectedAny": ["central message", "main idea of story", "message", "moral", "lesson", "what the author wants us to learn"] },
+    { "question": "What is symbolism?", "expectedAny": ["objects representing meanings", "using symbols for deeper meaning"] },
+    { "question": "Give an example of internal conflict.", "expectedAny": ["character deciding right from wrong", "self-doubt"] },
+    { "question": "Give an example of external conflict.", "expectedAny": ["character vs nature", "fighting another character"] },
+    { "question": "How do authors develop themes?", "expectedAny": ["through character actions and conflicts", "using plot and character"] },
+    { "question": "Give an example of symbolism.", "expectedAny": ["dove representing peace", "dark clouds showing trouble"] }
+  ]
 }

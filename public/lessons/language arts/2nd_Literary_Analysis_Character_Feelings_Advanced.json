@@ -40,7 +40,7 @@
   ],
   "fillintheblank": [
     { "question": "The reason why a character does something is called their ________.", "expectedAny": ["motivation", "reason", "purpose", "why they act"] },
-    { "question": "How a character responds to events is their ________.", "expectedAny": ["reaction"] },
+    { "question": "How a character responds to events is their ________.", "expectedAny": ["reaction", "response"] },
     { "question": "We use story ________ to learn about feelings.", "expectedAny": ["clues", "details"] },
     { "question": "A ________ can show feelings without words.", "expectedAny": ["picture", "illustration"] },
     { "question": "A character who frowns might feel ________.", "expectedAny": ["sad", "angry"] },
@@ -51,7 +51,7 @@
     { "question": "If a character is smiling and jumping, how might they be feeling?", "expectedAny": ["happy", "excited", "joyful", "glad", "cheerful"] },
     { "question": "Describe a time a character's feelings changed in a story you read.", "expectedAny": ["from sad to happy", "from scared to brave", "reasonable change"] },
     { "question": "Give one clue that shows a character is angry.", "expectedAny": ["yelling", "frowning", "crossed arms"] },
-    { "question": "How can knowing a character's motivation help you?", "expectedAny": ["understand why they act", "predict what they might do"] },
+  { "question": "How can knowing a character's motivation help you?", "expectedAny": ["understand why they act", "predict what they might do", "see their reasons"] },
     { "question": "Name a feeling and a matching action.", "expectedAny": ["happy - smile", "sad - cry", "scared - hide"] },
     { "question": "How can pictures help you figure out feelings?", "expectedAny": ["look at faces", "body language", "what is happening"] },
     { "question": "What might a character do if they feel nervous on stage?", "expectedAny": ["shake", "speak quietly", "look down"] }

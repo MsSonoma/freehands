@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Start with simple expressions using familiar contexts. Practice translating word phrases into algebraic expressions. Emphasize that variables represent unknown quantities.",
-  "sample": {
-    "question": "What do we call a letter that represents an unknown number?",
-    "expectedAny": ["variable", "unknown variable", "algebraic variable", "letter variable"]
-  },
-  "truefalse": {
-    "question": "In the expression 3x + 5, the coefficient of x is 3.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "How would you write 'a number plus 7' as an algebraic expression?",
-    "expectedAny": ["x + 7", "n + 7", "variable + 7", "any letter + 7"]
-  },
-  "fillintheblank": {
-    "question": "To ________ an expression means to substitute numbers for variables.",
-    "expectedAny": ["evaluate", "solve", "calculate", "substitute"]
-  },
-  "shortanswer": {
-    "question": "What is the value of 2x + 3 when x = 4?",
-    "expectedAny": ["11", "eleven", "2(4) + 3 = 11", "8 + 3 = 11"]
-  },
-  "wordProblems": {
-    "question": "Sarah has some stickers. After buying 12 more, she has x + 12 stickers. If x = 25, how many stickers does she have?",
-    "expectedAny": ["37 stickers", "37", "25 + 12 = 37", "thirty-seven stickers"]
-  }
+  "sample": [
+    { "question": "What do we call a letter that represents an unknown number?", "expectedAny": ["variable", "letter", "unknown variable", "algebraic variable"] },
+    { "question": "Which is a variable?", "choices": ["5", "x", "+", "10"], "correct": 1, "expectedAny": ["x"] },
+    { "question": "In 3x, the number 3 is the ________.", "expectedAny": ["coefficient"] },
+    { "question": "A single number or variable is a ________.", "expectedAny": ["term"] },
+    { "question": "Which is an algebraic expression?", "choices": ["5 = 5", "x + 7", "True", "Red"], "correct": 1, "expectedAny": ["x + 7"] },
+    { "question": "To find the value by substituting is to ________.", "expectedAny": ["evaluate"] },
+    { "question": "In 5y + 2, what is the coefficient?", "expectedAny": ["5"] },
+    { "question": "Which represents 'a number minus 3'?", "choices": ["3 - x", "x - 3", "3x", "x + 3"], "correct": 1, "expectedAny": ["x - 3"] },
+    { "question": "Evaluate x + 4 when x = 6.", "expectedAny": ["10"] },
+    { "question": "What does a variable represent?", "expectedAny": ["unknown number", "unknown value", "any number"] }
+  ],
+  "truefalse": [
+    { "question": "In the expression 3x + 5, the coefficient of x is 3.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Variables can only be the letter x.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "An algebraic expression contains variables.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The coefficient is always 1.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "To evaluate means to substitute values.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All terms must have variables.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "In 7y, 7 is the coefficient.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Variables represent known numbers only.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "x + 5 is an algebraic expression.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Every expression must have an equals sign.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "How would you write 'a number plus 7' as an algebraic expression?", "choices": ["7 - x", "x + 7", "7x", "x - 7"], "correct": 1, "expectedAny": ["x + 7", "n + 7", "x+7", "n+7", "7 + x", "7+x"] },
+    { "question": "What is the coefficient in 4x + 2?", "choices": ["2", "4", "x", "6"], "correct": 1, "expectedAny": ["4"] },
+    { "question": "Which is a variable?", "choices": ["8", "y", "+", "-"], "correct": 1, "expectedAny": ["y"] },
+    { "question": "Evaluate 2x when x = 5.", "choices": ["7", "10", "25", "3"], "correct": 1, "expectedAny": ["10"] },
+    { "question": "How do you write 'twice a number'?", "choices": ["x + 2", "2 + x", "2x", "x - 2"], "correct": 2, "expectedAny": ["2x", "2 x", "2*x", "2 * x", "x * 2"] },
+    { "question": "What is a term?", "choices": ["Equals sign", "Single number or variable", "Plus sign", "Answer"], "correct": 1, "expectedAny": ["single number or variable"] },
+    { "question": "Evaluate x - 3 when x = 10.", "choices": ["13", "7", "30", "3"], "correct": 1, "expectedAny": ["7"] },
+    { "question": "Which represents 'a number times 6'?", "choices": ["x + 6", "6 - x", "6x", "x - 6"], "correct": 2, "expectedAny": ["6x"] },
+    { "question": "In 9y + 1, what is the coefficient?", "choices": ["1", "9", "y", "10"], "correct": 1, "expectedAny": ["9"] },
+    { "question": "Evaluate 3x + 1 when x = 2.", "choices": ["5", "6", "7", "8"], "correct": 2, "expectedAny": ["7"] }
+  ],
+  "fillintheblank": [
+    { "question": "To ________ an expression means to substitute numbers for variables.", "expectedAny": ["evaluate"] },
+    { "question": "A letter that represents an unknown is a ________.", "expectedAny": ["variable"] },
+    { "question": "In 5x, the ________ is 5.", "expectedAny": ["coefficient"] },
+    { "question": "A single number or variable is a ________.", "expectedAny": ["term"] },
+    { "question": "An ________ expression contains variables and operations.", "expectedAny": ["algebraic"] },
+    { "question": "In 8y + 3, the coefficient of y is ________.", "expectedAny": ["8"] },
+    { "question": "To find the value, ________ numbers for variables.", "expectedAny": ["substitute"] },
+    { "question": "The expression x + 9 has ________ terms.", "expectedAny": ["2", "two"] },
+    { "question": "'A number minus 4' is written as ________ - 4.", "expectedAny": ["x", "n", "variable"] },
+    { "question": "Variables can be any ________.", "expectedAny": ["letter", "symbol"] }
+  ],
+  "shortanswer": [
+    { "question": "What is the value of 2x + 3 when x = 4?", "expectedAny": ["11", "2(4) + 3 = 11"] },
+    { "question": "Write 'a number divided by 5' as an expression.", "expectedAny": ["x/5", "x ÷ 5", "n/5", "x / 5", "n / 5"] },
+    { "question": "Evaluate 3x - 2 when x = 6.", "expectedAny": ["16", "3(6) - 2 = 16"] },
+    { "question": "What is the coefficient in 7y + 4?", "expectedAny": ["7"] },
+    { "question": "Write '10 more than a number' as an expression.", "expectedAny": ["x + 10", "n + 10"] },
+    { "question": "Evaluate x + x when x = 8.", "expectedAny": ["16", "8 + 8 = 16"] },
+    { "question": "Explain what a variable is.", "expectedAny": ["letter representing unknown", "symbol for unknown number", "represents any number"] },
+    { "question": "Evaluate 5x when x = 3.", "expectedAny": ["15", "5(3) = 15"] },
+    { "question": "What does coefficient mean?", "expectedAny": ["number multiplying variable", "number in front of variable", "number in front", "number times variable"] },
+    { "question": "Evaluate 4x + 1 when x = 5.", "expectedAny": ["21", "4(5) + 1 = 21"] }
+  ],
+  "wordProblems": [
+    { "question": "Sarah has some stickers. After buying 12 more, she has x + 12 stickers. If x = 25, how many stickers does she have?", "expectedAny": ["37", "25 + 12 = 37"] },
+    { "question": "Tom has 3 times as many marbles as his friend. If his friend has x marbles and x = 8, how many does Tom have?", "expectedAny": ["24", "3(8) = 24"] },
+    { "question": "A number increased by 7 is x + 7. If x = 15, what is the result?", "expectedAny": ["22", "15 + 7 = 22"] },
+    { "question": "Lisa runs 2x miles. If x = 5, how many miles does she run?", "expectedAny": ["10", "2(5) = 10"] },
+    { "question": "A store has x apples. After selling 6, they have x - 6 left. If x = 20, how many are left?", "expectedAny": ["14", "20 - 6 = 14"] },
+    { "question": "Mike saves $x each week for 4 weeks, saving 4x total. If x = 10, how much did he save?", "expectedAny": ["40", "4(10) = 40"] },
+    { "question": "A book costs $x and a pen costs $3. The total is x + 3. If x = 12, what is the total?", "expectedAny": ["15", "12 + 3 = 15"] },
+    { "question": "Emma has x candies. After eating 5, she has x - 5 left. If x = 18, how many are left?", "expectedAny": ["13", "18 - 5 = 13"] },
+    { "question": "A number doubled is 2x. If x = 7, what is the doubled number?", "expectedAny": ["14", "2(7) = 14"] },
+    { "question": "Jake has x toys plus 8 more, giving him x + 8. If x = 12, how many toys does he have?", "expectedAny": ["20", "12 + 8 = 20"] }
+  ]
 }

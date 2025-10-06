@@ -23,61 +23,85 @@
     {
       "term": "expression",
       "definition": "A mathematical phrase that contains numbers, variables, and operations"
+    },
+    {
+      "term": "function",
+      "definition": "A rule that pairs each input with exactly one output"
+    },
+    {
+      "term": "coefficient",
+      "definition": "The number that multiplies a variable, like 4 in 4x"
+    },
+    {
+      "term": "evaluate",
+      "definition": "To find the value of an expression by substituting a number for a variable"
+    },
+    {
+      "term": "input",
+      "definition": "The value you put into a function to get an output"
+    },
+    {
+      "term": "output",
+      "definition": "The result you get from a function's rule"
+    },
+    {
+      "term": "distributive property",
+      "definition": "Multiplying a sum by a number gives the same result as multiplying each addend and then adding: a(b + c) = ab + ac"
     }
   ],
   "teachingNotes": "Introduce basic algebraic concepts through patterns and simple equations. Use input/output tables to show relationships. Help students understand that letters can represent unknown numbers.",
   "sample": [
-    {"question": "What is the rule for this pattern: 5, 10, 15, 20, 25?", "expectedAny": ["add 5", "multiply by 5"]},
-    {"question": "Continue the pattern: 2, 4, 8, 16, ____.", "expectedAny": ["32", "×2 rule"]},
-    {"question": "What is the next number: 9, 7, 5, 3, ____?", "expectedAny": ["1", "subtract 2"]},
-    {"question": "Write an expression for 'three more than a number n'.", "expectedAny": ["n + 3"]},
-    {"question": "Find the unknown: n + 7 = 11.", "expectedAny": ["4"]},
-    {"question": "Make an input-output rule: input × 4 then + 1.", "expectedAny": ["4x + 1"]},
-    {"question": "Is 3n the same as n + n + n?", "expectedAny": ["yes"]}
+    {"question": "What is the rule for this pattern: 5, 10, 15, 20, 25?", "expectedAny": ["add 5", "+5 each time", "multiply by 5"]},
+    {"question": "Continue the pattern: 2, 4, 8, 16, ____.", "expectedAny": ["32", "thirty-two", "double each time", "times 2 rule"]},
+    {"question": "What is the next number: 9, 7, 5, 3, ____?", "expectedAny": ["1", "one", "subtract 2", "decrease by 2"]},
+    {"question": "Write an expression for 'three more than a number n'.", "expectedAny": ["n + 3", "3 + n"]},
+    {"question": "Find the unknown: n + 7 = 11.", "expectedAny": ["4", "four"]},
+    {"question": "Make an input-output rule: input × 4 then + 1.", "expectedAny": ["4x + 1", "4n + 1", "y = 4x + 1", "multiply by 4 then add 1"]},
+    {"question": "Is 3n the same as n + n + n?", "expectedAny": ["yes", "true"]}
   ],
   "truefalse": [
-    {"question": "In the equation x + 7 = 12, the variable x represents the number 5.", "answer": true},
-    {"question": "A variable must always stand for 1.", "answer": false},
-    {"question": "The expression 2(n + 3) equals 2n + 6.", "answer": true},
-    {"question": "In a pattern, the rule can never involve subtraction.", "answer": false},
-    {"question": "An equation must have an equals sign.", "answer": true},
-    {"question": "If n = 4, then 3n = 7.", "answer": false},
-    {"question": "Variables can represent unknown or changing numbers.", "answer": true}
+    {"question": "In the equation x + 7 = 12, the variable x represents the number 5.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "A variable must always stand for 1.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "The expression 2(n + 3) equals 2n + 6.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "In a pattern, the rule can never involve subtraction.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "An equation must have an equals sign.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
+    {"question": "If n = 4, then 3n = 7.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
+    {"question": "Variables can represent unknown or changing numbers.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]}
   ],
   "multiplechoice": [
-    {"question": "If the rule is 'multiply by 3', what number comes next after 4, 12, 36?", "choices": ["72", "96", "108", "36"], "correct": 2},
-    {"question": "Which expression means 'five more than twice n'?", "choices": ["2n + 5", "5n + 2", "n + 5 + n", "2 + 5n"], "correct": 0},
-    {"question": "For 4n = 28, what is n?", "choices": ["5", "6", "7", "8"], "correct": 2},
-    {"question": "Which pattern matches +3 each time?", "choices": ["2, 5, 8, 11", "3, 6, 12, 24", "10, 7, 4, 1", "1, 4, 9, 16"], "correct": 0},
-    {"question": "Which is equal to n + n + n + n?", "choices": ["n^4", "n4", "4n", "n + 4"], "correct": 2},
-    {"question": "In the table x: 1,2,3; y: 4,6,8; what is the rule?", "choices": ["y = x + 3", "y = 2x + 2", "y = 3x + 1", "y = x^2"], "correct": 1},
-    {"question": "Which graph represents a constant increase?", "choices": ["curved up", "flat", "straight line up", "zigzag"], "correct": 2}
+    {"question": "If the rule is 'multiply by 3', what number comes next after 4, 12, 36?", "choices": ["72", "96", "108", "36"], "correct": 2, "expectedAny": ["108", "c", "3", "third"]},
+    {"question": "Which expression means 'five more than twice n'?", "choices": ["2n + 5", "5n + 2", "n + 5 + n", "2 + 5n"], "correct": 0, "expectedAny": ["2n + 5", "a", "1", "first"]},
+    {"question": "For 4n = 28, what is n?", "choices": ["5", "6", "7", "8"], "correct": 2, "expectedAny": ["7", "c", "3", "third"]},
+    {"question": "Which pattern matches +3 each time?", "choices": ["2, 5, 8, 11", "3, 6, 12, 24", "10, 7, 4, 1", "1, 4, 9, 16"], "correct": 0, "expectedAny": ["2, 5, 8, 11", "a", "1", "first"]},
+    {"question": "Which is equal to n + n + n + n?", "choices": ["n^4", "n4", "4n", "n + 4"], "correct": 2, "expectedAny": ["4n", "c", "3", "third"]},
+    {"question": "In the table x: 1,2,3; y: 4,6,8; what is the rule?", "choices": ["y = x + 3", "y = 2x + 2", "y = 3x + 1", "y = x^2"], "correct": 1, "expectedAny": ["y = 2x + 2", "b", "2", "second"]},
+    {"question": "Which graph represents a constant increase?", "choices": ["curved up", "flat", "straight line up", "zigzag"], "correct": 2, "expectedAny": ["straight line up", "c", "3", "third"]}
   ],
   "fillintheblank": [
-    {"question": "In the expression 2n + 3, the letter n is called a ________.", "expectedAny": ["variable"]},
-    {"question": "The number in front of a variable, like 4 in 4x, is the ________.", "expectedAny": ["coefficient"]},
-    {"question": "A mathematical sentence with an equals sign is an ________.", "expectedAny": ["equation"]},
+    {"question": "In the expression 2n + 3, the letter n is called a ________.", "expectedAny": ["variable", "unknown", "unknown number"]},
+    {"question": "The number in front of a variable, like 4 in 4x, is the ________.", "expectedAny": ["coefficient", "number in front", "multiplier"]},
+    {"question": "A mathematical sentence with an equals sign is an ________.", "expectedAny": ["equation", "equality statement", "math sentence with equals"]},
     {"question": "A ________ is a rule for generating a pattern.", "expectedAny": ["function", "rule"]},
-    {"question": "The result of 3 × n is written as ________.", "expectedAny": ["3n"]},
-    {"question": "When you replace a variable with a number, you ________ the expression.", "expectedAny": ["evaluate"]},
-    {"question": "The output of a function depends on the ________.", "expectedAny": ["input"]}
+    {"question": "The result of 3 × n is written as ________.", "expectedAny": ["3n", "3 × n", "3*n", "3 times n"]},
+    {"question": "When you replace a variable with a number, you ________ the expression.", "expectedAny": ["evaluate", "solve", "find the value"]},
+    {"question": "The output of a function depends on the ________.", "expectedAny": ["input", "input value"]}
   ],
   "shortanswer": [
-    {"question": "What does the equation 4 × n = 20 mean?", "expectedAny": ["n = 5"]},
-    {"question": "Explain the distributive property with 3(n + 2).", "expectedAny": ["3n + 6"]},
-    {"question": "Write a rule for the pattern: 1, 4, 7, 10, ...", "expectedAny": ["add 3"]},
-    {"question": "How can a table help describe a function?", "expectedAny": ["shows input/output pairs"]},
-    {"question": "Create an equation for: the total T is 5 more than twice n.", "expectedAny": ["T = 2n + 5"]},
-    {"question": "Give an example where a variable represents a changing quantity.", "expectedAny": ["time", "temperature"]},
-    {"question": "Why do we use variables?", "expectedAny": ["represent unknowns", "generalize patterns"]}
+    {"question": "What does the equation 4 × n = 20 mean?", "expectedAny": ["n = 5", "n is 5", "n equals five", "n equals 5", "5"]},
+    {"question": "Explain the distributive property with 3(n + 2).", "expectedAny": ["3n + 6", "3 × n + 6", "3n plus 6", "3 times n plus 3 times 2", "multiply both parts"]},
+    {"question": "Write a rule for the pattern: 1, 4, 7, 10, ...", "expectedAny": ["add 3", "+3 each time", "increase by 3", "plus 3", "go up by 3"]},
+    {"question": "How can a table help describe a function?", "expectedAny": ["shows input/output pairs", "shows how inputs map to outputs", "organizes values", "shows the pattern", "see the rule"]},
+    {"question": "Create an equation for: the total T is 5 more than twice n.", "expectedAny": ["T = 2n + 5", "2n + 5 = T", "T equals 2n plus 5", "T = 5 + 2n"]},
+    {"question": "Give an example where a variable represents a changing quantity.", "expectedAny": ["time", "temperature", "distance", "age", "speed", "number of"]},
+    {"question": "Why do we use variables?", "expectedAny": ["represent unknowns", "generalize patterns", "stand for a number", "unknown number", "don't know the number"]}
   ],
   "wordProblems": [
-    {"question": "Maria saves $3 each week. Write an expression to show how much she saves in n weeks.", "expectedAny": ["3n"]},
-    {"question": "A taxi charges $2 plus $0.5 per mile. Write a function for cost C with miles m.", "expectedAny": ["C = 2 + 0.5m"]},
-    {"question": "A plant grows 2 cm per week starting at 5 cm. Write an expression for height after w weeks.", "expectedAny": ["5 + 2w"]},
-    {"question": "The pattern starts at 10 and subtracts 3 each time. What is the 5th term?", "expectedAny": ["-2", "10,7,4,1,-2"]},
-    {"question": "Tickets cost $8 each. Write an equation for total T for n tickets.", "expectedAny": ["T = 8n"]},
-    {"question": "If y = 4x + 1 and x = 3, what is y?", "expectedAny": ["13"]},
-    {"question": "A pool fills at 500 L per hour starting empty. Write a rule for amount after h hours.", "expectedAny": ["500h"]}
+    {"question": "Maria saves $3 each week. Write an expression to show how much she saves in n weeks.", "expectedAny": ["3n", "3 × n", "3*n"]},
+    {"question": "A taxi charges $2 plus $0.5 per mile. Write a function for cost C with miles m.", "expectedAny": ["C = 2 + 0.5m", "C = 0.5m + 2", "C(m) = 0.5m + 2"]},
+    {"question": "A plant grows 2 cm per week starting at 5 cm. Write an expression for height after w weeks.", "expectedAny": ["5 + 2w", "2w + 5", "h = 5 + 2w"]},
+    {"question": "The pattern starts at 10 and subtracts 3 each time. What is the 5th term?", "expectedAny": ["-2", "negative 2", "10,7,4,1,-2"]},
+    {"question": "Tickets cost $8 each. Write an equation for total T for n tickets.", "expectedAny": ["T = 8n", "8n", "T = 8 × n"]},
+    {"question": "If y = 4x + 1 and x = 3, what is y?", "expectedAny": ["13", "thirteen"]},
+    {"question": "A pool fills at 500 L per hour starting empty. Write a rule for amount after h hours.", "expectedAny": ["500h", "V = 500h", "500 × h"]}
   ]
 }

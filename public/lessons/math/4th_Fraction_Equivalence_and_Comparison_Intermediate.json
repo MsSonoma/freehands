@@ -8,7 +8,12 @@
     {"term": "equivalent fractions", "definition": "Fractions that represent the same value but have different numerators and denominators"},
     {"term": "common denominator", "definition": "The same denominator used in two or more fractions to compare them"},
     {"term": "benchmark fraction", "definition": "Common fractions like 1/2, 1/4, 3/4 used to estimate and compare"},
-    {"term": "simplify", "definition": "To write a fraction in its simplest form using the smallest possible numbers"}
+    {"term": "simplify", "definition": "To write a fraction in its simplest form using the smallest possible numbers"},
+    {"term": "numerator", "definition": "The top number in a fraction that counts how many parts"},
+    {"term": "denominator", "definition": "The bottom number in a fraction that tells the total equal parts"},
+    {"term": "greatest common factor (GCF)", "definition": "The largest number that divides both the numerator and denominator"},
+    {"term": "least common multiple (LCM)", "definition": "The smallest multiple shared by two or more numbers"},
+    {"term": "cross-multiplication", "definition": "A method to compare fractions by multiplying across the numerators and denominators"}
   ],
   "teachingNotes": "Use fraction strips and number lines. Focus on visual models before abstract algorithms. Practice finding equivalent fractions through multiplication and division.",
   "sample": [
@@ -21,40 +26,40 @@
     {"question": "What is a common denominator for 2/3 and 5/6?", "expectedAny": ["6"]}
   ],
   "truefalse": [
-    {"question": "To compare fractions with different denominators, you need a common denominator.", "answer": true, "expectedAny": ["rename to like denominators"]},
-    {"question": "Multiplying the numerator and denominator by the same number changes the value of a fraction.", "answer": false, "expectedAny": ["equivalent fraction rule"]},
-    {"question": "3/4 equals 0.75.", "answer": true, "expectedAny": ["75 hundredths"]},
-    {"question": "2/5 is greater than 1/2.", "answer": false, "expectedAny": ["0.4 < 0.5"]},
-    {"question": "Cross-multiplying can help compare fractions with unlike denominators.", "answer": true, "expectedAny": ["compare products"]},
-    {"question": "6/9 simplifies to 3/6.", "answer": false, "expectedAny": ["6/9 = 2/3"]},
-    {"question": "Equivalent fractions name the same point on a number line.", "answer": true, "expectedAny": ["same location"]}
+    {"question": "To compare fractions with different denominators, you need a common denominator.", "answer": true, "expectedAny": ["rename to like denominators", "true", "t", "yes", "y", "correct"]},
+    {"question": "Multiplying the numerator and denominator by the same number changes the value of a fraction.", "answer": false, "expectedAny": ["equivalent fraction rule", "false", "f", "no", "n", "incorrect"]},
+    {"question": "3/4 equals 0.75.", "answer": true, "expectedAny": ["75 hundredths", "true", "t", "yes", "y", "correct"]},
+    {"question": "2/5 is greater than 1/2.", "answer": false, "expectedAny": ["0.4 < 0.5", "false", "f", "no", "n", "incorrect"]},
+    {"question": "Cross-multiplying can help compare fractions with unlike denominators.", "answer": true, "expectedAny": ["compare products", "true", "t", "yes", "y", "correct"]},
+    {"question": "6/9 simplifies to 3/6.", "answer": false, "expectedAny": ["6/9 = 2/3", "false", "f", "no", "n", "incorrect"]},
+    {"question": "Equivalent fractions name the same point on a number line.", "answer": true, "expectedAny": ["same location", "true", "t", "yes", "y", "correct"]}
   ],
   "multiplechoice": [
-    {"question": "Which fraction is greater than 2/3?", "choices": ["5/9", "3/5", "7/9", "1/2"], "correct": 2, "expectedAny": ["7/9 > 2/3"]},
-    {"question": "Which pair is equivalent?", "choices": ["3/6 and 1/3", "4/8 and 1/2", "2/5 and 4/6", "5/10 and 3/5"], "correct": 1, "expectedAny": ["4/8 = 1/2"]},
-    {"question": "What is 2/3 as a decimal?", "choices": ["0.23", "0.6", "0.66...", "0.3"], "correct": 2, "expectedAny": ["repeating 6"]},
-    {"question": "Which is the least?", "choices": ["3/5", "4/7", "1/2", "5/8"], "correct": 1, "expectedAny": ["4/7 ≈ 0.571, smallest among"]},
-    {"question": "A common denominator for 3/4 and 2/5 is:", "choices": ["9", "10", "15", "20"], "correct": 3, "expectedAny": ["LCM 4 and 5"]},
-    {"question": "Which fraction equals 0.2?", "choices": ["1/2", "1/4", "1/5", "2/5"], "correct": 2, "expectedAny": ["one fifth"]},
-    {"question": "Which is greater: 5/12 or 1/3?", "choices": ["5/12", "1/3", "equal", "cannot compare"], "correct": 0, "expectedAny": ["5/12 = 0.416..., 1/3 ≈ 0.333..."]}
+    {"question": "Which fraction is greater than 2/3?", "choices": ["5/9", "3/5", "7/9", "1/2"], "correct": 2, "expectedAny": ["7/9", "7/9 > 2/3", "c", "3", "third"]},
+    {"question": "Which pair is equivalent?", "choices": ["3/6 and 1/3", "4/8 and 1/2", "2/5 and 4/6", "5/10 and 3/5"], "correct": 1, "expectedAny": ["4/8 and 1/2", "4/8 = 1/2", "b", "2", "second"]},
+    {"question": "What is 2/3 as a decimal?", "choices": ["0.23", "0.6", "0.66...", "0.3"], "correct": 2, "expectedAny": ["0.66...", "repeating 6", "c", "3", "third"]},
+    {"question": "Which is the least?", "choices": ["3/5", "4/7", "1/2", "5/8"], "correct": 1, "expectedAny": ["4/7", "4/7 ≈ 0.571, smallest among", "b", "2", "second"]},
+    {"question": "A common denominator for 3/4 and 2/5 is:", "choices": ["9", "10", "15", "20"], "correct": 3, "expectedAny": ["20", "d", "4", "fourth", "LCM 4 and 5"]},
+    {"question": "Which fraction equals 0.2?", "choices": ["1/2", "1/4", "1/5", "2/5"], "correct": 2, "expectedAny": ["1/5", "one fifth", "c", "3", "third"]},
+    {"question": "Which is greater: 5/12 or 1/3?", "choices": ["5/12", "1/3", "equal", "cannot compare"], "correct": 0, "expectedAny": ["5/12", "5/12 = 0.416..., 1/3 ≈ 0.333...", "a", "1", "first"]}
   ],
   "fillintheblank": [
     {"question": "The fraction 8/12 simplified is _____ because both 8 and 12 can be divided by _____.", "expectedAny": ["2/3", "4"]},
-    {"question": "To compare 3/4 and 5/8, find a common denominator of _____.", "expectedAny": ["8"]},
-    {"question": "6/10 is equivalent to _____.", "expectedAny": ["3/5"]},
-    {"question": "A benchmark fraction close to 5/8 is _____.", "expectedAny": ["1/2"]},
-    {"question": "To simplify 9/12, divide numerator and denominator by _____ to get 3/4.", "expectedAny": ["3"]},
-    {"question": "The top number in a fraction is called the _____.", "expectedAny": ["numerator"]},
-    {"question": "3/4 is the same point as _____/16 on a number line.", "expectedAny": ["12"]}
+    {"question": "To compare 3/4 and 5/8, find a common denominator of _____.", "expectedAny": ["8", "eight"]},
+    {"question": "6/10 is equivalent to _____.", "expectedAny": ["3/5", "three-fifths", "0.6"]},
+    {"question": "A benchmark fraction close to 5/8 is _____.", "expectedAny": ["1/2", "one half", "0.5"]},
+    {"question": "To simplify 9/12, divide numerator and denominator by _____ to get 3/4.", "expectedAny": ["3", "three"]},
+    {"question": "The top number in a fraction is called the _____.", "expectedAny": ["numerator", "the numerator", "top number"]},
+    {"question": "3/4 is the same point as _____/16 on a number line.", "expectedAny": ["12", "twelve"]}
   ],
   "shortanswer": [
-    {"question": "How can you tell if 3/5 and 6/10 are equivalent without a calculator?", "expectedAny": ["multiply 3/5 by 2/2 = 6/10"]},
-    {"question": "Explain how to use cross-multiplication to compare 3/7 and 2/5.", "expectedAny": ["3×5 vs 7×2", "15 vs 14"]},
-    {"question": "Why are 2/4 and 1/2 equivalent?", "expectedAny": ["divide by 2/2"]},
-    {"question": "Describe how to convert 3/4 to a decimal using hundredths.", "expectedAny": ["75/100 = 0.75"]},
-    {"question": "Give an example of two non-equivalent fractions and explain.", "expectedAny": ["2/3 and 3/5"]},
-    {"question": "How can benchmark fractions help compare 5/8 and 3/5?", "expectedAny": ["compare to 1/2 and 1", "relative distances"]},
-    {"question": "What does it mean to simplify a fraction?", "expectedAny": ["lowest terms", "divide by GCF"]}
+    {"question": "How can you tell if 3/5 and 6/10 are equivalent without a calculator?", "expectedAny": ["multiply 3/5 by 2/2 = 6/10", "simplify 6/10 to 3/5", "they name the same point on the number line", "cross products equal"]},
+    {"question": "Explain how to use cross-multiplication to compare 3/7 and 2/5.", "expectedAny": ["3×5 vs 7×2", "15 vs 14", "since 15>14, 3/7 > 2/5", "compare products"]},
+    {"question": "Why are 2/4 and 1/2 equivalent?", "expectedAny": ["divide by 2/2", "simplify 2/4 to 1/2", "same point on a number line", "multiply 1/2 by 2/2"]},
+    {"question": "Describe how to convert 3/4 to a decimal using hundredths.", "expectedAny": ["75/100 = 0.75", "multiply by 25/25 to get hundredths", "three quarters equals 0.75"]},
+    {"question": "Give an example of two non-equivalent fractions and explain.", "expectedAny": ["2/3 and 3/5", "0.666... > 0.6 so not equal", "cross multiply: 2×5 = 10, 3×3 = 9", "different fractions", "1/2 and 1/3"]},
+    {"question": "How can benchmark fractions help compare 5/8 and 3/5?", "expectedAny": ["compare to 1/2 and 1", "relative distances", "0.625 vs 0.6 so 5/8 is greater", "which is closer to 1", "use 1/2 to compare", "both more than half"]},
+    {"question": "What does it mean to simplify a fraction?", "expectedAny": ["lowest terms", "divide by GCF", "no common factors greater than 1", "reduce the fraction", "make it simpler", "reduce to smallest form"]}
   ],
   "wordProblems": [
     {"question": "Sarah ate 2/8 of a pizza and Jake ate 1/4 of the same pizza. Who ate more, or did they eat the same amount?", "expectedAny": ["same amount", "2/8 = 1/4"]},

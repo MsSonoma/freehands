@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "9th_Acids_Bases_pH_Scale_Intermediate",
   "title": "Acids, Bases, and the pH Scale",
   "grade": "9th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "acid",
-      "definition": "Substance that releases hydrogen ions (H+) in solution"
-    },
-    {
-      "term": "base",
-      "definition": "Substance that releases hydroxide ions (OH-) or accepts H+"
-    },
-    {
-      "term": "pH scale",
-      "definition": "Logarithmic scale measuring acidity from 0-14"
-    },
-    {
-      "term": "neutralization",
-      "definition": "Reaction between acid and base to form salt and water"
-    },
-    {
-      "term": "indicator",
-      "definition": "Substance that changes color to show pH level"
-    }
+    {"term": "acid", "definition": "Substance that releases hydrogen ions (H+) in solution"},
+    {"term": "base", "definition": "Substance that releases hydroxide ions (OH-) or accepts H+"},
+    {"term": "pH scale", "definition": "Logarithmic scale measuring acidity from 0-14"},
+    {"term": "neutralization", "definition": "Reaction between acid and base to form salt and water"},
+    {"term": "indicator", "definition": "Substance that changes color to show pH level"}
   ],
   "teachingNotes": "Use common examples of acids and bases. Demonstrate pH testing with indicators and discuss real-world applications.",
-  "sample": {
-    "question": "What is a substance that releases hydrogen ions in solution?",
-    "expectedAny": [
-      "acid",
-      "acidic substance",
-      "proton donor",
-      "H+ donor"
-    ]
-  },
-  "truefalse": {
-    "question": "The pH scale ranges from 0 to 14.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the reaction between an acid and base called?",
-    "expectedAny": [
-      "neutralization",
-      "acid-base reaction",
-      "neutralization reaction",
-      "salt formation"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A substance that changes color to show pH is called an ________.",
-    "expectedAny": [
-      "indicator",
-      "pH indicator",
-      "color indicator",
-      "chemical indicator"
-    ]
-  },
-  "shortanswer": {
-    "question": "What happens to pH when you add acid to pure water?",
-    "expectedAny": [
-      "pH decreases",
-      "becomes more acidic",
-      "pH goes below 7",
-      "becomes less than 7"
-    ]
-  }
+  "sample": [
+    {"question": "What is a substance that releases hydrogen ions in solution?", "expectedAny": ["acid", "acidic substance", "proton donor", "H+ releaser"]},
+    {"question": "What is a base?", "expectedAny": ["releases hydroxide ions", "accepts H+", "OH- donor", "proton acceptor"]},
+    {"question": "What is the pH scale?", "expectedAny": ["scale measuring acidity", "0 to 14 scale", "acidity measurement", "acid-base scale"]},
+    {"question": "What is neutralization?", "expectedAny": ["acid and base reaction", "forms salt and water", "neutralization reaction", "acid plus base"]},
+    {"question": "What is an indicator?", "expectedAny": ["shows pH by color", "changes color for pH", "pH color indicator", "color changing substance"]},
+    {"question": "What pH is neutral?", "expectedAny": ["7", "seven", "pH 7"]},
+    {"question": "What pH range is acidic?", "expectedAny": ["below 7", "0 to 7", "less than 7"]},
+    {"question": "What pH range is basic?", "expectedAny": ["above 7", "7 to 14", "greater than 7"]},
+    {"question": "Give an example of an acid.", "expectedAny": ["lemon juice", "vinegar", "HCl", "any acid"]},
+    {"question": "Give an example of a base.", "expectedAny": ["soap", "ammonia", "NaOH", "any base"]}
+  ],
+  "truefalse": [
+    {"question": "The pH scale ranges from 0 to 14. (True or False)", "correct": true},
+    {"question": "pH 7 is acidic. (True or False)", "correct": false},
+    {"question": "Acids release H+ ions. (True or False)", "correct": true},
+    {"question": "Bases accept H+ ions. (True or False)", "correct": true},
+    {"question": "Lower pH means more basic. (True or False)", "correct": false},
+    {"question": "Neutralization forms salt and water. (True or False)", "correct": true},
+    {"question": "Indicators change color with pH. (True or False)", "correct": true},
+    {"question": "pH above 7 is basic. (True or False)", "correct": true},
+    {"question": "pH below 7 is acidic. (True or False)", "correct": true},
+    {"question": "Vinegar is a base. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "What is the reaction between an acid and base called?", "choices": [{"letter": "A", "text": "Oxidation"}, {"letter": "B", "text": "Neutralization"}, {"letter": "C", "text": "Reduction"}, {"letter": "D", "text": "Combustion"}], "correct": "B"},
+    {"question": "What pH is neutral?", "choices": [{"letter": "A", "text": "0"}, {"letter": "B", "text": "7"}, {"letter": "C", "text": "14"}, {"letter": "D", "text": "10"}], "correct": "B"},
+    {"question": "What releases H+ ions?", "choices": [{"letter": "A", "text": "Base"}, {"letter": "B", "text": "Acid"}, {"letter": "C", "text": "Salt"}, {"letter": "D", "text": "Water"}], "correct": "B"},
+    {"question": "What accepts H+ ions?", "choices": [{"letter": "A", "text": "Acid"}, {"letter": "B", "text": "Base"}, {"letter": "C", "text": "Salt"}, {"letter": "D", "text": "Indicator"}], "correct": "B"},
+    {"question": "What shows pH by changing color?", "choices": [{"letter": "A", "text": "Salt"}, {"letter": "B", "text": "Water"}, {"letter": "C", "text": "Indicator"}, {"letter": "D", "text": "Base"}], "correct": "C"},
+    {"question": "pH 3 is?", "choices": [{"letter": "A", "text": "Neutral"}, {"letter": "B", "text": "Basic"}, {"letter": "C", "text": "Acidic"}, {"letter": "D", "text": "Neutral or basic"}], "correct": "C"},
+    {"question": "pH 11 is?", "choices": [{"letter": "A", "text": "Acidic"}, {"letter": "B", "text": "Neutral"}, {"letter": "C", "text": "Basic"}, {"letter": "D", "text": "Neutral or acidic"}], "correct": "C"},
+    {"question": "What does neutralization produce?", "choices": [{"letter": "A", "text": "Acid only"}, {"letter": "B", "text": "Base only"}, {"letter": "C", "text": "Salt and water"}, {"letter": "D", "text": "Gas"}], "correct": "C"},
+    {"question": "Lower pH means?", "choices": [{"letter": "A", "text": "More acidic"}, {"letter": "B", "text": "More basic"}, {"letter": "C", "text": "Neutral"}, {"letter": "D", "text": "No change"}], "correct": "A"},
+    {"question": "Higher pH means?", "choices": [{"letter": "A", "text": "More acidic"}, {"letter": "B", "text": "More basic"}, {"letter": "C", "text": "Neutral"}, {"letter": "D", "text": "Lower acidity only"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "A substance that changes color to show pH is called an _____.", "expectedAny": ["indicator", "pH indicator"]},
+    {"question": "The pH scale ranges from 0 to _____.", "expectedAny": ["14", "fourteen"]},
+    {"question": "pH _____ is neutral.", "expectedAny": ["7", "seven"]},
+    {"question": "Acids release _____ ions.", "expectedAny": ["H+", "hydrogen", "proton"]},
+    {"question": "Bases release _____ ions or accept H+.", "expectedAny": ["OH-", "hydroxide"]},
+    {"question": "_____ is the reaction of acid and base.", "expectedAny": ["neutralization"]},
+    {"question": "pH below 7 is _____.", "expectedAny": ["acidic", "acid"]},
+    {"question": "pH above 7 is _____.", "expectedAny": ["basic", "alkaline"]},
+    {"question": "Neutralization forms salt and _____.", "expectedAny": ["water", "H2O"]},
+    {"question": "Lower pH means more _____.", "expectedAny": ["acidic", "acid"]}
+  ],
+  "shortanswer": [
+    {"question": "What is an acid?", "keyTerms": ["releases", "H+", "hydrogen ions", "solution"], "expectedAny": ["Substance that releases hydrogen ions", "Releases H+ in solution", "Proton donor"]},
+    {"question": "What is a base?", "keyTerms": ["releases", "OH-", "accepts", "H+"], "expectedAny": ["Releases hydroxide ions or accepts H+", "OH- donor or H+ acceptor", "Accepts hydrogen ions"]},
+    {"question": "What does the pH scale measure?", "keyTerms": ["acidity", "0 to 14", "measures", "acid or base"], "expectedAny": ["Measures acidity from 0 to 14", "Acidity level on 0-14 scale", "How acidic or basic"]},
+    {"question": "What happens during neutralization?", "keyTerms": ["acid", "base", "react", "salt and water"], "expectedAny": ["Acid and base react to form salt and water", "Forms salt and water", "Acid plus base makes salt and water"]},
+    {"question": "How do indicators work?", "keyTerms": ["change", "color", "pH", "show"], "expectedAny": ["Change color to show pH", "Color changes with acidity", "Different colors for different pH"]},
+    {"question": "What does pH 7 mean?", "keyTerms": ["neutral", "not acidic", "not basic", "middle"], "expectedAny": ["Neutral, not acidic or basic", "The middle, neutral pH", "Neither acid nor base"]},
+    {"question": "What does low pH mean?", "keyTerms": ["acidic", "more", "H+", "less than 7"], "expectedAny": ["More acidic with more H+", "Below 7, acidic", "High acidity"]},
+    {"question": "What does high pH mean?", "keyTerms": ["basic", "alkaline", "less H+", "above 7"], "expectedAny": ["More basic with less H+", "Above 7, basic or alkaline", "High basicity"]},
+    {"question": "Why is pH scale logarithmic?", "keyTerms": ["each unit", "10 times", "factor of 10", "exponential"], "expectedAny": ["Each unit is 10 times different", "Factor of 10 between units", "pH 5 is 10 times more acidic than pH 6"]},
+    {"question": "Give examples of acids and bases in daily life.", "keyTerms": ["acid", "vinegar", "lemon", "base", "soap", "ammonia"], "expectedAny": ["Acids: vinegar, lemon juice; Bases: soap, ammonia", "Vinegar is acid, soap is base", "Lemon juice acidic, cleaning products basic"]}
+  ]
 }

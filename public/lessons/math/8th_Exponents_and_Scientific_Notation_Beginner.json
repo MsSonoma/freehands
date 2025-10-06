@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Start with small exponents and build to larger ones. Show how scientific notation helps with very large and small numbers.",
-  "sample": {
-    "question": "What shows how many times a base is multiplied by itself?",
-    "expectedAny": ["exponent", "power", "index", "superscript number"]
-  },
-  "truefalse": {
-    "question": "In 2³, the base is 2 and the exponent is 3.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is 10³?",
-    "expectedAny": ["1000", "one thousand", "10 × 10 × 10", "1,000"]
-  },
-  "fillintheblank": {
-    "question": "Scientific notation uses powers of ________.",
-    "expectedAny": ["10", "ten", "base 10", "decimal"]
-  },
-  "shortanswer": {
-    "question": "Write 4,500 in scientific notation.",
-    "expectedAny": ["4.5 × 10³", "4.5 × 10^3", "4.5E3", "4.5 times 10 to the 3rd"]
-  },
-  "wordProblems": {
-    "question": "If bacteria double every hour and you start with 2³ bacteria, how many do you have after 2 more doublings?",
-    "expectedAny": ["32", "2⁵", "2^5", "thirty-two"]
-  }
+  "sample": [
+    { "question": "What shows how many times a base is multiplied by itself?", "expectedAny": ["exponent"] },
+    { "question": "Which is multiplied number?", "choices": ["Exponent", "Base", "Power", "Sum"], "correct": 1, "expectedAny": ["base"] },
+    { "question": "Powers of 10 notation is ________.", "expectedAny": ["scientific notation"] },
+    { "question": "10 raised to exponent is ________.", "expectedAny": ["power of 10"] },
+    { "question": "Regular number writing is ________.", "expectedAny": ["standard form"] },
+    { "question": "What is small superscript number?", "choices": ["Base", "Exponent", "Sum", "Product"], "correct": 1, "expectedAny": ["exponent"] },
+    { "question": "Number being multiplied is ________.", "expectedAny": ["base"] },
+    { "question": "What uses powers of 10?", "choices": ["Addition", "Scientific notation", "Division", "Subtraction"], "correct": 1, "expectedAny": ["scientific notation"] },
+    { "question": "Ten to an exponent is ________.", "expectedAny": ["power of 10"] },
+    { "question": "Normal number format is ________.", "expectedAny": ["standard form"] }
+  ],
+  "truefalse": [
+    { "question": "In 2³, the base is 2 and the exponent is 3.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Exponent is multiplied number.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Scientific notation uses powers of 10.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Base is small superscript.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Standard form is regular writing.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Exponent shows multiplication times.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Powers of 10 are additions.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "In 5², five is base.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Scientific notation is only for small numbers.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Standard form is normal way.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is 10³?", "choices": ["30", "1000", "100", "10000"], "correct": 1, "expectedAny": ["1000"] },
+    { "question": "What is multiplied number?", "choices": ["Exponent", "Base", "Power", "Sum"], "correct": 1, "expectedAny": ["base"] },
+    { "question": "What is small superscript?", "choices": ["Base", "Exponent", "Sum", "Product"], "correct": 1, "expectedAny": ["exponent"] },
+    { "question": "What uses powers of 10?", "choices": ["Addition", "Scientific notation", "Division", "Subtraction"], "correct": 1, "expectedAny": ["scientific notation"] },
+    { "question": "What is 2⁴?", "choices": ["8", "16", "6", "4"], "correct": 1, "expectedAny": ["16"] },
+    { "question": "In 3², what is base?", "choices": ["2", "3", "9", "6"], "correct": 1, "expectedAny": ["3"] },
+    { "question": "What is regular form?", "choices": ["Scientific", "Standard form", "Exponential", "Power"], "correct": 1, "expectedAny": ["standard form"] },
+    { "question": "What is 10²?", "choices": ["20", "100", "10", "1000"], "correct": 1, "expectedAny": ["100"] },
+    { "question": "In 5³, what is exponent?", "choices": ["5", "3", "125", "15"], "correct": 1, "expectedAny": ["3"] },
+    { "question": "Power of 10 is?", "choices": ["Addition", "10 to exponent", "Subtraction", "Division"], "correct": 1, "expectedAny": ["10 to exponent"] }
+  ],
+  "fillintheblank": [
+    { "question": "Scientific notation uses powers of ________.", "expectedAny": ["10"] },
+    { "question": "In 4³, four is the ________.", "expectedAny": ["base"] },
+    { "question": "In 4³, three is the ________.", "expectedAny": ["exponent"] },
+    { "question": "Regular number writing is ________.", "expectedAny": ["standard form"] },
+    { "question": "10 raised to exponent is ________.", "expectedAny": ["power of 10"] },
+    { "question": "An ________ shows multiplication times.", "expectedAny": ["exponent"] },
+    { "question": "The ________ is multiplied number.", "expectedAny": ["base"] },
+    { "question": "________ notation uses powers of 10.", "expectedAny": ["scientific"] },
+    { "question": "________ form is regular way.", "expectedAny": ["standard"] },
+    { "question": "________ of 10 is 10 to exponent.", "expectedAny": ["power"] }
+  ],
+  "shortanswer": [
+    { "question": "Write 4,500 in scientific notation.", "expectedAny": ["4.5 × 10³", "4.5 times 10 to the 3rd", "4.5 × 10^3", "4.5E3"] },
+    { "question": "What is exponent?", "expectedAny": ["shows multiplication times", "power", "how many times to multiply", "repeated multiplication"] },
+    { "question": "What is base?", "expectedAny": ["number being multiplied", "multiplied number"] },
+    { "question": "What is 2³?", "expectedAny": ["8", "2 times 2 times 2"] },
+    { "question": "Write 300 in scientific notation.", "expectedAny": ["3 × 10²", "3 times 10 to the 2nd"] },
+    { "question": "What is power of 10?", "expectedAny": ["10 raised to exponent", "10 to an exponent"] },
+    { "question": "What is standard form?", "expectedAny": ["regular number writing", "normal way"] },
+    { "question": "Calculate 3².", "expectedAny": ["9", "3 times 3"] },
+    { "question": "Why use scientific notation?", "expectedAny": ["for very large or small numbers", "easier to write big numbers"] },
+    { "question": "What is 10⁴?", "expectedAny": ["10000", "ten thousand"] }
+  ],
+  "wordProblems": [
+    { "question": "If bacteria double every hour and you start with 2³ bacteria, how many do you have after 2 more doublings?", "expectedAny": ["32", "2⁵"] },
+    { "question": "A computer stores 10³ files. How many files?", "expectedAny": ["1000", "one thousand"] },
+    { "question": "If 10² = 100, how many zeros in 10⁴?", "expectedAny": ["4", "four"] },
+    { "question": "A cell divides into 2³ cells. How many?", "expectedAny": ["8", "eight"] },
+    { "question": "Light travels 3 × 10⁸ m/s. Write in standard form.", "expectedAny": ["300000000", "300 million"] },
+    { "question": "If 5² = 25, what is 5³?", "expectedAny": ["125", "5 times 25"] },
+    { "question": "A book has 10² pages. How many?", "expectedAny": ["100", "one hundred"] },
+    { "question": "Population is 6 × 10⁶. In standard form?", "expectedAny": ["6000000", "6 million"] },
+    { "question": "If 2⁴ = 16, what is 2⁵?", "expectedAny": ["32", "2 times 16"] },
+    { "question": "Distance is 4.5 × 10³ km. In standard form?", "expectedAny": ["4500", "four thousand five hundred"] }
+  ]
 }

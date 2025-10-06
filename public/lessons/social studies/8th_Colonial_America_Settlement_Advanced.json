@@ -1,73 +1,74 @@
-{
+﻿{
   "id": "8th_Colonial_America_Settlement_Advanced",
   "title": "Colonial America and Early Settlement",
   "grade": "8th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "colony",
-      "definition": "A settlement controlled by a distant country"
-    },
-    {
-      "term": "charter",
-      "definition": "A document giving permission to establish a colony"
-    },
-    {
-      "term": "proprietary colony",
-      "definition": "A colony owned and governed by an individual"
-    },
-    {
-      "term": "indentured servant",
-      "definition": "A person who worked for a period to pay for passage to America"
-    },
-    {
-      "term": "mercantilism",
-      "definition": "An economic system where colonies provide raw materials to the mother country"
-    }
+    {"term": "colony", "definition": "A settlement controlled by a distant country"},
+    {"term": "charter", "definition": "A document giving permission to establish a colony"},
+    {"term": "proprietary colony", "definition": "A colony owned and governed by an individual"},
+    {"term": "indentured servant", "definition": "A person who worked for a period to pay for passage to America"},
+    {"term": "mercantilism", "definition": "An economic system where colonies provide raw materials to the mother country"}
   ],
   "teachingNotes": "Compare different types of colonies and their purposes. Discuss how geography influenced colonial development.",
-  "sample": {
-    "question": "What is a settlement controlled by a distant country?",
-    "expectedAny": [
-      "colony",
-      "colonial settlement",
-      "overseas territory",
-      "dependent territory"
-    ]
-  },
-  "truefalse": {
-    "question": "Indentured servants worked for a period to pay for their passage to America.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What economic system required colonies to provide raw materials?",
-    "expectedAny": [
-      "mercantilism",
-      "colonial economy",
-      "mercantilist system",
-      "trade system"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A document giving permission to establish a colony is called a ________.",
-    "expectedAny": [
-      "charter",
-      "colonial charter",
-      "permission document",
-      "founding document"
-    ]
-  },
-  "shortanswer": {
-    "question": "Why did different colonies develop different economies?",
-    "expectedAny": [
-      "geography and climate differences",
-      "natural resources varied",
-      "environmental factors"
-    ]
-  }
+  "sample": [
+    {"question": "What was a colony in the context of the Americas?", "expectedAny": ["a settlement controlled by a distant country", "land controlled by another nation", "territory governed by a foreign power", "land controlled by another", "settlement under control"]},
+    {"question": "What was a charter?", "expectedAny": ["document giving permission to establish a colony", "official permission from the king", "legal document granting colonial rights", "permission document", "royal permission"]},
+    {"question": "What was a proprietary colony?", "expectedAny": ["colony owned by an individual", "colony governed by a private owner", "colony granted to a person by the king"]},
+    {"question": "Who were indentured servants?", "expectedAny": ["people who worked to pay for passage", "workers under contract for several years", "laborers who worked to repay travel costs"]},
+    {"question": "What was mercantilism?", "expectedAny": ["economic system where colonies provide raw materials", "system benefiting the mother country", "trade policy favoring the parent nation"]},
+    {"question": "Why did people come to the American colonies?", "expectedAny": ["religious freedom", "economic opportunity", "escape persecution", "land ownership"]},
+    {"question": "How did geography affect colonial economies?", "expectedAny": ["influenced what they could grow or produce", "determined economic activities", "shaped trade and agriculture"]},
+    {"question": "What role did raw materials play in colonization?", "expectedAny": ["sent to mother country", "used in mercantilism", "provided resources for England"]},
+    {"question": "How were proprietary colonies different from royal colonies?", "expectedAny": ["owned by individuals not the king", "governed by private owners", "controlled by proprietors"]},
+    {"question": "Why did England establish colonies in America?", "expectedAny": ["economic gain", "raw materials", "expand territory", "trade benefits"]}
+  ],
+  "truefalse": [
+    {"question": "Geography influenced the different economies of the colonies. (True or False)", "correct": true},
+    {"question": "A colony is a settlement controlled by a distant country. (True or False)", "correct": true},
+    {"question": "All colonies were owned directly by the king. (True or False)", "correct": false},
+    {"question": "Indentured servants worked to pay for their passage to America. (True or False)", "correct": true},
+    {"question": "Mercantilism benefited the colonies more than the mother country. (True or False)", "correct": false},
+    {"question": "A charter gave permission to establish a colony. (True or False)", "correct": true},
+    {"question": "Proprietary colonies were owned and governed by individuals. (True or False)", "correct": true},
+    {"question": "All colonists came to America for religious freedom. (True or False)", "correct": false},
+    {"question": "Colonial economies were all exactly the same. (True or False)", "correct": false},
+    {"question": "Raw materials from colonies were sent to England under mercantilism. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What was the main purpose of mercantilism for the mother country?", "choices": [{"letter": "A", "text": "To help colonies become independent"}, {"letter": "B", "text": "To gain wealth through colonial trade"}, {"letter": "C", "text": "To promote equality between nations"}, {"letter": "D", "text": "To establish democratic governments"}], "correct": "B"},
+    {"question": "What is a colony?", "choices": [{"letter": "A", "text": "An independent nation"}, {"letter": "B", "text": "A settlement controlled by a distant country"}, {"letter": "C", "text": "A trading post"}, {"letter": "D", "text": "A military base"}], "correct": "B"},
+    {"question": "What was a charter in colonial times?", "choices": [{"letter": "A", "text": "A type of ship"}, {"letter": "B", "text": "A document giving permission to establish a colony"}, {"letter": "C", "text": "A religious text"}, {"letter": "D", "text": "A trade agreement"}], "correct": "B"},
+    {"question": "What was a proprietary colony?", "choices": [{"letter": "A", "text": "A colony owned by the king"}, {"letter": "B", "text": "A colony owned and governed by an individual"}, {"letter": "C", "text": "A colony run by the church"}, {"letter": "D", "text": "A colony controlled by merchants"}], "correct": "B"},
+    {"question": "Who were indentured servants?", "choices": [{"letter": "A", "text": "Wealthy landowners"}, {"letter": "B", "text": "Government officials"}, {"letter": "C", "text": "People who worked to pay for passage to America"}, {"letter": "D", "text": "Native American guides"}], "correct": "C"},
+    {"question": "How did geography affect colonial economies?", "choices": [{"letter": "A", "text": "It had no effect"}, {"letter": "B", "text": "It made all colonies the same"}, {"letter": "C", "text": "It influenced what they could grow or produce"}, {"letter": "D", "text": "It only affected transportation"}], "correct": "C"},
+    {"question": "What did colonies provide to the mother country under mercantilism?", "choices": [{"letter": "A", "text": "Finished manufactured goods"}, {"letter": "B", "text": "Raw materials"}, {"letter": "C", "text": "Military support only"}, {"letter": "D", "text": "Nothing at all"}], "correct": "B"},
+    {"question": "Why did many people come to the American colonies?", "choices": [{"letter": "A", "text": "For vacation"}, {"letter": "B", "text": "To serve in the military"}, {"letter": "C", "text": "For religious freedom and economic opportunity"}, {"letter": "D", "text": "To explore only"}], "correct": "C"},
+    {"question": "What was the relationship between colonies and the mother country?", "choices": [{"letter": "A", "text": "Completely independent"}, {"letter": "B", "text": "Equal partners"}, {"letter": "C", "text": "Colonies were controlled by and benefited the mother country"}, {"letter": "D", "text": "Mother country served the colonies"}], "correct": "C"},
+    {"question": "Which economic system governed colonial trade?", "choices": [{"letter": "A", "text": "Capitalism"}, {"letter": "B", "text": "Mercantilism"}, {"letter": "C", "text": "Socialism"}, {"letter": "D", "text": "Feudalism"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "A _____ was a settlement controlled by a distant country.", "expectedAny": ["colony"]},
+    {"question": "A _____ was a document giving permission to establish a colony.", "expectedAny": ["charter"]},
+    {"question": "A _____ colony was owned and governed by an individual.", "expectedAny": ["proprietary"]},
+    {"question": "_____ servants worked for a period to pay for their passage to America.", "expectedAny": ["Indentured"]},
+    {"question": "_____ was an economic system where colonies provided raw materials to the mother country.", "expectedAny": ["Mercantilism"]},
+    {"question": "_____ influenced the different economies of the colonies.", "expectedAny": ["Geography"]},
+    {"question": "Colonies sent _____ materials to England under mercantilism.", "expectedAny": ["raw"]},
+    {"question": "The mother _____ controlled and benefited from colonial trade.", "expectedAny": ["country"]},
+    {"question": "Many colonists came to America for religious _____ and economic opportunity.", "expectedAny": ["freedom"]},
+    {"question": "A _____ country governed its colonies from far away.", "expectedAny": ["distant", "foreign"]}
+  ],
+  "shortanswer": [
+    {"question": "How did mercantilism benefit the mother country but limit colonial economic freedom?", "keyTerms": ["raw materials", "mother country", "wealth", "colonies"], "expectedAny": ["Colonies provided raw materials that enriched the mother country while limiting colonial trade and manufacturing", "The mother country gained wealth from colonial resources while restricting colonial economic independence", "Mercantilism benefited the mother country through colonial raw materials but prevented colonies from trading freely"]},
+    {"question": "Why did geography lead to different colonial economies?", "keyTerms": ["climate", "resources", "land", "different"], "expectedAny": ["Different climates and resources led to different products and industries", "Geography determined what crops could grow and what resources were available", "Land and climate influenced whether colonies focused on farming, trade, or other activities"]},
+    {"question": "What advantages and disadvantages did indentured servants face?", "keyTerms": ["passage", "work", "freedom", "years"], "expectedAny": ["They got passage to America but had to work for years before gaining freedom", "Servants received transportation but faced years of hard labor", "They could come to America but lost freedom for the contract period"]},
+    {"question": "How did a proprietary colony differ from a royal colony?", "keyTerms": ["owner", "individual", "king", "control"], "expectedAny": ["A proprietary colony was owned by an individual while a royal colony was controlled by the king", "Proprietary colonies had private owners while royal colonies were governed directly by the crown", "Individual owners controlled proprietary colonies but the king controlled royal colonies"]},
+    {"question": "Why did England want to establish colonies in America?", "keyTerms": ["resources", "wealth", "trade", "economic"], "expectedAny": ["To gain resources and wealth through trade and raw materials", "For economic benefits from colonial resources and markets", "To expand trade and access natural resources for economic gain"]},
+    {"question": "What role did a charter play in colonial settlement?", "keyTerms": ["permission", "establish", "legal", "rights"], "expectedAny": ["It gave legal permission to establish a colony with certain rights", "A charter provided official approval and defined colonial powers", "It granted the legal right to settle and govern colonial territory"]},
+    {"question": "How did mercantilism shape colonial trade policies?", "keyTerms": ["benefit", "mother country", "restrict", "trade"], "expectedAny": ["Policies were designed to benefit the mother country by restricting colonial trade", "Trade rules forced colonies to send resources to England and buy English goods", "Restrictions ensured colonial trade benefited the mother country economically"]},
+    {"question": "Why did many colonists seek religious freedom in America?", "keyTerms": ["persecution", "beliefs", "practice", "freedom"], "expectedAny": ["They faced persecution for their beliefs and wanted freedom to practice religion", "To escape religious persecution and worship freely", "They sought freedom to practice their religious beliefs without interference"]},
+    {"question": "What was the relationship between colonists and the mother country?", "keyTerms": ["control", "governed", "dependent", "distant"], "expectedAny": ["The mother country controlled and governed the distant colonies", "Colonies were dependent on and controlled by the mother country", "The distant mother country exercised control over colonial affairs"]},
+    {"question": "How did colonial settlements benefit England economically?", "keyTerms": ["raw materials", "markets", "wealth", "trade"], "expectedAny": ["Colonies provided raw materials and markets that increased English wealth", "England gained wealth through colonial raw materials and trade", "Colonial resources and markets benefited English economic interests"]}
+  ]
 }

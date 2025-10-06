@@ -1,74 +1,455 @@
-{
-  "id": "11th_Civil_Rights_Movement_American_Democracy_Advanced",
-  "title": "Civil Rights Movement and American Democracy",
-  "grade": "11th",
-  "difficulty": "Advanced",
-  "vocab": [
-    {
-      "term": "Black Power movement",
-      "definition": "Militant approach emphasizing African American self-determination and pride"
-    },
-    {
-      "term": "de facto segregation",
-      "definition": "Racial separation existing in practice without legal requirement"
-    },
-    {
-      "term": "white backlash",
-      "definition": "Negative reaction by whites to civil rights gains and social changes"
-    },
-    {
-      "term": "intersectionality",
-      "definition": "Recognition that individuals face multiple, overlapping forms of discrimination"
-    },
-    {
-      "term": "systemic racism",
-      "definition": "Institutional patterns and policies that perpetuate racial inequality"
-    }
-  ],
-  "teachingNotes": "Examine complex dynamics within civil rights movement and its evolution. Analyze continuing challenges and contemporary relevance.",
-  "sample": {
-    "question": "What approach emphasized African American self-determination and pride?",
-    "expectedAny": [
-      "Black Power movement",
-      "Black Power",
-      "militant civil rights",
-      "black nationalism"
-    ]
-  },
-  "truefalse": {
-    "question": "De facto segregation exists in practice without legal requirement.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What recognizes multiple, overlapping forms of discrimination?",
-    "expectedAny": [
-      "intersectionality",
-      "multiple discrimination",
-      "overlapping bias",
-      "compound prejudice"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Institutional patterns perpetuating racial inequality constitute ________ racism.",
-    "expectedAny": [
-      "systemic",
-      "institutional",
-      "structural",
-      "endemic"
-    ]
-  },
-  "shortanswer": {
-    "question": "How did white backlash affect civil rights progress?",
-    "expectedAny": [
-      "slowed implementation",
-      "political resistance",
-      "policy reversals",
-      "social tension"
-    ]
-  }
+﻿{
+    "id":  "11th_Civil_Rights_Movement_American_Democracy_Advanced",
+    "title":  "Civil Rights Movement and American Democracy",
+    "grade":  "11th",
+    "difficulty":  "Advanced",
+    "vocab":  [
+                  {
+                      "term":  "de jure segregation",
+                      "definition":  "Segregation by law especially in South"
+                  },
+                  {
+                      "term":  "de facto segregation",
+                      "definition":  "Segregation by practice not law"
+                  },
+                  {
+                      "term":  "affirmative action",
+                      "definition":  "Policies favoring disadvantaged groups"
+                  },
+                  {
+                      "term":  "Black Power movement",
+                      "definition":  "Movement emphasizing racial pride and self-determination"
+                  },
+                  {
+                      "term":  "fair housing",
+                      "definition":  "Equal opportunity in housing without discrimination"
+                  }
+              ],
+    "teachingNotes":  "Examine Civil Rights Movement strategies and achievements. Analyze ongoing struggle for equality.",
+    "sample":  [
+                   {
+                       "question":  "What are citizenship rights?",
+                       "expectedAny":  [
+                                           "civil rights",
+                                           "political and social freedom",
+                                           "citizenship rights",
+                                           "equal rights",
+                                           "civil liberties",
+                                           "constitutional rights"
+                                       ]
+                   },
+                   {
+                       "question":  "What separated people by race?",
+                       "expectedAny":  [
+                                           "segregation",
+                                           "racial separation",
+                                           "racial segregation",
+                                           "separate but equal",
+                                           "racial division",
+                                           "jim crow segregation"
+                                       ]
+                   },
+                   {
+                       "question":  "What was nonviolent protest?",
+                       "expectedAny":  [
+                                           "civil disobedience",
+                                           "nonviolent resistance",
+                                           "peaceful protest",
+                                           "nonviolent protest",
+                                           "passive resistance",
+                                           "nonviolent action"
+                                       ]
+                   },
+                   {
+                       "question":  "What case ended school segregation?",
+                       "expectedAny":  [
+                                           "Brown v Board",
+                                           "Brown decision",
+                                           "Brown v Board of Education",
+                                           "Brown case",
+                                           "Brown ruling",
+                                           "Brown vs Board"
+                                       ]
+                   },
+                   {
+                       "question":  "What protested bus segregation?",
+                       "expectedAny":  [
+                                           "Montgomery Bus Boycott",
+                                           "Montgomery boycott"
+                                       ]
+                   },
+                   {
+                       "question":  "What was lunch counter protest?",
+                       "expectedAny":  [
+                                           "sit-in",
+                                           "sit-ins"
+                                       ]
+                   },
+                   {
+                       "question":  "Who tested bus desegregation?",
+                       "expectedAny":  [
+                                           "Freedom Riders",
+                                           "Freedom Rides"
+                                       ]
+                   },
+                   {
+                       "question":  "Where was Dream speech?",
+                       "expectedAny":  [
+                                           "March on Washington",
+                                           "Washington march"
+                                       ]
+                   },
+                   {
+                       "question":  "What 1964 law banned discrimination?",
+                       "expectedAny":  [
+                                           "Civil Rights Act",
+                                           "Civil Rights Act 1964"
+                                       ]
+                   },
+                   {
+                       "question":  "What protected voting rights?",
+                       "expectedAny":  [
+                                           "Voting Rights Act",
+                                           "Voting Rights Act 1965"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Civil rights are citizenship freedoms.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Segregation integrated people.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Civil disobedience used violence.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Brown v Board ended school segregation.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Montgomery boycott was ineffective.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Sit-ins protested segregation.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Freedom Riders faced no violence.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "MLK spoke at March on Washington.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Civil Rights Act allowed discrimination.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Voting Rights Act protected voting.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What are civil rights?",
+                               "choices":  [
+                                               "Property rights",
+                                               "Citizenship freedoms",
+                                               "Business rights",
+                                               "State powers"
+                                           ],
+                               "correct":  "Citizenship freedoms"
+                           },
+                           {
+                               "question":  "What was segregation?",
+                               "choices":  [
+                                               "Integration",
+                                               "Separation by race",
+                                               "Equal treatment",
+                                               "Mixed communities"
+                                           ],
+                               "correct":  "Separation by race"
+                           },
+                           {
+                               "question":  "What was civil disobedience?",
+                               "choices":  [
+                                               "Violent protest",
+                                               "Nonviolent resistance",
+                                               "Accepting injustice",
+                                               "Ignoring laws"
+                                           ],
+                               "correct":  "Nonviolent resistance"
+                           },
+                           {
+                               "question":  "What did Brown v Board end?",
+                               "choices":  [
+                                               "Slavery",
+                                               "School segregation",
+                                               "Voting restrictions",
+                                               "Housing discrimination"
+                                           ],
+                               "correct":  "School segregation"
+                           },
+                           {
+                               "question":  "What was Montgomery Boycott?",
+                               "choices":  [
+                                               "School protest",
+                                               "Bus protest",
+                                               "Voting protest",
+                                               "Housing protest"
+                                           ],
+                               "correct":  "Bus protest"
+                           },
+                           {
+                               "question":  "What were sit-ins?",
+                               "choices":  [
+                                               "Bus protests",
+                                               "Lunch counter protests",
+                                               "School protests",
+                                               "Voting protests"
+                                           ],
+                               "correct":  "Lunch counter protests"
+                           },
+                           {
+                               "question":  "Who were Freedom Riders?",
+                               "choices":  [
+                                               "Bus drivers",
+                                               "Desegregation activists",
+                                               "Politicians",
+                                               "Teachers"
+                                           ],
+                               "correct":  "Desegregation activists"
+                           },
+                           {
+                               "question":  "What happened at March on Washington?",
+                               "choices":  [
+                                               "Riot",
+                                               "Dream speech",
+                                               "Boycott",
+                                               "Sit-in"
+                                           ],
+                               "correct":  "Dream speech"
+                           },
+                           {
+                               "question":  "What did Civil Rights Act ban?",
+                               "choices":  [
+                                               "Voting",
+                                               "Discrimination",
+                                               "Integration",
+                                               "Protests"
+                                           ],
+                               "correct":  "Discrimination"
+                           },
+                           {
+                               "question":  "What did Voting Rights Act end?",
+                               "choices":  [
+                                               "Voting",
+                                               "Literacy tests",
+                                               "Integration",
+                                               "Protests"
+                                           ],
+                               "correct":  "Literacy tests"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "_____ rights are citizenship freedoms.",
+                               "expectedAny":  [
+                                                   "civil",
+                                                   "political"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ separated people by race.",
+                               "expectedAny":  [
+                                                   "segregation",
+                                                   "racial separation"
+                                               ]
+                           },
+                           {
+                               "question":  "Civil _____ was nonviolent protest.",
+                               "expectedAny":  [
+                                                   "disobedience",
+                                                   "resistance"
+                                               ]
+                           },
+                           {
+                               "question":  "Brown v _____ ended school segregation.",
+                               "expectedAny":  [
+                                                   "Board",
+                                                   "Board of Education"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ Bus Boycott protested segregation.",
+                               "expectedAny":  [
+                                                   "Montgomery",
+                                                   "Alabama"
+                                               ]
+                           },
+                           {
+                               "question":  "_____-ins protested lunch counters.",
+                               "expectedAny":  [
+                                                   "sit",
+                                                   "Sit"
+                                               ]
+                           },
+                           {
+                               "question":  "Freedom _____ tested bus desegregation.",
+                               "expectedAny":  [
+                                                   "Riders",
+                                                   "Rides"
+                                               ]
+                           },
+                           {
+                               "question":  "March on _____ featured Dream speech.",
+                               "expectedAny":  [
+                                                   "Washington",
+                                                   "DC"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ Rights Act 1964 banned discrimination.",
+                               "expectedAny":  [
+                                                   "Civil",
+                                                   "1964"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ Rights Act 1965 protected voting.",
+                               "expectedAny":  [
+                                                   "Voting",
+                                                   "1965"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "What are civil rights?",
+                            "expectedAny":  [
+                                                "rights of citizens to political and social freedom",
+                                                "equality before law",
+                                                "protection from discrimination"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain segregation.",
+                            "expectedAny":  [
+                                                "separation of people by race",
+                                                "Jim Crow system",
+                                                "separate but equal doctrine"
+                                            ]
+                        },
+                        {
+                            "question":  "What was civil disobedience?",
+                            "expectedAny":  [
+                                                "nonviolent refusal to obey unjust laws",
+                                                "peaceful protest strategy",
+                                                "Gandhi-influenced tactic"
+                                            ]
+                        },
+                        {
+                            "question":  "What was Brown v Board?",
+                            "expectedAny":  [
+                                                "1954 Supreme Court case declaring school segregation unconstitutional",
+                                                "overturned Plessy v Ferguson",
+                                                "ordered integration"
+                                            ]
+                        },
+                        {
+                            "question":  "Describe Montgomery Bus Boycott.",
+                            "expectedAny":  [
+                                                "1955-56 protest against bus segregation",
+                                                "sparked by Rosa Parks arrest",
+                                                "led by MLK lasted over year"
+                                            ]
+                        },
+                        {
+                            "question":  "What were sit-ins?",
+                            "expectedAny":  [
+                                                "protests where participants occupy segregated places",
+                                                "lunch counter demonstrations",
+                                                "began in Greensboro 1960"
+                                            ]
+                        },
+                        {
+                            "question":  "Who were Freedom Riders?",
+                            "expectedAny":  [
+                                                "civil rights activists testing desegregation on interstate buses",
+                                                "faced violent opposition in South",
+                                                "1961 campaign"
+                                            ]
+                        },
+                        {
+                            "question":  "What was March on Washington?",
+                            "expectedAny":  [
+                                                "1963 demonstration where MLK gave I Have a Dream speech",
+                                                "250000 participants",
+                                                "called for jobs and freedom"
+                                            ]
+                        },
+                        {
+                            "question":  "What did Civil Rights Act 1964 do?",
+                            "expectedAny":  [
+                                                "prohibited discrimination based on race color religion sex national origin",
+                                                "banned segregation in public places",
+                                                "strengthened voting rights"
+                                            ]
+                        },
+                        {
+                            "question":  "What did Voting Rights Act 1965 do?",
+                            "expectedAny":  [
+                                                "protected voting rights and ended literacy tests",
+                                                "federal oversight of registration",
+                                                "response to Selma march"
+                                            ]
+                        }
+                    ]
 }

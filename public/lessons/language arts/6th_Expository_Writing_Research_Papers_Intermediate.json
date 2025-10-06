@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Teach the five-paragraph essay structure. Practice writing clear thesis statements. Emphasize using reliable sources and citing evidence properly.",
-  "sample": {
-    "question": "What type of writing explains or informs using facts?",
-    "expectedAny": [
-      "expository writing",
-      "informative writing",
-      "explanatory writing",
-      "factual writing"
-    ]
-  },
-  "truefalse": {
-    "question": "A thesis statement tells the reader the main idea of the essay.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What should the first sentence of a body paragraph contain?",
-    "expectedAny": [
-      "topic sentence",
-      "main idea",
-      "paragraph topic",
-      "controlling idea"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Facts and examples that prove your main idea are called ________ evidence.",
-    "expectedAny": [
-      "supporting",
-      "supporting evidence",
-      "backup",
-      "proof"
-    ]
-  },
-  "shortanswer": {
-    "question": "What are the three main parts of an expository essay?",
-    "expectedAny": [
-      "introduction, body, conclusion",
-      "intro, body paragraphs, conclusion",
-      "beginning, middle, end",
-      "opening, support, closing"
-    ]
-  }
+  "sample": [
+    { "question": "What type of writing explains or informs using facts?", "expectedAny": ["expository writing", "informative writing", "explanatory writing"] },
+    { "question": "Which states the main idea of an essay?", "choices": ["Topic sentence", "Thesis statement", "Conclusion", "Title"], "correct": 1, "expectedAny": ["thesis statement"] },
+    { "question": "The final paragraph that summarizes is the ________.", "expectedAny": ["conclusion"] },
+    { "question": "Facts that prove your idea are ________ evidence.", "expectedAny": ["supporting"] },
+    { "question": "Which is NOT part of an essay?", "choices": ["Introduction", "Body", "Conclusion", "Commercial"], "correct": 3, "expectedAny": ["commercial"] },
+    { "question": "The first sentence of a paragraph is the ________ sentence.", "expectedAny": ["topic"] },
+    { "question": "Writing that uses facts to explain is ________.", "expectedAny": ["expository"] },
+    { "question": "Which part comes first?", "choices": ["Conclusion", "Body", "Introduction", "Bibliography"], "correct": 2, "expectedAny": ["introduction"] },
+    { "question": "Name one part of an expository essay.", "expectedAny": ["introduction", "body", "conclusion"] },
+    { "question": "What does a thesis statement do?", "expectedAny": ["states main idea", "tells what essay is about", "presents argument"] }
+  ],
+  "truefalse": [
+    { "question": "A thesis statement tells the reader the main idea of the essay.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Expository writing uses only opinions, no facts.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Supporting evidence helps prove your main idea.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The conclusion comes at the beginning of an essay.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A topic sentence states the main idea of a paragraph.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Expository writing is meant to entertain only.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "An essay needs an introduction, body, and conclusion.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "You should never use facts in expository writing.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The thesis statement is usually in the introduction.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All paragraphs should connect to the thesis.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "What should the first sentence of a body paragraph contain?", "choices": ["Random fact", "Topic sentence", "Conclusion", "Question"], "correct": 1, "expectedAny": ["topic sentence"] },
+    { "question": "What is expository writing?", "choices": ["Fiction stories", "Poetry", "Writing that explains facts", "Personal letters"], "correct": 2, "expectedAny": ["writing that explains facts"] },
+    { "question": "Where is the thesis statement usually found?", "choices": ["Conclusion", "Body", "Introduction", "Title"], "correct": 2, "expectedAny": ["introduction"] },
+    { "question": "What proves your main idea?", "choices": ["Opinions only", "Supporting evidence", "Random thoughts", "Guesses"], "correct": 1, "expectedAny": ["supporting evidence"] },
+    { "question": "What does the conclusion do?", "choices": ["Starts the essay", "Summarizes main points", "Adds new topics", "Asks questions"], "correct": 1, "expectedAny": ["summarizes main points"] },
+    { "question": "Which is part of essay structure?", "choices": ["Advertisements", "Body paragraphs", "Cartoons", "Games"], "correct": 1, "expectedAny": ["body paragraphs"] },
+    { "question": "What type of information belongs in expository writing?", "choices": ["Only feelings", "Facts and evidence", "Made-up stories", "Personal gossip"], "correct": 1, "expectedAny": ["facts and evidence"] },
+    { "question": "What should each body paragraph have?", "choices": ["No topic", "A clear topic", "Random words", "Just pictures"], "correct": 1, "expectedAny": ["a clear topic"] },
+    { "question": "What restates the thesis?", "choices": ["Introduction", "Topic sentence", "Conclusion", "Title"], "correct": 2, "expectedAny": ["conclusion"] },
+    { "question": "How many main parts does an essay have?", "choices": ["One", "Two", "Three", "Ten"], "correct": 2, "expectedAny": ["three"] }
+  ],
+  "fillintheblank": [
+  { "question": "Facts and examples that prove your main idea are called ________ evidence.", "expectedAny": ["supporting", "support", "corroborating"] },
+  { "question": "A sentence that states the main idea of an essay is a ________ statement.", "expectedAny": ["thesis", "central"] },
+  { "question": "Writing that explains using facts is ________ writing.", "expectedAny": ["expository", "informative", "explanatory"] },
+  { "question": "The first sentence of a paragraph is the ________ sentence.", "expectedAny": ["topic", "topic (topic sentence)"] },
+  { "question": "The final paragraph is the ________.", "expectedAny": ["conclusion", "closing"] },
+  { "question": "The opening paragraph is the ________.", "expectedAny": ["introduction", "intro"] },
+  { "question": "The middle paragraphs are called the ________ paragraphs.", "expectedAny": ["body", "body paragraphs"] },
+  { "question": "________ help prove your thesis statement.", "expectedAny": ["evidence", "facts", "details", "supporting details"] },
+  { "question": "The ________ restates the thesis at the end.", "expectedAny": ["conclusion", "closing paragraph"] },
+  { "question": "Each body paragraph should have a ________ sentence.", "expectedAny": ["topic", "topic sentence"] }
+  ],
+  "shortanswer": [
+    { "question": "What are the three main parts of an expository essay?", "expectedAny": ["introduction, body, conclusion", "intro, body, conclusion", "opening, middle, closing"] },
+  { "question": "Explain what a thesis statement is.", "expectedAny": ["states the main idea", "tells what essay is about", "main point of essay", "a clear sentence that expresses the essay's claim"] },
+  { "question": "Why is supporting evidence important?", "expectedAny": ["proves your point", "backs up thesis", "gives facts", "shows credible support for claims"] },
+  { "question": "What should a topic sentence do?", "expectedAny": ["state paragraph's main idea", "tell what paragraph is about", "introduce paragraph topic", "connect to the thesis"] },
+    { "question": "Give an example of expository writing.", "expectedAny": ["how-to article", "research paper", "informational essay", "textbook chapter"] },
+  { "question": "What goes in the introduction?", "expectedAny": ["hook and thesis", "background and main idea", "topic introduction and thesis statement", "context and clear thesis"] },
+  { "question": "What goes in the conclusion?", "expectedAny": ["summary and restated thesis", "recap of main points", "final thoughts and summary", "a call back to the thesis without new points"] },
+    { "question": "How is expository writing different from narrative writing?", "expectedAny": ["expository explains facts", "narrative tells stories", "expository informs, narrative entertains"] },
+    { "question": "Why should you use facts in expository writing?", "expectedAny": ["to inform accurately", "to prove points", "to be credible"] },
+    { "question": "What makes a good thesis statement?", "expectedAny": ["clear and specific", "states main idea", "focused and arguable"] }
+  ]
 }

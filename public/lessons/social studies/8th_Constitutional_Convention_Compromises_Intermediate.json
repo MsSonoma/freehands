@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Explain the major compromises and why they were necessary. Discuss how the Constitution balanced different interests.",
-  "sample": {
-    "question": "What created a two-house legislature?",
-    "expectedAny": [
-      "Great Compromise",
-      "Connecticut Compromise",
-      "legislative compromise",
-      "bicameral compromise"
-    ]
-  },
-  "truefalse": {
-    "question": "The Virginia Plan favored states with larger populations.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What plan wanted equal representation for all states?",
-    "expectedAny": [
-      "New Jersey Plan",
-      "small state plan",
-      "equal representation plan",
-      "unicameral plan"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A system sharing power between national and state governments is ________.",
-    "expectedAny": [
-      "federalism",
-      "federal system",
-      "shared power",
-      "dual government"
-    ]
-  },
-  "shortanswer": {
-    "question": "How did the Great Compromise solve the representation problem?",
-    "expectedAny": [
-      "House based on population, Senate equal",
-      "combined both plans",
-      "bicameral legislature"
-    ]
-  }
+  "sample": [
+    {"question": "What did the Great Compromise create?", "expectedAny": ["a two-house legislature", "bicameral legislature", "Senate and House of Representatives", "big agreement", "important compromise"]},
+    {"question": "What was the Virginia Plan?", "expectedAny": ["representation based on state population", "plan favoring large states", "population-based representation"]},
+    {"question": "What was the New Jersey Plan?", "expectedAny": ["equal representation for all states", "plan favoring small states", "one vote per state"]},
+    {"question": "What was the Three-Fifths Compromise?", "expectedAny": ["counted enslaved people as three-fifths for representation", "compromise on counting enslaved population", "three out of five enslaved people counted"]},
+    {"question": "What is federalism?", "expectedAny": ["power shared between national and state governments", "division of power", "shared government authority", "shared power system", "power sharing"]},
+    {"question": "Why was the Constitutional Convention held?", "expectedAny": ["to fix problems with the Articles of Confederation", "to create a stronger government", "to write a new Constitution"]},
+    {"question": "How are senators chosen in Congress?", "expectedAny": ["two per state", "equal representation", "each state gets two"]},
+    {"question": "How is representation determined in the House?", "expectedAny": ["based on population", "by state population", "proportional to population"]},
+    {"question": "What did small states want at the Convention?", "expectedAny": ["equal representation", "same power as large states", "equal voice"]},
+    {"question": "What did large states want at the Convention?", "expectedAny": ["representation by population", "more representatives", "power based on size"]}
+  ],
+  "truefalse": [
+    {"question": "The Great Compromise created a two-house legislature. (True or False)", "correct": true},
+    {"question": "The Virginia Plan favored small states. (True or False)", "correct": false},
+    {"question": "The New Jersey Plan wanted equal representation for all states. (True or False)", "correct": true},
+    {"question": "The Three-Fifths Compromise counted enslaved people as three-fifths for representation. (True or False)", "correct": true},
+    {"question": "Federalism means all power goes to the national government. (True or False)", "correct": false},
+    {"question": "The Senate gives each state equal representation. (True or False)", "correct": true},
+    {"question": "The House of Representatives is based on state population. (True or False)", "correct": true},
+    {"question": "Large states wanted equal representation at the Convention. (True or False)", "correct": false},
+    {"question": "The Constitutional Convention met to strengthen the national government. (True or False)", "correct": true},
+    {"question": "All states agreed on representation from the beginning. (True or False)", "correct": false}
+  ],
+  "multiplechoice": [
+    {"question": "Which plan favored large states by basing representation on population?", "choices": [{"letter": "A", "text": "New Jersey Plan"}, {"letter": "B", "text": "Virginia Plan"}, {"letter": "C", "text": "Connecticut Plan"}, {"letter": "D", "text": "Massachusetts Plan"}], "correct": "B"},
+    {"question": "What did the Great Compromise create?", "choices": [{"letter": "A", "text": "A single-house legislature"}, {"letter": "B", "text": "A two-house legislature"}, {"letter": "C", "text": "A monarchy"}, {"letter": "D", "text": "A dictatorship"}], "correct": "B"},
+    {"question": "Which plan wanted equal representation for all states?", "choices": [{"letter": "A", "text": "Virginia Plan"}, {"letter": "B", "text": "New Jersey Plan"}, {"letter": "C", "text": "Maryland Plan"}, {"letter": "D", "text": "Georgia Plan"}], "correct": "B"},
+    {"question": "What is federalism?", "choices": [{"letter": "A", "text": "All power to states"}, {"letter": "B", "text": "All power to national government"}, {"letter": "C", "text": "Power shared between national and state governments"}, {"letter": "D", "text": "Power to the people only"}], "correct": "C"},
+    {"question": "How many senators does each state have?", "choices": [{"letter": "A", "text": "Based on population"}, {"letter": "B", "text": "One"}, {"letter": "C", "text": "Two"}, {"letter": "D", "text": "Five"}], "correct": "C"},
+    {"question": "What determines representation in the House of Representatives?", "choices": [{"letter": "A", "text": "State wealth"}, {"letter": "B", "text": "State population"}, {"letter": "C", "text": "State size in land"}, {"letter": "D", "text": "Equal for all"}], "correct": "B"},
+    {"question": "What was the Three-Fifths Compromise about?", "choices": [{"letter": "A", "text": "Taxation rates"}, {"letter": "B", "text": "Counting enslaved people for representation"}, {"letter": "C", "text": "Voting rights"}, {"letter": "D", "text": "Trade agreements"}], "correct": "B"},
+    {"question": "Why did small states prefer the New Jersey Plan?", "choices": [{"letter": "A", "text": "It gave them more money"}, {"letter": "B", "text": "It gave them equal representation"}, {"letter": "C", "text": "It gave them more land"}, {"letter": "D", "text": "It gave them no representation"}], "correct": "B"},
+    {"question": "Why did large states prefer the Virginia Plan?", "choices": [{"letter": "A", "text": "It gave equal representation"}, {"letter": "B", "text": "It gave them more representatives based on population"}, {"letter": "C", "text": "It gave them less power"}, {"letter": "D", "text": "It abolished the Senate"}], "correct": "B"},
+    {"question": "What did the Constitutional Convention replace?", "choices": [{"letter": "A", "text": "The Declaration of Independence"}, {"letter": "B", "text": "The Articles of Confederation"}, {"letter": "C", "text": "The Bill of Rights"}, {"letter": "D", "text": "The Magna Carta"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "The _____ Compromise created a two-house legislature with the Senate and House of Representatives.", "expectedAny": ["Great", "Connecticut"]},
+    {"question": "The _____ Plan favored large states with representation based on population.", "expectedAny": ["Virginia"]},
+    {"question": "The New _____ Plan wanted equal representation for all states.", "expectedAny": ["Jersey"]},
+    {"question": "The Three-_____ Compromise counted enslaved people as three-fifths for representation.", "expectedAny": ["Fifths"]},
+    {"question": "_____ is the sharing of power between national and state governments.", "expectedAny": ["Federalism"]},
+    {"question": "Each state has _____ senators in the Senate.", "expectedAny": ["two", "2"]},
+    {"question": "Representation in the House of Representatives is based on state _____.", "expectedAny": ["population"]},
+    {"question": "The Constitutional _____ met in Philadelphia to write the Constitution.", "expectedAny": ["Convention"]},
+    {"question": "_____ states wanted representation based on population.", "expectedAny": ["Large", "Big"]},
+    {"question": "_____ states wanted equal representation regardless of size.", "expectedAny": ["Small"]}
+  ],
+  "shortanswer": [
+    {"question": "How did the Great Compromise satisfy both large and small states?", "keyTerms": ["Senate", "House", "equal", "population"], "expectedAny": ["It created a Senate with equal representation and a House based on population", "Small states got equal representation in the Senate while large states got more representatives in the House", "The compromise balanced power by giving equal representation in one house and population-based representation in the other"]},
+    {"question": "Why did large states support the Virginia Plan?", "keyTerms": ["population", "more", "representatives", "power"], "expectedAny": ["It gave them more representatives based on their larger population", "They would have more power with population-based representation", "Larger population meant more representatives and more influence"]},
+    {"question": "Why did small states support the New Jersey Plan?", "keyTerms": ["equal", "representation", "same", "power"], "expectedAny": ["It gave them equal representation regardless of size", "They would have the same power as large states", "Equal representation meant small states would not be dominated"]},
+    {"question": "What is federalism and why was it important?", "keyTerms": ["power", "shared", "national", "state"], "expectedAny": ["Federalism shares power between national and state governments", "It balanced power so neither national nor state government was too strong", "Shared power between national and state levels protected both"]},
+    {"question": "How does the Senate represent states equally?", "keyTerms": ["two", "senators", "each", "state"], "expectedAny": ["Each state has two senators regardless of population", "All states get equal representation with two senators each", "Every state has the same number of senators"]},
+    {"question": "How does the House of Representatives reflect population?", "keyTerms": ["based", "population", "more", "people"], "expectedAny": ["Representation is based on state population", "States with more people get more representatives", "The number of representatives reflects how many people live in the state"]},
+    {"question": "Why was the Three-Fifths Compromise controversial?", "keyTerms": ["enslaved", "people", "representation", "counted"], "expectedAny": ["It counted enslaved people for representation but they had no rights", "Enslaved people were counted as three-fifths but could not vote", "It gave slave states more power without giving enslaved people freedom"]},
+    {"question": "What problem was the Constitutional Convention trying to solve?", "keyTerms": ["weak", "government", "Articles", "Confederation"], "expectedAny": ["The weak national government under the Articles of Confederation", "Problems with the Articles of Confederation made government too weak", "They needed a stronger national government to replace the Articles"]},
+    {"question": "How did compromises help create the Constitution?", "keyTerms": ["agreement", "different", "states", "work together"], "expectedAny": ["Compromises allowed states with different interests to reach agreement", "Different states could work together by finding middle ground", "Agreements between opposing groups made the Constitution possible"]},
+    {"question": "Why was representation such a contentious issue?", "keyTerms": ["power", "influence", "large", "small"], "expectedAny": ["It determined how much power and influence each state would have", "Large and small states disagreed on how to distribute power", "Representation affected whether states had equal or proportional influence"]}
+  ]
 }

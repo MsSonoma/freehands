@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Use world maps and globes extensively. Practice using latitude and longitude coordinates. Discuss how geography affects climate and culture.",
-  "sample": {
-    "question": "How many continents are there on Earth?",
-    "expectedAny": [
-      "seven",
-      "7",
-      "seven continents",
-      "7 continents"
-    ]
-  },
-  "truefalse": {
-    "question": "The equator divides Earth into northern and southern hemispheres.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which lines measure distance east and west?",
-    "expectedAny": [
-      "longitude",
-      "longitude lines",
-      "meridian lines",
-      "east-west lines"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The physical features of land are called ________.",
-    "expectedAny": [
-      "topography",
-      "physical geography",
-      "landforms",
-      "terrain"
-    ]
-  },
-  "shortanswer": {
-    "question": "Name the seven continents.",
-    "expectedAny": [
-      "Asia, Africa, North America, South America, Antarctica, Europe, Australia",
-      "all seven continents listed",
-      "Asia, Africa, Americas, Europe, Australia, Antarctica"
-    ]
-  }
+  "sample": [
+    { "question": "How many continents are there on Earth?", "expectedAny": ["seven", "7"] },
+    { "question": "Which divides Earth into north and south?", "choices": ["Prime meridian", "Equator", "Ocean", "River"], "correct": 1, "expectedAny": ["equator"] },
+    { "question": "Lines measuring distance east and west are ________.", "expectedAny": ["longitude"] },
+    { "question": "Half of Earth is a ________.", "expectedAny": ["hemisphere"] },
+    { "question": "Physical features of land are ________.", "expectedAny": ["topography"] },
+    { "question": "How many large landmasses?", "choices": ["Five", "Seven", "Nine", "Ten"], "correct": 1, "expectedAny": ["seven"] },
+    { "question": "Lines north and south of equator are ________.", "expectedAny": ["latitude"] },
+    { "question": "A large landmass is a ________.", "expectedAny": ["continent"] },
+    { "question": "Which measures distance?", "choices": ["Ocean", "Longitude", "Mountain", "Desert"], "correct": 1, "expectedAny": ["longitude"] },
+    { "question": "Land features are ________.", "expectedAny": ["topography"] }
+  ],
+  "truefalse": [
+    { "question": "The equator divides Earth into northern and southern hemispheres.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "There are ten continents.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Longitude lines measure east and west.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A hemisphere is a quarter of Earth.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Latitude lines run north and south of the equator.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Topography is about government.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "There are seven continents.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The prime meridian measures north-south.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Geography affects climate.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A continent is a small island.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which lines measure distance east and west?", "choices": ["Latitude", "Longitude", "Equator", "Ocean"], "correct": 1, "expectedAny": ["longitude"] },
+    { "question": "How many continents exist?", "choices": ["Five", "Six", "Seven", "Eight"], "correct": 2, "expectedAny": ["seven"] },
+    { "question": "What divides hemispheres?", "choices": ["Mountain", "Equator", "River", "Desert"], "correct": 1, "expectedAny": ["equator"] },
+    { "question": "What are physical features?", "choices": ["Government", "Topography", "Economy", "Politics"], "correct": 1, "expectedAny": ["topography"] },
+    { "question": "What is half of Earth?", "choices": ["Continent", "Hemisphere", "Ocean", "Island"], "correct": 1, "expectedAny": ["hemisphere"] },
+    { "question": "Which measures north-south?", "choices": ["Longitude", "Latitude", "Ocean", "River"], "correct": 1, "expectedAny": ["latitude"] },
+    { "question": "What is a large landmass?", "choices": ["Island", "Continent", "Lake", "River"], "correct": 1, "expectedAny": ["continent"] },
+    { "question": "What divides Earth east-west?", "choices": ["Equator", "Prime meridian", "Ocean", "Mountain"], "correct": 1, "expectedAny": ["prime meridian"] },
+    { "question": "What includes mountains and rivers?", "choices": ["Economy", "Topography", "Government", "Culture"], "correct": 1, "expectedAny": ["topography"] },
+    { "question": "How many continents?", "choices": ["7", "5", "9", "10"], "correct": 0, "expectedAny": ["7"] }
+  ],
+  "fillintheblank": [
+    { "question": "The physical features of land are called ________.", "expectedAny": ["topography"] },
+    { "question": "There are ________ continents on Earth.", "expectedAny": ["seven", "7"] },
+    { "question": "Lines measuring east and west are ________.", "expectedAny": ["longitude"] },
+    { "question": "Half of Earth is a ________.", "expectedAny": ["hemisphere"] },
+    { "question": "Lines measuring north and south are ________.", "expectedAny": ["latitude"] },
+    { "question": "A large landmass is a ________.", "expectedAny": ["continent"] },
+    { "question": "The ________ divides hemispheres.", "expectedAny": ["equator"] },
+    { "question": "________ are physical land features.", "expectedAny": ["topography"] },
+    { "question": "________ lines run east-west.", "expectedAny": ["longitude"] },
+    { "question": "Earth has ________ large landmasses.", "expectedAny": ["seven", "7"] }
+  ],
+  "shortanswer": [
+    { "question": "Name the seven continents.", "expectedAny": ["Asia, Africa, North America, South America, Antarctica, Europe, Australia", "all seven continents", "Asia Africa North America South America Antarctica Europe Australia"] },
+    { "question": "What is a continent?", "expectedAny": ["large landmass", "one of seven landmasses on Earth", "big land area"] },
+    { "question": "What is a hemisphere?", "expectedAny": ["half of Earth", "divided by equator or prime meridian", "half the globe"] },
+    { "question": "What is latitude?", "expectedAny": ["lines measuring north and south", "distance from equator", "horizontal lines"] },
+    { "question": "What is longitude?", "expectedAny": ["lines measuring east and west", "distance from prime meridian", "vertical lines"] },
+    { "question": "What is topography?", "expectedAny": ["physical features of land", "mountains, rivers, plains", "land features"] },
+    { "question": "What divides Earth into hemispheres?", "expectedAny": ["equator and prime meridian", "dividing lines", "equator or prime meridian"] },
+    { "question": "How does geography affect culture?", "expectedAny": ["influences climate and resources", "affects how people live", "shapes way of life"] },
+    { "question": "What are longitude lines?", "expectedAny": ["lines measuring east and west", "meridian lines", "vertical lines"] },
+    { "question": "What are latitude lines?", "expectedAny": ["lines measuring north and south", "parallel lines from equator", "horizontal lines"] }
+  ]
 }

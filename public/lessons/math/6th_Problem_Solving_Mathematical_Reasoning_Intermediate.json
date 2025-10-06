@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Emphasize multiple solution strategies. Encourage students to explain their reasoning. Practice identifying patterns and making mathematical arguments.",
-  "sample": {
-    "question": "What do we call using logical thinking to solve math problems?",
-    "expectedAny": ["mathematical reasoning", "logical reasoning", "mathematical thinking", "problem-solving reasoning"]
-  },
-  "truefalse": {
-    "question": "There is only one correct way to solve any math problem.",
-    "expectedAny": ["false", "no", "f", "incorrect"]
-  },
-  "multiplechoice": {
-    "question": "What is an educated guess about a mathematical pattern called?",
-    "expectedAny": ["conjecture", "hypothesis", "mathematical guess", "pattern prediction"]
-  },
-  "fillintheblank": {
-    "question": "An example that proves a statement is false is called a ________.",
-    "expectedAny": ["counterexample", "counter example", "contradicting example", "opposing example"]
-  },
-  "shortanswer": {
-    "question": "What are three good problem-solving strategies?",
-    "expectedAny": ["guess and check, draw a picture, work backwards", "make a table, look for patterns, solve simpler problem", "organize data, use logic, try different approaches"]
-  },
-  "wordProblems": {
-    "question": "Sarah notices that 1+3=4, 4+5=9, 9+7=16. She conjectures that the sum is always a perfect square. Find a counterexample.",
-    "expectedAny": ["16+9=25, but next would be 25+11=36", "the pattern breaks", "not all consecutive sums are perfect squares", "check: does the pattern continue?"]
-  }
+  "sample": [
+    { "question": "What do we call using logical thinking to solve math problems?", "expectedAny": ["mathematical reasoning", "logical reasoning"] },
+    { "question": "Which is a problem-solving strategy?", "choices": ["Guessing randomly", "Draw a picture", "Give up", "Skip it"], "correct": 1, "expectedAny": ["draw a picture"] },
+    { "question": "A planned approach to solve problems is a ________.", "expectedAny": ["strategy"] },
+    { "question": "An educated guess about a pattern is a ________.", "expectedAny": ["conjecture"] },
+    { "question": "What shows a statement is false?", "choices": ["Proof", "Counterexample", "Strategy", "Pattern"], "correct": 1, "expectedAny": ["counterexample"] },
+    { "question": "A logical argument showing truth is a ________.", "expectedAny": ["proof"] },
+    { "question": "Using logic to solve problems is mathematical ________.", "expectedAny": ["reasoning"] },
+    { "question": "Which helps solve problems?", "choices": ["Making a table", "Ignoring data", "Avoiding work", "Guessing wildly"], "correct": 0, "expectedAny": ["making a table"] },
+    { "question": "Name one problem-solving strategy.", "expectedAny": ["guess and check", "work backwards", "draw a diagram", "make a table"] },
+    { "question": "Why use multiple strategies?", "expectedAny": ["find different solutions", "check answers", "understand better"] }
+  ],
+  "truefalse": [
+    { "question": "There is only one correct way to solve any math problem.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Mathematical reasoning uses logical thinking.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A counterexample proves a statement is true.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Strategies help organize problem solving.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "A conjecture is always correct.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Proof uses logical arguments.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "You should never check your answer.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Patterns can help solve problems.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All problems have only one solution method.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Mathematical reasoning improves problem solving.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is an educated guess about a mathematical pattern called?", "choices": ["Proof", "Conjecture", "Answer", "Solution"], "correct": 1, "expectedAny": ["conjecture"] },
+    { "question": "What is a counterexample?", "choices": ["Another way to solve", "Shows statement is false", "A correct answer", "A pattern"], "correct": 1, "expectedAny": ["shows statement is false"] },
+    { "question": "Which is a good strategy?", "choices": ["Guess randomly", "Make a table", "Skip steps", "Ignore patterns"], "correct": 1, "expectedAny": ["make a table"] },
+    { "question": "What is proof?", "choices": ["A guess", "Logical argument", "Random answer", "Question"], "correct": 1, "expectedAny": ["logical argument"] },
+    { "question": "Mathematical reasoning uses:", "choices": ["Random guesses", "Logical thinking", "No thinking", "Emotion only"], "correct": 1, "expectedAny": ["logical thinking"] },
+    { "question": "Which helps solve 2+4+6+8?", "choices": ["Look for pattern", "Give up", "Guess", "Skip it"], "correct": 0, "expectedAny": ["look for pattern"] },
+    { "question": "What is a strategy?", "choices": ["Wrong answer", "Planned approach", "Random action", "Mistake"], "correct": 1, "expectedAny": ["planned approach"] },
+    { "question": "To disprove 'all numbers are even,' find:", "choices": ["Even number", "Counterexample (odd)", "Pattern", "Proof"], "correct": 1, "expectedAny": ["counterexample"] },
+    { "question": "Which shows reasoning?", "choices": ["Guessing wildly", "Explaining steps", "Skipping work", "Rushing"], "correct": 1, "expectedAny": ["explaining steps"] },
+    { "question": "Working backwards is:", "choices": ["A mistake", "A strategy", "Not helpful", "Useless"], "correct": 1, "expectedAny": ["a strategy"] }
+  ],
+  "fillintheblank": [
+    { "question": "An example that proves a statement is false is called a ________.", "expectedAny": ["counterexample"] },
+    { "question": "Using logical thinking to solve problems is mathematical ________.", "expectedAny": ["reasoning"] },
+    { "question": "A planned approach to solve problems is a ________.", "expectedAny": ["strategy"] },
+    { "question": "An educated guess about a pattern is a ________.", "expectedAny": ["conjecture"] },
+    { "question": "A logical argument showing truth is a ________.", "expectedAny": ["proof"] },
+    { "question": "________ are plans or methods for solving problems.", "expectedAny": ["strategies"] },
+    { "question": "To disprove a statement, find a ________.", "expectedAny": ["counterexample"] },
+    { "question": "Mathematical ________ uses logic and thinking.", "expectedAny": ["reasoning"] },
+    { "question": "A ________ can be tested with examples.", "expectedAny": ["conjecture"] },
+    { "question": "Drawing a picture is one problem-solving ________.", "expectedAny": ["strategy"] }
+  ],
+  "shortanswer": [
+    { "question": "What are three good problem-solving strategies?", "expectedAny": ["guess and check, draw a picture, work backwards", "make a table, look for patterns, solve simpler"] },
+    { "question": "Explain what a conjecture is.", "expectedAny": ["educated guess about pattern", "hypothesis about math", "prediction based on examples"] },
+    { "question": "What is a counterexample? Give one for 'all numbers are positive.'", "expectedAny": ["shows statement is false", "-5 is a counterexample", "negative numbers disprove it"] },
+    { "question": "Why is mathematical reasoning important?", "expectedAny": ["helps solve problems logically", "improves thinking", "finds correct solutions"] },
+    { "question": "Describe the 'work backwards' strategy.", "expectedAny": ["start with answer and reverse steps", "begin at end", "undo operations"] },
+    { "question": "How can patterns help solve problems?", "expectedAny": ["reveal structure", "predict next steps", "show relationships"] },
+    { "question": "What makes a good proof?", "expectedAny": ["logical steps", "clear reasoning", "shows why it's true"] },
+    { "question": "Name two ways to organize problem-solving.", "expectedAny": ["make a table", "draw a diagram", "list information", "organize data"] },
+    { "question": "Why use multiple strategies?", "expectedAny": ["check work", "find easier method", "understand better"] },
+    { "question": "Explain what mathematical reasoning means.", "expectedAny": ["using logic to solve math", "thinking logically about problems", "reasoning with numbers"] }
+  ],
+  "wordProblems": [
+    { "question": "Sarah notices that 1+3=4, 4+5=9, 9+7=16. She conjectures the sum is always a perfect square. Is this true?", "expectedAny": ["no", "false", "counterexample exists", "pattern breaks"] },
+    { "question": "Tom says all prime numbers are odd. Find a counterexample.", "expectedAny": ["2", "2 is prime and even"] },
+    { "question": "A number pattern is 2, 4, 8, 16. What strategy helps find the next number?", "expectedAny": ["look for pattern", "doubling pattern", "multiply by 2"] },
+    { "question": "Lisa has $50 at the end. She bought a $15 book and $10 toy. How much did she start with?", "expectedAny": ["75", "$75", "work backwards: 50+15+10"] },
+    { "question": "Prove that the sum of two even numbers is always even.", "expectedAny": ["2+4=6, 6+8=14, all even", "even plus even stays even", "multiples of 2 add to multiples of 2"] },
+    { "question": "Jake says all rectangles are squares. What's wrong?", "expectedAny": ["counterexample: rectangle not square", "squares are special rectangles", "not all rectangles have equal sides"] },
+    { "question": "Find the pattern: 5, 10, 15, 20. What comes next?", "expectedAny": ["25", "add 5 each time"] },
+    { "question": "A parking lot has 6 rows of 8 cars. Which strategy helps find the total?", "expectedAny": ["multiply", "make array", "6 × 8 = 48"] },
+    { "question": "Maria claims all odd numbers are prime. Find a counterexample.", "expectedAny": ["9", "15", "21", "odd but not prime"] },
+    { "question": "The sum of angles in triangles is 180°. Is this a conjecture or proven?", "expectedAny": ["proven", "proof exists", "mathematical fact"] }
+  ]
 }

@@ -7,52 +7,89 @@
   "vocab": [
     {"term": "plot", "definition": "The sequence of events in a story; what happens from beginning to end."},
     {"term": "conflict", "definition": "The main problem or struggle that the characters face."},
-    {"term": "climax", "definition": "The most exciting or intense part of the story, where the conflict reaches its peak."}
+    {"term": "climax", "definition": "The most exciting or intense part of the story, where the conflict reaches its peak."},
+    {"term": "setting", "definition": "Where and when a story takes place (time and place)."},
+    {"term": "character", "definition": "A person, animal, or creature in a story."},
+    {"term": "protagonist", "definition": "The main character in a story (often the hero)."},
+    {"term": "resolution", "definition": "How the problem is solved; how the story ends."},
+    {"term": "dialogue", "definition": "Conversation between characters, shown with quotation marks."},
+    {"term": "rising action", "definition": "Events that build tension and lead up to the climax."},
+    {"term": "falling action", "definition": "Events after the climax that lead to the resolution."},
+    {"term": "theme", "definition": "The message, lesson, or big idea of a story."}
   ],
   "teachingNotes": "Introduce plot using a story mountain or plot diagram (Beginning, Rising Action, Climax, Falling Action, Resolution). This helps students visualize the story's structure and organize their own narratives.",
   "sample": [
-    {"question": "What are the five main elements of a story?", "expectedAny": ["Characters, setting, plot, conflict, and theme."]},
-    {"question": "What two things does the setting of a story tell us?", "expectedAny": ["Where and when the story takes place."]},
-    {"question": "What is the problem in a story called?", "expectedAny": ["The conflict."]},
-    {"question": "Who are the characters in a story?", "expectedAny": ["The people, animals, or creatures the story is about."]},
-    {"question": "What are the main parts of a story's plot?", "expectedAny": ["Beginning, rising action, climax, falling action, and resolution."]},
-    {"question": "What is the solution to the problem in a story called?", "expectedAny": ["The resolution."]},
-    {"question": "What makes a good beginning for a story?", "expectedAny": ["It should introduce the characters and setting, and hook the reader."]}
+    {"question": "What are the five main elements of a story?", "expectedAny": [
+      "characters, setting, plot, conflict, and theme",
+      "characters setting plot conflict theme",
+      "character, setting, plot, problem, theme",
+      "characters, setting, plot, conflict and theme"
+    ]},
+    {"question": "What two things does the setting of a story tell us?", "expectedAny": [
+      "where and when the story takes place",
+      "time and place",
+      "when and where"
+    ]},
+    {"question": "What is the problem in a story called?", "expectedAny": [
+      "the conflict",
+      "conflict",
+      "the problem"
+    ]},
+    {"question": "Who are the characters in a story?", "expectedAny": [
+      "the people, animals, or creatures the story is about",
+      "the people or animals in the story",
+      "who the story is about"
+    ]},
+    {"question": "What are the main parts of a story's plot?", "expectedAny": [
+      "beginning, rising action, climax, falling action, and resolution",
+      "beginning rising action climax falling action resolution",
+      "beginning, middle, climax, falling action, resolution"
+    ]},
+    {"question": "What is the solution to the problem in a story called?", "expectedAny": [
+      "the resolution",
+      "resolution",
+      "solution"
+    ]},
+    {"question": "What makes a good beginning for a story?", "expectedAny": [
+      "it should introduce the characters and setting and hook the reader",
+      "introduce characters and setting",
+      "hook the reader"
+    ]}
   ],
   "truefalse": [
-    {"question": "Every story needs to have characters.", "answer": true},
-    {"question": "The setting of a story includes both the time and the place.", "answer": true},
-    {"question": "The problem in a story is also called the conflict.", "answer": true},
-    {"question": "A good story does not need a solution or resolution.", "answer": false},
-    {"question": "The plot is the sequence of events that make up the story.", "answer": true},
-    {"question": "All stories must take place in the present day.", "answer": false},
-    {"question": "Dialogue is the conversation between characters in a story.", "answer": true}
+    {"question": "Every story needs to have characters.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "stories have characters"]},
+    {"question": "The setting of a story includes both the time and the place.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "time and place"]},
+    {"question": "The problem in a story is also called the conflict.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "problem is conflict"]},
+    {"question": "A good story does not need a solution or resolution.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "stories need a resolution"]},
+    {"question": "The plot is the sequence of events that make up the story.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "plot is sequence of events"]},
+    {"question": "All stories must take place in the present day.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "stories can be in past or future"]},
+    {"question": "Dialogue is the conversation between characters in a story.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "dialogue is conversation"]}
   ],
   "multiplechoice": [
-    {"question": "The beginning of a story, which introduces the characters and setting, is called the ___.", "choices": ["resolution", "climax", "introduction/exposition", "end"], "correct": 2},
-    {"question": "The main character in a story is often called the ___.", "choices": ["villain", "protagonist", "setting", "plot"], "correct": 1},
-    {"question": "The most exciting part of the story, where the problem is at its worst, is the ___.", "choices": ["beginning", "climax", "setting", "character"], "correct": 1},
-    {"question": "The setting of a story tells the reader ___.", "choices": ["who the story is about", "what the problem is", "where and when the story happens", "how the story ends"], "correct": 2},
-    {"question": "The rising action of a story is the series of events that leads up to the ___.", "choices": ["beginning", "climax", "introduction", "characters"], "correct": 1},
-    {"question": "The resolution of a story is the part where the ___.", "choices": ["problem is introduced", "problem is solved", "story gets more complicated", "characters are introduced"], "correct": 1},
-    {"question": "When writing dialogue, you should put ___ around the words the character is speaking.", "choices": ["quotation marks", "parentheses", "brackets", "nothing"], "correct": 0}
+    {"question": "The beginning of a story, which introduces the characters and setting, is called the ___.", "choices": ["resolution", "climax", "introduction/exposition", "end"], "correct": 2, "expectedAny": ["c", "C", "3", "introduction/exposition", "exposition", "introduction"]},
+    {"question": "The main character in a story is often called the ___.", "choices": ["villain", "protagonist", "setting", "plot"], "correct": 1, "expectedAny": ["b", "B", "2", "protagonist", "main character", "hero"]},
+    {"question": "The most exciting part of the story, where the problem is at its worst, is the ___.", "choices": ["beginning", "climax", "setting", "character"], "correct": 1, "expectedAny": ["b", "B", "2", "climax", "turning point", "most exciting part"]},
+    {"question": "The setting of a story tells the reader ___.", "choices": ["who the story is about", "what the problem is", "where and when the story happens", "how the story ends"], "correct": 2, "expectedAny": ["c", "C", "3", "where and when the story happens", "time and place", "when and where"]},
+    {"question": "The rising action of a story is the series of events that leads up to the ___.", "choices": ["beginning", "climax", "introduction", "characters"], "correct": 1, "expectedAny": ["b", "B", "2", "climax", "leads to the climax"]},
+    {"question": "The resolution of a story is the part where the ___.", "choices": ["problem is introduced", "problem is solved", "story gets more complicated", "characters are introduced"], "correct": 1, "expectedAny": ["b", "B", "2", "problem is solved", "solution", "ending"]},
+    {"question": "When writing dialogue, you should put ___ around the words the character is speaking.", "choices": ["quotation marks", "parentheses", "brackets", "nothing"], "correct": 0, "expectedAny": ["a", "A", "1", "quotation marks", "quotes"]}
   ],
   "fillintheblank": [
-    {"question": "The ___ is where and when a story takes place.", "expectedAny": ["setting"]},
-    {"question": "The main character, or hero, of the story is called the ___.", "expectedAny": ["protagonist"]},
-    {"question": "The main problem or struggle in a story is called the ___.", "expectedAny": ["conflict"]},
-    {"question": "The most exciting turning point in the story is the ___.", "expectedAny": ["climax"]},
-    {"question": "___ is the conversation between characters, shown with quotation marks.", "expectedAny": ["Dialogue"]},
-    {"question": "The ___ is the part of the story where the problem is solved.", "expectedAny": ["resolution"]},
-    {"question": "The sequence of events in a story is known as the ___.", "expectedAny": ["plot"]}
+    {"question": "The ___ is where and when a story takes place.", "expectedAny": ["setting", "the setting", "time and place", "where and when"]},
+    {"question": "The main character, or hero, of the story is called the ___.", "expectedAny": ["protagonist", "main character", "hero", "the protagonist"]},
+    {"question": "The main problem or struggle in a story is called the ___.", "expectedAny": ["conflict", "problem", "challenge", "the conflict"]},
+    {"question": "The most exciting turning point in the story is the ___.", "expectedAny": ["climax", "turning point", "most exciting part", "the climax"]},
+    {"question": "___ is the conversation between characters, shown with quotation marks.", "expectedAny": ["Dialogue", "dialogue", "conversation", "talking"]},
+    {"question": "The ___ is the part of the story where the problem is solved.", "expectedAny": ["resolution", "solution", "ending", "wrap-up"]},
+    {"question": "The sequence of events in a story is known as the ___.", "expectedAny": ["plot", "story events", "sequence of events", "the plot"]}
   ],
   "shortanswer": [
-    {"question": "What are some qualities that make a character interesting to read about?", "expectedAny": ["They have a unique personality, face challenges, have goals, and often change throughout the story."]},
-    {"question": "How can an author create a vivid setting for a story?", "expectedAny": ["By using descriptive words (adjectives) that appeal to the five senses."]},
-    {"question": "What are some different types of conflict a character might face?", "expectedAny": ["Character vs. character, character vs. nature, character vs. self."]},
-    {"question": "What are two important rules for writing good dialogue?", "expectedAny": ["It should sound natural for the character, and it needs to be punctuated correctly with quotation marks."]},
-    {"question": "What is the difference between a story's plot and its theme?", "expectedAny": ["The plot is what happens in the story, while the theme is the story's message or lesson."]},
-    {"question": "What is a 'hook' in a story, and why is it important?", "expectedAny": ["It's an exciting opening that grabs the reader's attention and makes them want to keep reading."]},
-    {"question": "Create a simple plot outline for a story about a lost dog.", "expectedAny": ["Beginning: A girl's dog runs away. Middle: She searches the neighborhood. End: She finds her dog safe."]}
+    {"question": "What are some qualities that make a character interesting to read about?", "expectedAny": ["unique personality", "faces challenges", "has goals", "changes or grows", "shows feelings", "is relatable", "has strengths and weaknesses", "has problems", "goes through changes", "interesting personality"]},
+    {"question": "How can an author create a vivid setting for a story?", "expectedAny": ["use sensory details", "describe sights and sounds", "use strong adjectives", "show, not tell", "describe time and place", "describe what you see and hear", "use describing words", "paint a picture"]},
+    {"question": "What are some different types of conflict a character might face?", "expectedAny": ["character vs. character", "character vs. nature", "character vs. self", "character vs. society", "internal and external conflict", "fighting another person", "fighting nature", "fighting yourself", "problem with another character", "problem with themselves"]},
+    {"question": "What are two important rules for writing good dialogue?", "expectedAny": ["use quotation marks correctly", "make it sound natural", "start a new paragraph for a new speaker", "punctuate correctly", "use quote marks", "put quotes around talking", "sound like real people", "new line for new speaker"]},
+    {"question": "What is the difference between a story's plot and its theme?", "expectedAny": ["plot is what happens", "theme is the message", "plot is events", "theme is the lesson", "plot is the sequence of events; theme is the big idea", "plot is the story; theme is the meaning", "plot is action; theme is lesson"]},
+    {"question": "What is a 'hook' in a story, and why is it important?", "expectedAny": ["an exciting opening", "grabs the reader's attention", "makes the reader want to keep reading", "pulls the reader in", "interesting beginning", "catches attention", "makes you want to read more"]},
+    {"question": "Create a simple plot outline for a story about a lost dog.", "expectedAny": ["beginning: dog goes missing", "middle: someone searches", "end: the dog is found", "lost dog, search, found", "search, clues, reunion", "dog lost, family looks, dog found", "any logical beginning/middle/end"]}
   ]
 }

@@ -1,0 +1,541 @@
+﻿{
+    "id":  "12th_Linear_Algebra_Matrix_Theory_Intermediate",
+    "title":  "Linear Algebra and Matrix Theory",
+    "grade":  "12th",
+    "difficulty":  "Intermediate",
+    "vocab":  [
+                  {
+                      "term":  "matrix multiplication",
+                      "definition":  "Combining matrices by row-column products"
+                  },
+                  {
+                      "term":  "inverse matrix",
+                      "definition":  "Matrix that reverses another matrix"
+                  },
+                  {
+                      "term":  "eigenvalue",
+                      "definition":  "Scalar stretching factor for eigenvector"
+                  },
+                  {
+                      "term":  "eigenvector",
+                      "definition":  "Vector scaled by matrix transformation"
+                  },
+                  {
+                      "term":  "linear transformation",
+                      "definition":  "Function preserving vector operations"
+                  }
+              ],
+    "teachingNotes":  "Explore linear algebra fundamentals and matrix operations. Apply to systems and transformations.",
+    "sample":  [
+                   {
+                       "question":  "What is rectangular array?",
+                       "expectedAny":  [
+                                           "matrix",
+                                           "array",
+                                           "rectangular array",
+                                           "number grid",
+                                           "matrix array",
+                                           "number matrix"
+                                       ]
+                   },
+                   {
+                       "question":  "What is ordered list?",
+                       "expectedAny":  [
+                                           "vector",
+                                           "list",
+                                           "ordered list",
+                                           "number list",
+                                           "vector list",
+                                           "ordered array"
+                                       ]
+                   },
+                   {
+                       "question":  "What has first power variables?",
+                       "expectedAny":  [
+                                           "linear equation",
+                                           "linear",
+                                           "first degree equation",
+                                           "straight line equation",
+                                           "degree one",
+                                           "linear relationship"
+                                       ]
+                   },
+                   {
+                       "question":  "What are equations together?",
+                       "expectedAny":  [
+                                           "system of equations",
+                                           "system",
+                                           "equation system",
+                                           "simultaneous equations",
+                                           "multiple equations",
+                                           "equations set"
+                                       ]
+                   },
+                   {
+                       "question":  "What number from square matrix?",
+                       "expectedAny":  [
+                                           "determinant",
+                                           "det",
+                                           "matrix determinant",
+                                           "square matrix value",
+                                           "det value",
+                                           "matrix number"
+                                       ]
+                   },
+                   {
+                       "question":  "What combines matrices?",
+                       "expectedAny":  [
+                                           "matrix multiplication",
+                                           "multiplication",
+                                           "matrix product",
+                                           "multiplying matrices",
+                                           "combining matrices",
+                                           "matrix operation"
+                                       ]
+                   },
+                   {
+                       "question":  "What reverses matrix?",
+                       "expectedAny":  [
+                                           "inverse matrix",
+                                           "inverse"
+                                       ]
+                   },
+                   {
+                       "question":  "What is scaling factor?",
+                       "expectedAny":  [
+                                           "eigenvalue",
+                                           "lambda"
+                                       ]
+                   },
+                   {
+                       "question":  "What is scaled vector?",
+                       "expectedAny":  [
+                                           "eigenvector",
+                                           "vector"
+                                       ]
+                   },
+                   {
+                       "question":  "What preserves vector operations?",
+                       "expectedAny":  [
+                                           "linear transformation",
+                                           "transformation"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Matrix is rectangular array.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Vector is unordered.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Linear equations have first power.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "System has one equation.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Determinant comes from square matrix.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Matrix multiplication is commutative.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Inverse reverses matrix.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "Eigenvalue scales eigenvector.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      },
+                      {
+                          "question":  "All matrices have eigenvectors.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f"
+                                          ]
+                      },
+                      {
+                          "question":  "Linear transformation preserves operations.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What is rectangular array?",
+                               "choices":  [
+                                               "Vector",
+                                               "Matrix",
+                                               "Scalar",
+                                               "Point"
+                                           ],
+                               "correct":  "Matrix"
+                           },
+                           {
+                               "question":  "What is ordered list?",
+                               "choices":  [
+                                               "Matrix",
+                                               "Scalar",
+                                               "Vector",
+                                               "Plane"
+                                           ],
+                               "correct":  "Vector"
+                           },
+                           {
+                               "question":  "What power are linear equations?",
+                               "choices":  [
+                                               "First",
+                                               "Second",
+                                               "Third",
+                                               "Fourth"
+                                           ],
+                               "correct":  "First"
+                           },
+                           {
+                               "question":  "What solves together?",
+                               "choices":  [
+                                               "Single equation",
+                                               "System",
+                                               "Graph",
+                                               "Point"
+                                           ],
+                               "correct":  "System"
+                           },
+                           {
+                               "question":  "What comes from square matrix?",
+                               "choices":  [
+                                               "Vector",
+                                               "Determinant",
+                                               "Scalar",
+                                               "Point"
+                                           ],
+                               "correct":  "Determinant"
+                           },
+                           {
+                               "question":  "What combines matrices?",
+                               "choices":  [
+                                               "Addition only",
+                                               "Matrix multiplication",
+                                               "Division",
+                                               "Subtraction only"
+                                           ],
+                               "correct":  "Matrix multiplication"
+                           },
+                           {
+                               "question":  "What reverses operation?",
+                               "choices":  [
+                                               "Transpose",
+                                               "Inverse",
+                                               "Scalar",
+                                               "Vector"
+                                           ],
+                               "correct":  "Inverse"
+                           },
+                           {
+                               "question":  "What is lambda?",
+                               "choices":  [
+                                               "Eigenvector",
+                                               "Eigenvalue",
+                                               "Matrix",
+                                               "Determinant"
+                                           ],
+                               "correct":  "Eigenvalue"
+                           },
+                           {
+                               "question":  "What gets scaled?",
+                               "choices":  [
+                                               "Eigenvalue",
+                                               "Scalar",
+                                               "Eigenvector",
+                                               "Determinant"
+                                           ],
+                               "correct":  "Eigenvector"
+                           },
+                           {
+                               "question":  "What preserves structure?",
+                               "choices":  [
+                                               "Random function",
+                                               "Linear transformation",
+                                               "Nonlinear function",
+                                               "Chaos"
+                                           ],
+                               "correct":  "Linear transformation"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "A _____ is rectangular array.",
+                               "expectedAny":  [
+                                                   "matrix",
+                                                   "Matrix"
+                                               ]
+                           },
+                           {
+                               "question":  "A _____ is ordered list.",
+                               "expectedAny":  [
+                                                   "vector",
+                                                   "Vector"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ equations have first power.",
+                               "expectedAny":  [
+                                                   "linear",
+                                                   "Linear"
+                                               ]
+                           },
+                           {
+                               "question":  "A _____ has multiple equations.",
+                               "expectedAny":  [
+                                                   "system",
+                                                   "System"
+                                               ]
+                           },
+                           {
+                               "question":  "A _____ comes from square matrix.",
+                               "expectedAny":  [
+                                                   "determinant",
+                                                   "Determinant"
+                                               ]
+                           },
+                           {
+                               "question":  "Matrix _____ combines matrices.",
+                               "expectedAny":  [
+                                                   "multiplication",
+                                                   "Multiplication"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ matrix reverses operation.",
+                               "expectedAny":  [
+                                                   "inverse",
+                                                   "Inverse"
+                                               ]
+                           },
+                           {
+                               "question":  "An _____ scales eigenvector.",
+                               "expectedAny":  [
+                                                   "eigenvalue",
+                                                   "Eigenvalue"
+                                               ]
+                           },
+                           {
+                               "question":  "An _____ gets scaled.",
+                               "expectedAny":  [
+                                                   "eigenvector",
+                                                   "Eigenvector"
+                                               ]
+                           },
+                           {
+                               "question":  "Linear _____ preserves operations.",
+                               "expectedAny":  [
+                                                   "transformation",
+                                                   "Transformation"
+                                               ]
+                           }
+                       ],
+    "wordProblems":  [
+                         {
+                             "question":  "What is determinant of 2x2 matrix with rows [2,3] and [1,4]?",
+                             "expectedAny":  [
+                                                 "5",
+                                                 "five"
+                                             ]
+                         },
+                         {
+                             "question":  "Add vectors [1,2] and [3,4].",
+                             "expectedAny":  [
+                                                 "[4,6]",
+                                                 "(4,6)",
+                                                 "4 6"
+                                             ]
+                         },
+                         {
+                             "question":  "Multiply matrix [2,0;0,3] by vector [1,1].",
+                             "expectedAny":  [
+                                                 "[2,3]",
+                                                 "(2,3)",
+                                                 "2 3"
+                                             ]
+                         },
+                         {
+                             "question":  "Is [2,4] a scalar multiple of [1,2]?",
+                             "expectedAny":  [
+                                                 "yes",
+                                                 "true"
+                                             ]
+                         },
+                         {
+                             "question":  "What is 2 times vector [3,4,5]?",
+                             "expectedAny":  [
+                                                 "[6,8,10]",
+                                                 "(6,8,10)",
+                                                 "6 8 10"
+                                             ]
+                         },
+                         {
+                             "question":  "Find inverse of 2x2 identity matrix.",
+                             "expectedAny":  [
+                                                 "identity",
+                                                 "itself",
+                                                 "same"
+                                             ]
+                         },
+                         {
+                             "question":  "If eigenvalue is 3 and eigenvector is [1,0], what is A times [1,0]?",
+                             "expectedAny":  [
+                                                 "[3,0]",
+                                                 "(3,0)",
+                                                 "3 0"
+                                             ]
+                         },
+                         {
+                             "question":  "Solve x plus y equals 5 and x minus y equals 1.",
+                             "expectedAny":  [
+                                                 "x=3 y=2",
+                                                 "(3,2)",
+                                                 "3 and 2"
+                                             ]
+                         },
+                         {
+                             "question":  "What is determinant of identity matrix?",
+                             "expectedAny":  [
+                                                 "1",
+                                                 "one"
+                                             ]
+                         },
+                         {
+                             "question":  "Is matrix multiplication commutative for AB and BA?",
+                             "expectedAny":  [
+                                                 "no",
+                                                 "false"
+                                             ]
+                         }
+                     ],
+    "shortanswer":  [
+                        {
+                            "question":  "What is a matrix?",
+                            "expectedAny":  [
+                                                "rectangular array of numbers",
+                                                "organized in rows and columns",
+                                                "represents system or transformation"
+                                            ]
+                        },
+                        {
+                            "question":  "Define vector.",
+                            "expectedAny":  [
+                                                "ordered list of numbers",
+                                                "represents direction and magnitude",
+                                                "element of vector space"
+                                            ]
+                        },
+                        {
+                            "question":  "What is linear equation?",
+                            "expectedAny":  [
+                                                "equation with variables to first power",
+                                                "graphs as straight line",
+                                                "no exponents products or roots"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain system of equations.",
+                            "expectedAny":  [
+                                                "set of equations to solve together",
+                                                "finding common solutions",
+                                                "represents intersection of constraints"
+                                            ]
+                        },
+                        {
+                            "question":  "What is determinant?",
+                            "expectedAny":  [
+                                                "number calculated from square matrix",
+                                                "measures scaling factor of transformation",
+                                                "zero means not invertible"
+                                            ]
+                        },
+                        {
+                            "question":  "What is matrix multiplication?",
+                            "expectedAny":  [
+                                                "combining matrices by row-column products",
+                                                "not commutative AB not equal BA",
+                                                "dimensions must match properly"
+                                            ]
+                        },
+                        {
+                            "question":  "Define inverse matrix.",
+                            "expectedAny":  [
+                                                "matrix that reverses another matrix",
+                                                "A times A inverse equals identity",
+                                                "not all matrices have inverses"
+                                            ]
+                        },
+                        {
+                            "question":  "What is eigenvalue?",
+                            "expectedAny":  [
+                                                "scalar stretching factor for eigenvector",
+                                                "lambda where A v equals lambda v",
+                                                "reveals transformation properties"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain eigenvector.",
+                            "expectedAny":  [
+                                                "vector scaled by matrix transformation",
+                                                "direction unchanged only magnitude changes",
+                                                "corresponds to eigenvalue"
+                                            ]
+                        },
+                        {
+                            "question":  "What is linear transformation?",
+                            "expectedAny":  [
+                                                "function preserving vector operations",
+                                                "represented by matrix multiplication",
+                                                "preserves addition and scalar multiplication"
+                                            ]
+                        }
+                    ]
+}

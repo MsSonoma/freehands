@@ -20,6 +20,10 @@
     {
       "term": "soft",
       "definition": "A quiet sound with little volume"
+    },
+    {
+      "term": "material",
+      "definition": "What something is made of, like wood, metal, or cloth"
     }
   ],
   "teachingNotes": "Use musical instruments and everyday objects. Let students feel vibrations. Explore different volumes and pitches through hands-on activities.",
@@ -51,21 +55,21 @@
     {"question": "We hear with our ___", "choices": ["eyes", "nose", "ears", "mouth"], "correct": 2, "expectedAny": ["ears"]}
   ],
   "fillintheblank": [
-    {"question": "When you pluck a rubber band, it _____ and makes a _____.", "expectedAny": ["vibrates", "sound"]},
-    {"question": "Fast vibrations make _____ sounds.", "expectedAny": ["high"]},
-    {"question": "Slow vibrations make _____ sounds.", "expectedAny": ["low"]},
-    {"question": "Sound _____ off walls to make echoes.", "expectedAny": ["bounces"]},
-    {"question": "Plucking a string makes it _____.", "expectedAny": ["vibrate"]},
-    {"question": "Your _____ cords make sound when you talk.", "expectedAny": ["vocal"]},
-    {"question": "Bigger vibrations make _____ sounds.", "expectedAny": ["louder"]}
+    {"question": "When you pluck a rubber band, it _____ and makes a _____.", "expectedAny": ["vibrates", "shakes", "a sound"]},
+    {"question": "Fast vibrations make _____ sounds.", "expectedAny": ["high", "high-pitched"]},
+    {"question": "Slow vibrations make _____ sounds.", "expectedAny": ["low", "low-pitched"]},
+    {"question": "Sound _____ off walls to make echoes.", "expectedAny": ["bounces", "reflects"]},
+    {"question": "Plucking a string makes it _____.", "expectedAny": ["vibrate", "shake"]},
+    {"question": "Your _____ cords make sound when you talk.", "expectedAny": ["vocal", "voice"]},
+    {"question": "Bigger vibrations make _____ sounds.", "expectedAny": ["louder", "stronger"]}
   ],
   "shortanswer": [
-    {"question": "How can you make a sound louder or softer?", "expectedAny": ["hit harder/softer", "more/less force"]},
-    {"question": "Why do we see lightning before thunder?", "expectedAny": ["light travels faster than sound"]},
-    {"question": "What materials block sound?", "expectedAny": ["thick walls", "soft materials"]},
-    {"question": "How do instruments make different sounds?", "expectedAny": ["different vibrations, size, material"]},
-    {"question": "Draw how sound waves spread from a bell.", "expectedAny": ["rings moving out"]},
-    {"question": "Why do we have two ears?", "expectedAny": ["find where sound comes from"]},
+    {"question": "How can you make a sound louder or softer?", "expectedAny": ["hit harder/softer", "more/less force", "blow harder/softer"]},
+    {"question": "Why do we see lightning before thunder?", "expectedAny": ["light travels faster than sound", "light is faster than sound", "light arrives before sound"]},
+    {"question": "What materials block sound?", "expectedAny": ["thick walls", "soft materials", "foam or cloth"]},
+    {"question": "How do instruments make different sounds?", "expectedAny": ["different vibrations, size, material", "change size or tightness", "different materials vibrate"]},
+  {"question": "Draw how sound waves spread from a bell.", "expectedAny": ["rings moving out", "ripples moving out", "circles moving out"]},
+    {"question": "Why do we have two ears?", "expectedAny": ["find where sound comes from", "to locate sounds", "to hear direction"]},
     {"question": "How can you make sounds quieter?", "expectedAny": ["cover source", "move away", "use soft materials"]}
   ]
 }

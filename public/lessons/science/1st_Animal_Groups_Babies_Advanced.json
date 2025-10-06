@@ -20,6 +20,22 @@
     {
       "term": "adult",
       "definition": "A grown-up animal that can have babies"
+    },
+    {
+      "term": "grow",
+      "definition": "To get bigger or change over time"
+    },
+    {
+      "term": "fish",
+      "definition": "Animals that live in water and breathe with gills"
+    },
+    {
+      "term": "reptile",
+      "definition": "Animals with scales that lay eggs on land"
+    },
+    {
+      "term": "amphibian",
+      "definition": "Animals that can live on land and in water"
     }
   ],
   "teachingNotes": "Use pictures of animal families. Discuss how babies look like their parents. Compare different animal groups and characteristics.",
@@ -51,21 +67,21 @@
     {"question": "Which animal baby is a foal?", "choices": ["horse", "duck", "fish", "frog"], "correct": 0, "expectedAny": ["horse"]}
   ],
   "fillintheblank": [
-    {"question": "A baby cat is called a _____", "expectedAny": ["kitten"]},
-    {"question": "A baby dog is called a _____", "expectedAny": ["puppy"]},
-    {"question": "A baby cow is a _____", "expectedAny": ["calf"]},
-    {"question": "A baby horse is a _____", "expectedAny": ["foal"]},
-    {"question": "Birds have _____ on their bodies.", "expectedAny": ["feathers"]},
-    {"question": "Fish breathe with _____", "expectedAny": ["gills"]},
-    {"question": "Mammals have _____ or hair.", "expectedAny": ["fur"]}
+    {"question": "A baby cat is called a _____", "expectedAny": ["kitten", "a kitten"]},
+    {"question": "A baby dog is called a _____", "expectedAny": ["puppy", "a puppy"]},
+    {"question": "A baby cow is a _____", "expectedAny": ["calf", "a calf"]},
+    {"question": "A baby horse is a _____", "expectedAny": ["foal", "a foal"]},
+    {"question": "Birds have _____ on their bodies.", "expectedAny": ["feathers", "bird feathers"]},
+    {"question": "Fish breathe with _____", "expectedAny": ["gills", "their gills"]},
+    {"question": "Mammals have _____ or hair.", "expectedAny": ["fur", "body fur"]}
   ],
   "shortanswer": [
-    {"question": "How are baby animals similar to their parents?", "expectedAny": ["look alike", "same features"]},
-    {"question": "Name one mammal, one bird, and one fish.", "expectedAny": ["dog, robin, goldfish"]},
-    {"question": "Why do birds build nests?", "expectedAny": ["to keep eggs/babies safe"]},
-    {"question": "How do fish babies live in water?", "expectedAny": ["use gills to breathe"]},
-    {"question": "Draw an animal family (parent and baby).", "expectedAny": ["drawing with labels"]},
-    {"question": "What do mammal moms give their babies to drink?", "expectedAny": ["milk"]},
-    {"question": "How does a tadpole change as it grows?", "expectedAny": ["grows legs, loses tail, becomes frog"]}
+    {"question": "How are baby animals similar to their parents?", "expectedAny": ["look alike", "same features", "look the same", "they look alike"]},
+    {"question": "Name one mammal, one bird, and one fish.", "expectedAny": ["dog, robin, goldfish", "cat, eagle, salmon", "cow, sparrow, trout", "dog robin goldfish", "cat eagle salmon"]},
+    {"question": "Why do birds build nests?", "expectedAny": ["to keep eggs/babies safe", "for shelter", "to raise babies", "keep babies safe"]},
+    {"question": "How do fish babies live in water?", "expectedAny": ["use gills to breathe", "they use gills", "gills help them breathe", "with gills"]},
+    {"question": "Draw an animal family (parent and baby).", "expectedAny": ["drawing with labels", "labeled drawing", "picture with labels", "drawing"]},
+    {"question": "What do mammal moms give their babies to drink?", "expectedAny": ["milk", "mother's milk", "milk from their mothers", "their milk"]},
+    {"question": "How does a tadpole change as it grows?", "expectedAny": ["grows legs, loses tail, becomes frog", "becomes a frog", "grows legs and loses its tail", "turns into a frog"]}
   ]
 }

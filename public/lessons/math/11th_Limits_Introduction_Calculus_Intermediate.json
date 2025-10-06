@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "11th_Limits_Introduction_Calculus_Intermediate",
   "title": "Limits and Introduction to Calculus",
   "grade": "11th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "indeterminate form",
-      "definition": "Expression like 0/0 or ∞/∞ that requires special evaluation techniques"
-    },
-    {
-      "term": "L'Hôpital's rule",
-      "definition": "Method for evaluating limits of indeterminate forms using derivatives"
-    },
-    {
-      "term": "squeeze theorem",
-      "definition": "Method for finding limits by trapping function between two others"
-    },
-    {
-      "term": "infinite limit",
-      "definition": "Function values that grow without bound as input approaches value"
-    },
-    {
-      "term": "limit at infinity",
-      "definition": "Behavior of function as input approaches positive or negative infinity"
-    }
+    {"term": "one-sided limit", "definition": "Limit approached from left or right direction only"},
+    {"term": "indeterminate form", "definition": "Expression like 0/0 that requires further analysis"},
+    {"term": "limit laws", "definition": "Rules for combining and evaluating limits algebraically"},
+    {"term": "continuity", "definition": "Function has no breaks jumps or holes"},
+    {"term": "instantaneous rate of change", "definition": "Rate at specific point found using limits"}
   ],
-  "teachingNotes": "Introduce limit evaluation techniques and special cases. Practice with rational functions and trigonometric limits.",
-  "sample": {
-    "question": "What is an expression like 0/0 that requires special evaluation?",
-    "expectedAny": ["indeterminate form", "undefined form", "special case", "ambiguous expression"]
-  },
-  "truefalse": {
-    "question": "L'Hôpital's rule uses derivatives to evaluate certain limits.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What method traps a function between two others to find limits?",
-    "expectedAny": ["squeeze theorem", "sandwich theorem", "pinching theorem", "compression theorem"]
-  },
-  "fillintheblank": {
-    "question": "Function behavior as input approaches infinity is a limit at ________.",
-    "expectedAny": ["infinity", "infinite", "∞", "unbounded"]
-  },
-  "shortanswer": {
-    "question": "What are common indeterminate forms?",
-    "expectedAny": ["0/0", "∞/∞", "0·∞", "∞ - ∞", "1^∞"]
-  },
-  "wordProblems": {
-    "question": "What is lim(x→∞) (3x² + 2x)/(x² - 1)?",
-    "expectedAny": ["3", "three", "highest degree coefficient ratio", "3/1 = 3"]
-  }
+  "teachingNotes": "Build on basic limits with techniques for evaluation. Connect to rates of change.",
+  "sample": [
+    {"question": "What limit approaches from one direction?", "expectedAny": ["one-sided limit", "left-hand or right-hand limit", "directional limit", "sided limit"]},
+    {"question": "What form requires more analysis like 0/0?", "expectedAny": ["indeterminate form", "indeterminate", "undefined form", "ambiguous form"]},
+    {"question": "What rules help evaluate limits?", "expectedAny": ["limit laws", "laws of limits", "limit properties", "limit rules"]},
+    {"question": "What means a function has no breaks?", "expectedAny": ["continuity", "continuous", "unbroken", "connected"]},
+    {"question": "What rate is found at a specific point?", "expectedAny": ["instantaneous rate of change", "instantaneous rate", "derivative", "point rate"]},
+    {"question": "What approaches from left or right only?", "expectedAny": ["one-sided limit", "directional limit", "left or right limit", "sided approach"]},
+    {"question": "What does 0/0 represent in limits?", "expectedAny": ["indeterminate form", "needs more work", "requires factoring or algebra", "ambiguous"]},
+    {"question": "What allows combining limits algebraically?", "expectedAny": ["limit laws", "limit properties", "limit rules", "algebraic laws"]},
+    {"question": "What property has no jumps or holes?", "expectedAny": ["continuity", "continuous function", "connected graph", "unbroken"]},
+    {"question": "What gives slope at one point?", "expectedAny": ["instantaneous rate of change", "derivative", "limit of difference quotient", "point slope"]}
+  ],
+  "truefalse": [
+    {"question": "One-sided limits can differ from two-sided limits.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "0/0 is always equal to 0.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Limit laws allow adding limits term by term.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "A continuous function has no breaks.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Instantaneous rate requires measuring over an interval.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Indeterminate forms need algebraic manipulation.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Left-hand limit notation is lim(xa).", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Continuity at a point requires the limit to equal the function value.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "All functions are continuous everywhere.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Instantaneous rate is the limit of average rates.", "expectedAny": ["true", "yes", "t", "correct"]}
+  ],
+  "multiplechoice": [
+    {"question": "What is lim(x2) f(x)?", "choices": ["Limit from right", "Limit from left", "Two-sided limit", "Derivative"], "correct": "Limit from left"},
+    {"question": "What is 0/0 in limits?", "choices": ["Zero", "Undefined", "Indeterminate", "Infinity"], "correct": "Indeterminate"},
+    {"question": "Which law allows lim(f + g) = lim f + lim g?", "choices": ["Product", "Sum", "Quotient", "Chain"], "correct": "Sum"},
+    {"question": "What requires lim(xa) f(x) = f(a)?", "choices": ["Differentiability", "Continuity", "Integrability", "Periodicity"], "correct": "Continuity"},
+    {"question": "What is lim(h0) [f(x + h) - f(x)]/h?", "choices": ["Average rate", "Instantaneous rate", "Slope", "All of these"], "correct": "All of these"},
+    {"question": "What is lim(x3) (x - 9)/(x - 3)?", "choices": ["0", "3", "6", "Undefined"], "correct": "6"},
+    {"question": "If lim(x2)  lim(x2), what is missing?", "choices": ["One-sided limit", "Two-sided limit", "Continuity", "Derivative"], "correct": "Two-sided limit"},
+    {"question": "Which is indeterminate?", "choices": ["1/0", "0/1", "0/0", "1/1"], "correct": "0/0"},
+    {"question": "What operation preserves limits?", "choices": ["All basic operations", "Only addition", "Only multiplication", "None"], "correct": "All basic operations"},
+    {"question": "Continuity fails if there is a?", "choices": ["Curve", "Jump", "Slope", "Limit"], "correct": "Jump"}
+  ],
+  "fillintheblank": [
+    {"question": "A _____-sided limit approaches from one direction.", "expectedAny": ["one", "1", "single", "one sided", "unidirectional", "single sided"]},
+    {"question": "The form 0/0 is _____.", "expectedAny": ["indeterminate", "undefined", "ambiguous", "indeterminate form", "unclear", "not determined"]},
+    {"question": "_____ laws allow combining limits algebraically.", "expectedAny": ["limit", "limiting", "algebraic", "limit laws", "combination", "operation laws"]},
+    {"question": "A _____ function has no breaks or jumps.", "expectedAny": ["continuous", "connected", "unbroken", "continuous function", "smooth", "no breaks"]},
+    {"question": "_____ rate of change is found at a single point.", "expectedAny": ["instantaneous", "instant", "point", "instantaneous rate", "at a point", "moment"]},
+    {"question": "lim(xa) approaches from the _____.", "expectedAny": ["left", "negative side", "below"]},
+    {"question": "To resolve 0/0, try _____ or simplifying.", "expectedAny": ["factoring", "algebra", "canceling"]},
+    {"question": "lim(xa) [f(x) + g(x)] = lim f(x) _____ lim g(x).", "expectedAny": ["+", "plus", "added to"]},
+    {"question": "For continuity, the limit must equal the _____ value.", "expectedAny": ["function", "actual", "point"]},
+    {"question": "Instantaneous rate is the limit of _____ rates.", "expectedAny": ["average", "mean", "interval"]}
+  ],
+  "shortanswer": [
+    {"question": "Explain the difference between one-sided and two-sided limits.", "expectedAny": ["one-sided approaches from left or right only while two-sided requires both to match", "one-sided is directional and two-sided needs agreement from both sides", "left or right limit versus limit that exists from both directions"]},
+    {"question": "Why is 0/0 indeterminate and how do you resolve it?", "expectedAny": ["0/0 could be any value so factor and cancel or use algebra to simplify", "indeterminate because numerator and denominator both approach zero need to simplify", "requires algebraic manipulation like factoring to find the actual limit"]},
+    {"question": "State and explain the sum law for limits.", "expectedAny": ["limit of a sum equals sum of limits if both exist", "lim(f + g) = lim f + lim g when limits exist", "you can split limits across addition"]},
+    {"question": "Define continuity at a point.", "expectedAny": ["function is continuous if limit exists equals function value and function is defined", "lim(xa) f(x) = f(a) and f(a) exists", "no breaks means limit equals function value at the point"]},
+    {"question": "How does instantaneous rate relate to average rate?", "expectedAny": ["instantaneous rate is the limit of average rate as interval shrinks to zero", "take average rate over smaller intervals approaching a point", "limit of [f(x + h) - f(x)]/h as h approaches 0"]},
+    {"question": "Evaluate lim(x4) (x - 4)/(x - 2) by rationalizing.", "expectedAny": ["multiply by conjugate to get 4", "rationalize and simplify to get limit of 4", "equals 4 after multiplying by x + 2"]},
+    {"question": "If lim(x2) f(x) = 3 and lim(x2) f(x) = 5, does lim(x2) f(x) exist?", "expectedAny": ["no because one-sided limits are different", "two-sided limit does not exist when sides disagree", "no the limit does not exist"]},
+    {"question": "Explain why polynomials are continuous everywhere.", "expectedAny": ["limit equals function value at every point for polynomials", "no breaks jumps or holes in polynomial graphs", "continuous because they have no undefined points or discontinuities"]},
+    {"question": "How do you find instantaneous velocity from position?", "expectedAny": ["take the limit of average velocity as time interval approaches zero", "lim(h0) [s(t + h) - s(t)]/h gives instantaneous velocity", "limit of change in position over change in time"]},
+    {"question": "What three conditions must hold for continuity at x = a?", "expectedAny": ["f(a) must exist the limit must exist and they must be equal", "defined at a limit exists at a and limit equals f(a)", "function value and limit must both exist and match"]}
+  ],
+  "wordProblems": [
+    {"question": "A car's position is s(t) = t + 3t meters. Find instantaneous velocity at t = 2.", "expectedAny": ["7 meters per second", "lim(h0) [(2 + h) + 3(2 + h) - 13]/h = 7", "derivative at t = 2 gives 7"]},
+    {"question": "Evaluate lim(x1) (x - 1)/(x - 1).", "expectedAny": ["3", "factor as (x - 1)(x + x + 1)/(x - 1) then evaluate", "equals 3 after canceling"]},
+    {"question": "Is f(x) = (x - 4)/(x - 2) continuous at x = 2? Explain.", "expectedAny": ["no because f(2) is undefined even though limit exists", "discontinuous at x = 2 has a hole", "removable discontinuity limit is 4 but function undefined"]},
+    {"question": "Find lim(x0) (sin x)/x using a table or graph.", "expectedAny": ["1", "limit equals 1", "approaches 1 as x approaches 0"]},
+    {"question": "A ball's height is h(t) = -5t + 20t meters. Find instantaneous velocity at t = 1.", "expectedAny": ["10 meters per second", "lim(h0) [h(1 + h) - h(1)]/h = 10", "velocity at t = 1 is 10"]},
+    {"question": "Does lim(x3) (|x - 3|)/(x - 3) exist?", "expectedAny": ["no because left limit is -1 and right limit is 1", "one-sided limits differ so no two-sided limit", "does not exist"]},
+    {"question": "If f(x) = x for x < 2 and f(x) = 2x for x  2, is f continuous at x = 2?", "expectedAny": ["yes because both sides approach 4 and f(2) = 4", "continuous since limit equals function value", "yes limit is 4 and f(2) is 4"]},
+    {"question": "Evaluate lim(h0) [(3 + h) - 9]/h.", "expectedAny": ["6", "simplify to get 6 + h then take limit", "equals 6"]},
+    {"question": "Population P(t) = 1000e^(0.05t). Find instantaneous growth rate at t = 0.", "expectedAny": ["50 people per year", "limit of difference quotient at t = 0", "approximately 50"]},
+    {"question": "Use limit laws to find lim(x2) [3x - x + 5].", "expectedAny": ["15", "substitute x = 2 to get 12 - 2 + 5", "equals 15"]}
+  ]
 }

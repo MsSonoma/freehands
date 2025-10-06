@@ -1,4 +1,4 @@
-{
+﻿{
   "id": "world-literature-comparative-analysis-advanced",
   "title": "World Literature and Comparative Analysis",
   "grade": "11th",
@@ -23,55 +23,224 @@
     }
   ],
   "teachingNotes": "Use texts from diverse cultures and time periods. Emphasize both cultural specificity and universal human experiences. Develop skills in cross-cultural analysis and interpretation.",
-  "sample": {
-    "question": "What makes a theme 'universal' in literature?",
-    "expectedAny": [
-      "appears across different cultures and time periods",
-      "addresses fundamental human experiences",
-      "transcends cultural boundaries"
-    ]
-  },
+  "sample": [
+    {
+      "question": "What makes a theme 'universal' in literature?",
+      "expectedAny": ["appears across different cultures and time periods", "addresses fundamental human experiences", "transcends cultural boundaries", "common to all humanity", "crosses all cultures", "shared by all people"]
+    },
+    {
+      "question": "What is the study of literature across cultures?",
+      "expectedAny": ["comparative literature", "cross-cultural literary study", "international literature", "multicultural analysis", "world literature study", "cross cultural comparison"]
+    },
+    {
+      "question": "What circumstances influence a literary work?",
+      "expectedAny": ["cultural context", "social historical political circumstances", "contextual background", "cultural environment", "historical context", "social context"]
+    },
+    {
+      "question": "What is the body of works passed down in a culture?",
+      "expectedAny": ["literary tradition", "cultural literary heritage", "traditional literature", "literary canon", "literary heritage", "cultural canon"]
+    },
+    {
+      "question": "What themes cross cultural boundaries?",
+      "expectedAny": ["universal themes", "common human themes", "transcendent themes", "shared human experiences", "cross cultural themes", "global themes"]
+    },
+    {
+      "question": "What field compares literature across languages?",
+      "expectedAny": ["comparative literature", "cross-linguistic study", "international literary analysis", "comparative analysis"]
+    },
+    {
+      "question": "What includes social and historical circumstances?",
+      "expectedAny": ["cultural context", "contextual background", "social environment", "historical setting"]
+    },
+    {
+      "question": "What connects readers across time and place?",
+      "expectedAny": ["universal themes", "common human experiences", "shared concerns", "transcendent ideas"]
+    },
+    {
+      "question": "What conventions are passed down culturally?",
+      "expectedAny": ["literary tradition", "cultural heritage", "traditional forms", "inherited literary practices"]
+    },
+    {
+      "question": "What analysis examines multiple cultures?",
+      "expectedAny": ["comparative literature", "cross-cultural analysis", "multicultural study", "international comparison"]
+    }
+  ],
   "truefalse": [
     {
       "question": "Understanding cultural context is essential for interpreting world literature.",
-      "answer": true,
-      "expectedAny": [
-        "cultural background influences meaning and interpretation"
-      ]
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Universal themes are unique to single cultures.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Comparative literature studies works across different cultures.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Literary traditions are identical in all cultures.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Cultural context includes historical and political circumstances.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Universal themes appear only in Western literature.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Comparative literature crosses linguistic boundaries.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Cultural context is irrelevant to interpretation.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Literary traditions preserve cultural conventions.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Universal themes cannot connect diverse readers.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
     }
   ],
   "multiplechoice": [
     {
-      "question": "Which is an example of a universal theme in world literature?",
-      "choices": [
-        "American democracy",
-        "Medieval feudalism",
-        "Love and loss",
-        "Industrial revolution"
-      ],
-      "correct": 2,
-      "expectedAny": [
-        "love and loss appear in literature worldwide"
-      ]
+      "question": "What studies literature across cultures?",
+      "choices": ["Single literature", "Comparative literature", "National literature", "Regional literature"],
+      "correct": "Comparative literature"
+    },
+    {
+      "question": "What influences literary works?",
+      "choices": ["Nothing", "Cultural context", "Random chance", "Pure imagination"],
+      "correct": "Cultural context"
+    },
+    {
+      "question": "What themes cross cultures?",
+      "choices": ["Regional only", "Universal themes", "Local only", "Specific themes"],
+      "correct": "Universal themes"
+    },
+    {
+      "question": "What is passed down culturally?",
+      "choices": ["Nothing", "Literary tradition", "Random ideas", "Isolated works"],
+      "correct": "Literary tradition"
+    },
+    {
+      "question": "What includes historical circumstances?",
+      "choices": ["Plot only", "Cultural context", "Characters only", "Setting only"],
+      "correct": "Cultural context"
+    },
+    {
+      "question": "What connects all humanity?",
+      "choices": ["Local themes", "Universal themes", "Regional themes", "Specific themes"],
+      "correct": "Universal themes"
+    },
+    {
+      "question": "What compares different cultures?",
+      "choices": ["Single study", "Comparative literature", "One nation", "One region"],
+      "correct": "Comparative literature"
+    },
+    {
+      "question": "What shapes interpretation?",
+      "choices": ["Nothing", "Cultural context", "Randomness", "Guessing"],
+      "correct": "Cultural context"
+    },
+    {
+      "question": "What preserves conventions?",
+      "choices": ["Change only", "Literary tradition", "Chaos", "Disorder"],
+      "correct": "Literary tradition"
+    },
+    {
+      "question": "What transcends boundaries?",
+      "choices": ["Local themes", "Universal themes", "Regional themes", "Narrow themes"],
+      "correct": "Universal themes"
     }
   ],
   "fillintheblank": [
     {
-      "question": "When comparing literature from different cultures, we examine both the _____ context and _____ themes.",
-      "expectedAny": [
-        "cultural",
-        "universal"
-      ]
+      "question": "_____ literature studies works across different cultures.",
+      "expectedAny": ["comparative", "cross-cultural", "international"]
+    },
+    {
+      "question": "_____ context includes social and historical circumstances.",
+      "expectedAny": ["cultural", "social", "historical"]
+    },
+    {
+      "question": "_____ themes appear across different cultures.",
+      "expectedAny": ["universal", "common", "transcendent"]
+    },
+    {
+      "question": "_____ tradition is the body of works passed down.",
+      "expectedAny": ["literary", "cultural", "writing"]
+    },
+    {
+      "question": "_____ analysis compares literature from multiple cultures.",
+      "expectedAny": ["comparative", "cross-cultural", "multicultural"]
+    },
+    {
+      "question": "Understanding _____ is essential for interpretation.",
+      "expectedAny": ["context", "cultural context", "background"]
+    },
+    {
+      "question": "Love and death are _____ themes.",
+      "expectedAny": ["universal", "common", "transcendent"]
+    },
+    {
+      "question": "Each culture has a unique _____ tradition.",
+      "expectedAny": ["literary", "writing", "cultural"]
+    },
+    {
+      "question": "_____ circumstances shape literary meaning.",
+      "expectedAny": ["cultural", "historical", "social"]
+    },
+    {
+      "question": "_____ themes connect diverse readers.",
+      "expectedAny": ["universal", "shared", "common"]
     }
   ],
   "shortanswer": [
     {
-      "question": "How can reading world literature expand our understanding of human experience?",
-      "expectedAny": [
-        "exposes us to different perspectives",
-        "shows common humanity across cultures",
-        "challenges our assumptions"
-      ]
+      "question": "Explain what comparative literature studies and why it matters.",
+      "expectedAny": ["comparative literature examines works across cultures languages and periods to find connections", "studying literature comparatively reveals both cultural differences and universal human experiences", "it helps readers understand how literature reflects and shapes diverse worldviews"]
+    },
+    {
+      "question": "Why is cultural context important for interpreting world literature?",
+      "expectedAny": ["cultural context provides the historical social and political background needed to understand meaning", "without context readers may miss cultural references and misinterpret themes", "context reveals how literature responds to specific cultural circumstances"]
+    },
+    {
+      "question": "Give examples of universal themes in world literature.",
+      "expectedAny": ["love death family conflict and identity appear across all cultures", "themes like justice sacrifice and coming of age transcend cultural boundaries", "universal experiences like loss hope and struggle connect diverse readers"]
+    },
+    {
+      "question": "How does literary tradition shape contemporary writing?",
+      "expectedAny": ["traditions provide conventions forms and themes that writers inherit and transform", "contemporary writers respond to traditional works by continuing or challenging them", "literary tradition creates shared references and expectations within cultures"]
+    },
+    {
+      "question": "What challenges arise in comparative literature?",
+      "expectedAny": ["translation can distort original meaning and cultural nuances", "readers may impose their own cultural assumptions on foreign texts", "balancing cultural specificity with universal interpretation requires careful analysis"]
+    },
+    {
+      "question": "How can universal themes differ across cultures?",
+      "expectedAny": ["while themes like love are universal how they are expressed varies culturally", "different cultures emphasize different aspects of universal experiences", "universal themes take culturally specific forms and meanings"]
+    },
+    {
+      "question": "Describe the relationship between cultural context and meaning.",
+      "expectedAny": ["cultural context shapes how themes symbols and conflicts are understood", "meaning emerges from the interaction between text and cultural background", "without context readers cannot fully grasp the significance of literary choices"]
+    },
+    {
+      "question": "Why study literature from multiple cultures?",
+      "expectedAny": ["studying diverse literature expands understanding of human experience", "exposure to multiple perspectives challenges cultural assumptions", "comparative study reveals both diversity and commonality in human expression"]
+    },
+    {
+      "question": "How do literary traditions evolve over time?",
+      "expectedAny": ["traditions change as writers innovate and respond to new circumstances", "cultural exchange and historical events transform literary conventions", "each generation reinterprets and modifies inherited traditions"]
+    },
+    {
+      "question": "What makes a work part of world literature?",
+      "expectedAny": ["works that transcend their origins to speak to diverse audiences", "literature that addresses universal themes while maintaining cultural specificity", "texts that gain significance across multiple cultures and time periods"]
     }
   ]
 }

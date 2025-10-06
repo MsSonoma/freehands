@@ -40,21 +40,21 @@
   ],
   "fillintheblank": [
     {"question": "Skip counting by 2s: 2, 4, 6, _____, 10, _____, 14", "expectedAny": ["8", "12"]},
-    {"question": "Counting by 10s from 30: 30, 40, 50, _____", "expectedAny": ["60"]},
-    {"question": "Counting by 5s from 15: 15, 20, 25, _____", "expectedAny": ["30"]},
-    {"question": "Counting back by 2s: 14, 12, 10, _____", "expectedAny": ["8"]},
-    {"question": "Counting by 3s from 3: 3, 6, 9, _____", "expectedAny": ["12"]},
-    {"question": "Even numbers end in _____", "expectedAny": ["0,2,4,6,8"]},
-    {"question": "Odd numbers end in _____", "expectedAny": ["1,3,5,7,9"]}
+    {"question": "Counting by 10s from 30: 30, 40, 50, _____", "expectedAny": ["60", "sixty"]},
+    {"question": "Counting by 5s from 15: 15, 20, 25, _____", "expectedAny": ["30", "thirty"]},
+    {"question": "Counting back by 2s: 14, 12, 10, _____", "expectedAny": ["8", "eight"]},
+    {"question": "Counting by 3s from 3: 3, 6, 9, _____", "expectedAny": ["12", "twelve"]},
+    {"question": "Even numbers end in _____", "expectedAny": ["0,2,4,6,8", "0 2 4 6 8"]},
+    {"question": "Odd numbers end in _____", "expectedAny": ["1,3,5,7,9", "1 3 5 7 9"]}
   ],
   "shortanswer": [
-    {"question": "How does skip counting by 5s help when counting money?", "expectedAny": ["nickels are worth 5 cents each", "helps count groups of 5 cents"]},
-    {"question": "Explain how you would find the next number in 4, 8, 12, ___.", "expectedAny": ["add 4 each time"]},
-    {"question": "How can skip counting help with multiplication later?", "expectedAny": ["it is repeated addition"]},
-    {"question": "What strategy helps when skip counting backward?", "expectedAny": ["subtract the same amount each time"]},
-    {"question": "Why is a hundreds chart useful for patterns?", "expectedAny": ["you can see jumps clearly"]},
-    {"question": "How can you check if a pattern is correct?", "expectedAny": ["apply the same rule to each step"]},
-    {"question": "Give an example of a pattern in nature.", "expectedAny": ["zebra stripes", "flower petals"]}
+    {"question": "How does skip counting by 5s help when counting money?", "expectedAny": ["nickels are worth 5 cents each", "helps count groups of 5 cents", "dimes are 10 so tens help too"]},
+    {"question": "Explain how you would find the next number in 4, 8, 12, ___.", "expectedAny": ["add 4 each time", "keep adding four", "plus four repeats"]},
+    {"question": "How can skip counting help with multiplication later?", "expectedAny": ["it is repeated addition", "it shows equal jumps", "it makes groups faster"]},
+    {"question": "What strategy helps when skip counting backward?", "expectedAny": ["subtract the same amount each time", "count back by the pattern size", "go back in equal steps"]},
+    {"question": "Why is a hundreds chart useful for patterns?", "expectedAny": ["you can see jumps clearly", "you can see the steps", "it shows the pattern visually"]},
+    {"question": "How can you check if a pattern is correct?", "expectedAny": ["apply the same rule to each step", "use the same change each time", "see if the difference stays the same"]},
+    {"question": "Give an example of a pattern in nature.", "expectedAny": ["zebra stripes", "flower petals", "pinecone spirals"]}
   ],
   "wordProblems": [
     {"question": "Maria has 6 pairs of socks. If she skip counts by 2s to find the total number of socks, what numbers will she say?", "expectedAny": ["2, 4, 6, 8, 10, 12", "6 pairs = 12 socks total"]},

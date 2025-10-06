@@ -27,7 +27,9 @@
     "question": "What is the difference between an atom and a molecule?",
     "expectedAny": [
       "atom is single element unit, molecule is multiple atoms bonded",
-      "atoms are building blocks, molecules are compounds"
+      "atoms are building blocks, molecules are compounds",
+      "atom is one, molecule is bonded atoms",
+      "molecule has atoms joined together"
     ]
   },
   "truefalse": [

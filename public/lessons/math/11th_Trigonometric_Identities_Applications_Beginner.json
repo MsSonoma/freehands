@@ -1,4 +1,4 @@
-{
+﻿{
   "id": "11th_Trigonometric_Identities_Applications_Beginner",
   "title": "Trigonometric Identities and Applications",
   "grade": "11th",
@@ -10,7 +10,7 @@
     },
     {
       "term": "Pythagorean identity",
-      "definition": "Identity stating sin²θ + cos²θ = 1"
+      "definition": "Identity stating sinθ + cosθ = 1"
     },
     {
       "term": "reciprocal identity",
@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Start with fundamental identities and build to more complex ones. Use unit circle for verification.",
-  "sample": {
-    "question": "What is an equation with trigonometric functions true for all valid values?",
-    "expectedAny": ["trigonometric identity", "trig identity", "trigonometric equation", "identity equation"]
-  },
-  "truefalse": {
-    "question": "The Pythagorean identity states sin²θ + cos²θ = 1.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What relates trigonometric functions to their reciprocals?",
-    "expectedAny": ["reciprocal identity", "reciprocal relationship", "inverse trig identity", "reciprocal equation"]
-  },
-  "fillintheblank": {
-    "question": "The acute angle between terminal side and x-axis is the ________ angle.",
-    "expectedAny": ["reference", "acute reference", "standard", "base"]
-  },
-  "shortanswer": {
-    "question": "What are the three Pythagorean identities?",
-    "expectedAny": ["sin²θ + cos²θ = 1", "1 + tan²θ = sec²θ", "1 + cot²θ = csc²θ"]
-  },
-  "wordProblems": {
-    "question": "If sin θ = 3/5 and θ is in quadrant I, what is cos θ?",
-    "expectedAny": ["4/5", "0.8", "four-fifths", "cos θ = 4/5"]
-  }
+  "sample": [
+    {"question": "What is an equation with trigonometric functions true for all valid values?", "expectedAny": ["trigonometric identity", "trig identity", "trigonometric equation", "identity equation", "trig equation", "angular identity"]},
+    {"question": "What identity states sinθ + cosθ = 1?", "expectedAny": ["Pythagorean identity", "Pythagorean trig identity", "sine cosine identity", "fundamental identity", "Pythagorean", "basic trig identity"]},
+    {"question": "What relates trigonometric functions to their reciprocals?", "expectedAny": ["reciprocal identity", "reciprocal relationship", "inverse trig identity", "reciprocal equation", "reciprocal formula", "reciprocal trig"]},
+    {"question": "What are trigonometric functions equal for complementary angles?", "expectedAny": ["cofunctions", "cofunction pairs", "complementary functions", "cofunction identities", "complementary pairs", "cofunction relationships"]},
+    {"question": "What is the acute angle between terminal side and x-axis?", "expectedAny": ["reference angle", "reference", "acute reference", "standard angle", "related angle", "basic angle"]},
+    {"question": "What type of equation is always true in trigonometry?", "expectedAny": ["identity", "trigonometric identity", "trig identity", "always-true equation"]},
+    {"question": "What famous identity involves sine squared and cosine squared?", "expectedAny": ["Pythagorean identity", "Pythagorean theorem identity", "sinθ + cosθ = 1", "fundamental identity"]},
+    {"question": "What identity connects csc and sin?", "expectedAny": ["reciprocal identity", "reciprocal relationship", "csc = 1/sin", "reciprocal equation"]},
+    {"question": "What are sin and cos for complementary angles?", "expectedAny": ["cofunctions", "cofunction pairs", "complementary pairs", "related functions"]},
+    {"question": "What angle helps find trig values in any quadrant?", "expectedAny": ["reference angle", "reference", "acute angle", "standard angle"]}
+  ],
+  "truefalse": [
+    {"question": "The Pythagorean identity states sinθ + cosθ = 1.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Reciprocal identities relate functions to their opposites.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "A trigonometric identity is true for all valid angle values.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "The reference angle can be obtuse.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Cofunctions are equal for complementary angles.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "sin θ and csc θ are reciprocals.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "The Pythagorean identity only works for acute angles.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "tan θ = sin θ / cos θ is an identity.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "All trigonometric equations are identities.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "The reference angle is always between 0 and 90 degrees.", "expectedAny": ["true", "yes", "t", "correct"]}
+  ],
+  "multiplechoice": [
+    {"question": "What is sinθ + cosθ equal to?", "choices": ["0", "1", "2", "θ"], "correct": "1"},
+    {"question": "What is the reciprocal of sin θ?", "choices": ["cos θ", "tan θ", "csc θ", "sec θ"], "correct": "csc θ"},
+    {"question": "What is tan θ equal to?", "choices": ["sin θ / cos θ", "cos θ / sin θ", "1 / sin θ", "1 / cos θ"], "correct": "sin θ / cos θ"},
+    {"question": "What type of angle is a reference angle?", "choices": ["Obtuse", "Acute", "Right", "Straight"], "correct": "Acute"},
+    {"question": "What is the reciprocal of cos θ?", "choices": ["sin θ", "sec θ", "csc θ", "tan θ"], "correct": "sec θ"},
+    {"question": "Which identity is fundamental?", "choices": ["tan + 1 = sec", "sin + cos = 1", "cot + 1 = csc", "All of these"], "correct": "sin + cos = 1"},
+    {"question": "What are sin and cos for complementary angles?", "choices": ["Equal", "Opposite", "Cofunctions", "Reciprocals"], "correct": "Cofunctions"},
+    {"question": "What is cot θ equal to?", "choices": ["sin/cos", "cos/sin", "1/sin", "1/cos"], "correct": "cos/sin"},
+    {"question": "What is always true?", "choices": ["Equation", "Identity", "Formula", "Expression"], "correct": "Identity"},
+    {"question": "What is the reciprocal of tan θ?", "choices": ["sin θ", "cos θ", "cot θ", "sec θ"], "correct": "cot θ"}
+  ],
+  "fillintheblank": [
+    {"question": "A trigonometric _____ is true for all valid values.", "expectedAny": ["identity", "equation", "relation"]},
+    {"question": "The _____ identity states sinθ + cosθ = 1.", "expectedAny": ["Pythagorean", "fundamental", "basic"]},
+    {"question": "_____ identities relate functions to their reciprocals.", "expectedAny": ["reciprocal", "inverse", "reciprocity"]},
+    {"question": "_____ are equal for complementary angles.", "expectedAny": ["cofunctions", "cofunction pairs", "complementary functions"]},
+    {"question": "The _____ angle is always acute.", "expectedAny": ["reference", "standard", "basic"]},
+    {"question": "sin θ and _____ are reciprocals.", "expectedAny": ["csc", "cosecant", "csc θ"]},
+    {"question": "cos θ and _____ are reciprocals.", "expectedAny": ["sec", "secant", "sec θ"]},
+    {"question": "tan θ equals sin θ divided by _____.", "expectedAny": ["cos θ", "cosine", "cos"]},
+    {"question": "sinθ + cosθ = _____.", "expectedAny": ["1", "one"]},
+    {"question": "A _____ angle is between 0 and 90 degrees.", "expectedAny": ["reference", "acute", "standard"]}
+  ],
+  "shortanswer": [
+    {"question": "Explain why sinθ + cosθ = 1 for all angles.", "expectedAny": ["it comes from the Pythagorean theorem on the unit circle", "on unit circle x + y = 1 where x = cos and y = sin", "fundamental relationship from unit circle definition"]},
+    {"question": "What is the difference between an identity and an equation?", "expectedAny": ["an identity is true for all values while an equation may only be true for some", "identities are always true but equations need to be solved", "identity holds for all angles but equation only for specific angles"]},
+    {"question": "Why is the reference angle always acute?", "expectedAny": ["it is defined as the acute angle to the x-axis", "by definition it measures the smallest angle to the axis", "reference angles are always between 0 and 90 degrees"]},
+    {"question": "How are sin and csc related?", "expectedAny": ["they are reciprocals so csc θ = 1/sin θ", "sin and csc multiply to give 1", "cosecant is the reciprocal of sine"]},
+    {"question": "What does it mean for functions to be cofunctions?", "expectedAny": ["they are equal when angles are complementary", "cofunction values match for angles that sum to 90 degrees", "sin θ = cos(90 - θ) shows cofunction relationship"]},
+    {"question": "Derive tan θ from sin θ and cos θ.", "expectedAny": ["tan θ = sin θ / cos θ by definition", "tangent equals sine divided by cosine", "from unit circle tan is y/x which is sin/cos"]},
+    {"question": "Why are reciprocal identities useful?", "expectedAny": ["they allow converting between equivalent forms", "help simplify complex expressions", "provide alternative ways to express trigonometric functions"]},
+    {"question": "How can you verify a trigonometric identity?", "expectedAny": ["work on one side to transform it into the other side", "use known identities to simplify both sides", "substitute specific values or use unit circle"]},
+    {"question": "What is the relationship between tan and cot?", "expectedAny": ["they are reciprocals so cot θ = 1/tan θ", "cot θ = cos θ/sin θ which is 1/(sin θ/cos θ)", "cotangent is the reciprocal of tangent"]},
+    {"question": "Give an example of using a reference angle.", "expectedAny": ["to find sin 150 use reference angle 30 so sin 150 = sin 30 = 1/2", "reference angle helps find trig values in any quadrant", "use acute angle to determine value then apply sign based on quadrant"]}
+  ],
+  "wordProblems": [
+    {"question": "A ladder forms a 60 angle with the ground. If sin 60 = 3/2, use the Pythagorean identity to find cos 60.", "expectedAny": ["cos 60 = 1/2", "using sin + cos = 1 gives cos = 1 - 3/4 = 1/4 so cos = 1/2", "square root of (1 - 3/4) = 1/2"]},
+    {"question": "A surveyor measures an angle of 120 from horizontal. What is the reference angle?", "expectedAny": ["60 degrees", "180 - 120 = 60", "the acute angle to x-axis is 60"]},
+    {"question": "If sin θ = 3/5, use the Pythagorean identity to find cos θ assuming θ is acute.", "expectedAny": ["cos θ = 4/5", "cos = 1 - 9/25 = 16/25 so cos = 4/5", "square root of (1 - 9/25) = 4/5"]},
+    {"question": "A ramp makes a 15 angle with the ground. What angle does it make with the vertical wall, and what is the cofunction relationship?", "expectedAny": ["75 degrees and sin 15 = cos 75", "complementary angle is 90 - 15 = 75", "cofunction identity relates the 15 and 75 angles"]},
+    {"question": "If tan θ = 2, find sin θ / cos θ using identities.", "expectedAny": ["sin θ / cos θ = 2", "tan equals sin/cos so it equals 2", "by definition tan θ = sin θ / cos θ = 2"]},
+    {"question": "A wheel rotates through 210. What is its reference angle?", "expectedAny": ["30 degrees", "210 - 180 = 30", "the angle from x-axis in third quadrant is 30"]},
+    {"question": "If sec θ = 5/3, find cos θ using reciprocal identities.", "expectedAny": ["cos θ = 3/5", "sec is reciprocal of cos so cos = 1/sec = 3/5", "reciprocal of 5/3 is 3/5"]},
+    {"question": "A satellite's elevation angle is 25. What is the angle from vertical, and how are these angles related?", "expectedAny": ["65 degrees and they are complementary", "90 - 25 = 65 and they form cofunction pairs", "complementary angles with cofunction relationship"]},
+    {"question": "If csc θ = 13/5, use reciprocal identity to find sin θ.", "expectedAny": ["sin θ = 5/13", "csc is reciprocal of sin so sin = 1/csc = 5/13", "reciprocal of 13/5 is 5/13"]},
+    {"question": "A projectile is launched at 35. If you know sin 35, which cofunction identity helps find cos 55?", "expectedAny": ["sin 35 = cos 55 because they are complementary", "cofunction identity sin θ = cos(90 - θ)", "35 and 55 are complementary so their cofunctions are equal"]}
+  ]
 }

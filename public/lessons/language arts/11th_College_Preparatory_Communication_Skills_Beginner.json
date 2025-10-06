@@ -1,4 +1,4 @@
-{
+﻿{
   "id": "11th_College_Preparatory_Communication_Skills_Beginner",
   "title": "College Preparatory Communication Skills",
   "grade": "11th",
@@ -26,49 +26,224 @@
     }
   ],
   "teachingNotes": "Focus on transition from high school to college-level expectations. Practice academic writing conventions.",
-  "sample": {
-    "question": "What is the formal style of communication used in scholarly settings?",
-    "expectedAny": [
-      "academic discourse",
-      "scholarly communication",
-      "formal academic language",
-      "academic style"
-    ]
-  },
-  "truefalse": {
-    "question": "A thesis statement guides an entire academic essay.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is the process of having others evaluate your work?",
-    "expectedAny": [
-      "peer review",
-      "peer evaluation",
-      "collaborative review",
-      "peer assessment"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Language appropriate for academic contexts uses ________ register.",
-    "expectedAny": [
-      "formal",
-      "academic",
-      "professional",
-      "scholarly"
-    ]
-  },
-  "shortanswer": {
-    "question": "What types of evidence strengthen academic arguments?",
-    "expectedAny": [
-      "statistics",
-      "expert quotes",
-      "research studies",
-      "factual examples"
-    ]
-  }
+  "sample": [
+    {
+      "question": "What is the formal style of communication used in scholarly settings?",
+      "expectedAny": ["academic discourse", "scholarly communication", "formal academic language", "academic style", "scholarly discourse", "formal communication"]
+    },
+    {
+      "question": "What guides an entire academic essay?",
+      "expectedAny": ["thesis statement", "thesis", "main claim", "central argument", "main argument", "primary claim"]
+    },
+    {
+      "question": "What supports arguments in academic writing?",
+      "expectedAny": ["evidence", "facts", "examples", "support", "supporting details", "proof"]
+    },
+    {
+      "question": "What language level is appropriate for academic contexts?",
+      "expectedAny": ["formal register", "formal language", "academic register", "professional language", "formal tone", "academic language"]
+    },
+    {
+      "question": "What process involves others evaluating your work?",
+      "expectedAny": ["peer review", "peer evaluation", "peer feedback", "collaborative review", "peer assessment", "peer critique"]
+    },
+    {
+      "question": "What type of communication is used in college?",
+      "expectedAny": ["academic discourse", "scholarly discourse", "formal academic communication", "academic language"]
+    },
+    {
+      "question": "What makes a claim clear and specific?",
+      "expectedAny": ["thesis statement", "strong thesis", "specific claim", "clear argument"]
+    },
+    {
+      "question": "What strengthens academic arguments?",
+      "expectedAny": ["evidence", "supporting facts", "data", "expert opinions"]
+    },
+    {
+      "question": "What register avoids slang and contractions?",
+      "expectedAny": ["formal register", "formal language", "academic register", "professional tone"]
+    },
+    {
+      "question": "What helps improve writing through feedback?",
+      "expectedAny": ["peer review", "peer feedback", "collaborative editing", "peer evaluation"]
+    }
+  ],
+  "truefalse": [
+    {
+      "question": "A thesis statement guides an entire academic essay.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Academic discourse allows informal slang.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Evidence supports arguments in academic writing.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Formal register uses casual contractions.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Peer review involves others evaluating your work.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Academic discourse is informal and conversational.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "A thesis statement should be clear and specific.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Evidence can be personal opinions only.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    },
+    {
+      "question": "Formal register is appropriate for professional contexts.",
+      "expectedAny": ["true", "yes", "correct", "t"]
+    },
+    {
+      "question": "Peer review is unnecessary for academic writing.",
+      "expectedAny": ["false", "no", "incorrect", "f"]
+    }
+  ],
+  "multiplechoice": [
+    {
+      "question": "What is academic discourse?",
+      "choices": ["Casual chat", "Formal communication", "Text messaging", "Informal speech"],
+      "correct": "Formal communication"
+    },
+    {
+      "question": "What guides an academic essay?",
+      "choices": ["Title", "Thesis", "Bibliography", "Footnotes"],
+      "correct": "Thesis"
+    },
+    {
+      "question": "What type of support is evidence?",
+      "choices": ["Opinions", "Facts", "Guesses", "Stories"],
+      "correct": "Facts"
+    },
+    {
+      "question": "What language level is formal register?",
+      "choices": ["Slang", "Professional", "Casual", "Conversational"],
+      "correct": "Professional"
+    },
+    {
+      "question": "What involves others evaluating work?",
+      "choices": ["Self-edit", "Peer review", "Publishing", "Grading"],
+      "correct": "Peer review"
+    },
+    {
+      "question": "Where is academic discourse used?",
+      "choices": ["Texting", "Scholarly settings", "Social media", "Casual talk"],
+      "correct": "Scholarly settings"
+    },
+    {
+      "question": "What makes a thesis effective?",
+      "choices": ["Vagueness", "Specificity", "Length", "Complexity"],
+      "correct": "Specificity"
+    },
+    {
+      "question": "What strengthens arguments?",
+      "choices": ["Opinions", "Evidence", "Emotion", "Volume"],
+      "correct": "Evidence"
+    },
+    {
+      "question": "What should formal writing avoid?",
+      "choices": ["Evidence", "Clarity", "Contractions", "Structure"],
+      "correct": "Contractions"
+    },
+    {
+      "question": "What improves writing quality?",
+      "choices": ["Ignoring feedback", "Peer review", "Rushing", "Avoiding edits"],
+      "correct": "Peer review"
+    }
+  ],
+  "fillintheblank": [
+    {
+      "question": "_____ discourse is the formal communication style used in college.",
+      "expectedAny": ["academic", "scholarly", "formal"]
+    },
+    {
+      "question": "A _____ statement guides the entire academic essay.",
+      "expectedAny": ["thesis", "thematic", "claim"]
+    },
+    {
+      "question": "_____ includes facts and examples supporting arguments.",
+      "expectedAny": ["evidence", "support", "proof"]
+    },
+    {
+      "question": "_____ register is appropriate for professional contexts.",
+      "expectedAny": ["formal", "academic", "professional"]
+    },
+    {
+      "question": "_____ review involves others evaluating your work.",
+      "expectedAny": ["peer", "collaborative", "editorial"]
+    },
+    {
+      "question": "College requires _____ communication skills.",
+      "expectedAny": ["academic", "formal", "scholarly"]
+    },
+    {
+      "question": "A strong _____ makes a clear claim.",
+      "expectedAny": ["thesis", "argument", "statement"]
+    },
+    {
+      "question": "Academic writing requires credible _____.",
+      "expectedAny": ["evidence", "sources", "support"]
+    },
+    {
+      "question": "_____ language avoids slang and contractions.",
+      "expectedAny": ["formal", "academic", "professional"]
+    },
+    {
+      "question": "_____ feedback helps improve essays.",
+      "expectedAny": ["peer", "collaborative", "editorial"]
+    }
+  ],
+  "shortanswer": [
+    {
+      "question": "Explain what academic discourse means and why it matters.",
+      "expectedAny": ["academic discourse is formal scholarly communication essential for college success", "the formal language style used in academic settings to convey ideas clearly", "professional communication expected in college and career contexts"]
+    },
+    {
+      "question": "What makes a thesis statement effective?",
+      "expectedAny": ["a clear specific claim that guides the entire essay and is arguable", "an effective thesis presents a focused argument the paper will support", "specificity and clarity that establishes the essay's purpose"]
+    },
+    {
+      "question": "Why is evidence important in academic writing?",
+      "expectedAny": ["evidence supports claims with facts and makes arguments credible", "facts and examples strengthen arguments and convince readers", "credible support demonstrates research and validates claims"]
+    },
+    {
+      "question": "Describe what formal register means in writing.",
+      "expectedAny": ["formal register is professional language avoiding contractions and slang", "the appropriate academic tone for scholarly and professional contexts", "elevated language level suitable for formal communication"]
+    },
+    {
+      "question": "How does peer review improve writing?",
+      "expectedAny": ["peer review provides feedback that helps identify weaknesses and strengthen arguments", "others offer perspectives that improve clarity and organization", "collaborative evaluation catches errors and enhances quality"]
+    },
+    {
+      "question": "What is the difference between academic and casual discourse?",
+      "expectedAny": ["academic discourse is formal and structured while casual is informal and conversational", "academic requires evidence and precision while casual allows opinions and slang", "scholarly communication follows conventions that casual speech does not"]
+    },
+    {
+      "question": "Give an example of strong evidence in an essay.",
+      "expectedAny": ["statistics from credible research studies supporting the claim", "expert opinions from published scholars in the field", "documented facts and data from reliable sources"]
+    },
+    {
+      "question": "Why should writers avoid contractions in formal writing?",
+      "expectedAny": ["contractions are too casual for academic and professional contexts", "formal register maintains professional tone without informal shortcuts", "academic writing requires complete words for clarity and professionalism"]
+    },
+    {
+      "question": "How can peer review help with thesis development?",
+      "expectedAny": ["peers can identify when a thesis lacks clarity or specificity", "feedback helps refine arguments and make claims more focused", "collaborative review ensures the thesis effectively guides the essay"]
+    },
+    {
+      "question": "Why is learning academic discourse important for college?",
+      "expectedAny": ["college requires formal communication for essays and discussions", "academic discourse is essential for success in scholarly environments", "professional communication skills are necessary for college and careers"]
+    }
+  ]
 }

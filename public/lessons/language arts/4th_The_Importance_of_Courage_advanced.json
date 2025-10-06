@@ -24,6 +24,38 @@
     {
       "term": "Bravery",
       "definition": "Courageous behavior or character."
+    },
+    {
+      "term": "Adversity",
+      "definition": "Hard times or difficult situations that test you."
+    },
+    {
+      "term": "Resilience",
+      "definition": "The ability to recover after a setback or failure."
+    },
+    {
+      "term": "Integrity",
+      "definition": "Doing the right thing even when no one is watching."
+    },
+    {
+      "term": "Moral choice",
+      "definition": "A decision about what is right or wrong."
+    },
+    {
+      "term": "Consequence",
+      "definition": "What happens because of a choice or action."
+    },
+    {
+      "term": "Obstacle",
+      "definition": "Something that gets in the way of reaching a goal."
+    },
+    {
+      "term": "Risk",
+      "definition": "Trying something that might be dangerous or might not work."
+    },
+    {
+      "term": "Protagonist",
+      "definition": "The main character in a story."
     }
   ],
   "teachingNotes": "The life skill of courage told through the conduit of storytelling.",
@@ -58,159 +90,40 @@
     }
   ],
   "truefalse": [
-    {
-      "Q": "Courage means never being afraid.",
-      "A": false
-    },
-    {
-      "Q": "Bravery and courage are the same thing.",
-      "A": true
-    },
-    {
-      "Q": "A character can grow without courage.",
-      "A": false
-    },
-    {
-      "Q": "Courage is only for heroes in stories.",
-      "A": false
-    },
-    {
-      "Q": "Courage is a life skill.",
-      "A": true
-    },
-    {
-      "Q": "Every character in a story shows courage.",
-      "A": false
-    },
-    {
-      "Q": "Courage can help solve problems.",
-      "A": true
-    }
+    { "Q": "Courage means never being afraid.", "A": false, "expectedAny": ["false", "f", "no", "n", "incorrect"] },
+    { "Q": "Bravery and courage are the same thing.", "A": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "Q": "A character can grow without courage.", "A": false, "expectedAny": ["false", "f", "no", "n", "incorrect"] },
+    { "Q": "Courage is only for heroes in stories.", "A": false, "expectedAny": ["false", "f", "no", "n", "incorrect"] },
+    { "Q": "Courage is a life skill.", "A": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "Q": "Every character in a story shows courage.", "A": false, "expectedAny": ["false", "f", "no", "n", "incorrect"] },
+    { "Q": "Courage can help solve problems.", "A": true, "expectedAny": ["true", "t", "yes", "y", "correct"] }
   ],
   "multiplechoice": [
-    {
-      "Q": "What is a key element of character development?",
-      "choices": [
-        "Courage",
-        "Height",
-        "Age"
-      ],
-      "A": "Courage"
-    },
-    {
-      "Q": "Who might need courage?",
-      "choices": [
-        "A firefighter",
-        "A student",
-        "Both"
-      ],
-      "A": "Both"
-    },
-    {
-      "Q": "What can courage help a character in a story do?",
-      "choices": [
-        "Give up",
-        "Overcome fear",
-        "Stop trying"
-      ],
-      "A": "Overcome fear"
-    },
-    {
-      "Q": "In stories, courage is often shown when characters:",
-      "choices": [
-        "Run away",
-        "Face challenges",
-        "Ignore problems"
-      ],
-      "A": "Face challenges"
-    },
-    {
-      "Q": "Which word is closest in meaning to courage?",
-      "choices": [
-        "Fear",
-        "Bravery",
-        "Sadness"
-      ],
-      "A": "Bravery"
-    },
-    {
-      "Q": "What can happen to a character who shows courage?",
-      "choices": [
-        "They stay the same",
-        "They grow",
-        "They disappear"
-      ],
-      "A": "They grow"
-    },
-    {
-      "Q": "Courage in a story helps to:",
-      "choices": [
-        "Create conflict",
-        "Solve problems",
-        "Make characters boring"
-      ],
-      "A": "Solve problems"
-    }
+    { "Q": "What is a key element of character development?", "choices": ["Courage", "Height", "Age"], "A": "Courage", "expectedAny": ["courage", "a", "1", "first"] },
+    { "Q": "Who might need courage?", "choices": ["A firefighter", "A student", "Both"], "A": "Both", "expectedAny": ["both", "c", "3", "third"] },
+    { "Q": "What can courage help a character in a story do?", "choices": ["Give up", "Overcome fear", "Stop trying"], "A": "Overcome fear", "expectedAny": ["overcome fear", "b", "2", "second"] },
+    { "Q": "In stories, courage is often shown when characters:", "choices": ["Run away", "Face challenges", "Ignore problems"], "A": "Face challenges", "expectedAny": ["face challenges", "b", "2", "second"] },
+    { "Q": "Which word is closest in meaning to courage?", "choices": ["Fear", "Bravery", "Sadness"], "A": "Bravery", "expectedAny": ["bravery", "b", "2", "second"] },
+    { "Q": "What can happen to a character who shows courage?", "choices": ["They stay the same", "They grow", "They disappear"], "A": "They grow", "expectedAny": ["they grow", "grow", "b", "2", "second"] },
+    { "Q": "Courage in a story helps to:", "choices": ["Create conflict", "Solve problems", "Make characters boring"], "A": "Solve problems", "expectedAny": ["solve problems", "b", "2", "second"] }
   ],
   "fillintheblank": [
-    {
-      "Q": "Courage helps characters to ______ their fears.",
-      "A": "overcome"
-    },
-    {
-      "Q": "A person in a story is called a ______.",
-      "A": "character"
-    },
-    {
-      "Q": "________ is the ability to do something that scares you.",
-      "A": "Courage"
-    },
-    {
-      "Q": "Character ________ is how a character changes in a story.",
-      "A": "development"
-    },
-    {
-      "Q": "________ is another word for bravery.",
-      "A": "Courage"
-    },
-    {
-      "Q": "Through storytelling, we learn about ________.",
-      "A": "courage"
-    },
-    {
-      "Q": "Facing a challenge can help a character ______.",
-      "A": "grow"
-    }
+    { "Q": "Courage helps characters to ______ their fears.", "A": "overcome", "expectedAny": ["overcome", "conquer", "face", "confront", "deal with"] },
+    { "Q": "A person in a story is called a ______.", "A": "character", "expectedAny": ["character", "a character"] },
+    { "Q": "________ is the ability to do something that scares you.", "A": "Courage", "expectedAny": ["courage", "bravery", "having courage"] },
+    { "Q": "Character ________ is how a character changes in a story.", "A": "development", "expectedAny": ["development", "growth"] },
+    { "Q": "________ is another word for bravery.", "A": "Courage", "expectedAny": ["courage", "bravery"] },
+    { "Q": "Through storytelling, we learn about ________.", "A": "courage", "expectedAny": ["courage", "bravery", "integrity"] },
+    { "Q": "Facing a challenge can help a character ______.", "A": "grow", "expectedAny": ["grow", "change", "develop", "improve"] }
   ],
   "shortanswer": [
-    {
-      "Q": "Why do stories often include courageous characters?",
-      "A": "To show how characters can overcome challenges and grow."
-    },
-    {
-      "Q": "What is one way a character might show courage?",
-      "A": "By standing up for someone else in the story."
-    },
-    {
-      "Q": "How does courage help in real life?",
-      "A": "It helps people face their fears and try new things."
-    },
-    {
-      "Q": "Give an example of a courageous character from a story you know.",
-      "A": "Harry Potter shows courage by facing Voldemort."
-    },
-    {
-      "Q": "What might happen if a character lacks courage?",
-      "A": "They might struggle to face challenges or grow."
-    },
-    {
-      "Q": "How can courage change a story's outcome?",
-      "A": "It can lead to a positive resolution or victory."
-    },
-    {
-      "Q": "Why is courage considered a life skill?",
-      "A": "Because it helps people handle difficult situations."
-    }
+    { "Q": "Why do stories often include courageous characters?", "A": "To show how characters can overcome challenges and grow.", "expectedAny": ["to show growth", "to overcome challenges", "to face challenges and grow", "to solve problems", "to do the right thing"] },
+    { "Q": "What is one way a character might show courage?", "A": "By standing up for someone else in the story.", "expectedAny": ["stand up for someone", "stand up for what is right", "help someone even if scared", "tell the truth", "take a risk to help"] },
+    { "Q": "How does courage help in real life?", "A": "It helps people face their fears and try new things.", "expectedAny": ["face fears", "try new things", "handle difficult situations", "solve problems", "keep going after a setback"] },
+    { "Q": "Give an example of a courageous character from a story you know.", "A": "Harry Potter shows courage by facing Voldemort.", "expectedAny": ["harry potter", "aslan", "katniss", "percy jackson", "matilda", "mulan", "frodo"] },
+    { "Q": "What might happen if a character lacks courage?", "A": "They might struggle to face challenges or grow.", "expectedAny": ["struggle to face challenges", "not grow", "avoid problems", "miss chances", "stay the same"] },
+    { "Q": "How can courage change a story's outcome?", "A": "It can lead to a positive resolution or victory.", "expectedAny": ["lead to a positive resolution", "help win", "solve the problem", "lead to success"] },
+    { "Q": "Why is courage considered a life skill?", "A": "Because it helps people handle difficult situations.", "expectedAny": ["helps handle difficult situations", "face fears", "make good choices", "do the right thing"] }
   ],
   "subject": "language arts"
 }

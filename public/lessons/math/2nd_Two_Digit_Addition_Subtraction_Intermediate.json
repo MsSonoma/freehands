@@ -23,6 +23,10 @@
     {
       "term": "difference",
       "definition": "The answer when you subtract one number from another"
+    },
+    {
+      "term": "blocks",
+      "definition": "Base-ten blocks used to model tens and ones"
     }
   ],
   "teachingNotes": "Teach addition and subtraction with regrouping using manipulatives. Show step-by-step process: add/subtract ones first, then tens. Use real-world problems to make math meaningful.",
@@ -55,21 +59,21 @@
   ],
   "fillintheblank": [
     {"question": "To solve 54 + 29, first add the ________, then add the tens.", "expectedAny": ["ones", "ones place", "units", "right column"]},
-    {"question": "Regrouping means trading 10 ________ for 1 ten.", "expectedAny": ["ones"]},
+    {"question": "Regrouping means trading 10 ________ for 1 ten.", "expectedAny": ["ones", "ones place"]},
     {"question": "When subtracting, if the top ones are smaller than the bottom ones, you should ________.", "expectedAny": ["regroup", "borrow"]},
-    {"question": "The answer to an addition problem is the ________.", "expectedAny": ["sum"]},
-    {"question": "The answer to a subtraction problem is the ________.", "expectedAny": ["difference"]},
-    {"question": "In 73, 7 represents the number of ________.", "expectedAny": ["tens"]},
-    {"question": "In 73, 3 represents the number of ________.", "expectedAny": ["ones"]}
+    {"question": "The answer to an addition problem is the ________.", "expectedAny": ["sum", "total"]},
+    {"question": "The answer to a subtraction problem is the ________.", "expectedAny": ["difference", "result"]},
+    {"question": "In 73, 7 represents the number of ________.", "expectedAny": ["tens", "tens place"]},
+    {"question": "In 73, 3 represents the number of ________.", "expectedAny": ["ones", "ones place"]}
   ],
   "shortanswer": [
-    {"question": "Explain how to solve 72 - 45.", "expectedAny": ["subtract ones then tens", "regroup if needed", "take away 45", "step by step"]},
-    {"question": "Explain why 38 + 27 requires regrouping.", "expectedAny": ["8+7=15 so make 1 ten and 5 ones"]},
-    {"question": "Show how to solve 54 - 26.", "expectedAny": ["regroup 1 ten to ones, then subtract"]},
-    {"question": "How can a number line help with 45 + 28?", "expectedAny": ["jump 20 then 8", "break apart into tens and ones"]},
-    {"question": "What strategy helps with 69 - 32?", "expectedAny": ["subtract ones then tens; regroup if needed"]},
-    {"question": "How can base-ten blocks show 73 - 48?", "expectedAny": ["trade a ten for 10 ones and subtract"]},
-    {"question": "Explain why 70 - 35 = 35 without regrouping.", "expectedAny": ["0 ones minus 5 needs regrouping but tens subtraction shows 7 tens - 3 tens = 4 tens then subtract ones"]}
+    {"question": "Explain how to solve 72 - 45.", "expectedAny": ["subtract ones then tens", "regroup if needed", "use a number line to count back"]},
+    {"question": "Explain why 38 + 27 requires regrouping.", "expectedAny": ["8+7=15 so make 1 ten and 5 ones", "ones add to more than 9 so carry a ten", "fifteen ones becomes one ten and five ones"]},
+    {"question": "Show how to solve 54 - 26.", "expectedAny": ["regroup 1 ten to ones, then subtract", "borrow a ten then subtract ones and tens", "use base-ten blocks to trade and subtract"]},
+    {"question": "How can a number line help with 45 + 28?", "expectedAny": ["jump 20 then 8", "break apart into tens and ones", "make a jump to the next ten then add the rest"]},
+    {"question": "What strategy helps with 69 - 32?", "expectedAny": ["subtract ones then tens; regroup if needed", "use place value and regroup", "count back by tens and ones"]},
+    {"question": "How can base-ten blocks show 73 - 48?", "expectedAny": ["trade a ten for 10 ones and subtract", "show 7 tens and 3 ones then trade to subtract 8 ones", "use blocks to model and take away"]},
+    {"question": "Explain why 70 - 35 = 35 without regrouping.", "expectedAny": ["70 minus 30 is 40 then minus 5 is 35", "subtract tens then ones", "use mental math: 7 tens minus 3 tens is 4 tens; minus 5 ones is 35"]}
   ],
   "wordProblems": [
     {"question": "There are 46 students in second grade and 38 students in first grade. How many students are there in total?", "expectedAny": ["84", "84 students", "eighty-four", "eighty-four students"]},

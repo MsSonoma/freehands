@@ -24,6 +24,14 @@
     {
       "term": "Bravery",
       "definition": "Courageous behavior or character."
+    },
+    {
+      "term": "Protagonist",
+      "definition": "The main character in a story."
+    },
+    {
+      "term": "Character arc",
+      "definition": "The way a character changes over time in a story."
     }
   ],
   "teachingNotes": "The life skill of courage told through the conduit of storytelling.",
@@ -55,6 +63,38 @@
     {
       "Q": "Can you name a story where a character shows courage?",
       "A": "In the story of 'The Lion, the Witch and the Wardrobe,' Aslan shows courage by facing the White Witch."
+    },
+    {
+      "Q": "What role does courage play in a hero's journey?",
+      "A": "Courage is crucial in a hero's journey as it helps the hero face and overcome great challenges."
+    },
+    {
+      "Q": "How can courage be shown in everyday life?",
+      "A": "Courage can be shown in everyday life by speaking up against bullying or trying something new."
+    },
+    {
+      "Q": "What is the difference between courage and recklessness?",
+      "A": "Courage involves thoughtful action despite fear, while recklessness ignores potential dangers."
+    },
+    {
+      "Q": "Why do authors often include courageous characters in their stories?",
+      "A": "Authors include courageous characters to inspire readers and to show character development."
+    },
+    {
+      "Q": "How can courage inspire others?",
+      "A": "Courage can inspire others by showing them that difficult tasks can be achieved with bravery."
+    },
+    {
+      "Q": "What might happen if a character lacks courage?",
+      "A": "If a character lacks courage, they might fail to face challenges and miss opportunities for growth."
+    },
+    {
+      "Q": "What is an example of a story where courage leads to success?",
+      "A": "In 'Harry Potter,' Harry's courage helps him defeat Voldemort and protect his friends."
+    },
+    {
+      "Q": "Can courage be learned or improved?",
+      "A": "Yes, courage can be learned and improved by facing fears and challenging oneself regularly."
     }
   ],
   "truefalse": [
@@ -84,6 +124,38 @@
     },
     {
       "Q": "Courage can help solve problems.",
+      "A": true
+    },
+    {
+      "Q": "Courage is needed to face new challenges.",
+      "A": true
+    },
+    {
+      "Q": "Being courageous always means being successful.",
+      "A": false
+    },
+    {
+      "Q": "Courage can be shown by standing up to a bully.",
+      "A": true
+    },
+    {
+      "Q": "Courage and carelessness are the same.",
+      "A": false
+    },
+    {
+      "Q": "Courage can inspire others to be brave.",
+      "A": true
+    },
+    {
+      "Q": "Courage is only shown in dangerous situations.",
+      "A": false
+    },
+    {
+      "Q": "You can learn to be more courageous over time.",
+      "A": true
+    },
+    {
+      "Q": "Courage is important for personal growth.",
       "A": true
     }
   ],
@@ -150,66 +222,355 @@
         "Make characters boring"
       ],
       "A": "Solve problems"
+    },
+    {
+      "Q": "Which situation might require courage?",
+      "choices": [
+        "Reading a book",
+        "Standing up for a friend",
+        "Eating lunch"
+      ],
+      "A": "Standing up for a friend"
+    },
+    {
+      "Q": "What is an example of courage?",
+      "choices": [
+        "Running away",
+        "Facing a fear",
+        "Ignoring a problem"
+      ],
+      "A": "Facing a fear"
+    },
+    {
+      "Q": "Why is courage important in teamwork?",
+      "choices": [
+        "It helps avoid conflict",
+        "It helps solve problems",
+        "It makes work harder"
+      ],
+      "A": "It helps solve problems"
+    },
+    {
+      "Q": "How can courage affect a story's plot?",
+      "choices": [
+        "It makes the story boring",
+        "It helps characters overcome obstacles",
+        "It has no effect"
+      ],
+      "A": "It helps characters overcome obstacles"
+    },
+    {
+      "Q": "Which of the following is NOT an example of courage?",
+      "choices": [
+        "Avoiding a challenge",
+        "Trying something new",
+        "Helping someone in need"
+      ],
+      "A": "Avoiding a challenge"
+    },
+    {
+      "Q": "What is a benefit of showing courage?",
+      "choices": [
+        "It can lead to personal growth",
+        "It always results in winning",
+        "It makes others dislike you"
+      ],
+      "A": "It can lead to personal growth"
+    },
+    {
+      "Q": "Courageous characters often:",
+      "choices": [
+        "Run from problems",
+        "Face challenges",
+        "Ignore others"
+      ],
+      "A": "Face challenges"
+    },
+    {
+      "Q": "What quality does a courageous person have?",
+      "choices": [
+        "Fearlessness",
+        "Laziness",
+        "Indifference"
+      ],
+      "A": "Fearlessness"
     }
   ],
   "fillintheblank": [
     {
       "Q": "Courage helps characters to ______ their fears.",
-      "A": "overcome"
+      "expectedAny": [
+        "overcome",
+        "face",
+        "conquer",
+        "get past"
+      ]
     },
     {
       "Q": "A person in a story is called a ______.",
-      "A": "character"
+      "expectedAny": [
+        "character",
+        "protagonist"
+      ]
     },
     {
       "Q": "________ is the ability to do something that scares you.",
-      "A": "Courage"
+      "expectedAny": [
+        "courage",
+        "bravery"
+      ]
     },
     {
       "Q": "Character ________ is how a character changes in a story.",
-      "A": "development"
+      "expectedAny": [
+        "development",
+        "growth",
+        "arc"
+      ]
     },
     {
       "Q": "________ is another word for bravery.",
-      "A": "Courage"
+      "expectedAny": [
+        "courage",
+        "valor"
+      ]
     },
     {
       "Q": "Through storytelling, we learn about ________.",
-      "A": "courage"
+      "expectedAny": [
+        "courage",
+        "bravery"
+      ]
     },
     {
       "Q": "Facing a challenge can help a character ______.",
-      "A": "grow"
+      "expectedAny": [
+        "grow",
+        "change",
+        "improve",
+        "develop"
+      ]
+    },
+    {
+      "Q": "Courage is needed to ______ new experiences.",
+      "expectedAny": [
+        "face",
+        "embrace",
+        "try",
+        "explore"
+      ]
+    },
+    {
+      "Q": "Courage can inspire others to ______.",
+      "expectedAny": [
+        "act",
+        "be brave",
+        "try",
+        "succeed"
+      ]
+    },
+    {
+      "Q": "A ______ can demonstrate courage by standing up for a friend.",
+      "expectedAny": [
+        "student",
+        "child",
+        "person",
+        "friend"
+      ]
+    },
+    {
+      "Q": "With courage, a person can ______ challenges.",
+      "expectedAny": [
+        "face",
+        "overcome",
+        "handle",
+        "tackle"
+      ]
+    },
+    {
+      "Q": "It takes courage to ______ what is right.",
+      "expectedAny": [
+        "do",
+        "stand up for",
+        "choose",
+        "say"
+      ]
+    },
+    {
+      "Q": "Courage is a ______ that can be developed.",
+      "expectedAny": [
+        "skill",
+        "trait",
+        "quality",
+        "ability"
+      ]
+    },
+    {
+      "Q": "A courageous act can ______ a story's direction.",
+      "expectedAny": [
+        "change",
+        "alter",
+        "shift",
+        "influence"
+      ]
+    },
+    {
+      "Q": "Showing courage can lead to personal ______.",
+      "expectedAny": [
+        "growth",
+        "development",
+        "improvement",
+        "success"
+      ]
     }
   ],
   "shortanswer": [
     {
       "Q": "Why do stories often include courageous characters?",
-      "A": "To show how characters can overcome challenges and grow."
+      "expectedAny": [
+        "to show character growth",
+        "to show growth",
+        "to help characters face fears",
+        "to overcome challenges",
+        "to solve problems"
+      ]
     },
     {
       "Q": "What is one way a character might show courage?",
-      "A": "By standing up for someone else in the story."
+      "expectedAny": [
+        "stand up for someone",
+        "tell the truth",
+        "face a bully",
+        "speak up for what is right",
+        "try something hard"
+      ]
     },
     {
       "Q": "How does courage help in real life?",
-      "A": "It helps people face their fears and try new things."
+      "expectedAny": [
+        "helps people face fears",
+        "helps people try new things",
+        "helps solve problems",
+        "helps stand up for what is right"
+      ]
     },
     {
       "Q": "Give an example of a courageous character from a story you know.",
-      "A": "Harry Potter shows courage by facing Voldemort."
+      "expectedAny": [
+        "Harry Potter",
+        "Matilda",
+        "Aslan",
+        "Percy Jackson",
+        "Charlotte"
+      ]
     },
     {
       "Q": "What might happen if a character lacks courage?",
-      "A": "They might struggle to face challenges or grow."
+      "expectedAny": [
+        "avoid challenges",
+        "stay the same",
+        "not grow",
+        "fail to solve the problem",
+        "give up"
+      ]
     },
     {
       "Q": "How can courage change a story's outcome?",
-      "A": "It can lead to a positive resolution or victory."
+      "expectedAny": [
+        "solve the problem",
+        "lead to victory",
+        "create a happy ending",
+        "save the day",
+        "lead to success"
+      ]
     },
     {
       "Q": "Why is courage considered a life skill?",
-      "A": "Because it helps people handle difficult situations."
+      "expectedAny": [
+        "helps people handle difficult situations",
+        "helps make good choices under pressure",
+        "helps stand up for what is right",
+        "helps keep trying when it's hard"
+      ]
+    },
+    {
+      "Q": "What are some situations where courage is required?",
+      "expectedAny": [
+        "speaking in public",
+        "trying out for a team",
+        "standing up to a bully",
+        "admitting a mistake",
+        "helping someone in trouble"
+      ]
+    },
+    {
+      "Q": "Can courage be contagious? How?",
+      "expectedAny": [
+        "yes, by inspiring others",
+        "yes, it encourages others",
+        "yes, by setting an example",
+        "yes, it motivates others"
+      ]
+    },
+    {
+      "Q": "How can a student show courage in school?",
+      "expectedAny": [
+        "by asking questions",
+        "by trying new activities",
+        "by standing up for classmates",
+        "by speaking in front of the class",
+        "by joining a new club"
+      ]
+    },
+    {
+      "Q": "What is a common trait of courageous people?",
+      "expectedAny": [
+        "confidence",
+        "determination",
+        "bravery",
+        "resilience",
+        "willingness to help"
+      ]
+    },
+    {
+      "Q": "How can courage impact friendships?",
+      "expectedAny": [
+        "by building trust",
+        "by strengthening bonds",
+        "by encouraging honesty",
+        "by supporting others",
+        "by solving conflicts"
+      ]
+    },
+    {
+      "Q": "Why is it important to show courage in difficult times?",
+      "expectedAny": [
+        "it helps overcome obstacles",
+        "it builds character",
+        "it can lead to success",
+        "it shows strength",
+        "it inspires others"
+      ]
+    },
+    {
+      "Q": "What is a historical example of courage?",
+      "expectedAny": [
+        "Rosa Parks refusing to give up her seat",
+        "Martin Luther King Jr.'s speeches",
+        "Nelson Mandela's fight for freedom",
+        "Malala Yousafzai advocating for education",
+        "Anne Frank's bravery during hiding"
+      ]
+    },
+    {
+      "Q": "How can parents encourage courage in children?",
+      "expectedAny": [
+        "by supporting them",
+        "by encouraging them to try new things",
+        "by praising their efforts",
+        "by teaching them to face fears",
+        "by setting a good example"
+      ]
     }
   ],
   "subject": "language arts"

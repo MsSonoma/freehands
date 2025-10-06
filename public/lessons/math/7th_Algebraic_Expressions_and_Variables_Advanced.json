@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Start with simple expressions and build complexity. Show how variables represent unknown quantities. Practice combining like terms.",
-  "sample": {
-    "question": "What is a letter or symbol that represents an unknown number?",
-    "expectedAny": ["variable", "unknown", "letter variable", "algebraic variable"]
-  },
-  "truefalse": {
-    "question": "In the expression 3x + 5, the coefficient of x is 3.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "Which terms are like terms?",
-    "expectedAny": ["2x and 5x", "3y and 7y", "4a and 9a", "same variable terms"]
-  },
-  "fillintheblank": {
-    "question": "To combine like terms means to ________ an expression.",
-    "expectedAny": ["simplify", "reduce", "combine", "condense"]
-  },
-  "shortanswer": {
-    "question": "Simplify the expression: 4x + 2x + 3",
-    "expectedAny": ["6x + 3", "6x+3", "3 + 6x", "3+6x"]
-  },
-  "wordProblems": {
-    "question": "Sarah has x apples. She buys 3 more apples and then gives away 2 apples. Write an expression for how many apples she has.",
-    "expectedAny": ["x + 3 - 2", "x + 1", "x+1", "(x+3)-2"]
-  }
+  "sample": [
+    { "question": "What is a letter or symbol that represents an unknown number?", "expectedAny": ["variable"] },
+    { "question": "Which is math with variables?", "choices": ["Number", "Algebraic expression", "Integer", "Fraction"], "correct": 1, "expectedAny": ["algebraic expression"] },
+    { "question": "Number multiplying variable is ________.", "expectedAny": ["coefficient"] },
+    { "question": "Same variable, same power are ________.", "expectedAny": ["like terms"] },
+    { "question": "Combining like terms is to ________.", "expectedAny": ["simplify"] },
+    { "question": "What is an unknown value?", "choices": ["Number", "Variable", "Constant", "Integer"], "correct": 1, "expectedAny": ["variable"] },
+    { "question": "A math phrase with variables is ________.", "expectedAny": ["algebraic expression"] },
+    { "question": "In 5x, the 5 is the ________.", "expectedAny": ["coefficient"] },
+    { "question": "Which are like terms?", "choices": ["x and y", "3x and 5x", "x and 2", "xy and x"], "correct": 1, "expectedAny": ["3x and 5x"] },
+    { "question": "Reducing expression is to ________.", "expectedAny": ["simplify"] }
+  ],
+  "truefalse": [
+    { "question": "In the expression 3x + 5, the coefficient of x is 3.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "2x and 3y are like terms.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A variable represents an unknown number.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All terms are like terms.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Simplifying combines like terms.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "In 7y, 7 is the variable.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "An algebraic expression has variables.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "4x and 4x² are like terms.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "x is a variable.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Coefficient is always 1.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which terms are like terms?", "choices": ["x and y", "2x and 5x", "3 and x", "xy and x"], "correct": 1, "expectedAny": ["2x and 5x"] },
+    { "question": "What is unknown value?", "choices": ["Number", "Variable", "Constant", "Integer"], "correct": 1, "expectedAny": ["variable"] },
+    { "question": "What is math with variables?", "choices": ["Number", "Expression", "Integer", "Fraction"], "correct": 1, "expectedAny": ["expression"] },
+    { "question": "In 6x, what is 6?", "choices": ["Variable", "Coefficient", "Constant", "Term"], "correct": 1, "expectedAny": ["coefficient"] },
+    { "question": "What combines like terms?", "choices": ["Expand", "Simplify", "Distribute", "Factor"], "correct": 1, "expectedAny": ["simplify"] },
+    { "question": "Simplify: 3x + 2x", "choices": ["5x", "6x", "5x²", "x"], "correct": 0, "expectedAny": ["5x"] },
+    { "question": "Simplify: 7y - 3y", "choices": ["10y", "4y", "4", "10"], "correct": 1, "expectedAny": ["4y"] },
+    { "question": "In 9z, what is z?", "choices": ["Coefficient", "Variable", "Constant", "Number"], "correct": 1, "expectedAny": ["variable"] },
+    { "question": "Which are like terms?", "choices": ["5 and x", "4y and 7y", "x and y", "2x and x²"], "correct": 1, "expectedAny": ["4y and 7y"] },
+    { "question": "Simplify: 8a + a", "choices": ["8a", "9a", "8a²", "9"], "correct": 1, "expectedAny": ["9a"] }
+  ],
+  "fillintheblank": [
+    { "question": "To combine like terms means to ________ an expression.", "expectedAny": ["simplify"] },
+    { "question": "A letter representing unknown is a ________.", "expectedAny": ["variable"] },
+    { "question": "In 5x, 5 is the ________.", "expectedAny": ["coefficient"] },
+    { "question": "Same variable, same power are ________ terms.", "expectedAny": ["like"] },
+    { "question": "A phrase with variables is ________ expression.", "expectedAny": ["algebraic"] },
+    { "question": "To ________ means combine like terms.", "expectedAny": ["simplify"] },
+    { "question": "A ________ is an unknown value.", "expectedAny": ["variable"] },
+    { "question": "The ________ multiplies the variable.", "expectedAny": ["coefficient"] },
+    { "question": "________ terms have same variable.", "expectedAny": ["like"] },
+    { "question": "Math with variables is ________.", "expectedAny": ["algebraic", "algebraic expression"] }
+  ],
+  "shortanswer": [
+    { "question": "Simplify the expression: 4x + 2x + 3", "expectedAny": ["6x + 3"] },
+    { "question": "What is a variable?", "expectedAny": ["unknown value", "letter for number", "unknown number", "letter representing number", "symbol for number"] },
+    { "question": "What is a coefficient?", "expectedAny": ["number multiplying variable", "number with variable", "number in front", "number times variable"] },
+    { "question": "What are like terms?", "expectedAny": ["same variable same power", "terms you combine", "same variable and exponent", "matching terms"] },
+    { "question": "What does simplify mean?", "expectedAny": ["combine like terms", "reduce expression"] },
+    { "question": "Simplify: 5y + 3y", "expectedAny": ["8y"] },
+    { "question": "Simplify: 7x - 2x", "expectedAny": ["5x"] },
+    { "question": "Simplify: 3a + 2 + a", "expectedAny": ["4a + 2"] },
+    { "question": "In 8z, what is the coefficient?", "expectedAny": ["8"] },
+    { "question": "Simplify: 10b - 4b + 1", "expectedAny": ["6b + 1"] }
+  ],
+  "wordProblems": [
+    { "question": "Sarah has x apples. She buys 3 more apples and then gives away 2 apples. Write an expression for how many apples she has.", "expectedAny": ["x + 3 - 2", "x + 1"] },
+    { "question": "John has 5 more books than Maria. If Maria has n books, how many does John have?", "expectedAny": ["n + 5"] },
+    { "question": "A rectangle is 2x wide and 3x long. Write expression for perimeter.", "expectedAny": ["10x", "2(2x) + 2(3x)"] },
+    { "question": "Lisa earns $y per hour. She works 8 hours. Write expression for earnings.", "expectedAny": ["8y"] },
+    { "question": "Tom has x dollars. He spends $15. Write expression for remaining money.", "expectedAny": ["x - 15"] },
+    { "question": "A number n is doubled and then increased by 4. Write the expression.", "expectedAny": ["2n + 4"] },
+    { "question": "Emma has 3 times as many pencils as pens. If she has p pens, how many pencils?", "expectedAny": ["3p"] },
+    { "question": "A car travels at speed s for 4 hours. Write expression for distance.", "expectedAny": ["4s"] },
+    { "question": "Mike has x cards. He gets 7 more, then loses 3. Write expression.", "expectedAny": ["x + 7 - 3", "x + 4"] },
+    { "question": "A store sells shirts for $p. You buy 5 shirts. Write expression for total cost.", "expectedAny": ["5p"] }
+  ]
 }

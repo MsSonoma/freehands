@@ -18,8 +18,12 @@
       "definition": "Being kind and caring toward others"
     },
     {
-      "term": "responsibility",
-      "definition": "A job or duty that you need to do"
+      "term": "duty",
+      "definition": "A job you need to do"
+    },
+    {
+      "term": "classroom",
+      "definition": "The room where you learn at school"
     }
   ],
   "teachingNotes": "Discuss classroom and school rules. Practice safety procedures. Connect rules to keeping everyone safe and happy. Role-play scenarios.",
@@ -49,16 +53,16 @@
     {"question": "What is the safe way to get down from playground equipment?", "choices": ["jump off", "climb down carefully", "slide down backwards", "hang and drop"], "correct": 1, "expectedAny": ["climb down carefully from equipment"]}
   ],
   "fillintheblank": [
-    {"question": "We raise our _____ to talk in class.", "expectedAny": ["hand"]},
-    {"question": "_____ help keep everyone safe and happy.", "expectedAny": ["Rules"]},
-    {"question": "We should always _____ in the hallways.", "expectedAny": ["walk"]},
-    {"question": "When crossing the street, we should look _____ ways.", "expectedAny": ["both"]},
-    {"question": "We show _____ by following the rules.", "expectedAny": ["respect"]},
-    {"question": "During a fire drill, we should line up _____.", "expectedAny": ["quietly"]},
-    {"question": "It's our _____ to follow classroom rules.", "expectedAny": ["responsibility"]}
+    {"question": "We raise our _____ to talk in class.", "expectedAny": ["hand", "our hand"]},
+    {"question": "_____ help keep everyone safe and happy.", "expectedAny": ["Rules", "rules"]},
+    {"question": "We should always _____ in the hallways.", "expectedAny": ["walk", "walk quietly"]},
+    {"question": "When crossing the street, we should look _____ ways.", "expectedAny": ["both", "both ways"]},
+    {"question": "We show _____ by following the rules.", "expectedAny": ["respect", "care"]},
+    {"question": "During a fire drill, we should line up _____.", "expectedAny": ["quietly", "calmly"]},
+    {"question": "It's our _____ to follow classroom rules.", "expectedAny": ["duty", "job"]}
   ],
   "shortanswer": [
-    {"question": "Name one classroom rule.", "expectedAny": ["various classroom rules"]},
+  {"question": "Name one classroom rule.", "expectedAny": ["raise your hand", "walk in hallways", "keep hands to yourself", "listen to the teacher"]},
     {"question": "How do rules help us learn better?", "expectedAny": ["keep class quiet", "help us focus", "create safe environment", "reduce distractions"]},
     {"question": "What safety rules do you follow at home?", "expectedAny": ["don't touch hot stove", "look both ways", "tell parents where going", "wear helmet"]},
     {"question": "Why is it important to listen to adults?", "expectedAny": ["they keep us safe", "they know more", "they help us", "they protect us"]},

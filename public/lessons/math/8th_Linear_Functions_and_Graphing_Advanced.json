@@ -26,28 +26,76 @@
     }
   ],
   "teachingNotes": "Practice graphing lines using slope and y-intercept. Connect to real-world situations involving constant rates.",
-  "sample": {
-    "question": "What is a function whose graph is a straight line?",
-    "expectedAny": ["linear function", "linear equation", "straight line function", "first-degree function"]
-  },
-  "truefalse": {
-    "question": "The slope of a line is calculated as rise over run.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What is the point where a line crosses the y-axis?",
-    "expectedAny": ["y-intercept", "vertical intercept", "y-axis intersection", "initial value"]
-  },
-  "fillintheblank": {
-    "question": "The steepness of a line is called its ________.",
-    "expectedAny": ["slope", "gradient", "steepness", "incline"]
-  },
-  "shortanswer": {
-    "question": "What does the equation y = 2x + 3 tell you about the line?",
-    "expectedAny": ["slope is 2, y-intercept is 3", "rises 2 units for each 1 unit right", "steepness 2, starts at 3"]
-  },
-  "wordProblems": {
-    "question": "A line passes through points (0,4) and (2,10). What is the slope?",
-    "expectedAny": ["3", "slope = 3", "(10-4)/(2-0) = 3", "rise 6, run 2"]
-  }
+  "sample": [
+    { "question": "What is a function whose graph is a straight line?", "expectedAny": ["linear function"] },
+    { "question": "Which is line steepness?", "choices": ["Y-intercept", "Slope", "X-intercept", "Point"], "correct": 1, "expectedAny": ["slope"] },
+    { "question": "Where line crosses y-axis is ________.", "expectedAny": ["y-intercept"] },
+    { "question": "Plane with x and y axes is ________.", "expectedAny": ["coordinate plane"] },
+    { "question": "How quantity changes is ________.", "expectedAny": ["rate of change"] },
+    { "question": "What is straight line function?", "choices": ["Curved", "Linear function", "Circle", "Parabola"], "correct": 1, "expectedAny": ["linear function"] },
+    { "question": "Rise over run is ________.", "expectedAny": ["slope"] },
+    { "question": "What is y-axis crossing?", "choices": ["X-intercept", "Y-intercept", "Origin", "Point"], "correct": 1, "expectedAny": ["y-intercept"] },
+    { "question": "Two-dimensional plane is ________.", "expectedAny": ["coordinate plane"] },
+    { "question": "Change relationship is ________.", "expectedAny": ["rate of change"] }
+  ],
+  "truefalse": [
+    { "question": "The slope of a line is calculated as rise over run.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Linear function graph is curved.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Y-intercept is where line crosses y-axis.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Slope is horizontal distance.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Coordinate plane has two axes.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Rate of change is always zero.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Linear function makes straight line.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Slope measures curve.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Y-intercept is starting value.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Coordinate plane is one-dimensional.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is the point where a line crosses the y-axis?", "choices": ["X-intercept", "Y-intercept", "Origin", "Endpoint"], "correct": 1, "expectedAny": ["y-intercept"] },
+    { "question": "What is straight line function?", "choices": ["Curved", "Linear function", "Circle", "Parabola"], "correct": 1, "expectedAny": ["linear function"] },
+    { "question": "What is steepness?", "choices": ["Y-intercept", "Slope", "X-intercept", "Point"], "correct": 1, "expectedAny": ["slope"] },
+    { "question": "What is two-dimensional plane?", "choices": ["Line", "Coordinate plane", "Point", "Curve"], "correct": 1, "expectedAny": ["coordinate plane"] },
+    { "question": "What is change relation?", "choices": ["Constant", "Rate of change", "Slope only", "Y-intercept"], "correct": 1, "expectedAny": ["rate of change"] },
+    { "question": "Slope is calculated as?", "choices": ["Run over rise", "Rise over run", "X over y", "Y times x"], "correct": 1, "expectedAny": ["rise over run"] },
+    { "question": "Linear function graph is?", "choices": ["Curved", "Straight line", "Circle", "Zigzag"], "correct": 1, "expectedAny": ["straight line"] },
+    { "question": "Y-intercept value when?", "choices": ["x = 1", "x = 0", "x = y", "x = 10"], "correct": 1, "expectedAny": ["x = 0"] },
+    { "question": "Coordinate plane has?", "choices": ["One axis", "Two axes", "Three axes", "No axes"], "correct": 1, "expectedAny": ["two axes"] },
+    { "question": "Slope shows?", "choices": ["Length", "Steepness", "Color", "Width"], "correct": 1, "expectedAny": ["steepness"] }
+  ],
+  "fillintheblank": [
+    { "question": "The steepness of a line is called its ________.", "expectedAny": ["slope"] },
+    { "question": "A ________ function makes straight line.", "expectedAny": ["linear"] },
+    { "question": "The ________-intercept is where line crosses y-axis.", "expectedAny": ["y"] },
+    { "question": "A ________ plane has x and y axes.", "expectedAny": ["coordinate"] },
+    { "question": "________ of change shows how quantities relate.", "expectedAny": ["rate"] },
+    { "question": "________ is rise over run.", "expectedAny": ["slope"] },
+    { "question": "________ function graph is straight.", "expectedAny": ["linear"] },
+    { "question": "Y-________ is y-axis crossing.", "expectedAny": ["intercept"] },
+    { "question": "________ plane is two-dimensional.", "expectedAny": ["coordinate"] },
+    { "question": "Rate of ________ relates quantities.", "expectedAny": ["change"] }
+  ],
+  "shortanswer": [
+    { "question": "What does the equation y = 2x + 3 tell you about the line?", "expectedAny": ["slope is 2, y-intercept is 3", "rises 2 units for each 1 unit right"] },
+    { "question": "What is linear function?", "expectedAny": ["function making straight line", "straight line graph"] },
+    { "question": "What is slope?", "expectedAny": ["line steepness", "rise over run", "rate of change", "how steep"] },
+    { "question": "What is y-intercept?", "expectedAny": ["where line crosses y-axis", "y-axis crossing", "b in y = mx + b", "starting value"] },
+    { "question": "In y = 3x + 1, what is slope?", "expectedAny": ["3", "slope is 3"] },
+    { "question": "What is coordinate plane?", "expectedAny": ["plane with x and y axes", "two-dimensional plane"] },
+    { "question": "What is rate of change?", "expectedAny": ["how quantities change together", "change relationship"] },
+    { "question": "In y = x + 4, what is y-intercept?", "expectedAny": ["4", "y-intercept is 4"] },
+    { "question": "How calculate slope?", "expectedAny": ["rise over run", "vertical change over horizontal"] },
+    { "question": "Is y = 2x + 1 linear?", "expectedAny": ["yes", "linear function"] }
+  ],
+  "wordProblems": [
+    { "question": "A line passes through points (0,4) and (2,10). What is the slope?", "expectedAny": ["3", "slope = 3"] },
+    { "question": "Water fills at 2 gallons per minute starting with 5 gallons. Write equation.", "expectedAny": ["y = 2x + 5", "2x + 5"] },
+    { "question": "Line has slope 4 and y-intercept 2. Write equation.", "expectedAny": ["y = 4x + 2", "4x + 2"] },
+    { "question": "Points (0,3) and (1,7) are on line. Find slope.", "expectedAny": ["4", "slope = 4"] },
+    { "question": "Car travels 60 mph starting 20 miles away. Write equation.", "expectedAny": ["y = 60x + 20", "60x + 20"] },
+    { "question": "Line passes through (0,1) and (3,7). Find slope.", "expectedAny": ["2", "slope = 2"] },
+    { "question": "Temperature rises 3° per hour from 50°. Write equation.", "expectedAny": ["y = 3x + 50", "3x + 50"] },
+    { "question": "Slope is 5, y-intercept is 0. Write equation.", "expectedAny": ["y = 5x", "5x"] },
+    { "question": "Line through (0,2) and (4,10). Find slope.", "expectedAny": ["2", "slope = 2"] },
+    { "question": "Plant grows 2 cm per day from 10 cm. Write equation.", "expectedAny": ["y = 2x + 10", "2x + 10"] }
+  ]
 }

@@ -21,6 +21,14 @@
       "definition": "A coin worth 25 cents"
     },
     {
+      "term": "dime",
+      "definition": "A coin worth 10 cents"
+    },
+    {
+      "term": "nickel",
+      "definition": "A coin worth 5 cents"
+    },
+    {
       "term": "dollar",
       "definition": "Paper money worth 100 cents"
     }
@@ -54,22 +62,22 @@
     {"question": "Which makes $1.00?", "choices": ["2 quarters + 5 dimes", "10 dimes", "4 quarters", "20 nickels"], "correct": 2}
   ],
   "fillintheblank": [
-    {"question": "Four quarters equal one ________.", "expectedAny": ["dollar", "$1", "100 cents", "one dollar"]},
-    {"question": "A dime is worth ________ cents.", "expectedAny": ["10"]},
-    {"question": "A nickel is worth ________ cents.", "expectedAny": ["5"]},
-    {"question": "Quarter past 3 is ________.", "expectedAny": ["3:15"]},
-    {"question": "Half past 9 is ________.", "expectedAny": ["9:30"]},
-    {"question": "Quarter to 6 is ________.", "expectedAny": ["5:45"]},
-    {"question": "There are ________ minutes in an hour.", "expectedAny": ["60"]}
+    {"question": "Four quarters equal one ________.", "expectedAny": ["dollar", "$1", "one dollar", "$1.00"]},
+    {"question": "A dime is worth ________ cents.", "expectedAny": ["10", "ten"]},
+    {"question": "A nickel is worth ________ cents.", "expectedAny": ["5", "five"]},
+    {"question": "Quarter past 3 is ________.", "expectedAny": ["3:15", "three fifteen"]},
+    {"question": "Half past 9 is ________.", "expectedAny": ["9:30", "nine thirty"]},
+    {"question": "Quarter to 6 is ________.", "expectedAny": ["5:45", "five forty-five"]},
+    {"question": "There are ________ minutes in an hour.", "expectedAny": ["60", "sixty"]}
   ],
   "shortanswer": [
     {"question": "What time will it be 30 minutes after 2:00?", "expectedAny": ["2:30", "two thirty", "half past two", "thirty minutes later"]},
-    {"question": "How can you count 8 dimes quickly?", "expectedAny": ["count by 10s to 80 cents"]},
-    {"question": "Explain how to find the value of 3 quarters and 1 dime.", "expectedAny": ["25+25+25+10 = 85 cents"]},
-    {"question": "How do you read 4:45 on an analog clock?", "expectedAny": ["quarter to five"]},
-    {"question": "If you have 2 quarters, 1 nickel, and 3 pennies, how much is that?", "expectedAny": ["58 cents"]},
-    {"question": "How would you make one dollar using only dimes?", "expectedAny": ["10 dimes"]},
-    {"question": "What is elapsed time from 1:10 to 1:40?", "expectedAny": ["30 minutes"]}
+    {"question": "How can you count 8 dimes quickly?", "expectedAny": ["by tens to reach 80", "ten each so 10+10+10+10+10+10+10+10", "groups of ten add to eighty"]},
+    {"question": "Explain how to find the value of 3 quarters and 1 dime.", "expectedAny": ["25+25+25+10 = 85", "three quarters plus one dime is 85", "seventy-five plus ten makes eighty-five"]},
+    {"question": "How do you read 4:45 on an analog clock?", "expectedAny": ["four forty-five", "quarter to five", "fifteen minutes to five"]},
+    {"question": "If you have 2 quarters, 1 nickel, and 3 pennies, how much is that?", "expectedAny": ["58 cents", "$0.58", "fifty-eight cents"]},
+    {"question": "How would you make one dollar using only dimes?", "expectedAny": ["10 dimes", "ten dimes", "$1.00 in dimes"]},
+    {"question": "What is elapsed time from 1:10 to 1:40?", "expectedAny": ["30 minutes", "half an hour", "thirty minutes"]}
   ],
   "wordProblems": [
     {"question": "Tommy has 3 quarters and 2 dimes. How much money does he have?", "expectedAny": ["95 cents", "95¢", "$0.95", "ninety-five cents"]},

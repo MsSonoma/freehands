@@ -26,48 +26,64 @@
     }
   ],
   "teachingNotes": "Use current examples from advertisements, news, and social media. Practice distinguishing facts from opinions. Discuss how media can influence thinking and behavior.",
-  "sample": {
-    "question": "What is the ability to analyze and evaluate different types of media called?",
-    "expectedAny": [
-      "media literacy",
-      "critical media skills",
-      "media analysis",
-      "digital literacy"
-    ]
-  },
-  "truefalse": {
-    "question": "A fact is something that can be proven true.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What is information designed to promote a particular viewpoint called?",
-    "expectedAny": [
-      "propaganda",
-      "biased information",
-      "persuasive media",
-      "promotional content"
-    ]
-  },
-  "fillintheblank": {
-    "question": "A preference that influences how information is presented is called ________.",
-    "expectedAny": [
-      "bias",
-      "prejudice",
-      "slant",
-      "perspective"
-    ]
-  },
-  "shortanswer": {
-    "question": "How can you tell the difference between a fact and an opinion?",
-    "expectedAny": [
-      "facts can be proven, opinions are beliefs",
-      "facts have evidence, opinions are personal",
-      "facts are verifiable, opinions are subjective"
-    ]
-  }
+  "sample": [
+    { "question": "What is the ability to analyze and evaluate different types of media called?", "expectedAny": ["media literacy", "critical media skills", "media analysis"] },
+    { "question": "Which is a fact?", "choices": ["Pizza is delicious.", "Water boils at 100°C.", "Summer is the best season.", "Blue is pretty."], "correct": 1, "expectedAny": ["water boils at 100°C"] },
+    { "question": "Information designed to promote a viewpoint is ________.", "expectedAny": ["propaganda"] },
+    { "question": "A preference that influences presentation is ________.", "expectedAny": ["bias"] },
+    { "question": "Which is an opinion?", "choices": ["The sky is blue.", "Dogs are mammals.", "Chocolate tastes best.", "Earth orbits the sun."], "correct": 2, "expectedAny": ["chocolate tastes best"] },
+    { "question": "Something that can be proven is a ________.", "expectedAny": ["fact"] },
+    { "question": "A personal belief is called an ________.", "expectedAny": ["opinion"] },
+    { "question": "Which shows bias?", "choices": ["The temperature is 70°F.", "This brand is obviously the best.", "It rained today.", "School starts at 8 AM."], "correct": 1, "expectedAny": ["this brand is obviously the best"] },
+    { "question": "Name one type of media.", "expectedAny": ["television", "internet", "newspaper", "radio", "social media"] },
+    { "question": "Why is media literacy important?", "expectedAny": ["to evaluate information", "to think critically", "to avoid manipulation"] }
+  ],
+  "truefalse": [
+    { "question": "A fact is something that can be proven true.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All media is completely unbiased.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "An opinion is a personal belief.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Propaganda always tells the complete truth.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Media literacy helps you think critically.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Facts can vary based on personal feelings.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Bias can affect how information is presented.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Everything you see on the internet is a fact.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Advertisements often use persuasive techniques.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Critical thinking means accepting everything you hear.", "expectedAny": ["false", "no", "f", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is information designed to promote a particular viewpoint called?", "choices": ["Fact", "Propaganda", "Science", "History"], "correct": 1, "expectedAny": ["propaganda"] },
+    { "question": "Which is a fact?", "choices": ["Dogs are the best pets.", "Ice cream is delicious.", "The sun is a star.", "Winter is fun."], "correct": 2, "expectedAny": ["the sun is a star"] },
+    { "question": "What does bias mean?", "choices": ["A proven fact", "A preference that influences", "A type of media", "A news story"], "correct": 1, "expectedAny": ["a preference that influences"] },
+    { "question": "Which is an opinion?", "choices": ["Mammals are warm-blooded.", "History is boring.", "Plants need sunlight.", "Water is wet."], "correct": 1, "expectedAny": ["history is boring"] },
+    { "question": "What skill helps you evaluate media?", "choices": ["Running", "Media literacy", "Cooking", "Drawing"], "correct": 1, "expectedAny": ["media literacy"] },
+    { "question": "Which shows propaganda?", "choices": ["Water freezes at 0°C.", "Our product is perfect for everyone!", "The meeting is at 3 PM.", "There are 12 months."], "correct": 1, "expectedAny": ["our product is perfect for everyone"] },
+    { "question": "What can be proven?", "choices": ["Opinions", "Beliefs", "Facts", "Preferences"], "correct": 2, "expectedAny": ["facts"] },
+    { "question": "Which is NOT a type of media?", "choices": ["Television", "Internet", "Pencil", "Radio"], "correct": 2, "expectedAny": ["pencil"] },
+    { "question": "Why check sources?", "choices": ["It's fun", "To verify accuracy", "To waste time", "To confuse yourself"], "correct": 1, "expectedAny": ["to verify accuracy"] },
+    { "question": "Which statement is biased?", "choices": ["The game ended 3-2.", "Our team is clearly superior.", "It rained yesterday.", "The book has 200 pages."], "correct": 1, "expectedAny": ["our team is clearly superior"] }
+  ],
+  "fillintheblank": [
+    { "question": "A preference that influences how information is presented is called ________.", "expectedAny": ["bias", "prejudice"] },
+    { "question": "Information that can be proven is a ________.", "expectedAny": ["fact"] },
+    { "question": "A personal belief is an ________.", "expectedAny": ["opinion"] },
+    { "question": "Information designed to persuade is ________.", "expectedAny": ["propaganda"] },
+  { "question": "The ability to evaluate media is ________ literacy.", "expectedAny": ["media", "media (media literacy)"] },
+  { "question": "________ thinking helps you analyze information.", "expectedAny": ["critical", "logical"] },
+  { "question": "Advertisements often contain ________ language.", "expectedAny": ["persuasive", "biased", "emotional"] },
+  { "question": "To verify information, check the ________.", "expectedAny": ["source", "author/source"] },
+    { "question": "News can have ________ that influences presentation.", "expectedAny": ["bias"] },
+    { "question": "Media ________ means understanding how media works.", "expectedAny": ["literacy"] }
+  ],
+  "shortanswer": [
+    { "question": "How can you tell the difference between a fact and an opinion?", "expectedAny": ["facts can be proven", "opinions are beliefs", "facts have evidence"] },
+    { "question": "Give an example of a fact about weather.", "expectedAny": ["it rained today", "the temperature is 70 degrees", "snow is frozen water"] },
+    { "question": "Give an example of an opinion about school.", "expectedAny": ["math is fun", "lunch is the best", "homework is hard"] },
+    { "question": "Why is it important to identify bias in media?", "expectedAny": ["to get accurate information", "to think critically", "to avoid manipulation"] },
+    { "question": "Name two types of media you use.", "expectedAny": ["internet and television", "social media and radio", "newspaper and websites"] },
+  { "question": "How can propaganda influence people?", "expectedAny": ["by persuading them", "by showing only one side", "by using emotional appeals", "by repeating messages"] },
+  { "question": "What should you do before believing information online?", "expectedAny": ["check the source", "verify facts", "look for evidence", "cross-check with reliable sites"] },
+    { "question": "Explain what media literacy means.", "expectedAny": ["ability to analyze media", "understanding how media works", "evaluating media critically"] },
+    { "question": "Give an example of bias in advertising.", "expectedAny": ["claiming a product is best", "showing only positive reviews", "exaggerating benefits"] },
+    { "question": "Why is critical thinking important for media?", "expectedAny": ["to evaluate information", "to avoid being misled", "to make informed decisions"] }
+  ]
 }

@@ -23,31 +23,83 @@
     {
       "term": "origin",
       "definition": "The point (0, 0) where the x-axis and y-axis meet"
+    },
+    {
+      "term": "quadrant",
+      "definition": "One of the four sections of the coordinate plane divided by the x- and y-axes"
     }
   ],
   "teachingNotes": "Start with simple positive coordinates. Teach that the first number goes right/left and the second number goes up/down. Practice plotting points and reading coordinates.",
-  "sample": {
-    "question": "What ordered pair represents the origin?",
-    "expectedAny": ["(0, 0)", "0, 0", "zero, zero", "origin is (0,0)"]
-  },
-  "truefalse": {
-    "question": "In the ordered pair (3, 5), the 3 tells you to move 3 units to the right.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "Which axis is horizontal?",
-    "expectedAny": ["x-axis", "x axis", "horizontal axis", "the x-axis"]
-  },
-  "fillintheblank": {
-    "question": "To plot the point (4, 2), move 4 units right and ________ units up.",
-    "expectedAny": ["2", "two", "2 units", "two units"]
-  },
-  "shortanswer": {
-    "question": "What are the coordinates of a point that is 3 units right and 1 unit up from the origin?",
-    "expectedAny": ["(3, 1)", "3, 1", "three, one", "(3,1)"]
-  },
-  "wordProblems": {
-    "question": "On a treasure map, the treasure is located at coordinates (5, 4). If you start at the origin, how do you get there?",
-    "expectedAny": ["move 5 right and 4 up", "go 5 units right, 4 units up", "right 5, up 4", "5 right, 4 up"]
-  }
+  "sample": [
+    { "question": "What ordered pair represents the origin?", "expectedAny": ["(0, 0)", "0, 0", "zero, zero", "origin is (0,0)"] },
+    { "question": "In (x, y), which coordinate tells you how far to move up or down?", "expectedAny": ["y", "y-coordinate"] },
+    { "question": "Which axis is horizontal?", "expectedAny": ["x-axis", "x axis"] },
+    { "question": "Plot (4, 2): move 4 right and ________ up.", "expectedAny": ["2", "two"] },
+    { "question": "The point (0, 5) is on which axis?", "expectedAny": ["y-axis", "y axis"] },
+    { "question": "What ordered pair is 6 right and 3 up?", "expectedAny": ["(6, 3)", "6, 3"] },
+    { "question": "The point (7, 0) lies on the ________ axis.", "expectedAny": ["x", "x-axis"] },
+    { "question": "Moving left decreases the ________ value.", "expectedAny": ["x"] },
+    { "question": "Moving up increases the ________ value.", "expectedAny": ["y"] },
+    { "question": "A point at (2, 2) is in which quadrant when only positive axes are used?", "expectedAny": ["first", "Quadrant I", "I"] }
+  ],
+  "truefalse": [
+    { "question": "In the ordered pair (3, 5), the 3 tells you to move 3 units to the right.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "(0, 0) is called the origin.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The y-axis is horizontal.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "The first number in (x, y) tells left-right movement.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The point (0, 4) lies on the x-axis.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Moving down decreases the y-value.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The point (5, 0) lies on the y-axis.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "(2, 3) and (3, 2) are the same point.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "A point at (7, 0) is on the x-axis.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The origin is where the axes meet.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which axis is horizontal?", "choices": ["x-axis", "y-axis", "z-axis", "none"], "correct": 0, "expectedAny": ["x-axis", "x axis", "horizontal axis", "the x-axis"] },
+    { "question": "What are the coordinates 3 right and 4 up?", "choices": ["(4, 3)", "(3, 4)", "(−3, 4)", "(3, −4)"], "correct": 1, "expectedAny": ["(3, 4)"] },
+    { "question": "Which point is on the y-axis?", "choices": ["(0, 6)", "(6, 0)", "(2, 2)", "(1, 0)"], "correct": 0, "expectedAny": ["(0, 6)"] },
+    { "question": "Which point is on the x-axis?", "choices": ["(0, 5)", "(4, 0)", "(2, 3)", "(0, 0)"], "correct": 1, "expectedAny": ["(4, 0)"] },
+    { "question": "Which point is 1 left and 2 up from (3, 2)?", "choices": ["(2, 4)", "(4, 4)", "(2, 3)", "(1, 2)"], "correct": 2, "expectedAny": ["(2, 3)"] },
+    { "question": "Which point has y = 0?", "choices": ["(0, 3)", "(5, 0)", "(0, 0)", "(3, 5)"], "correct": 1, "expectedAny": ["y = 0 on x-axis"] },
+    { "question": "Which ordered pair represents 2 right and 0 up?", "choices": ["(0, 2)", "(2, 0)", "(−2, 0)", "(2, −2)"], "correct": 1, "expectedAny": ["(2, 0)"] },
+    { "question": "If a point moves from (1, 2) to (1, 5), what changed?", "choices": ["x increased", "y increased", "x decreased", "y decreased"], "correct": 1, "expectedAny": ["y increased"] },
+    { "question": "Which point is 0 right and 7 up?", "choices": ["(7, 0)", "(0, 7)", "(−7, 0)", "(7, 7)"], "correct": 1, "expectedAny": ["(0, 7)"] },
+    { "question": "Which point lies at the origin?", "choices": ["(1, 1)", "(0, 1)", "(0, 0)", "(1, 0)"], "correct": 2, "expectedAny": ["(0, 0)"] }
+  ],
+  "fillintheblank": [
+    { "question": "To plot the point (4, 2), move 4 units right and ________ units up.", "expectedAny": ["2", "two", "2 units", "two units", "up two"] },
+    { "question": "In (x, y), the first number is the ________-coordinate.", "expectedAny": ["x", "x-coordinate", "x coordinate", "x value"] },
+    { "question": "The vertical axis is the ________ axis.", "expectedAny": ["y-axis", "y axis", "y", "vertical axis"] },
+    { "question": "A point on the x-axis has a ________ value of 0.", "expectedAny": ["y", "y-coordinate", "y coordinate", "y value"] },
+    { "question": "A point on the y-axis has an ________ value of 0.", "expectedAny": ["x", "x-coordinate", "x coordinate", "x value"] },
+    { "question": "Moving left decreases the ________ value.", "expectedAny": ["x", "x-coordinate", "x coordinate", "x value"] },
+    { "question": "Moving down decreases the ________ value.", "expectedAny": ["y", "y-coordinate", "y coordinate", "y value"] },
+    { "question": "The point (0, 0) is called the ________.", "expectedAny": ["origin", "the origin", "zero, zero", "point zero zero"] },
+    { "question": "(5, 0) lies on the ________ axis.", "expectedAny": ["x", "x-axis", "x axis", "horizontal"] },
+    { "question": "(0, 9) lies on the ________ axis.", "expectedAny": ["y", "y-axis", "y axis", "vertical"] }
+  ],
+  "shortanswer": [
+    { "question": "What are the coordinates of a point that is 3 units right and 1 unit up from the origin?", "expectedAny": ["(3, 1)", "3, 1", "three, one", "(3,1)", "x three, y one"] },
+    { "question": "Explain how to plot (2, 5).", "expectedAny": ["move 2 right, 5 up", "x then y", "first x then y", "go right two, up five"] },
+    { "question": "Describe the difference between x and y coordinates.", "expectedAny": ["x left/right", "y up/down", "x is horizontal; y is vertical", "x is side to side; y is up and down"] },
+    { "question": "Give a real-life example of using a coordinate plane.", "expectedAny": ["map", "graph", "grid", "seating chart", "battleship game"] },
+    { "question": "What point is 4 left and 2 up from (3, 3)?", "expectedAny": ["(−1, 5)", "(-1, 5)", "negative one comma five", "x = -1, y = 5"] },
+    { "question": "How can you tell if a point is on an axis?", "expectedAny": ["one coordinate is 0", "x=0 or y=0", "has a zero coordinate", "x is zero or y is zero"] },
+    { "question": "Where is (0, 6) located?", "expectedAny": ["on y-axis", "on the y-axis", "y axis", "on the vertical axis"] },
+    { "question": "Give the coordinates of a point 0 right and 0 up.", "expectedAny": ["(0, 0)", "origin", "zero, zero", "zero zero"] },
+    { "question": "Explain why (2, 3) ≠ (3, 2).", "expectedAny": ["order matters", "different x and y", "swapping changes location", "switching the numbers changes the point"] },
+    { "question": "Which axis does (8, 0) lie on?", "expectedAny": ["x-axis", "x axis", "the x-axis", "x"] }
+  ],
+  "wordProblems": [
+    { "question": "On a treasure map, the treasure is located at coordinates (5, 4). If you start at the origin, how do you get there?", "expectedAny": ["move 5 right and 4 up", "go 5 units right, 4 units up", "right 5, up 4", "5 right, 4 up"] },
+    { "question": "A point marks a tree at (7, 1). Starting from (2, 1), how do you reach the tree?", "expectedAny": ["move 5 right", "right 5"] },
+    { "question": "A robot starts at (0, 0). It moves to (3, 2), then to (3, 5). What changed between the last two points?", "expectedAny": ["y increased by 3", "went up 3"] },
+    { "question": "On a grid, a house is at (4, 0). Is it on an axis? Which one?", "expectedAny": ["x-axis"] },
+    { "question": "A playground is at (0, 6). Is it on an axis? Which one?", "expectedAny": ["y-axis"] },
+    { "question": "Starting at (2, 3), how do you get to (5, 3)?", "expectedAny": ["move 3 right"] },
+    { "question": "A store is at (6, 4). From (6, 1), how do you get there?", "expectedAny": ["move 3 up"] },
+    { "question": "From (1, 1), to reach (0, 1) you move ________.", "expectedAny": ["left 1"] },
+    { "question": "From (2, 5) to (2, 2), what changed?", "expectedAny": ["y decreased by 3", "down 3"] },
+    { "question": "A map uses a grid. A park is at (0, 0). Where is it?", "expectedAny": ["origin"] }
+  ]
 }

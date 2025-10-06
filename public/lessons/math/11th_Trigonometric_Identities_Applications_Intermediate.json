@@ -1,53 +1,86 @@
-{
+﻿{
   "id": "11th_Trigonometric_Identities_Applications_Intermediate",
   "title": "Trigonometric Identities and Applications",
   "grade": "11th",
   "difficulty": "Intermediate",
   "vocab": [
-    {
-      "term": "sum formula",
-      "definition": "Identity for trigonometric function of sum of two angles"
-    },
-    {
-      "term": "difference formula",
-      "definition": "Identity for trigonometric function of difference of two angles"
-    },
-    {
-      "term": "double angle formula",
-      "definition": "Identity for trigonometric function of twice an angle"
-    },
-    {
-      "term": "half angle formula",
-      "definition": "Identity for trigonometric function of half an angle"
-    },
-    {
-      "term": "product-to-sum formula",
-      "definition": "Identity converting product of trigonometric functions to sum"
-    }
+    {"term": "Pythagorean identity", "definition": "sinθ + cosθ = 1 and related forms"},
+    {"term": "double-angle formula", "definition": "Expresses trig function of 2θ in terms of θ"},
+    {"term": "sum and difference formulas", "definition": "Express trig of (α  β) in terms of separate angles"},
+    {"term": "trigonometric equation", "definition": "Equation involving trigonometric functions to solve"},
+    {"term": "angle of elevation", "definition": "Angle above horizontal when looking up"}
   ],
-  "teachingNotes": "Practice deriving and applying compound angle formulas. Connect to real-world applications.",
-  "sample": {
-    "question": "What is an identity for trigonometric function of sum of angles?",
-    "expectedAny": ["sum formula", "addition formula", "angle sum identity", "compound angle formula"]
-  },
-  "truefalse": {
-    "question": "Double angle formulas involve trigonometric functions of twice an angle.",
-    "expectedAny": ["true", "yes", "t", "correct"]
-  },
-  "multiplechoice": {
-    "question": "What converts products of trig functions to sums?",
-    "expectedAny": ["product-to-sum formula", "product formula", "multiplication identity", "product identity"]
-  },
-  "fillintheblank": {
-    "question": "An identity for trig function of half an angle is a ________ angle formula.",
-    "expectedAny": ["half", "half-angle", "bisection", "semi-angle"]
-  },
-  "shortanswer": {
-    "question": "What is the cosine sum formula?",
-    "expectedAny": ["cos(A + B) = cos A cos B - sin A sin B", "cos(α + β) = cos α cos β - sin α sin β"]
-  },
-  "wordProblems": {
-    "question": "If cos 15° = cos(45° - 30°), what is the exact value using difference formula?",
-    "expectedAny": ["(√6 + √2)/4", "(√6+√2)/4", "quarter root six plus root two", "0.9659"]
-  }
+  "teachingNotes": "Focus on applying identities to simplify and solve. Practice real-world applications.",
+  "sample": [
+    {"question": "What identity relates sinθ and cosθ?", "expectedAny": ["Pythagorean identity", "Pythagorean theorem for trig", "sinθ + cosθ = 1", "fundamental identity"]},
+    {"question": "What formula expresses sin(2θ)?", "expectedAny": ["double-angle formula", "double angle identity", "2sinθcosθ", "sine double angle"]},
+    {"question": "What formulas handle sin(α + β)?", "expectedAny": ["sum and difference formulas", "angle sum formulas", "addition formulas", "compound angle formulas"]},
+    {"question": "What equation contains trig functions?", "expectedAny": ["trigonometric equation", "trig equation", "equation with sine or cosine", "angular equation"]},
+    {"question": "What angle looks upward from horizontal?", "expectedAny": ["angle of elevation", "elevation angle", "upward angle", "vertical angle"]},
+    {"question": "What does sinθ + cosθ equal?", "expectedAny": ["1", "one", "unity", "identity equals 1"]},
+    {"question": "What is cos(2θ) in terms of cosθ?", "expectedAny": ["2cosθ - 1", "double angle formula", "cosine double angle", "two cos squared minus one"]},
+    {"question": "What helps find sin(75) using 45 and 30?", "expectedAny": ["sum formula", "angle addition", "sum and difference formulas", "angle sum identity"]},
+    {"question": "What requires solving for the angle?", "expectedAny": ["trigonometric equation", "trig equation", "angular equation", "equation in θ"]},
+    {"question": "What measures looking up at an object?", "expectedAny": ["angle of elevation", "elevation angle", "upward viewing angle", "height angle"]}
+  ],
+  "truefalse": [
+    {"question": "The Pythagorean identity is sinθ + cosθ = 1.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Double-angle formulas only work for sine.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Sum formulas help find exact values.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Angle of elevation is measured below horizontal.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Trigonometric equations can have multiple solutions.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "sin(2θ) = 2sinθ.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "cosθ = 1 - sinθ from Pythagorean identity.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Sum formulas and difference formulas are unrelated.", "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Identities can simplify complex expressions.", "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "All trig equations have exactly one solution.", "expectedAny": ["false", "no", "f", "incorrect"]}
+  ],
+  "multiplechoice": [
+    {"question": "What is sinθ + cosθ?", "choices": ["0", "1", "2", "π"], "correct": "1"},
+    {"question": "What is sin(2θ)?", "choices": ["2sinθ", "sinθ", "2sinθcosθ", "sinθ + cosθ"], "correct": "2sinθcosθ"},
+    {"question": "What is cos(2θ)?", "choices": ["2cosθ", "cosθ - sinθ", "cosθ", "2cosθ"], "correct": "cosθ - sinθ"},
+    {"question": "Which helps find sin(α + β)?", "choices": ["Pythagorean", "Double-angle", "Sum formula", "Half-angle"], "correct": "Sum formula"},
+    {"question": "Angle of elevation is measured from?", "choices": ["Vertical", "Horizontal", "Object", "Ground"], "correct": "Horizontal"},
+    {"question": "What is 1 - cosθ?", "choices": ["sinθ", "cosθ", "tanθ", "1"], "correct": "sinθ"},
+    {"question": "What is tanθ + 1?", "choices": ["sinθ", "cosθ", "secθ", "cscθ"], "correct": "secθ"},
+    {"question": "If sinθ = 0.6 and θ is acute, what is cosθ?", "choices": ["0.4", "0.6", "0.8", "1"], "correct": "0.8"},
+    {"question": "What solves 2sinθ = 1?", "choices": ["30 or 150", "45 or 135", "60 or 120", "0 or 180"], "correct": "30 or 150"},
+    {"question": "Which identity involves tan and sec?", "choices": ["sin + cos = 1", "tan + 1 = sec", "sin(2θ)", "cos(α + β)"], "correct": "tan + 1 = sec"}
+  ],
+  "fillintheblank": [
+    {"question": "The _____ identity states sinθ + cosθ = 1.", "expectedAny": ["Pythagorean", "fundamental", "basic", "Pythagorean identity", "sine cosine", "trig fundamental"]},
+    {"question": "The _____-angle formula expresses sin(2θ).", "expectedAny": ["double", "dual", "twice", "double angle", "two angle", "2 angle"]},
+    {"question": "_____ formulas handle sin(α + β).", "expectedAny": ["sum", "addition", "angle sum", "sum formulas", "angle addition", "trig sum"]},
+    {"question": "A _____ equation contains sine or cosine.", "expectedAny": ["trigonometric", "trig", "angular", "trigonometric equation", "trig equation", "sine cosine"]},
+    {"question": "Angle of _____ measures upward from horizontal.", "expectedAny": ["elevation", "height", "ascent", "elevation angle", "upward angle", "inclination"]},
+    {"question": "sin(2θ) = 2sinθ_____.", "expectedAny": ["cosθ", "cos θ", "times cosθ"]},
+    {"question": "cos(2θ) = cosθ - _____.", "expectedAny": ["sinθ", "sin squared θ", "sine squared θ"]},
+    {"question": "If sinθ = 0.36, then cosθ = _____.", "expectedAny": ["0.64", ".64", "64 percent"]},
+    {"question": "tanθ + 1 = _____.", "expectedAny": ["secθ", "secant squared θ", "sec squared θ"]},
+    {"question": "Looking up from ground creates angle of _____.", "expectedAny": ["elevation", "sight", "view"]}
+  ],
+  "shortanswer": [
+    {"question": "State the Pythagorean identity and explain its importance.", "expectedAny": ["sinθ + cosθ = 1 which relates sine and cosine fundamentally", "fundamental relationship between sine and cosine always equals 1", "connects the two main trig functions in essential way"]},
+    {"question": "Derive cos(2θ) using the Pythagorean identity.", "expectedAny": ["start with cosθ - sinθ then substitute sinθ = 1 - cosθ to get 2cosθ - 1", "cosθ - sinθ equals cosθ - (1 - cosθ) equals 2cosθ - 1", "use identity to replace sinθ and simplify"]},
+    {"question": "Explain how to use sum formulas to find sin(75).", "expectedAny": ["sin(75) = sin(45 + 30) = sin45cos30 + cos45sin30", "use 45 and 30 degree angles with sum formula", "break into 45 plus 30 and apply angle addition formula"]},
+    {"question": "Solve 2sinθ = 3 for 0  θ  360.", "expectedAny": ["sinθ = 3/2 so θ = 60 or 120", "60 degrees and 120 degrees", "first and second quadrants where sine equals root 3 over 2"]},
+    {"question": "Why can trigonometric equations have multiple solutions?", "expectedAny": ["trig functions are periodic so values repeat", "sine and cosine repeat every 360 degrees", "multiple angles can give same trig value due to periodicity"]},
+    {"question": "Use Pythagorean identity to find cosθ if sinθ = 0.6.", "expectedAny": ["cosθ = 1 - sinθ = 1 - 0.36 = 0.64 so cosθ = 0.8", "cosθ equals plus or minus 0.8", "0.8 or -0.8 depending on quadrant"]},
+    {"question": "What is the relationship between angle of elevation and depression?", "expectedAny": ["they are alternate interior angles so they are equal", "equal angles from parallel horizontal lines", "same measure from different viewpoints"]},
+    {"question": "Simplify sinθ/(1 - cosθ) using identities.", "expectedAny": ["use sinθ = 1 - cosθ = (1 - cosθ)(1 + cosθ) to get 1 + cosθ", "factor numerator to cancel denominator giving 1 + cosθ", "equals 1 plus cosθ after canceling"]},
+    {"question": "Express tan(2θ) in terms of tanθ.", "expectedAny": ["tan(2θ) = 2tanθ/(1 - tanθ)", "two tanθ divided by 1 minus tanθ", "double angle formula for tangent"]},
+    {"question": "How do identities help verify equations?", "expectedAny": ["transform one side to match the other using known identities", "substitute equivalent expressions to prove equality", "manipulate using identities until both sides are same"]}
+  ],
+  "wordProblems": [
+    {"question": "A ladder reaches 20 feet up a wall at a 75 angle with the ground. How long is the ladder?", "expectedAny": ["about 20.7 feet", "20/sin(75)", "approximately 21 feet"]},
+    {"question": "From 100 feet away, you see a building top at 40 elevation. How tall is the building?", "expectedAny": ["about 84 feet", "100tan(40)", "approximately 84 feet tall"]},
+    {"question": "Verify the identity: sinθ/(1 + cosθ) = 1 - cosθ.", "expectedAny": ["multiply by (1 - cosθ)/(1 - cosθ) and use sinθ = 1 - cosθ", "use difference of squares to simplify", "proven using Pythagorean identity"]},
+    {"question": "Solve cos(2θ) = 0.5 for 0  θ  180.", "expectedAny": ["2θ = 60 so θ = 30", "θ equals 30 degrees", "30 is the solution"]},
+    {"question": "A 50-foot wire supports a pole at 60 from horizontal. How high does it attach?", "expectedAny": ["about 43.3 feet", "50sin(60)", "approximately 43 feet high"]},
+    {"question": "Use double-angle formula to find sin(60) knowing sin(30) = 0.5 and cos(30) = 3/2.", "expectedAny": ["sin(60) = 2sin(30)cos(30) = 2(0.5)(3/2) = 3/2", "equals root 3 over 2", "approximately 0.866"]},
+    {"question": "A ramp rises 5 feet over 20 feet horizontal distance. What is the angle of elevation?", "expectedAny": ["about 14", "arctan(5/20)", "approximately 14 degrees"]},
+    {"question": "Simplify (sinθ + cosθ) using identities.", "expectedAny": ["sinθ + 2sinθcosθ + cosθ = 1 + 2sinθcosθ = 1 + sin(2θ)", "equals 1 plus sin(2θ)", "1 + 2sinθcosθ"]},
+    {"question": "Two observers 1 mile apart see a balloon at 45 and 60 elevation. Estimate its height.", "expectedAny": ["about 0.73 miles or 3850 feet", "uses tangent from both positions", "approximately 3850 feet"]},
+    {"question": "If sinθ = 3cosθ, find tanθ.", "expectedAny": ["tanθ = 3", "plus or minus root 3", "approximately 1.732"]}
+  ]
 }

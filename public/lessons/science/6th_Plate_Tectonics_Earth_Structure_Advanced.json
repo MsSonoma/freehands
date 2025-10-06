@@ -26,49 +26,64 @@
     }
   ],
   "teachingNotes": "Use maps showing plate boundaries and real examples of earthquakes and volcanoes. Discuss evidence for continental drift including fossils and rock formations.",
-  "sample": {
-    "question": "What is the theory that explains how continents move over time?",
-    "expectedAny": [
-      "plate tectonics",
-      "continental drift",
-      "tectonic plate theory",
-      "plate tectonic theory"
-    ]
-  },
-  "truefalse": {
-    "question": "Earth's outer shell is made of moving pieces called tectonic plates.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Where do most earthquakes occur?",
-    "expectedAny": [
-      "plate boundaries",
-      "where plates meet",
-      "along tectonic plates",
-      "plate edges"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The thick layer of hot rock beneath Earth's crust is called the ________.",
-    "expectedAny": [
-      "mantle",
-      "Earth's mantle",
-      "mantle layer",
-      "hot mantle"
-    ]
-  },
-  "shortanswer": {
-    "question": "What evidence supports the theory of continental drift?",
-    "expectedAny": [
-      "matching fossils on different continents",
-      "similar rock formations",
-      "puzzle-like continent shapes",
-      "fossil evidence"
-    ]
-  }
+  "sample": [
+    { "question": "What is the theory that explains how continents move over time?", "expectedAny": ["plate tectonics", "continental drift"] },
+    { "question": "Which causes sudden shaking?", "choices": ["Wind", "Earthquake", "Rain", "Sun"], "correct": 1, "expectedAny": ["earthquake"] },
+    { "question": "Slow continent movement is ________.", "expectedAny": ["continental drift"] },
+    { "question": "An opening for molten rock is a ________.", "expectedAny": ["volcano"] },
+    { "question": "Hot rock beneath the crust is the ________.", "expectedAny": ["mantle"] },
+    { "question": "What are Earth's moving pieces?", "choices": ["Mountains", "Plates", "Oceans", "Clouds"], "correct": 1, "expectedAny": ["plates", "tectonic plates"] },
+    { "question": "Ground shaking is an ________.", "expectedAny": ["earthquake"] },
+    { "question": "Plates move in ________.", "expectedAny": ["plate tectonics"] },
+    { "question": "Where does lava come from?", "choices": ["Ocean", "Sky", "Volcano", "River"], "correct": 2, "expectedAny": ["volcano"] },
+    { "question": "The layer below the crust is the ________.", "expectedAny": ["mantle"] }
+  ],
+  "truefalse": [
+    { "question": "Earth's outer shell is made of moving pieces called tectonic plates.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Continents have never moved.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Earthquakes happen when plates move.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Volcanoes are openings in Earth's surface.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The mantle is cold.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Continental drift takes millions of years.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "Plates never move.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Earthquakes can cause ground shaking.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "The mantle is above the crust.", "expectedAny": ["false", "no", "f", "incorrect"] },
+    { "question": "Plate tectonics explains continent movement.", "expectedAny": ["true", "yes", "t", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "Where do most earthquakes occur?", "choices": ["City centers", "Plate boundaries", "Oceans only", "Deserts"], "correct": 1, "expectedAny": ["plate boundaries"] },
+    { "question": "What is beneath Earth's crust?", "choices": ["Water", "Air", "Mantle", "Space"], "correct": 2, "expectedAny": ["mantle"] },
+    { "question": "What theory explains moving continents?", "choices": ["Weather", "Plate tectonics", "Gravity", "Magnetism"], "correct": 1, "expectedAny": ["plate tectonics"] },
+    { "question": "Where does lava erupt?", "choices": ["Ocean", "Volcano", "River", "Lake"], "correct": 1, "expectedAny": ["volcano"] },
+    { "question": "What causes earthquakes?", "choices": ["Rain", "Wind", "Plate movement", "Snow"], "correct": 2, "expectedAny": ["plate movement"] },
+    { "question": "What is continental drift?", "choices": ["Ocean waves", "Moving continents", "Wind patterns", "Cloud movement"], "correct": 1, "expectedAny": ["moving continents"] },
+    { "question": "What is hot rock below crust?", "choices": ["Ocean", "Atmosphere", "Mantle", "Space"], "correct": 2, "expectedAny": ["mantle"] },
+    { "question": "What are tectonic plates?", "choices": ["Clouds", "Earth's moving pieces", "Oceans", "Mountains"], "correct": 1, "expectedAny": ["Earth's moving pieces", "moving pieces"] },
+    { "question": "What can cause ground shaking?", "choices": ["Earthquake", "Rain", "Sun", "Moon"], "correct": 0, "expectedAny": ["earthquake"] },
+    { "question": "Where is molten rock?", "choices": ["Sky", "Ocean", "Volcano", "Cloud"], "correct": 2, "expectedAny": ["volcano"] }
+  ],
+  "fillintheblank": [
+    { "question": "The thick layer of hot rock beneath Earth's crust is called the ________.", "expectedAny": ["mantle"] },
+    { "question": "The theory of moving plates is ________.", "expectedAny": ["plate tectonics"] },
+    { "question": "Slow continent movement is ________.", "expectedAny": ["continental drift"] },
+    { "question": "Sudden ground shaking is an ________.", "expectedAny": ["earthquake"] },
+    { "question": "An opening for molten rock is a ________.", "expectedAny": ["volcano"] },
+    { "question": "Earth's outer shell has moving ________.", "expectedAny": ["plates", "tectonic plates"] },
+    { "question": "The ________ is beneath the crust.", "expectedAny": ["mantle"] },
+    { "question": "________ happen at plate boundaries.", "expectedAny": ["earthquakes"] },
+    { "question": "Plates moving explains ________.", "expectedAny": ["continental drift", "earthquakes", "volcanoes"] },
+    { "question": "Molten rock erupts from a ________.", "expectedAny": ["volcano"] }
+  ],
+  "shortanswer": [
+    { "question": "What evidence supports the theory of continental drift?", "expectedAny": ["matching fossils", "similar rock formations", "continent shapes"] },
+    { "question": "What is plate tectonics?", "expectedAny": ["theory of moving plates", "explains continent movement"] },
+    { "question": "What is an earthquake?", "expectedAny": ["ground shaking from plate movement", "sudden shaking"] },
+    { "question": "What is a volcano?", "expectedAny": ["opening for molten rock", "where lava erupts"] },
+    { "question": "What is the mantle?", "expectedAny": ["hot rock layer below crust", "thick hot rock layer"] },
+    { "question": "Why do plates move?", "expectedAny": ["heat from mantle", "convection currents", "mantle movement"] },
+    { "question": "Where do earthquakes happen most?", "expectedAny": ["plate boundaries", "where plates meet"] },
+    { "question": "What is continental drift?", "expectedAny": ["slow continent movement", "continents moving over time"] },
+    { "question": "How do fossils support continental drift?", "expectedAny": ["same fossils on different continents", "matching fossils"] },
+    { "question": "What comes from volcanoes?", "expectedAny": ["lava", "molten rock", "magma"] }
+  ]
 }

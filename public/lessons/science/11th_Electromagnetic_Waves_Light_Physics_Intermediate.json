@@ -1,74 +1,471 @@
-{
-  "id": "11th_Electromagnetic_Waves_Light_Physics_Intermediate",
-  "title": "Electromagnetic Waves and Light Physics",
-  "grade": "11th",
-  "difficulty": "Intermediate",
-  "vocab": [
-    {
-      "term": "wave-particle duality",
-      "definition": "Property of matter and energy exhibiting both wave and particle characteristics"
-    },
-    {
-      "term": "interference",
-      "definition": "Combination of waves resulting in reinforcement or cancellation"
-    },
-    {
-      "term": "diffraction",
-      "definition": "Bending of waves around obstacles or through openings"
-    },
-    {
-      "term": "polarization",
-      "definition": "Orientation of electromagnetic wave oscillations in specific directions"
-    },
-    {
-      "term": "Doppler effect",
-      "definition": "Change in wave frequency due to relative motion between source and observer"
-    }
-  ],
-  "teachingNotes": "Demonstrate wave phenomena through experiments. Discuss applications in technology and astronomy.",
-  "sample": {
-    "question": "What property shows both wave and particle characteristics?",
-    "expectedAny": [
-      "wave-particle duality",
-      "dual nature",
-      "wave-particle property",
-      "quantum duality"
-    ]
-  },
-  "truefalse": {
-    "question": "Diffraction involves waves bending around obstacles.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What causes frequency changes due to relative motion?",
-    "expectedAny": [
-      "Doppler effect",
-      "frequency shift",
-      "motion effect",
-      "relative motion phenomenon"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The orientation of electromagnetic oscillations is called ________.",
-    "expectedAny": [
-      "polarization",
-      "wave orientation",
-      "oscillation direction",
-      "field alignment"
-    ]
-  },
-  "shortanswer": {
-    "question": "How does interference create wave patterns?",
-    "expectedAny": [
-      "constructive interference",
-      "destructive interference",
-      "wave combination",
-      "amplitude changes"
-    ]
-  }
+﻿{
+    "id":  "11th_Electromagnetic_Waves_Light_Physics_Intermediate",
+    "title":  "Electromagnetic Waves and Light Physics",
+    "grade":  "11th",
+    "difficulty":  "Intermediate",
+    "vocab":  [
+                  {
+                      "term":  "polarization",
+                      "definition":  "Orientation of oscillating electric field in EM wave"
+                  },
+                  {
+                      "term":  "diffraction",
+                      "definition":  "Bending of waves around obstacles or through openings"
+                  },
+                  {
+                      "term":  "interference",
+                      "definition":  "Superposition of waves creating patterns of constructive and destructive regions"
+                  },
+                  {
+                      "term":  "Doppler effect",
+                      "definition":  "Change in observed frequency due to relative motion"
+                  },
+                  {
+                      "term":  "refraction",
+                      "definition":  "Bending of wave when changing medium due to speed change"
+                  }
+              ],
+    "teachingNotes":  "Demonstrate wave phenomena with experiments. Connect to real applications like polarized sunglasses and radar.",
+    "sample":  [
+                   {
+                       "question":  "What is electric field orientation?",
+                       "expectedAny":  [
+                                           "polarization",
+                                           "wave polarization",
+                                           "field direction",
+                                           "field orientation",
+                                           "light polarization",
+                                           "polarized light"
+                                       ]
+                   },
+                   {
+                       "question":  "What is wave bending around obstacles?",
+                       "expectedAny":  [
+                                           "diffraction",
+                                           "wave diffraction",
+                                           "bending",
+                                           "wave bending",
+                                           "spreading around obstacles",
+                                           "obstacle bending"
+                                       ]
+                   },
+                   {
+                       "question":  "What creates constructive and destructive patterns?",
+                       "expectedAny":  [
+                                           "interference",
+                                           "wave interference",
+                                           "superposition",
+                                           "wave superposition",
+                                           "interference pattern",
+                                           "wave combination"
+                                       ]
+                   },
+                   {
+                       "question":  "What changes frequency with motion?",
+                       "expectedAny":  [
+                                           "Doppler effect",
+                                           "Doppler shift",
+                                           "frequency shift"
+                                       ]
+                   },
+                   {
+                       "question":  "What bends waves changing medium?",
+                       "expectedAny":  [
+                                           "refraction",
+                                           "wave refraction",
+                                           "bending"
+                                       ]
+                   },
+                   {
+                       "question":  "What blocks certain oscillations?",
+                       "expectedAny":  [
+                                           "polarization",
+                                           "polarizer",
+                                           "polarizing filter"
+                                       ]
+                   },
+                   {
+                       "question":  "What spreads waves through opening?",
+                       "expectedAny":  [
+                                           "diffraction",
+                                           "wave spreading",
+                                           "bending"
+                                       ]
+                   },
+                   {
+                       "question":  "What adds wave amplitudes?",
+                       "expectedAny":  [
+                                           "interference",
+                                           "superposition",
+                                           "wave combination"
+                                       ]
+                   },
+                   {
+                       "question":  "What causes red shift?",
+                       "expectedAny":  [
+                                           "Doppler effect",
+                                           "motion away",
+                                           "recession"
+                                       ]
+                   },
+                   {
+                       "question":  "What changes wave direction?",
+                       "expectedAny":  [
+                                           "refraction",
+                                           "medium change",
+                                           "speed change"
+                                       ]
+                   }
+               ],
+    "truefalse":  [
+                      {
+                          "question":  "Polarization restricts oscillation direction.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Diffraction only occurs with sound.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Constructive interference increases amplitude.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Doppler effect requires medium.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Refraction changes wave speed.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Only transverse waves can be polarized.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Diffraction increases with wavelength.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Destructive interference creates larger waves.",
+                          "expectedAny":  [
+                                              "false",
+                                              "no",
+                                              "f",
+                                              "incorrect"
+                                          ]
+                      },
+                      {
+                          "question":  "Blue shift means approaching source.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      },
+                      {
+                          "question":  "Refraction causes mirages.",
+                          "expectedAny":  [
+                                              "true",
+                                              "yes",
+                                              "t",
+                                              "correct"
+                                          ]
+                      }
+                  ],
+    "multiplechoice":  [
+                           {
+                               "question":  "What restricts field oscillation?",
+                               "choices":  [
+                                               "Diffraction",
+                                               "Polarization",
+                                               "Interference",
+                                               "Refraction"
+                                           ],
+                               "correct":  "Polarization"
+                           },
+                           {
+                               "question":  "What bends around corners?",
+                               "choices":  [
+                                               "Polarization",
+                                               "Diffraction",
+                                               "Interference",
+                                               "Reflection"
+                                           ],
+                               "correct":  "Diffraction"
+                           },
+                           {
+                               "question":  "What creates bright and dark bands?",
+                               "choices":  [
+                                               "Polarization",
+                                               "Diffraction",
+                                               "Interference",
+                                               "Refraction"
+                                           ],
+                               "correct":  "Interference"
+                           },
+                           {
+                               "question":  "What shifts ambulance siren?",
+                               "choices":  [
+                                               "Diffraction",
+                                               "Interference",
+                                               "Doppler",
+                                               "Polarization"
+                                           ],
+                               "correct":  "Doppler"
+                           },
+                           {
+                               "question":  "What bends light entering water?",
+                               "choices":  [
+                                               "Reflection",
+                                               "Refraction",
+                                               "Diffraction",
+                                               "Polarization"
+                                           ],
+                               "correct":  "Refraction"
+                           },
+                           {
+                               "question":  "What do polarized sunglasses block?",
+                               "choices":  [
+                                               "All light",
+                                               "Certain orientations",
+                                               "All colors",
+                                               "UV only"
+                                           ],
+                               "correct":  "Certain orientations"
+                           },
+                           {
+                               "question":  "What increases with larger wavelength?",
+                               "choices":  [
+                                               "Speed",
+                                               "Diffraction",
+                                               "Frequency",
+                                               "Energy"
+                                           ],
+                               "correct":  "Diffraction"
+                           },
+                           {
+                               "question":  "When are waves in phase?",
+                               "choices":  [
+                                               "Never",
+                                               "Destructive",
+                                               "Constructive",
+                                               "Always"
+                                           ],
+                               "correct":  "Constructive"
+                           },
+                           {
+                               "question":  "What causes red shift in stars?",
+                               "choices":  [
+                                               "Moving away",
+                                               "Moving toward",
+                                               "Stationary",
+                                               "Rotating"
+                                           ],
+                               "correct":  "Moving away"
+                           },
+                           {
+                               "question":  "What changes at boundary?",
+                               "choices":  [
+                                               "Frequency",
+                                               "Wavelength",
+                                               "Energy",
+                                               "Amplitude"
+                                           ],
+                               "correct":  "Wavelength"
+                           }
+                       ],
+    "fillintheblank":  [
+                           {
+                               "question":  "_____ restricts field direction.",
+                               "expectedAny":  [
+                                                   "polarization",
+                                                   "polarizing"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ bends waves around obstacles.",
+                               "expectedAny":  [
+                                                   "diffraction",
+                                                   "wave diffraction"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ combines wave amplitudes.",
+                               "expectedAny":  [
+                                                   "interference",
+                                                   "superposition"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ effect shifts frequency with motion.",
+                               "expectedAny":  [
+                                                   "Doppler",
+                                                   "Doppler effect"
+                                               ]
+                           },
+                           {
+                               "question":  "_____ bends waves changing medium.",
+                               "expectedAny":  [
+                                                   "refraction",
+                                                   "wave refraction"
+                                               ]
+                           },
+                           {
+                               "question":  "Transverse waves can be _____.",
+                               "expectedAny":  [
+                                                   "polarized",
+                                                   "polarization"
+                                               ]
+                           },
+                           {
+                               "question":  "Constructive interference _____ amplitude.",
+                               "expectedAny":  [
+                                                   "increases",
+                                                   "adds",
+                                                   "doubles"
+                                               ]
+                           },
+                           {
+                               "question":  "Moving away causes _____ shift.",
+                               "expectedAny":  [
+                                                   "red",
+                                                   "redshift",
+                                                   "Doppler"
+                                               ]
+                           },
+                           {
+                               "question":  "Light slows entering _____.",
+                               "expectedAny":  [
+                                                   "denser medium",
+                                                   "water",
+                                                   "glass"
+                                               ]
+                           },
+                           {
+                               "question":  "Diffraction increases with longer _____.",
+                               "expectedAny":  [
+                                                   "wavelength",
+                                                   "waves"
+                                               ]
+                           }
+                       ],
+    "shortanswer":  [
+                        {
+                            "question":  "What is polarization?",
+                            "expectedAny":  [
+                                                "orientation of oscillating electric field in EM wave",
+                                                "restricting oscillations to one direction",
+                                                "filtering certain field orientations"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain diffraction.",
+                            "expectedAny":  [
+                                                "bending of waves around obstacles or through openings",
+                                                "spreading of waves past edges",
+                                                "interference effect at boundaries"
+                                            ]
+                        },
+                        {
+                            "question":  "What is interference?",
+                            "expectedAny":  [
+                                                "superposition of waves creating patterns",
+                                                "constructive adds destructive cancels",
+                                                "combination of overlapping waves"
+                                            ]
+                        },
+                        {
+                            "question":  "Describe Doppler effect.",
+                            "expectedAny":  [
+                                                "change in observed frequency due to relative motion",
+                                                "frequency increases approaching decreases receding",
+                                                "motion causes frequency shift"
+                                            ]
+                        },
+                        {
+                            "question":  "What is refraction?",
+                            "expectedAny":  [
+                                                "bending of wave when changing medium",
+                                                "direction change due to speed change",
+                                                "caused by different wave speeds"
+                                            ]
+                        },
+                        {
+                            "question":  "How do polarized sunglasses work?",
+                            "expectedAny":  [
+                                                "block horizontally polarized glare",
+                                                "filter out certain orientations",
+                                                "reduce reflected light"
+                                            ]
+                        },
+                        {
+                            "question":  "Why does diffraction increase with wavelength?",
+                            "expectedAny":  [
+                                                "longer waves bend more around obstacles",
+                                                "wavelength comparable to opening size",
+                                                "wave nature more apparent"
+                                            ]
+                        },
+                        {
+                            "question":  "Explain constructive interference.",
+                            "expectedAny":  [
+                                                "waves in phase add amplitudes",
+                                                "crests align creating larger amplitude",
+                                                "reinforcement of waves"
+                                            ]
+                        },
+                        {
+                            "question":  "What causes stellar red shift?",
+                            "expectedAny":  [
+                                                "galaxies moving away stretches wavelength",
+                                                "Doppler effect from recession",
+                                                "expanding universe"
+                                            ]
+                        },
+                        {
+                            "question":  "Why does light bend entering water?",
+                            "expectedAny":  [
+                                                "speed changes causing direction change",
+                                                "refraction from different optical density",
+                                                "wavelength changes frequency constant"
+                                            ]
+                        }
+                    ]
 }

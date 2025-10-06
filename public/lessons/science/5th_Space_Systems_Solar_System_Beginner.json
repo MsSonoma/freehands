@@ -23,52 +23,87 @@
     {
       "term": "asteroid",
       "definition": "A rocky object that orbits the sun but is smaller than a planet"
+    },
+    {
+      "term": "rotate",
+      "definition": "To spin on an axis (like Earth turning to make day and night)"
+    },
+    {
+      "term": "revolve",
+      "definition": "To travel around another object (like Earth going around the sun)"
+    },
+    {
+      "term": "satellite",
+      "definition": "An object that orbits a planet; can be natural like the Moon or artificial"
+    },
+    {
+      "term": "comet",
+      "definition": "An icy object that orbits the sun and can have a glowing tail"
+    },
+    {
+      "term": "dwarf planet",
+      "definition": "A small round object that orbits the sun but has not cleared its path"
     }
   ],
   "teachingNotes": "Use models and diagrams to show the relative sizes and distances of planets. Discuss the role of gravity in keeping planets in orbit. Compare different types of objects in our solar system.",
-  "sample": {
-    "question": "What keeps the planets orbiting around the sun?",
-    "expectedAny": [
-      "gravity",
-      "gravitational force",
-      "the sun's gravity",
-      "gravitational pull"
-    ]
-  },
-  "truefalse": {
-    "question": "The sun is the largest object in our solar system.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "Which planet is closest to the sun?",
-    "expectedAny": [
-      "Mercury",
-      "first planet",
-      "innermost planet",
-      "closest planet"
-    ]
-  },
-  "fillintheblank": {
-    "question": "The path that a planet takes around the sun is called its ________.",
-    "expectedAny": [
-      "orbit",
-      "orbital path",
-      "trajectory",
-      "revolution"
-    ]
-  },
-  "shortanswer": {
-    "question": "How are asteroids different from planets?",
-    "expectedAny": [
-      "much smaller",
-      "haven't cleared orbital path",
-      "rocky debris",
-      "minor objects"
-    ]
-  }
+  "sample": [
+    { "question": "What keeps the planets orbiting around the sun?", "expectedAny": ["gravity", "gravitational force", "the sun's gravity"] },
+    { "question": "Name the star at the center of our solar system.", "expectedAny": ["the sun", "sun"] },
+    { "question": "What force keeps the moon in orbit around Earth?", "expectedAny": ["gravity"] },
+    { "question": "Name a rocky object smaller than a planet that orbits the sun.", "expectedAny": ["asteroid"] },
+    { "question": "What is the path of an object around another called?", "expectedAny": ["orbit"] },
+    { "question": "Name the largest planet in our solar system.", "expectedAny": ["Jupiter"] },
+    { "question": "Which two planets are known as gas giants?", "expectedAny": ["Jupiter and Saturn"] },
+    { "question": "What do we call the group of eight major planets and other objects around the sun?", "expectedAny": ["solar system"] },
+    { "question": "What is the smallest planet?", "expectedAny": ["Mercury"] },
+    { "question": "What separates the inner rocky planets from the outer giant planets?", "expectedAny": ["asteroid belt"] }
+  ],
+  "truefalse": [
+    { "question": "The sun is the largest object in our solar system.", "expectedAny": ["true", "yes", "t", "correct"] },
+    { "question": "All planets are the same size.", "expectedAny": ["false"] },
+    { "question": "Gravity keeps planets in their orbits.", "expectedAny": ["true"] },
+    { "question": "Asteroids are bigger than planets.", "expectedAny": ["false"] },
+    { "question": "Earth is a rocky planet.", "expectedAny": ["true"] },
+    { "question": "Jupiter is smaller than Earth.", "expectedAny": ["false"] },
+    { "question": "The asteroid belt lies between Mars and Jupiter.", "expectedAny": ["true"] },
+    { "question": "The moon orbits the sun directly.", "expectedAny": ["false"] },
+    { "question": "Planets closer to the sun take less time to orbit it.", "expectedAny": ["true"] },
+    { "question": "Saturn has rings.", "expectedAny": ["true"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which planet is closest to the sun?", "choices": ["Mercury", "Venus", "Earth", "Mars"], "correct": 0, "expectedAny": ["Mercury"] },
+    { "question": "Which planet is known for its rings?", "choices": ["Earth", "Mars", "Saturn", "Neptune"], "correct": 2, "expectedAny": ["Saturn"] },
+    { "question": "Which is a gas giant?", "choices": ["Mercury", "Venus", "Earth", "Jupiter"], "correct": 3, "expectedAny": ["Jupiter"] },
+    { "question": "The asteroid belt is between:", "choices": ["Earth and Mars", "Mars and Jupiter", "Jupiter and Saturn", "Saturn and Uranus"], "correct": 1, "expectedAny": ["Mars and Jupiter"] },
+    { "question": "Which planet is called the Red Planet?", "choices": ["Venus", "Earth", "Mars", "Jupiter"], "correct": 2, "expectedAny": ["Mars"] },
+    { "question": "The sun is a:", "choices": ["planet", "star", "asteroid", "comet"], "correct": 1, "expectedAny": ["star"] },
+    { "question": "Which planet is the largest?", "choices": ["Earth", "Jupiter", "Neptune", "Venus"], "correct": 1, "expectedAny": ["Jupiter"] },
+    { "question": "Which object orbits the Earth?", "choices": ["the sun", "the moon", "Mars", "Mercury"], "correct": 1, "expectedAny": ["moon"] },
+    { "question": "Which planet is farthest from the sun?", "choices": ["Mars", "Jupiter", "Saturn", "Neptune"], "correct": 3, "expectedAny": ["Neptune"] },
+    { "question": "Which force keeps planets in orbit?", "choices": ["friction", "gravity", "magnetism", "electricity"], "correct": 1, "expectedAny": ["gravity"] }
+  ],
+  "fillintheblank": [
+    { "question": "The path that a planet takes around the sun is called its ________.", "expectedAny": ["orbit", "path around the sun"] },
+    { "question": "The largest planet is ________.", "expectedAny": ["Jupiter"] },
+    { "question": "The closest planet to the sun is ________.", "expectedAny": ["Mercury"] },
+    { "question": "The asteroid ________ separates inner and outer planets.", "expectedAny": ["belt", "asteroid belt"] },
+    { "question": "The sun is a ________.", "expectedAny": ["star"] },
+    { "question": "Planets are kept in orbit by ________.", "expectedAny": ["gravity", "the sun's gravity"] },
+    { "question": "Earth's natural satellite is the ________.", "expectedAny": ["moon", "the moon"] },
+    { "question": "Mars is known as the ________ Planet.", "expectedAny": ["Red", "red"] },
+    { "question": "Jupiter and Saturn are ________ giants.", "expectedAny": ["gas", "gas-giants"] },
+    { "question": "Neptune is the ________ planet from the sun.", "expectedAny": ["farthest", "eighth", "8th"] }
+  ],
+  "shortanswer": [
+    { "question": "How are asteroids different from planets?", "expectedAny": ["smaller", "do not clear orbit", "irregular shape"] },
+    { "question": "Explain why gravity is important in the solar system.", "expectedAny": ["keeps objects in orbit", "holds planets around the sun"] },
+    { "question": "Why does Mercury orbit faster than Neptune?", "expectedAny": ["closer to the sun, stronger gravity, shorter path", "shorter orbit and stronger pull"] },
+    { "question": "Name two differences between inner and outer planets.", "expectedAny": ["rocky vs gas", "smaller vs larger", "warmer vs colder"] },
+    { "question": "What is the asteroid belt?", "expectedAny": ["region of many asteroids between Mars and Jupiter", "band of rocks between Mars and Jupiter"] },
+    { "question": "How does the moon affect Earth?", "expectedAny": ["tides", "light at night", "stabilizes tilt"] },
+    { "question": "What is an orbit?", "expectedAny": ["path around another object due to gravity", "a curved path around something"] },
+    { "question": "Why is the sun considered a star?", "expectedAny": ["ball of hot gases producing light and heat", "it makes its own light"] },
+    { "question": "Give an example of a satellite.", "expectedAny": ["the moon", "artificial satellite", "space satellite"] },
+    { "question": "Name one way scientists study planets.", "expectedAny": ["telescopes", "space probes", "spacecraft missions"] }
+  ]
 }

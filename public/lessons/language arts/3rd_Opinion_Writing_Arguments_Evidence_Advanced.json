@@ -5,54 +5,91 @@
   "difficulty": "Advanced",
   "featured": false,
   "vocab": [
-    {"term": "opinion", "definition": "A personal belief or feeling about something that cannot be proven right or wrong."},
-    {"term": "fact", "definition": "A statement that can be proven to be true."},
-    {"term": "evidence", "definition": "Facts, examples, and reasons that support an opinion."}
+    {"word": "opinion", "kid_friendly_definition": "A personal belief or feeling about something that cannot be proven right or wrong."},
+    {"word": "fact", "kid_friendly_definition": "A statement that can be proven to be true."},
+    {"word": "evidence", "kid_friendly_definition": "Facts, examples, and reasons that support an opinion."},
+    {"word": "claim", "kid_friendly_definition": "The main point or opinion you are trying to prove."},
+    {"word": "reason", "kid_friendly_definition": "A statement that explains why your opinion makes sense."},
+    {"word": "conclusion", "kid_friendly_definition": "The ending that sums up your opinion and reasons."},
+    {"word": "persuasive", "kid_friendly_definition": "Writing that tries to convince someone to agree with you."},
+    {"word": "supporting example", "kid_friendly_definition": "A specific fact or story that backs up your reason."},
+    {"word": "counterargument", "kid_friendly_definition": "A reason that goes against your opinion that you can address."}
   ],
   "teachingNotes": "Teach students the OREO method for opinion writing: State your Opinion, provide a Reason, give an Example (evidence), and restate your Opinion. This provides a clear, memorable structure for building an argument.",
   "sample": [
-    {"question": "What is an opinion?", "expectedAny": ["A personal belief or feeling."]},
-    {"question": "What is a fact?", "expectedAny": ["A statement that can be proven true."]},
-    {"question": "How do you support an opinion to make it stronger?", "expectedAny": ["By using reasons and evidence."]},
-    {"question": "What makes a piece of evidence strong?", "expectedAny": ["It is a fact or a specific example that directly relates to the opinion."]},
-    {"question": "What is the goal of a persuasive or opinion paragraph?", "expectedAny": ["To convince the reader to agree with your viewpoint."]},
-    {"question": "How should you start an opinion essay?", "expectedAny": ["By clearly stating your opinion."]},
-    {"question": "What are some transition words used in opinion writing?", "expectedAny": ["I believe, in my opinion, for example, also."]}
+    {"question": "What is an opinion?", "expectedAny": [
+      "a personal belief or feeling",
+      "a belief",
+      "what someone thinks"
+    ]},
+    {"question": "What is a fact?", "expectedAny": [
+      "a statement that can be proven true",
+      "something you can prove",
+      "a true statement"
+    ]},
+    {"question": "How do you support an opinion to make it stronger?", "expectedAny": [
+      "by using reasons and evidence",
+      "give reasons and examples",
+      "add facts and examples"
+    ]},
+    {"question": "What makes a piece of evidence strong?", "expectedAny": [
+      "it is a fact or a specific example that directly relates to the opinion",
+      "relevant facts or examples",
+      "specific, related example"
+    ]},
+    {"question": "What is the goal of a persuasive or opinion paragraph?", "expectedAny": [
+      "to convince the reader to agree with your viewpoint",
+      "to persuade the reader",
+      "to change the reader's mind"
+    ]},
+    {"question": "How should you start an opinion essay?", "expectedAny": [
+      "by clearly stating your opinion",
+      "state your opinion",
+      "say your claim"
+    ]},
+    {"question": "What are some transition words used in opinion writing?", "expectedAny": [
+      "i believe",
+      "in my opinion",
+      "for example",
+      "also",
+      "because",
+      "first"
+    ]}
   ],
   "truefalse": [
-    {"question": "An opinion is what someone thinks or believes.", "answer": true},
-    {"question": "Facts are statements that can be proven to be true.", "answer": true},
-    {"question": "A strong opinion does not need any support or reasons.", "answer": false},
-    {"question": "Using evidence like facts and examples makes an argument stronger.", "answer": true},
-    {"question": "Everyone must agree with your opinion if you state it clearly.", "answer": false},
-    {"question": "In writing, facts are more important than opinions.", "answer": false},
-    {"question": "A good argument uses logical reasons and specific examples.", "answer": true}
+    {"question": "An opinion is what someone thinks or believes.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "an opinion is a belief"]},
+    {"question": "Facts are statements that can be proven to be true.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "facts can be proven"]},
+    {"question": "A strong opinion does not need any support or reasons.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "opinions need reasons"]},
+    {"question": "Using evidence like facts and examples makes an argument stronger.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "evidence makes arguments stronger"]},
+    {"question": "Everyone must agree with your opinion if you state it clearly.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "people can disagree"]},
+    {"question": "In writing, facts are more important than opinions.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect", "both matter"]},
+    {"question": "A good argument uses logical reasons and specific examples.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct", "uses reasons and examples"]}
   ],
   "multiplechoice": [
-    {"question": "Which of the following is an opinion statement?", "choices": ["Dogs have four legs.", "Dogs are the best pets.", "Dogs are mammals.", "Dogs can bark."], "correct": 1},
-    {"question": "A fact is a statement that can be ___.", "choices": ["proven true", "a feeling", "an opinion", "a belief"], "correct": 0},
-    {"question": "To persuade someone means to ___ them.", "choices": ["inform", "convince", "question", "ignore"], "correct": 1},
-    {"question": "Strong evidence to support an opinion is usually ___.", "choices": ["made up", "a relevant fact or example", "another opinion", "false"], "correct": 1},
-    {"question": "Good opinion writing needs to include ___.", "choices": ["only feelings", "reasons and evidence", "no supporting details", "confusing language"], "correct": 1},
-    {"question": "Which of these phrases is a transition used to introduce an opinion?", "choices": ["Next,", "I believe that...", "Under the table,", "Behind the door,"], "correct": 1},
-    {"question": "The reasons you give to support your opinion should be ___.", "choices": ["mean", "logical and clear", "angry", "confusing"], "correct": 1}
+    {"question": "Which of the following is an opinion statement?", "choices": ["Dogs have four legs.", "Dogs are the best pets.", "Dogs are mammals.", "Dogs can bark."], "correct": 1, "expectedAny": ["b", "B", "2", "dogs are the best pets", "opinion"]},
+    {"question": "A fact is a statement that can be ___.", "choices": ["proven true", "a feeling", "an opinion", "a belief"], "correct": 0, "expectedAny": ["a", "A", "1", "proven true", "can be proven true"]},
+    {"question": "To persuade someone means to ___ them.", "choices": ["inform", "convince", "question", "ignore"], "correct": 1, "expectedAny": ["b", "B", "2", "convince"]},
+    {"question": "Strong evidence to support an opinion is usually ___.", "choices": ["made up", "a relevant fact or example", "another opinion", "false"], "correct": 1, "expectedAny": ["b", "B", "2", "a relevant fact or example", "relevant fact or example"]},
+    {"question": "Good opinion writing needs to include ___.", "choices": ["only feelings", "reasons and evidence", "no supporting details", "confusing language"], "correct": 1, "expectedAny": ["b", "B", "2", "reasons and evidence", "reasons with evidence"]},
+    {"question": "Which of these phrases is a transition used to introduce an opinion?", "choices": ["Next,", "I believe that...", "Under the table,", "Behind the door,"], "correct": 1, "expectedAny": ["b", "B", "2", "i believe that", "i believe"]},
+    {"question": "The reasons you give to support your opinion should be ___.", "choices": ["mean", "logical and clear", "angry", "confusing"], "correct": 1, "expectedAny": ["b", "B", "2", "logical and clear", "clear and logical"]}
   ],
   "fillintheblank": [
-    {"question": "An ___ is a statement of what a person believes or feels.", "expectedAny": ["opinion"]},
-    {"question": "A ___ is a statement that can be proven to be true.", "expectedAny": ["fact"]},
-    {"question": "___ is the information, like facts and examples, that you use to support your opinion.", "expectedAny": ["Evidence"]},
-    {"question": "To ___ someone means to convince them to agree with you.", "expectedAny": ["persuade"]},
-    {"question": "Opinion writing clearly states your ___ on a topic.", "expectedAny": ["position", "belief", "opinion"]},
-    {"question": "___ words like 'for example' and 'in conclusion' help connect your reasons.", "expectedAny": ["Transition"]},
-    {"question": "A strong argument uses logical ___ and specific examples.", "expectedAny": ["reasons"]}
+    {"question": "An ___ is a statement of what a person believes or feels.", "expectedAny": ["opinion", "a personal opinion", "belief"]},
+    {"question": "A ___ is a statement that can be proven to be true.", "expectedAny": ["fact", "a true fact", "something proven true"]},
+    {"question": "___ is the information, like facts and examples, that you use to support your opinion.", "expectedAny": ["Evidence", "evidence", "proof", "supporting details"]},
+    {"question": "To ___ someone means to convince them to agree with you.", "expectedAny": ["persuade", "convince", "sway"]},
+    {"question": "Opinion writing clearly states your ___ on a topic.", "expectedAny": ["position", "belief", "opinion", "claim", "point of view"]},
+    {"question": "___ words like 'for example' and 'in conclusion' help connect your reasons.", "expectedAny": ["Transition", "transition", "linking", "signal"]},
+    {"question": "A strong argument uses logical ___ and specific examples.", "expectedAny": ["reasons", "reasons and evidence", "good reasons", "clear reasons"]}
   ],
   "shortanswer": [
-    {"question": "What is the main difference between a fact and an opinion?", "expectedAny": ["A fact can be proven true, while an opinion is a personal belief that cannot be proven."]},
-    {"question": "How can you make your opinion more persuasive to a reader?", "expectedAny": ["By supporting it with strong reasons, facts, and specific examples."]},
-    {"question": "What are the key parts of a good argument?", "expectedAny": ["A clear opinion, strong reasons to support it, evidence for those reasons, and a conclusion."]},
-    {"question": "List three 'signal words' or phrases that indicate an opinion is being shared.", "expectedAny": ["I think, I believe, in my opinion, the best, the worst, should"]},
-    {"question": "Why is providing evidence so important in opinion writing?", "expectedAny": ["It shows that your opinion is based on thought and facts, not just feelings, which makes it more convincing."]},
-    {"question": "How should you organize a piece of opinion writing?", "expectedAny": ["Start by stating your opinion, then provide several reasons with evidence, and end with a conclusion."]},
-    {"question": "State an opinion about your favorite food and give two reasons to support it.", "expectedAny": ["Pizza is the best food because it can be customized with many toppings and it is perfect for sharing with friends."]}
+    {"question": "What is the main difference between a fact and an opinion?", "expectedAny": ["a fact can be proven true", "an opinion is a personal belief", "facts are testable, opinions are beliefs", "facts can be checked"]},
+    {"question": "How can you make your opinion more persuasive to a reader?", "expectedAny": ["use strong reasons", "add facts and examples", "explain with evidence", "use specific examples"]},
+    {"question": "What are the key parts of a good argument?", "expectedAny": ["clear opinion (claim)", "reasons", "evidence", "conclusion", "transitions"]},
+    {"question": "List three 'signal words' or phrases that indicate an opinion is being shared.", "expectedAny": ["I think", "I believe", "in my opinion", "should", "the best", "I feel", "from my point of view"]},
+    {"question": "Why is providing evidence so important in opinion writing?", "expectedAny": ["it makes your opinion more convincing", "shows your opinion is based on facts", "proves your reasons", "backs up your claim"]},
+    {"question": "How should you organize a piece of opinion writing?", "expectedAny": ["state your opinion", "give reasons with evidence", "end with a conclusion", "OREO structure"]},
+    {"question": "State an opinion about your favorite food and give two reasons to support it.", "expectedAny": ["Pizza is the best food because it has many toppings and is fun to share.", "Ice cream is great because it comes in many flavors and cools you down.", "Tacos are the best because they are tasty and you can choose your fillings.", "Burgers are my favorite because they are tasty and filling."]}
   ]
 }

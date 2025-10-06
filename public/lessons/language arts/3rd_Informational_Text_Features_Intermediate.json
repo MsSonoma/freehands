@@ -5,54 +5,67 @@
   "difficulty": "Intermediate",
   "featured": false,
   "vocab": [
-    {"term": "text features", "definition": "Parts of a text that help you find and understand information, like headings, bold words, and captions."},
-    {"term": "heading", "definition": "A title at the head of a page or section of a book."},
-    {"term": "caption", "definition": "A short explanation under a picture or illustration."}
+    {"word": "text features", "kid_friendly_definition": "Parts of a text that help you find and understand information, like headings, bold words, and captions."},
+    {"word": "heading", "kid_friendly_definition": "A title at the head of a page or section of a book."},
+    {"word": "caption", "kid_friendly_definition": "A short explanation under a picture or illustration."},
+    {"word": "subheading", "kid_friendly_definition": "A smaller title under a heading that introduces a subsection."},
+    {"word": "bold print", "kid_friendly_definition": "Thicker, darker text used to show important words."},
+    {"word": "table of contents", "kid_friendly_definition": "A list at the beginning of a book showing chapters and their page numbers."},
+    {"word": "glossary", "kid_friendly_definition": "A list of key words and their definitions, usually at the back of a book."},
+    {"word": "index", "kid_friendly_definition": "An alphabetical list of topics with page numbers."},
+    {"word": "diagram", "kid_friendly_definition": "A labeled drawing that shows the parts of something."},
+    {"word": "label", "kid_friendly_definition": "A word or short phrase that names a part of a diagram or picture."},
+    {"word": "table", "kid_friendly_definition": "An organizer that shows information in rows and columns."},
+    {"word": "sidebar", "kid_friendly_definition": "A box on a page with extra or interesting information related to the main text."},
+    {"word": "map", "kid_friendly_definition": "A picture that shows where places are located."},
+    {"word": "chart", "kid_friendly_definition": "A visual organizer that shows information in rows and columns or groups."},
+    {"word": "graph", "kid_friendly_definition": "A picture that uses bars or lines to show numbers or data."},
+    {"word": "cross-section", "kid_friendly_definition": "A picture that shows what something looks like if you cut through it."}
   ],
   "teachingNotes": "Create a 'text feature scavenger hunt.' Give students a list of features (e.g., 'a bold word,' 'a caption,' 'a heading') and have them find examples in a non-fiction book or article.",
   "sample": [
-    {"question": "What is a heading in a book?", "expectedAny": ["A title for a section."]},
-    {"question": "Why do authors use bold words?", "expectedAny": ["To show they are important."]},
-    {"question": "What does a caption tell us?", "expectedAny": ["It explains a picture or photograph."]},
-    {"question": "What is the purpose of a table of contents?", "expectedAny": ["To show where chapters or sections start."]},
-    {"question": "How do diagrams help readers understand a topic?", "expectedAny": ["They show the parts of something."]},
-    {"question": "What kind of information can you find in a glossary?", "expectedAny": ["Definitions of important words."]},
-    {"question": "Why are photographs included in informational texts?", "expectedAny": ["To show what something really looks like."]}
+    {"question": "What is a heading in a book?", "expectedAny": ["A title for a section.", "the section title", "title of a section"]},
+    {"question": "Why do authors use bold words?", "expectedAny": ["To show they are important.", "to highlight key words", "to make important vocabulary stand out"]},
+    {"question": "What does a caption tell us?", "expectedAny": ["It explains a picture or photograph.", "it tells what the picture shows", "explains the photo"]},
+    {"question": "What is the purpose of a table of contents?", "expectedAny": ["To show where chapters or sections start.", "to list chapters with page numbers", "to help find sections quickly"]},
+    {"question": "How do diagrams help readers understand a topic?", "expectedAny": ["They show the parts of something.", "they label parts", "they help explain how something works"]},
+    {"question": "What kind of information can you find in a glossary?", "expectedAny": ["Definitions of important words.", "word meanings", "definitions of key terms"]},
+    {"question": "Why are photographs included in informational texts?", "expectedAny": ["To show what something really looks like.", "to give a real-life picture", "to help readers see the topic"]}
   ],
   "truefalse": [
-    {"question": "Headings tell the reader what a new section of text will be about.", "answer": true},
-    {"question": "A caption is a short sentence that explains a picture or diagram.", "answer": true},
-    {"question": "Words that are in bold print are usually not very important.", "answer": false},
-    {"question": "An index is found at the very front of a book.", "answer": false},
-    {"question": "Diagrams are drawings that show how things work or what their parts are.", "answer": true},
-    {"question": "A glossary is like a mini-dictionary for the book.", "answer": true},
-    {"question": "Text features are designed to help readers find and understand information more easily.", "answer": true}
+    {"question": "Headings tell the reader what a new section of text will be about.", "answer": true, "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "A caption is a short sentence that explains a picture or diagram.", "answer": true, "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Words that are in bold print are usually not very important.", "answer": false, "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "An index is found at the very front of a book.", "answer": false, "expectedAny": ["false", "no", "f", "incorrect"]},
+    {"question": "Diagrams are drawings that show how things work or what their parts are.", "answer": true, "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "A glossary is like a mini-dictionary for the book.", "answer": true, "expectedAny": ["true", "yes", "t", "correct"]},
+    {"question": "Text features are designed to help readers find and understand information more easily.", "answer": true, "expectedAny": ["true", "yes", "t", "correct"]}
   ],
   "multiplechoice": [
-    {"question": "A table of contents helps a reader by showing ___.", "choices": ["the definitions of words", "the page numbers where chapters begin", "all the pictures in the book", "the index"], "correct": 1},
-    {"question": "Bold words in a text are usually ___.", "choices": ["mistakes", "important vocabulary words", "the author's opinions", "optional to read"], "correct": 1},
-    {"question": "A glossary gives the reader ___.", "choices": ["page numbers for topics", "the definitions of key words", "a list of chapters", "pictures of the topic"], "correct": 1},
-    {"question": "An index at the back of a book helps you find ___.", "choices": ["the definitions of words", "the exact page number for a specific topic", "the list of chapters", "the author's name"], "correct": 1},
-    {"question": "Labels on a diagram are used to name the ___.", "choices": ["entire book", "different parts of the object", "the author", "the page numbers"], "correct": 1},
-    {"question": "A sidebar or text box on a page usually contains ___.", "choices": ["the main text", "extra, interesting information", "nothing important", "the title of the book"], "correct": 1},
-    {"question": "A map is a text feature that shows ___.", "choices": ["how something works", "the location of a place", "the definition of a word", "the table of contents"], "correct": 1}
+    {"question": "A table of contents helps a reader by showing ___.", "choices": ["the definitions of words", "the page numbers where chapters begin", "all the pictures in the book", "the index"], "correct": 1, "expectedAny": ["the page numbers where chapters begin", "chapter page numbers", "where chapters start"]},
+    {"question": "Bold words in a text are usually ___.", "choices": ["mistakes", "important vocabulary words", "the author's opinions", "optional to read"], "correct": 1, "expectedAny": ["important vocabulary words", "important words", "key vocabulary"]},
+    {"question": "A glossary gives the reader ___.", "choices": ["page numbers for topics", "the definitions of key words", "a list of chapters", "pictures of the topic"], "correct": 1, "expectedAny": ["the definitions of key words", "word definitions", "definitions"]},
+    {"question": "An index at the back of a book helps you find ___.", "choices": ["the definitions of words", "the exact page number for a specific topic", "the list of chapters", "the author's name"], "correct": 1, "expectedAny": ["the exact page number for a specific topic", "page numbers for topics", "where to find a topic"]},
+    {"question": "Labels on a diagram are used to name the ___.", "choices": ["entire book", "different parts of the object", "the author", "the page numbers"], "correct": 1, "expectedAny": ["different parts of the object", "parts", "labeled parts"]},
+    {"question": "A sidebar or text box on a page usually contains ___.", "choices": ["the main text", "extra, interesting information", "nothing important", "the title of the book"], "correct": 1, "expectedAny": ["extra, interesting information", "extra information", "fun facts"]},
+    {"question": "A map is a text feature that shows ___.", "choices": ["how something works", "the location of a place", "the definition of a word", "the table of contents"], "correct": 1, "expectedAny": ["the location of a place", "where places are", "locations"]}
   ],
   "fillintheblank": [
-    {"question": "A ___ is a short description under a photograph that explains what it is.", "expectedAny": ["caption"]},
-    {"question": "Important vocabulary words are often written in ___ print to make them stand out.", "expectedAny": ["bold"]},
-    {"question": "The ___ at the beginning of a book lists the chapters and their starting page numbers.", "expectedAny": ["table of contents"]},
-    {"question": "If you don't know the meaning of a word, you can look it up in the ___.", "expectedAny": ["glossary"]},
-    {"question": "An ___ at the back of the book lists topics alphabetically and the pages where you can find them.", "expectedAny": ["index"]},
-    {"question": "___ and charts help organize information into rows and columns.", "expectedAny": ["Tables"]},
-    {"question": "A ___ is a drawing with labels that shows the different parts of something.", "expectedAny": ["diagram"]}
+    {"question": "A ___ is a short description under a photograph that explains what it is.", "expectedAny": ["caption", "photo caption", "picture caption"]},
+    {"question": "Important vocabulary words are often written in ___ print to make them stand out.", "expectedAny": ["bold", "boldface", "bold print"]},
+    {"question": "The ___ at the beginning of a book lists the chapters and their starting page numbers.", "expectedAny": ["table of contents", "contents", "TOC", "contents page"]},
+    {"question": "If you don't know the meaning of a word, you can look it up in the ___.", "expectedAny": ["glossary", "mini-dictionary", "word list", "glossary section"]},
+    {"question": "An ___ at the back of the book lists topics alphabetically and the pages where you can find them.", "expectedAny": ["index", "topic index", "back-of-book index", "alphabetical index", "back index"]},
+    {"question": "___ and charts help organize information into rows and columns.", "expectedAny": ["Tables", "tables", "data tables", "table"]},
+    {"question": "A ___ is a drawing with labels that shows the different parts of something.", "expectedAny": ["diagram", "labeled diagram", "labeled picture", "labeled drawing"]}
   ],
   "shortanswer": [
-    {"question": "How do headings and subheadings help you when you are reading?", "expectedAny": ["They organize the text into smaller sections and tell you what each section is about."]},
-    {"question": "Why are text features like bold words and glossaries important in non-fiction books?", "expectedAny": ["They help you learn new vocabulary and understand the topic better."]},
-    {"question": "What is the difference between a glossary and an index?", "expectedAny": ["A glossary defines words, while an index tells you the page number where a topic is mentioned."]},
-    {"question": "How can looking at pictures and captions help you before you even start reading the main text?", "expectedAny": ["They give you clues about what the text will be about."]},
-    {"question": "Name five different text features you might find in a science textbook.", "expectedAny": ["Headings, captions, bold words, diagrams, glossary, index, table of contents"]},
-    {"question": "How do you use a table of contents to find information?", "expectedAny": ["You look for the chapter or section you want to read and then go to the page number listed."]},
-    {"question": "Why might an author use different fonts or text sizes in a book?", "expectedAny": ["To show that some information, like a heading, is more important or to organize the page."]}
+    {"question": "How do headings and subheadings help you when you are reading?", "expectedAny": ["organize the text into sections", "tell what each section is about", "help you find information quickly", "help you skim for topics", "tell you what part comes next", "divide the book", "break it up"]},
+    {"question": "Why are text features like bold words and glossaries important in non-fiction books?", "expectedAny": ["help you learn new vocabulary", "make key words stand out", "explain important terms", "clarify key terms", "show important words", "teach new words", "help understand"]},
+    {"question": "What is the difference between a glossary and an index?", "expectedAny": ["glossary gives definitions", "index gives page numbers for topics", "glossary = word meanings; index = where to find topics", "glossary defines words; index shows page references", "glossary is meanings, index is pages", "glossary tells what words mean", "index tells page numbers"]},
+    {"question": "How can looking at pictures and captions help you before you even start reading the main text?", "expectedAny": ["give clues about the topic", "preview important ideas", "build background knowledge", "preview vocabulary and context", "show what it is about", "hint at the story", "get ready to read"]},
+    {"question": "Name five different text features you might find in a science textbook.", "expectedAny": ["headings", "captions", "bold words", "diagrams", "glossary", "index", "table of contents", "maps", "pictures", "tables", "charts"]},
+    {"question": "How do you use a table of contents to find information?", "expectedAny": ["find the chapter or section", "look at the page number", "go to that page", "scan the contents page", "see where chapters are", "look for the topic", "check the list"]},
+    {"question": "Why might an author use different fonts or text sizes in a book?", "expectedAny": ["to show important information", "to organize the page", "to make headings stand out", "to mark headings and subheadings", "to highlight key parts", "to make it easier to read", "to show sections"]}
   ]
 }

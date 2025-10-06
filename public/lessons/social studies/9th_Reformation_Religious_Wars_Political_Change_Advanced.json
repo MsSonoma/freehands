@@ -1,74 +1,74 @@
-{
+﻿{
   "id": "9th_Reformation_Religious_Wars_Political_Change_Advanced",
   "title": "Reformation: Religious Wars and Political Change",
   "grade": "9th",
   "difficulty": "Advanced",
   "vocab": [
-    {
-      "term": "reformation",
-      "definition": "16th century religious movement that split Western Christianity"
-    },
-    {
-      "term": "protestant",
-      "definition": "Christian who broke away from Catholic Church authority"
-    },
-    {
-      "term": "counter-reformation",
-      "definition": "Catholic Church's response to Protestant challenges"
-    },
-    {
-      "term": "indulgence",
-      "definition": "Payment to reduce punishment for sin, criticized by reformers"
-    },
-    {
-      "term": "religious tolerance",
-      "definition": "Acceptance of different religious beliefs and practices"
-    }
+    {"term": "reformation", "definition": "16th century religious movement that split Western Christianity"},
+    {"term": "protestant", "definition": "Christian who broke away from Catholic Church authority"},
+    {"term": "counter-reformation", "definition": "Catholic Church's response to Protestant challenges"},
+    {"term": "indulgence", "definition": "Payment to reduce punishment for sin, criticized by reformers"},
+    {"term": "religious tolerance", "definition": "Acceptance of different religious beliefs and practices"}
   ],
   "teachingNotes": "Analyze causes and consequences of religious reform. Discuss how religious conflict shaped European politics and society.",
-  "sample": {
-    "question": "What 16th century movement split Western Christianity?",
-    "expectedAny": [
-      "reformation",
-      "Protestant Reformation",
-      "religious reformation",
-      "church reform"
-    ]
-  },
-  "truefalse": {
-    "question": "Protestants broke away from Catholic Church authority.",
-    "expectedAny": [
-      "true",
-      "yes",
-      "t",
-      "correct"
-    ]
-  },
-  "multiplechoice": {
-    "question": "What was the Catholic Church's response to Protestant challenges?",
-    "expectedAny": [
-      "Counter-Reformation",
-      "Catholic reform",
-      "church response",
-      "Catholic counter-attack"
-    ]
-  },
-  "fillintheblank": {
-    "question": "Payment to reduce punishment for sin was called an ________.",
-    "expectedAny": [
-      "indulgence",
-      "payment",
-      "church payment",
-      "sin payment"
-    ]
-  },
-  "shortanswer": {
-    "question": "How did the Reformation lead to religious wars?",
-    "expectedAny": [
-      "created competing religious claims",
-      "divided Europe religiously",
-      "challenged political authority",
-      "sparked conflicts over faith"
-    ]
-  }
+  "sample": [
+    {"question": "What 16th century movement split Western Christianity?", "expectedAny": ["reformation", "Protestant Reformation", "religious reformation", "church reform"]},
+    {"question": "What is a Protestant?", "expectedAny": ["Christian who broke from Catholic Church", "Protestant Christian", "reformed Christian", "non-Catholic Christian"]},
+    {"question": "What is the Counter-Reformation?", "expectedAny": ["Catholic Church's response", "Catholic reform", "response to Protestants", "Catholic counter-movement"]},
+    {"question": "What is an indulgence?", "expectedAny": ["payment to reduce sin punishment", "criticized payment", "sin reduction payment", "payment for forgiveness"]},
+    {"question": "What is religious tolerance?", "expectedAny": ["acceptance of different beliefs", "accepting other religions", "tolerance of beliefs", "respecting other faiths"]},
+    {"question": "When was the Reformation?", "expectedAny": ["16th century", "1500s", "Renaissance period"]},
+    {"question": "What did Protestants break from?", "expectedAny": ["Catholic Church authority", "papal authority", "Rome"]},
+    {"question": "How did Catholics respond?", "expectedAny": ["Counter-Reformation", "Catholic reform", "internal reforms"]},
+    {"question": "What did reformers criticize?", "expectedAny": ["indulgences", "church corruption", "sale of indulgences"]},
+    {"question": "What acceptance developed?", "expectedAny": ["religious tolerance", "tolerance of beliefs", "accepting differences"]}
+  ],
+  "truefalse": [
+    {"question": "Protestants broke away from Catholic Church authority. (True or False)", "correct": true},
+    {"question": "The Reformation occurred in the 16th century. (True or False)", "correct": true},
+    {"question": "Indulgences were praised by reformers. (True or False)", "correct": false},
+    {"question": "The Counter-Reformation was a Catholic response. (True or False)", "correct": true},
+    {"question": "Religious tolerance means accepting different beliefs. (True or False)", "correct": true},
+    {"question": "The Reformation split Western Christianity. (True or False)", "correct": true},
+    {"question": "Protestants followed Catholic Church authority. (True or False)", "correct": false},
+    {"question": "Indulgences were payments for sin. (True or False)", "correct": true},
+    {"question": "The Counter-Reformation rejected all reform. (True or False)", "correct": false},
+    {"question": "Religious wars shaped European politics. (True or False)", "correct": true}
+  ],
+  "multiplechoice": [
+    {"question": "What movement split Western Christianity?", "choices": [{"letter": "A", "text": "Renaissance"}, {"letter": "B", "text": "Reformation"}, {"letter": "C", "text": "Crusades"}, {"letter": "D", "text": "Revolution"}], "correct": "B"},
+    {"question": "Who broke from Catholic authority?", "choices": [{"letter": "A", "text": "Muslims"}, {"letter": "B", "text": "Jews"}, {"letter": "C", "text": "Protestants"}, {"letter": "D", "text": "Pagans"}], "correct": "C"},
+    {"question": "What was the Catholic response?", "choices": [{"letter": "A", "text": "Crusades"}, {"letter": "B", "text": "Counter-Reformation"}, {"letter": "C", "text": "Inquisition"}, {"letter": "D", "text": "Silence"}], "correct": "B"},
+    {"question": "What payment was criticized?", "choices": [{"letter": "A", "text": "Taxes"}, {"letter": "B", "text": "Tithes"}, {"letter": "C", "text": "Indulgences"}, {"letter": "D", "text": "Fees"}], "correct": "C"},
+    {"question": "What is accepting different beliefs?", "choices": [{"letter": "A", "text": "Intolerance"}, {"letter": "B", "text": "Religious tolerance"}, {"letter": "C", "text": "Conversion"}, {"letter": "D", "text": "Rejection"}], "correct": "B"},
+    {"question": "When was the Reformation?", "choices": [{"letter": "A", "text": "14th century"}, {"letter": "B", "text": "16th century"}, {"letter": "C", "text": "18th century"}, {"letter": "D", "text": "20th century"}], "correct": "B"},
+    {"question": "What did reformers oppose?", "choices": [{"letter": "A", "text": "Prayer"}, {"letter": "B", "text": "Indulgences"}, {"letter": "C", "text": "Bible"}, {"letter": "D", "text": "Churches"}], "correct": "B"},
+    {"question": "What authority did Protestants reject?", "choices": [{"letter": "A", "text": "Government"}, {"letter": "B", "text": "Catholic Church"}, {"letter": "C", "text": "Monarchy"}, {"letter": "D", "text": "Military"}], "correct": "B"},
+    {"question": "What shaped European politics?", "choices": [{"letter": "A", "text": "Trade only"}, {"letter": "B", "text": "Religious wars"}, {"letter": "C", "text": "Art"}, {"letter": "D", "text": "Science"}], "correct": "B"},
+    {"question": "What did Reformation cause?", "choices": [{"letter": "A", "text": "Unity"}, {"letter": "B", "text": "Split in Christianity"}, {"letter": "C", "text": "Peace"}, {"letter": "D", "text": "Silence"}], "correct": "B"}
+  ],
+  "fillintheblank": [
+    {"question": "The _____ split Western Christianity in the 16th century.", "expectedAny": ["reformation", "Reformation"]},
+    {"question": "_____ broke away from Catholic Church authority.", "expectedAny": ["protestants", "Protestants"]},
+    {"question": "The _____-_____ was the Catholic response.", "expectedAny": ["Counter-Reformation", "counter-reformation"]},
+    {"question": "An _____ was a payment to reduce sin punishment.", "expectedAny": ["indulgence"]},
+    {"question": "_____ tolerance means accepting different beliefs.", "expectedAny": ["religious"]},
+    {"question": "The Reformation occurred in the _____ century.", "expectedAny": ["16th", "sixteenth"]},
+    {"question": "Reformers criticized the sale of _____.", "expectedAny": ["indulgences"]},
+    {"question": "_____ rejected papal authority.", "expectedAny": ["protestants", "Protestants"]},
+    {"question": "The Catholic Church launched the _____-_____.", "expectedAny": ["Counter-Reformation", "counter-reformation"]},
+    {"question": "Religious _____ shaped European politics.", "expectedAny": ["wars", "conflict"]}
+  ],
+  "shortanswer": [
+    {"question": "What was the Reformation?", "keyTerms": ["16th century", "religious", "movement", "split Christianity"], "expectedAny": ["16th century religious movement that split Western Christianity", "Protestant break from Catholic Church", "Religious reform movement"]},
+    {"question": "Who were Protestants?", "keyTerms": ["Christians", "broke away", "Catholic Church", "authority"], "expectedAny": ["Christians who broke away from Catholic Church authority", "Reformed Christians rejecting papal power", "Followers of Protestant Reformation"]},
+    {"question": "What was the Counter-Reformation?", "keyTerms": ["Catholic Church", "response", "Protestant", "challenges"], "expectedAny": ["Catholic Church's response to Protestant challenges", "Catholic reform and renewal", "Church's answer to Reformation"]},
+    {"question": "What were indulgences?", "keyTerms": ["payment", "reduce", "punishment", "sin"], "expectedAny": ["Payments to reduce punishment for sin", "Criticized practice of paying for forgiveness", "Financial remission of sin punishment"]},
+    {"question": "What is religious tolerance?", "keyTerms": ["acceptance", "different", "beliefs", "practices"], "expectedAny": ["Acceptance of different religious beliefs and practices", "Respecting other faiths", "Allowing religious diversity"]},
+    {"question": "What caused the Reformation?", "keyTerms": ["corruption", "indulgences", "church", "authority"], "expectedAny": ["Church corruption and sale of indulgences", "Criticism of papal authority and practices", "Desire for religious reform"]},
+    {"question": "How did the Reformation spread?", "keyTerms": ["printing press", "ideas", "across Europe", "leaders"], "expectedAny": ["Through printing press and reformer leaders across Europe", "Ideas spread rapidly via print and preaching", "Multiple reformers in different regions"]},
+    {"question": "What were religious wars?", "keyTerms": ["conflicts", "Protestants", "Catholics", "political"], "expectedAny": ["Conflicts between Protestants and Catholics with political dimensions", "Wars over religious differences and control", "Armed conflicts from religious divisions"]},
+    {"question": "What political changes occurred?", "keyTerms": ["weakened", "papal", "authority", "national"], "expectedAny": ["Weakened papal authority and strengthened national churches", "Shift in religious and political power", "Emergence of Protestant states"]},
+    {"question": "Why was tolerance important?", "keyTerms": ["ended", "wars", "coexistence", "peace"], "expectedAny": ["Eventually ended religious wars and allowed coexistence", "Necessary for peace in divided Europe", "Permitted religious diversity"]}
+  ]
 }
