@@ -20,8 +20,7 @@ export async function GET(request) {
     const subject = decodeURIComponent(parts[parts.length - 1] || '').toLowerCase();
     if (!subject) return NextResponse.json({ error: 'Subject required' }, { status: 400 });
     
-    // If subject is "facilitator", fetch from Supabase Storage subject folders
-    // These are the approved lessons that have been copied from facilitator-lessons/{userId}/ to {subject}/
+    // If subject is "facilitator", fetch ALL generated lessons from facilitator-lessons/ folders
     if (subject === 'facilitator') {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -31,57 +30,77 @@ export async function GET(request) {
       
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
       
-      // List all approved lessons from all subject folders in Supabase Storage
+      // List all user folders under facilitator-lessons/
       const results = [];
-      const subjects = ['math', 'science', 'language arts', 'social studies'];
       
-      for (const subj of subjects) {
-        try {
-          const { data: files, error } = await supabase.storage
-            .from('lessons')
-            .list(subj, {
-              limit: 1000,
-              offset: 0,
-            });
-          
-          if (error) {
-            console.error(`Error listing ${subj} lessons:`, error);
-            continue;
-          }
-          
-          if (!files || files.length === 0) continue;
-          
-          // Filter for JSON files only
-          const jsonFiles = files.filter(f => f.name.toLowerCase().endsWith('.json'));
-          
-          // Download and parse each file
-          for (const file of jsonFiles) {
-            try {
-              const { data: fileData, error: downloadError } = await supabase.storage
-                .from('lessons')
-                .download(`${subj}/${file.name}`);
-              
-              if (downloadError || !fileData) continue;
-              
-              const text = await fileData.text();
-              const lessonData = JSON.parse(text);
-              
-              results.push({
-                file: file.name,
-                id: lessonData.id || file.name,
-                title: lessonData.title || file.name.replace(/\.json$/, '').split('_').join(' '),
-                blurb: lessonData.blurb || '',
-                difficulty: (lessonData.difficulty || '').toLowerCase(),
-                grade: lessonData.grade != null ? String(lessonData.grade) : null,
-                subject: subj // Include subject for facilitator view
-              });
-            } catch (err) {
-              console.error(`Error processing ${subj}/${file.name}:`, err);
-            }
-          }
-        } catch (err) {
-          console.error(`Error fetching ${subj} lessons:`, err);
+      try {
+        const { data: folders, error: foldersError } = await supabase.storage
+          .from('lessons')
+          .list('facilitator-lessons', {
+            limit: 1000,
+            offset: 0,
+          });
+        
+        if (foldersError) {
+          console.error('Error listing facilitator-lessons folders:', foldersError);
+          return NextResponse.json(results);
         }
+        
+        if (!folders || folders.length === 0) {
+          return NextResponse.json(results);
+        }
+        
+        // Each folder is a user ID
+        for (const folder of folders) {
+          if (!folder.id) continue; // Skip if not a folder
+          
+          try {
+            const { data: files, error: filesError } = await supabase.storage
+              .from('lessons')
+              .list(`facilitator-lessons/${folder.name}`, {
+                limit: 1000,
+                offset: 0,
+              });
+            
+            if (filesError || !files) continue;
+            
+            // Filter for JSON files only
+            const jsonFiles = files.filter(f => f.name && f.name.toLowerCase().endsWith('.json'));
+            
+            // Download and parse each file
+            for (const file of jsonFiles) {
+              try {
+                const { data: fileData, error: downloadError } = await supabase.storage
+                  .from('lessons')
+                  .download(`facilitator-lessons/${folder.name}/${file.name}`);
+                
+                if (downloadError || !fileData) continue;
+                
+                const text = await fileData.text();
+                const lessonData = JSON.parse(text);
+                
+                results.push({
+                  file: file.name,
+                  id: lessonData.id || file.name,
+                  title: lessonData.title || file.name.replace(/\.json$/, '').split('_').join(' '),
+                  blurb: lessonData.blurb || '',
+                  difficulty: (lessonData.difficulty || '').toLowerCase(),
+                  grade: lessonData.grade != null ? String(lessonData.grade) : null,
+                  subject: lessonData.subject || 'unknown', // Subject from lesson data
+                  approved: lessonData.approved || false,
+                  needsUpdate: lessonData.needsUpdate || false,
+                  userId: folder.name // Track which user's folder this came from
+                });
+              } catch (err) {
+                console.error(`Error processing facilitator-lessons/${folder.name}/${file.name}:`, err);
+              }
+            }
+          } catch (err) {
+            console.error(`Error fetching files from facilitator-lessons/${folder.name}:`, err);
+          }
+        }
+      } catch (err) {
+        console.error('Error in facilitator lessons fetch:', err);
       }
       
       return NextResponse.json(results);

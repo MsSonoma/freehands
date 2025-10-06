@@ -289,10 +289,70 @@ export default function FacilitatorLessonsPage() {
                     {filteredLessons.length === 0 ? (
                       <p style={{ color: '#6b7280', padding: '12px', textAlign: 'center' }}>
                         {subject === 'facilitator' && selectedGrade === 'all' 
-                          ? 'No approved lessons yet. Generate and approve lessons in the Lesson Maker to see them here.'
+                          ? 'No generated lessons yet. Use the Lesson Maker to create custom lessons.'
                           : `No lessons found for Grade ${selectedGrade}`}
                       </p>
+                    ) : subject === 'facilitator' ? (
+                      // For facilitator lessons, group by subject
+                      (() => {
+                        const grouped = {}
+                        filteredLessons.forEach(lesson => {
+                          const subj = lesson.subject || 'other'
+                          if (!grouped[subj]) grouped[subj] = []
+                          grouped[subj].push(lesson)
+                        })
+                        
+                        return Object.keys(grouped).sort().map(subj => (
+                          <div key={subj} style={{ marginBottom: 24 }}>
+                            <h3 style={{ 
+                              fontSize: 16, 
+                              fontWeight: 600, 
+                              marginBottom: 8, 
+                              color: '#374151',
+                              textTransform: 'capitalize',
+                              paddingLeft: 8
+                            }}>
+                              {subj === 'language arts' ? 'Language Arts' : subj === 'social studies' ? 'Social Studies' : subj.charAt(0).toUpperCase() + subj.slice(1)}
+                            </h3>
+                            {grouped[subj].map(lesson => {
+                              const lessonKey = `${subject}/${lesson.file}`
+                              const isApproved = !!approvedLessons[lessonKey]
+                              
+                              return (
+                                <div key={lesson.file} style={card}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={isApproved}
+                                      onChange={() => toggleApproval(subject, lesson.file)}
+                                      id={`lesson-${lessonKey}`}
+                                      className="brand-checkbox"
+                                    />
+                                    <label
+                                      htmlFor={`lesson-${lessonKey}`}
+                                      style={{ flex: 1, cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+                                    >
+                                      <div style={{ fontWeight: 600 }}>{lesson.title}</div>
+                                      <div style={{ fontSize: 14, color: '#6b7280' }}>
+                                        {lesson.grade && `Grade ${lesson.grade}`}
+                                        {lesson.grade && lesson.difficulty && ' · '}
+                                        {lesson.difficulty && lesson.difficulty.charAt(0).toUpperCase() + lesson.difficulty.slice(1)}
+                                      </div>
+                                      {lesson.blurb && (
+                                        <div style={{ fontSize: 14, color: '#9ca3af', marginTop: 4 }}>
+                                          {lesson.blurb}
+                                        </div>
+                                      )}
+                                    </label>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        ))
+                      })()
                     ) : (
+                      // For other subjects, render normally
                       filteredLessons.map(lesson => {
                         const lessonKey = `${subject}/${lesson.file}`
                         const isApproved = !!approvedLessons[lessonKey]
