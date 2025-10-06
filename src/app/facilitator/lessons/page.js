@@ -49,7 +49,11 @@ export default function FacilitatorLessonsPage() {
       const lessonsMap = {}
       for (const subject of subjects) {
         try {
-          const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { cache: 'no-store' })
+          // For facilitator subject, pass learnerId if available
+          const queryParams = subject === 'facilitator' && selectedLearnerId 
+            ? `?learnerId=${encodeURIComponent(selectedLearnerId)}` 
+            : '';
+          const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}${queryParams}`, { cache: 'no-store' })
           const list = res.ok ? await res.json() : []
           lessonsMap[subject] = Array.isArray(list) ? list : []
         } catch {
@@ -59,7 +63,7 @@ export default function FacilitatorLessonsPage() {
       if (!cancelled) setAllLessons(lessonsMap)
     })()
     return () => { cancelled = true }
-  }, [])
+  }, [selectedLearnerId]) // Add selectedLearnerId as dependency
 
   // Load approved lessons for selected learner and set grade filters to learner's grade
   useEffect(() => {
