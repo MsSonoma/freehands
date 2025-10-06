@@ -527,6 +527,12 @@ function SessionPageInner() {
   // Poem state
   // poemState: 'inactive' | 'awaiting-topic' | 'awaiting-ok'
   const [poemState, setPoemState] = useState('inactive');
+  // Story state
+  // storyState: 'inactive' | 'awaiting-turn' | 'ending'
+  const [storyState, setStoryState] = useState('inactive');
+  const [storyUsedThisGate, setStoryUsedThisGate] = useState(false);
+  // Story transcript: array of {role: 'user'|'assistant', text: string}
+  const [storyTranscript, setStoryTranscript] = useState([]);
 
   // Reset opening actions visibility on begin and on major phase changes
   useEffect(() => {
@@ -535,11 +541,13 @@ function SessionPageInner() {
       setJokeUsedThisGate(false);
       setRiddleUsedThisGate(false);
       setPoemUsedThisGate(false);
+      setStoryUsedThisGate(false);
+      setStoryTranscript([]); // Clear story transcript on new discussion gate
     }
   }, [phase, subPhase]);
 
   // After Opening finishes speaking and we are awaiting-learner, show action buttons
-  // Only when not in Ask, Riddle, or Poem flows
+  // Only when not in Ask, Riddle, Poem, or Story flows
   useEffect(() => {
     if (
       !isSpeaking &&
@@ -547,11 +555,12 @@ function SessionPageInner() {
       subPhase === 'awaiting-learner' &&
       askState === 'inactive' &&
       riddleState === 'inactive' &&
-      poemState === 'inactive'
+      poemState === 'inactive' &&
+      storyState === 'inactive'
     ) {
       setShowOpeningActions(true);
     }
-  }, [isSpeaking, phase, subPhase, askState, riddleState, poemState]);
+  }, [isSpeaking, phase, subPhase, askState, riddleState, poemState, storyState]);
 
   // Also reveal Opening actions when the captions finish (even if audio is still playing)
   useEffect(() => {
@@ -561,18 +570,19 @@ function SessionPageInner() {
       subPhase === 'awaiting-learner' &&
       askState === 'inactive' &&
       riddleState === 'inactive' &&
-      poemState === 'inactive'
+      poemState === 'inactive' &&
+      storyState === 'inactive'
     ) {
       setShowOpeningActions(true);
     }
-  }, [captionsDone, phase, subPhase, askState, riddleState, poemState]);
+  }, [captionsDone, phase, subPhase, askState, riddleState, poemState, storyState]);
 
-  // If Ask, Riddle, or Poem becomes active, immediately hide Opening actions
+  // If Ask, Riddle, Poem, or Story becomes active, immediately hide Opening actions
   useEffect(() => {
-    if (askState !== 'inactive' || riddleState !== 'inactive' || poemState !== 'inactive') {
+    if (askState !== 'inactive' || riddleState !== 'inactive' || poemState !== 'inactive' || storyState !== 'inactive') {
       try { setShowOpeningActions(false); } catch {}
     }
-  }, [askState, riddleState, poemState]);
+  }, [askState, riddleState, poemState, storyState]);
 
   // Handler: Tell me a joke (once per gate)
   const handleTellJoke = useCallback(async () => {
@@ -862,6 +872,146 @@ function SessionPageInner() {
     setShowOpeningActions(true);
     setCanSend(true);
   }, []);
+
+  // Story: start collaborative storytelling
+  const handleStoryStart = useCallback(async () => {
+    try { setShowOpeningActions(false); } catch {}
+    try { setStoryUsedThisGate(true); } catch {}
+    setStoryTranscript([]); // Reset transcript for new story
+    setStoryState('awaiting-turn');
+    setCanSend(true);
+    await speakFrontend('Start the story and I will pick up from where you leave off.');
+  }, [speakFrontend]);
+
+  // Story: Your Turn - send story contribution to backend
+  const handleStoryYourTurn = useCallback(async (inputValue) => {
+    const trimmed = String(inputValue ?? '').trim();
+    if (!trimmed) return;
+    // Prevent concurrent calls by checking canSend state
+    setCanSend(false);
+    
+    // Add user's contribution to transcript
+    const updatedTranscript = [...storyTranscript, { role: 'user', text: trimmed }];
+    
+    // Echo the user's story contribution to captions as user line
+    try {
+      const prevLen = captionSentencesRef.current?.length || 0;
+      const nextAll = [...(captionSentencesRef.current || []), { text: trimmed, role: 'user' }];
+      captionSentencesRef.current = nextAll;
+      setCaptionSentences(nextAll);
+      setCaptionIndex(prevLen);
+    } catch {}
+    
+    // Build story context from transcript
+    const storyContext = updatedTranscript.length > 0
+      ? 'Story so far: ' + updatedTranscript.map(turn => 
+          turn.role === 'user' ? `Child: "${turn.text}"` : `You: "${turn.text}"`
+        ).join(' ')
+      : '';
+    
+    // Send to backend with collaborative storytelling instructions and full context
+    const instruction = [
+      'You are Ms. Sonoma talking to a 5 year old.',
+      'You are telling a collaborative story in turns.',
+      storyContext,
+      `The child just said: "${trimmed.replace(/["]/g, "'")}"`,
+      'Continue the story playfully in 2-3 short sentences.',
+      'Build naturally on what came before.',
+      'Make it fun and age-appropriate for a child.',
+      'Do not end the story yet.'
+    ].filter(Boolean).join(' ');
+    
+    // Call API directly for text only, then use speakFrontend for unified audio+captions
+    let responseText = 'What happens next?';
+    try {
+      const res = await fetch('/api/sonoma', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instruction, innertext: '' })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        responseText = (data && data.reply) ? data.reply : responseText;
+      }
+    } catch (err) {
+      console.warn('[Story] API call failed:', err);
+    }
+    
+    // Add Ms. Sonoma's response to transcript
+    setStoryTranscript([...updatedTranscript, { role: 'assistant', text: responseText }]);
+    
+    setStoryState('awaiting-turn');
+    // Use speakFrontend for unified TTS + captions + state management
+    await speakFrontend(responseText);
+    setCanSend(true);
+  }, [subjectParam, difficultyParam, lessonParam, storyTranscript, speakFrontend]);
+
+  // Story: End - wrap up the story
+  const handleStoryEnd = useCallback(async (inputValue, endingType = 'happy') => {
+    const trimmed = String(inputValue ?? '').trim();
+    setCanSend(false);
+    
+    // Add final user input to transcript if provided
+    let updatedTranscript = [...storyTranscript];
+    if (trimmed) {
+      updatedTranscript = [...updatedTranscript, { role: 'user', text: trimmed }];
+      // Echo any final user input to captions
+      try {
+        const prevLen = captionSentencesRef.current?.length || 0;
+        const nextAll = [...(captionSentencesRef.current || []), { text: trimmed, role: 'user' }];
+        captionSentencesRef.current = nextAll;
+        setCaptionSentences(nextAll);
+        setCaptionIndex(prevLen);
+      } catch {}
+    }
+    
+    // Build story context from transcript
+    const storyContext = updatedTranscript.length > 0
+      ? 'Story so far: ' + updatedTranscript.map(turn => 
+          turn.role === 'user' ? `Child: "${turn.text}"` : `You: "${turn.text}"`
+        ).join(' ')
+      : '';
+    
+    // Instruct backend to wrap up the story with the specified ending type
+    const userPart = trimmed ? `The child just said: "${trimmed.replace(/["]/g, "'")}"` : '';
+    const endingInstruction = endingType === 'funny' 
+      ? 'Wrap up the story with a funny and silly conclusion in 2-3 short sentences. Make it unexpected and amusing for a child.'
+      : 'Wrap up the story with a playful conclusion in 2-3 short sentences. Make the ending happy and satisfying for a child.';
+    const instruction = [
+      'You are Ms. Sonoma talking to a 5 year old.',
+      'You are ending a collaborative story.',
+      storyContext,
+      userPart,
+      endingInstruction
+    ].filter(Boolean).join(' ');
+    
+    // Call API directly for text only, then use speakFrontend for unified audio+captions
+    let responseText = 'And they all lived happily ever after. The end.';
+    try {
+      const res = await fetch('/api/sonoma', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instruction, innertext: '' })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        responseText = (data && data.reply) ? data.reply : responseText;
+      }
+    } catch (err) {
+      console.warn('[Story] API call failed:', err);
+    }
+    
+    // Clear transcript when story ends
+    setStoryTranscript([]);
+    
+    // Use speakFrontend for unified TTS + captions + state management
+    await speakFrontend(responseText);
+    
+    // Return to opening actions
+    setStoryState('inactive');
+    setShowOpeningActions(true);
+    setCanSend(true);
+  }, [subjectParam, difficultyParam, lessonParam, storyTranscript, speakFrontend]);
 
 
   // Riddle: judging is disabled. We ignore text attempts and provide only Hint/Answer/Back.
@@ -4440,7 +4590,7 @@ function SessionPageInner() {
           phase, subPhase,
           teachingStage,
           idx: { ci: currentCompIndex, ei: currentExIndex, wi: currentWorksheetIndex, ti: testActiveIndex },
-          gates: { qa: !!qaAnswersUnlocked, jk: !!jokeUsedThisGate, rd: !!riddleUsedThisGate, pm: !!poemUsedThisGate },
+          gates: { qa: !!qaAnswersUnlocked, jk: !!jokeUsedThisGate, rd: !!riddleUsedThisGate, pm: !!poemUsedThisGate, st: !!storyUsedThisGate },
           cur: {
             c: currentCompProblem ? (currentCompProblem.id || currentCompProblem.key || currentCompProblem.question || currentCompProblem.prompt || '1') : null,
             e: currentExerciseProblem ? (currentExerciseProblem.id || currentExerciseProblem.key || currentExerciseProblem.question || currentExerciseProblem.prompt || '1') : null,
@@ -4499,7 +4649,8 @@ function SessionPageInner() {
           ticker,
           teachingStage,
           stageRepeats,
-          qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate,
+          qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, storyUsedThisGate,
+          storyTranscript,
           currentCompIndex, currentExIndex, currentWorksheetIndex,
           testActiveIndex,
           currentCompProblem, currentExerciseProblem,
@@ -4537,7 +4688,7 @@ function SessionPageInner() {
         lastSavedSigRef.current = sig;
       } catch {}
     }, 200);
-  }, [phase, subPhase, showBegin, teachingStage, /*stageRepeats excluded from triggers*/, qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testCorrectCount, testFinalPercent, /*captionSentences excluded*/, /*captionIndex excluded*/, usedTestCuePhrases, getSnapshotStorageKey, lessonParam, effectiveLessonTitle, transcriptSessionId]);
+  }, [phase, subPhase, showBegin, teachingStage, /*stageRepeats excluded from triggers*/, qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, storyUsedThisGate, storyTranscript, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testCorrectCount, testFinalPercent, /*captionSentences excluded*/, /*captionIndex excluded*/, usedTestCuePhrases, getSnapshotStorageKey, lessonParam, effectiveLessonTitle, transcriptSessionId]);
 
   // Memoized signature of meaningful resume-relevant state. Changes here will cause an autosave.
   const snapshotSigMemo = useMemo(() => {
@@ -4545,7 +4696,7 @@ function SessionPageInner() {
       phase, subPhase,
       teachingStage,
       idx: { ci: currentCompIndex, ei: currentExIndex, wi: currentWorksheetIndex, ti: testActiveIndex },
-      gates: { qa: !!qaAnswersUnlocked, jk: !!jokeUsedThisGate, rd: !!riddleUsedThisGate, pm: !!poemUsedThisGate },
+      gates: { qa: !!qaAnswersUnlocked, jk: !!jokeUsedThisGate, rd: !!riddleUsedThisGate, pm: !!poemUsedThisGate, st: !!storyUsedThisGate },
       cur: {
         c: currentCompProblem ? (currentCompProblem.id || currentCompProblem.key || currentCompProblem.question || currentCompProblem.prompt || '1') : null,
         e: currentExerciseProblem ? (currentExerciseProblem.id || currentExerciseProblem.key || currentExerciseProblem.question || currentExerciseProblem.prompt || '1') : null,
@@ -4558,7 +4709,7 @@ function SessionPageInner() {
       },
     };
     try { return JSON.stringify(sigObj); } catch { return '' }
-  }, [phase, subPhase, teachingStage, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testFinalPercent, activeQuestionBodyRef.current]);
+  }, [phase, subPhase, teachingStage, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, storyUsedThisGate, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testFinalPercent, activeQuestionBodyRef.current]);
 
   // Save on ticker change to support resume at each count increment (coalesced with timer)
   useEffect(() => {
@@ -4656,6 +4807,8 @@ function SessionPageInner() {
         try { setJokeUsedThisGate(!!snap.jokeUsedThisGate); } catch {}
         try { setRiddleUsedThisGate(!!snap.riddleUsedThisGate); } catch {}
         try { setPoemUsedThisGate(!!snap.poemUsedThisGate); } catch {}
+        try { setStoryUsedThisGate(!!snap.storyUsedThisGate); } catch {}
+        try { setStoryTranscript(Array.isArray(snap.storyTranscript) ? snap.storyTranscript : []); } catch {}
         // Three-stage teaching state
         try { if (typeof snap.teachingStage === 'string') setTeachingStage(snap.teachingStage); } catch {}
         try { if (snap.stageRepeats && typeof snap.stageRepeats === 'object') setStageRepeats({ definitions: Number.isFinite(snap.stageRepeats.definitions) ? snap.stageRepeats.definitions : 0, explanation: Number.isFinite(snap.stageRepeats.explanation) ? snap.stageRepeats.explanation : 0, examples: Number.isFinite(snap.stageRepeats.examples) ? snap.stageRepeats.examples : 0 }); } catch {}
@@ -5082,6 +5235,7 @@ function SessionPageInner() {
       setJokeUsedThisGate(false);
       setRiddleUsedThisGate(false);
       setPoemUsedThisGate(false);
+      setStoryUsedThisGate(false);
       setTicker(0);
       setOfferResume(false);
     } catch {}
@@ -7030,8 +7184,7 @@ function SessionPageInner() {
     setJokeUsedThisGate(false);
     setRiddleUsedThisGate(false);
     setPoemUsedThisGate(false);
-  setRiddleUsedThisGate(false);
-  setPoemUsedThisGate(false);
+    setStoryUsedThisGate(false);
     // Immediately advance subPhase so the "Begin Worksheet" button disappears
     setSubPhase('worksheet-active');
     worksheetIndexRef.current = 0;
@@ -7117,6 +7270,9 @@ function SessionPageInner() {
   // Gate quick-answer buttons until Start the lesson
   setQaAnswersUnlocked(false);
   setJokeUsedThisGate(false);
+  setRiddleUsedThisGate(false);
+  setPoemUsedThisGate(false);
+  setStoryUsedThisGate(false);
     // Ensure audio can play if previously paused by user
     setUserPaused(false);
     // Reset model-validated correctness tracking
@@ -7206,6 +7362,7 @@ function SessionPageInner() {
   setJokeUsedThisGate(false);
   setRiddleUsedThisGate(false);
   setPoemUsedThisGate(false);
+  setStoryUsedThisGate(false);
     // Persist the entrance to comprehension-start immediately
   // Persist the entrance to comprehension-start immediately (single-snapshot resume pointer)
   try { scheduleSaveSnapshot('begin-comprehension'); } catch {}
@@ -7740,6 +7897,7 @@ function SessionPageInner() {
   setJokeUsedThisGate(false);
   setRiddleUsedThisGate(false);
   setPoemUsedThisGate(false);
+  setStoryUsedThisGate(false);
   // Persist phase entrance for Exercise
   try { scheduleSaveSnapshot('begin-exercise'); } catch {}
     // Frontend-only: brief intro + first question via unified TTS/captions
@@ -7760,6 +7918,9 @@ function SessionPageInner() {
   };
 
   const handleSend = async (providedValue) => {
+    // Prevent concurrent calls while processing
+    if (!canSend) return;
+    
     // Use the provided value when present (e.g., from InputPanel), otherwise fall back to state
     const raw = providedValue !== undefined ? providedValue : learnerInput;
     const trimmed = String(raw ?? '').trim();
@@ -7824,11 +7985,19 @@ function SessionPageInner() {
         'Do not add a title or extra commentary.'
       ].join(' ');
       const result = await callMsSonoma(instruction, '', { phase: 'discussion', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, step: 'poem' }).catch(() => null);
-      const poem = (result && result.text) ? result.text : `Here is a little poem about ${trimmed}.`;
-      await speakFrontend(poem);
+      // callMsSonoma handles audio playback internally, so no need to call speakFrontend
       setPoemState('awaiting-ok');
       setCanSend(false);
       setShowOpeningActions(true);
+      return;
+    }
+
+    // Story: awaiting-turn → treat as Your Turn
+    if (storyState === 'awaiting-turn') {
+      // Prevent double-processing by checking if input is already cleared
+      if (!trimmed) return;
+      setLearnerInput('');
+      await handleStoryYourTurn(trimmed);
       return;
     }
 
@@ -9472,7 +9641,8 @@ function SessionPageInner() {
                 showOpeningActions &&
                 askState === 'inactive' &&
                 riddleState === 'inactive' &&
-                poemState === 'inactive'
+                poemState === 'inactive' &&
+                storyState === 'inactive'
               );
               if (!canShow) return null;
               const wrap = { display:'flex', alignItems:'center', justifyContent:'center', flexWrap:'wrap', gap:8, padding:'6px 12px' };
@@ -9481,10 +9651,11 @@ function SessionPageInner() {
               const disabledBtn = { ...btn, opacity:0.5, cursor:'not-allowed' };
               return (
                 <div style={wrap} aria-label="Opening actions">
-                  <button type="button" style={jokeUsedThisGate ? disabledBtn : btn} onClick={jokeUsedThisGate ? undefined : handleTellJoke} disabled={jokeUsedThisGate}> Joke</button>
                   <button type="button" style={btn} onClick={handleAskQuestionStart}>Ask</button>
+                  <button type="button" style={jokeUsedThisGate ? disabledBtn : btn} onClick={jokeUsedThisGate ? undefined : handleTellJoke} disabled={jokeUsedThisGate}> Joke</button>
                   <button type="button" style={riddleUsedThisGate ? disabledBtn : btn} onClick={riddleUsedThisGate ? undefined : handleTellRiddle} disabled={riddleUsedThisGate}>Riddle</button>
                   <button type="button" style={poemUsedThisGate ? disabledBtn : btn} onClick={poemUsedThisGate ? undefined : handlePoemStart} disabled={poemUsedThisGate}>Poem</button>
+                  <button type="button" style={storyUsedThisGate ? disabledBtn : btn} onClick={storyUsedThisGate ? undefined : handleStoryStart} disabled={storyUsedThisGate}>Story</button>
                   <button type="button" style={goBtn} onClick={lessonData ? handleStartLesson : undefined} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson…'}>Go</button>
                 </div>
               );
@@ -9502,7 +9673,7 @@ function SessionPageInner() {
                 (phase === 'test' && subPhase === 'test-active')
               );
               const canShow = (
-                inQnA && !isSpeaking && showOpeningActions && askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive'
+                inQnA && !isSpeaking && showOpeningActions && askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive' && storyState === 'inactive'
               );
               if (!canShow) return null;
               const wrap = { display:'flex', alignItems:'center', justifyContent:'center', flexWrap:'wrap', gap:8, padding:'6px 12px' };
@@ -9519,10 +9690,11 @@ function SessionPageInner() {
               );
               return (
                 <div style={wrap} aria-label="Phase opening actions">
-                  <button type="button" style={jokeUsedThisGate ? disabledBtn : btn} onClick={jokeUsedThisGate ? undefined : handleTellJoke} disabled={jokeUsedThisGate}> Joke</button>
                   <button type="button" style={btn} onClick={handleAskQuestionStart}>Ask</button>
+                  <button type="button" style={jokeUsedThisGate ? disabledBtn : btn} onClick={jokeUsedThisGate ? undefined : handleTellJoke} disabled={jokeUsedThisGate}> Joke</button>
                   <button type="button" style={riddleUsedThisGate ? disabledBtn : btn} onClick={riddleUsedThisGate ? undefined : handleTellRiddle} disabled={riddleUsedThisGate}>Riddle</button>
                   <button type="button" style={poemUsedThisGate ? disabledBtn : btn} onClick={poemUsedThisGate ? undefined : handlePoemStart} disabled={poemUsedThisGate}>Poem</button>
+                  <button type="button" style={storyUsedThisGate ? disabledBtn : btn} onClick={storyUsedThisGate ? undefined : handleStoryStart} disabled={storyUsedThisGate}>Story</button>
                   <button type="button" style={goBtn} onClick={onGo} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson…'}>Go</button>
                 </div>
               );
@@ -9558,6 +9730,23 @@ function SessionPageInner() {
                 <button type="button" style={okBtn} onClick={handlePoemOk}>Ok</button>
               </div>
             );
+          })()}
+
+          {/* Story: Happy Ending / Funny Ending buttons during storytelling */}
+          {storyState === 'awaiting-turn' && (() => {
+            try {
+              const isDisabled = sendDisabled || !canSend;
+              const btnBase = { color:'#fff', borderRadius:8, padding:'8px 16px', minHeight:40, fontWeight:800, border:'none', cursor: isDisabled ? 'not-allowed' : 'pointer', opacity: isDisabled ? 0.5 : 1, transition: 'opacity 0.2s' };
+              const happyBtn = { ...btnBase, background:'#059669', boxShadow:'0 2px 12px rgba(5,150,105,0.28)' };
+              const funnyBtn = { ...btnBase, background:'#d97706', boxShadow:'0 2px 12px rgba(217,119,6,0.28)' };
+              return (
+                <div style={{display:'flex', justifyContent:'center', gap:8, padding:'6px 12px', flexWrap:'wrap'}}>
+                  <button type="button" style={happyBtn} onClick={() => { if (!isDisabled) { const val = learnerInput; setLearnerInput(''); handleStoryEnd(val, 'happy'); } }} disabled={isDisabled}>Happy Ending</button>
+                  <button type="button" style={funnyBtn} onClick={() => { if (!isDisabled) { const val = learnerInput; setLearnerInput(''); handleStoryEnd(val, 'funny'); } }} disabled={isDisabled}>Funny Ending</button>
+                </div>
+              );
+            } catch {}
+            return null;
           })()}
 
           {/* Riddle action row (inside fixed footer) */}
