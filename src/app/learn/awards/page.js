@@ -42,11 +42,26 @@ export default function AwardsPage() {
   useEffect(() => {
     let cancelled = false
     ;(async () => {
+      // Get auth token for facilitator lessons
+      let token = null
+      try {
+        const { getSupabaseClient } = await import('@/app/lib/supabaseClient')
+        const supabase = getSupabaseClient()
+        if (supabase) {
+          const { data: { session } } = await supabase.auth.getSession()
+          token = session?.access_token || null
+        }
+      } catch {}
+
       const lessonsMap = {}
       for (const subject of subjects) {
         try {
+          const headers = subject === 'facilitator' && token 
+            ? { 'Authorization': `Bearer ${token}` }
+            : {}
           const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { 
-            cache: 'no-store'
+            cache: 'no-store',
+            headers
           })
           const list = res.ok ? await res.json() : []
           lessonsMap[subject] = Array.isArray(list) ? list : []
