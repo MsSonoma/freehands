@@ -55,9 +55,15 @@ export async function GET(request) {
           return NextResponse.json(results);
         }
         
-        // Each folder is a user ID
+        console.log('[FACILITATOR] Raw folders data:', JSON.stringify(folders.slice(0, 2), null, 2));
+        
+        // Each folder is a user ID - in Supabase Storage, folders have id: null, files have id: string
         for (const folder of folders) {
-          if (!folder.id) continue; // Skip if not a folder
+          // Skip files (they have an id), we only want folders (id is null)
+          if (folder.id !== null) {
+            console.log('[FACILITATOR] Skipping file:', folder.name);
+            continue;
+          }
           
           console.log('[FACILITATOR] Processing folder:', folder.name);
           
