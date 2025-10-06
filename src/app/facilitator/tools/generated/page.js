@@ -244,12 +244,12 @@ export default function GeneratedLessonsPage(){
     }
   }
 
-  async function handlePreviewText(file) {
+  async function handlePreviewText(file, userId) {
     setBusy(true)
     setError('')
     try {
-      const path = `/lessons/${encodeURIComponent('Facilitator Lessons')}/${encodeURIComponent(file)}`
-      const res = await fetch(path, { cache: 'no-store' })
+      const params = new URLSearchParams({ file, userId })
+      const res = await fetch(`/api/facilitator/lessons/get?${params}`, { cache: 'no-store' })
       if (!res.ok) {
         const snippet = await res.text().catch(()=> '')
         setError(`Failed to load lesson JSON (${res.status}). ${snippet.slice(0, 120)}`)
@@ -335,7 +335,7 @@ export default function GeneratedLessonsPage(){
               <h3 style={{ margin:'0 0 4px' }}>{it.title || it.file}</h3>
               <p style={{ margin:'0 0 8px', color:'#555' }}>Grade: {it.grade || '—'} · {it.difficulty || '—'} · Subject: {it.subject || '—'} {it.approved ? '· Approved' : ''}{it.needsUpdate ? ' · Needs Update' : ''}</p>
               <div style={{ display:'flex', gap:8, flexWrap:'nowrap' }}>
-                <button style={btnSecondary} disabled={busy} onClick={()=>handlePreviewText(it.file)}>
+                <button style={btnSecondary} disabled={busy} onClick={()=>handlePreviewText(it.file, it.userId)}>
                   {busy ? 'Loading…' : (textPreviews[it.file] ? 'Refresh Preview' : 'Preview Text')}
                 </button>
                 <button style={btn} disabled={busy} onClick={()=>openChangeModal(it.file, it.userId)}>
