@@ -20,45 +20,71 @@ export async function GET(request){
     const supabase = await getSupabaseAdmin()
     if (!supabase) return NextResponse.json({ error: 'Storage not configured' }, { status: 500 })
     
-    // List all files in facilitator-lessons bucket
-    const { data: files, error: listError } = await supabase.storage
+    // First, list all user folders in facilitator-lessons
+    const { data: userFolders, error: folderError } = await supabase.storage
       .from('lessons')
       .list('facilitator-lessons', { limit: 1000 })
     
-    if (listError) {
-      console.error('Storage list error:', listError)
+    if (folderError) {
+      console.error('Storage folder list error:', folderError)
       return NextResponse.json([])
     }
     
     const out = []
-    for (const fileObj of files || []) {
-      if (!fileObj.name.toLowerCase().endsWith('.json')) continue
+    
+    // Iterate through each user folder
+    for (const folder of userFolders || []) {
+      if (!folder.id) continue // Skip non-folder items
+      
       try {
-        // Download and parse each file
-        const { data: fileData, error: downloadError } = await supabase.storage
+        // List files in this user's folder
+        const { data: files, error: listError } = await supabase.storage
           .from('lessons')
-          .download(`facilitator-lessons/${fileObj.name}`)
+          .list(`facilitator-lessons/${folder.name}`, { limit: 1000 })
         
-        if (downloadError) continue
+        if (listError) {
+          console.error(`Error listing files in ${folder.name}:`, listError)
+          continue
+        }
         
-        const raw = await fileData.text()
-        const js = JSON.parse(raw)
-        const subj = (js.subject || '').toString().toLowerCase()
-        const approved = js.approved === true // Track approval status in the lesson JSON itself
-        const needsUpdate = js.needsUpdate === true
-        out.push({ 
-          file: fileObj.name, 
-          title: js.title || fileObj.name, 
-          grade: js.grade || null, 
-          difficulty: (js.difficulty || '').toLowerCase(), 
-          subject: subj || null, 
-          approved, 
-          needsUpdate 
-        })
-      } catch (parseError) {
-        console.error('Parse error for', fileObj.name, parseError)
+        // Process each file
+        for (const fileObj of files || []) {
+          if (!fileObj.name.toLowerCase().endsWith('.json')) continue
+          try {
+            // Download and parse each file
+            const { data: fileData, error: downloadError } = await supabase.storage
+              .from('lessons')
+              .download(`facilitator-lessons/${folder.name}/${fileObj.name}`)
+            
+            if (downloadError) {
+              console.error(`Error downloading ${fileObj.name}:`, downloadError)
+              continue
+            }
+            
+            const raw = await fileData.text()
+            const js = JSON.parse(raw)
+            const subj = (js.subject || '').toString().toLowerCase()
+            const approved = js.approved === true
+            const needsUpdate = js.needsUpdate === true
+            out.push({ 
+              file: fileObj.name, 
+              userId: folder.name,
+              title: js.title || fileObj.name, 
+              grade: js.grade || null, 
+              difficulty: (js.difficulty || '').toLowerCase(), 
+              subject: subj || null, 
+              approved, 
+              needsUpdate 
+            })
+          } catch (parseError) {
+            console.error('Parse error for', fileObj.name, parseError)
+          }
+        }
+      } catch (userFolderError) {
+        console.error(`Error processing folder ${folder.name}:`, userFolderError)
       }
     }
+    
     return NextResponse.json(out)
   } catch (e) {
     console.error('List error:', e)

@@ -12,7 +12,7 @@ export default function GeneratedLessonsPage(){
   const [error, setError] = useState('')
   const [textPreviews, setTextPreviews] = useState({}) // { [file]: string }
   const [changeRequests, setChangeRequests] = useState({}) // { [file]: string }
-  const [showChangeModal, setShowChangeModal] = useState(null) // file name when modal open
+  const [showChangeModal, setShowChangeModal] = useState(null) // { file, userId } when modal open
 
   async function refresh(){
     setLoading(true)
@@ -50,7 +50,7 @@ export default function GeneratedLessonsPage(){
   const btnApprove = { ...btn, background:'#065f46', borderColor:'#065f46' }
   const btnSecondary = { ...btn, background:'#374151', borderColor:'#374151' }
 
-  async function handleDelete(file){
+  async function handleDelete(file, userId){
     if (!confirm('Delete this lesson?')) return
     setBusy(true)
     try {
@@ -59,7 +59,7 @@ export default function GeneratedLessonsPage(){
       const token = session?.access_token
       const res = await fetch('/api/facilitator/lessons/delete', {
         method:'POST', headers:{ 'Content-Type':'application/json', ...(token?{Authorization:`Bearer ${token}`}:{}) },
-        body: JSON.stringify({ file })
+        body: JSON.stringify({ file, userId })
       })
       if (!res.ok) {
         const js = await res.json().catch(()=>null)
@@ -71,7 +71,7 @@ export default function GeneratedLessonsPage(){
     }
   }
 
-  async function handleApprove(file){
+  async function handleApprove(file, userId){
     setBusy(true)
     setError('')
     try {
@@ -80,7 +80,7 @@ export default function GeneratedLessonsPage(){
       const token = session?.access_token
       const res = await fetch('/api/facilitator/lessons/approve', {
         method:'POST', headers:{ 'Content-Type':'application/json', ...(token?{Authorization:`Bearer ${token}`}:{}) },
-        body: JSON.stringify({ file })
+        body: JSON.stringify({ file, userId })
       })
       if (!res.ok) {
         const js = await res.json().catch(()=>null)
@@ -271,7 +271,9 @@ export default function GeneratedLessonsPage(){
     })
   }
 
-  async function handleRequestChanges(file) {
+  async function handleRequestChanges() {
+    if (!showChangeModal) return
+    const { file, userId } = showChangeModal
     const changeRequest = changeRequests[file] || ''
     if (!changeRequest.trim()) {
       setError('Please describe the changes you want')
@@ -286,7 +288,7 @@ export default function GeneratedLessonsPage(){
       const res = await fetch('/api/facilitator/lessons/request-changes', {
         method:'POST',
         headers:{ 'Content-Type':'application/json', ...(token?{Authorization:`Bearer ${token}`}:{}) },
-        body: JSON.stringify({ file, changeRequest })
+        body: JSON.stringify({ file, changeRequest, userId })
       })
       const js = await res.json().catch(()=>null)
       if (!res.ok) {
@@ -305,8 +307,8 @@ export default function GeneratedLessonsPage(){
     }
   }
 
-  function openChangeModal(file) {
-    setShowChangeModal(file)
+  function openChangeModal(file, userId) {
+    setShowChangeModal({ file, userId })
     setError('')
   }
 
@@ -336,13 +338,13 @@ export default function GeneratedLessonsPage(){
                 <button style={btnSecondary} disabled={busy} onClick={()=>handlePreviewText(it.file)}>
                   {busy ? 'Loading…' : (textPreviews[it.file] ? 'Refresh Preview' : 'Preview Text')}
                 </button>
-                <button style={btn} disabled={busy} onClick={()=>openChangeModal(it.file)}>
+                <button style={btn} disabled={busy} onClick={()=>openChangeModal(it.file, it.userId)}>
                   Request Changes
                 </button>
-                <button style={{...btnApprove, ...(it.approved && !it.needsUpdate ? {opacity:0.5} : {})}} disabled={busy || (it.approved && !it.needsUpdate)} onClick={()=>handleApprove(it.file)}>
+                <button style={{...btnApprove, ...(it.approved && !it.needsUpdate ? {opacity:0.5} : {})}} disabled={busy || (it.approved && !it.needsUpdate)} onClick={()=>handleApprove(it.file, it.userId)}>
                   {busy ? (it.needsUpdate ? 'Updating…' : 'Approving…') : (it.approved && !it.needsUpdate ? 'Approved' : it.needsUpdate ? 'Update' : 'Approve')}
                 </button>
-                <button style={btnDanger} disabled={busy} onClick={()=>handleDelete(it.file)}>
+                <button style={btnDanger} disabled={busy} onClick={()=>handleDelete(it.file, it.userId)}>
                   {busy ? 'Deleting…' : 'Delete'}
                 </button>
               </div>
@@ -371,15 +373,15 @@ export default function GeneratedLessonsPage(){
             <p style={{ color:'#555' }}>Describe the changes you want to make to this lesson:</p>
             <textarea
               style={{ width:'100%', minHeight:120, padding:'10px 12px', border:'1px solid #e5e7eb', borderRadius:8, fontFamily:'inherit', fontSize:14 }}
-              value={changeRequests[showChangeModal] || ''}
-              onChange={e=>setChangeRequests(prev=>({...prev, [showChangeModal]: e.target.value}))}
+              value={changeRequests[showChangeModal.file] || ''}
+              onChange={e=>setChangeRequests(prev=>({...prev, [showChangeModal.file]: e.target.value}))}
               placeholder="e.g., Add more examples about fractions, make questions easier, include word problems..."
             />
             <div style={{ marginTop:16, display:'flex', gap:8, justifyContent:'flex-end' }}>
               <button style={btnSecondary} disabled={busy} onClick={closeChangeModal}>
                 Cancel
               </button>
-              <button style={btn} disabled={busy} onClick={()=>handleRequestChanges(showChangeModal)}>
+              <button style={btn} disabled={busy} onClick={handleRequestChanges}>
                 {busy ? 'Applying…' : 'Apply Changes'}
               </button>
             </div>
