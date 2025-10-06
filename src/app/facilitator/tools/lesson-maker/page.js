@@ -55,6 +55,18 @@ export default function LessonMakerPage(){
       // Show success message
       if (js?.storageUrl) {
         setMessage(`Lesson generated and saved to cloud storage: ${js.file}`)
+      } else if (js?.storageError) {
+        setMessage(`Lesson generated but storage failed: ${js.storageError}. Downloading lesson file...`)
+        // Trigger download as backup
+        const blob = new Blob([JSON.stringify(js.lesson, null, 2)], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = js.file || 'lesson.json'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
       } else if (js?.lesson) {
         setMessage(`Lesson generated successfully.`)
         // Trigger download as backup

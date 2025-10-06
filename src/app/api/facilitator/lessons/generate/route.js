@@ -95,6 +95,7 @@ export async function POST(request){
     
     // Store in Supabase Storage
     let storageUrl = null
+    let storageError = null
     if (supabase) {
       try {
         const storagePath = `facilitator-lessons/${user.id}/${file}`
@@ -107,6 +108,8 @@ export async function POST(request){
         
         if (uploadError) {
           console.error('Storage upload error:', uploadError)
+          storageError = uploadError.message || JSON.stringify(uploadError)
+          // Don't fail the request - return lesson data for download
         } else {
           // Get public URL
           const { data: urlData } = supabase.storage
@@ -114,9 +117,12 @@ export async function POST(request){
             .getPublicUrl(storagePath)
           storageUrl = urlData?.publicUrl || null
         }
-      } catch (storageError) {
-        console.error('Storage error:', storageError)
+      } catch (err) {
+        console.error('Storage error:', err)
+        storageError = err.message || String(err)
       }
+    } else {
+      storageError = 'Supabase client not initialized'
     }
     
     return NextResponse.json({ 
@@ -124,6 +130,7 @@ export async function POST(request){
       file, 
       lesson,
       storageUrl,
+      storageError,
       path: storageUrl
     })
   } catch (e) {
