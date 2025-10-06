@@ -315,6 +315,9 @@ export default function HeaderBar() {
 		// Facilitator Hotkeys page should return to Settings
 		if (pathname.startsWith('/facilitator/hotkeys')) return '/facilitator/settings';
 
+		// Facilitator Tools sub-pages should return to Tools page
+		if (pathname.startsWith('/facilitator/tools/')) return '/facilitator/tools';
+
 		// Facilitator chain: / -> /facilitator -> /facilitator/(learners|plan|settings|tools)
 		if (
 			pathname.startsWith('/facilitator/learners') ||
