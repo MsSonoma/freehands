@@ -22,9 +22,11 @@ export async function GET(request) {
     
     // If subject is "facilitator", fetch ALL generated lessons from facilitator-lessons/ folders
     if (subject === 'facilitator') {
+      console.log('[FACILITATOR] Fetching facilitator lessons...');
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       if (!supabaseUrl || !supabaseServiceKey) {
+        console.log('[FACILITATOR] Missing Supabase config');
         return NextResponse.json({ error: 'Supabase configuration missing' }, { status: 500 });
       }
       
@@ -41,18 +43,23 @@ export async function GET(request) {
             offset: 0,
           });
         
+        console.log('[FACILITATOR] Folders found:', folders?.length || 0);
+        
         if (foldersError) {
-          console.error('Error listing facilitator-lessons folders:', foldersError);
+          console.error('[FACILITATOR] Error listing folders:', foldersError);
           return NextResponse.json(results);
         }
         
         if (!folders || folders.length === 0) {
+          console.log('[FACILITATOR] No folders found in facilitator-lessons/');
           return NextResponse.json(results);
         }
         
         // Each folder is a user ID
         for (const folder of folders) {
           if (!folder.id) continue; // Skip if not a folder
+          
+          console.log('[FACILITATOR] Processing folder:', folder.name);
           
           try {
             const { data: files, error: filesError } = await supabase.storage
@@ -61,6 +68,8 @@ export async function GET(request) {
                 limit: 1000,
                 offset: 0,
               });
+            
+            console.log(`[FACILITATOR] Files in ${folder.name}:`, files?.length || 0);
             
             if (filesError || !files) continue;
             
@@ -103,6 +112,7 @@ export async function GET(request) {
         console.error('Error in facilitator lessons fetch:', err);
       }
       
+      console.log('[FACILITATOR] Total lessons found:', results.length);
       return NextResponse.json(results);
     }
     
