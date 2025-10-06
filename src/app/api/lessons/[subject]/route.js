@@ -20,13 +20,9 @@ export async function GET(request) {
     const subject = decodeURIComponent(parts[parts.length - 1] || '').toLowerCase();
     if (!subject) return NextResponse.json({ error: 'Subject required' }, { status: 400 });
     
-    // If subject is "facilitator", fetch from Supabase Storage for the learner
+    // If subject is "facilitator", fetch from Supabase Storage subject folders
+    // These are the approved lessons that have been copied from facilitator-lessons/{userId}/ to {subject}/
     if (subject === 'facilitator') {
-      const learnerId = url.searchParams.get('learnerId');
-      if (!learnerId) {
-        return NextResponse.json({ error: 'learnerId required for facilitator lessons' }, { status: 400 });
-      }
-      
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       if (!supabaseUrl || !supabaseServiceKey) {

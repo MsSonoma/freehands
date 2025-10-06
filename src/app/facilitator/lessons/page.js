@@ -44,19 +44,13 @@ export default function FacilitatorLessonsPage() {
 
   // Load all lessons from all subjects
   useEffect(() => {
-    // Don't fetch until we have a learner selected (for facilitator lessons)
-    if (!selectedLearnerId) return
-    
     let cancelled = false
     ;(async () => {
       const lessonsMap = {}
       for (const subject of subjects) {
         try {
-          // For facilitator subject, pass learnerId
-          const queryParams = subject === 'facilitator' 
-            ? `?learnerId=${encodeURIComponent(selectedLearnerId)}` 
-            : '';
-          const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}${queryParams}`, { cache: 'no-store' })
+          // No special query params needed - facilitator lessons come from approved subject folders
+          const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { cache: 'no-store' })
           const list = res.ok ? await res.json() : []
           lessonsMap[subject] = Array.isArray(list) ? list : []
         } catch {
@@ -66,7 +60,7 @@ export default function FacilitatorLessonsPage() {
       if (!cancelled) setAllLessons(lessonsMap)
     })()
     return () => { cancelled = true }
-  }, [selectedLearnerId]) // Add selectedLearnerId as dependency
+  }, []) // No dependency - fetch once on mount
 
   // Load approved lessons for selected learner and set grade filters to learner's grade
   useEffect(() => {
