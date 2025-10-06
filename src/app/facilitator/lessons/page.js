@@ -237,12 +237,16 @@ export default function FacilitatorLessonsPage() {
 
           {subjects.map(subject => {
             const lessons = allLessons[subject] || []
-            const filteredLessons = filterLessonsByGrade(lessons, subject)
+            // For facilitator lessons, only show approved ones
+            const displayLessons = subject === 'facilitator' 
+              ? lessons.filter(l => l.approved === true)
+              : lessons
+            const filteredLessons = filterLessonsByGrade(displayLessons, subject)
             const displaySubject = subject === 'facilitator' ? 'Facilitator Lessons' : 
                                    subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
             
             // Always show facilitator subject even when empty; hide others if empty
-            if (lessons.length === 0 && subject !== 'facilitator') return null
+            if (displayLessons.length === 0 && subject !== 'facilitator') return null
 
             const isExpanded = expandedSubjects[subject]
             const approvedCount = filteredLessons.filter(l => approvedLessons[`${subject}/${l.file}`]).length

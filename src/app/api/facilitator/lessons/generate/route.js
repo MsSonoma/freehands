@@ -89,17 +89,19 @@ export async function POST(request){
     lesson.difficulty = lesson.difficulty || difficulty
   // Persist subject for downstream approval/publishing
     lesson.subject = (lesson.subject || subject || '').toString().toLowerCase()
+    // Store the creator's userId for filtering
+    lesson.userId = user.id
     
     const base = safeFileName(`${grade}_${lesson.title}_${difficulty}`)
     const file = `${base}.json`
     const lessonJson = JSON.stringify(lesson, null, 2)
     
-    // Store in Supabase Storage in facilitator's folder (shared across all their learners)
+    // Store in Supabase Storage flat in facilitator-lessons bucket
     let storageUrl = null
     let storageError = null
     if (supabase) {
       try {
-        const storagePath = `facilitator-lessons/${user.id}/${file}`
+        const storagePath = `facilitator-lessons/${file}`
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('lessons')
           .upload(storagePath, lessonJson, {

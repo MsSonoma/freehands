@@ -19,10 +19,9 @@ export async function GET(request){
   try {
     const { searchParams } = new URL(request.url)
     const file = searchParams.get('file')
-    const userId = searchParams.get('userId')
     
-    if (!file || !userId) {
-      return NextResponse.json({ error: 'Missing file or userId parameter' }, { status: 400 })
+    if (!file) {
+      return NextResponse.json({ error: 'Missing file parameter' }, { status: 400 })
     }
     
     const supabase = await getSupabaseAdmin()
@@ -31,7 +30,7 @@ export async function GET(request){
     }
     
     // Download from Supabase Storage
-    const storagePath = `facilitator-lessons/${userId}/${file}`
+    const storagePath = `facilitator-lessons/${file}`
     const { data: fileData, error: downloadError } = await supabase.storage
       .from('lessons')
       .download(storagePath)
