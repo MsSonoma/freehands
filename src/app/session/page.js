@@ -2565,7 +2565,7 @@ function SessionPageInner() {
     } catch {}
   };
 
-  const ensureAudioContext = () => {
+  const ensureAudioContext = useCallback(() => {
     const Ctx = (typeof window !== 'undefined') && (window.AudioContext || window.webkitAudioContext);
     if (!Ctx) return null;
     if (!audioCtxRef.current || (audioCtxRef.current && audioCtxRef.current.state === 'closed')) {
@@ -2588,7 +2588,7 @@ function SessionPageInner() {
       }
     } catch {}
     return audioCtxRef.current;
-  };
+  }, []);
 
   const stopWebAudioSource = () => {
     const src = webAudioSourceRef.current;
