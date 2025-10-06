@@ -44,19 +44,16 @@ export default function FacilitatorLessonsPage() {
 
   // Load all lessons from all subjects
   useEffect(() => {
+    // Don't fetch until we have a learner selected (for facilitator lessons)
+    if (!selectedLearnerId) return
+    
     let cancelled = false
     ;(async () => {
       const lessonsMap = {}
       for (const subject of subjects) {
         try {
-          // For facilitator subject, skip if no learner is selected
-          if (subject === 'facilitator' && !selectedLearnerId) {
-            lessonsMap[subject] = []
-            continue
-          }
-          
-          // For facilitator subject, pass learnerId if available
-          const queryParams = subject === 'facilitator' && selectedLearnerId 
+          // For facilitator subject, pass learnerId
+          const queryParams = subject === 'facilitator' 
             ? `?learnerId=${encodeURIComponent(selectedLearnerId)}` 
             : '';
           const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}${queryParams}`, { cache: 'no-store' })
@@ -238,7 +235,8 @@ export default function FacilitatorLessonsPage() {
             const displaySubject = subject === 'facilitator' ? 'Facilitator Lessons' : 
                                    subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
             
-            if (lessons.length === 0) return null
+            // Always show facilitator subject even when empty; hide others if empty
+            if (lessons.length === 0 && subject !== 'facilitator') return null
 
             const isExpanded = expandedSubjects[subject]
             const approvedCount = filteredLessons.filter(l => approvedLessons[`${subject}/${l.file}`]).length
@@ -296,7 +294,9 @@ export default function FacilitatorLessonsPage() {
                   <div style={accordionContent}>
                     {filteredLessons.length === 0 ? (
                       <p style={{ color: '#6b7280', padding: '12px', textAlign: 'center' }}>
-                        No lessons found for Grade {selectedGrade}
+                        {subject === 'facilitator' && selectedGrade === 'all' 
+                          ? 'No approved lessons yet. Generate and approve lessons in the Lesson Maker to see them here.'
+                          : `No lessons found for Grade ${selectedGrade}`}
                       </p>
                     ) : (
                       filteredLessons.map(lesson => {
