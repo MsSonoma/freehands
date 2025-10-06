@@ -151,7 +151,14 @@ function renderTranscriptRtf({ lessonTitle, learnerName, learnerId, lessonId, se
 async function loadLedger(store, path) {
   try {
     const dl = await store.download(path);
-    if (!dl.error && dl.data) {
+    if (dl.error) {
+      // 404 is expected for new ledgers; other errors may indicate config issues
+      if (dl.error.statusCode !== 404 && dl.error.statusCode !== '404') {
+        console.warn(`[transcripts] Download error for ${path}:`, dl.error);
+      }
+      return [];
+    }
+    if (dl.data) {
       try { return JSON.parse(await dl.data.text()); } catch {}
     }
   } catch {}
@@ -164,20 +171,32 @@ async function writeLedgerAndArtifacts(store, { basePath, lessonTitle, learnerNa
   const pdfPath = `${basePath}/transcript.pdf`;
   const txtPath = `${basePath}/transcript.txt`;
   const ledgerBlob = new Blob([JSON.stringify(ledger)], { type: 'application/json' });
-  await store.upload(ledgerPath, ledgerBlob, { upsert: true, contentType: 'application/json' });
+  
+  const ledgerResult = await store.upload(ledgerPath, ledgerBlob, { upsert: true, contentType: 'application/json' });
+  if (ledgerResult.error) {
+    console.error('[transcripts] Storage upload failed. Bucket "transcripts" may not exist or RLS policies may not be configured. See docs/transcripts-storage.md', ledgerResult.error);
+    throw new Error(`Storage upload failed: ${ledgerResult.error.message}`);
+  }
+  
   // PDF
   const pdfDoc = renderTranscriptPdf({ lessonTitle, learnerName, learnerId, lessonId, segments: ledger });
   const pdfBlob = pdfDoc.output('blob');
-  await store.upload(pdfPath, pdfBlob, { upsert: true, contentType: 'application/pdf' });
+  const pdfResult = await store.upload(pdfPath, pdfBlob, { upsert: true, contentType: 'application/pdf' });
+  if (pdfResult.error) throw new Error(`PDF upload failed: ${pdfResult.error.message}`);
+  
   // TXT
   const txt = renderTranscriptText({ lessonTitle, learnerName, learnerId, lessonId, segments: ledger });
   const txtBlob = new Blob([txt], { type: 'text/plain' });
-  await store.upload(txtPath, txtBlob, { upsert: true, contentType: 'text/plain; charset=utf-8' });
+  const txtResult = await store.upload(txtPath, txtBlob, { upsert: true, contentType: 'text/plain; charset=utf-8' });
+  if (txtResult.error) throw new Error(`TXT upload failed: ${txtResult.error.message}`);
+  
   // RTF
   const rtfPath = `${basePath}/transcript.rtf`;
   const rtf = renderTranscriptRtf({ lessonTitle, learnerName, learnerId, lessonId, segments: ledger });
   const rtfBlob = new Blob([rtf], { type: 'application/rtf' });
-  await store.upload(rtfPath, rtfBlob, { upsert: true, contentType: 'application/rtf' });
+  const rtfResult = await store.upload(rtfPath, rtfBlob, { upsert: true, contentType: 'application/rtf' });
+  if (rtfResult.error) throw new Error(`RTF upload failed: ${rtfResult.error.message}`);
+  
   return { pdfPath, txtPath, rtfPath };
 }
 
@@ -222,7 +241,13 @@ export async function appendTranscriptSegment({ learnerId, learnerName, lessonId
     const consolidatedFile = consolidatedOut?.txtPath || consolidatedOut?.pdfPath;
     return { ok: true, path: lastSessionFile || consolidatedFile };
   } catch (e) {
-    console.warn('[transcripts] append failed', e);
+    // Storage errors are often due to missing bucket or RLS policies
+    const isStorageError = e?.message?.includes('Storage') || e?.message?.includes('upload failed');
+    if (isStorageError) {
+      console.error('[transcripts] Storage configuration required. Please set up the "transcripts" bucket and RLS policies per docs/transcripts-storage.md', e);
+    } else {
+      console.warn('[transcripts] append failed', e);
+    }
     return { ok: false, reason: 'error', error: e };
   }
 }
@@ -268,7 +293,12 @@ export async function updateTranscriptLiveSegment({ learnerId, learnerName, less
 
     return { ok: true, path: lastPdf || consolidatedPdf };
   } catch (e) {
-    console.warn('[transcripts] live update failed', e);
+    const isStorageError = e?.message?.includes('Storage') || e?.message?.includes('upload failed');
+    if (isStorageError) {
+      console.error('[transcripts] Storage configuration required. Please set up the "transcripts" bucket and RLS policies per docs/transcripts-storage.md', e);
+    } else {
+      console.warn('[transcripts] live update failed', e);
+    }
     return { ok: false, reason: 'error', error: e };
   }
 }
