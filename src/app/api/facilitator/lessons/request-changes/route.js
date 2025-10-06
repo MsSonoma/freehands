@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -9,23 +7,23 @@ async function readUserAndTier(request){
   try {
     const auth = request.headers.get('authorization') || ''
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : null
-    if (!token) return { user: null, plan_tier: 'free' }
+    if (!token) return { user: null, plan_tier: 'free', supabase: null }
     const { createClient } = await import('@supabase/supabase-js')
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     const svc = process.env.SUPABASE_SERVICE_ROLE_KEY
     const supabase = createClient(url, anon, { global: { headers: { Authorization: `Bearer ${token}` } }, auth: { persistSession: false } })
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { user: null, plan_tier: 'free' }
+    if (!user) return { user: null, plan_tier: 'free', supabase: null }
     const admin = svc ? createClient(url, svc, { auth: { persistSession:false } }) : null
     let plan = 'free'
     if (admin) {
       const { data } = await admin.from('profiles').select('plan_tier').eq('id', user.id).maybeSingle()
       plan = (data?.plan_tier || 'free').toLowerCase()
     }
-    return { user, plan_tier: plan }
+    return { user, plan_tier: plan, supabase: admin || supabase }
   } catch {
-    return { user: null, plan_tier: 'free' }
+    return { user: null, plan_tier: 'free', supabase: null }
   }
 }
 
@@ -64,30 +62,32 @@ async function callModel(prompt){
 }
 
 export async function POST(request){
-  const { user, plan_tier } = await readUserAndTier(request)
+  const { user, plan_tier, supabase } = await readUserAndTier(request)
   if (!user) return NextResponse.json({ error:'Unauthorized' }, { status: 401 })
   if (plan_tier !== 'premium') return NextResponse.json({ error:'Premium plan required' }, { status: 403 })
+  if (!supabase) return NextResponse.json({ error:'Storage not configured' }, { status: 500 })
+  
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error:'Invalid body' }, { status: 400 }) }
   const { file, changeRequest } = body || {}
   if (!file || !changeRequest) return NextResponse.json({ error:'Missing file or changeRequest' }, { status: 400 })
   
   try {
-    // Load existing lesson
-    const root = path.join(process.cwd(), 'public', 'lessons', 'Facilitator Lessons')
-    const full = path.join(root, file)
+    // Load existing lesson from Supabase Storage
+    const storagePath = `facilitator-lessons/${user.id}/${file}`
+    const { data: fileData, error: downloadError } = await supabase.storage
+      .from('lessons')
+      .download(storagePath)
     
-    if (!fs.existsSync(full)) {
+    if (downloadError || !fileData) {
       return NextResponse.json({ error:'Lesson file not found' }, { status: 404 })
     }
     
-    const existingContent = fs.readFileSync(full, 'utf8')
+    const existingContent = await fileData.text()
     const existingLesson = JSON.parse(existingContent)
     
     // Check if this lesson is already approved
-    const subj = (existingLesson.subject || '').toString().toLowerCase()
-    const approvedPath = subj ? path.join(process.cwd(), 'public', 'lessons', subj, file) : null
-    const wasApproved = approvedPath ? fs.existsSync(approvedPath) : false
+    const wasApproved = existingLesson.approved === true
     
     // Generate updated lesson
     const prompt = buildChangePrompt(existingLesson, changeRequest)
@@ -103,13 +103,25 @@ export async function POST(request){
     // Mark as needing update if it was previously approved
     if (wasApproved) {
       updatedLesson.needsUpdate = true
+      updatedLesson.approved = false // Require re-approval
     }
     
-    // Save updated lesson
-    fs.writeFileSync(full, JSON.stringify(updatedLesson, null, 2), 'utf8')
+    // Save updated lesson to Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from('lessons')
+      .upload(storagePath, JSON.stringify(updatedLesson, null, 2), {
+        contentType: 'application/json',
+        upsert: true
+      })
+    
+    if (uploadError) {
+      console.error('Update upload error:', uploadError)
+      return NextResponse.json({ error: 'Failed to save updated lesson' }, { status: 500 })
+    }
     
     return NextResponse.json({ ok:true, file, message:'Lesson updated successfully' })
   } catch (e) {
+    console.error('Request changes error:', e)
     return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })
   }
 }

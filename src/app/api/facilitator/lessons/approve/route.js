@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -9,61 +7,83 @@ async function readUserAndTier(request){
   try {
     const auth = request.headers.get('authorization') || ''
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : null
-    if (!token) return { user: null, plan_tier: 'free' }
+    if (!token) return { user: null, plan_tier: 'free', supabase: null }
     const { createClient } = await import('@supabase/supabase-js')
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     const svc = process.env.SUPABASE_SERVICE_ROLE_KEY
     const supabase = createClient(url, anon, { global: { headers: { Authorization: `Bearer ${token}` } }, auth: { persistSession: false } })
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { user: null, plan_tier: 'free' }
+    if (!user) return { user: null, plan_tier: 'free', supabase: null }
     const admin = svc ? createClient(url, svc, { auth: { persistSession:false } }) : null
     let plan = 'free'
     if (admin) {
       const { data } = await admin.from('profiles').select('plan_tier').eq('id', user.id).maybeSingle()
       plan = (data?.plan_tier || 'free').toLowerCase()
     }
-    return { user, plan_tier: plan }
+    return { user, plan_tier: plan, supabase: admin || supabase }
   } catch {
-    return { user: null, plan_tier: 'free' }
+    return { user: null, plan_tier: 'free', supabase: null }
   }
 }
 
 export async function POST(request){
-  const { user, plan_tier } = await readUserAndTier(request)
+  const { user, plan_tier, supabase } = await readUserAndTier(request)
   if (!user) return NextResponse.json({ error:'Unauthorized' }, { status: 401 })
   if (plan_tier !== 'premium') return NextResponse.json({ error:'Premium plan required' }, { status: 403 })
+  if (!supabase) return NextResponse.json({ error:'Storage not configured' }, { status: 500 })
+  
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error:'Invalid body' }, { status: 400 }) }
   const file = (body?.file || '').toString()
-  if (!file || file.includes('..') || file.includes('/') || file.includes('\\')) return NextResponse.json({ error:'Invalid file' }, { status: 400 })
-
-  const srcDir = path.join(process.cwd(), 'public', 'lessons', 'Facilitator Lessons')
-  const srcPath = path.join(srcDir, file)
-  if (!fs.existsSync(srcPath)) return NextResponse.json({ error:'Source not found' }, { status: 404 })
+  if (!file || file.includes('..') || file.includes('/') || file.includes('\\\\')) return NextResponse.json({ error:'Invalid file' }, { status: 400 })
 
   try {
-    const raw = fs.readFileSync(srcPath, 'utf8')
+    // Download from Supabase Storage
+    const storagePath = `facilitator-lessons/${user.id}/${file}`
+    const { data: fileData, error: downloadError } = await supabase.storage
+      .from('lessons')
+      .download(storagePath)
+    
+    if (downloadError || !fileData) {
+      return NextResponse.json({ error:'Lesson not found in storage' }, { status: 404 })
+    }
+    
+    const raw = await fileData.text()
     const js = JSON.parse(raw)
     const subj = (js.subject || '').toString().toLowerCase()
     const allowed = new Set(['math','language arts','science','social studies'])
     if (!allowed.has(subj)) return NextResponse.json({ error:'Unknown or missing subject on lesson' }, { status: 400 })
-    // Destination folder is the subject folder (not Facilitator Lessons)
-    const destDir = path.join(process.cwd(), 'public', 'lessons', subj)
-    fs.mkdirSync(destDir, { recursive: true })
-    // Use original filename to avoid re-mapping links
-    const destPath = path.join(destDir, file)
     
-    // Clear needsUpdate flag when approving/updating
-    if (js.needsUpdate) {
-      delete js.needsUpdate
-      // Also update the source file to clear the flag
-      fs.writeFileSync(srcPath, JSON.stringify(js, null, 2), 'utf8')
+    // Mark as approved and clear needsUpdate flag
+    js.approved = true
+    if (js.needsUpdate) delete js.needsUpdate
+    
+    // Store approved version in subject-specific path
+    const approvedPath = `lessons/${subj}/${file}`
+    const { error: uploadError } = await supabase.storage
+      .from('lessons')
+      .upload(approvedPath, JSON.stringify(js, null, 2), {
+        contentType: 'application/json',
+        upsert: true
+      })
+    
+    if (uploadError) {
+      console.error('Approve upload error:', uploadError)
+      return NextResponse.json({ error: 'Failed to save approved lesson' }, { status: 500 })
     }
     
-    fs.writeFileSync(destPath, JSON.stringify(js, null, 2), 'utf8')
+    // Also update the original file to mark it as approved
+    const { error: updateError } = await supabase.storage
+      .from('lessons')
+      .upload(storagePath, JSON.stringify(js, null, 2), {
+        contentType: 'application/json',
+        upsert: true
+      })
+    
     return NextResponse.json({ ok:true, subject: subj, file })
   } catch (e) {
+    console.error('Approve error:', e)
     return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })
   }
 }

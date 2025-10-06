@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -9,23 +7,23 @@ async function readUserAndTier(request){
   try {
     const auth = request.headers.get('authorization') || ''
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : null
-    if (!token) return { user: null, plan_tier: 'free' }
+    if (!token) return { user: null, plan_tier: 'free', token: null, supabase: null }
     const { createClient } = await import('@supabase/supabase-js')
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     const svc = process.env.SUPABASE_SERVICE_ROLE_KEY
     const supabase = createClient(url, anon, { global: { headers: { Authorization: `Bearer ${token}` } }, auth: { persistSession: false } })
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { user: null, plan_tier: 'free' }
+    if (!user) return { user: null, plan_tier: 'free', token: null, supabase: null }
     const admin = svc ? createClient(url, svc, { auth: { persistSession:false } }) : null
     let plan = 'free'
     if (admin) {
       const { data } = await admin.from('profiles').select('plan_tier').eq('id', user.id).maybeSingle()
       plan = (data?.plan_tier || 'free').toLowerCase()
     }
-    return { user, plan_tier: plan }
+    return { user, plan_tier: plan, token, supabase: admin || supabase }
   } catch {
-    return { user: null, plan_tier: 'free' }
+    return { user: null, plan_tier: 'free', token: null, supabase: null }
   }
 }
 
@@ -73,7 +71,7 @@ async function callModel(prompt){
 }
 
 export async function POST(request){
-  const { user, plan_tier } = await readUserAndTier(request)
+  const { user, plan_tier, supabase } = await readUserAndTier(request)
   if (!user) return NextResponse.json({ error:'Unauthorized' }, { status: 401 })
   if (plan_tier !== 'premium') return NextResponse.json({ error:'Premium plan required' }, { status: 403 })
   let body
@@ -89,15 +87,45 @@ export async function POST(request){
     lesson.grade = lesson.grade || grade
     lesson.difficulty = lesson.difficulty || difficulty
   // Persist subject for downstream approval/publishing
-  lesson.subject = (lesson.subject || subject || '').toString().toLowerCase()
-    // Ensure folder exists
-    const root = path.join(process.cwd(), 'public', 'lessons', 'Facilitator Lessons')
-    fs.mkdirSync(root, { recursive: true })
+    lesson.subject = (lesson.subject || subject || '').toString().toLowerCase()
+    
     const base = safeFileName(`${grade}_${lesson.title}_${difficulty}`)
     const file = `${base}.json`
-    const full = path.join(root, file)
-  fs.writeFileSync(full, JSON.stringify(lesson, null, 2), 'utf8')
-    return NextResponse.json({ ok:true, file, path:`/lessons/${encodeURIComponent('Facilitator Lessons')}/${encodeURIComponent(file)}` })
+    const lessonJson = JSON.stringify(lesson, null, 2)
+    
+    // Store in Supabase Storage
+    let storageUrl = null
+    if (supabase) {
+      try {
+        const storagePath = `facilitator-lessons/${user.id}/${file}`
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('lessons')
+          .upload(storagePath, lessonJson, {
+            contentType: 'application/json',
+            upsert: true
+          })
+        
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError)
+        } else {
+          // Get public URL
+          const { data: urlData } = supabase.storage
+            .from('lessons')
+            .getPublicUrl(storagePath)
+          storageUrl = urlData?.publicUrl || null
+        }
+      } catch (storageError) {
+        console.error('Storage error:', storageError)
+      }
+    }
+    
+    return NextResponse.json({ 
+      ok: true, 
+      file, 
+      lesson,
+      storageUrl,
+      path: storageUrl
+    })
   } catch (e) {
     return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })
   }

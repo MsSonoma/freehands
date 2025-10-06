@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -37,17 +35,25 @@ export async function POST(request){
   try { body = await request.json() } catch { return NextResponse.json({ error:'Invalid body' }, { status: 400 }) }
   const file = (body?.file || '').toString()
   if (!file || file.includes('..') || file.includes('/') || file.includes('\\')) return NextResponse.json({ error:'Invalid file' }, { status: 400 })
-  const full = path.join(process.cwd(), 'public', 'lessons', 'Facilitator Lessons', file)
+  
   try {
-    if (fs.existsSync(full)) fs.unlinkSync(full)
-    // Also remove approved copy under subject folders if exists
-    try {
-      const subjects = ['math','language arts','science','social studies']
-      for (const s of subjects) {
-        const p = path.join(process.cwd(), 'public', 'lessons', s, file)
-        if (fs.existsSync(p)) fs.unlinkSync(p)
-      }
-    } catch {}
+    const { createClient } = await import('@supabase/supabase-js')
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const svc = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !svc) return NextResponse.json({ error: 'Storage not configured' }, { status: 500 })
+    
+    const supabase = createClient(url, svc, { auth: { persistSession: false } })
+    
+    // Delete from Supabase Storage
+    const storagePath = `facilitator-lessons/${user.id}/${file}`
+    const { error: deleteError } = await supabase.storage
+      .from('lessons')
+      .remove([storagePath])
+    
+    if (deleteError) {
+      console.error('Storage delete error:', deleteError)
+      return NextResponse.json({ error: 'Failed to delete' }, { status: 500 })
+    }
     return NextResponse.json({ ok:true })
   } catch (e) {
     return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })
