@@ -46,12 +46,19 @@ export default function FacilitatorLessonsPage() {
   useEffect(() => {
     let cancelled = false
     ;(async () => {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      
       const lessonsMap = {}
       for (const subject of subjects) {
         try {
           console.log(`[FRONTEND] Fetching lessons for subject: ${subject}`);
-          // No special query params needed - facilitator lessons come from approved subject folders
-          const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { cache: 'no-store' })
+          const headers = subject === 'facilitator' && token ? { Authorization: `Bearer ${token}` } : {};
+          const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { 
+            cache: 'no-store',
+            headers
+          })
           console.log(`[FRONTEND] Response for ${subject}:`, res.status, res.ok);
           const list = res.ok ? await res.json() : []
           console.log(`[FRONTEND] Lessons for ${subject}:`, list.length);

@@ -20,25 +20,54 @@ export async function GET(request) {
     const subject = decodeURIComponent(parts[parts.length - 1] || '').toLowerCase();
     if (!subject) return NextResponse.json({ error: 'Subject required' }, { status: 400 });
     
-    // If subject is "facilitator", fetch ALL generated lessons from facilitator-lessons/ folder (flat structure)
+    // If subject is "facilitator", fetch ALL generated lessons from the current user's folder
     if (subject === 'facilitator') {
       console.log('[FACILITATOR] Fetching facilitator lessons...');
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      if (!supabaseUrl || !supabaseServiceKey) {
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseServiceKey || !anonKey) {
         console.log('[FACILITATOR] Missing Supabase config');
         return NextResponse.json({ error: 'Supabase configuration missing' }, { status: 500 });
       }
       
+      // Get the current user from auth header
+      const auth = request.headers.get('authorization') || '';
+      const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+      
+      let userId = null;
+      if (token) {
+        try {
+          const { createClient } = await import('@supabase/supabase-js');
+          const userClient = createClient(supabaseUrl, anonKey, { 
+            global: { headers: { Authorization: `Bearer ${token}` } }, 
+            auth: { persistSession: false } 
+          });
+          const { data: { user } } = await userClient.auth.getUser();
+          userId = user?.id;
+        } catch (err) {
+          console.error('[FACILITATOR] Auth error:', err);
+        }
+      }
+      
+      if (!userId) {
+        console.log('[FACILITATOR] No authenticated user');
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      
+      console.log('[FACILITATOR] User ID:', userId);
+      
+      const { createClient } = await import('@supabase/supabase-js');
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
       
-      // List all lessons directly in facilitator-lessons/ folder
+      // List all lessons in the user's facilitator-lessons folder
       const results = [];
       
       try {
         const { data: files, error: filesError } = await supabase.storage
           .from('lessons')
-          .list('facilitator-lessons', {
+          .list(`facilitator-lessons/${userId}`, {
             limit: 1000,
             offset: 0,
           });
@@ -51,7 +80,7 @@ export async function GET(request) {
         }
         
         if (!files || files.length === 0) {
-          console.log('[FACILITATOR] No files found in facilitator-lessons/');
+          console.log('[FACILITATOR] No files found in facilitator-lessons/', userId);
           return NextResponse.json(results);
         }
         
@@ -64,7 +93,7 @@ export async function GET(request) {
           try {
             const { data: fileData, error: downloadError } = await supabase.storage
               .from('lessons')
-              .download(`facilitator-lessons/${file.name}`);
+              .download(`facilitator-lessons/${userId}/${file.name}`);
             
             if (downloadError || !fileData) {
               console.error('[FACILITATOR] Download error for', file.name, downloadError);
