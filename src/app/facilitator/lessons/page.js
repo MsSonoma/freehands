@@ -32,7 +32,17 @@ export default function FacilitatorLessonsPage() {
           if (!cancelled && learnersData) {
             setLearners(learnersData)
             if (learnersData.length > 0) {
-              setSelectedLearnerId(learnersData[0].id)
+              // Try to get active learner from localStorage first
+              let defaultLearnerId = null
+              try {
+                const activeLearnerId = localStorage.getItem('learner_id')
+                if (activeLearnerId && learnersData.some(l => l.id === activeLearnerId)) {
+                  defaultLearnerId = activeLearnerId
+                }
+              } catch {}
+              
+              // Fall back to first learner if no active learner found
+              setSelectedLearnerId(defaultLearnerId || learnersData[0].id)
             }
           }
         }
