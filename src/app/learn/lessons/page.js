@@ -256,11 +256,10 @@ function LessonsPageInner(){
                           })
                           if (res.ok) {
                             const js = await res.json()
-                            if (js.allowed) {
-                              openLesson(subject, l.file)
-                            } else {
-                              alert(js.message || 'Lesson quota exceeded')
-                            }
+                            openLesson(subject, l.file)
+                          } else if (res.status === 429) {
+                            const js = await res.json()
+                            alert(js.error || 'Daily lesson limit reached')
                           } else {
                             openLesson(subject, l.file)
                           }
