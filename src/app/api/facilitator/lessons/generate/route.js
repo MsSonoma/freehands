@@ -76,8 +76,12 @@ export async function POST(request){
   if (plan_tier !== 'premium') return NextResponse.json({ error:'Premium plan required' }, { status: 403 })
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error:'Invalid body' }, { status: 400 }) }
-  const { title, subject, difficulty, grade, description, notes, vocab } = body || {}
+  const { title, subject, difficulty, grade, description, notes, vocab, learnerId } = body || {}
   if (!title || !subject || !difficulty || !grade) return NextResponse.json({ error:'Missing fields' }, { status: 400 })
+  
+  // Determine storage folder: use learnerId if provided and not 'all', otherwise use facilitator's user.id
+  const targetUserId = (learnerId && learnerId !== 'all') ? learnerId : user.id
+  
   try {
     const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes, vocab })
     const lesson = await callModel(prompt)
@@ -93,12 +97,12 @@ export async function POST(request){
     const file = `${base}.json`
     const lessonJson = JSON.stringify(lesson, null, 2)
     
-    // Store in Supabase Storage
+    // Store in Supabase Storage under the target user's folder
     let storageUrl = null
     let storageError = null
     if (supabase) {
       try {
-        const storagePath = `facilitator-lessons/${user.id}/${file}`
+        const storagePath = `facilitator-lessons/${targetUserId}/${file}`
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('lessons')
           .upload(storagePath, lessonJson, {
@@ -131,7 +135,8 @@ export async function POST(request){
       lesson,
       storageUrl,
       storageError,
-      path: storageUrl
+      path: storageUrl,
+      targetUserId // Return for debugging/confirmation
     })
   } catch (e) {
     return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })

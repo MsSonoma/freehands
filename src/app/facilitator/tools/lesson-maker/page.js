@@ -12,8 +12,9 @@ export default function LessonMakerPage(){
   const router = useRouter()
   const [tier, setTier] = useState('free')
   const [loading, setLoading] = useState(true)
+  const [learners, setLearners] = useState([])
   const [form, setForm] = useState({
-    grade:'', difficulty:'intermediate', subject:'math', title:'', description:'', notes:'', vocab:''
+    grade:'', difficulty:'intermediate', subject:'math', title:'', description:'', notes:'', vocab:'', learnerId:'all'
   })
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
@@ -28,6 +29,12 @@ export default function LessonMakerPage(){
         const { data } = await supabase.from('profiles').select('plan_tier').eq('id', session.user.id).maybeSingle()
         const t = (data?.plan_tier || 'free').toLowerCase()
         if (!cancelled) setTier(t)
+        
+        // Fetch learners
+        const { data: learnersData } = await supabase.from('learners').select('*').order('created_at', { ascending: false })
+        if (!cancelled && learnersData) {
+          setLearners(learnersData)
+        }
       } catch {}
       if (!cancelled) setLoading(false)
     })()
@@ -105,6 +112,16 @@ export default function LessonMakerPage(){
     <main style={{ padding:24, maxWidth:720, margin:'0 auto' }}>
       <h1 style={{ marginTop:0 }}>Lesson Maker</h1>
       <form onSubmit={handleGenerate}>
+        <label style={label}>For Learner</label>
+        <select style={input} value={form.learnerId} onChange={e=>setForm(f=>({...f,learnerId:e.target.value}))}>
+          <option value="all">All Learners</option>
+          {learners.map(learner => (
+            <option key={learner.id} value={learner.id}>
+              {learner.name} {learner.grade ? `(Grade ${learner.grade})` : ''}
+            </option>
+          ))}
+        </select>
+
         <label style={label}>Lesson Title</label>
         <input style={input} required value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} placeholder="e.g., Fractions on a Number Line" />
 
