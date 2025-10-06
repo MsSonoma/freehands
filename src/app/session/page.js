@@ -2843,22 +2843,6 @@ function SessionPageInner() {
     } catch { micRequestInFlightRef.current = false; }
   }, [unlockAudioPlayback, isSafari, micAllowed]);
 
-  // Prewarm AudioContext on page entry without changing the unlocked UI state.
-  // This does not attempt to play or mark audio as unlocked; it simply creates/resumes the context if possible.
-  const prewarmAudio = useCallback(() => {
-    try {
-      const ctx = ensureAudioContext();
-      if (ctx && ctx.state === 'suspended') {
-        // Best-effort resume; not a user gesture, so may be ignored
-        ctx.resume();
-      }
-    } catch {}
-  }, [ensureAudioContext]);
-
-  useEffect(() => {
-    prewarmAudio();
-  }, [prewarmAudio]);
-
   // Keep audioUnlocked state loosely synced with ref if one changes elsewhere
   useEffect(() => {
     if (audioUnlockedRef.current && !audioUnlocked) {
