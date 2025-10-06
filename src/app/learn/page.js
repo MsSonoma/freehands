@@ -20,6 +20,10 @@ export default function LearnPage() {
     r.push('/learn/lessons')
   }
 
+  function goToAwards() {
+    r.push('/learn/awards')
+  }
+
   return (
     <main style={{ minHeight:'calc(100dvh - 56px)', padding:'16px 24px' }}>
       <div style={{ width:'100%', maxWidth:560, textAlign:'center', margin:'0 auto' }}>
@@ -54,7 +58,7 @@ export default function LearnPage() {
             }} />
           </div>
         ) : (
-          <div style={{ marginTop: 16 }}>
+          <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
             <button
               onClick={goToLessons}
               style={{
@@ -71,6 +75,23 @@ export default function LearnPage() {
               }}
             >
               View Lessons
+            </button>
+            <button
+              onClick={goToAwards}
+              style={{
+                padding:'14px 20px', 
+                border:'2px solid #059669', 
+                borderRadius:12,
+                fontSize:16, 
+                fontWeight:700,
+                background:'#059669',
+                color:'#fff',
+                cursor:'pointer',
+                width:'100%', 
+                maxWidth:320
+              }}
+            >
+              🏆 Awards
             </button>
           </div>
         )}
