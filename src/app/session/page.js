@@ -30,6 +30,7 @@ import { ENCOURAGEMENT_SNIPPETS, CELEBRATE_CORRECT, HINT_FIRST, HINT_SECOND, pic
 import { normalizeBase64Audio, base64ToArrayBuffer, makeSilentWavDataUrl, ensureAudioContext, stopWebAudioSource, playViaWebAudio, unlockAudioPlayback, requestAudioAndMicPermissions } from './utils/audioUtils';
 import { clearCaptionTimers as clearCaptionTimersUtil, scheduleCaptionsForAudio as scheduleCaptionsForAudioUtil, scheduleCaptionsForDuration as scheduleCaptionsForDurationUtil } from './utils/captionUtils';
 import { clearSynthetic as clearSyntheticUtil, finishSynthetic as finishSyntheticUtil, pauseSynthetic as pauseSyntheticUtil, resumeSynthetic as resumeSyntheticUtil } from './utils/syntheticPlaybackUtils';
+import { buildQAPool as buildQAPoolUtil, ensureExactCount as ensureExactCountUtil, initSampleDeck as initSampleDeckUtil, drawSampleUnique as drawSampleUniqueUtil, reserveSamples as reserveSamplesUtil, initWordDeck as initWordDeckUtil, drawWordUnique as drawWordUniqueUtil } from './utils/assessmentGenerationUtils';
 
 export default function SessionPage(){
   return (
@@ -1520,72 +1521,7 @@ function SessionPageInner() {
   }, [lessonData, lessonFilePath]);
 
   // Build a normalized QA pool for comprehension/exercise
-  // - Math: use a broad pool that includes Samples + category groups (TF/MC/FIB/Short Answer)
-  // - Others: prefer Samples; fall back to TF/MC/FIB only (no Short Answer in comprehension/exercise)
-  // - Normalize fields so both 'answer' and 'expected' exist on each item, and coerce single-object fields to arrays
-  const buildQAPool = useCallback(() => {
-    const arrify = (val) => (Array.isArray(val) ? val : (val ? [val] : []));
-    const ensureAE = (qIn) => {
-      const q = { ...qIn };
-      // If both expected and answer are missing but expectedAny exists, seed them from the first acceptable
-      const any = Array.isArray(q.expectedAny) ? q.expectedAny.filter(Boolean) : [];
-      if ((q.expected == null) && (q.answer == null) && any.length) {
-        const seed = String(any[0]);
-        q.expected = seed;
-        q.answer = seed;
-      } else {
-        q.expected = q.expected ?? q.answer;
-        q.answer = q.answer ?? q.expected;
-      }
-      return q;
-    };
-    const normalize = (q) => ensureAE(q);
-    const isShortAnswer = (q) => isShortAnswerItem(q);
-    const shuffle = (arr) => {
-      const copy = [...arr];
-      for (let i = copy.length - 1; i > 0; i -= 1) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copy[i], copy[j]] = [copy[j], copy[i]];
-      }
-      return copy;
-    };
-    const isMath = (subjectParam === 'math');
-
-    // Prepare Samples
-  const samplesRaw = arrify(lessonData?.sample).map(q => ({ ...normalize(q), questionType: 'sa' }));
-    const samplesForPhase = isMath
-      ? samplesRaw // allow Short Answer in Math comprehension/exercise
-      : samplesRaw.filter((q) => !isShortAnswer(q)); // exclude SA for non-Math
-
-    // Prepare categories (accept single object or array)
-  const tf = arrify(lessonData?.truefalse).map(q => ({ ...q, sourceType: 'tf', questionType: 'tf' })).map(normalize);
-  const mc = arrify(lessonData?.multiplechoice).map(q => ({ ...q, sourceType: 'mc', questionType: 'mc' })).map(normalize);
-  const fib = arrify(lessonData?.fillintheblank).map(q => ({ ...q, sourceType: 'fib', questionType: 'sa' })).map(normalize);
-  const sa = arrify(lessonData?.shortanswer).map(q => ({ ...q, sourceType: 'short', questionType: 'sa' })).map(normalize);
-
-    // Exclude invalid MC entries that have no options/choices (would behave like short answer)
-    const mcValid = mc.filter(q => {
-      const hasChoices = (Array.isArray(q?.choices) && q.choices.length) || (Array.isArray(q?.options) && q.options.length);
-      return hasChoices;
-    });
-
-    if (isMath) {
-      // Math: Mix Samples with TF/MC/FIB/SA
-      const pool = [...samplesForPhase, ...tf, ...mcValid, ...fib, ...sa];
-      // Log unique questionTypes for dev validation
-      try { console.debug('[PoolTagging] Comp/Ex pool types:', Array.from(new Set(pool.map(x => x?.questionType || 'sa')))); } catch {}
-      return shuffle(pool);
-    }
-
-    // Non-Math: Prefer Samples (no SA). If none, fall back to TF/MC/FIB only.
-    if (samplesForPhase.length) {
-      try { console.debug('[PoolTagging] Comp/Ex pool types (samples only):', Array.from(new Set(samplesForPhase.map(x => x?.questionType || 'sa')))); } catch {}
-      return shuffle(samplesForPhase);
-    }
-    const catPool = [...tf, ...mcValid, ...fib];
-    try { console.debug('[PoolTagging] Comp/Ex pool types (cats):', Array.from(new Set(catPool.map(x => x?.questionType || 'sa')))); } catch {}
-    return shuffle(catPool);
-  }, [lessonData]);
+  const buildQAPool = useCallback(() => buildQAPoolUtil(lessonData, subjectParam), [lessonData, subjectParam]);
 
   useEffect(() => {
     let cancelled = false;
@@ -2768,109 +2704,40 @@ function SessionPageInner() {
     }
   };
 
-  // Ensure a set matches target length by topping up from provided pools; duplicates only as last resort
-  const promptKey = (q) => String(q?.prompt || q?.question || '').trim().toLowerCase();
+  // Ensure a set matches target length by topping up from provided pools
   const ensureExactCount = useCallback((base = [], target = 0, pools = [], allowDuplicatesAsLastResort = true) => {
-    const out = [...(Array.isArray(base) ? base : [])];
-    if (out.length >= target) return out.slice(0, target);
-    const used = new Set(out.map(promptKey));
-    const pushUnique = (item) => {
-      const key = promptKey(item);
-      if (!key || !used.has(key)) {
-        out.push(item);
-        if (key) used.add(key);
-      }
-    };
-    for (const pool of pools) {
-      if (out.length >= target) break;
-      const arr = Array.isArray(pool) ? pool : [];
-      for (const item of arr) {
-        if (out.length >= target) break;
-        pushUnique(item);
-      }
-    }
-    if (out.length < target && allowDuplicatesAsLastResort) {
-      // Cycle through pools again allowing duplicates
-      const flat = pools.flat().filter(Boolean);
-      let idx = 0;
-      while (out.length < target && flat.length) {
-        out.push(flat[idx % flat.length]);
-        idx += 1;
-      }
-    }
-    return out.slice(0, target);
+    return ensureExactCountUtil(base, target, pools, allowDuplicatesAsLastResort);
   }, []);
 
-  // Global, non-repeating sample deck across phases (comprehension, exercise, and math worksheet/test picks)
-  const sampleDeckRef = useRef([]); // array of sample items in a fixed shuffled order
-  const sampleIndexRef = useRef(0); // next read index in deck
-  const usedSampleSetRef = useRef(new Set()); // track used prompts to avoid repeats across phases within a cycle
-  const shuffleArr = (arr) => {
-    const copy = [...arr];
-    for (let i = copy.length - 1; i > 0; i -= 1) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [copy[i], copy[j]] = [copy[j], copy[i]];
-    }
-    return copy;
-  };
+  // Global, non-repeating sample deck across phases
+  const sampleDeckRef = useRef([]);
+  const sampleIndexRef = useRef(0);
+  const usedSampleSetRef = useRef(new Set());
+  
   const initSampleDeck = useCallback((data) => {
-    try {
-      const raw = Array.isArray(data?.sample) ? data.sample : [];
-      sampleDeckRef.current = shuffleArr(raw);
-      sampleIndexRef.current = 0;
-      usedSampleSetRef.current = new Set();
-    } catch {
-      sampleDeckRef.current = [];
-      sampleIndexRef.current = 0;
-      usedSampleSetRef.current = new Set();
-    }
+    initSampleDeckUtil(data, { sampleDeckRef, sampleIndexRef, usedSampleSetRef });
   }, []);
+  
   const drawSampleUnique = useCallback(() => {
-    const deck = sampleDeckRef.current || [];
-    if (!deck.length) return null;
-    if (sampleIndexRef.current >= deck.length) {
-      // Completed a full cycle: reshuffle and reset (now repeats are allowed again)
-      sampleDeckRef.current = shuffleArr(deck);
-      sampleIndexRef.current = 0;
-      usedSampleSetRef.current = new Set();
-    }
-    const item = sampleDeckRef.current[sampleIndexRef.current++];
-    const key = String(item?.prompt || item?.question || '').trim();
-    if (key) usedSampleSetRef.current.add(key);
-    return item || null;
+    return drawSampleUniqueUtil({ sampleDeckRef, sampleIndexRef, usedSampleSetRef });
   }, []);
+  
   const reserveSamples = useCallback((count) => {
-    const out = [];
-    for (let i = 0; i < count; i += 1) {
-      const it = drawSampleUnique();
-      if (!it) break;
-      out.push(it);
-    }
-    return out;
-  }, [drawSampleUnique]);
+    return reserveSamplesUtil(count, { sampleDeckRef, sampleIndexRef, usedSampleSetRef });
+  }, []);
 
-  // Word problem deck (math) with non-repeating behavior across phases that use it (worksheet/test selections)
+  // Word problem deck (math) with non-repeating behavior
   const wordDeckRef = useRef([]);
   const wordIndexRef = useRef(0);
+  
   const initWordDeck = useCallback((data) => {
-    try {
-      const raw = Array.isArray(data?.wordProblems) ? data.wordProblems : [];
-      wordDeckRef.current = shuffleArr(raw);
-      wordIndexRef.current = 0;
-    } catch {
-      wordDeckRef.current = [];
-      wordIndexRef.current = 0;
-    }
+    initWordDeckUtil(data, { wordDeckRef, wordIndexRef });
   }, []);
+  
   const drawWordUnique = useCallback(() => {
-    const deck = wordDeckRef.current || [];
-    if (!deck.length) return null;
-    if (wordIndexRef.current >= deck.length) {
-      wordDeckRef.current = shuffleArr(deck);
-      wordIndexRef.current = 0;
-    }
-    return wordDeckRef.current[wordIndexRef.current++] || null;
+    return drawWordUniqueUtil({ wordDeckRef, wordIndexRef });
   }, []);
+  
   const reserveWords = useCallback((count) => {
     const out = [];
     for (let i = 0; i < count; i += 1) {
@@ -2881,8 +2748,7 @@ function SessionPageInner() {
     return out;
   }, [drawWordUnique]);
 
-  // Only react to explicit user pause by pausing the video; do not auto-play the video here.
-  // Video playback will be driven by TTS (audio) so we avoid starting the video on mount or when userPaused flips to false.
+  // Only react to explicit user pause by pausing the video
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
