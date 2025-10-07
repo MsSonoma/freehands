@@ -37,6 +37,7 @@ import { useDiscussionHandlers } from './hooks/useDiscussionHandlers';
 import { useAudioPlayback } from './hooks/useAudioPlayback';
 import { usePhaseHandlers } from './hooks/usePhaseHandlers';
 import { useAssessmentGeneration } from './hooks/useAssessmentGeneration';
+import { useTeachingFlow } from './hooks/useTeachingFlow';
 
 export default function SessionPage(){
   return (
@@ -2279,7 +2280,7 @@ function SessionPageInner() {
   };
 
   // Three-stage teaching state and helpers
-  const [teachingStage, setTeachingStage] = useState('idle'); // 'idle' | 'definitions' | 'explanation' | 'examples'
+  const [teachingStage, setTeachingStage] = useState('idle'); // 'idle' | 'definitions' | 'examples'
   const [stageRepeats, setStageRepeats] = useState({ definitions: 0, explanation: 0, examples: 0 });
 
   // Session snapshot persistence (restore and save) — placed after state declarations to avoid TDZ
@@ -2761,7 +2762,6 @@ function SessionPageInner() {
         setSubPhase('teaching-3stage');
         setCanSend(false);
         if (teachingStage === 'definitions') { await teachDefinitions(false); await promptGateRepeat(); return; }
-        if (teachingStage === 'explanation') { await teachExplanation(false); await promptGateRepeat(); return; }
         if (teachingStage === 'examples') { await teachExamples(false); await promptGateRepeat(); return; }
         return;
       }
@@ -3093,12 +3093,104 @@ function SessionPageInner() {
     } catch { return []; }
   }, [getAvailableVocab, getFallbackVocabFromTitle]);
 
+  // Teaching flow hook (two-stage: definitions → examples)
+  const {
+    promptGateRepeat: promptGateRepeatHook,
+    teachDefinitions: teachDefinitionsHook,
+    teachExamples: teachExamplesHook,
+    startTwoStageTeaching: startTwoStageTeachingHook,
+    handleGateYes: handleGateYesHook,
+    handleGateNo: handleGateNoHook,
+    moveToComprehensionWithCue: moveToComprehensionWithCueHook,
+  } = useTeachingFlow({
+    // State setters
+    setCanSend,
+    setSubPhase,
+    setPhase,
+    setTeachingStage,
+    setStageRepeats,
+    setCaptionSentences,
+    setCaptionIndex,
+    setTtsLoadingCount,
+    setCurrentCompProblem,
+    // State values
+    teachingStage,
+    // Refs
+    captionSentencesRef,
+    // API & utilities
+    callMsSonoma,
+    speakFrontend,
+    playAudioFromBase64,
+    scheduleSaveSnapshot,
+    ensureLessonDataReady,
+    getAvailableVocab,
+    getGradeNumber,
+    getCleanLessonTitle,
+    getTeachingNotes,
+    splitIntoSentences,
+    mergeMcChoiceFragments,
+    enforceNbspAfterMcLabels,
+    // Lesson context
+    subjectParam,
+    difficultyParam,
+    lessonParam,
+    effectiveLessonTitle,
+    // Constants
+    COMPREHENSION_CUE_PHRASE,
+  });
+
   const promptGateRepeat = useCallback(async () => {
-    // Hard-wired spoken gate with captions
-    try { await speakFrontend('Do you want me to go over that again?'); } catch {}
+    // New flow: Ask "Do you have any questions?" then provide example questions the child could ask
+    setCanSend(false);
+    setSubPhase('teaching-3stage'); // hide gate buttons while we generate examples
+    
+    try {
+      // First part: "Do you have any questions?"
+      await speakFrontend('Do you have any questions?');
+      
+      // Generate example questions relevant to the current teaching stage and lesson
+      const lessonTitle = getCleanLessonTitle();
+      const notes = getTeachingNotes() || '';
+      const stageLabel = teachingStage === 'definitions' ? 'vocabulary definitions' : 'examples';
+      
+      const instruction = [
+        `The lesson is "${lessonTitle}".`,
+        `We just covered ${stageLabel}.`,
+        'Generate 2-3 short example questions a child might ask about this topic.',
+        'Start with: "You could ask questions like..."',
+        'Then list the questions briefly and naturally.',
+        'Keep it very short and friendly.',
+        'Do not answer the questions.',
+        'Kid-friendly style rules: Use simple everyday words a 5–7 year old can understand. Keep sentences short (about 6–12 words).',
+        'Always respond with natural spoken text only. Do not use emojis, decorative characters, repeated punctuation, or symbols.'
+      ].join(' ');
+      
+      const result = await callMsSonoma(
+        instruction,
+        '',
+        {
+          phase: 'teaching',
+          subject: subjectParam,
+          difficulty: difficultyParam,
+          lesson: lessonParam,
+          lessonTitle: effectiveLessonTitle,
+          step: 'gate-example-questions',
+          teachingNotes: notes || undefined,
+          stage: teachingStage
+        }
+      );
+      
+      if (!result.success) {
+        // Fallback if generation fails
+        console.warn('[GateRepeat] Failed to generate example questions');
+      }
+    } catch (err) {
+      console.warn('[GateRepeat] Error generating example questions:', err);
+    }
+    
     setSubPhase('awaiting-gate');
     setCanSend(false); // gated via buttons
-  }, [speakFrontend]);
+  }, [speakFrontend, getCleanLessonTitle, teachingStage, callMsSonoma, subjectParam, difficultyParam, lessonParam, effectiveLessonTitle]);
 
   const teachDefinitions = useCallback(async (isRepeat = false) => {
     setCanSend(false);
@@ -3305,21 +3397,13 @@ function SessionPageInner() {
     setTeachingRepeats((c) => c + 1);
   };
 
-  // Teaching gate UI handlers for three-stage flow
+  // Teaching gate UI handlers for three-stage flow (now two-stage: definitions + examples)
   const handleGateYes = useCallback(async () => {
     try { console.info('[Gate] YES clicked: repeat stage', teachingStage); } catch {}
     if (teachingStage === 'definitions') {
       const ok = await teachDefinitions(true);
       if (ok) {
         setStageRepeats((s) => ({ ...s, definitions: (s.definitions || 0) + 1 }));
-        await promptGateRepeat();
-      }
-      return;
-    }
-    if (teachingStage === 'explanation') {
-      const ok = await teachExplanation(true);
-      if (ok) {
-        setStageRepeats((s) => ({ ...s, explanation: (s.explanation || 0) + 1 }));
         await promptGateRepeat();
       }
       return;
@@ -3332,7 +3416,7 @@ function SessionPageInner() {
       }
       return;
     }
-  }, [teachingStage, teachDefinitions, teachExplanation, teachExamples, promptGateRepeat]);
+  }, [teachingStage, teachDefinitions, teachExamples, promptGateRepeat]);
 
   const moveToComprehensionWithCue = useCallback(async () => {
     // Use the existing caption pipeline with TTS cue
@@ -3384,15 +3468,7 @@ function SessionPageInner() {
   const handleGateNo = useCallback(async () => {
     try { console.info('[Gate] NO clicked: next stage', teachingStage); } catch {}
     if (teachingStage === 'definitions') {
-      // Advance to Explanation
-      setTeachingStage('explanation');
-      try { scheduleSaveSnapshot('begin-teaching-explanation'); } catch {}
-      const ok = await teachExplanation(false);
-      if (ok) await promptGateRepeat();
-      return;
-    }
-    if (teachingStage === 'explanation') {
-      // Advance to Examples
+      // Advance directly to Examples (explanation stage removed)
       setTeachingStage('examples');
       try { scheduleSaveSnapshot('begin-teaching-examples'); } catch {}
       const ok = await teachExamples(false);
@@ -3400,12 +3476,12 @@ function SessionPageInner() {
       return;
     }
     if (teachingStage === 'examples') {
-      // Done with three stages: cue comprehension
+      // Done with two stages: cue comprehension
       setTeachingStage('idle');
       await moveToComprehensionWithCue();
       return;
     }
-  }, [teachingStage, teachExplanation, teachExamples, promptGateRepeat, moveToComprehensionWithCue]);
+  }, [teachingStage, teachExamples, promptGateRepeat, moveToComprehensionWithCue]);
 
   // Auto-advance scripted steps after audio finishes speaking
   useEffect(() => {
@@ -7062,14 +7138,16 @@ function SessionPageInner() {
               // Determine if a quick-answer cluster should appear (TF/MC) and render it in the middle of this row
               let qa = null;
               try {
-                // Show hard-wired Yes/No during teaching gate; hide while speaking (belt-and-suspenders)
+                // Show Repeat Vocab/Examples/Next buttons during teaching gate; hide while speaking
                 if (phase === 'teaching' && subPhase === 'awaiting-gate' && !isSpeaking && askState === 'inactive') {
                   const qaWrap = { display:'flex', alignItems:'center', justifyContent:'center', gap:8, flex:1, flexWrap:'wrap', padding:'0 8px' };
                   const qaBtn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight: (isShortHeight && isMobileLandscape) ? 32 : 36, minWidth:56, fontWeight:700, border:'none', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.18)' };
+                  const repeatLabel = teachingStage === 'examples' ? 'Repeat Examples' : 'Repeat Vocab';
+                  const ariaLabel = teachingStage === 'examples' ? 'Teaching gate: repeat examples or move to next stage' : 'Teaching gate: repeat vocab or move to next stage';
                   qa = (
-                    <div style={qaWrap} aria-label="Teaching gate: repeat or move on">
-                      <button type="button" style={qaBtn} onClick={handleGateYes}>Yes</button>
-                      <button type="button" style={qaBtn} onClick={handleGateNo}>No</button>
+                    <div style={qaWrap} aria-label={ariaLabel}>
+                      <button type="button" style={qaBtn} onClick={handleGateYes}>{repeatLabel}</button>
+                      <button type="button" style={qaBtn} onClick={handleGateNo}>Next</button>
                       <button
                         type="button"
                         style={{ ...qaBtn, minWidth: 140, opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
@@ -7500,23 +7578,25 @@ function SessionPageInner() {
           })()}
 
           {/* Quick-answer buttons row (appears above input when a TF/MC item is active).
-              Also renders gate Yes/No during teaching awaiting-gate.
+              Also renders gate Repeat Vocab/Examples and Next during teaching awaiting-gate.
               Suppressed on short-height when controls are already in this row.
               Now gated behind Start the lesson: hidden until qaAnswersUnlocked is true. */}
           {(() => {
             try {
-              // Show teaching gate Yes/No when awaiting-gate; hide while speaking (belt-and-suspenders)
+              // Show teaching gate Repeat Vocab/Examples and Next when awaiting-gate; hide while speaking
               if (phase === 'teaching' && subPhase === 'awaiting-gate' && !isSpeaking && askState === 'inactive') {
                 const containerStyle = {
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 8,
                   paddingLeft: isMobileLandscape ? 12 : '4%', paddingRight: isMobileLandscape ? 12 : '4%', marginBottom: 6,
                 };
                 const btnBase = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, minWidth:56, fontWeight:700, border:'none', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.18)' };
+                const repeatLabel = teachingStage === 'examples' ? 'Repeat Examples' : 'Repeat Vocab';
+                const ariaLabel = teachingStage === 'examples' ? 'Teaching gate: repeat examples or move to next stage' : 'Teaching gate: repeat vocab or move to next stage';
                 if (isShortHeight) return null; // already rendered in controls row above
                 return (
-                  <div style={containerStyle} aria-label="Teaching gate: repeat or move on">
-                    <button type="button" style={btnBase} onClick={handleGateYes}>Yes</button>
-                    <button type="button" style={btnBase} onClick={handleGateNo}>No</button>
+                  <div style={containerStyle} aria-label={ariaLabel}>
+                    <button type="button" style={btnBase} onClick={handleGateYes}>{repeatLabel}</button>
+                    <button type="button" style={btnBase} onClick={handleGateNo}>Next</button>
                     <button
                       type="button"
                       style={{ ...btnBase, minWidth: 160, background: '#374151', opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
@@ -7654,6 +7734,7 @@ function SessionPageInner() {
             phase={phase}
             subPhase={subPhase}
             currentCompProblem={currentCompProblem}
+            teachingStage={teachingStage}
             tipOverride={tipOverride}
             onSend={handleSend}
             compact={isMobileLandscape}
@@ -8008,7 +8089,7 @@ function CurrentAssessmentPrompt({ phase, subPhase, testActiveIndex, testList })
   return <span>{String(prompt)}</span>;
 }
 
-function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, loading, onSend, showBegin, isSpeaking, phase, subPhase, tipOverride, abortKey, currentCompProblem, compact = false, hotkeys }) {
+function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, loading, onSend, showBegin, isSpeaking, phase, subPhase, tipOverride, abortKey, currentCompProblem, teachingStage, compact = false, hotkeys }) {
   const [focused, setFocused] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -8204,7 +8285,10 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
     if (loading) return 'loading...';
     if (isSpeaking) return 'Ms. Sonoma is talking...';
     // During Teaching gate, disable text and prompt to use buttons
-    if (phase === 'teaching' && subPhase === 'awaiting-gate') return 'Tap Yes or No below';
+    if (phase === 'teaching' && subPhase === 'awaiting-gate') {
+      const repeatLabel = teachingStage === 'examples' ? 'Repeat Examples' : 'Repeat Vocab';
+      return `Tap ${repeatLabel} or Next below`;
+    }
     // During Comprehension: lock input and guide clearly
     if (phase === 'comprehension') {
   if (subPhase === 'comprehension-start') return 'Press "Begin Comprehension"';
