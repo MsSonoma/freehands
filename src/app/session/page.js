@@ -1334,23 +1334,19 @@ function SessionPageInner() {
         try { setUserPaused(false); } catch {}
       }
     }
-  }, [loading, playbackIntent, captionIndex, scheduleCaptionsForAudio]);
+  }, [loading, playbackIntent, captionIndex]);
 
   // Stable refs for state/functions used by the unified play/pause controller
   const userPausedRef = useRef(userPaused);
   useEffect(() => { userPausedRef.current = userPaused; }, [userPaused]);
   const captionIndexRef = useRef(captionIndex);
   useEffect(() => { captionIndexRef.current = captionIndex; }, [captionIndex]);
-  const scheduleCaptionsForAudioRef = useRef(scheduleCaptionsForAudio);
-  useEffect(() => { scheduleCaptionsForAudioRef.current = scheduleCaptionsForAudio; }, [scheduleCaptionsForAudio]);
-  const scheduleCaptionsForDurationRef = useRef(scheduleCaptionsForDuration);
-  useEffect(() => { scheduleCaptionsForDurationRef.current = scheduleCaptionsForDuration; }, [scheduleCaptionsForDuration]);
-  const computeHeuristicDurationRef = useRef(computeHeuristicDuration);
-  useEffect(() => { computeHeuristicDurationRef.current = computeHeuristicDuration; }, [computeHeuristicDuration]);
-  const armSpeechGuardRef = useRef(armSpeechGuard);
-  useEffect(() => { armSpeechGuardRef.current = armSpeechGuard; }, [armSpeechGuard]);
-  const playAudioFromBase64Ref = useRef(playAudioFromBase64);
-  useEffect(() => { playAudioFromBase64Ref.current = playAudioFromBase64; }, [playAudioFromBase64]);
+  // These refs will be populated after useAudioPlayback hook provides the functions
+  const scheduleCaptionsForAudioRef = useRef(null);
+  const scheduleCaptionsForDurationRef = useRef(null);
+  const computeHeuristicDurationRef = useRef(null);
+  const armSpeechGuardRef = useRef(armSpeechGuard); // armSpeechGuard exists early
+  const playAudioFromBase64Ref = useRef(null);
 
   // New unified pause implementation
   const pauseAll = useCallback(() => {
@@ -2049,6 +2045,12 @@ function SessionPageInner() {
   const finishSynthetic = finishSyntheticHook;
   const pauseSynthetic = pauseSyntheticHook;
   const resumeSynthetic = resumeSyntheticHook;
+
+  // Update refs with hook-provided functions (for use in callbacks defined before the hook)
+  useEffect(() => { scheduleCaptionsForAudioRef.current = scheduleCaptionsForAudio; }, [scheduleCaptionsForAudio]);
+  useEffect(() => { scheduleCaptionsForDurationRef.current = scheduleCaptionsForDuration; }, [scheduleCaptionsForDuration]);
+  useEffect(() => { computeHeuristicDurationRef.current = computeHeuristicDuration; }, [computeHeuristicDuration]);
+  useEffect(() => { playAudioFromBase64Ref.current = playAudioFromBase64; }, [playAudioFromBase64]);
 
   // Only react to explicit user pause by pausing the video
   useEffect(() => {
