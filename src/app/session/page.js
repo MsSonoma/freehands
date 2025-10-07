@@ -29,6 +29,7 @@ import { isAnswerCorrectLocal, expandExpectedAnswer, expandRiddleAcceptables, co
 import { ENCOURAGEMENT_SNIPPETS, CELEBRATE_CORRECT, HINT_FIRST, HINT_SECOND, pickHint, buildCountCuePattern } from './utils/feedbackMessages';
 import { normalizeBase64Audio, base64ToArrayBuffer, makeSilentWavDataUrl, ensureAudioContext, stopWebAudioSource, playViaWebAudio, unlockAudioPlayback, requestAudioAndMicPermissions } from './utils/audioUtils';
 import { clearCaptionTimers as clearCaptionTimersUtil, scheduleCaptionsForAudio as scheduleCaptionsForAudioUtil, scheduleCaptionsForDuration as scheduleCaptionsForDurationUtil } from './utils/captionUtils';
+import { clearSynthetic as clearSyntheticUtil, finishSynthetic as finishSyntheticUtil, pauseSynthetic as pauseSyntheticUtil, resumeSynthetic as resumeSyntheticUtil } from './utils/syntheticPlaybackUtils';
 
 export default function SessionPage(){
   return (
@@ -2152,73 +2153,33 @@ function SessionPageInner() {
   // Synthetic playback (no audio asset) state
   const syntheticRef = useRef({ active: false, duration: 0, elapsed: 0, startAtMs: 0, timerId: null });
 
-  const clearSynthetic = () => {
-    try { if (syntheticRef.current?.timerId) clearTimeout(syntheticRef.current.timerId); } catch {}
-    syntheticRef.current = { active: false, duration: 0, elapsed: 0, startAtMs: 0, timerId: null };
-  };
+  const clearSynthetic = () => clearSyntheticUtil(syntheticRef);
 
   const finishSynthetic = () => {
-    try { setIsSpeaking(false); } catch {}
-    try { if (videoRef.current) videoRef.current.pause(); } catch {}
-    // If we're in Discussion awaiting-learner, explicitly reveal Opening actions now
-    try {
-      if (
-        phase === 'discussion' &&
-        subPhase === 'awaiting-learner' &&
-        askState === 'inactive' &&
-        riddleState === 'inactive' &&
-        poemState === 'inactive'
-      ) {
-        setShowOpeningActions(true);
-      }
-    } catch {}
-    clearSpeechGuard();
-    clearSynthetic();
+    finishSyntheticUtil(
+      syntheticRef,
+      videoRef,
+      { phase, subPhase, askState, riddleState, poemState },
+      setIsSpeaking,
+      setShowOpeningActions,
+      clearSpeechGuard
+    );
   };
 
-  const pauseSynthetic = () => {
-    const s = syntheticRef.current;
-    if (!s?.active) return;
-    try {
-      if (s.startAtMs) {
-        const now = Date.now();
-        const delta = Math.max(0, (now - s.startAtMs) / 1000);
-        s.elapsed = Math.max(0, (s.elapsed || 0) + delta);
-      }
-    } catch {}
-    try { if (s.timerId) clearTimeout(s.timerId); } catch {}
-    s.timerId = null;
-    s.startAtMs = 0;
-    try { if (videoRef.current) videoRef.current.pause(); } catch {}
-    try { clearCaptionTimers(); } catch {}
-  };
+  const pauseSynthetic = () => pauseSyntheticUtil(syntheticRef, videoRef, clearCaptionTimers);
 
   const resumeSynthetic = () => {
-    const s = syntheticRef.current;
-    if (!s?.active) return;
-    const total = Number(s.duration || 0);
-    const elapsed = Math.max(0, Number(s.elapsed || 0));
-    const remaining = Math.max(0.1, total - elapsed);
-    try {
-      const startAt = captionIndex;
-      const end = captionBatchEndRef.current || captionSentencesRef.current.length;
-      const slice = (captionSentencesRef.current || []).slice(startAt, end);
-      if (slice.length) scheduleCaptionsForDuration(remaining, slice, startAt);
-    } catch {}
-    try {
-      if (videoRef.current) {
-        const vp = videoRef.current.play();
-        if (vp && vp.catch) {
-          vp.catch(() => setTimeout(() => { try { videoRef.current && videoRef.current.play().catch(() => {}); } catch {} }, 250));
-        }
-      }
-    } catch {}
-    try { setIsSpeaking(true); } catch {}
-    try { if (speechGuardTimerRef?.current) clearTimeout(speechGuardTimerRef.current); } catch {}
-    try {
-      s.startAtMs = Date.now();
-      s.timerId = setTimeout(finishSynthetic, Math.round(remaining * 1000) + 50);
-    } catch {}
+    resumeSyntheticUtil(
+      syntheticRef,
+      videoRef,
+      captionBatchEndRef,
+      captionSentencesRef,
+      captionIndex,
+      speechGuardTimerRef,
+      scheduleCaptionsForDuration,
+      setIsSpeaking,
+      finishSynthetic
+    );
   };
 
   // Web Speech API fallback removed per requirement: absolutely no browser Web Speech usage.
