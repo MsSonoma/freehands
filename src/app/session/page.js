@@ -2284,6 +2284,16 @@ function SessionPageInner() {
   // Synthetic playback (no audio asset) state
   const syntheticRef = useRef({ active: false, duration: 0, elapsed: 0, startAtMs: 0, timerId: null });
 
+  // Stop WebAudio source (must be defined before first use)
+  const stopWebAudioSource = () => {
+    const src = webAudioSourceRef.current;
+    if (src) {
+      try { src.onended = null; } catch {}
+      try { src.stop(); } catch {}
+      try { src.disconnect(); } catch {}
+    }
+  };
+
   const clearSynthetic = () => {
     try { if (syntheticRef.current?.timerId) clearTimeout(syntheticRef.current.timerId); } catch {}
     syntheticRef.current = { active: false, duration: 0, elapsed: 0, startAtMs: 0, timerId: null };
@@ -2377,15 +2387,6 @@ function SessionPageInner() {
     } catch {}
     return audioCtxRef.current;
   }, []);
-
-  const stopWebAudioSource = () => {
-    const src = webAudioSourceRef.current;
-    if (src) {
-      try { src.onended = null; } catch {}
-      try { src.stop(); } catch {}
-      try { src.disconnect(); } catch {}
-    }
-  };
 
   // Generate a tiny silent WAV data URL to reliably unlock HTMLMedia playback on user gesture
   const makeSilentWavDataUrl = (durationMs = 60, sampleRate = 8000) => {
