@@ -31,6 +31,7 @@ import { normalizeBase64Audio, base64ToArrayBuffer, makeSilentWavDataUrl, ensure
 import { clearCaptionTimers as clearCaptionTimersUtil, scheduleCaptionsForAudio as scheduleCaptionsForAudioUtil, scheduleCaptionsForDuration as scheduleCaptionsForDurationUtil } from './utils/captionUtils';
 import { clearSynthetic as clearSyntheticUtil, finishSynthetic as finishSyntheticUtil, pauseSynthetic as pauseSyntheticUtil, resumeSynthetic as resumeSyntheticUtil } from './utils/syntheticPlaybackUtils';
 import { buildQAPool as buildQAPoolUtil, ensureExactCount as ensureExactCountUtil, initSampleDeck as initSampleDeckUtil, drawSampleUnique as drawSampleUniqueUtil, reserveSamples as reserveSamplesUtil, initWordDeck as initWordDeckUtil, drawWordUnique as drawWordUniqueUtil } from './utils/assessmentGenerationUtils';
+import { getSnapshotStorageKey as getSnapshotStorageKeyUtil, scheduleSaveSnapshotCore } from './utils/snapshotPersistenceUtils';
 
 export default function SessionPage(){
   return (
@@ -858,17 +859,9 @@ function SessionPageInner() {
       return `${base}${suffix}`;
     } catch { return lessonParam || ''; }
   };
-  // Stable key for session snapshots (canonicalized without .json extension; scoped by learner in the store/API)
+  // Stable key for session snapshots
   const getSnapshotStorageKey = (override) => {
-    try {
-      const d = override?.data ?? lessonData;
-      const m = override?.manifest ?? manifestInfo;
-      const p = override?.param ?? lessonParam;
-      let base = (d && d.id) || (m && m.file) || p || '';
-      // Canonicalize: strip trailing .json if present so we never fork keys by extension
-      base = String(base).replace(/\.json$/i, '');
-      return `${base}`;
-    } catch { return (lessonParam || '').replace(/\.json$/i, ''); }
+    return getSnapshotStorageKeyUtil({ lessonData, manifestInfo, lessonParam, override });
   };
   const [currentWorksheetIndex, setCurrentWorksheetIndex] = useState(0);
   // Sample-driven question pools (for comprehension & exercise)
