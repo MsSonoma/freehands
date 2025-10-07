@@ -36,6 +36,7 @@ import { clearSpeechGuard as clearSpeechGuardUtil, forceStopSpeaking as forceSto
 import { useDiscussionHandlers } from './hooks/useDiscussionHandlers';
 import { useAudioPlayback } from './hooks/useAudioPlayback';
 import { usePhaseHandlers } from './hooks/usePhaseHandlers';
+import { useAssessmentGeneration } from './hooks/useAssessmentGeneration';
 
 export default function SessionPage(){
   return (
@@ -1754,6 +1755,23 @@ function SessionPageInner() {
     }
     return out;
   }, [drawWordUnique]);
+
+  // Assessment generation hook
+  const {
+    shuffle: shuffleHook,
+    shuffleArr: shuffleArrHook,
+    selectMixed: selectMixedHook,
+    takeMixed: takeMixedHook,
+    buildFromCategories: buildFromCategoriesHook,
+    generateAssessments: generateAssessmentsHook,
+  } = useAssessmentGeneration({
+    lessonData,
+    subjectParam,
+    WORKSHEET_TARGET,
+    TEST_TARGET,
+    reserveSamples,
+    reserveWords,
+  });
 
   // Transient placeholder override for the input field (non-intrusive and time-limited)
   const [tipOverride, setTipOverride] = useState(null);
