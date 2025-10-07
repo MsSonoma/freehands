@@ -1933,6 +1933,14 @@ function SessionPageInner() {
     finishSynthetic: finishSyntheticHook,
     pauseSynthetic: pauseSyntheticHook,
     resumeSynthetic: resumeSyntheticHook,
+    // Refs from the hook
+    audioCtxRef,
+    webAudioGainRef,
+    webAudioSourceRef,
+    webAudioBufferRef,
+    webAudioStartedAtRef,
+    webAudioPausedAtRef,
+    syntheticRef
   } = useAudioPlayback({
     // State setters
     setIsSpeaking,
