@@ -23,7 +23,7 @@ import { splitIntoSentences, mergeMcChoiceFragments, enforceNbspAfterMcLabels, c
 import { CLEAN_SPEECH_INSTRUCTION, GUARD_INSTRUCTION, KID_FRIENDLY_STYLE, COMPREHENSION_CUE_PHRASE, LEGACY_LESSON_MAP, timelinePhases, phaseLabels, discussionSteps, getTeachingSteps } from './utils/constants';
 import { buildSystemMessage, buildPerQuestionJudgingSpec } from './utils/systemMessage';
 import { resolveLessonInfo, getLessonTitle } from './utils/lessonUtils';
-import { formatQuestionForSpeech, isShortAnswerItem, isTrueFalse, isMultipleChoice, formatMcOptions, ensureQuestionMark, promptKey, deriveCorrectAnswerText, formatQuestionForInlineAsk, letterForAnswer, naturalJoin } from './utils/questionFormatting';
+import { formatQuestionForSpeech, isShortAnswerItem, isTrueFalse, isMultipleChoice, formatMcOptions, ensureQuestionMark, promptKey, deriveCorrectAnswerText, formatQuestionForInlineAsk, letterForAnswer, getOptionTextForLetter, naturalJoin } from './utils/questionFormatting';
 import { normalizeAnswer } from './utils/answerNormalization';
 import { isAnswerCorrectLocal, expandExpectedAnswer, expandRiddleAcceptables, composeExpectedBundle } from './utils/answerEvaluation';
 import { ENCOURAGEMENT_SNIPPETS, CELEBRATE_CORRECT, HINT_FIRST, HINT_SECOND, pickHint, buildCountCuePattern } from './utils/feedbackMessages';
@@ -35,6 +35,7 @@ import { getSnapshotStorageKey as getSnapshotStorageKeyUtil, scheduleSaveSnapsho
 import { clearSpeechGuard as clearSpeechGuardUtil, forceStopSpeaking as forceStopSpeakingUtil, armSpeechGuard as armSpeechGuardUtil, armSpeechGuardThrottled as armSpeechGuardThrottledUtil } from './utils/speechGuardUtils';
 import { useDiscussionHandlers } from './hooks/useDiscussionHandlers';
 import { useAudioPlayback } from './hooks/useAudioPlayback';
+import { usePhaseHandlers } from './hooks/usePhaseHandlers';
 
 export default function SessionPage(){
   return (
@@ -237,52 +238,15 @@ function SessionPageInner() {
   }, [askState, riddleState, poemState, storyState]);
 
   // Helper: speak arbitrary frontend text via unified captions + TTS
-  const speakFrontend = useCallback(async (text, opts = {}) => {
-    try {
-      const mcLayout = opts && typeof opts === 'object' ? (opts.mcLayout || 'inline') : 'inline';
-      const noCaptions = !!(opts && typeof opts === 'object' && opts.noCaptions);
-      let sentences = splitIntoSentences(text);
-      sentences = mergeMcChoiceFragments(sentences, mcLayout).map((s) => enforceNbspAfterMcLabels(s));
-      // When noCaptions is set (e.g., resume after refresh), do not mutate caption state
-      // so the transcript on screen does not duplicate. Still play TTS.
-      let startIndexForBatch = 0;
-      if (!noCaptions) {
-        const prevLen = captionSentencesRef.current?.length || 0;
-        const nextAll = [...(captionSentencesRef.current || []), ...sentences];
-        captionSentencesRef.current = nextAll;
-        setCaptionSentences(nextAll);
-        setCaptionIndex(prevLen);
-        startIndexForBatch = prevLen;
-      } else {
-        // Keep current caption index; batch will be empty so no scheduling occurs
-        try { startIndexForBatch = Number(captionIndexRef.current || 0); } catch { startIndexForBatch = 0; }
-      }
-  let dec = false;
-  try {
-    setTtsLoadingCount((c) => c + 1);
-    let res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
-      if (!res.ok) {
-        try { await fetch('/api/tts', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(() => {}); } catch {}
-        res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
-      }
-        if (res.ok) {
-        const data = await res.json().catch(() => ({}));
-        let b64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
-        if (b64) b64 = normalizeBase64Audio(b64);
-        if (b64) {
-          if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
-          // Let the playback engine manage isSpeaking lifecycle
-          try { setIsSpeaking(true); } catch {}
-          try { await playAudioFromBase64(b64, noCaptions ? [] : sentences, startIndexForBatch); } catch {}
-        } else {
-          if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
-          // Use unified synthetic playback so video + isSpeaking behave consistently
-          try { await playAudioFromBase64('', noCaptions ? [] : sentences, startIndexForBatch); } catch {}
-        }
-      }
-  } catch {}
-  finally { if (!dec) setTtsLoadingCount((c) => Math.max(0, c - 1)); }
-  } catch {}
+  // Use a ref so early functions can call it before it's fully defined
+  const speakFrontendRef = useRef(null);
+  const speakFrontend = useCallback(async (...args) => {
+    console.log('[speakFrontend] Wrapper called, ref is:', speakFrontendRef.current ? 'set' : 'null', 'args:', args);
+    if (speakFrontendRef.current) {
+      return speakFrontendRef.current(...args);
+    } else {
+      console.warn('[speakFrontend] Ref is null, cannot execute');
+    }
   }, []);
 
   // (moved: handleStartLesson is defined after explicit Go handlers to avoid TDZ)
@@ -1037,6 +1001,30 @@ function SessionPageInner() {
       if (lessonData && (Array.isArray(lessonData.vocab) || lessonData.vocab)) {
         return lessonData;
       }
+      
+      // Handle facilitator lessons from Supabase
+      if (subjectParam === 'facilitator' && lessonFilename) {
+        try {
+          const supabase = getSupabaseClient();
+          if (supabase) {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              const params = new URLSearchParams({
+                file: lessonFilename,
+                userId: user.id
+              });
+              const res = await fetch(`/api/facilitator/lessons/get?${params}`);
+              if (res.ok) {
+                const data = await res.json();
+                try { setLessonData(data); } catch {}
+                try { console.info('[LessonLoad] Loaded facilitator lesson', lessonFilename); } catch {}
+                return data;
+              }
+            }
+          }
+        } catch {}
+      }
+      
       // If we know where to load it from, fetch on-demand
       if (lessonFilePath) {
         const res = await fetch(lessonFilePath);
@@ -1047,7 +1035,7 @@ function SessionPageInner() {
           return data;
         }
         // Fallback: try common subject folders to locate the lesson file if subjectParam is missing/mismatched
-        const candidatesBase = ['math', 'language arts', 'science', 'social studies', 'Facilitator Lessons'];
+        const candidatesBase = ['math', 'language arts', 'science', 'social studies'];
         const preferred = subjectFolderSegment;
         const ordered = [preferred, ...candidatesBase.filter(s => s !== preferred)];
         for (const folder of ordered) {
@@ -1065,7 +1053,7 @@ function SessionPageInner() {
       }
     } catch {}
     return lessonData;
-  }, [lessonData, lessonFilePath]);
+  }, [lessonData, lessonFilePath, subjectParam, lessonFilename, subjectFolderSegment]);
 
   // Build a normalized QA pool for comprehension/exercise
   const buildQAPool = useCallback(() => buildQAPoolUtil(lessonData, subjectParam), [lessonData, subjectParam]);
@@ -1076,7 +1064,7 @@ function SessionPageInner() {
     const load = async () => {
       // Ensure dynamic targets from learner/runtime are available before building generated sets
       await ensureRuntimeTargets(true); // Force fresh reload
-      if (!lessonFilePath) {
+      if (!lessonFilePath && subjectParam !== 'facilitator') {
         if (!cancelled) {
           setLessonData(null);
           setLessonDataError("");
@@ -1087,11 +1075,38 @@ function SessionPageInner() {
 
       setLessonDataLoading(true);
       try {
-        const res = await fetch(lessonFilePath);
-        if (!res.ok) {
-          throw new Error(`Failed to load lesson data (${res.status})`);
+        let data;
+        
+        // Handle facilitator lessons from Supabase
+        if (subjectParam === 'facilitator' && lessonFilename) {
+          const supabase = getSupabaseClient();
+          if (!supabase) {
+            throw new Error('Supabase client not available');
+          }
+          
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) {
+            throw new Error('User not authenticated');
+          }
+          
+          const params = new URLSearchParams({
+            file: lessonFilename,
+            userId: user.id
+          });
+          
+          const res = await fetch(`/api/facilitator/lessons/get?${params}`);
+          if (!res.ok) {
+            throw new Error(`Failed to load lesson data (${res.status})`);
+          }
+          data = await res.json();
+        } else {
+          // Handle standard lessons from public folder
+          const res = await fetch(lessonFilePath);
+          if (!res.ok) {
+            throw new Error(`Failed to load lesson data (${res.status})`);
+          }
+          data = await res.json();
         }
-        const data = await res.json();
         if (!cancelled) {
           setLessonData(data);
           setLessonDataError("");
@@ -1349,6 +1364,7 @@ function SessionPageInner() {
   const computeHeuristicDurationRef = useRef(null);
   const armSpeechGuardRef = useRef(armSpeechGuard); // armSpeechGuard exists early
   const playAudioFromBase64Ref = useRef(null);
+  const startThreeStageTeachingRef = useRef(null); // will be populated after function is defined
 
   // New unified pause implementation
   const pauseAll = useCallback(() => {
@@ -2015,6 +2031,71 @@ function SessionPageInner() {
   const pauseSynthetic = pauseSyntheticHook;
   const resumeSynthetic = resumeSyntheticHook;
 
+  // Helper: speak arbitrary frontend text via unified captions + TTS
+  // (defined here after playAudioFromBase64 is available, and updates the ref for early callbacks)
+  const speakFrontendImpl = useCallback(async (text, opts = {}) => {
+    console.log('[speakFrontendImpl] Called with text:', text?.substring(0, 50), 'opts:', opts);
+    try {
+      const mcLayout = opts && typeof opts === 'object' ? (opts.mcLayout || 'inline') : 'inline';
+      const noCaptions = !!(opts && typeof opts === 'object' && opts.noCaptions);
+      let sentences = splitIntoSentences(text);
+      sentences = mergeMcChoiceFragments(sentences, mcLayout).map((s) => enforceNbspAfterMcLabels(s));
+      // When noCaptions is set (e.g., resume after refresh), do not mutate caption state
+      // so the transcript on screen does not duplicate. Still play TTS.
+      let startIndexForBatch = 0;
+      if (!noCaptions) {
+        const prevLen = captionSentencesRef.current?.length || 0;
+        const nextAll = [...(captionSentencesRef.current || []), ...sentences];
+        captionSentencesRef.current = nextAll;
+        setCaptionSentences(nextAll);
+        setCaptionIndex(prevLen);
+        startIndexForBatch = prevLen;
+      } else {
+        // Keep current caption index; batch will be empty so no scheduling occurs
+        try { startIndexForBatch = Number(captionIndexRef.current || 0); } catch { startIndexForBatch = 0; }
+      }
+      console.log('[speakFrontendImpl] About to fetch TTS');
+      let dec = false;
+      try {
+        setTtsLoadingCount((c) => c + 1);
+        let res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
+        if (!res.ok) {
+          try { await fetch('/api/tts', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(() => {}); } catch {}
+          res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
+        }
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          let b64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
+          if (b64) b64 = normalizeBase64Audio(b64);
+          console.log('[speakFrontendImpl] Got audio, length:', b64?.length || 0);
+          if (b64) {
+            if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
+            // Let the playback engine manage isSpeaking lifecycle
+            try { setIsSpeaking(true); } catch {}
+            console.log('[speakFrontendImpl] About to play audio');
+            try { await playAudioFromBase64(b64, noCaptions ? [] : sentences, startIndexForBatch); } catch {}
+            console.log('[speakFrontendImpl] Audio playback complete');
+          } else {
+            if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
+            // Use unified synthetic playback so video + isSpeaking behave consistently
+            try { await playAudioFromBase64('', noCaptions ? [] : sentences, startIndexForBatch); } catch {}
+          }
+        }
+      } catch (err) {
+        console.error('[speakFrontendImpl] Error:', err);
+      }
+      finally { if (!dec) setTtsLoadingCount((c) => Math.max(0, c - 1)); }
+    } catch (err) {
+      console.error('[speakFrontendImpl] Outer error:', err);
+    }
+  }, [playAudioFromBase64, setTtsLoadingCount, setIsSpeaking, setCaptionSentences, setCaptionIndex, captionSentencesRef, captionIndexRef]);
+
+  // Update the ref so early callbacks can use it
+  useEffect(() => { 
+    console.log('[speakFrontendImpl] Updating ref with implementation');
+    speakFrontendRef.current = speakFrontendImpl; 
+  }, [speakFrontendImpl]);
+
   // Update refs with hook-provided functions (for use in callbacks defined before the hook)
   useEffect(() => { scheduleCaptionsForAudioRef.current = scheduleCaptionsForAudio; }, [scheduleCaptionsForAudio]);
   useEffect(() => { scheduleCaptionsForDurationRef.current = scheduleCaptionsForDuration; }, [scheduleCaptionsForDuration]);
@@ -2061,6 +2142,7 @@ function SessionPageInner() {
     setAbortKey,
     jokeUsedThisGate,
     subjectParam,
+    lessonData,
     phase,
     subPhase,
     currentCompProblem,
@@ -2081,6 +2163,49 @@ function SessionPageInner() {
     speakFrontend,
     callMsSonoma,
     playAudioFromBase64,
+  });
+
+  // Use phase handlers hook
+  const {
+    handleGoComprehension: handleGoComprehensionHook,
+    handleGoExercise: handleGoExerciseHook,
+    handleGoWorksheet: handleGoWorksheetHook,
+    handleGoTest: handleGoTestHook,
+    handleStartLesson: handleStartLessonHook
+  } = usePhaseHandlers({
+    // State setters
+    setShowOpeningActions,
+    setCurrentCompProblem,
+    setSubPhase,
+    setQaAnswersUnlocked,
+    setCanSend,
+    setCurrentCompIndex,
+    setCompPool,
+    setCurrentExerciseProblem,
+    setCurrentExIndex,
+    setExercisePool,
+    
+    // State values
+    phase,
+    currentCompProblem,
+    generatedComprehension,
+    currentCompIndex,
+    compPool,
+    currentExerciseProblem,
+    generatedExercise,
+    currentExIndex,
+    exercisePool,
+    generatedWorksheet,
+    generatedTest,
+    
+    // Refs
+    activeQuestionBodyRef,
+    startThreeStageTeachingRef,
+    
+    // Functions
+    speakFrontend,
+    drawSampleUnique,
+    buildQAPool
   });
 
 
@@ -3339,6 +3464,9 @@ function SessionPageInner() {
     let ok = await teachDefinitions(false);
     if (ok) await promptGateRepeat();
   }, [ensureLessonDataReady, getAvailableVocab, teachDefinitions, promptGateRepeat]);
+
+  // Update ref so phase handlers hook can use it
+  useEffect(() => { startThreeStageTeachingRef.current = startThreeStageTeaching; }, [startThreeStageTeaching]);
 
   const startTeachingUnifiedRepeat = async () => {
     // Repeat teaching with a different transition tone; avoid sounding like a fresh start.
@@ -4618,10 +4746,12 @@ function SessionPageInner() {
   );
   const qnaButtonsVisible = (
     inQnAForButtons && !isSpeaking && showOpeningActions &&
-    askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive'
+    askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive' && storyState === 'inactive'
   );
   const buttonsGating = discussionButtonsVisible || qnaButtonsVisible;
-  const sendDisabled = (!canSend || loading || comprehensionAwaitingBegin || speakingLock || buttonsGating);
+  // Allow story input even while speaking might be finishing; story bypasses speaking lock
+  const storyInputActive = storyState === 'awaiting-turn';
+  const sendDisabled = storyInputActive ? (!canSend || loading) : (!canSend || loading || comprehensionAwaitingBegin || speakingLock || buttonsGating);
 
   const subPhaseStatus = useMemo(() => {
     switch (subPhase) {

@@ -9,8 +9,7 @@
  */
 
 import { useCallback } from 'react';
-import { ensureQuestionMark, formatQuestionForSpeech } from '../utils/questionFormatters';
-import { isShortAnswerItem } from '../utils/qaUtils';
+import { ensureQuestionMark, formatQuestionForSpeech, isShortAnswerItem } from '../utils/questionFormatting';
 
 const ENCOURAGEMENT_SNIPPETS = [
   "You've got this",
@@ -49,12 +48,12 @@ export function usePhaseHandlers({
   
   // Refs
   activeQuestionBodyRef,
+  startThreeStageTeachingRef,
   
   // Functions
   speakFrontend,
   drawSampleUnique,
-  buildQAPool,
-  startThreeStageTeaching
+  buildQAPool
 }) {
 
   const handleGoComprehension = useCallback(async () => {
@@ -224,11 +223,15 @@ export function usePhaseHandlers({
       setCanSend(true);
       return;
     }
-    try { await startThreeStageTeaching(); } catch {}
+    try { 
+      if (startThreeStageTeachingRef.current) {
+        await startThreeStageTeachingRef.current(); 
+      }
+    } catch {}
   }, [
     phase, currentCompProblem, currentExerciseProblem, generatedWorksheet, generatedTest,
     setShowOpeningActions, setQaAnswersUnlocked, setCanSend, activeQuestionBodyRef,
-    speakFrontend, startThreeStageTeaching
+    speakFrontend, startThreeStageTeachingRef
   ]);
 
   return {

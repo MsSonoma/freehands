@@ -42,7 +42,9 @@ export function getJokesForSubject(subject) {
  * @returns {Joke | null}
  */
 export function pickNextJoke(subject) {
+  console.log('[pickNextJoke] Called with subject:', subject);
   const list = getJokesForSubject(subject);
+  console.log('[pickNextJoke] Got list with length:', list?.length);
   if (!list.length) return null;
   if (typeof window === 'undefined') return list[0];
   try {
@@ -56,7 +58,9 @@ export function pickNextJoke(subject) {
       idx = (idx + 1) % list.length;
     }
     localStorage.setItem(key, String(idx));
-    return list[idx];
+    const result = list[idx];
+    console.log('[pickNextJoke] Returning joke:', result?.id);
+    return result;
   } catch {
     return list[Math.floor(Math.random() * list.length)];
   }
