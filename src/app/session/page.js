@@ -34,6 +34,7 @@ import { buildQAPool as buildQAPoolUtil, ensureExactCount as ensureExactCountUti
 import { getSnapshotStorageKey as getSnapshotStorageKeyUtil, scheduleSaveSnapshotCore } from './utils/snapshotPersistenceUtils';
 import { clearSpeechGuard as clearSpeechGuardUtil, forceStopSpeaking as forceStopSpeakingUtil, armSpeechGuard as armSpeechGuardUtil, armSpeechGuardThrottled as armSpeechGuardThrottledUtil } from './utils/speechGuardUtils';
 import { useDiscussionHandlers } from './hooks/useDiscussionHandlers';
+import { useAudioPlayback } from './hooks/useAudioPlayback';
 
 export default function SessionPage(){
   return (
