@@ -888,15 +888,6 @@ function SessionPageInner() {
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
   // Track last arm time to avoid spamming guard while we get metadata/ticks
   const lastGuardArmAtRef = useRef(0);
-  const computeHeuristicDuration = (sentences = []) => {
-    try {
-      const arr = Array.isArray(sentences) ? sentences : [];
-      if (!arr.length) return 3.5;
-      const totalWords = arr.reduce((sum, s) => sum + ((String(s).trim().split(/\s+/).filter(Boolean).length) || 1), 0) || arr.length;
-      const base = Math.max(totalWords / 3.6, Math.min(arr.length * 1.5, 12));
-      return clamp(base, 1.5, 300);
-    } catch { return 6; }
-  };
   const armSpeechGuard = useCallback((seconds, label = '') => {
     armSpeechGuardUtil(seconds, label, speechGuardTimerRef, forceStopSpeaking);
   }, [forceStopSpeaking]);
@@ -1633,16 +1624,6 @@ function SessionPageInner() {
     }
   };
 
-  // Persistent WebAudio context + nodes for iOS fallback
-  const audioCtxRef = useRef(null);
-  const webAudioGainRef = useRef(null);
-  const webAudioSourceRef = useRef(null);
-  const webAudioBufferRef = useRef(null);
-  const webAudioStartedAtRef = useRef(0);
-  const webAudioPausedAtRef = useRef(0);
-  // Synthetic playback (no audio asset) state
-  const syntheticRef = useRef({ active: false, duration: 0, elapsed: 0, startAtMs: 0, timerId: null });
-
   const clearSynthetic = () => clearSyntheticUtil(syntheticRef);
 
   const finishSynthetic = () => {
@@ -1918,8 +1899,6 @@ function SessionPageInner() {
       setUserPaused(false);
     }
   }, [loading, pauseAll, resumeAll]);
-
-  const toggleMute = () => setMuted((m) => !m);
 
   // Centralized abort/cleanup: stop audio, captions, mic/STT, and in-flight requests
   // keepCaptions: when true, do NOT wipe captionSentences so on-screen transcript remains continuous across handoffs
