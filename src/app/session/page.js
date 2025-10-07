@@ -1284,37 +1284,18 @@ function SessionPageInner() {
   // Guard: if audio stalls or never ends on mobile, auto-release the speaking lock so controls do not hang
   const speechGuardTimerRef = useRef(null);
   const clearSpeechGuard = useCallback(() => {
-    try {
-      if (speechGuardTimerRef.current) {
-        clearTimeout(speechGuardTimerRef.current);
-        speechGuardTimerRef.current = null;
-      }
-    } catch {}
+    clearSpeechGuardUtil(speechGuardTimerRef);
   }, []);
   const forceStopSpeaking = useCallback((reason = 'timeout') => {
-    try { console.warn('[Session] Speech guard fired; forcing stop. reason=', reason); } catch {}
-    if (audioRef.current) {
-      try { audioRef.current.pause(); } catch {}
-      try { audioRef.current.src = ''; } catch {}
-      audioRef.current = null;
-    }
-    try { stopWebAudioSource(); } catch {}
-    if (videoRef.current) { try { videoRef.current.pause(); } catch {} }
-    try { setIsSpeaking(false); } catch {}
-    // Also surface Opening actions if we are in Discussion awaiting-learner
-    try {
-      if (
-        phase === 'discussion' &&
-        subPhase === 'awaiting-learner' &&
-        askState === 'inactive' &&
-        riddleState === 'inactive' &&
-        poemState === 'inactive'
-      ) {
-        setShowOpeningActions(true);
-      }
-    } catch {}
-    clearSpeechGuard();
-  }, [clearSpeechGuard]);
+    forceStopSpeakingUtil(
+      reason,
+      { audioRef, videoRef, speechGuardTimerRef },
+      { phase, subPhase, askState, riddleState, poemState },
+      setIsSpeaking,
+      setShowOpeningActions,
+      stopWebAudioSource
+    );
+  }, [phase, subPhase, askState, riddleState, poemState]);
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
   // Track last arm time to avoid spamming guard while we get metadata/ticks
   const lastGuardArmAtRef = useRef(0);
@@ -1328,19 +1309,10 @@ function SessionPageInner() {
     } catch { return 6; }
   };
   const armSpeechGuard = useCallback((seconds, label = '') => {
-    clearSpeechGuard();
-    const sec = Math.max(0, Number(seconds) || 0);
-    // No upper cap: allow long audio; add a small safety fudge
-    const ms = Math.max(1800, Math.floor(sec * 1000) + 3000);
-    try { console.info('[Session] Arming speech guard for ~', Math.round(ms/1000), 's', label ? `(${label})` : ''); } catch {}
-    speechGuardTimerRef.current = setTimeout(() => forceStopSpeaking('guard:' + (label || 'unknown')), ms);
-  }, [clearSpeechGuard, forceStopSpeaking]);
+    armSpeechGuardUtil(seconds, label, speechGuardTimerRef, forceStopSpeaking);
+  }, [forceStopSpeaking]);
   const armSpeechGuardThrottled = useCallback((seconds, label = '') => {
-    const now = Date.now();
-    if (!lastGuardArmAtRef.current || now - lastGuardArmAtRef.current >= 800) {
-      lastGuardArmAtRef.current = now;
-      armSpeechGuard(seconds, label);
-    }
+    armSpeechGuardThrottledUtil(seconds, label, lastGuardArmAtRef, armSpeechGuard);
   }, [armSpeechGuard]);
   const lastSentencesRef = useRef([]);
   const lastStartIndexRef = useRef(0);
