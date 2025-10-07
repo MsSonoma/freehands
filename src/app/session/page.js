@@ -26,6 +26,7 @@ import { resolveLessonInfo, getLessonTitle } from './utils/lessonUtils';
 import { formatQuestionForSpeech, isShortAnswerItem, isTrueFalse, isMultipleChoice, formatMcOptions, ensureQuestionMark, promptKey, deriveCorrectAnswerText, formatQuestionForInlineAsk, letterForAnswer, naturalJoin } from './utils/questionFormatting';
 import { normalizeAnswer } from './utils/answerNormalization';
 import { isAnswerCorrectLocal, expandExpectedAnswer, expandRiddleAcceptables, composeExpectedBundle } from './utils/answerEvaluation';
+import { ENCOURAGEMENT_SNIPPETS, CELEBRATE_CORRECT, HINT_FIRST, HINT_SECOND, pickHint, buildCountCuePattern } from './utils/feedbackMessages';
 
 export default function SessionPage(){
   return (
@@ -1430,36 +1431,6 @@ function SessionPageInner() {
     } catch { return null; }
   };
 
-  // Encouragement snippets used around progress/count cues in comprehension, exercise, worksheet.
-  // Keep short, single sentences (no trailing spaces). Safe for insertion before or after count cue.
-  const ENCOURAGEMENT_SNIPPETS = useMemo(() => [
-    'Great focus',
-    'Nice thinking',
-    'You are doing great',
-    'Keep it up',
-    'Strong effort',
-    'Brain power engaged',
-    'Love that persistence',
-  'Flex that brain',
-    'Terrific progress',
-    'Staying sharp'
-  ], []);
-
-  // Organic single-sentence celebrations for correct comprehension answers (no rigid cue wording).
-  // Keep them short, warm, and domain-agnostic; avoid trailing punctuation beyond a period.
-  const CELEBRATE_CORRECT = useMemo(() => [
-    'Yes, great thinking',
-    'That is right',
-    'Nice work',
-    'You nailed it',
-    'Correct and confident',
-    'Solid answer',
-    'Exactly right',
-    'Way to go',
-    'Spot on',
-    'You got it'
-  ], []);
-
   // Track wrong attempts per question key so we can vary hints and reveal on third try
   const wrongAttemptsRef = useRef(new Map());
   const bumpWrongAttempt = useCallback((qKey) => {
@@ -1474,43 +1445,6 @@ function SessionPageInner() {
   const resetWrongAttempt = useCallback((qKey) => {
     try { if (qKey) wrongAttemptsRef.current.delete(qKey); } catch {}
   }, []);
-
-  // Supportive hint variations so we don't repeat the same line each time
-  const HINT_FIRST = useMemo(() => [
-    'Not quite right. Think about the key idea and try again.',
-    'Not quite. Take another look and try again.',
-    'Almost there. Read it once more and try again.'
-  ], []);
-  const HINT_SECOND = useMemo(() => [
-    'Good effort. You have got this—focus on the main idea.',
-    'Nice try. Think about what the question is really asking.',
-    'You are close. Pick the best match for the idea.'
-  ], []);
-  const pickHint = useCallback((arr, qKey) => {
-    try {
-      const list = Array.isArray(arr) && arr.length ? arr : ['Try again.'];
-      // Simple stable pick by key hash to keep variety without randomness per turn
-      let h = 0; const s = String(qKey || '');
-      for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-      return list[h % list.length];
-    } catch { return 'Try again.'; }
-  }, []);
-
-  // Helper to build a randomized pattern specification we inject into model instructions.
-  // Returns an object { patternHint, pick } where pick(encouragement, progressPhrase) -> combined string
-  // patternHint is inserted into instructions so model knows allowed positions.
-  const buildCountCuePattern = useCallback((progressPhrase) => {
-    // Decide order on the client so UX sees variety deterministically per turn.
-    const encouragement = ENCOURAGEMENT_SNIPPETS[Math.floor(Math.random() * ENCOURAGEMENT_SNIPPETS.length)];
-    const placeBefore = Math.random() < 0.5;
-    const patternHint = placeBefore
-      ? `Say a brief encouragement (e.g., "${encouragement}.") immediately BEFORE you say: "${progressPhrase}"`
-      : `Say the progress phrase "${progressPhrase}" then immediately AFTER it one brief encouragement such as: "${encouragement}."`;
-    const pick = () => placeBefore
-      ? `${encouragement}. ${progressPhrase}`
-      : `${progressPhrase} ${encouragement}.`;
-    return { encouragement, placeBefore, patternHint, pick };
-  }, [ENCOURAGEMENT_SNIPPETS]);
 
   // Re-added: derive manifest info + teaching steps (was removed accidentally, causing ReferenceError)
   const manifestInfo = useMemo(
