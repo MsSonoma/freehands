@@ -28,6 +28,7 @@ import { normalizeAnswer } from './utils/answerNormalization';
 import { isAnswerCorrectLocal, expandExpectedAnswer, expandRiddleAcceptables, composeExpectedBundle } from './utils/answerEvaluation';
 import { ENCOURAGEMENT_SNIPPETS, CELEBRATE_CORRECT, HINT_FIRST, HINT_SECOND, pickHint, buildCountCuePattern } from './utils/feedbackMessages';
 import { normalizeBase64Audio, base64ToArrayBuffer, makeSilentWavDataUrl, ensureAudioContext, stopWebAudioSource, playViaWebAudio, unlockAudioPlayback, requestAudioAndMicPermissions } from './utils/audioUtils';
+import { clearCaptionTimers as clearCaptionTimersUtil, scheduleCaptionsForAudio as scheduleCaptionsForAudioUtil, scheduleCaptionsForDuration as scheduleCaptionsForDurationUtil } from './utils/captionUtils';
 
 export default function SessionPage(){
   return (
@@ -1790,93 +1791,22 @@ function SessionPageInner() {
 
   const waitForBeat = (ms = 240) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  const clearCaptionTimers = () => {
-    captionTimersRef.current.forEach((timer) => clearTimeout(timer));
-    captionTimersRef.current = [];
-  };
+  const clearCaptionTimers = () => clearCaptionTimersUtil(captionTimersRef);
 
   const scheduleCaptionsForAudio = (audio, sentences, startIndex = 0) => {
-    clearCaptionTimers();
-    if (!sentences.length) return;
-    try { setCaptionsDone(false); } catch {}
-
-    // Only schedule through the provided batch of sentences; caller passes in the new batch
-    const totalWords = sentences.reduce((sum, s) => sum + (countWords(s) || 1), 0) || sentences.length;
-    const startSchedule = (durationSeconds) => {
-      const safeDuration = durationSeconds && Number.isFinite(durationSeconds) && durationSeconds > 0
-        ? durationSeconds
-        : Math.max(totalWords / 3.6, Math.min(sentences.length * 1.5, 12));
-
-      // Ensure a minimum display time per sentence so progression is visible
-      const minPerSentence = 0.6; // seconds
-
-      let elapsed = 0;
-      setCaptionIndex(startIndex);
-      for (let i = 1; i < sentences.length; i += 1) {
-        const prevWords = countWords(sentences[i - 1]) || 1;
-        const step = Math.max(minPerSentence, safeDuration * (prevWords / totalWords));
-        elapsed += step;
-        const targetIndex = startIndex + i;
-        const timer = window.setTimeout(() => {
-          setCaptionIndex(targetIndex);
-          // If we reached the end-of-batch caption, mark captionsDone
-          try {
-            const end = captionBatchEndRef.current || (startIndex + sentences.length);
-            if (targetIndex >= end - 1) setCaptionsDone(true);
-          } catch {}
-        }, Math.round(elapsed * 1000));
-        captionTimersRef.current.push(timer);
-      }
-    };
-
-    let scheduled = false;
-    const launch = (d) => {
-      if (scheduled) return;
-      scheduled = true;
-      startSchedule(d);
-    };
-    if (Number.isFinite(audio.duration) && audio.duration > 0) {
-      // Use remaining duration when resuming mid-playback so caption pacing stays aligned
-      const remaining = Math.max(0.1, (audio.duration || 0) - (audio.currentTime || 0));
-      launch(remaining);
-    } else {
-      const onLoaded = () => launch(audio.duration);
-      audio.addEventListener("loadedmetadata", onLoaded, { once: true });
-      audio.addEventListener("canplay", onLoaded, { once: true });
-      // Fallback: if metadata never fires quickly, schedule with heuristic after 250ms
-      const fallbackTimer = window.setTimeout(() => launch(0), 250);
-      captionTimersRef.current.push(fallbackTimer);
-    }
+    scheduleCaptionsForAudioUtil(audio, sentences, startIndex, 
+      { captionTimersRef, captionBatchEndRef }, 
+      setCaptionIndex, 
+      setCaptionsDone
+    );
   };
 
-  // Schedule captions against a known duration (used by WebAudio fallback)
   const scheduleCaptionsForDuration = (durationSeconds, sentences, startIndex = 0) => {
-    clearCaptionTimers();
-    if (!sentences || !sentences.length) return;
-    try { setCaptionsDone(false); } catch {}
-
-    const totalWords = sentences.reduce((sum, s) => sum + (countWords(s) || 1), 0) || sentences.length;
-    const safeDuration = durationSeconds && Number.isFinite(durationSeconds) && durationSeconds > 0
-      ? durationSeconds
-      : Math.max(totalWords / 3.6, Math.min(sentences.length * 1.5, 12));
-    const minPerSentence = 0.6;
-
-    let elapsed = 0;
-    setCaptionIndex(startIndex);
-    for (let i = 1; i < sentences.length; i += 1) {
-      const prevWords = countWords(sentences[i - 1]) || 1;
-      const step = Math.max(minPerSentence, safeDuration * (prevWords / totalWords));
-      elapsed += step;
-      const targetIndex = startIndex + i;
-      const timer = window.setTimeout(() => {
-        setCaptionIndex(targetIndex);
-        try {
-          const end = captionBatchEndRef.current || (startIndex + sentences.length);
-          if (targetIndex >= end - 1) setCaptionsDone(true);
-        } catch {}
-      }, Math.round(elapsed * 1000));
-      captionTimersRef.current.push(timer);
-    }
+    scheduleCaptionsForDurationUtil(durationSeconds, sentences, startIndex,
+      { captionTimersRef, captionBatchEndRef },
+      setCaptionIndex,
+      setCaptionsDone
+    );
   };
 
   const playAudioFromBase64 = async (audioBase64, batchSentences = [], startIndex = 0, opts = {}) => {
