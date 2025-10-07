@@ -183,6 +183,8 @@ function SessionPageInner() {
   const [storyUsedThisGate, setStoryUsedThisGate] = useState(false);
   // Story transcript: array of {role: 'user'|'assistant', text: string}
   const [storyTranscript, setStoryTranscript] = useState([]);
+  // When a snapshot is restored on mount, surface a Resume/Restart offer in the footer
+  const [offerResume, setOfferResume] = useState(false);
 
   // Reset opening actions visibility on begin and on major phase changes
   useEffect(() => {
@@ -2332,8 +2334,6 @@ function SessionPageInner() {
   const lastSavedSigRef = useRef(null);
   // Retry budget for labeled saves when key is not yet ready
   const pendingSaveRetriesRef = useRef({});
-  // When a snapshot is restored on mount, surface a Resume/Restart offer in the footer
-  const [offerResume, setOfferResume] = useState(false);
   const scheduleSaveSnapshot = useCallback((label = '') => {
     // Generally do not save until restore has run at least once to avoid clobbering, except for explicit user-driven labels
     if (!restoredSnapshotRef.current && label === 'state-change') return;
