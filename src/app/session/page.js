@@ -1900,6 +1900,28 @@ function SessionPageInner() {
     }
     return out;
   }, [drawWordUnique]);
+
+  // Transient placeholder override for the input field (non-intrusive and time-limited)
+  const [tipOverride, setTipOverride] = useState(null);
+  const tipTimerRef = useRef(null);
+  // Note: mutual exclusivity with Opening/Go buttons is handled via sendDisabled (buttonsGating)
+  const showTipOverride = useCallback((text, ms = 10000) => {
+    try { if (tipTimerRef.current) clearTimeout(tipTimerRef.current); } catch {}
+    setTipOverride(String(text || '').trim() || null);
+    if (ms > 0) {
+      tipTimerRef.current = setTimeout(() => {
+        setTipOverride(null);
+        tipTimerRef.current = null;
+      }, ms);
+    }
+  }, []);
+  // Clear on state transitions so normal placeholder flow resumes immediately when the UI changes
+  useEffect(() => {
+    if (tipOverride != null) setTipOverride(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, subPhase, loading, canSend, showBegin, isSpeaking]);
+  useEffect(() => () => { try { if (tipTimerRef.current) clearTimeout(tipTimerRef.current); } catch {} }, []);
+
   // Audio playback hook - manages all TTS audio, video sync, and caption scheduling
   const {
     playAudioFromBase64: playAudioFromBase64Hook,
@@ -4592,26 +4614,6 @@ function SessionPageInner() {
   );
   const buttonsGating = discussionButtonsVisible || qnaButtonsVisible;
   const sendDisabled = (!canSend || loading || comprehensionAwaitingBegin || speakingLock || buttonsGating);
-  // Transient placeholder override for the input field (non-intrusive and time-limited)
-  const [tipOverride, setTipOverride] = useState(null);
-  const tipTimerRef = useRef(null);
-  // Note: mutual exclusivity with Opening/Go buttons is handled via sendDisabled (buttonsGating)
-  const showTipOverride = useCallback((text, ms = 10000) => {
-    try { if (tipTimerRef.current) clearTimeout(tipTimerRef.current); } catch {}
-    setTipOverride(String(text || '').trim() || null);
-    if (ms > 0) {
-      tipTimerRef.current = setTimeout(() => {
-        setTipOverride(null);
-        tipTimerRef.current = null;
-      }, ms);
-    }
-  }, []);
-  // Clear on state transitions so normal placeholder flow resumes immediately when the UI changes
-  useEffect(() => {
-    if (tipOverride != null) setTipOverride(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, subPhase, loading, canSend, showBegin, isSpeaking]);
-  useEffect(() => () => { try { if (tipTimerRef.current) clearTimeout(tipTimerRef.current); } catch {} }, []);
 
   const subPhaseStatus = useMemo(() => {
     switch (subPhase) {
