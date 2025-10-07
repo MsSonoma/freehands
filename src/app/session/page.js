@@ -23,6 +23,8 @@ import { splitIntoSentences, mergeMcChoiceFragments, enforceNbspAfterMcLabels, c
 import { CLEAN_SPEECH_INSTRUCTION, GUARD_INSTRUCTION, KID_FRIENDLY_STYLE, COMPREHENSION_CUE_PHRASE, LEGACY_LESSON_MAP, timelinePhases, phaseLabels, discussionSteps, getTeachingSteps } from './utils/constants';
 import { buildSystemMessage, buildPerQuestionJudgingSpec } from './utils/systemMessage';
 import { resolveLessonInfo, getLessonTitle } from './utils/lessonUtils';
+import { formatQuestionForSpeech, isShortAnswerItem, isTrueFalse, isMultipleChoice, formatMcOptions, ensureQuestionMark, promptKey, deriveCorrectAnswerText, formatQuestionForInlineAsk, letterForAnswer, naturalJoin } from './utils/questionFormatting';
+import { normalizeAnswer } from './utils/answerNormalization';
 
 export default function SessionPage(){
   return (
