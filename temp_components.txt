@@ -1,0 +1,1205 @@
+﻿function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPhase }) {
+  const columns = Array.isArray(timelinePhases) && timelinePhases.length > 0 ? timelinePhases.length : 5;
+  const gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
+  const containerRef = useRef(null);
+  const [labelFontSize, setLabelFontSize] = useState('1rem');
+
+  // Compute a shared font size so the longest label fits within a single column
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+  const BASE = 16; // px for measurement
+  const MIN = 12;  // px - keep readable on small screens
+  const MAX = 20;  // px - permit larger labels on wider screens
+    const PADDING_X = 18 * 2 + 4; // left+right padding plus a little slack for borders
+
+    const labels = (Array.isArray(timelinePhases) ? timelinePhases : []).map(k => String(phaseLabels[k] || ''));
+    if (!labels.length) return;
+
+    const compute = () => {
+      const totalWidth = el.clientWidth || 0;
+  if (totalWidth <= 0) { setLabelFontSize('1rem'); return; }
+      const colWidth = totalWidth / columns;
+      const available = Math.max(0, colWidth - PADDING_X);
+
+      // Build a hidden measurer span to measure widths at BASE size and bold weight (worst case)
+      const meas = document.createElement('span');
+      meas.style.position = 'fixed';
+      meas.style.left = '-99999px';
+      meas.style.top = '0';
+      meas.style.whiteSpace = 'nowrap';
+      meas.style.visibility = 'hidden';
+      const cs = window.getComputedStyle(el);
+      meas.style.fontFamily = cs.fontFamily || 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial';
+      meas.style.fontWeight = '700'; // measure bold to avoid overflow when highlighted
+      meas.style.fontSize = `${BASE}px`;
+      document.body.appendChild(meas);
+      let maxLabelWidth = 0;
+      for (const text of labels) {
+        meas.textContent = text;
+        const w = meas.getBoundingClientRect().width;
+        if (w > maxLabelWidth) maxLabelWidth = w;
+      }
+      document.body.removeChild(meas);
+
+  if (maxLabelWidth <= 0 || available <= 0) { setLabelFontSize('1rem'); return; }
+      const scale = Math.min(1, available / maxLabelWidth);
+  const next = Math.max(MIN, Math.min(MAX, Math.floor(BASE * scale)));
+  // Map px -> rem using current root font-size for consistent scaling
+  const rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  const nextRem = Math.max(0.5, next / rootPx);
+  setLabelFontSize(`${nextRem}rem`);
+    };
+
+    // Initial compute + observe container size changes
+    compute();
+    const ro = new ResizeObserver(() => compute());
+    try { ro.observe(el); } catch {}
+    // Recompute on window orientation changes
+    const onResize = () => compute();
+    window.addEventListener('resize', onResize);
+    return () => {
+      try { ro.disconnect(); } catch {}
+      window.removeEventListener('resize', onResize);
+    };
+  }, [timelinePhases, columns]);
+
+  return (
+  <div ref={containerRef} style={{ display: "grid", gridTemplateColumns, gap: 'clamp(0.25rem, 0.8vw, 0.5rem)', marginBottom: compact ? 'clamp(0.125rem, 0.6vw, 0.25rem)' : 'clamp(0.25rem, 1vw, 0.625rem)', width: '100%', minWidth: 0, position: 'relative', zIndex: 9999, padding: 'clamp(0.125rem, 0.6vw, 0.375rem)', boxSizing: 'border-box' }}>
+      {timelinePhases.map((phaseKey) => (
+        <div
+          key={phaseKey}
+          onClick={onJumpPhase ? () => onJumpPhase(phaseKey) : undefined}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            boxSizing: 'border-box',
+            padding: compact ? 'clamp(3px, 0.6vw, 6px) clamp(8px, 1.4vw, 12px)' : 'clamp(6px, 1vw, 10px) clamp(14px, 2vw, 18px)',
+            borderRadius: 12,
+            background: timelineHighlight === phaseKey ? "#c7442e" : "#e5e7eb",
+            color: timelineHighlight === phaseKey ? "#fff" : "#374151",
+            fontWeight: timelineHighlight === phaseKey ? 700 : 500,
+            boxShadow: timelineHighlight === phaseKey ? "0 0 0 3px #c7442e, 0 2px 8px #c7442e" : undefined,
+            border: "2px solid transparent",
+            // Responsive label typography
+            fontSize: labelFontSize,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            minWidth: 0,
+            cursor: onJumpPhase ? 'pointer' : 'default',
+            userSelect: 'none',
+            transition: 'background 120ms ease, transform 120ms ease',
+            ...(onJumpPhase ? {':hover': {}} : {})
+          }}
+        >
+          {phaseLabels[phaseKey]}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, isLastWorksheetQuestion, onOpenReview }) {
+  // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
+  // Remove horizontal clamp: let the video occupy the full available width of its column
+  const containerMaxWidth = 'none';
+  const dynamicHeightStyle = (isMobileLandscape && videoMaxHeight) ? { maxHeight: videoMaxHeight, height: videoMaxHeight, minHeight: 0 } : {};
+  // Responsive control sizing: derive a target size from container width via CSS clamp.
+  // We'll expose a CSS variable --ctrlSize and reuse for skip + play/pause/mute for symmetry.
+  const controlClusterStyle = {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    display: 'flex',
+    gap: 12,
+    zIndex: 10,
+    // size calculation moved to child buttons via CSS var
+  };
+  const controlButtonBase = {
+    background: '#1f2937',
+    color: '#fff',
+    border: 'none',
+    width: 'var(--ctrlSize)',
+    height: 'var(--ctrlSize)',
+    display: 'grid',
+    placeItems: 'center',
+    borderRadius: '50%',
+    cursor: 'pointer',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+  };
+  // Begin overlays removed. Keep controls always enabled.
+  const atPhaseBegin = false;
+  // Portrait refinement: instead of padding the outer wrapper, shrink the video width a bit so
+  // the empty space on each side is symmetrical and the video remains visually centered.
+  // We choose a slight shrink (e.g. 92%) to create subtle gutters. Landscape keeps full width.
+  const outerWrapperStyle = { position: 'relative', margin: '0 auto', width: '100%' };
+
+  // In portrait, interpolate height from 25svh at 1:1 to 35svh at 2:1 (height:width), clamped outside that range.
+  const [portraitSvH, setPortraitSvH] = useState(35);
+  useEffect(() => {
+    const computePortraitHeight = () => {
+      try {
+        const w = Math.max(1, window.innerWidth || 1);
+        const h = Math.max(1, window.innerHeight || 1);
+        const ratio = h / w; // 1 => square; 2 => twice as tall as wide
+        const t = Math.min(1, Math.max(0, (ratio - 1) / (2 - 1))); // 0..1 over [1,2]
+  const svh = 35 - (10 * t); // 35..25
+        setPortraitSvH(svh);
+      } catch {}
+    };
+    if (!isMobileLandscape) {
+      computePortraitHeight();
+      window.addEventListener('resize', computePortraitHeight);
+      window.addEventListener('orientationchange', computePortraitHeight);
+      return () => {
+        window.removeEventListener('resize', computePortraitHeight);
+        window.removeEventListener('orientationchange', computePortraitHeight);
+      };
+    }
+  }, [isMobileLandscape]);
+
+  const innerVideoWrapperStyle = isMobileLandscape
+    ? { position: 'relative', overflow: 'hidden', aspectRatio: '16 / 7.2', minHeight: 200, width: '100%', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', background: '#000', '--ctrlSize': 'clamp(34px, 6.2vw, 52px)', ...dynamicHeightStyle }
+    : { position: 'relative', overflow: 'hidden', height: `${portraitSvH}svh`, width: '92%', margin: '0 auto', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', background: '#000', '--ctrlSize': 'clamp(34px, 6.2vw, 52px)' };
+  return (
+    <div style={outerWrapperStyle}>
+      <div style={innerVideoWrapperStyle}>
+        <video
+          ref={videoRef}
+          src="/media/ms-sonoma-3.mp4"
+          muted={muted}
+          loop
+          playsInline
+          preload="auto"
+          onLoadedMetadata={() => {
+            try {
+              // Ensure the first frame is visible on load without auto-playing
+              if (videoRef.current) {
+                try { videoRef.current.currentTime = 0; } catch {}
+                try { videoRef.current.pause(); } catch {}
+              }
+            } catch {}
+          }}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
+        />
+        {/* No black screen during test */}
+        {(phase === 'comprehension' || phase === 'exercise') && (
+          <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(17,24,39,0.78)', color: '#fff', padding: '6px 10px', borderRadius: 8, fontSize: 'clamp(0.85rem, 1.6vw, 1rem)', fontWeight: 600, letterSpacing: 0.3, boxShadow: '0 2px 6px rgba(0,0,0,0.25)', zIndex: 10000, pointerEvents: 'none' }}>
+            {phase === 'comprehension' ? `${ticker}/${COMPREHENSION_TARGET}` : `${ticker}/${EXERCISE_TARGET}`}
+          </div>
+        )}
+        {(phase === 'worksheet' && subPhase === 'worksheet-active') ? (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 32px', pointerEvents: 'none', textAlign: 'center' }}>
+            <div style={{ fontSize: 'clamp(1.75rem, 4.2vw, 3.25rem)', fontWeight: 800, lineHeight: 1.18, color: '#ffffff', textShadow: '0 0 4px rgba(0,0,0,0.9), 0 2px 6px rgba(0,0,0,0.85), 0 4px 22px rgba(0,0,0,0.65)', letterSpacing: 0.5, fontFamily: 'Inter, system-ui, sans-serif', width: '100%' }}>
+              <CurrentAssessmentPrompt phase={phase} subPhase={subPhase} testActiveIndex={testActiveIndex} testList={testList} />
+            </div>
+          </div>
+        ) : null}
+        {/* Ticker for worksheet/test phases rendered after prompt overlay to stay on top */}
+        {((phase === 'worksheet' && subPhase === 'worksheet-active') || (phase === 'test' && subPhase === 'test-active')) && (
+          <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(17,24,39,0.78)', color: '#fff', padding: '6px 10px', borderRadius: 8, fontSize: 'clamp(0.85rem, 1.6vw, 1rem)', fontWeight: 600, letterSpacing: 0.3, boxShadow: '0 2px 6px rgba(0,0,0,0.25)', zIndex: 10000, pointerEvents: 'none' }}>
+            {phase === 'worksheet' ? `Question ${Number((typeof currentWorksheetIndex === 'number' ? currentWorksheetIndex : 0) + 1)}` : `Question ${Number((typeof testActiveIndex === 'number' ? testActiveIndex : 0) + 1)}`}
+          </div>
+        )}
+        {((phase === 'congrats') || (phase === 'test' && typeof subPhase === 'string' && subPhase.startsWith('review'))) && typeof testFinalPercent === 'number' && (
+          <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(17,24,39,0.85)', color: '#fff', padding: '10px 14px', borderRadius: 10, fontSize: 'clamp(1rem, 2vw, 1.25rem)', fontWeight: 700, letterSpacing: 0.4, boxShadow: '0 2px 10px rgba(0,0,0,0.4)' }}>Score: {testFinalPercent}%</div>
+        )}
+  {/* Ticker badges handled above for all phases */}
+        {overlayLoading && (
+          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, zIndex: 5, pointerEvents: 'none', background: 'rgba(0,0,0,0.38)', padding: '46px 50px', borderRadius: 160, backdropFilter: 'blur(2px)', boxShadow: '0 6px 28px rgba(0,0,0,0.45)' }}>
+            <div className="ms-spinner-legacy" aria-hidden="true">
+              <div className="ms-spinner" role="status" aria-label="Loading" />
+            </div>
+            <div style={{ color: '#fff', fontSize: 'clamp(0.95rem, 1.6vw, 1rem)', fontWeight: 600, letterSpacing: 0.5, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>Loading...</div>
+          </div>
+        )}
+        {/* Begin overlays removed intentionally */}
+  {/* Primary control cluster (mute only; play/pause removed per request) */}
+  {!isShortHeight && (
+  <div style={controlClusterStyle}>
+          <button type="button" onClick={onToggleMute} aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'} style={controlButtonBase}>
+            {muted ? (
+              <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
+            ) : (
+              <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M19 8a5 5 0 010 8" /><path d="M15 11a2 2 0 010 2" /></svg>
+            )}
+          </button>
+        </div>
+  )}
+        {/* Skip controls in video overlay removed per requirements */}
+        {skipPendingLessonLoad && (
+          <div style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(31,41,55,0.85)', color: '#fff', padding: '6px 12px', borderRadius: 8, fontSize: 'clamp(0.75rem, 1.4vw, 0.9rem)', fontWeight: 600, letterSpacing: 0.4, boxShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>Loading lesson… skip will apply</div>
+        )}
+        {/* Last-worksheet safety: show explicit Review button to enter facilitator override */}
+        {(phase === 'worksheet' && subPhase === 'worksheet-active' && isLastWorksheetQuestion && typeof onOpenReview === 'function') && (
+          <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 10002, pointerEvents: 'auto' }}>
+            <button
+              type="button"
+              onClick={onOpenReview}
+              style={{
+                background: '#2563EB',
+                color: '#fff',
+                fontWeight: 800,
+                letterSpacing: 0.3,
+                borderRadius: 12,
+                padding: '10px 18px',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 6px 16px rgba(0,0,0,0.25)'
+              }}
+            >
+              Review
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Helper component to extract current assessment question from global caption state via context-less DOM fallback
+function CurrentAssessmentPrompt({ phase, subPhase, testActiveIndex, testList }) {
+  // We will attempt to read window.__MS_CAPTIONS if exposed else fallback to scanning caption container.
+  const [prompt, setPrompt] = useState('');
+  useEffect(() => {
+    const extract = () => {
+      // Prefer authoritative local data for TEST overlay so numbering/choices are reliable
+      try {
+        if (phase === 'test' && subPhase === 'test-active' && Array.isArray(testList) && typeof testActiveIndex === 'number') {
+          const idx = Math.max(0, Math.min(testList.length - 1, testActiveIndex));
+          const q = testList[idx];
+          if (q) {
+            const number = `${idx + 1}. `;
+            const stem = (q.prompt || q.question || q.text || '').toString().trim();
+            const rawChoices = Array.isArray(q.choices) && q.choices.length ? q.choices : (Array.isArray(q.options) ? q.options : []);
+            if (rawChoices && rawChoices.length) {
+              const letters = ['A','B','C','D','E','F'];
+              const parts = rawChoices.slice(0, 6).map((c, i) => `${letters[i]})\u00A0${String(c)}`);
+              // Return structured payload so renderer can stack lines and keep pairs together
+              return { number, stem, parts };
+            }
+            return { number, stem, parts: [] };
+          }
+        }
+      } catch {}
+      try {
+        // Direct global if maintained
+        if (window.__MS_CAPTION_SENTENCES && Array.isArray(window.__MS_CAPTION_SENTENCES)) {
+          // For test, avoid using captions: handled above via local data.
+          if (phase === 'worksheet' && subPhase === 'worksheet-active') {
+            return window.__MS_CAPTION_SENTENCES[window.__MS_CAPTION_SENTENCES.length - 1] || '';
+          }
+        }
+        // Fallback: query caption panel paragraphs
+        const panel = document.querySelector('[data-ms-caption-panel]');
+        if (panel) {
+          const parts = Array.from(panel.querySelectorAll('p')).map(p => p.textContent.trim()).filter(Boolean);
+          // For test, avoid using captions: handled above via local data.
+          if (phase === 'worksheet' && subPhase === 'worksheet-active') return parts[parts.length - 1] || '';
+        }
+      } catch {}
+      return '';
+    };
+    setPrompt(extract());
+    const id = setInterval(() => setPrompt(extract()), 400); // lightweight poll to keep in sync
+    return () => clearInterval(id);
+  }, [phase, subPhase]);
+  if (!prompt) return null;
+  // If structured payload, render stacked with nowrap options
+  if (typeof prompt === 'object' && prompt && 'number' in prompt) {
+    const { number, stem, parts } = prompt;
+    const children = [<span key="stem">{number}{stem}</span>];
+    if (parts && parts.length) {
+      parts.forEach((t, i) => {
+        children.push(<br key={`br-${i}`} />);
+        children.push(<span key={`opt-${i}`} style={{ whiteSpace: 'nowrap' }}>{enforceNbspAfterMcLabels(t)}</span>);
+      });
+    }
+    return <span>{children}</span>;
+  }
+  // Fallback: plain string
+  return <span>{String(prompt)}</span>;
+}
+
+function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, loading, onSend, showBegin, isSpeaking, phase, subPhase, tipOverride, abortKey, currentCompProblem, compact = false, hotkeys }) {
+  const [focused, setFocused] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+  const autoStopRef = useRef(null);
+  const inputRef = useRef(null);
+  // Track whether Numpad+ is currently held to avoid repeat triggers
+  const hotkeyDownRef = useRef(false);
+  // Track touch-hold lifecycle so we can start on touchstart and stop on touchend without triggering synthetic clicks
+  const touchActiveRef = useRef(false);
+
+  // Abort controller for STT fetch
+  const sttAbortRef = useRef(null);
+
+  const transcribeBlob = useCallback(async (blob) => {
+    if (!blob) return;
+    setUploading(true);
+    setErrorMsg('');
+    try {
+      const fd = new FormData();
+      fd.append('audio', blob, 'input.webm');
+      fd.append('language', 'en-US');
+      const ctrl = new AbortController();
+      sttAbortRef.current = ctrl;
+      const res = await fetch('/api/stt', { method: 'POST', body: fd, signal: ctrl.signal });
+      if (!res.ok) throw new Error(`STT failed ${res.status}`);
+      const data = await res.json();
+      const text = (data?.transcript || '').trim();
+      if (text) {
+        // Populate the input with the transcript; facilitator can edit/press Send
+        setLearnerInput(text);
+      } else {
+        setErrorMsg('No speech detected');
+      }
+    } catch (e) {
+      if (e?.name === 'AbortError') {
+        console.warn('[STT] aborted');
+        return;
+      }
+      console.warn('[STT] transcription failed', e);
+      setErrorMsg('Transcription failed');
+    } finally {
+      setUploading(false);
+    }
+  }, []);
+
+  const startRecording = useCallback(async () => {
+    if (isRecording || uploading) return;
+    setErrorMsg('');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      try { if (typeof window !== 'undefined') localStorage.setItem('ms_micAllowed', 'true'); } catch {}
+      const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      chunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunksRef.current.push(e.data); };
+      // When recording actually starts, clear any existing typed text so mic can be used to retry without manual delete
+      mr.onstart = () => {
+        setIsRecording(true);
+        try {
+          if (typeof learnerInput === 'string' && learnerInput.trim().length > 0) {
+            setLearnerInput('');
+          }
+        } catch {}
+      };
+      mr.onerror = (e) => { console.warn('[Mic] recorder error', e?.error || e); setIsRecording(false); setErrorMsg('Recording error'); };
+      mr.onstop = async () => {
+        try { stream.getTracks().forEach(tr => tr.stop()); } catch {}
+        const out = new Blob(chunksRef.current, { type: 'audio/webm' });
+        await transcribeBlob(out);
+      };
+      mediaRecorderRef.current = mr;
+      mr.start();
+      autoStopRef.current = setTimeout(() => { try { mr.state !== 'inactive' && mr.stop(); } catch {} }, 30000);
+    } catch (e) {
+      console.warn('[Mic] getUserMedia failed', e);
+      setErrorMsg('Mic permission denied');
+      try {
+        if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError' || e.name === 'NotFoundError')) {
+          if (typeof window !== 'undefined') localStorage.setItem('ms_micAllowed', 'false');
+        }
+      } catch {}
+    }
+  }, [isRecording, uploading, transcribeBlob, learnerInput, setLearnerInput]);
+
+  const stopRecording = useCallback(() => {
+    const mr = mediaRecorderRef.current;
+    if (autoStopRef.current) { clearTimeout(autoStopRef.current); autoStopRef.current = null; }
+    if (mr && mr.state !== 'inactive') {
+      try { mr.stop(); } catch {}
+    }
+    setIsRecording(false);
+  }, []);
+
+  // Global hotkey: Hold configured key (default NumpadPlus) to record (keydown starts, keyup stops)
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      const code = e.code || e.key;
+      const micCode = (hotkeys?.micHold || DEFAULT_HOTKEYS.micHold);
+      if (!micCode || code !== micCode) return;
+      // Prevent text input of '+' when we handle it
+      e.preventDefault();
+      if (hotkeyDownRef.current) return; // ignore auto-repeat
+      hotkeyDownRef.current = true;
+      if (!sendDisabled && !isRecording && !uploading) {
+        startRecording();
+      }
+    };
+    const onKeyUp = (e) => {
+      const code = e.code || e.key;
+      const micCode = (hotkeys?.micHold || DEFAULT_HOTKEYS.micHold);
+      if (!micCode || code !== micCode) return;
+      e.preventDefault();
+      hotkeyDownRef.current = false;
+      if (isRecording) {
+        stopRecording();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown, { passive: false });
+    window.addEventListener('keyup', onKeyUp, { passive: false });
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, [isRecording, uploading, sendDisabled, startRecording, stopRecording, hotkeys]);
+
+  useEffect(() => () => {
+    try { mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive' && mediaRecorderRef.current.stop(); } catch {}
+    if (autoStopRef.current) clearTimeout(autoStopRef.current);
+  }, []);
+
+  // Stop any in-progress mic/STT when abortKey changes (skip pressed)
+  useEffect(() => {
+    // Abort STT fetch
+    try { if (sttAbortRef.current) sttAbortRef.current.abort('skip'); } catch {}
+    // Stop recording if active
+    try {
+      // Clear any pending auto-stop timer so it doesn't try to stop again later
+      if (autoStopRef.current) { clearTimeout(autoStopRef.current); autoStopRef.current = null; }
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+    } catch {}
+    setIsRecording(false);
+    setUploading(false);
+    setErrorMsg('');
+  }, [abortKey]);
+
+  // If user hits Enter or Send while recording, stop first
+  const handleSend = useCallback(() => {
+    if (isRecording) stopRecording();
+    onSend();
+  }, [isRecording, stopRecording, onSend]);
+  // Auto-focus when the field becomes actionable (enabled and allowed to send)
+  // Add a tiny retry window to avoid races right after TTS ends or layout settles
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    if (sendDisabled || !canSend) return;
+    let rafId = null;
+    let t0 = null;
+    let t1 = null;
+    const doFocus = () => {
+      try {
+        el.focus({ preventScroll: true });
+        const len = el.value.length;
+        el.setSelectionRange(len, len);
+      } catch {/* ignore focus errors */}
+    };
+    // Initial microtask/next-tick
+    t0 = setTimeout(() => {
+      if (document.activeElement !== el) doFocus();
+    }, 0);
+    // After a frame, try again if something stole focus
+    rafId = requestAnimationFrame(() => {
+      if (document.activeElement !== el) doFocus();
+    });
+    // One last short retry
+    t1 = setTimeout(() => {
+      if (document.activeElement !== el) doFocus();
+    }, 120);
+    return () => {
+      if (t0) clearTimeout(t0);
+      if (t1) clearTimeout(t1);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [sendDisabled, canSend]);
+  const computePlaceholder = () => {
+    if (tipOverride) return tipOverride;
+    if (showBegin) return 'Press "Begin"';
+    if (phase === 'congrats') return 'Press "Complete Lesson"';
+    if (loading) return 'loading...';
+    if (isSpeaking) return 'Ms. Sonoma is talking...';
+    // During Teaching gate, disable text and prompt to use buttons
+    if (phase === 'teaching' && subPhase === 'awaiting-gate') return 'Tap Yes or No below';
+    // During Comprehension: lock input and guide clearly
+    if (phase === 'comprehension') {
+  if (subPhase === 'comprehension-start') return 'Press "Begin Comprehension"';
+    }
+  if (phase === 'exercise' && subPhase === 'exercise-awaiting-begin') return 'Press "Begin Exercise"';
+  if (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin') return 'Press "Begin Worksheet"';
+    if (phase === 'test' && subPhase === 'test-awaiting-begin') return 'Press "Begin Test"';
+    // Show guidance any time input is actionable (buttons full color => not disabled)
+    if (!sendDisabled) return 'Type your answer...';
+    return '';
+  };
+  return (
+  <div style={{ display: "flex", alignItems: "center", gap: (typeof compact !== 'undefined' && compact) ? 6 : 8, marginBottom: 0, width: '100%', maxWidth: '100%', marginLeft: 'auto', marginRight: 'auto', boxSizing: 'border-box', paddingLeft: (typeof compact !== 'undefined' && compact) ? 8 : (compact ? 12 : '4%'), paddingRight: (typeof compact !== 'undefined' && compact) ? 8 : (compact ? 12 : '4%') }}>
+      <button
+        style={{
+          background: (sendDisabled) ? "#4b5563" : '#c7442e',
+          color: "#fff",
+          borderRadius: 8,
+          padding: (typeof compact !== 'undefined' && compact) ? "6px 10px" : "8px 12px",
+          fontWeight: 600,
+          border: "none",
+          cursor: (sendDisabled) ? "not-allowed" : "pointer",
+          opacity: (sendDisabled) ? 0.7 : 1,
+          transition: "background 0.2s, opacity 0.2s, box-shadow 0.2s",
+          position: 'relative',
+          boxShadow: isRecording ? '0 0 0 4px rgba(199,68,46,0.35), 0 0 12px 4px rgba(199,68,46,0.55)' : '0 2px 6px rgba(0,0,0,0.25)',
+          // Prevent long-press selection/callout on mobile
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none',
+          touchAction: 'manipulation'
+        }}
+        aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+  disabled={sendDisabled}
+        onContextMenu={(e) => { e.preventDefault(); }}
+        onDragStart={(e) => { e.preventDefault(); }}
+        onTouchStart={(e) => {
+          // Use hold-to-record on touch devices; prevent synthetic click
+          e.preventDefault();
+          if (sendDisabled) return;
+          touchActiveRef.current = true;
+          if (!isRecording && !uploading) {
+            startRecording();
+          }
+        }}
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          if (!touchActiveRef.current) return;
+          touchActiveRef.current = false;
+          if (isRecording) {
+            stopRecording();
+          }
+        }}
+        onTouchCancel={(e) => {
+          e.preventDefault();
+          touchActiveRef.current = false;
+          if (isRecording) {
+            stopRecording();
+          }
+        }}
+        onClick={() => {
+          if (sendDisabled) return;
+          if (isRecording) {
+            stopRecording();
+          } else {
+            startRecording();
+          }
+        }}
+      >
+        {isRecording ? (
+          <div style={{ position:'relative', width:18, height:18 }}>
+            <div style={{ position:'absolute', inset:0, background:'#fff', borderRadius:4, animation:'msPulse 1s ease-in-out infinite' }} />
+          </div>
+        ) : uploading ? (
+          <div style={{ position:'relative', width:18, height:18 }}>
+            <div style={{ position:'absolute', inset:0, border:'3px solid rgba(255,255,255,0.4)', borderTopColor:'#fff', borderRadius:'50%', animation:'msSpinFade 0.9s linear infinite' }} />
+          </div>
+        ) : (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 14a3 3 0 003-3V7a3 3 0 10-6 0v4a3 3 0 003 3z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M19 11a7 7 0 01-14 0" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 21v-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+      </button>
+      {/* Removed iOS-only test sound button to simplify controls */}
+      <input
+        ref={inputRef}
+            title={(() => {
+              const micCode = (hotkeys?.micHold || DEFAULT_HOTKEYS.micHold);
+              const label = micCode === 'NumpadAdd' ? 'Numpad +' : micCode || 'Numpad +';
+              return isRecording ? `Release ${label} to stop` : `Hold ${label} to talk`;
+            })()}
+        value={learnerInput}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        onChange={(event) => setLearnerInput(event.target.value)}
+        onKeyDown={(e) => {
+          const code = e.code || e.key;
+          const beginCode = (hotkeys?.beginSend || DEFAULT_HOTKEYS.beginSend);
+          if (code === beginCode) {
+            e.preventDefault();
+            if (!sendDisabled) {
+              handleSend();
+            }
+          }
+        }}
+        placeholder={computePlaceholder()}
+  disabled={sendDisabled}
+        style={{
+          flex: 1,
+          padding: "10px",
+          borderRadius: 6,
+          border: "1px solid #bdbdbd",
+          fontSize: 'clamp(0.95rem, 1.6vw, 1.05rem)',
+          background: (!sendDisabled) ? "#fff" : "#f3f4f6",
+          color: (!sendDisabled) ? "#111827" : "#9ca3af",
+          transition: 'background 0.2s, color 0.2s',
+          ...(loading ? { animation: 'flashInputPlaceholder 0.85s ease-in-out infinite' } : {})
+        }}
+      />
+      <button
+        style={{
+          background: (sendDisabled) ? "#4b5563" : "#c7442e",
+          color: "#fff",
+          borderRadius: 8,
+          padding: (typeof compact !== 'undefined' && compact) ? "6px 10px" : "8px 12px",
+          fontWeight: 600,
+          border: "none",
+          cursor: (sendDisabled) ? "not-allowed" : "pointer",
+          opacity: (sendDisabled) ? 0.7 : 1,
+          transition: "background 0.2s, opacity 0.2s",
+        }}
+        aria-label="Send response"
+  disabled={sendDisabled}
+  onClick={handleSend}
+      >
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+          <path d="M22 2L11 13" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {/* Flash animation style for loading placeholder */}
+      <style jsx>{`
+        @keyframes flashInputPlaceholder {
+          0% { opacity: 1; }
+          50% { opacity: 0.55; }
+          100% { opacity: 1; }
+        }
+        @keyframes msPulse { 0% { transform: scale(1); opacity:1;} 50% { transform: scale(0.55); opacity:0.5;} 100% { transform: scale(1); opacity:1;} }
+        @keyframes msSpinFade {
+          0% { transform: rotate(0deg); opacity: 1; }
+          50% { transform: rotate(180deg); opacity: 0.55; }
+          100% { transform: rotate(360deg); opacity: 1; }
+        }
+        .ms-spinner {
+          position: relative;
+          box-sizing: border-box;
+          width: 64px;
+          height: 64px;
+          border: 6px solid rgba(255,255,255,0.22);
+          border-top-color: #ffffff;
+          border-radius: 50%;
+          animation: msSpinFade 0.9s linear infinite;
+          filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
+        }
+      `}</style>
+    {errorMsg && (
+  <div style={{ position:'absolute', bottom:-18, left:4, fontSize:'clamp(0.7rem, 1.2vw, 0.8rem)', color:'#c7442e' }}>{errorMsg}</div>
+    )}
+    </div>
+  );
+}
+
+function DownloadPanel({
+  lessonDataLoading,
+  canDownloadWorksheet,
+  canDownloadTest,
+  onDownloadWorksheet,
+  onDownloadTest,
+  onReroll,
+}) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: 8,
+        alignItems: 'stretch',
+        marginTop: 8,
+        marginBottom: 4,
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+        paddingLeft: 12,
+        paddingRight: 12,
+      }}
+    >
+      <button
+        type="button"
+        style={{
+          background: lessonDataLoading || !canDownloadWorksheet ? "#6b7280" : "#1f2937",
+          color: "#fff",
+          borderRadius: 8,
+          padding: '12px 14px',
+          minHeight: 44,
+          fontWeight: 600,
+          border: "none",
+          cursor: lessonDataLoading || !canDownloadWorksheet ? "not-allowed" : "pointer",
+          opacity: lessonDataLoading || !canDownloadWorksheet ? 0.7 : 1,
+          width: '100%',
+          whiteSpace: 'nowrap',
+          textOverflow: 'ellipsis',
+          overflow: 'hidden',
+        }}
+        disabled={lessonDataLoading || !canDownloadWorksheet}
+        onClick={onDownloadWorksheet}
+      >
+        Worksheet
+      </button>
+      <button
+        type="button"
+        style={{
+          background: lessonDataLoading || !canDownloadTest ? "#6b7280" : "#1f2937",
+          color: "#fff",
+          borderRadius: 8,
+          padding: '12px 14px',
+          minHeight: 44,
+          fontWeight: 600,
+          border: "none",
+          cursor: lessonDataLoading || !canDownloadTest ? "not-allowed" : "pointer",
+          opacity: lessonDataLoading || !canDownloadTest ? 0.7 : 1,
+          width: '100%',
+          whiteSpace: 'nowrap',
+          textOverflow: 'ellipsis',
+          overflow: 'hidden',
+        }}
+        disabled={lessonDataLoading || !canDownloadTest}
+        onClick={onDownloadTest}
+      >
+        Test
+      </button>
+      <button
+        type="button"
+        style={{
+          background: lessonDataLoading || (!canDownloadWorksheet && !canDownloadTest) ? "#6b7280" : "#c7442e",
+          color: "#fff",
+          borderRadius: 8,
+          padding: '12px 14px',
+          minHeight: 44,
+          fontWeight: 700,
+          border: "none",
+          cursor: lessonDataLoading || (!canDownloadWorksheet && !canDownloadTest) ? "not-allowed" : "pointer",
+          opacity: lessonDataLoading || (!canDownloadWorksheet && !canDownloadTest) ? 0.7 : 1,
+          width: '100%',
+          whiteSpace: 'nowrap',
+          textOverflow: 'ellipsis',
+          overflow: 'hidden',
+        }}
+        disabled={lessonDataLoading || (!canDownloadWorksheet && !canDownloadTest)}
+        onClick={onReroll}
+        title="Reset and re-generate a new worksheet and test"
+      >
+        Refresh Worksheet & Test
+      </button>
+    </div>
+  );
+}
+
+function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact = false, fullHeight = false, stackedHeight = null, phase, vocabTerms = [] }) {
+  const [canScroll, setCanScroll] = useState(false);
+  const [atTop, setAtTop] = useState(true);
+  const [atBottom, setAtBottom] = useState(true);
+  // Normalize incoming sentences (strings or { text, role }) to a consistent shape
+  const items = useMemo(() => {
+    if (!Array.isArray(sentences)) return [];
+    return sentences.map((s) => (typeof s === 'string' ? { text: s } : (s && typeof s === 'object' ? s : { text: '' })));
+  }, [sentences]);
+
+  // Detect overflow & scroll position on the scroller (boxRef)
+  const recomputeScrollState = useCallback(() => {
+    if (!boxRef?.current) return;
+    const el = boxRef.current;
+    const overflow = el.scrollHeight > el.clientHeight + 4; // tolerance
+    setCanScroll(overflow);
+    setAtTop(el.scrollTop <= 4);
+    setAtBottom(el.scrollTop >= el.scrollHeight - el.clientHeight - 4);
+  }, [boxRef]);
+
+  useEffect(() => { recomputeScrollState(); }, [items, stackedHeight, fullHeight, compact, recomputeScrollState]);
+
+  useEffect(() => {
+    if (!boxRef?.current) return;
+    const el = boxRef.current;
+    const handler = () => recomputeScrollState();
+    el.addEventListener('scroll', handler, { passive: true });
+    const resizeObs = new ResizeObserver(handler);
+    resizeObs.observe(el);
+    return () => { el.removeEventListener('scroll', handler); resizeObs.disconnect(); };
+  }, [boxRef, recomputeScrollState]);
+
+  // Auto-center active caption line
+  useEffect(() => {
+    if (!boxRef?.current) return;
+    const activeEl = boxRef.current.querySelector(`[data-idx="${activeIndex}"]`);
+    if (!activeEl) return;
+    const container = boxRef.current;
+    const marginTop = 8;
+    const marginBottom = 24;
+    const scale = Number.isFinite(scaleFactor) && scaleFactor > 0 ? scaleFactor : 1;
+    const elementTop = activeEl.offsetTop - marginTop;
+    const elementBottom = activeEl.offsetTop + activeEl.offsetHeight + marginBottom;
+    const viewTop = container.scrollTop;
+    const viewBottom = viewTop + container.clientHeight;
+    const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight);
+    const isLast = activeIndex >= (Array.isArray(items) ? items.length - 1 : -1);
+    if (elementTop < viewTop || elementBottom > viewBottom) {
+      const distance = Math.abs(elementTop - viewTop);
+      const jumpThreshold = (container.clientHeight * 0.65) / scale;
+      let target;
+      if (isLast) target = maxScroll; else {
+        const desiredOffset = Math.max(0, elementTop - (container.clientHeight * 0.2) / scale);
+        target = Math.min(maxScroll, desiredOffset);
+      }
+      if (distance > jumpThreshold) container.scrollTop = target; else container.scrollTo({ top: target, behavior: 'smooth' });
+      if (isLast) requestAnimationFrame(() => { container.scrollTop = maxScroll; });
+    }
+  }, [activeIndex, items, scaleFactor, boxRef]);
+
+  const containerStyle = {
+    width: '100%',
+    boxSizing: 'border-box',
+    background: '#ffffff',
+    borderRadius: 14,
+    position: 'relative',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+    display: 'flex',
+    flexDirection: 'column',
+    flex: fullHeight ? '1 1 auto' : undefined,
+    maxHeight: fullHeight ? '100%' : (stackedHeight ? stackedHeight : (compact ? '14vh' : '18vh')),
+    height: fullHeight ? '100%' : (stackedHeight ? stackedHeight : 'auto'),
+  };
+
+  const scrollerStyle = {
+    flex: '1 1 auto',
+    height: '100%',
+    overflowY: 'auto',
+    paddingTop: compact ? 6 : 12,
+    paddingRight: 12,
+    paddingBottom: compact ? 6 : 12,
+    paddingLeft: 12,
+    color: '#111111',
+    fontSize: 'clamp(1.125rem, 2.4vw, 1.5rem)',
+    lineHeight: 1.5,
+  };
+
+  return (
+    <div data-ms-caption-panel-container style={containerStyle}>
+      <div style={{ position: 'absolute', top: 6, right: 6, display: 'flex', flexDirection: 'column', gap: 6, zIndex: 10 }}>
+        <button
+          type="button"
+          aria-label="Scroll up captions"
+          disabled={atTop}
+          onClick={() => { if (boxRef.current) boxRef.current.scrollBy({ top: -Math.max(80, boxRef.current.clientHeight * 0.4), behavior: 'smooth' }); }}
+          style={{
+            background: atTop ? '#d1d5db' : '#1f2937',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 6,
+            width: 34,
+            height: 34,
+            fontSize: 'clamp(1rem, 1.8vw, 1.2rem)',
+            lineHeight: '34px',
+            cursor: atTop ? 'default' : 'pointer',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.25)',
+            opacity: atTop ? 0.6 : 1,
+          }}
+        >▲</button>
+        <button
+          type="button"
+          aria-label="Scroll down captions"
+          disabled={atBottom}
+          onClick={() => { if (boxRef.current) boxRef.current.scrollBy({ top: Math.max(80, boxRef.current.clientHeight * 0.4), behavior: 'smooth' }); }}
+          style={{
+            background: atBottom ? '#d1d5db' : '#1f2937',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 6,
+            width: 34,
+            height: 34,
+            fontSize: 'clamp(1rem, 1.8vw, 1.2rem)',
+            lineHeight: '34px',
+            cursor: atBottom ? 'default' : 'pointer',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.25)',
+            opacity: atBottom ? 0.6 : 1,
+          }}
+        >▼</button>
+      </div>
+      <div ref={boxRef} data-ms-caption-panel className="scrollbar-hidden" style={scrollerStyle} aria-live="polite">
+        {Array.isArray(items) && items.length > 0 ? (
+          <>
+          {items.map((s, idx) => {
+            const text = (s && typeof s.text === 'string') ? s.text : '';
+            if (text === '\n') {
+              return <div key={idx} data-idx={idx} style={{ height: 6 }} />;
+            }
+            const isActive = idx === activeIndex;
+            const containerBase = { margin: '6px 0', transition: 'background-color 160ms ease, color 160ms ease' };
+            const activeContainer = isActive ? { background: 'rgba(199,68,46,0.08)', borderRadius: 8, padding: '4px 6px' } : null;
+            const textBase = { whiteSpace: 'pre-line' };
+            const activeText = isActive ? { fontWeight: 700, color: '#111111' } : { fontWeight: 500 };
+            // Style for learner-entered lines
+            const userText = { color: '#c7442e', fontWeight: 600 };
+            // If this line appears to contain multiple-choice choices, render stacked with nowrap pairs
+            const mcMatch = text && /(\s|^)[A-F][\.)]\s+\S/.test(text) && (text.match(/[A-F][\.)]\s+\S/g) || []).length >= 2;
+            let mcRender = null;
+            if (mcMatch) {
+              try {
+                const m = text.match(/^(\d+\.\s*)?(.*?)(\s+[A-F][\.)]\s.*)$/);
+                if (m) {
+                  const [, num = '', stem = '', choiceChunk = ''] = m;
+                  const tokens = choiceChunk.trim().split(/\s+(?=[A-F][\.)]\s)/);
+                  mcRender = (
+                    <div style={{ whiteSpace: 'normal' }}>
+                      {(num || stem) ? <div>{num}{stem}</div> : null}
+                      {tokens.map((t, i) => (
+                        <div key={i} style={{ whiteSpace: 'nowrap' }}>{enforceNbspAfterMcLabels(t)}</div>
+                      ))}
+                    </div>
+                  );
+                }
+              } catch {}
+            }
+            // Build highlighted parts when in Discussion and vocab terms exist; skip for user lines and MC renders
+            let highlighted = null;
+            try {
+              if (!mcRender && s.role !== 'user' && (phase === 'discussion' || phase === 'teaching') && text) {
+                const terms = Array.isArray(vocabTerms) ? vocabTerms.filter(Boolean).map(t => String(t).trim()).filter(Boolean) : [];
+                if (terms.length) {
+                  const esc = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                  // Cross-compatible boundary emulation using prefix capture; allow simple plural/possessive
+                  const core = terms.map(esc).sort((a,b)=>b.length-a.length).join('|');
+                  const pattern = new RegExp(`(^|[^A-Za-z0-9])(${core})(?:'s|s)?(?![A-Za-z0-9])`, 'gi');
+                  const parts = [];
+                  let lastIndex = 0;
+                  let m;
+                  while ((m = pattern.exec(text)) !== null) {
+                    const start = m.index;
+                    const prefix = m[1] || '';
+                    const coreTerm = m[2] || '';
+                    const full = m[0] || '';
+                    const suffix = full.slice(prefix.length + coreTerm.length);
+                    // Add text before match
+                    if (start > lastIndex) parts.push(text.slice(lastIndex, start));
+                    // Add prefix unbolded
+                    if (prefix) parts.push(prefix);
+                    // Bold the term plus any simple suffix
+                    const boldKey = `b-${idx}-${start}`;
+                    parts.push(<strong key={boldKey}>{coreTerm + suffix}</strong>);
+                    lastIndex = start + full.length;
+                  }
+                  if (lastIndex > 0) {
+                    if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+                    highlighted = parts;
+                  }
+                }
+              }
+            } catch {}
+            return (
+              <div key={idx} data-idx={idx} style={{ ...containerBase, ...(activeContainer || {}) }} aria-current={isActive ? 'true' : undefined}>
+                {s.role === 'user' ? (
+                  <div style={{ ...textBase, ...userText }}>{text}</div>
+                ) : mcRender ? (
+                  <div style={{ ...textBase, ...activeText }}>{mcRender}</div>
+                ) : (
+                  <div style={{ ...textBase, ...activeText }}>{highlighted || text}</div>
+                )}
+              </div>
+            );
+          })}
+          {/* Dynamic tail spacer to keep one blank line at the bottom without altering the transcript */}
+          <div aria-hidden data-ms-caption-tail-spacer style={{ height: '1.5em' }} />
+          </>
+        ) : (
+          <>
+            <div style={{ color: '#6b7280' }}>No captions yet.</div>
+            {/* Keep consistent tail spacing even when empty */}
+            <div aria-hidden data-ms-caption-tail-spacer style={{ height: '1.5em' }} />
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PhaseDetail({
+  phase,
+  subPhase,
+  subPhaseStatus,
+  onDiscussionAction,
+  onTeachingAction,
+  learnerInput,
+  setLearnerInput,
+  worksheetAnswers,
+  setWorksheetAnswers,
+  testAnswers,
+  setTestAnswers,
+  callMsSonoma,
+  subjectParam,
+  difficultyParam,
+  lessonParam,
+  setPhase,
+  setSubPhase,
+  ticker,
+  setTicker,
+  setCanSend,
+  waitForBeat,
+  transcript,
+}) {
+  const renderSection = () => {
+    switch (phase) {
+      case "discussion":
+        // Controls and status for discussion are handled elsewhere; render nothing here.
+        return null;
+      case "teaching":
+        // Controls and status for teaching are handled elsewhere; render nothing here.
+        return null;
+      case "comprehension":
+        return (
+          <div style={{ marginBottom: 24 }}>
+            <p style={{ margin: 0 }}>Correct Answers: {ticker}</p>
+            <p style={{ fontSize: 13, color: '#374151', marginTop: 6 }}>
+              Continue responding in the input; Ms. Sonoma will ask the next question automatically until the target is met.
+            </p>
+          </div>
+        );
+      case "worksheet":
+        return (
+          <div style={{ marginBottom: 24 }}>
+            <p>Worksheet progress: {worksheetAnswers.length}</p>
+            <button
+              type="button"
+              style={primaryButtonStyle}
+              onClick={async () => {
+                const nextTicker = ticker + 1;
+                setTicker(nextTicker);
+                setWorksheetAnswers([...worksheetAnswers, learnerInput]);
+                const result = await callMsSonoma(
+                  "Worksheet: Remind to print, give hints if incorrect, cue next phase at target count.",
+                  learnerInput,
+                    {
+                    phase: "worksheet",
+                    subject: subjectParam,
+                    difficulty: difficultyParam,
+                    lesson: lessonParam,
+                  lessonTitle: effectiveLessonTitle,
+                    ticker: nextTicker,
+                  }
+                );
+                setLearnerInput("");
+                if (result.success && nextTicker >= WORKSHEET_TARGET) {
+                  setPhase("test");
+                  setSubPhase("test-start");
+                  setCanSend(false);
+                }
+              }}
+            >
+              Next worksheet item
+            </button>
+          </div>
+        );
+      case "test":
+        // Render Review controls inline when in a review subphase to keep the timeline in Test
+        if (typeof subPhase === 'string' && subPhase.startsWith('review')) {
+          return (
+            <div style={{ marginBottom: 24 }}>
+              <h2>Facilitator Review</h2>
+              <p>Adjust correctness as needed, then accept.</p>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:8 }}>
+                <span>
+                  Score preview: {typeof testFinalPercent === 'number' ? testFinalPercent : Math.round(((Array.isArray(testCorrectByIndex)?testCorrectByIndex.filter(Boolean).length:0)/Math.max(1,(Array.isArray(generatedTest)?generatedTest.length:0))*100))}%
+                </span>
+                <button type="button" style={primaryButtonStyle} onClick={finalizeReview}>Accept</button>
+              </div>
+            </div>
+          );
+        }
+        return (
+          <div style={{ marginBottom: 24 }}>
+            <p>Test answers recorded: {testAnswers.length}</p>
+            <button
+              type="button"
+              style={primaryButtonStyle}
+              onClick={async () => {
+                const nextTicker = ticker + 1;
+                setTicker(nextTicker);
+                setTestAnswers([...testAnswers, learnerInput]);
+                const payload = {
+                  phase: "test",
+                  subject: subjectParam,
+                  difficulty: difficultyParam,
+                  lesson: lessonParam,
+                  lessonTitle: effectiveLessonTitle,
+                  ticker: nextTicker,
+                };
+                // Clear input immediately
+                setLearnerInput("");
+                // If we've met or exceeded the target, do not await anything — go straight to review.
+                if (nextTicker >= TEST_TARGET) {
+                  try { setCanSend(false); } catch {}
+                  // Review is a subphase of Test; keep phase pinned to 'test'
+                  try { setSubPhase("review-start"); } catch {}
+                  // Fire-and-forget the API call so logs/metrics are not lost, but do not block UI.
+                  try { callMsSonoma("Test: Black screen, overlay questions, grade after all answers, no hints or rephrasing.", learnerInput, payload); } catch {}
+                  return;
+                }
+                // Otherwise, continue normal flow for intermediate questions.
+                try {
+                  await callMsSonoma(
+                    "Test: Black screen, overlay questions, grade after all answers, no hints or rephrasing.",
+                    learnerInput,
+                    payload
+                  );
+                } catch {}
+              }}
+            >
+              Submit test answer
+            </button>
+          </div>
+        );
+      case "grading":
+        return (
+          <div style={{ marginBottom: 24 }}>
+            <p>Grading in progress...</p>
+          </div>
+        );
+      case "review":
+        // Legacy: keep nothing here so timeline stays consistent; review renders under test phase
+        return null;
+      case "congrats":
+        return (
+          <div style={{ marginBottom: 24 }}>
+            <h2>Congratulations!</h2>
+            {!congratsStarted ? (
+              <div>
+                <p>{transcript}</p>
+                <button type="button" style={primaryButtonStyle} onClick={() => setCongratsStarted(true)}>Start Congrats</button>
+              </div>
+            ) : (
+              <p>{transcript}</p>
+            )}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return renderSection();
+}
+
+
+
+
+
+
+// End of PhaseDetail component
+
+
+
+
+
+
+
+
+
+
+
+
+
