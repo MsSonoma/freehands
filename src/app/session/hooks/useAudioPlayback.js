@@ -13,20 +13,8 @@ import { useCallback, useRef, useEffect } from 'react';
 import { 
   normalizeBase64Audio, 
   base64ToArrayBuffer, 
-  makeSilentWavDataUrl, 
-  ensureAudioContext as ensureAudioContextUtil,
-  playViaWebAudio as playViaWebAudioUtil 
+  makeSilentWavDataUrl
 } from '../utils/audioUtils';
-import {
-  scheduleCaptionsForAudioUtil,
-  scheduleCaptionsForDurationUtil
-} from '../utils/captionSchedulingUtils';
-import {
-  clearSyntheticUtil,
-  finishSyntheticUtil,
-  pauseSyntheticUtil,
-  resumeSyntheticUtil
-} from '../utils/syntheticPlaybackUtils';
 import { countWords, clamp, waitForBeat } from '../utils/textProcessing';
 
 export function useAudioPlayback({
@@ -75,7 +63,13 @@ export function useAudioPlayback({
   speechGuardTimerRef,
   lastGuardArmAtRef,
   
-  // Functions from parent
+  // Utility functions from parent (currently inline in page.js)
+  scheduleCaptionsForAudioUtil,
+  scheduleCaptionsForDurationUtil,
+  clearSyntheticUtil,
+  finishSyntheticUtil,
+  pauseSyntheticUtil,
+  resumeSyntheticUtil,
   clearCaptionTimers,
   clearSpeechGuard,
   armSpeechGuard: armSpeechGuardFromParent,
@@ -114,65 +108,34 @@ export function useAudioPlayback({
    * Schedule captions based on audio duration
    */
   const scheduleCaptionsForAudio = useCallback((audio, sentences, startIndex = 0) => {
-    scheduleCaptionsForAudioUtil(
-      audio, 
-      sentences, 
-      startIndex, 
-      { captionTimersRef, captionBatchEndRef }, 
-      setCaptionIndex, 
-      setCaptionsDone
-    );
-  }, [setCaptionIndex, setCaptionsDone]);
+    scheduleCaptionsForAudioUtil(audio, sentences, startIndex);
+  }, [scheduleCaptionsForAudioUtil]);
   
   /**
    * Schedule captions based on fixed duration (synthetic playback)
    */
   const scheduleCaptionsForDuration = useCallback((durationSeconds, sentences, startIndex = 0) => {
-    scheduleCaptionsForDurationUtil(
-      durationSeconds, 
-      sentences, 
-      startIndex,
-      { captionTimersRef, captionBatchEndRef },
-      setCaptionIndex,
-      setCaptionsDone
-    );
-  }, [setCaptionIndex, setCaptionsDone]);
+    scheduleCaptionsForDurationUtil(durationSeconds, sentences, startIndex);
+  }, [scheduleCaptionsForDurationUtil]);
   
   /**
    * Synthetic playback helpers
    */
   const clearSynthetic = useCallback(() => {
-    clearSyntheticUtil(syntheticRef);
-  }, []);
+    clearSyntheticUtil();
+  }, [clearSyntheticUtil]);
   
   const finishSynthetic = useCallback(() => {
-    finishSyntheticUtil(
-      syntheticRef,
-      videoRef,
-      { phase, subPhase, askState, riddleState, poemState },
-      setIsSpeaking,
-      setShowOpeningActions,
-      clearSpeechGuard
-    );
-  }, [phase, subPhase, askState, riddleState, poemState, setIsSpeaking, setShowOpeningActions, clearSpeechGuard]);
+    finishSyntheticUtil();
+  }, [finishSyntheticUtil]);
   
   const pauseSynthetic = useCallback(() => {
-    pauseSyntheticUtil(syntheticRef, videoRef, clearCaptionTimers);
-  }, [clearCaptionTimers]);
+    pauseSyntheticUtil();
+  }, [pauseSyntheticUtil]);
   
   const resumeSynthetic = useCallback(() => {
-    resumeSyntheticUtil(
-      syntheticRef,
-      videoRef,
-      captionBatchEndRef,
-      captionSentencesRef,
-      captionIndex,
-      speechGuardTimerRef,
-      scheduleCaptionsForDuration,
-      setIsSpeaking,
-      finishSynthetic
-    );
-  }, [captionIndex, scheduleCaptionsForDuration, setIsSpeaking, finishSynthetic]);
+    resumeSyntheticUtil();
+  }, [resumeSyntheticUtil]);
   
   /**
    * Main audio playback function
