@@ -1007,6 +1007,7 @@ function SessionPageInner() {
                 }
                 return copy;
               };
+              const shuffleArr = (arr) => shuffle(arr);
               // Select a blended set (for math): ~70% from samples/categories and ~30% from word problems
                 const selectMixed = (samples = [], wpArr = [], target = 0, isTest = false) => {
                 const wpAvail = Array.isArray(wpArr) ? wpArr : [];
