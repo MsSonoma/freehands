@@ -32,6 +32,8 @@ import { clearCaptionTimers as clearCaptionTimersUtil, scheduleCaptionsForAudio 
 import { clearSynthetic as clearSyntheticUtil, finishSynthetic as finishSyntheticUtil, pauseSynthetic as pauseSyntheticUtil, resumeSynthetic as resumeSyntheticUtil } from './utils/syntheticPlaybackUtils';
 import { buildQAPool as buildQAPoolUtil, ensureExactCount as ensureExactCountUtil, initSampleDeck as initSampleDeckUtil, drawSampleUnique as drawSampleUniqueUtil, reserveSamples as reserveSamplesUtil, initWordDeck as initWordDeckUtil, drawWordUnique as drawWordUniqueUtil } from './utils/assessmentGenerationUtils';
 import { getSnapshotStorageKey as getSnapshotStorageKeyUtil, scheduleSaveSnapshotCore } from './utils/snapshotPersistenceUtils';
+import { clearSpeechGuard as clearSpeechGuardUtil, forceStopSpeaking as forceStopSpeakingUtil, armSpeechGuard as armSpeechGuardUtil, armSpeechGuardThrottled as armSpeechGuardThrottledUtil } from './utils/speechGuardUtils';
+import { useDiscussionHandlers } from './hooks/useDiscussionHandlers';
 
 export default function SessionPage(){
   return (
