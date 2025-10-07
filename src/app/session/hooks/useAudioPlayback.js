@@ -112,34 +112,38 @@ export function useAudioPlayback({
    * Schedule captions based on audio duration
    */
   const scheduleCaptionsForAudio = useCallback((audio, sentences, startIndex = 0) => {
-    scheduleCaptionsForAudioUtil(audio, sentences, startIndex);
-  }, [scheduleCaptionsForAudioUtil]);
+    const refs = { captionTimersRef, captionBatchEndRef };
+    scheduleCaptionsForAudioUtil(audio, sentences, startIndex, refs, setCaptionIndex, setCaptionsDone);
+  }, [scheduleCaptionsForAudioUtil, captionTimersRef, captionBatchEndRef, setCaptionIndex, setCaptionsDone]);
   
   /**
    * Schedule captions based on fixed duration (synthetic playback)
    */
   const scheduleCaptionsForDuration = useCallback((durationSeconds, sentences, startIndex = 0) => {
-    scheduleCaptionsForDurationUtil(durationSeconds, sentences, startIndex);
-  }, [scheduleCaptionsForDurationUtil]);
+    const refs = { captionTimersRef, captionBatchEndRef };
+    scheduleCaptionsForDurationUtil(durationSeconds, sentences, startIndex, refs, setCaptionIndex, setCaptionsDone);
+  }, [scheduleCaptionsForDurationUtil, captionTimersRef, captionBatchEndRef, setCaptionIndex, setCaptionsDone]);
   
   /**
    * Synthetic playback helpers
    */
   const clearSynthetic = useCallback(() => {
-    clearSyntheticUtil();
+    clearSyntheticUtil(syntheticRef);
   }, [clearSyntheticUtil]);
   
   const finishSynthetic = useCallback(() => {
-    finishSyntheticUtil();
-  }, [finishSyntheticUtil]);
+    const phaseState = { phase, subPhase, askState, riddleState, poemState };
+    finishSyntheticUtil(syntheticRef, videoRef, phaseState, setIsSpeaking, setShowOpeningActions, clearSpeechGuard);
+  }, [finishSyntheticUtil, phase, subPhase, askState, riddleState, poemState, videoRef, setIsSpeaking, setShowOpeningActions, clearSpeechGuard]);
   
   const pauseSynthetic = useCallback(() => {
-    pauseSyntheticUtil();
-  }, [pauseSyntheticUtil]);
+    pauseSyntheticUtil(syntheticRef, videoRef, clearCaptionTimers);
+  }, [pauseSyntheticUtil, videoRef, clearCaptionTimers]);
   
   const resumeSynthetic = useCallback(() => {
-    resumeSyntheticUtil();
-  }, [resumeSyntheticUtil]);
+    const refs = { videoRef, speechGuardTimerRef, captionBatchEndRef, captionSentencesRef };
+    resumeSyntheticUtil(syntheticRef, refs, captionIndex, scheduleCaptionsForDuration, setIsSpeaking, finishSynthetic);
+  }, [resumeSyntheticUtil, videoRef, speechGuardTimerRef, captionBatchEndRef, captionSentencesRef, captionIndex, scheduleCaptionsForDuration, setIsSpeaking, finishSynthetic]);
   
   /**
    * Main audio playback function
