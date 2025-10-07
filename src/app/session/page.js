@@ -442,13 +442,6 @@ function SessionPageInner() {
     }
   }, [phase, subPhase, currentCompProblem, isSpeaking, canSend]);
 
-  // Use hook-provided phase handlers
-  const handleGoComprehension = handleGoComprehensionHook;
-  const handleGoExercise = handleGoExerciseHook;
-  const handleGoWorksheet = handleGoWorksheetHook;
-  const handleGoTest = handleGoTestHook;
-  const handleStartLesson = handleStartLessonHook;
-
   // Persist comprehension/exercise pools whenever they are initialized or change length (e.g., after consuming an item)
   useEffect(() => {
     const storageKey = getAssessmentStorageKey();
@@ -2051,6 +2044,13 @@ function SessionPageInner() {
     drawSampleUnique,
     buildQAPool
   });
+
+  // Use hook-provided phase handlers
+  const handleGoComprehension = handleGoComprehensionHook;
+  const handleGoExercise = handleGoExerciseHook;
+  const handleGoWorksheet = handleGoWorksheetHook;
+  const handleGoTest = handleGoTestHook;
+  const handleStartLesson = handleStartLessonHook;
 
 
   // Only react to explicit user pause by pausing the video
