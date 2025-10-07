@@ -53,62 +53,16 @@ export function useDiscussionHandlers({
   
   // Refs
   captionSentencesRef,
-  captionIndexRef,
   askReturnBodyRef,
   activeQuestionBodyRef,
   worksheetIndexRef,
   
-  // Functions
-  playAudioFromBase64,
+  // Functions from parent component
+  speakFrontend,
   callMsSonoma,
+  playAudioFromBase64,
 }) {
   
-  // Helper: speak arbitrary frontend text via unified captions + TTS
-  const speakFrontend = useCallback(async (text, opts = {}) => {
-    try {
-      const mcLayout = opts && typeof opts === 'object' ? (opts.mcLayout || 'inline') : 'inline';
-      const noCaptions = !!(opts && typeof opts === 'object' && opts.noCaptions);
-      let sentences = splitIntoSentences(text);
-      sentences = mergeMcChoiceFragments(sentences, mcLayout).map((s) => enforceNbspAfterMcLabels(s));
-      
-      let startIndexForBatch = 0;
-      if (!noCaptions) {
-        const prevLen = captionSentencesRef.current?.length || 0;
-        const nextAll = [...(captionSentencesRef.current || []), ...sentences];
-        captionSentencesRef.current = nextAll;
-        setCaptionSentences(nextAll);
-        setCaptionIndex(prevLen);
-        startIndexForBatch = prevLen;
-      } else {
-        try { startIndexForBatch = Number(captionIndexRef.current || 0); } catch { startIndexForBatch = 0; }
-      }
-      
-      let dec = false;
-      try {
-        setTtsLoadingCount((c) => c + 1);
-        let res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
-        if (!res.ok) {
-          try { await fetch('/api/tts', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(() => {}); } catch {}
-          res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
-        }
-        if (res.ok) {
-          const data = await res.json().catch(() => ({}));
-          let b64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
-          if (b64) b64 = normalizeBase64Audio(b64);
-          if (b64) {
-            if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
-            try { setIsSpeaking(true); } catch {}
-            try { await playAudioFromBase64(b64, noCaptions ? [] : sentences, startIndexForBatch); } catch {}
-          } else {
-            if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
-            try { await playAudioFromBase64('', noCaptions ? [] : sentences, startIndexForBatch); } catch {}
-          }
-        }
-      } catch {}
-      finally { if (!dec) setTtsLoadingCount((c) => Math.max(0, c - 1)); }
-    } catch {}
-  }, [captionSentencesRef, captionIndexRef, setCaptionSentences, setCaptionIndex, setTtsLoadingCount, setIsSpeaking, playAudioFromBase64]);
-
   // Joke handler
   const handleTellJoke = useCallback(async () => {
     if (jokeUsedThisGate) return;
@@ -490,6 +444,5 @@ export function useDiscussionHandlers({
     handleStoryStart,
     handleStoryYourTurn,
     handleStoryEnd,
-    speakFrontend,
   };
 }
