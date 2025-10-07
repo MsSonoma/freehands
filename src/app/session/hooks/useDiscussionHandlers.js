@@ -9,8 +9,11 @@
  */
 
 import { useCallback } from 'react';
-import { splitIntoSentences, mergeMcChoiceFragments, enforceNbspAfterMcLabels, ensureQuestionMark, formatQuestionForSpeech, normalizeBase64Audio } from '../utils/textProcessing';
-import { pickNextJoke, renderJoke, pickNextRiddle, renderRiddle } from '@/app/lib/opening';
+import { splitIntoSentences, mergeMcChoiceFragments, enforceNbspAfterMcLabels } from '../utils/textProcessing';
+import { normalizeBase64Audio } from '../utils/audioUtils';
+import { ensureQuestionMark, formatQuestionForSpeech } from '../utils/questionFormatting';
+import { pickNextJoke, renderJoke } from '@/app/lib/jokes';
+import { pickNextRiddle, renderRiddle } from '@/app/lib/riddles';
 
 export function useDiscussionHandlers({
   // State setters
