@@ -22,6 +22,7 @@ import { upsertMedal, emojiForTier, tierForPercent } from '@/app/lib/medalsClien
 import { splitIntoSentences, mergeMcChoiceFragments, enforceNbspAfterMcLabels, countWords } from './utils/textProcessing';
 import { CLEAN_SPEECH_INSTRUCTION, GUARD_INSTRUCTION, KID_FRIENDLY_STYLE, COMPREHENSION_CUE_PHRASE, LEGACY_LESSON_MAP, timelinePhases, phaseLabels, discussionSteps, getTeachingSteps } from './utils/constants';
 import { buildSystemMessage, buildPerQuestionJudgingSpec } from './utils/systemMessage';
+import { resolveLessonInfo, getLessonTitle } from './utils/lessonUtils';
 
 export default function SessionPage(){
   return (
@@ -106,15 +107,6 @@ async function ensureRuntimeTargets(forceReload = false) {
   } catch (error) {
     console.error('[Session] Error loading runtime targets:', error);
   }
-}
-
-function resolveLessonInfo(subject, lesson) {
-  let base = lesson || "";
-  // legacy mapping
-  if (LEGACY_LESSON_MAP[base]) base = LEGACY_LESSON_MAP[base];
-  // ensure filename ends with .json
-  let file = base.endsWith('.json') ? base : `${base}.json`;
-  return { title: lesson || "Lesson", file };
 }
   
 function SessionPageInner() {
