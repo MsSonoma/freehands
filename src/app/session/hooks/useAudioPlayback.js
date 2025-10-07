@@ -15,7 +15,11 @@ import {
   base64ToArrayBuffer, 
   makeSilentWavDataUrl
 } from '../utils/audioUtils';
-import { countWords, clamp, waitForBeat } from '../utils/textProcessing';
+import { countWords } from '../utils/textProcessing';
+
+// Inline utility functions (defined in page.js, duplicated here for independence)
+const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+const waitForBeat = (ms = 240) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function useAudioPlayback({
   // State setters

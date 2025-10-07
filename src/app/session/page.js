@@ -2364,6 +2364,80 @@ function SessionPageInner() {
     playAudioFromBase64,
   });
 
+  // Audio playback hook - manages all TTS audio, video sync, and caption scheduling
+  const {
+    playAudioFromBase64: playAudioFromBase64Hook,
+    scheduleCaptionsForAudio: scheduleCaptionsForAudioHook,
+    scheduleCaptionsForDuration: scheduleCaptionsForDurationHook,
+    computeHeuristicDuration: computeHeuristicDurationHook,
+    toggleMute: toggleMuteHook,
+    clearSynthetic: clearSyntheticHook,
+    finishSynthetic: finishSyntheticHook,
+    pauseSynthetic: pauseSyntheticHook,
+    resumeSynthetic: resumeSyntheticHook,
+  } = useAudioPlayback({
+    // State setters
+    setIsSpeaking,
+    setShowOpeningActions,
+    setCaptionIndex,
+    setCaptionsDone,
+    setCaptionSentences,
+    setMuted,
+    setUserPaused,
+    setPlaybackIntent,
+    setAudioUnlocked,
+    setOfferResume,
+    
+    // State values
+    muted,
+    userPaused,
+    loading,
+    playbackIntent,
+    captionIndex,
+    audioUnlocked,
+    phase,
+    subPhase,
+    askState,
+    riddleState,
+    poemState,
+    
+    // Refs passed to hook
+    audioRef,
+    videoRef,
+    mutedRef,
+    audioUnlockedRef,
+    userPausedRef,
+    captionIndexRef,
+    captionSentencesRef,
+    captionTimersRef,
+    captionBatchStartRef,
+    captionBatchEndRef,
+    lastAudioBase64Ref,
+    lastSentencesRef,
+    lastStartIndexRef,
+    preferHtmlAudioOnceRef,
+    forceNextPlaybackRef,
+    htmlAudioPausedAtRef,
+    speechGuardTimerRef,
+    lastGuardArmAtRef,
+    
+    // Utility functions from utils and inline functions
+    scheduleCaptionsForAudioUtil,
+    scheduleCaptionsForDurationUtil,
+    clearSyntheticUtil,
+    finishSyntheticUtil,
+    pauseSyntheticUtil,
+    resumeSyntheticUtil,
+    clearCaptionTimers,
+    clearSpeechGuard,
+    armSpeechGuard,
+    armSpeechGuardThrottled,
+    forceStopSpeaking,
+    showTipOverride,
+    ensureAudioContext,
+    playViaWebAudio,
+  });
+
   // Only react to explicit user pause by pausing the video
   useEffect(() => {
     const video = videoRef.current;
