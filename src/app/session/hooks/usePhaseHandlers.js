@@ -63,16 +63,15 @@ export function usePhaseHandlers({
     if (!item) {
       let firstComp = null;
       if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
-        let idx = currentCompIndex;
-        while (idx < generatedComprehension.length && isShortAnswerItem(generatedComprehension[idx])) idx += 1;
-        if (idx < generatedComprehension.length) { firstComp = generatedComprehension[idx]; setCurrentCompIndex(idx + 1); }
+        firstComp = generatedComprehension[currentCompIndex];
+        setCurrentCompIndex(currentCompIndex + 1);
       }
       if (!firstComp) {
-        let tries = 0; while (tries < 5) { const s = drawSampleUnique(); if (s && !isShortAnswerItem(s)) { firstComp = s; break; } tries += 1; }
+        let tries = 0; while (tries < 5) { const s = drawSampleUnique(); if (s) { firstComp = s; break; } tries += 1; }
       }
       if (!firstComp && compPool.length) {
-        const filtered = compPool.filter(q => !isShortAnswerItem(q));
-        if (filtered.length > 0) { firstComp = filtered[0]; setCompPool(compPool.slice(1)); }
+        firstComp = compPool[0];
+        setCompPool(compPool.slice(1));
       }
       if (!firstComp) {
         const refilled = buildQAPool();
@@ -110,12 +109,11 @@ export function usePhaseHandlers({
     if (!item) {
       let first = null;
       if (Array.isArray(generatedExercise) && currentExIndex < generatedExercise.length) {
-        let idx = currentExIndex;
-        while (idx < generatedExercise.length && isShortAnswerItem(generatedExercise[idx])) idx += 1;
-        if (idx < generatedExercise.length) { first = generatedExercise[idx]; setCurrentExIndex(idx + 1); }
+        first = generatedExercise[currentExIndex];
+        setCurrentExIndex(currentExIndex + 1);
       }
-      if (!first) { let tries = 0; while (tries < 5) { const s = drawSampleUnique(); if (s && !isShortAnswerItem(s)) { first = s; break; } tries += 1; } }
-      if (!first && exercisePool.length) { const [head, ...rest] = exercisePool; first = isShortAnswerItem(head) ? null : head; setExercisePool(rest); }
+      if (!first) { let tries = 0; while (tries < 5) { const s = drawSampleUnique(); if (s) { first = s; break; } tries += 1; } }
+      if (!first && exercisePool.length) { const [head, ...rest] = exercisePool; first = head; setExercisePool(rest); }
       if (!first) { const refilled = buildQAPool(); if (refilled.length) { const [head, ...rest] = refilled; first = head; setExercisePool(rest); } }
       if (first) { setCurrentExerciseProblem(first); item = first; setSubPhase('exercise-start'); }
     }

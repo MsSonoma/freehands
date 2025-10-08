@@ -51,9 +51,9 @@ export function useAssessmentGeneration({
     const desiredWp = Math.round(target * 0.3);
     const wpSel = (words || []).slice(0, desiredWp).map(q => ({ ...(isTest ? ({ ...q, expected: q.expected ?? q.answer }) : q), sourceType: 'word', questionType: 'sa' }));
     
-    // Cap SA/FIB to 10% each in the remainder from samples+categories
+    // Cap SA/FIB to 15% each in the remainder from samples+categories
     const remainder = Math.max(0, target - wpSel.length);
-    const cap = Math.max(0, Math.floor(target * 0.10));
+    const cap = Math.max(0, Math.floor(target * 0.15));
     
     const tf = Array.isArray(data.truefalse) ? data.truefalse.map(q => ({ ...q, sourceType: 'tf', questionType: 'tf' })) : [];
     const mc = Array.isArray(data.multiplechoice) ? data.multiplechoice.map(q => ({ ...q, sourceType: 'mc', questionType: 'mc' })) : [];
@@ -84,7 +84,7 @@ export function useAssessmentGeneration({
     return mixed;
   };
 
-  // Non-math: build from category arrays, capping Short Answer and Fill-in-the-Blank at 10% each
+  // Non-math: build from category arrays, capping Short Answer and Fill-in-the-Blank at 15% each
   const buildFromCategories = (target = 0, data) => {
     const tf = Array.isArray(data.truefalse) ? data.truefalse.map(q => ({ ...q, sourceType: 'tf', questionType: 'tf' })) : [];
     const mc = Array.isArray(data.multiplechoice) ? data.multiplechoice.map(q => ({ ...q, sourceType: 'mc', questionType: 'mc' })) : [];
@@ -94,7 +94,7 @@ export function useAssessmentGeneration({
     const anyCats = tf.length || mc.length || fib.length || sa.length;
     if (!anyCats) return null;
     
-    const cap = Math.max(0, Math.floor(target * 0.10));
+    const cap = Math.max(0, Math.floor(target * 0.15)); // 15% cap for SA and FIB each
     const saPick = shuffle(sa).slice(0, Math.min(cap, sa.length));
     const fibPick = shuffle(fib).slice(0, Math.min(cap, fib.length));
     const others = shuffle([...tf, ...mc]);

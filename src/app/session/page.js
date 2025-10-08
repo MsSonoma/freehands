@@ -23,7 +23,7 @@ import { splitIntoSentences, mergeMcChoiceFragments, enforceNbspAfterMcLabels, c
 import { CLEAN_SPEECH_INSTRUCTION, GUARD_INSTRUCTION, KID_FRIENDLY_STYLE, COMPREHENSION_CUE_PHRASE, LEGACY_LESSON_MAP, timelinePhases, phaseLabels, discussionSteps, getTeachingSteps } from './utils/constants';
 import { buildSystemMessage, buildPerQuestionJudgingSpec } from './utils/systemMessage';
 import { resolveLessonInfo, getLessonTitle } from './utils/lessonUtils';
-import { formatQuestionForSpeech, isShortAnswerItem, isTrueFalse, isMultipleChoice, formatMcOptions, ensureQuestionMark, promptKey, deriveCorrectAnswerText, formatQuestionForInlineAsk, letterForAnswer, getOptionTextForLetter, naturalJoin } from './utils/questionFormatting';
+import { formatQuestionForSpeech, isShortAnswerItem, isFillInBlank, isTrueFalse, isMultipleChoice, formatMcOptions, ensureQuestionMark, promptKey, deriveCorrectAnswerText, formatQuestionForInlineAsk, letterForAnswer, getOptionTextForLetter, naturalJoin } from './utils/questionFormatting';
 import { normalizeAnswer } from './utils/answerNormalization';
 import { isAnswerCorrectLocal, expandExpectedAnswer, expandRiddleAcceptables, composeExpectedBundle } from './utils/answerEvaluation';
 import { ENCOURAGEMENT_SNIPPETS, CELEBRATE_CORRECT, HINT_FIRST, HINT_SECOND, pickHint, buildCountCuePattern } from './utils/feedbackMessages';
@@ -3628,18 +3628,15 @@ function SessionPageInner() {
     // Try to pick a first comprehension problem in the same priority order used elsewhere
     let firstComp = null;
     if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
-      let idx = currentCompIndex;
-      while (idx < generatedComprehension.length && isShortAnswerItem(generatedComprehension[idx])) idx += 1;
-      if (idx < generatedComprehension.length) {
-        firstComp = generatedComprehension[idx];
-        setCurrentCompIndex(idx + 1);
-      }
+      // Allow all question types now, including SA
+      firstComp = generatedComprehension[currentCompIndex];
+      setCurrentCompIndex(currentCompIndex + 1);
     }
     if (!firstComp) {
       let tries = 0;
       while (tries < 5) {
         const s = drawSampleUnique();
-        if (s && !isShortAnswerItem(s)) { firstComp = s; break; }
+        if (s) { firstComp = s; break; }
         tries += 1;
       }
     }
@@ -4114,24 +4111,21 @@ function SessionPageInner() {
     // Choose first exercise problem from ephemeral pre-generated array; fallback to deck/pools
     let first = null;
     if (Array.isArray(generatedExercise) && currentExIndex < generatedExercise.length) {
-      let idx = currentExIndex;
-      while (idx < generatedExercise.length && isShortAnswerItem(generatedExercise[idx])) idx += 1;
-      if (idx < generatedExercise.length) {
-        first = generatedExercise[idx];
-        setCurrentExIndex(idx + 1);
-      }
+      // Allow all question types now, including SA
+      first = generatedExercise[currentExIndex];
+      setCurrentExIndex(currentExIndex + 1);
     }
     if (!first) {
       let tries = 0;
       while (tries < 5) {
         const candidate = drawSampleUnique();
-        if (candidate && !isShortAnswerItem(candidate)) { first = candidate; break; }
+        if (candidate) { first = candidate; break; }
         tries += 1;
       }
     }
     if (!first && exercisePool.length) {
       const [head, ...rest] = exercisePool;
-      first = isShortAnswerItem(head) ? null : head;
+      first = head;
       setExercisePool(rest);
     }
     if (!first) {
@@ -4251,6 +4245,82 @@ function SessionPageInner() {
     WORKSHEET_INTROS,
     TEST_INTROS,
   });
+
+  /**
+   * Unified answer judging: uses backend API for short-answer questions,
+   * local judging for TF/MC/FIB questions.
+   * 
+   * @param {string} learnerAnswer - The learner's answer
+   * @param {Array<string>} acceptable - List of acceptable answers
+   * @param {Object} problem - Question object with type info
+   * @returns {Promise<boolean>} True if answer is correct
+   */
+  const judgeAnswer = async (learnerAnswer, acceptable, problem) => {
+    try {
+      // Check if this is a short-answer or fill-in-blank question
+      const isSA = isShortAnswerItem(problem);
+      const isFIB = isFillInBlank(problem);
+      const useBackend = isSA || isFIB;
+      
+      console.log('[judgeAnswer] Question type check:', {
+        isSA,
+        isFIB,
+        useBackend,
+        question: problem.question || problem.prompt || '',
+        learnerAnswer
+      });
+      
+      if (useBackend) {
+        // Use backend API for short-answer and fill-in-blank questions
+        const expectedPrimary = problem.answer || problem.expected || '';
+        const expectedAnyArr = expectedAnyList(problem);
+        const keywords = Array.isArray(problem.keywords) ? problem.keywords : [];
+        const minKeywords = typeof problem.minKeywords === 'number' ? problem.minKeywords : (keywords.length > 0 ? 1 : 0);
+        
+        console.log('[judgeAnswer] Sending to backend:', {
+          question: problem.question || problem.prompt || '',
+          expectedPrimary,
+          expectedAnyArr,
+          keywords,
+          minKeywords
+        });
+        
+        try {
+          const response = await fetch('/api/judge-short-answer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              question: problem.question || problem.prompt || '',
+              learnerAnswer,
+              expectedAnswer: expectedPrimary,
+              expectedAny: expectedAnyArr,
+              keywords,
+              minKeywords,
+            }),
+          });
+          
+          if (!response.ok) {
+            console.warn('[judgeAnswer] Backend API failed, falling back to local judging');
+            return isAnswerCorrectLocal(learnerAnswer, acceptable, problem);
+          }
+          
+          const data = await response.json();
+          console.log('[judgeAnswer] Backend response:', data);
+          return !!data.correct;
+        } catch (apiError) {
+          console.warn('[judgeAnswer] Backend API error, falling back to local judging:', apiError);
+          return isAnswerCorrectLocal(learnerAnswer, acceptable, problem);
+        }
+      } else {
+        // Use local judging for TF/MC/FIB questions
+        return isAnswerCorrectLocal(learnerAnswer, acceptable, problem);
+      }
+    } catch (error) {
+      console.error('[judgeAnswer] Error:', error);
+      // Fallback to local judging on any error
+      return isAnswerCorrectLocal(learnerAnswer, acceptable, problem);
+    }
+  };
 
   const handleSend = async (providedValue) => {
     // Prevent concurrent calls while processing
@@ -4503,19 +4573,18 @@ function SessionPageInner() {
       // Ensure a current problem; if none, select one. If no input, just speak the question and return.
       let problem = currentCompProblem;
       if (!problem) {
-        // Try generated list first, skipping short-answer items
+        // Try generated list first (now includes SA questions)
         let pick = null;
         if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
-          let idx = currentCompIndex;
-          while (idx < generatedComprehension.length && isShortAnswerItem(generatedComprehension[idx])) idx += 1;
-          if (idx < generatedComprehension.length) { pick = generatedComprehension[idx]; setCurrentCompIndex(idx + 1); }
+          pick = generatedComprehension[currentCompIndex];
+          setCurrentCompIndex(currentCompIndex + 1);
         }
         if (!pick) {
-          let tries = 0; while (tries < 5) { const s = drawSampleUnique(); if (s && !isShortAnswerItem(s)) { pick = s; break; } tries += 1; }
+          let tries = 0; while (tries < 5) { const s = drawSampleUnique(); if (s) { pick = s; break; } tries += 1; }
         }
         if (!pick && compPool.length) {
-          const filtered = compPool.filter(q => !isShortAnswerItem(q));
-          if (filtered.length > 0) { pick = filtered[0]; setCompPool(compPool.slice(1)); }
+          pick = compPool[0];
+          setCompPool(compPool.slice(1));
         }
         if (!pick) {
           const refilled = buildQAPool();
@@ -4549,7 +4618,8 @@ function SessionPageInner() {
         if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
           const currText = (() => { try { return (problem?.question ?? formatQuestionForSpeech(problem)).trim(); } catch { return ''; } })();
           let idx = currentCompIndex;
-          while (idx < generatedComprehension.length && (isShortAnswerItem(generatedComprehension[idx]) || (()=>{ try { const t=(generatedComprehension[idx]?.question ?? formatQuestionForSpeech(generatedComprehension[idx])).trim(); return t===currText; } catch { return false; }})())) idx += 1;
+          // Skip only if same question (allow SA now)
+          while (idx < generatedComprehension.length && (()=>{ try { const t=(generatedComprehension[idx]?.question ?? formatQuestionForSpeech(generatedComprehension[idx])).trim(); return t===currText; } catch { return false; }})()) idx += 1;
           if (idx < generatedComprehension.length) { nextProblem = generatedComprehension[idx]; setCurrentCompIndex(idx + 1); }
         }
         if (!nextProblem) {
@@ -4557,16 +4627,16 @@ function SessionPageInner() {
           while (tries < 5) {
             const s = drawSampleUnique();
             const isSame = (() => { try { const t=(s?.question ?? formatQuestionForSpeech(s)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t===c; } catch { return false; }})();
-            if (s && !isShortAnswerItem(s) && !isSame) { nextProblem = s; break; }
+            if (s && !isSame) { nextProblem = s; break; }
             tries += 1;
           }
         }
         if (!nextProblem && compPool.length) {
           const [head, ...rest] = compPool;
           const headSame = (()=>{ try { const t=(head?.question ?? formatQuestionForSpeech(head)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t===c; } catch { return false; }})();
-          if (head && !isShortAnswerItem(head) && !headSame) { nextProblem = head; setCompPool(rest); }
+          if (head && !headSame) { nextProblem = head; setCompPool(rest); }
           else {
-            const altIndex = rest.findIndex(q => q && !isShortAnswerItem(q) && (()=>{ try { const t=(q?.question ?? formatQuestionForSpeech(q)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t!==c; } catch { return true; }})());
+            const altIndex = rest.findIndex(q => q && (()=>{ try { const t=(q?.question ?? formatQuestionForSpeech(q)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t!==c; } catch { return true; }})());
             if (altIndex >= 0) { nextProblem = rest[altIndex]; setCompPool(rest.slice(altIndex + 1)); }
             else { setCompPool(rest); }
           }
@@ -4615,7 +4685,7 @@ function SessionPageInner() {
       // Judge locally with unified leniency
       let correct = false;
       try {
-        correct = isAnswerCorrectLocal(trimmed, acceptable, problem);
+        correct = await judgeAnswer(trimmed, acceptable, problem);
       } catch {}
 
       setLearnerInput('');
@@ -4700,15 +4770,16 @@ function SessionPageInner() {
       if (!problem) {
         let first = null;
         if (Array.isArray(generatedExercise) && currentExIndex < generatedExercise.length) {
-          let idx = currentExIndex;
-          while (idx < generatedExercise.length && isShortAnswerItem(generatedExercise[idx])) idx += 1;
-          if (idx < generatedExercise.length) { first = generatedExercise[idx]; setCurrentExIndex(idx + 1); }
+          first = generatedExercise[currentExIndex];
+          setCurrentExIndex(currentExIndex + 1);
         }
         if (!first) {
-          let tries = 0; while (tries < 5 && !first) { const c = drawSampleUnique(); if (c && !isShortAnswerItem(c)) { first = c; break; } tries += 1; }
+          let tries = 0; while (tries < 5 && !first) { const c = drawSampleUnique(); if (c) { first = c; break; } tries += 1; }
         }
         if (!first && exercisePool.length) {
-          const [head, ...rest] = exercisePool; const pick = isShortAnswerItem(head) ? null : head; if (pick) first = pick; setExercisePool(rest);
+          const [head, ...rest] = exercisePool;
+          if (head) first = head;
+          setExercisePool(rest);
         }
         if (!first) {
           const refilled = buildQAPool();
@@ -4738,7 +4809,8 @@ function SessionPageInner() {
         if (Array.isArray(generatedExercise) && currentExIndex < generatedExercise.length) {
           const currText = (() => { try { return (problem?.question ?? formatQuestionForSpeech(problem)).trim(); } catch { return ''; } })();
           let idx = currentExIndex;
-          while (idx < generatedExercise.length && (isShortAnswerItem(generatedExercise[idx]) || (()=>{ try { const t=(generatedExercise[idx]?.question ?? formatQuestionForSpeech(generatedExercise[idx])).trim(); return t===currText; } catch { return false; }})())) idx += 1;
+          // Skip only if same question (allow SA now)
+          while (idx < generatedExercise.length && (()=>{ try { const t=(generatedExercise[idx]?.question ?? formatQuestionForSpeech(generatedExercise[idx])).trim(); return t===currText; } catch { return false; }})()) idx += 1;
           if (idx < generatedExercise.length) { nextProblem = generatedExercise[idx]; setCurrentExIndex(idx + 1); }
         }
         if (!nextProblem) {
@@ -4746,16 +4818,16 @@ function SessionPageInner() {
           while (tries < 5) {
             const s = drawSampleUnique();
             const isSame = (() => { try { const t=(s?.question ?? formatQuestionForSpeech(s)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t===c; } catch { return false; }})();
-            if (s && !isShortAnswerItem(s) && !isSame) { nextProblem = s; break; }
+            if (s && !isSame) { nextProblem = s; break; }
             tries += 1;
           }
         }
         if (!nextProblem && exercisePool.length) {
           const [head, ...rest] = exercisePool;
           const headSame = (()=>{ try { const t=(head?.question ?? formatQuestionForSpeech(head)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t===c; } catch { return false; }})();
-          if (head && !isShortAnswerItem(head) && !headSame) { nextProblem = head; setExercisePool(rest); }
+          if (head && !headSame) { nextProblem = head; setExercisePool(rest); }
           else {
-            const altIndex = rest.findIndex(q => q && !isShortAnswerItem(q) && (()=>{ try { const t=(q?.question ?? formatQuestionForSpeech(q)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t!==c; } catch { return true; }})());
+            const altIndex = rest.findIndex(q => q && (()=>{ try { const t=(q?.question ?? formatQuestionForSpeech(q)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t!==c; } catch { return true; }})());
             if (altIndex >= 0) { nextProblem = rest[altIndex]; setExercisePool(rest.slice(altIndex + 1)); }
             else { setExercisePool(rest); }
           }
@@ -4788,7 +4860,7 @@ function SessionPageInner() {
       // Local correctness using unified helper
       let correct = false;
       try { 
-        correct = isAnswerCorrectLocal(trimmed, acceptableE, problem); 
+        correct = await judgeAnswer(trimmed, acceptableE, problem); 
         if (!correct) {
           console.log('[Exercise] Answer marked incorrect:', { learnerAnswer: trimmed, acceptableE, problemAnswer: problem.answer, problemExpected: problem.expected, problemA: problem.A, problema: problem.a, anyOfE });
         }
@@ -4914,7 +4986,7 @@ function SessionPageInner() {
 
       // Local correctness using unified helper
       let correctW = false;
-      try { correctW = isAnswerCorrectLocal(trimmed, acceptableW, problem); } catch {}
+      try { correctW = await judgeAnswer(trimmed, acceptableW, problem); } catch {}
 
       setLearnerInput('');
 
@@ -5022,7 +5094,7 @@ function SessionPageInner() {
 
           // Local correctness using unified helper (no retries in test)
           let judgedCorrect = false;
-          try { judgedCorrect = isAnswerCorrectLocal(trimmed, acceptableT, qObj); } catch {}
+          try { judgedCorrect = await judgeAnswer(trimmed, acceptableT, qObj); } catch {}
 
           // Update correctness arrays and counts
           try { setTestCorrectByIndex(prev => { const a = Array.isArray(prev) ? prev.slice() : []; a[idx] = !!judgedCorrect; return a; }); } catch {}

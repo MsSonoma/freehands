@@ -25,7 +25,7 @@ function shuffleArray(arr) {
 /**
  * Build question/answer pool from lesson data.
  * Normalizes questions, filters by subject rules, and shuffles.
- * Math: includes all types. Others: prefer samples, exclude short answer from comprehension/exercise.
+ * Math: includes all types. Others: prefer samples, TEMPORARILY ALLOWING short answer for backend testing.
  * 
  * @param {object} lessonData - Lesson data containing question categories
  * @param {string} subjectParam - Subject identifier (e.g., 'math')
@@ -54,11 +54,9 @@ export function buildQAPool(lessonData, subjectParam) {
   const isShortAnswer = (q) => isShortAnswerItem(q);
   const isMath = (subjectParam === 'math');
 
-  // Prepare Samples
+  // Prepare Samples - TEMPORARILY allow SA in all subjects for backend testing
   const samplesRaw = arrify(lessonData?.sample).map(q => ({ ...normalize(q), questionType: 'sa' }));
-  const samplesForPhase = isMath
-    ? samplesRaw // allow Short Answer in Math comprehension/exercise
-    : samplesRaw.filter((q) => !isShortAnswer(q)); // exclude SA for non-Math
+  const samplesForPhase = samplesRaw; // Previously filtered out SA for non-math
 
   // Prepare categories (accept single object or array)
   const tf = arrify(lessonData?.truefalse).map(q => ({ ...q, sourceType: 'tf', questionType: 'tf' })).map(normalize);
@@ -178,6 +176,12 @@ export function drawSampleUnique(refs) {
   const item = sampleDeckRef.current[sampleIndexRef.current++];
   const key = String(item?.prompt || item?.question || '').trim();
   if (key) usedSampleSetRef.current.add(key);
+  
+  // Tag items from sample array with sourceType to aid detection
+  if (item && !item.sourceType) {
+    return { ...item, sourceType: 'short' };
+  }
+  
   return item || null;
 }
 
