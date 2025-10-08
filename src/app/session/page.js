@@ -38,6 +38,7 @@ import { useAudioPlayback } from './hooks/useAudioPlayback';
 import { usePhaseHandlers } from './hooks/usePhaseHandlers';
 import { useAssessmentGeneration } from './hooks/useAssessmentGeneration';
 import { useTeachingFlow } from './hooks/useTeachingFlow';
+import { useAssessmentDownloads } from './hooks/useAssessmentDownloads';
 
 export default function SessionPage(){
   return (
