@@ -4403,10 +4403,50 @@ function SessionPageInner() {
         { phase: 'discussion', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, lessonTitle: effectiveLessonTitle, step: 'open-question', gradeLevel },
         { fastReturn: false }
       );
-      // After reply speech, ask for confirmation via frontend TTS (spoken only; no footer label)
+      // After reply speech, ask if they have other questions and suggest examples
       try {
-        await speakFrontend('Did I answer your question?');
-      } catch {}
+        await speakFrontend('Do you have any other questions?');
+        
+        // Generate example questions that evolve from what the learner just asked
+        const lessonTitle = getCleanLessonTitle();
+        const notes = getTeachingNotes() || '';
+        
+        const instruction = [
+          `The lesson is "${lessonTitle}".`,
+          `The learner just asked: "${trimmed}"`,
+          'We answered their question.',
+          'Now generate 2-3 short follow-up questions that naturally evolve from what they asked.',
+          'These should be related questions that go deeper or explore connected ideas.',
+          'Make them curious and enticing so the learner wants to ask more.',
+          'Start with: "You could ask questions like..."',
+          'Then list the questions briefly and naturally.',
+          'Keep it very short and friendly.',
+          'Do not answer the questions.',
+          'Kid-friendly style rules: Use simple everyday words a 5–7 year old can understand. Keep sentences short (about 6–12 words).',
+          'Always respond with natural spoken text only. Do not use emojis, decorative characters, repeated punctuation, or symbols.'
+        ].join(' ');
+        
+        const exampleQuestionsResult = await callMsSonoma(
+          instruction,
+          '',
+          {
+            phase: 'discussion',
+            subject: subjectParam,
+            difficulty: difficultyParam,
+            lesson: lessonParam,
+            lessonTitle: effectiveLessonTitle,
+            step: 'ask-example-questions',
+            teachingNotes: notes || undefined,
+            originalQuestion: trimmed
+          }
+        );
+        
+        if (!exampleQuestionsResult.success) {
+          console.warn('[Ask] Failed to generate example questions');
+        }
+      } catch (err) {
+        console.warn('[Ask] Error in confirmation flow:', err);
+      }
       setAskState('awaiting-confirmation');
       // Keep input disabled while awaiting button choice
       setCanSend(false);
@@ -6043,15 +6083,11 @@ function SessionPageInner() {
           {askState === 'awaiting-confirmation' && (() => {
             const wrap = { display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'6px 12px', flexWrap:'wrap' };
             const btnBase = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
-            const yesBtn = { ...btnBase, background:'#065f46' };
-            const noBtn = { ...btnBase, background:'#7f1d1d' };
             const backBtn = { ...btnBase, background:'#374151' };
             return (
-              <div style={wrap} aria-label="Ask confirmation">
+              <div style={wrap} aria-label="Ask confirmation: ask another or go back">
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <button type="button" style={yesBtn} onClick={handleAskConfirmYes}>Yes</button>
-                  <button type="button" style={noBtn} onClick={handleAskConfirmNo}>No</button>
-                  <button type="button" style={btnBase} onClick={handleAskAnother}>Ask another question</button>
+                  <button type="button" style={btnBase} onClick={handleAskAnother}>Ask</button>
                   <button type="button" style={backBtn} onClick={handleAskBack}>Back</button>
                 </div>
               </div>
