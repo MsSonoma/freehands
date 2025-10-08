@@ -47,7 +47,7 @@ async function callModel(prompt){
     throw new Error('OpenAI API key not configured')
   }
   const body = {
-    model: process.env.SONOMA_OPENAI_MODEL || process.env.OPENAI_MODEL || 'gpt-4o',
+    model: process.env.SONOMA_OPENAI_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini',
     messages: [
       { role:'system', content:'Return only valid JSON. No markdown. No commentary.' },
       { role:'user', content: prompt }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
+export const maxDuration = 60 // Extended timeout for OpenAI lesson generation
 
 async function readUserAndTier(request){
   try {
@@ -65,18 +66,38 @@ async function callModel(prompt){
     }
   }
   const body = {
-    model: process.env.SONOMA_OPENAI_MODEL || process.env.OPENAI_MODEL || 'gpt-4o',
+    model: process.env.SONOMA_OPENAI_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini',
     messages: [
       { role:'system', content:'Return only valid JSON. No markdown. No commentary.' },
       { role:'user', content: prompt }
     ],
     temperature: 0.6,
+    timeout: 50000, // 50 second timeout for the API call itself
   }
-  const res = await fetch(url, { method:'POST', headers:{ 'Authorization':`Bearer ${key}`, 'Content-Type':'application/json' }, body: JSON.stringify(body) })
-  if (!res.ok) throw new Error(`Model error ${res.status}`)
-  const js = await res.json()
-  const text = js?.choices?.[0]?.message?.content || '{}'
-  try { return JSON.parse(text) } catch { throw new Error('Model returned invalid JSON') }
+  
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 55000) // 55 second hard limit
+  
+  try {
+    const res = await fetch(url, { 
+      method:'POST', 
+      headers:{ 'Authorization':`Bearer ${key}`, 'Content-Type':'application/json' }, 
+      body: JSON.stringify(body),
+      signal: controller.signal
+    })
+    clearTimeout(timeoutId)
+    
+    if (!res.ok) throw new Error(`Model error ${res.status}`)
+    const js = await res.json()
+    const text = js?.choices?.[0]?.message?.content || '{}'
+    try { return JSON.parse(text) } catch { throw new Error('Model returned invalid JSON') }
+  } catch (err) {
+    clearTimeout(timeoutId)
+    if (err.name === 'AbortError') {
+      throw new Error('OpenAI request timeout - lesson generation took too long')
+    }
+    throw err
+  }
 }
 
 export async function POST(request){

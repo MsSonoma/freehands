@@ -4,6 +4,9 @@
   "functions": {
     "src/app/api/**/route.{js,ts}": {
       "maxDuration": 30
+    },
+    "src/app/api/facilitator/lessons/generate/route.js": {
+      "maxDuration": 60
     }
   }
 }

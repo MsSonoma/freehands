@@ -54,8 +54,13 @@ You can switch providers and prompt verbosity without code changes using environ
 - SONOMA_PROVIDER=anthropic | openai (default auto-chooses `anthropic` if ANTHROPIC_API_KEY is set)
 - SONOMA_MODEL=claude-4.1-opus (Preview) or any Anthropic model id
 - ANTHROPIC_MODEL=claude-3.5-sonnet (fallback)
-- SONOMA_OPENAI_MODEL=gpt-4o (fallback when provider=openai)
+- SONOMA_OPENAI_MODEL=gpt-4o (for Ms. Sonoma tutoring; facilitator tools use gpt-4o-mini)
 - SONOMA_PROMPT_MODE=compact | full (compact reduces tokens; full is more verbose)
+
+**Model Strategy:**
+- **Ms. Sonoma tutoring** (`/api/sonoma`): Uses `gpt-4o` (or Claude) for best child-facing experience
+- **Lesson generation** (`/api/facilitator/lessons/generate`): Uses `gpt-4o-mini` for speed and cost efficiency
+- **Lesson editing** (`/api/facilitator/lessons/request-changes`): Uses `gpt-4o-mini` for facilitator workflows
 
 Revert strategy:
 - Set SONOMA_PROVIDER=openai to force OpenAI
