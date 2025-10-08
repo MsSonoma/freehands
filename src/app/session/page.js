@@ -3093,9 +3093,6 @@ function SessionPageInner() {
     } catch { return []; }
   }, [getAvailableVocab, getFallbackVocabFromTitle]);
 
-  // Update ref so phase handlers hook can use it
-  useEffect(() => { startThreeStageTeachingRef.current = startThreeStageTeaching; }, [startThreeStageTeaching]);
-
   const startTeachingUnifiedRepeat = async () => {
     // Repeat teaching with a different transition tone; avoid sounding like a fresh start.
     setCanSend(false);
@@ -4662,6 +4659,11 @@ function SessionPageInner() {
   const handleGateYes = handleGateYesHook;
   const handleGateNo = handleGateNoHook;
   const moveToComprehensionWithCue = moveToComprehensionWithCueHook;
+
+  // Update ref so phase handlers hook can use it
+  useEffect(() => {
+    startThreeStageTeachingRef.current = startThreeStageTeaching;
+  }, [startThreeStageTeaching]);
 
   const beginWorksheetPhase = async () => {
     // End any prior API/audio/mic activity before starting fresh
