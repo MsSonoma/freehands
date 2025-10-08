@@ -39,6 +39,7 @@ import { usePhaseHandlers } from './hooks/usePhaseHandlers';
 import { useAssessmentGeneration } from './hooks/useAssessmentGeneration';
 import { useTeachingFlow } from './hooks/useTeachingFlow';
 import { useAssessmentDownloads } from './hooks/useAssessmentDownloads';
+import { useSnapshotPersistence } from './hooks/useSnapshotPersistence';
 
 export default function SessionPage(){
   return (
