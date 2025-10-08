@@ -2289,6 +2289,7 @@ function SessionPageInner() {
   const restoredSnapshotRef = useRef(false);
   const didRunRestoreRef = useRef(false); // ensure we attempt restore exactly once per mount
   const restoreFoundRef = useRef(false);  // whether we actually applied a prior snapshot
+  const resumeAppliedRef = useRef(false); // track whether resume reconciliation has been applied
   const snapshotSaveTimerRef = useRef(null);
   // Track a logical per-restart session id for per-session transcript files
   const [transcriptSessionId, setTranscriptSessionId] = useState(null);
