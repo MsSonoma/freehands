@@ -44,6 +44,37 @@ export async function GET(request){
     const raw = await fileData.text()
     const lesson = JSON.parse(raw)
     
+    // Normalize question field names: Q/q -> prompt/question, A/a -> answer/expected
+    const normalizeQuestion = (q) => {
+      if (!q || typeof q !== 'object') return q
+      const normalized = { ...q }
+      // Map Q or q to prompt and question
+      if (q.Q !== undefined) {
+        normalized.prompt = q.Q
+        normalized.question = q.Q
+      } else if (q.q !== undefined) {
+        normalized.prompt = q.q
+        normalized.question = q.q
+      }
+      // Map A or a to answer and expected
+      if (q.A !== undefined) {
+        normalized.answer = q.A
+        normalized.expected = q.A
+      } else if (q.a !== undefined) {
+        normalized.answer = q.a
+        normalized.expected = q.a
+      }
+      return normalized
+    }
+    
+    // Normalize all question arrays
+    const questionArrays = ['sample', 'truefalse', 'multiplechoice', 'shortanswer', 'fillintheblank', 'worksheet', 'test']
+    for (const key of questionArrays) {
+      if (Array.isArray(lesson[key])) {
+        lesson[key] = lesson[key].map(normalizeQuestion)
+      }
+    }
+    
     return NextResponse.json(lesson)
   } catch (e) {
     console.error('Get lesson error:', e)

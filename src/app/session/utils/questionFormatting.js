@@ -117,7 +117,7 @@ export function formatQuestionForSpeech(item, { layout = 'inline' } = {}) {
   if (!item) return '';
   const tfPrefix = isTrueFalse(item) ? 'True/False: ' : '';
   const mc = formatMcOptions(item, { layout });
-  const base = String(item.prompt || item.question || '').trim();
+  const base = String(item.prompt || item.question || item.Q || item.q || '').trim();
   // Put MC options on a new line; keep them comma-separated
   return mc ? `${tfPrefix}${base}\n${mc}` : `${tfPrefix}${base}`;
 }
@@ -180,7 +180,7 @@ export function formatQuestionForInlineAsk(item) {
   if (!item) return '';
   try {
     const tfPrefix = isTrueFalse(item) ? 'True/False: ' : '';
-    const baseRaw = String(item.prompt || item.question || '').trim();
+    const baseRaw = String(item.prompt || item.question || item.Q || '').trim();
     // Remove any trailing sentence punctuation from the stem; we'll add the final '?' at the very end later
     const base = baseRaw.replace(/\s*[?.!]+$/, '');
     const mcLine = formatMcOptions(item); // already single-line like "A.\u00A0foo,   B.\u00A0bar"
@@ -338,5 +338,5 @@ export function isOpenEndedTestItem(q) {
  * Get prompt key for deduplication
  */
 export function promptKey(q) {
-  return String(q?.prompt || q?.question || '').trim().toLowerCase();
+  return String(q?.prompt || q?.question || q?.Q || '').trim().toLowerCase();
 }

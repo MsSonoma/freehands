@@ -43,8 +43,9 @@ export function buildQAPool(lessonData, subjectParam) {
       q.expected = seed;
       q.answer = seed;
     } else {
-      q.expected = q.expected ?? q.answer;
-      q.answer = q.answer ?? q.expected;
+      // Also check for uppercase/lowercase Q and A fields from facilitator lessons
+      q.expected = q.expected ?? q.answer ?? q.A ?? q.a;
+      q.answer = q.answer ?? q.expected ?? q.A ?? q.a;
     }
     return q;
   };

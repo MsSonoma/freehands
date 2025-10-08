@@ -72,23 +72,33 @@ export default function GeneratedLessonsPage(){
   }
 
   async function handleApprove(file, userId){
+    console.log('[APPROVE] Starting approval for:', file, 'userId:', userId)
     setBusy(true)
     setError('')
     try {
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
+      console.log('[APPROVE] Token:', token ? 'present' : 'missing')
       const res = await fetch('/api/facilitator/lessons/approve', {
         method:'POST', headers:{ 'Content-Type':'application/json', ...(token?{Authorization:`Bearer ${token}`}:{}) },
         body: JSON.stringify({ file, userId })
       })
+      console.log('[APPROVE] Response status:', res.status, res.ok)
       if (!res.ok) {
         const js = await res.json().catch(()=>null)
+        console.error('[APPROVE] Error response:', js)
         setError(js?.error || 'Approve failed')
+        return
       }
-      // No need to refresh main lessons page here; it reads from disk dynamically
-      // We do refresh our list in case you want to remove it after approval later
+      const responseData = await res.json().catch(() => ({}))
+      console.log('[APPROVE] Success response:', responseData)
+      // Success - refresh the list to show updated approval status
       await refresh()
+      console.log('[APPROVE] Refresh complete')
+    } catch (err) {
+      console.error('[APPROVE] Exception:', err)
+      setError(err?.message || 'Failed to approve lesson')
     } finally {
       setBusy(false)
     }

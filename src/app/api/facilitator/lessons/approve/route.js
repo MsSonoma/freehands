@@ -28,7 +28,9 @@ async function readUserAndTier(request){
 }
 
 export async function POST(request){
+  console.log('[APPROVE API] Request received')
   const { user, plan_tier, supabase } = await readUserAndTier(request)
+  console.log('[APPROVE API] User:', user?.id, 'Plan:', plan_tier)
   if (!user) return NextResponse.json({ error:'Unauthorized' }, { status: 401 })
   if (plan_tier !== 'premium') return NextResponse.json({ error:'Premium plan required' }, { status: 403 })
   if (!supabase) return NextResponse.json({ error:'Storage not configured' }, { status: 500 })
@@ -37,25 +39,31 @@ export async function POST(request){
   try { body = await request.json() } catch { return NextResponse.json({ error:'Invalid body' }, { status: 400 }) }
   const file = (body?.file || '').toString()
   const userId = body?.userId || user.id // Use provided userId or fall back to current user
+  console.log('[APPROVE API] File:', file, 'UserId:', userId)
   if (!file || file.includes('..') || file.includes('/') || file.includes('\\\\')) return NextResponse.json({ error:'Invalid file' }, { status: 400 })
 
   try {
     // Download from Supabase Storage
     const storagePath = `facilitator-lessons/${userId}/${file}`
+    console.log('[APPROVE API] Storage path:', storagePath)
     const { data: fileData, error: downloadError } = await supabase.storage
       .from('lessons')
       .download(storagePath)
     
     if (downloadError || !fileData) {
+      console.error('[APPROVE API] Download error:', downloadError)
       return NextResponse.json({ error:'Lesson not found in storage' }, { status: 404 })
     }
     
     const raw = await fileData.text()
     const js = JSON.parse(raw)
+    console.log('[APPROVE API] Current approved status:', js.approved)
     
     // Mark as approved and clear needsUpdate flag
     js.approved = true
     if (js.needsUpdate) delete js.needsUpdate
+    
+    console.log('[APPROVE API] New approved status:', js.approved)
     
     // Update the original file to mark it as approved
     const { error: updateError } = await supabase.storage
@@ -66,13 +74,14 @@ export async function POST(request){
       })
     
     if (updateError) {
-      console.error('Approve update error:', updateError)
+      console.error('[APPROVE API] Update error:', updateError)
       return NextResponse.json({ error: 'Failed to update lesson' }, { status: 500 })
     }
     
+    console.log('[APPROVE API] Success!')
     return NextResponse.json({ ok:true, file })
   } catch (e) {
-    console.error('Approve error:', e)
+    console.error('[APPROVE API] Exception:', e)
     return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })
   }
 }

@@ -898,7 +898,7 @@ function SessionPageInner() {
   }, [lessonData, lessonFilePath, subjectParam, lessonFilename, subjectFolderSegment]);
 
   // Build a normalized QA pool for comprehension/exercise
-  const buildQAPool = useCallback(() => buildQAPoolUtil(lessonData, subjectParam), [lessonData, subjectParam]);
+  const buildQAPool = useCallback((dataOverride = null) => buildQAPoolUtil(dataOverride || lessonData, subjectParam), [lessonData, subjectParam]);
 
   useEffect(() => {
     let cancelled = false;
@@ -969,13 +969,13 @@ function SessionPageInner() {
             if (stored && Array.isArray(stored.comprehension) && stored.comprehension.length) {
               setCompPool(stored.comprehension);
             } else {
-              const initialPool = buildQAPool();
+              const initialPool = buildQAPool(data);
               if (initialPool.length) setCompPool(initialPool);
             }
             if (stored && Array.isArray(stored.exercise) && stored.exercise.length) {
               setExercisePool(stored.exercise);
             } else {
-              const initialPool = buildQAPool();
+              const initialPool = buildQAPool(data);
               if (initialPool.length) setExercisePool(initialPool);
             }
             setCurrentCompProblem(null);
@@ -2654,7 +2654,7 @@ function SessionPageInner() {
       // Format a question's text for PDF rendering (apply FIB shrink, TF prefix) and split MC choices
       // Returns { prompt, choicesLine }
       const renderLineText = (item) => {
-        let base = String(item.prompt || item.question || '');
+        let base = String(item.prompt || item.question || item.Q || item.q || '');
         const qType = String(item.type || '').toLowerCase();
         const isFIB = item.sourceType === 'fib' || /fill\s*in\s*the\s*blank|fillintheblank/.test(qType);
         const isTF = item.sourceType === 'tf' || /^(true\s*\/\s*false|truefalse|tf)$/i.test(qType);
@@ -4763,7 +4763,7 @@ function SessionPageInner() {
       }
 
       // Build acceptable answers
-  const { primary: expectedPrimaryE, synonyms: expectedSynsE } = expandExpectedAnswer(problem.answer ?? problem.expected);
+  const { primary: expectedPrimaryE, synonyms: expectedSynsE } = expandExpectedAnswer(problem.answer ?? problem.expected ?? problem.A ?? problem.a);
       const anyOfE = expectedAnyList(problem);
       let acceptableE = anyOfE && anyOfE.length ? Array.from(new Set(anyOfE.map(String))) : [expectedPrimaryE, ...expectedSynsE];
       // If numeric correct index exists, add letter and option text
@@ -4787,7 +4787,12 @@ function SessionPageInner() {
 
       // Local correctness using unified helper
       let correct = false;
-      try { correct = isAnswerCorrectLocal(trimmed, acceptableE, problem); } catch {}
+      try { 
+        correct = isAnswerCorrectLocal(trimmed, acceptableE, problem); 
+        if (!correct) {
+          console.log('[Exercise] Answer marked incorrect:', { learnerAnswer: trimmed, acceptableE, problemAnswer: problem.answer, problemExpected: problem.expected, problemA: problem.A, problema: problem.a, anyOfE });
+        }
+      } catch {}
 
       setLearnerInput('');
 
@@ -4833,11 +4838,12 @@ function SessionPageInner() {
       // Snapshot the question we are re-asking with a hint
       activeQuestionBodyRef.current = currQ;
       if (wrongNE >= 3) {
-        const { primary: expectedPrimaryE2, synonyms: expectedSynsE2 } = expandExpectedAnswer(problem.answer ?? problem.expected);
+        const { primary: expectedPrimaryE2, synonyms: expectedSynsE2 } = expandExpectedAnswer(problem.answer ?? problem.expected ?? problem.A ?? problem.a);
         const anyOfE2 = expectedAnyList(problem);
         const acceptableE2 = anyOfE2 && anyOfE2.length ? Array.from(new Set(anyOfE2.map(String))) : [expectedPrimaryE2, ...expectedSynsE2];
         const correctTextE = deriveCorrectAnswerText(problem, acceptableE2, expectedPrimaryE2) || expectedPrimaryE2 || '';
         const revealE = correctTextE ? `Not quite right. The correct answer is ${correctTextE}.` : 'Not quite right.';
+        try { console.log('[Exercise] Third try reveal:', { correctTextE, expectedPrimaryE2, acceptableE2, problemAnswer: problem.answer, problemExpected: problem.expected, problemA: problem.A, problema: problem.a }); } catch {}
         try { await speakFrontend(`${revealE} ${currQ}`, { mcLayout: 'multiline' }); } catch {}
       } else if (wrongNE === 2) {
         const supportiveE = pickHint(HINT_SECOND, qKeyE);
@@ -4952,11 +4958,12 @@ function SessionPageInner() {
       // Snapshot the worksheet question we are re-asking
       activeQuestionBodyRef.current = currQ;
       if (wrongNW >= 3) {
-        const { primary: expectedPrimaryW2, synonyms: expectedSynsW2 } = expandExpectedAnswer(problem.answer ?? problem.expected);
+        const { primary: expectedPrimaryW2, synonyms: expectedSynsW2 } = expandExpectedAnswer(problem.answer ?? problem.expected ?? problem.A ?? problem.a);
         const anyOfW2 = expectedAnyList(problem);
         const acceptableW2 = anyOfW2 && anyOfW2.length ? Array.from(new Set(anyOfW2.map(String))) : [expectedPrimaryW2, ...expectedSynsW2];
         const correctTextW = deriveCorrectAnswerText(problem, acceptableW2, expectedPrimaryW2) || expectedPrimaryW2 || '';
         const revealW = correctTextW ? `Not quite right. The correct answer is ${correctTextW}.` : 'Not quite right.';
+        try { console.log('[Worksheet] Third try reveal:', { correctTextW, expectedPrimaryW2, acceptableW2, problemAnswer: problem.answer, problemExpected: problem.expected, problemA: problem.A, problema: problem.a }); } catch {}
         try { await speakFrontend(`${revealW} ${currQ}`, { mcLayout: 'multiline' }); } catch {}
       } else if (wrongNW === 2) {
         const supportiveW = pickHint(HINT_SECOND, qKeyW);

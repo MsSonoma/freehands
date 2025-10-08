@@ -296,11 +296,11 @@ export function useAssessmentDownloads({
       const extractAnswer = (q) => {
         try {
           if (!q) return '—';
-          // Possible fields: answer, expected, correct, key, solution; MC: correct option; TF: boolean
+          // Possible fields: answer, expected, correct, key, solution, A, a; MC: correct option; TF: boolean
           if (Array.isArray(q.answers)) return q.answers.join(', ');
           if (Array.isArray(q.expected)) return q.expected.join(', ');
           if (Array.isArray(q.answer)) return q.answer.join(', ');
-          const direct = q.expected || q.answer || q.solution || q.correct || q.key;
+          const direct = q.expected || q.answer || q.solution || q.correct || q.key || q.A || q.a;
           if (typeof direct === 'string' && direct.trim()) return direct.trim();
           if (typeof direct === 'number') return String(direct);
           if (typeof q === 'object') {
@@ -345,7 +345,7 @@ export function useAssessmentDownloads({
       if (itemsWorksheet.length) {
         doc.setFontSize(16); doc.text('Worksheet Answers', 14, y); y += 8; normalFont();
         itemsWorksheet.forEach(q => {
-          const prompt = (q.prompt || q.question || q.text || '').toString().trim();
+          const prompt = (q.prompt || q.question || q.Q || q.q || q.text || '').toString().trim();
           renderAnswerLine('W', q.number, prompt, extractAnswer(q));
         });
         y += 4;
@@ -355,7 +355,7 @@ export function useAssessmentDownloads({
         if (y > 250) { doc.addPage(); y = 14; }
         doc.setFontSize(16); doc.text('Test Answers', 14, y); y += 8; normalFont();
         itemsTest.forEach(q => {
-          const prompt = (q.prompt || q.question || q.text || '').toString().trim();
+          const prompt = (q.prompt || q.question || q.Q || q.q || q.text || '').toString().trim();
           renderAnswerLine('T', q.number, prompt, extractAnswer(q));
         });
       }
