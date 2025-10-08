@@ -40,6 +40,7 @@ import { useAssessmentGeneration } from './hooks/useAssessmentGeneration';
 import { useTeachingFlow } from './hooks/useTeachingFlow';
 import { useAssessmentDownloads } from './hooks/useAssessmentDownloads';
 import { useSnapshotPersistence } from './hooks/useSnapshotPersistence';
+import { useResumeRestart } from './hooks/useResumeRestart';
 
 export default function SessionPage(){
   return (
