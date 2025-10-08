@@ -3093,14 +3093,6 @@ function SessionPageInner() {
     } catch { return []; }
   }, [getAvailableVocab, getFallbackVocabFromTitle]);
 
-  const promptGateRepeat = promptGateRepeatHook;
-
-  const teachDefinitions = teachDefinitionsHook;
-
-  const teachExamples = teachExamplesHook;
-
-  const startThreeStageTeaching = startTwoStageTeachingHook;
-
   // Update ref so phase handlers hook can use it
   useEffect(() => { startThreeStageTeachingRef.current = startThreeStageTeaching; }, [startThreeStageTeaching]);
 
@@ -3136,13 +3128,6 @@ function SessionPageInner() {
     setCanSend(false);
     setTeachingRepeats((c) => c + 1);
   };
-
-  // Teaching gate UI handlers for three-stage flow (now two-stage: definitions + examples)
-  const handleGateYes = handleGateYesHook;
-
-  const moveToComprehensionWithCue = moveToComprehensionWithCueHook;
-
-  const handleGateNo = handleGateNoHook;
 
   // Auto-advance scripted steps after audio finishes speaking
   useEffect(() => {
@@ -4668,6 +4653,15 @@ function SessionPageInner() {
     // Constants
     COMPREHENSION_CUE_PHRASE,
   });
+
+  // Use hook-provided teaching flow functions
+  const promptGateRepeat = promptGateRepeatHook;
+  const teachDefinitions = teachDefinitionsHook;
+  const teachExamples = teachExamplesHook;
+  const startThreeStageTeaching = startTwoStageTeachingHook;
+  const handleGateYes = handleGateYesHook;
+  const handleGateNo = handleGateNoHook;
+  const moveToComprehensionWithCue = moveToComprehensionWithCueHook;
 
   const beginWorksheetPhase = async () => {
     // End any prior API/audio/mic activity before starting fresh
