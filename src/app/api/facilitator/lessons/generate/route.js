@@ -71,8 +71,7 @@ async function callModel(prompt){
       { role:'system', content:'Return only valid JSON. No markdown. No commentary.' },
       { role:'user', content: prompt }
     ],
-    temperature: 0.6,
-    timeout: 50000, // 50 second timeout for the API call itself
+    temperature: 0.6
   }
   
   const controller = new AbortController()
