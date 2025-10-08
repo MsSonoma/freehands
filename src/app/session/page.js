@@ -3145,31 +3145,6 @@ function SessionPageInner() {
     }
   }, [isSpeaking, loading, phase, subPhase, showBegin, teachingStage]);
 
-  // Use hook-provided download functions
-  const handleDownloadWorksheet = handleDownloadWorksheetHook;
-  const handleDownloadTest = handleDownloadTestHook;
-  const handleDownloadAnswers = handleDownloadAnswersHook;
-  const handleDownloadWorksheetTestCombined = handleDownloadWorksheetTestCombinedHook;
-  const handleRefreshWorksheetAndTest = handleRefreshWorksheetAndTestHook;
-
-  // Make header print dropdown trigger the same actions
-  useEffect(() => {
-    const onWs = () => { try { handleDownloadWorksheet(); } catch {} };
-    const onTest = () => { try { handleDownloadTest(); } catch {} };
-    const onCombined = () => { try { handleDownloadWorksheetTestCombined(); } catch {} };
-    const onRefresh = () => { try { handleRefreshWorksheetAndTest(); } catch {} };
-    window.addEventListener('ms:print:worksheet', onWs);
-    window.addEventListener('ms:print:test', onTest);
-    window.addEventListener('ms:print:combined', onCombined);
-    window.addEventListener('ms:print:refresh', onRefresh);
-    return () => {
-      window.removeEventListener('ms:print:worksheet', onWs);
-      window.removeEventListener('ms:print:test', onTest);
-      window.removeEventListener('ms:print:combined', onCombined);
-      window.removeEventListener('ms:print:refresh', onRefresh);
-    };
-  }, [handleDownloadWorksheet, handleDownloadTest, handleDownloadWorksheetTestCombined, handleRefreshWorksheetAndTest]);
-
   // Enable downloads when generated sets exist; for non-math also allow when categories/legacy arrays are present
   const hasNonMathCats = subjectParam !== 'math' && Boolean(
     (lessonData?.truefalse && lessonData.truefalse.length) ||
@@ -4015,6 +3990,31 @@ function SessionPageInner() {
     WORKSHEET_TARGET,
     TEST_TARGET
   });
+
+  // Use hook-provided download functions
+  const handleDownloadWorksheet = handleDownloadWorksheetHook;
+  const handleDownloadTest = handleDownloadTestHook;
+  const handleDownloadAnswers = handleDownloadAnswersHook;
+  const handleDownloadWorksheetTestCombined = handleDownloadWorksheetTestCombinedHook;
+  const handleRefreshWorksheetAndTest = handleRefreshWorksheetAndTestHook;
+
+  // Make header print dropdown trigger the same actions
+  useEffect(() => {
+    const onWs = () => { try { handleDownloadWorksheet(); } catch {} };
+    const onTest = () => { try { handleDownloadTest(); } catch {} };
+    const onCombined = () => { try { handleDownloadWorksheetTestCombined(); } catch {} };
+    const onRefresh = () => { try { handleRefreshWorksheetAndTest(); } catch {} };
+    window.addEventListener('ms:print:worksheet', onWs);
+    window.addEventListener('ms:print:test', onTest);
+    window.addEventListener('ms:print:combined', onCombined);
+    window.addEventListener('ms:print:refresh', onRefresh);
+    return () => {
+      window.removeEventListener('ms:print:worksheet', onWs);
+      window.removeEventListener('ms:print:test', onTest);
+      window.removeEventListener('ms:print:combined', onCombined);
+      window.removeEventListener('ms:print:refresh', onRefresh);
+    };
+  }, [handleDownloadWorksheet, handleDownloadTest, handleDownloadWorksheetTestCombined, handleRefreshWorksheetAndTest]);
 
   const beginWorksheetPhase = async () => {
     // End any prior API/audio/mic activity before starting fresh
