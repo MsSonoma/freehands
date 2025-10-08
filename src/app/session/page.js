@@ -4666,6 +4666,49 @@ function SessionPageInner() {
     startThreeStageTeachingRef.current = startThreeStageTeaching;
   }, [startThreeStageTeaching]);
 
+  // Assessment downloads hook
+  const {
+    handleDownloadWorksheet: handleDownloadWorksheetHook,
+    handleDownloadTest: handleDownloadTestHook,
+    handleDownloadAnswers: handleDownloadAnswersHook,
+    handleDownloadWorksheetTestCombined: handleDownloadWorksheetTestCombinedHook,
+    handleRefreshWorksheetAndTest: handleRefreshWorksheetAndTestHook
+  } = useAssessmentDownloads({
+    lessonData,
+    manifestInfo,
+    lessonParam,
+    subjectParam,
+    generatedWorksheet,
+    generatedTest,
+    compPool,
+    exercisePool,
+    worksheetSourceFull,
+    testSourceFull,
+    setDownloadError,
+    setGeneratedWorksheet,
+    setGeneratedTest,
+    setCurrentWorksheetIndex,
+    setTestActiveIndex,
+    setTestUserAnswers,
+    worksheetIndexRef,
+    ensurePinAllowed,
+    showTipOverride,
+    getAssessmentStorageKey,
+    getSnapshotStorageKey,
+    saveAssessments,
+    clearAssessments,
+    ensureExactCount,
+    promptKey,
+    createPdfForItems,
+    shareOrPreviewPdf,
+    ensureRuntimeTargets,
+    reserveSamples,
+    reserveWords,
+    jsPDF,
+    WORKSHEET_TARGET,
+    TEST_TARGET
+  });
+
   const beginWorksheetPhase = async () => {
     // End any prior API/audio/mic activity before starting fresh
     try { abortAllActivity(true); } catch {}
