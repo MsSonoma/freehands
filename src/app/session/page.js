@@ -3093,52 +3093,6 @@ function SessionPageInner() {
     } catch { return []; }
   }, [getAvailableVocab, getFallbackVocabFromTitle]);
 
-  // Teaching flow hook (two-stage: definitions → examples)
-  const {
-    promptGateRepeat: promptGateRepeatHook,
-    teachDefinitions: teachDefinitionsHook,
-    teachExamples: teachExamplesHook,
-    startTwoStageTeaching: startTwoStageTeachingHook,
-    handleGateYes: handleGateYesHook,
-    handleGateNo: handleGateNoHook,
-    moveToComprehensionWithCue: moveToComprehensionWithCueHook,
-  } = useTeachingFlow({
-    // State setters
-    setCanSend,
-    setSubPhase,
-    setPhase,
-    setTeachingStage,
-    setStageRepeats,
-    setCaptionSentences,
-    setCaptionIndex,
-    setTtsLoadingCount,
-    setCurrentCompProblem,
-    // State values
-    teachingStage,
-    // Refs
-    captionSentencesRef,
-    // API & utilities
-    callMsSonoma,
-    speakFrontend,
-    playAudioFromBase64,
-    scheduleSaveSnapshot,
-    ensureLessonDataReady,
-    getAvailableVocab,
-    getGradeNumber,
-    getCleanLessonTitle,
-    getTeachingNotes,
-    splitIntoSentences,
-    mergeMcChoiceFragments,
-    enforceNbspAfterMcLabels,
-    // Lesson context
-    subjectParam,
-    difficultyParam,
-    lessonParam,
-    effectiveLessonTitle,
-    // Constants
-    COMPREHENSION_CUE_PHRASE,
-  });
-
   const promptGateRepeat = promptGateRepeatHook;
 
   const teachDefinitions = teachDefinitionsHook;
@@ -4668,6 +4622,52 @@ function SessionPageInner() {
     const preface = 'Teaching notes (for your internal guidance; integrate naturally—do not read verbatim): ' + tn;
     return `${preface}\n${baseInstruction}`;
   }, [getTeachingNotes]);
+
+  // Teaching flow hook (two-stage: definitions → examples)
+  const {
+    promptGateRepeat: promptGateRepeatHook,
+    teachDefinitions: teachDefinitionsHook,
+    teachExamples: teachExamplesHook,
+    startTwoStageTeaching: startTwoStageTeachingHook,
+    handleGateYes: handleGateYesHook,
+    handleGateNo: handleGateNoHook,
+    moveToComprehensionWithCue: moveToComprehensionWithCueHook,
+  } = useTeachingFlow({
+    // State setters
+    setCanSend,
+    setSubPhase,
+    setPhase,
+    setTeachingStage,
+    setStageRepeats,
+    setCaptionSentences,
+    setCaptionIndex,
+    setTtsLoadingCount,
+    setCurrentCompProblem,
+    // State values
+    teachingStage,
+    // Refs
+    captionSentencesRef,
+    // API & utilities
+    callMsSonoma,
+    speakFrontend,
+    playAudioFromBase64,
+    scheduleSaveSnapshot,
+    ensureLessonDataReady,
+    getAvailableVocab,
+    getGradeNumber,
+    getCleanLessonTitle,
+    getTeachingNotes,
+    splitIntoSentences,
+    mergeMcChoiceFragments,
+    enforceNbspAfterMcLabels,
+    // Lesson context
+    subjectParam,
+    difficultyParam,
+    lessonParam,
+    effectiveLessonTitle,
+    // Constants
+    COMPREHENSION_CUE_PHRASE,
+  });
 
   const beginWorksheetPhase = async () => {
     // End any prior API/audio/mic activity before starting fresh
