@@ -42,11 +42,50 @@ function buildPrompt({ title, subject, difficulty, grade, description, notes, vo
   if (notes && notes.trim()) {
     notesGuidance = ` Additional guidance for lesson creation: ${notes.trim()}.`
   }
-  return `You are an education content generator. Create a JSON lesson with fields: id, title, grade, difficulty, blurb, vocab (array of {term, definition}), teachingNotes, sample (at least 10 Q&A), truefalse (at least 10), multiplechoice (at least 10), fillintheblank (at least 10), shortanswer (at least 10).
+  return `You are an education content generator. Create a complete JSON lesson following this exact structure:
 
-IMPORTANT: The teachingNotes field must contain practical, actionable guidance for facilitators teaching this lesson. Include: key teaching strategies, common student misconceptions to address, suggested activities or demonstrations, connections to real-world examples, and tips for differentiation. Make it 2-4 sentences of concrete, helpful advice.${notesGuidance}
+{
+  "id": "string",
+  "title": "string",
+  "grade": "${grade}",
+  "difficulty": "${difficulty}",
+  "subject": "${subject}",
+  "blurb": "string",
+  "vocab": [{"term": "string", "definition": "string"}],
+  "teachingNotes": "string",
+  "sample": [{"question": "string", "expectedAny": ["string"]}],
+  "truefalse": [{"question": "COMPLETE QUESTION TEXT HERE", "answer": true|false, "expectedAny": ["true"|"false"]}],
+  "multiplechoice": [{"question": "string", "choices": ["A", "B", "C", "D"], "correct": 0-3, "expectedAny": ["correct answer text"]}],
+  "fillintheblank": [{"question": "COMPLETE SENTENCE WITH _____ BLANK", "expectedAny": ["answer"]}],
+  "shortanswer": [{"question": "string", "expectedAny": ["answer"]}]
+}
 
-Keep all content kid-safe and age-appropriate for ${grade} grade. Difficulty: ${difficulty}. Grade: ${grade}. Subject: ${subject}. Title: ${title}. Blurb: ${description}.${vocabText} Use concise, age-appropriate wording. Ensure each question type has at least 10 questions.`
+CRITICAL REQUIREMENTS:
+1. Every truefalse item MUST have complete question text (not blank)
+2. Every fillintheblank item MUST have a complete sentence with _____ showing the blank
+3. Every multiplechoice item:
+   - Must have 4 distinct choices (do NOT prefix with A), B), C), D) - just the text)
+   - "correct" is the index (0, 1, 2, or 3) of the right answer
+   - "expectedAny" contains the text of the correct choice
+4. Each question type needs at least 10 complete questions
+5. teachingNotes: Include key teaching strategies, common misconceptions, real-world connections, and differentiation tips (2-4 sentences)${notesGuidance}
+
+EXAMPLE truefalse format:
+{"question": "The sun rises in the east.", "answer": true, "expectedAny": ["true"]}
+
+EXAMPLE multiplechoice format:
+{"question": "What color is the sky?", "choices": ["red", "blue", "green", "yellow"], "correct": 1, "expectedAny": ["blue"]}
+
+EXAMPLE fillintheblank format:
+{"question": "The _____ is hot and bright.", "expectedAny": ["sun", "star"]}
+
+Title: ${title}
+Blurb: ${description}
+Grade: ${grade}
+Difficulty: ${difficulty}
+Subject: ${subject}${vocabText}
+
+Return ONLY valid JSON. No markdown, no code blocks, no commentary.`
 }
 
 async function callModel(prompt){
