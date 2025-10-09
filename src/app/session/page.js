@@ -4335,40 +4335,6 @@ function SessionPageInner() {
     // Clear only when actually sending so the input doesn't appear to "eat" text without sending
     setLearnerInput("");
 
-    // Riddle attempt: when a riddle is active and we're awaiting a solve, judge the attempt first
-    if (phase === 'discussion' && subPhase === 'awaiting-learner' && riddleState === 'awaiting-solve' && currentRiddle) {
-      setCanSend(false);
-      // Echo the learner's attempt into captions as user line
-      try {
-        const prevLen = captionSentencesRef.current?.length || 0;
-        const nextAll = [...(captionSentencesRef.current || []), { text: trimmed, role: 'user' }];
-        captionSentencesRef.current = nextAll;
-        setCaptionSentences(nextAll);
-        setCaptionIndex(prevLen);
-      } catch {}
-      const result = await judgeRiddleAttempt(trimmed);
-      const line = (result && result.text) ? result.text : '';
-      if (!line) {
-        // If the model returned nothing, keep silent here and just allow another attempt
-        setRiddleState('awaiting-solve');
-        setCanSend(true);
-        return;
-      }
-      await speakFrontend(line);
-      // If model said it's correct, end riddle and return to options; otherwise keep awaiting solve
-      const isCorrect = /\b(correct|you got it|that\'?s right)\b/i.test(line);
-      if (isCorrect) {
-        setRiddleState('inactive');
-        setCurrentRiddle(null);
-        setShowOpeningActions(true);
-        setCanSend(true);
-      } else {
-        setRiddleState('awaiting-solve');
-        setCanSend(true);
-      }
-      return;
-    }
-
     // Poem: topic input ? generate poem, then await Ok
     if (poemState === 'awaiting-topic') {
       setCanSend(false);
@@ -5232,7 +5198,7 @@ function SessionPageInner() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [showBegin, phase, subPhase, loading, isSpeaking, beginSession, beginComprehensionPhase, beginSkippedExercise, beginWorksheetPhase, beginTestPhase, hotkeys]);
 
-  // Global hotkeys for skip left/right and mute toggle (play/pause removed)
+  // Global hotkeys for mute toggle
   useEffect(() => {
     const onKeyDown = (e) => {
       const code = e.code || e.key;
@@ -5240,29 +5206,17 @@ function SessionPageInner() {
       if (isTextEntryTarget(target)) return; // don't steal keys while typing in inputs/textareas
       if (!hotkeys) return;
 
-      const { skipLeft, skipRight, muteToggle } = { ...DEFAULT_HOTKEYS, ...hotkeys };
+      const { muteToggle } = { ...DEFAULT_HOTKEYS, ...hotkeys };
 
-      if (skipLeft && code === skipLeft) {
-        e.preventDefault();
-        // Boundaries handled in function; PIN gating applied inside
-        skipBackwardPhase?.();
-        return;
-      }
-      if (skipRight && code === skipRight) {
-        e.preventDefault();
-        skipForwardPhase?.();
-        return;
-      }
       if (muteToggle && code === muteToggle) {
         e.preventDefault();
         toggleMute?.();
         return;
       }
-      // play/pause hotkey removed per request
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [hotkeys, skipBackwardPhase, skipForwardPhase, toggleMute]);
+  }, [hotkeys, toggleMute]);
 
   const renderDiscussionControls = () => {
     if (subPhase === "awaiting-learner") {
@@ -5786,8 +5740,6 @@ function SessionPageInner() {
               // Make footer controls slightly smaller when the viewport is short in landscape so the footer takes less vertical space
               const btnSize = (isShortHeight && isMobileLandscape) ? 32 : 36;
               const btnBase = { background:'#1f2937', color:'#fff', border:'none', width:btnSize, height:btnSize, display:'grid', placeItems:'center', borderRadius:'50%', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.2)' };
-              const canPrev = typeof skipBackwardPhase === 'function' && phase !== 'discussion';
-              const canNext = typeof skipForwardPhase === 'function' && phase !== 'test';
               // Determine if a quick-answer cluster should appear (TF/MC) and render it in the middle of this row
               let qa = null;
               try {
@@ -5881,22 +5833,13 @@ function SessionPageInner() {
                   }
                 }
               } catch {}
-              // Move playback/mute to the left, prev/next (skip) to the right, and inset both pairs symmetrically.
+              // Footer controls inset symmetrically
               const pairInset = (isShortHeight && isMobileLandscape) ? 64 : 24;
               return (
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, paddingTop:2, paddingBottom:2, paddingLeft: pairInset, paddingRight: pairInset, marginBottom:2 }}>
-                  {/* Left: Previous + Next (skip) */}
-                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    <button type="button" aria-label="Previous" title="Previous" onClick={canPrev ? skipBackwardPhase : undefined} disabled={!canPrev} style={{ ...btnBase, opacity: canPrev ? 1 : 0.4, cursor: canPrev ? 'pointer' : 'not-allowed' }}>
-                      <svg style={{ width:'55%', height:'55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-                    </button>
-                    <button type="button" aria-label="Next" title="Next" onClick={canNext ? skipForwardPhase : undefined} disabled={!canNext} style={{ ...btnBase, opacity: canNext ? 1 : 0.4, cursor: canNext ? 'pointer' : 'not-allowed' }}>
-                      <svg style={{ width:'55%', height:'55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-                    </button>
-                  </div>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, paddingTop:2, paddingBottom:2, paddingLeft: pairInset, paddingRight: pairInset, marginBottom:2 }}>
                   {/* Middle: Quick answers if available */}
                   {qa}
-                  {/* Right: Submit during review + Review (when reached) + Play/Pause + Mute */}
+                  {/* Right: Submit during review + Review (when reached) + Mute */}
                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                     {(() => {
                       try {
@@ -5975,20 +5918,9 @@ function SessionPageInner() {
               if (isShortHeight) {
                 // Single row: play/mute left, begin center, skip right � inset both pairs symmetrically
                 const btnBase = { background:'#1f2937', color:'#fff', border:'none', width:36, height:36, display:'grid', placeItems:'center', borderRadius:'50%', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.2)' };
-                const canPrev = typeof skipBackwardPhase === 'function' && phase !== 'discussion';
-                const canNext = typeof skipForwardPhase === 'function' && phase !== 'test';
                 const pairInset = (isShortHeight && isMobileLandscape) ? 64 : 24;
                 return (
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, paddingTop:2, paddingBottom:2, paddingLeft: pairInset, paddingRight: pairInset, marginBottom:2 }}>
-                      {/* Left: Skip (Previous + Next) */}
-                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                        <button type="button" aria-label="Previous" title="Previous" onClick={canPrev ? skipBackwardPhase : undefined} disabled={!canPrev} style={{ ...btnBase, opacity: canPrev ? 1 : 0.4, cursor: canPrev ? 'pointer' : 'not-allowed' }}>
-                          <svg style={{ width:'55%', height:'55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-                        </button>
-                        <button type="button" aria-label="Next" title="Next" onClick={canNext ? skipForwardPhase : undefined} disabled={!canNext} style={{ ...btnBase, opacity: canNext ? 1 : 0.4, cursor: canNext ? 'pointer' : 'not-allowed' }}>
-                          <svg style={{ width:'55%', height:'55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-                        </button>
-                      </div>
                       {/* Middle: Begin CTA(s) */}
                       <div style={{ display:'flex', alignItems:'center', gap:12, flex:1, justifyContent:'center' }}>
                       {needBeginDiscussion && (
