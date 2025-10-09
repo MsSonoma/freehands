@@ -2,11 +2,9 @@
  * Lesson utilities for loading and resolving lesson information.
  */
 
-import { LEGACY_LESSON_MAP } from './constants';
-
 /**
  * Resolve lesson information from subject and lesson parameters.
- * Handles legacy lesson ID mapping and ensures proper .json extension.
+ * Ensures proper .json extension.
  * 
  * @param {string} subject - The subject area (e.g., 'math', 'science')
  * @param {string} lesson - The lesson identifier or filename
@@ -15,17 +13,11 @@ import { LEGACY_LESSON_MAP } from './constants';
  * @returns {string} return.file - The lesson filename with .json extension
  * 
  * @example
- * resolveLessonInfo('math', 'lesson.beginner.1')
- * // Returns: { title: 'lesson.beginner.1', file: 'Multiply_1_Digit_Numbers_Beginner.json' }
- * 
- * @example
  * resolveLessonInfo('math', 'Addition_Basics')
  * // Returns: { title: 'Addition_Basics', file: 'Addition_Basics.json' }
  */
 export function resolveLessonInfo(subject, lesson) {
   let base = lesson || "";
-  // legacy mapping
-  if (LEGACY_LESSON_MAP[base]) base = LEGACY_LESSON_MAP[base];
   // ensure filename ends with .json
   let file = base.endsWith('.json') ? base : `${base}.json`;
   return { title: lesson || "Lesson", file };

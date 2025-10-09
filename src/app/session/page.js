@@ -20,7 +20,7 @@ import { getStoredAssessments, saveAssessments, clearAssessments } from './asses
 import { getStoredSnapshot, saveSnapshot, clearSnapshot, consolidateSnapshots } from './sessionSnapshotStore';
 import { upsertMedal, emojiForTier, tierForPercent } from '@/app/lib/medalsClient';
 import { splitIntoSentences, mergeMcChoiceFragments, enforceNbspAfterMcLabels, countWords } from './utils/textProcessing';
-import { CLEAN_SPEECH_INSTRUCTION, GUARD_INSTRUCTION, KID_FRIENDLY_STYLE, COMPREHENSION_CUE_PHRASE, LEGACY_LESSON_MAP, timelinePhases, phaseLabels, discussionSteps, getTeachingSteps } from './utils/constants';
+import { CLEAN_SPEECH_INSTRUCTION, GUARD_INSTRUCTION, KID_FRIENDLY_STYLE, COMPREHENSION_CUE_PHRASE, timelinePhases, phaseLabels, discussionSteps, getTeachingSteps } from './utils/constants';
 import { buildSystemMessage, buildPerQuestionJudgingSpec } from './utils/systemMessage';
 import { resolveLessonInfo, getLessonTitle } from './utils/lessonUtils';
 import { formatQuestionForSpeech, isShortAnswerItem, isFillInBlank, isTrueFalse, isMultipleChoice, formatMcOptions, ensureQuestionMark, promptKey, deriveCorrectAnswerText, formatQuestionForInlineAsk, letterForAnswer, getOptionTextForLetter, naturalJoin } from './utils/questionFormatting';

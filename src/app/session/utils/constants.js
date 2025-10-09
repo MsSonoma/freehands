@@ -38,15 +38,6 @@ export const KID_FRIENDLY_STYLE = [
 export const COMPREHENSION_CUE_PHRASE = "Great. Let's move on to comprehension.";
 
 /**
- * Backward compatibility map for legacy lesson ids -> new filenames.
- */
-export const LEGACY_LESSON_MAP = {
-  'lesson.beginner.1': 'Multiply_1_Digit_Numbers_Beginner.json',
-  'lesson.intermediate.1': 'Multiply_2_Digit_Numbers_Intermediate.json',
-  'lesson.advanced.1': 'Multiply_3_Digit_Numbers_Advanced.json',
-};
-
-/**
  * Order of major phases shown above the video timeline.
  */
 export const timelinePhases = ["discussion", "comprehension", "exercise", "worksheet", "test"];
