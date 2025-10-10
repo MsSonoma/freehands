@@ -2,10 +2,64 @@
  * audioUtils.js
  * 
  * Audio/TTS utilities for session page: base64 normalization, HTMLAudio/WebAudio playback,
- * silent WAV generation for unlock, AudioContext management, and mic permission requests.
+ * silent WAV generation for unlock, AudioContext management, mic permission requests, and video playback coordination.
  * 
  * Pure functions and stateless helpers only - no React hooks or component state.
  */
+
+/**
+ * Play video with robust retry mechanism for mobile browsers.
+ * Mobile browsers (especially iOS) can be finicky with video.play() due to autoplay policies,
+ * loading states, and timing issues. This helper provides multiple retry attempts with backoff.
+ * 
+ * @param {HTMLVideoElement|null} video - Video element to play
+ * @param {number} maxRetries - Maximum number of retry attempts (default 3)
+ * @param {number} initialDelay - Initial retry delay in ms (default 100)
+ * @returns {Promise<void>}
+ */
+export async function playVideoWithRetry(video, maxRetries = 3, initialDelay = 100) {
+  if (!video) return;
+  
+  let attempt = 0;
+  let delay = initialDelay;
+  
+  while (attempt < maxRetries) {
+    try {
+      // Ensure video is in a playable state
+      if (video.readyState < 2) {
+        // HAVE_CURRENT_DATA = 2; wait for enough data
+        await new Promise((resolve) => {
+          const onReady = () => {
+            video.removeEventListener('loadeddata', onReady);
+            video.removeEventListener('canplay', onReady);
+            resolve();
+          };
+          video.addEventListener('loadeddata', onReady, { once: true });
+          video.addEventListener('canplay', onReady, { once: true });
+          // Timeout fallback
+          setTimeout(resolve, 500);
+        });
+      }
+      
+      const playPromise = video.play();
+      if (playPromise && playPromise.then) {
+        await playPromise;
+      }
+      // Success - video is playing
+      return;
+    } catch (err) {
+      attempt++;
+      if (attempt >= maxRetries) {
+        // Final attempt failed; log but don't throw to avoid breaking the session
+        console.warn('[Session] Video play failed after', maxRetries, 'attempts:', err?.name || err?.message || err);
+        return;
+      }
+      // Wait before retry with exponential backoff
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      delay *= 2; // exponential backoff
+    }
+  }
+}
 
 /**
  * Normalize base64 audio string: strip data URLs, remove whitespace, convert base64url to standard base64, and add padding.
@@ -258,10 +312,7 @@ export async function playViaWebAudio(
         // Start video in response to audio start and arm guard with known duration
         try {
           if (videoRef.current) {
-            const vp = videoRef.current.play();
-            if (vp && vp.catch) {
-              vp.catch(() => setTimeout(() => { try { videoRef.current && videoRef.current.play().catch(() => {}); } catch {} }, 250));
-            }
+            playVideoWithRetry(videoRef.current);
           }
         } catch {}
         // Arm guard with known duration for WebAudio

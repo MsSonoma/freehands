@@ -27,7 +27,7 @@ import { formatQuestionForSpeech, isShortAnswerItem, isFillInBlank, isTrueFalse,
 import { normalizeAnswer } from './utils/answerNormalization';
 import { isAnswerCorrectLocal, expandExpectedAnswer, expandRiddleAcceptables, composeExpectedBundle } from './utils/answerEvaluation';
 import { ENCOURAGEMENT_SNIPPETS, CELEBRATE_CORRECT, HINT_FIRST, HINT_SECOND, pickHint, buildCountCuePattern } from './utils/feedbackMessages';
-import { normalizeBase64Audio, base64ToArrayBuffer, makeSilentWavDataUrl, ensureAudioContext, stopWebAudioSource, playViaWebAudio, unlockAudioPlayback, requestAudioAndMicPermissions } from './utils/audioUtils';
+import { normalizeBase64Audio, base64ToArrayBuffer, makeSilentWavDataUrl, ensureAudioContext, stopWebAudioSource, playViaWebAudio, unlockAudioPlayback, requestAudioAndMicPermissions, playVideoWithRetry } from './utils/audioUtils';
 import { clearCaptionTimers as clearCaptionTimersUtil, scheduleCaptionsForAudio as scheduleCaptionsForAudioUtil, scheduleCaptionsForDuration as scheduleCaptionsForDurationUtil } from './utils/captionUtils';
 import { clearSynthetic as clearSyntheticUtil, finishSynthetic as finishSyntheticUtil, pauseSynthetic as pauseSyntheticUtil, resumeSynthetic as resumeSyntheticUtil } from './utils/syntheticPlaybackUtils';
 import { buildQAPool as buildQAPoolUtil, ensureExactCount as ensureExactCountUtil, initSampleDeck as initSampleDeckUtil, drawSampleUnique as drawSampleUniqueUtil, reserveSamples as reserveSamplesUtil, initWordDeck as initWordDeckUtil, drawWordUnique as drawWordUniqueUtil } from './utils/assessmentGenerationUtils';
@@ -1260,10 +1260,7 @@ function SessionPageInner() {
           src.start(0, offset);
           try {
             if (videoRef.current) {
-              const vp = videoRef.current.play();
-              if (vp && vp.catch) {
-                vp.catch(() => setTimeout(() => { try { videoRef.current && videoRef.current.play().catch(() => {}); } catch {} }, 250));
-              }
+              playVideoWithRetry(videoRef.current);
             }
           } catch {}
           // Captions from remaining duration
@@ -1295,10 +1292,7 @@ function SessionPageInner() {
     // Always try to start the video with user gesture
     try {
       if (videoRef.current) {
-        const vp = videoRef.current.play();
-        if (vp && vp.catch) {
-          vp.catch(() => setTimeout(() => { try { videoRef.current && videoRef.current.play().catch(() => {}); } catch {} }, 250));
-        }
+        playVideoWithRetry(videoRef.current);
       }
     } catch {}
   }, [ensureAudioContext]);
@@ -2327,6 +2321,8 @@ function SessionPageInner() {
     captionSentences,
     captionIndex,
     usedTestCuePhrases,
+    generatedComprehension,
+    generatedExercise,
     generatedWorksheet,
     generatedTest,
     // State setters
@@ -2355,6 +2351,8 @@ function SessionPageInner() {
     setCaptionSentences,
     setCaptionIndex,
     setUsedTestCuePhrases,
+    setGeneratedComprehension,
+    setGeneratedExercise,
     setLoading,
     setOfferResume,
     setCanSend,
@@ -3232,18 +3230,10 @@ function SessionPageInner() {
             [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
           }
           const totalNeeded = Math.max(0, (COMPREHENSION_TARGET || 0)) + Math.max(0, (EXERCISE_TARGET || 0));
-          let take = shuffled.slice(0, totalNeeded);
-          if (take.length < totalNeeded && shuffled.length) {
-            const extra = [];
-            let k = 0;
-            while (take.length + extra.length < totalNeeded) {
-              extra.push({ ...shuffled[k % shuffled.length] });
-              k += 1;
-            }
-            take = [...take, ...extra];
-          }
-          const compArr = take.slice(0, COMPREHENSION_TARGET);
-          const exArr = take.slice(COMPREHENSION_TARGET, COMPREHENSION_TARGET + EXERCISE_TARGET);
+          // Don't duplicate questions - use only what's available
+          let take = shuffled.slice(0, Math.min(totalNeeded, shuffled.length));
+          const compArr = take.slice(0, Math.min(COMPREHENSION_TARGET, take.length));
+          const exArr = take.slice(compArr.length, Math.min(compArr.length + EXERCISE_TARGET, take.length));
           setGeneratedComprehension(compArr);
           setGeneratedExercise(exArr);
           setCurrentCompIndex(0);
@@ -4535,6 +4525,8 @@ function SessionPageInner() {
         : `That makes ${nextCount} correct answers.`;
       const nearTarget = (ticker === COMPREHENSION_TARGET - 1);
       const atTarget = (nextCount === COMPREHENSION_TARGET);
+      
+      console.log('[Comprehension] Start of phase:', { ticker, nextCount, nearTarget, atTarget, COMPREHENSION_TARGET, currentCompProblem: !!currentCompProblem });
 
       // Ensure a current problem; if none, select one. If no input, just speak the question and return.
       let problem = currentCompProblem;
@@ -4580,24 +4572,34 @@ function SessionPageInner() {
 
       // Draw the next problem now (avoid duplicates); only used when current is correct and not final
       let nextProblem = null;
+      console.log('[Comprehension] Pre-selection check:', { nearTarget, atTarget, willTryPreselect: !nearTarget && !atTarget, hasGeneratedComprehension: !!generatedComprehension, generatedComprehensionLength: generatedComprehension?.length, currentCompIndex, currentProblemText: problem?.question?.substring(0, 50) });
       if (!nearTarget && !atTarget) {
         if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
-          const currText = (() => { try { return (problem?.question ?? formatQuestionForSpeech(problem)).trim(); } catch { return ''; } })();
           let idx = currentCompIndex;
-          // Skip only if same question (allow SA now)
-          while (idx < generatedComprehension.length && (()=>{ try { const t=(generatedComprehension[idx]?.question ?? formatQuestionForSpeech(generatedComprehension[idx])).trim(); return t===currText; } catch { return false; }})()) idx += 1;
-          if (idx < generatedComprehension.length) { nextProblem = generatedComprehension[idx]; setCurrentCompIndex(idx + 1); }
+          const candidateText = generatedComprehension[idx]?.question?.substring(0, 50);
+          console.log('[Comprehension] Trying generatedComprehension at idx:', idx, 'text:', candidateText);
+          // Simply take the next item from the pre-generated array (duplicates already handled during generation)
+          nextProblem = generatedComprehension[idx]; 
+          setCurrentCompIndex(idx + 1); 
+          console.log('[Comprehension] Selected from generatedComprehension, will set index to:', idx + 1);
         }
         if (!nextProblem) {
+          console.log('[Comprehension] Trying drawSampleUnique...');
           let tries = 0;
           while (tries < 5) {
             const s = drawSampleUnique();
             const isSame = (() => { try { const t=(s?.question ?? formatQuestionForSpeech(s)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t===c; } catch { return false; }})();
-            if (s && !isSame) { nextProblem = s; break; }
+            if (s && !isSame) { 
+              nextProblem = s; 
+              console.log('[Comprehension] Selected from drawSampleUnique'); 
+              break; 
+            }
             tries += 1;
           }
+          if (!nextProblem) console.log('[Comprehension] drawSampleUnique failed after', tries, 'tries');
         }
         if (!nextProblem && compPool.length) {
+          console.log('[Comprehension] Trying compPool, length:', compPool.length);
           const [head, ...rest] = compPool;
           const headSame = (()=>{ try { const t=(head?.question ?? formatQuestionForSpeech(head)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t===c; } catch { return false; }})();
           if (head && !headSame) { nextProblem = head; setCompPool(rest); }
@@ -4608,6 +4610,8 @@ function SessionPageInner() {
           }
         }
       }
+      
+      console.log('[Comprehension] After pre-selection, nextProblem:', !!nextProblem);
 
       // Build acceptable answers for local judging
   // Accept both schema variants: some items use `answer`, others use `expected`
@@ -4652,7 +4656,10 @@ function SessionPageInner() {
       let correct = false;
       try {
         correct = await judgeAnswer(trimmed, acceptable, problem);
-      } catch {}
+        console.log('[Comprehension] judgeAnswer result:', { correct, trimmed, ticker, nearTarget, atTarget, hasNextProblem: !!nextProblem });
+      } catch (err) {
+        console.error('[Comprehension] judgeAnswer error:', err);
+      }
 
       setLearnerInput('');
 
@@ -4675,7 +4682,9 @@ function SessionPageInner() {
           return;
         }
         setTicker(ticker + 1);
+        console.log('[Comprehension] After correct answer:', { nearTarget, atTarget, hasNextProblem: !!nextProblem, ticker: ticker + 1 });
         if (!nearTarget && nextProblem) {
+          console.log('[Comprehension] Taking path: ask next question');
           setCurrentCompProblem(nextProblem);
           try { scheduleSaveSnapshot('qa-correct-next'); } catch {}
           const nextQ = ensureQuestionMark(formatQuestionForSpeech(nextProblem, { layout: 'multiline' }));
@@ -4686,6 +4695,20 @@ function SessionPageInner() {
           setCanSend(false);
           return;
         }
+        // No more unique questions available - complete the phase early
+        if (!nextProblem && !nearTarget && !atTarget) {
+          console.log('[Comprehension] Taking path: no more questions, ending phase early');
+          try { scheduleSaveSnapshot('comprehension-complete'); } catch {}
+          try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for comprehension. Now let's begin the exercise.`); } catch {}
+          setPhase('exercise');
+          setSubPhase('exercise-awaiting-begin');
+          setExerciseSkippedAwaitBegin(true);
+          setTicker(0);
+          setCurrentCompProblem(null);
+          setCanSend(false);
+          return;
+        }
+        console.log('[Comprehension] Taking path: near/at target or other condition - just celebrate');
         try { scheduleSaveSnapshot('qa-correct-progress'); } catch {}
         try { await speakFrontend(`${celebration}. ${progressPhrase}`); } catch {}
   setCanSend(true);
@@ -6516,7 +6539,7 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
         <video
           ref={videoRef}
           src="/media/ms-sonoma-3.mp4"
-          muted={muted}
+          muted
           loop
           playsInline
           preload="auto"

@@ -59,6 +59,8 @@ export function useSnapshotPersistence({
   captionSentences,
   captionIndex,
   usedTestCuePhrases,
+  generatedComprehension,
+  generatedExercise,
   generatedWorksheet,
   generatedTest,
   // State setters
@@ -87,6 +89,8 @@ export function useSnapshotPersistence({
   setCaptionSentences,
   setCaptionIndex,
   setUsedTestCuePhrases,
+  setGeneratedComprehension,
+  setGeneratedExercise,
   setLoading,
   setOfferResume,
   setCanSend,
@@ -222,6 +226,8 @@ export function useSnapshotPersistence({
           captionSentences: Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current : (Array.isArray(captionSentences) ? captionSentences : []),
           captionIndex,
           usedTestCuePhrases,
+          generatedComprehension,
+          generatedExercise,
           resume,
         };
         if (!storedKey || String(storedKey).trim().length === 0) {
@@ -386,6 +392,9 @@ export function useSnapshotPersistence({
         try { setTestActiveIndex(Number.isFinite(snap.testActiveIndex) ? snap.testActiveIndex : 0); } catch {}
         try { setCurrentCompProblem(snap.currentCompProblem || null); } catch {}
         try { setCurrentExerciseProblem(snap.currentExerciseProblem || null); } catch {}
+        // Generated question arrays
+        try { Array.isArray(snap.generatedComprehension) && setGeneratedComprehension(snap.generatedComprehension); } catch {}
+        try { Array.isArray(snap.generatedExercise) && setGeneratedExercise(snap.generatedExercise); } catch {}
         // Test arrays
         try { Array.isArray(snap.testUserAnswers) && setTestUserAnswers(snap.testUserAnswers); } catch {}
         try { Array.isArray(snap.testCorrectByIndex) && setTestCorrectByIndex(snap.testCorrectByIndex); } catch {}
@@ -440,7 +449,7 @@ export function useSnapshotPersistence({
       }
     };
     doRestore();
-  }, [lessonParam, manifestInfo?.file, lessonData?.id, didRunRestoreRef, restoredSnapshotRef, restoreFoundRef, getSnapshotStorageKey, setLoading, setPhase, setSubPhase, setShowBegin, setTicker, setQaAnswersUnlocked, setJokeUsedThisGate, setRiddleUsedThisGate, setPoemUsedThisGate, setStoryUsedThisGate, setStoryTranscript, setTeachingStage, setStageRepeats, setCurrentCompIndex, setCurrentExIndex, setCurrentWorksheetIndex, setTestActiveIndex, setCurrentCompProblem, setCurrentExerciseProblem, setTestUserAnswers, setTestCorrectByIndex, setTestCorrectCount, setTestFinalPercent, setUsedTestCuePhrases, setCaptionSentences, setCaptionIndex, captionSentencesRef, worksheetIndexRef, setTtsLoadingCount, setIsSpeaking, setCanSend, setOfferResume, manifestInfo, lessonData, phase, subPhase, WORKSHEET_TARGET, TEST_TARGET]);
+  }, [lessonParam, manifestInfo?.file, lessonData?.id, didRunRestoreRef, restoredSnapshotRef, restoreFoundRef, getSnapshotStorageKey, setLoading, setPhase, setSubPhase, setShowBegin, setTicker, setQaAnswersUnlocked, setJokeUsedThisGate, setRiddleUsedThisGate, setPoemUsedThisGate, setStoryUsedThisGate, setStoryTranscript, setTeachingStage, setStageRepeats, setCurrentCompIndex, setCurrentExIndex, setCurrentWorksheetIndex, setTestActiveIndex, setCurrentCompProblem, setCurrentExerciseProblem, setGeneratedComprehension, setGeneratedExercise, setTestUserAnswers, setTestCorrectByIndex, setTestCorrectCount, setTestFinalPercent, setUsedTestCuePhrases, setCaptionSentences, setCaptionIndex, captionSentencesRef, worksheetIndexRef, setTtsLoadingCount, setIsSpeaking, setCanSend, setOfferResume, manifestInfo, lessonData, phase, subPhase, WORKSHEET_TARGET, TEST_TARGET]);
 
   // Save snapshot when the meaningful signature changes; coalescing occurs inside scheduleSaveSnapshot
   useEffect(() => {

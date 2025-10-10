@@ -25,7 +25,7 @@ function shuffleArray(arr) {
 /**
  * Build question/answer pool from lesson data.
  * Normalizes questions, filters by subject rules, and shuffles.
- * Math: includes all types. Others: prefer samples, TEMPORARILY ALLOWING short answer for backend testing.
+ * Uses TF/MC/FIB/SA question types from all subjects.
  * 
  * @param {object} lessonData - Lesson data containing question categories
  * @param {string} subjectParam - Subject identifier (e.g., 'math')
@@ -51,12 +51,6 @@ export function buildQAPool(lessonData, subjectParam) {
   };
   
   const normalize = (q) => ensureAE(q);
-  const isShortAnswer = (q) => isShortAnswerItem(q);
-  const isMath = (subjectParam === 'math');
-
-  // Prepare Samples - TEMPORARILY allow SA in all subjects for backend testing
-  const samplesRaw = arrify(lessonData?.sample).map(q => ({ ...normalize(q), questionType: 'sa' }));
-  const samplesForPhase = samplesRaw; // Previously filtered out SA for non-math
 
   // Prepare categories (accept single object or array)
   const tf = arrify(lessonData?.truefalse).map(q => ({ ...q, sourceType: 'tf', questionType: 'tf' })).map(normalize);
@@ -70,22 +64,11 @@ export function buildQAPool(lessonData, subjectParam) {
     return hasChoices;
   });
 
-  if (isMath) {
-    // Math: Mix Samples with TF/MC/FIB/SA
-    const pool = [...samplesForPhase, ...tf, ...mcValid, ...fib, ...sa];
-    // Log unique questionTypes for dev validation
-    try { console.debug('[PoolTagging] Comp/Ex pool types:', Array.from(new Set(pool.map(x => x?.questionType || 'sa')))); } catch {}
-    return shuffleArray(pool);
-  }
-
-  // Non-Math: Prefer Samples (no SA). If none, fall back to TF/MC/FIB only.
-  if (samplesForPhase.length) {
-    try { console.debug('[PoolTagging] Comp/Ex pool types (samples only):', Array.from(new Set(samplesForPhase.map(x => x?.questionType || 'sa')))); } catch {}
-    return shuffleArray(samplesForPhase);
-  }
-  const catPool = [...tf, ...mcValid, ...fib];
-  try { console.debug('[PoolTagging] Comp/Ex pool types (cats):', Array.from(new Set(catPool.map(x => x?.questionType || 'sa')))); } catch {}
-  return shuffleArray(catPool);
+  // All subjects: Use TF/MC/FIB/SA question types
+  const pool = [...tf, ...mcValid, ...fib, ...sa];
+  // Log unique questionTypes for dev validation
+  try { console.debug('[PoolTagging] Comp/Ex pool types:', Array.from(new Set(pool.map(x => x?.questionType || 'sa')))); } catch {}
+  return shuffleArray(pool);
 }
 
 /**

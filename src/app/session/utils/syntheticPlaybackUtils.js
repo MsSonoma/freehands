@@ -4,6 +4,8 @@
  * Manages timing state machine for displaying captions when no TTS audio is available.
  */
 
+import { playVideoWithRetry } from './audioUtils';
+
 /**
  * Clear synthetic playback state and timers.
  * Resets the synthetic ref to inactive state with all timing data cleared.
@@ -124,12 +126,7 @@ export function resumeSynthetic(
   
   try {
     if (videoRef.current) {
-      const vp = videoRef.current.play();
-      if (vp && vp.catch) {
-        vp.catch(() => setTimeout(() => { 
-          try { videoRef.current && videoRef.current.play().catch(() => {}); } catch {} 
-        }, 250));
-      }
+      playVideoWithRetry(videoRef.current);
     }
   } catch {}
   

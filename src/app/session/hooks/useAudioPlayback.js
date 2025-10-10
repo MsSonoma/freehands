@@ -13,7 +13,8 @@ import { useCallback, useRef, useEffect } from 'react';
 import { 
   normalizeBase64Audio, 
   base64ToArrayBuffer, 
-  makeSilentWavDataUrl
+  makeSilentWavDataUrl,
+  playVideoWithRetry
 } from '../utils/audioUtils';
 import { countWords } from '../utils/textProcessing';
 
@@ -177,10 +178,7 @@ export function useAudioPlayback({
       try { scheduleCaptionsForDuration(safeDuration, sentences, startIndex); } catch {}
       try {
         if (videoRef.current) {
-          const vp = videoRef.current.play();
-          if (vp && vp.catch) {
-            vp.catch(() => setTimeout(() => { try { videoRef.current && videoRef.current.play().catch(() => {}); } catch {} }, 250));
-          }
+          playVideoWithRetry(videoRef.current);
         }
       } catch {}
       try {
@@ -351,13 +349,10 @@ export function useAudioPlayback({
               armSpeechGuardFromParent(remaining, 'html:onplay');
             }
           } catch {}
-          // Start the video when audio starts; retry once if needed (mobile quirk)
+          // Start the video when audio starts; retry with robust mechanism (mobile quirk)
           try {
             if (videoRef.current) {
-              const vp = videoRef.current.play();
-              if (vp && vp.catch) {
-                vp.catch(() => setTimeout(() => { try { videoRef.current && videoRef.current.play().catch(() => {}); } catch {} }, 250));
-              }
+              playVideoWithRetry(videoRef.current);
             }
           } catch {}
         };
