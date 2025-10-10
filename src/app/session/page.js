@@ -6888,6 +6888,18 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
     if (phase === 'congrats') return 'Press "Complete Lesson"';
     if (loading) return 'loading...';
     if (isSpeaking) return 'Ms. Sonoma is talking...';
+    // During Discussion with Opening actions visible (Ask, Joke, Riddle, Poem, Story, Go buttons)
+    if (
+      phase === 'discussion' &&
+      subPhase === 'awaiting-learner' &&
+      showOpeningActions &&
+      askState === 'inactive' &&
+      riddleState === 'inactive' &&
+      poemState === 'inactive' &&
+      storyState === 'inactive'
+    ) {
+      return 'Press "Go" to begin';
+    }
     // During Teaching gate, disable text and prompt to use buttons
     if (phase === 'teaching' && subPhase === 'awaiting-gate') {
       const repeatLabel = teachingStage === 'examples' ? 'Repeat Examples' : 'Repeat Vocab';
