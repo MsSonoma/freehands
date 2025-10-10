@@ -6893,6 +6893,8 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
     if (phase === 'congrats') return 'Press "Complete Lesson"';
     if (loading) return 'loading...';
     if (isSpeaking) return 'Ms. Sonoma is talking...';
+    // During Ask sequence: prompt for question input
+    if (askState === 'awaiting-input') return 'Type your question...';
     // During Discussion with Opening actions visible (Ask, Joke, Riddle, Poem, Story, Go buttons)
     if (
       phase === 'discussion' &&
