@@ -6343,6 +6343,11 @@ function SessionPageInner() {
             onSend={handleSend}
             compact={isMobileLandscape}
             hotkeys={hotkeys}
+            showOpeningActions={showOpeningActions}
+            askState={askState}
+            riddleState={riddleState}
+            poemState={poemState}
+            storyState={storyState}
           />
         </>)}
         </div>
@@ -6693,7 +6698,7 @@ function CurrentAssessmentPrompt({ phase, subPhase, testActiveIndex, testList })
   return <span>{String(prompt)}</span>;
 }
 
-function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, loading, onSend, showBegin, isSpeaking, phase, subPhase, tipOverride, abortKey, currentCompProblem, teachingStage, compact = false, hotkeys }) {
+function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, loading, onSend, showBegin, isSpeaking, phase, subPhase, tipOverride, abortKey, currentCompProblem, teachingStage, compact = false, hotkeys, showOpeningActions, askState, riddleState, poemState, storyState }) {
   const [focused, setFocused] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [uploading, setUploading] = useState(false);
