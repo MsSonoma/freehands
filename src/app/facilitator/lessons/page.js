@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
+import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
 
 export default function FacilitatorLessonsPage() {
   const [tier, setTier] = useState('free')
@@ -9,6 +10,7 @@ export default function FacilitatorLessonsPage() {
   const [selectedLearnerId, setSelectedLearnerId] = useState(null)
   const [allLessons, setAllLessons] = useState({}) // { subject: [lessons] }
   const [approvedLessons, setApprovedLessons] = useState({}) // { 'subject/lesson_file': true }
+  const [medals, setMedals] = useState({}) // { lesson_key: { bestPercent, medalTier } }
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [expandedSubjects, setExpandedSubjects] = useState({}) // { subject: true/false }
@@ -89,6 +91,7 @@ export default function FacilitatorLessonsPage() {
     if (!selectedLearnerId) {
       setApprovedLessons({})
       setGradeFilters({})
+      setMedals({})
       return
     }
     let cancelled = false
@@ -111,9 +114,16 @@ export default function FacilitatorLessonsPage() {
             setGradeFilters({})
           }
         }
+        
+        // Fetch medals for this learner
+        const medalsData = await getMedalsForLearner(selectedLearnerId)
+        if (!cancelled) {
+          setMedals(medalsData || {})
+        }
       } catch {
         setApprovedLessons({})
         setGradeFilters({})
+        setMedals({})
       }
     })()
     return () => { cancelled = true }
@@ -343,6 +353,9 @@ export default function FacilitatorLessonsPage() {
                             {grouped[subj].map(lesson => {
                               const lessonKey = `${subject}/${lesson.file}`
                               const isApproved = !!approvedLessons[lessonKey]
+                              const medalInfo = medals[lessonKey]
+                              const hasCompleted = medalInfo && medalInfo.bestPercent > 0
+                              const medalEmoji = medalInfo?.medalTier ? emojiForTier(medalInfo.medalTier) : null
                               
                               return (
                                 <div key={lesson.file} style={card}>
@@ -358,11 +371,35 @@ export default function FacilitatorLessonsPage() {
                                       htmlFor={`lesson-${lessonKey}`}
                                       style={{ flex: 1, cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
                                     >
-                                      <div style={{ fontWeight: 600 }}>{lesson.title}</div>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <span style={{ fontWeight: 600 }}>{lesson.title}</span>
+                                        {hasCompleted && (
+                                          <span style={{ 
+                                            fontSize: 12, 
+                                            background: '#dcfce7', 
+                                            color: '#166534',
+                                            padding: '2px 6px',
+                                            borderRadius: 4,
+                                            fontWeight: 600
+                                          }}>
+                                            ✓ Completed
+                                          </span>
+                                        )}
+                                        {medalEmoji && (
+                                          <span style={{ fontSize: 20 }} title={`${medalInfo.medalTier} medal - ${medalInfo.bestPercent}%`}>
+                                            {medalEmoji}
+                                          </span>
+                                        )}
+                                      </div>
                                       <div style={{ fontSize: 14, color: '#6b7280' }}>
                                         {lesson.grade && `Grade ${lesson.grade}`}
                                         {lesson.grade && lesson.difficulty && ' · '}
                                         {lesson.difficulty && lesson.difficulty.charAt(0).toUpperCase() + lesson.difficulty.slice(1)}
+                                        {hasCompleted && medalInfo.bestPercent && (
+                                          <span style={{ marginLeft: 8, color: '#059669' }}>
+                                            · Best: {medalInfo.bestPercent}%
+                                          </span>
+                                        )}
                                       </div>
                                       {lesson.blurb && (
                                         <div style={{ fontSize: 14, color: '#9ca3af', marginTop: 4 }}>
@@ -382,6 +419,9 @@ export default function FacilitatorLessonsPage() {
                       filteredLessons.map(lesson => {
                         const lessonKey = `${subject}/${lesson.file}`
                         const isApproved = !!approvedLessons[lessonKey]
+                        const medalInfo = medals[lessonKey]
+                        const hasCompleted = medalInfo && medalInfo.bestPercent > 0
+                        const medalEmoji = medalInfo?.medalTier ? emojiForTier(medalInfo.medalTier) : null
                         
                         return (
                           <div key={lesson.file} style={card}>
@@ -397,11 +437,35 @@ export default function FacilitatorLessonsPage() {
                                 htmlFor={`lesson-${lessonKey}`}
                                 style={{ flex: 1, cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
                               >
-                                <div style={{ fontWeight: 600 }}>{lesson.title}</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <span style={{ fontWeight: 600 }}>{lesson.title}</span>
+                                  {hasCompleted && (
+                                    <span style={{ 
+                                      fontSize: 12, 
+                                      background: '#dcfce7', 
+                                      color: '#166534',
+                                      padding: '2px 6px',
+                                      borderRadius: 4,
+                                      fontWeight: 600
+                                    }}>
+                                      ✓ Completed
+                                    </span>
+                                  )}
+                                  {medalEmoji && (
+                                    <span style={{ fontSize: 20 }} title={`${medalInfo.medalTier} medal - ${medalInfo.bestPercent}%`}>
+                                      {medalEmoji}
+                                    </span>
+                                  )}
+                                </div>
                                 <div style={{ fontSize: 14, color: '#6b7280' }}>
                                   {lesson.grade && `Grade ${lesson.grade}`}
                                   {lesson.grade && lesson.difficulty && ' · '}
                                   {lesson.difficulty && lesson.difficulty.charAt(0).toUpperCase() + lesson.difficulty.slice(1)}
+                                  {hasCompleted && medalInfo.bestPercent && (
+                                    <span style={{ marginLeft: 8, color: '#059669' }}>
+                                      · Best: {medalInfo.bestPercent}%
+                                    </span>
+                                  )}
                                 </div>
                                 {lesson.blurb && (
                                   <div style={{ fontSize: 14, color: '#9ca3af', marginTop: 4 }}>
