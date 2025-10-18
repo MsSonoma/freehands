@@ -293,7 +293,6 @@ export function useSnapshotPersistence({
     const doRestore = async () => {
       // Ensure the overlay shows while we resolve snapshot and reconcile resume
       try { setLoading(true); } catch {}
-      let attempted = false;
       try {
         const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
         // Try multiple candidate keys in case different sources are available at different times
@@ -310,8 +309,8 @@ export function useSnapshotPersistence({
           return; // do not mark didRunRestore/restored flags so we can try again when deps update
         }
 
-  // We will mark didRun only when we actually finish attempting with all available sources
-  attempted = true;
+  // Mark as attempted IMMEDIATELY to prevent re-entry during async operations
+  didRunRestoreRef.current = true;
 
         // Collect all available snapshots among candidates and legacy variants, then pick the newest by savedAt
         let snap = null;
@@ -322,7 +321,10 @@ export function useSnapshotPersistence({
             if (s) {
               const t = Date.parse(s.savedAt || '') || 0;
               if (t >= newestAt) { snap = s; newestAt = t; }
-              try { console.debug('[Snapshot] candidate', { key: keyLike, note, at: new Date().toISOString(), savedAt: s.savedAt }); } catch {}
+              // Only log candidates when they're actually viable (reduces noise)
+              if (t > 0) {
+                try { console.debug('[Snapshot] candidate', { key: keyLike, note, savedAt: s.savedAt }); } catch {}
+              }
             }
           } catch { /* ignore */ }
         };
@@ -346,19 +348,19 @@ export function useSnapshotPersistence({
         if (!snap) {
           if (!sourcesReady) {
             // Postpone finalize; dependencies will change when manifest/data load, allowing another attempt
+            // Reset the flag so we can retry when dependencies change
+            didRunRestoreRef.current = false;
             try { console.debug('[Snapshot] no snapshot yet; will retry when sources are ready', { at: new Date().toISOString() }); } catch {}
             return;
           }
           // No snapshot and sources are ready: finalize restore as not-found so saving can begin
-          didRunRestoreRef.current = true;
           restoreFoundRef.current = false;
           try { setOfferResume(false); } catch {}
           // Hide loading immediately in no-snapshot case so UI becomes interactive
           try { setLoading(false); } catch {}
           return;
         }
-        // Found a snapshot: finalize
-        didRunRestoreRef.current = true;
+        // Found a snapshot: apply it
         // Apply core flow state first
         try { setPhase(snap.phase || 'discussion'); } catch {}
         try { setSubPhase(snap.subPhase || 'greeting'); } catch {}
@@ -433,23 +435,69 @@ export function useSnapshotPersistence({
         } catch {}
       } finally {
         // Whether or not a snapshot was found, mark restored so subsequent state changes start saving
-        if (attempted) {
-          restoredSnapshotRef.current = true;
-          try { console.debug('[Snapshot] restore attempt finished', { restored: restoreFoundRef.current, at: new Date().toISOString() }); } catch {}
-          // After first restore attempt, consolidate legacy keys in the background
-          try {
-            const k = getSnapshotStorageKey();
-            const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
-            if (k) consolidateSnapshots(k, { learnerId: lid });
-          } catch {}
-          // Safety: if reconciliation does not trigger a render (e.g., snapshot matches current defaults),
-          // clear the loading overlay now so the screen becomes interactive.
-          try { setLoading(false); } catch {}
-        }
+        restoredSnapshotRef.current = true;
+        try { console.debug('[Snapshot] restore attempt finished', { restored: restoreFoundRef.current, at: new Date().toISOString() }); } catch {}
+        // After first restore attempt, consolidate legacy keys in the background
+        try {
+          const k = getSnapshotStorageKey();
+          const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
+          if (k) consolidateSnapshots(k, { learnerId: lid });
+        } catch {}
+        // Safety: if reconciliation does not trigger a render (e.g., snapshot matches current defaults),
+        // clear the loading overlay now so the screen becomes interactive.
+        try { setLoading(false); } catch {}
       }
     };
     doRestore();
-  }, [lessonParam, manifestInfo?.file, lessonData?.id, didRunRestoreRef, restoredSnapshotRef, restoreFoundRef, getSnapshotStorageKey, setLoading, setPhase, setSubPhase, setShowBegin, setTicker, setQaAnswersUnlocked, setJokeUsedThisGate, setRiddleUsedThisGate, setPoemUsedThisGate, setStoryUsedThisGate, setStoryTranscript, setTeachingStage, setStageRepeats, setCurrentCompIndex, setCurrentExIndex, setCurrentWorksheetIndex, setTestActiveIndex, setCurrentCompProblem, setCurrentExerciseProblem, setGeneratedComprehension, setGeneratedExercise, setTestUserAnswers, setTestCorrectByIndex, setTestCorrectCount, setTestFinalPercent, setUsedTestCuePhrases, setCaptionSentences, setCaptionIndex, captionSentencesRef, worksheetIndexRef, setTtsLoadingCount, setIsSpeaking, setCanSend, setOfferResume, manifestInfo, lessonData, phase, subPhase, WORKSHEET_TARGET, TEST_TARGET]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    // Only depend on inputs that determine IF/WHEN to restore, not the outputs we're setting
+    lessonParam,
+    manifestInfo?.file,
+    lessonData?.id,
+    WORKSHEET_TARGET,
+    TEST_TARGET,
+    // Refs and functions are stable
+    didRunRestoreRef,
+    restoredSnapshotRef,
+    restoreFoundRef,
+    captionSentencesRef,
+    worksheetIndexRef,
+    getSnapshotStorageKey,
+    // Setters are stable from useState
+    setLoading,
+    setPhase,
+    setSubPhase,
+    setShowBegin,
+    setTicker,
+    setQaAnswersUnlocked,
+    setJokeUsedThisGate,
+    setRiddleUsedThisGate,
+    setPoemUsedThisGate,
+    setStoryUsedThisGate,
+    setStoryTranscript,
+    setTeachingStage,
+    setStageRepeats,
+    setCurrentCompIndex,
+    setCurrentExIndex,
+    setCurrentWorksheetIndex,
+    setTestActiveIndex,
+    setCurrentCompProblem,
+    setCurrentExerciseProblem,
+    setGeneratedComprehension,
+    setGeneratedExercise,
+    setTestUserAnswers,
+    setTestCorrectByIndex,
+    setTestCorrectCount,
+    setTestFinalPercent,
+    setUsedTestCuePhrases,
+    setCaptionSentences,
+    setCaptionIndex,
+    setTtsLoadingCount,
+    setIsSpeaking,
+    setCanSend,
+    setOfferResume,
+  ]);
 
   // Save snapshot when the meaningful signature changes; coalescing occurs inside scheduleSaveSnapshot
   useEffect(() => {

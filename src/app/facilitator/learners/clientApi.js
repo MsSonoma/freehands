@@ -103,6 +103,8 @@ export async function createLearner(payload) {
         exercise: flat.exercise,
         worksheet: flat.worksheet,
         test: flat.test,
+        session_timer_minutes: payload.session_timer_minutes,
+        golden_keys: payload.golden_keys !== undefined ? Number(payload.golden_keys) : 0,
       }, uid);
       if (!error) { supabaseLearnersMode = 'flat'; return normalizeRow(data); }
       if (!isUndefinedColumnOrTable(error)) throw new Error(error.message || 'Failed to create learner');
@@ -171,6 +173,7 @@ export async function getLearner(id) {
 }
 
 export async function updateLearner(id, updates) {
+  console.log('🔧 updateLearner called with:', { id, updates });
   const supabase = getSupabaseClient();
   if (supabase && hasSupabaseEnv()) {
     if (supabaseLearnersMode === 'disabled') return updateLocal(id, updates);
@@ -182,17 +185,27 @@ export async function updateLearner(id, updates) {
     const uid = userData?.user?.id;
     if (!uid) throw new Error('Please log in to update learners');
     const flat = toFlatTargets(updates);
+    console.log('📦 toFlatTargets returned:', flat);
     const tryFlat = supabaseLearnersMode !== 'json';
     if (tryFlat) {
-      const { data, error } = await updateWithOwner(supabase, id, {
+      const updatePayload = {
         name: updates.name,
         grade: updates.grade,
         comprehension: flat.comprehension,
         exercise: flat.exercise,
         worksheet: flat.worksheet,
         test: flat.test,
-      }, uid);
-      if (!error) { supabaseLearnersMode = 'flat'; return normalizeRow(data); }
+        session_timer_minutes: updates.session_timer_minutes,
+        golden_keys: updates.golden_keys !== undefined ? Number(updates.golden_keys) : undefined,
+      };
+      console.log('📤 Sending to Supabase (flat mode):', updatePayload);
+      const { data, error } = await updateWithOwner(supabase, id, updatePayload, uid);
+      if (!error) { 
+        supabaseLearnersMode = 'flat'; 
+        const normalized = normalizeRow(data);
+        console.log('✅ Supabase update successful, normalized:', normalized);
+        return normalized;
+      }
       if (!isUndefinedColumnOrTable(error)) throw new Error(error.message || 'Failed to update learner');
       // fallthrough to JSON mode
     }
@@ -239,25 +252,39 @@ function normalizeRow(row) {
     exercise: c(row.exercise ?? row.targets?.exercise),
     worksheet: c(row.worksheet ?? row.targets?.worksheet),
     test: c(row.test ?? row.targets?.test),
+    session_timer_minutes: c(row.session_timer_minutes),
+    golden_keys: c(row.golden_keys),
   };
+  // console.log('🔄 normalizeRow input:', row, 'output:', merged); // Removed: excessive logging
   return merged;
 }
 
 function toFlatTargets(obj) {
   const t = obj.targets || obj;
-  return {
+  const result = {
     comprehension: Number(t.comprehension),
     exercise: Number(t.exercise),
     worksheet: Number(t.worksheet),
     test: Number(t.test),
+    session_timer_minutes: obj.session_timer_minutes !== undefined ? Number(obj.session_timer_minutes) : undefined,
+    golden_keys: obj.golden_keys !== undefined ? Number(obj.golden_keys) : undefined,
   };
+  console.log('🔄 toFlatTargets input:', obj, 'output:', result);
+  return result;
 }
 
 function createLocal(payload) {
   const list = readLocal();
   const id = Date.now().toString(36);
   const flat = toFlatTargets(payload);
-  const item = { id, name: payload.name, grade: payload.grade, ...flat };
+  const item = { 
+    id, 
+    name: payload.name, 
+    grade: payload.grade, 
+    ...flat,
+    session_timer_minutes: payload.session_timer_minutes !== undefined ? Number(payload.session_timer_minutes) : 60,
+    golden_keys: payload.golden_keys !== undefined ? Number(payload.golden_keys) : 0
+  };
   list.unshift(item); writeLocal(list); return item;
 }
 
@@ -266,7 +293,14 @@ function updateLocal(id, updates) {
   const idx = list.findIndex(x => x.id === id);
   if (idx !== -1) {
     const flat = toFlatTargets(updates);
-    const updated = { ...list[idx], name: updates.name, grade: updates.grade, ...flat };
+    const updated = { 
+      ...list[idx], 
+      name: updates.name, 
+      grade: updates.grade, 
+      ...flat,
+      ...(updates.session_timer_minutes !== undefined ? { session_timer_minutes: Number(updates.session_timer_minutes) } : {}),
+      ...(updates.golden_keys !== undefined ? { golden_keys: Number(updates.golden_keys) } : {})
+    };
     list[idx] = updated; writeLocal(list); return updated;
   }
   return null;

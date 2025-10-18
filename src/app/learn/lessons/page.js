@@ -4,7 +4,9 @@ import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
 import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
+import { getLearner, updateLearner } from '@/app/facilitator/learners/clientApi'
 import LoadingProgress from '@/components/LoadingProgress'
+import GoldenKeyCounter from '@/app/learn/GoldenKeyCounter'
 
 function LessonsPageInner(){
   const router = useRouter()
@@ -18,6 +20,7 @@ function LessonsPageInner(){
   const [planTier, setPlanTier] = useState('free')
   const [todaysCount, setTodaysCount] = useState(0)
   const [sessionLoading, setSessionLoading] = useState(false)
+  const [goldenKeySelected, setGoldenKeySelected] = useState(false)
 
   const subjects = ['math', 'science', 'language arts', 'social studies', 'facilitator']
 
@@ -131,7 +134,7 @@ function LessonsPageInner(){
     return () => { cancelled = true }
   }, [learnerId])
 
-  function openLesson(subject, fileBaseName){
+  async function openLesson(subject, fileBaseName){
     const ent = featuresForTier(planTier)
     try {
       const dateKey = new Date().toISOString().slice(0,10)
@@ -151,8 +154,33 @@ function LessonsPageInner(){
       }
     } catch {}
     
+    // Handle golden key consumption - decrement from database
+    if (goldenKeySelected && learnerId) {
+      try {
+        const learner = await getLearner(learnerId)
+        if (learner && learner.golden_keys > 0) {
+          await updateLearner(learnerId, { 
+            name: learner.name,
+            grade: learner.grade,
+            targets: {
+              comprehension: learner.comprehension,
+              exercise: learner.exercise,
+              worksheet: learner.worksheet,
+              test: learner.test
+            },
+            session_timer_minutes: learner.session_timer_minutes,
+            golden_keys: learner.golden_keys - 1
+          })
+        }
+      } catch (e) {
+        console.error('[Golden Key] Failed to consume key:', e)
+      }
+    }
+    
     setSessionLoading(true)
-    router.push(`/session?subject=${encodeURIComponent(subject)}&lesson=${encodeURIComponent(fileBaseName)}`)
+    const url = `/session?subject=${encodeURIComponent(subject)}&lesson=${encodeURIComponent(fileBaseName)}`
+    const withKey = goldenKeySelected ? `${url}&goldenKey=true` : url
+    router.push(withKey)
   }
 
   const card = { border:'1px solid #e5e7eb', borderRadius:12, padding:14, display:'flex', flexDirection:'column', justifyContent:'space-between', background:'#fff' }
@@ -186,6 +214,13 @@ function LessonsPageInner(){
           Learning with <strong style={{ color:'#111' }}>{learnerName}</strong>
         </div>
       )}
+
+      {/* Golden Key Counter */}
+      <GoldenKeyCounter
+        learnerId={learnerId}
+        selected={goldenKeySelected}
+        onToggle={() => setGoldenKeySelected(prev => !prev)}
+      />
 
       {loading ? (
         <p style={{ textAlign:'center' }}>Loading lessons</p>

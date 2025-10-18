@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { ensurePinAllowed } from '@/app/lib/pinGate';
 
 // Facilitator Hub
 export default function FacilitatorPage() {
@@ -27,6 +28,25 @@ export default function FacilitatorPage() {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
   const [facilitatorName, setFacilitatorName] = useState('');
+  const [pinChecked, setPinChecked] = useState(false);
+
+  // Check PIN requirement on mount
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const allowed = await ensurePinAllowed('facilitator-page');
+        if (!allowed) {
+          router.push('/');
+          return;
+        }
+        if (!cancelled) setPinChecked(true);
+      } catch (e) {
+        if (!cancelled) setPinChecked(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [router]);
 
   useEffect(() => {
     let cancelled = false;
@@ -171,6 +191,11 @@ export default function FacilitatorPage() {
       window.removeEventListener('focus', onVis);
     };
   }, []);
+
+  // Don't render page content until PIN check is complete
+  if (!pinChecked) {
+    return <div style={{ padding: '12px 24px 0', textAlign: 'center' }}><p>Loading…</p></div>;
+  }
 
   return (
     <div style={{ padding: '12px 24px 0' }}>

@@ -30,6 +30,11 @@ export function useDiscussionHandlers({
   setPoemState,
   setStoryState,
   setStoryTranscript,
+  setStorySetupStep,
+  setStoryCharacters,
+  setStorySetting,
+  setStoryPlot,
+  setStoryPhase,
   setTtsLoadingCount,
   setIsSpeaking,
   setCaptionSentences,
@@ -52,6 +57,11 @@ export function useDiscussionHandlers({
   askOriginalQuestion,
   currentRiddle,
   storyTranscript,
+  storySetupStep,
+  storyCharacters,
+  storySetting,
+  storyPlot,
+  storyPhase,
   difficultyParam,
   lessonParam,
   
@@ -65,6 +75,9 @@ export function useDiscussionHandlers({
   speakFrontend,
   callMsSonoma,
   playAudioFromBase64,
+  
+  // Golden key flag
+  hasGoldenKey = false,
 }) {
   
   // Joke handler
@@ -326,12 +339,30 @@ export function useDiscussionHandlers({
 
   // Poem handlers
   const handlePoemStart = useCallback(async () => {
+    // Check if golden key is required and available
+    // Skip check if this session has a golden key enabled
+    if (!hasGoldenKey) {
+      const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
+      if (learnerId && learnerId !== 'demo') {
+        try {
+          const keysRaw = localStorage.getItem(`golden_keys_${learnerId}`);
+          const keys = keysRaw ? JSON.parse(keysRaw) : [];
+          if (keys.length === 0) {
+            await speakFrontend('You need a golden key to unlock the poem. Complete a lesson within the time limit to earn one!');
+            return;
+          }
+        } catch (e) {
+          console.warn('[Poem] Failed to check golden keys:', e);
+        }
+      }
+    }
+    
     try { setShowOpeningActions(false); } catch {}
     try { setPoemUsedThisGate(true); } catch {}
     setPoemState('awaiting-topic');
     setCanSend(true);
     await speakFrontend('What would you like the poem to be about?');
-  }, [setShowOpeningActions, setPoemUsedThisGate, setPoemState, setCanSend, speakFrontend]);
+  }, [hasGoldenKey, setShowOpeningActions, setPoemUsedThisGate, setPoemState, setCanSend, speakFrontend]);
 
   const handlePoemOk = useCallback(() => {
     setPoemState('inactive');
@@ -342,23 +373,226 @@ export function useDiscussionHandlers({
   // Story handlers
   const handleStoryStart = useCallback(async () => {
     console.log('[STORY] handleStoryStart called');
+    
+    // Check if golden key is required and available
+    // Skip check if this session has a golden key enabled
+    if (!hasGoldenKey) {
+      const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
+      if (learnerId && learnerId !== 'demo') {
+        try {
+          const keysRaw = localStorage.getItem(`golden_keys_${learnerId}`);
+          const keys = keysRaw ? JSON.parse(keysRaw) : [];
+          if (keys.length === 0) {
+            await speakFrontend('You need a golden key to unlock the story. Complete a lesson within the time limit to earn one!');
+            return;
+          }
+        } catch (e) {
+          console.warn('[Story] Failed to check golden keys:', e);
+        }
+      }
+    }
+    
     try { setShowOpeningActions(false); } catch {}
     try { setStoryUsedThisGate(true); } catch {}
-    setStoryTranscript([]);
-    console.log('[STORY] Setting storyState to awaiting-turn');
-    setStoryState('awaiting-turn');
-    console.log('[STORY] About to call speakFrontend');
-    await speakFrontend('Start the story and I will pick up from where you leave off.');
-    console.log('[STORY] speakFrontend completed, setting canSend to true');
-    setCanSend(true);
+    
+    // Check if this is a continuation from a previous phase
+    if (storyTranscript.length > 0) {
+      console.log('[STORY] Continuing existing story');
+      
+      // Determine the prompt based on actual phase
+      const isTestPhase = phase === 'test' || subPhase === 'test-active';
+      
+      if (isTestPhase) {
+        // Test phase: ask for ending
+        // Generate a brief paraphrased summary using AI
+        const lastAssistant = [...storyTranscript].reverse().find(t => t.role === 'assistant');
+        let briefSummary = 'Let me remind you where we left off in our story.';
+        
+        if (lastAssistant) {
+          const summaryInstruction = [
+            'You are Ms. Sonoma talking to a 5 year old.',
+            `Briefly paraphrase this story part in 1-2 short sentences: "${lastAssistant.text.replace(/To be continued\.?/i, '').trim()}"`,
+            'Keep it simple and exciting.',
+            'Do not add "To be continued."'
+          ].filter(Boolean).join(' ');
+          
+          try {
+            const res = await fetch('/api/sonoma', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ instruction: summaryInstruction, innertext: '' })
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.reply) {
+                briefSummary = data.reply.trim();
+              }
+            }
+          } catch (err) {
+            console.warn('[Story] Failed to generate summary:', err);
+          }
+        }
+        
+        setStoryState('awaiting-turn');
+        await speakFrontend(`${briefSummary} How would you like the story to end?`);
+        setCanSend(true);
+      } else {
+        // Comprehension, Exercise, Worksheet: suggest story possibilities
+        // Generate a brief paraphrased summary using AI
+        const lastAssistant = [...storyTranscript].reverse().find(t => t.role === 'assistant');
+        let briefSummary = 'Let me remind you where we left off.';
+        
+        if (lastAssistant) {
+          const summaryInstruction = [
+            'You are Ms. Sonoma talking to a 5 year old.',
+            `Briefly paraphrase this story part in 1-2 short sentences: "${lastAssistant.text.replace(/To be continued\.?/i, '').trim()}"`,
+            'Keep it simple and exciting.',
+            'Do not add "To be continued."'
+          ].filter(Boolean).join(' ');
+          
+          try {
+            const res = await fetch('/api/sonoma', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ instruction: summaryInstruction, innertext: '' })
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.reply) {
+                briefSummary = data.reply.trim();
+              }
+            }
+          } catch (err) {
+            console.warn('[Story] Failed to generate summary:', err);
+          }
+        }
+        
+        // Generate story suggestions using AI
+        const storyContext = storyTranscript.length > 0
+          ? 'Story so far: ' + storyTranscript.slice(-4).map(turn => 
+              turn.role === 'user' ? `Child: "${turn.text}"` : `You: "${turn.text}"`
+            ).join(' ')
+          : '';
+        
+        const suggestionInstruction = [
+          'You are Ms. Sonoma helping a child continue their story.',
+          storyContext,
+          'Suggest 3 brief, exciting story possibilities for what could happen next.',
+          'Keep each suggestion to 4-6 words maximum.',
+          'Make them fun and age-appropriate.',
+          'Format as: "You could say: [option 1], or [option 2], or [option 3]."'
+        ].filter(Boolean).join(' ');
+        
+        let suggestions = 'You could say: the hero finds treasure, or a friend appears, or something magical happens.';
+        try {
+          const res = await fetch('/api/sonoma', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ instruction: suggestionInstruction, innertext: '' })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.reply) {
+              suggestions = data.reply;
+            }
+          }
+        } catch (err) {
+          console.warn('[Story] Failed to generate suggestions:', err);
+        }
+        
+        setStoryState('awaiting-turn');
+        await speakFrontend(`${briefSummary} What would you like to happen next? ${suggestions}`);
+        setCanSend(true);
+      }
+    } else {
+      // New story - start with setup
+      console.log('[STORY] Starting new story - collecting characters');
+      setStoryTranscript([]);
+      setStoryCharacters('');
+      setStorySetting('');
+      setStoryPlot('');
+      setStorySetupStep('characters');
+      setStoryPhase(phase); // Track which phase the story started in
+      setStoryState('awaiting-setup');
+      await speakFrontend('Who are the characters in the story?');
+      setCanSend(true);
+    }
     console.log('[STORY] handleStoryStart complete');
-  }, [setShowOpeningActions, setStoryUsedThisGate, setStoryTranscript, setStoryState, setCanSend, speakFrontend]);
+  }, [
+    hasGoldenKey, setShowOpeningActions, setStoryUsedThisGate, setStoryTranscript, setStoryState, 
+    setStorySetupStep, setStoryCharacters, setStorySetting, setStoryPlot, setStoryPhase,
+    setCanSend, speakFrontend, storyTranscript, phase, subPhase
+  ]);
 
   const handleStoryYourTurn = useCallback(async (inputValue) => {
     const trimmed = String(inputValue ?? '').trim();
     if (!trimmed) return;
     setCanSend(false);
     
+    // Handle setup phase
+    if (storySetupStep === 'characters') {
+      setStoryCharacters(trimmed);
+      setStorySetupStep('setting');
+      await speakFrontend('Where does the story take place?');
+      setCanSend(true);
+      return;
+    }
+    
+    if (storySetupStep === 'setting') {
+      setStorySetting(trimmed);
+      setStorySetupStep('plot');
+      await speakFrontend('What happens in the story?');
+      setCanSend(true);
+      return;
+    }
+    
+    if (storySetupStep === 'plot') {
+      setStoryPlot(trimmed);
+      setStorySetupStep('complete');
+      
+      // Now generate the first part of the story with all setup info
+      const instruction = [
+        'You are Ms. Sonoma talking to a 5 year old.',
+        'You are starting a collaborative story.',
+        `The characters are: ${storyCharacters}`,
+        `The setting is: ${storySetting}`,
+        `The plot involves: ${trimmed}`,
+        'Tell the first part of the story in 2-3 short sentences.',
+        'Follow the child\'s ideas closely and make the story about what they want unless it\'s inappropriate.',
+        'Make it fun and age-appropriate for a child.',
+        'End by saying "To be continued."'
+      ].filter(Boolean).join(' ');
+      
+      let responseText = 'Once upon a time. To be continued.';
+      try {
+        const res = await fetch('/api/sonoma', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ instruction, innertext: '' })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          responseText = (data && data.reply) ? data.reply : responseText;
+        }
+      } catch (err) {
+        console.warn('[Story] API call failed:', err);
+      }
+      
+      const setupTranscript = [
+        { role: 'user', text: `Characters: ${storyCharacters}` },
+        { role: 'user', text: `Setting: ${storySetting}` },
+        { role: 'user', text: `Plot: ${trimmed}` },
+        { role: 'assistant', text: responseText }
+      ];
+      setStoryTranscript(setupTranscript);
+      setStoryState('inactive');
+      await speakFrontend(responseText);
+      setShowOpeningActions(true);
+      setCanSend(true);
+      return;
+    }
+    
+    // Handle story continuation
     const updatedTranscript = [...storyTranscript, { role: 'user', text: trimmed }];
     
     try {
@@ -369,24 +603,39 @@ export function useDiscussionHandlers({
       setCaptionIndex(prevLen);
     } catch {}
     
+    // Check if this is the test phase (should end the story)
+    const isTestPhase = phase === 'test' || subPhase === 'test-active';
+    
     const storyContext = updatedTranscript.length > 0
       ? 'Story so far: ' + updatedTranscript.map(turn => 
           turn.role === 'user' ? `Child: "${turn.text}"` : `You: "${turn.text}"`
         ).join(' ')
       : '';
     
-    const instruction = [
-      'You are Ms. Sonoma talking to a 5 year old.',
-      'You are telling a collaborative story in turns.',
-      storyContext,
-      `The child just said: "${trimmed.replace(/["]/g, "'")}"`,
-      'Continue the story playfully in 2-3 short sentences.',
-      'Build naturally on what came before.',
-      'Make it fun and age-appropriate for a child.',
-      'Do not end the story yet.'
-    ].filter(Boolean).join(' ');
+    const instruction = isTestPhase
+      ? [
+          'You are Ms. Sonoma talking to a 5 year old.',
+          'You are ending a collaborative story.',
+          storyContext,
+          `The child wants the story to end like this: "${trimmed.replace(/["]/g, "'")}"`,
+          'End the story based on their idea in 2-3 short sentences.',
+          'Follow the child\'s ideas closely and make the ending about what they want unless it\'s inappropriate.',
+          'Make it satisfying and age-appropriate for a child.',
+          'Say "The end." at the very end.'
+        ].filter(Boolean).join(' ')
+      : [
+          'You are Ms. Sonoma talking to a 5 year old.',
+          'You are telling a collaborative story in turns.',
+          storyContext,
+          `The child just said: "${trimmed.replace(/["]/g, "'")}"`,
+          'Continue the story in 2-3 short sentences.',
+          'Follow the child\'s ideas closely and make the story about what they want unless it\'s inappropriate.',
+          'Build naturally on what came before.',
+          'Make it fun and age-appropriate for a child.',
+          'End by saying "To be continued."'
+        ].filter(Boolean).join(' ');
     
-    let responseText = 'What happens next?';
+    let responseText = isTestPhase ? 'And they all lived happily ever after. The end.' : 'What happens next? To be continued.';
     try {
       const res = await fetch('/api/sonoma', {
         method: 'POST',
@@ -402,12 +651,38 @@ export function useDiscussionHandlers({
     }
     
     setStoryTranscript([...updatedTranscript, { role: 'assistant', text: responseText }]);
-    setStoryState('awaiting-turn');
-    await speakFrontend(responseText);
-    setCanSend(true);
-  }, [storyTranscript, captionSentencesRef, setCaptionSentences, setCaptionIndex, setStoryTranscript, setStoryState, setCanSend, speakFrontend]);
+    
+    if (isTestPhase) {
+      // Story ends in test phase - add thank you message
+      setStoryState('inactive');
+      setStoryTranscript([]); // Clear for next session
+      setStorySetupStep('');
+      setStoryCharacters('');
+      setStorySetting('');
+      setStoryPlot('');
+      setStoryPhase('');
+      await speakFrontend(responseText);
+      // Add thank you message after the story ends
+      await speakFrontend('Thanks for helping me tell this story.');
+      setShowOpeningActions(true);
+      setCanSend(true);
+    } else {
+      // Story continues
+      setStoryState('inactive');
+      await speakFrontend(responseText);
+      setShowOpeningActions(true);
+      setCanSend(true);
+    }
+  }, [
+    storyTranscript, storySetupStep, storyCharacters, storySetting, storyPlot, phase, subPhase,
+    captionSentencesRef, setCaptionSentences, setCaptionIndex, setStoryTranscript, setStoryState,
+    setStorySetupStep, setStoryCharacters, setStorySetting, setStoryPlot, setStoryPhase,
+    setCanSend, setShowOpeningActions, speakFrontend
+  ]);
 
   const handleStoryEnd = useCallback(async (inputValue, endingType = 'happy') => {
+    // This function is kept for backward compatibility but is no longer used
+    // Story endings are now handled through handleStoryYourTurn in test phase
     const trimmed = String(inputValue ?? '').trim();
     setCanSend(false);
     
@@ -429,16 +704,16 @@ export function useDiscussionHandlers({
         ).join(' ')
       : '';
     
-    const userPart = trimmed ? `The child just said: "${trimmed.replace(/["]/g, "'")}"` : '';
-    const endingInstruction = endingType === 'funny' 
-      ? 'Wrap up the story with a funny and silly conclusion in 2-3 short sentences. Make it unexpected and amusing for a child.'
-      : 'Wrap up the story with a playful conclusion in 2-3 short sentences. Make the ending happy and satisfying for a child.';
+    const userPart = trimmed ? `The child wants the story to end like this: "${trimmed.replace(/["]/g, "'")}"` : '';
     const instruction = [
       'You are Ms. Sonoma talking to a 5 year old.',
       'You are ending a collaborative story.',
       storyContext,
       userPart,
-      endingInstruction
+      'End the story based on their idea in 2-3 short sentences.',
+      'Follow the child\'s ideas closely and make the ending about what they want unless it\'s inappropriate.',
+      'Make it satisfying and age-appropriate for a child.',
+      'Say "The end." at the very end.'
     ].filter(Boolean).join(' ');
     
     let responseText = 'And they all lived happily ever after. The end.';
@@ -457,11 +732,20 @@ export function useDiscussionHandlers({
     }
     
     setStoryTranscript([]);
+    setStorySetupStep('');
+    setStoryCharacters('');
+    setStorySetting('');
+    setStoryPlot('');
+    setStoryPhase('');
     await speakFrontend(responseText);
     setStoryState('inactive');
     setShowOpeningActions(true);
     setCanSend(true);
-  }, [storyTranscript, captionSentencesRef, setCaptionSentences, setCaptionIndex, setStoryTranscript, setCanSend, speakFrontend, setStoryState, setShowOpeningActions]);
+  }, [
+    storyTranscript, captionSentencesRef, setCaptionSentences, setCaptionIndex, 
+    setStoryTranscript, setStorySetupStep, setStoryCharacters, setStorySetting, 
+    setStoryPlot, setStoryPhase, setCanSend, speakFrontend, setStoryState, setShowOpeningActions
+  ]);
 
   return {
     // Exported handlers

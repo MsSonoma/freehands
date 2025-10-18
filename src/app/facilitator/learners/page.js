@@ -23,6 +23,7 @@ export default function LearnersPage() {
 			setLoading(true);
 			try {
 				const data = await listLearners();
+				console.log('📋 listLearners returned:', data);
 				// Fetch plan_tier if possible to compute max learners
 				let tier = 'free';
 				if (hasSupabaseEnv()) {
@@ -41,6 +42,7 @@ export default function LearnersPage() {
 					setPlanTier(tier);
 					setMaxLearners(ent.learnersMax);
 					setItems(data);
+					console.log('✅ setItems called with:', data);
 				}
 			} catch (err) {
                 const msg = err?.message || String(err) || 'Failed to load learners';
@@ -118,16 +120,29 @@ export default function LearnersPage() {
 
 	const handleInlineSave = async (idx, updated) => {
 		const id = items[idx].id;
+		console.log('🔍 handleInlineSave called with:', { idx, id, updated });
 		setSavingId(id);
 		setSavedId(null); // Clear any existing saved notification
 			try {
-				await updateLearner(id, updated);
-			setItems(prev => prev.map((x,i) => i===idx ? { ...x, ...updated, ...(updated.targets?{
-				comprehension: Number(updated.targets.comprehension),
-				exercise: Number(updated.targets.exercise),
-				worksheet: Number(updated.targets.worksheet),
-				test: Number(updated.targets.test),
-			}:{}) } : x));
+				console.log('💾 Calling updateLearner with id:', id, 'updates:', updated);
+				const result = await updateLearner(id, updated);
+				console.log('✅ updateLearner returned:', result);
+			setItems(prev => prev.map((x,i) => i===idx ? { 
+				...x, 
+				...updated, 
+				...(updated.targets?{
+					comprehension: Number(updated.targets.comprehension),
+					exercise: Number(updated.targets.exercise),
+					worksheet: Number(updated.targets.worksheet),
+					test: Number(updated.targets.test),
+				}:{}),
+				...(updated.session_timer_minutes !== undefined ? {
+					session_timer_minutes: Number(updated.session_timer_minutes)
+				}:{}),
+				...(updated.golden_keys !== undefined ? {
+					golden_keys: Number(updated.golden_keys)
+				}:{})
+			} : x));
 			// Show saved notification
 			setSavedId(id);
 			// Clear saved notification after 2 seconds
@@ -299,17 +314,106 @@ function Dial({ value, onChange, options, ariaLabel, title }){
 	);
 }
 
+// TimerDial component specifically for session timer (displays in hours)
+function TimerDial({ value, onChange, ariaLabel }){
+	const TIMER_OPTIONS = ['60', '120', '180', '240', '300']; // minutes
+	const TIMER_LABELS = { '60': '1h', '120': '2h', '180': '3h', '240': '4h', '300': '5h' };
+
+	const labels = TIMER_OPTIONS.map(v => TIMER_LABELS[v]);
+	let idx = TIMER_OPTIONS.indexOf(String(value));
+	if (idx === -1) idx = 0; // default to 1 hour
+
+	const setIdx = (newIdx) => {
+		const clamped = Math.max(0, Math.min(TIMER_OPTIONS.length - 1, newIdx));
+		if (clamped === idx) return;
+		const out = TIMER_OPTIONS[clamped];
+		onChange && onChange({ target: { value: out } });
+	};
+
+	const step = (delta) => setIdx(idx + delta);
+
+	const onKey = (e) => {
+		if (['ArrowUp','ArrowRight'].includes(e.key)) { e.preventDefault(); step(1); }
+		else if (['ArrowDown','ArrowLeft'].includes(e.key)) { e.preventDefault(); step(-1); }
+		else if (e.key === 'Home') { e.preventDefault(); setIdx(0); }
+		else if (e.key === 'End') { e.preventDefault(); setIdx(TIMER_OPTIONS.length - 1); }
+	};
+
+	const onWheel = (e) => {
+		e.preventDefault();
+		const delta = Math.sign(e.deltaY) * -1;
+		step(delta);
+	};
+
+	const containerStyle = { display:'flex', alignItems:'center', gap:8, justifyContent:'space-between', padding:'6px 8px', border:'1px solid #e6e6e6', borderRadius:8, userSelect:'none', background:'#fff', width:'100%', maxWidth:100, minHeight:42 };
+	const btnStyle = { padding:'6px 8px', border:'1px solid #ddd', borderRadius:6, background:'#fff', cursor:'pointer', flex:'0 0 auto', color:'#0b1220' };
+	const valueStyle = { flex: '1 1 auto', textAlign:'center', fontWeight:700, color:'#0b1220' };
+
+	return (
+		<div
+			role="spinbutton"
+			aria-label={ariaLabel}
+			aria-valuemin={1}
+			aria-valuemax={5}
+			aria-valuenow={idx + 1}
+			aria-valuetext={labels[idx]}
+			tabIndex={0}
+			onKeyDown={onKey}
+			onWheel={onWheel}
+			style={containerStyle}
+		>
+			<button
+				type="button"
+				aria-label={`Decrease ${ariaLabel || 'timer'}`}
+				tabIndex={-1}
+				onClick={()=>step(-1)}
+				disabled={idx <= 0}
+				style={btnStyle}
+			>
+				◀
+			</button>
+			<div style={valueStyle}>{labels[idx]}</div>
+			<button
+				type="button"
+				aria-label={`Increase ${ariaLabel || 'timer'}`}
+				tabIndex={-1}
+				onClick={()=>step(1)}
+				disabled={idx >= TIMER_OPTIONS.length - 1}
+				style={btnStyle}
+			>
+				▶
+			</button>
+		</div>
+	);
+}
+
 const range = (a,b)=>Array.from({length:b-a+1},(_,i)=>String(a+i));
 const GRADES = ['K',...range(1,12)];
 const TARGETS = range(3,20);
 
 function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, onDelete }){
+	console.log('🎯 LearnerRow render, item:', item);
 	const [name, setName] = useState(item.name || '');
 	const [grade, setGrade] = useState(item.grade || 'K');
 	const [comprehension, setComprehension] = useState(String(item.comprehension ?? item.targets?.comprehension ?? 3));
 	const [exercise, setExercise] = useState(String(item.exercise ?? item.targets?.exercise ?? 3));
 	const [worksheet, setWorksheet] = useState(String(item.worksheet ?? item.targets?.worksheet ?? 3));
 	const [test, setTest] = useState(String(item.test ?? item.targets?.test ?? 3));
+	const [sessionTimer, setSessionTimer] = useState(String(item.session_timer_minutes || '60'));
+	const [goldenKeys, setGoldenKeys] = useState(String(item.golden_keys ?? 0));
+	console.log('⏱️ LearnerRow initial sessionTimer state:', sessionTimer, 'from item.session_timer_minutes:', item.session_timer_minutes);
+
+	// Sync state with prop changes (e.g., after save updates the item)
+	useEffect(() => {
+		console.log('🔄 LearnerRow useEffect triggered, item.session_timer_minutes:', item.session_timer_minutes);
+		if (item.session_timer_minutes !== undefined) {
+			console.log('✅ Setting sessionTimer to:', String(item.session_timer_minutes));
+			setSessionTimer(String(item.session_timer_minutes));
+		}
+		if (item.golden_keys !== undefined) {
+			setGoldenKeys(String(item.golden_keys));
+		}
+	}, [item.session_timer_minutes, item.golden_keys]);
 
     // Responsive redesign: remove fixed 616px dial grid and allow wrapping on small screens.
     // Use flex for top row and auto-fit grid for dials.
@@ -344,7 +448,7 @@ function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, o
 						</div>
           </div>
 					<div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'flex-end', alignItems:'center', flex:'1 1 320px' }}>
-            <button onClick={()=>onSave({ name, grade, targets:{ comprehension, exercise, worksheet, test } })} disabled={saving} style={{ ...actionBtnStyle, color:'#0b1220' }}>{saving ? 'Saving…' : 'Save'}<span aria-hidden style={{ fontSize:16, lineHeight:1 }}>💾</span></button>
+            <button onClick={()=>onSave({ name, grade, targets:{ comprehension, exercise, worksheet, test }, session_timer_minutes: Number(sessionTimer), golden_keys: Number(goldenKeys) })} disabled={saving} style={{ ...actionBtnStyle, color:'#0b1220' }}>{saving ? 'Saving…' : 'Save'}<span aria-hidden style={{ fontSize:16, lineHeight:1 }}>💾</span></button>
             {saved && (
 			  <div style={{ padding:'8px 12px', background:'#d4f8d4', color:'#2d5a2d', borderRadius:8, fontSize:'clamp(0.9rem, 1.6vw, 1rem)', fontWeight:500 }}>Saved</div>
             )}
@@ -376,6 +480,14 @@ function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, o
 									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
 			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Test</div>
             <Dial value={test} onChange={e => setTest(e.target.value)} options={TARGETS} ariaLabel="Test" />
+									</div>
+									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
+			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Timer</div>
+            <TimerDial value={sessionTimer} onChange={e => setSessionTimer(e.target.value)} ariaLabel="Session Timer" />
+									</div>
+									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
+			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Golden Keys</div>
+            <Dial value={goldenKeys} onChange={e => setGoldenKeys(e.target.value)} options={range(0, 10)} ariaLabel="Golden Keys" title="Golden Keys" />
 									</div>
 
 											{/* Transcripts as a matching tile */}

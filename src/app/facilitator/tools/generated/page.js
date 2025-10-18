@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
+import LessonEditor from '@/components/LessonEditor'
 
 
 export default function GeneratedLessonsPage(){
@@ -9,10 +10,11 @@ export default function GeneratedLessonsPage(){
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
+  const [busyItems, setBusyItems] = useState({}) // { [file]: 'approving' | 'deleting' | 'editing' }
   const [error, setError] = useState('')
-  const [textPreviews, setTextPreviews] = useState({}) // { [file]: string }
   const [changeRequests, setChangeRequests] = useState({}) // { [file]: string }
   const [showChangeModal, setShowChangeModal] = useState(null) // { file, userId } when modal open
+  const [editingLesson, setEditingLesson] = useState(null) // { file, userId, lesson } when editing
 
   async function refresh(){
     setLoading(true)
@@ -52,7 +54,7 @@ export default function GeneratedLessonsPage(){
 
   async function handleDelete(file, userId){
     if (!confirm('Delete this lesson?')) return
-    setBusy(true)
+    setBusyItems(prev => ({ ...prev, [file]: 'deleting' }))
     try {
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
@@ -67,13 +69,17 @@ export default function GeneratedLessonsPage(){
       }
       await refresh()
     } finally {
-      setBusy(false)
+      setBusyItems(prev => {
+        const next = { ...prev }
+        delete next[file]
+        return next
+      })
     }
   }
 
   async function handleApprove(file, userId){
     console.log('[APPROVE] Starting approval for:', file, 'userId:', userId)
-    setBusy(true)
+    setBusyItems(prev => ({ ...prev, [file]: 'approving' }))
     setError('')
     try {
       const supabase = getSupabaseClient()
@@ -100,162 +106,16 @@ export default function GeneratedLessonsPage(){
       console.error('[APPROVE] Exception:', err)
       setError(err?.message || 'Failed to approve lesson')
     } finally {
-      setBusy(false)
+      setBusyItems(prev => {
+        const next = { ...prev }
+        delete next[file]
+        return next
+      })
     }
   }
 
-  function firstOf(obj, keys, fallback = undefined) {
-    for (const k of keys) {
-      const v = obj?.[k]
-      if (v !== undefined && v !== null) return v
-    }
-    return fallback
-  }
-
-  function toArray(x) {
-    if (!x) return []
-    if (Array.isArray(x)) return x
-    return [x]
-  }
-
-  function normalizeChoices(choices) {
-    const arr = toArray(choices).map(c => {
-      if (typeof c === 'string') return c
-      if (!c || typeof c !== 'object') return ''
-      return firstOf(c, ['text', 'label', 'choice', 'value'], JSON.stringify(c))
-    })
-    return arr.filter(Boolean)
-  }
-
-  function boolToWord(v) {
-    const s = typeof v === 'string' ? v.trim().toLowerCase() : v
-    if (s === true || s === 'true' || s === 't' || s === '1' || s === 'yes') return 'True'
-    return 'False'
-  }
-
-  function coalesceTitle(obj, fallbackTitle) {
-    return firstOf(obj, ['title', 'topic', 'name', 'lessonTitle'], fallbackTitle)
-  }
-
-  function renderLessonText(obj, file) {
-    try {
-      const lines = []
-      const title = coalesceTitle(obj, file)
-      const grade = firstOf(obj, ['grade', 'gradeLevel', 'level'], '—')
-      const diff = firstOf(obj, ['difficulty', 'levelName'], '—')
-      const subject = firstOf(obj, ['subject', 'category'], '—')
-      lines.push(`# ${title}`)
-      lines.push(`Grade: ${grade}  •  Difficulty: ${diff}  •  Subject: ${subject}`)
-      lines.push('')
-
-      const blurb = firstOf(obj, ['blurb', 'summary', 'overview', 'description'])
-      if (blurb) { lines.push(blurb); lines.push('') }
-
-      // Vocabulary
-      let vocab = firstOf(obj, ['vocab', 'vocabulary', 'vocabularyTerms', 'terms'])
-      if (vocab) {
-        const list = toArray(vocab).map(v => {
-          if (typeof v === 'string') return { term: v, def: '' }
-          if (!v || typeof v !== 'object') return null
-          const term = firstOf(v, ['term', 'word', 'title', 'name'], '')
-          const def = firstOf(v, ['definition', 'def', 'meaning', 'explanation'], '')
-          return term ? { term, def } : null
-        }).filter(Boolean)
-        if (list.length) {
-          lines.push('Vocabulary:')
-          for (const { term, def } of list) {
-            lines.push(`- ${term}${def ? ` — ${def}` : ''}`)
-          }
-          lines.push('')
-        }
-      }
-
-      // Teaching notes
-      const notes = firstOf(obj, ['teachingNotes', 'teacherNotes', 'notes'])
-      if (notes) {
-        lines.push('Teaching Notes:')
-        lines.push(typeof notes === 'string' ? notes : JSON.stringify(notes, null, 2))
-        lines.push('')
-      }
-
-  // Collect questions across likely keys
-      const sections = []
-  const mc = toArray(firstOf(obj, ['multipleChoice', 'multiplechoice', 'mc']))
-      if (mc.length) sections.push({ kind: 'Multiple Choice', items: mc })
-  const tf = toArray(firstOf(obj, ['trueFalse', 'truefalse', 'tf', 'true_false']))
-      if (tf.length) sections.push({ kind: 'True/False', items: tf })
-  const sa = toArray(firstOf(obj, ['shortAnswer', 'shortanswer', 'sa', 'short_answer']))
-      if (sa.length) sections.push({ kind: 'Short Answer', items: sa })
-  const fib = toArray(firstOf(obj, ['fillInBlank', 'fillIn', 'fillInTheBlank', 'fill_in', 'fillintheblank']))
-      if (fib.length) sections.push({ kind: 'Fill in the Blank', items: fib })
-  const qa = toArray(firstOf(obj, ['qa', 'questions', 'q_a', 'qAndA']))
-      if (qa.length) sections.push({ kind: 'Questions', items: qa })
-  const sample = toArray(firstOf(obj, ['sample', 'qaSample', 'examples', 'qna', 'q_and_a']))
-  if (sample.length) sections.push({ kind: 'Sample Q&A', items: sample })
-
-      for (const sec of sections) {
-        lines.push(sec.kind + ':')
-        sec.items.forEach((qItem, idx) => {
-          if (!qItem || typeof qItem !== 'object') {
-            if (qItem) lines.push(`${idx + 1}. ${String(qItem)}`)
-            return
-          }
-          const q = firstOf(qItem, ['q', 'Q', 'question', 'prompt', 'text'], '')
-          const a = firstOf(qItem, ['a', 'A', 'answer', 'answers', 'solution', 'explanation', 'expected', 'expectedAny', 'sample'])
-          if (sec.kind === 'Multiple Choice') {
-            // Choices may be in 'choices', 'options', or an array under 'A' (variant)
-            let choices = normalizeChoices(firstOf(qItem, ['choices', 'options']))
-            if (!choices.length) choices = normalizeChoices(qItem.A)
-            let answerText = ''
-            const correctIndex = firstOf(qItem, ['correctIndex', 'answerIndex', 'CorrectIndex'])
-            const correctLetter = firstOf(qItem, ['correct', 'Correct', 'letter'])
-            const correctText = firstOf(qItem, ['correctAnswer', 'correctAnswerText'])
-            if (typeof correctIndex === 'number' && choices[correctIndex] !== undefined) answerText = choices[correctIndex]
-            else if (typeof a === 'number' && choices[a] !== undefined) answerText = choices[a]
-            else if (typeof a === 'string') answerText = a
-            else if (correctLetter && typeof correctLetter === 'string') {
-              const idx = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(correctLetter.toUpperCase())
-              if (idx >= 0 && choices[idx] !== undefined) answerText = choices[idx]
-            }
-            else if (typeof correctText === 'string') answerText = correctText
-            lines.push(`${idx + 1}. ${q}`)
-            choices.forEach((c, i) => {
-              const letter = String.fromCharCode(65 + i)
-              lines.push(`   ${letter}) ${c}`)
-            })
-            if (answerText) lines.push(`   Answer: ${answerText}`)
-          } else if (sec.kind === 'True/False') {
-            let ans = a
-            if (ans === undefined) ans = firstOf(qItem, ['correct', 'Correct'])
-            lines.push(`${idx + 1}. ${q} — Answer: ${boolToWord(ans)}`)
-          } else if (sec.kind === 'Sample Q&A') {
-            const ansText = Array.isArray(a) ? a.join(', ') : (a ?? firstOf(qItem, ['expectedAny', 'expected', 'answers']))
-            const flatAns = Array.isArray(ansText) ? ansText.join(', ') : (ansText || '')
-            lines.push(`${idx + 1}. ${q}`)
-            if (flatAns) lines.push(`   Sample: ${flatAns}`)
-          } else if (sec.kind === 'Fill in the Blank') {
-            const ansText = Array.isArray(a) ? a.join(', ') : ((a ?? firstOf(qItem, ['expectedAny', 'expected', 'answers'])) || '')
-            lines.push(`${idx + 1}. ${q}`)
-            if (ansText) lines.push(`   Answer: ${ansText}`)
-          } else if (sec.kind === 'Short Answer' || sec.kind === 'Questions') {
-            const ansTextRaw = a ?? firstOf(qItem, ['expectedAny', 'expected', 'answers'])
-            const ansText = Array.isArray(ansTextRaw) ? ansTextRaw.join('\n') : (ansTextRaw || '')
-            lines.push(`${idx + 1}. ${q}`)
-            if (ansText) lines.push(`   Sample: ${ansText}`)
-          }
-        })
-        lines.push('')
-      }
-
-      if (lines[lines.length - 1] === '') lines.pop()
-      return lines.join('\n')
-    } catch (e) {
-      return `Preview unavailable. ${e?.message || ''}`
-    }
-  }
-
-  async function handlePreviewText(file, userId) {
-    setBusy(true)
+  async function handleEditLesson(file, userId) {
+    setBusyItems(prev => ({ ...prev, [file]: 'editing' }))
     setError('')
     try {
       const params = new URLSearchParams({ file, userId })
@@ -265,20 +125,56 @@ export default function GeneratedLessonsPage(){
         setError(`Failed to load lesson JSON (${res.status}). ${snippet.slice(0, 120)}`)
         return
       }
-      const data = await res.json()
-      const text = renderLessonText(data, file)
-      setTextPreviews(prev => ({ ...prev, [file]: text }))
+      const lesson = await res.json()
+      setEditingLesson({ file, userId, lesson })
+    } finally {
+      setBusyItems(prev => {
+        const next = { ...prev }
+        delete next[file]
+        return next
+      })
+    }
+  }
+
+  async function handleSaveLesson(updatedLesson) {
+    if (!editingLesson) return
+    setBusy(true)
+    setError('')
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      
+      const res = await fetch('/api/facilitator/lessons/update', {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json', 
+          ...(token ? { Authorization: `Bearer ${token}` } : {}) 
+        },
+        body: JSON.stringify({ 
+          file: editingLesson.file, 
+          userId: editingLesson.userId,
+          lesson: updatedLesson 
+        })
+      })
+
+      const js = await res.json().catch(() => null)
+      if (!res.ok) {
+        setError(js?.error || 'Failed to save lesson')
+        return
+      }
+
+      // Success - close editor and refresh list
+      setEditingLesson(null)
+      await refresh()
     } finally {
       setBusy(false)
     }
   }
 
-  function handleCloseTextPreview(file) {
-    setTextPreviews(prev => {
-      const next = { ...prev }
-      delete next[file]
-      return next
-    })
+  function handleCancelEdit() {
+    setEditingLesson(null)
+    setError('')
   }
 
   async function handleRequestChanges() {
@@ -330,51 +226,62 @@ export default function GeneratedLessonsPage(){
   return (
     <main style={{ padding:24, width:'100%', margin:0 }}>
       <h1 style={{ marginTop:0 }}>Generated Lessons</h1>
-      {!ent.facilitatorTools ? (
+      
+      {/* Show editor if editing a lesson */}
+      {editingLesson && (
+        <div style={{ marginBottom: 24 }}>
+          <LessonEditor
+            initialLesson={editingLesson.lesson}
+            onSave={handleSaveLesson}
+            onCancel={handleCancelEdit}
+            busy={busy}
+          />
+        </div>
+      )}
+
+      {!editingLesson && !ent.facilitatorTools ? (
         <p>Premium required. <a href="/facilitator/plan">View plans</a>.</p>
-      ) : loading ? (
+      ) : !editingLesson && loading ? (
         <p>Loading…</p>
-      ) : items.length === 0 ? (
+      ) : !editingLesson && items.length === 0 ? (
         <p>No generated lessons yet. Use Lesson Maker to create one.</p>
-      ) : (
+      ) : !editingLesson ? (
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(520px, 1fr))', gap:12 }}>
           {items.map(it => {
-            const isPreviewOpen = !!textPreviews[it.file]
+            const itemBusy = busyItems[it.file]
+            const isApproving = itemBusy === 'approving'
+            const isDeleting = itemBusy === 'deleting'
+            const isEditing = itemBusy === 'editing'
+            const isItemBusy = !!itemBusy
+            
             return (
-            <div key={it.file} style={{ ...card, ...(isPreviewOpen ? { gridColumn:'1 / -1' } : null) }}>
+            <div key={it.file} style={card}>
               <h3 style={{ margin:'0 0 4px' }}>{it.title || it.file}</h3>
               <p style={{ margin:'0 0 8px', color:'#555' }}>Grade: {it.grade || '—'} · {it.difficulty || '—'} · Subject: {it.subject || '—'} {it.approved ? '· Approved' : ''}{it.needsUpdate ? ' · Needs Update' : ''}</p>
-              <div style={{ display:'flex', gap:8, flexWrap:'nowrap' }}>
-                <button style={btnSecondary} disabled={busy} onClick={()=>handlePreviewText(it.file, it.userId)}>
-                  {busy ? 'Loading…' : (textPreviews[it.file] ? 'Refresh Preview' : 'Preview Text')}
+              <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                <button style={btn} disabled={isItemBusy} onClick={()=>handleEditLesson(it.file, it.userId)}>
+                  {isEditing ? 'Loading…' : 'Edit Lesson'}
                 </button>
-                <button style={btn} disabled={busy} onClick={()=>openChangeModal(it.file, it.userId)}>
-                  Request Changes
+                <button style={btnSecondary} disabled={isItemBusy} onClick={()=>openChangeModal(it.file, it.userId)}>
+                  Request AI Changes
                 </button>
-                <button style={{...btnApprove, ...(it.approved && !it.needsUpdate ? {opacity:0.5} : {})}} disabled={busy || (it.approved && !it.needsUpdate)} onClick={()=>handleApprove(it.file, it.userId)}>
-                  {busy 
+                <button 
+                  style={{...btnApprove, ...(it.approved && !it.needsUpdate ? {opacity:0.5} : {})}} 
+                  disabled={isApproving || (it.approved && !it.needsUpdate)} 
+                  onClick={()=>handleApprove(it.file, it.userId)}
+                >
+                  {isApproving 
                     ? (it.approved && it.needsUpdate ? 'Updating…' : 'Approving…') 
                     : (it.approved && !it.needsUpdate ? 'Approved' : it.approved && it.needsUpdate ? 'Update' : 'Approve')}
                 </button>
-                <button style={btnDanger} disabled={busy} onClick={()=>handleDelete(it.file, it.userId)}>
-                  {busy ? 'Deleting…' : 'Delete'}
+                <button style={btnDanger} disabled={isItemBusy} onClick={()=>handleDelete(it.file, it.userId)}>
+                  {isDeleting ? 'Deleting…' : 'Delete'}
                 </button>
               </div>
-              {textPreviews[it.file] && (
-                <div style={{ marginTop:10 }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6, color:'#555' }}>
-                    <span>Inline preview</span>
-                    <button onClick={()=>handleCloseTextPreview(it.file)} style={{ ...btnSecondary, padding:'4px 8px' }}>Close</button>
-                  </div>
-                  <pre style={{ whiteSpace:'pre-wrap', wordBreak:'break-word', border:'1px solid #e5e7eb', borderRadius:8, padding:16, background:'#f9fafb', maxHeight:480, overflow:'auto', fontFamily:'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans, "Apple Color Emoji", "Segoe UI Emoji"', fontSize:14, lineHeight:1.5 }}>
-                    {textPreviews[it.file]}
-                  </pre>
-                </div>
-              )}
             </div>
           )})}
         </div>
-      )}
+      ) : null}
       {error && <p style={{ color:'#b91c1c', marginTop:12 }}>{error}</p>}
       
       {/* Change Request Modal */}

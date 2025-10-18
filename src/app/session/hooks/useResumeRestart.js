@@ -19,7 +19,7 @@ import { appendTranscriptSegment } from '../../lib/transcriptsClient';
  *     setCurrentWorksheetIndex, setCurrentCompProblem, setCurrentExerciseProblem,
  *     setTestUserAnswers, setTestCorrectByIndex, setTestCorrectCount, setTestFinalPercent,
  *     setJokeUsedThisGate, setRiddleUsedThisGate, setPoemUsedThisGate, setStoryUsedThisGate,
- *     setTicker, setCaptionSentences, setCaptionIndex, setTranscriptSessionId
+ *     setTimerPaused, setTicker, setCaptionSentences, setCaptionIndex, setTranscriptSessionId
  *   - Refs: preferHtmlAudioOnceRef, forceNextPlaybackRef, activeQuestionBodyRef,
  *     worksheetIndexRef, captionSentencesRef, sessionStartRef, transcriptSegmentStartIndexRef
  *   - Functions: unlockAudioPlayback, startDiscussionStep, teachDefinitions, promptGateRepeat,
@@ -70,6 +70,7 @@ export function useResumeRestart({
   setRiddleUsedThisGate,
   setPoemUsedThisGate,
   setStoryUsedThisGate,
+  setTimerPaused,
   setTicker,
   setCaptionSentences,
   setCaptionIndex,
@@ -263,6 +264,20 @@ export function useResumeRestart({
       const ans = typeof window !== 'undefined' ? window.prompt("Restart will clear saved progress and cannot be reversed. Type 'ok' to confirm.") : null;
       if (!ans || String(ans).trim().toLowerCase() !== 'ok') { try { console.info('[Restart] cancelled by user'); } catch {} return; }
     } catch {}
+    
+    // Reset timer state for restart
+    try {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('session_timer_state');
+        console.info('[Restart] Timer reset');
+      }
+      if (setTimerPaused) {
+        setTimerPaused(false);
+      }
+    } catch (e) {
+      console.warn('[Restart] Failed to reset timer:', e);
+    }
+    
     // Stop all activity and cut the current transcript segment so nothing is lost
     try { abortAllActivity(); } catch {}
     try {

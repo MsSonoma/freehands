@@ -448,6 +448,7 @@ function PinManager({ email }) {
 
   const save = async () => {
     setMsg(''); setSaving(true)
+    console.log('[PIN Save] Starting save process, hasPin:', hasPin, 'pinLength:', pin?.length)
     try {
       if (!pin || pin.length < 4 || pin.length > 8 || /\D/.test(pin)) throw new Error('Use a 4–8 digit PIN')
       if (pin !== pin2) throw new Error('PINs do not match')
@@ -456,27 +457,34 @@ function PinManager({ email }) {
         const supabase = getSupabaseClient()
         const { data: { session } } = await supabase.auth.getSession()
         const token = session?.access_token
+        console.log('[PIN Save] Got session, hasToken:', !!token)
         if (!token) throw new Error('Sign in required')
+        console.log('[PIN Save] Calling API with prefs:', prefs)
         const res = await fetch('/api/facilitator/pin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ pin, currentPin: hasPin ? currentPin : null, prefs })
         })
         const js = await res.json().catch(()=>({}))
+        console.log('[PIN Save] API response:', { ok: res.ok, status: res.status, body: js })
         if (!res.ok || !js?.ok) throw new Error(js?.error || 'Failed to save')
         // Keep local fallback in sync so existing gates work
-        try { setFacilitatorPin(pin) } catch (e) {}
+        console.log('[PIN Save] Saving to localStorage')
+        try { setFacilitatorPin(pin) } catch (e) { console.error('[PIN Save] localStorage save failed:', e) }
       } catch (e) {
+        console.error('[PIN Save] Server save failed, using fallback:', e?.message)
         // Fallback to local storage
-        try { setFacilitatorPin(pin) } catch (e2) {}
+        try { setFacilitatorPin(pin) } catch (e2) { console.error('[PIN Save] Fallback localStorage failed:', e2) }
         if (hasPin && currentPin && currentPin !== (typeof window !== 'undefined' ? localStorage.getItem('facilitator_pin') : '')) {
           throw e
         }
       }
       setHasPin(true)
+      console.log('[PIN Save] Success! setHasPin(true) called')
       setMsg('Saved!')
       setPin(''); setPin2(''); setCurrentPin('')
     } catch (e) {
+      console.error('[PIN Save] Final error:', e)
       setMsg(e?.message || 'Failed to save')
     } finally { setSaving(false) }
   }
@@ -524,22 +532,21 @@ function PinManager({ email }) {
             body: JSON.stringify({ pin, currentPin: hasPin ? currentPin : null, prefs })
           })
           const js = await res.json().catch(()=>({}))
-          if (!res.ok || !js?.ok) throw new Error(js?.error || 'Failed to save')
+          console.log('[Client PIN] API response:', { status: res.status, ok: res.ok, body: js })
+          if (!res.ok || !js?.ok) {
+            const errorMsg = js?.error || `Failed to save (${res.status})`
+            console.error('[Client PIN] API error:', errorMsg)
+            throw new Error(errorMsg)
+          }
           try { setFacilitatorPin(pin) } catch {}
           setHasPin(true)
           setPin(''); setPin2(''); setCurrentPin('')
           setPinPrefsLocal(prefs)
           setMsg('Saved')
         } catch (err) {
-          try { setFacilitatorPin(pin) } catch {}
-          if (hasPin && currentPin) {
-            const localPin = (typeof window !== 'undefined') ? localStorage.getItem('facilitator_pin') : ''
-            if (currentPin !== localPin) throw err
-          }
-          setHasPin(true)
-          setPin(''); setPin2(''); setCurrentPin('')
-          setPinPrefsLocal(prefs)
-          setMsg('Saved')
+          console.error('[Client PIN] Save error:', err)
+          // Show the actual error instead of swallowing it
+          throw err
         }
       } else {
         try {
@@ -593,6 +600,10 @@ function PinManager({ email }) {
       <div style={{ marginTop: 2 }}>
         <h3 style={{ margin: '6px 0 4px', fontSize: 14 }}>Require PIN for:</h3>
         <div style={{ display:'grid', gap:6 }}>
+          <label style={{ display:'inline-flex', alignItems:'center', gap:6 }}>
+            <input type="checkbox" checked={!!prefs.facilitatorPage} onChange={(e)=> setPrefs(p=>({ ...p, facilitatorPage: e.target.checked }))} />
+            <span>Facilitator Page</span>
+          </label>
           <label style={{ display:'inline-flex', alignItems:'center', gap:6 }}>
             <input type="checkbox" checked={!!prefs.downloads} onChange={(e)=> setPrefs(p=>({ ...p, downloads: e.target.checked }))} />
             <span>Print previews and downloads</span>

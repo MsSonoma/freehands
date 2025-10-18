@@ -11,7 +11,9 @@ const DEFAULT_PREFS = {
 	facilitatorKey: true,    // combined facilitator key
 	skipTimeline: true,      // skip buttons and timeline jumps
 	changeLearner: true,     // change learner on Learn page
-    refresh: true,         // re-generate worksheet & test
+    refresh: true,           // re-generate worksheet & test
+    timer: true,             // pause/resume session timer
+    facilitatorPage: false,  // accessing facilitator page
 };
 
 function readPrefsLocal() {
@@ -55,6 +57,8 @@ function mapActionToPrefKey(action) {
 		case 'timeline': return 'skipTimeline';
 		case 'change-learner': return 'changeLearner';
         case 'refresh': return 'refresh';
+        case 'timer': return 'timer';
+        case 'facilitator-page': return 'facilitatorPage';
 		default: return null;
 	}
 }
@@ -113,8 +117,17 @@ export async function ensurePinAllowed(action = 'action') {
 		const { hasPin, prefs } = await fetchServerPrefsAndHasPin();
 		const prefKey = mapActionToPrefKey(action);
 		const shouldGate = Boolean(hasPin && (prefKey ? (prefs?.[prefKey] ?? DEFAULT_PREFS[prefKey]) : true));
+		
+		// Debug logging for timer and facilitator-page actions
+		if (action === 'timer' || action === 'facilitator-page') {
+			console.log('[PIN Gate]', action, 'action:', { hasPin, prefKey, prefValue: prefs?.[prefKey], defaultValue: DEFAULT_PREFS[prefKey], shouldGate, prefs });
+		}
+		
 		if (!shouldGate) return true;
-		if (unlockedThisSession()) return true;
+		
+		// Timer and facilitator-page actions always require fresh PIN entry (no session unlock bypass)
+		const requiresFreshPin = (action === 'timer' || action === 'facilitator-page');
+		if (!requiresFreshPin && unlockedThisSession()) return true;
 
 		// Prompt for PIN using a minimal masked modal so characters are hidden.
 		const input = await promptForPinMasked({ title: 'Facilitator PIN', message: 'Enter PIN to continue' });
@@ -131,7 +144,10 @@ export async function ensurePinAllowed(action = 'action') {
 			try { alert('Incorrect PIN.'); } catch {}
 			return false;
 		}
-		setUnlockedSession(true);
+		// Timer actions don't unlock the session - they always require PIN
+		if (!requiresFreshPin) {
+			setUnlockedSession(true);
+		}
 		return true;
 	} catch {
 		return true; // fail-open to avoid blocking core flow

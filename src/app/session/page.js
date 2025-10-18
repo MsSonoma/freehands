@@ -41,6 +41,7 @@ import { useTeachingFlow } from './hooks/useTeachingFlow';
 import { useAssessmentDownloads } from './hooks/useAssessmentDownloads';
 import { useSnapshotPersistence } from './hooks/useSnapshotPersistence';
 import { useResumeRestart } from './hooks/useResumeRestart';
+import SessionTimer from './components/SessionTimer';
 
 export default function SessionPage(){
   return (
@@ -142,6 +143,7 @@ function SessionPageInner() {
   const subjectParam = (searchParams?.get('subject') || 'math').toLowerCase();
   const lessonParam = searchParams?.get('lesson') || '';
   const difficultyParam = (searchParams?.get('difficulty') || 'beginner').toLowerCase();
+  const hasGoldenKey = searchParams?.get('goldenKey') === 'true';
   
   // Force target reload when learner changes
   const reloadTargetsForCurrentLearner = useCallback(async () => {
@@ -184,13 +186,90 @@ function SessionPageInner() {
   // poemState: 'inactive' | 'awaiting-topic' | 'awaiting-ok'
   const [poemState, setPoemState] = useState('inactive');
   // Story state
-  // storyState: 'inactive' | 'awaiting-turn' | 'ending'
+  // storyState: 'inactive' | 'awaiting-setup' | 'awaiting-turn' | 'ending'
   const [storyState, setStoryState] = useState('inactive');
   const [storyUsedThisGate, setStoryUsedThisGate] = useState(false);
   // Story transcript: array of {role: 'user'|'assistant', text: string}
   const [storyTranscript, setStoryTranscript] = useState([]);
+  // Story setup: tracks collection of characters, setting, and plot
+  const [storySetupStep, setStorySetupStep] = useState(''); // 'characters' | 'setting' | 'plot' | 'complete'
+  const [storyCharacters, setStoryCharacters] = useState('');
+  const [storySetting, setStorySetting] = useState('');
+  const [storyPlot, setStoryPlot] = useState('');
+  // Track which phase the story started in (to know if we're continuing across phases)
+  const [storyPhase, setStoryPhase] = useState('');
   // When a snapshot is restored on mount, surface a Resume/Restart offer in the footer
   const [offerResume, setOfferResume] = useState(false);
+
+  // Session Timer state
+  const [timerPaused, setTimerPaused] = useState(false);
+  const [sessionTimerMinutes, setSessionTimerMinutes] = useState(60); // Default 1 hour
+  const [goldenKeyEarned, setGoldenKeyEarned] = useState(false);
+
+  // Load timer setting from current learner (re-run when learner changes)
+  useEffect(() => {
+    (async () => {
+      try {
+        const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
+        if (learnerId && learnerId !== 'demo') {
+          const learner = await getLearner(learnerId);
+          if (learner?.session_timer_minutes) {
+            setSessionTimerMinutes(Number(learner.session_timer_minutes));
+            console.info('[Session] Timer duration loaded:', learner.session_timer_minutes, 'minutes');
+          } else {
+            setSessionTimerMinutes(60); // Reset to default if not set
+            console.info('[Session] No timer setting found, using default 60 minutes');
+          }
+        } else {
+          setSessionTimerMinutes(60); // Default for demo or no learner
+        }
+      } catch (e) {
+        console.warn('[Session] Failed to load timer setting:', e);
+        setSessionTimerMinutes(60); // Fallback to default on error
+      }
+    })();
+  }, []); // Keep empty to only load on mount
+  
+  // Also listen for storage changes to pick up timer updates from facilitator page
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'facilitator_learners' || e.key === 'learner_id') {
+        // Reload timer setting when learner data changes
+        (async () => {
+          try {
+            const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
+            if (learnerId && learnerId !== 'demo') {
+              const learner = await getLearner(learnerId);
+              if (learner?.session_timer_minutes) {
+                setSessionTimerMinutes(Number(learner.session_timer_minutes));
+                console.info('[Session] Timer duration updated from storage change:', learner.session_timer_minutes, 'minutes');
+              }
+            }
+          } catch (e) {
+            console.warn('[Session] Failed to reload timer setting:', e);
+          }
+        })();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Handle timer pause/resume with PIN verification
+  const handleTimerPauseToggle = useCallback(async () => {
+    const ok = await ensurePinAllowed('timer');
+    if (!ok) return;
+    setTimerPaused(prev => !prev);
+  }, []);
+
+  // Handle timer completion
+  const handleTimeUp = useCallback(() => {
+    // When time is up, show warning but allow learner to continue
+    if (typeof window !== 'undefined') {
+      alert('Time is up! Complete the lesson to see if you earned the golden key.');
+    }
+  }, []);
 
   // Reset opening actions visibility on begin and on major phase changes
   useEffect(() => {
@@ -199,8 +278,8 @@ function SessionPageInner() {
       setJokeUsedThisGate(false);
       setRiddleUsedThisGate(false);
       setPoemUsedThisGate(false);
-      setStoryUsedThisGate(false);
-      setStoryTranscript([]); // Clear story transcript on new discussion gate
+      // Story persists across phases - don't reset storyUsedThisGate or clear transcript
+      // Only clear story when starting a completely new session
     }
   }, [phase, subPhase]);
 
@@ -331,6 +410,43 @@ function SessionPageInner() {
       } catch {}
     })();
   }, []);
+
+  // Calculate lesson progress percentage (defined after all state variables)
+  const calculateLessonProgress = useCallback(() => {
+    // Map phases to progress percentages
+    const phaseWeights = {
+      'discussion': 10,
+      'teaching': 30,
+      'comprehension': 50,
+      'exercise': 70,
+      'worksheet': 85,
+      'test': 95
+    };
+    
+    let baseProgress = phaseWeights[phase] || 0;
+    
+    // Add granular progress within each phase
+    if (phase === 'comprehension' && currentCompIndex > 0) {
+      const phaseRange = phaseWeights.comprehension - phaseWeights.teaching;
+      const withinPhase = (currentCompIndex / COMPREHENSION_TARGET) * phaseRange;
+      baseProgress = phaseWeights.teaching + Math.min(withinPhase, phaseRange);
+    } else if (phase === 'exercise' && currentExIndex > 0) {
+      const phaseRange = phaseWeights.exercise - phaseWeights.comprehension;
+      const withinPhase = (currentExIndex / EXERCISE_TARGET) * phaseRange;
+      baseProgress = phaseWeights.comprehension + Math.min(withinPhase, phaseRange);
+    } else if (phase === 'worksheet' && worksheetAnswers.length > 0) {
+      const phaseRange = phaseWeights.worksheet - phaseWeights.exercise;
+      const withinPhase = (worksheetAnswers.length / WORKSHEET_TARGET) * phaseRange;
+      baseProgress = phaseWeights.exercise + Math.min(withinPhase, phaseRange);
+    } else if (phase === 'test' && testAnswers.length > 0) {
+      const phaseRange = phaseWeights.test - phaseWeights.worksheet;
+      const withinPhase = (testAnswers.length / TEST_TARGET) * phaseRange;
+      baseProgress = phaseWeights.worksheet + Math.min(withinPhase, phaseRange);
+    }
+    
+    return Math.min(100, Math.max(0, baseProgress));
+  }, [phase, currentCompIndex, currentExIndex, worksheetAnswers, testAnswers]);
+
   // Dynamic target height for video in landscape (computed from viewport)
   const [videoMaxHeight, setVideoMaxHeight] = useState(null);
   // Dynamic video column width in landscape (percent of row width)
@@ -1887,7 +2003,7 @@ function SessionPageInner() {
 
   // Update the ref so early callbacks can use it
   useEffect(() => { 
-    console.log('[speakFrontendImpl] Updating ref with implementation');
+    // console.log('[speakFrontendImpl] Updating ref with implementation'); // Removed: excessive logging
     speakFrontendRef.current = speakFrontendImpl; 
   }, [speakFrontendImpl]);
 
@@ -1929,6 +2045,11 @@ function SessionPageInner() {
     setPoemState,
     setStoryState,
     setStoryTranscript,
+    setStorySetupStep,
+    setStoryCharacters,
+    setStorySetting,
+    setStoryPlot,
+    setStoryPhase,
     setTtsLoadingCount,
     setIsSpeaking,
     setCaptionSentences,
@@ -1949,6 +2070,11 @@ function SessionPageInner() {
     askOriginalQuestion,
     currentRiddle,
     storyTranscript,
+    storySetupStep,
+    storyCharacters,
+    storySetting,
+    storyPlot,
+    storyPhase,
     difficultyParam,
     lessonParam,
     captionSentencesRef,
@@ -1958,6 +2084,7 @@ function SessionPageInner() {
     speakFrontend,
     callMsSonoma,
     playAudioFromBase64,
+    hasGoldenKey,
   });
 
   // Use phase handlers hook
@@ -2955,9 +3082,9 @@ function SessionPageInner() {
     askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive' && storyState === 'inactive'
   );
   const buttonsGating = discussionButtonsVisible || qnaButtonsVisible;
-  // Allow story input even while speaking might be finishing; story bypasses speaking lock
-  const storyInputActive = storyState === 'awaiting-turn';
-  const sendDisabled = storyInputActive ? (!canSend || loading) : (!canSend || loading || comprehensionAwaitingBegin || speakingLock || buttonsGating);
+  // Story input should also respect the speaking lock
+  const storyInputActive = (storyState === 'awaiting-turn' || storyState === 'awaiting-setup');
+  const sendDisabled = storyInputActive ? (!canSend || loading || speakingLock) : (!canSend || loading || comprehensionAwaitingBegin || speakingLock || buttonsGating);
 
   const subPhaseStatus = useMemo(() => {
     switch (subPhase) {
@@ -3201,6 +3328,30 @@ function SessionPageInner() {
 
   const beginSession = async () => {
     try { console.info('[Begin] Clicked: starting session'); } catch {}
+    
+    // Reload timer setting from current learner to get latest value
+    try {
+      const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
+      if (learnerId && learnerId !== 'demo') {
+        const learner = await getLearner(learnerId);
+        if (learner?.session_timer_minutes) {
+          setSessionTimerMinutes(Number(learner.session_timer_minutes));
+          console.info('[Begin] Timer duration loaded:', learner.session_timer_minutes, 'minutes');
+        }
+      }
+    } catch (e) {
+      console.warn('[Begin] Failed to reload timer setting:', e);
+    }
+    
+    // Reset timer state for new session
+    try {
+      sessionStorage.removeItem('session_timer_state');
+      setTimerPaused(false);
+      console.info('[Begin] Timer reset for new session');
+    } catch (e) {
+      console.warn('[Begin] Failed to reset timer:', e);
+    }
+    
     // End any prior API/audio/mic activity before starting fresh; keep captions continuity at Discussion opening
     try { abortAllActivity(true); } catch {}
     // Ensure audio and mic permissions are handled as part of Begin (in-gesture)
@@ -4199,6 +4350,7 @@ function SessionPageInner() {
     setRiddleUsedThisGate,
     setPoemUsedThisGate,
     setStoryUsedThisGate,
+    setTimerPaused,
     setTicker,
     setCaptionSentences,
     setCaptionIndex,
@@ -4353,8 +4505,8 @@ function SessionPageInner() {
       return;
     }
 
-    // Story: awaiting-turn ? treat as Your Turn
-    if (storyState === 'awaiting-turn') {
+    // Story: awaiting-turn or awaiting-setup ? treat as Your Turn (handles both setup and continuation)
+    if (storyState === 'awaiting-turn' || storyState === 'awaiting-setup') {
       // Prevent double-processing by checking if input is already cleared
       if (!trimmed) return;
       setLearnerInput('');
@@ -5293,6 +5445,55 @@ function SessionPageInner() {
 
   // Shared Complete Lesson handler used by VideoPanel (and any other triggers)
   const onCompleteLesson = useCallback(async () => {
+    // Check if golden key was earned (completed within time limit)
+    let earnedKey = false;
+    try {
+      const timerState = sessionStorage.getItem('session_timer_state');
+      if (timerState) {
+        const state = JSON.parse(timerState);
+        const totalSeconds = sessionTimerMinutes * 60;
+        const elapsed = state.elapsedSeconds || 0;
+        if (elapsed <= totalSeconds) {
+          earnedKey = true;
+          setGoldenKeyEarned(true);
+          // Increment golden key in database
+          const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
+          if (learnerId && learnerId !== 'demo') {
+            try {
+              const { getLearner, updateLearner } = await import('@/app/facilitator/learners/clientApi');
+              const learner = await getLearner(learnerId);
+              if (learner) {
+                await updateLearner(learnerId, {
+                  name: learner.name,
+                  grade: learner.grade,
+                  targets: {
+                    comprehension: learner.comprehension,
+                    exercise: learner.exercise,
+                    worksheet: learner.worksheet,
+                    test: learner.test
+                  },
+                  session_timer_minutes: learner.session_timer_minutes,
+                  golden_keys: (learner.golden_keys || 0) + 1
+                });
+              }
+            } catch (err) {
+              console.error('[Golden Key] Failed to increment key:', err);
+            }
+          }
+        }
+      }
+    } catch {}
+
+    // Show golden key message if earned
+    if (earnedKey && typeof window !== 'undefined') {
+      alert('🔑 Congratulations! You earned the Golden Key! This unlocks the poem and story in your next lesson!');
+    }
+
+    // Clear timer state
+    try {
+      sessionStorage.removeItem('session_timer_state');
+    } catch {}
+
     // Stop any ongoing audio/speech/mic work first
     try { abortAllActivity(); } catch {}
     const key = getAssessmentStorageKey();
@@ -5348,7 +5549,7 @@ function SessionPageInner() {
         try { window.location.href = '/learn/lessons'; } catch {}
       }
     }
-  }, [effectiveLessonTitle, lessonParam, router]);
+  }, [effectiveLessonTitle, lessonParam, router, sessionTimerMinutes]);
 
   // No portrait spacer: timeline should sit directly under the header in portrait mode.
 
@@ -5577,6 +5778,11 @@ function SessionPageInner() {
   testActiveIndex={testActiveIndex}
   testList={Array.isArray(generatedTest) ? generatedTest : []}
         onCompleteLesson={onCompleteLesson}
+        sessionTimerMinutes={sessionTimerMinutes}
+        timerPaused={timerPaused}
+        calculateLessonProgress={calculateLessonProgress}
+        handleTimeUp={handleTimeUp}
+        handleTimerPauseToggle={handleTimerPauseToggle}
       />
       {/* Worksheet end-of-phase Review button removed per requirements */}
     </div>
@@ -6139,22 +6345,7 @@ function SessionPageInner() {
             );
           })()}
 
-          {/* Story: Happy Ending / Funny Ending buttons during storytelling */}
-          {storyState === 'awaiting-turn' && (() => {
-            try {
-              const isDisabled = sendDisabled || !canSend;
-              const btnBase = { color:'#fff', borderRadius:8, padding:'8px 16px', minHeight:40, fontWeight:800, border:'none', cursor: isDisabled ? 'not-allowed' : 'pointer', opacity: isDisabled ? 0.5 : 1, transition: 'opacity 0.2s' };
-              const happyBtn = { ...btnBase, background:'#059669', boxShadow:'0 2px 12px rgba(5,150,105,0.28)' };
-              const funnyBtn = { ...btnBase, background:'#d97706', boxShadow:'0 2px 12px rgba(217,119,6,0.28)' };
-              return (
-                <div style={{display:'flex', justifyContent:'center', gap:8, padding:'6px 12px', flexWrap:'wrap'}}>
-                  <button type="button" style={happyBtn} onClick={() => { if (!isDisabled) { const val = learnerInput; setLearnerInput(''); handleStoryEnd(val, 'happy'); } }} disabled={isDisabled}>Happy Ending</button>
-                  <button type="button" style={funnyBtn} onClick={() => { if (!isDisabled) { const val = learnerInput; setLearnerInput(''); handleStoryEnd(val, 'funny'); } }} disabled={isDisabled}>Funny Ending</button>
-                </div>
-              );
-            } catch {}
-            return null;
-          })()}
+          {/* Story buttons removed - story continuation is now handled through text input */}
 
           {/* Riddle action row (inside fixed footer) */}
           {(() => {
@@ -6476,7 +6667,7 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
   );
 }
 
-function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, isLastWorksheetQuestion, onOpenReview }) {
+function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, isLastWorksheetQuestion, onOpenReview, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle }) {
   // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
   // Remove horizontal clamp: let the video occupy the full available width of its column
   const containerMaxWidth = 'none';
@@ -6559,6 +6750,24 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
           }}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
         />
+        {/* Session Timer - overlay in top left */}
+        {sessionTimerMinutes > 0 && !showBegin && (
+          <div style={{ 
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            zIndex: 10001
+          }}>
+            <SessionTimer
+              key={`timer-${sessionTimerMinutes}`}
+              totalMinutes={sessionTimerMinutes}
+              lessonProgress={calculateLessonProgress()}
+              isPaused={timerPaused}
+              onTimeUp={handleTimeUp}
+              onPauseToggle={handleTimerPauseToggle}
+            />
+          </div>
+        )}
         {/* No black screen during test */}
         {(phase === 'comprehension' || phase === 'exercise') && (
           <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(17,24,39,0.78)', color: '#fff', padding: '6px 10px', borderRadius: 8, fontSize: 'clamp(0.85rem, 1.6vw, 1rem)', fontWeight: 600, letterSpacing: 0.3, boxShadow: '0 2px 6px rgba(0,0,0,0.25)', zIndex: 10000, pointerEvents: 'none' }}>
