@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
-import { getSupabaseClientServer } from '@/app/lib/supabaseServer'
+import { createClient } from '@supabase/supabase-js'
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 /**
  * PUT /api/facilitator/lessons/update
@@ -7,23 +10,47 @@ import { getSupabaseClientServer } from '@/app/lib/supabaseServer'
  */
 export async function PUT(req) {
   try {
-    const supabase = getSupabaseClientServer()
+    // Authenticate user from Bearer token
+    const auth = req.headers.get('authorization') || ''
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : null
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const svc = process.env.SUPABASE_SERVICE_ROLE_KEY
+    
+    const supabase = createClient(url, anon, { 
+      global: { headers: { Authorization: `Bearer ${token}` } }, 
+      auth: { persistSession: false } 
+    })
+    
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check premium status
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('plan_tier')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    const tier = (profile?.plan_tier || 'free').toLowerCase()
+    // Check premium status using service role key for direct access
+    const admin = svc ? createClient(url, svc, { auth: { persistSession: false } }) : null
+    let tier = 'free'
+    
+    if (admin) {
+      const { data: profile } = await admin
+        .from('profiles')
+        .select('plan_tier')
+        .eq('id', user.id)
+        .maybeSingle()
+      
+      tier = (profile?.plan_tier || 'free').toLowerCase()
+    }
+    
     if (tier !== 'premium' && tier !== 'lifetime') {
       return NextResponse.json({ error: 'Premium required' }, { status: 403 })
     }
+
+    // Use admin client for storage operations
+    const storageClient = admin || supabase
 
     const body = await req.json()
     const { file, lesson, userId } = body
@@ -46,7 +73,7 @@ export async function PUT(req) {
     const storagePath = `${targetUserId}/${file}`
 
     // Verify file exists and belongs to this user
-    const { data: existingFile, error: fetchError } = await supabase
+    const { data: existingFile, error: fetchError } = await storageClient
       .storage
       .from('lessons')
       .list(targetUserId, { search: file })
@@ -57,7 +84,7 @@ export async function PUT(req) {
 
     // Update the lesson file
     const lessonContent = JSON.stringify(lesson, null, 2)
-    const { error: uploadError } = await supabase
+    const { error: uploadError } = await storageClient
       .storage
       .from('lessons')
       .update(storagePath, lessonContent, {
