@@ -1,5 +1,6 @@
 import HeaderBar from './HeaderBar';
 import CookieBanner from '@/components/CookieBanner';
+import FacilitatorSectionTracker from '@/components/FacilitatorSectionTracker';
 
 // Expose richer metadata so Next.js will emit proper <link rel="icon" ...> tags.
 // We keep the existing favicon.ico (for legacy browsers) and add the branded png.
@@ -27,6 +28,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
   <body style={{ margin:0, fontFamily:'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif', overflowY:'auto', scrollbarGutter:'stable' }}>
         <HeaderBar />
+        <FacilitatorSectionTracker />
 
         {/* Page content with minimal top padding; header is sticky and occupies its own height.
             Remove global maxWidth so routes can opt-in to width caps themselves (e.g., Home).

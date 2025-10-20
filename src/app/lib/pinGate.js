@@ -4,6 +4,7 @@
 const PIN_KEY = 'facilitator_pin';
 const PREFS_KEY = 'facilitator_pin_prefs';
 const UNLOCK_KEY = 'facilitator_pin_unlocked'; // session-level
+const FACILITATOR_SECTION_KEY = 'facilitator_section_active'; // session-level flag
 
 // Default preferences when a PIN exists but prefs are not saved yet
 const DEFAULT_PREFS = {
@@ -111,6 +112,16 @@ function setUnlockedSession(v) {
 	try { if (v) sessionStorage.setItem(UNLOCK_KEY, '1'); else sessionStorage.removeItem(UNLOCK_KEY); } catch {}
 }
 
+function isInFacilitatorSection() {
+	if (typeof window === 'undefined') return false;
+	try { return sessionStorage.getItem(FACILITATOR_SECTION_KEY) === '1'; } catch { return false; }
+}
+
+export function setInFacilitatorSection(v) {
+	if (typeof window === 'undefined') return;
+	try { if (v) sessionStorage.setItem(FACILITATOR_SECTION_KEY, '1'); else sessionStorage.removeItem(FACILITATOR_SECTION_KEY); } catch {}
+}
+
 export async function ensurePinAllowed(action = 'action') {
 	if (typeof window === 'undefined') return true; // SSR: allow
 	try {
@@ -125,8 +136,14 @@ export async function ensurePinAllowed(action = 'action') {
 		
 		if (!shouldGate) return true;
 		
-		// Timer and facilitator-page actions always require fresh PIN entry (no session unlock bypass)
-		const requiresFreshPin = (action === 'timer' || action === 'facilitator-page');
+		// Timer actions always require fresh PIN entry (no session unlock bypass)
+		const requiresFreshPin = (action === 'timer');
+		
+		// For facilitator-page action: if already in facilitator section, skip PIN check
+		if (action === 'facilitator-page' && isInFacilitatorSection()) {
+			return true;
+		}
+		
 		if (!requiresFreshPin && unlockedThisSession()) return true;
 
 		// Prompt for PIN using a minimal masked modal so characters are hidden.
@@ -144,17 +161,24 @@ export async function ensurePinAllowed(action = 'action') {
 			try { alert('Incorrect PIN.'); } catch {}
 			return false;
 		}
+		
 		// Timer actions don't unlock the session - they always require PIN
 		if (!requiresFreshPin) {
 			setUnlockedSession(true);
 		}
+		
+		// When entering facilitator section, mark it active
+		if (action === 'facilitator-page') {
+			setInFacilitatorSection(true);
+		}
+		
 		return true;
 	} catch {
 		return true; // fail-open to avoid blocking core flow
 	}
 }
 
-const pinGateApi = { ensurePinAllowed, setFacilitatorPin, clearFacilitatorPin, getPinPrefsLocal, setPinPrefsLocal };
+const pinGateApi = { ensurePinAllowed, setFacilitatorPin, clearFacilitatorPin, getPinPrefsLocal, setPinPrefsLocal, setInFacilitatorSection };
 export default pinGateApi;
 
 // Lightweight, dependency-free masked PIN modal. Returns Promise<string|null>.

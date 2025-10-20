@@ -70,24 +70,21 @@ export async function PUT(req) {
       return NextResponse.json({ error: 'Cannot edit another facilitator\'s lesson' }, { status: 403 })
     }
 
-    const storagePath = `${targetUserId}/${file}`
+    const storagePath = `facilitator-lessons/${targetUserId}/${file}`
+    console.log('[UPDATE_LESSON] Received request')
+    console.log('[UPDATE_LESSON] Storage path:', storagePath)
+    console.log('[UPDATE_LESSON] File:', file)
+    console.log('[UPDATE_LESSON] UserId:', targetUserId)
+    console.log('[UPDATE_LESSON] User ID:', user.id)
 
-    // Verify file exists and belongs to this user
-    const { data: existingFile, error: fetchError } = await storageClient
-      .storage
-      .from('lessons')
-      .list(targetUserId, { search: file })
-
-    if (fetchError || !existingFile || existingFile.length === 0) {
-      return NextResponse.json({ error: 'Lesson file not found' }, { status: 404 })
-    }
-
-    // Update the lesson file
+    // Prepare the lesson content
     const lessonContent = JSON.stringify(lesson, null, 2)
+    
+    // Try to upload/update the file with upsert
     const { error: uploadError } = await storageClient
       .storage
       .from('lessons')
-      .update(storagePath, lessonContent, {
+      .upload(storagePath, lessonContent, {
         contentType: 'application/json',
         upsert: true
       })

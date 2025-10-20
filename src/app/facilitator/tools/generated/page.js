@@ -145,6 +145,12 @@ export default function GeneratedLessonsPage(){
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
       
+      console.log('[SAVE_LESSON] Sending update:', {
+        file: editingLesson.file,
+        userId: editingLesson.userId,
+        lessonTitle: updatedLesson.title
+      })
+      
       const res = await fetch('/api/facilitator/lessons/update', {
         method: 'PUT',
         headers: { 
@@ -159,8 +165,13 @@ export default function GeneratedLessonsPage(){
       })
 
       const js = await res.json().catch(() => null)
+      console.log('[SAVE_LESSON] Response:', { status: res.status, body: js })
+      
       if (!res.ok) {
-        setError(js?.error || 'Failed to save lesson')
+        const errorMsg = js?.error || 'Failed to save lesson'
+        const details = js?.details ? ` (${js.details})` : ''
+        const path = js?.path ? ` [${js.path}]` : ''
+        setError(errorMsg + details + path)
         return
       }
 
