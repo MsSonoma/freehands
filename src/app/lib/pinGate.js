@@ -146,8 +146,8 @@ export async function ensurePinAllowed(action = 'action') {
 			return true;
 		}
 		
-		// Timer actions always require fresh PIN entry (no session unlock bypass)
-		const requiresFreshPin = (action === 'timer');
+		// Timer and facilitator-page actions have special handling (don't use session unlock)
+		const requiresFreshPin = (action === 'timer' || action === 'facilitator-page');
 		
 		// For facilitator-page action: if already in facilitator section, skip PIN check
 		if (action === 'facilitator-page' && isInFacilitatorSection()) {
@@ -155,6 +155,7 @@ export async function ensurePinAllowed(action = 'action') {
 			return true;
 		}
 		
+		// Session unlock only applies to non-timer, non-facilitator-page actions
 		if (!requiresFreshPin && unlockedThisSession()) {
 			console.log('[PIN Gate] Skipping PIN - session already unlocked');
 			return true;
