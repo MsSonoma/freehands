@@ -829,11 +829,8 @@ function SessionPageInner() {
   useEffect(() => { isSpeakingRef.current = isSpeaking; }, [isSpeaking]);
   // Mirror latest mute state for async callbacks (prevents stale closures)
   const mutedRef = useRef(false);
-  const [userPaused, setUserPaused] = useState(false); // user-level pause covering video + TTS
-  // When true, the next play attempt ignores userPaused gating (used for Opening begin)
+  // When true, the next play attempt ignores gating (used for Opening begin)
   const forceNextPlaybackRef = useRef(false);
-  // Record user play/pause intents that occur while the app is loading; apply after load finishes
-  const [playbackIntent, setPlaybackIntent] = useState(null); // 'play' | 'pause' | null
   // Browser detection: treat Safari specially for mic prompts
   const isSafari = useMemo(() => {
     if (typeof navigator === 'undefined') return false;
@@ -1347,45 +1344,7 @@ function SessionPageInner() {
     }
   }, [muted]);
 
-  // When loading finishes, apply any deferred playback intent
-  useEffect(() => {
-    if (!loading && playbackIntent) {
-      const intent = playbackIntent;
-      // Clear first to avoid re-entry loops
-      setPlaybackIntent(null);
-      if (intent === 'pause') {
-        try { if (audioRef.current) audioRef.current.pause(); } catch {}
-        try { if (videoRef.current) videoRef.current.pause(); } catch {}
-        try { pauseSynthetic(); } catch {}
-  clearCaptionTimers();
-        // Ensure UI state reflects paused
-        try { setUserPaused(true); } catch {}
-      } else if (intent === 'play') {
-        if (syntheticRef.current?.active) {
-          try { resumeSynthetic(); } catch {}
-        }
-        const a = audioRef.current;
-        if (a) {
-          try {
-            a.play();
-            setIsSpeaking(true);
-            const startAt = captionIndex;
-            const batchEnd = captionBatchEndRef.current || captionSentencesRef.current.length;
-            const slice = (captionSentencesRef.current || []).slice(startAt, batchEnd);
-            if (slice.length) {
-              try { scheduleCaptionsForAudio(a, slice, startAt); } catch {}
-            }
-          } catch {}
-        }
-        // Do not directly play the video here; let audio.onplay (or synthetic resume) start it
-        try { setUserPaused(false); } catch {}
-      }
-    }
-  }, [loading, playbackIntent, captionIndex]);
-
-  // Stable refs for state/functions used by the unified play/pause controller
-  const userPausedRef = useRef(userPaused);
-  useEffect(() => { userPausedRef.current = userPaused; }, [userPaused]);
+  // Stable refs for state/functions used by audio playback
   const captionIndexRef = useRef(captionIndex);
   useEffect(() => { captionIndexRef.current = captionIndex; }, [captionIndex]);
   // These refs will be populated after useAudioPlayback hook provides the functions
@@ -1575,23 +1534,6 @@ function SessionPageInner() {
       }
     } catch {}
   }, [ensureAudioContext]);
-
-  // Brand-new toggle using unified controller; preserves look/placement
-  const togglePlayPause = useCallback(() => {
-    const willPause = !userPausedRef.current ? true : false;
-    if (loading) {
-      setPlaybackIntent(willPause ? 'pause' : 'play');
-      setUserPaused(willPause);
-      return;
-    }
-    if (willPause) {
-      pauseAll();
-      setUserPaused(true);
-    } else {
-      resumeAll();
-      setUserPaused(false);
-    }
-  }, [loading, pauseAll, resumeAll]);
 
   // Centralized abort/cleanup: stop audio, captions, mic/STT, and in-flight requests
   // keepCaptions: when true, do NOT wipe captionSentences so on-screen transcript remains continuous across handoffs
@@ -2368,19 +2310,6 @@ function SessionPageInner() {
   const handleStartLesson = handleStartLessonHook;
 
 
-  // Only react to explicit user pause by pausing the video
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    try {
-      if (userPaused) {
-        video.pause();
-      }
-    } catch {
-      /* ignore */
-    }
-  }, [userPaused]);
-
   useEffect(() => {
     return () => {
       clearCaptionTimers();
@@ -2415,13 +2344,10 @@ function SessionPageInner() {
       console.warn('[Opening] Audio unlock failed', e);
     }
     
-    // Ensure we are not starting in a muted or paused state
+    // Ensure we are not starting in a muted state
     try { setMuted(false); } catch {}
-    try { setUserPaused(false); } catch {}
     try { mutedRef.current = false; } catch {}
-    try { userPausedRef.current = false; } catch {} // Set ref immediately, don't wait for useEffect
     try { forceNextPlaybackRef.current = true; } catch {}
-    try { setPlaybackIntent(null); } catch {} // Clear any stale pause intent that would fire when loading finishes
     
     // CRITICAL for Chrome: Unlock video autoplay by playing during user gesture
     // Keep it playing (muted and looping) so audio code doesn't need to restart it
@@ -3939,8 +3865,6 @@ function SessionPageInner() {
   setRiddleUsedThisGate(false);
   setPoemUsedThisGate(false);
   setStoryUsedThisGate(false);
-    // Ensure audio can play if previously paused by user
-    setUserPaused(false);
     // Reset model-validated correctness tracking
     setUsedTestCuePhrases([]);
   setTestCorrectByIndex([]);
@@ -6089,8 +6013,6 @@ function SessionPageInner() {
         testFinalPercent={testFinalPercent}
         lessonParam={lessonParam}
         muted={muted}
-        
-        userPaused={userPaused}
         onToggleMute={toggleMute}
   loading={loading}
   overlayLoading={overlayLoading}
@@ -7063,7 +6985,7 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
   );
 }
 
-function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, isLastWorksheetQuestion, onOpenReview, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle }) {
+function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, onToggleMute, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, isLastWorksheetQuestion, onOpenReview, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle }) {
   // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
   // Remove horizontal clamp: let the video occupy the full available width of its column
   const containerMaxWidth = 'none';
