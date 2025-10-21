@@ -182,12 +182,16 @@ function promptForPinMasked({ title = 'Enter PIN', message = 'Enter your PIN' } 
 			if (resolved) return;
 			resolved = true;
 			try { document.removeEventListener('keydown', onKeyDown, true); } catch {}
-			try { overlay?.remove(); } catch {}
+			try { overlay.remove(); } catch {}
 		};
 
-		const onCancel = () => { if (!resolved) { resolve(null); } cleanup(); };
+		const onCancel = () => { if (!resolved) resolve(null); cleanup(); };
+		
+		// Store actual PIN value separately
+		let actualValue = '';
+		
 		const onSubmit = () => {
-			const val = input?.value?.trim() || '';
+			const val = actualValue.trim();
 			if (val === '') { err.textContent = 'Please enter your PIN.'; input?.focus(); return; }
 			if (!resolved) { resolve(val); }
 			cleanup();
@@ -221,22 +225,32 @@ function promptForPinMasked({ title = 'Enter PIN', message = 'Enter your PIN' } 
 		tip.textContent = message;
 		tip.style.cssText = 'display:block;font-size:12px;color:#6b7280;margin-bottom:4px;';
 
+		// Use type='text' instead of 'password' to prevent password manager detection
 		const input = document.createElement('input');
-		input.type = 'password';
+		input.type = 'text';
 		input.inputMode = 'numeric';
-		input.autocomplete = 'new-password'; // prevent password manager autofill
-		input.name = 'facilitator-pin-' + Date.now(); // unique name to prevent caching
+		input.autocomplete = 'off';
+		input.name = 'pin-' + Math.random().toString(36); // random name
 		input.pattern = '[0-9]*';
 		input.setAttribute('aria-label', 'Facilitator PIN');
-		input.setAttribute('data-lpignore', 'true'); // LastPass ignore
-		input.setAttribute('data-form-type', 'other'); // General password manager hint
-		input.setAttribute('data-1p-ignore', 'true'); // 1Password ignore
-		input.readOnly = true; // Start as readonly to prevent autofill
-		input.style.cssText = 'width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;';
+		input.setAttribute('data-lpignore', 'true');
+		input.setAttribute('data-form-type', 'other');
+		input.setAttribute('data-1p-ignore', 'true');
+		input.maxLength = 10; // reasonable PIN length limit
+		input.style.cssText = 'width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;-webkit-text-security:disc;text-security:disc;font-family:text-security-disc;';
 		
-		// Remove readonly on focus to allow typing
-		input.addEventListener('focus', () => {
-			input.readOnly = false;
+		// Manually mask characters for browsers that don't support text-security
+		input.addEventListener('input', (e) => {
+			const newVal = e.target.value;
+			if (newVal.length > actualValue.length) {
+				// Characters added
+				actualValue = actualValue + newVal.slice(actualValue.length);
+			} else {
+				// Characters removed
+				actualValue = actualValue.slice(0, newVal.length);
+			}
+			// Show dots for display
+			e.target.value = '•'.repeat(actualValue.length);
 		});
 
 		const err = document.createElement('div');
