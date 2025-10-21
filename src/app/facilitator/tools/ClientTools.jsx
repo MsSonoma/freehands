@@ -1,13 +1,37 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
+import { ensurePinAllowed } from '@/app/lib/pinGate'
 import Link from 'next/link'
 
 export default function ClientTools(){
+  const router = useRouter()
   const [tier, setTier] = useState('free')
   const [loading, setLoading] = useState(true)
+  const [pinChecked, setPinChecked] = useState(false)
+
+  // Check PIN requirement on mount
   useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const allowed = await ensurePinAllowed('facilitator-page')
+        if (!allowed) {
+          router.push('/')
+          return
+        }
+        if (!cancelled) setPinChecked(true)
+      } catch (e) {
+        if (!cancelled) setPinChecked(true)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [router])
+
+  useEffect(() => {
+    if (!pinChecked) return
     let cancelled = false
     ;(async () => {
       try {
@@ -24,7 +48,11 @@ export default function ClientTools(){
       if (!cancelled) setLoading(false)
     })()
     return () => { cancelled = true }
-  }, [])
+  }, [pinChecked])
+
+  if (!pinChecked) {
+    return <main style={{ padding: 24 }}><p>Loading…</p></main>
+  }
 
   const ent = featuresForTier(tier)
   return (

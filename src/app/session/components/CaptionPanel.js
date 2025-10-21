@@ -103,13 +103,18 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
             borderRadius: 6,
             width: 34,
             height: 34,
-            fontSize: 'clamp(1rem, 1.8vw, 1.2rem)',
-            lineHeight: '34px',
             cursor: atTop ? 'default' : 'pointer',
             boxShadow: '0 2px 4px rgba(0,0,0,0.25)',
             opacity: atTop ? 0.6 : 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '18px',
+            fontWeight: 'bold',
           }}
-        >▲</button>
+        >
+          ^
+        </button>
         <button
           type="button"
           aria-label="Scroll down captions"
@@ -122,13 +127,18 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
             borderRadius: 6,
             width: 34,
             height: 34,
-            fontSize: 'clamp(1rem, 1.8vw, 1.2rem)',
-            lineHeight: '34px',
             cursor: atBottom ? 'default' : 'pointer',
             boxShadow: '0 2px 4px rgba(0,0,0,0.25)',
             opacity: atBottom ? 0.6 : 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '18px',
+            fontWeight: 'bold',
           }}
-        >▼</button>
+        >
+          v
+        </button>
       </div>
       <div ref={boxRef} data-ms-caption-panel className="scrollbar-hidden" style={scrollerStyle} aria-live="polite">
         {Array.isArray(items) && items.length > 0 ? (

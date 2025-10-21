@@ -1,10 +1,14 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
 import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
+import { ensurePinAllowed } from '@/app/lib/pinGate'
 
 export default function FacilitatorLessonsPage() {
+  const router = useRouter()
+  const [pinChecked, setPinChecked] = useState(false)
   const [tier, setTier] = useState('free')
   const [learners, setLearners] = useState([])
   const [selectedLearnerId, setSelectedLearnerId] = useState(null)
@@ -19,7 +23,26 @@ export default function FacilitatorLessonsPage() {
   const subjects = ['math', 'science', 'language arts', 'social studies', 'facilitator']
   const grades = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
+  // Check PIN requirement on mount
   useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const allowed = await ensurePinAllowed('facilitator-page')
+        if (!allowed) {
+          router.push('/')
+          return
+        }
+        if (!cancelled) setPinChecked(true)
+      } catch (e) {
+        if (!cancelled) setPinChecked(true)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [router])
+
+  useEffect(() => {
+    if (!pinChecked) return
     let cancelled = false
     ;(async () => {
       try {
@@ -52,7 +75,7 @@ export default function FacilitatorLessonsPage() {
       if (!cancelled) setLoading(false)
     })()
     return () => { cancelled = true }
-  }, [])
+  }, [pinChecked])
 
   // Load all lessons from all subjects
   useEffect(() => {
@@ -216,6 +239,10 @@ export default function FacilitatorLessonsPage() {
         <a href="/facilitator/plan">View plans</a>
       </main>
     )
+  }
+
+  if (!pinChecked) {
+    return <main style={{ padding: '12px 24px' }}><p>Loading…</p></main>
   }
 
   return (

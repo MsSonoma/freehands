@@ -1,9 +1,32 @@
 "use client"
 import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
+import { ensurePinAllowed } from '@/app/lib/pinGate'
 
 export default function FacilitatorSettingsPage() {
+	const router = useRouter()
+	const [pinChecked, setPinChecked] = useState(false)
+	
+	// Check PIN requirement on mount
+	useEffect(() => {
+		let cancelled = false
+		;(async () => {
+			try {
+				const allowed = await ensurePinAllowed('facilitator-page')
+				if (!allowed) {
+					router.push('/')
+					return
+				}
+				if (!cancelled) setPinChecked(true)
+			} catch (e) {
+				if (!cancelled) setPinChecked(true)
+			}
+		})()
+		return () => { cancelled = true }
+	}, [router])
+
 	// Timezone
 	const [loadingTz, setLoadingTz] = useState(true)
 	const [savingTz, setSavingTz] = useState(false)
@@ -37,6 +60,7 @@ export default function FacilitatorSettingsPage() {
 	}, [])
 
 	useEffect(() => {
+		if (!pinChecked) return
 		let cancelled = false
 		;(async () => {
 			try {
@@ -68,7 +92,11 @@ export default function FacilitatorSettingsPage() {
 			if (!cancelled) setLoadingTz(false)
 		})()
 		return () => { cancelled = true }
-	}, [])
+	}, [pinChecked])
+
+	if (!pinChecked) {
+		return <main style={{ padding: 12 }}><p style={{ textAlign: 'center' }}>Loading…</p></main>
+	}
 
 	return (
 		<main style={{ padding: 12 }}>

@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { listLearners, deleteLearner, updateLearner } from './clientApi';
 import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
 import { featuresForTier } from '@/app/lib/entitlements';
+import { ensurePinAllowed } from '@/app/lib/pinGate';
 
 export default function LearnersPage() {
+	const router = useRouter();
+	const [pinChecked, setPinChecked] = useState(false);
 	const [items, setItems] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [savingId, setSavingId] = useState(null);
@@ -17,7 +21,26 @@ export default function LearnersPage() {
 	// Shared current learner selection (same variable used on Learn page)
 	const [selectedLearnerId, setSelectedLearnerId] = useState(null);
 
+	// Check PIN requirement on mount
 	useEffect(() => {
+		let cancelled = false;
+		(async () => {
+			try {
+				const allowed = await ensurePinAllowed('facilitator-page');
+				if (!allowed) {
+					router.push('/');
+					return;
+				}
+				if (!cancelled) setPinChecked(true);
+			} catch (e) {
+				if (!cancelled) setPinChecked(true);
+			}
+		})();
+		return () => { cancelled = true; };
+	}, [router]);
+
+	useEffect(() => {
+		if (!pinChecked) return;
 		let mounted = true;
 		(async () => {
 			setLoading(true);
@@ -52,7 +75,7 @@ export default function LearnersPage() {
 			}
 		})();
 		return () => { mounted = false; };
-	}, []);
+	}, [pinChecked]);
 
 	// Initialize current selection from localStorage to keep in sync with Learn page
 	useEffect(() => {
@@ -153,6 +176,10 @@ export default function LearnersPage() {
 			setSavingId(null);
 		}
 	};
+
+	if (!pinChecked) {
+		return <main style={{ padding: 24 }}><p>Loading…</p></main>;
+	}
 
 	return (
 		<main style={{ padding: 24, overflowX: 'hidden' }}>

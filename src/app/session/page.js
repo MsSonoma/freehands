@@ -185,6 +185,7 @@ function SessionPageInner() {
   // Poem state
   // poemState: 'inactive' | 'awaiting-topic' | 'awaiting-ok'
   const [poemState, setPoemState] = useState('inactive');
+  const [showPoemSuggestions, setShowPoemSuggestions] = useState(false);
   // Story state
   // storyState: 'inactive' | 'awaiting-setup' | 'awaiting-turn' | 'ending'
   const [storyState, setStoryState] = useState('inactive');
@@ -198,6 +199,16 @@ function SessionPageInner() {
   const [storyPlot, setStoryPlot] = useState('');
   // Track which phase the story started in (to know if we're continuing across phases)
   const [storyPhase, setStoryPhase] = useState('');
+  // Fill-in-Fun state
+  // fillInFunState: 'inactive' | 'loading' | 'collecting-words' | 'awaiting-ok'
+  const [fillInFunState, setFillInFunState] = useState('inactive');
+  const [fillInFunUsedThisGate, setFillInFunUsedThisGate] = useState(false);
+  // Template structure: { template: string, words: [{type, label, prompt}] }
+  const [fillInFunTemplate, setFillInFunTemplate] = useState(null);
+  // Collected words: { label1: 'word1', label2: 'word2', ... }
+  const [fillInFunCollectedWords, setFillInFunCollectedWords] = useState({});
+  // Current word index being collected
+  const [fillInFunCurrentIndex, setFillInFunCurrentIndex] = useState(0);
   // When a snapshot is restored on mount, surface a Resume/Restart offer in the footer
   const [offerResume, setOfferResume] = useState(false);
 
@@ -293,11 +304,12 @@ function SessionPageInner() {
       askState === 'inactive' &&
       riddleState === 'inactive' &&
       poemState === 'inactive' &&
-      storyState === 'inactive'
+      storyState === 'inactive' &&
+      fillInFunState === 'inactive'
     ) {
       setShowOpeningActions(true);
     }
-  }, [isSpeaking, phase, subPhase, askState, riddleState, poemState, storyState]);
+  }, [isSpeaking, phase, subPhase, askState, riddleState, poemState, storyState, fillInFunState]);
 
   // Also reveal Opening actions when the captions finish (even if audio is still playing)
   useEffect(() => {
@@ -308,18 +320,19 @@ function SessionPageInner() {
       askState === 'inactive' &&
       riddleState === 'inactive' &&
       poemState === 'inactive' &&
-      storyState === 'inactive'
+      storyState === 'inactive' &&
+      fillInFunState === 'inactive'
     ) {
       setShowOpeningActions(true);
     }
-  }, [captionsDone, phase, subPhase, askState, riddleState, poemState, storyState]);
+  }, [captionsDone, phase, subPhase, askState, riddleState, poemState, storyState, fillInFunState]);
 
-  // If Ask, Riddle, Poem, or Story becomes active, immediately hide Opening actions
+  // If Ask, Riddle, Poem, Story, or Fill-in-Fun becomes active, immediately hide Opening actions
   useEffect(() => {
-    if (askState !== 'inactive' || riddleState !== 'inactive' || poemState !== 'inactive' || storyState !== 'inactive') {
+    if (askState !== 'inactive' || riddleState !== 'inactive' || poemState !== 'inactive' || storyState !== 'inactive' || fillInFunState !== 'inactive') {
       try { setShowOpeningActions(false); } catch {}
     }
-  }, [askState, riddleState, poemState, storyState]);
+  }, [askState, riddleState, poemState, storyState, fillInFunState]);
 
   // Helper: speak arbitrary frontend text via unified captions + TTS
   // Use a ref so early functions can call it before it's fully defined
@@ -2027,22 +2040,32 @@ function SessionPageInner() {
     revealRiddleAnswer,
     handleRiddleBack,
     handlePoemStart,
+    handlePoemSuggestions,
     handlePoemOk,
+    handlePoemBack,
     handleStoryStart,
     handleStoryYourTurn,
     handleStoryEnd,
+    handleStoryBack,
+    handleFillInFunStart,
+    handleFillInFunWordSubmit,
+    handleFillInFunOk,
+    handleFillInFunBack,
   } = useDiscussionHandlers({
     setShowOpeningActions,
     setJokeUsedThisGate,
     setRiddleUsedThisGate,
     setPoemUsedThisGate,
     setStoryUsedThisGate,
+    setFillInFunUsedThisGate,
     setCanSend,
+    setLoading,
     setAskState,
     setAskOriginalQuestion,
     setRiddleState,
     setCurrentRiddle,
     setPoemState,
+    setShowPoemSuggestions,
     setStoryState,
     setStoryTranscript,
     setStorySetupStep,
@@ -2050,6 +2073,10 @@ function SessionPageInner() {
     setStorySetting,
     setStoryPlot,
     setStoryPhase,
+    setFillInFunState,
+    setFillInFunTemplate,
+    setFillInFunCollectedWords,
+    setFillInFunCurrentIndex,
     setTtsLoadingCount,
     setIsSpeaking,
     setCaptionSentences,
@@ -2057,6 +2084,7 @@ function SessionPageInner() {
     setLearnerInput,
     setAbortKey,
     jokeUsedThisGate,
+    fillInFunUsedThisGate,
     subjectParam,
     lessonData,
     phase,
@@ -2075,6 +2103,9 @@ function SessionPageInner() {
     storySetting,
     storyPlot,
     storyPhase,
+    fillInFunTemplate,
+    fillInFunCollectedWords,
+    fillInFunCurrentIndex,
     difficultyParam,
     lessonParam,
     captionSentencesRef,
@@ -2759,13 +2790,21 @@ function SessionPageInner() {
         const lettersExcludingX = text.replace(/x/gi, '').match(/[a-wy-z]/i);
         return Boolean(lettersExcludingX);
       };
-      // Helper: shrink long blanks for fill-in-the-blank items
-      // Previously ~one-third; now double the size (~two-thirds) as requested
-      const shrinkFIBBlanks = (s, ratio = 0.66) => {
+      // Helper: dynamically size blanks for fill-in-the-blank items based on answer length
+      // Scales blank size proportionally to answer length to avoid tiny spaces for long words
+      const shrinkFIBBlanks = (s, answerLength = 0) => {
         if (!s) return s;
         return s.replace(/_{4,}/g, (m) => {
-          const desired = Math.max(12, Math.round(m.length * ratio));
-          return '_'.repeat(desired);
+          // Base size: scale with answer length (roughly 2 underscores per character)
+          // Min 12 underscores for short answers, max 60 for very long ones
+          let targetSize = 12;
+          if (answerLength > 0) {
+            targetSize = Math.max(12, Math.min(60, answerLength * 2));
+          } else {
+            // Fallback: use 66% of original blank length if answer length unknown
+            targetSize = Math.max(12, Math.round(m.length * 0.66));
+          }
+          return '_'.repeat(targetSize);
         });
       };
       const expandBlank = (s, factor = 4) => {
@@ -2783,9 +2822,18 @@ function SessionPageInner() {
         const qType = String(item.type || '').toLowerCase();
         const isFIB = item.sourceType === 'fib' || /fill\s*in\s*the\s*blank|fillintheblank/.test(qType);
         const isTF = item.sourceType === 'tf' || /^(true\s*\/\s*false|truefalse|tf)$/i.test(qType);
-        // Shrink blanks for FIB items (both worksheet and test)
+        // Shrink blanks for FIB items (both worksheet and test) based on answer length
         if (isFIB) {
-          base = shrinkFIBBlanks(base);
+          // Get answer length from various possible fields
+          let answerLength = 0;
+          const answer = item.answer || item.expected || item.correct || item.key || '';
+          if (Array.isArray(item.answers) && item.answers.length > 0) {
+            // Use longest answer from array
+            answerLength = Math.max(...item.answers.map(a => String(a || '').trim().length));
+          } else if (answer) {
+            answerLength = String(answer).trim().length;
+          }
+          base = shrinkFIBBlanks(base, answerLength);
         }
         // Expand blank for word problems (math) in worksheet (do not affect FIB)
         if (label === 'worksheet' && !isFIB && isLikelyWordProblem(item)) {
@@ -3069,7 +3117,8 @@ function SessionPageInner() {
     showOpeningActions &&
     askState === 'inactive' &&
     riddleState === 'inactive' &&
-    poemState === 'inactive'
+    poemState === 'inactive' &&
+    fillInFunState === 'inactive'
   );
   const inQnAForButtons = (
     (phase === 'comprehension' && subPhase === 'comprehension-active') ||
@@ -3079,12 +3128,13 @@ function SessionPageInner() {
   );
   const qnaButtonsVisible = (
     inQnAForButtons && !isSpeaking && showOpeningActions &&
-    askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive' && storyState === 'inactive'
+    askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive' && storyState === 'inactive' && fillInFunState === 'inactive'
   );
   const buttonsGating = discussionButtonsVisible || qnaButtonsVisible;
-  // Story input should also respect the speaking lock
+  // Story and Fill-in-Fun input should also respect the speaking lock
   const storyInputActive = (storyState === 'awaiting-turn' || storyState === 'awaiting-setup');
-  const sendDisabled = storyInputActive ? (!canSend || loading || speakingLock) : (!canSend || loading || comprehensionAwaitingBegin || speakingLock || buttonsGating);
+  const fillInFunInputActive = (fillInFunState === 'collecting-words');
+  const sendDisabled = (storyInputActive || fillInFunInputActive) ? (!canSend || loading || speakingLock) : (!canSend || loading || comprehensionAwaitingBegin || speakingLock || buttonsGating);
 
   const subPhaseStatus = useMemo(() => {
     switch (subPhase) {
@@ -4355,6 +4405,7 @@ function SessionPageInner() {
     setCaptionSentences,
     setCaptionIndex,
     setTranscriptSessionId,
+    setLoading,
     // Refs
     preferHtmlAudioOnceRef,
     forceNextPlaybackRef,
@@ -4480,6 +4531,7 @@ function SessionPageInner() {
     // Poem: topic input ? generate poem, then await Ok
     if (poemState === 'awaiting-topic') {
       setCanSend(false);
+      setShowPoemSuggestions(false);
       // Echo the user's topic to captions as user line
       try {
         const prevLen = captionSentencesRef.current?.length || 0;
@@ -4511,6 +4563,14 @@ function SessionPageInner() {
       if (!trimmed) return;
       setLearnerInput('');
       await handleStoryYourTurn(trimmed);
+      return;
+    }
+
+    // Fill-in-Fun: collecting words
+    if (fillInFunState === 'collecting-words') {
+      if (!trimmed) return;
+      setLearnerInput('');
+      await handleFillInFunWordSubmit(trimmed);
       return;
     }
 
@@ -6259,7 +6319,8 @@ function SessionPageInner() {
                 askState === 'inactive' &&
                 riddleState === 'inactive' &&
                 poemState === 'inactive' &&
-                storyState === 'inactive'
+                storyState === 'inactive' &&
+                fillInFunState === 'inactive'
               );
               if (!canShow) return null;
               const wrap = { display:'flex', alignItems:'center', justifyContent:'center', flexWrap:'wrap', gap:8, padding:'6px 12px' };
@@ -6273,6 +6334,7 @@ function SessionPageInner() {
                   <button type="button" style={riddleUsedThisGate ? disabledBtn : btn} onClick={riddleUsedThisGate ? undefined : handleTellRiddle} disabled={riddleUsedThisGate}>Riddle</button>
                   <button type="button" style={poemUsedThisGate ? disabledBtn : btn} onClick={poemUsedThisGate ? undefined : handlePoemStart} disabled={poemUsedThisGate}>Poem</button>
                   <button type="button" style={storyUsedThisGate ? disabledBtn : btn} onClick={storyUsedThisGate ? undefined : handleStoryStart} disabled={storyUsedThisGate}>Story</button>
+                  <button type="button" style={fillInFunUsedThisGate ? disabledBtn : btn} onClick={fillInFunUsedThisGate ? undefined : handleFillInFunStart} disabled={fillInFunUsedThisGate}>Fill-in-Fun</button>
                   <button type="button" style={goBtn} onClick={lessonData ? handleStartLesson : undefined} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson�'}>Go</button>
                 </div>
               );
@@ -6290,7 +6352,7 @@ function SessionPageInner() {
                 (phase === 'test' && subPhase === 'test-active')
               );
               const canShow = (
-                inQnA && !isSpeaking && showOpeningActions && askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive' && storyState === 'inactive'
+                inQnA && !isSpeaking && showOpeningActions && askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive' && storyState === 'inactive' && fillInFunState === 'inactive'
               );
               if (!canShow) return null;
               const wrap = { display:'flex', alignItems:'center', justifyContent:'center', flexWrap:'wrap', gap:8, padding:'6px 12px' };
@@ -6312,6 +6374,7 @@ function SessionPageInner() {
                   <button type="button" style={riddleUsedThisGate ? disabledBtn : btn} onClick={riddleUsedThisGate ? undefined : handleTellRiddle} disabled={riddleUsedThisGate}>Riddle</button>
                   <button type="button" style={poemUsedThisGate ? disabledBtn : btn} onClick={poemUsedThisGate ? undefined : handlePoemStart} disabled={poemUsedThisGate}>Poem</button>
                   <button type="button" style={storyUsedThisGate ? disabledBtn : btn} onClick={storyUsedThisGate ? undefined : handleStoryStart} disabled={storyUsedThisGate}>Story</button>
+                  <button type="button" style={fillInFunUsedThisGate ? disabledBtn : btn} onClick={fillInFunUsedThisGate ? undefined : handleFillInFunStart} disabled={fillInFunUsedThisGate}>Fill-in-Fun</button>
                   <button type="button" style={goBtn} onClick={onGo} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson�'}>Go</button>
                 </div>
               );
@@ -6334,18 +6397,68 @@ function SessionPageInner() {
             );
           })()}
 
-          {/* Poem confirmation row: shows Ok after poem is read */}
-          {poemState === 'awaiting-ok' && (() => {
-            const wrap = { display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'6px 12px', flexWrap:'wrap' };
-            const okBtn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
-            return (
-              <div style={wrap} aria-label="Poem confirmation">
-                <button type="button" style={okBtn} onClick={handlePoemOk}>Ok</button>
-              </div>
-            );
+          {/* Poem action buttons: Suggestions, Ok, and Back */}
+          {(() => {
+            try {
+              const active = (poemState === 'awaiting-topic' || poemState === 'awaiting-ok');
+              if (!active) return null;
+              const wrap = { display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'6px 12px', flexWrap:'wrap' };
+              const btnBase = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
+              const backBtn = { ...btnBase, background:'#374151' };
+              return (
+                <div style={wrap} aria-label="Poem actions">
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    {poemState === 'awaiting-topic' && showPoemSuggestions && (
+                      <button type="button" style={btnBase} onClick={handlePoemSuggestions}>Suggestions</button>
+                    )}
+                    {poemState === 'awaiting-ok' && (
+                      <button type="button" style={btnBase} onClick={handlePoemOk}>Ok</button>
+                    )}
+                    <button type="button" style={backBtn} onClick={handlePoemBack}>Back</button>
+                  </div>
+                </div>
+              );
+            } catch {}
+            return null;
           })()}
 
-          {/* Story buttons removed - story continuation is now handled through text input */}
+          {/* Fill-in-Fun action buttons: Ok and Back */}
+          {(() => {
+            try {
+              const active = (fillInFunState === 'collecting-words' || fillInFunState === 'awaiting-ok');
+              if (!active) return null;
+              const wrap = { display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'6px 12px', flexWrap:'wrap' };
+              const btnBase = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
+              const backBtn = { ...btnBase, background:'#374151' };
+              return (
+                <div style={wrap} aria-label="Fill-in-Fun actions">
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    {fillInFunState === 'awaiting-ok' && (
+                      <button type="button" style={btnBase} onClick={handleFillInFunOk}>Ok</button>
+                    )}
+                    <button type="button" style={backBtn} onClick={handleFillInFunBack}>Back</button>
+                  </div>
+                </div>
+              );
+            } catch {}
+            return null;
+          })()}
+
+          {/* Story back button: shows during story setup and continuation */}
+          {(() => {
+            try {
+              const active = (storyState === 'awaiting-setup' || storyState === 'awaiting-turn');
+              if (!active) return null;
+              const wrap = { display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'6px 12px', flexWrap:'wrap' };
+              const backBtn = { background:'#374151', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
+              return (
+                <div style={wrap} aria-label="Story actions">
+                  <button type="button" style={backBtn} onClick={handleStoryBack}>Back</button>
+                </div>
+              );
+            } catch {}
+            return null;
+          })()}
 
           {/* Riddle action row (inside fixed footer) */}
           {(() => {
@@ -6539,6 +6652,7 @@ function SessionPageInner() {
             riddleState={riddleState}
             poemState={poemState}
             storyState={storyState}
+            fillInFunState={fillInFunState}
           />
         </>)}
         </div>
@@ -6907,7 +7021,7 @@ function CurrentAssessmentPrompt({ phase, subPhase, testActiveIndex, testList })
   return <span>{String(prompt)}</span>;
 }
 
-function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, loading, onSend, showBegin, isSpeaking, phase, subPhase, tipOverride, abortKey, currentCompProblem, teachingStage, compact = false, hotkeys, showOpeningActions, askState, riddleState, poemState, storyState }) {
+function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, loading, onSend, showBegin, isSpeaking, phase, subPhase, tipOverride, abortKey, currentCompProblem, teachingStage, compact = false, hotkeys, showOpeningActions, askState, riddleState, poemState, storyState, fillInFunState }) {
   const [focused, setFocused] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -7102,9 +7216,13 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
     if (phase === 'congrats') return 'Press "Complete Lesson"';
     if (loading) return 'loading...';
     if (isSpeaking) return 'Ms. Sonoma is talking...';
+    // During Fill-in-Fun word collection
+    if (fillInFunState === 'collecting-words') return 'Type your word and press Send';
     // During Ask sequence: prompt for question input
     if (askState === 'awaiting-input') return 'Type your question...';
-    // During Discussion with Opening actions visible (Ask, Joke, Riddle, Poem, Story, Go buttons)
+    // During Story word collection
+    if (storyState === 'awaiting-turn' || storyState === 'awaiting-setup') return 'Type your answer and press Send';
+    // During Discussion with Opening actions visible (Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Go buttons)
     if (
       phase === 'discussion' &&
       subPhase === 'awaiting-learner' &&
@@ -7112,7 +7230,8 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
       askState === 'inactive' &&
       riddleState === 'inactive' &&
       poemState === 'inactive' &&
-      storyState === 'inactive'
+      storyState === 'inactive' &&
+      fillInFunState === 'inactive'
     ) {
       return 'Press "Go" to begin';
     }
@@ -7497,8 +7616,21 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
             cursor: atTop ? 'default' : 'pointer',
             boxShadow: '0 2px 4px rgba(0,0,0,0.25)',
             opacity: atTop ? 0.6 : 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
-        >?</button>
+        >
+          <span style={{ 
+            width: 0, 
+            height: 0, 
+            borderLeft: '6px solid transparent',
+            borderRight: '6px solid transparent',
+            borderBottom: '8px solid #fff',
+            display: 'inline-block',
+            transform: 'translateY(-2px)'
+          }} />
+        </button>
         <button
           type="button"
           aria-label="Scroll down captions"
@@ -7517,7 +7649,16 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
             boxShadow: '0 2px 4px rgba(0,0,0,0.25)',
             opacity: atBottom ? 0.6 : 1,
           }}
-        >?</button>
+        >
+          <span style={{ 
+            width: 0, 
+            height: 0, 
+            borderLeft: '6px solid transparent',
+            borderRight: '6px solid transparent',
+            borderTop: '8px solid #fff',
+            display: 'inline-block'
+          }} />
+        </button>
       </div>
       <div ref={boxRef} data-ms-caption-panel className="scrollbar-hidden" style={scrollerStyle} aria-live="polite">
         {Array.isArray(items) && items.length > 0 ? (

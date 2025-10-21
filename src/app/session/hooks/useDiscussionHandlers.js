@@ -5,6 +5,7 @@
  * - Riddles (with hint/reveal)
  * - Poems
  * - Stories (collaborative storytelling)
+ * - Fill-in-Fun (word game similar to Mad Libs)
  * - Ask Questions (learner can ask Ms. Sonoma questions)
  */
 
@@ -22,12 +23,15 @@ export function useDiscussionHandlers({
   setRiddleUsedThisGate,
   setPoemUsedThisGate,
   setStoryUsedThisGate,
+  setFillInFunUsedThisGate,
   setCanSend,
+  setLoading,
   setAskState,
   setAskOriginalQuestion,
   setRiddleState,
   setCurrentRiddle,
   setPoemState,
+  setShowPoemSuggestions,
   setStoryState,
   setStoryTranscript,
   setStorySetupStep,
@@ -35,6 +39,10 @@ export function useDiscussionHandlers({
   setStorySetting,
   setStoryPlot,
   setStoryPhase,
+  setFillInFunState,
+  setFillInFunTemplate,
+  setFillInFunCollectedWords,
+  setFillInFunCurrentIndex,
   setTtsLoadingCount,
   setIsSpeaking,
   setCaptionSentences,
@@ -44,6 +52,7 @@ export function useDiscussionHandlers({
   
   // State values
   jokeUsedThisGate,
+  fillInFunUsedThisGate,
   subjectParam,
   lessonData,
   phase,
@@ -62,6 +71,9 @@ export function useDiscussionHandlers({
   storySetting,
   storyPlot,
   storyPhase,
+  fillInFunTemplate,
+  fillInFunCollectedWords,
+  fillInFunCurrentIndex,
   difficultyParam,
   lessonParam,
   
@@ -360,15 +372,29 @@ export function useDiscussionHandlers({
     try { setShowOpeningActions(false); } catch {}
     try { setPoemUsedThisGate(true); } catch {}
     setPoemState('awaiting-topic');
+    setShowPoemSuggestions(true);
     setCanSend(true);
     await speakFrontend('What would you like the poem to be about?');
-  }, [hasGoldenKey, setShowOpeningActions, setPoemUsedThisGate, setPoemState, setCanSend, speakFrontend]);
+  }, [hasGoldenKey, setShowOpeningActions, setPoemUsedThisGate, setPoemState, setShowPoemSuggestions, setCanSend, speakFrontend]);
+
+  const handlePoemSuggestions = useCallback(async () => {
+    setShowPoemSuggestions(false);
+    await speakFrontend('You could ask for a poem about your favorite animal, a fun adventure, or something you learned today.');
+  }, [setShowPoemSuggestions, speakFrontend]);
 
   const handlePoemOk = useCallback(() => {
     setPoemState('inactive');
+    setShowPoemSuggestions(false);
     setShowOpeningActions(true);
     setCanSend(true);
-  }, [setPoemState, setShowOpeningActions, setCanSend]);
+  }, [setPoemState, setShowPoemSuggestions, setShowOpeningActions, setCanSend]);
+
+  const handlePoemBack = useCallback(() => {
+    setPoemState('inactive');
+    setShowPoemSuggestions(false);
+    try { setShowOpeningActions(true); } catch {}
+    try { setCanSend(true); } catch {}
+  }, [setPoemState, setShowPoemSuggestions, setShowOpeningActions, setCanSend]);
 
   // Story handlers
   const handleStoryStart = useCallback(async () => {
@@ -533,6 +559,16 @@ export function useDiscussionHandlers({
     if (storySetupStep === 'characters') {
       setStoryCharacters(trimmed);
       setStorySetupStep('setting');
+      
+      // Add user's characters input to captions in red
+      try {
+        const prevLen = captionSentencesRef.current?.length || 0;
+        const nextAll = [...(captionSentencesRef.current || []), { text: `Characters: ${trimmed}`, role: 'user' }];
+        captionSentencesRef.current = nextAll;
+        setCaptionSentences(nextAll);
+        setCaptionIndex(prevLen);
+      } catch {}
+      
       await speakFrontend('Where does the story take place?');
       setCanSend(true);
       return;
@@ -541,6 +577,16 @@ export function useDiscussionHandlers({
     if (storySetupStep === 'setting') {
       setStorySetting(trimmed);
       setStorySetupStep('plot');
+      
+      // Add user's setting input to captions in red
+      try {
+        const prevLen = captionSentencesRef.current?.length || 0;
+        const nextAll = [...(captionSentencesRef.current || []), { text: `Setting: ${trimmed}`, role: 'user' }];
+        captionSentencesRef.current = nextAll;
+        setCaptionSentences(nextAll);
+        setCaptionIndex(prevLen);
+      } catch {}
+      
       await speakFrontend('What happens in the story?');
       setCanSend(true);
       return;
@@ -549,6 +595,15 @@ export function useDiscussionHandlers({
     if (storySetupStep === 'plot') {
       setStoryPlot(trimmed);
       setStorySetupStep('complete');
+      
+      // Add user's plot input to captions in red
+      try {
+        const prevLen = captionSentencesRef.current?.length || 0;
+        const nextAll = [...(captionSentencesRef.current || []), { text: `Plot: ${trimmed}`, role: 'user' }];
+        captionSentencesRef.current = nextAll;
+        setCaptionSentences(nextAll);
+        setCaptionIndex(prevLen);
+      } catch {}
       
       // Now generate the first part of the story with all setup info
       const instruction = [
@@ -652,6 +707,15 @@ export function useDiscussionHandlers({
     
     setStoryTranscript([...updatedTranscript, { role: 'assistant', text: responseText }]);
     
+    // Add assistant's response to captions with role='assistant' so it doesn't show in red
+    try {
+      const prevLen = captionSentencesRef.current?.length || 0;
+      const nextAll = [...(captionSentencesRef.current || []), { text: responseText, role: 'assistant' }];
+      captionSentencesRef.current = nextAll;
+      setCaptionSentences(nextAll);
+      setCaptionIndex(prevLen);
+    } catch {}
+    
     if (isTestPhase) {
       // Story ends in test phase - add thank you message
       setStoryState('inactive');
@@ -661,7 +725,7 @@ export function useDiscussionHandlers({
       setStorySetting('');
       setStoryPlot('');
       setStoryPhase('');
-      await speakFrontend(responseText);
+      await speakFrontend(responseText, { noCaptions: true });
       // Add thank you message after the story ends
       await speakFrontend('Thanks for helping me tell this story.');
       setShowOpeningActions(true);
@@ -669,7 +733,7 @@ export function useDiscussionHandlers({
     } else {
       // Story continues
       setStoryState('inactive');
-      await speakFrontend(responseText);
+      await speakFrontend(responseText, { noCaptions: true });
       setShowOpeningActions(true);
       setCanSend(true);
     }
@@ -747,6 +811,157 @@ export function useDiscussionHandlers({
     setStoryPlot, setStoryPhase, setCanSend, speakFrontend, setStoryState, setShowOpeningActions
   ]);
 
+  const handleStoryBack = useCallback(() => {
+    setStoryTranscript([]);
+    setStorySetupStep('');
+    setStoryCharacters('');
+    setStorySetting('');
+    setStoryPlot('');
+    setStoryPhase('');
+    setStoryState('inactive');
+    try { setShowOpeningActions(true); } catch {}
+    try { setCanSend(true); } catch {}
+  }, [
+    setStoryTranscript, setStorySetupStep, setStoryCharacters, setStorySetting,
+    setStoryPlot, setStoryPhase, setStoryState, setShowOpeningActions, setCanSend
+  ]);
+
+  // Fill-in-Fun handlers
+  const handleFillInFunStart = useCallback(async () => {
+    console.log('[FILL-IN-FUN] Button clicked, starting handler');
+    if (fillInFunUsedThisGate) return;
+    
+    try { setShowOpeningActions(false); } catch {}
+    setFillInFunState('loading');
+    setCanSend(false);
+    
+    await speakFrontend('Let me create a fun fill-in story for you!');
+    
+    // Show loading screen while generating template
+    setLoading(true);
+    
+    try {
+      // Call the API to generate a template
+      const subject = lessonData?.subject || subjectParam || 'general';
+      const lessonTitle = lessonData?.title || '';
+      
+      const response = await fetch('/api/fill-in-fun', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject, lessonTitle })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate template');
+      }
+      
+      const data = await response.json();
+      console.log('[FILL-IN-FUN] Got template:', data);
+      
+      setFillInFunTemplate(data);
+      setFillInFunCollectedWords({});
+      setFillInFunCurrentIndex(0);
+      setFillInFunUsedThisGate(true);
+      setFillInFunState('collecting-words');
+      setLoading(false);
+      
+      // Ask for the first word
+      const firstWord = data.words[0];
+      await speakFrontend(`Give me ${firstWord.prompt}.`);
+      setCanSend(true);
+      
+    } catch (error) {
+      console.error('[FILL-IN-FUN] Error generating template:', error);
+      setLoading(false);
+      await speakFrontend('Oops! Something went wrong. Let us try something else.');
+      setFillInFunState('inactive');
+      setShowOpeningActions(true);
+      setCanSend(true);
+    }
+  }, [
+    fillInFunUsedThisGate, lessonData, subjectParam, speakFrontend,
+    setShowOpeningActions, setFillInFunState, setFillInFunTemplate,
+    setFillInFunCollectedWords, setFillInFunCurrentIndex, setFillInFunUsedThisGate,
+    setCanSend, setLoading
+  ]);
+
+  const handleFillInFunWordSubmit = useCallback(async (inputValue) => {
+    const trimmed = String(inputValue ?? '').trim();
+    if (!trimmed || !fillInFunTemplate) return;
+    
+    setCanSend(false);
+    
+    const currentWord = fillInFunTemplate.words[fillInFunCurrentIndex];
+    const newCollected = {
+      ...fillInFunCollectedWords,
+      [currentWord.label]: trimmed
+    };
+    setFillInFunCollectedWords(newCollected);
+    
+    // Add user's word to captions in red
+    try {
+      const prevLen = captionSentencesRef.current?.length || 0;
+      const nextAll = [...(captionSentencesRef.current || []), { text: trimmed, role: 'user' }];
+      captionSentencesRef.current = nextAll;
+      setCaptionSentences(nextAll);
+      setCaptionIndex(prevLen);
+    } catch {}
+    
+    const nextIndex = fillInFunCurrentIndex + 1;
+    
+    if (nextIndex < fillInFunTemplate.words.length) {
+      // Ask for next word
+      setFillInFunCurrentIndex(nextIndex);
+      const nextWord = fillInFunTemplate.words[nextIndex];
+      await speakFrontend(`Great! Now give me ${nextWord.prompt}.`);
+      setCanSend(true);
+    } else {
+      // All words collected - substitute and read the story
+      let finalStory = fillInFunTemplate.template;
+      
+      // Replace all placeholders with collected words
+      Object.keys(newCollected).forEach(label => {
+        const regex = new RegExp(`\\{${label}\\}`, 'g');
+        finalStory = finalStory.replace(regex, newCollected[label]);
+      });
+      
+      console.log('[FILL-IN-FUN] Final story:', finalStory);
+      
+      setFillInFunState('awaiting-ok');
+      await speakFrontend(`Here is your story! ${finalStory}`);
+      // Don't set canSend(true) - wait for Ok button
+    }
+  }, [
+    fillInFunTemplate, fillInFunCurrentIndex, fillInFunCollectedWords,
+    captionSentencesRef, setCaptionSentences, setCaptionIndex,
+    setFillInFunCollectedWords, setFillInFunCurrentIndex, setFillInFunState,
+    setCanSend, speakFrontend
+  ]);
+
+  const handleFillInFunOk = useCallback(() => {
+    setFillInFunState('inactive');
+    setFillInFunTemplate(null);
+    setFillInFunCollectedWords({});
+    setFillInFunCurrentIndex(0);
+    try { setShowOpeningActions(true); } catch {}
+    try { setCanSend(true); } catch {}
+  }, [
+    setFillInFunState, setFillInFunTemplate, setFillInFunCollectedWords,
+    setFillInFunCurrentIndex, setShowOpeningActions, setCanSend
+  ]);
+
+  const handleFillInFunBack = useCallback(() => {
+    setFillInFunState('inactive');
+    setFillInFunTemplate(null);
+    setFillInFunCollectedWords({});
+    setFillInFunCurrentIndex(0);
+    try { setShowOpeningActions(true); } catch {}
+    try { setCanSend(true); } catch {}
+  }, [
+    setFillInFunState, setFillInFunTemplate, setFillInFunCollectedWords,
+    setFillInFunCurrentIndex, setShowOpeningActions, setCanSend
+  ]);
+
   return {
     // Exported handlers
     handleTellJoke,
@@ -761,9 +976,16 @@ export function useDiscussionHandlers({
     revealRiddleAnswer,
     handleRiddleBack,
     handlePoemStart,
+    handlePoemSuggestions,
     handlePoemOk,
+    handlePoemBack,
     handleStoryStart,
     handleStoryYourTurn,
     handleStoryEnd,
+    handleStoryBack,
+    handleFillInFunStart,
+    handleFillInFunWordSubmit,
+    handleFillInFunOk,
+    handleFillInFunBack,
   };
 }
