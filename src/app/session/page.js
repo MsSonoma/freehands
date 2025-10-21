@@ -345,6 +345,7 @@ function SessionPageInner() {
       setJokeUsedThisGate(false);
       setRiddleUsedThisGate(false);
       setPoemUsedThisGate(false);
+      setFillInFunUsedThisGate(false);
       // Story persists across phases - don't reset storyUsedThisGate or clear transcript
       // Only clear story when starting a completely new session
     }
@@ -855,6 +856,20 @@ function SessionPageInner() {
       }
     } catch {}
   }, []);
+
+  // Preload video on mount to avoid race condition on Begin
+  useEffect(() => {
+    try {
+      if (videoRef.current) {
+        // Trigger video load immediately
+        videoRef.current.load();
+        console.info('[Session] Video preload initiated on mount');
+      }
+    } catch (e) {
+      console.warn('[Session] Video preload failed', e);
+    }
+  }, []);
+
   const lastAudioBase64Ref = useRef(null);
   // Track HTMLAudio paused position so we can reconstruct/resume after long idle or GC
   const htmlAudioPausedAtRef = useRef(0);
@@ -2374,6 +2389,32 @@ function SessionPageInner() {
     try {
       if (videoRef.current) {
         console.info('[Opening] Attempting to play video during Begin gesture');
+        // Ensure video is loaded before playing
+        if (videoRef.current.readyState < 2) {
+          console.info('[Opening] Video not ready (readyState=' + videoRef.current.readyState + '), loading now');
+          videoRef.current.load();
+          // Wait for video to be ready
+          await new Promise((resolve) => {
+            const checkReady = () => {
+              if (videoRef.current && videoRef.current.readyState >= 2) {
+                console.info('[Opening] Video ready after load');
+                resolve();
+              } else {
+                const onReady = () => {
+                  console.info('[Opening] Video ready via loadeddata event');
+                  resolve();
+                };
+                videoRef.current?.addEventListener('loadeddata', onReady, { once: true });
+                // Fallback timeout if event never fires
+                setTimeout(() => {
+                  console.warn('[Opening] Video ready timeout, proceeding anyway');
+                  resolve();
+                }, 1000);
+              }
+            };
+            checkReady();
+          });
+        }
         // Use playVideoWithRetry to handle mobile quirks
         playVideoWithRetry(videoRef.current).catch(e => {
           console.warn('[Opening] Video play during Begin failed', e);
