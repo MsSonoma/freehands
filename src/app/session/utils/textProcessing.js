@@ -16,8 +16,10 @@ export function splitIntoSentences(text) {
     for (const lineRaw of lines) {
       const line = String(lineRaw).replace(/[\t ]+/g, ' ').trimEnd();
       if (!line) continue;
+      // Split on sentence-ending punctuation followed by whitespace or closing quotes then whitespace
+      // This prevents splitting numbered lists (1. Item) and preserves quotes with periods ("text.")
       const parts = line
-        .split(/(?<=[.?!])/)
+        .split(/(?<=[.?!]["']?)\s+/)
         .map((part) => String(part).trim())
         .filter(Boolean);
       if (parts.length) out.push(...parts);

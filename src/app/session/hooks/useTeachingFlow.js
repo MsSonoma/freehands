@@ -3,7 +3,10 @@
  * 
  * Custom hook managing the two-stage teaching flow (Definitions → Examples).
  * Handles stage progression, repeat logic, and gate transitions.
+ * Supports sentence-by-sentence gating for vocab definitions.
  */
+
+import { useState, useRef } from 'react';
 
 export function useTeachingFlow({
   // State setters
@@ -47,6 +50,14 @@ export function useTeachingFlow({
   COMPREHENSION_CUE_PHRASE,
 }) {
   
+  // Sentence-by-sentence gating state for vocab definitions
+  const [vocabSentences, setVocabSentences] = useState([]);
+  const [vocabSentenceIndex, setVocabSentenceIndex] = useState(0);
+  const [isInSentenceMode, setIsInSentenceMode] = useState(false); // Track if navigating sentences vs final gate
+  const vocabSentencesRef = useRef([]);
+  const vocabSentenceIndexRef = useRef(0);
+  const isInSentenceModeRef = useRef(false);
+  
   /**
    * Gate prompt: "Do you have any questions?" + example questions
    */
@@ -61,11 +72,25 @@ export function useTeachingFlow({
       // Generate example questions relevant to the current teaching stage and lesson
       const lessonTitle = getCleanLessonTitle();
       const notes = getTeachingNotes() || '';
-      const stageLabel = teachingStage === 'definitions' ? 'vocabulary definitions' : 'examples';
+      
+      // Determine what we just covered
+      let stageLabel = teachingStage === 'definitions' ? 'vocabulary definitions' : 'examples';
+      let contextInfo = '';
+      
+      // For definitions stage with sentence-by-sentence gating, reference the specific sentence
+      if (teachingStage === 'definitions' && vocabSentencesRef.current.length > 0) {
+        const currentSentence = vocabSentencesRef.current[vocabSentenceIndexRef.current];
+        const sentenceNum = vocabSentenceIndexRef.current + 1;
+        const totalSentences = vocabSentencesRef.current.length;
+        
+        stageLabel = `vocabulary definition (sentence ${sentenceNum} of ${totalSentences})`;
+        contextInfo = `The sentence we just covered was: "${currentSentence}"`;
+      }
       
       const instruction = [
         `The lesson is "${lessonTitle}".`,
         `We just covered ${stageLabel}.`,
+        contextInfo,
         'Generate 2-3 short example questions a child might ask about this topic.',
         'Start with: "You could ask questions like..."',
         'Then list the questions briefly and naturally.',
@@ -73,7 +98,7 @@ export function useTeachingFlow({
         'Do not answer the questions.',
         'Kid-friendly style rules: Use simple everyday words a 5–7 year old can understand. Keep sentences short (about 6–12 words).',
         'Always respond with natural spoken text only. Do not use emojis, decorative characters, repeated punctuation, or symbols.'
-      ].join(' ');
+      ].filter(Boolean).join(' ');
       
       const result = await callMsSonoma(
         instruction,
@@ -102,12 +127,24 @@ export function useTeachingFlow({
   };
 
   /**
-   * Teach definitions stage
+   * Teach definitions stage - sentence-by-sentence gating
    */
   const teachDefinitions = async (isRepeat = false) => {
     setCanSend(false);
     setSubPhase('teaching-3stage');
     
+    // If we already have vocab sentences stored, handle repeat/next
+    if (vocabSentencesRef.current.length > 0) {
+      const currentSentence = vocabSentencesRef.current[vocabSentenceIndexRef.current];
+      if (currentSentence) {
+        // Speak the current sentence (whether repeat or continuing)
+        try { await speakFrontend(currentSentence); } catch {}
+        return true;
+      }
+      return false;
+    }
+    
+    // First time through: speak intro and get all vocab definitions from GPT
     if (!isRepeat) {
       try { await speakFrontend("First let's go over some definitions."); } catch {}
     }
@@ -151,11 +188,14 @@ export function useTeachingFlow({
       '',
       `Definitions: Define these words: ${vocabCsv}. Keep it warm, playful, and brief. Do not ask a question.`,
       '',
+      'CRITICAL ACCURACY: All definitions must be factually accurate and scientifically correct. Never state incorrect facts, make false comparisons, or contradict established knowledge. If unsure about any fact, omit it rather than guess. OVERRIDE: If vocab definitions or teaching notes are provided below, base your teaching on that content - paraphrase naturally in your own style, but preserve the meaning and facts exactly as given. Do not correct, contradict, or add different information.',
+      '',
       "Kid-friendly: Use simple everyday words a 5 year old can understand. Keep sentences short (about 6–12 words). Avoid big words and jargon. If you must use one, add a quick kid-friendly meaning in parentheses. Use a warm, friendly tone with everyday examples. Speak directly to the learner using 'you' and 'we'. One idea per sentence; do not pack many steps into one sentence.",
       '',
       'Always respond with natural spoken text only. Do not use emojis, decorative characters, repeated punctuation, ASCII art, bullet lines, or other symbols that would be awkward to read aloud.'
     ].join('\n');
     
+    // Get full definitions from GPT but skip audio playback (we'll play sentence-by-sentence)
     const result = await callMsSonoma(
       instruction,
       '',
@@ -169,8 +209,35 @@ export function useTeachingFlow({
         teachingNotes: getTeachingNotes() || undefined,
         vocab: hasAnyVocab ? vocabList : [],
         stage: 'definitions'
-      }
+      },
+      { skipAudio: true } // Skip audio - we'll play sentence-by-sentence
     );
+    
+    if (result.success && result.text) {
+      // Split the GPT response into sentences
+      const sentences = splitIntoSentences(result.text).filter(s => s.trim());
+      
+      if (sentences.length === 0) {
+        console.warn('[Definitions] No sentences found after splitting');
+        return false;
+      }
+      
+      // Store all sentences for sentence-by-sentence gating
+      vocabSentencesRef.current = sentences;
+      setVocabSentences(sentences);
+      vocabSentenceIndexRef.current = 0;
+      setVocabSentenceIndex(0);
+      isInSentenceModeRef.current = true;
+      setIsInSentenceMode(true);
+      
+      console.info('[Definitions] Split into', sentences.length, 'sentences for gating');
+      console.info('[Definitions] Set isInSentenceMode to TRUE');
+      
+      // Speak the first sentence
+      try { await speakFrontend(sentences[0]); } catch {}
+      
+      return true;
+    }
     
     return !!result.success;
   };
@@ -195,6 +262,8 @@ export function useTeachingFlow({
       '',
       'No intro: Do not greet or introduce yourself; begin immediately with the examples.',
       'Examples: Show 2–3 tiny worked examples appropriate for this lesson. You compute every step. Be concise, warm, and playful. Do not add definitions or broad explanations beyond what is needed to show the steps. Do not do an introduction or a wrap; give only the examples.',
+      '',
+      'CRITICAL ACCURACY: All examples and facts must be scientifically and academically correct. Never demonstrate incorrect procedures, state false information, or contradict established knowledge. Verify accuracy before presenting. OVERRIDE: If teaching notes below specify particular examples or methods, base your examples on that guidance - paraphrase naturally in your own style, but preserve the meaning and facts exactly as given. Do not correct, contradict, or add different information.',
       '',
       'Kid-friendly style rules: Use simple everyday words a 5–7 year old can understand. Keep sentences short (about 6–12 words). Avoid big words and jargon. If you must use one, add a quick kid-friendly meaning in parentheses. Use a warm, friendly tone with everyday examples. Speak directly to the learner using \"you\" and \"we\". One idea per sentence; do not pack many steps into one sentence.',
       '',
@@ -238,16 +307,34 @@ export function useTeachingFlow({
     try { scheduleSaveSnapshot('begin-teaching-definitions'); } catch {}
     
     const ok = await teachDefinitions(false);
-    if (ok) await promptGateRepeat();
+    if (ok) {
+      // Just show gate buttons, don't ask "Do you have any questions?" yet
+      setSubPhase('awaiting-gate');
+      setCanSend(false);
+    }
   };
 
   /**
-   * Handle "Yes" button - repeat current stage
+   * Handle "Yes" button - repeat current sentence or stage
    */
   const handleGateYes = async () => {
-    try { console.info('[Gate] YES clicked: repeat stage', teachingStage); } catch {}
+    try { console.info('[Gate] YES clicked: repeat', teachingStage); } catch {}
     
     if (teachingStage === 'definitions') {
+      // If we have sentences, just repeat the current one
+      if (vocabSentencesRef.current.length > 0) {
+        const currentSentence = vocabSentencesRef.current[vocabSentenceIndexRef.current];
+        if (currentSentence) {
+          // Use noCaptions to avoid re-transcribing
+          try { await speakFrontend(currentSentence, { noCaptions: true }); } catch {}
+          // Don't call promptGateRepeat - just show gate buttons again
+          setSubPhase('awaiting-gate');
+          setCanSend(false);
+          return;
+        }
+      }
+      
+      // Fallback: repeat the whole stage (shouldn't happen normally)
       const ok = await teachDefinitions(true);
       if (ok) {
         setStageRepeats((s) => ({ ...s, definitions: (s.definitions || 0) + 1 }));
@@ -267,13 +354,50 @@ export function useTeachingFlow({
   };
 
   /**
-   * Handle "No" button - advance to next stage or comprehension
+   * Handle "No" button - advance to next sentence or next stage
    */
   const handleGateNo = async () => {
-    try { console.info('[Gate] NO clicked: next stage', teachingStage); } catch {}
+    try { console.info('[Gate] NO clicked: next', teachingStage); } catch {}
     
     if (teachingStage === 'definitions') {
-      // Advance to Examples
+      // If we have sentences stored, try to advance to the next one
+      if (vocabSentencesRef.current.length > 0) {
+        const nextIndex = vocabSentenceIndexRef.current + 1;
+        
+        // Check if there are more sentences
+        if (nextIndex < vocabSentencesRef.current.length) {
+          // Advance to next sentence
+          vocabSentenceIndexRef.current = nextIndex;
+          setVocabSentenceIndex(nextIndex);
+          
+          try { 
+            console.info('[Gate] Advancing to sentence', nextIndex + 1, 'of', vocabSentencesRef.current.length); 
+          } catch {}
+          
+          const nextSentence = vocabSentencesRef.current[nextIndex];
+          try { await speakFrontend(nextSentence); } catch {}
+          // Don't call promptGateRepeat - just show gate buttons again
+          setSubPhase('awaiting-gate');
+          setCanSend(false);
+          return;
+        }
+        
+        // No more sentences - NOW call promptGateRepeat for the final gate
+        try { console.info('[Gate] All vocab sentences covered; showing final gate'); } catch {}
+        vocabSentencesRef.current = []; // Clear vocab sentences
+        setVocabSentences([]);
+        vocabSentenceIndexRef.current = 0;
+        setVocabSentenceIndex(0);
+        isInSentenceModeRef.current = false; // Now in final gate mode
+        setIsInSentenceMode(false);
+        console.info('[Gate] Set isInSentenceMode to FALSE for final gate');
+        
+        // Show the "Do you have any questions?" gate AFTER all sentences
+        await promptGateRepeat();
+        return;
+      }
+      
+      // Final gate "No" - advance to Examples stage
       setTeachingStage('examples');
       try { scheduleSaveSnapshot('begin-teaching-examples'); } catch {}
       const ok = await teachExamples(false);
@@ -371,5 +495,6 @@ export function useTeachingFlow({
     handleGateYes,
     handleGateNo,
     moveToComprehensionWithCue,
+    isInSentenceMode, // Export sentence navigation mode flag
   };
 }

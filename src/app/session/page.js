@@ -33,6 +33,7 @@ import { clearSynthetic as clearSyntheticUtil, finishSynthetic as finishSyntheti
 import { buildQAPool as buildQAPoolUtil, ensureExactCount as ensureExactCountUtil, initSampleDeck as initSampleDeckUtil, drawSampleUnique as drawSampleUniqueUtil, reserveSamples as reserveSamplesUtil, initWordDeck as initWordDeckUtil, drawWordUnique as drawWordUniqueUtil } from './utils/assessmentGenerationUtils';
 import { getSnapshotStorageKey as getSnapshotStorageKeyUtil, scheduleSaveSnapshotCore } from './utils/snapshotPersistenceUtils';
 import { clearSpeechGuard as clearSpeechGuardUtil, forceStopSpeaking as forceStopSpeakingUtil, armSpeechGuard as armSpeechGuardUtil, armSpeechGuardThrottled as armSpeechGuardThrottledUtil } from './utils/speechGuardUtils';
+import { checkLearnerInput } from './utils/profanityFilter';
 import { useDiscussionHandlers } from './hooks/useDiscussionHandlers';
 import { useAudioPlayback } from './hooks/useAudioPlayback';
 import { usePhaseHandlers } from './hooks/usePhaseHandlers';
@@ -1766,9 +1767,6 @@ function SessionPageInner() {
         // best-effort hygiene; ignore errors
       }
 
-    setTranscript(replyText);
-    setError("");
-
   // Prepare captions from the full reply (append to keep full transcript)
   let newSentences = splitIntoSentences(replyText);
   // Merge MC fragments like "A." + "7, B." + ... into a single inline sentence for captions
@@ -1781,6 +1779,18 @@ function SessionPageInner() {
       if (normalizedJoined.length < Math.floor(0.9 * normalizedOriginal.length)) {
         newSentences = [normalizedOriginal];
       }
+
+      // Skip audio playback, transcript, and caption display if requested (for sentence-by-sentence gating)
+      if (opts.skipAudio) {
+        // Return text and sentences without updating UI - caller will handle display
+        setLoading(false);
+        setPhaseGuardSent((prev) => (prev[phaseKey] ? prev : { ...prev, [phaseKey]: true }));
+        return { success: true, data, text: replyText, sentences: newSentences };
+      }
+
+    setTranscript(replyText);
+    setError("");
+
   const prevLen = captionSentencesRef.current?.length || 0;
   let nextAll = [...(captionSentencesRef.current || [])];
   // If user provided input (innertext), insert it ABOVE Ms. Sonoma's reply as its own line,
@@ -1800,16 +1810,18 @@ function SessionPageInner() {
       }
     }
   } catch { /* non-fatal */ }
+      // Network + processing complete; stop showing loading placeholder BEFORE or while starting audio
+      setLoading(false);
+      
   nextAll = [...nextAll, ...newSentences];
   captionSentencesRef.current = nextAll;
   setCaptionSentences(nextAll);
   // Set selection to the first reply sentence (skip the inserted items before reply)
   setCaptionIndex(prevLen + preReplyExtra);
 
-      // Network + processing complete; stop showing loading placeholder BEFORE or while starting audio
-      setLoading(false);
       const hasAudio = Boolean(data.audio);
       setIsSpeaking(hasAudio);
+      
       if (opts.fastReturn) {
         // Fire-and-forget audio so caller can process reply (e.g., test review cue detection) immediately
         const replyStartIndex = prevLen + preReplyExtra;
@@ -3551,6 +3563,7 @@ function SessionPageInner() {
     handleGateYes: handleGateYesHook,
     handleGateNo: handleGateNoHook,
     moveToComprehensionWithCue: moveToComprehensionWithCueHook,
+    isInSentenceMode,
   } = useTeachingFlow({
     // State setters
     setCanSend,
@@ -4586,6 +4599,17 @@ function SessionPageInner() {
     if (!trimmed) {
       return;
     }
+    
+    // Check for profanity and block if detected
+    const profanityCheck = checkLearnerInput(trimmed);
+    if (!profanityCheck.allowed) {
+      console.log('[Session] Profanity detected and blocked:', { filtered: profanityCheck.filtered });
+      // Show rejection message and clear input
+      setLearnerInput("");
+      await speakFrontend(profanityCheck.message || "Let's use kind words.");
+      return;
+    }
+    
     // Clear only when actually sending so the input doesn't appear to "eat" text without sending
     setLearnerInput("");
 
@@ -6096,10 +6120,10 @@ function SessionPageInner() {
             gap: 8,
             flexWrap: 'wrap'
           }}>
-            <button type="button" onClick={handleResumeClick} style={{ padding: '8px 12px', background: '#111827', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, cursor: 'pointer' }}>
+            <button type="button" onClick={handleResumeClick} style={{ padding: '8px 12px', background: '#c7442e', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, cursor: 'pointer' }}>
               Resume
             </button>
-            <button type="button" onClick={handleRestartClick} style={{ padding: '8px 12px', background: '#f43f5e', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, cursor: 'pointer' }}>
+            <button type="button" onClick={handleRestartClick} style={{ padding: '8px 12px', background: '#111827', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, cursor: 'pointer' }}>
               Restart
             </button>
           </div>
@@ -6127,12 +6151,23 @@ function SessionPageInner() {
                 if (phase === 'teaching' && subPhase === 'awaiting-gate' && !isSpeaking && askState === 'inactive') {
                   const qaWrap = { display:'flex', alignItems:'center', justifyContent:'center', gap:8, flex:1, flexWrap:'wrap', padding:'0 8px' };
                   const qaBtn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight: (isShortHeight && isMobileLandscape) ? 32 : 36, minWidth:56, fontWeight:700, border:'none', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.18)' };
-                  const repeatLabel = teachingStage === 'examples' ? 'Repeat Examples' : 'Repeat Vocab';
+                  // Button labels: "Repeat Sentence"/"Next Sentence" during sentence navigation, "Restart Vocab"/"Next: Examples" at final gate
+                  let repeatLabel = 'Restart Vocab';
+                  let nextLabel = 'Next: Examples';
+                  console.log('[Gate Button] teachingStage:', teachingStage, 'isInSentenceMode:', isInSentenceMode);
+                  if (teachingStage === 'examples') {
+                    repeatLabel = 'Repeat Examples';
+                    nextLabel = 'Next';
+                  } else if (teachingStage === 'definitions' && isInSentenceMode) {
+                    repeatLabel = 'Repeat Sentence';
+                    nextLabel = 'Next Sentence';
+                    console.log('[Gate Button] Setting labels to "Repeat Sentence"/"Next Sentence" for sentence mode');
+                  }
                   const ariaLabel = teachingStage === 'examples' ? 'Teaching gate: repeat examples or move to next stage' : 'Teaching gate: repeat vocab or move to next stage';
                   qa = (
                     <div style={qaWrap} aria-label={ariaLabel}>
                       <button type="button" style={qaBtn} onClick={handleGateYes}>{repeatLabel}</button>
-                      <button type="button" style={qaBtn} onClick={handleGateNo}>Next</button>
+                      <button type="button" style={qaBtn} onClick={handleGateNo}>{nextLabel}</button>
                       <button
                         type="button"
                         style={{ ...qaBtn, minWidth: 140, opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
@@ -6589,13 +6624,24 @@ function SessionPageInner() {
                   paddingLeft: isMobileLandscape ? 12 : '4%', paddingRight: isMobileLandscape ? 12 : '4%', marginBottom: 6,
                 };
                 const btnBase = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, minWidth:56, fontWeight:700, border:'none', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.18)' };
-                const repeatLabel = teachingStage === 'examples' ? 'Repeat Examples' : 'Repeat Vocab';
+                // Button labels: "Repeat Sentence"/"Next Sentence" during sentence navigation, "Restart Vocab"/"Next: Examples" at final gate
+                let repeatLabel = 'Restart Vocab';
+                let nextLabel = 'Next: Examples';
+                console.log('[Gate Button 2] teachingStage:', teachingStage, 'isInSentenceMode:', isInSentenceMode);
+                if (teachingStage === 'examples') {
+                  repeatLabel = 'Repeat Examples';
+                  nextLabel = 'Next';
+                } else if (teachingStage === 'definitions' && isInSentenceMode) {
+                  repeatLabel = 'Repeat Sentence';
+                  nextLabel = 'Next Sentence';
+                  console.log('[Gate Button 2] Setting labels to "Repeat Sentence"/"Next Sentence" for sentence mode');
+                }
                 const ariaLabel = teachingStage === 'examples' ? 'Teaching gate: repeat examples or move to next stage' : 'Teaching gate: repeat vocab or move to next stage';
                 if (isShortHeight) return null; // already rendered in controls row above
                 return (
                   <div style={containerStyle} aria-label={ariaLabel}>
                     <button type="button" style={btnBase} onClick={handleGateYes}>{repeatLabel}</button>
-                    <button type="button" style={btnBase} onClick={handleGateNo}>Next</button>
+                    <button type="button" style={btnBase} onClick={handleGateNo}>{nextLabel}</button>
                     <button
                       type="button"
                       style={{ ...btnBase, minWidth: 160, background: '#374151', opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
@@ -6734,6 +6780,7 @@ function SessionPageInner() {
             subPhase={subPhase}
             currentCompProblem={currentCompProblem}
             teachingStage={teachingStage}
+            isInSentenceMode={isInSentenceMode}
             tipOverride={tipOverride}
             onSend={handleSend}
             compact={isMobileLandscape}
@@ -7112,7 +7159,7 @@ function CurrentAssessmentPrompt({ phase, subPhase, testActiveIndex, testList })
   return <span>{String(prompt)}</span>;
 }
 
-function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, loading, onSend, showBegin, isSpeaking, phase, subPhase, tipOverride, abortKey, currentCompProblem, teachingStage, compact = false, hotkeys, showOpeningActions, askState, riddleState, poemState, storyState, fillInFunState }) {
+function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, loading, onSend, showBegin, isSpeaking, phase, subPhase, tipOverride, abortKey, currentCompProblem, teachingStage, isInSentenceMode, compact = false, hotkeys, showOpeningActions, askState, riddleState, poemState, storyState, fillInFunState }) {
   const [focused, setFocused] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -7328,8 +7375,13 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
     }
     // During Teaching gate, disable text and prompt to use buttons
     if (phase === 'teaching' && subPhase === 'awaiting-gate') {
-      const repeatLabel = teachingStage === 'examples' ? 'Repeat Examples' : 'Repeat Vocab';
-      return `Tap ${repeatLabel} or Next below`;
+      if (teachingStage === 'examples') {
+        return 'Tap Repeat Examples or Next above';
+      }
+      // During definitions: check if in sentence mode
+      const repeatLabel = isInSentenceMode ? 'Repeat Sentence' : 'Restart Vocab';
+      const nextLabel = isInSentenceMode ? 'Next Sentence' : 'Next: Examples';
+      return `Tap ${repeatLabel} or ${nextLabel} above`;
     }
     // During Comprehension: lock input and guide clearly
     if (phase === 'comprehension') {

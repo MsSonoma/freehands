@@ -60,15 +60,27 @@ function buildPrompt({ title, subject, difficulty, grade, description, notes, vo
   "shortanswer": [{"question": "string", "expectedAny": ["answer"]}]
 }
 
+FACTUAL ACCURACY REQUIREMENTS:
+- All vocabulary definitions must be scientifically and academically accurate
+- All questions and answers must be factually correct
+- Never include false information, incorrect facts, or misleading comparisons
+- For science topics, use established scientific knowledge
+- For math topics, ensure all calculations and concepts are correct
+- If uncertain about any fact, omit it rather than include potentially incorrect information
+
 CRITICAL REQUIREMENTS:
 1. Every truefalse item MUST have complete question text (not blank)
 2. Every fillintheblank item MUST have a complete sentence with _____ showing the blank
 3. Every multiplechoice item:
-   - Must have 4 distinct choices (do NOT prefix with A), B), C), D) - just the text)
+   - Must have EXACTLY 4 distinct choices (do NOT prefix with A), B), C), D) - just the text)
    - "correct" is the index (0, 1, 2, or 3) of the right answer
    - "expectedAny" contains the text of the correct choice
 4. Each question type needs at least 10 complete questions
-5. teachingNotes: Include key teaching strategies, common misconceptions, real-world connections, and differentiation tips (2-4 sentences)${notesGuidance}
+5. For shortanswer and fillintheblank items:
+   - Include multiple acceptable answers in "expectedAny" array
+   - Add common synonyms and alternative phrasings to increase leniency
+   - Example: ["photosynthesis", "making food", "food production", "creating energy"]
+6. teachingNotes: Include key teaching strategies, common misconceptions, real-world connections, and differentiation tips (2-4 sentences)${notesGuidance}
 
 EXAMPLE truefalse format:
 {"question": "The sun rises in the east.", "answer": true, "expectedAny": ["true"]}

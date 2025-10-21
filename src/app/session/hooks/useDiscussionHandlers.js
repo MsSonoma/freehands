@@ -330,8 +330,11 @@ export function useDiscussionHandlers({
     if (!currentRiddle) return;
     const instruction = `You are Ms. Sonoma. Give a tiny hint (one short sentence) for this riddle without revealing the answer. Riddle: "${currentRiddle.text}". Correct answer: "${currentRiddle.answer}". Keep it playful and encouraging.`;
     const result = await callMsSonoma(instruction, '', { phase: 'discussion', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, step: 'riddle-hint' }, { fastReturn: true }).catch(() => null);
-    const line = (result && result.text) ? result.text : 'Here is a small hint.';
-    await speakFrontend(line);
+    // Backend already synthesizes and plays audio via fastReturn; no need to call speakFrontend again
+    if (!result || !result.text) {
+      // Fallback only if API call failed
+      await speakFrontend('Here is a small hint.');
+    }
     setRiddleState('awaiting-solve');
   }, [currentRiddle, subjectParam, difficultyParam, lessonParam, callMsSonoma, speakFrontend, setRiddleState]);
 
@@ -426,6 +429,7 @@ export function useDiscussionHandlers({
     // Check if this is a continuation from a previous phase
     if (storyTranscript.length > 0) {
       console.log('[STORY] Continuing existing story');
+      try { setLoading(true); } catch {}
       
       // Determine the prompt based on actual phase
       const isTestPhase = phase === 'test' || subPhase === 'test-active';
@@ -461,6 +465,7 @@ export function useDiscussionHandlers({
           }
         }
         
+        try { setLoading(false); } catch {}
         setStoryState('awaiting-turn');
         await speakFrontend(`${briefSummary} How would you like the story to end?`);
         setCanSend(true);
@@ -528,6 +533,7 @@ export function useDiscussionHandlers({
           console.warn('[Story] Failed to generate suggestions:', err);
         }
         
+        try { setLoading(false); } catch {}
         setStoryState('awaiting-turn');
         await speakFrontend(`${briefSummary} What would you like to happen next? ${suggestions}`);
         setCanSend(true);
@@ -549,7 +555,7 @@ export function useDiscussionHandlers({
   }, [
     hasGoldenKey, setShowOpeningActions, setStoryUsedThisGate, setStoryTranscript, setStoryState, 
     setStorySetupStep, setStoryCharacters, setStorySetting, setStoryPlot, setStoryPhase,
-    setCanSend, speakFrontend, storyTranscript, phase, subPhase
+    setCanSend, setLoading, speakFrontend, storyTranscript, phase, subPhase, learnerGrade, difficultyParam
   ]);
 
   const handleStoryYourTurn = useCallback(async (inputValue) => {
@@ -614,7 +620,7 @@ export function useDiscussionHandlers({
         `The characters are: ${storyCharacters}`,
         `The setting is: ${storySetting}`,
         `The plot involves: ${trimmed}`,
-        'Tell the first part of the story in 2-3 short sentences.',
+        'Tell the first part of the story in 4-6 sentences.',
         'Follow the child\'s ideas closely and make the story about what they want unless it\'s inappropriate.',
         'Make it fun and age-appropriate for a child.',
         'End by saying "To be continued."'
@@ -675,7 +681,7 @@ export function useDiscussionHandlers({
           'You are ending a collaborative story.',
           storyContext,
           `The child wants the story to end like this: "${trimmed.replace(/["]/g, "'")}"`,
-          'End the story based on their idea in 2-3 short sentences.',
+          'End the story based on their idea in 4-6 sentences.',
           'Follow the child\'s ideas closely and make the ending about what they want unless it\'s inappropriate.',
           'Make it satisfying and age-appropriate for a child.',
           'Say "The end." at the very end.'
@@ -685,7 +691,7 @@ export function useDiscussionHandlers({
           'You are telling a collaborative story in turns.',
           storyContext,
           `The child just said: "${trimmed.replace(/["]/g, "'")}"`,
-          'Continue the story in 2-3 short sentences.',
+          'Continue the story in 4-6 sentences.',
           'Follow the child\'s ideas closely and make the story about what they want unless it\'s inappropriate.',
           'Build naturally on what came before.',
           'Make it fun and age-appropriate for a child.',
