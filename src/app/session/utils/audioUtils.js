@@ -312,34 +312,40 @@ export async function playViaWebAudio(
         resolve();
       };
       try {
-        try { console.info('[Session] Starting WebAudio source now at', ctx?.currentTime); } catch {}
-        webAudioStartedAtRef.current = ctx.currentTime;
-        webAudioPausedAtRef.current = 0;
-        
-        // Start video in response to audio start
-        const startVideoAndCaptions = async () => {
+        // Start video first, then audio and captions together
+        // This ensures video is playing before audio starts (critical for mobile browsers)
+        const startPlayback = async () => {
           try {
             if (videoRef.current) {
+              try { console.info('[Session] Starting video before WebAudio'); } catch {}
               await playVideoWithRetry(videoRef.current);
-              // Small delay to ensure video has actually started playing before scheduling captions
-              // Critical for slow devices (old iPads) where video takes time to start
-              await new Promise(r => setTimeout(r, 100));
+              // Brief settling time for video playback on slow devices
+              await new Promise(r => setTimeout(r, 50));
             }
-          } catch {}
+          } catch (e) {
+            try { console.warn('[Session] Video start failed, continuing with audio', e); } catch {}
+          }
           
-          // Now schedule captions after video is playing
+          // Now start audio source
+          try { console.info('[Session] Starting WebAudio source now at', ctx?.currentTime); } catch {}
+          webAudioStartedAtRef.current = ctx.currentTime;
+          webAudioPausedAtRef.current = 0;
+          
+          // Schedule captions immediately after audio starts
           const allowAuto = (!userPausedRef.current || forceNextPlaybackRef.current);
           if (allowAuto) {
             try { scheduleCaptionsForDuration(buffer.duration, sentences || [], startIndex || 0); } catch {}
           }
+          
+          // Arm guard with known duration for WebAudio
+          try { armSpeechGuard(buffer.duration || 0, 'webaudio:start'); } catch {}
+          src.start(0);
         };
         
-        // Start video and captions asynchronously (don't block audio start)
-        startVideoAndCaptions().catch(() => {});
-        
-        // Arm guard with known duration for WebAudio
-        try { armSpeechGuard(buffer.duration || 0, 'webaudio:start'); } catch {}
-        src.start(0);
+        startPlayback().catch((e) => {
+          try { console.warn('[Session] WebAudio playback start failed', e); } catch {}
+          resolve();
+        });
       } catch (e) { console.warn('[Session] WebAudio start failed', e); resolve(); }
     });
   } catch (e) {
