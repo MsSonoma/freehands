@@ -16,6 +16,7 @@ export default function FacilitatorLessonsPage() {
   const [approvedLessons, setApprovedLessons] = useState({}) // { 'subject/lesson_file': true }
   const [medals, setMedals] = useState({}) // { lesson_key: { bestPercent, medalTier } }
   const [loading, setLoading] = useState(true)
+  const [lessonsLoading, setLessonsLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [expandedSubjects, setExpandedSubjects] = useState({}) // { subject: true/false }
   const [gradeFilters, setGradeFilters] = useState({}) // { subject: 'K' | '1' | '2' | ... | 'all' }
@@ -81,6 +82,7 @@ export default function FacilitatorLessonsPage() {
   useEffect(() => {
     let cancelled = false
     ;(async () => {
+      setLessonsLoading(true)
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
@@ -104,7 +106,10 @@ export default function FacilitatorLessonsPage() {
         }
       }
       console.log('[FRONTEND] All lessons loaded:', lessonsMap);
-      if (!cancelled) setAllLessons(lessonsMap)
+      if (!cancelled) {
+        setAllLessons(lessonsMap)
+        setLessonsLoading(false)
+      }
     })()
     return () => { cancelled = true }
   }, []) // No dependency - fetch once on mount
@@ -245,7 +250,7 @@ export default function FacilitatorLessonsPage() {
     return <main style={{ padding: '12px 24px' }}><p>Loading…</p></main>
   }
 
-  if (loading) {
+  if (loading || lessonsLoading) {
     return (
       <main style={{ padding: '12px 24px', maxWidth: 1200, margin: '0 auto' }}>
         <h1 style={{ marginBottom: 16 }}>Manage Approved Lessons</h1>
