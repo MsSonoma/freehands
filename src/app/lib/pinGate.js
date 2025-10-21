@@ -129,23 +129,38 @@ export async function ensurePinAllowed(action = 'action') {
 		const prefKey = mapActionToPrefKey(action);
 		const shouldGate = Boolean(hasPin && (prefKey ? (prefs?.[prefKey] ?? DEFAULT_PREFS[prefKey]) : true));
 		
-		// Debug logging for timer and facilitator-page actions
-		if (action === 'timer' || action === 'facilitator-page') {
-			console.log('[PIN Gate]', action, 'action:', { hasPin, prefKey, prefValue: prefs?.[prefKey], defaultValue: DEFAULT_PREFS[prefKey], shouldGate, prefs });
-		}
+		// Enhanced debug logging for all actions
+		console.log('[PIN Gate]', action, 'action:', { 
+			hasPin, 
+			prefKey, 
+			prefValue: prefs?.[prefKey], 
+			defaultValue: DEFAULT_PREFS[prefKey], 
+			shouldGate, 
+			prefs,
+			isInFacilitatorSection: isInFacilitatorSection(),
+			unlockedThisSession: unlockedThisSession()
+		});
 		
-		if (!shouldGate) return true;
+		if (!shouldGate) {
+			console.log('[PIN Gate] Not gating - shouldGate is false');
+			return true;
+		}
 		
 		// Timer actions always require fresh PIN entry (no session unlock bypass)
 		const requiresFreshPin = (action === 'timer');
 		
 		// For facilitator-page action: if already in facilitator section, skip PIN check
 		if (action === 'facilitator-page' && isInFacilitatorSection()) {
+			console.log('[PIN Gate] Skipping PIN - already in facilitator section');
 			return true;
 		}
 		
-		if (!requiresFreshPin && unlockedThisSession()) return true;
+		if (!requiresFreshPin && unlockedThisSession()) {
+			console.log('[PIN Gate] Skipping PIN - session already unlocked');
+			return true;
+		}
 
+		console.log('[PIN Gate] Prompting for PIN...');
 		// Prompt for PIN using a minimal masked modal so characters are hidden.
 		const input = await promptForPinMasked({ title: 'Facilitator PIN', message: 'Enter PIN to continue' });
 		if (input == null || input === '') return false;
