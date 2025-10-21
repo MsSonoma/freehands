@@ -959,6 +959,19 @@ function SessionPageInner() {
     return typeof t === "string" ? t.trim() : String(t);
   }, [lessonData, manifestInfo.title]);
   
+  // Helper: derive Grade number (e.g., 4 from "4th") from common sources
+  const getGradeNumber = useCallback(() => {
+    try {
+      const source = (manifestInfo?.title || effectiveLessonTitle || lessonParam || '').toString();
+      const m = source.match(/\b(K|1st|2nd|3rd|[4-9]th|1[0-2]th)\b/i);
+      if (!m) return '';
+      const token = m[1].toLowerCase();
+      if (token === 'k') return 'K';
+      const n = token.replace(/(st|nd|rd|th)$/i, '');
+      return String(parseInt(n, 10));
+    } catch { return ''; }
+  }, [manifestInfo?.title, effectiveLessonTitle, lessonParam]);
+  
   const teachingSteps = useMemo(() => {
     // Use learner's grade if available, otherwise try to derive from lesson title
     const gradeToUse = learnerGrade || getGradeNumber();
@@ -2602,19 +2615,6 @@ function SessionPageInner() {
     }
     return [];
   }, [lessonData]);
-
-  // Helper: derive Grade number (e.g., 4 from "4th") from common sources
-  const getGradeNumber = useCallback(() => {
-    try {
-      const source = (manifestInfo?.title || effectiveLessonTitle || lessonParam || '').toString();
-      const m = source.match(/\b(K|1st|2nd|3rd|[4-9]th|1[0-2]th)\b/i);
-      if (!m) return '';
-      const token = m[1].toLowerCase();
-      if (token === 'k') return 'K';
-      const n = token.replace(/(st|nd|rd|th)$/i, '');
-      return String(parseInt(n, 10));
-    } catch { return ''; }
-  }, [manifestInfo?.title, effectiveLessonTitle, lessonParam]);
 
   // Helper: clean lesson title for display (strip grade prefixes, difficulty suffixes, underscores/extensions)
   const getCleanLessonTitle = useCallback(() => {

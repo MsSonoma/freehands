@@ -9,7 +9,8 @@ export default function AwardsPage() {
   const [learnerId, setLearnerId] = useState(null)
   const [medals, setMedals] = useState({})
   const [allLessons, setAllLessons] = useState({})
-  const [loading, setLoading] = useState(true)
+  const [medalsLoading, setMedalsLoading] = useState(true)
+  const [lessonsLoading, setLessonsLoading] = useState(true)
 
   const subjects = ['math', 'science', 'language arts', 'social studies', 'facilitator']
 
@@ -25,7 +26,7 @@ export default function AwardsPage() {
   useEffect(() => {
     if (!learnerId) {
       setMedals({})
-      setLoading(false)
+      setMedalsLoading(false)
       return
     }
     (async () => {
@@ -35,7 +36,7 @@ export default function AwardsPage() {
       } catch {
         setMedals({})
       }
-      setLoading(false)
+      setMedalsLoading(false)
     })()
   }, [learnerId])
 
@@ -69,7 +70,10 @@ export default function AwardsPage() {
           lessonsMap[subject] = []
         }
       }
-      if (!cancelled) setAllLessons(lessonsMap)
+      if (!cancelled) {
+        setAllLessons(lessonsMap)
+        setLessonsLoading(false)
+      }
     })()
     return () => { cancelled = true }
   }, [])
@@ -110,6 +114,7 @@ export default function AwardsPage() {
     return grouped
   }
 
+  const loading = medalsLoading || lessonsLoading
   const groupedMedals = medalsBySubject()
   const hasMedals = Object.keys(groupedMedals).length > 0
   const totalMedals = Object.values(groupedMedals).reduce((sum, arr) => sum + arr.length, 0)
@@ -152,7 +157,23 @@ export default function AwardsPage() {
       )}
 
       {loading ? (
-        <p style={{ textAlign: 'center' }}>Loading awards...</p>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: 12, marginTop: 32 }}>
+          <div style={{ 
+            width: 48, 
+            height: 48, 
+            border: '4px solid #e5e7eb', 
+            borderTop: '4px solid #111', 
+            borderRadius: '50%', 
+            animation: 'spin 1s linear infinite' 
+          }}></div>
+          <p style={{ textAlign:'center', color: '#6b7280', fontSize: 16 }}>Loading awards...</p>
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
       ) : !hasMedals ? (
         <div style={{ textAlign: 'center', marginTop: 32 }}>
           <p style={{ fontSize: 48 }}>🎯</p>
