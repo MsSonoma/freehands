@@ -2423,29 +2423,27 @@ function SessionPageInner() {
     try { forceNextPlaybackRef.current = true; } catch {}
     
     // CRITICAL for Chrome: Unlock video autoplay by playing briefly during user gesture
-    // Then pause it so audio code can play it when ready
+    // Await completion to ensure unlock happens before proceeding
     try {
       if (videoRef.current) {
         console.info('[Opening] Unlocking video autoplay for Chrome');
         if (videoRef.current.readyState < 2) {
           videoRef.current.load();
+          // Wait a moment for load to register
+          await new Promise(r => setTimeout(r, 100));
         }
         // Play and immediately pause to unlock autoplay permission
         const playPromise = videoRef.current.play();
         if (playPromise && playPromise.then) {
-          playPromise.then(() => {
-            // Let it play for a brief moment to establish permission
-            setTimeout(() => {
-              try {
-                if (videoRef.current) {
-                  videoRef.current.pause();
-                  console.info('[Opening] Video autoplay unlocked, paused for audio code');
-                }
-              } catch {}
-            }, 50);
-          }).catch(e => {
-            console.warn('[Opening] Video unlock failed', e);
-          });
+          await playPromise;
+          // Let it play for a brief moment to establish permission
+          await new Promise(r => setTimeout(r, 100));
+          try {
+            if (videoRef.current) {
+              videoRef.current.pause();
+              console.info('[Opening] Video autoplay unlocked, paused for audio code');
+            }
+          } catch {}
         }
       }
     } catch (e) {
