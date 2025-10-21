@@ -303,8 +303,18 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
   }
 
   const handleSave = () => {
-    if (!validateLesson()) return
+    console.log('[LessonEditor] handleSave called')
+    console.log('[LessonEditor] Current lesson state:', JSON.stringify(lesson, null, 2).substring(0, 500))
+    
+    if (!validateLesson()) {
+      console.log('[LessonEditor] Validation failed, not saving')
+      return
+    }
+    
     const cleanedLesson = cleanLesson(lesson)
+    console.log('[LessonEditor] Cleaned lesson data:', JSON.stringify(cleanedLesson, null, 2).substring(0, 500))
+    console.log('[LessonEditor] Calling onSave with cleaned lesson')
+    
     onSave(cleanedLesson)
   }
 

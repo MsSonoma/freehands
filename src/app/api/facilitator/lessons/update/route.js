@@ -79,9 +79,11 @@ export async function PUT(req) {
 
     // Prepare the lesson content
     const lessonContent = JSON.stringify(lesson, null, 2)
+    console.log('[UPDATE_LESSON] Lesson content preview:', lessonContent.substring(0, 200))
+    console.log('[UPDATE_LESSON] Using storage client:', admin ? 'admin (service role)' : 'user client')
     
     // Try to upload/update the file with upsert
-    const { error: uploadError } = await storageClient
+    const { data: uploadData, error: uploadError } = await storageClient
       .storage
       .from('lessons')
       .upload(storagePath, lessonContent, {
@@ -89,9 +91,11 @@ export async function PUT(req) {
         upsert: true
       })
 
+    console.log('[UPDATE_LESSON] Upload result:', { data: uploadData, error: uploadError })
+
     if (uploadError) {
       console.error('[UPDATE_LESSON] Upload error:', uploadError)
-      return NextResponse.json({ error: `Failed to update lesson: ${uploadError.message}` }, { status: 500 })
+      return NextResponse.json({ error: `Failed to update lesson: ${uploadError.message}`, details: uploadError }, { status: 500 })
     }
 
     // If the lesson was previously marked as needing updates, clear that flag

@@ -44,7 +44,7 @@ Create these policies for the `lessons` bucket:
 
 #### 1. Allow Premium Users to Upload/Update Their Own Lessons
 ```sql
--- Allow premium users to upload to their facilitator folder
+-- Allow premium/lifetime users to upload to their facilitator folder
 CREATE POLICY "Premium users can upload facilitator lessons"
 ON storage.objects FOR INSERT
 WITH CHECK (
@@ -55,11 +55,11 @@ WITH CHECK (
   EXISTS (
     SELECT 1 FROM profiles 
     WHERE id = auth.uid() 
-    AND plan_tier = 'premium'
+    AND plan_tier IN ('premium', 'lifetime')
   )
 );
 
--- Allow premium users to update their own lessons
+-- Allow premium/lifetime users to update their own lessons
 CREATE POLICY "Premium users can update facilitator lessons"
 ON storage.objects FOR UPDATE
 USING (
@@ -70,11 +70,11 @@ USING (
   EXISTS (
     SELECT 1 FROM profiles 
     WHERE id = auth.uid() 
-    AND plan_tier = 'premium'
+    AND plan_tier IN ('premium', 'lifetime')
   )
 );
 
--- Allow premium users to delete their own lessons
+-- Allow premium/lifetime users to delete their own lessons
 CREATE POLICY "Premium users can delete facilitator lessons"
 ON storage.objects FOR DELETE
 USING (
@@ -85,14 +85,14 @@ USING (
   EXISTS (
     SELECT 1 FROM profiles 
     WHERE id = auth.uid() 
-    AND plan_tier = 'premium'
+    AND plan_tier IN ('premium', 'lifetime')
   )
 );
 ```
 
 #### 2. Allow Premium Users to Approve Lessons (Move to Subject Folders)
 ```sql
--- Allow premium users to upload approved lessons to subject folders
+-- Allow premium/lifetime users to upload approved lessons to subject folders
 CREATE POLICY "Premium users can approve lessons"
 ON storage.objects FOR INSERT
 WITH CHECK (
@@ -102,7 +102,7 @@ WITH CHECK (
   EXISTS (
     SELECT 1 FROM profiles 
     WHERE id = auth.uid() 
-    AND plan_tier = 'premium'
+    AND plan_tier IN ('premium', 'lifetime')
   )
 );
 
@@ -116,7 +116,7 @@ USING (
   EXISTS (
     SELECT 1 FROM profiles 
     WHERE id = auth.uid() 
-    AND plan_tier = 'premium'
+    AND plan_tier IN ('premium', 'lifetime')
   )
 );
 ```

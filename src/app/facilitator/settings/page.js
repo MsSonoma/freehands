@@ -233,7 +233,7 @@ function DeleteAccount() {
 
 	if (!confirming) {
 		return (
-			<div style={{ border:'1px solid #fca5a5', background:'#fff', borderRadius:12, padding:8, display:'grid', gap:6, justifyItems:'center', width:'fit-content', maxWidth:'100%' }}>
+			<div style={{ border:'1px solid #fca5a5', background:'#fff', borderRadius:12, padding:8, display:'grid', gap:6, justifyItems:'center', width:'fit-content', maxWidth:'100%', margin:'0 auto' }}>
 				<button onClick={()=> setConfirming(true)} disabled={deleting}
 					style={{ display:'block', margin:'0 auto', padding:'5px 10px', border:'1px solid #b00020', borderRadius:8, background:'#b00020', color:'#fff', fontWeight:700 }}>
 					Delete my account
@@ -244,7 +244,7 @@ function DeleteAccount() {
 	}
 
 	return (
-		<div style={{ border:'1px solid #fca5a5', background:'#fff', borderRadius:12, padding:8, display:'grid', gap:6, justifyItems:'center', width:'fit-content', maxWidth:'100%' }}>
+		<div style={{ border:'1px solid #fca5a5', background:'#fff', borderRadius:12, padding:8, display:'grid', gap:6, justifyItems:'center', width:'fit-content', maxWidth:'100%', margin:'0 auto' }}>
 			<span style={{ color:'#b00020', textAlign:'center' }}>Are you sure?</span>
 			<button onClick={()=> setConfirming(false)} disabled={deleting}
 				style={{ display:'block', margin:'0 auto', padding:'5px 10px', border:'1px solid #e5e7eb', borderRadius:8, background:'#fff' }}>Cancel</button>

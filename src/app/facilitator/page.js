@@ -201,12 +201,12 @@ export default function FacilitatorPage() {
   }
 
   return (
-    <div style={{ padding: '12px 24px 0' }}>
+    <div style={{ padding: '4px 24px 0' }}>
       <div style={{ width: '100%', maxWidth: 560, margin: '0 auto' }}>
-        <h1 style={{ marginTop: 0, marginBottom: 4, textAlign: 'center' }}>{facilitatorName ? `Hi, ${facilitatorName}!` : 'Facilitator'}</h1>
-        <p style={{ color: '#555', marginTop: 0, marginBottom: 12, textAlign: 'center' }}>Choose a section to manage.</p>
+        <h1 style={{ marginTop: 0, marginBottom: 0, textAlign: 'center' }}>{facilitatorName ? `Hi, ${facilitatorName}!` : 'Facilitator'}</h1>
+        <p style={{ color: '#555', marginTop: 0, marginBottom: 4, textAlign: 'center' }}>Choose a section to manage.</p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <Link href="/facilitator/account" style={cardStyle}>Account</Link>
           <Link href="/facilitator/learners" style={cardStyle}>Learners</Link>
           <Link href="/facilitator/lessons" style={cardStyle}>Lessons</Link>
@@ -216,20 +216,20 @@ export default function FacilitatorPage() {
         </div>
 
         {/* Billing summary */}
-        <section aria-label="Billing" style={{ marginTop: 48, padding: 8, border: '1px solid #e5e7eb', borderRadius: 12, background: '#fff', textAlign: 'center' }}>
-          <h2 style={{ margin: '0 0 4px', fontSize: 18, textAlign: 'center' }}>Billing</h2>
-          <p style={{ margin: '0 0 8px', color: '#444', textAlign: 'center' }}>
+        <section aria-label="Billing" style={{ marginTop: 16, padding: 6, border: '1px solid #e5e7eb', borderRadius: 12, background: '#fff', textAlign: 'center' }}>
+          <h2 style={{ margin: '0 0 0', fontSize: 18, textAlign: 'center' }}>Billing</h2>
+          <p style={{ margin: '0 0 4px', color: '#444', textAlign: 'center' }}>
             Subscription: {loading ? '…' : (plan || 'free')}
           </p>
           <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <button type="button" onClick={openPortal} style={{ padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8, background: '#f7f7f7' }}>
+            <button type="button" onClick={openPortal} style={{ padding: '6px 10px', border: '1px solid #ddd', borderRadius: 8, background: '#f7f7f7' }}>
               Manage subscription
             </button>
           </div>
         </section>
 
         {/* Auth control moved below Billing */}
-        <div style={{ marginTop: 32, marginBottom: 0 }}>
+        <div style={{ marginTop: 12, marginBottom: 0 }}>
           {hasSupabaseEnv() && (
             session ? (
               <button

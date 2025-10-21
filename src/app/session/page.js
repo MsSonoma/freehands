@@ -20,7 +20,7 @@ import { getStoredAssessments, saveAssessments, clearAssessments } from './asses
 import { getStoredSnapshot, saveSnapshot, clearSnapshot, consolidateSnapshots } from './sessionSnapshotStore';
 import { upsertMedal, emojiForTier, tierForPercent } from '@/app/lib/medalsClient';
 import { splitIntoSentences, mergeMcChoiceFragments, enforceNbspAfterMcLabels, countWords } from './utils/textProcessing';
-import { CLEAN_SPEECH_INSTRUCTION, GUARD_INSTRUCTION, KID_FRIENDLY_STYLE, COMPREHENSION_CUE_PHRASE, timelinePhases, phaseLabels, discussionSteps, getTeachingSteps } from './utils/constants';
+import { CLEAN_SPEECH_INSTRUCTION, GUARD_INSTRUCTION, KID_FRIENDLY_STYLE, COMPREHENSION_CUE_PHRASE, timelinePhases, phaseLabels, discussionSteps, getTeachingSteps, getGradeAndDifficultyStyle } from './utils/constants';
 import { buildSystemMessage, buildPerQuestionJudgingSpec } from './utils/systemMessage';
 import { resolveLessonInfo, getLessonTitle } from './utils/lessonUtils';
 import { formatQuestionForSpeech, isShortAnswerItem, isFillInBlank, isTrueFalse, isMultipleChoice, formatMcOptions, ensureQuestionMark, promptKey, deriveCorrectAnswerText, formatQuestionForInlineAsk, letterForAnswer, getOptionTextForLetter, naturalJoin } from './utils/questionFormatting';
@@ -216,8 +216,11 @@ function SessionPageInner() {
   const [timerPaused, setTimerPaused] = useState(false);
   const [sessionTimerMinutes, setSessionTimerMinutes] = useState(60); // Default 1 hour
   const [goldenKeyEarned, setGoldenKeyEarned] = useState(false);
+  
+  // Learner grade state (for grade-appropriate speech)
+  const [learnerGrade, setLearnerGrade] = useState('');
 
-  // Load timer setting from current learner (re-run when learner changes)
+  // Load timer setting and grade from current learner (re-run when learner changes)
   useEffect(() => {
     (async () => {
       try {
@@ -231,21 +234,30 @@ function SessionPageInner() {
             setSessionTimerMinutes(60); // Reset to default if not set
             console.info('[Session] No timer setting found, using default 60 minutes');
           }
+          // Load learner grade
+          if (learner?.grade) {
+            setLearnerGrade(learner.grade);
+            console.info('[Session] Learner grade loaded:', learner.grade);
+          } else {
+            setLearnerGrade(''); // Clear if not set
+          }
         } else {
           setSessionTimerMinutes(60); // Default for demo or no learner
+          setLearnerGrade(''); // Clear grade for demo
         }
       } catch (e) {
-        console.warn('[Session] Failed to load timer setting:', e);
+        console.warn('[Session] Failed to load timer setting and grade:', e);
         setSessionTimerMinutes(60); // Fallback to default on error
+        setLearnerGrade('');
       }
     })();
   }, []); // Keep empty to only load on mount
   
-  // Also listen for storage changes to pick up timer updates from facilitator page
+  // Also listen for storage changes to pick up timer and grade updates from facilitator page
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === 'facilitator_learners' || e.key === 'learner_id') {
-        // Reload timer setting when learner data changes
+        // Reload timer setting and grade when learner data changes
         (async () => {
           try {
             const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
@@ -255,9 +267,13 @@ function SessionPageInner() {
                 setSessionTimerMinutes(Number(learner.session_timer_minutes));
                 console.info('[Session] Timer duration updated from storage change:', learner.session_timer_minutes, 'minutes');
               }
+              if (learner?.grade) {
+                setLearnerGrade(learner.grade);
+                console.info('[Session] Learner grade updated from storage change:', learner.grade);
+              }
             }
           } catch (e) {
-            console.warn('[Session] Failed to reload timer setting:', e);
+            console.warn('[Session] Failed to reload timer setting and grade:', e);
           }
         })();
       }
@@ -942,7 +958,12 @@ function SessionPageInner() {
     const t = (lessonData?.title || lessonData?.lessonTitle || manifestInfo.title || "Lesson");
     return typeof t === "string" ? t.trim() : String(t);
   }, [lessonData, manifestInfo.title]);
-  const teachingSteps = useMemo(() => getTeachingSteps(effectiveLessonTitle), [effectiveLessonTitle]);
+  
+  const teachingSteps = useMemo(() => {
+    // Use learner's grade if available, otherwise try to derive from lesson title
+    const gradeToUse = learnerGrade || getGradeNumber();
+    return getTeachingSteps(effectiveLessonTitle, gradeToUse, difficultyParam);
+  }, [effectiveLessonTitle, learnerGrade, difficultyParam, getGradeNumber]);
   // Dispatch lesson title to header (mobile landscape) now that manifestInfo/effectiveLessonTitle are initialized
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -2108,6 +2129,7 @@ function SessionPageInner() {
     fillInFunCurrentIndex,
     difficultyParam,
     lessonParam,
+    learnerGrade,
     captionSentencesRef,
     askReturnBodyRef,
     activeQuestionBodyRef,
@@ -2665,7 +2687,7 @@ function SessionPageInner() {
       "3) Compact recap of the exact procedural steps (no questions at the end).",
       // Declaration already given for teaching phase above; no need to restate the banned list. Re-emphasize no questions.
       "Follow prior teaching guardrails (no future-phase terms or additional questions).",
-      KID_FRIENDLY_STYLE
+      getGradeAndDifficultyStyle(learnerGrade || getGradeNumber(), difficultyParam)
     ].join(" ");
     instruction = withTeachingNotes(instruction);
     const result = await callMsSonoma(instruction, "", {

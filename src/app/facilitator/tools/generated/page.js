@@ -145,11 +145,20 @@ export default function GeneratedLessonsPage(){
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
       
-      console.log('[SAVE_LESSON] Sending update:', {
+      console.log('[SAVE_LESSON] Editing lesson context:', {
         file: editingLesson.file,
-        userId: editingLesson.userId,
-        lessonTitle: updatedLesson.title
+        userId: editingLesson.userId
       })
+      console.log('[SAVE_LESSON] Updated lesson data:', JSON.stringify(updatedLesson, null, 2).substring(0, 500))
+      console.log('[SAVE_LESSON] Has token:', !!token)
+      
+      const payload = { 
+        file: editingLesson.file, 
+        userId: editingLesson.userId,
+        lesson: updatedLesson 
+      }
+      
+      console.log('[SAVE_LESSON] Sending payload to /api/facilitator/lessons/update')
       
       const res = await fetch('/api/facilitator/lessons/update', {
         method: 'PUT',
@@ -157,27 +166,28 @@ export default function GeneratedLessonsPage(){
           'Content-Type': 'application/json', 
           ...(token ? { Authorization: `Bearer ${token}` } : {}) 
         },
-        body: JSON.stringify({ 
-          file: editingLesson.file, 
-          userId: editingLesson.userId,
-          lesson: updatedLesson 
-        })
+        body: JSON.stringify(payload)
       })
 
       const js = await res.json().catch(() => null)
-      console.log('[SAVE_LESSON] Response:', { status: res.status, body: js })
+      console.log('[SAVE_LESSON] Response:', { status: res.status, ok: res.ok, body: js })
       
       if (!res.ok) {
         const errorMsg = js?.error || 'Failed to save lesson'
         const details = js?.details ? ` (${js.details})` : ''
         const path = js?.path ? ` [${js.path}]` : ''
         setError(errorMsg + details + path)
+        console.error('[SAVE_LESSON] Error saving:', errorMsg + details + path)
         return
       }
 
       // Success - close editor and refresh list
+      console.log('[SAVE_LESSON] Save successful, closing editor and refreshing')
       setEditingLesson(null)
       await refresh()
+    } catch (err) {
+      console.error('[SAVE_LESSON] Exception:', err)
+      setError(err.message || 'Unknown error occurred')
     } finally {
       setBusy(false)
     }

@@ -15,6 +15,7 @@ import { normalizeBase64Audio } from '../utils/audioUtils';
 import { ensureQuestionMark, formatQuestionForSpeech } from '../utils/questionFormatting';
 import { pickNextJoke, renderJoke } from '@/app/lib/jokes';
 import { pickNextRiddle, renderRiddle } from '@/app/lib/riddles';
+import { getGradeAndDifficultyStyle } from '../utils/constants';
 
 export function useDiscussionHandlers({
   // State setters
@@ -76,6 +77,7 @@ export function useDiscussionHandlers({
   fillInFunCurrentIndex,
   difficultyParam,
   lessonParam,
+  learnerGrade = '',
   
   // Refs
   captionSentencesRef,
@@ -436,7 +438,7 @@ export function useDiscussionHandlers({
         
         if (lastAssistant) {
           const summaryInstruction = [
-            'You are Ms. Sonoma talking to a 5 year old.',
+            `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(learnerGrade, difficultyParam)}`,
             `Briefly paraphrase this story part in 1-2 short sentences: "${lastAssistant.text.replace(/To be continued\.?/i, '').trim()}"`,
             'Keep it simple and exciting.',
             'Do not add "To be continued."'
@@ -470,7 +472,7 @@ export function useDiscussionHandlers({
         
         if (lastAssistant) {
           const summaryInstruction = [
-            'You are Ms. Sonoma talking to a 5 year old.',
+            `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(learnerGrade, difficultyParam)}`,
             `Briefly paraphrase this story part in 1-2 short sentences: "${lastAssistant.text.replace(/To be continued\.?/i, '').trim()}"`,
             'Keep it simple and exciting.',
             'Do not add "To be continued."'
@@ -501,7 +503,7 @@ export function useDiscussionHandlers({
           : '';
         
         const suggestionInstruction = [
-          'You are Ms. Sonoma helping a child continue their story.',
+          `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(learnerGrade, difficultyParam)}`,
           storyContext,
           'Suggest 3 brief, exciting story possibilities for what could happen next.',
           'Keep each suggestion to 4-6 words maximum.',
@@ -607,7 +609,7 @@ export function useDiscussionHandlers({
       
       // Now generate the first part of the story with all setup info
       const instruction = [
-        'You are Ms. Sonoma talking to a 5 year old.',
+        `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(learnerGrade, difficultyParam)}`,
         'You are starting a collaborative story.',
         `The characters are: ${storyCharacters}`,
         `The setting is: ${storySetting}`,
@@ -669,7 +671,7 @@ export function useDiscussionHandlers({
     
     const instruction = isTestPhase
       ? [
-          'You are Ms. Sonoma talking to a 5 year old.',
+          `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(learnerGrade, difficultyParam)}`,
           'You are ending a collaborative story.',
           storyContext,
           `The child wants the story to end like this: "${trimmed.replace(/["]/g, "'")}"`,
@@ -679,7 +681,7 @@ export function useDiscussionHandlers({
           'Say "The end." at the very end.'
         ].filter(Boolean).join(' ')
       : [
-          'You are Ms. Sonoma talking to a 5 year old.',
+          `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(learnerGrade, difficultyParam)}`,
           'You are telling a collaborative story in turns.',
           storyContext,
           `The child just said: "${trimmed.replace(/["]/g, "'")}"`,
@@ -770,7 +772,7 @@ export function useDiscussionHandlers({
     
     const userPart = trimmed ? `The child wants the story to end like this: "${trimmed.replace(/["]/g, "'")}"` : '';
     const instruction = [
-      'You are Ms. Sonoma talking to a 5 year old.',
+      `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(learnerGrade, difficultyParam)}`,
       'You are ending a collaborative story.',
       storyContext,
       userPart,

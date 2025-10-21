@@ -3,7 +3,7 @@
  * Functions to compose instructions and grading specifications.
  */
 
-import { CLEAN_SPEECH_INSTRUCTION, GUARD_INSTRUCTION, KID_FRIENDLY_STYLE } from './constants';
+import { CLEAN_SPEECH_INSTRUCTION, GUARD_INSTRUCTION, KID_FRIENDLY_STYLE, getGradeAndDifficultyStyle } from './constants';
 
 /**
  * Compose the system message sent to Ms. Sonoma.
@@ -19,9 +19,19 @@ import { CLEAN_SPEECH_INSTRUCTION, GUARD_INSTRUCTION, KID_FRIENDLY_STYLE } from 
  * @param {Array} options.vocab - Vocabulary terms (strings or objects with term/definition)
  * @param {string} options.gatePhrase - Optional phrase to say verbatim
  * @param {string} options.stage - Current stage (e.g., 'definitions')
+ * @param {string|number} options.grade - Learner's grade level (e.g., 'K', '4', '4th', 4)
+ * @param {string} options.difficulty - Lesson difficulty ('beginner', 'intermediate', 'advanced')
  * @returns {string} Complete system message for Ms. Sonoma
  */
-export function buildSystemMessage({ lessonTitle = "", teachingNotes = "", vocab = [], gatePhrase = "", stage = "" } = {}) {
+export function buildSystemMessage({ 
+  lessonTitle = "", 
+  teachingNotes = "", 
+  vocab = [], 
+  gatePhrase = "", 
+  stage = "",
+  grade = "",
+  difficulty = "beginner"
+} = {}) {
   const scopeSource = teachingNotes && teachingNotes.trim() ? "teachingNotes" : "lessonTitle";
   const scopeText = scopeSource === "teachingNotes" ? teachingNotes.trim() : lessonTitle.trim();
 
@@ -35,10 +45,10 @@ export function buildSystemMessage({ lessonTitle = "", teachingNotes = "", vocab
         const term = v.term || v.word;
         return `- ${term} — ${v.definition}`;
       }).join("\n");
-      vocabContent += "\nInstruction: During the TEACHING segment only, give each provided definition in a single short kid-friendly sentence and use the term naturally in examples. Do NOT repeat these definitions during the comprehension phase.";
+      vocabContent += "\nInstruction: During the TEACHING segment only, give each provided definition in a single short sentence appropriate for the learner's grade level and use the term naturally in examples. Do NOT repeat these definitions during the comprehension phase.";
     } else {
       const list = vocab.map(v => (typeof v === "string" ? v : (v.term || v.word))).join(", ");
-      vocabContent = `Vocab list: ${list}.\nInstruction: For each term above, during the TEACHING segment only, give a single short kid-friendly definition (one sentence) and then use the term in your worked examples. Do NOT repeat the definitions during comprehension.`;
+      vocabContent = `Vocab list: ${list}.\nInstruction: For each term above, during the TEACHING segment only, give a single short definition (one sentence appropriate for the learner's grade level) and then use the term in your worked examples. Do NOT repeat the definitions during comprehension.`;
     }
   } else {
     // Omit vocab entirely for non-definitions or when none provided
@@ -53,13 +63,16 @@ export function buildSystemMessage({ lessonTitle = "", teachingNotes = "", vocab
   // Neutral normalization note may be included globally (non-grading, general guidance)
   const NORMALIZATION_NOTE = "Normalize by lowercasing, trimming, collapsing spaces, removing punctuation, and mapping number words zero–twenty to digits.";
 
+  // Get grade-appropriate and difficulty-aware style instructions
+  const styleInstructions = getGradeAndDifficultyStyle(grade, difficulty);
+
   const parts = [
     CLEAN_SPEECH_INSTRUCTION,
     "Include provided vocab only during the teaching segment.",
     `Lesson background (do not read aloud): ${scopeText}`,
     vocabContent,
     GUARD_INSTRUCTION,
-    KID_FRIENDLY_STYLE,
+    styleInstructions,
     NORMALIZATION_NOTE,
     // compact gate rule
     gatePhraseLine,

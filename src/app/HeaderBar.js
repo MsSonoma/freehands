@@ -320,9 +320,10 @@ export default function HeaderBar() {
 		// Facilitator Tools sub-pages should return to Tools page
 		if (pathname.startsWith('/facilitator/tools/')) return '/facilitator/tools';
 
-		// Facilitator chain: / -> /facilitator -> /facilitator/(learners|plan|settings|tools)
+		// Facilitator chain: / -> /facilitator -> /facilitator/(learners|lessons|plan|settings|tools)
 		if (
 			pathname.startsWith('/facilitator/learners') ||
+			pathname.startsWith('/facilitator/lessons') ||
 			pathname.startsWith('/facilitator/plan') ||
 			pathname.startsWith('/facilitator/settings') ||
 			pathname.startsWith('/facilitator/tools') ||
