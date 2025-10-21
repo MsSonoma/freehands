@@ -312,40 +312,26 @@ export async function playViaWebAudio(
         resolve();
       };
       try {
-        // Start video first, then audio and captions together
-        // This ensures video is playing before audio starts (critical for mobile browsers)
-        const startPlayback = async () => {
-          try {
-            if (videoRef.current) {
-              try { console.info('[Session] Starting video before WebAudio'); } catch {}
-              await playVideoWithRetry(videoRef.current);
-              // Brief settling time for video playback on slow devices
-              await new Promise(r => setTimeout(r, 50));
-            }
-          } catch (e) {
-            try { console.warn('[Session] Video start failed, continuing with audio', e); } catch {}
-          }
-          
-          // Now start audio source
-          try { console.info('[Session] Starting WebAudio source now at', ctx?.currentTime); } catch {}
-          webAudioStartedAtRef.current = ctx.currentTime;
-          webAudioPausedAtRef.current = 0;
-          
-          // Schedule captions immediately after audio starts
-          const allowAuto = (!userPausedRef.current || forceNextPlaybackRef.current);
-          if (allowAuto) {
-            try { scheduleCaptionsForDuration(buffer.duration, sentences || [], startIndex || 0); } catch {}
-          }
-          
-          // Arm guard with known duration for WebAudio
-          try { armSpeechGuard(buffer.duration || 0, 'webaudio:start'); } catch {}
-          src.start(0);
-        };
+        try { console.info('[Session] Starting WebAudio source now at', ctx?.currentTime); } catch {}
+        webAudioStartedAtRef.current = ctx.currentTime;
+        webAudioPausedAtRef.current = 0;
         
-        startPlayback().catch((e) => {
-          try { console.warn('[Session] WebAudio playback start failed', e); } catch {}
-          resolve();
-        });
+        // Trigger video play immediately before audio starts (don't await - let them run in parallel)
+        try {
+          if (videoRef.current) {
+            playVideoWithRetry(videoRef.current);
+          }
+        } catch {}
+        
+        // Schedule captions immediately with audio start
+        const allowAuto = (!userPausedRef.current || forceNextPlaybackRef.current);
+        if (allowAuto) {
+          try { scheduleCaptionsForDuration(buffer.duration, sentences || [], startIndex || 0); } catch {}
+        }
+        
+        // Arm guard with known duration for WebAudio
+        try { armSpeechGuard(buffer.duration || 0, 'webaudio:start'); } catch {}
+        src.start(0);
       } catch (e) { console.warn('[Session] WebAudio start failed', e); resolve(); }
     });
   } catch (e) {
