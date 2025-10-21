@@ -14,6 +14,7 @@ function LessonsPageInner(){
   const [approvedLessons, setApprovedLessons] = useState({})
   const [allLessons, setAllLessons] = useState({})
   const [loading, setLoading] = useState(true)
+  const [lessonsLoading, setLessonsLoading] = useState(true)
   const [medals, setMedals] = useState({})
   const [learnerName, setLearnerName] = useState(null)
   const [learnerId, setLearnerId] = useState(null)
@@ -81,6 +82,7 @@ function LessonsPageInner(){
   useEffect(() => {
     let cancelled = false
     ;(async () => {
+      setLessonsLoading(true)
       // Get auth token for facilitator lessons
       let token = null
       try {
@@ -107,7 +109,10 @@ function LessonsPageInner(){
           lessonsMap[subject] = []
         }
       }
-      if (!cancelled) setAllLessons(lessonsMap)
+      if (!cancelled) {
+        setAllLessons(lessonsMap)
+        setLessonsLoading(false)
+      }
     })()
     return () => { cancelled = true }
   }, [])
@@ -222,8 +227,24 @@ function LessonsPageInner(){
         onToggle={() => setGoldenKeySelected(prev => !prev)}
       />
 
-      {loading ? (
-        <p style={{ textAlign:'center' }}>Loading lessons</p>
+      {loading || lessonsLoading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: 12, marginTop: 32 }}>
+          <div style={{ 
+            width: 48, 
+            height: 48, 
+            border: '4px solid #e5e7eb', 
+            borderTop: '4px solid #111', 
+            borderRadius: '50%', 
+            animation: 'spin 1s linear infinite' 
+          }}></div>
+          <p style={{ textAlign:'center', color: '#6b7280', fontSize: 16 }}>Loading lessons...</p>
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
       ) : !hasApprovedLessons ? (
         <div style={{ textAlign:'center', marginTop:32 }}>
           <p style={{ color:'#6b7280' }}>No lessons have been approved for this learner yet.</p>
