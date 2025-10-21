@@ -2422,32 +2422,25 @@ function SessionPageInner() {
     try { userPausedRef.current = false; } catch {} // Set ref immediately, don't wait for useEffect
     try { forceNextPlaybackRef.current = true; } catch {}
     
-    // CRITICAL for Chrome: Unlock video autoplay by playing briefly during user gesture
-    // Await completion to ensure unlock happens before proceeding
+    // CRITICAL for Chrome: Unlock video autoplay by playing during user gesture
+    // Keep it playing (muted and looping) so audio code doesn't need to restart it
     try {
       if (videoRef.current) {
-        console.info('[Opening] Unlocking video autoplay for Chrome');
+        console.info('[Opening] Starting video during Begin for Chrome autoplay');
         if (videoRef.current.readyState < 2) {
           videoRef.current.load();
           // Wait a moment for load to register
           await new Promise(r => setTimeout(r, 100));
         }
-        // Play and immediately pause to unlock autoplay permission
+        // Play video and keep it playing (it's muted and looping anyway)
         const playPromise = videoRef.current.play();
         if (playPromise && playPromise.then) {
           await playPromise;
-          // Let it play for a brief moment to establish permission
-          await new Promise(r => setTimeout(r, 100));
-          try {
-            if (videoRef.current) {
-              videoRef.current.pause();
-              console.info('[Opening] Video autoplay unlocked, paused for audio code');
-            }
-          } catch {}
+          console.info('[Opening] Video playing and unlocked for Chrome');
         }
       }
     } catch (e) {
-      console.warn('[Opening] Video unlock failed', e);
+      console.warn('[Opening] Video play failed', e);
     }
     
   // Unified discussion is now generated locally: Greeting + Encouragement + next-step prompt (no joke/silly question)
