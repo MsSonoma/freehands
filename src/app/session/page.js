@@ -2369,6 +2369,18 @@ function SessionPageInner() {
     try { setUserPaused(false); } catch {}
     try { mutedRef.current = false; } catch {}
     try { forceNextPlaybackRef.current = true; } catch {}
+    
+    // CRITICAL for Chrome iOS: Start video during user gesture to avoid autoplay blocks
+    try {
+      if (videoRef.current) {
+        console.info('[Opening] Attempting to play video during Begin gesture');
+        // Use playVideoWithRetry to handle mobile quirks
+        playVideoWithRetry(videoRef.current).catch(e => {
+          console.warn('[Opening] Video play during Begin failed', e);
+        });
+      }
+    } catch {}
+    
   // Unified discussion is now generated locally: Greeting + Encouragement + next-step prompt (no joke/silly question)
     setCanSend(false);
     // Compose the opening text using local pools (no API/TTS for this step)
@@ -7062,10 +7074,9 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
           preload="auto"
           onLoadedMetadata={() => {
             try {
-              // Ensure the first frame is visible on load without auto-playing
-              if (videoRef.current) {
+              // Seek to first frame without pausing to keep video ready for immediate playback
+              if (videoRef.current && videoRef.current.paused) {
                 try { videoRef.current.currentTime = 0; } catch {}
-                try { videoRef.current.pause(); } catch {}
               }
             } catch {}
           }}

@@ -41,11 +41,17 @@ export async function playVideoWithRetry(video, maxRetries = 3, initialDelay = 1
         });
       }
       
+      // For Chrome iOS: ensure video isn't stuck in a paused/ended state
+      if (video.ended) {
+        try { video.currentTime = 0; } catch {}
+      }
+      
       const playPromise = video.play();
       if (playPromise && playPromise.then) {
         await playPromise;
       }
       // Success - video is playing
+      console.info('[Session] Video playback started successfully on attempt', attempt + 1);
       return;
     } catch (err) {
       attempt++;
