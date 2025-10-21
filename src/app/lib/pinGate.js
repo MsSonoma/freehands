@@ -221,25 +221,23 @@ function promptForPinMasked({ title = 'Enter PIN', message = 'Enter your PIN' } 
 		tip.textContent = message;
 		tip.style.cssText = 'display:block;font-size:12px;color:#6b7280;margin-bottom:4px;';
 
-		// Hidden username input to improve autofill heuristics context
-		const hiddenUser = document.createElement('input');
-		hiddenUser.type = 'text';
-		hiddenUser.name = 'username';
-		hiddenUser.autocomplete = 'username';
-		hiddenUser.setAttribute('aria-hidden', 'true');
-		hiddenUser.tabIndex = -1;
-		hiddenUser.style.cssText = 'position:absolute;width:1px;height:1px;padding:0;border:0;clip:rect(0 0 0 0);clip-path:inset(50%);overflow:hidden;white-space:nowrap;';
-
 		const input = document.createElement('input');
 		input.type = 'password';
 		input.inputMode = 'numeric';
-		input.autocomplete = 'off'; // prevent password manager autofill
-		input.name = 'facilitator-pin';
+		input.autocomplete = 'new-password'; // prevent password manager autofill
+		input.name = 'facilitator-pin-' + Date.now(); // unique name to prevent caching
 		input.pattern = '[0-9]*';
 		input.setAttribute('aria-label', 'Facilitator PIN');
 		input.setAttribute('data-lpignore', 'true'); // LastPass ignore
 		input.setAttribute('data-form-type', 'other'); // General password manager hint
+		input.setAttribute('data-1p-ignore', 'true'); // 1Password ignore
+		input.readOnly = true; // Start as readonly to prevent autofill
 		input.style.cssText = 'width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;';
+		
+		// Remove readonly on focus to allow typing
+		input.addEventListener('focus', () => {
+			input.readOnly = false;
+		});
 
 		const err = document.createElement('div');
 		err.setAttribute('role', 'alert');
@@ -266,7 +264,6 @@ function promptForPinMasked({ title = 'Enter PIN', message = 'Enter your PIN' } 
 		label.appendChild(tip);
 		label.appendChild(input);
 		dialog.appendChild(h3);
-		dialog.appendChild(hiddenUser);
 		dialog.appendChild(label);
 		dialog.appendChild(err);
 		dialog.appendChild(actions);
