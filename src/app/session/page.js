@@ -2386,19 +2386,20 @@ function SessionPageInner() {
     try { userPausedRef.current = false; } catch {} // Set ref immediately, don't wait for useEffect
     try { forceNextPlaybackRef.current = true; } catch {}
     
-    // CRITICAL for Chrome iOS: Start video during user gesture to avoid autoplay blocks
+    // Ensure video is loaded and ready during user gesture, but don't start playing yet
+    // Let the audio playback code start the video to avoid double-play conflicts in Chrome
     try {
       if (videoRef.current) {
-        console.info('[Opening] Attempting to play video during Begin gesture');
-        // Ensure video is loaded before playing
+        console.info('[Opening] Ensuring video is ready during Begin gesture');
+        // Ensure video is loaded
         if (videoRef.current.readyState < 2) {
           console.info('[Opening] Video not ready (readyState=' + videoRef.current.readyState + '), loading now');
           videoRef.current.load();
-          // Wait for video to be ready
+          // Wait for video to be ready (but don't play it yet)
           await new Promise((resolve) => {
             const checkReady = () => {
               if (videoRef.current && videoRef.current.readyState >= 2) {
-                console.info('[Opening] Video ready after load');
+                console.info('[Opening] Video ready and loaded');
                 resolve();
               } else {
                 const onReady = () => {
@@ -2415,11 +2416,9 @@ function SessionPageInner() {
             };
             checkReady();
           });
+        } else {
+          console.info('[Opening] Video already ready (readyState=' + videoRef.current.readyState + ')');
         }
-        // Use playVideoWithRetry to handle mobile quirks
-        playVideoWithRetry(videoRef.current).catch(e => {
-          console.warn('[Opening] Video play during Begin failed', e);
-        });
       }
     } catch {}
     
