@@ -808,6 +808,7 @@ function SessionPageInner() {
   // (footer height measurement moved above stacked caption sizing effect)
   // Media & caption refs (restored after refactor removal)
   const videoRef = useRef(null); // controls lesson video playback synchrony with TTS
+  const videoPlayingRef = useRef(false); // track if video is currently playing to avoid duplicate play calls
   const audioRef = useRef(null); // active Audio element for synthesized speech
   const captionTimersRef = useRef([]); // active timers advancing captionIndex
   const captionSentencesRef = useRef([]); // accumulated caption sentences for full transcript persistence
@@ -2093,6 +2094,7 @@ function SessionPageInner() {
       armSpeechGuard,
       clearSpeechGuard,
       videoRef,
+      videoPlayingRef,
       { captionBatchStartRef, captionBatchEndRef },
       userPausedRef,
       forceNextPlaybackRef,
@@ -2386,16 +2388,16 @@ function SessionPageInner() {
     try { userPausedRef.current = false; } catch {} // Set ref immediately, don't wait for useEffect
     try { forceNextPlaybackRef.current = true; } catch {}
     
-    // Ensure video is loaded and ready during user gesture, but don't start playing yet
-    // Let the audio playback code start the video to avoid double-play conflicts in Chrome
+    // CRITICAL for Chrome: Play video during user gesture to satisfy autoplay policy
+    // Set flag so audio code doesn't try to play it again
     try {
       if (videoRef.current) {
-        console.info('[Opening] Ensuring video is ready during Begin gesture');
+        console.info('[Opening] Playing video during Begin gesture for Chrome autoplay');
         // Ensure video is loaded
         if (videoRef.current.readyState < 2) {
           console.info('[Opening] Video not ready (readyState=' + videoRef.current.readyState + '), loading now');
           videoRef.current.load();
-          // Wait for video to be ready (but don't play it yet)
+          // Wait for video to be ready
           await new Promise((resolve) => {
             const checkReady = () => {
               if (videoRef.current && videoRef.current.readyState >= 2) {
@@ -2419,8 +2421,15 @@ function SessionPageInner() {
         } else {
           console.info('[Opening] Video already ready (readyState=' + videoRef.current.readyState + ')');
         }
+        
+        // Play video and mark as playing so audio code doesn't duplicate
+        await playVideoWithRetry(videoRef.current);
+        videoPlayingRef.current = true;
+        console.info('[Opening] Video playing, flag set');
       }
-    } catch {}
+    } catch (e) {
+      console.warn('[Opening] Video play during Begin failed', e);
+    }
     
   // Unified discussion is now generated locally: Greeting + Encouragement + next-step prompt (no joke/silly question)
     setCanSend(false);

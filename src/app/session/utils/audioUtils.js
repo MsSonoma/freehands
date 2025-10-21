@@ -203,6 +203,7 @@ export function stopWebAudioSource(webAudioSourceRef) {
  * @param {Function} armSpeechGuard - Callback to arm speech timeout guard
  * @param {Function} clearSpeechGuard - Callback to clear speech timeout guard
  * @param {Object} videoRef - Ref to video element for lockstep playback
+ * @param {Object} videoPlayingRef - Ref tracking if video is already playing
  * @param {Object} captionBatchRefs - Object with captionBatchStartRef and captionBatchEndRef
  * @param {Object} userPausedRef - Ref tracking user pause state
  * @param {Object} forceNextPlaybackRef - Ref for force-play flag
@@ -225,6 +226,7 @@ export async function playViaWebAudio(
   armSpeechGuard,
   clearSpeechGuard,
   videoRef,
+  videoPlayingRef,
   captionBatchRefs,
   userPausedRef,
   forceNextPlaybackRef,
@@ -316,10 +318,13 @@ export async function playViaWebAudio(
         webAudioStartedAtRef.current = ctx.currentTime;
         webAudioPausedAtRef.current = 0;
         
-        // Trigger video play immediately before audio starts (don't await - let them run in parallel)
+        // Trigger video play only if not already playing (Begin gesture may have already started it)
         try {
-          if (videoRef.current) {
+          if (videoRef.current && !videoPlayingRef.current) {
+            console.info('[Session] WebAudio starting video');
             playVideoWithRetry(videoRef.current);
+          } else if (videoPlayingRef.current) {
+            console.info('[Session] Video already playing from Begin gesture, skipping duplicate play');
           }
         } catch {}
         
