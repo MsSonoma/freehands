@@ -2421,6 +2421,7 @@ function SessionPageInner() {
     try { mutedRef.current = false; } catch {}
     try { userPausedRef.current = false; } catch {} // Set ref immediately, don't wait for useEffect
     try { forceNextPlaybackRef.current = true; } catch {}
+    try { setPlaybackIntent(null); } catch {} // Clear any stale pause intent that would fire when loading finishes
     
     // CRITICAL for Chrome: Unlock video autoplay by playing during user gesture
     // Keep it playing (muted and looping) so audio code doesn't need to restart it
