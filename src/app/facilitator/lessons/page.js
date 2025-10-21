@@ -6,6 +6,9 @@ import { featuresForTier } from '@/app/lib/entitlements'
 import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
 
+const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'facilitator']
+const GRADES = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+
 export default function FacilitatorLessonsPage() {
   const router = useRouter()
   const [pinChecked, setPinChecked] = useState(false)
@@ -14,15 +17,13 @@ export default function FacilitatorLessonsPage() {
   const [selectedLearnerId, setSelectedLearnerId] = useState(null)
   const [allLessons, setAllLessons] = useState({}) // { subject: [lessons] }
   const [approvedLessons, setApprovedLessons] = useState({}) // { 'subject/lesson_file': true }
+  const [activeGoldenKeys, setActiveGoldenKeys] = useState({}) // { 'subject/lesson_file': true }
   const [medals, setMedals] = useState({}) // { lesson_key: { bestPercent, medalTier } }
   const [loading, setLoading] = useState(true)
   const [lessonsLoading, setLessonsLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [expandedSubjects, setExpandedSubjects] = useState({}) // { subject: true/false }
   const [gradeFilters, setGradeFilters] = useState({}) // { subject: 'K' | '1' | '2' | ... | 'all' }
-
-  const subjects = ['math', 'science', 'language arts', 'social studies', 'facilitator']
-  const grades = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
   // Check PIN requirement on mount
   useEffect(() => {
@@ -88,7 +89,7 @@ export default function FacilitatorLessonsPage() {
       const token = session?.access_token
       
       const lessonsMap = {}
-      for (const subject of subjects) {
+      for (const subject of SUBJECTS) {
         try {
           console.log(`[FRONTEND] Fetching lessons for subject: ${subject}`);
           const headers = subject === 'facilitator' && token ? { Authorization: `Bearer ${token}` } : {};
@@ -118,6 +119,7 @@ export default function FacilitatorLessonsPage() {
   useEffect(() => {
     if (!selectedLearnerId) {
       setApprovedLessons({})
+      setActiveGoldenKeys({})
       setGradeFilters({})
       setMedals({})
       return
@@ -126,15 +128,34 @@ export default function FacilitatorLessonsPage() {
     ;(async () => {
       try {
         const supabase = getSupabaseClient()
-        const { data } = await supabase.from('learners').select('approved_lessons, grade').eq('id', selectedLearnerId).maybeSingle()
+        // Try to load with all fields first
+        let data, error
+        const result = await supabase.from('learners').select('approved_lessons, active_golden_keys, grade').eq('id', selectedLearnerId).maybeSingle()
+        data = result.data
+        error = result.error
+        
+        // If error, try without active_golden_keys (column might not exist yet)
+        if (error) {
+          console.warn('[Facilitator Lessons] Error loading with active_golden_keys, trying without:', error)
+          const fallbackResult = await supabase.from('learners').select('approved_lessons, grade').eq('id', selectedLearnerId).maybeSingle()
+          data = fallbackResult.data
+          error = fallbackResult.error
+          if (error) {
+            console.error('[Facilitator Lessons] Load error:', error)
+            throw error
+          }
+        }
+        
+        console.log('[Facilitator Lessons] Loaded data for learner:', selectedLearnerId, data)
         if (!cancelled) {
           setApprovedLessons(data?.approved_lessons || {})
+          setActiveGoldenKeys(data?.active_golden_keys || {})
           
           // Set grade filters to learner's grade for all subjects
           if (data?.grade) {
             const learnerGrade = String(data.grade).trim().replace(/(?:st|nd|rd|th)$/i, '').toUpperCase()
             const defaultFilters = {}
-            subjects.forEach(subject => {
+            SUBJECTS.forEach(subject => {
               defaultFilters[subject] = learnerGrade
             })
             setGradeFilters(defaultFilters)
@@ -148,8 +169,10 @@ export default function FacilitatorLessonsPage() {
         if (!cancelled) {
           setMedals(medalsData || {})
         }
-      } catch {
+      } catch (err) {
+        console.error('[Facilitator Lessons] Failed to load learner data:', err)
         setApprovedLessons({})
+        setActiveGoldenKeys({})
         setGradeFilters({})
         setMedals({})
       }
@@ -173,9 +196,15 @@ export default function FacilitatorLessonsPage() {
     
     try {
       const supabase = getSupabaseClient()
-      await supabase.from('learners').update({ approved_lessons: newApproved }).eq('id', selectedLearnerId)
+      const { error } = await supabase.from('learners').update({ approved_lessons: newApproved }).eq('id', selectedLearnerId)
+      if (error) {
+        console.error('[Facilitator Lessons] Save error:', error)
+        throw error
+      }
+      console.log('[Facilitator Lessons] Successfully saved approved lessons for learner:', selectedLearnerId, newApproved)
     } catch (e) {
-      alert('Failed to save: ' + (e?.message || 'Unknown error'))
+      console.error('[Facilitator Lessons] Failed to save:', e)
+      alert('Failed to save: ' + (e?.message || e?.hint || 'Unknown error'))
       // Revert on error
       setApprovedLessons(approvedLessons)
     } finally {
@@ -315,7 +344,7 @@ export default function FacilitatorLessonsPage() {
 
           {saving && <p style={{ color: '#555' }}>Saving...</p>}
 
-          {subjects.map(subject => {
+          {SUBJECTS.map(subject => {
             const lessons = allLessons[subject] || []
             // For facilitator lessons, only show approved ones
             const displayLessons = subject === 'facilitator' 
@@ -373,7 +402,7 @@ export default function FacilitatorLessonsPage() {
                       }}
                     >
                       <option value="all">All Grades</option>
-                      {grades.map(grade => (
+                      {GRADES.map(grade => (
                         <option key={grade} value={grade}>Grade {grade}</option>
                       ))}
                     </select>
@@ -413,6 +442,7 @@ export default function FacilitatorLessonsPage() {
                             {grouped[subj].map(lesson => {
                               const lessonKey = `${subject}/${lesson.file}`
                               const isApproved = !!approvedLessons[lessonKey]
+                              const hasActiveKey = activeGoldenKeys[lessonKey] === true
                               const medalInfo = medals[lessonKey]
                               const hasCompleted = medalInfo && medalInfo.bestPercent > 0
                               const medalEmoji = medalInfo?.medalTier ? emojiForTier(medalInfo.medalTier) : null
@@ -433,6 +463,18 @@ export default function FacilitatorLessonsPage() {
                                     >
                                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                         <span style={{ fontWeight: 600 }}>{lesson.title}</span>
+                                        {hasActiveKey && (
+                                          <span style={{ 
+                                            fontSize: 12, 
+                                            background: '#fef3c7', 
+                                            color: '#92400e',
+                                            padding: '2px 6px',
+                                            borderRadius: 4,
+                                            fontWeight: 600
+                                          }} title="Golden Key Active on this lesson">
+                                            🔑
+                                          </span>
+                                        )}
                                         {hasCompleted && (
                                           <span style={{ 
                                             fontSize: 12, 
@@ -479,6 +521,7 @@ export default function FacilitatorLessonsPage() {
                       filteredLessons.map(lesson => {
                         const lessonKey = `${subject}/${lesson.file}`
                         const isApproved = !!approvedLessons[lessonKey]
+                        const hasActiveKey = activeGoldenKeys[lessonKey] === true
                         const medalInfo = medals[lessonKey]
                         const hasCompleted = medalInfo && medalInfo.bestPercent > 0
                         const medalEmoji = medalInfo?.medalTier ? emojiForTier(medalInfo.medalTier) : null
@@ -499,6 +542,18 @@ export default function FacilitatorLessonsPage() {
                               >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                   <span style={{ fontWeight: 600 }}>{lesson.title}</span>
+                                  {hasActiveKey && (
+                                    <span style={{ 
+                                      fontSize: 12, 
+                                      background: '#fef3c7', 
+                                      color: '#92400e',
+                                      padding: '2px 6px',
+                                      borderRadius: 4,
+                                      fontWeight: 600
+                                    }} title="Golden Key Active on this lesson">
+                                      🔑
+                                    </span>
+                                  )}
                                   {hasCompleted && (
                                     <span style={{ 
                                       fontSize: 12, 

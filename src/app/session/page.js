@@ -10,7 +10,7 @@ import { jsPDF } from "jspdf";
 import { loadRuntimeVariables } from "../lib/runtimeVariables";
 import { getSupabaseClient } from "../lib/supabaseClient";
 import { appendTranscriptSegment, updateTranscriptLiveSegment } from "../lib/transcriptsClient";
-import { getLearner } from "@/app/facilitator/learners/clientApi";
+import { getLearner, updateLearner } from "@/app/facilitator/learners/clientApi";
 // SpinnerScreen removed here; reverting to in-panel overlay spinner
 import { generateOpening } from "../lib/opening";
 import { pickNextJoke, renderJoke } from "../lib/jokes";
@@ -143,7 +143,10 @@ function SessionPageInner() {
   const subjectParam = (searchParams?.get('subject') || 'math').toLowerCase();
   const lessonParam = searchParams?.get('lesson') || '';
   const difficultyParam = (searchParams?.get('difficulty') || 'beginner').toLowerCase();
-  const hasGoldenKey = searchParams?.get('goldenKey') === 'true';
+  const goldenKeyFromUrl = searchParams?.get('goldenKey') === 'true';
+  
+  // Track whether this lesson has an active golden key (from URL or persisted in DB)
+  const [hasGoldenKey, setHasGoldenKey] = useState(goldenKeyFromUrl);
   
   // Force target reload when learner changes
   const reloadTargetsForCurrentLearner = useCallback(async () => {
@@ -220,7 +223,7 @@ function SessionPageInner() {
   // Learner grade state (for grade-appropriate speech)
   const [learnerGrade, setLearnerGrade] = useState('');
 
-  // Load timer setting and grade from current learner (re-run when learner changes)
+  // Load timer setting, grade, and check for active golden keys on this lesson
   useEffect(() => {
     (async () => {
       try {
@@ -241,6 +244,39 @@ function SessionPageInner() {
           } else {
             setLearnerGrade(''); // Clear if not set
           }
+          
+          // Check for active golden key on this lesson
+          const lessonKey = `${subjectParam}/${lessonParam}`;
+          const activeKeys = learner?.active_golden_keys || {};
+          if (activeKeys[lessonKey]) {
+            setHasGoldenKey(true);
+            console.info('[Golden Key] Found active golden key for this lesson:', lessonKey);
+          } else if (goldenKeyFromUrl) {
+            // New golden key usage - save it to the database
+            setHasGoldenKey(true);
+            console.info('[Golden Key] Saving new golden key usage for lesson:', lessonKey);
+            try {
+              await updateLearner(learnerId, {
+                name: learner.name,
+                grade: learner.grade,
+                targets: {
+                  comprehension: learner.comprehension,
+                  exercise: learner.exercise,
+                  worksheet: learner.worksheet,
+                  test: learner.test
+                },
+                session_timer_minutes: learner.session_timer_minutes,
+                golden_keys: learner.golden_keys, // Don't decrement here - already done in learn/lessons page
+                active_golden_keys: {
+                  ...activeKeys,
+                  [lessonKey]: true
+                }
+              });
+              console.info('[Golden Key] Successfully saved golden key usage');
+            } catch (err) {
+              console.error('[Golden Key] Failed to save golden key usage:', err);
+            }
+          }
         } else {
           setSessionTimerMinutes(60); // Default for demo or no learner
           setLearnerGrade(''); // Clear grade for demo
@@ -251,7 +287,7 @@ function SessionPageInner() {
         setLearnerGrade('');
       }
     })();
-  }, []); // Keep empty to only load on mount
+  }, [subjectParam, lessonParam, goldenKeyFromUrl]); // Re-run when lesson changes
   
   // Also listen for storage changes to pick up timer and grade updates from facilitator page
   useEffect(() => {
@@ -5579,6 +5615,39 @@ function SessionPageInner() {
       sessionStorage.removeItem('session_timer_state');
     } catch {}
 
+    // Clear active golden key for this lesson if it was used
+    if (hasGoldenKey) {
+      const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
+      if (learnerId && learnerId !== 'demo') {
+        try {
+          const { getLearner, updateLearner } = await import('@/app/facilitator/learners/clientApi');
+          const learner = await getLearner(learnerId);
+          if (learner) {
+            const lessonKey = `${subjectParam}/${lessonParam}`;
+            const activeKeys = { ...(learner.active_golden_keys || {}) };
+            delete activeKeys[lessonKey];
+            
+            await updateLearner(learnerId, {
+              name: learner.name,
+              grade: learner.grade,
+              targets: {
+                comprehension: learner.comprehension,
+                exercise: learner.exercise,
+                worksheet: learner.worksheet,
+                test: learner.test
+              },
+              session_timer_minutes: learner.session_timer_minutes,
+              golden_keys: learner.golden_keys,
+              active_golden_keys: activeKeys
+            });
+            console.info('[Golden Key] Cleared active golden key for completed lesson:', lessonKey);
+          }
+        } catch (err) {
+          console.error('[Golden Key] Failed to clear active golden key:', err);
+        }
+      }
+    }
+
     // Stop any ongoing audio/speech/mic work first
     try { abortAllActivity(); } catch {}
     const key = getAssessmentStorageKey();
@@ -6027,9 +6096,6 @@ function SessionPageInner() {
             gap: 8,
             flexWrap: 'wrap'
           }}>
-            <div style={{ color: '#991b1b', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '6px 10px', fontSize: 12 }}>
-              Restart clears saved progress and cannot be reversed.
-            </div>
             <button type="button" onClick={handleResumeClick} style={{ padding: '8px 12px', background: '#111827', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, cursor: 'pointer' }}>
               Resume
             </button>

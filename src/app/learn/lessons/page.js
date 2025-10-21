@@ -8,6 +8,8 @@ import { getLearner, updateLearner } from '@/app/facilitator/learners/clientApi'
 import LoadingProgress from '@/components/LoadingProgress'
 import GoldenKeyCounter from '@/app/learn/GoldenKeyCounter'
 
+const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'facilitator']
+
 function LessonsPageInner(){
   const router = useRouter()
 
@@ -22,8 +24,7 @@ function LessonsPageInner(){
   const [todaysCount, setTodaysCount] = useState(0)
   const [sessionLoading, setSessionLoading] = useState(false)
   const [goldenKeySelected, setGoldenKeySelected] = useState(false)
-
-  const subjects = ['math', 'science', 'language arts', 'social studies', 'facilitator']
+  const [activeGoldenKeys, setActiveGoldenKeys] = useState({}) // Track lessons with active golden keys
 
   useEffect(() => {
     let mounted = true
@@ -94,7 +95,7 @@ function LessonsPageInner(){
       } catch {}
       
       const lessonsMap = {}
-      for (const subject of subjects) {
+      for (const subject of SUBJECTS) {
         try {
           const headers = subject === 'facilitator' && token 
             ? { 'Authorization': `Bearer ${token}` }
@@ -120,6 +121,7 @@ function LessonsPageInner(){
   useEffect(() => {
     if (!learnerId) {
       setApprovedLessons({})
+      setActiveGoldenKeys({})
       setLoading(false)
       return
     }
@@ -127,12 +129,35 @@ function LessonsPageInner(){
     ;(async () => {
       try {
         const supabase = getSupabaseClient()
-        const { data } = await supabase.from('learners').select('approved_lessons').eq('id', learnerId).maybeSingle()
+        // Try to load with all fields first
+        let data, error
+        const result = await supabase.from('learners').select('approved_lessons, active_golden_keys').eq('id', learnerId).maybeSingle()
+        data = result.data
+        error = result.error
+        
+        // If error, try without active_golden_keys (column might not exist yet)
+        if (error) {
+          console.warn('[Learn Lessons] Error loading with active_golden_keys, trying without:', error)
+          const fallbackResult = await supabase.from('learners').select('approved_lessons').eq('id', learnerId).maybeSingle()
+          data = fallbackResult.data
+          error = fallbackResult.error
+          if (error) {
+            console.error('[Learn Lessons] Load error:', error)
+            throw error
+          }
+        }
+        
+        console.log('[Learn Lessons] Loaded approved lessons for learner:', learnerId, data)
         if (!cancelled) {
           setApprovedLessons(data?.approved_lessons || {})
+          setActiveGoldenKeys(data?.active_golden_keys || {})
         }
-      } catch {
-        if (!cancelled) setApprovedLessons({})
+      } catch (err) {
+        console.error('[Learn Lessons] Failed to load:', err)
+        if (!cancelled) {
+          setApprovedLessons({})
+          setActiveGoldenKeys({})
+        }
       }
       if (!cancelled) setLoading(false)
     })()
@@ -255,7 +280,7 @@ function LessonsPageInner(){
       ) : (
         <>
           <div style={grid}>
-            {subjects.map(subject => {
+            {SUBJECTS.map(subject => {
               const lessons = lessonsBySubject[subject]
               if (!lessons || lessons.length === 0) return null
 
@@ -270,6 +295,7 @@ function LessonsPageInner(){
                 const lessonKey = `${subject}/${l.file}`
                 const medalTier = medals[lessonKey]?.medalTier || null
                 const medal = medalTier ? emojiForTier(medalTier) : ''
+                const hasActiveKey = activeGoldenKeys[lessonKey] === true
                 
                 // For facilitator lessons, use lesson.subject; for others use the subject category
                 const subjectBadge = subject === 'facilitator' && l.subject
@@ -279,8 +305,25 @@ function LessonsPageInner(){
                 return (
                   <div key={`${subject}-${l.file}`} style={card}>
                     <div>
-                      <div style={{ fontSize:12, color:'#6b7280', marginBottom:4 }}>
-                        {subjectBadge}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <div style={{ fontSize:12, color:'#6b7280' }}>
+                          {subjectBadge}
+                        </div>
+                        {hasActiveKey && (
+                          <div style={{ 
+                            fontSize: 16, 
+                            background: '#fef3c7', 
+                            color: '#92400e',
+                            padding: '2px 6px',
+                            borderRadius: 6,
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4
+                          }} title="Golden Key Active">
+                            🔑 Active
+                          </div>
+                        )}
                       </div>
                       <h3 style={{ margin:'0 0 6px' }}>
                         {l.title} {medal}

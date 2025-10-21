@@ -105,6 +105,7 @@ export async function createLearner(payload) {
         test: flat.test,
         session_timer_minutes: payload.session_timer_minutes,
         golden_keys: payload.golden_keys !== undefined ? Number(payload.golden_keys) : 0,
+        active_golden_keys: payload.active_golden_keys || {},
       }, uid);
       if (!error) { supabaseLearnersMode = 'flat'; return normalizeRow(data); }
       if (!isUndefinedColumnOrTable(error)) throw new Error(error.message || 'Failed to create learner');
@@ -197,6 +198,7 @@ export async function updateLearner(id, updates) {
         test: flat.test,
         session_timer_minutes: updates.session_timer_minutes,
         golden_keys: updates.golden_keys !== undefined ? Number(updates.golden_keys) : undefined,
+        active_golden_keys: updates.active_golden_keys !== undefined ? updates.active_golden_keys : undefined,
       };
       console.log('📤 Sending to Supabase (flat mode):', updatePayload);
       const { data, error } = await updateWithOwner(supabase, id, updatePayload, uid);
@@ -254,6 +256,7 @@ function normalizeRow(row) {
     test: c(row.test ?? row.targets?.test),
     session_timer_minutes: c(row.session_timer_minutes),
     golden_keys: c(row.golden_keys),
+    active_golden_keys: row.active_golden_keys || {},
   };
   // console.log('🔄 normalizeRow input:', row, 'output:', merged); // Removed: excessive logging
   return merged;
@@ -268,6 +271,7 @@ function toFlatTargets(obj) {
     test: Number(t.test),
     session_timer_minutes: obj.session_timer_minutes !== undefined ? Number(obj.session_timer_minutes) : undefined,
     golden_keys: obj.golden_keys !== undefined ? Number(obj.golden_keys) : undefined,
+    active_golden_keys: obj.active_golden_keys !== undefined ? obj.active_golden_keys : undefined,
   };
   console.log('🔄 toFlatTargets input:', obj, 'output:', result);
   return result;
@@ -283,7 +287,8 @@ function createLocal(payload) {
     grade: payload.grade, 
     ...flat,
     session_timer_minutes: payload.session_timer_minutes !== undefined ? Number(payload.session_timer_minutes) : 60,
-    golden_keys: payload.golden_keys !== undefined ? Number(payload.golden_keys) : 0
+    golden_keys: payload.golden_keys !== undefined ? Number(payload.golden_keys) : 0,
+    active_golden_keys: payload.active_golden_keys || {}
   };
   list.unshift(item); writeLocal(list); return item;
 }
@@ -299,7 +304,8 @@ function updateLocal(id, updates) {
       grade: updates.grade, 
       ...flat,
       ...(updates.session_timer_minutes !== undefined ? { session_timer_minutes: Number(updates.session_timer_minutes) } : {}),
-      ...(updates.golden_keys !== undefined ? { golden_keys: Number(updates.golden_keys) } : {})
+      ...(updates.golden_keys !== undefined ? { golden_keys: Number(updates.golden_keys) } : {}),
+      ...(updates.active_golden_keys !== undefined ? { active_golden_keys: updates.active_golden_keys } : {})
     };
     list[idx] = updated; writeLocal(list); return updated;
   }
