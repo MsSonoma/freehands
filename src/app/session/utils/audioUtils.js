@@ -288,7 +288,7 @@ export async function playViaWebAudio(
       }
     }
     setIsSpeaking(true);
-    await new Promise(async (resolve) => {
+    await new Promise((resolve) => {
       src.onended = () => {
         try {
           setIsSpeaking(false);
@@ -314,37 +314,29 @@ export async function playViaWebAudio(
         resolve();
       };
       try {
-        // Start video first and wait for it to be ready before starting audio
-        const startPlayback = async () => {
-          try {
-            if (videoRef.current && !videoPlayingRef.current) {
-              console.info('[Session] WebAudio starting video and waiting for ready');
-              await playVideoWithRetry(videoRef.current);
-              // Brief wait to ensure video actually started (critical for Chrome)
-              await new Promise(r => setTimeout(r, 50));
-            } else if (videoPlayingRef.current) {
-              console.info('[Session] Video already playing, continuing');
-            }
-          } catch (e) {
-            console.warn('[Session] Video start failed, continuing with audio only', e);
-          }
-          
-          try { console.info('[Session] Starting WebAudio source now at', ctx?.currentTime); } catch {}
-          webAudioStartedAtRef.current = ctx.currentTime;
-          webAudioPausedAtRef.current = 0;
-          
-          // Schedule captions immediately with audio start
-          const allowAuto = (!userPausedRef.current || forceNextPlaybackRef.current);
-          if (allowAuto) {
-            try { scheduleCaptionsForDuration(buffer.duration, sentences || [], startIndex || 0); } catch {}
-          }
-          
-          // Arm guard with known duration for WebAudio
-          try { armSpeechGuard(buffer.duration || 0, 'webaudio:start'); } catch {}
-          src.start(0);
-        };
+        try { console.info('[Session] Starting WebAudio source now at', ctx?.currentTime); } catch {}
+        webAudioStartedAtRef.current = ctx.currentTime;
+        webAudioPausedAtRef.current = 0;
         
-        await startPlayback();
+        // Start video immediately with audio (don't block)
+        try {
+          if (videoRef.current && !videoPlayingRef.current) {
+            console.info('[Session] WebAudio starting video');
+            playVideoWithRetry(videoRef.current);
+          } else if (videoPlayingRef.current) {
+            console.info('[Session] Video already playing, continuing');
+          }
+        } catch {}
+        
+        // Schedule captions immediately with audio start
+        const allowAuto = (!userPausedRef.current || forceNextPlaybackRef.current);
+        if (allowAuto) {
+          try { scheduleCaptionsForDuration(buffer.duration, sentences || [], startIndex || 0); } catch {}
+        }
+        
+        // Arm guard with known duration for WebAudio
+        try { armSpeechGuard(buffer.duration || 0, 'webaudio:start'); } catch {}
+        src.start(0);
       } catch (e) { 
         console.warn('[Session] WebAudio start failed', e); 
         resolve(); 

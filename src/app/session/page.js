@@ -2406,8 +2406,15 @@ function SessionPageInner() {
   const startDiscussionStep = async () => {
     try { console.info('[Opening] startDiscussionStep entered'); } catch {}
     try { console.info('[Opening] generateOpening typeof =', typeof generateOpening); } catch {}
-    // Ensure audio is unlocked and mic permissions requested within the Begin click gesture
-  // mic permission will be requested only when user starts recording
+    
+    // CRITICAL: Unlock audio during user gesture (Begin click) - required for Chrome
+    try {
+      console.info('[Opening] Unlocking audio playback for Chrome');
+      await unlockAudioPlaybackWrapped();
+    } catch (e) {
+      console.warn('[Opening] Audio unlock failed', e);
+    }
+    
     // Ensure we are not starting in a muted or paused state
     try { setMuted(false); } catch {}
     try { setUserPaused(false); } catch {}
