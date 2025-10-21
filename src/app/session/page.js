@@ -2383,6 +2383,7 @@ function SessionPageInner() {
     try { setMuted(false); } catch {}
     try { setUserPaused(false); } catch {}
     try { mutedRef.current = false; } catch {}
+    try { userPausedRef.current = false; } catch {} // Set ref immediately, don't wait for useEffect
     try { forceNextPlaybackRef.current = true; } catch {}
     
     // CRITICAL for Chrome iOS: Start video during user gesture to avoid autoplay blocks
