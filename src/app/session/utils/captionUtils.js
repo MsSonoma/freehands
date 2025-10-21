@@ -106,8 +106,24 @@ export function scheduleCaptionsForAudio(audio, sentences, startIndex, refs, set
     const onLoaded = () => launch(audio.duration);
     audio.addEventListener("loadedmetadata", onLoaded, { once: true });
     audio.addEventListener("canplay", onLoaded, { once: true });
-    // Fallback: if metadata never fires quickly, schedule with heuristic after 250ms
-    const fallbackTimer = window.setTimeout(() => launch(0), 250);
+    
+    // Wait for audio to actually start playing before scheduling captions (critical for slow devices)
+    // If audio never plays, fall back to heuristic after longer delay
+    const onPlayStart = () => {
+      if (!scheduled) {
+        const duration = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0;
+        launch(duration);
+      }
+    };
+    audio.addEventListener("play", onPlayStart, { once: true });
+    
+    // Extended fallback for extremely slow devices: only start captions after 2 seconds if audio still hasn't loaded/played
+    const fallbackTimer = window.setTimeout(() => {
+      if (!scheduled) {
+        console.warn('[Captions] Audio metadata/play delayed beyond 2s, starting captions with heuristic');
+        launch(0);
+      }
+    }, 2000);
     captionTimersRef.current.push(fallbackTimer);
   }
 }

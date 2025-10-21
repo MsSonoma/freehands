@@ -280,7 +280,7 @@ export async function playViaWebAudio(
           captionBatchRefs.captionBatchStartRef.current = startIndex || 0;
           captionBatchRefs.captionBatchEndRef.current = (startIndex || 0) + batchLen;
         } catch {}
-        try { scheduleCaptionsForDuration(buffer.duration, sentences || [], startIndex || 0); } catch {}
+        // Note: Caption scheduling deferred until after video starts (see below)
         // Reset the force flag after first autoplay attempt
         try { if (forceNextPlaybackRef.current) forceNextPlaybackRef.current = false; } catch {}
       }
@@ -315,12 +315,28 @@ export async function playViaWebAudio(
         try { console.info('[Session] Starting WebAudio source now at', ctx?.currentTime); } catch {}
         webAudioStartedAtRef.current = ctx.currentTime;
         webAudioPausedAtRef.current = 0;
-        // Start video in response to audio start and arm guard with known duration
-        try {
-          if (videoRef.current) {
-            playVideoWithRetry(videoRef.current);
+        
+        // Start video in response to audio start
+        const startVideoAndCaptions = async () => {
+          try {
+            if (videoRef.current) {
+              await playVideoWithRetry(videoRef.current);
+              // Small delay to ensure video has actually started playing before scheduling captions
+              // Critical for slow devices (old iPads) where video takes time to start
+              await new Promise(r => setTimeout(r, 100));
+            }
+          } catch {}
+          
+          // Now schedule captions after video is playing
+          const allowAuto = (!userPausedRef.current || forceNextPlaybackRef.current);
+          if (allowAuto) {
+            try { scheduleCaptionsForDuration(buffer.duration, sentences || [], startIndex || 0); } catch {}
           }
-        } catch {}
+        };
+        
+        // Start video and captions asynchronously (don't block audio start)
+        startVideoAndCaptions().catch(() => {});
+        
         // Arm guard with known duration for WebAudio
         try { armSpeechGuard(buffer.duration || 0, 'webaudio:start'); } catch {}
         src.start(0);
