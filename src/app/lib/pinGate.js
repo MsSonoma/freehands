@@ -14,7 +14,7 @@ const DEFAULT_PREFS = {
 	changeLearner: true,     // change learner on Learn page
     refresh: true,           // re-generate worksheet & test
     timer: true,             // pause/resume session timer
-    facilitatorPage: false,  // accessing facilitator page
+    facilitatorPage: true,   // accessing facilitator page
 };
 
 function readPrefsLocal() {
