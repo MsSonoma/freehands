@@ -3,7 +3,6 @@
 
 const PIN_KEY = 'facilitator_pin';
 const PREFS_KEY = 'facilitator_pin_prefs';
-const UNLOCK_KEY = 'facilitator_pin_unlocked'; // session-level
 const FACILITATOR_SECTION_KEY = 'facilitator_section_active'; // session-level flag
 
 // Default preferences when a PIN exists but prefs are not saved yet
@@ -46,7 +45,6 @@ export function setFacilitatorPin(pin) {
 export function clearFacilitatorPin() {
 	if (typeof window === 'undefined') return;
 	try { localStorage.removeItem(PIN_KEY); } catch {}
-	try { sessionStorage.removeItem(UNLOCK_KEY); } catch {}
 }
 
 function mapActionToPrefKey(action) {
@@ -102,16 +100,6 @@ async function verifyPinServer(pin) {
 	}
 }
 
-function unlockedThisSession() {
-	if (typeof window === 'undefined') return true;
-	try { return sessionStorage.getItem(UNLOCK_KEY) === '1'; } catch { return false; }
-}
-
-function setUnlockedSession(v) {
-	if (typeof window === 'undefined') return;
-	try { if (v) sessionStorage.setItem(UNLOCK_KEY, '1'); else sessionStorage.removeItem(UNLOCK_KEY); } catch {}
-}
-
 function isInFacilitatorSection() {
 	if (typeof window === 'undefined') return false;
 	try { return sessionStorage.getItem(FACILITATOR_SECTION_KEY) === '1'; } catch { return false; }
@@ -137,8 +125,7 @@ export async function ensurePinAllowed(action = 'action') {
 			defaultValue: DEFAULT_PREFS[prefKey], 
 			shouldGate, 
 			prefs,
-			isInFacilitatorSection: isInFacilitatorSection(),
-			unlockedThisSession: unlockedThisSession()
+			isInFacilitatorSection: isInFacilitatorSection()
 		});
 		
 		if (!shouldGate) {
@@ -146,18 +133,9 @@ export async function ensurePinAllowed(action = 'action') {
 			return true;
 		}
 		
-		// Timer and facilitator-page actions have special handling (don't use session unlock)
-		const requiresFreshPin = (action === 'timer' || action === 'facilitator-page');
-		
 		// For facilitator-page action: if already in facilitator section, skip PIN check
 		if (action === 'facilitator-page' && isInFacilitatorSection()) {
 			console.log('[PIN Gate] Skipping PIN - already in facilitator section');
-			return true;
-		}
-		
-		// Session unlock only applies to non-timer, non-facilitator-page actions
-		if (!requiresFreshPin && unlockedThisSession()) {
-			console.log('[PIN Gate] Skipping PIN - session already unlocked');
 			return true;
 		}
 
@@ -176,11 +154,6 @@ export async function ensurePinAllowed(action = 'action') {
 		if (!ok) {
 			try { alert('Incorrect PIN.'); } catch {}
 			return false;
-		}
-		
-		// Timer actions don't unlock the session - they always require PIN
-		if (!requiresFreshPin) {
-			setUnlockedSession(true);
 		}
 		
 		// When entering facilitator section, mark it active
