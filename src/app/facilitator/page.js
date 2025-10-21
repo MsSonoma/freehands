@@ -35,13 +35,16 @@ export default function FacilitatorPage() {
     let cancelled = false;
     (async () => {
       try {
+        console.log('[Facilitator Page] Checking PIN...');
         const allowed = await ensurePinAllowed('facilitator-page');
+        console.log('[Facilitator Page] PIN check result:', allowed);
         if (!allowed) {
           router.push('/');
           return;
         }
         if (!cancelled) setPinChecked(true);
       } catch (e) {
+        console.error('[Facilitator Page] PIN check error:', e);
         if (!cancelled) setPinChecked(true);
       }
     })();

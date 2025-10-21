@@ -110,6 +110,9 @@ export function setInFacilitatorSection(v) {
 	try { if (v) sessionStorage.setItem(FACILITATOR_SECTION_KEY, '1'); else sessionStorage.removeItem(FACILITATOR_SECTION_KEY); } catch {}
 }
 
+// Global lock to prevent multiple simultaneous PIN prompts
+let activePinPrompt = null;
+
 export async function ensurePinAllowed(action = 'action') {
 	if (typeof window === 'undefined') return true; // SSR: allow
 	try {
@@ -139,29 +142,44 @@ export async function ensurePinAllowed(action = 'action') {
 			return true;
 		}
 
-		console.log('[PIN Gate] Prompting for PIN...');
-		// Prompt for PIN using a minimal masked modal so characters are hidden.
-		const input = await promptForPinMasked({ title: 'Facilitator PIN', message: 'Enter PIN to continue' });
-		if (input == null || input === '') return false;
+		// If another PIN prompt is already active, wait for it instead of creating a duplicate
+		if (activePinPrompt) {
+			console.log('[PIN Gate] Another PIN prompt is active, waiting for it...');
+			return await activePinPrompt;
+		}
 
-		// Try server verification; fallback to local
-		const serverOk = await verifyPinServer(input);
-		let ok = (serverOk === true);
-		if (serverOk === null) {
-			// No server; compare to local fallback
-			try { ok = (localStorage.getItem(PIN_KEY) || '') === input; } catch { ok = true; }
-		}
-		if (!ok) {
-			try { alert('Incorrect PIN.'); } catch {}
-			return false;
-		}
+		console.log('[PIN Gate] Prompting for PIN... (facilitator section flag was:', isInFacilitatorSection(), ')');
+		// Create the PIN prompt and store it globally
+		activePinPrompt = (async () => {
+			try {
+				// Prompt for PIN using a minimal masked modal so characters are hidden.
+				const input = await promptForPinMasked({ title: 'Facilitator PIN', message: 'Enter PIN to continue' });
+				if (input == null || input === '') return false;
+
+				// Try server verification; fallback to local
+				const serverOk = await verifyPinServer(input);
+				let ok = (serverOk === true);
+				if (serverOk === null) {
+					// No server; compare to local fallback
+					try { ok = (localStorage.getItem(PIN_KEY) || '') === input; } catch { ok = true; }
+				}
+				if (!ok) {
+					try { alert('Incorrect PIN.'); } catch {}
+					return false;
+				}
+				
+				// When entering facilitator section, mark it active
+				if (action === 'facilitator-page') {
+					setInFacilitatorSection(true);
+				}
+				
+				return true;
+			} finally {
+				activePinPrompt = null;
+			}
+		})();
 		
-		// When entering facilitator section, mark it active
-		if (action === 'facilitator-page') {
-			setInFacilitatorSection(true);
-		}
-		
-		return true;
+		return await activePinPrompt;
 	} catch {
 		return true; // fail-open to avoid blocking core flow
 	}
