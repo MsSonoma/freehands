@@ -1370,7 +1370,13 @@ function SessionPageInner() {
         webAudioPausedAtRef.current = elapsed;
       }
     } catch {}
-    try { stopWebAudioSource(); } catch {}
+    try {
+      if (webAudioSourceRef.current) {
+        try { webAudioSourceRef.current.stop(); } catch {}
+        try { webAudioSourceRef.current.disconnect(); } catch {}
+        webAudioSourceRef.current = null;
+      }
+    } catch {}
     try { if (videoRef.current) videoRef.current.pause(); } catch {}
     try { clearCaptionTimers(); } catch {}
     try { clearSpeechGuard(); } catch {}
@@ -1433,9 +1439,31 @@ function SessionPageInner() {
     } else if (webAudioBufferRef.current) {
       // WebAudio resume
       try {
-        const ctx = ensureAudioContext();
+        // Create/resume AudioContext
+        let ctx = audioCtxRef.current;
+        if (!ctx || ctx.state === 'closed') {
+          const Ctx = (typeof window !== 'undefined') && (window.AudioContext || window.webkitAudioContext);
+          if (Ctx) {
+            ctx = new Ctx();
+            audioCtxRef.current = ctx;
+            const gain = ctx.createGain();
+            gain.gain.value = mutedRef.current ? 0 : 1;
+            gain.connect(ctx.destination);
+            webAudioGainRef.current = gain;
+          }
+        }
+        if (ctx && ctx.state === 'suspended') {
+          ctx.resume();
+        }
+        
         if (ctx) {
-          stopWebAudioSource();
+          // Stop any existing source
+          if (webAudioSourceRef.current) {
+            try { webAudioSourceRef.current.stop(); } catch {}
+            try { webAudioSourceRef.current.disconnect(); } catch {}
+            webAudioSourceRef.current = null;
+          }
+          
           const src = ctx.createBufferSource();
           src.buffer = webAudioBufferRef.current;
           src.connect(webAudioGainRef.current || ctx.destination);
@@ -1453,7 +1481,12 @@ function SessionPageInner() {
                 poemState === 'inactive'
               ) { setShowOpeningActions(true); }
             } catch {}
-            stopWebAudioSource();
+            // Stop source
+            if (webAudioSourceRef.current) {
+              try { webAudioSourceRef.current.stop(); } catch {}
+              try { webAudioSourceRef.current.disconnect(); } catch {}
+              webAudioSourceRef.current = null;
+            }
             webAudioStartedAtRef.current = 0;
             webAudioPausedAtRef.current = 0;
             clearSpeechGuard();
@@ -2028,6 +2061,42 @@ function SessionPageInner() {
     ensureAudioContext,
     playViaWebAudio,
   });
+
+  // Create inline wrappers for audio utility functions using hook-provided refs
+  const ensureAudioContextWrapped = useCallback(() => {
+    return ensureAudioContext({ audioCtxRef, webAudioGainRef, mutedRef });
+  }, [audioCtxRef, webAudioGainRef, mutedRef]);
+  
+  const playViaWebAudioWrapped = useCallback(async (b64, sentences, startIndex) => {
+    return playViaWebAudio(
+      b64,
+      sentences,
+      startIndex,
+      { audioCtxRef, webAudioGainRef, webAudioSourceRef, webAudioBufferRef, webAudioStartedAtRef, webAudioPausedAtRef, mutedRef },
+      scheduleCaptionsForDurationUtil,
+      setIsSpeaking,
+      armSpeechGuard,
+      clearSpeechGuard,
+      videoRef,
+      { captionBatchStartRef, captionBatchEndRef },
+      userPausedRef,
+      forceNextPlaybackRef,
+      phase,
+      subPhase,
+      askState,
+      riddleState,
+      poemState,
+      setShowOpeningActions
+    );
+  }, [audioCtxRef, webAudioGainRef, webAudioSourceRef, webAudioBufferRef, webAudioStartedAtRef, webAudioPausedAtRef, mutedRef, phase, subPhase, askState, riddleState, poemState, armSpeechGuard, clearSpeechGuard]);
+  
+  const stopWebAudioSourceWrapped = useCallback(() => {
+    return stopWebAudioSource(webAudioSourceRef);
+  }, [webAudioSourceRef]);
+  
+  const unlockAudioPlaybackWrapped = useCallback(() => {
+    return unlockAudioPlayback({ audioCtxRef, webAudioGainRef, mutedRef }, audioUnlockedRef, setAudioUnlocked);
+  }, [audioCtxRef, webAudioGainRef, mutedRef]);
 
   // Use hook-provided functions (avoids redeclaration of inline wrappers below)
   const playAudioFromBase64 = playAudioFromBase64Hook;
@@ -5746,7 +5815,7 @@ function SessionPageInner() {
     {(() => {
   const showBanner = !audioUnlocked;
       if (!showBanner) return null;
-  const onEnable = () => { try { unlockAudioPlayback(); } catch {} };
+  const onEnable = () => { try { unlockAudioPlaybackWrapped(); } catch {} };
       return (
         <div style={{ width: '100%', borderBottom: '1px solid #e5e7eb', background: '#fff8e1', color: '#4b3b00' }}>
           <div style={{ maxWidth: 900, margin: '0 auto', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 12 }}>
