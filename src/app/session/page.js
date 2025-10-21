@@ -1992,16 +1992,12 @@ function SessionPageInner() {
     setCaptionsDone,
     setCaptionSentences,
     setMuted,
-    setUserPaused,
-    setPlaybackIntent,
     setAudioUnlocked,
     setOfferResume,
     
     // State values
     muted,
-    userPaused,
     loading,
-    playbackIntent,
     captionIndex,
     audioUnlocked,
     phase,
