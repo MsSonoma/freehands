@@ -233,10 +233,12 @@ function promptForPinMasked({ title = 'Enter PIN', message = 'Enter your PIN' } 
 		const input = document.createElement('input');
 		input.type = 'password';
 		input.inputMode = 'numeric';
-		input.autocomplete = 'one-time-code'; // hint numeric keypad
+		input.autocomplete = 'off'; // prevent password manager autofill
 		input.name = 'facilitator-pin';
 		input.pattern = '[0-9]*';
 		input.setAttribute('aria-label', 'Facilitator PIN');
+		input.setAttribute('data-lpignore', 'true'); // LastPass ignore
+		input.setAttribute('data-form-type', 'other'); // General password manager hint
 		input.style.cssText = 'width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;';
 
 		const err = document.createElement('div');
