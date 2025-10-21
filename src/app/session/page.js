@@ -865,6 +865,33 @@ function SessionPageInner() {
         // Trigger video load immediately
         videoRef.current.load();
         console.info('[Session] Video preload initiated on mount');
+        
+        // Track video playing state for Chrome autoplay coordination
+        const video = videoRef.current;
+        const onPlay = () => {
+          videoPlayingRef.current = true;
+          console.info('[Session] Video playing, flag set to true');
+        };
+        const onPause = () => {
+          videoPlayingRef.current = false;
+          console.info('[Session] Video paused, flag set to false');
+        };
+        const onEnded = () => {
+          videoPlayingRef.current = false;
+          console.info('[Session] Video ended, flag set to false');
+        };
+        
+        video.addEventListener('play', onPlay);
+        video.addEventListener('playing', onPlay);
+        video.addEventListener('pause', onPause);
+        video.addEventListener('ended', onEnded);
+        
+        return () => {
+          video.removeEventListener('play', onPlay);
+          video.removeEventListener('playing', onPlay);
+          video.removeEventListener('pause', onPause);
+          video.removeEventListener('ended', onEnded);
+        };
       }
     } catch (e) {
       console.warn('[Session] Video preload failed', e);
@@ -2389,7 +2416,7 @@ function SessionPageInner() {
     try { forceNextPlaybackRef.current = true; } catch {}
     
     // CRITICAL for Chrome: Play video during user gesture to satisfy autoplay policy
-    // Set flag so audio code doesn't try to play it again
+    // Video event listeners will automatically track playing state
     try {
       if (videoRef.current) {
         console.info('[Opening] Playing video during Begin gesture for Chrome autoplay');
@@ -2422,10 +2449,9 @@ function SessionPageInner() {
           console.info('[Opening] Video already ready (readyState=' + videoRef.current.readyState + ')');
         }
         
-        // Play video and mark as playing so audio code doesn't duplicate
+        // Play video (event listener will set flag automatically)
         await playVideoWithRetry(videoRef.current);
-        videoPlayingRef.current = true;
-        console.info('[Opening] Video playing, flag set');
+        console.info('[Opening] Video play initiated');
       }
     } catch (e) {
       console.warn('[Opening] Video play during Begin failed', e);
