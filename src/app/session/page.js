@@ -2094,7 +2094,7 @@ function SessionPageInner() {
     return stopWebAudioSource(webAudioSourceRef);
   }, [webAudioSourceRef]);
   
-  const unlockAudioPlaybackWrapped = useCallback(() => {
+  const unlockAudioPlaybackWrapped = useCallback(async () => {
     return unlockAudioPlayback({ audioCtxRef, webAudioGainRef, mutedRef }, audioUnlockedRef, setAudioUnlocked);
   }, [audioCtxRef, webAudioGainRef, mutedRef]);
 
@@ -5815,7 +5815,7 @@ function SessionPageInner() {
     {(() => {
   const showBanner = !audioUnlocked;
       if (!showBanner) return null;
-  const onEnable = () => { try { unlockAudioPlaybackWrapped(); } catch {} };
+  const onEnable = async () => { try { await unlockAudioPlaybackWrapped(); } catch {} };
       return (
         <div style={{ width: '100%', borderBottom: '1px solid #e5e7eb', background: '#fff8e1', color: '#4b3b00' }}>
           <div style={{ maxWidth: 900, margin: '0 auto', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 12 }}>

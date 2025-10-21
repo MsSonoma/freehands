@@ -334,14 +334,25 @@ export async function playViaWebAudio(
  * @param {Object} audioUnlockedRef - Ref tracking unlock state
  * @param {Function} setAudioUnlocked - Callback to update unlock state
  */
-export function unlockAudioPlayback(refs, audioUnlockedRef, setAudioUnlocked) {
+export async function unlockAudioPlayback(refs, audioUnlockedRef, setAudioUnlocked) {
   const { audioCtxRef, webAudioGainRef } = refs;
   try {
     // Create/resume AudioContext during the gesture
     const ctx = ensureAudioContext(refs);
+    
+    // CRITICAL for Chrome iOS: await the resume to ensure context is running
+    if (ctx && ctx.state === 'suspended') {
+      try {
+        await ctx.resume();
+        console.info('[Session] AudioContext resumed during unlock, state:', ctx.state);
+      } catch (e) {
+        console.warn('[Session] Failed to resume AudioContext during unlock', e);
+      }
+    }
+    
     try {
       // Small near-silent blip to solidify unlock; do not await
-      if (ctx) {
+      if (ctx && ctx.state === 'running') {
         const osc = ctx.createOscillator();
         const g = ctx.createGain();
         g.gain.value = 0.0001;
