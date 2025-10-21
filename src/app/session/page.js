@@ -2415,46 +2415,34 @@ function SessionPageInner() {
     try { userPausedRef.current = false; } catch {} // Set ref immediately, don't wait for useEffect
     try { forceNextPlaybackRef.current = true; } catch {}
     
-    // CRITICAL for Chrome: Play video during user gesture to satisfy autoplay policy
-    // Video event listeners will automatically track playing state
+    // CRITICAL for Chrome: Unlock video autoplay by playing briefly during user gesture
+    // Then pause it so audio code can play it when ready
     try {
       if (videoRef.current) {
-        console.info('[Opening] Playing video during Begin gesture for Chrome autoplay');
-        // Ensure video is loaded
+        console.info('[Opening] Unlocking video autoplay for Chrome');
         if (videoRef.current.readyState < 2) {
-          console.info('[Opening] Video not ready (readyState=' + videoRef.current.readyState + '), loading now');
           videoRef.current.load();
-          // Wait for video to be ready
-          await new Promise((resolve) => {
-            const checkReady = () => {
-              if (videoRef.current && videoRef.current.readyState >= 2) {
-                console.info('[Opening] Video ready and loaded');
-                resolve();
-              } else {
-                const onReady = () => {
-                  console.info('[Opening] Video ready via loadeddata event');
-                  resolve();
-                };
-                videoRef.current?.addEventListener('loadeddata', onReady, { once: true });
-                // Fallback timeout if event never fires
-                setTimeout(() => {
-                  console.warn('[Opening] Video ready timeout, proceeding anyway');
-                  resolve();
-                }, 1000);
-              }
-            };
-            checkReady();
-          });
-        } else {
-          console.info('[Opening] Video already ready (readyState=' + videoRef.current.readyState + ')');
         }
-        
-        // Play video (event listener will set flag automatically)
-        await playVideoWithRetry(videoRef.current);
-        console.info('[Opening] Video play initiated');
+        // Play and immediately pause to unlock autoplay permission
+        const playPromise = videoRef.current.play();
+        if (playPromise && playPromise.then) {
+          playPromise.then(() => {
+            // Let it play for a brief moment to establish permission
+            setTimeout(() => {
+              try {
+                if (videoRef.current) {
+                  videoRef.current.pause();
+                  console.info('[Opening] Video autoplay unlocked, paused for audio code');
+                }
+              } catch {}
+            }, 50);
+          }).catch(e => {
+            console.warn('[Opening] Video unlock failed', e);
+          });
+        }
       }
     } catch (e) {
-      console.warn('[Opening] Video play during Begin failed', e);
+      console.warn('[Opening] Video unlock failed', e);
     }
     
   // Unified discussion is now generated locally: Greeting + Encouragement + next-step prompt (no joke/silly question)

@@ -318,13 +318,15 @@ export async function playViaWebAudio(
         webAudioStartedAtRef.current = ctx.currentTime;
         webAudioPausedAtRef.current = 0;
         
-        // Trigger video play only if not already playing (Begin gesture may have already started it)
+        // Always try to start video with audio (Begin only unlocked permission, didn't keep it playing)
         try {
-          if (videoRef.current && !videoPlayingRef.current) {
-            console.info('[Session] WebAudio starting video');
-            playVideoWithRetry(videoRef.current);
-          } else if (videoPlayingRef.current) {
-            console.info('[Session] Video already playing from Begin gesture, skipping duplicate play');
+          if (videoRef.current) {
+            if (videoPlayingRef.current) {
+              console.info('[Session] Video already playing, continuing');
+            } else {
+              console.info('[Session] WebAudio starting video');
+              playVideoWithRetry(videoRef.current);
+            }
           }
         } catch {}
         
