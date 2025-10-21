@@ -9,7 +9,7 @@ import { useState, useEffect, useRef } from 'react';
  * @param {number} lessonProgress - Percentage of lesson completed (0-100)
  * @param {boolean} isPaused - Whether the timer is paused
  * @param {function} onTimeUp - Callback when timer reaches zero
- * @param {function} onPauseToggle - Callback to request pause/resume (requires PIN)
+ * @param {function} onPauseToggle - Callback to request pause/resume (PIN required only for pausing)
  */
 export default function SessionTimer({ 
   totalMinutes = 60, 
@@ -142,7 +142,7 @@ export default function SessionTimer({
           }}
           onMouseEnter={e => e.currentTarget.style.opacity = '1'}
           onMouseLeave={e => e.currentTarget.style.opacity = '0.8'}
-          title={isPaused ? 'Resume (requires PIN)' : 'Pause (requires PIN)'}
+          title={isPaused ? 'Resume' : 'Pause (requires PIN)'}
         >
           {isPaused ? '▶️' : '⏸️'}
         </button>

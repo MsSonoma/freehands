@@ -285,10 +285,13 @@ function SessionPageInner() {
 
   // Handle timer pause/resume with PIN verification
   const handleTimerPauseToggle = useCallback(async () => {
-    const ok = await ensurePinAllowed('timer');
-    if (!ok) return;
+    // Only require PIN when pausing (not when resuming)
+    if (!timerPaused) {
+      const ok = await ensurePinAllowed('timer');
+      if (!ok) return;
+    }
     setTimerPaused(prev => !prev);
-  }, []);
+  }, [timerPaused]);
 
   // Handle timer completion
   const handleTimeUp = useCallback(() => {
