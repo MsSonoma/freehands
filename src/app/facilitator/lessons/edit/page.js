@@ -1,11 +1,11 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import LessonEditor from '@/components/LessonEditor'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
 
-export default function EditLessonPage() {
+function EditLessonContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const lessonKey = searchParams.get('key')
@@ -181,5 +181,17 @@ export default function EditLessonPage() {
         />
       )}
     </div>
+  )
+}
+
+export default function EditLessonPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <div style={{ fontSize: 16, color: '#6b7280' }}>Loading...</div>
+      </div>
+    }>
+      <EditLessonContent />
+    </Suspense>
   )
 }
