@@ -147,9 +147,30 @@ function LessonsPageInner(){
           }
         }
         
-        console.log('[Learn Lessons] Loaded approved lessons for learner:', learnerId, data)
+        // Load today's scheduled lessons and merge with approved lessons
+        let mergedApproved = data?.approved_lessons || {}
+        try {
+          const today = new Date().toISOString().split('T')[0]
+          const scheduleResponse = await fetch(`/api/lesson-schedule?learnerId=${learnerId}&action=active`)
+          if (scheduleResponse.ok) {
+            const scheduleData = await scheduleResponse.json()
+            const scheduledLessons = scheduleData.lessons || []
+            console.log('[Learn Lessons] Scheduled lessons for today:', scheduledLessons)
+            
+            // Add scheduled lessons to approved lessons
+            scheduledLessons.forEach(item => {
+              if (item.lesson_key) {
+                mergedApproved[item.lesson_key] = true
+              }
+            })
+          }
+        } catch (schedErr) {
+          console.warn('[Learn Lessons] Could not load scheduled lessons:', schedErr)
+        }
+        
+        console.log('[Learn Lessons] Loaded approved + scheduled lessons for learner:', learnerId, mergedApproved)
         if (!cancelled) {
-          setApprovedLessons(data?.approved_lessons || {})
+          setApprovedLessons(mergedApproved)
           setActiveGoldenKeys(data?.active_golden_keys || {})
         }
       } catch (err) {

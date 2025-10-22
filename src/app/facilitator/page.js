@@ -212,6 +212,7 @@ export default function FacilitatorPage() {
           <Link href="/facilitator/account" style={cardStyle}>Account</Link>
           <Link href="/facilitator/learners" style={cardStyle}>Learners</Link>
           <Link href="/facilitator/lessons" style={cardStyle}>Lessons</Link>
+          <Link href="/facilitator/calendar" style={cardStyle}>Calendar</Link>
           <Link href="/facilitator/plan" style={cardStyle}>Plan</Link>
           <Link href="/facilitator/settings" style={cardStyle}>Settings</Link>
           <Link href="/facilitator/tools" style={cardStyle}>Tools</Link>

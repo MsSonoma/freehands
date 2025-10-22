@@ -16,6 +16,17 @@ Mr. Mentor helps facilitators:
 
 ## Key Features
 
+### **NEW: Background Actions**
+Mr. Mentor can now perform actions without you leaving the conversation:
+- **Search Lesson Library**: "What fractions lessons do you have for 3rd grade?" → Searches all available lessons
+- **Review Lesson Details**: "Tell me more about the photosynthesis lesson" → Retrieves full lesson content
+- **Generate Custom Lessons**: "Create a 5th grade math lesson on fractions" → Lesson appears in your Facilitator Lessons
+- **Schedule Lessons**: "Add the photosynthesis lesson to Emma's calendar for Monday" → Scheduled automatically
+- **Seamless Integration**: All actions happen in the background with natural language confirmation
+- **Smart Workflow**: Mr. Mentor searches existing lessons first, then generates if needed
+
+See [Function Calling Documentation](./mr-mentor-function-calling.md) for details.
+
 ### Learner-Specific Counseling
 - **Learner Selection**: Choose which learner to discuss from dropdown menu
 - **Automatic Context**: Mr. Mentor receives complete learner profile and progress data

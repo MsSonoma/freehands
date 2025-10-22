@@ -138,9 +138,9 @@ export default function HeaderBar() {
 		if (isNarrow && printMenuOpen) setPrintMenuOpen(false);
 	}, [isNarrow, printMenuOpen]);
 
-	// Receive the session page title from the session page or counselor page
+	// Receive the session page title from the session page, counselor page, or calendar page
 	useEffect(() => {
-		if (!pathname.startsWith('/session') && !pathname.startsWith('/facilitator/tools/counselor')) { setSessionTitle(''); return; }
+		if (!pathname.startsWith('/session') && !pathname.startsWith('/facilitator/tools/counselor') && !pathname.startsWith('/facilitator/calendar')) { setSessionTitle(''); return; }
 		const onTitle = (e) => {
 			try { setSessionTitle((e && e.detail) || ''); } catch { setSessionTitle(''); }
 		};
@@ -432,9 +432,9 @@ export default function HeaderBar() {
 					</Link>
 				</div>
 
-				{/* Center area: show lesson title on Session/Counselor in mobile landscape; else show Back */}
+				{/* Center area: show lesson title on Session/Counselor/Calendar; else show Back */}
 				<div style={{ flex:1, display:'flex', justifyContent:'center', alignItems:'center', minWidth:0 }}>
-					{((pathname.startsWith('/session') || pathname.startsWith('/facilitator/tools/counselor')) && sessionTitle) ? (
+					{((pathname.startsWith('/session') || pathname.startsWith('/facilitator/tools/counselor') || pathname.startsWith('/facilitator/calendar')) && sessionTitle) ? (
 						isSmallWidth ? (
 							<div style={{ position:'relative', width:'100%', maxWidth:'min(98vw, 1300px)', height:'100%' }}>
 								<div style={{ position:'absolute', left:0, right:0, top:'50%', transform:'translateY(-50%)', display:'flex', justifyContent:'center', alignItems:'center', padding:'0 4px' }}>

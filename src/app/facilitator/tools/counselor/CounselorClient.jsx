@@ -324,9 +324,19 @@ export default function CounselorClient() {
     setCaptionIndex(0)
 
     try {
+      // Get auth token for function calling
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+      
       const response = await fetch('/api/counselor', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify({
           message: message,
           // Send previous conversation history (API will append current message to build full context)
