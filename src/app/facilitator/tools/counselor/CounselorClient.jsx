@@ -205,14 +205,15 @@ export default function CounselorClient() {
           const hMax = 600
           let frac
           if (h <= hMin) {
-            frac = 0.40
+            frac = 0.44
           } else if (h >= hMax) {
-            frac = 0.70
+            frac = 0.65
           } else {
             const t = (h - hMin) / (hMax - hMin)
-            frac = 0.40 + t * (0.70 - 0.40)
+            frac = 0.44 + t * (0.65 - 0.44)
           }
-          const target = Math.round(h * frac)
+          // Subtract padding (16px top, 16px in landscape)
+          const target = Math.round(h * frac) - 16
           setVideoMaxHeight(target)
         } else {
           setVideoMaxHeight(null)
@@ -347,7 +348,16 @@ export default function CounselorClient() {
       })
 
       if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`)
+        let errorMessage = `Request failed with status ${response.status}`
+        try {
+          const errorData = await response.json()
+          if (errorData.error) {
+            errorMessage += `: ${errorData.error}`
+          }
+        } catch {
+          // If response isn't JSON, use default message
+        }
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()
@@ -509,12 +519,26 @@ export default function CounselorClient() {
 
   const videoEffectiveHeight = videoMaxHeight && Number.isFinite(videoMaxHeight) ? videoMaxHeight : null
 
+  // Debug logging
+  console.log('[Mr. Mentor Layout]', {
+    isMobileLandscape,
+    videoMaxHeight,
+    videoEffectiveHeight,
+    windowHeight: typeof window !== 'undefined' ? window.innerHeight : 'N/A',
+    calculatedPercentage: videoEffectiveHeight && typeof window !== 'undefined' ? (videoEffectiveHeight / window.innerHeight * 100).toFixed(1) + '%' : 'N/A'
+  })
+
   return (
     <div style={{
       display: 'flex',
       flexDirection: 'column',
       height: '100vh',
       maxHeight: '100vh',
+      width: '100vw',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      paddingTop: isMobileLandscape ? 'clamp(48px, 8svh, 60px)' : 'clamp(56px, 9svh, 72px)',
       background: '#f9fafb',
       overflow: 'hidden'
     }}>
@@ -529,13 +553,14 @@ export default function CounselorClient() {
       }}>
         {/* Video panel */}
         <div style={{
-          flex: isMobileLandscape ? 1 : '0 0 auto',
+          flex: isMobileLandscape ? 1 : '0 0 30%',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          background: '#000',
+          background: isMobileLandscape ? '#000' : '#f9fafb',
           position: 'relative',
-          minHeight: 0
+          minHeight: 0,
+          padding: isMobileLandscape ? 0 : 16
         }}>
           <video
             ref={videoRef}
@@ -547,7 +572,8 @@ export default function CounselorClient() {
             style={{
               width: '100%',
               height: '100%',
-              objectFit: 'cover'
+              objectFit: 'cover',
+              objectPosition: 'center 35%'
             }}
           />
           {/* Skip button (bottom-left, visible when speaking) */}
@@ -606,7 +632,7 @@ export default function CounselorClient() {
         <div
           ref={captionBoxRef}
           style={{
-            flex: 1,
+            flex: isMobileLandscape ? 1 : '0 0 35%',
             padding: 16,
             background: '#fff',
             borderRadius: isMobileLandscape ? 8 : 0,

@@ -714,6 +714,9 @@ export async function POST(req) {
   const callId = createCallId()
   const logPrefix = `[Mr. Mentor][${callId}]`
   
+  console.log(`${logPrefix} POST request received`)
+  console.log(`${logPrefix} Headers:`, Object.fromEntries(req.headers.entries()))
+  
   try {
     // Parse request body
     let userMessage = ''
@@ -724,6 +727,7 @@ export async function POST(req) {
     try {
       if (contentType.includes('application/json')) {
         const body = await req.json()
+        console.log(`${logPrefix} Parsed body:`, JSON.stringify(body).substring(0, 200))
         userMessage = (body.message || '').trim()
         conversationHistory = Array.isArray(body.history) ? body.history : []
         learnerTranscript = body.learner_transcript || null
@@ -737,8 +741,8 @@ export async function POST(req) {
         console.warn(`${logPrefix} Non-JSON payload; treating as message text`)
       }
     } catch (parseErr) {
-      console.warn(`${logPrefix} Failed to parse request:`, parseErr)
-      return NextResponse.json({ error: 'Invalid request format.' }, { status: 400 })
+      console.error(`${logPrefix} Failed to parse request:`, parseErr)
+      return NextResponse.json({ error: `Invalid request format: ${parseErr.message}` }, { status: 400 })
     }
 
     if (!userMessage) {
@@ -916,12 +920,30 @@ export async function POST(req) {
                   title: { type: 'string' },
                   blurb: { type: 'string' },
                   teachingNotes: { type: 'string' },
-                  vocab: { type: 'array' },
-                  sample: { type: 'array' },
-                  truefalse: { type: 'array' },
-                  multiplechoice: { type: 'array' },
-                  shortanswer: { type: 'array' },
-                  fillintheblank: { type: 'array' }
+                  vocab: { 
+                    type: 'array',
+                    items: { type: 'object' }
+                  },
+                  sample: { 
+                    type: 'array',
+                    items: { type: 'object' }
+                  },
+                  truefalse: { 
+                    type: 'array',
+                    items: { type: 'object' }
+                  },
+                  multiplechoice: { 
+                    type: 'array',
+                    items: { type: 'object' }
+                  },
+                  shortanswer: { 
+                    type: 'array',
+                    items: { type: 'object' }
+                  },
+                  fillintheblank: { 
+                    type: 'array',
+                    items: { type: 'object' }
+                  }
                 }
               }
             },
@@ -933,20 +955,25 @@ export async function POST(req) {
 
     // Call OpenAI
     console.log(`${logPrefix} Calling OpenAI with ${messages.length} messages`)
+    
+    const requestBody = {
+      model: OPENAI_MODEL,
+      messages: messages,
+      max_tokens: 1500,
+      temperature: 0.8,
+      tools: tools,
+      tool_choice: 'auto'
+    }
+    
+    console.log(`${logPrefix} Request body size: ${JSON.stringify(requestBody).length} chars`)
+    
     const response = await fetch(OPENAI_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
-      body: JSON.stringify({
-        model: OPENAI_MODEL,
-        messages: messages,
-        max_tokens: 1500,
-        temperature: 0.8,
-        tools: tools,
-        tool_choice: 'auto'
-      })
+      body: JSON.stringify(requestBody)
     })
 
     const rawBody = await response.text()
@@ -958,7 +985,8 @@ export async function POST(req) {
     }
 
     if (!response.ok) {
-      console.error(`${logPrefix} OpenAI request failed:`, parsedBody)
+      console.error(`${logPrefix} OpenAI request failed with status ${response.status}`)
+      console.error(`${logPrefix} OpenAI error details:`, JSON.stringify(parsedBody, null, 2))
       return NextResponse.json({ error: 'Failed to get response from Mr. Mentor.' }, { status: response.status })
     }
 

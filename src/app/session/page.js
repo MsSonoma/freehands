@@ -3825,6 +3825,7 @@ function SessionPageInner() {
     setRiddleUsedThisGate(false);
     setPoemUsedThisGate(false);
     setStoryUsedThisGate(false);
+    setFillInFunUsedThisGate(false);
     // Immediately advance subPhase so the "Begin Worksheet" button disappears
     setSubPhase('worksheet-active');
     worksheetIndexRef.current = 0;
@@ -3913,6 +3914,7 @@ function SessionPageInner() {
   setRiddleUsedThisGate(false);
   setPoemUsedThisGate(false);
   setStoryUsedThisGate(false);
+  setFillInFunUsedThisGate(false);
     // Reset model-validated correctness tracking
     setUsedTestCuePhrases([]);
   setTestCorrectByIndex([]);
@@ -4001,6 +4003,7 @@ function SessionPageInner() {
   setRiddleUsedThisGate(false);
   setPoemUsedThisGate(false);
   setStoryUsedThisGate(false);
+  setFillInFunUsedThisGate(false);
     // Persist the entrance to comprehension-start immediately
   // Persist the entrance to comprehension-start immediately (single-snapshot resume pointer)
   try { scheduleSaveSnapshot('begin-comprehension'); } catch {}
@@ -4530,6 +4533,7 @@ function SessionPageInner() {
   setRiddleUsedThisGate(false);
   setPoemUsedThisGate(false);
   setStoryUsedThisGate(false);
+  setFillInFunUsedThisGate(false);
   // Persist phase entrance for Exercise
   try { scheduleSaveSnapshot('begin-exercise'); } catch {}
     // Frontend-only: brief intro + first question via unified TTS/captions
