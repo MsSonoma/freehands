@@ -547,6 +547,32 @@ export default function FacilitatorLessonsPage() {
                                         </div>
                                       )}
                                     </label>
+                                    
+                                    {/* Edit Lesson button */}
+                                    <button
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(lessonKey)}`)
+                                      }}
+                                      style={{
+                                        marginLeft: 'auto',
+                                        padding: '6px 12px',
+                                        border: '1px solid #d1d5db',
+                                        borderRadius: 6,
+                                        background: '#fff',
+                                        color: '#6b7280',
+                                        fontSize: 13,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 6
+                                      }}
+                                      title="Edit this lesson"
+                                    >
+                                      <span>✏️</span>
+                                      Edit
+                                    </button>
                                   </div>
                                   
                                   {/* Notes section */}
@@ -747,6 +773,32 @@ export default function FacilitatorLessonsPage() {
                                   </div>
                                 )}
                               </label>
+                              
+                              {/* Edit Lesson button */}
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(lessonKey)}`)
+                                }}
+                                style={{
+                                  marginLeft: 'auto',
+                                  padding: '6px 12px',
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: 6,
+                                  background: '#fff',
+                                  color: '#6b7280',
+                                  fontSize: 13,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 6
+                                }}
+                                title="Edit this lesson"
+                              >
+                                <span>✏️</span>
+                                Edit
+                              </button>
                             </div>
                             
                             {/* Notes section */}

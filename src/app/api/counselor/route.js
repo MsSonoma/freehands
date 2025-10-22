@@ -62,7 +62,7 @@ Curriculum Planning Expertise:
 
 YOUR TOOLS - YOU CAN USE THESE RIGHT NOW:
 
-You have 4 function calling tools available. Use them actively during conversations:
+You have 5 function calling tools available. Use them actively during conversations:
 
 1. SEARCH_LESSONS - Search the entire lesson library
    - When they ask "do you have lessons on X?" → USE THIS TOOL
@@ -84,6 +84,11 @@ You have 4 function calling tools available. Use them actively during conversati
 4. SCHEDULE_LESSON - Add lessons to calendars
    - When they say "add that to Monday" or "schedule for Emma" → USE THIS TOOL
    - Need: learner selected, lesson key from search, date
+
+5. EDIT_LESSON - Modify existing lessons (ALL lessons: installed subjects AND facilitator-created)
+   - When they ask to change/fix/update/edit a lesson → USE THIS TOOL
+   - Can edit: vocabulary, teaching notes, blurb, questions (all types)
+   - Works on both pre-installed lessons AND custom facilitator lessons
 
 CRITICAL: When someone asks about lessons, DON'T say "I can't access" or "I'm unable to" - JUST USE THE SEARCH TOOL.
 If you need details on parameters, call get_capabilities first.
@@ -313,6 +318,23 @@ function getCapabilitiesInfo(args) {
       returns: 'Success confirmation with scheduled date and lesson key',
       notes: 'Learner must be selected in dropdown for you to have their ID in context',
       example: 'Schedule for Emma on Dec 18: {learnerId: "abc123", lessonKey: "math/Multiplication_Basics.json", scheduledDate: "2025-12-18"}'
+    },
+    
+    edit_lesson: {
+      name: 'edit_lesson',
+      purpose: 'Modify an existing lesson (works on ALL lessons: installed subjects like math/science AND facilitator-created lessons)',
+      when_to_use: 'When facilitator asks to change/fix/update/edit a lesson, correct errors, add vocabulary, improve questions, etc.',
+      parameters: {
+        lessonKey: 'Required. Format: "subject/filename.json" (from search results)',
+        updates: 'Required. Object with fields to update. Can include: title, blurb, teachingNotes, vocab (array of {term, definition}), sample, truefalse, multiplechoice, shortanswer, fillintheblank (arrays of questions)'
+      },
+      returns: 'Success confirmation that lesson was updated',
+      notes: 'Can edit ANY lesson - both pre-installed subject lessons AND custom facilitator lessons. Get current lesson with get_lesson_details first, then send only the fields that need to change.',
+      examples: [
+        'Fix teaching notes: {lessonKey: "science/Photosynthesis.json", updates: {teachingNotes: "Updated notes..."}}',
+        'Add vocabulary: {lessonKey: "math/Fractions.json", updates: {vocab: [{term: "numerator", definition: "Top number"}, {term: "denominator", definition: "Bottom number"}]}}',
+        'Update blurb: {lessonKey: "facilitator/Custom_Lesson.json", updates: {blurb: "New description"}}'
+      ]
     }
   }
   
@@ -320,6 +342,7 @@ function getCapabilitiesInfo(args) {
     best_practices: [
       'SEARCH FIRST: Always search for existing lessons before generating new ones',
       'GET DETAILS: Review lesson content before recommending to ensure good fit',
+      'EDIT WHEN NEEDED: If a lesson needs corrections or improvements, use edit_lesson',
       'ASK FOR CLARIFICATION: If missing required parameters, ask the facilitator',
       'CONFIRM ACTIONS: After completing an action, confirm what was done',
       'NATURAL LANGUAGE: Don\'t mention function names or technical details to the user'
@@ -329,7 +352,7 @@ function getCapabilitiesInfo(args) {
       '1. Facilitator asks about a topic',
       '2. Search for relevant lessons',
       '3. Review top matches with get_lesson_details',
-      '4. Recommend best fit OR generate if nothing suitable',
+      '4. Recommend best fit OR generate if nothing suitable OR edit if needs changes',
       '5. Schedule for learner if requested',
       '6. Confirm completion and suggest next steps'
     ],
@@ -339,7 +362,8 @@ function getCapabilitiesInfo(args) {
       'What lessons do you have on X?': 'search_lessons → list results → offer to provide details',
       'Tell me about lesson Y': 'get_lesson_details → summarize',
       'Create a lesson about X': 'generate_lesson (but search first!)',
-      'Schedule lesson for learner': 'schedule_lesson (need lessonKey from search/generate)'
+      'Schedule lesson for learner': 'schedule_lesson (need lessonKey from search/generate)',
+      'Fix/edit a lesson': 'get_lesson_details → edit_lesson (with updates)'
     }
   }
   
@@ -646,6 +670,46 @@ async function executeLessonScheduling(args, request) {
   }
 }
 
+// Helper function to execute lesson editing
+async function executeLessonEdit(args, request) {
+  try {
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader) {
+      return { error: 'Authentication required' }
+    }
+    
+    const { lessonKey, updates } = args
+    
+    if (!lessonKey || !updates) {
+      return { error: 'Missing lessonKey or updates' }
+    }
+    
+    // Call the lesson edit API
+    const editResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/lesson-edit`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader
+      },
+      body: JSON.stringify({ lessonKey, updates })
+    })
+    
+    const result = await editResponse.json()
+    
+    if (!editResponse.ok) {
+      return { error: result.error || 'Lesson edit failed' }
+    }
+    
+    return {
+      success: true,
+      lessonKey: lessonKey,
+      message: `Lesson "${lessonKey}" has been updated successfully.`
+    }
+  } catch (err) {
+    return { error: err.message || String(err) }
+  }
+}
+
 export async function POST(req) {
   const callId = createCallId()
   const logPrefix = `[Mr. Mentor][${callId}]`
@@ -694,7 +758,7 @@ export async function POST(req) {
     // Build system prompt with learner context if available
     let systemPrompt = MENTOR_SYSTEM_PROMPT
     if (learnerTranscript) {
-      systemPrompt += `\n\n=== CURRENT LEARNER CONTEXT ===\nThe facilitator has selected a specific learner to discuss. Here is their profile and progress:\n\n${learnerTranscript}\n\n=== END LEARNER CONTEXT ===\n\nUse this information to provide personalized, data-informed guidance. Reference specific achievements, struggles, or patterns you notice. Ask questions that help the facilitator reflect on this learner's unique needs and progress.`
+      systemPrompt += `\n\n=== CURRENT LEARNER CONTEXT ===\nThe facilitator has selected a specific learner to discuss. Here is their profile and progress:\n\n${learnerTranscript}\n\n=== END LEARNER CONTEXT ===\n\nIMPORTANT: When scheduling lessons, use the learner ID shown at the top of the profile (the long UUID string after "ID:"). This is required for the schedule_lesson function. Do NOT try to use the learner's name - you MUST use their ID.\n\nUse this information to provide personalized, data-informed guidance. Reference specific achievements, struggles, or patterns you notice. Ask questions that help the facilitator reflect on this learner's unique needs and progress.`
     }
 
     // Build conversation messages
@@ -832,6 +896,38 @@ export async function POST(req) {
             required: ['learnerId', 'lessonKey', 'scheduledDate']
           }
         }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'edit_lesson',
+          description: 'Edit an existing lesson (works on ALL lessons: math, science, language arts, social studies, AND facilitator lessons). Use when facilitator wants to fix, update, or improve a lesson.',
+          parameters: {
+            type: 'object',
+            properties: {
+              lessonKey: {
+                type: 'string',
+                description: 'The lesson identifier in format "subject/filename" (e.g., "science/Photosynthesis.json")'
+              },
+              updates: {
+                type: 'object',
+                description: 'Object containing the fields to update. Can include: title, blurb, teachingNotes, vocab (array), sample (array), truefalse (array), multiplechoice (array), shortanswer (array), fillintheblank (array)',
+                properties: {
+                  title: { type: 'string' },
+                  blurb: { type: 'string' },
+                  teachingNotes: { type: 'string' },
+                  vocab: { type: 'array' },
+                  sample: { type: 'array' },
+                  truefalse: { type: 'array' },
+                  multiplechoice: { type: 'array' },
+                  shortanswer: { type: 'array' },
+                  fillintheblank: { type: 'array' }
+                }
+              }
+            },
+            required: ['lessonKey', 'updates']
+          }
+        }
       }
     ]
 
@@ -893,6 +989,8 @@ export async function POST(req) {
             result = await executeLessonGeneration(functionArgs, req)
           } else if (functionName === 'schedule_lesson') {
             result = await executeLessonScheduling(functionArgs, req)
+          } else if (functionName === 'edit_lesson') {
+            result = await executeLessonEdit(functionArgs, req)
           } else {
             result = { error: 'Unknown function' }
           }

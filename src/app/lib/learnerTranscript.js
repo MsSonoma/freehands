@@ -15,8 +15,9 @@ export async function buildLearnerTranscript(learner, medals) {
 
   const lines = [];
   
-  // Basic info
+  // Basic info with ID for scheduling
   lines.push(`LEARNER PROFILE:`);
+  lines.push(`ID: ${learner.id}`);
   lines.push(`Name: ${learner.name || 'Unknown'}`);
   if (learner.grade) {
     lines.push(`Grade: ${learner.grade}`);
