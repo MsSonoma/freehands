@@ -69,6 +69,11 @@ export default function ClientTools(){
       ) : (
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(260px, 1fr))', gap:12 }}>
           <div style={{ border:'1px solid #e5e7eb', borderRadius:12, padding:16, background:'#fff' }}>
+            <h3 style={{ marginTop:0 }}>Mr. Mentor</h3>
+            <p style={{ color:'#555' }}>Talk with an AI counselor who helps with teaching challenges, curriculum planning, and goal setting.</p>
+            <Link href="/facilitator/tools/counselor" style={{ display:'inline-block', padding:'8px 12px', border:'1px solid #111', background:'#111', color:'#fff', borderRadius:8, fontWeight:600 }}>Open Mr. Mentor</Link>
+          </div>
+          <div style={{ border:'1px solid #e5e7eb', borderRadius:12, padding:16, background:'#fff' }}>
             <h3 style={{ marginTop:0 }}>Lesson Maker</h3>
             <p style={{ color:'#555' }}>Use AI to draft a lesson aligned to your grade, subject, and difficulty. Saved under Facilitator Lessons.</p>
             <Link href="/facilitator/tools/lesson-maker" style={{ display:'inline-block', padding:'8px 12px', border:'1px solid #111', background:'#111', color:'#fff', borderRadius:8, fontWeight:600 }}>Open Lesson Maker</Link>

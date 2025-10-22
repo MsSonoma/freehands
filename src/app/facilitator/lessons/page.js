@@ -18,12 +18,14 @@ export default function FacilitatorLessonsPage() {
   const [allLessons, setAllLessons] = useState({}) // { subject: [lessons] }
   const [approvedLessons, setApprovedLessons] = useState({}) // { 'subject/lesson_file': true }
   const [activeGoldenKeys, setActiveGoldenKeys] = useState({}) // { 'subject/lesson_file': true }
+  const [lessonNotes, setLessonNotes] = useState({}) // { 'subject/lesson_file': 'note text' }
   const [medals, setMedals] = useState({}) // { lesson_key: { bestPercent, medalTier } }
   const [loading, setLoading] = useState(true)
   const [lessonsLoading, setLessonsLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [expandedSubjects, setExpandedSubjects] = useState({}) // { subject: true/false }
   const [gradeFilters, setGradeFilters] = useState({}) // { subject: 'K' | '1' | '2' | ... | 'all' }
+  const [editingNote, setEditingNote] = useState(null) // lesson key currently being edited
 
   // Check PIN requirement on mount
   useEffect(() => {
@@ -130,13 +132,13 @@ export default function FacilitatorLessonsPage() {
         const supabase = getSupabaseClient()
         // Try to load with all fields first
         let data, error
-        const result = await supabase.from('learners').select('approved_lessons, active_golden_keys, grade').eq('id', selectedLearnerId).maybeSingle()
+        const result = await supabase.from('learners').select('approved_lessons, active_golden_keys, lesson_notes, grade').eq('id', selectedLearnerId).maybeSingle()
         data = result.data
         error = result.error
         
-        // If error, try without active_golden_keys (column might not exist yet)
+        // If error, try without newer columns (might not exist yet)
         if (error) {
-          console.warn('[Facilitator Lessons] Error loading with active_golden_keys, trying without:', error)
+          console.warn('[Facilitator Lessons] Error loading with all fields, trying without:', error)
           const fallbackResult = await supabase.from('learners').select('approved_lessons, grade').eq('id', selectedLearnerId).maybeSingle()
           data = fallbackResult.data
           error = fallbackResult.error
@@ -150,6 +152,7 @@ export default function FacilitatorLessonsPage() {
         if (!cancelled) {
           setApprovedLessons(data?.approved_lessons || {})
           setActiveGoldenKeys(data?.active_golden_keys || {})
+          setLessonNotes(data?.lesson_notes || {})
           
           // Set grade filters to learner's grade for all subjects
           if (data?.grade) {
@@ -224,6 +227,38 @@ export default function FacilitatorLessonsPage() {
       ...prev,
       [subject]: grade
     }))
+  }
+
+  async function saveNote(lessonKey, noteText) {
+    if (!selectedLearnerId) return
+    
+    const newNotes = { ...lessonNotes }
+    if (noteText && noteText.trim()) {
+      newNotes[lessonKey] = noteText.trim()
+    } else {
+      delete newNotes[lessonKey]
+    }
+    
+    setLessonNotes(newNotes)
+    setEditingNote(null)
+    setSaving(true)
+    
+    try {
+      const supabase = getSupabaseClient()
+      const { error } = await supabase.from('learners').update({ lesson_notes: newNotes }).eq('id', selectedLearnerId)
+      if (error) {
+        console.error('[Facilitator Lessons] Note save error:', error)
+        throw error
+      }
+      console.log('[Facilitator Lessons] Successfully saved note for lesson:', lessonKey)
+    } catch (e) {
+      console.error('[Facilitator Lessons] Failed to save note:', e)
+      alert('Failed to save note: ' + (e?.message || e?.hint || 'Unknown error'))
+      // Revert on error
+      setLessonNotes(lessonNotes)
+    } finally {
+      setSaving(false)
+    }
   }
 
   function filterLessonsByGrade(lessons, subject) {
@@ -446,16 +481,19 @@ export default function FacilitatorLessonsPage() {
                               const medalInfo = medals[lessonKey]
                               const hasCompleted = medalInfo && medalInfo.bestPercent > 0
                               const medalEmoji = medalInfo?.medalTier ? emojiForTier(medalInfo.medalTier) : null
+                              const noteText = lessonNotes[lessonKey] || ''
+                              const isEditingThisNote = editingNote === lessonKey
                               
                               return (
                                 <div key={lesson.file} style={card}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                                     <input
                                       type="checkbox"
                                       checked={isApproved}
                                       onChange={() => toggleApproval(subject, lesson.file)}
                                       id={`lesson-${lessonKey}`}
                                       className="brand-checkbox"
+                                      style={{ marginTop: 4 }}
                                     />
                                     <label
                                       htmlFor={`lesson-${lessonKey}`}
@@ -510,6 +548,123 @@ export default function FacilitatorLessonsPage() {
                                       )}
                                     </label>
                                   </div>
+                                  
+                                  {/* Notes section */}
+                                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f3f4f6' }} onClick={(e) => e.stopPropagation()}>
+                                    {isEditingThisNote ? (
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                        <textarea
+                                          defaultValue={noteText}
+                                          placeholder="Add notes about this learner's progress or challenges with this lesson..."
+                                          autoFocus
+                                          rows={3}
+                                          style={{
+                                            width: '100%',
+                                            padding: '8px',
+                                            border: '1px solid #d1d5db',
+                                            borderRadius: 6,
+                                            fontSize: 14,
+                                            fontFamily: 'inherit',
+                                            resize: 'vertical'
+                                          }}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                                              saveNote(lessonKey, e.target.value)
+                                            }
+                                            if (e.key === 'Escape') {
+                                              setEditingNote(null)
+                                            }
+                                          }}
+                                          id={`note-${lessonKey}`}
+                                        />
+                                        <div style={{ display: 'flex', gap: 8 }}>
+                                          <button
+                                            onClick={() => {
+                                              const textarea = document.getElementById(`note-${lessonKey}`)
+                                              saveNote(lessonKey, textarea?.value || '')
+                                            }}
+                                            disabled={saving}
+                                            style={{
+                                              padding: '6px 12px',
+                                              border: 'none',
+                                              borderRadius: 6,
+                                              background: '#2563eb',
+                                              color: '#fff',
+                                              fontSize: 13,
+                                              fontWeight: 600,
+                                              cursor: saving ? 'wait' : 'pointer'
+                                            }}
+                                          >
+                                            {saving ? 'Saving...' : 'Save'}
+                                          </button>
+                                          <button
+                                            onClick={() => setEditingNote(null)}
+                                            disabled={saving}
+                                            style={{
+                                              padding: '6px 12px',
+                                              border: '1px solid #d1d5db',
+                                              borderRadius: 6,
+                                              background: '#fff',
+                                              color: '#374151',
+                                              fontSize: 13,
+                                              fontWeight: 600,
+                                              cursor: saving ? 'wait' : 'pointer'
+                                            }}
+                                          >
+                                            Cancel
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div>
+                                        {noteText ? (
+                                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                            <div style={{ fontSize: 13, color: '#6b7280', fontWeight: 600 }}>
+                                              📝 Note for Mr. Mentor:
+                                            </div>
+                                            <div style={{ fontSize: 14, color: '#374151', whiteSpace: 'pre-wrap' }}>
+                                              {noteText}
+                                            </div>
+                                            <button
+                                              onClick={() => setEditingNote(lessonKey)}
+                                              style={{
+                                                alignSelf: 'flex-start',
+                                                padding: '4px 8px',
+                                                border: '1px solid #d1d5db',
+                                                borderRadius: 6,
+                                                background: '#fff',
+                                                color: '#6b7280',
+                                                fontSize: 12,
+                                                cursor: 'pointer',
+                                                marginTop: 4
+                                              }}
+                                            >
+                                              Edit Note
+                                            </button>
+                                          </div>
+                                        ) : (
+                                          <button
+                                            onClick={() => setEditingNote(lessonKey)}
+                                            style={{
+                                              padding: '6px 10px',
+                                              border: '1px solid #d1d5db',
+                                              borderRadius: 6,
+                                              background: '#fff',
+                                              color: '#6b7280',
+                                              fontSize: 13,
+                                              cursor: 'pointer',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              gap: 4
+                                            }}
+                                          >
+                                            <span>📝</span>
+                                            Add note for Mr. Mentor
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               )
                             })}
@@ -526,15 +681,19 @@ export default function FacilitatorLessonsPage() {
                         const hasCompleted = medalInfo && medalInfo.bestPercent > 0
                         const medalEmoji = medalInfo?.medalTier ? emojiForTier(medalInfo.medalTier) : null
                         
+                        const noteText = lessonNotes[lessonKey] || ''
+                        const isEditingThisNote = editingNote === lessonKey
+                        
                         return (
                           <div key={lesson.file} style={card}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                               <input
                                 type="checkbox"
                                 checked={isApproved}
                                 onChange={() => toggleApproval(subject, lesson.file)}
                                 id={`lesson-${lessonKey}`}
                                 className="brand-checkbox"
+                                style={{ marginTop: 4 }}
                               />
                               <label
                                 htmlFor={`lesson-${lessonKey}`}
@@ -588,6 +747,123 @@ export default function FacilitatorLessonsPage() {
                                   </div>
                                 )}
                               </label>
+                            </div>
+                            
+                            {/* Notes section */}
+                            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f3f4f6' }} onClick={(e) => e.stopPropagation()}>
+                              {isEditingThisNote ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                  <textarea
+                                    defaultValue={noteText}
+                                    placeholder="Add notes about this learner's progress or challenges with this lesson..."
+                                    autoFocus
+                                    rows={3}
+                                    style={{
+                                      width: '100%',
+                                      padding: '8px',
+                                      border: '1px solid #d1d5db',
+                                      borderRadius: 6,
+                                      fontSize: 14,
+                                      fontFamily: 'inherit',
+                                      resize: 'vertical'
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                                        saveNote(lessonKey, e.target.value)
+                                      }
+                                      if (e.key === 'Escape') {
+                                        setEditingNote(null)
+                                      }
+                                    }}
+                                    id={`note-${lessonKey}`}
+                                  />
+                                  <div style={{ display: 'flex', gap: 8 }}>
+                                    <button
+                                      onClick={() => {
+                                        const textarea = document.getElementById(`note-${lessonKey}`)
+                                        saveNote(lessonKey, textarea?.value || '')
+                                      }}
+                                      disabled={saving}
+                                      style={{
+                                        padding: '6px 12px',
+                                        border: 'none',
+                                        borderRadius: 6,
+                                        background: '#2563eb',
+                                        color: '#fff',
+                                        fontSize: 13,
+                                        fontWeight: 600,
+                                        cursor: saving ? 'wait' : 'pointer'
+                                      }}
+                                    >
+                                      {saving ? 'Saving...' : 'Save'}
+                                    </button>
+                                    <button
+                                      onClick={() => setEditingNote(null)}
+                                      disabled={saving}
+                                      style={{
+                                        padding: '6px 12px',
+                                        border: '1px solid #d1d5db',
+                                        borderRadius: 6,
+                                        background: '#fff',
+                                        color: '#374151',
+                                        fontSize: 13,
+                                        fontWeight: 600,
+                                        cursor: saving ? 'wait' : 'pointer'
+                                      }}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div>
+                                  {noteText ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                      <div style={{ fontSize: 13, color: '#6b7280', fontWeight: 600 }}>
+                                        📝 Note for Mr. Mentor:
+                                      </div>
+                                      <div style={{ fontSize: 14, color: '#374151', whiteSpace: 'pre-wrap' }}>
+                                        {noteText}
+                                      </div>
+                                      <button
+                                        onClick={() => setEditingNote(lessonKey)}
+                                        style={{
+                                          alignSelf: 'flex-start',
+                                          padding: '4px 8px',
+                                          border: '1px solid #d1d5db',
+                                          borderRadius: 6,
+                                          background: '#fff',
+                                          color: '#6b7280',
+                                          fontSize: 12,
+                                          cursor: 'pointer',
+                                          marginTop: 4
+                                        }}
+                                      >
+                                        Edit Note
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => setEditingNote(lessonKey)}
+                                      style={{
+                                        padding: '6px 10px',
+                                        border: '1px solid #d1d5db',
+                                        borderRadius: 6,
+                                        background: '#fff',
+                                        color: '#6b7280',
+                                        fontSize: 13,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 4
+                                      }}
+                                    >
+                                      <span>📝</span>
+                                      Add note for Mr. Mentor
+                                    </button>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </div>
                         )

@@ -41,6 +41,8 @@ export default function LoginPage() {
 		try {
 			if (!hasSupabaseEnv()) {
 				// Dev-friendly fallback: pretend login works locally
+				// Mark facilitator section as active to skip PIN on redirect
+				try { sessionStorage.setItem('facilitator_section_active', '1'); } catch {}
 				router.push('/facilitator');
 				return;
 			}
@@ -82,6 +84,8 @@ export default function LoginPage() {
 						}
 						throw new Error(signInError.message || 'Login failed');
 					}
+			// Mark facilitator section as active to skip PIN on redirect
+			try { sessionStorage.setItem('facilitator_section_active', '1'); } catch {}
 			router.push('/facilitator');
 		} catch (err) {
 			setError(err?.message || 'Login failed');
@@ -156,6 +160,8 @@ export default function LoginPage() {
 											const supabase = getSupabaseClient();
 											const { error } = await supabase.auth.mfa.verify({ factorId: mfaFactorId, code: mfaCode, challengeId: mfaChallengeId });
 											if (error) throw error;
+											// Mark facilitator section as active to skip PIN on redirect
+											try { sessionStorage.setItem('facilitator_section_active', '1'); } catch {}
 											router.push('/facilitator');
 										} catch (err) {
 											setMfaError(err?.message || 'Invalid code');

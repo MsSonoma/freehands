@@ -2089,6 +2089,60 @@ function SessionPageInner() {
   const pauseSynthetic = pauseSyntheticHook;
   const resumeSynthetic = resumeSyntheticHook;
 
+  // Skip speech: stop TTS, video, captions and jump to end of current response turn
+  const handleSkipSpeech = useCallback(() => {
+    console.log('[handleSkipSpeech] Skipping current speech');
+    
+    // Stop all audio playback
+    if (audioRef.current) {
+      try { audioRef.current.pause(); } catch {}
+      try { audioRef.current.src = ''; } catch {}
+      audioRef.current = null;
+    }
+    
+    // Stop WebAudio source
+    if (webAudioSourceRef.current) {
+      try { webAudioSourceRef.current.stop(); } catch {}
+      try { webAudioSourceRef.current.disconnect(); } catch {}
+      webAudioSourceRef.current = null;
+    }
+    
+    // Stop synthetic playback
+    try { clearSynthetic(); } catch {}
+    
+    // Pause video
+    if (videoRef.current) {
+      try { videoRef.current.pause(); } catch {}
+    }
+    
+    // Clear captions
+    try { clearCaptionTimers(); } catch {}
+    
+    // Clear speech guard timer
+    try { clearSpeechGuard(); } catch {}
+    
+    // Set speaking to false
+    try { setIsSpeaking(false); } catch {}
+    
+    // Show opening actions if in the right phase/state
+    try {
+      if (
+        phase === 'discussion' &&
+        subPhase === 'awaiting-learner' &&
+        askState === 'inactive' &&
+        riddleState === 'inactive' &&
+        poemState === 'inactive'
+      ) {
+        setShowOpeningActions(true);
+      }
+    } catch {}
+    
+    // Reset playback state refs
+    webAudioStartedAtRef.current = 0;
+    webAudioPausedAtRef.current = 0;
+    htmlAudioPausedAtRef.current = 0;
+  }, [phase, subPhase, askState, riddleState, poemState, clearSynthetic, clearSpeechGuard]);
+
   // Helper: speak arbitrary frontend text via unified captions + TTS
   // (defined here after playAudioFromBase64 is available, and updates the ref for early callbacks)
   const speakFrontendImpl = useCallback(async (text, opts = {}) => {
@@ -6008,6 +6062,7 @@ function SessionPageInner() {
         lessonParam={lessonParam}
         muted={muted}
         onToggleMute={toggleMute}
+        onSkip={handleSkipSpeech}
   loading={loading}
   overlayLoading={overlayLoading}
         exerciseSkippedAwaitBegin={exerciseSkippedAwaitBegin}
@@ -6979,7 +7034,7 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
   );
 }
 
-function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, onToggleMute, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, isLastWorksheetQuestion, onOpenReview, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle }) {
+function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, isLastWorksheetQuestion, onOpenReview, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle }) {
   // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
   // Remove horizontal clamp: let the video occupy the full available width of its column
   const containerMaxWidth = 'none';
@@ -7123,9 +7178,38 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
           </button>
         </div>
   )}
-        {/* Skip controls in video overlay removed per requirements */}
+        {/* Skip button when speaking */}
+        {isSpeaking && !isShortHeight && typeof onSkip === 'function' && (
+          <button
+            type="button"
+            onClick={onSkip}
+            aria-label="Skip"
+            title="Skip"
+            style={{
+              position: 'absolute',
+              bottom: 16,
+              left: 16,
+              background: '#1f2937',
+              color: '#fff',
+              border: 'none',
+              width: 'var(--ctrlSize)',
+              height: 'var(--ctrlSize)',
+              display: 'grid',
+              placeItems: 'center',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+              zIndex: 10
+            }}
+          >
+            <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="5 4 15 12 5 20 5 4" />
+              <line x1="19" y1="5" x2="19" y2="19" />
+            </svg>
+          </button>
+        )}
         {skipPendingLessonLoad && (
-          <div style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(31,41,55,0.85)', color: '#fff', padding: '6px 12px', borderRadius: 8, fontSize: 'clamp(0.75rem, 1.4vw, 0.9rem)', fontWeight: 600, letterSpacing: 0.4, boxShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>Loading lesson� skip will apply</div>
+          <div style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(31,41,55,0.85)', color: '#fff', padding: '6px 12px', borderRadius: 8, fontSize: 'clamp(0.75rem, 1.4vw, 0.9rem)', fontWeight: 600, letterSpacing: 0.4, boxShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>Loading lesson… skip will apply</div>
         )}
         {/* Last-worksheet safety: show explicit Review button to enter facilitator override */}
         {(phase === 'worksheet' && subPhase === 'worksheet-active' && isLastWorksheetQuestion && typeof onOpenReview === 'function') && (

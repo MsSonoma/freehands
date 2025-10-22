@@ -138,9 +138,9 @@ export default function HeaderBar() {
 		if (isNarrow && printMenuOpen) setPrintMenuOpen(false);
 	}, [isNarrow, printMenuOpen]);
 
-	// Receive the session page title from the session page
+	// Receive the session page title from the session page or counselor page
 	useEffect(() => {
-		if (!pathname.startsWith('/session')) { setSessionTitle(''); return; }
+		if (!pathname.startsWith('/session') && !pathname.startsWith('/facilitator/tools/counselor')) { setSessionTitle(''); return; }
 		const onTitle = (e) => {
 			try { setSessionTitle((e && e.detail) || ''); } catch { setSessionTitle(''); }
 		};
@@ -432,9 +432,9 @@ export default function HeaderBar() {
 					</Link>
 				</div>
 
-				{/* Center area: show lesson title on Session in mobile landscape; else show Back */}
+				{/* Center area: show lesson title on Session/Counselor in mobile landscape; else show Back */}
 				<div style={{ flex:1, display:'flex', justifyContent:'center', alignItems:'center', minWidth:0 }}>
-					{(pathname.startsWith('/session') && sessionTitle) ? (
+					{((pathname.startsWith('/session') || pathname.startsWith('/facilitator/tools/counselor')) && sessionTitle) ? (
 						isSmallWidth ? (
 							<div style={{ position:'relative', width:'100%', maxWidth:'min(98vw, 1300px)', height:'100%' }}>
 								<div style={{ position:'absolute', left:0, right:0, top:'50%', transform:'translateY(-50%)', display:'flex', justifyContent:'center', alignItems:'center', padding:'0 4px' }}>
@@ -540,6 +540,14 @@ export default function HeaderBar() {
 											<button type="button" role="menuitem" style={{ ...MOBILE_MENU_ITEM_STYLE, color:'#c7442e', borderTop:'1px solid #f3f4f6' }} onClick={() => { try { window.dispatchEvent(new Event('ms:print:refresh')); } catch {}; setNavOpen(false); }}>Refresh</button>
 										</div>
 									)}
+
+									{/* Mr. Mentor actions, if applicable */}
+									{pathname.startsWith('/facilitator/tools/counselor') && (
+										<div style={{ display:'flex', flexDirection:'column', borderTop: '1px solid #f3f4f6' }}>
+											<button type="button" role="menuitem" style={MOBILE_MENU_ITEM_STYLE} onClick={() => { try { window.dispatchEvent(new Event('ms:mentor:export')); } catch {}; setNavOpen(false); }}>Export Conversation</button>
+											<button type="button" role="menuitem" style={{ ...MOBILE_MENU_ITEM_STYLE, color:'#c7442e', borderTop:'1px solid #f3f4f6' }} onClick={() => { try { window.dispatchEvent(new Event('ms:mentor:new-session')); } catch {}; setNavOpen(false); }}>New Session</button>
+										</div>
+									)}
 								</div>
 							)}
 						</>
@@ -597,6 +605,45 @@ export default function HeaderBar() {
 												</button>
 											</div>
 										)}
+								</div>
+							)}
+							{/* Mr. Mentor menu dropdown to the left of Learn */}
+							{pathname.startsWith('/facilitator/tools/counselor') && (
+								<div ref={printMenuRef} style={{ position:'relative', display:'flex', alignItems:'center', gap:8 }}>
+									<button
+										aria-label="Mr. Mentor menu"
+										onClick={() => setPrintMenuOpen((v) => !v)}
+										style={{
+											background:'#1f2937', color:'#fff', border:'none', width:36, height:36,
+											display:'inline-flex', alignItems:'center', justifyContent:'center', borderRadius:8, cursor:'pointer',
+											boxShadow:'0 2px 6px rgba(0,0,0,0.25)'
+										}}
+									>
+										{/* Menu icon (three dots) */}
+										<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+											<circle cx="12" cy="12" r="1"/>
+											<circle cx="12" cy="5" r="1"/>
+											<circle cx="12" cy="19" r="1"/>
+										</svg>
+									</button>
+									{printMenuOpen && (
+										<div style={{ position:'absolute', right:0, top:44, background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, boxShadow:'0 8px 24px rgba(0,0,0,0.12)', minWidth:180, overflow:'hidden', zIndex:1200 }}>
+											<button
+												type="button"
+												style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', background:'transparent', border:'none', cursor:'pointer', fontWeight:600, color:'#111' }}
+												onClick={() => { try { window.dispatchEvent(new Event('ms:mentor:export')); } catch {}; setPrintMenuOpen(false); }}
+											>
+												Export Conversation
+											</button>
+											<button
+												type="button"
+												style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', background:'transparent', border:'none', cursor:'pointer', fontWeight:700, color:'#c7442e', borderTop:'1px solid #f3f4f6' }}
+												onClick={() => { try { window.dispatchEvent(new Event('ms:mentor:new-session')); } catch {}; setPrintMenuOpen(false); }}
+											>
+												New Session
+											</button>
+										</div>
+									)}
 								</div>
 							)}
 							<Link href="/learn" style={{ textDecoration:'none', color:'#111', fontWeight:500 }}>Learn</Link>

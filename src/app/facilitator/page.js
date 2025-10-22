@@ -143,6 +143,8 @@ export default function FacilitatorPage() {
       if (typeof window === 'undefined') return;
       const url = new URL(window.location.href);
       if (url.searchParams.has('rts')) {
+        // User just returned from OAuth, mark facilitator section as active to skip PIN
+        try { sessionStorage.setItem('facilitator_section_active', '1'); } catch {}
         url.searchParams.delete('rts');
         window.history.replaceState(null, '', url.toString());
       }

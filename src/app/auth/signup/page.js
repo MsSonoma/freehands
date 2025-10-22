@@ -20,6 +20,8 @@ export default function SignupPage() {
 		try {
 			if (!hasSupabaseEnv()) {
 				// Dev-friendly fallback
+				// Mark facilitator section as active to skip PIN on redirect
+				try { sessionStorage.setItem('facilitator_section_active', '1'); } catch {}
 				router.push('/facilitator');
 				return;
 			}
@@ -36,6 +38,8 @@ export default function SignupPage() {
 						setInfo('Check your email to confirm your account, then return here to log in.');
 						return; // do not redirect if confirmation required
 					}
+					// Mark facilitator section as active to skip PIN on redirect
+					try { sessionStorage.setItem('facilitator_section_active', '1'); } catch {}
 					router.push('/facilitator');
 		} catch (err) {
 			setError(err?.message || 'Sign up failed');
