@@ -289,7 +289,7 @@ export default function CalendarPage() {
           <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-6">
             <h3 className="text-yellow-800 font-semibold mb-2">⚠️ Database Setup Required</h3>
             <p className="text-yellow-700 text-sm mb-3">
-              The lesson_schedule table hasn't been created yet. Please run the migration in your Supabase SQL Editor:
+              The lesson_schedule table hasn&apos;t been created yet. Please run the migration in your Supabase SQL Editor:
             </p>
             <code className="block bg-yellow-100 text-yellow-900 p-2 rounded text-xs mb-2">
               scripts/add-lesson-schedule-table.sql
