@@ -19,7 +19,63 @@ export default function GeneratedLessonsPage(){
   async function refresh(){
     setLoading(true)
     try {
-      const res = await fetch('/api/facilitator/lessons/list', { cache:'no-store' })
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      
+      if (!token) {
+        // Not logged in - show dummy preview lessons
+        const dummyLessons = [
+          {
+            file: 'preview-fractions.json',
+            userId: 'preview',
+            title: 'Fractions on a Number Line',
+            grade: '3rd',
+            difficulty: 'beginner',
+            subject: 'math',
+            approved: true,
+            needsUpdate: false
+          },
+          {
+            file: 'preview-planets.json',
+            userId: 'preview',
+            title: 'The Solar System',
+            grade: '4th',
+            difficulty: 'intermediate',
+            subject: 'science',
+            approved: false,
+            needsUpdate: false
+          },
+          {
+            file: 'preview-grammar.json',
+            userId: 'preview',
+            title: 'Parts of Speech',
+            grade: '5th',
+            difficulty: 'intermediate',
+            subject: 'language arts',
+            approved: true,
+            needsUpdate: false
+          },
+          {
+            file: 'preview-civics.json',
+            userId: 'preview',
+            title: 'How Laws Are Made',
+            grade: '6th',
+            difficulty: 'advanced',
+            subject: 'social studies',
+            approved: false,
+            needsUpdate: true
+          }
+        ]
+        setItems(dummyLessons)
+        setLoading(false)
+        return
+      }
+      
+      const res = await fetch('/api/facilitator/lessons/list', { 
+        cache:'no-store',
+        headers: { Authorization: `Bearer ${token}` }
+      })
       const js = await res.json().catch(()=>[])
       setItems(Array.isArray(js) ? js : [])
     } catch {
@@ -46,6 +102,7 @@ export default function GeneratedLessonsPage(){
   }, [])
 
   const ent = featuresForTier(tier)
+  const hasAccess = ent.facilitatorTools
   const card = { border:'1px solid #e5e7eb', borderRadius:12, padding:12, background:'#fff' }
   const btn = { display:'inline-flex', alignItems:'center', justifyContent:'center', padding:'8px 10px', border:'1px solid #111', background:'#111', color:'#fff', borderRadius:8, fontWeight:600 }
   const btnDanger = { ...btn, background:'#b91c1c', borderColor:'#b91c1c' }
@@ -53,6 +110,7 @@ export default function GeneratedLessonsPage(){
   const btnSecondary = { ...btn, background:'#374151', borderColor:'#374151' }
 
   async function handleDelete(file, userId){
+    if (!hasAccess) return
     if (!confirm('Delete this lesson?')) return
     setBusyItems(prev => ({ ...prev, [file]: 'deleting' }))
     try {
@@ -78,6 +136,7 @@ export default function GeneratedLessonsPage(){
   }
 
   async function handleApprove(file, userId){
+    if (!hasAccess) return
     console.log('[APPROVE] Starting approval for:', file, 'userId:', userId)
     setBusyItems(prev => ({ ...prev, [file]: 'approving' }))
     setError('')
@@ -115,6 +174,7 @@ export default function GeneratedLessonsPage(){
   }
 
   async function handleEditLesson(file, userId) {
+    if (!hasAccess) return
     setBusyItems(prev => ({ ...prev, [file]: 'editing' }))
     setError('')
     try {
@@ -235,6 +295,7 @@ export default function GeneratedLessonsPage(){
   }
 
   function openChangeModal(file, userId) {
+    if (!hasAccess) return
     setShowChangeModal({ file, userId })
     setError('')
   }
@@ -245,12 +306,12 @@ export default function GeneratedLessonsPage(){
   }
 
   return (
-    <main style={{ padding:24, width:'100%', margin:0 }}>
+    <main style={{ padding:24, width:'100%', margin:0, position: 'relative' }}>
       <h1 style={{ marginTop:0 }}>Generated Lessons</h1>
       
       {/* Show editor if editing a lesson */}
       {editingLesson && (
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 24, opacity: hasAccess ? 1 : 0.6, pointerEvents: hasAccess ? 'auto' : 'none' }}>
           <LessonEditor
             initialLesson={editingLesson.lesson}
             onSave={handleSaveLesson}
@@ -260,14 +321,14 @@ export default function GeneratedLessonsPage(){
         </div>
       )}
 
-      {!editingLesson && !ent.facilitatorTools ? (
-        <p>Premium required. <a href="/facilitator/plan">View plans</a>.</p>
-      ) : !editingLesson && loading ? (
+      {!editingLesson && loading ? (
         <p>Loading…</p>
       ) : !editingLesson && items.length === 0 ? (
-        <p>No generated lessons yet. Use Lesson Maker to create one.</p>
+        <div style={{ opacity: hasAccess ? 1 : 0.6 }}>
+          <p>No generated lessons yet. Use Lesson Maker to create one.</p>
+        </div>
       ) : !editingLesson ? (
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(520px, 1fr))', gap:12 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(520px, 1fr))', gap:12, opacity: hasAccess ? 1 : 0.6, pointerEvents: hasAccess ? 'auto' : 'none' }}>
           {items.map(it => {
             const itemBusy = busyItems[it.file]
             const isApproving = itemBusy === 'approving'
@@ -324,6 +385,116 @@ export default function GeneratedLessonsPage(){
               <button style={btn} disabled={busy} onClick={handleRequestChanges}>
                 {busy ? 'Applying…' : 'Apply Changes'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upgrade Overlay - Window Shopping Experience */}
+      {!hasAccess && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: 20
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: 16,
+            padding: '32px 24px',
+            maxWidth: 500,
+            width: '100%',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>📚</div>
+            <h2 style={{ 
+              margin: '0 0 16px 0', 
+              fontSize: 24, 
+              fontWeight: 700,
+              color: '#111'
+            }}>
+              Unlock Generated Lessons
+            </h2>
+            <p style={{ 
+              color: '#555', 
+              fontSize: 16, 
+              lineHeight: 1.6,
+              marginBottom: 24
+            }}>
+              Manage your AI-generated lessons with full editing, approval, and change request capabilities. 
+              Available exclusively to Premium subscribers.
+            </p>
+            
+            <div style={{ 
+              background: '#f9fafb', 
+              border: '1px solid #e5e7eb',
+              borderRadius: 12,
+              padding: 20,
+              marginBottom: 24,
+              textAlign: 'left'
+            }}>
+              <p style={{ fontWeight: 600, marginBottom: 12, color: '#111' }}>What You Can Do:</p>
+              <ul style={{ 
+                margin: 0, 
+                paddingLeft: 20, 
+                fontSize: 14,
+                lineHeight: 2,
+                color: '#374151'
+              }}>
+                <li>Edit and customize generated lessons</li>
+                <li>Request AI-powered changes and refinements</li>
+                <li>Approve lessons for use with learners</li>
+                <li>Delete or archive lessons you don't need</li>
+                <li>Full control over your lesson library</li>
+              </ul>
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <a
+                href="/facilitator/plan"
+                style={{
+                  display: 'inline-block',
+                  padding: '12px 32px',
+                  background: '#2563eb',
+                  color: '#fff',
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  fontSize: 16,
+                  textDecoration: 'none',
+                  boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)',
+                  transition: 'transform 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                Upgrade to Premium
+              </a>
+              <a
+                href="/facilitator/tools"
+                style={{
+                  display: 'inline-block',
+                  padding: '12px 24px',
+                  background: 'transparent',
+                  color: '#6b7280',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  fontSize: 16,
+                  cursor: 'pointer',
+                  textDecoration: 'none'
+                }}
+              >
+                Go Back
+              </a>
             </div>
           </div>
         </div>

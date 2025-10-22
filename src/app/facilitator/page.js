@@ -30,26 +30,11 @@ export default function FacilitatorPage() {
   const [facilitatorName, setFacilitatorName] = useState('');
   const [pinChecked, setPinChecked] = useState(false);
 
-  // Check PIN requirement on mount
+  // Skip PIN check entirely for window shopping experience
+  // Users can browse facilitator pages freely; PIN only needed for actual use
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        console.log('[Facilitator Page] Checking PIN...');
-        const allowed = await ensurePinAllowed('facilitator-page');
-        console.log('[Facilitator Page] PIN check result:', allowed);
-        if (!allowed) {
-          router.push('/');
-          return;
-        }
-        if (!cancelled) setPinChecked(true);
-      } catch (e) {
-        console.error('[Facilitator Page] PIN check error:', e);
-        if (!cancelled) setPinChecked(true);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [router]);
+    setPinChecked(true);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -238,7 +223,15 @@ export default function FacilitatorPage() {
               <button
                 onClick={async () => {
                   const supabase = getSupabaseClient();
-                  try { await supabase?.auth?.signOut?.() } catch (e) {}
+                  try { 
+                    await supabase?.auth?.signOut?.();
+                    // Clear PIN and prefs from localStorage on logout (account-level security)
+                    try {
+                      localStorage.removeItem('facilitator_pin');
+                      localStorage.removeItem('facilitator_pin_prefs');
+                      sessionStorage.removeItem('facilitator_section_active');
+                    } catch (e) {}
+                  } catch (e) {}
                   router.push('/auth/login')
                 }}
                 style={authCardStyle}

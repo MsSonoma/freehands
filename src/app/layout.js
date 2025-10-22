@@ -22,6 +22,14 @@ export const metadata = {
   }
 }
 
+// Prevent zoom-in on input focus on mobile devices
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false
+}
+
 /** @param {{ children: React.ReactNode }} props */
 export default function RootLayout({ children }) {
   return (

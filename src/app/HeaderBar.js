@@ -158,10 +158,13 @@ export default function HeaderBar() {
 			} catch {}
 		};
 		const onKey = (e) => { if (e.key === 'Escape') setPrintMenuOpen(false); };
+		// Use both mousedown and touchstart for mobile compatibility
 		document.addEventListener('mousedown', onDocDown);
+		document.addEventListener('touchstart', onDocDown);
 		document.addEventListener('keydown', onKey);
 		return () => {
 			document.removeEventListener('mousedown', onDocDown);
+			document.removeEventListener('touchstart', onDocDown);
 			document.removeEventListener('keydown', onKey);
 		};
 	}, [printMenuOpen]);
@@ -612,7 +615,13 @@ export default function HeaderBar() {
 								<div ref={printMenuRef} style={{ position:'relative', display:'flex', alignItems:'center', gap:8 }}>
 									<button
 										aria-label="Mr. Mentor menu"
-										onClick={() => setPrintMenuOpen((v) => !v)}
+										onClick={(e) => { 
+											e.stopPropagation(); 
+											setPrintMenuOpen((v) => !v); 
+										}}
+										onTouchStart={(e) => {
+											e.stopPropagation();
+										}}
 										style={{
 											background:'#1f2937', color:'#fff', border:'none', width:36, height:36,
 											display:'inline-flex', alignItems:'center', justifyContent:'center', borderRadius:8, cursor:'pointer',

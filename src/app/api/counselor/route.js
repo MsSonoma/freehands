@@ -90,6 +90,18 @@ You have 5 function calling tools available. Use them actively during conversati
    - Can edit: vocabulary, teaching notes, blurb, questions (all types)
    - Works on both pre-installed lessons AND custom facilitator lessons
 
+6. GET_CONVERSATION_MEMORY - Retrieve past conversation summaries
+   - When you need context from previous sessions → USE THIS TOOL
+   - When they mention something discussed before → USE THIS TOOL
+   - Automatically loads at start of each conversation for continuity
+   - Can search across all past conversations with keywords
+
+7. SEARCH_CONVERSATION_HISTORY - Search past conversations with keywords
+   - When they say "what did we discuss about X?" → USE THIS TOOL
+   - When they want to review past advice or plans → USE THIS TOOL
+   - Uses fuzzy matching to find relevant past conversations
+   - Searches both current and archived conversations
+
 CRITICAL: When someone asks about lessons, DON'T say "I can't access" or "I'm unable to" - JUST USE THE SEARCH TOOL.
 If you need details on parameters, call get_capabilities first.
 Use these tools proactively - they expect you to search and find things for them.
@@ -334,6 +346,34 @@ function getCapabilitiesInfo(args) {
         'Fix teaching notes: {lessonKey: "science/Photosynthesis.json", updates: {teachingNotes: "Updated notes..."}}',
         'Add vocabulary: {lessonKey: "math/Fractions.json", updates: {vocab: [{term: "numerator", definition: "Top number"}, {term: "denominator", definition: "Bottom number"}]}}',
         'Update blurb: {lessonKey: "facilitator/Custom_Lesson.json", updates: {blurb: "New description"}}'
+      ]
+    },
+    
+    get_conversation_memory: {
+      name: 'get_conversation_memory',
+      purpose: 'Retrieve conversation memory from previous sessions for continuity',
+      when_to_use: 'To maintain context across sessions, reference past discussions, or when facilitator mentions something from before',
+      parameters: {
+        learner_id: 'Optional. If discussing a specific learner, provide their ID to get learner-specific conversation history. Omit for general facilitator conversations.'
+      },
+      returns: 'Conversation summary, recent turns, and turn count. Returns null if no previous conversation exists.',
+      notes: 'This is automatically called at the start of each conversation. You can also call it explicitly when you need to reference past context.',
+      example: 'Get general memory: {} or Get learner-specific: {learner_id: "abc123"}'
+    },
+    
+    search_conversation_history: {
+      name: 'search_conversation_history',
+      purpose: 'Search past conversations using keywords (fuzzy matching)',
+      when_to_use: 'When facilitator asks "what did we discuss about X?" or wants to review past advice, plans, or topics',
+      parameters: {
+        search: 'Required. Keywords or phrases to search for in conversation summaries',
+        include_archive: 'Optional. Set to true to also search archived conversations (default: false)'
+      },
+      returns: 'List of matching conversations with summaries, dates, and learner context',
+      notes: 'Uses PostgreSQL full-text search with fuzzy matching. Searches both current and optionally archived conversations.',
+      examples: [
+        'Search recent: {search: "math curriculum"}',
+        'Search all history: {search: "Emma reading struggles", include_archive: true}'
       ]
     }
   }
@@ -710,6 +750,120 @@ async function executeLessonEdit(args, request) {
   }
 }
 
+// Helper function to get conversation memory
+async function executeGetConversationMemory(args, request) {
+  try {
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader) {
+      return { error: 'Authentication required' }
+    }
+    
+    const { learner_id = null } = args
+    
+    // Build URL with query params
+    const url = new URL(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/conversation-memory`)
+    if (learner_id) {
+      url.searchParams.set('learner_id', learner_id)
+    }
+    
+    const memoryResponse = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'Authorization': authHeader
+      }
+    })
+    
+    const result = await memoryResponse.json()
+    
+    if (!memoryResponse.ok) {
+      return { error: result.error || 'Failed to fetch conversation memory' }
+    }
+    
+    if (!result.conversation_update) {
+      return {
+        success: true,
+        has_memory: false,
+        message: 'No previous conversation memory found for this context.'
+      }
+    }
+    
+    return {
+      success: true,
+      has_memory: true,
+      summary: result.conversation_update.summary,
+      turn_count: result.conversation_update.turn_count,
+      last_updated: result.conversation_update.updated_at,
+      recent_context: result.conversation_update.recent_turns?.slice(-3) || [], // Last 3 turns for immediate context
+      message: `Retrieved conversation memory with ${result.conversation_update.turn_count} turns.`
+    }
+  } catch (err) {
+    return { error: err.message || String(err) }
+  }
+}
+
+// Helper function to search conversation history
+async function executeSearchConversationHistory(args, request) {
+  try {
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader) {
+      return { error: 'Authentication required' }
+    }
+    
+    const { search, include_archive = false } = args
+    
+    if (!search || search.trim() === '') {
+      return { error: 'Search query required' }
+    }
+    
+    // Build URL with query params
+    const url = new URL(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/conversation-memory`)
+    url.searchParams.set('search', search)
+    if (include_archive) {
+      url.searchParams.set('include_archive', 'true')
+    }
+    
+    const searchResponse = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'Authorization': authHeader
+      }
+    })
+    
+    const result = await searchResponse.json()
+    
+    if (!searchResponse.ok) {
+      return { error: result.error || 'Search failed' }
+    }
+    
+    if (!result.results || result.results.length === 0) {
+      return {
+        success: true,
+        count: 0,
+        results: [],
+        message: `No conversations found matching "${search}".`
+      }
+    }
+    
+    // Format results for readability
+    const formatted = result.results.map(r => ({
+      summary: r.summary,
+      turn_count: r.turn_count,
+      date: r.updated_at || r.archived_at,
+      learner_context: r.learner_id ? 'Learner-specific' : 'General facilitator',
+      archived: r.archived || false
+    }))
+    
+    return {
+      success: true,
+      count: result.count,
+      results: formatted,
+      message: `Found ${result.count} conversation(s) matching "${search}".`
+    }
+  } catch (err) {
+    return { error: err.message || String(err) }
+  }
+}
+
 export async function POST(req) {
   const callId = createCallId()
   const logPrefix = `[Mr. Mentor][${callId}]`
@@ -763,6 +917,37 @@ export async function POST(req) {
     let systemPrompt = MENTOR_SYSTEM_PROMPT
     if (learnerTranscript) {
       systemPrompt += `\n\n=== CURRENT LEARNER CONTEXT ===\nThe facilitator has selected a specific learner to discuss. Here is their profile and progress:\n\n${learnerTranscript}\n\n=== END LEARNER CONTEXT ===\n\nIMPORTANT: When scheduling lessons, use the learner ID shown at the top of the profile (the long UUID string after "ID:"). This is required for the schedule_lesson function. Do NOT try to use the learner's name - you MUST use their ID.\n\nUse this information to provide personalized, data-informed guidance. Reference specific achievements, struggles, or patterns you notice. Ask questions that help the facilitator reflect on this learner's unique needs and progress.`
+    }
+
+    // Load conversation memory for continuity (only if this is the first message in the conversation)
+    if (conversationHistory.length === 0) {
+      try {
+        const authHeader = req.headers.get('authorization')
+        if (authHeader) {
+          const learnerId = learnerTranscript ? null : null // Extract learner ID if needed from transcript
+          const memoryUrl = new URL(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/conversation-memory`)
+          if (learnerId) {
+            memoryUrl.searchParams.set('learner_id', learnerId)
+          }
+          
+          const memoryResponse = await fetch(memoryUrl.toString(), {
+            method: 'GET',
+            headers: { 'Authorization': authHeader }
+          })
+          
+          if (memoryResponse.ok) {
+            const memoryData = await memoryResponse.json()
+            if (memoryData.conversation_update) {
+              const memory = memoryData.conversation_update
+              systemPrompt += `\n\n=== CONVERSATION MEMORY ===\nYou have context from previous conversations with this facilitator${learnerId ? ' about this learner' : ''}.\n\nPrevious Summary (${memory.turn_count} turns):\n${memory.summary}\n\nLast Update: ${new Date(memory.updated_at).toLocaleDateString()}\n\n=== END CONVERSATION MEMORY ===\n\nUse this context to provide continuity. Reference past discussions naturally when relevant. If they mention something you discussed before, acknowledge it.`
+              console.log(`${logPrefix} Loaded conversation memory with ${memory.turn_count} turns`)
+            }
+          }
+        }
+      } catch (memErr) {
+        console.warn(`${logPrefix} Failed to load conversation memory:`, memErr)
+        // Continue without memory - don't fail the request
+      }
     }
 
     // Build conversation messages
@@ -950,6 +1135,43 @@ export async function POST(req) {
             required: ['lessonKey', 'updates']
           }
         }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'get_conversation_memory',
+          description: 'Retrieve conversation memory from previous sessions. This provides context continuity across conversations. Use this when you need to reference past discussions or when a facilitator mentions something from before.',
+          parameters: {
+            type: 'object',
+            properties: {
+              learner_id: {
+                type: 'string',
+                description: 'Optional. The ID of a specific learner if discussing learner-specific conversations. Omit for general facilitator conversations.'
+              }
+            }
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'search_conversation_history',
+          description: 'Search past conversations using keywords with fuzzy matching. Use this when facilitator asks "what did we discuss about X?" or wants to review past advice, plans, or topics.',
+          parameters: {
+            type: 'object',
+            properties: {
+              search: {
+                type: 'string',
+                description: 'Keywords or phrases to search for in conversation summaries'
+              },
+              include_archive: {
+                type: 'boolean',
+                description: 'Optional. Set to true to also search archived conversations (default: false)'
+              }
+            },
+            required: ['search']
+          }
+        }
       }
     ]
 
@@ -1019,6 +1241,10 @@ export async function POST(req) {
             result = await executeLessonScheduling(functionArgs, req)
           } else if (functionName === 'edit_lesson') {
             result = await executeLessonEdit(functionArgs, req)
+          } else if (functionName === 'get_conversation_memory') {
+            result = await executeGetConversationMemory(functionArgs, req)
+          } else if (functionName === 'search_conversation_history') {
+            result = await executeSearchConversationHistory(functionArgs, req)
           } else {
             result = { error: 'Unknown function' }
           }

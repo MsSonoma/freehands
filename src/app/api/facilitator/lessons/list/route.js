@@ -20,64 +20,61 @@ export async function GET(request){
     const supabase = await getSupabaseAdmin()
     if (!supabase) return NextResponse.json({ error: 'Storage not configured' }, { status: 500 })
     
-    // List all user folders in facilitator-lessons
-    const { data: userFolders, error: folderError } = await supabase.storage
-      .from('lessons')
-      .list('facilitator-lessons', { limit: 1000 })
+    // SECURITY: Require authentication and only return lessons for the authenticated user
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized - login required' }, { status: 401 })
+    }
     
-    if (folderError) {
-      console.error('Storage folder list error:', folderError)
+    const token = authHeader.substring(7)
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 })
+    }
+    
+    const userId = user.id
+    
+    // Only list files in THIS user's folder
+    const { data: files, error: listError } = await supabase.storage
+      .from('lessons')
+      .list(`facilitator-lessons/${userId}`, { limit: 1000 })
+    
+    if (listError) {
+      console.error('Storage list error:', listError)
       return NextResponse.json([])
     }
     
     const out = []
     
-    // Iterate through each user folder
-    for (const folder of userFolders || []) {
-      // Skip if it's a file rather than a folder (folders have id === null)
-      if (folder.id !== null || !folder.name) continue
+    // Process each file in the user's folder
+    for (const fileObj of files || []) {
+      if (!fileObj.name.toLowerCase().endsWith('.json')) continue
       
       try {
-        // List files in this user's folder
-        const { data: files, error: listError } = await supabase.storage
+        // Download and parse each file
+        const { data: fileData, error: downloadError } = await supabase.storage
           .from('lessons')
-          .list(`facilitator-lessons/${folder.name}`, { limit: 1000 })
+          .download(`facilitator-lessons/${userId}/${fileObj.name}`)
         
-        if (listError) continue
+        if (downloadError) continue
         
-        // Process each file
-        for (const fileObj of files || []) {
-          if (!fileObj.name.toLowerCase().endsWith('.json')) continue
-          
-          try {
-            // Download and parse each file
-            const { data: fileData, error: downloadError } = await supabase.storage
-              .from('lessons')
-              .download(`facilitator-lessons/${folder.name}/${fileObj.name}`)
-            
-            if (downloadError) continue
-            
-            const raw = await fileData.text()
-            const js = JSON.parse(raw)
-            const subj = (js.subject || '').toString().toLowerCase()
-            const approved = js.approved === true
-            const needsUpdate = js.needsUpdate === true
-            out.push({ 
-              file: fileObj.name,
-              userId: folder.name,
-              title: js.title || fileObj.name, 
-              grade: js.grade || null, 
-              difficulty: (js.difficulty || '').toLowerCase(), 
-              subject: subj || null, 
-              approved, 
-              needsUpdate 
-            })
-          } catch (parseError) {
-            console.error('Parse error for', fileObj.name, parseError)
-          }
-        }
-      } catch (userFolderError) {
-        console.error(`Error processing folder ${folder.name}:`, userFolderError)
+        const raw = await fileData.text()
+        const js = JSON.parse(raw)
+        const subj = (js.subject || '').toString().toLowerCase()
+        const approved = js.approved === true
+        const needsUpdate = js.needsUpdate === true
+        out.push({ 
+          file: fileObj.name,
+          userId: userId,
+          title: js.title || fileObj.name, 
+          grade: js.grade || null, 
+          difficulty: (js.difficulty || '').toLowerCase(), 
+          subject: subj || null, 
+          approved, 
+          needsUpdate 
+        })
+      } catch (parseError) {
+        console.error('Parse error for', fileObj.name, parseError)
       }
     }
     

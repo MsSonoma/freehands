@@ -255,11 +255,17 @@ function DeleteAccount() {
 					const { data: { session } } = await supabase.auth.getSession()
 					const token = session?.access_token
 					if (!token) throw new Error('Please sign in')
-					const res = await fetch('/api/user/delete', { method:'POST', headers: { Authorization: `Bearer ${token}` } })
-					const js = await res.json().catch(()=>({}))
-					if (!res.ok || !js?.ok) throw new Error(js?.error || 'Failed to delete account')
-					await supabase.auth.signOut()
-					window.location.assign('/')
+				const res = await fetch('/api/user/delete', { method:'POST', headers: { Authorization: `Bearer ${token}` } })
+				const js = await res.json().catch(()=>({}))
+				if (!res.ok || !js?.ok) throw new Error(js?.error || 'Failed to delete account')
+				await supabase.auth.signOut()
+				// Clear PIN and prefs from localStorage on account deletion (account-level security)
+				try {
+					localStorage.removeItem('facilitator_pin')
+					localStorage.removeItem('facilitator_pin_prefs')
+					sessionStorage.removeItem('facilitator_section_active')
+				} catch (e) {}
+				window.location.assign('/')
 				} catch (e) {
 					setError(e?.message || 'Unexpected error')
 				} finally { setDeleting(false) }

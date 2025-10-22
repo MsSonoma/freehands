@@ -42,23 +42,11 @@ export default function CounselorClient() {
   const [isMobileLandscape, setIsMobileLandscape] = useState(false)
   const [videoMaxHeight, setVideoMaxHeight] = useState(null)
 
-  // Check PIN on mount
+  // Skip PIN check entirely for window shopping experience
+  // Users can browse freely; PIN only needed for actual functionality (checked later)
   useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      try {
-        const allowed = await ensurePinAllowed('facilitator-page')
-        if (!allowed) {
-          router.push('/')
-          return
-        }
-        if (!cancelled) setPinChecked(true)
-      } catch (e) {
-        if (!cancelled) setPinChecked(true)
-      }
-    })()
-    return () => { cancelled = true }
-  }, [router])
+    setPinChecked(true)
+  }, [])
 
   // Check premium tier
   useEffect(() => {
@@ -385,13 +373,47 @@ export default function CounselorClient() {
         await playAudio(data.audio)
       }
 
+      // Update conversation memory in background (async, non-blocking)
+      updateConversationMemory(finalHistory, token).catch(err => {
+        console.warn('[Mr. Mentor] Failed to update conversation memory:', err)
+        // Don't block the UI or show error - this is a background operation
+      })
+
     } catch (err) {
       console.error('[Mr. Mentor] Request failed:', err)
       setError('Failed to reach Mr. Mentor. Please try again.')
     } finally {
       setLoading(false)
     }
-  }, [userInput, loading, conversationHistory, playAudio])
+  }, [userInput, loading, conversationHistory, playAudio, learnerTranscript, selectedLearnerId])
+
+  // Helper: Update conversation memory after each exchange
+  const updateConversationMemory = async (conversationHistory, token) => {
+    try {
+      // Only send the last 2 turns (user + assistant) to update incrementally
+      const recentTurns = conversationHistory.slice(-2)
+      
+      const learnerId = selectedLearnerId !== 'none' ? selectedLearnerId : null
+      
+      await fetch('/api/conversation-memory', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          learner_id: learnerId,
+          conversation_turns: recentTurns,
+          force_regenerate: false // Incremental update
+        })
+      })
+      
+      console.log('[Mr. Mentor] Conversation memory updated')
+    } catch (err) {
+      // Silent failure - don't interrupt user experience
+      console.warn('[Mr. Mentor] Memory update failed:', err)
+    }
+  }
 
   // Handle Enter key to send message
   const handleKeyDown = (e) => {
@@ -477,42 +499,6 @@ export default function CounselorClient() {
     return (
       <main style={{ padding: 24 }}>
         <p>Loading...</p>
-      </main>
-    )
-  }
-
-  if (!hasAccess) {
-    return (
-      <main style={{ padding: 24 }}>
-        <h1>Mr. Mentor</h1>
-        <div style={{ 
-          border: '1px solid #e5e7eb', 
-          borderRadius: 12, 
-          padding: 16, 
-          background: '#fff',
-          maxWidth: 600 
-        }}>
-          <h3 style={{ marginTop: 0 }}>Premium Required</h3>
-          <p style={{ color: '#555' }}>
-            Mr. Mentor is available exclusively to Premium subscribers. 
-            Upgrade to access personalized counseling and curriculum planning support.
-          </p>
-          <a 
-            href="/facilitator/plan" 
-            style={{ 
-              display: 'inline-block', 
-              padding: '8px 12px', 
-              border: '1px solid #111', 
-              background: '#111', 
-              color: '#fff', 
-              borderRadius: 8, 
-              fontWeight: 600,
-              textDecoration: 'none'
-            }}
-          >
-            View Plans
-          </a>
-        </div>
       </main>
     )
   }
@@ -645,14 +631,33 @@ export default function CounselorClient() {
           }}
         >
           {conversationHistory.length === 0 ? (
-            <div style={{ color: '#9ca3af', textAlign: 'center', paddingTop: 40 }}>
-              <p style={{ fontSize: 18, fontWeight: 500, marginBottom: 8 }}>
+            <div style={{ color: '#9ca3af', paddingTop: 40, maxWidth: 700, margin: '0 auto' }}>
+              <p style={{ fontSize: 18, fontWeight: 500, marginBottom: 16, color: '#374151', textAlign: 'center' }}>
                 Welcome to Mr. Mentor
               </p>
-              <p style={{ fontSize: 14 }}>
+              <p style={{ fontSize: 14, marginBottom: 20, textAlign: 'center' }}>
                 I'm here to support you in your teaching journey. 
                 Share your challenges, goals, or questions about curriculum planning.
               </p>
+              <div style={{ fontSize: 14, marginBottom: 20, color: '#6b7280', textAlign: 'left' }}>
+                <p style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>I can help you:</p>
+                <ul style={{ paddingLeft: 24, marginBottom: 16, lineHeight: 1.8 }}>
+                  <li>Process feelings and challenges around teaching</li>
+                  <li>Plan curriculum and create learning schedules</li>
+                  <li>Develop strategies for specific learning situations</li>
+                  <li>Balance academic expectations with family dynamics</li>
+                </ul>
+                <p style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>Background Actions (Just Ask!):</p>
+                <ul style={{ paddingLeft: 24, marginBottom: 16, lineHeight: 1.8 }}>
+                  <li><strong>Search Lessons:</strong> "What fractions lessons do you have for 3rd grade?"</li>
+                  <li><strong>Review Details:</strong> "Tell me more about the photosynthesis lesson"</li>
+                  <li><strong>Generate Lessons:</strong> "Create a 5th grade math lesson on fractions"</li>
+                  <li><strong>Schedule Lessons:</strong> "Add the photosynthesis lesson to Emma's calendar for Monday"</li>
+                </ul>
+                <p style={{ fontSize: 13, fontStyle: 'italic', color: '#9ca3af' }}>
+                  Select a learner from the dropdown below to get personalized guidance based on their progress.
+                </p>
+              </div>
             </div>
           ) : (
             conversationHistory.map((msg, idx) => (
@@ -763,27 +768,28 @@ export default function CounselorClient() {
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type your message and press Enter to send..."
-              disabled={loading || isSpeaking}
+              placeholder={!hasAccess ? "Premium required to use Mr. Mentor..." : "Type your message and press Enter to send..."}
+              disabled={!hasAccess || loading || isSpeaking}
               style={{
                 flex: 1,
                 padding: '8px 12px',
                 border: '1px solid #d1d5db',
                 borderRadius: 8,
                 fontSize: 14,
-                fontFamily: 'inherit'
+                fontFamily: 'inherit',
+                cursor: !hasAccess ? 'not-allowed' : 'text'
               }}
             />
             <button
               onClick={sendMessage}
-              disabled={!userInput.trim() || loading || isSpeaking}
+              disabled={!hasAccess || !userInput.trim() || loading || isSpeaking}
               style={{
                 padding: '8px 24px',
                 border: 'none',
                 borderRadius: 8,
-                background: (!userInput.trim() || loading || isSpeaking) ? '#d1d5db' : '#2563eb',
+                background: (!hasAccess || !userInput.trim() || loading || isSpeaking) ? '#d1d5db' : '#2563eb',
                 color: '#fff',
-                cursor: (!userInput.trim() || loading || isSpeaking) ? 'not-allowed' : 'pointer',
+                cursor: (!hasAccess || !userInput.trim() || loading || isSpeaking) ? 'not-allowed' : 'pointer',
                 fontSize: 14,
                 fontWeight: 600,
                 flexShrink: 0
@@ -803,6 +809,114 @@ export default function CounselorClient() {
           </div>
         </div>
       </div>
+
+      {/* Upgrade Overlay - Window Shopping Experience */}
+      {!hasAccess && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: 20
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: 16,
+            padding: '32px 24px',
+            maxWidth: 500,
+            width: '100%',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🎓</div>
+            <h2 style={{ 
+              margin: '0 0 16px 0', 
+              fontSize: 24, 
+              fontWeight: 700,
+              color: '#111'
+            }}>
+              Unlock Mr. Mentor
+            </h2>
+            <p style={{ 
+              color: '#555', 
+              fontSize: 16, 
+              lineHeight: 1.6,
+              marginBottom: 24
+            }}>
+              Get personalized counseling and curriculum planning support with Mr. Mentor. 
+              Available exclusively to Premium subscribers.
+            </p>
+            
+            <div style={{ 
+              background: '#f9fafb', 
+              border: '1px solid #e5e7eb',
+              borderRadius: 12,
+              padding: 20,
+              marginBottom: 24,
+              textAlign: 'left'
+            }}>
+              <p style={{ fontWeight: 600, marginBottom: 12, color: '#111' }}>What You Get:</p>
+              <ul style={{ 
+                margin: 0, 
+                paddingLeft: 20, 
+                fontSize: 14,
+                lineHeight: 2,
+                color: '#374151'
+              }}>
+                <li>AI-powered counseling for teaching challenges</li>
+                <li>Search, review, and generate custom lessons</li>
+                <li>Schedule lessons directly to learner calendars</li>
+                <li>Data-informed guidance based on learner progress</li>
+                <li>Curriculum planning and goal-setting support</li>
+              </ul>
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <a
+                href="/facilitator/plan"
+                style={{
+                  display: 'inline-block',
+                  padding: '12px 32px',
+                  background: '#2563eb',
+                  color: '#fff',
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  fontSize: 16,
+                  textDecoration: 'none',
+                  boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)',
+                  transition: 'transform 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                Upgrade to Premium
+              </a>
+              <button
+                onClick={() => router.back()}
+                style={{
+                  padding: '12px 24px',
+                  background: 'transparent',
+                  color: '#6b7280',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  fontSize: 16,
+                  cursor: 'pointer'
+                }}
+              >
+                Go Back
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

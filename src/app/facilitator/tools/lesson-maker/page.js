@@ -24,10 +24,12 @@ export default function LessonMakerPage(){
       try {
         const supabase = getSupabaseClient()
         const { data: { session } } = await supabase.auth.getSession()
-        if (!session?.user) { router.push('/auth/login'); return }
-        const { data } = await supabase.from('profiles').select('plan_tier').eq('id', session.user.id).maybeSingle()
-        const t = (data?.plan_tier || 'free').toLowerCase()
-        if (!cancelled) setTier(t)
+        // Allow preview even without login
+        if (session?.user) {
+          const { data } = await supabase.from('profiles').select('plan_tier').eq('id', session.user.id).maybeSingle()
+          const t = (data?.plan_tier || 'free').toLowerCase()
+          if (!cancelled) setTier(t)
+        }
       } catch {}
       if (!cancelled) setLoading(false)
     })()
@@ -90,21 +92,16 @@ export default function LessonMakerPage(){
   }
 
   if (loading) return <main style={{ padding:24 }}><p>Loading…</p></main>
-  if (!ent.facilitatorTools) return (
-    <main style={{ padding:24 }}>
-      <h1>Lesson Maker</h1>
-      <p>Premium required. <a href="/facilitator/plan">View plans</a>.</p>
-    </main>
-  )
 
+  const hasAccess = ent.facilitatorTools
   const label = { display:'block', fontWeight:600, margin:'12px 0 4px' }
   const input = { width:'100%', padding:'10px 12px', border:'1px solid #e5e7eb', borderRadius:8 }
   const btn = { display:'inline-flex', alignItems:'center', justifyContent:'center', padding:'10px 12px', border:'1px solid #111', background:'#111', color:'#fff', borderRadius:8, fontWeight:600 }
 
   return (
-    <main style={{ padding:24, maxWidth:720, margin:'0 auto' }}>
+    <main style={{ padding:24, maxWidth:720, margin:'0 auto', position: 'relative' }}>
       <h1 style={{ marginTop:0 }}>Lesson Maker</h1>
-      <form onSubmit={handleGenerate}>
+      <form onSubmit={handleGenerate} style={{ opacity: hasAccess ? 1 : 0.6, pointerEvents: hasAccess ? 'auto' : 'none' }}>
         <label style={label}>Lesson Title</label>
         <input style={input} required value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} placeholder="e.g., Fractions on a Number Line" />
 
@@ -141,6 +138,114 @@ export default function LessonMakerPage(){
           View Generated Lessons
         </a>
       </div>
+
+      {/* Upgrade Overlay - Window Shopping Experience */}
+      {!hasAccess && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: 20
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: 16,
+            padding: '32px 24px',
+            maxWidth: 500,
+            width: '100%',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🎨</div>
+            <h2 style={{ 
+              margin: '0 0 16px 0', 
+              fontSize: 24, 
+              fontWeight: 700,
+              color: '#111'
+            }}>
+              Unlock Lesson Maker
+            </h2>
+            <p style={{ 
+              color: '#555', 
+              fontSize: 16, 
+              lineHeight: 1.6,
+              marginBottom: 24
+            }}>
+              Create custom AI-generated lessons tailored to your grade level, subject, and difficulty. 
+              Available exclusively to Premium subscribers.
+            </p>
+            
+            <div style={{ 
+              background: '#f9fafb', 
+              border: '1px solid #e5e7eb',
+              borderRadius: 12,
+              padding: 20,
+              marginBottom: 24,
+              textAlign: 'left'
+            }}>
+              <p style={{ fontWeight: 600, marginBottom: 12, color: '#111' }}>What You Can Create:</p>
+              <ul style={{ 
+                margin: 0, 
+                paddingLeft: 20, 
+                fontSize: 14,
+                lineHeight: 2,
+                color: '#374151'
+              }}>
+                <li>Custom vocabulary and definitions</li>
+                <li>Teaching examples aligned to your standards</li>
+                <li>Comprehension questions with answer checking</li>
+                <li>Exercises, worksheets, and tests</li>
+                <li>Saved automatically to your Facilitator Lessons</li>
+              </ul>
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <a
+                href="/facilitator/plan"
+                style={{
+                  display: 'inline-block',
+                  padding: '12px 32px',
+                  background: '#2563eb',
+                  color: '#fff',
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  fontSize: 16,
+                  textDecoration: 'none',
+                  boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)',
+                  transition: 'transform 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                Upgrade to Premium
+              </a>
+              <button
+                onClick={() => router.back()}
+                style={{
+                  padding: '12px 24px',
+                  background: 'transparent',
+                  color: '#6b7280',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  fontSize: 16,
+                  cursor: 'pointer'
+                }}
+              >
+                Go Back
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
