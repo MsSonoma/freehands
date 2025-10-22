@@ -453,7 +453,7 @@ export default function GeneratedLessonsPage(){
                 <li>Edit and customize generated lessons</li>
                 <li>Request AI-powered changes and refinements</li>
                 <li>Approve lessons for use with learners</li>
-                <li>Delete or archive lessons you don't need</li>
+                <li>Delete or archive lessons you don&apos;t need</li>
                 <li>Full control over your lesson library</li>
               </ul>
             </div>

@@ -67,7 +67,21 @@ Revert strategy:
 - Unset SONOMA_PROMPT_MODE or set to `full` to restore the original, longer prompt
 - Remove ANTHROPIC_API_KEY to disable Anthropic entirely
 
-## Transcript archiving (Supabase)
+## Supabase Setup
+
+### Required: Profiles Email Sync
+
+**IMPORTANT:** User emails won't be saved to the database without this setup.
+
+Run the setup script in your Supabase SQL Editor:
+- Script: `scripts/setup-profiles-with-triggers.sql`
+- Guide: `docs/SETUP_PROFILES_EMAIL_SYNC.md`
+
+This creates database triggers that automatically sync user emails from `auth.users` to the `profiles` table when users sign up or update their accounts.
+
+To verify it's working, run: `scripts/verify-profiles-setup.sql`
+
+### Optional: Transcript Archiving
 
 Learner transcripts are archived to Supabase Storage (append-only ledger + consolidated PDF) when Supabase is configured. To enable:
 
