@@ -5,12 +5,15 @@ import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
 import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
+import { useAccessControl } from '@/app/hooks/useAccessControl'
+import GatedOverlay from '@/app/components/GatedOverlay'
 
 const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'facilitator']
 const GRADES = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
 export default function FacilitatorLessonsPage() {
   const router = useRouter()
+  const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true })
   const [pinChecked, setPinChecked] = useState(false)
   const [tier, setTier] = useState('free')
   const [learners, setLearners] = useState([])
@@ -291,60 +294,16 @@ export default function FacilitatorLessonsPage() {
     paddingLeft: 8
   }
 
-  if (loading) {
-    return (
-      <main style={{ padding: '12px 24px' }}>
-        <h1>Lessons</h1>
-        <p>Loading...</p>
-      </main>
-    )
-  }
-
-  if (!ent.facilitatorTools) {
-    return (
-      <main style={{ padding: '12px 24px' }}>
-        <h1>Lessons</h1>
-        <p style={{ color: '#555' }}>Upgrade to Premium to manage approved lessons for learners.</p>
-        <a href="/facilitator/plan">View plans</a>
-      </main>
-    )
-  }
-
-  if (!pinChecked) {
+  if (!pinChecked || authLoading || loading || lessonsLoading) {
     return <main style={{ padding: '12px 24px' }}><p>Loading…</p></main>
-  }
-
-  if (loading || lessonsLoading) {
-    console.log('[Lessons Page] Showing loading spinner:', { loading, lessonsLoading })
-    return (
-      <main style={{ padding: '12px 24px', maxWidth: 1200, margin: '0 auto' }}>
-        <h1 style={{ marginBottom: 16 }}>Manage Approved Lessons</h1>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: 12 }}>
-          <div style={{ 
-            width: 48, 
-            height: 48, 
-            border: '4px solid #e5e7eb', 
-            borderTop: '4px solid #111', 
-            borderRadius: '50%', 
-            animation: 'spin 1s linear infinite' 
-          }}></div>
-          <p style={{ color: '#6b7280', fontSize: 16 }}>Loading lessons...</p>
-        </div>
-        <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
-      </main>
-    )
   }
 
   console.log('[Lessons Page] Rendering main content:', { loading, lessonsLoading, learnersCount: learners.length })
 
   return (
-    <main style={{ padding: '12px 24px', maxWidth: 1200, margin: '0 auto' }}>
-      <h1 style={{ marginBottom: 16 }}>Manage Approved Lessons</h1>
+    <>
+      <main style={{ padding: '12px 24px', maxWidth: 1200, margin: '0 auto', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
+        <h1 style={{ marginBottom: 16 }}>Manage Approved Lessons</h1>
       
       {learners.length === 0 ? (
         <div>
@@ -929,5 +888,20 @@ export default function FacilitatorLessonsPage() {
         </>
       )}
     </main>
+    
+    <GatedOverlay
+      show={!isAuthenticated}
+      gateType={gateType}
+      feature="Lesson Library"
+      emoji="📚"
+      description="Sign in to access your personalized lesson library, approve lessons for learners, and track their progress."
+      benefits={[
+        'Browse and approve lessons by grade and subject',
+        'Manage lesson access with Golden Keys',
+        'Add personal notes for each lesson',
+        'Track which lessons your learners have completed'
+      ]}
+    />
+    </>
   )
 }

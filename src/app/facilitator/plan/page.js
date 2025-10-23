@@ -1,5 +1,8 @@
 "use client";
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAccessControl } from '@/app/hooks/useAccessControl';
+import GatedOverlay from '@/app/components/GatedOverlay';
 // BillingStatusDev removed per request
 
 const plans = [
@@ -57,6 +60,8 @@ async function openPortal(setPortalLoading) {
 }
 
 export default function FacilitatorPlanPage() {
+  const router = useRouter();
+  const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true });
   const [loadingTier, setLoadingTier] = useState(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [currentTier, setCurrentTier] = useState(null);
@@ -158,8 +163,14 @@ export default function FacilitatorPlanPage() {
       window.removeEventListener('focus', onFocus);
     };
   }, []);
+
+  if (authLoading) {
+    return <main style={{ padding: 12 }}><p>Loading…</p></main>;
+  }
+
   return (
-    <main style={{ padding: 12 }}>
+    <>
+    <main style={{ padding: 12, opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
   {/* Dev billing status banner removed */}
       <h1 style={{ marginTop: 0, marginBottom: 2 }}>Choose your plan</h1>
       <p style={{ color: '#555', marginTop: 0, marginBottom: 8 }}>Compare features and pick the level that fits your needs.</p>
@@ -268,6 +279,21 @@ export default function FacilitatorPlanPage() {
         @media (max-width: 640px) { [aria-label="Plan comparison"] { grid-template-columns: 1fr; } }
       `}</style>
     </main>
+    
+    <GatedOverlay
+      show={!isAuthenticated}
+      gateType={gateType}
+      feature="Plans & Billing"
+      emoji="💳"
+      description="Sign in to view and manage your subscription plan."
+      benefits={[
+        'Compare and select from Free, Basic, Plus, or Premium plans',
+        'Manage your subscription and billing details',
+        'View your current plan and usage',
+        'Cancel or upgrade anytime'
+      ]}
+    />
+    </>
   );
 }
 

@@ -1,0 +1,49 @@
+{
+  "title": "Welcome to Math with Ms. Sonoma!",
+  "subject": "math",
+  "grade": "3",
+  "difficulty": "easy",
+  "blurb": "Learn how Ms. Sonoma teaches math by exploring simple addition",
+  "vocab": [
+    {
+      "term": "Addition",
+      "definition": "Putting numbers together to find a total"
+    },
+    {
+      "term": "Sum",
+      "definition": "The answer you get when you add numbers together"
+    },
+    {
+      "term": "Plus",
+      "definition": "The word we use for the addition symbol"
+    }
+  ],
+  "examples": [
+    "If you have 3 apples and get 2 more apples, you now have 5 apples. That's 3 plus 2 equals 5.",
+    "When we add 4 plus 3, we can count up from 4: five, six, seven. So 4 plus 3 equals 7.",
+    "Zero is special in addition. When you add zero to any number, the number stays the same. So 5 plus 0 equals 5."
+  ],
+  "comprehension": [
+    {
+      "question": "What is 2 plus 3?",
+      "acceptable": ["5", "five"],
+      "type": "short-answer",
+      "key_terms": ["5", "five"],
+      "min_required": 1
+    },
+    {
+      "question": "What is 4 plus 1?",
+      "acceptable": ["5", "five"],
+      "type": "short-answer",
+      "key_terms": ["5", "five"],
+      "min_required": 1
+    },
+    {
+      "question": "What is 6 plus 0?",
+      "acceptable": ["6", "six"],
+      "type": "short-answer",
+      "key_terms": ["6", "six"],
+      "min_required": 1
+    }
+  ]
+}

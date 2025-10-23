@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { listLearners } from '@/app/facilitator/learners/clientApi'
+import { getSupabaseClient } from '@/app/lib/supabaseClient'
 
 // Contract:
 // - Props:
@@ -10,9 +12,11 @@ import { listLearners } from '@/app/facilitator/learners/clientApi'
 //   - Loads learners from Supabase if configured, else from localStorage fallback
 //   - Provides a Demo Learner option when list is empty
 export default function LearnerSelector({ onSelect, compact = false }) {
+  const router = useRouter()
   const [learners, setLearners] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -20,10 +24,24 @@ export default function LearnerSelector({ onSelect, compact = false }) {
       try {
         setLoading(true)
         setError('')
+        
+        // Check if user is logged in
+        const supabase = getSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!cancelled) setIsLoggedIn(!!session?.user)
+        
         const list = await listLearners()
         if (!cancelled) setLearners(Array.isArray(list) ? list : [])
       } catch (e) {
-        if (!cancelled) setError(e?.message || 'Failed to load learners')
+        if (!cancelled) {
+          // Check again if user is logged in (in case the error is auth-related)
+          try {
+            const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            setIsLoggedIn(!!session?.user)
+          } catch {}
+          setError(e?.message || 'Failed to load learners')
+        }
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -62,20 +80,59 @@ export default function LearnerSelector({ onSelect, compact = false }) {
   if (loading) {
     return <div style={{ textAlign:'center' }}>Loading learners…</div>
   }
-  if (error) {
-    return <div role="alert" style={{ color:'#b91c1c', textAlign:'center' }}>{error}</div>
+
+  // Show auth-specific messaging when not logged in
+  if (!isLoggedIn) {
+    return (
+      <div style={{ textAlign:'center', padding: '16px' }}>
+        <p style={{ marginTop: 0, marginBottom: 12 }}>Create an account to make learner profiles</p>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => router.push('/auth/signup')}
+            style={{ padding:'8px 16px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff', fontWeight:600 }}
+          >
+            Sign Up
+          </button>
+          <button
+            onClick={() => router.push('/auth/login')}
+            style={{ padding:'8px 16px', border:'1px solid #ddd', borderRadius:8, background:'#fff' }}
+          >
+            Sign In
+          </button>
+        </div>
+        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #e5e7eb' }}>
+          <p style={{ marginTop: 0, marginBottom: 8, fontSize: '0.9rem', color: '#6b7280' }}>Or try without an account:</p>
+          <button
+            onClick={() => pick({ id: 'demo', name: 'Demo Learner', grade: 4 })}
+            style={{ padding:'8px 12px', border:'1px solid #ddd', borderRadius:8 }}
+          >
+            Use Demo Learner
+          </button>
+        </div>
+      </div>
+    )
   }
 
+  // Show different message when logged in but no learners yet
   if (!learners.length) {
     return (
-      <div style={{ textAlign:'center' }}>
-        <p style={{ marginTop: 0, marginBottom: 8 }}>No learners found.</p>
+      <div style={{ textAlign:'center', padding: '16px' }}>
+        <p style={{ marginTop: 0, marginBottom: 12 }}>Add your first learner to get started</p>
         <button
-          onClick={() => pick({ id: 'demo', name: 'Demo Learner', grade: 4 })}
-          style={{ padding:'8px 12px', border:'1px solid #ddd', borderRadius:8 }}
+          onClick={() => router.push('/facilitator/learners/add')}
+          style={{ padding:'8px 16px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff', fontWeight:600, marginBottom: 8 }}
         >
-          Use Demo Learner
+          Add Learner
         </button>
+        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #e5e7eb' }}>
+          <p style={{ marginTop: 0, marginBottom: 8, fontSize: '0.9rem', color: '#6b7280' }}>Or try with a demo:</p>
+          <button
+            onClick={() => pick({ id: 'demo', name: 'Demo Learner', grade: 4 })}
+            style={{ padding:'8px 12px', border:'1px solid #ddd', borderRadius:8 }}
+          >
+            Use Demo Learner
+          </button>
+        </div>
       </div>
     )
   }

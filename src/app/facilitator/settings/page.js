@@ -4,9 +4,12 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
+import { useAccessControl } from '@/app/hooks/useAccessControl'
+import GatedOverlay from '@/app/components/GatedOverlay'
 
 export default function FacilitatorSettingsPage() {
 	const router = useRouter()
+	const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true })
 	const [pinChecked, setPinChecked] = useState(false)
 	
 	// Check PIN requirement on mount
@@ -94,12 +97,13 @@ export default function FacilitatorSettingsPage() {
 		return () => { cancelled = true }
 	}, [pinChecked])
 
-	if (!pinChecked) {
+	if (!pinChecked || authLoading) {
 		return <main style={{ padding: 12 }}><p style={{ textAlign: 'center' }}>Loading…</p></main>
 	}
 
 	return (
-		<main style={{ padding: 12 }}>
+		<>
+			<main style={{ padding: 12, opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
 			<div style={{ width:'100%', maxWidth: 760, margin: '0 auto', textAlign:'center' }}>
 				<h1 style={{ fontSize:24, fontWeight:800, margin:'0 0 8px 0', textAlign:'center' }}>Settings</h1>
 
@@ -223,6 +227,21 @@ export default function FacilitatorSettingsPage() {
 				</section>
 			</div>
 		</main>
+		
+		<GatedOverlay
+			show={!isAuthenticated}
+			gateType={gateType}
+			feature="Settings"
+			emoji="⚙️"
+			description="Sign in to customize your app preferences, manage hotkeys, set your timezone, and control your data."
+			benefits={[
+				'Customize keyboard shortcuts and hotkeys',
+				'Set your preferred timezone for scheduling',
+				'Manage email preferences and notifications',
+				'Access privacy settings and account deletion'
+			]}
+		/>
+		</>
 	)
 }
 
@@ -259,10 +278,8 @@ function DeleteAccount() {
 				const js = await res.json().catch(()=>({}))
 				if (!res.ok || !js?.ok) throw new Error(js?.error || 'Failed to delete account')
 				await supabase.auth.signOut()
-				// Clear PIN and prefs from localStorage on account deletion (account-level security)
+				// Clear session storage on account deletion
 				try {
-					localStorage.removeItem('facilitator_pin')
-					localStorage.removeItem('facilitator_pin_prefs')
 					sessionStorage.removeItem('facilitator_section_active')
 				} catch (e) {}
 				window.location.assign('/')

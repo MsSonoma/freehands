@@ -28,6 +28,7 @@ async function readUserAndTier(request){
 }
 
 export async function POST(request){
+  const startTime = Date.now()
   console.log('[APPROVE API] Request received')
   const { user, plan_tier, supabase } = await readUserAndTier(request)
   console.log('[APPROVE API] User:', user?.id, 'Plan:', plan_tier)
@@ -46,9 +47,11 @@ export async function POST(request){
     // Download from Supabase Storage
     const storagePath = `facilitator-lessons/${userId}/${file}`
     console.log('[APPROVE API] Storage path:', storagePath)
+    const downloadStart = Date.now()
     const { data: fileData, error: downloadError } = await supabase.storage
       .from('lessons')
       .download(storagePath)
+    console.log(`[APPROVE API] Download took ${Date.now() - downloadStart}ms`)
     
     if (downloadError || !fileData) {
       console.error('[APPROVE API] Download error:', downloadError)
@@ -66,20 +69,27 @@ export async function POST(request){
     console.log('[APPROVE API] New approved status:', js.approved)
     
     // Update the original file to mark it as approved
+    const uploadStart = Date.now()
+    const updatedContent = JSON.stringify(js, null, 2)
+    const blob = new Blob([updatedContent], { type: 'application/json' })
+    
     const { error: updateError } = await supabase.storage
       .from('lessons')
-      .upload(storagePath, JSON.stringify(js, null, 2), {
+      .upload(storagePath, blob, {
         contentType: 'application/json',
-        upsert: true
+        upsert: true,
+        cacheControl: '3600'
       })
+    console.log(`[APPROVE API] Upload took ${Date.now() - uploadStart}ms`)
     
     if (updateError) {
       console.error('[APPROVE API] Update error:', updateError)
       return NextResponse.json({ error: 'Failed to update lesson' }, { status: 500 })
     }
     
-    console.log('[APPROVE API] Success!')
-    return NextResponse.json({ ok:true, file })
+    const totalTime = Date.now() - startTime
+    console.log(`[APPROVE API] Success! Total time: ${totalTime}ms`)
+    return NextResponse.json({ ok:true, file, timeMs: totalTime })
   } catch (e) {
     console.error('[APPROVE API] Exception:', e)
     return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })

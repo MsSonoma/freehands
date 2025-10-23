@@ -71,15 +71,18 @@ async function fetchServerPrefsAndHasPin() {
 		const supabase = getSupabaseClient?.();
 		const { data: { session } } = await supabase.auth.getSession();
 		const token = session?.access_token;
-		if (!token) return { hasPin: !!(typeof window !== 'undefined' && localStorage.getItem(PIN_KEY)), prefs: readPrefsLocal() };
+		// No session = not logged in = no PIN at account level
+		if (!token) return { hasPin: false, prefs: null };
 		const res = await fetch('/api/facilitator/pin', { headers: { Authorization: `Bearer ${token}` } });
 		const js = await res.json().catch(()=>({}));
-		if (!res.ok || !js?.ok) return { hasPin: !!(typeof window !== 'undefined' && localStorage.getItem(PIN_KEY)), prefs: readPrefsLocal() };
+		// If API fails, assume no PIN (fail-safe for non-logged-in users)
+		if (!res.ok || !js?.ok) return { hasPin: false, prefs: null };
 		// Persist a local copy for quick reads
 		if (js?.prefs && typeof window !== 'undefined') setPinPrefsLocal(js.prefs);
 		return { hasPin: !!js.hasPin, prefs: js?.prefs || readPrefsLocal() };
 	} catch {
-		return { hasPin: !!(typeof window !== 'undefined' && localStorage.getItem(PIN_KEY)), prefs: readPrefsLocal() };
+		// On error, assume no PIN (fail-safe for non-logged-in users)
+		return { hasPin: false, prefs: null };
 	}
 }
 
@@ -156,14 +159,9 @@ export async function ensurePinAllowed(action = 'action') {
 				const input = await promptForPinMasked({ title: 'Facilitator PIN', message: 'Enter PIN to continue' });
 				if (input == null || input === '') return false;
 
-				// Try server verification; fallback to local
+				// Server verification only (no localStorage fallback)
 				const serverOk = await verifyPinServer(input);
-				let ok = (serverOk === true);
-				if (serverOk === null) {
-					// No server; compare to local fallback
-					try { ok = (localStorage.getItem(PIN_KEY) || '') === input; } catch { ok = true; }
-				}
-				if (!ok) {
+				if (serverOk !== true) {
 					try { alert('Incorrect PIN.'); } catch {}
 					return false;
 				}

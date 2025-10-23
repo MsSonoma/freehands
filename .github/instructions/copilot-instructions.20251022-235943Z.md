@@ -216,28 +216,3 @@ Short answer third-try leniency (sa_leniency_3)
 
 Assessment mapping
 - Exercise, Worksheet, and Test reuse the Comprehension ask/feedback flow and apply the selected leniency in exactly the same way.
-
-15) Brand signals integration [COPILOT]
-- Source of truth (do not guess):
-  - .github/Signals/MsSonoma_Voice_and_Vocabulary_Guide.pdf
-  - .github/Signals/MsSonoma_Messaging_Matrix_Text.pdf
-  - .github/Signals/MsSonoma_OnePage_Brand_Story.pdf
-  - .github/Signals/MsSonoma_Homepage_Copy_Framework.pdf
-  - .github/Signals/MsSonoma_Launch_Deck_The_Calm_Revolution.pdf
-  - .github/Signals/MsSonoma_SignalFlow_Full_Report.pdf
-- Integration workflow:
-  - Extract brand text to developer notes; curate tone traits, allowed lexicon, avoid list, and candidate lines.
-  - Register only approved canonical lines as [VERBATIM] cues; everything else remains [SAMPLE].
-  - Update phase rules to reference new [VERBATIM] cues only after registration.
-- Guardrails:
-  - Never market to kids; brand informs tone, not promotion.
-  - No brand names or product claims in [SONOMA] outputs.
-  - Keep ASCII punctuation, 6-12 words, warm and calm.
-- Fallback:
-  - If brand artifacts are not yet curated, keep existing [SONOMA] rules; do not invent cues.
-
-16) Brand cue registry [VERBATIM]
-- OPENING_JOKE_PROMPTS: approved lines to introduce a joke.
-- CLOSING_ENCOURAGEMENTS: approved short closers aligned with brand.
-- PRAISE_SHORT: approved one-line praise options.
-- HINT_SOFTENERS: approved one-line soften-and-try-again options.

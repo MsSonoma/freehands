@@ -1,0 +1,52 @@
+{
+  "title": "Welcome to Language Arts with Ms. Sonoma!",
+  "subject": "language arts",
+  "grade": "3",
+  "difficulty": "easy",
+  "blurb": "Learn how Ms. Sonoma teaches reading and writing with nouns",
+  "vocab": [
+    {
+      "term": "Noun",
+      "definition": "A word that names a person, place, or thing"
+    },
+    {
+      "term": "Person",
+      "definition": "Any human like a teacher, friend, or parent"
+    },
+    {
+      "term": "Place",
+      "definition": "Anywhere you can go like a school, park, or home"
+    },
+    {
+      "term": "Thing",
+      "definition": "Any object you can see or touch like a book, ball, or chair"
+    }
+  ],
+  "examples": [
+    "Teacher is a noun because it names a person. School is a noun because it names a place.",
+    "Book is a noun because it names a thing. We can say: The teacher read a book at school.",
+    "Nouns are the naming words in sentences. They tell us who or what the sentence is about."
+  ],
+  "comprehension": [
+    {
+      "question": "Is 'dog' a noun?",
+      "acceptable": ["yes", "true"],
+      "type": "true-false",
+      "correct": "true"
+    },
+    {
+      "question": "What kind of noun is 'park'? Is it a person, place, or thing?",
+      "acceptable": ["place", "a place"],
+      "type": "short-answer",
+      "key_terms": ["place"],
+      "min_required": 1
+    },
+    {
+      "question": "Can you name a noun that is a person?",
+      "acceptable": ["teacher", "student", "mom", "dad", "friend", "child", "parent", "brother", "sister", "doctor", "any person"],
+      "type": "short-answer",
+      "key_terms": ["teacher", "student", "mom", "dad", "friend", "child", "parent", "brother", "sister", "doctor", "person"],
+      "min_required": 1
+    }
+  ]
+}

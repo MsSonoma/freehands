@@ -4,11 +4,14 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
+import { useAccessControl } from '@/app/hooks/useAccessControl'
+import GatedOverlay from '@/app/components/GatedOverlay'
 import LessonCalendar from './LessonCalendar'
 import LessonPicker from './LessonPicker'
 
 export default function CalendarPage() {
   const router = useRouter()
+  const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true })
   const [learners, setLearners] = useState([])
   const [selectedLearnerId, setSelectedLearnerId] = useState('')
   const [selectedDate, setSelectedDate] = useState(null)
@@ -59,8 +62,11 @@ export default function CalendarPage() {
     try {
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
+      
+      // Don't redirect - let the overlay handle it
       if (!session?.user) {
-        router.push('/login')
+        setHasAccess(false)
+        setLoading(false)
         return
       }
 
@@ -253,36 +259,14 @@ export default function CalendarPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
-      </div>
-    )
-  }
-
-  if (!hasAccess) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-md p-8 max-w-md text-center">
-          <h2 className="text-2xl font-bold mb-4">Premium Feature</h2>
-          <p className="text-gray-600 mb-6">
-            The Lesson Calendar is a premium facilitator tool. Upgrade your plan to access this feature.
-          </p>
-          <button
-            onClick={() => router.push('/facilitator/plan')}
-            className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition"
-          >
-            View Plans
-          </button>
-        </div>
-      </div>
-    )
+  if (authLoading || loading) {
+    return <div style={{ padding: '24px' }}><p>Loading…</p></div>
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6">
+    <>
+      <div style={{ minHeight: '100vh', background: '#f9fafb', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: 24 }}>
 
         {/* Database Setup Warning */}
         {!tableExists && (
@@ -424,5 +408,38 @@ export default function CalendarPage() {
         )}
       </div>
     </div>
+    
+    <GatedOverlay
+      show={!isAuthenticated}
+      gateType="auth"
+      feature="Lesson Calendar"
+      emoji="📅"
+      description="Sign in to schedule lessons, plan learning activities, and track completion over time."
+      benefits={[
+        'Schedule lessons in advance for each learner',
+        'View all scheduled lessons in a monthly calendar',
+        'Track lesson completion and attendance',
+        'Set up recurring lesson schedules'
+      ]}
+    />
+    
+    {isAuthenticated && !hasAccess && (
+      <GatedOverlay
+        show={true}
+        gateType="tier"
+        feature="Lesson Calendar"
+        emoji="📅"
+        description="The Lesson Calendar is a premium facilitator tool. Upgrade your plan to access scheduling and tracking features."
+        benefits={[
+          'Schedule lessons in advance for each learner',
+          'View all scheduled lessons in a monthly calendar',
+          'Track lesson completion and attendance',
+          'Set up recurring lesson schedules'
+        ]}
+        currentTier={tier}
+        requiredTier="premium"
+      />
+    )}
+    </>
   )
 }

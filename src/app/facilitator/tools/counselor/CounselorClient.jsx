@@ -12,6 +12,10 @@ export default function CounselorClient() {
   const [pinChecked, setPinChecked] = useState(false)
   const [tierChecked, setTierChecked] = useState(false)
   const [hasAccess, setHasAccess] = useState(false)
+  const [mentorQuota, setMentorQuota] = useState(null)
+  const [mentorQuotaLoading, setMentorQuotaLoading] = useState(true)
+  const [sessionStarted, setSessionStarted] = useState(false)
+  const [currentSessionTokens, setCurrentSessionTokens] = useState(0)
   
   // Learner selection
   const [learners, setLearners] = useState([])
@@ -87,6 +91,36 @@ export default function CounselorClient() {
     })()
     return () => { cancelled = true }
   }, [pinChecked])
+
+  // Check Mr. Mentor quota
+  useEffect(() => {
+    if (!hasAccess || !tierChecked) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const supabase = getSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+        if (!token) {
+          if (!cancelled) setMentorQuotaLoading(false)
+          return
+        }
+        
+        const res = await fetch('/api/usage/mentor/check', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const data = await res.json()
+        if (!cancelled) {
+          setMentorQuota(data)
+          setMentorQuotaLoading(false)
+        }
+      } catch (e) {
+        console.error('Failed to check mentor quota:', e)
+        if (!cancelled) setMentorQuotaLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [hasAccess, tierChecked])
 
   // Load learners list
   useEffect(() => {
@@ -296,23 +330,50 @@ export default function CounselorClient() {
     const message = userInput.trim()
     if (!message || loading) return
 
+    // Check mentor quota before sending
+    if (mentorQuota && !mentorQuota.allowed) {
+      setError(mentorQuota.needsAddon 
+        ? 'You have used your 5 Mr. Mentor sessions. Upgrade to Premium+ to get unlimited access.'
+        : 'You need a Premium plan to access Mr. Mentor.')
+      return
+    }
+
     setLoading(true)
     setError('')
     setUserInput('')
 
-    // Add user message to conversation
-    const updatedHistory = [
-      ...conversationHistory,
-      { role: 'user', content: message }
-    ]
-    setConversationHistory(updatedHistory)
-
-    // Display user message in captions
-    setCaptionText(message)
-    setCaptionSentences([message])
-    setCaptionIndex(0)
-
     try {
+      // Start session if this is the first message
+      if (!sessionStarted) {
+        const supabase = getSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+        
+        if (token) {
+          await fetch('/api/usage/mentor/increment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ action: 'start' })
+          })
+          setSessionStarted(true)
+        }
+      }
+
+      // Add user message to conversation
+      const updatedHistory = [
+        ...conversationHistory,
+        { role: 'user', content: message }
+      ]
+      setConversationHistory(updatedHistory)
+
+      // Display user message in captions
+      setCaptionText(message)
+      setCaptionSentences([message])
+      setCaptionIndex(0)
+
       // Get auth token for function calling
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
@@ -373,6 +434,26 @@ export default function CounselorClient() {
         await playAudio(data.audio)
       }
 
+      // Track token usage for this exchange
+      if (token && data.usage && data.usage.total_tokens) {
+        const tokensUsed = data.usage.total_tokens
+        const newTotal = currentSessionTokens + tokensUsed
+        setCurrentSessionTokens(newTotal)
+        
+        // Send token count to backend
+        await fetch('/api/usage/mentor/increment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ 
+            action: 'add_tokens',
+            tokens: tokensUsed
+          })
+        })
+      }
+
       // Update conversation memory in background (async, non-blocking)
       updateConversationMemory(finalHistory, token).catch(err => {
         console.warn('[Mr. Mentor] Failed to update conversation memory:', err)
@@ -385,7 +466,7 @@ export default function CounselorClient() {
     } finally {
       setLoading(false)
     }
-  }, [userInput, loading, conversationHistory, playAudio, learnerTranscript, selectedLearnerId])
+  }, [userInput, loading, conversationHistory, playAudio, learnerTranscript, selectedLearnerId, mentorQuota, sessionStarted, currentSessionTokens])
 
   // Helper: Update conversation memory after each exchange
   const updateConversationMemory = async (conversationHistory, token) => {
@@ -424,19 +505,43 @@ export default function CounselorClient() {
   }
 
   // Clear conversation
-  const clearConversation = useCallback(() => {
+  const clearConversation = useCallback(async () => {
     if (confirm('Are you sure you want to start a new session? This will clear your conversation history.')) {
+      // End current session if one is active
+      if (sessionStarted) {
+        try {
+          const supabase = getSupabaseClient()
+          const { data: { session } } = await supabase.auth.getSession()
+          const token = session?.access_token
+          
+          if (token) {
+            await fetch('/api/usage/mentor/increment', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ action: 'end' })
+            })
+          }
+        } catch (e) {
+          console.error('Failed to end mentor session:', e)
+        }
+      }
+      
       setConversationHistory([])
       setCaptionText('')
       setCaptionSentences([])
       setCaptionIndex(0)
       setUserInput('')
       setError('')
+      setSessionStarted(false)
+      setCurrentSessionTokens(0)
       try {
         localStorage.removeItem('mr_mentor_conversation')
       } catch {}
     }
-  }, [])
+  }, [sessionStarted])
 
   // Toggle mute
   const toggleMute = useCallback(() => {
@@ -718,6 +823,35 @@ export default function CounselorClient() {
           marginLeft: 'auto',
           marginRight: 'auto'
         }}>
+          {/* Quota Info */}
+          {!mentorQuotaLoading && mentorQuota && (
+            <div style={{ 
+              padding: '8px 12px', 
+              marginBottom: 8, 
+              borderRadius: 8, 
+              background: mentorQuota.allowed ? (mentorQuota.unlimited ? '#f0fdf4' : '#f0f9ff') : '#fef2f2',
+              border: `1px solid ${mentorQuota.allowed ? (mentorQuota.unlimited ? '#bbf7d0' : '#bfdbfe') : '#fecaca'}`,
+              fontSize: 13
+            }}>
+              <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                {mentorQuota.unlimited && 'Unlimited Mr. Mentor Sessions'}
+                {!mentorQuota.unlimited && mentorQuota.allowed && `Mr. Mentor Sessions: ${mentorQuota.remaining} remaining`}
+                {!mentorQuota.allowed && mentorQuota.needsAddon && 'Session Limit Reached'}
+                {!mentorQuota.allowed && !mentorQuota.needsAddon && 'Premium Plan Required'}
+              </div>
+              {!mentorQuota.allowed && mentorQuota.needsAddon && (
+                <div style={{ fontSize: 12, color: '#991b1b', marginTop: 4 }}>
+                  Upgrade to Premium+ ($20/month addon) for unlimited Mr. Mentor access. <a href="/facilitator/plan" style={{ color: '#991b1b', textDecoration: 'underline' }}>View Plans</a>
+                </div>
+              )}
+              {!mentorQuota.allowed && !mentorQuota.needsAddon && (
+                <div style={{ fontSize: 12, color: '#991b1b', marginTop: 4 }}>
+                  Mr. Mentor requires a Premium plan. <a href="/facilitator/plan" style={{ color: '#991b1b', textDecoration: 'underline' }}>Upgrade Now</a>
+                </div>
+              )}
+            </div>
+          )}
+          
           {/* Learner selection dropdown */}
           {learners.length > 0 && (
             <div style={{ marginBottom: 8 }}>

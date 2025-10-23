@@ -1,9 +1,14 @@
 "use client"
 import { useEffect, useState } from 'react'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
-import { setFacilitatorPin, clearFacilitatorPin, getPinPrefsLocal, setPinPrefsLocal } from '@/app/lib/pinGate'
+import { getPinPrefsLocal, setPinPrefsLocal } from '@/app/lib/pinGate'
+import { useAccessControl } from '@/app/hooks/useAccessControl'
+import GatedOverlay from '@/app/components/GatedOverlay'
+import { useRouter } from 'next/navigation'
 
 export default function FacilitatorAccountPage() {
+  const router = useRouter()
+  const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true })
   const [loading, setLoading] = useState(true)
   const [savingName, setSavingName] = useState(false)
   const [facilitatorName, setFacilitatorName] = useState('')
@@ -113,8 +118,13 @@ export default function FacilitatorAccountPage() {
     return () => { cancelled = true }
   }, [])
 
+  if (authLoading || loading) {
+    return <main style={{ padding: 7 }}><p>Loading…</p></main>
+  }
+
   return (
-    <main style={{ padding: 7 }}>
+    <>
+      <main style={{ padding: 7, opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
       <div style={{ width: '100%', maxWidth: 600, margin: '0 auto' }}>
         <h1 style={{ marginTop: 0, marginBottom: 3, textAlign: 'left' }}>Account</h1>
         <p style={{ color: '#555', marginTop: 0, marginBottom: 5, textAlign: 'left' }}>Manage your profile and sign-in details.</p>
@@ -394,6 +404,21 @@ export default function FacilitatorAccountPage() {
         </section>
       </div>
     </main>
+    
+    <GatedOverlay
+      show={!isAuthenticated}
+      gateType={gateType}
+      feature="Account Management"
+      emoji="👤"
+      description="Sign in to manage your account settings, security preferences, and connected services."
+      benefits={[
+        'Manage your profile and display name',
+        'Set up two-factor authentication',
+        'Configure PIN protection for sensitive actions',
+        'Link and manage connected accounts (Google, etc.)'
+      ]}
+    />
+    </>
   )
 }
 
@@ -413,7 +438,7 @@ function PinManager({ email }) {
     ;(async () => {
       try {
         setLoading(true)
-        // Try to call API to see if server-side PIN exists
+        // Fetch PIN status from server only
         const supabase = getSupabaseClient()
         const { data: { session } } = await supabase.auth.getSession()
         const token = session?.access_token
@@ -426,17 +451,16 @@ function PinManager({ email }) {
             if (js.prefs && typeof js.prefs === 'object') setPrefs(prev => ({ ...prev, ...js.prefs }))
           }
         } else {
-          // If API not configured, fall back to local check
-          const stored = typeof window !== 'undefined' ? localStorage.getItem('facilitator_pin') : null
+          // API failed - no PIN
           if (!cancelled) {
-            setHasPin(!!stored)
+            setHasPin(false)
             setPrefs(getPinPrefsLocal())
           }
         }
       } catch (e) {
-        const stored = typeof window !== 'undefined' ? localStorage.getItem('facilitator_pin') : null
+        // Error fetching - no PIN
         if (!cancelled) {
-          setHasPin(!!stored)
+          setHasPin(false)
           setPrefs(getPinPrefsLocal())
         }
       } finally {
@@ -452,33 +476,21 @@ function PinManager({ email }) {
     try {
       if (!pin || pin.length < 4 || pin.length > 8 || /\D/.test(pin)) throw new Error('Use a 4–8 digit PIN')
       if (pin !== pin2) throw new Error('PINs do not match')
-      // Prefer server API when available
-      try {
-        const supabase = getSupabaseClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        const token = session?.access_token
-        console.log('[PIN Save] Got session, hasToken:', !!token)
-        if (!token) throw new Error('Sign in required')
-        console.log('[PIN Save] Calling API with prefs:', prefs)
-        const res = await fetch('/api/facilitator/pin', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ pin, currentPin: hasPin ? currentPin : null, prefs })
-        })
-        const js = await res.json().catch(()=>({}))
-        console.log('[PIN Save] API response:', { ok: res.ok, status: res.status, body: js })
-        if (!res.ok || !js?.ok) throw new Error(js?.error || 'Failed to save')
-        // Keep local fallback in sync so existing gates work
-        console.log('[PIN Save] Saving to localStorage')
-        try { setFacilitatorPin(pin) } catch (e) { console.error('[PIN Save] localStorage save failed:', e) }
-      } catch (e) {
-        console.error('[PIN Save] Server save failed, using fallback:', e?.message)
-        // Fallback to local storage
-        try { setFacilitatorPin(pin) } catch (e2) { console.error('[PIN Save] Fallback localStorage failed:', e2) }
-        if (hasPin && currentPin && currentPin !== (typeof window !== 'undefined' ? localStorage.getItem('facilitator_pin') : '')) {
-          throw e
-        }
-      }
+      // Save via server API only
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      console.log('[PIN Save] Got session, hasToken:', !!token)
+      if (!token) throw new Error('Sign in required')
+      console.log('[PIN Save] Calling API with prefs:', prefs)
+      const res = await fetch('/api/facilitator/pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ pin, currentPin: hasPin ? currentPin : null, prefs })
+      })
+      const js = await res.json().catch(()=>({}))
+      console.log('[PIN Save] API response:', { ok: res.ok, status: res.status, body: js })
+      if (!res.ok || !js?.ok) throw new Error(js?.error || 'Failed to save')
       setHasPin(true)
       console.log('[PIN Save] Success! setHasPin(true) called')
       setMsg('Saved!')
@@ -492,18 +504,13 @@ function PinManager({ email }) {
   const clear = async () => {
     setMsg(''); setSaving(true)
     try {
-      // Try server
-      try {
-        const supabase = getSupabaseClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        const token = session?.access_token
-        if (!token) throw new Error('Sign in required')
-        const res = await fetch('/api/facilitator/pin', { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
-        const js = await res.json().catch(()=>({}))
-        if (!res.ok || !js?.ok) throw new Error(js?.error || 'Failed to clear')
-      } catch (e) {}
-      // Always clear local fallback
-      try { clearFacilitatorPin() } catch (e2) {}
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) throw new Error('Sign in required')
+      const res = await fetch('/api/facilitator/pin', { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+      const js = await res.json().catch(()=>({}))
+      if (!res.ok || !js?.ok) throw new Error(js?.error || 'Failed to clear')
       setHasPin(false)
       setMsg('Cleared')
       setPin(''); setPin2(''); setCurrentPin('')
@@ -525,29 +532,22 @@ function PinManager({ email }) {
       if (pinChange) {
         if (!/^\d{4,8}$/.test(pin)) throw new Error('Use a 4–8 digit PIN')
         if (pin !== pin2) throw new Error('PINs do not match')
-        try {
-          const res = await fetch('/api/facilitator/pin', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ pin, currentPin: hasPin ? currentPin : null, prefs })
-          })
-          const js = await res.json().catch(()=>({}))
-          console.log('[Client PIN] API response:', { status: res.status, ok: res.ok, body: js })
-          if (!res.ok || !js?.ok) {
-            const errorMsg = js?.error || `Failed to save (${res.status})`
-            console.error('[Client PIN] API error:', errorMsg)
-            throw new Error(errorMsg)
-          }
-          try { setFacilitatorPin(pin) } catch {}
-          setHasPin(true)
-          setPin(''); setPin2(''); setCurrentPin('')
-          setPinPrefsLocal(prefs)
-          setMsg('Saved')
-        } catch (err) {
-          console.error('[Client PIN] Save error:', err)
-          // Show the actual error instead of swallowing it
-          throw err
+        const res = await fetch('/api/facilitator/pin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ pin, currentPin: hasPin ? currentPin : null, prefs })
+        })
+        const js = await res.json().catch(()=>({}))
+        console.log('[Client PIN] API response:', { status: res.status, ok: res.ok, body: js })
+        if (!res.ok || !js?.ok) {
+          const errorMsg = js?.error || `Failed to save (${res.status})`
+          console.error('[Client PIN] API error:', errorMsg)
+          throw new Error(errorMsg)
         }
+        setHasPin(true)
+        setPin(''); setPin2(''); setCurrentPin('')
+        setPinPrefsLocal(prefs)
+        setMsg('Saved')
       } else {
         try {
           const res = await fetch('/api/facilitator/pin', { method:'PUT', headers: { 'Content-Type':'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ prefs }) })

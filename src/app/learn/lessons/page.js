@@ -95,6 +95,18 @@ function LessonsPageInner(){
       } catch {}
       
       const lessonsMap = {}
+      
+      // Load demo lessons if it's the demo learner
+      if (learnerId === 'demo') {
+        try {
+          const res = await fetch('/api/lessons/demo', { cache: 'no-store' })
+          const list = res.ok ? await res.json() : []
+          lessonsMap['demo'] = Array.isArray(list) ? list : []
+        } catch {
+          lessonsMap['demo'] = []
+        }
+      }
+      
       for (const subject of SUBJECTS) {
         try {
           const headers = subject === 'facilitator' && token 
@@ -116,11 +128,25 @@ function LessonsPageInner(){
       }
     })()
     return () => { cancelled = true }
-  }, [])
+  }, [learnerId])
 
   useEffect(() => {
     if (!learnerId) {
       setApprovedLessons({})
+      setActiveGoldenKeys({})
+      setLoading(false)
+      return
+    }
+    // Demo learner doesn't need database lookup
+    if (learnerId === 'demo') {
+      // Auto-approve all demo lessons for the demo learner
+      const demoApproved = {}
+      if (allLessons['demo']) {
+        allLessons['demo'].forEach(lesson => {
+          demoApproved[`demo/${lesson.file}`] = true
+        })
+      }
+      setApprovedLessons(demoApproved)
       setActiveGoldenKeys({})
       setLoading(false)
       return
@@ -142,8 +168,9 @@ function LessonsPageInner(){
           data = fallbackResult.data
           error = fallbackResult.error
           if (error) {
-            console.error('[Learn Lessons] Load error:', error)
-            throw error
+            console.warn('[Learn Lessons] Could not load learner data (may not exist in database yet):', learnerId)
+            // Don't throw - just use empty defaults
+            data = null
           }
         }
         
@@ -183,27 +210,33 @@ function LessonsPageInner(){
       if (!cancelled) setLoading(false)
     })()
     return () => { cancelled = true }
-  }, [learnerId])
+  }, [learnerId, allLessons])
 
   async function openLesson(subject, fileBaseName){
     const ent = featuresForTier(planTier)
-    try {
-      const dateKey = new Date().toISOString().slice(0,10)
-      const key = `lesson_unique:${dateKey}`
-      const raw = localStorage.getItem(key)
-      const set = new Set(raw ? JSON.parse(raw) : [])
-      const lessonKey = `${subject}/${fileBaseName}`
-      if (!set.has(lessonKey)) {
-        const cap = ent.lessonsPerDay
-        if (Number.isFinite(cap) && set.size >= cap) {
-          alert(`Daily limit reached. Your plan allows ${cap === Infinity ? 'unlimited' : cap} unique lessons per day.`)
-          return
+    
+    // Skip quota checks for demo lessons - they're unlimited
+    const isDemoLesson = subject === 'demo';
+    
+    if (!isDemoLesson) {
+      try {
+        const dateKey = new Date().toISOString().slice(0,10)
+        const key = `lesson_unique:${dateKey}`
+        const raw = localStorage.getItem(key)
+        const set = new Set(raw ? JSON.parse(raw) : [])
+        const lessonKey = `${subject}/${fileBaseName}`
+        if (!set.has(lessonKey)) {
+          const cap = ent.lessonsPerDay
+          if (Number.isFinite(cap) && set.size >= cap) {
+            alert(`Daily limit reached. Your plan allows ${cap === Infinity ? 'unlimited' : cap} unique lessons per day.`)
+            return
+          }
+          set.add(lessonKey)
+          localStorage.setItem(key, JSON.stringify(Array.from(set)))
+          setTodaysCount(set.size)
         }
-        set.add(lessonKey)
-        localStorage.setItem(key, JSON.stringify(Array.from(set)))
-        setTodaysCount(set.size)
-      }
-    } catch {}
+      } catch {}
+    }
     
     // Handle golden key consumption - decrement from database
     if (goldenKeySelected && learnerId) {
@@ -301,6 +334,48 @@ function LessonsPageInner(){
       ) : (
         <>
           <div style={grid}>
+            {/* Show demo lessons first if they exist */}
+            {lessonsBySubject['demo'] && lessonsBySubject['demo'].map((l) => {
+              const ent = featuresForTier(planTier)
+              const cap = ent.lessonsPerDay
+              const capped = Number.isFinite(cap) && todaysCount >= cap
+              const lessonKey = `demo/${l.file}`
+              const medalTier = medals[lessonKey]?.medalTier || null
+              const medal = medalTier ? emojiForTier(medalTier) : ''
+              
+              return (
+                <div key={`demo-${l.file}`} style={card}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <div style={{ fontSize:12, color:'#6b7280' }}>
+                        {l.subject ? l.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Tutorial'}
+                      </div>
+                      <div style={{ 
+                        fontSize: 11, 
+                        background: '#dbeafe', 
+                        color: '#1e40af',
+                        padding: '2px 6px',
+                        borderRadius: 6,
+                        fontWeight: 600
+                      }}>
+                        Demo
+                      </div>
+                    </div>
+                    <h3 style={{ margin:'0 0 6px' }}>
+                      {l.title} {medal}
+                    </h3>
+                    <p style={{ margin:0, color:'#4b5563', fontSize:14 }}>{l.blurb || ' '}</p>
+                  </div>
+                  <button
+                    style={btn}
+                    onClick={()=>{ openLesson('demo', l.file) }}
+                  >
+                    Start Lesson
+                  </button>
+                </div>
+              )
+            })}
+            
             {SUBJECTS.map(subject => {
               const lessons = lessonsBySubject[subject]
               if (!lessons || lessons.length === 0) return null

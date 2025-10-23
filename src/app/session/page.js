@@ -43,6 +43,7 @@ import { useAssessmentDownloads } from './hooks/useAssessmentDownloads';
 import { useSnapshotPersistence } from './hooks/useSnapshotPersistence';
 import { useResumeRestart } from './hooks/useResumeRestart';
 import SessionTimer from './components/SessionTimer';
+import GatedOverlay from '../components/GatedOverlay';
 
 export default function SessionPage(){
   return (
@@ -223,6 +224,86 @@ function SessionPageInner() {
   
   // Learner grade state (for grade-appropriate speech)
   const [learnerGrade, setLearnerGrade] = useState('');
+  
+  // Lesson quota gate state
+  const [showQuotaGate, setShowQuotaGate] = useState(false);
+  const [quotaGateInfo, setQuotaGateInfo] = useState({ remaining: 0, limit: 0, tier: 'free' });
+  
+  // Ask feature gate state (for demo lessons)
+  const [showAskGate, setShowAskGate] = useState(false);
+  
+  // Debug: Log when showAskGate changes
+  useEffect(() => {
+    console.log('[Ask Gate] showAskGate state changed to:', showAskGate);
+  }, [showAskGate]);
+  
+  // User tier state for feature gating
+  const [userTier, setUserTier] = useState('free');
+  
+  // Helper: check if Ask feature is allowed (requires Basic+ tier)
+  const askFeatureAllowed = useMemo(() => {
+    const { ENTITLEMENTS } = require('../lib/entitlements');
+    const entitlement = ENTITLEMENTS[userTier] || ENTITLEMENTS.free;
+    return entitlement.askFeature;
+  }, [userTier]);
+  
+  // Helper: get Ask button click handler (demo lessons show gate, others require tier)
+  const getAskButtonHandler = useCallback((originalHandler) => {
+    const isDemoLesson = subjectParam === 'demo';
+    console.log('[Ask Button] getAskButtonHandler called - isDemoLesson:', isDemoLesson, 'askFeatureAllowed:', askFeatureAllowed);
+    if (isDemoLesson || !askFeatureAllowed) {
+      // Demo lessons or users without feature: show gate
+      return () => {
+        console.log('[Ask Button] Showing ask gate overlay');
+        setShowAskGate(true);
+      };
+    }
+    // Users with feature: execute original handler
+    console.log('[Ask Button] Returning original handler');
+    return originalHandler;
+  }, [subjectParam, askFeatureAllowed]);
+  
+  // Helper: check if Ask button should be disabled (never disabled now - always clickable to show gate or execute)
+  const isAskButtonDisabled = useMemo(() => {
+    return false; // Always enabled so users can click to see gate
+  }, []);
+  
+  // Helper: check if golden key features (Poem/Story) are allowed
+  const goldenKeyFeaturesAllowed = useMemo(() => {
+    // Golden key features require an active golden key on this lesson
+    // All tiers can use them if they have a golden key
+    return hasGoldenKey;
+  }, [hasGoldenKey]);
+  
+  // Load user tier from profile
+  useEffect(() => {
+    (async () => {
+      try {
+        const supabase = getSupabaseClient();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (user) {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('stripe_subscription_tier')
+            .eq('id', user.id)
+            .single();
+          
+          if (profile?.stripe_subscription_tier) {
+            setUserTier(profile.stripe_subscription_tier);
+            console.info('[Session] User tier loaded:', profile.stripe_subscription_tier);
+          } else {
+            setUserTier('free');
+          }
+        } else {
+          setUserTier('free');
+        }
+      } catch (e) {
+        console.warn('[Session] Failed to load user tier:', e);
+        setUserTier('free');
+      }
+    })();
+  }, []);
 
   // Load timer setting, grade, and check for active golden keys on this lesson
   useEffect(() => {
@@ -3570,6 +3651,55 @@ function SessionPageInner() {
   const beginSession = async () => {
     try { console.info('[Begin] Clicked: starting session'); } catch {}
     
+    // Skip quota checks for demo lessons - they're unlimited
+    const isDemoLesson = subjectParam === 'demo';
+    console.info('[Begin] Subject param:', subjectParam, 'isDemoLesson:', isDemoLesson);
+    
+    // Check lesson quota before allowing session to start
+    if (!isDemoLesson) {
+      try {
+        const supabase = getSupabaseClient();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (session?.access_token) {
+          const response = await fetch('/api/usage/check-lesson-quota', {
+            headers: {
+              'authorization': `Bearer ${session.access_token}`
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (!data.allowed) {
+              // Show gate overlay
+              setQuotaGateInfo({
+                remaining: data.remaining || 0,
+                limit: data.limit || 0,
+                tier: data.tier || 'free',
+                reason: data.reason
+              });
+              setShowQuotaGate(true);
+              return; // Stop session start
+            }
+            console.info('[Begin] Lesson quota check passed:', data);
+            
+            // Increment lesson counter
+            await fetch('/api/usage/increment-lesson', {
+              method: 'POST',
+              headers: {
+                'authorization': `Bearer ${session.access_token}`
+              }
+            });
+          } else {
+            console.warn('[Begin] Quota check failed, allowing session anyway');
+          }
+        }
+      } catch (e) {
+        console.warn('[Begin] Failed to check lesson quota:', e);
+        // Allow session to continue on error to avoid blocking learners
+      }
+    }
+    
     // Reload timer setting from current learner to get latest value
     try {
       const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
@@ -5852,13 +5982,14 @@ function SessionPageInner() {
   // No portrait spacer: timeline should sit directly under the header in portrait mode.
 
   return (
+    <>
     <div style={{ width: '100%', height: '100svh', overflow: 'hidden' }}>
   {/* Bounding wrapper: regular flow; inner container handles centering via margin auto */}
-  <div style={{ width: '100%', position: 'relative', height: '100%' }}>
+  <div style={{ width: '100%', height: '100%' }}>
     {/* Scroll area sized to the viewport; disable scrolling to keep top cluster fixed */}
   <div style={{ height: '100%', overflowY: 'hidden', WebkitOverflowScrolling: 'touch', overscrollBehaviorY: 'contain' }}>
     {/* Width-matched wrapper: center by actual scaled width */}
-  <div style={{ width: '100%', position: 'relative', boxSizing: 'border-box', paddingBottom: footerHeight }}>
+  <div style={{ width: '100%', boxSizing: 'border-box', paddingBottom: footerHeight }}>
   {/* Content wrapper (no transform scaling). Add small horizontal gutters in landscape. */}
   <div style={ isMobileLandscape ? { width: '100%', paddingLeft: 8, paddingRight: 8, boxSizing: 'border-box' } : { width: '100%' } }>
       {/* Sticky cluster: title + timeline + video + captions stick under the header without moving into it */}
@@ -6290,8 +6421,7 @@ function SessionPageInner() {
                       <button
                         type="button"
                         style={{ ...qaBtn, minWidth: 140, opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
-                        onClick={askState === 'inactive' ? handleAskQuestionStart : undefined}
-                        disabled={askState !== 'inactive'}
+                        onClick={askState === 'inactive' ? getAskButtonHandler(handleAskQuestionStart) : undefined}
                       >Ask</button>
                     </div>
                   );
@@ -6327,8 +6457,7 @@ function SessionPageInner() {
                           <button
                             type="button"
                             style={{ ...qaBtn, minWidth: 100, opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
-                            onClick={askState === 'inactive' ? handleAskQuestionStart : undefined}
-                            disabled={askState !== 'inactive'}
+                            onClick={askState === 'inactive' ? getAskButtonHandler(handleAskQuestionStart) : undefined}
                           >Ask</button>
                         </div>
                       );
@@ -6345,8 +6474,7 @@ function SessionPageInner() {
                             <button
                               type="button"
                               style={{ ...qaBtn, minWidth: 100, opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
-                              onClick={askState === 'inactive' ? handleAskQuestionStart : undefined}
-                              disabled={askState !== 'inactive'}
+                              onClick={askState === 'inactive' ? getAskButtonHandler(handleAskQuestionStart) : undefined}
                             >Ask</button>
                           </div>
                         );
@@ -6357,8 +6485,7 @@ function SessionPageInner() {
                             <button
                               type="button"
                               style={{ ...qaBtn, minWidth: 120, opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
-                              onClick={askState === 'inactive' ? handleAskQuestionStart : undefined}
-                              disabled={askState !== 'inactive'}
+                              onClick={askState === 'inactive' ? getAskButtonHandler(handleAskQuestionStart) : undefined}
                             >Ask</button>
                           </div>
                         );
@@ -6572,13 +6699,18 @@ function SessionPageInner() {
               const btn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
               const goBtn = { ...btn, background:'#c7442e', boxShadow:'0 2px 12px rgba(199,68,46,0.28)' };
               const disabledBtn = { ...btn, opacity:0.5, cursor:'not-allowed' };
+              
+              // Poem/Story require an active golden key on this lesson
+              const poemDisabled = poemUsedThisGate || !goldenKeyFeaturesAllowed;
+              const storyDisabled = storyUsedThisGate || !goldenKeyFeaturesAllowed;
+              
               return (
                 <div style={wrap} aria-label="Opening actions">
-                  <button type="button" style={btn} onClick={handleAskQuestionStart}>Ask</button>
+                  <button type="button" style={btn} onClick={getAskButtonHandler(handleAskQuestionStart)}>Ask</button>
                   <button type="button" style={jokeUsedThisGate ? disabledBtn : btn} onClick={jokeUsedThisGate ? undefined : handleTellJoke} disabled={jokeUsedThisGate}> Joke</button>
                   <button type="button" style={riddleUsedThisGate ? disabledBtn : btn} onClick={riddleUsedThisGate ? undefined : handleTellRiddle} disabled={riddleUsedThisGate}>Riddle</button>
-                  <button type="button" style={poemUsedThisGate ? disabledBtn : btn} onClick={poemUsedThisGate ? undefined : handlePoemStart} disabled={poemUsedThisGate}>Poem</button>
-                  <button type="button" style={storyUsedThisGate ? disabledBtn : btn} onClick={storyUsedThisGate ? undefined : handleStoryStart} disabled={storyUsedThisGate}>Story</button>
+                  <button type="button" style={poemDisabled ? disabledBtn : btn} onClick={poemDisabled ? undefined : handlePoemStart} disabled={poemDisabled} title={!goldenKeyFeaturesAllowed ? 'Use a Golden Key to unlock' : undefined}>Poem</button>
+                  <button type="button" style={storyDisabled ? disabledBtn : btn} onClick={storyDisabled ? undefined : handleStoryStart} disabled={storyDisabled} title={!goldenKeyFeaturesAllowed ? 'Use a Golden Key to unlock' : undefined}>Story</button>
                   <button type="button" style={fillInFunUsedThisGate ? disabledBtn : btn} onClick={fillInFunUsedThisGate ? undefined : handleFillInFunStart} disabled={fillInFunUsedThisGate}>Fill-in-Fun</button>
                   <button type="button" style={goBtn} onClick={lessonData ? handleStartLesson : undefined} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson�'}>Go</button>
                 </div>
@@ -6612,13 +6744,18 @@ function SessionPageInner() {
                 phase === 'test' ? handleGoTest :
                 handleStartLesson
               );
+              
+              // Poem/Story require an active golden key on this lesson
+              const poemDisabled = poemUsedThisGate || !goldenKeyFeaturesAllowed;
+              const storyDisabled = storyUsedThisGate || !goldenKeyFeaturesAllowed;
+              
               return (
                 <div style={wrap} aria-label="Phase opening actions">
-                  <button type="button" style={btn} onClick={handleAskQuestionStart}>Ask</button>
+                  <button type="button" style={btn} onClick={getAskButtonHandler(handleAskQuestionStart)}>Ask</button>
                   <button type="button" style={jokeUsedThisGate ? disabledBtn : btn} onClick={jokeUsedThisGate ? undefined : handleTellJoke} disabled={jokeUsedThisGate}> Joke</button>
                   <button type="button" style={riddleUsedThisGate ? disabledBtn : btn} onClick={riddleUsedThisGate ? undefined : handleTellRiddle} disabled={riddleUsedThisGate}>Riddle</button>
-                  <button type="button" style={poemUsedThisGate ? disabledBtn : btn} onClick={poemUsedThisGate ? undefined : handlePoemStart} disabled={poemUsedThisGate}>Poem</button>
-                  <button type="button" style={storyUsedThisGate ? disabledBtn : btn} onClick={storyUsedThisGate ? undefined : handleStoryStart} disabled={storyUsedThisGate}>Story</button>
+                  <button type="button" style={poemDisabled ? disabledBtn : btn} onClick={poemDisabled ? undefined : handlePoemStart} disabled={poemDisabled} title={!goldenKeyFeaturesAllowed ? 'Use a Golden Key to unlock' : undefined}>Poem</button>
+                  <button type="button" style={storyDisabled ? disabledBtn : btn} onClick={storyDisabled ? undefined : handleStoryStart} disabled={storyDisabled} title={!goldenKeyFeaturesAllowed ? 'Use a Golden Key to unlock' : undefined}>Story</button>
                   <button type="button" style={fillInFunUsedThisGate ? disabledBtn : btn} onClick={fillInFunUsedThisGate ? undefined : handleFillInFunStart} disabled={fillInFunUsedThisGate}>Fill-in-Fun</button>
                   <button type="button" style={goBtn} onClick={onGo} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson�'}>Go</button>
                 </div>
@@ -6764,8 +6901,7 @@ function SessionPageInner() {
                     <button
                       type="button"
                       style={{ ...btnBase, minWidth: 160, background: '#374151', opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
-                      onClick={askState === 'inactive' ? handleAskQuestionStart : undefined}
-                      disabled={askState !== 'inactive'}
+                      onClick={askState === 'inactive' ? getAskButtonHandler(handleAskQuestionStart) : undefined}
                     >Ask</button>
                   </div>
                 );
@@ -6845,8 +6981,7 @@ function SessionPageInner() {
                     <button
                       type="button"
                       style={{ ...btnBase, minWidth: 100, background: '#374151', opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
-                      onClick={askState === 'inactive' ? handleAskQuestionStart : undefined}
-                      disabled={askState !== 'inactive'}
+                      onClick={askState === 'inactive' ? getAskButtonHandler(handleAskQuestionStart) : undefined}
                     >Ask</button>
                   </div>
                 );
@@ -6865,8 +7000,7 @@ function SessionPageInner() {
                     <button
                       type="button"
                       style={{ ...btnBase, minWidth: 100, background: '#374151', opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
-                      onClick={askState === 'inactive' ? handleAskQuestionStart : undefined}
-                      disabled={askState !== 'inactive'}
+                      onClick={askState === 'inactive' ? getAskButtonHandler(handleAskQuestionStart) : undefined}
                     >Ask</button>
                   </div>
                 );
@@ -6878,8 +7012,7 @@ function SessionPageInner() {
                   <button
                     type="button"
                     style={{ ...btnBase, minWidth: 120, background: '#374151', opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
-                    onClick={askState === 'inactive' ? handleAskQuestionStart : undefined}
-                    disabled={askState !== 'inactive'}
+                    onClick={askState === 'inactive' ? getAskButtonHandler(handleAskQuestionStart) : undefined}
                   >Ask</button>
                 </div>
               );
@@ -6917,6 +7050,43 @@ function SessionPageInner() {
   {/* Intentionally nothing rendered below the fixed footer */}
         {/* Close outer viewport container */}
       </div>
+    
+    {/* Lesson Quota Gate Overlay - moved outside position:relative containers */}
+    {showQuotaGate && (
+      <GatedOverlay
+        show={showQuotaGate}
+        onClose={() => setShowQuotaGate(false)}
+        gateType="tier"
+        feature="More Lessons Today"
+        emoji="📚"
+        description={`You've used ${quotaGateInfo.limit} of ${quotaGateInfo.limit} lessons today on your ${quotaGateInfo.tier} plan.`}
+        benefits={[
+          'Upgrade to Basic for 5 lessons per day',
+          'Upgrade to Plus for unlimited lessons',
+          'Upgrade to Premium for unlimited lessons + 10 learners'
+        ]}
+        requiredTier="basic"
+      />
+    )}
+    
+    {/* Ask Feature Gate Overlay - for demo lessons */}
+    {showAskGate && (
+      <GatedOverlay
+        show={showAskGate}
+        onClose={() => setShowAskGate(false)}
+        gateType="tier"
+        feature="Ask Questions"
+        emoji="💬"
+        description="Ask Ms. Sonoma questions about the lesson to get personalized help and deeper understanding."
+        benefits={[
+          'Ask questions during any lesson',
+          'Get instant answers from Ms. Sonoma',
+          'Available on Basic plan and higher'
+        ]}
+        requiredTier="basic"
+      />
+    )}
+    </>
   );
 }
 

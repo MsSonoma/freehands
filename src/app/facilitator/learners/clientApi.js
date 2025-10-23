@@ -41,9 +41,13 @@ export async function listLearners() {
   if (supabase && hasSupabaseEnv()) {
     if (supabaseLearnersMode === 'disabled') return readLocal();
     const { data: userData, error: userErr } = await supabase.auth.getUser();
-    if (userErr) throw new Error(userErr.message || 'Auth error');
-    const uid = userData?.user?.id;
-    if (!uid) throw new Error('Please log in to view your learners');
+    // If there's no session (user not logged in), clear local cache and return empty
+    if (userErr || !userData?.user?.id) {
+      // Clear any cached learners from previous sessions
+      try { writeLocal([]); } catch {}
+      return [];
+    }
+    const uid = userData.user.id;
 
     // Prefer relying on RLS to scope rows (no owner filter) and avoid 400s
     // from unknown owner columns across environments.

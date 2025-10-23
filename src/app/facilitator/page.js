@@ -225,10 +225,8 @@ export default function FacilitatorPage() {
                   const supabase = getSupabaseClient();
                   try { 
                     await supabase?.auth?.signOut?.();
-                    // Clear PIN and prefs from localStorage on logout (account-level security)
+                    // Clear session storage on logout
                     try {
-                      localStorage.removeItem('facilitator_pin');
-                      localStorage.removeItem('facilitator_pin_prefs');
                       sessionStorage.removeItem('facilitator_section_active');
                     } catch (e) {}
                   } catch (e) {}

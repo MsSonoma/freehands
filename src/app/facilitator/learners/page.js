@@ -7,9 +7,12 @@ import { listLearners, deleteLearner, updateLearner } from './clientApi';
 import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
 import { featuresForTier } from '@/app/lib/entitlements';
 import { ensurePinAllowed } from '@/app/lib/pinGate';
+import { useAccessControl } from '@/app/hooks/useAccessControl';
+import GatedOverlay from '@/app/components/GatedOverlay';
 
 export default function LearnersPage() {
 	const router = useRouter();
+	const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true });
 	const [pinChecked, setPinChecked] = useState(false);
 	const [items, setItems] = useState([]);
 	const [loading, setLoading] = useState(true);
@@ -177,12 +180,13 @@ export default function LearnersPage() {
 		}
 	};
 
-	if (!pinChecked) {
+	if (!pinChecked || authLoading) {
 		return <main style={{ padding: 24 }}><p>Loading…</p></main>;
 	}
 
 	return (
-		<main style={{ padding: 24, overflowX: 'hidden' }}>
+		<>
+			<main style={{ padding: 24, overflowX: 'hidden', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
 			<div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap' }}>
 				<h1 style={{ marginTop:0, marginBottom:0 }}>Learners</h1>
 				<div style={{ display:'flex', alignItems:'center', gap:12 }}>
@@ -238,6 +242,21 @@ export default function LearnersPage() {
 				</div>
 			)}
 		</main>
+		
+		<GatedOverlay
+			show={!isAuthenticated}
+			gateType={gateType}
+			feature="Learner Management"
+			emoji="👥"
+			description="Sign in to create and manage learners, track their progress, and customize their learning experience."
+			benefits={[
+				'Create and manage multiple learners',
+				'Track progress and performance across lessons',
+				'Customize grade levels and learning targets',
+				'Sync learner data across all your devices'
+			]}
+		/>
+		</>
 	);
 }
 

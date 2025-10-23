@@ -1,0 +1,53 @@
+{
+  "title": "Welcome to Science with Ms. Sonoma!",
+  "subject": "science",
+  "grade": "3",
+  "difficulty": "easy",
+  "blurb": "Discover how Ms. Sonoma teaches science by learning about water",
+  "vocab": [
+    {
+      "term": "Water",
+      "definition": "A clear liquid that we drink and that falls as rain"
+    },
+    {
+      "term": "Solid",
+      "definition": "Something that keeps its shape, like ice"
+    },
+    {
+      "term": "Liquid",
+      "definition": "Something that flows and takes the shape of its container"
+    },
+    {
+      "term": "Gas",
+      "definition": "Something you cannot see that floats in the air, like steam"
+    }
+  ],
+  "examples": [
+    "Ice is water in its solid form. When ice gets warm, it melts and turns into liquid water.",
+    "When you boil water in a pot, you see steam rising up. Steam is water as a gas.",
+    "Water can change between solid, liquid, and gas. This is why we see clouds, rain, and snow."
+  ],
+  "comprehension": [
+    {
+      "question": "What is ice?",
+      "acceptable": ["solid water", "frozen water", "water as a solid", "solid form of water"],
+      "type": "short-answer",
+      "key_terms": ["solid", "water", "frozen", "ice"],
+      "min_required": 2
+    },
+    {
+      "question": "What happens when ice gets warm?",
+      "acceptable": ["it melts", "turns to water", "becomes liquid", "melts into water"],
+      "type": "short-answer",
+      "key_terms": ["melts", "liquid", "water"],
+      "min_required": 1
+    },
+    {
+      "question": "Is steam a solid, liquid, or gas?",
+      "acceptable": ["gas", "a gas"],
+      "type": "short-answer",
+      "key_terms": ["gas"],
+      "min_required": 1
+    }
+  ]
+}

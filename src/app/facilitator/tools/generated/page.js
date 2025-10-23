@@ -12,6 +12,7 @@ export default function GeneratedLessonsPage(){
   const [busy, setBusy] = useState(false)
   const [busyItems, setBusyItems] = useState({}) // { [file]: 'approving' | 'deleting' | 'editing' }
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('') // Success message
   const [changeRequests, setChangeRequests] = useState({}) // { [file]: string }
   const [showChangeModal, setShowChangeModal] = useState(null) // { file, userId } when modal open
   const [editingLesson, setEditingLesson] = useState(null) // { file, userId, lesson } when editing
@@ -140,6 +141,7 @@ export default function GeneratedLessonsPage(){
     console.log('[APPROVE] Starting approval for:', file, 'userId:', userId)
     setBusyItems(prev => ({ ...prev, [file]: 'approving' }))
     setError('')
+    setSuccess('')
     try {
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
@@ -158,7 +160,9 @@ export default function GeneratedLessonsPage(){
       }
       const responseData = await res.json().catch(() => ({}))
       console.log('[APPROVE] Success response:', responseData)
-      // Success - refresh the list to show updated approval status
+      // Success - show notification and refresh the list
+      setSuccess('Lesson approved successfully!')
+      setTimeout(() => setSuccess(''), 3000) // Clear after 3 seconds
       await refresh()
       console.log('[APPROVE] Refresh complete')
     } catch (err) {
@@ -364,7 +368,8 @@ export default function GeneratedLessonsPage(){
           )})}
         </div>
       ) : null}
-      {error && <p style={{ color:'#b91c1c', marginTop:12 }}>{error}</p>}
+      {error && <p style={{ color:'#b91c1c', marginTop:12, fontWeight: 600 }}>{error}</p>}
+      {success && <p style={{ color:'#16a34a', marginTop:12, fontWeight: 600 }}>{success}</p>}
       
       {/* Change Request Modal */}
       {showChangeModal && (

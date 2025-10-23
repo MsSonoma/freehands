@@ -1,0 +1,52 @@
+{
+  "title": "Welcome to Social Studies with Ms. Sonoma!",
+  "subject": "social studies",
+  "grade": "3",
+  "difficulty": "easy",
+  "blurb": "Explore how Ms. Sonoma teaches about people and places",
+  "vocab": [
+    {
+      "term": "Community",
+      "definition": "A group of people who live in the same area"
+    },
+    {
+      "term": "Neighbor",
+      "definition": "Someone who lives near you"
+    },
+    {
+      "term": "Helper",
+      "definition": "Someone who works to make the community better"
+    },
+    {
+      "term": "Citizen",
+      "definition": "A person who belongs to a community"
+    }
+  ],
+  "examples": [
+    "Your neighborhood is a community. The people who live on your street are your neighbors.",
+    "Community helpers include teachers, firefighters, and doctors. They help keep everyone safe and healthy.",
+    "Good citizens help their community by being kind, following rules, and taking care of shared spaces."
+  ],
+  "comprehension": [
+    {
+      "question": "What is a community?",
+      "acceptable": ["group of people", "people who live together", "people in an area", "people living in the same place"],
+      "type": "short-answer",
+      "key_terms": ["people", "group", "area", "together", "live"],
+      "min_required": 2
+    },
+    {
+      "question": "Is a teacher a community helper?",
+      "acceptable": ["yes", "true"],
+      "type": "true-false",
+      "correct": "true"
+    },
+    {
+      "question": "Can you name one way to be a good citizen?",
+      "acceptable": ["be kind", "follow rules", "help others", "be nice", "share", "take care of things", "respect others"],
+      "type": "short-answer",
+      "key_terms": ["kind", "rules", "help", "nice", "share", "care", "respect"],
+      "min_required": 1
+    }
+  ]
+}
