@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/router'
+import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
 import GatedOverlay from '@/app/components/GatedOverlay'
