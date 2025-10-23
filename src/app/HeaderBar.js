@@ -616,11 +616,14 @@ export default function HeaderBar() {
 									<button
 										aria-label="Mr. Mentor menu"
 										onClick={(e) => { 
+											e.preventDefault();
 											e.stopPropagation(); 
 											setPrintMenuOpen((v) => !v); 
 										}}
-										onTouchStart={(e) => {
+										onTouchEnd={(e) => {
+											e.preventDefault();
 											e.stopPropagation();
+											setPrintMenuOpen((v) => !v);
 										}}
 										style={{
 											background:'#1f2937', color:'#fff', border:'none', width:36, height:36,
