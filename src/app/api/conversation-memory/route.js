@@ -123,13 +123,13 @@ export async function POST(request) {
 
     const { user, supabase } = auth
     const body = await request.json()
-    const { learner_id = null, conversation_turns = [], force_regenerate = false } = body
+    const { learner_id = null, conversation_turns = [], force_regenerate = false, summary_override = null } = body
 
     if (!Array.isArray(conversation_turns) || conversation_turns.length === 0) {
       return NextResponse.json({ error: 'Conversation turns required' }, { status: 400 })
     }
 
-    console.log(`[Conversation Memory] Updating memory for facilitator ${user.id}, learner ${learner_id || 'none'}, turns: ${conversation_turns.length}`)
+    console.log(`[Conversation Memory] Updating memory for facilitator ${user.id}, learner ${learner_id || 'none'}, turns: ${conversation_turns.length}, override: ${!!summary_override}`)
 
     // Get existing conversation update
     const { data: existing, error: fetchError } = await supabase
@@ -144,16 +144,22 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Database error' }, { status: 500 })
     }
 
-    // Generate or update summary
+    // Generate or update summary (or use user-edited override)
     let summary
-    try {
-      summary = await generateSummary(
-        conversation_turns, 
-        force_regenerate ? null : existing?.summary
-      )
-    } catch (summaryError) {
-      console.error('[Conversation Memory] Summary generation failed:', summaryError)
-      return NextResponse.json({ error: 'Failed to generate summary' }, { status: 500 })
+    if (summary_override) {
+      // User provided their own edited summary
+      summary = summary_override.trim()
+    } else {
+      // Generate summary using AI
+      try {
+        summary = await generateSummary(
+          conversation_turns, 
+          force_regenerate ? null : existing?.summary
+        )
+      } catch (summaryError) {
+        console.error('[Conversation Memory] Summary generation failed:', summaryError)
+        return NextResponse.json({ error: 'Failed to generate summary' }, { status: 500 })
+      }
     }
 
     // Prepare recent turns (keep last 10 for context)

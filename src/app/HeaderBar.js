@@ -34,9 +34,6 @@ export default function HeaderBar() {
 	const [brandFitSize, setBrandFitSize] = useState(null);
 	const [printMenuOpen, setPrintMenuOpen] = useState(false);
 	const printMenuRef = useRef(null);
-	const [mentorMenuOpen, setMentorMenuOpen] = useState(false);
-	const mentorMenuRef = useRef(null);
-	const mentorToggleRef = useRef(null);
 	// Mobile menu (hamburger) state and refs
 	const [navOpen, setNavOpen] = useState(false);
 	const [isNarrow, setIsNarrow] = useState(false);
@@ -184,42 +181,6 @@ export default function HeaderBar() {
 			}
 		};
 	}, [printMenuOpen]);
-
-	// Close the mentor menu on outside click or Escape
-	useEffect(() => {
-		if (!mentorMenuOpen) return;
-		// Add a small delay before attaching listeners to prevent immediate close on touch
-		const timeoutId = setTimeout(() => {
-			const onDocDown = (e) => {
-				try {
-					const menuEl = mentorMenuRef.current;
-					const toggleEl = mentorToggleRef.current;
-					if (!menuEl || !toggleEl) return;
-					if (!menuEl.contains(e.target) && !toggleEl.contains(e.target)) setMentorMenuOpen(false);
-				} catch {}
-			};
-			const onKey = (e) => { if (e.key === 'Escape') setMentorMenuOpen(false); };
-			// Use both mousedown and touchstart for mobile compatibility
-			document.addEventListener('mousedown', onDocDown);
-			document.addEventListener('touchstart', onDocDown);
-			document.addEventListener('keydown', onKey);
-			
-			// Store cleanup in a way we can access it
-			mentorMenuRef.current._cleanup = () => {
-				document.removeEventListener('mousedown', onDocDown);
-				document.removeEventListener('touchstart', onDocDown);
-				document.removeEventListener('keydown', onKey);
-			};
-		}, 100);
-		
-		return () => {
-			clearTimeout(timeoutId);
-			if (mentorMenuRef.current?._cleanup) {
-				mentorMenuRef.current._cleanup();
-				mentorMenuRef.current._cleanup = null;
-			}
-		};
-	}, [mentorMenuOpen]);
 
 	// Close the nav menu on outside click or Escape
 	useEffect(() => {
@@ -660,55 +621,6 @@ export default function HeaderBar() {
 												</button>
 											</div>
 										)}
-								</div>
-							)}
-							{/* Mr. Mentor menu dropdown to the left of Learn */}
-							{pathname.startsWith('/facilitator/tools/counselor') && (
-								<div style={{ position:'relative', display:'flex', alignItems:'center', gap:8 }}>
-									<button
-										ref={mentorToggleRef}
-										aria-label="Mr. Mentor menu"
-										onClick={(e) => { 
-											e.preventDefault();
-											e.stopPropagation(); 
-											setMentorMenuOpen((v) => !v); 
-										}}
-										onTouchEnd={(e) => {
-											e.preventDefault();
-											e.stopPropagation();
-											setMentorMenuOpen((v) => !v);
-										}}
-										style={{
-											background:'#1f2937', color:'#fff', border:'none', width:36, height:36,
-											display:'inline-flex', alignItems:'center', justifyContent:'center', borderRadius:8, cursor:'pointer',
-											boxShadow:'0 2px 6px rgba(0,0,0,0.25)'
-										}}
-									>
-										{/* Menu icon (three dots) */}
-										<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-											<circle cx="12" cy="12" r="1"/>
-											<circle cx="12" cy="5" r="1"/>
-											<circle cx="12" cy="19" r="1"/>
-										</svg>
-									</button>
-									{mentorMenuOpen && (
-										<div ref={mentorMenuRef} style={{ position:'absolute', right:0, top:44, background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, boxShadow:'0 8px 24px rgba(0,0,0,0.12)', minWidth:180, overflow:'hidden', zIndex:1200 }}>
-											<button
-												type="button"
-												style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', background:'transparent', border:'none', cursor:'pointer', fontWeight:600, color:'#111' }}
-												onClick={() => { try { window.dispatchEvent(new Event('ms:mentor:export')); } catch {}; setMentorMenuOpen(false); }}
-											>
-												Export Conversation
-											</button>
-											<button
-												type="button"
-												style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', background:'transparent', border:'none', cursor:'pointer', fontWeight:700, color:'#c7442e', borderTop:'1px solid #f3f4f6' }}
-												onClick={() => { try { window.dispatchEvent(new Event('ms:mentor:new-session')); } catch {}; setMentorMenuOpen(false); }}
-											>
-												New Session
-											</button>
-										</div>
-									)}
 								</div>
 							)}
 							<Link href="/learn" style={{ textDecoration:'none', color:'#111', fontWeight:500 }}>Learn</Link>

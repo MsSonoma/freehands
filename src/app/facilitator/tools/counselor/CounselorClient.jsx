@@ -6,6 +6,7 @@ import { ensurePinAllowed } from '@/app/lib/pinGate'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
 import { fetchLearnerTranscript } from '@/app/lib/learnerTranscript'
+import ClipboardOverlay from './ClipboardOverlay'
 
 export default function CounselorClient() {
   const router = useRouter()
@@ -26,6 +27,11 @@ export default function CounselorClient() {
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  
+  // Draft summary state
+  const [draftSummary, setDraftSummary] = useState('')
+  const [showClipboard, setShowClipboard] = useState(false)
+  const [clipboardInstructions, setClipboardInstructions] = useState(false)
   
   // Caption state (similar to session page)
   const [captionText, setCaptionText] = useState('')
@@ -414,9 +420,9 @@ export default function CounselorClient() {
         })
       }
 
-      // Update conversation memory in background (async, non-blocking)
-      updateConversationMemory(finalHistory, token).catch(err => {
-        console.warn('[Mr. Mentor] Failed to update conversation memory:', err)
+      // Update draft summary in background (async, non-blocking)
+      updateDraftSummary(finalHistory, token).catch(err => {
+        console.warn('[Mr. Mentor] Failed to update draft summary:', err)
         // Don't block the UI or show error - this is a background operation
       })
 
@@ -428,15 +434,15 @@ export default function CounselorClient() {
     }
   }, [userInput, loading, conversationHistory, playAudio, learnerTranscript, selectedLearnerId, sessionStarted, currentSessionTokens])
 
-  // Helper: Update conversation memory after each exchange
-  const updateConversationMemory = async (conversationHistory, token) => {
+  // Helper: Update draft summary after each exchange (not saved to memory until approved)
+  const updateDraftSummary = async (conversationHistory, token) => {
     try {
       // Only send the last 2 turns (user + assistant) to update incrementally
       const recentTurns = conversationHistory.slice(-2)
       
       const learnerId = selectedLearnerId !== 'none' ? selectedLearnerId : null
       
-      await fetch('/api/conversation-memory', {
+      const response = await fetch('/api/conversation-drafts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -444,15 +450,21 @@ export default function CounselorClient() {
         },
         body: JSON.stringify({
           learner_id: learnerId,
-          conversation_turns: recentTurns,
-          force_regenerate: false // Incremental update
+          conversation_turns: recentTurns
         })
       })
       
-      console.log('[Mr. Mentor] Conversation memory updated')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.draft?.draft_summary) {
+          setDraftSummary(data.draft.draft_summary)
+        }
+      }
+      
+      console.log('[Mr. Mentor] Draft summary updated')
     } catch (err) {
       // Silent failure - don't interrupt user experience
-      console.warn('[Mr. Mentor] Memory update failed:', err)
+      console.warn('[Mr. Mentor] Draft update failed:', err)
     }
   }
 
@@ -464,44 +476,147 @@ export default function CounselorClient() {
     }
   }
 
-  // Clear conversation
-  const clearConversation = useCallback(async () => {
-    if (confirm('Are you sure you want to start a new session? This will clear your conversation history.')) {
-      // End current session if one is active
-      if (sessionStarted) {
-        try {
-          const supabase = getSupabaseClient()
-          const { data: { session } } = await supabase.auth.getSession()
-          const token = session?.access_token
-          
-          if (token) {
-            await fetch('/api/usage/mentor/increment', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({ action: 'end' })
-            })
-          }
-        } catch (e) {
-          console.error('Failed to end mentor session:', e)
-        }
-      }
-      
-      setConversationHistory([])
-      setCaptionText('')
-      setCaptionSentences([])
-      setCaptionIndex(0)
-      setUserInput('')
-      setError('')
-      setSessionStarted(false)
-      setCurrentSessionTokens(0)
-      try {
-        localStorage.removeItem('mr_mentor_conversation')
-      } catch {}
+  // Trigger new conversation flow (show clipboard first)
+  const startNewConversation = useCallback(async () => {
+    if (conversationHistory.length === 0) {
+      // No conversation to save, just start fresh
+      return
     }
-  }, [sessionStarted])
+
+    // First, speak instructions
+    setClipboardInstructions(true)
+    
+    // Play Mr. Mentor's instruction audio
+    const instructionText = "Before we start a new conversation, let's save what we discussed. I've prepared a summary for you. You can review it, edit if needed, and choose to save it to my memory or delete it entirely. You can also export the whole conversation if you'd like to keep a complete record."
+    
+    try {
+      await playAudio(instructionText)
+    } catch (err) {
+      console.warn('[Mr. Mentor] Failed to play instructions:', err)
+    }
+    
+    // Show clipboard overlay
+    setShowClipboard(true)
+  }, [conversationHistory, playAudio])
+
+  // Handle clipboard save (commit to permanent memory)
+  const handleClipboardSave = useCallback(async (editedSummary) => {
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      
+      if (!token) {
+        alert('Unable to save: not authenticated')
+        return
+      }
+
+      const learnerId = selectedLearnerId !== 'none' ? selectedLearnerId : null
+
+      // Save to conversation_updates (permanent memory)
+      await fetch('/api/conversation-memory', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          learner_id: learnerId,
+          conversation_turns: conversationHistory,
+          summary_override: editedSummary // Use the user-edited summary
+        })
+      })
+
+      // Delete the draft
+      await fetch(`/api/conversation-drafts?learner_id=${learnerId || ''}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      // Clear conversation and start fresh
+      await clearConversationAfterSave()
+      
+      setShowClipboard(false)
+      setClipboardInstructions(false)
+      
+      alert('Conversation saved to memory!')
+    } catch (err) {
+      console.error('[Mr. Mentor] Failed to save:', err)
+      alert('Failed to save conversation. Please try again.')
+    }
+  }, [conversationHistory, selectedLearnerId])
+
+  // Handle clipboard delete (discard conversation)
+  const handleClipboardDelete = useCallback(async () => {
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      
+      if (!token) return
+
+      const learnerId = selectedLearnerId !== 'none' ? selectedLearnerId : null
+
+      // Delete the draft
+      await fetch(`/api/conversation-drafts?learner_id=${learnerId || ''}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      // Clear conversation
+      await clearConversationAfterSave()
+      
+      setShowClipboard(false)
+      setClipboardInstructions(false)
+      
+      alert('Conversation deleted.')
+    } catch (err) {
+      console.error('[Mr. Mentor] Failed to delete:', err)
+      alert('Failed to delete conversation.')
+    }
+  }, [selectedLearnerId])
+
+  // Helper: Actually clear conversation state after save/delete
+  const clearConversationAfterSave = async () => {
+    // End current session if one is active
+    if (sessionStarted) {
+      try {
+        const supabase = getSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+        
+        if (token) {
+          await fetch('/api/usage/mentor/increment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ action: 'end' })
+          })
+        }
+      } catch (e) {
+        console.error('Failed to end mentor session:', e)
+      }
+    }
+    
+    setConversationHistory([])
+    setCaptionText('')
+    setCaptionSentences([])
+    setCaptionIndex(0)
+    setUserInput('')
+    setError('')
+    setSessionStarted(false)
+    setCurrentSessionTokens(0)
+    setDraftSummary('')
+    try {
+      localStorage.removeItem('mr_mentor_conversation')
+    } catch {}
+  }
 
   // Toggle mute
   const toggleMute = useCallback(() => {
@@ -539,10 +654,10 @@ export default function CounselorClient() {
     URL.revokeObjectURL(url)
   }, [conversationHistory])
 
-  // Listen for menu actions from HeaderBar hamburger
+  // Listen for menu actions from HeaderBar (no longer used, but keep for backwards compat)
   useEffect(() => {
     const onExport = () => exportConversation()
-    const onNewSession = () => clearConversation()
+    const onNewSession = () => startNewConversation()
     
     window.addEventListener('ms:mentor:export', onExport)
     window.addEventListener('ms:mentor:new-session', onNewSession)
@@ -551,7 +666,7 @@ export default function CounselorClient() {
       window.removeEventListener('ms:mentor:export', onExport)
       window.removeEventListener('ms:mentor:new-session', onNewSession)
     }
-  }, [exportConversation, clearConversation])
+  }, [exportConversation, startNewConversation])
 
   // Auto-scroll captions to bottom
   useEffect(() => {
@@ -681,20 +796,62 @@ export default function CounselorClient() {
 
         {/* Caption panel */}
         <div
-          ref={captionBoxRef}
           style={{
             flex: isMobileLandscape ? 1 : '0 0 35%',
-            padding: 16,
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
             background: '#fff',
             borderRadius: isMobileLandscape ? 8 : 0,
             border: isMobileLandscape ? '1px solid #e5e7eb' : 'none',
-            overflowY: 'auto',
-            fontSize: 16,
-            lineHeight: 1.6,
-            color: '#374151',
             minHeight: 0
           }}
         >
+          {/* New Conversation button (top-left of caption area) */}
+          {conversationHistory.length > 0 && (
+            <button
+              onClick={startNewConversation}
+              style={{
+                position: 'absolute',
+                top: 12,
+                left: 12,
+                padding: '8px 12px',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                background: '#3b82f6',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                zIndex: 10,
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#2563eb'
+                e.currentTarget.style.transform = 'translateY(-1px)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#3b82f6'
+                e.currentTarget.style.transform = 'translateY(0)'
+              }}
+            >
+              🔄 New Conversation
+            </button>
+          )}
+          
+          <div
+            ref={captionBoxRef}
+            style={{
+              flex: 1,
+              padding: conversationHistory.length > 0 ? '56px 16px 16px' : 16,
+              overflowY: 'auto',
+              fontSize: 16,
+              lineHeight: 1.6,
+              color: '#374151',
+              minHeight: 0
+            }}
+          >
           {conversationHistory.length === 0 ? (
             <div style={{ color: '#9ca3af', paddingTop: 40, maxWidth: 700, margin: '0 auto' }}>
               <p style={{ fontSize: 18, fontWeight: 500, marginBottom: 16, color: '#374151', textAlign: 'center' }}>
@@ -763,8 +920,22 @@ export default function CounselorClient() {
               {error}
             </div>
           )}
+          </div>
         </div>
       </div>
+
+      {/* Clipboard Overlay */}
+      <ClipboardOverlay
+        summary={draftSummary}
+        onSave={handleClipboardSave}
+        onDelete={handleClipboardDelete}
+        onExport={exportConversation}
+        onClose={() => {
+          setShowClipboard(false)
+          setClipboardInstructions(false)
+        }}
+        show={showClipboard}
+      />
 
       {/* Input footer */}
       <div style={{
