@@ -24,7 +24,7 @@ export async function GET(request) {
     // Get profile with usage data
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('stripe_subscription_tier, mentor_sessions_used, mentor_addon_active, mentor_current_session_tokens, mentor_session_started_at')
+      .select('plan_tier, mentor_sessions_used, mentor_addon_active, mentor_current_session_tokens, mentor_session_started_at')
       .eq('id', user.id)
       .single();
 
@@ -32,7 +32,7 @@ export async function GET(request) {
       return Response.json({ allowed: false, reason: 'Profile not found' }, { status: 404 });
     }
 
-    const tier = profile.stripe_subscription_tier || 'free';
+    const tier = profile.plan_tier || 'free';
     const entitlement = ENTITLEMENTS[tier] || ENTITLEMENTS.free;
     
     const sessionLimit = entitlement.mentorSessions;
