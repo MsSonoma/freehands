@@ -142,6 +142,43 @@ export default function CounselorClient() {
     return () => { cancelled = true }
   }, [selectedLearnerId])
 
+  // Load existing draft summary on mount and when learner changes
+  useEffect(() => {
+    if (!hasAccess || !tierChecked) return
+    
+    let cancelled = false
+    ;(async () => {
+      try {
+        const supabase = getSupabaseClient()
+        if (!supabase) return
+        
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+        if (!token) return
+
+        const learnerId = selectedLearnerId !== 'none' ? selectedLearnerId : null
+        
+        const response = await fetch(`/api/conversation-drafts?learner_id=${learnerId || ''}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        if (response.ok && !cancelled) {
+          const data = await response.json()
+          if (data.draft?.draft_summary) {
+            setDraftSummary(data.draft.draft_summary)
+            console.log('[Mr. Mentor] Loaded existing draft summary')
+          }
+        }
+      } catch (err) {
+        console.warn('[Mr. Mentor] Failed to load existing draft:', err)
+      }
+    })()
+    
+    return () => { cancelled = true }
+  }, [hasAccess, tierChecked, selectedLearnerId])
+
   // Dispatch title to header (like session page)
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -437,10 +474,14 @@ export default function CounselorClient() {
   // Helper: Update draft summary after each exchange (not saved to memory until approved)
   const updateDraftSummary = async (conversationHistory, token) => {
     try {
+      console.log('[Mr. Mentor] Updating draft summary...')
+      
       // Only send the last 2 turns (user + assistant) to update incrementally
       const recentTurns = conversationHistory.slice(-2)
       
       const learnerId = selectedLearnerId !== 'none' ? selectedLearnerId : null
+      
+      console.log('[Mr. Mentor] Sending draft update:', { learnerId, turnCount: recentTurns.length })
       
       const response = await fetch('/api/conversation-drafts', {
         method: 'POST',
@@ -456,12 +497,19 @@ export default function CounselorClient() {
       
       if (response.ok) {
         const data = await response.json()
+        console.log('[Mr. Mentor] Draft response:', data)
         if (data.draft?.draft_summary) {
           setDraftSummary(data.draft.draft_summary)
+          console.log('[Mr. Mentor] Draft summary updated:', data.draft.draft_summary.substring(0, 50) + '...')
+        } else {
+          console.warn('[Mr. Mentor] No draft_summary in response')
         }
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('[Mr. Mentor] Draft update failed:', response.status, errorData)
       }
       
-      console.log('[Mr. Mentor] Draft summary updated')
+      console.log('[Mr. Mentor] Draft summary update complete')
     } catch (err) {
       // Silent failure - don't interrupt user experience
       console.warn('[Mr. Mentor] Draft update failed:', err)
@@ -483,21 +531,10 @@ export default function CounselorClient() {
       return
     }
 
-    // First, speak instructions
-    setClipboardInstructions(true)
-    
-    // Play Mr. Mentor's instruction audio
-    const instructionText = "Before we start a new conversation, let's save what we discussed. I've prepared a summary for you. You can review it, edit if needed, and choose to save it to my memory or delete it entirely. You can also export the whole conversation if you'd like to keep a complete record."
-    
-    try {
-      await playAudio(instructionText)
-    } catch (err) {
-      console.warn('[Mr. Mentor] Failed to play instructions:', err)
-    }
-    
-    // Show clipboard overlay
+    // Show clipboard overlay immediately (skip audio instructions to avoid playback errors)
+    // The overlay itself provides clear UI instructions
     setShowClipboard(true)
-  }, [conversationHistory, playAudio])
+  }, [conversationHistory])
 
   // Handle clipboard save (commit to permanent memory)
   const handleClipboardSave = useCallback(async (editedSummary) => {
