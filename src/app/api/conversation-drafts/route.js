@@ -1,10 +1,13 @@
 // API for Mr. Mentor conversation drafts (unapproved summaries)
 import { NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+// OpenAI configuration
+const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
+const OPENAI_MODEL = 'gpt-4o'
 
 function getSupabaseAdmin() {
   if (!supabaseUrl || !supabaseServiceKey) return null
@@ -215,16 +218,14 @@ export async function DELETE(request) {
   }
 }
 
-// Helper: Generate incremental summary using Claude
+// Helper: Generate incremental summary using OpenAI
 async function generateDraftSummary(conversationTurns, existingSummary = null) {
   try {
-    const apiKey = process.env.ANTHROPIC_API_KEY
+    const apiKey = process.env.OPENAI_API_KEY
     if (!apiKey) {
-      console.error('[Conversation Drafts] Missing Anthropic API key')
+      console.error('[Conversation Drafts] Missing OpenAI API key')
       return null
     }
-
-    const anthropic = new Anthropic({ apiKey })
 
     // Build prompt for incremental summarization
     let prompt = ''
@@ -244,17 +245,30 @@ Please provide an updated, concise summary (max 500 characters) that incorporate
 ${conversationTurns.map(t => `${t.role === 'user' ? 'User' : 'Assistant'}: ${t.content}`).join('\n\n')}`
     }
 
-    const response = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 300,
-      temperature: 0.3,
-      messages: [{
-        role: 'user',
-        content: prompt
-      }]
+    const response = await fetch(OPENAI_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: OPENAI_MODEL,
+        messages: [{
+          role: 'user',
+          content: prompt
+        }],
+        max_tokens: 300,
+        temperature: 0.3
+      })
     })
 
-    const summaryText = response.content[0]?.text?.trim() || ''
+    if (!response.ok) {
+      console.error('[Conversation Drafts] OpenAI request failed:', response.status)
+      return null
+    }
+
+    const data = await response.json()
+    const summaryText = data.choices[0]?.message?.content?.trim() || ''
     
     // Ensure it fits within 500 char limit
     return summaryText.substring(0, 500)
