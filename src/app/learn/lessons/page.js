@@ -5,6 +5,7 @@ import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
 import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
 import { getLearner, updateLearner } from '@/app/facilitator/learners/clientApi'
+import { ensurePinAllowed } from '@/app/lib/pinGate'
 import LoadingProgress from '@/components/LoadingProgress'
 import GoldenKeyCounter from '@/app/learn/GoldenKeyCounter'
 
@@ -27,6 +28,9 @@ function LessonsPageInner(){
   const [goldenKeySelected, setGoldenKeySelected] = useState(false)
   const [activeGoldenKeys, setActiveGoldenKeys] = useState({}) // Track lessons with active golden keys
   const [refreshTrigger, setRefreshTrigger] = useState(0) // Used to force refresh at midnight and on schedule changes
+  const [lessonNotes, setLessonNotes] = useState({}) // { 'subject/lesson_file': 'note text' }
+  const [editingNote, setEditingNote] = useState(null) // lesson key currently being edited
+  const [saving, setSaving] = useState(false)
 
   // Set up midnight refresh timer
   useEffect(() => {
@@ -196,13 +200,13 @@ function LessonsPageInner(){
         const supabase = getSupabaseClient()
         // Try to load with all fields first
         let data, error
-        const result = await supabase.from('learners').select('approved_lessons, active_golden_keys').eq('id', learnerId).maybeSingle()
+        const result = await supabase.from('learners').select('approved_lessons, active_golden_keys, lesson_notes').eq('id', learnerId).maybeSingle()
         data = result.data
         error = result.error
         
-        // If error, try without active_golden_keys (column might not exist yet)
+        // If error, try without newer columns
         if (error) {
-          console.warn('[Learn Lessons] Error loading with active_golden_keys, trying without:', error)
+          console.warn('[Learn Lessons] Error loading with all fields, trying without:', error)
           const fallbackResult = await supabase.from('learners').select('approved_lessons').eq('id', learnerId).maybeSingle()
           data = fallbackResult.data
           error = fallbackResult.error
@@ -254,6 +258,7 @@ function LessonsPageInner(){
           setApprovedLessons(mergedApproved)
           setScheduledLessons(scheduled)
           setActiveGoldenKeys(data?.active_golden_keys || {})
+          setLessonNotes(data?.lesson_notes || {})
         }
       } catch (err) {
         console.error('[Learn Lessons] Failed to load:', err)
@@ -320,6 +325,46 @@ function LessonsPageInner(){
     const url = `/session?subject=${encodeURIComponent(subject)}&lesson=${encodeURIComponent(fileBaseName)}`
     const withKey = goldenKeySelected ? `${url}&goldenKey=true` : url
     router.push(withKey)
+  }
+
+  async function saveNote(lessonKey, noteText) {
+    if (!learnerId) return
+    
+    // Require PIN before saving notes
+    const allowed = await ensurePinAllowed('lesson-notes')
+    if (!allowed) {
+      alert('PIN required to manage lesson notes')
+      setEditingNote(null)
+      return
+    }
+    
+    const newNotes = { ...lessonNotes }
+    if (noteText && noteText.trim()) {
+      newNotes[lessonKey] = noteText.trim()
+    } else {
+      delete newNotes[lessonKey]
+    }
+    
+    setLessonNotes(newNotes)
+    setEditingNote(null)
+    setSaving(true)
+    
+    try {
+      const supabase = getSupabaseClient()
+      const { error } = await supabase.from('learners').update({ lesson_notes: newNotes }).eq('id', learnerId)
+      if (error) {
+        console.error('[Learn Lessons] Note save error:', error)
+        throw error
+      }
+      console.log('[Learn Lessons] Successfully saved note for lesson:', lessonKey)
+    } catch (e) {
+      console.error('[Learn Lessons] Failed to save note:', e)
+      alert('Failed to save note: ' + (e?.message || e?.hint || 'Unknown error'))
+      // Revert on error
+      setLessonNotes(lessonNotes)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const card = { border:'1px solid #e5e7eb', borderRadius:12, padding:14, display:'flex', flexDirection:'column', justifyContent:'space-between', background:'#fff' }
@@ -448,6 +493,8 @@ function LessonsPageInner(){
                 const medalTier = medals[lessonKey]?.medalTier || null
                 const medal = medalTier ? emojiForTier(medalTier) : ''
                 const hasActiveKey = activeGoldenKeys[lessonKey] === true
+                const noteText = lessonNotes[lessonKey] || ''
+                const isEditingThisNote = editingNote === lessonKey
                 
                 // For generated lessons, use lesson.subject; for others use the subject category
                 const subjectBadge = subject === 'generated' && l.subject
@@ -505,39 +552,147 @@ function LessonsPageInner(){
                           {l.difficulty && l.difficulty.charAt(0).toUpperCase() + l.difficulty.slice(1)}
                         </div>
                       )}
+                      
+                      {/* Facilitator Notes Section */}
+                      {noteText && !isEditingThisNote && (
+                        <div style={{
+                          marginTop: 8,
+                          padding: 8,
+                          background: '#fef3c7',
+                          borderRadius: 6,
+                          fontSize: 13,
+                          color: '#92400e'
+                        }}>
+                          <div style={{ fontWeight: 600, marginBottom: 4 }}>📝 Facilitator Note:</div>
+                          <div style={{ whiteSpace: 'pre-wrap' }}>{noteText}</div>
+                        </div>
+                      )}
+                      
+                      {/* Notes Editing Section */}
+                      {isEditingThisNote && (
+                        <div style={{ marginTop: 8 }}>
+                          <textarea
+                            defaultValue={noteText}
+                            placeholder="Add facilitator notes..."
+                            autoFocus
+                            rows={3}
+                            style={{
+                              width: '100%',
+                              padding: '8px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: 6,
+                              fontSize: 13,
+                              fontFamily: 'inherit',
+                              resize: 'vertical',
+                              marginBottom: 8,
+                              boxSizing: 'border-box'
+                            }}
+                            id={`note-${lessonKey}`}
+                          />
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button
+                              onClick={() => {
+                                const textarea = document.getElementById(`note-${lessonKey}`)
+                                saveNote(lessonKey, textarea?.value || '')
+                              }}
+                              disabled={saving}
+                              style={{
+                                padding: '6px 12px',
+                                border: 'none',
+                                borderRadius: 6,
+                                background: '#2563eb',
+                                color: '#fff',
+                                fontSize: 13,
+                                fontWeight: 600,
+                                cursor: saving ? 'wait' : 'pointer'
+                              }}
+                            >
+                              {saving ? 'Saving...' : 'Save'}
+                            </button>
+                            <button
+                              onClick={() => setEditingNote(null)}
+                              disabled={saving}
+                              style={{
+                                padding: '6px 12px',
+                                border: '1px solid #d1d5db',
+                                borderRadius: 6,
+                                background: '#fff',
+                                color: '#374151',
+                                fontSize: 13,
+                                cursor: saving ? 'wait' : 'pointer'
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <button
-                      style={capped ? btnDisabled : btn}
-                      disabled={capped}
-                      onClick={async ()=>{
-                        try {
-                          const supabase = getSupabaseClient()
-                          const { data: { session } } = await supabase.auth.getSession()
-                          const token = session?.access_token
-                          if (!token) { openLesson(subject, l.file); return }
-                          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
-                          const lessonKey = `${subject}/${l.file}`
-                          const res = await fetch('/api/lessons/quota', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                            body: JSON.stringify({ lesson_key: lessonKey, timezone: tz })
-                          })
-                          if (res.ok) {
-                            const js = await res.json()
-                            openLesson(subject, l.file)
-                          } else if (res.status === 429) {
-                            const js = await res.json()
-                            alert(js.error || 'Daily lesson limit reached')
-                          } else {
+                    
+                    {/* Action buttons container */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {/* Notes button */}
+                      {!isEditingThisNote && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setEditingNote(lessonKey)
+                          }}
+                          style={{
+                            padding: '6px 12px',
+                            border: '1px solid #d1d5db',
+                            borderRadius: 8,
+                            background: noteText ? '#fef3c7' : '#fff',
+                            color: '#374151',
+                            fontSize: 13,
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6
+                          }}
+                          title={noteText ? 'Edit facilitator note' : 'Add facilitator note'}
+                        >
+                          📝 {noteText ? 'Edit Note' : 'Add Note'}
+                        </button>
+                      )}
+                      
+                      {/* Start Lesson button */}
+                      <button
+                        style={capped ? btnDisabled : btn}
+                        disabled={capped}
+                        onClick={async ()=>{
+                          try {
+                            const supabase = getSupabaseClient()
+                            const { data: { session } } = await supabase.auth.getSession()
+                            const token = session?.access_token
+                            if (!token) { openLesson(subject, l.file); return }
+                            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+                            const lessonKey = `${subject}/${l.file}`
+                            const res = await fetch('/api/lessons/quota', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                              body: JSON.stringify({ lesson_key: lessonKey, timezone: tz })
+                            })
+                            if (res.ok) {
+                              const js = await res.json()
+                              openLesson(subject, l.file)
+                            } else if (res.status === 429) {
+                              const js = await res.json()
+                              alert(js.error || 'Daily lesson limit reached')
+                            } else {
+                              openLesson(subject, l.file)
+                            }
+                          } catch {
                             openLesson(subject, l.file)
                           }
-                        } catch {
-                          openLesson(subject, l.file)
-                        }
-                      }}
-                    >
-                      Start Lesson
-                    </button>
+                        }}
+                      >
+                        Start Lesson
+                      </button>
+                    </div>
                   </div>
                 )
               })
