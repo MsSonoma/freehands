@@ -333,6 +333,9 @@ export default function HeaderBar() {
 		// Facilitator Hotkeys page should return to Settings
 		if (pathname.startsWith('/facilitator/hotkeys')) return '/facilitator/account/settings';
 
+		// Mr. Mentor (counselor) should return to facilitator main page
+		if (pathname.startsWith('/facilitator/generator/counselor')) return '/facilitator';
+
 		// Facilitator Generator sub-pages should return to Generator page
 		if (pathname.startsWith('/facilitator/generator/')) return '/facilitator/generator';
 
