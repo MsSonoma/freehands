@@ -80,8 +80,14 @@ export default function LessonsOverlay({ learnerId }) {
           if (res.ok) {
             const generatedList = await res.json()
             console.log('[LessonsOverlay] Generated lessons:', generatedList.length)
+            // Sort generated lessons by creation time, newest first
+            const sortedGeneratedList = generatedList.sort((a, b) => {
+              const timeA = new Date(a.created_at || 0).getTime()
+              const timeB = new Date(b.created_at || 0).getTime()
+              return timeB - timeA // Descending order (newest first)
+            })
             // Merge generated lessons into their respective subjects with ✨ marker
-            for (const lesson of generatedList) {
+            for (const lesson of sortedGeneratedList) {
               const subject = lesson.subject || 'math'
               if (!results[subject]) results[subject] = []
               results[subject].push({
