@@ -20,6 +20,8 @@ export default function FacilitatorLessonsPage() {
   const [selectedLearnerId, setSelectedLearnerId] = useState(null)
   const [allLessons, setAllLessons] = useState({}) // { subject: [lessons] }
   const [approvedLessons, setApprovedLessons] = useState({}) // { 'subject/lesson_file': true }
+  const [scheduledLessons, setScheduledLessons] = useState({}) // { 'subject/lesson_file': true } - lessons scheduled for today
+  const [futureScheduledLessons, setFutureScheduledLessons] = useState({}) // { 'subject/lesson_file': 'YYYY-MM-DD' } - lessons scheduled for future dates
   const [activeGoldenKeys, setActiveGoldenKeys] = useState({}) // { 'subject/lesson_file': true }
   const [lessonNotes, setLessonNotes] = useState({}) // { 'subject/lesson_file': 'note text' }
   const [medals, setMedals] = useState({}) // { lesson_key: { bestPercent, medalTier } }
@@ -29,6 +31,46 @@ export default function FacilitatorLessonsPage() {
   const [expandedSubjects, setExpandedSubjects] = useState({}) // { subject: true/false }
   const [gradeFilters, setGradeFilters] = useState({}) // { subject: 'K' | '1' | '2' | ... | 'all' }
   const [editingNote, setEditingNote] = useState(null) // lesson key currently being edited
+  const [scheduleDates, setScheduleDates] = useState({}) // { 'subject/lesson_file': { month, day, year } }
+  const [scheduling, setScheduling] = useState(null) // lesson key currently being scheduled
+  const [refreshTrigger, setRefreshTrigger] = useState(0) // Used to force refresh at midnight and on schedule changes
+
+  // Set up midnight refresh timer
+  useEffect(() => {
+    const scheduleNextMidnightRefresh = () => {
+      const now = new Date()
+      const tomorrow = new Date(now)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      tomorrow.setHours(0, 0, 0, 0)
+      const msUntilMidnight = tomorrow.getTime() - now.getTime()
+      
+      console.log('[Facilitator Lessons] Scheduling refresh in', Math.round(msUntilMidnight / 1000 / 60), 'minutes at midnight')
+      
+      const timer = setTimeout(() => {
+        console.log('[Facilitator Lessons] Midnight refresh triggered')
+        setRefreshTrigger(prev => prev + 1)
+        // Schedule next midnight refresh
+        scheduleNextMidnightRefresh()
+      }, msUntilMidnight)
+      
+      return timer
+    }
+    
+    const timer = scheduleNextMidnightRefresh()
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Poll for newly scheduled lessons every 2 minutes
+  useEffect(() => {
+    if (!selectedLearnerId) return
+    
+    const pollInterval = setInterval(() => {
+      console.log('[Facilitator Lessons] Polling for schedule changes')
+      setRefreshTrigger(prev => prev + 1)
+    }, 2 * 60 * 1000) // 2 minutes
+    
+    return () => clearInterval(pollInterval)
+  }, [selectedLearnerId])
 
   // Check PIN requirement on mount
   useEffect(() => {
@@ -152,9 +194,70 @@ export default function FacilitatorLessonsPage() {
         }
         
         console.log('[Facilitator Lessons] Loaded data for learner:', selectedLearnerId, data)
+        
+        // Load scheduled lessons (today and future)
+        let mergedApproved = data?.approved_lessons || {}
+        let scheduled = {}
+        let futureScheduled = {}
+        try {
+          const today = new Date().toISOString().split('T')[0]
+          const { data: { session } } = await supabase.auth.getSession()
+          const token = session?.access_token
+          
+          if (!token) {
+            console.warn('[Facilitator Lessons] No auth token available for schedule fetch')
+          } else {
+            // Get today's scheduled lessons
+            const scheduleResponse = await fetch(`/api/lesson-schedule?learnerId=${selectedLearnerId}&action=active`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            })
+            if (scheduleResponse.ok) {
+              const scheduleData = await scheduleResponse.json()
+              const scheduledLessons = scheduleData.lessons || []
+              console.log('[Facilitator Lessons] Scheduled lessons for today:', scheduledLessons)
+              
+              // Track scheduled lessons separately - don't merge into approved
+              scheduledLessons.forEach(item => {
+                if (item.lesson_key) {
+                  scheduled[item.lesson_key] = true
+                }
+              })
+            } else {
+              console.warn('[Facilitator Lessons] Schedule fetch failed:', scheduleResponse.status)
+            }
+            
+            // Get all scheduled lessons for this learner (future dates)
+            const futureEnd = new Date()
+            futureEnd.setFullYear(futureEnd.getFullYear() + 1)
+            const allScheduleResponse = await fetch(`/api/lesson-schedule?learnerId=${selectedLearnerId}&startDate=${today}&endDate=${futureEnd.toISOString().split('T')[0]}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            })
+            if (allScheduleResponse.ok) {
+              const allScheduleData = await allScheduleResponse.json()
+              const allScheduledLessons = allScheduleData.schedule || []
+              console.log('[Facilitator Lessons] All scheduled lessons:', allScheduledLessons)
+              
+              allScheduledLessons.forEach(item => {
+                if (item.lesson_key && item.scheduled_date && item.scheduled_date > today) {
+                  futureScheduled[item.lesson_key] = item.scheduled_date
+                }
+              })
+            }
+          }
+        } catch (schedErr) {
+          console.warn('[Facilitator Lessons] Could not load scheduled lessons:', schedErr)
+        }
+        
         if (!cancelled) {
-          setApprovedLessons(data?.approved_lessons || {})
+          setApprovedLessons(mergedApproved)
+          setScheduledLessons(scheduled)
+          setFutureScheduledLessons(futureScheduled)
           setActiveGoldenKeys(data?.active_golden_keys || {})
+          setLessonNotes(data?.lesson_notes || {})
           setLessonNotes(data?.lesson_notes || {})
           
           // Set grade filters to learner's grade for all subjects
@@ -184,7 +287,7 @@ export default function FacilitatorLessonsPage() {
       }
     })()
     return () => { cancelled = true }
-  }, [selectedLearnerId])
+  }, [selectedLearnerId, refreshTrigger])
 
   async function toggleApproval(subject, lessonFile) {
     if (!selectedLearnerId) return
@@ -273,6 +376,74 @@ export default function FacilitatorLessonsPage() {
       const lessonGrade = String(lesson.grade).trim().replace(/(?:st|nd|rd|th)$/i, '').toUpperCase()
       return lessonGrade === selectedGrade
     })
+  }
+
+  async function scheduleLesson(lessonKey) {
+    const dateInfo = scheduleDates[lessonKey]
+    if (!dateInfo || !dateInfo.month || !dateInfo.day || !dateInfo.year) return
+
+    const scheduledDate = `${dateInfo.year}-${String(dateInfo.month).padStart(2, '0')}-${String(dateInfo.day).padStart(2, '0')}`
+    
+    setScheduling(lessonKey)
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      if (!token) {
+        alert('Not authenticated')
+        return
+      }
+
+      const response = await fetch('/api/lesson-schedule', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          learnerId: selectedLearnerId,
+          lessonKey: lessonKey,
+          scheduledDate: scheduledDate
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to schedule')
+      }
+
+      // Trigger refresh to update the calendar emoji
+      setRefreshTrigger(prev => prev + 1)
+      alert(`Lesson scheduled for ${scheduledDate}`)
+    } catch (e) {
+      console.error('[Facilitator Lessons] Failed to schedule:', e)
+      alert('Failed to schedule: ' + e.message)
+    } finally {
+      setScheduling(null)
+    }
+  }
+
+  function getScheduleDateForLesson(lessonKey) {
+    if (!scheduleDates[lessonKey]) {
+      const today = new Date()
+      return {
+        month: today.getMonth() + 1,
+        day: today.getDate(),
+        year: today.getFullYear()
+      }
+    }
+    return scheduleDates[lessonKey]
+  }
+
+  function updateScheduleDate(lessonKey, field, value) {
+    setScheduleDates(prev => ({
+      ...prev,
+      [lessonKey]: {
+        ...getScheduleDateForLesson(lessonKey),
+        [field]: parseInt(value)
+      }
+    }))
   }
 
   const ent = featuresForTier(tier)
@@ -436,24 +607,44 @@ export default function FacilitatorLessonsPage() {
                             {grouped[subj].map(lesson => {
                               const lessonKey = `${subject}/${lesson.file}`
                               const isApproved = !!approvedLessons[lessonKey]
+                              const isScheduled = !!scheduledLessons[lessonKey]
+                              const futureDate = futureScheduledLessons[lessonKey]
                               const hasActiveKey = activeGoldenKeys[lessonKey] === true
                               const medalInfo = medals[lessonKey]
                               const hasCompleted = medalInfo && medalInfo.bestPercent > 0
                               const medalEmoji = medalInfo?.medalTier ? emojiForTier(medalInfo.medalTier) : null
                               const noteText = lessonNotes[lessonKey] || ''
                               const isEditingThisNote = editingNote === lessonKey
+                              const dateInfo = getScheduleDateForLesson(lessonKey)
                               
                               return (
                                 <div key={lesson.file} style={card}>
                                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                                    <input
-                                      type="checkbox"
-                                      checked={isApproved}
-                                      onChange={() => toggleApproval(subject, lesson.file)}
-                                      id={`lesson-${lessonKey}`}
-                                      className="brand-checkbox"
-                                      style={{ marginTop: 4 }}
-                                    />
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                                      <input
+                                        type="checkbox"
+                                        checked={isApproved}
+                                        onChange={() => toggleApproval(subject, lesson.file)}
+                                        id={`lesson-${lessonKey}`}
+                                        className="brand-checkbox"
+                                        style={{ marginTop: 4 }}
+                                      />
+                                      {isScheduled && (
+                                        <span style={{ 
+                                          fontSize: 16,
+                                        }} title="Scheduled for today">
+                                          📅
+                                        </span>
+                                      )}
+                                      {!isScheduled && futureDate && (
+                                        <span style={{ 
+                                          fontSize: 16,
+                                          opacity: 0.5
+                                        }} title={`Scheduled for ${futureDate}`}>
+                                          📅
+                                        </span>
+                                      )}
+                                    </div>
                                     <label
                                       htmlFor={`lesson-${lessonKey}`}
                                       style={{ flex: 1, cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
@@ -650,6 +841,79 @@ export default function FacilitatorLessonsPage() {
                                       </div>
                                     )}
                                   </div>
+                                  
+                                  {/* Scheduling section */}
+                                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f3f4f6' }} onClick={(e) => e.stopPropagation()}>
+                                    <div style={{ fontSize: 13, color: '#6b7280', fontWeight: 600, marginBottom: 8 }}>
+                                      📅 Schedule this lesson:
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                      <select
+                                        value={dateInfo.month}
+                                        onChange={(e) => updateScheduleDate(lessonKey, 'month', e.target.value)}
+                                        style={{
+                                          padding: '6px 8px',
+                                          border: '1px solid #d1d5db',
+                                          borderRadius: 6,
+                                          fontSize: 14,
+                                          background: '#fff',
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((month, idx) => (
+                                          <option key={idx} value={idx + 1}>{month}</option>
+                                        ))}
+                                      </select>
+                                      <select
+                                        value={dateInfo.day}
+                                        onChange={(e) => updateScheduleDate(lessonKey, 'day', e.target.value)}
+                                        style={{
+                                          padding: '6px 8px',
+                                          border: '1px solid #d1d5db',
+                                          borderRadius: 6,
+                                          fontSize: 14,
+                                          background: '#fff',
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                                          <option key={day} value={day}>{day}</option>
+                                        ))}
+                                      </select>
+                                      <select
+                                        value={dateInfo.year}
+                                        onChange={(e) => updateScheduleDate(lessonKey, 'year', e.target.value)}
+                                        style={{
+                                          padding: '6px 8px',
+                                          border: '1px solid #d1d5db',
+                                          borderRadius: 6,
+                                          fontSize: 14,
+                                          background: '#fff',
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        {[2025, 2026, 2027].map(year => (
+                                          <option key={year} value={year}>{year}</option>
+                                        ))}
+                                      </select>
+                                      <button
+                                        onClick={() => scheduleLesson(lessonKey)}
+                                        disabled={scheduling === lessonKey || !dateInfo.month || !dateInfo.day || !dateInfo.year}
+                                        style={{
+                                          padding: '6px 12px',
+                                          border: 'none',
+                                          borderRadius: 6,
+                                          background: (scheduling === lessonKey || !dateInfo.month || !dateInfo.day || !dateInfo.year) ? '#d1d5db' : '#2563eb',
+                                          color: '#fff',
+                                          fontSize: 13,
+                                          fontWeight: 600,
+                                          cursor: (scheduling === lessonKey || !dateInfo.month || !dateInfo.day || !dateInfo.year) ? 'not-allowed' : 'pointer'
+                                        }}
+                                      >
+                                        {scheduling === lessonKey ? 'Scheduling...' : 'Schedule'}
+                                      </button>
+                                    </div>
+                                  </div>
                                 </div>
                               )
                             })}
@@ -661,6 +925,8 @@ export default function FacilitatorLessonsPage() {
                       filteredLessons.map(lesson => {
                         const lessonKey = `${subject}/${lesson.file}`
                         const isApproved = !!approvedLessons[lessonKey]
+                        const isScheduled = !!scheduledLessons[lessonKey]
+                        const futureDate = futureScheduledLessons[lessonKey]
                         const hasActiveKey = activeGoldenKeys[lessonKey] === true
                         const medalInfo = medals[lessonKey]
                         const hasCompleted = medalInfo && medalInfo.bestPercent > 0
@@ -668,18 +934,36 @@ export default function FacilitatorLessonsPage() {
                         
                         const noteText = lessonNotes[lessonKey] || ''
                         const isEditingThisNote = editingNote === lessonKey
+                        const dateInfo = getScheduleDateForLesson(lessonKey)
                         
                         return (
                           <div key={lesson.file} style={card}>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                              <input
-                                type="checkbox"
-                                checked={isApproved}
-                                onChange={() => toggleApproval(subject, lesson.file)}
-                                id={`lesson-${lessonKey}`}
-                                className="brand-checkbox"
-                                style={{ marginTop: 4 }}
-                              />
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                                <input
+                                  type="checkbox"
+                                  checked={isApproved}
+                                  onChange={() => toggleApproval(subject, lesson.file)}
+                                  id={`lesson-${lessonKey}`}
+                                  className="brand-checkbox"
+                                  style={{ marginTop: 4 }}
+                                />
+                                {isScheduled && (
+                                  <span style={{ 
+                                    fontSize: 16,
+                                  }} title="Scheduled for today">
+                                    📅
+                                  </span>
+                                )}
+                                {!isScheduled && futureDate && (
+                                  <span style={{ 
+                                    fontSize: 16,
+                                    opacity: 0.5
+                                  }} title={`Scheduled for ${futureDate}`}>
+                                    📅
+                                  </span>
+                                )}
+                              </div>
                               <label
                                 htmlFor={`lesson-${lessonKey}`}
                                 style={{ flex: 1, cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
@@ -875,6 +1159,79 @@ export default function FacilitatorLessonsPage() {
                                   )}
                                 </div>
                               )}
+                            </div>
+                            
+                            {/* Scheduling section */}
+                            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f3f4f6' }} onClick={(e) => e.stopPropagation()}>
+                              <div style={{ fontSize: 13, color: '#6b7280', fontWeight: 600, marginBottom: 8 }}>
+                                📅 Schedule this lesson:
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                <select
+                                  value={dateInfo.month}
+                                  onChange={(e) => updateScheduleDate(lessonKey, 'month', e.target.value)}
+                                  style={{
+                                    padding: '6px 8px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: 6,
+                                    fontSize: 14,
+                                    background: '#fff',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((month, idx) => (
+                                    <option key={idx} value={idx + 1}>{month}</option>
+                                  ))}
+                                </select>
+                                <select
+                                  value={dateInfo.day}
+                                  onChange={(e) => updateScheduleDate(lessonKey, 'day', e.target.value)}
+                                  style={{
+                                    padding: '6px 8px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: 6,
+                                    fontSize: 14,
+                                    background: '#fff',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                                    <option key={day} value={day}>{day}</option>
+                                  ))}
+                                </select>
+                                <select
+                                  value={dateInfo.year}
+                                  onChange={(e) => updateScheduleDate(lessonKey, 'year', e.target.value)}
+                                  style={{
+                                    padding: '6px 8px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: 6,
+                                    fontSize: 14,
+                                    background: '#fff',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  {[2025, 2026, 2027].map(year => (
+                                    <option key={year} value={year}>{year}</option>
+                                  ))}
+                                </select>
+                                <button
+                                  onClick={() => scheduleLesson(lessonKey)}
+                                  disabled={scheduling === lessonKey || !dateInfo.month || !dateInfo.day || !dateInfo.year}
+                                  style={{
+                                    padding: '6px 12px',
+                                    border: 'none',
+                                    borderRadius: 6,
+                                    background: (scheduling === lessonKey || !dateInfo.month || !dateInfo.day || !dateInfo.year) ? '#d1d5db' : '#2563eb',
+                                    color: '#fff',
+                                    fontSize: 13,
+                                    fontWeight: 600,
+                                    cursor: (scheduling === lessonKey || !dateInfo.month || !dateInfo.day || !dateInfo.year) ? 'not-allowed' : 'pointer'
+                                  }}
+                                >
+                                  {scheduling === lessonKey ? 'Scheduling...' : 'Schedule'}
+                                </button>
+                              </div>
                             </div>
                           </div>
                         )
