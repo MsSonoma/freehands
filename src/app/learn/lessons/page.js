@@ -8,12 +8,13 @@ import { getLearner, updateLearner } from '@/app/facilitator/learners/clientApi'
 import LoadingProgress from '@/components/LoadingProgress'
 import GoldenKeyCounter from '@/app/learn/GoldenKeyCounter'
 
-const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'facilitator']
+const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'generated']
 
 function LessonsPageInner(){
   const router = useRouter()
 
   const [approvedLessons, setApprovedLessons] = useState({})
+  const [scheduledLessons, setScheduledLessons] = useState({}) // { 'subject/lesson_file': true } - lessons scheduled for today
   const [allLessons, setAllLessons] = useState({})
   const [loading, setLoading] = useState(true)
   const [lessonsLoading, setLessonsLoading] = useState(true)
@@ -25,6 +26,44 @@ function LessonsPageInner(){
   const [sessionLoading, setSessionLoading] = useState(false)
   const [goldenKeySelected, setGoldenKeySelected] = useState(false)
   const [activeGoldenKeys, setActiveGoldenKeys] = useState({}) // Track lessons with active golden keys
+  const [refreshTrigger, setRefreshTrigger] = useState(0) // Used to force refresh at midnight and on schedule changes
+
+  // Set up midnight refresh timer
+  useEffect(() => {
+    const scheduleNextMidnightRefresh = () => {
+      const now = new Date()
+      const tomorrow = new Date(now)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      tomorrow.setHours(0, 0, 0, 0)
+      const msUntilMidnight = tomorrow.getTime() - now.getTime()
+      
+      console.log('[Learn Lessons] Scheduling refresh in', Math.round(msUntilMidnight / 1000 / 60), 'minutes at midnight')
+      
+      const timer = setTimeout(() => {
+        console.log('[Learn Lessons] Midnight refresh triggered')
+        setRefreshTrigger(prev => prev + 1)
+        // Schedule next midnight refresh
+        scheduleNextMidnightRefresh()
+      }, msUntilMidnight)
+      
+      return timer
+    }
+    
+    const timer = scheduleNextMidnightRefresh()
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Poll for newly scheduled lessons every 2 minutes
+  useEffect(() => {
+    if (!learnerId) return
+    
+    const pollInterval = setInterval(() => {
+      console.log('[Learn Lessons] Polling for schedule changes')
+      setRefreshTrigger(prev => prev + 1)
+    }, 2 * 60 * 1000) // 2 minutes
+    
+    return () => clearInterval(pollInterval)
+  }, [learnerId])
 
   useEffect(() => {
     let mounted = true
@@ -109,7 +148,7 @@ function LessonsPageInner(){
       
       for (const subject of SUBJECTS) {
         try {
-          const headers = subject === 'facilitator' && token 
+          const headers = subject === 'generated' && token 
             ? { 'Authorization': `Bearer ${token}` }
             : {}
           const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { 
@@ -176,20 +215,35 @@ function LessonsPageInner(){
         
         // Load today's scheduled lessons and merge with approved lessons
         let mergedApproved = data?.approved_lessons || {}
+        let scheduled = {}
         try {
           const today = new Date().toISOString().split('T')[0]
-          const scheduleResponse = await fetch(`/api/lesson-schedule?learnerId=${learnerId}&action=active`)
-          if (scheduleResponse.ok) {
-            const scheduleData = await scheduleResponse.json()
-            const scheduledLessons = scheduleData.lessons || []
-            console.log('[Learn Lessons] Scheduled lessons for today:', scheduledLessons)
-            
-            // Add scheduled lessons to approved lessons
-            scheduledLessons.forEach(item => {
-              if (item.lesson_key) {
-                mergedApproved[item.lesson_key] = true
+          const { data: { session } } = await supabase.auth.getSession()
+          const token = session?.access_token
+          
+          if (!token) {
+            console.warn('[Learn Lessons] No auth token available for schedule fetch')
+          } else {
+            const scheduleResponse = await fetch(`/api/lesson-schedule?learnerId=${learnerId}&action=active`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
               }
             })
+            if (scheduleResponse.ok) {
+              const scheduleData = await scheduleResponse.json()
+              const scheduledLessons = scheduleData.lessons || []
+              console.log('[Learn Lessons] Scheduled lessons for today:', scheduledLessons)
+              
+              // Add scheduled lessons to available lessons and track them separately
+              scheduledLessons.forEach(item => {
+                if (item.lesson_key) {
+                  mergedApproved[item.lesson_key] = true
+                  scheduled[item.lesson_key] = true
+                }
+              })
+            } else {
+              console.warn('[Learn Lessons] Schedule fetch failed:', scheduleResponse.status)
+            }
           }
         } catch (schedErr) {
           console.warn('[Learn Lessons] Could not load scheduled lessons:', schedErr)
@@ -198,6 +252,7 @@ function LessonsPageInner(){
         console.log('[Learn Lessons] Loaded approved + scheduled lessons for learner:', learnerId, mergedApproved)
         if (!cancelled) {
           setApprovedLessons(mergedApproved)
+          setScheduledLessons(scheduled)
           setActiveGoldenKeys(data?.active_golden_keys || {})
         }
       } catch (err) {
@@ -210,7 +265,7 @@ function LessonsPageInner(){
       if (!cancelled) setLoading(false)
     })()
     return () => { cancelled = true }
-  }, [learnerId, allLessons])
+  }, [learnerId, allLessons, refreshTrigger])
 
   async function openLesson(subject, fileBaseName){
     const ent = featuresForTier(planTier)
@@ -380,7 +435,7 @@ function LessonsPageInner(){
               const lessons = lessonsBySubject[subject]
               if (!lessons || lessons.length === 0) return null
 
-              const displaySubject = subject === 'facilitator' ? 'Facilitator Lessons' : 
+              const displaySubject = subject === 'generated' ? 'Generated Lessons' : 
                                      subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 
               // Render all lessons as cards with subject badges - no headings
@@ -389,12 +444,13 @@ function LessonsPageInner(){
                 const cap = ent.lessonsPerDay
                 const capped = Number.isFinite(cap) && todaysCount >= cap
                 const lessonKey = `${subject}/${l.file}`
+                const isScheduled = !!scheduledLessons[lessonKey]
                 const medalTier = medals[lessonKey]?.medalTier || null
                 const medal = medalTier ? emojiForTier(medalTier) : ''
                 const hasActiveKey = activeGoldenKeys[lessonKey] === true
                 
-                // For facilitator lessons, use lesson.subject; for others use the subject category
-                const subjectBadge = subject === 'facilitator' && l.subject
+                // For generated lessons, use lesson.subject; for others use the subject category
+                const subjectBadge = subject === 'generated' && l.subject
                   ? l.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
                   : displaySubject
                 
@@ -405,21 +461,38 @@ function LessonsPageInner(){
                         <div style={{ fontSize:12, color:'#6b7280' }}>
                           {subjectBadge}
                         </div>
-                        {hasActiveKey && (
-                          <div style={{ 
-                            fontSize: 16, 
-                            background: '#fef3c7', 
-                            color: '#92400e',
-                            padding: '2px 6px',
-                            borderRadius: 6,
-                            fontWeight: 600,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 4
-                          }} title="Golden Key Active">
-                            🔑 Active
-                          </div>
-                        )}
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          {isScheduled && (
+                            <div style={{ 
+                              fontSize: 16, 
+                              background: '#dbeafe', 
+                              color: '#1e40af',
+                              padding: '2px 6px',
+                              borderRadius: 6,
+                              fontWeight: 600,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }} title="Scheduled for today">
+                              📅
+                            </div>
+                          )}
+                          {hasActiveKey && (
+                            <div style={{ 
+                              fontSize: 16, 
+                              background: '#fef3c7', 
+                              color: '#92400e',
+                              padding: '2px 6px',
+                              borderRadius: 6,
+                              fontWeight: 600,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }} title="Golden Key Active">
+                              🔑 Active
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <h3 style={{ margin:'0 0 6px' }}>
                         {l.title} {medal}

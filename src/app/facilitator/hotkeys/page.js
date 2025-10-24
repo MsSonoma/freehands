@@ -1,7 +1,35 @@
 "use client";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ensurePinAllowed } from '@/app/lib/pinGate';
 import HotkeysManager from '@/components/HotkeysManager'
 
 export default function FacilitatorHotkeysPage() {
+  const router = useRouter();
+  const [pinChecked, setPinChecked] = useState(false);
+
+  // Check PIN requirement on mount
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const allowed = await ensurePinAllowed('facilitator-page');
+        if (!allowed) {
+          router.push('/');
+          return;
+        }
+        if (!cancelled) setPinChecked(true);
+      } catch (e) {
+        if (!cancelled) setPinChecked(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [router]);
+
+  if (!pinChecked) {
+    return <main style={{ padding: 20 }}><p>Loading…</p></main>;
+  }
+
   return (
     <main style={{ padding: 20 }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:8, marginBottom:12 }}>

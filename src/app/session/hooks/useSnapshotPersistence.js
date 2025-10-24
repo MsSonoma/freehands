@@ -289,7 +289,27 @@ export function useSnapshotPersistence({
 
   // Restore snapshot as early as possible (run once when a stable key can be derived)
   useEffect(() => {
-    if (didRunRestoreRef.current || restoredSnapshotRef.current) return;
+    console.log('[Snapshot] restore effect running', { 
+      didRunRestore: didRunRestoreRef.current, 
+      restoredSnapshot: restoredSnapshotRef.current,
+      lessonParam,
+      manifestFile: manifestInfo?.file,
+      lessonDataId: lessonData?.id
+    });
+    if (didRunRestoreRef.current || restoredSnapshotRef.current) {
+      console.log('[Snapshot] restore skipped - already attempted');
+      return;
+    }
+
+    // Wait for lessonData.id before attempting restore - this is the most reliable key
+    if (!lessonData?.id) {
+      console.log('[Snapshot] waiting for lessonData.id');
+      return;
+    }
+
+    // Mark as attempted IMMEDIATELY now that we have all required data
+    didRunRestoreRef.current = true;
+
     const doRestore = async () => {
       // Ensure the overlay shows while we resolve snapshot and reconcile resume
       try { setLoading(true); } catch {}
@@ -302,15 +322,14 @@ export function useSnapshotPersistence({
         try { const k = getSnapshotStorageKey({ manifest: manifestInfo }); if (k && !candidates.includes(k)) candidates.push(k); } catch {}
         try { if (lessonData?.id) { const k = getSnapshotStorageKey({ data: lessonData }); if (k && !candidates.includes(k)) candidates.push(k); } } catch {}
 
+        console.log('[Snapshot] restore keys generated', { keys: candidates.filter((k) => typeof k === 'string' && k.trim().length > 0) });
+
         // Only proceed when we have at least one non-empty key; otherwise, postpone restore
         const keys = candidates.filter((k) => typeof k === 'string' && k.trim().length > 0);
         if (keys.length === 0) {
           try { console.debug('[Snapshot] restore postponed (no key yet)', { at: new Date().toISOString() }); } catch {}
           return; // do not mark didRunRestore/restored flags so we can try again when deps update
         }
-
-  // Mark as attempted IMMEDIATELY to prevent re-entry during async operations
-  didRunRestoreRef.current = true;
 
         // Collect all available snapshots among candidates and legacy variants, then pick the newest by savedAt
         let snap = null;
@@ -342,22 +361,26 @@ export function useSnapshotPersistence({
             await consider(`${v}.json`, 'legacy-ext');
           }
         }
-        if (snap) { try { console.debug('[Snapshot] restore hit', { key: 'NEWEST', learnerId: lid, at: new Date().toISOString(), savedAt: snap.savedAt }); } catch {} }
+        if (snap) { try { console.log('[Snapshot] restore hit - snapshot found!', { key: 'NEWEST', learnerId: lid, savedAt: snap.savedAt, phase: snap.phase, subPhase: snap.subPhase, showBegin: snap.showBegin }); } catch {} }
         // If we didn't find a snapshot yet, decide whether to postpone based on source readiness
         const sourcesReady = Boolean(lessonParam) && (Boolean(manifestInfo?.file) || Boolean(lessonData?.id));
+        console.log('[Snapshot] restore check', { snap: !!snap, sourcesReady, lessonParam, manifestFile: manifestInfo?.file, lessonDataId: lessonData?.id });
         if (!snap) {
           if (!sourcesReady) {
             // Postpone finalize; dependencies will change when manifest/data load, allowing another attempt
             // Reset the flag so we can retry when dependencies change
             didRunRestoreRef.current = false;
             try { console.debug('[Snapshot] no snapshot yet; will retry when sources are ready', { at: new Date().toISOString() }); } catch {}
+            // Do NOT set loading=false or restoredSnapshotRef=true here; we'll retry
             return;
           }
           // No snapshot and sources are ready: finalize restore as not-found so saving can begin
           restoreFoundRef.current = false;
+          restoredSnapshotRef.current = true; // Mark as restored so autosaving can begin
           try { setOfferResume(false); } catch {}
           // Hide loading immediately in no-snapshot case so UI becomes interactive
           try { setLoading(false); } catch {}
+          try { console.debug('[Snapshot] no snapshot found; restore complete', { at: new Date().toISOString() }); } catch {}
           return;
         }
         // Found a snapshot: apply it
@@ -411,32 +434,39 @@ export function useSnapshotPersistence({
           const ci = Number.isFinite(snap.captionIndex) ? snap.captionIndex : 0;
           setCaptionIndex(Math.max(0, Math.min(ci, Math.max(0, lines.length - 1))));
         } catch {}
-        restoreFoundRef.current = true;
-  try { console.debug('[Snapshot] restore applied', { phase: snap.phase, subPhase: snap.subPhase, teachingStage: snap.teachingStage, at: new Date().toISOString() }); } catch {}
-  // Defer clearing loading until the resume reconciliation effect completes
+        // Defer clearing loading until the resume reconciliation effect completes
         try { setTtsLoadingCount(0); } catch {}
         try { setIsSpeaking(false); } catch {}
         try {
           // Minimal canSend heuristics on restore: enable only when in awaiting-begin or review or teaching stage prompts
           const enable = (
-            (phase === 'discussion' && subPhase === 'awaiting-learner') ||
-            (phase === 'comprehension' && subPhase === 'comprehension-start') ||
-            (phase === 'exercise' && subPhase === 'exercise-awaiting-begin') ||
-            (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin') ||
-            (phase === 'test' && (subPhase === 'test-awaiting-begin' || subPhase === 'review-start')) ||
-            (phase === 'teaching' && subPhase === 'teaching-3stage')
+            (snap.phase === 'discussion' && snap.subPhase === 'awaiting-learner') ||
+            (snap.phase === 'comprehension' && snap.subPhase === 'comprehension-start') ||
+            (snap.phase === 'exercise' && snap.subPhase === 'exercise-awaiting-begin') ||
+            (snap.phase === 'worksheet' && snap.subPhase === 'worksheet-awaiting-begin') ||
+            (snap.phase === 'test' && (snap.subPhase === 'test-awaiting-begin' || snap.subPhase === 'review-start')) ||
+            (snap.phase === 'teaching' && snap.subPhase === 'teaching-3stage')
           );
           setCanSend(!!enable);
         } catch {}
         try {
           // Do not surface Resume/Restart when the snapshot is effectively the global beginning
           const atGlobalStart = ((snap.phase || 'discussion') === 'discussion') && !!snap.showBegin;
+          console.log('[Snapshot] resume offer check', { atGlobalStart, phase: snap.phase, showBegin: snap.showBegin, willOfferResume: !atGlobalStart });
           setOfferResume(!atGlobalStart);
         } catch {}
-      } finally {
-        // Whether or not a snapshot was found, mark restored so subsequent state changes start saving
+        // Mark as restored NOW that we've successfully applied the snapshot
+        restoreFoundRef.current = true;
         restoredSnapshotRef.current = true;
-        try { console.debug('[Snapshot] restore attempt finished', { restored: restoreFoundRef.current, at: new Date().toISOString() }); } catch {}
+        try { console.log('[Snapshot] ✅ restore complete - snapshot applied', { phase: snap.phase, subPhase: snap.subPhase, teachingStage: snap.teachingStage, offerResume: true }); } catch {}
+      } catch (err) {
+        try { console.warn('[Snapshot] restore failed', err); } catch {}
+        // On error, mark as restored so we don't keep retrying and can start saving
+        restoredSnapshotRef.current = true;
+        restoreFoundRef.current = false;
+        try { setOfferResume(false); } catch {}
+        try { setLoading(false); } catch {}
+      } finally {
         // After first restore attempt, consolidate legacy keys in the background
         try {
           const k = getSnapshotStorageKey();

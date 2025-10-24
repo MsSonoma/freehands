@@ -176,7 +176,7 @@ export async function POST(request){
     const file = `${base}.json`
     const lessonJson = JSON.stringify(lesson, null, 2)
     
-    // Store in Supabase Storage in user's facilitator-lessons folder
+    // Store in Supabase Storage in user's generated-lessons folder
     let storageUrl = null
     let storageError = null
     if (supabase) {

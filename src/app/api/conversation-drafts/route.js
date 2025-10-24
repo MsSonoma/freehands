@@ -7,7 +7,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 // OpenAI configuration
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
-const OPENAI_MODEL = 'gpt-4o'
+const OPENAI_MODEL = 'gpt-4o-mini' // Using mini for draft summarization (same task as conversation-memory)
 
 function getSupabaseAdmin() {
   if (!supabaseUrl || !supabaseServiceKey) return null
@@ -37,19 +37,33 @@ export async function GET(request) {
     // Get learner_id from query params
     const { searchParams } = new URL(request.url)
     const learner_id = searchParams.get('learner_id') || null
+    
+    // Normalize learner_id: convert string "null" or empty string to actual null
+    const normalizedLearnerId = (learner_id === 'null' || learner_id === '' || !learner_id) ? null : learner_id
+    
+    console.log(`[Conversation Drafts] GET request for facilitator ${user.id}, learner ${normalizedLearnerId || 'none'}`)
 
     // Fetch draft
-    const { data: draft, error: fetchError } = await supabase
+    // Note: Use .is() for null values, .eq() for non-null values
+    let query = supabase
       .from('conversation_drafts')
       .select('*')
       .eq('facilitator_id', user.id)
-      .eq('learner_id', learner_id)
-      .maybeSingle()
+    
+    if (normalizedLearnerId === null) {
+      query = query.is('learner_id', null)
+    } else {
+      query = query.eq('learner_id', normalizedLearnerId)
+    }
+    
+    const { data: draft, error: fetchError } = await query.maybeSingle()
 
     if (fetchError) {
       console.error('[Conversation Drafts] Fetch error:', fetchError)
       return NextResponse.json({ error: 'Failed to fetch draft' }, { status: 500 })
     }
+    
+    console.log(`[Conversation Drafts] GET successful, draft found: ${!!draft}, summary length: ${draft?.draft_summary?.length || 0}`)
 
     return NextResponse.json({
       draft: draft || null
@@ -83,29 +97,46 @@ export async function POST(request) {
 
     const body = await request.json()
     const { learner_id = null, conversation_turns = [] } = body
+    
+    console.log(`[Conversation Drafts] Raw learner_id from body:`, learner_id, `type:`, typeof learner_id)
+    
+    // Normalize learner_id: convert string "null" or empty string to actual null
+    const normalizedLearnerId = (learner_id === 'null' || learner_id === '' || !learner_id) ? null : learner_id
+    
+    console.log(`[Conversation Drafts] Normalized learner_id:`, normalizedLearnerId, `type:`, typeof normalizedLearnerId)
 
-    console.log(`[Conversation Drafts] Updating draft for facilitator ${user.id}, learner ${learner_id || 'none'}, turns: ${conversation_turns.length}`)
+    console.log(`[Conversation Drafts] Updating draft for facilitator ${user.id}, learner ${normalizedLearnerId || 'none'}, turns: ${conversation_turns.length}`)
 
     // Fetch existing draft
-    const { data: existing, error: fetchError } = await supabase
+    // Note: Use .is() for null values, .eq() for non-null values
+    let query = supabase
       .from('conversation_drafts')
       .select('*')
       .eq('facilitator_id', user.id)
-      .eq('learner_id', learner_id)
-      .maybeSingle()
+    
+    if (normalizedLearnerId === null) {
+      query = query.is('learner_id', null)
+    } else {
+      query = query.eq('learner_id', normalizedLearnerId)
+    }
+    
+    const { data: existing, error: fetchError } = await query.maybeSingle()
 
     if (fetchError) {
       console.error('[Conversation Drafts] Error fetching existing:', fetchError)
-      return NextResponse.json({ error: 'Failed to check existing draft' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to check existing draft', details: fetchError.message }, { status: 500 })
     }
 
-    // Generate summary using Claude
+    // Generate summary using OpenAI
+    console.log('[Conversation Drafts] Generating summary with OpenAI...')
     const summaryText = await generateDraftSummary(conversation_turns, existing?.draft_summary)
 
     if (!summaryText) {
-      console.error('[Conversation Drafts] Summary generation failed')
-      return NextResponse.json({ error: 'Failed to generate summary' }, { status: 500 })
+      console.error('[Conversation Drafts] Summary generation failed - check OpenAI API key and logs above')
+      return NextResponse.json({ error: 'Failed to generate summary', details: 'OpenAI call failed or returned empty' }, { status: 500 })
     }
+    
+    console.log(`[Conversation Drafts] Generated summary: ${summaryText.length} chars`)
 
     // Update or insert draft
     if (existing) {
@@ -141,7 +172,7 @@ export async function POST(request) {
         .from('conversation_drafts')
         .insert({
           facilitator_id: user.id,
-          learner_id,
+          learner_id: normalizedLearnerId,
           draft_summary: summaryText,
           recent_turns: conversation_turns,
           turn_count: 1
@@ -192,13 +223,24 @@ export async function DELETE(request) {
     // Get learner_id from query params
     const { searchParams } = new URL(request.url)
     const learner_id = searchParams.get('learner_id') || null
+    
+    // Normalize learner_id: convert string "null" or empty string to actual null
+    const normalizedLearnerId = (learner_id === 'null' || learner_id === '' || !learner_id) ? null : learner_id
 
     // Delete draft
-    const { error: deleteError } = await supabase
+    // Note: Use .is() for null values, .eq() for non-null values
+    let query = supabase
       .from('conversation_drafts')
       .delete()
       .eq('facilitator_id', user.id)
-      .eq('learner_id', learner_id)
+    
+    if (normalizedLearnerId === null) {
+      query = query.is('learner_id', null)
+    } else {
+      query = query.eq('learner_id', normalizedLearnerId)
+    }
+    
+    const { error: deleteError } = await query
 
     if (deleteError) {
       console.error('[Conversation Drafts] Delete error:', deleteError)
@@ -238,9 +280,9 @@ Here are the most recent turns to incorporate:
 
 ${conversationTurns.map(t => `${t.role === 'user' ? 'User' : 'Assistant'}: ${t.content}`).join('\n\n')}
 
-Please provide an updated, concise summary (max 500 characters) that incorporates the new information while maintaining context. Focus on key topics, decisions, and insights.`
+Please provide an updated summary in 3-5 complete sentences (max 600 characters). Focus on key topics, decisions, and concrete actions taken (lessons generated, lessons scheduled, edits made). EXCLUDE the assistant's formulaic ending questions - those are just conversational prompts, not meaningful content. End with a complete sentence - do not cut off mid-thought.`
     } else {
-      prompt = `Please summarize the following conversation concisely (max 500 characters). Focus on key topics, decisions, and insights:
+      prompt = `Please summarize the following conversation in 3-5 complete sentences (max 600 characters). Focus on key topics, decisions, and concrete actions taken (lessons generated, lessons scheduled, edits made). EXCLUDE the assistant's formulaic ending questions - those are just conversational prompts, not meaningful content. End with a complete sentence - do not cut off mid-thought:
 
 ${conversationTurns.map(t => `${t.role === 'user' ? 'User' : 'Assistant'}: ${t.content}`).join('\n\n')}`
     }
@@ -263,15 +305,23 @@ ${conversationTurns.map(t => `${t.role === 'user' ? 'User' : 'Assistant'}: ${t.c
     })
 
     if (!response.ok) {
-      console.error('[Conversation Drafts] OpenAI request failed:', response.status)
+      const errorBody = await response.text().catch(() => 'Unable to read error body')
+      console.error('[Conversation Drafts] OpenAI request failed:', response.status, errorBody)
       return null
     }
 
     const data = await response.json()
     const summaryText = data.choices[0]?.message?.content?.trim() || ''
     
-    // Ensure it fits within 500 char limit
-    return summaryText.substring(0, 500)
+    if (!summaryText) {
+      console.error('[Conversation Drafts] OpenAI returned empty summary')
+      return null
+    }
+    
+    console.log(`[Conversation Drafts] OpenAI summary generated: ${summaryText.length} chars`)
+    
+    // Return the summary as-is (GPT should respect the length constraint in the prompt)
+    return summaryText
 
   } catch (error) {
     console.error('[Conversation Drafts] Summary generation error:', error)

@@ -36,6 +36,9 @@ const MENTOR_AUDIO_CONFIG = {
 // Mr. Mentor's core therapeutic system prompt
 const MENTOR_SYSTEM_PROMPT = `You are Mr. Mentor, a warm, caring professional counselor and educational consultant specializing in supporting homeschool facilitators and parents.
 
+CURRENT DATE: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })} (${new Date().toISOString().split('T')[0]})
+When scheduling lessons, always use the year 2025 unless the user explicitly specifies otherwise.
+
 Your role is to help facilitators:
 - Process their feelings and challenges around teaching
 - Clarify their educational goals and values
@@ -82,8 +85,11 @@ You have 5 function calling tools available. Use them actively during conversati
    - Takes 30-60 seconds to complete
 
 4. SCHEDULE_LESSON - Add lessons to calendars
-   - When they say "add that to Monday" or "schedule for Emma" → USE THIS TOOL
-   - Need: learner selected, lesson key from search, date
+   - When they say "schedule this" "add that to Monday" "put it on the calendar" → YOU MUST ACTUALLY CALL THIS FUNCTION
+   - You can use the learner's NAME (like "Emma") - the system will find them
+   - Need: learner name, lesson key from search/generate, date in YYYY-MM-DD format
+   - CRITICAL: DO NOT say you've scheduled something unless you ACTUALLY call the schedule_lesson function
+   - NEVER confirm scheduling without calling the function first
 
 5. EDIT_LESSON - Modify existing lessons (ALL lessons: installed subjects AND facilitator-created)
    - When they ask to change/fix/update/edit a lesson → USE THIS TOOL
@@ -103,6 +109,8 @@ You have 5 function calling tools available. Use them actively during conversati
    - Searches both current and archived conversations
 
 CRITICAL: When someone asks about lessons, DON'T say "I can't access" or "I'm unable to" - JUST USE THE SEARCH TOOL.
+CRITICAL: When someone asks you to schedule a lesson, you MUST call the schedule_lesson function. DO NOT confirm scheduling without actually calling it.
+CRITICAL: NEVER say "I've scheduled" or "has been scheduled" unless you actually called the schedule_lesson function and got a success response.
 If you need details on parameters, call get_capabilities first.
 Use these tools proactively - they expect you to search and find things for them.
 
@@ -325,7 +333,7 @@ function getCapabilitiesInfo(args) {
       parameters: {
         learnerId: 'Required. The learner\'s ID from context (you get this from learner transcript when they select a learner)',
         lessonKey: 'Required. Format: "subject/filename.json" (you get this from search results or after generating)',
-        scheduledDate: 'Required. Date in YYYY-MM-DD format. Convert natural language like "next Monday" to proper format.'
+        scheduledDate: 'Required. Date in YYYY-MM-DD format. CRITICAL: The current year is 2025. When user says "October 26th" they mean 2025-10-26, NOT 2023. Always use year 2025 unless they specify a different year. Convert natural language like "next Monday" to proper format.'
       },
       returns: 'Success confirmation with scheduled date and lesson key',
       notes: 'Learner must be selected in dropdown for you to have their ID in context',
@@ -640,7 +648,7 @@ async function executeGetLessonDetails(args, request) {
   }
 }
 
-// Helper function to execute lesson generation
+// Helper function to execute lesson generation with validation and auto-fix
 async function executeLessonGeneration(args, request) {
   try {
     const authHeader = request.headers.get('authorization')
@@ -648,7 +656,11 @@ async function executeLessonGeneration(args, request) {
       return { error: 'Authentication required' }
     }
     
-    // Call the lesson generation API
+    // Import validation functions
+    const { validateLessonQuality, buildValidationChangeRequest } = await import('@/app/lib/lessonValidation')
+    
+    // STEP 1: Call the lesson generation API
+    console.log('[Mr. Mentor] Generating lesson...')
     const genResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/facilitator/lessons/generate`, {
       method: 'POST',
       headers: {
@@ -664,13 +676,82 @@ async function executeLessonGeneration(args, request) {
       return { error: result.error || 'Lesson generation failed' }
     }
     
-    return {
-      success: true,
-      lessonFile: result.file,
-      lessonTitle: result.lesson?.title,
-      message: `Lesson "${result.lesson?.title}" has been created successfully.`
+    // Build the lessonKey in the format needed for scheduling: "facilitator/filename.json"
+    const lessonKey = `facilitator/${result.file}`
+    
+    // STEP 2: Validate the lesson quality
+    console.log('[Mr. Mentor] Validating lesson quality...')
+    const validation = validateLessonQuality(result.lesson)
+    
+    if (!validation.passed && validation.issues.length > 0) {
+      console.log('[Mr. Mentor] Validation failed, auto-fixing:', validation.issues)
+      
+      // STEP 3: Auto-fix with request-changes API
+      try {
+        const changeRequest = buildValidationChangeRequest(validation.issues)
+        const fixResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/facilitator/lessons/request-changes`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': authHeader
+          },
+          body: JSON.stringify({
+            file: result.file,
+            userId: result.userId,
+            changeRequest: changeRequest
+          })
+        })
+        
+        const fixResult = await fixResponse.json()
+        
+        if (fixResponse.ok) {
+          console.log('[Mr. Mentor] Auto-fix successful')
+          return {
+            success: true,
+            lessonFile: result.file,
+            lessonKey: lessonKey,
+            lessonTitle: result.lesson?.title,
+            message: `Lesson "${result.lesson?.title}" has been created and optimized for quality. You can now schedule it using the lesson key: ${lessonKey}`
+          }
+        } else {
+          console.error('[Mr. Mentor] Auto-fix failed:', fixResult.error)
+          // Still return success but with warning
+          return {
+            success: true,
+            lessonFile: result.file,
+            lessonKey: lessonKey,
+            lessonTitle: result.lesson?.title,
+            message: `Lesson "${result.lesson?.title}" has been created successfully. You can now schedule it using the lesson key: ${lessonKey}\n\nNote: Some quality improvements may be needed.`
+          }
+        }
+      } catch (fixError) {
+        console.error('[Mr. Mentor] Auto-fix error:', fixError)
+        // Still return success but with warning
+        return {
+          success: true,
+          lessonFile: result.file,
+          lessonKey: lessonKey,
+          lessonTitle: result.lesson?.title,
+          message: `Lesson "${result.lesson?.title}" has been created successfully. You can now schedule it using the lesson key: ${lessonKey}`
+        }
+      }
+    } else {
+      // Passed validation on first try
+      console.log('[Mr. Mentor] Validation passed')
+      if (validation.warnings.length > 0) {
+        console.log('[Mr. Mentor] Warnings:', validation.warnings)
+      }
+      
+      return {
+        success: true,
+        lessonFile: result.file,
+        lessonKey: lessonKey,
+        lessonTitle: result.lesson?.title,
+        message: `Lesson "${result.lesson?.title}" has been created successfully. You can now schedule it using the lesson key: ${lessonKey}`
+      }
     }
   } catch (err) {
+    console.error('[Mr. Mentor] Lesson generation error:', err)
     return { error: err.message || String(err) }
   }
 }
@@ -683,29 +764,79 @@ async function executeLessonScheduling(args, request) {
       return { error: 'Authentication required' }
     }
     
-    // Call the lesson schedule API
+    console.log('[Mr. Mentor] Scheduling lesson with args:', JSON.stringify(args, null, 2))
+    
+    // Validate required parameters
+    if (!args.learnerName) {
+      return { error: 'Missing learnerName - you need to specify which learner to schedule for' }
+    }
+    if (!args.lessonKey) {
+      return { error: 'Missing lessonKey - need the lesson identifier like "subject/filename.json"' }
+    }
+    if (!args.scheduledDate) {
+      return { error: 'Missing scheduledDate - need date in YYYY-MM-DD format' }
+    }
+    
+    // Look up the learner by name via Supabase
+    const { createClient } = await import('@supabase/supabase-js')
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    )
+    
+    const { data: learners, error: learnersError } = await supabase
+      .from('learners')
+      .select('id, name')
+      .order('created_at', { ascending: false })
+    
+    if (learnersError) {
+      return { error: 'Failed to fetch learners list', details: learnersError }
+    }
+    
+    const normalizedSearchName = args.learnerName.toLowerCase().trim()
+    const matchingLearner = learners.find(l => 
+      l.name?.toLowerCase().trim() === normalizedSearchName
+    )
+    
+    if (!matchingLearner) {
+      return { 
+        error: `Could not find a learner named "${args.learnerName}". Available learners: ${learners.map(l => l.name).join(', ')}` 
+      }
+    }
+    
+    console.log(`[Mr. Mentor] Found learner: ${matchingLearner.name} (${matchingLearner.id})`)
+    
+    // Call the lesson schedule API with the learner ID
     const schedResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/lesson-schedule`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': authHeader
       },
-      body: JSON.stringify(args)
+      body: JSON.stringify({
+        learnerId: matchingLearner.id,
+        lessonKey: args.lessonKey,
+        scheduledDate: args.scheduledDate
+      })
     })
     
     const result = await schedResponse.json()
     
     if (!schedResponse.ok) {
-      return { error: result.error || 'Lesson scheduling failed' }
+      console.error('[Mr. Mentor] Scheduling failed:', result)
+      return { error: result.error || 'Lesson scheduling failed', details: result }
     }
     
+    console.log('[Mr. Mentor] Scheduling succeeded')
     return {
       success: true,
       scheduledDate: args.scheduledDate,
       lessonKey: args.lessonKey,
-      message: `Lesson has been scheduled for ${args.scheduledDate}.`
+      learnerName: matchingLearner.name,
+      message: `Lesson has been scheduled for ${matchingLearner.name} on ${args.scheduledDate}.`
     }
   } catch (err) {
+    console.error('[Mr. Mentor] Scheduling exception:', err)
     return { error: err.message || String(err) }
   }
 }
@@ -916,7 +1047,7 @@ export async function POST(req) {
     // Build system prompt with learner context if available
     let systemPrompt = MENTOR_SYSTEM_PROMPT
     if (learnerTranscript) {
-      systemPrompt += `\n\n=== CURRENT LEARNER CONTEXT ===\nThe facilitator has selected a specific learner to discuss. Here is their profile and progress:\n\n${learnerTranscript}\n\n=== END LEARNER CONTEXT ===\n\nIMPORTANT: When scheduling lessons, use the learner ID shown at the top of the profile (the long UUID string after "ID:"). This is required for the schedule_lesson function. Do NOT try to use the learner's name - you MUST use their ID.\n\nUse this information to provide personalized, data-informed guidance. Reference specific achievements, struggles, or patterns you notice. Ask questions that help the facilitator reflect on this learner's unique needs and progress.`
+      systemPrompt += `\n\n=== CURRENT LEARNER CONTEXT ===\nThe facilitator has selected a specific learner to discuss. Here is their profile and progress:\n\n${learnerTranscript}\n\n=== END LEARNER CONTEXT ===\n\nIMPORTANT INSTRUCTIONS FOR THIS LEARNER:\n- When generating lessons, ALWAYS use the grade level shown in the learner profile above\n- When scheduling lessons, you can use the learner's name (e.g., "Emma", "John") and the system will find them\n- When searching for lessons, consider their current grade level and adjust difficulty accordingly\n\nUse this information to provide personalized, data-informed guidance. Reference specific achievements, struggles, or patterns you notice. Ask questions that help the facilitator reflect on this learner's unique needs and progress.`
     }
 
     // Load conversation memory for continuity (only if this is the first message in the conversation)
@@ -1069,9 +1200,9 @@ export async function POST(req) {
           parameters: {
             type: 'object',
             properties: {
-              learnerId: {
+              learnerName: {
                 type: 'string',
-                description: 'The ID of the learner'
+                description: 'The name of the learner (e.g., "Emma", "John"). The system will find the matching learner.'
               },
               lessonKey: {
                 type: 'string',
@@ -1082,7 +1213,7 @@ export async function POST(req) {
                 description: 'Date in YYYY-MM-DD format'
               }
             },
-            required: ['learnerId', 'lessonKey', 'scheduledDate']
+            required: ['learnerName', 'lessonKey', 'scheduledDate']
           }
         }
       },
@@ -1282,7 +1413,9 @@ export async function POST(req) {
         ...functionResults
       ]
       
-      console.log(`${logPrefix} Calling OpenAI again with function results`)
+      console.log(`${logPrefix} Calling OpenAI again with function results (${functionResults.length} results)`)
+      console.log(`${logPrefix} Follow-up message count: ${followUpMessages.length}`)
+      
       const followUpResponse = await fetch(OPENAI_URL, {
         method: 'POST',
         headers: {
@@ -1297,11 +1430,21 @@ export async function POST(req) {
         })
       })
       
+      if (!followUpResponse.ok) {
+        console.error(`${logPrefix} Follow-up OpenAI request failed with status ${followUpResponse.status}`)
+        const errorBody = await followUpResponse.text()
+        console.error(`${logPrefix} Follow-up error body:`, errorBody)
+        return NextResponse.json({ error: 'Failed to get follow-up response from Mr. Mentor.' }, { status: followUpResponse.status })
+      }
+      
       const followUpBody = await followUpResponse.json()
       const mentorReply = followUpBody?.choices?.[0]?.message?.content?.trim() ?? ''
       
+      console.log(`${logPrefix} Follow-up response received, length: ${mentorReply.length}`)
+      
       if (!mentorReply) {
         console.warn(`${logPrefix} Empty follow-up reply from OpenAI`)
+        console.warn(`${logPrefix} Full response:`, JSON.stringify(followUpBody, null, 2))
         return NextResponse.json({ error: 'Mr. Mentor had no response.' }, { status: 500 })
       }
       

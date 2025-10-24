@@ -9,7 +9,12 @@ async function getSupabaseAdmin(){
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const svc = process.env.SUPABASE_SERVICE_ROLE_KEY
     if (!url || !svc) return null
-    return createClient(url, svc, { auth: { persistSession: false } })
+    return createClient(url, svc, { 
+      auth: { 
+        persistSession: false,
+        autoRefreshToken: false 
+      }
+    })
   } catch {
     return null
   }
@@ -34,10 +39,14 @@ export async function GET(request){
     
     const userId = user.id
     
+    console.log('[LIST API] Fetching lessons for user:', userId)
+    
     // Only list files in THIS user's folder
     const { data: files, error: listError } = await supabase.storage
       .from('lessons')
       .list(`facilitator-lessons/${userId}`, { limit: 1000 })
+    
+    console.log('[LIST API] Files found:', files?.length, 'Error:', listError)
     
     if (listError) {
       console.error('Storage list error:', listError)
@@ -50,19 +59,34 @@ export async function GET(request){
     for (const fileObj of files || []) {
       if (!fileObj.name.toLowerCase().endsWith('.json')) continue
       
+      console.log('[LIST API] Processing file:', fileObj.name)
+      
       try {
-        // Download and parse each file
-        const { data: fileData, error: downloadError } = await supabase.storage
-          .from('lessons')
-          .download(`facilitator-lessons/${userId}/${fileObj.name}`)
+        // Bypass storage SDK and use direct REST API with service role
+        const filePath = `facilitator-lessons/${userId}/${fileObj.name}`
+        const storageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/lessons/${filePath}`
         
-        if (downloadError) continue
+        console.log('[LIST API] Fetching directly via REST API:', storageUrl)
+        const response = await fetch(storageUrl, {
+          headers: {
+            'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+            'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY
+          }
+        })
         
-        const raw = await fileData.text()
+        if (!response.ok) {
+          console.error('[LIST API] REST fetch error:', response.status, response.statusText)
+          const errorBody = await response.text().catch(() => 'Unable to read error body')
+          console.error('[LIST API] Error body:', errorBody)
+          continue
+        }
+        
+        const raw = await response.text()
         const js = JSON.parse(raw)
         const subj = (js.subject || '').toString().toLowerCase()
         const approved = js.approved === true
         const needsUpdate = js.needsUpdate === true
+        console.log('[LIST API] Parsed lesson:', fileObj.name, 'Subject:', subj)
         out.push({ 
           file: fileObj.name,
           userId: userId,
@@ -78,6 +102,7 @@ export async function GET(request){
       }
     }
     
+    console.log('[LIST API] Returning', out.length, 'lessons')
     return NextResponse.json(out)
   } catch (e) {
     console.error('List error:', e)

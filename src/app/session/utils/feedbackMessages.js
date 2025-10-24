@@ -3,6 +3,9 @@
  * Includes constants for celebrations, hints, and helper functions for building feedback.
  */
 
+import { CELEBRATE_CORRECT, generatePraise } from './praiseSignals';
+import { ENCOURAGEMENT_SNIPPETS } from './openingSignals';
+
 /**
  * Question type constraint note for AI instructions
  */
@@ -11,36 +14,16 @@ export const ALLOWED_Q_TYPES_NOTE = "Question type constraint: Only use Multiple
 /**
  * Short encouragement snippets for progress cues
  * Used around progress/count cues in comprehension, exercise, worksheet phases
+ * Re-exported from openingSignals for backward compatibility
  */
-export const ENCOURAGEMENT_SNIPPETS = [
-  'Great focus',
-  'Nice thinking',
-  'You are doing great',
-  'Keep it up',
-  'Strong effort',
-  'Brain power engaged',
-  'Love that persistence',
-  'Flex that brain',
-  'Terrific progress',
-  'Staying sharp'
-];
+export { ENCOURAGEMENT_SNIPPETS };
 
 /**
  * Celebration phrases for correct comprehension answers
  * Short, warm, domain-agnostic celebrations
+ * Re-exported from praiseSignals for backward compatibility
  */
-export const CELEBRATE_CORRECT = [
-  'Yes, great thinking',
-  'That is right',
-  'Nice work',
-  'You nailed it',
-  'Correct and confident',
-  'Solid answer',
-  'Exactly right',
-  'Way to go',
-  'Spot on',
-  'You got it'
-];
+export { CELEBRATE_CORRECT, generatePraise };
 
 /**
  * First-attempt hint variations

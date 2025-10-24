@@ -227,8 +227,8 @@ Assessment mapping
   - .github/Signals/MsSonoma_SignalFlow_Full_Report.pdf
 - Integration workflow:
   - Extract brand text to developer notes; curate tone traits, allowed lexicon, avoid list, and candidate lines.
-  - Prefer Signal Anchors over rigid lines; use [VERBATIM] only where phase rules require exact strings (e.g., JOKE_PROMPTS in Opening).
-  - Update phase rules to reference anchors; reference [VERBATIM] only for required exact options.
+  - Register only approved canonical lines as [VERBATIM] cues; everything else remains [SAMPLE].
+  - Update phase rules to reference new [VERBATIM] cues only after registration.
 - Guardrails:
   - Never market to kids; brand informs tone, not promotion.
   - No brand names or product claims in [SONOMA] outputs.
@@ -236,44 +236,8 @@ Assessment mapping
 - Fallback:
   - If brand artifacts are not yet curated, keep existing [SONOMA] rules; do not invent cues.
 
-16) Brand signal anchors [COPILOT]
-- PRAISE (correct answer)
-  - Intent: Acknowledge effort and method, not just the result
-  - Tone: Calm, specific, non-hype
-  - Lexicon: calm, clear, thinking, steps, focus
-  - Avoid: amazing, awesome, crushed it
-  - Shape: "Great [effort/thinking/focus]; [what they did well]."
-  - Examples:
-    - Great thinking; you used the zero property correctly.
-    - Nice focus; you checked each place value.
-- HINT (incorrect answer)
-  - Intent: Soften redirect; guide without solving
-  - Tone: Patient, collaborative
-  - Lexicon: smaller step, notice, try, together
-  - Avoid: Let me help you, That's wrong
-  - Shape: "Let's [action]. [Guiding question]."
-  - Examples:
-    - Let's try a smaller number. What is 1 times zero?
-    - Notice the place value here. What happens when we multiply by ten?
-- CLOSING
-  - Intent: Celebrate process and learning, not achievement
-  - Tone: Warm, grounded
-  - Lexicon: learned, practiced, worked, steady, progress
-  - Avoid: nailed it, perfect, genius
-  - Shape: "[Effort observation]. [One thing learned]. [Goodbye]."
-  - Examples:
-    - You worked steadily today. You practiced the zero property. See you next time.
-    - Great focus today. You learned how place value shifts with zeros. Talk soon.
-- Canonical cues required by phase rules [VERBATIM]
-  - OPENING_JOKE_PROMPTS:
-    - Wanna hear a joke?
-    - Let's start with a joke.
-
-17) Signal drift validator [COPILOT]
-- Before sending [SONOMA] content, validate:
-  - Word count per sentence: 6-12
-  - Preferred lexicon present: calm, clear, focus, steps, notice, practice, steady
-  - Avoid list absent: amazing, awesome, epic, crushed, nailed, genius
-  - Exclamation count: 0-1 per response
-  - Hype pattern absent: stacked adjectives, intensity escalation
-- If drift detected, rephrase using Signal Anchors (Section 16) before sending.
+16) Brand cue registry [VERBATIM]
+- OPENING_JOKE_PROMPTS: approved lines to introduce a joke.
+- CLOSING_ENCOURAGEMENTS: approved short closers aligned with brand.
+- PRAISE_SHORT: approved one-line praise options.
+- HINT_SOFTENERS: approved one-line soften-and-try-again options.

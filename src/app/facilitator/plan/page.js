@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAccessControl } from '@/app/hooks/useAccessControl';
+import { ensurePinAllowed } from '@/app/lib/pinGate';
 import GatedOverlay from '@/app/components/GatedOverlay';
 // BillingStatusDev removed per request
 
@@ -62,9 +63,29 @@ async function openPortal(setPortalLoading) {
 export default function FacilitatorPlanPage() {
   const router = useRouter();
   const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true });
+  const [pinChecked, setPinChecked] = useState(false);
   const [loadingTier, setLoadingTier] = useState(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [currentTier, setCurrentTier] = useState(null);
+
+  // Check PIN requirement on mount
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const allowed = await ensurePinAllowed('facilitator-page');
+        if (!allowed) {
+          router.push('/');
+          return;
+        }
+        if (!cancelled) setPinChecked(true);
+      } catch (e) {
+        if (!cancelled) setPinChecked(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [router]);
+
   // Clean up query params like ?checkout=success|cancel when returning from Stripe
   useEffect(() => {
     try {

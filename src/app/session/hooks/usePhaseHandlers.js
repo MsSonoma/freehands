@@ -10,15 +10,7 @@
 
 import { useCallback } from 'react';
 import { ensureQuestionMark, formatQuestionForSpeech, isShortAnswerItem } from '../utils/questionFormatting';
-
-const ENCOURAGEMENT_SNIPPETS = [
-  "You've got this",
-  "Great job so far",
-  "Nice work",
-  "Keep going",
-  "You're doing great",
-  "Excellent progress"
-];
+import { getEncouragement, ENCOURAGEMENT_SNIPPETS } from '../utils/openingSignals';
 
 export function usePhaseHandlers({
   // State setters
@@ -121,9 +113,7 @@ export function usePhaseHandlers({
     try {
       setQaAnswersUnlocked(true);
       // Speak a quick encouragement right after Go, before the first Exercise question.
-      const encouragement = ENCOURAGEMENT_SNIPPETS && ENCOURAGEMENT_SNIPPETS.length
-        ? ENCOURAGEMENT_SNIPPETS[Math.floor(Math.random() * ENCOURAGEMENT_SNIPPETS.length)]
-        : null;
+      const encouragement = getEncouragement();
       setCanSend(false);
       if (encouragement) {
         try { await speakFrontend(`${encouragement}.`); } catch {}

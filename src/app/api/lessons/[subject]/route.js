@@ -9,7 +9,7 @@ export const revalidate = 0;
 export const runtime = 'nodejs';
 
 // Enumerate lesson JSON files for a subject.
-// For "facilitator" subject, fetch from Supabase Storage for the specified learner.
+// For "generated" subject, fetch from Supabase Storage for the specified learner.
 // For other subjects, read from public/lessons/{subject} directory.
 // Returns minimal metadata for listing without loading entire question arrays.
 export async function GET(request) {
@@ -20,15 +20,15 @@ export async function GET(request) {
     const subject = decodeURIComponent(parts[parts.length - 1] || '').toLowerCase();
     if (!subject) return NextResponse.json({ error: 'Subject required' }, { status: 400 });
     
-    // If subject is "facilitator", fetch ALL generated lessons from the current user's folder
-    if (subject === 'facilitator') {
-      console.log('[FACILITATOR] Fetching facilitator lessons...');
+    // If subject is "generated", fetch ALL generated lessons from the current user's folder
+    if (subject === 'generated') {
+      console.log('[GENERATED] Fetching generated lessons...');
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
       
       if (!supabaseUrl || !supabaseServiceKey || !anonKey) {
-        console.log('[FACILITATOR] Missing Supabase config');
+        console.log('[GENERATED] Missing Supabase config');
         return NextResponse.json({ error: 'Supabase configuration missing' }, { status: 500 });
       }
       
@@ -61,7 +61,7 @@ export async function GET(request) {
       const { createClient } = await import('@supabase/supabase-js');
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
       
-      // List all lessons in the user's facilitator-lessons folder
+      // List all lessons in the user's generated-lessons folder
       const results = [];
       
       try {
@@ -72,21 +72,21 @@ export async function GET(request) {
             offset: 0,
           });
         
-        console.log('[FACILITATOR] Items found:', files?.length || 0);
+        console.log('[GENERATED] Items found:', files?.length || 0);
         
         if (filesError) {
-          console.error('[FACILITATOR] Error listing files:', filesError);
+          console.error('[GENERATED] Error listing files:', filesError);
           return NextResponse.json(results);
         }
         
         if (!files || files.length === 0) {
-          console.log('[FACILITATOR] No files found in facilitator-lessons/', userId);
+          console.log('[GENERATED] No files found in facilitator-lessons/', userId);
           return NextResponse.json(results);
         }
         
         // Filter for JSON files only (skip any folders)
         const jsonFiles = files.filter(f => f.name && f.name.toLowerCase().endsWith('.json') && f.id !== null);
-        console.log('[FACILITATOR] JSON files:', jsonFiles.length);
+        console.log('[GENERATED] JSON files:', jsonFiles.length);
         
         // Download and parse each file
         for (const file of jsonFiles) {

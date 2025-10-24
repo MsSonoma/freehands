@@ -12,11 +12,23 @@ export default function ClientTools(){
   const [loading, setLoading] = useState(true)
   const [pinChecked, setPinChecked] = useState(false)
 
-  // Skip PIN check entirely for window shopping experience
-  // Users can browse freely; PIN only needed for actual functionality (checked later)
+  // Check PIN requirement on mount
   useEffect(() => {
-    setPinChecked(true)
-  }, [])
+    let cancelled = false;
+    (async () => {
+      try {
+        const allowed = await ensurePinAllowed('facilitator-page');
+        if (!allowed) {
+          router.push('/');
+          return;
+        }
+        if (!cancelled) setPinChecked(true);
+      } catch (e) {
+        if (!cancelled) setPinChecked(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [router])
 
   useEffect(() => {
     if (!pinChecked) return
@@ -65,7 +77,7 @@ export default function ClientTools(){
                 <h3 style={{ marginTop:0, marginBottom: 0, color: '#92400e' }}>Preview Mode - Upgrade to Use</h3>
               </div>
               <p style={{ color:'#78350f', marginBottom: 12 }}>
-                You're viewing the Facilitator Tools. Upgrade to Premium to unlock Mr. Mentor, Lesson Maker, and more.
+                You're viewing the Facilitator Tools. Upgrade to Premium to unlock Mr. Mentor, Lesson Generator, and more.
               </p>
               <Link 
                 href="/facilitator/plan" 
@@ -155,8 +167,8 @@ export default function ClientTools(){
                   Premium
                 </div>
               )}
-              <h3 style={{ marginTop:0 }}>Lesson Maker</h3>
-              <p style={{ color:'#555' }}>Use AI to draft a lesson aligned to your grade, subject, and difficulty. Saved under Facilitator Lessons.</p>
+              <h3 style={{ marginTop:0 }}>Lesson Generator</h3>
+              <p style={{ color:'#555' }}>Use AI to draft a lesson aligned to your grade, subject, and difficulty. Saved under Generated Lessons.</p>
               <Link 
                 href="/facilitator/tools/lesson-maker" 
                 style={{ 
@@ -170,7 +182,7 @@ export default function ClientTools(){
                   textDecoration: 'none'
                 }}
               >
-                {hasAccess ? 'Open Lesson Maker' : 'Preview'}
+                {hasAccess ? 'Open Lesson Generator' : 'Preview'}
               </Link>
             </div>
             

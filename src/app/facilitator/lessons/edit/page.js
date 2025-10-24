@@ -16,23 +16,23 @@ function EditLessonContent() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  // Check PIN
+  // Check PIN requirement on mount
   useEffect(() => {
-    let cancelled = false
-    ;(async () => {
+    let cancelled = false;
+    (async () => {
       try {
-        const allowed = await ensurePinAllowed('facilitator-page')
+        const allowed = await ensurePinAllowed('facilitator-page');
         if (!allowed) {
-          router.push('/')
-          return
+          router.push('/');
+          return;
         }
-        if (!cancelled) setPinChecked(true)
+        if (!cancelled) setPinChecked(true);
       } catch (e) {
-        if (!cancelled) setPinChecked(true)
+        if (!cancelled) setPinChecked(true);
       }
-    })()
-    return () => { cancelled = true }
-  }, [router])
+    })();
+    return () => { cancelled = true; };
+  }, [router]);
 
   // Load lesson
   useEffect(() => {

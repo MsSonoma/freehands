@@ -59,7 +59,7 @@ export async function GET(){
     // Try to list files in the bucket
     const { data: files, error: listError } = await supabase.storage
       .from('lessons')
-      .list('facilitator-lessons', { limit: 5 })
+      .list('generated-lessons', { limit: 5 })
 
     return NextResponse.json({
       ...checks,

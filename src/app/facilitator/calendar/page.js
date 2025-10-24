@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
+import { ensurePinAllowed } from '@/app/lib/pinGate'
 import GatedOverlay from '@/app/components/GatedOverlay'
 import LessonCalendar from './LessonCalendar'
 import LessonPicker from './LessonPicker'
@@ -12,6 +13,7 @@ import LessonPicker from './LessonPicker'
 export default function CalendarPage() {
   const router = useRouter()
   const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true })
+  const [pinChecked, setPinChecked] = useState(false)
   const [learners, setLearners] = useState([])
   const [selectedLearnerId, setSelectedLearnerId] = useState('')
   const [selectedDate, setSelectedDate] = useState(null)
@@ -22,9 +24,28 @@ export default function CalendarPage() {
   const [hasAccess, setHasAccess] = useState(false)
   const [tableExists, setTableExists] = useState(true)
 
+  // Check PIN requirement on mount
   useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const allowed = await ensurePinAllowed('facilitator-page');
+        if (!allowed) {
+          router.push('/');
+          return;
+        }
+        if (!cancelled) setPinChecked(true);
+      } catch (e) {
+        if (!cancelled) setPinChecked(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [router]);
+
+  useEffect(() => {
+    if (!pinChecked) return;
     checkAccess()
-  }, [])
+  }, [pinChecked])
 
   // Send title to HeaderBar
   useEffect(() => {
@@ -48,6 +69,19 @@ export default function CalendarPage() {
     if (selectedLearnerId) {
       loadSchedule()
     }
+  }, [selectedLearnerId])
+
+  // Refresh schedule when page becomes visible (e.g., switching back from Mr. Mentor)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && selectedLearnerId) {
+        console.log('[Calendar] Page visible again, refreshing schedule...')
+        loadSchedule()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [selectedLearnerId])
 
   useEffect(() => {

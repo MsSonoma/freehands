@@ -7,12 +7,17 @@ import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
 import { fetchLearnerTranscript } from '@/app/lib/learnerTranscript'
 import ClipboardOverlay from './ClipboardOverlay'
+import CalendarOverlay from './overlays/CalendarOverlay'
+import LessonsOverlay from './overlays/LessonsOverlay'
+import GeneratedLessonsOverlay from './overlays/GeneratedLessonsOverlay'
+import LessonMakerOverlay from './overlays/LessonMakerOverlay'
 
 export default function CounselorClient() {
   const router = useRouter()
   const [pinChecked, setPinChecked] = useState(false)
   const [tierChecked, setTierChecked] = useState(false)
   const [hasAccess, setHasAccess] = useState(false)
+  const [tier, setTier] = useState('free')
   const [sessionStarted, setSessionStarted] = useState(false)
   const [currentSessionTokens, setCurrentSessionTokens] = useState(0)
   
@@ -38,23 +43,72 @@ export default function CounselorClient() {
   const [captionSentences, setCaptionSentences] = useState([])
   const [captionIndex, setCaptionIndex] = useState(0)
   
+  // Screen overlay state
+  const [activeScreen, setActiveScreen] = useState('mentor') // 'mentor' | 'calendar' | 'lessons' | 'generated' | 'maker'
+  
   // Audio/Video refs
   const videoRef = useRef(null)
+  const buttonVideoRef = useRef(null)
   const audioRef = useRef(null)
   const captionBoxRef = useRef(null)
   
-  // Mute state
-  const [muted, setMuted] = useState(false)
+  // Mute state - persisted in localStorage
+  const [muted, setMuted] = useState(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      const stored = localStorage.getItem('mr_mentor_muted')
+      return stored === 'true'
+    } catch {
+      return false
+    }
+  })
   
   // Layout state
   const [isMobileLandscape, setIsMobileLandscape] = useState(false)
   const [videoMaxHeight, setVideoMaxHeight] = useState(null)
+  const [captionPanelFlex, setCaptionPanelFlex] = useState('0 0 50%')
 
-  // Skip PIN check entirely for window shopping experience
-  // Users can browse freely; PIN only needed for actual functionality (checked later)
+  // Calculate caption panel height based on screen height
   useEffect(() => {
-    setPinChecked(true)
+    const updateCaptionHeight = () => {
+      const h = window.innerHeight
+      // Interpolate: 600px -> 40%, 1000px -> 50%
+      // Below 600: clamp to 40%, above 1000: clamp to 50%
+      let percent
+      if (h <= 600) {
+        percent = 40
+      } else if (h >= 1000) {
+        percent = 50
+      } else {
+        // Linear interpolation between 600 and 1000
+        const t = (h - 600) / (1000 - 600)
+        percent = 40 + (10 * t)
+      }
+      setCaptionPanelFlex(`0 0 ${percent}%`)
+    }
+    
+    updateCaptionHeight()
+    window.addEventListener('resize', updateCaptionHeight)
+    return () => window.removeEventListener('resize', updateCaptionHeight)
   }, [])
+
+  // Check PIN requirement on mount
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const allowed = await ensurePinAllowed('facilitator-page');
+        if (!allowed) {
+          router.push('/');
+          return;
+        }
+        if (!cancelled) setPinChecked(true);
+      } catch (e) {
+        if (!cancelled) setPinChecked(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [router]);
 
   // Check premium tier
   useEffect(() => {
@@ -68,9 +122,10 @@ export default function CounselorClient() {
           const uid = session?.user?.id
           if (uid) {
             const { data } = await supabase.from('profiles').select('plan_tier').eq('id', uid).maybeSingle()
-            const tier = (data?.plan_tier || 'free').toLowerCase()
-            const ent = featuresForTier(tier)
+            const planTier = (data?.plan_tier || 'free').toLowerCase()
+            const ent = featuresForTier(planTier)
             if (!cancelled) {
+              setTier(planTier)
               setHasAccess(ent.facilitatorTools)
               setTierChecked(true)
             }
@@ -290,6 +345,9 @@ export default function CounselorClient() {
         if (videoRef.current) {
           videoRef.current.pause()
         }
+        if (buttonVideoRef.current) {
+          buttonVideoRef.current.pause()
+        }
         audioRef.current = null
       }
 
@@ -305,6 +363,13 @@ export default function CounselorClient() {
       if (videoRef.current) {
         try {
           await videoRef.current.play()
+        } catch {}
+      }
+      
+      // Start button video if available
+      if (buttonVideoRef.current) {
+        try {
+          await buttonVideoRef.current.play()
         } catch {}
       }
     } catch (err) {
@@ -329,6 +394,13 @@ export default function CounselorClient() {
     if (videoRef.current) {
       try {
         videoRef.current.pause()
+      } catch {}
+    }
+    
+    // Pause button video
+    if (buttonVideoRef.current) {
+      try {
+        buttonVideoRef.current.pause()
       } catch {}
     }
     
@@ -663,6 +735,10 @@ export default function CounselorClient() {
         audioRef.current.muted = next
         audioRef.current.volume = next ? 0 : 1
       }
+      // Persist to localStorage
+      try {
+        localStorage.setItem('mr_mentor_muted', String(next))
+      } catch {}
       return next
     })
   }, [])
@@ -754,7 +830,7 @@ export default function CounselorClient() {
         gap: isMobileLandscape ? 16 : 0,
         padding: isMobileLandscape ? 16 : 0
       }}>
-        {/* Video panel */}
+        {/* Video/Overlay panel */}
         <div style={{
           flex: isMobileLandscape ? 1 : '0 0 30%',
           display: 'flex',
@@ -765,76 +841,116 @@ export default function CounselorClient() {
           minHeight: 0,
           padding: isMobileLandscape ? 0 : 16
         }}>
-          <video
-            ref={videoRef}
-            src="/media/Mr Mentor.mp4"
-            loop
-            muted
-            playsInline
-            preload="auto"
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              objectPosition: 'center 35%'
-            }}
-          />
-          {/* Skip button (bottom-left, visible when speaking) */}
-          {isSpeaking && (
-            <button
-              onClick={handleSkipSpeech}
-              aria-label="Skip"
-              title="Skip"
-              style={{
-                position: 'absolute',
-                bottom: 16,
-                left: 16,
-                background: '#1f2937',
-                color: '#fff',
-                border: 'none',
-                width: 'clamp(34px, 6.2vw, 52px)',
-                height: 'clamp(34px, 6.2vw, 52px)',
-                display: 'grid',
-                placeItems: 'center',
-                borderRadius: '50%',
-                cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-                zIndex: 10
-              }}
-            >
-              <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="5 4 15 12 5 20 5 4" />
-                <line x1="19" y1="5" x2="19" y2="19" />
-              </svg>
-            </button>
-          )}
+          {/* Show video when activeScreen is 'mentor', otherwise show overlay */}
+          {activeScreen === 'mentor' ? (
+            <>
+              <video
+                ref={videoRef}
+                src="/media/Mr Mentor.mp4"
+                loop
+                muted
+                playsInline
+                preload="auto"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center 35%'
+                }}
+              />
+              {/* Skip button (bottom-left, visible when speaking) */}
+              {isSpeaking && (
+                <button
+                  onClick={handleSkipSpeech}
+                  aria-label="Skip"
+                  title="Skip"
+                  style={{
+                    position: 'absolute',
+                    bottom: 16,
+                    left: 16,
+                    background: '#1f2937',
+                    color: '#fff',
+                    border: 'none',
+                    width: 'clamp(34px, 6.2vw, 52px)',
+                    height: 'clamp(34px, 6.2vw, 52px)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                    zIndex: 10
+                  }}
+                >
+                  <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="5 4 15 12 5 20 5 4" />
+                    <line x1="19" y1="5" x2="19" y2="19" />
+                  </svg>
+                </button>
+              )}
 
-          {/* Mute button overlay */}
-          <button
-            onClick={toggleMute}
-            style={{
-              position: 'absolute',
-              top: 12,
-              right: 12,
-              padding: '8px 12px',
-              border: 'none',
-              borderRadius: 6,
-              background: 'rgba(0,0,0,0.6)',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: 14,
-              fontWeight: 500
-            }}
-            title={muted ? 'Unmute' : 'Mute'}
-          >
-            {muted ? '🔇 Muted' : '🔊 Sound'}
-          </button>
+              {/* Mute button overlay - matches Ms. Sonoma's style */}
+              <button
+                onClick={toggleMute}
+                aria-label={muted ? 'Unmute' : 'Mute'}
+                title={muted ? 'Unmute' : 'Mute'}
+                style={{
+                  position: 'absolute',
+                  bottom: 16,
+                  right: 16,
+                  background: '#1f2937',
+                  color: '#fff',
+                  border: 'none',
+                  width: 'clamp(48px, 10vw, 64px)',
+                  height: 'clamp(48px, 10vw, 64px)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                  zIndex: 10
+                }}
+              >
+                {muted ? (
+                  <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                    <path d="M23 9l-6 6" />
+                    <path d="M17 9l6 6" />
+                  </svg>
+                ) : (
+                  <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                    <path d="M19 8a5 5 0 010 8" />
+                    <path d="M15 11a2 2 0 010 2" />
+                  </svg>
+                )}
+              </button>
+            </>
+          ) : (
+            <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
+              {activeScreen === 'calendar' && (
+                <CalendarOverlay 
+                  learnerId={selectedLearnerId}
+                />
+              )}
+              {activeScreen === 'lessons' && (
+                <LessonsOverlay 
+                  learnerId={selectedLearnerId}
+                />
+              )}
+              {activeScreen === 'generated' && (
+                <GeneratedLessonsOverlay learnerId={selectedLearnerId} />
+              )}
+              {activeScreen === 'maker' && (
+                <LessonMakerOverlay tier={tier} />
+              )}
+            </div>
+          )}
         </div>
 
         {/* Caption panel */}
         <div
           style={{
-            flex: isMobileLandscape ? 1 : '0 0 35%',
+            flex: isMobileLandscape ? 1 : captionPanelFlex,
             position: 'relative',
             display: 'flex',
             flexDirection: 'column',
@@ -991,41 +1107,158 @@ export default function CounselorClient() {
           marginLeft: 'auto',
           marginRight: 'auto'
         }}>
-          {/* Learner selection dropdown */}
+          {/* Learner selection dropdown and screen buttons */}
           {learners.length > 0 && (
             <div style={{ marginBottom: 8 }}>
-              <label htmlFor="learner-select" style={{ 
-                display: 'block', 
-                marginBottom: 4, 
-                fontSize: 13,
-                fontWeight: 600,
-                color: '#374151'
+              <div style={{ 
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: 4
               }}>
-                Discussing learner:
-              </label>
-              <select
-                id="learner-select"
-                value={selectedLearnerId}
-                onChange={(e) => setSelectedLearnerId(e.target.value)}
-                disabled={loading || isSpeaking}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: 8,
-                  fontSize: 14,
-                  fontFamily: 'inherit',
-                  background: '#fff',
-                  cursor: (loading || isSpeaking) ? 'not-allowed' : 'pointer'
-                }}
-              >
-                <option value="none">None (general discussion)</option>
-                {learners.map(learner => (
-                  <option key={learner.id} value={learner.id}>
-                    {learner.name} {learner.grade ? `(Grade ${learner.grade})` : ''}
-                  </option>
-                ))}
-              </select>
+                <select
+                  id="learner-select"
+                  value={selectedLearnerId}
+                  onChange={(e) => setSelectedLearnerId(e.target.value)}
+                  disabled={loading || isSpeaking}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontFamily: 'inherit',
+                    background: '#fff',
+                    cursor: (loading || isSpeaking) ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  <option value="none">No Learner Selected (general discussion)</option>
+                  {learners.map(learner => (
+                    <option key={learner.id} value={learner.id}>
+                      {learner.name} {learner.grade ? `(Grade ${learner.grade})` : ''}
+                    </option>
+                  ))}
+                </select>
+                
+                {/* Screen toggle buttons */}
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button
+                    onClick={() => setActiveScreen('mentor')}
+                    title="Mr. Mentor Video"
+                    style={{
+                      width: 40,
+                      height: 40,
+                      border: '2px solid',
+                      borderColor: activeScreen === 'mentor' ? '#3b82f6' : '#d1d5db',
+                      borderRadius: 6,
+                      background: '#000',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s',
+                      overflow: 'hidden',
+                      padding: 0,
+                      position: 'relative'
+                    }}
+                  >
+                    <video
+                      ref={buttonVideoRef}
+                      loop
+                      muted
+                      playsInline
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block'
+                      }}
+                    >
+                      <source src="/media/Mr Mentor.mp4" type="video/mp4" />
+                    </video>
+                  </button>
+                  <button
+                    onClick={() => setActiveScreen('lessons')}
+                    title="Lessons"
+                    style={{
+                      width: 40,
+                      height: 40,
+                      border: '2px solid',
+                      borderColor: activeScreen === 'lessons' ? '#3b82f6' : '#d1d5db',
+                      borderRadius: 6,
+                      background: activeScreen === 'lessons' ? '#dbeafe' : '#fff',
+                      cursor: 'pointer',
+                      fontSize: 20,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    📚
+                  </button>
+                  <button
+                    onClick={() => setActiveScreen('maker')}
+                    title="Lesson Generator"
+                    style={{
+                      width: 40,
+                      height: 40,
+                      border: '2px solid',
+                      borderColor: activeScreen === 'maker' ? '#3b82f6' : '#d1d5db',
+                      borderRadius: 6,
+                      background: activeScreen === 'maker' ? '#dbeafe' : '#fff',
+                      cursor: 'pointer',
+                      fontSize: 20,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    🎨
+                  </button>
+                  <button
+                    onClick={() => setActiveScreen('generated')}
+                    title="Generated Lessons"
+                    style={{
+                      width: 40,
+                      height: 40,
+                      border: '2px solid',
+                      borderColor: activeScreen === 'generated' ? '#3b82f6' : '#d1d5db',
+                      borderRadius: 6,
+                      background: activeScreen === 'generated' ? '#dbeafe' : '#fff',
+                      cursor: 'pointer',
+                      fontSize: 20,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    ✨
+                  </button>
+                  <button
+                    onClick={() => setActiveScreen('calendar')}
+                    title="Calendar"
+                    style={{
+                      width: 40,
+                      height: 40,
+                      border: '2px solid',
+                      borderColor: activeScreen === 'calendar' ? '#3b82f6' : '#d1d5db',
+                      borderRadius: 6,
+                      background: activeScreen === 'calendar' ? '#dbeafe' : '#fff',
+                      cursor: 'pointer',
+                      fontSize: 20,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    📅
+                  </button>
+                </div>
+              </div>
             </div>
           )}
           

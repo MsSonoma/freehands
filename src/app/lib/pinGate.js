@@ -113,6 +113,11 @@ export function setInFacilitatorSection(v) {
 	try { if (v) sessionStorage.setItem(FACILITATOR_SECTION_KEY, '1'); else sessionStorage.removeItem(FACILITATOR_SECTION_KEY); } catch {}
 }
 
+// Check if already in facilitator section without prompting for PIN
+export function checkFacilitatorSection() {
+	return isInFacilitatorSection();
+}
+
 // Global lock to prevent multiple simultaneous PIN prompts
 let activePinPrompt = null;
 

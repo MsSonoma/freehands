@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { setInFacilitatorSection } from '@/app/lib/pinGate';
 
@@ -9,12 +9,22 @@ import { setInFacilitatorSection } from '@/app/lib/pinGate';
  */
 export default function FacilitatorSectionTracker() {
   const pathname = usePathname();
+  const prevPathnameRef = useRef(pathname);
 
   useEffect(() => {
-    // If current path is not under /facilitator, clear the flag
-    if (pathname && !pathname.startsWith('/facilitator')) {
+    const prevPathname = prevPathnameRef.current;
+    const isInFacilitator = pathname && pathname.startsWith('/facilitator');
+    const wasInFacilitator = prevPathname && prevPathname.startsWith('/facilitator');
+    
+    // Only clear the flag when leaving the facilitator section entirely
+    // (from /facilitator/* to non-facilitator path)
+    if (wasInFacilitator && !isInFacilitator) {
+      console.log('[FacilitatorSectionTracker] Leaving facilitator section, clearing flag');
       setInFacilitatorSection(false);
     }
+    
+    // Update ref for next comparison
+    prevPathnameRef.current = pathname;
   }, [pathname]);
 
   return null;

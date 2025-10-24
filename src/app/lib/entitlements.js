@@ -9,20 +9,20 @@ export const ENTITLEMENTS = {
     devices: 1,
     facilitatorTools: false,
     askFeature: false, // Ask question requires Basic+
-    goldenKeyFeatures: true, // Poem/Story require golden key (any tier can use with key)
+    goldenKeyFeatures: false, // No golden keys on free tier
     lifetimeGenerations: 0,
     weeklyGenerations: 0,
     mentorSessions: 0,
   },
   basic: {
-    lessonsPerDay: 5,
+    lessonsPerDay: 2,
     allLessons: true,
     learnersMax: 1,
     devices: 1,
     facilitatorTools: false,
     askFeature: true, // Ask allowed on Basic+
     goldenKeyFeatures: true, // Can use golden keys
-    lifetimeGenerations: 5, // 5 total, never refreshes
+    lifetimeGenerations: 1, // 1 lifetime generation
     weeklyGenerations: 0,
     mentorSessions: 0,
   },
@@ -31,10 +31,10 @@ export const ENTITLEMENTS = {
     allLessons: true,
     learnersMax: 2,
     devices: 1,
-    facilitatorTools: false,
+    facilitatorTools: true, // Calendar and other facilitator tools enabled
     askFeature: true,
     goldenKeyFeatures: true,
-    lifetimeGenerations: 5, // Shared with basic (no reset on upgrade)
+    lifetimeGenerations: 5, // 5 lifetime generations
     weeklyGenerations: 1, // 1 per week in addition to lifetime
     mentorSessions: 0,
   },

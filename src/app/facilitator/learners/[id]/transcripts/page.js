@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState, use } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { ensurePinAllowed } from '@/app/lib/pinGate';
 // Fetch via server API to ensure service role access
 import { getLearner } from '@/app/facilitator/learners/clientApi';
 import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
@@ -10,12 +12,33 @@ export default function LearnerTranscriptsPage({ params }) {
   // In Next.js 15 App Router, params is a Promise in client components.
   // Unwrap with React.use() to avoid deprecation warnings and future breakage.
   const { id: learnerId } = use(params);
+  const router = useRouter();
+  const [pinChecked, setPinChecked] = useState(false);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [learnerName, setLearnerName] = useState('');
 
+  // Check PIN requirement on mount
   useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const allowed = await ensurePinAllowed('facilitator-page');
+        if (!allowed) {
+          router.push('/');
+          return;
+        }
+        if (!cancelled) setPinChecked(true);
+      } catch (e) {
+        if (!cancelled) setPinChecked(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [router]);
+
+  useEffect(() => {
+    if (!pinChecked) return;
     let mounted = true;
     (async () => {
       try {

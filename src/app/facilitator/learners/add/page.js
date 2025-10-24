@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { ensurePinAllowed } from '@/app/lib/pinGate';
 import { createLearner } from '../clientApi';
 import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
 import { featuresForTier } from '@/app/lib/entitlements';
@@ -16,6 +17,7 @@ const targetOptions = numericRange(3, 20);
 
 export default function AddLearnerPage() {
 	const router = useRouter();
+	const [pinChecked, setPinChecked] = useState(false);
 	const [name, setName] = useState('');
 	const [grade, setGrade] = useState('K');
 	const [comprehension, setComprehension] = useState('3');
@@ -28,8 +30,27 @@ export default function AddLearnerPage() {
 		const [count, setCount] = useState(0);
 		const atLimit = Number.isFinite(maxLearners) && count >= maxLearners;
 
+		// Check PIN requirement on mount
+		useEffect(() => {
+			let cancelled = false;
+			(async () => {
+				try {
+					const allowed = await ensurePinAllowed('facilitator-page');
+					if (!allowed) {
+						router.push('/');
+						return;
+					}
+					if (!cancelled) setPinChecked(true);
+				} catch (e) {
+					if (!cancelled) setPinChecked(true);
+				}
+			})();
+			return () => { cancelled = true; };
+		}, [router]);
+
 		// Load plan tier and current count
 		useEffect(() => {
+			if (!pinChecked) return;
 			let cancelled = false;
 			(async () => {
 				try {

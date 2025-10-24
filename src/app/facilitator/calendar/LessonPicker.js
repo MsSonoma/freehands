@@ -16,7 +16,7 @@ export default function LessonPicker({
   const [learnerGrade, setLearnerGrade] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  const subjects = ['math', 'science', 'language arts', 'social studies', 'facilitator']
+  const subjects = ['math', 'science', 'language arts', 'social studies', 'generated']
   const grades = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
   useEffect(() => {
@@ -78,7 +78,7 @@ export default function LessonPicker({
       const lessonsMap = {}
       for (const subject of subjects) {
         try {
-          const headers = subject === 'facilitator' && token ? { Authorization: `Bearer ${token}` } : {}
+          const headers = subject === 'generated' && token ? { Authorization: `Bearer ${token}` } : {}
           const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { 
             cache: 'no-store',
             headers

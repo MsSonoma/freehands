@@ -8,7 +8,7 @@ import { ensurePinAllowed } from '@/app/lib/pinGate'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
 import GatedOverlay from '@/app/components/GatedOverlay'
 
-const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'facilitator']
+const SUBJECTS = ['math', 'science', 'language arts', 'social studies']
 const GRADES = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
 export default function FacilitatorLessonsPage() {
@@ -136,13 +136,13 @@ export default function FacilitatorLessonsPage() {
       const token = session?.access_token
       
       const lessonsMap = {}
+      
+      // Load lessons from public folders for each subject
       for (const subject of SUBJECTS) {
         try {
           console.log(`[FRONTEND] Fetching lessons for subject: ${subject}`);
-          const headers = subject === 'facilitator' && token ? { Authorization: `Bearer ${token}` } : {};
           const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { 
-            cache: 'no-store',
-            headers
+            cache: 'no-store'
           })
           console.log(`[FRONTEND] Response for ${subject}:`, res.status, res.ok);
           const list = res.ok ? await res.json() : []
@@ -153,6 +153,34 @@ export default function FacilitatorLessonsPage() {
           lessonsMap[subject] = []
         }
       }
+      
+      // Load generated lessons from user's storage
+      if (token) {
+        try {
+          console.log('[FRONTEND] Fetching generated lessons')
+          const res = await fetch('/api/facilitator/lessons/list', {
+            cache: 'no-store',
+            headers: { Authorization: `Bearer ${token}` }
+          })
+          console.log('[FRONTEND] Generated lessons response:', res.status, res.ok)
+          if (res.ok) {
+            const generatedList = await res.json()
+            console.log('[FRONTEND] Generated lessons:', generatedList.length)
+            // Merge generated lessons into their respective subjects with ✨ marker
+            for (const lesson of generatedList) {
+              const subject = lesson.subject || 'math'
+              if (!lessonsMap[subject]) lessonsMap[subject] = []
+              lessonsMap[subject].push({
+                ...lesson,
+                isGenerated: true // Mark as generated for display
+              })
+            }
+          }
+        } catch (err) {
+          console.error('[FRONTEND] Error loading generated lessons:', err)
+        }
+      }
+      
       console.log('[FRONTEND] All lessons loaded:', lessonsMap);
       if (!cancelled) {
         setAllLessons(lessonsMap)
@@ -512,15 +540,15 @@ export default function FacilitatorLessonsPage() {
           {SUBJECTS.map(subject => {
             const lessons = allLessons[subject] || []
             // For facilitator lessons, only show approved ones
-            const displayLessons = subject === 'facilitator' 
+            const displayLessons = subject === 'generated' 
               ? lessons.filter(l => l.approved === true)
               : lessons
             const filteredLessons = filterLessonsByGrade(displayLessons, subject)
-            const displaySubject = subject === 'facilitator' ? 'Facilitator Lessons' : 
+            const displaySubject = subject === 'generated' ? 'Generated Lessons' : 
                                    subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
             
-            // Always show facilitator subject even when empty; hide others if empty
-            if (displayLessons.length === 0 && subject !== 'facilitator') return null
+            // Always show generated subject even when empty; hide others if empty
+            if (displayLessons.length === 0 && subject !== 'generated') return null
 
             const isExpanded = expandedSubjects[subject]
             const approvedCount = filteredLessons.filter(l => approvedLessons[`${subject}/${l.file}`]).length
@@ -578,12 +606,12 @@ export default function FacilitatorLessonsPage() {
                   <div style={accordionContent}>
                     {filteredLessons.length === 0 ? (
                       <p style={{ color: '#6b7280', padding: '12px', textAlign: 'center' }}>
-                        {subject === 'facilitator' && selectedGrade === 'all' 
-                          ? 'No generated lessons yet. Use the Lesson Maker to create custom lessons.'
+                        {subject === 'generated' && selectedGrade === 'all'
+                          ? 'No generated lessons yet. Use the Lesson Generator to create custom lessons.'
                           : `No lessons found for Grade ${selectedGrade}`}
                       </p>
-                    ) : subject === 'facilitator' ? (
-                      // For facilitator lessons, group by subject
+                    ) : subject === 'generated' ? (
+                      // For generated lessons, group by subject
                       (() => {
                         const grouped = {}
                         filteredLessons.forEach(lesson => {
@@ -605,7 +633,10 @@ export default function FacilitatorLessonsPage() {
                               {subj === 'language arts' ? 'Language Arts' : subj === 'social studies' ? 'Social Studies' : subj.charAt(0).toUpperCase() + subj.slice(1)}
                             </h3>
                             {grouped[subj].map(lesson => {
-                              const lessonKey = `${subject}/${lesson.file}`
+                              // Use 'facilitator' prefix for generated lessons, actual subject for public lessons
+                              const lessonKey = lesson.isGenerated 
+                                ? `facilitator/${lesson.file}` 
+                                : `${subject}/${lesson.file}`
                               const isApproved = !!approvedLessons[lessonKey]
                               const isScheduled = !!scheduledLessons[lessonKey]
                               const futureDate = futureScheduledLessons[lessonKey]
@@ -651,7 +682,7 @@ export default function FacilitatorLessonsPage() {
                                         style={{ flex: '1 1 200px', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
                                       >
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                          <span style={{ fontWeight: 600 }}>{lesson.title}</span>
+                                          <span style={{ fontWeight: 600 }}>{lesson.isGenerated && '✨ '}{lesson.title}</span>
                                         {hasActiveKey && (
                                           <span style={{ 
                                             fontSize: 12, 
@@ -905,7 +936,10 @@ export default function FacilitatorLessonsPage() {
                     ) : (
                       // For other subjects, render normally
                       filteredLessons.map(lesson => {
-                        const lessonKey = `${subject}/${lesson.file}`
+                        // Use 'facilitator' prefix for generated lessons, actual subject for public lessons
+                        const lessonKey = lesson.isGenerated 
+                          ? `facilitator/${lesson.file}` 
+                          : `${subject}/${lesson.file}`
                         const isApproved = !!approvedLessons[lessonKey]
                         const isScheduled = !!scheduledLessons[lessonKey]
                         const futureDate = futureScheduledLessons[lessonKey]
@@ -952,7 +986,7 @@ export default function FacilitatorLessonsPage() {
                                   style={{ flex: '1 1 200px', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
                                 >
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <span style={{ fontWeight: 600 }}>{lesson.title}</span>
+                                    <span style={{ fontWeight: 600 }}>{lesson.isGenerated && '✨ '}{lesson.title}</span>
                                   {hasActiveKey && (
                                     <span style={{ 
                                       fontSize: 12, 

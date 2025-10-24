@@ -12,7 +12,7 @@ export default function AwardsPage() {
   const [medalsLoading, setMedalsLoading] = useState(true)
   const [lessonsLoading, setLessonsLoading] = useState(true)
 
-  const subjects = ['math', 'science', 'language arts', 'social studies', 'facilitator']
+  const subjects = ['math', 'science', 'language arts', 'social studies', 'generated']
 
   useEffect(() => {
     try {
@@ -57,7 +57,7 @@ export default function AwardsPage() {
       const lessonsMap = {}
       for (const subject of subjects) {
         try {
-          const headers = subject === 'facilitator' && token 
+          const headers = subject === 'generated' && token 
             ? { 'Authorization': `Bearer ${token}` }
             : {}
           const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { 
@@ -221,7 +221,7 @@ export default function AwardsPage() {
             const lessons = groupedMedals[subject]
             if (!lessons || lessons.length === 0) return null
 
-            const displaySubject = subject === 'facilitator' 
+            const displaySubject = subject === 'generated' 
               ? 'Facilitator Lessons' 
               : subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 

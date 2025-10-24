@@ -14,21 +14,21 @@ export default function FacilitatorSettingsPage() {
 	
 	// Check PIN requirement on mount
 	useEffect(() => {
-		let cancelled = false
-		;(async () => {
+		let cancelled = false;
+		(async () => {
 			try {
-				const allowed = await ensurePinAllowed('facilitator-page')
+				const allowed = await ensurePinAllowed('facilitator-page');
 				if (!allowed) {
-					router.push('/')
-					return
+					router.push('/');
+					return;
 				}
-				if (!cancelled) setPinChecked(true)
+				if (!cancelled) setPinChecked(true);
 			} catch (e) {
-				if (!cancelled) setPinChecked(true)
+				if (!cancelled) setPinChecked(true);
 			}
-		})()
-		return () => { cancelled = true }
-	}, [router])
+		})();
+		return () => { cancelled = true; };
+	}, [router]);
 
 	// Timezone
 	const [loadingTz, setLoadingTz] = useState(true)

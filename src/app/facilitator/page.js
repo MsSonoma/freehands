@@ -30,11 +30,23 @@ export default function FacilitatorPage() {
   const [facilitatorName, setFacilitatorName] = useState('');
   const [pinChecked, setPinChecked] = useState(false);
 
-  // Skip PIN check entirely for window shopping experience
-  // Users can browse facilitator pages freely; PIN only needed for actual use
+  // Check PIN requirement on mount - this is the main entry point to facilitator section
   useEffect(() => {
-    setPinChecked(true);
-  }, []);
+    let cancelled = false;
+    (async () => {
+      try {
+        const allowed = await ensurePinAllowed('facilitator-page');
+        if (!allowed) {
+          router.push('/');
+          return;
+        }
+        if (!cancelled) setPinChecked(true);
+      } catch (e) {
+        if (!cancelled) setPinChecked(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [router]);
 
   useEffect(() => {
     let cancelled = false;

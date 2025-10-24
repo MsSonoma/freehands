@@ -27,6 +27,8 @@ import { formatQuestionForSpeech, isShortAnswerItem, isFillInBlank, isTrueFalse,
 import { normalizeAnswer } from './utils/answerNormalization';
 import { isAnswerCorrectLocal, expandExpectedAnswer, expandRiddleAcceptables, composeExpectedBundle } from './utils/answerEvaluation';
 import { ENCOURAGEMENT_SNIPPETS, CELEBRATE_CORRECT, HINT_FIRST, HINT_SECOND, pickHint, buildCountCuePattern } from './utils/feedbackMessages';
+import { generateClosing, getSimpleEncouragement } from './utils/closingSignals';
+import { getJokePrompt } from './utils/openingSignals';
 import { normalizeBase64Audio, base64ToArrayBuffer, makeSilentWavDataUrl, ensureAudioContext, stopWebAudioSource, playViaWebAudio, unlockAudioPlayback, requestAudioAndMicPermissions, playVideoWithRetry } from './utils/audioUtils';
 import { clearCaptionTimers as clearCaptionTimersUtil, scheduleCaptionsForAudio as scheduleCaptionsForAudioUtil, scheduleCaptionsForDuration as scheduleCaptionsForDurationUtil } from './utils/captionUtils';
 import { clearSynthetic as clearSyntheticUtil, finishSynthetic as finishSyntheticUtil, pauseSynthetic as pauseSyntheticUtil, resumeSynthetic as resumeSyntheticUtil } from './utils/syntheticPlaybackUtils';
@@ -285,13 +287,13 @@ function SessionPageInner() {
         if (user) {
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('stripe_subscription_tier')
+            .select('plan_tier')
             .eq('id', user.id)
             .single();
           
-          if (profile?.stripe_subscription_tier) {
-            setUserTier(profile.stripe_subscription_tier);
-            console.info('[Session] User tier loaded:', profile.stripe_subscription_tier);
+          if (profile?.plan_tier) {
+            setUserTier(profile.plan_tier);
+            console.info('[Session] User tier loaded:', profile.plan_tier);
           } else {
             setUserTier('free');
           }
@@ -617,18 +619,25 @@ function SessionPageInner() {
         setIsVeryShortLandscape((w > h) && (h <= 450));
         const isLandscape = w > h;
         if (!isLandscape) { setVideoMaxHeight(null); setVideoColPercent(50); return; }
-        // Smooth ramp: 40% at 375px height -> 70% at 600px height (linear),
-        // clamped to [0.40, 0.70]. Applies to all landscape viewports.
-        const hMin = 375;
-        const hMax = 600;
+        // Multi-stage smooth ramp: 40% at 375px -> 65% at 600px -> 70% at 700px -> 75% at 1000px
+        // clamped to [0.40, 0.75]. Applies to all landscape viewports.
         let frac;
-        if (h <= hMin) {
+        if (h <= 375) {
           frac = 0.40;
-        } else if (h >= hMax) {
-          frac = 0.70;
+        } else if (h <= 600) {
+          // Ramp from 40% at 375px to 65% at 600px
+          const t = (h - 375) / (600 - 375);
+          frac = 0.40 + t * (0.65 - 0.40);
+        } else if (h <= 700) {
+          // Ramp from 65% at 600px to 70% at 700px
+          const t = (h - 600) / (700 - 600);
+          frac = 0.65 + t * (0.70 - 0.65);
+        } else if (h <= 1000) {
+          // Ramp from 70% at 700px to 75% at 1000px
+          const t = (h - 700) / (1000 - 700);
+          frac = 0.70 + t * (0.75 - 0.70);
         } else {
-          const t = (h - hMin) / (hMax - hMin);
-          frac = 0.40 + t * (0.70 - 0.40);
+          frac = 0.75;
         }
         const target = Math.round(h * frac);
         setVideoMaxHeight(target);
@@ -1153,7 +1162,7 @@ function SessionPageInner() {
   const { WORKSHEET_CUE_VARIANTS } = require('./constants/worksheetCues.js');
 
   const subjectSegment = (subjectParam || "math").toLowerCase();
-  const subjectFolderSegment = subjectSegment === 'facilitator' ? 'Facilitator Lessons' : subjectSegment;
+  const subjectFolderSegment = subjectSegment === 'generated' ? 'Generated Lessons' : subjectSegment;
   // Preserve original casing of the lesson filename; only normalize subject segment
   const lessonFilename = manifestInfo.file || "";
   const lessonFilePath = lessonFilename
@@ -1168,8 +1177,8 @@ function SessionPageInner() {
         return lessonData;
       }
       
-      // Handle facilitator lessons from Supabase
-      if (subjectParam === 'facilitator' && lessonFilename) {
+      // Handle generated lessons from Supabase
+      if (subjectParam === 'generated' && lessonFilename) {
         try {
           const supabase = getSupabaseClient();
           if (supabase) {
@@ -1183,7 +1192,7 @@ function SessionPageInner() {
               if (res.ok) {
                 const data = await res.json();
                 try { setLessonData(data); } catch {}
-                try { console.info('[LessonLoad] Loaded facilitator lesson', lessonFilename); } catch {}
+                try { console.info('[LessonLoad] Loaded generated lesson', lessonFilename); } catch {}
                 return data;
               }
             }
@@ -1230,7 +1239,7 @@ function SessionPageInner() {
     const load = async () => {
       // Ensure dynamic targets from learner/runtime are available before building generated sets
       await ensureRuntimeTargets(true); // Force fresh reload
-      if (!lessonFilePath && subjectParam !== 'facilitator') {
+      if (!lessonFilePath && subjectParam !== 'generated') {
         if (!cancelled) {
           setLessonData(null);
           setLessonDataError("");
@@ -1244,7 +1253,7 @@ function SessionPageInner() {
         let data;
         
         // Handle facilitator lessons from Supabase
-        if (subjectParam === 'facilitator' && lessonFilename) {
+        if (subjectParam === 'generated' && lessonFilename) {
           const supabase = getSupabaseClient();
           if (!supabase) {
             throw new Error('Supabase client not available');
@@ -1755,10 +1764,10 @@ function SessionPageInner() {
           replyText = replyText.replace(/\b(worksheet|test|exam|quiz)\b/gi, "").replace(/\s{2,}/g, " ").trim();
         } else if (stepKey === "joke") {
           // Ensure required opener is present
-          const openers = ["Wanna hear a joke?", "Let's start with a joke."];
+          const openers = [getJokePrompt(), getJokePrompt()]; // Get two options
           const hasOpener = openers.some((o) => replyText.trim().toLowerCase().startsWith(o.toLowerCase()));
           if (!hasOpener) {
-            const chosen = openers[Math.random() < 0.5 ? 0 : 1];
+            const chosen = getJokePrompt();
             replyText = `${chosen} ${replyText.trim()}`.trim();
           }
           // Keep it short: at most 2 sentences; allow question only in opener
@@ -3949,7 +3958,7 @@ function SessionPageInner() {
     }
   // Ensure the initial Begin button is never shown once worksheet starts
     setShowBegin(false);
-    // Gate quick-answer buttons until the learner presses Start the lesson
+    // Gate quick-answer buttons until the learner presses Go button
     setQaAnswersUnlocked(false);
     setJokeUsedThisGate(false);
     setRiddleUsedThisGate(false);
@@ -3962,16 +3971,16 @@ function SessionPageInner() {
     setCurrentWorksheetIndex(0);
     setTicker(0);
     setCanSend(false);
-  const first = generatedWorksheet[0];
-  const num1 = (typeof first?.number === 'number' && first.number > 0) ? first.number : 1;
-  const q = ensureQuestionMark(`${num1}. ${formatQuestionForSpeech(first, { layout: 'multiline' })}`);
+    // Do NOT speak the first question here - it will be spoken when Go is pressed
+    // This prevents the question buttons from interfering with Ask/Joke/Riddle/Poem/Story/Fill-in-fun
     const opener = WORKSHEET_INTROS[Math.floor(Math.random() * WORKSHEET_INTROS.length)];
     try {
       await speakFrontend(opener);
     } catch {}
-    setCanSend(true);
-    // After intro+first question, reveal Opening actions row
+    // After intro, reveal Opening actions row
     try { setShowOpeningActions(true); } catch {}
+    // Keep input disabled until Go is pressed
+    setCanSend(false);
     if (worksheetSkippedAwaitBegin) setWorksheetSkippedAwaitBegin(false);
   };
 
@@ -4072,22 +4081,22 @@ function SessionPageInner() {
                   if (!isNaN(lt)) TEST_TARGET = lt;
                 }
     setTestCorrectCount(0);
-    // Do not manually append the first question to captions; we'll speak it locally
-    const firstItem = generatedTest[0];
-    const firstBody = formatQuestionForSpeech(firstItem, { layout: 'multiline' });
+    // Do NOT speak the first question here - it will be spoken when Go is pressed
+    // This prevents the question buttons from interfering with Ask/Joke/Riddle/Poem/Story/Fill-in-fun
     setTestActiveIndex(0);
     setSubPhase('test-active');
     setCanSend(false);
     try { showTipOverride('Starting test�', 3000); } catch {}
 
-    // Speak a short test intro (random); first question is gated behind Start the lesson
+    // Speak a short test intro (random); first question is gated behind Go button
     try {
       const opener = TEST_INTROS[Math.floor(Math.random() * TEST_INTROS.length)];
       await speakFrontend(opener);
     } catch {}
     // After intro, reveal Opening actions row (for Q&A extras)
     try { setShowOpeningActions(true); } catch {}
-    setCanSend(true);
+    // Keep input disabled until Go is pressed
+    setCanSend(false);
   };
 
   // During facilitator review (now a Test subphase): keep preview grade percent and count in sync with correctness array.
@@ -4139,69 +4148,21 @@ function SessionPageInner() {
   try { scheduleSaveSnapshot('begin-comprehension'); } catch {}
     try { console.log('[Session] Begin Comprehension clicked', { phase, subPhase, currentCompIndex, compPoolLen: Array.isArray(compPool) ? compPool.length : 0 }); } catch {}
   setCanSend(false);
-    // Try to pick a first comprehension problem in the same priority order used elsewhere
-    let firstComp = null;
-    if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
-      // Allow all question types now, including SA
-      firstComp = generatedComprehension[currentCompIndex];
-      setCurrentCompIndex(currentCompIndex + 1);
-    }
-    if (!firstComp) {
-      let tries = 0;
-      while (tries < 5) {
-        const s = drawSampleUnique();
-        if (s) { firstComp = s; break; }
-        tries += 1;
-      }
-    }
-    if (!firstComp && compPool.length) {
-      const filtered = compPool.filter(q => !isShortAnswerItem(q));
-      if (filtered.length > 0) {
-        firstComp = filtered[0];
-        setCompPool(compPool.slice(1));
-      }
-    }
-    // Final fallback: rebuild pool from lesson data
-    if (!firstComp) {
-      const refilled = buildQAPool();
-      if (Array.isArray(refilled) && refilled.length) {
-        firstComp = refilled[0];
-        setCompPool(refilled.slice(1));
-      }
-    }
-    // If we still didn't find a non-short-answer item, fall back to ANY available item
-    if (!firstComp) {
-      try {
-        if (Array.isArray(generatedComprehension) && generatedComprehension.length) {
-          firstComp = generatedComprehension[currentCompIndex] || generatedComprehension[0];
-          setCurrentCompIndex((currentCompIndex || 0) + 1);
-        } else if (Array.isArray(compPool) && compPool.length) {
-          firstComp = compPool[0];
-          setCompPool(compPool.slice(1));
-        }
-      } catch {}
-    }
-  if (firstComp) {
-      try { console.log('[Session] Selected first comprehension item', { firstComp }); } catch {}
-      setCurrentCompProblem(firstComp);
-      // Immediately enter active subPhase so the Begin button disappears right away
-      setSubPhase('comprehension-active');
+    // Do NOT arm the first question here - it will be armed when Go is pressed
+    // This prevents the question buttons from interfering with Ask/Joke/Riddle/Poem/Story/Fill-in-fun
+    // Immediately enter active subPhase so the Begin button disappears right away
+    setSubPhase('comprehension-active');
   // Persist the transition to comprehension-active so resume lands on the five-button view
   try { scheduleSaveSnapshot('comprehension-active'); } catch {}
-      // New: Phase intro (random from pool); first question is gated behind Start the lesson
-      const intro = COMPREHENSION_INTROS[Math.floor(Math.random() * COMPREHENSION_INTROS.length)];
-      try {
-        await speakFrontend(intro);
-      } catch {}
-      // After intro, reveal Opening actions row
-      try { setShowOpeningActions(true); } catch {}
-      // Keep input disabled until TTS finishes; an effect will re-enable when not speaking
-      setCanSend(false);
-    } else {
-      try { console.warn('[Session] Begin Comprehension: no available question found on first attempt'); } catch {}
-      // Nothing available yet; allow user to try again
-      setCanSend(true);
-    }
+    // New: Phase intro (random from pool); first question is gated behind Go button
+    const intro = COMPREHENSION_INTROS[Math.floor(Math.random() * COMPREHENSION_INTROS.length)];
+    try {
+      await speakFrontend(intro);
+    } catch {}
+    // After intro, reveal Opening actions row
+    try { setShowOpeningActions(true); } catch {}
+    // Keep input disabled until Go is pressed
+    setCanSend(false);
   };
 
   // Finalize facilitator review: lock score, then advance to congrats
@@ -4231,11 +4192,14 @@ function SessionPageInner() {
   useEffect(() => {
     if (phase === 'congrats' && typeof testFinalPercent === 'number' && congratsStarted && !congratsSpokenRef.current) {
       const learnerName = (typeof window !== 'undefined' ? (localStorage.getItem('learner_name') || '') : '').trim();
+      const closing = generateClosing({
+        conceptLearned: 'today\'s test',
+        engagementLevel: 'focused',
+        learnerName: learnerName || null
+      });
       const lines = [
         `Your score is ${testFinalPercent}%.`,
-        'Nice work today. I am proud of you.',
-        'Keep learning and having fun.',
-        learnerName ? `Goodbye ${learnerName}.` : 'Goodbye.'
+        closing
       ].join(' ');
       (async () => {
         setCongratsSpeaking(true);
@@ -4622,39 +4586,8 @@ function SessionPageInner() {
     // Ensure pools/assessments exist if we arrived here via skip before setup
     ensureBaseSessionSetup();
     // No standalone unlock prompt
-    // Choose first exercise problem from ephemeral pre-generated array; fallback to deck/pools
-    let first = null;
-    if (Array.isArray(generatedExercise) && currentExIndex < generatedExercise.length) {
-      // Allow all question types now, including SA
-      first = generatedExercise[currentExIndex];
-      setCurrentExIndex(currentExIndex + 1);
-    }
-    if (!first) {
-      let tries = 0;
-      while (tries < 5) {
-        const candidate = drawSampleUnique();
-        if (candidate) { first = candidate; break; }
-        tries += 1;
-      }
-    }
-    if (!first && exercisePool.length) {
-      const [head, ...rest] = exercisePool;
-      first = head;
-      setExercisePool(rest);
-    }
-    if (!first) {
-      const refilled = buildQAPool();
-      if (refilled.length) {
-        const [head, ...rest] = refilled;
-        first = head;
-        setExercisePool(rest);
-      }
-    }
-    if (first) {
-      setCurrentExerciseProblem(first);
-    } else {
-      setCurrentExerciseProblem(null);
-    }
+    // Do NOT arm the first question here - it will be armed when Go is pressed
+    // This prevents the question buttons from interfering with Ask/Joke/Riddle/Poem/Story/Fill-in-fun
   setExerciseSkippedAwaitBegin(false);
   setSubPhase('exercise-start');
   // Gate quick-answer buttons until Start the lesson
@@ -4666,21 +4599,17 @@ function SessionPageInner() {
   setFillInFunUsedThisGate(false);
   // Persist phase entrance for Exercise
   try { scheduleSaveSnapshot('begin-exercise'); } catch {}
-    // Frontend-only: brief intro + first question via unified TTS/captions
-    if (first) {
-      const opener = EXERCISE_INTROS[Math.floor(Math.random() * EXERCISE_INTROS.length)];
-      try {
-        setCanSend(false);
-        setTicker(0);
-        await speakFrontend(opener);
-      } catch {}
-      // After intro, reveal Opening actions row
-      try { setShowOpeningActions(true); } catch {}
-      setCanSend(true);
-    } else {
-      // Nothing to ask yet (rare); leave UI enabled
-      setCanSend(true);
-    }
+    // Frontend-only: brief intro; first question is gated behind Go button
+    const opener = EXERCISE_INTROS[Math.floor(Math.random() * EXERCISE_INTROS.length)];
+    try {
+      setCanSend(false);
+      setTicker(0);
+      await speakFrontend(opener);
+    } catch {}
+    // After intro, reveal Opening actions row
+    try { setShowOpeningActions(true); } catch {}
+    // Keep input disabled until Go is pressed
+    setCanSend(false);
   };
 
   // Footer actions: Resume current state (re-run the current part), or Restart entire lesson fresh
@@ -4739,7 +4668,7 @@ function SessionPageInner() {
     sessionStartRef,
     transcriptSegmentStartIndexRef,
     // Functions
-    unlockAudioPlayback,
+    unlockAudioPlayback: unlockAudioPlaybackWrapped,
     startDiscussionStep,
     teachDefinitions,
     promptGateRepeat,
@@ -5667,8 +5596,8 @@ function SessionPageInner() {
           try { setTestCorrectByIndex(prev => { const a = Array.isArray(prev) ? prev.slice() : []; a[idx] = judgedCorrect; return a; }); } catch {}
 
           // Always cue a short encouragement for closure, regardless of correctness
-          const encouragement = 'Way to go.';
-          const closingLine = `${speech} ${encouragement}`;
+          const encouragement = getSimpleEncouragement();
+          const closingLine = `${speech} ${encouragement}.`;
           // Speak feedback fully, then transition to review so it opens after Ms. Sonoma responds
           reviewDeferRef.current = true;
           try { await speakFrontend(closingLine); } catch {}
@@ -6380,193 +6309,7 @@ function SessionPageInner() {
         )}
         {/* When Resume tray is visible, do not render any other footer controls */}
   {offerResume ? null : (<>
-          {/* When the screen height is very short, relocate video overlay controls into the footer. If a Begin row is present, controls join that row. */}
-          {(() => {
-            try {
-              if (!isShortHeight) return null;
-              const needBeginDiscussion = (showBegin && phase === 'discussion');
-              const needBeginComp = (phase === 'comprehension' && subPhase === 'comprehension-start');
-              const needBeginExercise = (phase === 'exercise' && subPhase === 'exercise-awaiting-begin');
-              const needBeginWorksheet = (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin');
-              const needBeginTest = (phase === 'test' && subPhase === 'test-awaiting-begin');
-              const anyBegin = needBeginDiscussion || needBeginComp || needBeginExercise || needBeginWorksheet || needBeginTest;
-              if (anyBegin) return null; // controls will render within the Begin row below
-              // Make footer controls slightly smaller when the viewport is short in landscape so the footer takes less vertical space
-              const btnSize = (isShortHeight && isMobileLandscape) ? 32 : 36;
-              const btnBase = { background:'#1f2937', color:'#fff', border:'none', width:btnSize, height:btnSize, display:'grid', placeItems:'center', borderRadius:'50%', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.2)' };
-              // Determine if a quick-answer cluster should appear (TF/MC) and render it in the middle of this row
-              let qa = null;
-              try {
-                // Show Repeat Vocab/Examples/Next buttons during teaching gate; hide while speaking
-                if (phase === 'teaching' && subPhase === 'awaiting-gate' && !isSpeaking && askState === 'inactive') {
-                  const qaWrap = { display:'flex', alignItems:'center', justifyContent:'center', gap:8, flex:1, flexWrap:'wrap', padding:'0 8px' };
-                  const qaBtn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight: (isShortHeight && isMobileLandscape) ? 32 : 36, minWidth:56, fontWeight:700, border:'none', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.18)' };
-                  // Button labels: "Repeat Sentence"/"Next Sentence" during sentence navigation, "Restart Vocab"/"Next: Examples" at final gate
-                  let repeatLabel = 'Restart Vocab';
-                  let nextLabel = 'Next: Examples';
-                  console.log('[Gate Button] teachingStage:', teachingStage, 'isInSentenceMode:', isInSentenceMode);
-                  if (teachingStage === 'examples') {
-                    repeatLabel = 'Repeat Examples';
-                    nextLabel = 'Next';
-                  } else if (teachingStage === 'definitions' && isInSentenceMode) {
-                    repeatLabel = 'Repeat Sentence';
-                    nextLabel = 'Next Sentence';
-                    console.log('[Gate Button] Setting labels to "Repeat Sentence"/"Next Sentence" for sentence mode');
-                  }
-                  const ariaLabel = teachingStage === 'examples' ? 'Teaching gate: repeat examples or move to next stage' : 'Teaching gate: repeat vocab or move to next stage';
-                  qa = (
-                    <div style={qaWrap} aria-label={ariaLabel}>
-                      <button type="button" style={qaBtn} onClick={handleGateYes}>{repeatLabel}</button>
-                      <button type="button" style={qaBtn} onClick={handleGateNo}>{nextLabel}</button>
-                      <button
-                        type="button"
-                        style={{ ...qaBtn, minWidth: 140, opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
-                        onClick={askState === 'inactive' ? getAskButtonHandler(handleAskQuestionStart) : undefined}
-                      >Ask</button>
-                    </div>
-                  );
-                } else if (!sendDisabled && askState === 'inactive') {
-                  let active = null;
-                  if (phase === 'comprehension') {
-                    active = currentCompProblem || null;
-                  } else if (phase === 'exercise') {
-                    active = currentExerciseProblem || null;
-                  } else if (phase === 'worksheet' && subPhase === 'worksheet-active') {
-                    const idx = (typeof worksheetIndexRef !== 'undefined' && worksheetIndexRef && typeof worksheetIndexRef.current === 'number')
-                      ? (worksheetIndexRef.current ?? 0)
-                      : (typeof currentWorksheetIndex === 'number' ? currentWorksheetIndex : 0);
-                    const list = Array.isArray(generatedWorksheet) ? generatedWorksheet : [];
-                    active = list[idx] || null;
-                  } else if (phase === 'test' && subPhase === 'test-active') {
-                    const list = Array.isArray(generatedTest) ? generatedTest : [];
-                    const idx = (typeof testActiveIndex === 'number' ? testActiveIndex : 0);
-                    active = list[idx] || null;
-                  }
-                  if (active) {
-                    const choiceCount = Array.isArray(active.choices) && active.choices.length
-                      ? active.choices.length
-                      : (Array.isArray(active.options) ? active.options.length : 0);
-                    const qaWrap = { display:'flex', alignItems:'center', justifyContent:'center', gap:8, flex:1, flexWrap:'wrap', padding:'0 8px' };
-                    const qaBtn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight: (isShortHeight && isMobileLandscape) ? 32 : 36, minWidth:48, fontWeight:700, border:'none', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.18)' };
-                    const isTF = isTrueFalse(active);
-                    if (isTF) {
-                      qa = (
-                        <div style={qaWrap} aria-label="Quick answer: true or false">
-                          <button type="button" style={qaBtn} onClick={() => handleSend('true')}>True</button>
-                          <button type="button" style={qaBtn} onClick={() => handleSend('false')}>False</button>
-                          <button
-                            type="button"
-                            style={{ ...qaBtn, minWidth: 100, opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
-                            onClick={askState === 'inactive' ? getAskButtonHandler(handleAskQuestionStart) : undefined}
-                          >Ask</button>
-                        </div>
-                      );
-                    } else {
-                      const isMC = isMultipleChoice(active) || ((choiceCount || 0) >= 2);
-                      if (isMC) {
-                        const count = Math.min(4, Math.max(2, choiceCount || 4));
-                        const letters = ['A','B','C','D'].slice(0, count);
-                        qa = (
-                          <div style={qaWrap} aria-label="Quick answer: multiple choice">
-                            {letters.map((L) => (
-                              <button key={L} type="button" style={qaBtn} onClick={() => handleSend(L)}>{L}</button>
-                            ))}
-                            <button
-                              type="button"
-                              style={{ ...qaBtn, minWidth: 100, opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
-                              onClick={askState === 'inactive' ? getAskButtonHandler(handleAskQuestionStart) : undefined}
-                            >Ask</button>
-                          </div>
-                        );
-                      } else {
-                        // Short-answer or fill-in-the-blank: show Ask as the sole quick action
-                        qa = (
-                          <div style={qaWrap} aria-label="Ask about the current question">
-                            <button
-                              type="button"
-                              style={{ ...qaBtn, minWidth: 120, opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
-                              onClick={askState === 'inactive' ? getAskButtonHandler(handleAskQuestionStart) : undefined}
-                            >Ask</button>
-                          </div>
-                        );
-                      }
-                    }
-                  }
-                }
-              } catch {}
-              // Footer controls inset symmetrically
-              const pairInset = (isShortHeight && isMobileLandscape) ? 64 : 24;
-              return (
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, paddingTop:2, paddingBottom:2, paddingLeft: pairInset, paddingRight: pairInset, marginBottom:2 }}>
-                  {/* Middle: Quick answers if available */}
-                  {qa}
-                  {/* Right: Submit during review + Review (when reached) + Mute */}
-                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    {(() => {
-                      try {
-                        // Show a red Submit button during Test review to finalize and move to Congrats
-                        const inReview = (phase === 'test' && typeof subPhase === 'string' && subPhase.startsWith('review'));
-                        if (!inReview) return null;
-                        const disabled = !!isSpeaking;
-                        const submitBtn = { background:'#c7442e', color:'#fff', border:'none', height: btnSize, padding: '0 14px', display:'grid', placeItems:'center', borderRadius: 999, cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.2)', fontWeight:800 };
-                        return (
-                          <button
-                            type="button"
-                            aria-label="Submit"
-                            title="Submit"
-                            onClick={disabled ? undefined : finalizeReview}
-                            disabled={disabled}
-                            style={{ ...submitBtn, opacity: disabled ? 0.6 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}
-                          >
-                            Submit
-                          </button>
-                        );
-                      } catch { return null; }
-                    })()}
-                    {(() => {
-                      try {
-                        if (phase !== 'test') return null;
-                        // If already in review subphase, hide the Review button
-                        if (typeof subPhase === 'string' && subPhase.startsWith('review')) return null;
-                        const list = Array.isArray(generatedTest) ? generatedTest : [];
-                        const limit = Math.min((typeof TEST_TARGET === 'number' && TEST_TARGET > 0) ? TEST_TARGET : list.length, list.length);
-                        if (limit <= 0) return null;
-                        const answeredCount = Array.isArray(testUserAnswers) ? testUserAnswers.filter(v => typeof v === 'string' && v.length > 0).length : 0;
-                        const judgedCount = Array.isArray(testCorrectByIndex) ? testCorrectByIndex.filter(v => typeof v !== 'undefined').length : 0;
-                        const idxDone = (typeof testActiveIndex === 'number' ? testActiveIndex : 0) >= limit;
-                        const reached = (answeredCount >= limit) || (judgedCount >= limit) || idxDone || (typeof ticker === 'number' && ticker >= limit);
-                        if (!reached) return null;
-                        const disabled = !!isSpeaking;
-                        const reviewBtn = { background:'#b91c1c', color:'#fff', border:'none', height: btnSize, padding: '0 14px', display:'grid', placeItems:'center', borderRadius: 999, cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.2)', fontWeight:800 };
-                        return (
-                          <button
-                            type="button"
-                            aria-label="Review"
-                            title="Review"
-                            onClick={disabled ? undefined : () => { try { setSubPhase('review-start'); } catch {}; try { setCanSend(false); } catch {}; }}
-                            disabled={disabled}
-                            style={{ ...reviewBtn, opacity: disabled ? 0.6 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}
-                          >
-                            Review
-                          </button>
-                        );
-                      } catch { return null; }
-                    })()}
-                    {/* Play/Pause removed per request */}
-                    <button type="button" aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'} onClick={toggleMute} style={btnBase}>
-                      {muted ? (
-                        <svg style={{ width:'60%', height:'60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
-                      ) : (
-                        <svg style={{ width:'60%', height:'60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M19 8a5 5 0 010 8" /><path d="M15 11a2 2 0 010 2" /></svg>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              );
-            } catch {}
-            return null;
-          })()}
-          {/* Redundant Begin CTA row (appears above quick answers) */}
+          {/* Begin CTA row */}
           {(() => {
             try {
               const needBeginDiscussion = (showBegin && phase === 'discussion');
@@ -6576,51 +6319,6 @@ function SessionPageInner() {
               const needBeginTest = (phase === 'test' && subPhase === 'test-awaiting-begin');
               if (!(needBeginDiscussion || needBeginComp || needBeginExercise || needBeginWorksheet || needBeginTest)) return null;
               const ctaStyle = { background:'#c7442e', color:'#fff', borderRadius:10, padding:'10px 18px', fontWeight:800, fontSize:'clamp(1rem, 2.6vw, 1.125rem)', border:'none', boxShadow:'0 2px 12px rgba(199,68,46,0.28)', cursor:'pointer' };
-              if (isShortHeight) {
-                // Single row: play/mute left, begin center, skip right � inset both pairs symmetrically
-                const btnBase = { background:'#1f2937', color:'#fff', border:'none', width:36, height:36, display:'grid', placeItems:'center', borderRadius:'50%', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.2)' };
-                const pairInset = (isShortHeight && isMobileLandscape) ? 64 : 24;
-                return (
-                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, paddingTop:2, paddingBottom:2, paddingLeft: pairInset, paddingRight: pairInset, marginBottom:2 }}>
-                      {/* Middle: Begin CTA(s) */}
-                      <div style={{ display:'flex', alignItems:'center', gap:12, flex:1, justifyContent:'center' }}>
-                      {needBeginDiscussion && (
-                        <button type="button" style={ctaStyle} onClick={beginSession}>Begin</button>
-                      )}
-                      {needBeginComp && (
-                        <button type="button" style={ctaStyle} onClick={beginComprehensionPhase}>Begin Comprehension</button>
-                      )}
-                      {needBeginExercise && (
-                        <button type="button" style={ctaStyle} onClick={beginSkippedExercise}>Begin Exercise</button>
-                      )}
-                      {needBeginWorksheet && (
-                        <button type="button" style={ctaStyle} onClick={beginWorksheetPhase}>Begin Worksheet</button>
-                      )}
-                      {needBeginTest && (
-                        <button type="button" style={ctaStyle} onClick={beginTestPhase}>Begin Test</button>
-                      )}
-                    </div>
-                    {/* Right: Play/Pause + Mute */}
-                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                      <button type="button" aria-label={userPaused ? 'Play' : 'Pause'} title={'Press Begin first'} disabled style={{ ...btnBase, opacity: 0.4, cursor:'not-allowed' }}>
-                        {userPaused ? (
-                          <svg style={{ width:'55%', height:'55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 5v14l11-7z" /></svg>
-                        ) : (
-                          <svg style={{ width:'55%', height:'55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
-                        )}
-                      </button>
-                      <button type="button" aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'} onClick={toggleMute} style={btnBase}>
-                        {muted ? (
-                          <svg style={{ width:'60%', height:'60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
-                        ) : (
-                          <svg style={{ width:'60%', height:'60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M19 8a5 5 0 010 8" /><path d="M15 11a2 2 0 010 2" /></svg>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                );
-              }
-              // Default (not short height): center-only Begin row
               const rowStyle = { display:'flex', alignItems:'center', justifyContent:'center', gap:12, paddingLeft:12, paddingRight:12, marginBottom:4 };
               return (
                 <div style={rowStyle}>
@@ -7341,7 +7039,6 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
         )}
         {/* Begin overlays removed intentionally */}
   {/* Primary control cluster (mute only; play/pause removed per request) */}
-  {!isShortHeight && (
   <div style={controlClusterStyle}>
           <button type="button" onClick={onToggleMute} aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'} style={controlButtonBase}>
             {muted ? (
@@ -7351,9 +7048,8 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
             )}
           </button>
         </div>
-  )}
         {/* Skip button when speaking */}
-        {isSpeaking && !isShortHeight && typeof onSkip === 'function' && (
+        {isSpeaking && typeof onSkip === 'function' && (
           <button
             type="button"
             onClick={onSkip}

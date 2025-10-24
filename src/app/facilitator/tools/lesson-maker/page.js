@@ -3,8 +3,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
+import { ensurePinAllowed } from '@/app/lib/pinGate'
 import GatedOverlay from '@/app/components/GatedOverlay'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
+import Toast from '@/components/Toast'
+import { validateLessonQuality, buildValidationChangeRequest } from '@/app/lib/lessonValidation'
 
 
 const subjects = ['math','language arts','science','social studies']
@@ -16,6 +19,7 @@ export default function LessonMakerPage(){
     requiredAuth: 'required',
     requiredFeature: 'facilitatorTools'
   })
+  const [pinChecked, setPinChecked] = useState(false)
   const [form, setForm] = useState({
     grade:'', difficulty:'intermediate', subject:'math', title:'', description:'', notes:'', vocab:''
   })
@@ -23,12 +27,31 @@ export default function LessonMakerPage(){
   const [message, setMessage] = useState('')
   const [quotaInfo, setQuotaInfo] = useState(null)
   const [quotaLoading, setQuotaLoading] = useState(true)
+  const [toast, setToast] = useState(null) // { message, type }
 
   const ent = featuresForTier(tier)
 
+  // Check PIN requirement on mount
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const allowed = await ensurePinAllowed('facilitator-page');
+        if (!allowed) {
+          router.push('/');
+          return;
+        }
+        if (!cancelled) setPinChecked(true);
+      } catch (e) {
+        if (!cancelled) setPinChecked(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [router]);
+
   // Check generation quota on mount
   useEffect(() => {
-    if (!isAuthenticated || !hasAccess) return
+    if (!pinChecked || !isAuthenticated || !hasAccess) return
     let cancelled = false
     ;(async () => {
       try {
@@ -63,18 +86,31 @@ export default function LessonMakerPage(){
       return
     }
     
-    setBusy(true); setMessage('')
+    setBusy(true); setMessage(''); setToast(null)
+    let generatedFile = null
+    let generatedUserId = null
+    
     try {
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
+      
+      // STEP 1: Generate the lesson
+      setToast({ message: 'Generating lesson...', type: 'info' })
       const res = await fetch('/api/facilitator/lessons/generate', {
         method:'POST',
         headers:{ 'Content-Type':'application/json', ...(token ? { Authorization:`Bearer ${token}` } : {}) },
         body: JSON.stringify(form)
       })
       const js = await res.json().catch(()=>null)
-      if (!res.ok) { setMessage(js?.error || 'Failed to generate'); return }
+      if (!res.ok) { 
+        setMessage(js?.error || 'Failed to generate')
+        setToast({ message: 'Generation failed', type: 'error' })
+        return 
+      }
+      
+      generatedFile = js.file
+      generatedUserId = js.userId
       
       // Increment usage counter after successful generation
       try {
@@ -92,40 +128,78 @@ export default function LessonMakerPage(){
         console.error('Failed to update generation quota:', e)
       }
       
-      // Show success message
-      if (js?.storageUrl) {
-        setMessage(`Lesson generated and saved to cloud storage: ${js.file}`)
-      } else if (js?.storageError) {
-        setMessage(`Lesson generated but storage failed: ${js.storageError}. Downloading lesson file...`)
-        // Trigger download as backup
-        const blob = new Blob([JSON.stringify(js.lesson, null, 2)], { type: 'application/json' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = js.file || 'lesson.json'
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-      } else if (js?.lesson) {
-        setMessage(`Lesson generated successfully.`)
-        // Trigger download as backup
-        const blob = new Blob([JSON.stringify(js.lesson, null, 2)], { type: 'application/json' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = js.file || 'lesson.json'
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
+      // STEP 2: Validate the lesson
+      setToast({ message: 'Validating lesson quality...', type: 'info' })
+      const validation = validateLessonQuality(js.lesson)
+      
+      if (!validation.passed && validation.issues.length > 0) {
+        console.log('[Lesson Maker] Validation failed:', validation.issues)
+        
+        // STEP 3: Auto-fix with request-changes API
+        setToast({ message: 'Improving lesson quality...', type: 'info' })
+        
+        try {
+          const changeRequest = buildValidationChangeRequest(validation.issues)
+          const fixRes = await fetch('/api/facilitator/lessons/request-changes', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({
+              file: generatedFile,
+              userId: generatedUserId,
+              changeRequest: changeRequest
+            })
+          })
+          
+          const fixJs = await fixRes.json().catch(() => null)
+          if (fixRes.ok) {
+            console.log('[Lesson Maker] Auto-fix successful')
+            setToast({ message: 'Lesson ready!', type: 'success' })
+            setMessage(`Lesson generated, validated, and optimized: ${generatedFile}`)
+          } else {
+            console.error('[Lesson Maker] Auto-fix failed:', fixJs?.error)
+            setToast({ message: 'Lesson generated with quality warnings', type: 'warning' })
+            setMessage(`Lesson generated: ${generatedFile}\n\nQuality issues detected:\n${validation.issues.join('\n')}`)
+          }
+        } catch (fixError) {
+          console.error('[Lesson Maker] Auto-fix error:', fixError)
+          setToast({ message: 'Lesson generated with quality warnings', type: 'warning' })
+          setMessage(`Lesson generated: ${generatedFile}\n\nQuality issues detected:\n${validation.issues.join('\n')}`)
+        }
       } else {
-        setMessage('Lesson generated: ' + (js?.file || ''))
+        // Passed validation on first try!
+        console.log('[Lesson Maker] Validation passed')
+        if (validation.warnings.length > 0) {
+          console.log('[Lesson Maker] Warnings:', validation.warnings)
+        }
+        setToast({ message: 'Lesson ready!', type: 'success' })
+        
+        // Show success message
+        if (js?.storageUrl) {
+          setMessage(`Lesson generated and saved to cloud storage: ${js.file}`)
+        } else {
+          setMessage(`Lesson generated successfully: ${js.file}`)
+        }
       }
+      
+      // Handle storage errors (not blocking)
+      if (js?.storageError) {
+        console.error('Storage error:', js.storageError)
+        setMessage(prev => prev + `\n\nNote: Storage warning: ${js.storageError}`)
+      }
+      
     } catch (e) {
+      console.error('[Lesson Maker] Error:', e)
       setMessage('Error: ' + (e?.message || String(e)))
+      setToast({ message: 'Error generating lesson', type: 'error' })
     } finally {
       setBusy(false)
+      // Clear toast after 5 seconds if it's a success
+      setTimeout(() => {
+        setToast(prev => prev?.type === 'success' ? null : prev)
+      }, 5000)
     }
   }
 
@@ -137,7 +211,8 @@ export default function LessonMakerPage(){
 
   return (
     <main style={{ padding:24, maxWidth:720, margin:'0 auto', position: 'relative' }}>
-      <h1 style={{ marginTop:0 }}>Lesson Maker</h1>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      <h1 style={{ marginTop:0 }}>Lesson Generator</h1>
       
       {/* Quota Info */}
       {!quotaLoading && quotaInfo && hasAccess && (
