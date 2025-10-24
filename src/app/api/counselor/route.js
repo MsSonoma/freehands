@@ -39,6 +39,11 @@ const MENTOR_SYSTEM_PROMPT = `You are Mr. Mentor, a warm, caring professional co
 CURRENT DATE: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })} (${new Date().toISOString().split('T')[0]})
 When scheduling lessons, always use the year 2025 unless the user explicitly specifies otherwise.
 
+INTERFACE CONTEXT:
+The user has quick access buttons visible on their screen: Calendar, Lessons, Generated Lessons, and Lesson Maker. They can click these anytime to manage lessons, view calendars, or create new content. You don't need to explain how to access these - they're always available.
+
+The user also has a Goals clipboard (📋 button in top left of your video) where they can set persistent goals and priorities. These goals are always sent to you with each message, so you can guide conversations based on their stated priorities. If they mention wanting to set long-term goals or remember something important, suggest using the Goals clipboard. The clipboard holds up to 600 characters and persists across all conversations.
+
 Your role is to help facilitators:
 - Process their feelings and challenges around teaching
 - Clarify their educational goals and values
@@ -238,15 +243,25 @@ function previewText(text, max = 600) {
 async function synthesizeAudio(text, logPrefix) {
   let audioContent = undefined
   
-  // Check cache first
-  if (ttsCache.has(text)) {
-    audioContent = ttsCache.get(text)
+  // Strip markdown formatting for TTS (keep text readable but remove syntax)
+  // Remove **bold**, *italic*, and other markdown markers
+  const cleanTextForTTS = text
+    .replace(/\*\*([^*]+)\*\*/g, '$1')  // Remove **bold**
+    .replace(/\*([^*]+)\*/g, '$1')      // Remove *italic*
+    .replace(/_([^_]+)_/g, '$1')        // Remove _underline_
+    .replace(/`([^`]+)`/g, '$1')        // Remove `code`
+    .replace(/^#+\s+/gm, '')            // Remove # headers
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // Remove [links](url)
+  
+  // Check cache first (use cleaned text as key)
+  if (ttsCache.has(cleanTextForTTS)) {
+    audioContent = ttsCache.get(cleanTextForTTS)
     console.log(`${logPrefix} Using cached TTS audio`)
   } else {
     const ttsClient = await getTtsClient()
     if (ttsClient) {
       try {
-        const ssml = toSsml(text)
+        const ssml = toSsml(cleanTextForTTS)
         const [ttsResponse] = await ttsClient.synthesizeSpeech({
           input: { ssml },
           voice: MENTOR_VOICE,
@@ -259,7 +274,7 @@ async function synthesizeAudio(text, logPrefix) {
             : Buffer.from(ttsResponse.audioContent).toString('base64')
           
           // Cache with naive LRU
-          ttsCache.set(text, audioContent)
+          ttsCache.set(cleanTextForTTS, audioContent)
           if (ttsCache.size > TTS_CACHE_MAX) {
             const firstKey = ttsCache.keys().next().value
             ttsCache.delete(firstKey)
@@ -1009,6 +1024,7 @@ export async function POST(req) {
     
     const contentType = (req.headers?.get?.('content-type') || '').toLowerCase()
     let learnerTranscript = null
+    let goalsNotes = null
     try {
       if (contentType.includes('application/json')) {
         const body = await req.json()
@@ -1016,9 +1032,13 @@ export async function POST(req) {
         userMessage = (body.message || '').trim()
         conversationHistory = Array.isArray(body.history) ? body.history : []
         learnerTranscript = body.learner_transcript || null
+        goalsNotes = body.goals_notes || null
         console.log(`${logPrefix} Received message with ${conversationHistory.length} history items`)
         if (learnerTranscript) {
           console.log(`${logPrefix} Learner context provided (${learnerTranscript.length} chars)`)
+        }
+        if (goalsNotes) {
+          console.log(`${logPrefix} Goals notes provided (${goalsNotes.length} chars)`)
         }
       } else {
         const textBody = await req.text()
@@ -1044,8 +1064,13 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Mr. Mentor is unavailable.' }, { status: 500 })
     }
 
-    // Build system prompt with learner context if available
+    // Build system prompt with learner context and goals if available
     let systemPrompt = MENTOR_SYSTEM_PROMPT
+    
+    if (goalsNotes) {
+      systemPrompt += `\n\n=== PERSISTENT GOALS & PRIORITIES ===\nThe facilitator has set these persistent goals that should guide all conversations:\n\n${goalsNotes}\n\n=== END PERSISTENT GOALS ===\n\nIMPORTANT: These goals persist across all conversations. Reference them when relevant, and help the facilitator work toward them. The facilitator can update these goals anytime using the Goals clipboard button (📋) on screen.`
+    }
+    
     if (learnerTranscript) {
       systemPrompt += `\n\n=== CURRENT LEARNER CONTEXT ===\nThe facilitator has selected a specific learner to discuss. Here is their profile and progress:\n\n${learnerTranscript}\n\n=== END LEARNER CONTEXT ===\n\nIMPORTANT INSTRUCTIONS FOR THIS LEARNER:\n- When generating lessons, ALWAYS use the grade level shown in the learner profile above\n- When scheduling lessons, you can use the learner's name (e.g., "Emma", "John") and the system will find them\n- When searching for lessons, consider their current grade level and adjust difficulty accordingly\n\nUse this information to provide personalized, data-informed guidance. Reference specific achievements, struggles, or patterns you notice. Ask questions that help the facilitator reflect on this learner's unique needs and progress.`
     }

@@ -122,7 +122,7 @@ export default function LessonMakerOverlay({ tier }) {
       {/* Form */}
       <form onSubmit={handleSubmit} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: 12 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: '100%' }}>
-          {/* Grade & Difficulty */}
+          {/* Grade, Difficulty & Subject */}
           <div style={{ display: 'flex', gap: 8 }}>
             <div style={{ flex: 1 }}>
               <label style={{ display: 'block', fontSize: 11, fontWeight: 600, marginBottom: 4, color: '#374151' }}>
@@ -171,31 +171,31 @@ export default function LessonMakerOverlay({ tier }) {
                 ))}
               </select>
             </div>
-          </div>
-
-          {/* Subject */}
-          <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, marginBottom: 4, color: '#374151' }}>
-              Subject
-            </label>
-            <select
-              value={form.subject}
-              onChange={(e) => setForm({ ...form, subject: e.target.value })}
-              disabled={busy}
-              style={{
-                width: '100%',
-                padding: '6px 10px',
-                fontSize: 12,
-                border: '1px solid #d1d5db',
-                borderRadius: 6,
-                background: '#fff',
-                cursor: 'pointer'
-              }}
-            >
-              {subjects.map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
+            
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, marginBottom: 4, color: '#374151' }}>
+                Subject
+              </label>
+              <select
+                value={form.subject}
+                onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                disabled={busy}
+                style={{
+                  width: '100%',
+                  padding: '6px 10px',
+                  fontSize: 12,
+                  border: '1px solid #d1d5db',
+                  borderRadius: 6,
+                  background: '#fff',
+                  cursor: 'pointer',
+                  boxSizing: 'border-box'
+                }}
+              >
+                {subjects.map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Title */}
@@ -216,7 +216,8 @@ export default function LessonMakerOverlay({ tier }) {
                 fontSize: 12,
                 border: '1px solid #d1d5db',
                 borderRadius: 6,
-                background: '#fff'
+                background: '#fff',
+                boxSizing: 'border-box'
               }}
             />
           </div>
@@ -226,13 +227,13 @@ export default function LessonMakerOverlay({ tier }) {
             <label style={{ display: 'block', fontSize: 11, fontWeight: 600, marginBottom: 4, color: '#374151' }}>
               Description *
             </label>
-            <textarea
+            <input
+              type="text"
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="What should this lesson cover?"
               required
               disabled={busy}
-              rows={3}
               style={{
                 width: '100%',
                 padding: '6px 10px',
@@ -240,8 +241,6 @@ export default function LessonMakerOverlay({ tier }) {
                 border: '1px solid #d1d5db',
                 borderRadius: 6,
                 background: '#fff',
-                fontFamily: 'inherit',
-                resize: 'vertical',
                 boxSizing: 'border-box'
               }}
             />
@@ -252,12 +251,12 @@ export default function LessonMakerOverlay({ tier }) {
             <label style={{ display: 'block', fontSize: 11, fontWeight: 600, marginBottom: 4, color: '#374151' }}>
               Notes (optional)
             </label>
-            <textarea
+            <input
+              type="text"
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               placeholder="Any specific requirements or focus areas?"
               disabled={busy}
-              rows={2}
               style={{
                 width: '100%',
                 padding: '6px 10px',
@@ -265,8 +264,6 @@ export default function LessonMakerOverlay({ tier }) {
                 border: '1px solid #d1d5db',
                 borderRadius: 6,
                 background: '#fff',
-                fontFamily: 'inherit',
-                resize: 'vertical',
                 boxSizing: 'border-box'
               }}
             />
@@ -289,7 +286,8 @@ export default function LessonMakerOverlay({ tier }) {
                 fontSize: 12,
                 border: '1px solid #d1d5db',
                 borderRadius: 6,
-                background: '#fff'
+                background: '#fff',
+                boxSizing: 'border-box'
               }}
             />
           </div>

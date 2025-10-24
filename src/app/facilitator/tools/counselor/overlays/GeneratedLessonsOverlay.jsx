@@ -263,7 +263,7 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
       {editingLesson ? (
         <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ 
-            padding: '12px 16px', 
+            padding: '8px 12px', 
             background: 'linear-gradient(to right, #eff6ff, #eef2ff)',
             borderBottom: '1px solid #e5e7eb',
             flexShrink: 0,
@@ -271,14 +271,14 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
             alignItems: 'center',
             justifyContent: 'space-between'
           }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#1f2937' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#1f2937' }}>
               Edit Lesson
             </div>
             <button
               onClick={() => setEditingLesson(null)}
               style={{
                 padding: '4px 8px',
-                fontSize: 12,
+                fontSize: 11,
                 background: '#6b7280',
                 color: '#fff',
                 border: 'none',
@@ -290,12 +290,18 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
               Cancel
             </button>
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
+          <div style={{ 
+            flex: 1, 
+            overflowY: 'auto', 
+            padding: '8px',
+            fontSize: '11px'
+          }}>
             <LessonEditor
               initialLesson={editingLesson.lesson}
               onSave={handleSaveLesson}
               onCancel={() => setEditingLesson(null)}
               busy={busy}
+              compact={true}
             />
           </div>
         </div>

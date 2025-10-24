@@ -7,6 +7,7 @@ import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
 import { fetchLearnerTranscript } from '@/app/lib/learnerTranscript'
 import ClipboardOverlay from './ClipboardOverlay'
+import GoalsClipboardOverlay from './GoalsClipboardOverlay'
 import CalendarOverlay from './overlays/CalendarOverlay'
 import LessonsOverlay from './overlays/LessonsOverlay'
 import GeneratedLessonsOverlay from './overlays/GeneratedLessonsOverlay'
@@ -25,6 +26,7 @@ export default function CounselorClient() {
   const [learners, setLearners] = useState([])
   const [selectedLearnerId, setSelectedLearnerId] = useState('none')
   const [learnerTranscript, setLearnerTranscript] = useState('')
+  const [goalsNotes, setGoalsNotes] = useState('')
   
   // Conversation state
   const [conversationHistory, setConversationHistory] = useState([])
@@ -37,6 +39,9 @@ export default function CounselorClient() {
   const [draftSummary, setDraftSummary] = useState('')
   const [showClipboard, setShowClipboard] = useState(false)
   const [clipboardInstructions, setClipboardInstructions] = useState(false)
+  
+  // Goals clipboard state
+  const [showGoalsClipboard, setShowGoalsClipboard] = useState(false)
   
   // Caption state (similar to session page)
   const [captionText, setCaptionText] = useState('')
@@ -65,24 +70,28 @@ export default function CounselorClient() {
   
   // Layout state
   const [isMobileLandscape, setIsMobileLandscape] = useState(false)
+  const [isMobilePortrait, setIsMobilePortrait] = useState(false)
+  const [isNarrowScreen, setIsNarrowScreen] = useState(false)
+  const [isShortHeight, setIsShortHeight] = useState(false)
   const [videoMaxHeight, setVideoMaxHeight] = useState(null)
   const [captionPanelFlex, setCaptionPanelFlex] = useState('0 0 50%')
+  const [menuOpen, setMenuOpen] = useState(false)
 
   // Calculate caption panel height based on screen height
   useEffect(() => {
     const updateCaptionHeight = () => {
       const h = window.innerHeight
-      // Interpolate: 600px -> 40%, 1000px -> 50%
-      // Below 600: clamp to 40%, above 1000: clamp to 50%
+      // Interpolate: 600px -> 20%, 1000px -> 30%
+      // Below 600: clamp to 20%, above 1000: clamp to 30%
       let percent
       if (h <= 600) {
-        percent = 40
+        percent = 20
       } else if (h >= 1000) {
-        percent = 50
+        percent = 30
       } else {
         // Linear interpolation between 600 and 1000
         const t = (h - 600) / (1000 - 600)
-        percent = 40 + (10 * t)
+        percent = 20 + (10 * t)
       }
       setCaptionPanelFlex(`0 0 ${percent}%`)
     }
@@ -175,6 +184,7 @@ export default function CounselorClient() {
   useEffect(() => {
     if (selectedLearnerId === 'none') {
       setLearnerTranscript('')
+      setGoalsNotes('')
       return
     }
     
@@ -192,6 +202,30 @@ export default function CounselorClient() {
       } catch (err) {
         console.error('[Mr. Mentor] Failed to load learner transcript:', err)
         if (!cancelled) setLearnerTranscript('')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [selectedLearnerId])
+
+  // Load goals notes when selection changes
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const params = new URLSearchParams()
+        if (selectedLearnerId && selectedLearnerId !== 'none') {
+          params.append('learner_id', selectedLearnerId)
+        }
+        
+        const response = await fetch(`/api/goals-notes?${params.toString()}`)
+        if (response.ok && !cancelled) {
+          const data = await response.json()
+          setGoalsNotes(data.goals_notes || '')
+          console.log('[Mr. Mentor] Loaded goals notes:', data.goals_notes?.substring(0, 100))
+        }
+      } catch (err) {
+        console.error('[Mr. Mentor] Failed to load goals notes:', err)
+        if (!cancelled) setGoalsNotes('')
       }
     })()
     return () => { cancelled = true }
@@ -285,23 +319,32 @@ export default function CounselorClient() {
       try {
         const w = window.innerWidth
         const h = window.innerHeight
-        setIsMobileLandscape(w > h && (w / h) >= 1.0)
+        const isLandscape = w > h && (w / h) >= 1.0
+        const isPortrait = h > w && !isLandscape
+        
+        setIsMobileLandscape(isLandscape)
+        setIsMobilePortrait(isPortrait)
+        setIsNarrowScreen(w < 370)
+        setIsShortHeight(h <= 600)
         
         // Calculate video height for landscape
-        if (w > h) {
-          const hMin = 375
-          const hMax = 600
+        if (isLandscape) {
+          // Multi-stage smooth ramp: 45% at 375px -> 70% at 600px -> 105% at 1200px
           let frac
-          if (h <= hMin) {
-            frac = 0.44
-          } else if (h >= hMax) {
-            frac = 0.65
+          if (h <= 375) {
+            frac = 0.45
+          } else if (h <= 600) {
+            // Ramp from 45% at 375px to 70% at 600px
+            const t = (h - 375) / (600 - 375)
+            frac = 0.45 + t * (0.70 - 0.45)
+          } else if (h <= 1200) {
+            // Ramp from 70% at 600px to 105% at 1200px
+            const t = (h - 600) / (1200 - 600)
+            frac = 0.70 + t * (1.05 - 0.70)
           } else {
-            const t = (h - hMin) / (hMax - hMin)
-            frac = 0.44 + t * (0.65 - 0.44)
+            frac = 1.05
           }
-          // Subtract padding (16px top, 16px in landscape)
-          const target = Math.round(h * frac) - 16
+          const target = Math.round(h * frac)
           setVideoMaxHeight(target)
         } else {
           setVideoMaxHeight(null)
@@ -467,7 +510,9 @@ export default function CounselorClient() {
           // Send previous conversation history (API will append current message to build full context)
           history: conversationHistory,
           // Include learner context if a learner is selected
-          learner_transcript: learnerTranscript || null
+          learner_transcript: learnerTranscript || null,
+          // Include persistent goals notes
+          goals_notes: goalsNotes || null
         })
       })
 
@@ -743,6 +788,23 @@ export default function CounselorClient() {
     })
   }, [])
 
+  // Simple markdown renderer for bold text
+  const renderMarkdown = (text) => {
+    if (!text) return null
+    
+    // Split by **bold** markers
+    const parts = text.split(/(\*\*[^*]+\*\*)/)
+    
+    return parts.map((part, idx) => {
+      // Check if this part is bold
+      if (part.startsWith('**') && part.endsWith('**')) {
+        const boldText = part.slice(2, -2)
+        return <strong key={idx}>{boldText}</strong>
+      }
+      return <span key={idx}>{part}</span>
+    })
+  }
+
   // Export conversation
   const exportConversation = useCallback(() => {
     if (conversationHistory.length === 0) {
@@ -828,36 +890,106 @@ export default function CounselorClient() {
         flexDirection: isMobileLandscape ? 'row' : 'column',
         overflow: 'hidden',
         gap: isMobileLandscape ? 16 : 0,
-        padding: isMobileLandscape ? 16 : 0
+        padding: isMobileLandscape ? 16 : 0,
+        ...(isMobileLandscape && videoEffectiveHeight ? {
+          '--mrMentorSideBySideH': `${videoEffectiveHeight}px`
+        } : {})
       }}>
         {/* Video/Overlay panel */}
         <div style={{
-          flex: isMobileLandscape ? 1 : '0 0 30%',
+          flex: isMobileLandscape ? '0 0 50%' : '0 0 50%',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           background: isMobileLandscape ? '#000' : '#f9fafb',
           position: 'relative',
           minHeight: 0,
-          padding: isMobileLandscape ? 0 : 16
+          padding: isMobileLandscape ? 0 : 16,
+          overflow: 'hidden',
+          ...(isMobileLandscape ? {
+            aspectRatio: '16 / 9',
+            width: '100%',
+            // Use maxHeight to cap the container while letting aspectRatio determine natural size
+            ...(videoEffectiveHeight ? { maxHeight: 'var(--mrMentorSideBySideH)' } : {})
+          } : {})
         }}>
-          {/* Show video when activeScreen is 'mentor', otherwise show overlay */}
-          {activeScreen === 'mentor' ? (
+          {/* Video - direct child like Ms. Sonoma, hidden when showing overlays */}
+          <video
+            ref={videoRef}
+            src="/media/Mr Mentor.mp4"
+            loop
+            muted
+            playsInline
+            preload="auto"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center 35%',
+              visibility: activeScreen === 'mentor' ? 'visible' : 'hidden',
+              pointerEvents: activeScreen === 'mentor' ? 'auto' : 'none'
+            }}
+          />
+
+          {/* Overlay buttons - positioned relative to video panel container */}
+          {activeScreen === 'mentor' && (
             <>
-              <video
-                ref={videoRef}
-                src="/media/Mr Mentor.mp4"
-                loop
-                muted
-                playsInline
-                preload="auto"
+              {/* Goals clipboard button (top-left) */}
+              <button
+                onClick={() => setShowGoalsClipboard(true)}
+                aria-label="Goals"
+                title="Set persistent goals"
                 style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  objectPosition: 'center 35%'
+                  position: 'absolute',
+                  top: 16,
+                  left: 16,
+                  background: goalsNotes ? '#fef3c7' : '#1f2937',
+                  color: goalsNotes ? '#92400e' : '#fff',
+                  border: 'none',
+                  width: 'clamp(48px, 10vw, 64px)',
+                  height: 'clamp(48px, 10vw, 64px)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                  zIndex: 10,
+                  fontSize: 'clamp(22px, 5vw, 32px)'
                 }}
-              />
+              >
+                📋
+              </button>
+
+              {/* New Conversation button (top-right) - visible when conversation exists */}
+              {conversationHistory.length > 0 && (
+                <button
+                  onClick={startNewConversation}
+                  aria-label="New Conversation"
+                  title="New Conversation"
+                  style={{
+                    position: 'absolute',
+                    top: 16,
+                    right: 16,
+                    background: '#1f2937',
+                    color: '#fff',
+                    border: 'none',
+                    width: 'clamp(48px, 10vw, 64px)',
+                    height: 'clamp(48px, 10vw, 64px)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                    zIndex: 10,
+                    fontSize: 'clamp(22px, 5vw, 32px)'
+                  }}
+                >
+                  💾
+                </button>
+              )}
+
               {/* Skip button (bottom-left, visible when speaking) */}
               {isSpeaking && (
                 <button
@@ -925,8 +1057,20 @@ export default function CounselorClient() {
                 )}
               </button>
             </>
-          ) : (
-            <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
+          )}
+
+          {/* Overlays - shown on top when activeScreen is not 'mentor' */}
+          {activeScreen !== 'mentor' && (
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              background: '#fff',
+              zIndex: 5,
+              overflow: 'hidden'
+            }}>
               {activeScreen === 'calendar' && (
                 <CalendarOverlay 
                   learnerId={selectedLearnerId}
@@ -957,47 +1101,19 @@ export default function CounselorClient() {
             background: '#fff',
             borderRadius: isMobileLandscape ? 8 : 0,
             border: isMobileLandscape ? '1px solid #e5e7eb' : 'none',
-            minHeight: 0
+            minHeight: 0,
+            ...(isMobileLandscape && videoEffectiveHeight ? {
+              height: 'var(--mrMentorSideBySideH)',
+              maxHeight: 'var(--mrMentorSideBySideH)',
+              minHeight: 0
+            } : {})
           }}
         >
-          {/* New Conversation button (top-left of caption area) */}
-          {conversationHistory.length > 0 && (
-            <button
-              onClick={startNewConversation}
-              style={{
-                position: 'absolute',
-                top: 12,
-                left: 12,
-                padding: '8px 12px',
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                background: '#3b82f6',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-                zIndex: 10,
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#2563eb'
-                e.currentTarget.style.transform = 'translateY(-1px)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#3b82f6'
-                e.currentTarget.style.transform = 'translateY(0)'
-              }}
-            >
-              🔄 New Conversation
-            </button>
-          )}
-          
           <div
             ref={captionBoxRef}
             style={{
               flex: 1,
-              padding: conversationHistory.length > 0 ? '56px 16px 16px' : 16,
+              padding: 16,
               overflowY: 'auto',
               fontSize: 16,
               lineHeight: 1.6,
@@ -1006,31 +1122,38 @@ export default function CounselorClient() {
             }}
           >
           {conversationHistory.length === 0 ? (
-            <div style={{ color: '#9ca3af', paddingTop: 40, maxWidth: 700, margin: '0 auto' }}>
-              <p style={{ fontSize: 18, fontWeight: 500, marginBottom: 16, color: '#374151', textAlign: 'center' }}>
+            <div style={{ color: '#9ca3af', paddingTop: 8, maxWidth: 700, margin: '0 auto' }}>
+              <p style={{ fontSize: 18, fontWeight: 500, marginBottom: 12, color: '#374151', textAlign: 'center' }}>
                 Welcome to Mr. Mentor
               </p>
-              <p style={{ fontSize: 14, marginBottom: 20, textAlign: 'center' }}>
+              <p style={{ fontSize: 14, marginBottom: 16, textAlign: 'center' }}>
                 I'm here to support you in your teaching journey. 
                 Share your challenges, goals, or questions about curriculum planning.
               </p>
-              <div style={{ fontSize: 14, marginBottom: 20, color: '#6b7280', textAlign: 'left' }}>
+              <div style={{ fontSize: 14, marginBottom: 16, color: '#6b7280', textAlign: 'left' }}>
                 <p style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>I can help you:</p>
-                <ul style={{ paddingLeft: 24, marginBottom: 16, lineHeight: 1.8 }}>
+                <ul style={{ paddingLeft: 24, marginBottom: 12, lineHeight: 1.6 }}>
                   <li>Process feelings and challenges around teaching</li>
                   <li>Plan curriculum and create learning schedules</li>
                   <li>Develop strategies for specific learning situations</li>
                   <li>Balance academic expectations with family dynamics</li>
                 </ul>
                 <p style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>Background Actions (Just Ask!):</p>
-                <ul style={{ paddingLeft: 24, marginBottom: 16, lineHeight: 1.8 }}>
+                <ul style={{ paddingLeft: 24, marginBottom: 12, lineHeight: 1.6 }}>
                   <li><strong>Search Lessons:</strong> "What fractions lessons do you have for 3rd grade?"</li>
                   <li><strong>Review Details:</strong> "Tell me more about the photosynthesis lesson"</li>
                   <li><strong>Generate Lessons:</strong> "Create a 5th grade math lesson on fractions"</li>
                   <li><strong>Schedule Lessons:</strong> "Add the photosynthesis lesson to Emma's calendar for Monday"</li>
                 </ul>
-                <p style={{ fontSize: 13, fontStyle: 'italic', color: '#9ca3af' }}>
-                  Select a learner from the dropdown below to get personalized guidance based on their progress.
+                <p style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>Quick Access Screens:</p>
+                <ul style={{ paddingLeft: 24, marginBottom: 12, lineHeight: 1.6 }}>
+                  <li><strong>📚 Lessons:</strong> Browse and review all available lessons</li>
+                  <li><strong>🎨 Generator:</strong> Create custom lessons for your learners</li>
+                  <li><strong>✨ Generated:</strong> View your previously generated lessons</li>
+                  <li><strong>📅 Calendar:</strong> Manage learner schedules and lesson plans</li>
+                </ul>
+                <p style={{ fontSize: 13, fontStyle: 'italic', color: '#9ca3af', marginTop: 12 }}>
+                  Select a learner from the dropdown below to get personalized guidance based on their progress. Use the menu button to access different screens.
                 </p>
               </div>
             </div>
@@ -1052,7 +1175,7 @@ export default function CounselorClient() {
                   {msg.role === 'user' ? 'You' : 'Mr. Mentor'}
                 </div>
                 <div style={{ whiteSpace: 'pre-wrap' }}>
-                  {msg.content}
+                  {renderMarkdown(msg.content)}
                 </div>
               </div>
             ))
@@ -1090,6 +1213,15 @@ export default function CounselorClient() {
         show={showClipboard}
       />
 
+      {/* Goals Clipboard Overlay */}
+      <GoalsClipboardOverlay
+        visible={showGoalsClipboard}
+        onClose={() => setShowGoalsClipboard(false)}
+        learnerId={selectedLearnerId}
+        learnerName={learners.find(l => l.id === selectedLearnerId)?.name}
+        onSave={(text) => setGoalsNotes(text)}
+      />
+
       {/* Input footer */}
       <div style={{
         position: 'fixed',
@@ -1123,6 +1255,7 @@ export default function CounselorClient() {
                   disabled={loading || isSpeaking}
                   style={{
                     flex: 1,
+                    minWidth: 0,
                     padding: '8px 12px',
                     border: '1px solid #d1d5db',
                     borderRadius: 8,
@@ -1141,123 +1274,340 @@ export default function CounselorClient() {
                 </select>
                 
                 {/* Screen toggle buttons */}
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <button
-                    onClick={() => setActiveScreen('mentor')}
-                    title="Mr. Mentor Video"
-                    style={{
-                      width: 40,
-                      height: 40,
-                      border: '2px solid',
-                      borderColor: activeScreen === 'mentor' ? '#3b82f6' : '#d1d5db',
-                      borderRadius: 6,
-                      background: '#000',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.2s',
-                      overflow: 'hidden',
-                      padding: 0,
-                      position: 'relative'
-                    }}
-                  >
-                    <video
-                      ref={buttonVideoRef}
-                      loop
-                      muted
-                      playsInline
+                {isMobilePortrait ? (
+                  // Hamburger menu for mobile portrait
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setMenuOpen(!menuOpen)}
+                      title="Menu"
                       style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        display: 'block'
+                        width: 40,
+                        height: 40,
+                        border: '2px solid #d1d5db',
+                        borderRadius: 6,
+                        background: menuOpen ? '#dbeafe' : '#fff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexDirection: 'column',
+                        gap: 4,
+                        padding: 8,
+                        transition: 'all 0.2s'
                       }}
                     >
-                      <source src="/media/Mr Mentor.mp4" type="video/mp4" />
-                    </video>
-                  </button>
-                  <button
-                    onClick={() => setActiveScreen('lessons')}
-                    title="Lessons"
-                    style={{
-                      width: 40,
-                      height: 40,
-                      border: '2px solid',
-                      borderColor: activeScreen === 'lessons' ? '#3b82f6' : '#d1d5db',
-                      borderRadius: 6,
-                      background: activeScreen === 'lessons' ? '#dbeafe' : '#fff',
-                      cursor: 'pointer',
-                      fontSize: 20,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    📚
-                  </button>
-                  <button
-                    onClick={() => setActiveScreen('maker')}
-                    title="Lesson Generator"
-                    style={{
-                      width: 40,
-                      height: 40,
-                      border: '2px solid',
-                      borderColor: activeScreen === 'maker' ? '#3b82f6' : '#d1d5db',
-                      borderRadius: 6,
-                      background: activeScreen === 'maker' ? '#dbeafe' : '#fff',
-                      cursor: 'pointer',
-                      fontSize: 20,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    🎨
-                  </button>
-                  <button
-                    onClick={() => setActiveScreen('generated')}
-                    title="Generated Lessons"
-                    style={{
-                      width: 40,
-                      height: 40,
-                      border: '2px solid',
-                      borderColor: activeScreen === 'generated' ? '#3b82f6' : '#d1d5db',
-                      borderRadius: 6,
-                      background: activeScreen === 'generated' ? '#dbeafe' : '#fff',
-                      cursor: 'pointer',
-                      fontSize: 20,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    ✨
-                  </button>
-                  <button
-                    onClick={() => setActiveScreen('calendar')}
-                    title="Calendar"
-                    style={{
-                      width: 40,
-                      height: 40,
-                      border: '2px solid',
-                      borderColor: activeScreen === 'calendar' ? '#3b82f6' : '#d1d5db',
-                      borderRadius: 6,
-                      background: activeScreen === 'calendar' ? '#dbeafe' : '#fff',
-                      cursor: 'pointer',
-                      fontSize: 20,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    📅
-                  </button>
-                </div>
+                      <div style={{ width: '70%', height: 2, background: '#374151', borderRadius: 1 }} />
+                      <div style={{ width: '70%', height: 2, background: '#374151', borderRadius: 1 }} />
+                      <div style={{ width: '70%', height: 2, background: '#374151', borderRadius: 1 }} />
+                    </button>
+                    
+                    {/* Popup menu */}
+                    {menuOpen && (
+                      <>
+                        {/* Backdrop to close menu */}
+                        <div 
+                          onClick={() => setMenuOpen(false)}
+                          style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            zIndex: 998
+                          }}
+                        />
+                        
+                        {/* Menu panel */}
+                        <div style={{
+                          position: 'absolute',
+                          bottom: 48,
+                          right: 0,
+                          background: '#fff',
+                          border: '2px solid #d1d5db',
+                          borderRadius: 8,
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                          padding: 8,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 8,
+                          zIndex: 999,
+                          minWidth: 160
+                        }}>
+                          <button
+                            onClick={() => {
+                              setActiveScreen('mentor')
+                              setMenuOpen(false)
+                            }}
+                            title="Mr. Mentor Video"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              padding: '8px 12px',
+                              border: '2px solid',
+                              borderColor: activeScreen === 'mentor' ? '#3b82f6' : '#d1d5db',
+                              borderRadius: 6,
+                              background: activeScreen === 'mentor' ? '#dbeafe' : '#fff',
+                              cursor: 'pointer',
+                              fontSize: 14,
+                              fontWeight: 500,
+                              transition: 'all 0.2s',
+                              justifyContent: 'flex-start'
+                            }}
+                          >
+                            <div style={{
+                              width: 32,
+                              height: 32,
+                              border: '1px solid #d1d5db',
+                              borderRadius: 4,
+                              background: '#000',
+                              overflow: 'hidden',
+                              flexShrink: 0
+                            }}>
+                              <video
+                                loop
+                                muted
+                                playsInline
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                  display: 'block'
+                                }}
+                              >
+                                <source src="/media/Mr Mentor.mp4" type="video/mp4" />
+                              </video>
+                            </div>
+                            <span>Mr. Mentor</span>
+                          </button>
+                          
+                          <button
+                            onClick={() => {
+                              setActiveScreen('lessons')
+                              setMenuOpen(false)
+                            }}
+                            title="Lessons"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              padding: '8px 12px',
+                              border: '2px solid',
+                              borderColor: activeScreen === 'lessons' ? '#3b82f6' : '#d1d5db',
+                              borderRadius: 6,
+                              background: activeScreen === 'lessons' ? '#dbeafe' : '#fff',
+                              cursor: 'pointer',
+                              fontSize: 14,
+                              fontWeight: 500,
+                              transition: 'all 0.2s',
+                              justifyContent: 'flex-start'
+                            }}
+                          >
+                            <span style={{ fontSize: 20, width: 32, textAlign: 'center', flexShrink: 0 }}>📚</span>
+                            <span>Lessons</span>
+                          </button>
+                          
+                          <button
+                            onClick={() => {
+                              setActiveScreen('maker')
+                              setMenuOpen(false)
+                            }}
+                            title="Lesson Generator"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              padding: '8px 12px',
+                              border: '2px solid',
+                              borderColor: activeScreen === 'maker' ? '#3b82f6' : '#d1d5db',
+                              borderRadius: 6,
+                              background: activeScreen === 'maker' ? '#dbeafe' : '#fff',
+                              cursor: 'pointer',
+                              fontSize: 14,
+                              fontWeight: 500,
+                              transition: 'all 0.2s',
+                              justifyContent: 'flex-start'
+                            }}
+                          >
+                            <span style={{ fontSize: 20, width: 32, textAlign: 'center', flexShrink: 0 }}>🎨</span>
+                            <span>Generator</span>
+                          </button>
+                          
+                          <button
+                            onClick={() => {
+                              setActiveScreen('generated')
+                              setMenuOpen(false)
+                            }}
+                            title="Generated Lessons"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              padding: '8px 12px',
+                              border: '2px solid',
+                              borderColor: activeScreen === 'generated' ? '#3b82f6' : '#d1d5db',
+                              borderRadius: 6,
+                              background: activeScreen === 'generated' ? '#dbeafe' : '#fff',
+                              cursor: 'pointer',
+                              fontSize: 14,
+                              fontWeight: 500,
+                              transition: 'all 0.2s',
+                              justifyContent: 'flex-start'
+                            }}
+                          >
+                            <span style={{ fontSize: 20, width: 32, textAlign: 'center', flexShrink: 0 }}>✨</span>
+                            <span>Generated</span>
+                          </button>
+                          
+                          <button
+                            onClick={() => {
+                              setActiveScreen('calendar')
+                              setMenuOpen(false)
+                            }}
+                            title="Calendar"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              padding: '8px 12px',
+                              border: '2px solid',
+                              borderColor: activeScreen === 'calendar' ? '#3b82f6' : '#d1d5db',
+                              borderRadius: 6,
+                              background: activeScreen === 'calendar' ? '#dbeafe' : '#fff',
+                              cursor: 'pointer',
+                              fontSize: 14,
+                              fontWeight: 500,
+                              transition: 'all 0.2s',
+                              justifyContent: 'flex-start'
+                            }}
+                          >
+                            <span style={{ fontSize: 20, width: 32, textAlign: 'center', flexShrink: 0 }}>📅</span>
+                            <span>Calendar</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  // Regular button row for landscape and desktop
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button
+                      onClick={() => setActiveScreen('mentor')}
+                      title="Mr. Mentor Video"
+                      style={{
+                        width: 40,
+                        height: 40,
+                        border: '2px solid',
+                        borderColor: activeScreen === 'mentor' ? '#3b82f6' : '#d1d5db',
+                        borderRadius: 6,
+                        background: '#000',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s',
+                        overflow: 'hidden',
+                        padding: 0,
+                        position: 'relative'
+                      }}
+                    >
+                      <video
+                        ref={buttonVideoRef}
+                        loop
+                        muted
+                        playsInline
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          display: 'block'
+                        }}
+                      >
+                        <source src="/media/Mr Mentor.mp4" type="video/mp4" />
+                      </video>
+                    </button>
+                    <button
+                      onClick={() => setActiveScreen('lessons')}
+                      title="Lessons"
+                      style={{
+                        width: 40,
+                        height: 40,
+                        border: '2px solid',
+                        borderColor: activeScreen === 'lessons' ? '#3b82f6' : '#d1d5db',
+                        borderRadius: 6,
+                        background: activeScreen === 'lessons' ? '#dbeafe' : '#fff',
+                        cursor: 'pointer',
+                        fontSize: 20,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      📚
+                    </button>
+                    <button
+                      onClick={() => setActiveScreen('maker')}
+                      title="Lesson Generator"
+                      style={{
+                        width: 40,
+                        height: 40,
+                        border: '2px solid',
+                        borderColor: activeScreen === 'maker' ? '#3b82f6' : '#d1d5db',
+                        borderRadius: 6,
+                        background: activeScreen === 'maker' ? '#dbeafe' : '#fff',
+                        cursor: 'pointer',
+                        fontSize: 20,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      🎨
+                    </button>
+                    <button
+                      onClick={() => setActiveScreen('generated')}
+                      title="Generated Lessons"
+                      style={{
+                        width: 40,
+                        height: 40,
+                        border: '2px solid',
+                        borderColor: activeScreen === 'generated' ? '#3b82f6' : '#d1d5db',
+                        borderRadius: 6,
+                        background: activeScreen === 'generated' ? '#dbeafe' : '#fff',
+                        cursor: 'pointer',
+                        fontSize: 20,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      ✨
+                    </button>
+                    <button
+                      onClick={() => setActiveScreen('calendar')}
+                      title="Calendar"
+                      style={{
+                        width: 40,
+                        height: 40,
+                        border: '2px solid',
+                        borderColor: activeScreen === 'calendar' ? '#3b82f6' : '#d1d5db',
+                        borderRadius: 6,
+                        background: activeScreen === 'calendar' ? '#dbeafe' : '#fff',
+                        cursor: 'pointer',
+                        fontSize: 20,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      📅
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1290,18 +1640,18 @@ export default function CounselorClient() {
               onClick={sendMessage}
               disabled={!hasAccess || !userInput.trim() || loading || isSpeaking}
               style={{
-                padding: '8px 24px',
+                padding: isNarrowScreen ? '8px 12px' : '8px 24px',
                 border: 'none',
                 borderRadius: 8,
                 background: (!hasAccess || !userInput.trim() || loading || isSpeaking) ? '#d1d5db' : '#2563eb',
                 color: '#fff',
                 cursor: (!hasAccess || !userInput.trim() || loading || isSpeaking) ? 'not-allowed' : 'pointer',
-                fontSize: 14,
+                fontSize: isNarrowScreen ? '1.25rem' : 14,
                 fontWeight: 600,
                 flexShrink: 0
               }}
             >
-              {loading ? 'Sending...' : 'Send'}
+              {loading ? (isNarrowScreen ? '⏳' : 'Sending...') : (isNarrowScreen ? '📤' : 'Send')}
             </button>
             {(loading || isSpeaking) && (
               <div style={{ 

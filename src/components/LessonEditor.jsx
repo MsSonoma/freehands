@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
  * LessonEditor - Structured editor for lesson JSON
  * Allows facilitators to edit lessons in a form-based interface while maintaining JSON integrity
  */
-export default function LessonEditor({ initialLesson, onSave, onCancel, busy = false }) {
+export default function LessonEditor({ initialLesson, onSave, onCancel, busy = false, compact = false }) {
   const [lesson, setLesson] = useState(initialLesson || {})
   const [errors, setErrors] = useState([])
 
@@ -78,18 +78,6 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
     if (normalized.sample) {
       normalized.sample = toArray(normalized.sample).map(q => {
         const answers = q.expectedAny || q.expected || q.answers || q.answer || q.sample || q.a || q.A
-        const answerArray = toArray(answers)
-        return {
-          question: q.question || q.q || q.Q || '',
-          expectedAny: answerArray.length > 0 ? answerArray : ['']
-        }
-      })
-    }
-    
-    // Normalize word problems
-    if (normalized.wordProblems) {
-      normalized.wordProblems = toArray(normalized.wordProblems).map(q => {
-        const answers = q.expectedAny || q.expected || q.answers || q.answer || q.a || q.A
         const answerArray = toArray(answers)
         return {
           question: q.question || q.q || q.Q || '',
@@ -241,18 +229,6 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
       }
     })
     
-    // Word problems validation
-    const wp = toArray(lesson.wordProblems || [])
-    wp.forEach((q, idx) => {
-      if (!q.question?.trim()) {
-        errs.push(`Word problem #${idx + 1} is missing problem text`)
-      }
-      const answers = toArray(q.expectedAny || [])
-      if (answers.length === 0 || answers.every(a => !a?.trim())) {
-        errs.push(`Word problem #${idx + 1} needs at least one acceptable answer`)
-      }
-    })
-    
     setErrors(errs)
     return errs.length === 0
   }
@@ -269,7 +245,7 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
     // Clean each question type - remove empty questions
     const questionTypes = [
       'multiplechoice', 'truefalse', 'shortanswer', 
-      'fillintheblank', 'sample', 'wordProblems'
+      'fillintheblank', 'sample'
     ]
     
     questionTypes.forEach(type => {
@@ -318,24 +294,43 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
     onSave(cleanedLesson)
   }
 
-  // Styles
-  const sectionStyle = { marginBottom: 24, padding: 16, border: '1px solid #e5e7eb', borderRadius: 8, background: '#f9fafb' }
-  const labelStyle = { display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 14 }
-  const inputStyle = { width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14 }
-  const textareaStyle = { ...inputStyle, minHeight: 80, fontFamily: 'inherit' }
-  const btnStyle = { padding: '6px 10px', border: '1px solid #111', background: '#111', color: '#fff', borderRadius: 6, fontWeight: 600, fontSize: 13, cursor: 'pointer' }
+  // Styles - compact mode for overlays
+  const sectionStyle = compact 
+    ? { marginBottom: 12, padding: 8, border: '1px solid #e5e7eb', borderRadius: 6, background: '#f9fafb' }
+    : { marginBottom: 24, padding: 16, border: '1px solid #e5e7eb', borderRadius: 8, background: '#f9fafb' }
+  const labelStyle = compact
+    ? { display: 'block', fontWeight: 600, marginBottom: 2, fontSize: 11 }
+    : { display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 14 }
+  const inputStyle = compact
+    ? { width: '100%', padding: '4px 6px', border: '1px solid #d1d5db', borderRadius: 4, fontSize: 11 }
+    : { width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14 }
+  const textareaStyle = compact
+    ? { ...inputStyle, minHeight: 50, fontFamily: 'inherit' }
+    : { ...inputStyle, minHeight: 80, fontFamily: 'inherit' }
+  const btnStyle = compact
+    ? { padding: '4px 8px', border: '1px solid #111', background: '#111', color: '#fff', borderRadius: 4, fontWeight: 600, fontSize: 10, cursor: 'pointer' }
+    : { padding: '6px 10px', border: '1px solid #111', background: '#111', color: '#fff', borderRadius: 6, fontWeight: 600, fontSize: 13, cursor: 'pointer' }
   const btnSecondaryStyle = { ...btnStyle, background: '#6b7280', borderColor: '#6b7280' }
   const btnDangerStyle = { ...btnStyle, background: '#dc2626', borderColor: '#dc2626' }
   const btnAddStyle = { ...btnStyle, background: '#059669', borderColor: '#059669' }
 
   return (
-    <div style={{ padding: 20, background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb' }}>
-      <h2 style={{ marginTop: 0, marginBottom: 20 }}>Edit Lesson</h2>
+    <div style={compact 
+      ? { padding: 8, background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb' }
+      : { padding: 20, background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb' }
+    }>
+      <h2 style={compact 
+        ? { marginTop: 0, marginBottom: 12, fontSize: 14 }
+        : { marginTop: 0, marginBottom: 20 }
+      }>Edit Lesson</h2>
 
       {errors.length > 0 && (
-        <div style={{ padding: 12, background: '#fee2e2', border: '1px solid #dc2626', borderRadius: 8, marginBottom: 16 }}>
+        <div style={compact
+          ? { padding: 8, background: '#fee2e2', border: '1px solid #dc2626', borderRadius: 6, marginBottom: 8, fontSize: 11 }
+          : { padding: 12, background: '#fee2e2', border: '1px solid #dc2626', borderRadius: 8, marginBottom: 16 }
+        }>
           <strong>Please fix these errors:</strong>
-          <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
+          <ul style={{ margin: '4px 0 0', paddingLeft: 16, fontSize: compact ? 10 : 13 }}>
             {errors.map((err, i) => <li key={i}>{err}</li>)}
           </ul>
         </div>
@@ -343,7 +338,10 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
 
       {/* Basic Info */}
       <div style={sectionStyle}>
-        <h3 style={{ marginTop: 0, marginBottom: 12 }}>Basic Information</h3>
+        <h3 style={compact 
+          ? { marginTop: 0, marginBottom: 8, fontSize: 12 }
+          : { marginTop: 0, marginBottom: 12 }
+        }>Basic Information</h3>
         
         <label style={labelStyle}>Title *</label>
         <input
@@ -353,7 +351,12 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
           placeholder="Lesson title"
         />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginTop: 12 }}>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1fr 1fr 1fr', 
+          gap: compact ? 6 : 12, 
+          marginTop: compact ? 6 : 12 
+        }}>
           <div>
             <label style={labelStyle}>Grade *</label>
             <input
@@ -386,7 +389,7 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
           </div>
         </div>
 
-        <label style={{ ...labelStyle, marginTop: 12 }}>Description / Blurb</label>
+        <label style={{ ...labelStyle, marginTop: compact ? 6 : 12 }}>Description / Blurb</label>
         <textarea
           style={textareaStyle}
           value={lesson.blurb || ''}
@@ -394,7 +397,7 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
           placeholder="Brief overview of the lesson"
         />
 
-        <label style={{ ...labelStyle, marginTop: 12 }}>Teaching Notes</label>
+        <label style={{ ...labelStyle, marginTop: compact ? 6 : 12 }}>Teaching Notes</label>
         <textarea
           style={textareaStyle}
           value={lesson.teachingNotes || ''}
@@ -445,15 +448,13 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
         styles={{ sectionStyle, labelStyle, inputStyle, textareaStyle, btnAddStyle, btnDangerStyle }}
       />
 
-      {/* Word Problems */}
-      <WordProblemsEditor
-        questions={toArray(lesson.wordProblems || [])}
-        onChange={(newQuestions) => updateField('wordProblems', newQuestions)}
-        styles={{ sectionStyle, labelStyle, inputStyle, textareaStyle, btnAddStyle, btnDangerStyle }}
-      />
-
       {/* Action Buttons */}
-      <div style={{ marginTop: 24, display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+      <div style={{ 
+        marginTop: compact ? 12 : 24, 
+        display: 'flex', 
+        gap: compact ? 6 : 12, 
+        justifyContent: 'flex-end' 
+      }}>
         <button style={btnSecondaryStyle} onClick={onCancel} disabled={busy}>
           Cancel
         </button>
@@ -489,30 +490,72 @@ function VocabularyEditor({ vocab, onChange, styles }) {
       ) : (
         vocab.map((item, idx) => (
           <div key={idx} style={{ marginBottom: 12, padding: 12, border: '1px solid #d1d5db', borderRadius: 6, background: '#fff' }}>
-            <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
-              <div style={{ flex: 1 }}>
-                <label style={styles.labelStyle}>Term</label>
-                <input
-                  style={styles.inputStyle}
-                  value={item.term || ''}
-                  onChange={(e) => updateTerm(idx, 'term', e.target.value)}
-                  placeholder="Vocabulary term"
-                />
-              </div>
-              <div style={{ flex: 2 }}>
-                <label style={styles.labelStyle}>Definition</label>
-                <input
-                  style={styles.inputStyle}
-                  value={item.definition || item.def || ''}
-                  onChange={(e) => updateTerm(idx, 'definition', e.target.value)}
-                  placeholder="Definition"
-                />
-              </div>
-              <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                <button style={styles.btnDangerStyle} onClick={() => removeTerm(idx)}>
-                  Remove
-                </button>
-              </div>
+            <div style={{ marginBottom: 8 }}>
+              <label style={styles.labelStyle}>Term</label>
+              <textarea
+                style={{ 
+                  ...styles.inputStyle, 
+                  minHeight: 'auto', 
+                  fontFamily: 'inherit', 
+                  resize: 'none',
+                  overflow: 'hidden'
+                }}
+                value={item.term || ''}
+                onChange={(e) => {
+                  updateTerm(idx, 'term', e.target.value)
+                  e.target.style.height = 'auto'
+                  e.target.style.height = e.target.scrollHeight + 'px'
+                }}
+                onInput={(e) => {
+                  e.target.style.height = 'auto'
+                  e.target.style.height = e.target.scrollHeight + 'px'
+                }}
+                ref={(el) => {
+                  if (el) {
+                    el.style.height = 'auto'
+                    el.style.height = el.scrollHeight + 'px'
+                  }
+                }}
+                placeholder="Vocabulary term"
+                rows={1}
+              />
+            </div>
+            
+            <div style={{ marginBottom: 8 }}>
+              <label style={styles.labelStyle}>Definition</label>
+              <textarea
+                style={{ 
+                  ...styles.inputStyle, 
+                  minHeight: 'auto', 
+                  fontFamily: 'inherit', 
+                  resize: 'none',
+                  overflow: 'hidden'
+                }}
+                value={item.definition || item.def || ''}
+                onChange={(e) => {
+                  updateTerm(idx, 'definition', e.target.value)
+                  e.target.style.height = 'auto'
+                  e.target.style.height = e.target.scrollHeight + 'px'
+                }}
+                onInput={(e) => {
+                  e.target.style.height = 'auto'
+                  e.target.style.height = e.target.scrollHeight + 'px'
+                }}
+                ref={(el) => {
+                  if (el) {
+                    el.style.height = 'auto'
+                    el.style.height = el.scrollHeight + 'px'
+                  }
+                }}
+                placeholder="Definition"
+                rows={1}
+              />
+            </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button style={styles.btnDangerStyle} onClick={() => removeTerm(idx)}>
+                Remove
+              </button>
             </div>
           </div>
         ))
@@ -751,11 +794,32 @@ function ShortAnswerEditor({ questions, onChange, styles }) {
             </div>
             
             <label style={styles.labelStyle}>Question Text</label>
-            <input
-              style={styles.inputStyle}
+            <textarea
+              style={{ 
+                ...styles.inputStyle, 
+                minHeight: 'auto', 
+                fontFamily: 'inherit', 
+                resize: 'none',
+                overflow: 'hidden'
+              }}
               value={q.question || q.q || ''}
-              onChange={(e) => updateQuestion(qIdx, 'question', e.target.value)}
+              onChange={(e) => {
+                updateQuestion(qIdx, 'question', e.target.value)
+                e.target.style.height = 'auto'
+                e.target.style.height = e.target.scrollHeight + 'px'
+              }}
+              onInput={(e) => {
+                e.target.style.height = 'auto'
+                e.target.style.height = e.target.scrollHeight + 'px'
+              }}
+              ref={(el) => {
+                if (el) {
+                  el.style.height = 'auto'
+                  el.style.height = el.scrollHeight + 'px'
+                }
+              }}
               placeholder="Enter the question"
+              rows={1}
             />
 
             <label style={{ ...styles.labelStyle, marginTop: 12 }}>Acceptable Answers</label>
@@ -764,11 +828,33 @@ function ShortAnswerEditor({ questions, onChange, styles }) {
             </p>
             {(q.expectedAny || []).map((answer, aIdx) => (
               <div key={aIdx} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
-                <input
-                  style={{ ...styles.inputStyle, flex: 1 }}
+                <textarea
+                  style={{ 
+                    ...styles.inputStyle, 
+                    flex: 1, 
+                    minHeight: 'auto', 
+                    fontFamily: 'inherit', 
+                    resize: 'none',
+                    overflow: 'hidden'
+                  }}
                   value={answer}
-                  onChange={(e) => updateAnswer(qIdx, aIdx, e.target.value)}
+                  onChange={(e) => {
+                    updateAnswer(qIdx, aIdx, e.target.value)
+                    e.target.style.height = 'auto'
+                    e.target.style.height = e.target.scrollHeight + 'px'
+                  }}
+                  onInput={(e) => {
+                    e.target.style.height = 'auto'
+                    e.target.style.height = e.target.scrollHeight + 'px'
+                  }}
+                  ref={(el) => {
+                    if (el) {
+                      el.style.height = 'auto'
+                      el.style.height = el.scrollHeight + 'px'
+                    }
+                  }}
                   placeholder={`Acceptable answer ${aIdx + 1}`}
+                  rows={1}
                 />
                 {(q.expectedAny || []).length > 1 && (
                   <button style={{ ...styles.btnDangerStyle, padding: '4px 8px' }} onClick={() => removeAnswer(qIdx, aIdx)}>
@@ -975,96 +1061,6 @@ function SampleQAEditor({ questions, onChange, styles }) {
       )}
       <button style={styles.btnAddStyle} onClick={addQuestion}>
         + Add Sample Question
-      </button>
-    </div>
-  )
-}
-
-// Word Problems Editor (similar to short answer)
-function WordProblemsEditor({ questions, onChange, styles }) {
-  const addQuestion = () => {
-    onChange([...questions, { question: '', expectedAny: [''] }])
-  }
-
-  const updateQuestion = (index, field, value) => {
-    const updated = [...questions]
-    updated[index] = { ...updated[index], [field]: value }
-    onChange(updated)
-  }
-
-  const updateAnswer = (qIndex, aIndex, value) => {
-    const updated = [...questions]
-    const answers = [...(updated[qIndex].expectedAny || [])]
-    answers[aIndex] = value
-    updated[qIndex] = { ...updated[qIndex], expectedAny: answers }
-    onChange(updated)
-  }
-
-  const addAnswer = (qIndex) => {
-    const updated = [...questions]
-    const answers = [...(updated[qIndex].expectedAny || []), '']
-    updated[qIndex] = { ...updated[qIndex], expectedAny: answers }
-    onChange(updated)
-  }
-
-  const removeAnswer = (qIndex, aIndex) => {
-    const updated = [...questions]
-    const answers = updated[qIndex].expectedAny.filter((_, i) => i !== aIndex)
-    updated[qIndex] = { ...updated[qIndex], expectedAny: answers }
-    onChange(updated)
-  }
-
-  const removeQuestion = (index) => {
-    onChange(questions.filter((_, i) => i !== index))
-  }
-
-  return (
-    <div style={styles.sectionStyle}>
-      <h3 style={{ marginTop: 0, marginBottom: 12 }}>Word Problems</h3>
-      {questions.length === 0 ? (
-        <p style={{ color: '#6b7280', fontSize: 14 }}>No word problems yet. Add one below.</p>
-      ) : (
-        questions.map((q, qIdx) => (
-          <div key={qIdx} style={{ marginBottom: 16, padding: 12, border: '1px solid #d1d5db', borderRadius: 6, background: '#fff' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <strong>Problem {qIdx + 1}</strong>
-              <button style={styles.btnDangerStyle} onClick={() => removeQuestion(qIdx)}>
-                Remove Problem
-              </button>
-            </div>
-            
-            <label style={styles.labelStyle}>Problem Text</label>
-            <textarea
-              style={styles.textareaStyle}
-              value={q.question || q.q || ''}
-              onChange={(e) => updateQuestion(qIdx, 'question', e.target.value)}
-              placeholder="Enter the word problem"
-            />
-
-            <label style={{ ...styles.labelStyle, marginTop: 12 }}>Acceptable Answers</label>
-            {(q.expectedAny || []).map((answer, aIdx) => (
-              <div key={aIdx} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
-                <input
-                  style={{ ...styles.inputStyle, flex: 1 }}
-                  value={answer}
-                  onChange={(e) => updateAnswer(qIdx, aIdx, e.target.value)}
-                  placeholder={`Acceptable answer ${aIdx + 1}`}
-                />
-                {(q.expectedAny || []).length > 1 && (
-                  <button style={{ ...styles.btnDangerStyle, padding: '4px 8px' }} onClick={() => removeAnswer(qIdx, aIdx)}>
-                    ×
-                  </button>
-                )}
-              </div>
-            ))}
-            <button style={{ ...styles.btnAddStyle, padding: '4px 8px', fontSize: 12 }} onClick={() => addAnswer(qIdx)}>
-              + Add Acceptable Answer
-            </button>
-          </div>
-        ))
-      )}
-      <button style={styles.btnAddStyle} onClick={addQuestion}>
-        + Add Word Problem
       </button>
     </div>
   )

@@ -241,18 +241,26 @@ export default function LessonMakerPage(){
         <label style={label}>Lesson Title</label>
         <input style={input} required value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} placeholder="e.g., Fractions on a Number Line" />
 
-        <label style={label}>Subject</label>
-        <select style={input} value={form.subject} onChange={e=>setForm(f=>({...f,subject:e.target.value}))}>
-          {subjects.map(s=> <option key={s} value={s}>{s}</option>)}
-        </select>
-
-        <label style={label}>Difficulty</label>
-        <select style={input} value={form.difficulty} onChange={e=>setForm(f=>({...f,difficulty:e.target.value}))}>
-          {difficulties.map(d=> <option key={d} value={d}>{d}</option>)}
-        </select>
-
-        <label style={label}>Grade</label>
-        <input style={input} required value={form.grade} onChange={e=>setForm(f=>({...f,grade:e.target.value}))} placeholder="e.g., 3rd" />
+        <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+          <div style={{ flex: 1 }}>
+            <label style={label}>Grade</label>
+            <input style={input} required value={form.grade} onChange={e=>setForm(f=>({...f,grade:e.target.value}))} placeholder="e.g., 3rd" />
+          </div>
+          
+          <div style={{ flex: 1 }}>
+            <label style={label}>Difficulty</label>
+            <select style={input} value={form.difficulty} onChange={e=>setForm(f=>({...f,difficulty:e.target.value}))}>
+              {difficulties.map(d=> <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+          
+          <div style={{ flex: 1 }}>
+            <label style={label}>Subject</label>
+            <select style={input} value={form.subject} onChange={e=>setForm(f=>({...f,subject:e.target.value}))}>
+              {subjects.map(s=> <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+        </div>
 
         <label style={label}>Short Description</label>
         <textarea style={{...input, minHeight:80}} value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="What this lesson covers and the key skills." />
