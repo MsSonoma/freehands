@@ -19,6 +19,14 @@ export default function CalendarOverlay({ learnerId }) {
   useEffect(() => {
     if (learnerId && learnerId !== 'none') {
       loadSchedule()
+      
+      // Poll for updates every 2 minutes
+      const pollInterval = setInterval(() => {
+        console.log('[CalendarOverlay] Polling for schedule updates')
+        loadSchedule()
+      }, 2 * 60 * 1000)
+      
+      return () => clearInterval(pollInterval)
     } else {
       setScheduledLessons({})
       setScheduledForSelectedDate([])
@@ -41,37 +49,46 @@ export default function CalendarOverlay({ learnerId }) {
     
     try {
       const supabase = getSupabaseClient()
-      
-      // Check if table exists first
-      const { error: tableError } = await supabase
-        .from('lesson_calendar')
-        .select('id')
-        .limit(1)
-      
-      if (tableError) {
-        console.warn('lesson_calendar table does not exist yet')
-        setTableExists(false)
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      if (!token) {
+        console.warn('[CalendarOverlay] No auth token available')
         setScheduledLessons({})
         return
       }
-      
-      const { data, error } = await supabase
-        .from('lesson_calendar')
-        .select('*')
-        .eq('learner_id', learnerId)
 
-      if (error) throw error
+      // Get all scheduled lessons for this learner
+      const response = await fetch(`/api/lesson-schedule?learnerId=${learnerId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!response.ok) {
+        console.error('[CalendarOverlay] Failed to load schedule:', response.status)
+        setScheduledLessons({})
+        return
+      }
+
+      const result = await response.json()
+      const data = result.schedule || []
 
       const grouped = {}
-      data?.forEach(item => {
+      data.forEach(item => {
         const dateStr = item.scheduled_date
         if (!grouped[dateStr]) grouped[dateStr] = []
-        grouped[dateStr].push(item)
+        grouped[dateStr].push({
+          lesson_title: item.lesson_key?.split('/')[1]?.replace('.json', '').replace(/_/g, ' ') || 'Lesson',
+          subject: item.lesson_key?.split('/')[0] || 'Unknown',
+          grade: 'Various',
+          lesson_key: item.lesson_key
+        })
       })
       setScheduledLessons(grouped)
       setTableExists(true)
     } catch (err) {
-      console.error('Failed to load schedule:', err)
+      console.error('[CalendarOverlay] Failed to load schedule:', err)
       setScheduledLessons({})
     }
   }
