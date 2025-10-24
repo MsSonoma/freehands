@@ -645,12 +645,13 @@ export default function FacilitatorLessonsPage() {
                                         </span>
                                       )}
                                     </div>
-                                    <label
-                                      htmlFor={`lesson-${lessonKey}`}
-                                      style={{ flex: 1, cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
-                                    >
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <span style={{ fontWeight: 600 }}>{lesson.title}</span>
+                                    <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+                                      <label
+                                        htmlFor={`lesson-${lessonKey}`}
+                                        style={{ flex: '1 1 200px', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+                                      >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                          <span style={{ fontWeight: 600 }}>{lesson.title}</span>
                                         {hasActiveKey && (
                                           <span style={{ 
                                             fontSize: 12, 
@@ -696,38 +697,140 @@ export default function FacilitatorLessonsPage() {
                                           {lesson.blurb}
                                         </div>
                                       )}
-                                    </label>
-                                    
-                                    {/* Edit Lesson button */}
-                                    <button
-                                      onClick={(e) => {
-                                        e.preventDefault()
-                                        e.stopPropagation()
-                                        router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(lessonKey)}`)
-                                      }}
-                                      style={{
-                                        marginLeft: 'auto',
-                                        padding: '6px 12px',
-                                        border: '1px solid #d1d5db',
-                                        borderRadius: 6,
-                                        background: '#fff',
-                                        color: '#6b7280',
-                                        fontSize: 13,
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 6
-                                      }}
-                                      title="Edit this lesson"
-                                    >
-                                      <span>✏️</span>
-                                      Edit
-                                    </button>
+                                      </label>
+                                      
+                                      {/* Edit Lesson button */}
+                                      <button
+                                        onClick={(e) => {
+                                          e.preventDefault()
+                                          e.stopPropagation()
+                                          router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(lessonKey)}`)
+                                        }}
+                                        style={{
+                                          padding: '6px 12px',
+                                          border: '1px solid #d1d5db',
+                                          borderRadius: 6,
+                                          background: '#fff',
+                                          color: '#6b7280',
+                                          fontSize: 13,
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: 6,
+                                          whiteSpace: 'nowrap'
+                                        }}
+                                        title="Edit this lesson"
+                                      >
+                                        <span>✏️</span>
+                                        Edit
+                                      </button>
+                                      
+                                      {/* Notes button - inline */}
+                                      {!isEditingThisNote && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.preventDefault()
+                                            e.stopPropagation()
+                                            setEditingNote(lessonKey)
+                                          }}
+                                          style={{
+                                            padding: '6px 12px',
+                                            border: '1px solid #d1d5db',
+                                            borderRadius: 6,
+                                            background: '#fff',
+                                            color: '#6b7280',
+                                            fontSize: 13,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 6,
+                                            whiteSpace: 'nowrap'
+                                          }}
+                                          title={noteText ? 'Edit note for Mr. Mentor' : 'Add note for Mr. Mentor'}
+                                        >
+                                          <span>📝</span>
+                                          {noteText ? 'Edit Note' : 'Notes'}
+                                        </button>
+                                      )}
+                                      
+                                      {/* Scheduling controls - inline */}
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                        <span style={{ fontSize: 16 }}>📅</span>
+                                        <select
+                                          value={dateInfo.month}
+                                          onChange={(e) => updateScheduleDate(lessonKey, 'month', e.target.value)}
+                                          style={{
+                                            padding: '6px 8px',
+                                            border: '1px solid #d1d5db',
+                                            borderRadius: 6,
+                                            fontSize: 13,
+                                            background: '#fff',
+                                            cursor: 'pointer',
+                                            opacity: dateInfo.modified ? 1 : 0.5
+                                          }}
+                                        >
+                                          {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((month, idx) => (
+                                            <option key={idx} value={idx + 1}>{month}</option>
+                                          ))}
+                                        </select>
+                                        <select
+                                          value={dateInfo.day}
+                                          onChange={(e) => updateScheduleDate(lessonKey, 'day', e.target.value)}
+                                          style={{
+                                            padding: '6px 8px',
+                                            border: '1px solid #d1d5db',
+                                            borderRadius: 6,
+                                            fontSize: 13,
+                                            background: '#fff',
+                                            cursor: 'pointer',
+                                            opacity: dateInfo.modified ? 1 : 0.5
+                                          }}
+                                        >
+                                          {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                                            <option key={day} value={day}>{day}</option>
+                                          ))}
+                                        </select>
+                                        <select
+                                          value={dateInfo.year}
+                                          onChange={(e) => updateScheduleDate(lessonKey, 'year', e.target.value)}
+                                          style={{
+                                            padding: '6px 8px',
+                                            border: '1px solid #d1d5db',
+                                            borderRadius: 6,
+                                            fontSize: 13,
+                                            background: '#fff',
+                                            cursor: 'pointer',
+                                            opacity: dateInfo.modified ? 1 : 0.5
+                                          }}
+                                        >
+                                          {[2025, 2026, 2027].map(year => (
+                                            <option key={year} value={year}>{year}</option>
+                                          ))}
+                                        </select>
+                                        <button
+                                          onClick={() => scheduleLesson(lessonKey)}
+                                          disabled={scheduling === lessonKey || !dateInfo.modified}
+                                          style={{
+                                            padding: '6px 12px',
+                                            border: 'none',
+                                            borderRadius: 6,
+                                            background: (scheduling === lessonKey || !dateInfo.modified) ? '#d1d5db' : '#2563eb',
+                                            color: '#fff',
+                                            fontSize: 13,
+                                            fontWeight: 600,
+                                            cursor: (scheduling === lessonKey || !dateInfo.modified) ? 'not-allowed' : 'pointer',
+                                            whiteSpace: 'nowrap'
+                                          }}
+                                        >
+                                          {scheduling === lessonKey ? 'Scheduling...' : 'Schedule'}
+                                        </button>
+                                      </div>
+                                    </div>
                                   </div>
                                   
-                                  {/* Notes section */}
-                                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f3f4f6' }} onClick={(e) => e.stopPropagation()}>
-                                    {isEditingThisNote ? (
+                                  {/* Notes editing section - shows below when editing */}
+                                  {isEditingThisNote && (
+                                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f3f4f6' }} onClick={(e) => e.stopPropagation()}>
                                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                         <textarea
                                           defaultValue={noteText}
@@ -791,129 +894,8 @@ export default function FacilitatorLessonsPage() {
                                           </button>
                                         </div>
                                       </div>
-                                    ) : (
-                                      <div>
-                                        {noteText ? (
-                                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                            <div style={{ fontSize: 13, color: '#6b7280', fontWeight: 600 }}>
-                                              📝 Note for Mr. Mentor:
-                                            </div>
-                                            <div style={{ fontSize: 14, color: '#374151', whiteSpace: 'pre-wrap' }}>
-                                              {noteText}
-                                            </div>
-                                            <button
-                                              onClick={() => setEditingNote(lessonKey)}
-                                              style={{
-                                                alignSelf: 'flex-start',
-                                                padding: '4px 8px',
-                                                border: '1px solid #d1d5db',
-                                                borderRadius: 6,
-                                                background: '#fff',
-                                                color: '#6b7280',
-                                                fontSize: 12,
-                                                cursor: 'pointer',
-                                                marginTop: 4
-                                              }}
-                                            >
-                                              Edit Note
-                                            </button>
-                                          </div>
-                                        ) : (
-                                          <button
-                                            onClick={() => setEditingNote(lessonKey)}
-                                            style={{
-                                              padding: '6px 10px',
-                                              border: '1px solid #d1d5db',
-                                              borderRadius: 6,
-                                              background: '#fff',
-                                              color: '#6b7280',
-                                              fontSize: 13,
-                                              cursor: 'pointer',
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              gap: 4
-                                            }}
-                                          >
-                                            <span>📝</span>
-                                            Add note for Mr. Mentor
-                                          </button>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                  
-                                  {/* Scheduling section */}
-                                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f3f4f6' }} onClick={(e) => e.stopPropagation()}>
-                                    <div style={{ fontSize: 13, color: '#6b7280', fontWeight: 600, marginBottom: 8 }}>
-                                      📅 Schedule this lesson:
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                                      <select
-                                        value={dateInfo.month}
-                                        onChange={(e) => updateScheduleDate(lessonKey, 'month', e.target.value)}
-                                        style={{
-                                          padding: '6px 8px',
-                                          border: '1px solid #d1d5db',
-                                          borderRadius: 6,
-                                          fontSize: 14,
-                                          background: '#fff',
-                                          cursor: 'pointer'
-                                        }}
-                                      >
-                                        {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((month, idx) => (
-                                          <option key={idx} value={idx + 1}>{month}</option>
-                                        ))}
-                                      </select>
-                                      <select
-                                        value={dateInfo.day}
-                                        onChange={(e) => updateScheduleDate(lessonKey, 'day', e.target.value)}
-                                        style={{
-                                          padding: '6px 8px',
-                                          border: '1px solid #d1d5db',
-                                          borderRadius: 6,
-                                          fontSize: 14,
-                                          background: '#fff',
-                                          cursor: 'pointer'
-                                        }}
-                                      >
-                                        {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                                          <option key={day} value={day}>{day}</option>
-                                        ))}
-                                      </select>
-                                      <select
-                                        value={dateInfo.year}
-                                        onChange={(e) => updateScheduleDate(lessonKey, 'year', e.target.value)}
-                                        style={{
-                                          padding: '6px 8px',
-                                          border: '1px solid #d1d5db',
-                                          borderRadius: 6,
-                                          fontSize: 14,
-                                          background: '#fff',
-                                          cursor: 'pointer'
-                                        }}
-                                      >
-                                        {[2025, 2026, 2027].map(year => (
-                                          <option key={year} value={year}>{year}</option>
-                                        ))}
-                                      </select>
-                                      <button
-                                        onClick={() => scheduleLesson(lessonKey)}
-                                        disabled={scheduling === lessonKey || !dateInfo.month || !dateInfo.day || !dateInfo.year}
-                                        style={{
-                                          padding: '6px 12px',
-                                          border: 'none',
-                                          borderRadius: 6,
-                                          background: (scheduling === lessonKey || !dateInfo.month || !dateInfo.day || !dateInfo.year) ? '#d1d5db' : '#2563eb',
-                                          color: '#fff',
-                                          fontSize: 13,
-                                          fontWeight: 600,
-                                          cursor: (scheduling === lessonKey || !dateInfo.month || !dateInfo.day || !dateInfo.year) ? 'not-allowed' : 'pointer'
-                                        }}
-                                      >
-                                        {scheduling === lessonKey ? 'Scheduling...' : 'Schedule'}
-                                      </button>
-                                    </div>
-                                  </div>
+                                  )}
                                 </div>
                               )
                             })}
@@ -964,12 +946,13 @@ export default function FacilitatorLessonsPage() {
                                   </span>
                                 )}
                               </div>
-                              <label
-                                htmlFor={`lesson-${lessonKey}`}
-                                style={{ flex: 1, cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
-                              >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  <span style={{ fontWeight: 600 }}>{lesson.title}</span>
+                              <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+                                <label
+                                  htmlFor={`lesson-${lessonKey}`}
+                                  style={{ flex: '1 1 200px', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <span style={{ fontWeight: 600 }}>{lesson.title}</span>
                                   {hasActiveKey && (
                                     <span style={{ 
                                       fontSize: 12, 
@@ -1015,38 +998,140 @@ export default function FacilitatorLessonsPage() {
                                     {lesson.blurb}
                                   </div>
                                 )}
-                              </label>
-                              
-                              {/* Edit Lesson button */}
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault()
-                                  e.stopPropagation()
-                                  router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(lessonKey)}`)
-                                }}
-                                style={{
-                                  marginLeft: 'auto',
-                                  padding: '6px 12px',
-                                  border: '1px solid #d1d5db',
-                                  borderRadius: 6,
-                                  background: '#fff',
-                                  color: '#6b7280',
-                                  fontSize: 13,
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 6
-                                }}
-                                title="Edit this lesson"
-                              >
-                                <span>✏️</span>
-                                Edit
-                              </button>
+                                </label>
+                                
+                                {/* Edit Lesson button */}
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(lessonKey)}`)
+                                  }}
+                                  style={{
+                                    padding: '6px 12px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: 6,
+                                    background: '#fff',
+                                    color: '#6b7280',
+                                    fontSize: 13,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                  title="Edit this lesson"
+                                >
+                                  <span>✏️</span>
+                                  Edit
+                                </button>
+                                
+                                {/* Notes button - inline */}
+                                {!isEditingThisNote && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      setEditingNote(lessonKey)
+                                    }}
+                                    style={{
+                                      padding: '6px 12px',
+                                      border: '1px solid #d1d5db',
+                                      borderRadius: 6,
+                                      background: '#fff',
+                                      color: '#6b7280',
+                                      fontSize: 13,
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 6,
+                                      whiteSpace: 'nowrap'
+                                    }}
+                                    title={noteText ? 'Edit note for Mr. Mentor' : 'Add note for Mr. Mentor'}
+                                  >
+                                    <span>📝</span>
+                                    {noteText ? 'Edit Note' : 'Notes'}
+                                  </button>
+                                )}
+                                
+                                {/* Scheduling controls - inline */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                  <span style={{ fontSize: 16 }}>📅</span>
+                                  <select
+                                    value={dateInfo.month}
+                                    onChange={(e) => updateScheduleDate(lessonKey, 'month', e.target.value)}
+                                    style={{
+                                      padding: '6px 8px',
+                                      border: '1px solid #d1d5db',
+                                      borderRadius: 6,
+                                      fontSize: 13,
+                                      background: '#fff',
+                                      cursor: 'pointer',
+                                      opacity: dateInfo.modified ? 1 : 0.5
+                                    }}
+                                  >
+                                    {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((month, idx) => (
+                                      <option key={idx} value={idx + 1}>{month}</option>
+                                    ))}
+                                  </select>
+                                  <select
+                                    value={dateInfo.day}
+                                    onChange={(e) => updateScheduleDate(lessonKey, 'day', e.target.value)}
+                                    style={{
+                                      padding: '6px 8px',
+                                      border: '1px solid #d1d5db',
+                                      borderRadius: 6,
+                                      fontSize: 13,
+                                      background: '#fff',
+                                      cursor: 'pointer',
+                                      opacity: dateInfo.modified ? 1 : 0.5
+                                    }}
+                                  >
+                                    {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                                      <option key={day} value={day}>{day}</option>
+                                    ))}
+                                  </select>
+                                  <select
+                                    value={dateInfo.year}
+                                    onChange={(e) => updateScheduleDate(lessonKey, 'year', e.target.value)}
+                                    style={{
+                                      padding: '6px 8px',
+                                      border: '1px solid #d1d5db',
+                                      borderRadius: 6,
+                                      fontSize: 13,
+                                      background: '#fff',
+                                      cursor: 'pointer',
+                                      opacity: dateInfo.modified ? 1 : 0.5
+                                    }}
+                                  >
+                                    {[2025, 2026, 2027].map(year => (
+                                      <option key={year} value={year}>{year}</option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    onClick={() => scheduleLesson(lessonKey)}
+                                    disabled={scheduling === lessonKey || !dateInfo.modified}
+                                    style={{
+                                      padding: '6px 12px',
+                                      border: 'none',
+                                      borderRadius: 6,
+                                      background: (scheduling === lessonKey || !dateInfo.modified) ? '#d1d5db' : '#2563eb',
+                                      color: '#fff',
+                                      fontSize: 13,
+                                      fontWeight: 600,
+                                      cursor: (scheduling === lessonKey || !dateInfo.modified) ? 'not-allowed' : 'pointer',
+                                      whiteSpace: 'nowrap'
+                                    }}
+                                  >
+                                    {scheduling === lessonKey ? 'Scheduling...' : 'Schedule'}
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                             
-                            {/* Notes section */}
-                            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f3f4f6' }} onClick={(e) => e.stopPropagation()}>
-                              {isEditingThisNote ? (
+                            {/* Notes editing section - shows below when editing */}
+                            {isEditingThisNote && (
+                              <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f3f4f6' }} onClick={(e) => e.stopPropagation()}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                   <textarea
                                     defaultValue={noteText}
@@ -1110,129 +1195,9 @@ export default function FacilitatorLessonsPage() {
                                     </button>
                                   </div>
                                 </div>
-                              ) : (
-                                <div>
-                                  {noteText ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                      <div style={{ fontSize: 13, color: '#6b7280', fontWeight: 600 }}>
-                                        📝 Note for Mr. Mentor:
-                                      </div>
-                                      <div style={{ fontSize: 14, color: '#374151', whiteSpace: 'pre-wrap' }}>
-                                        {noteText}
-                                      </div>
-                                      <button
-                                        onClick={() => setEditingNote(lessonKey)}
-                                        style={{
-                                          alignSelf: 'flex-start',
-                                          padding: '4px 8px',
-                                          border: '1px solid #d1d5db',
-                                          borderRadius: 6,
-                                          background: '#fff',
-                                          color: '#6b7280',
-                                          fontSize: 12,
-                                          cursor: 'pointer',
-                                          marginTop: 4
-                                        }}
-                                      >
-                                        Edit Note
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <button
-                                      onClick={() => setEditingNote(lessonKey)}
-                                      style={{
-                                        padding: '6px 10px',
-                                        border: '1px solid #d1d5db',
-                                        borderRadius: 6,
-                                        background: '#fff',
-                                        color: '#6b7280',
-                                        fontSize: 13,
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 4
-                                      }}
-                                    >
-                                      <span>📝</span>
-                                      Add note for Mr. Mentor
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                            </div>
+                              </div>
+                            )}
                             
-                            {/* Scheduling section */}
-                            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f3f4f6' }} onClick={(e) => e.stopPropagation()}>
-                              <div style={{ fontSize: 13, color: '#6b7280', fontWeight: 600, marginBottom: 8 }}>
-                                📅 Schedule this lesson:
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                                <select
-                                  value={dateInfo.month}
-                                  onChange={(e) => updateScheduleDate(lessonKey, 'month', e.target.value)}
-                                  style={{
-                                    padding: '6px 8px',
-                                    border: '1px solid #d1d5db',
-                                    borderRadius: 6,
-                                    fontSize: 14,
-                                    background: '#fff',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((month, idx) => (
-                                    <option key={idx} value={idx + 1}>{month}</option>
-                                  ))}
-                                </select>
-                                <select
-                                  value={dateInfo.day}
-                                  onChange={(e) => updateScheduleDate(lessonKey, 'day', e.target.value)}
-                                  style={{
-                                    padding: '6px 8px',
-                                    border: '1px solid #d1d5db',
-                                    borderRadius: 6,
-                                    fontSize: 14,
-                                    background: '#fff',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                                    <option key={day} value={day}>{day}</option>
-                                  ))}
-                                </select>
-                                <select
-                                  value={dateInfo.year}
-                                  onChange={(e) => updateScheduleDate(lessonKey, 'year', e.target.value)}
-                                  style={{
-                                    padding: '6px 8px',
-                                    border: '1px solid #d1d5db',
-                                    borderRadius: 6,
-                                    fontSize: 14,
-                                    background: '#fff',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  {[2025, 2026, 2027].map(year => (
-                                    <option key={year} value={year}>{year}</option>
-                                  ))}
-                                </select>
-                                <button
-                                  onClick={() => scheduleLesson(lessonKey)}
-                                  disabled={scheduling === lessonKey || !dateInfo.month || !dateInfo.day || !dateInfo.year}
-                                  style={{
-                                    padding: '6px 12px',
-                                    border: 'none',
-                                    borderRadius: 6,
-                                    background: (scheduling === lessonKey || !dateInfo.month || !dateInfo.day || !dateInfo.year) ? '#d1d5db' : '#2563eb',
-                                    color: '#fff',
-                                    fontSize: 13,
-                                    fontWeight: 600,
-                                    cursor: (scheduling === lessonKey || !dateInfo.month || !dateInfo.day || !dateInfo.year) ? 'not-allowed' : 'pointer'
-                                  }}
-                                >
-                                  {scheduling === lessonKey ? 'Scheduling...' : 'Schedule'}
-                                </button>
-                              </div>
-                            </div>
                           </div>
                         )
                       })
