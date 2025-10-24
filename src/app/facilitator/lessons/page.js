@@ -322,9 +322,11 @@ export default function FacilitatorLessonsPage() {
     return () => { cancelled = true }
   }, [selectedLearnerId, refreshTrigger])
 
-  async function toggleApproval(subject, lessonFile) {
+  async function toggleApproval(subject, lessonFile, isGenerated = false) {
     if (!selectedLearnerId) return
-    const lessonKey = `${subject}/${lessonFile}`
+    // For generated lessons, use 'facilitator' prefix instead of 'generated'
+    const prefix = isGenerated ? 'facilitator' : subject
+    const lessonKey = `${prefix}/${lessonFile}`
     const newApproved = { ...approvedLessons }
     
     if (newApproved[lessonKey]) {
@@ -645,7 +647,7 @@ export default function FacilitatorLessonsPage() {
                                       <input
                                         type="checkbox"
                                         checked={isApproved}
-                                        onChange={() => toggleApproval(subject, lesson.file)}
+                                        onChange={() => toggleApproval(subject, lesson.file, lesson.isGenerated)}
                                         id={`lesson-${lessonKey}`}
                                         className="brand-checkbox"
                                       />
@@ -938,7 +940,7 @@ export default function FacilitatorLessonsPage() {
                                 <input
                                   type="checkbox"
                                   checked={isApproved}
-                                  onChange={() => toggleApproval(subject, lesson.file)}
+                                  onChange={() => toggleApproval(subject, lesson.file, lesson.isGenerated)}
                                   id={`lesson-${lessonKey}`}
                                   className="brand-checkbox"
                                 />
