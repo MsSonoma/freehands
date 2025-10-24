@@ -655,7 +655,7 @@ function LessonsPageInner(){
                           }}
                           title={noteText ? 'Edit facilitator note' : 'Add facilitator note'}
                         >
-                          📝 {noteText ? 'Edit Note' : 'Add Note'}
+                          📝 Notes
                         </button>
                       )}
                       
