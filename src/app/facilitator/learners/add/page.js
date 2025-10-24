@@ -113,7 +113,7 @@ export default function AddLearnerPage() {
 				<div style={{ marginBottom:16, padding:12, border:'1px solid #eee', borderRadius:8, background:'#fff' }}>
 					<div style={{ fontWeight:600, marginBottom:6 }}>Learner limit reached</div>
 					<div style={{ color:'#444', marginBottom:8 }}>Your {planTier} plan allows up to {maxLearners} learner{maxLearners===1?'':'s'}. Upgrade to add more learners.</div>
-					<a href="/facilitator/plan" style={{ padding:'8px 12px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff', textDecoration:'none' }}>View Plans</a>
+					<a href="/facilitator/account/plan" style={{ padding:'8px 12px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff', textDecoration:'none' }}>View Plans</a>
 				</div>
 			)}
 

@@ -82,7 +82,7 @@ export async function POST(req) {
       line_items: [{ price, quantity: 1 }],
       allow_promotion_codes: true,
       success_url: `${baseUrl}/billing/return?to=${encodeURIComponent('/facilitator?checkout=success')}`,
-      cancel_url: `${baseUrl}/billing/return?to=${encodeURIComponent('/facilitator/plan?checkout=cancel')}` ,
+      cancel_url: `${baseUrl}/billing/return?to=${encodeURIComponent('/facilitator/account/plan?checkout=cancel')}` ,
       metadata: { supabase_user_id: user.id, tier },
     });
 

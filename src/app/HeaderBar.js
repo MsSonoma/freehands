@@ -140,7 +140,7 @@ export default function HeaderBar() {
 
 	// Receive the session page title from the session page, counselor page, or calendar page
 	useEffect(() => {
-		if (!pathname.startsWith('/session') && !pathname.startsWith('/facilitator/tools/counselor') && !pathname.startsWith('/facilitator/calendar')) { setSessionTitle(''); return; }
+		if (!pathname.startsWith('/session') && !pathname.startsWith('/facilitator/generator/counselor') && !pathname.startsWith('/facilitator/calendar')) { setSessionTitle(''); return; }
 		const onTitle = (e) => {
 			try { setSessionTitle((e && e.detail) || ''); } catch { setSessionTitle(''); }
 		};
@@ -325,25 +325,27 @@ export default function HeaderBar() {
 		if (pathname.startsWith('/learn')) return '/';
 
 		// Billing (embedded checkout): return to plan selection
-		if (pathname.startsWith('/billing/element/checkout')) return '/facilitator/plan';
+		if (pathname.startsWith('/billing/element/checkout')) return '/facilitator/account/plan';
 
 		// Billing manage page (client-managed billing portal): return to facilitator overview
 		if (pathname.startsWith('/billing/manage')) return '/facilitator';
 
 		// Facilitator Hotkeys page should return to Settings
-		if (pathname.startsWith('/facilitator/hotkeys')) return '/facilitator/settings';
+		if (pathname.startsWith('/facilitator/hotkeys')) return '/facilitator/account/settings';
 
-		// Facilitator Tools sub-pages should return to Tools page
-		if (pathname.startsWith('/facilitator/tools/')) return '/facilitator/tools';
+		// Facilitator Generator sub-pages should return to Generator page
+		if (pathname.startsWith('/facilitator/generator/')) return '/facilitator/generator';
 
-		// Facilitator chain: / -> /facilitator -> /facilitator/(learners|lessons|plan|settings|tools)
+		// Facilitator Account sub-pages should return to Account page
+		if (pathname.startsWith('/facilitator/account/') && pathname !== '/facilitator/account') return '/facilitator/account';
+
+		// Facilitator chain: / -> /facilitator -> /facilitator/(learners|lessons|account|generator)
 		if (
 			pathname.startsWith('/facilitator/learners') ||
 			pathname.startsWith('/facilitator/lessons') ||
-			pathname.startsWith('/facilitator/plan') ||
-			pathname.startsWith('/facilitator/settings') ||
-			pathname.startsWith('/facilitator/tools') ||
-			pathname.startsWith('/facilitator/account')
+			pathname.startsWith('/facilitator/generator') ||
+			pathname.startsWith('/facilitator/account') ||
+			pathname.startsWith('/facilitator/calendar')
 		) {
 			return '/facilitator';
 		}
@@ -450,7 +452,7 @@ export default function HeaderBar() {
 
 				{/* Center area: show lesson title on Session/Counselor/Calendar; else show Back */}
 				<div style={{ flex:1, display:'flex', justifyContent:'center', alignItems:'center', minWidth:0 }}>
-					{((pathname.startsWith('/session') || pathname.startsWith('/facilitator/tools/counselor') || pathname.startsWith('/facilitator/calendar')) && sessionTitle) ? (
+					{((pathname.startsWith('/session') || pathname.startsWith('/facilitator/generator/counselor') || pathname.startsWith('/facilitator/calendar')) && sessionTitle) ? (
 						isSmallWidth ? (
 							<div style={{ position:'relative', width:'100%', maxWidth:'min(98vw, 1300px)', height:'100%' }}>
 								<div style={{ position:'absolute', left:0, right:0, top:'50%', transform:'translateY(-50%)', display:'flex', justifyContent:'center', alignItems:'center', padding:'0 4px' }}>
@@ -558,7 +560,7 @@ export default function HeaderBar() {
 									)}
 
 									{/* Mr. Mentor actions, if applicable */}
-									{pathname.startsWith('/facilitator/tools/counselor') && (
+									{pathname.startsWith('/facilitator/generator/counselor') && (
 										<div style={{ display:'flex', flexDirection:'column', borderTop: '1px solid #f3f4f6' }}>
 											<button type="button" role="menuitem" style={MOBILE_MENU_ITEM_STYLE} onClick={() => { try { window.dispatchEvent(new Event('ms:mentor:export')); } catch {}; setNavOpen(false); }}>Export Conversation</button>
 											<button type="button" role="menuitem" style={{ ...MOBILE_MENU_ITEM_STYLE, color:'#c7442e', borderTop:'1px solid #f3f4f6' }} onClick={() => { try { window.dispatchEvent(new Event('ms:mentor:new-session')); } catch {}; setNavOpen(false); }}>New Session</button>

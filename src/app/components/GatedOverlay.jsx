@@ -153,7 +153,7 @@ export default function GatedOverlay({
           ) : (
             <>
               <a
-                href="/facilitator/plan"
+                href="/facilitator/account/plan"
                 style={{
                   display: 'inline-block',
                   padding: '12px 32px',

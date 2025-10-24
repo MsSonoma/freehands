@@ -172,7 +172,7 @@ export default function ClientEmbeddedCheckout() {
         redirect: 'if_required',
       });
       if (result.error) throw result.error;
-      const url = new URL('/facilitator/plan', window.location.origin);
+      const url = new URL('/facilitator/account/plan', window.location.origin);
       url.searchParams.set('rts', Date.now().toString());
       router.replace(url.toString());
     } catch (err) {

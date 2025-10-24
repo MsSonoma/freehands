@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 // Trampoline redirect to avoid BFCache/stale state after returning from Stripe
-// Usage: /billing/return?to=/facilitator or /billing/return?to=/facilitator/plan?checkout=cancel
+// Usage: /billing/return?to=/facilitator or /billing/return?to=/facilitator/account/plan?checkout=cancel
 export async function GET(request) {
   const url = new URL(request.url)
   const toParam = url.searchParams.get('to') || '/'

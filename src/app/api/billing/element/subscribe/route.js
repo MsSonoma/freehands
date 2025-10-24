@@ -79,7 +79,7 @@ export async function POST(req) {
 
   // Provide a recommended return URL for 3DS or next actions
   const baseUrl = appUrl || new URL(req.url).origin;
-  const return_url = `${baseUrl}/billing/return?to=${encodeURIComponent('/facilitator/plan')}`;
+  const return_url = `${baseUrl}/billing/return?to=${encodeURIComponent('/facilitator/account/plan')}`;
 
     return NextResponse.json({ client_secret, return_url, subscription_id: subscription.id });
   } catch (err) {

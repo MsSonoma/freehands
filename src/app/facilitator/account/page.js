@@ -400,7 +400,50 @@ export default function FacilitatorAccountPage() {
             )}
             {linkMsg && <span style={{ color: '#374151' }}>{linkMsg}</span>}
           </div>
-          <p style={{ color: '#555', marginTop: 3 }}>Need to permanently delete your account? Use the Danger zone in <a href="/facilitator/settings">Settings</a>.</p>
+          <p style={{ color: '#555', marginTop: 3 }}>Need to permanently delete your account? Use the Danger zone in Settings (see below).</p>
+        </section>
+
+        {/* Navigation to Plan and Settings */}
+        <section style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <h2 style={{ fontSize: 18, margin: '3px 0' }}>Account Management</h2>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <a
+              href="/facilitator/account/plan"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '8px 16px',
+                border: '1px solid #e5e7eb',
+                borderRadius: 8,
+                background: '#fff',
+                color: '#111',
+                fontWeight: 600,
+                textDecoration: 'none',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
+              }}
+            >
+              Plan
+            </a>
+            <a
+              href="/facilitator/account/settings"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '8px 16px',
+                border: '1px solid #e5e7eb',
+                borderRadius: 8,
+                background: '#fff',
+                color: '#111',
+                fontWeight: 600,
+                textDecoration: 'none',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
+              }}
+            >
+              Settings
+            </a>
+          </div>
         </section>
       </div>
     </main>

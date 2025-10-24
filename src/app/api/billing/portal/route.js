@@ -58,7 +58,7 @@ export async function POST(req) {
     const baseUrl = appUrl || new URL(req.url).origin;
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: `${baseUrl}/billing/return?to=${encodeURIComponent('/facilitator/plan')}`,
+      return_url: `${baseUrl}/billing/return?to=${encodeURIComponent('/facilitator/account/plan')}`,
       // If you create a specific Portal configuration, you can set STRIPE_PORTAL_CONFIGURATION_ID
       // to force using it. Otherwise, Stripe uses your default configuration.
       configuration: process.env.STRIPE_PORTAL_CONFIGURATION_ID || undefined,

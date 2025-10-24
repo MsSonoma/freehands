@@ -273,7 +273,7 @@ export default function ClientManage() {
     <div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap' }}>
         <h1 style={{ margin:0 }}>Manage subscription</h1>
-        <a href="/facilitator/plan" className="back-link" style={{ color:'#c7442e', textDecoration:'none' }}>← Back to plans</a>
+        <a href="/facilitator/account/plan" className="back-link" style={{ color:'#c7442e', textDecoration:'none' }}>← Back to plans</a>
       </div>
 
       <p style={{ marginTop:8, color:'#6b7280', fontSize: 12 }}>

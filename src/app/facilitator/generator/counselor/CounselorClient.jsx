@@ -1736,7 +1736,7 @@ export default function CounselorClient() {
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
               <a
-                href="/facilitator/plan"
+                href="/facilitator/account/plan"
                 style={{
                   display: 'inline-block',
                   padding: '12px 32px',

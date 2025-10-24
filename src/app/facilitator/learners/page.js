@@ -194,7 +194,7 @@ export default function LearnersPage() {
 						<span style={{ color:'#666', fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)' }}>Plan: {planTier} • {items.length} / {maxLearners} learners</span>
 					)}
 					<Link
-						href={items.length >= maxLearners ? '/facilitator/plan' : '/facilitator/learners/add'}
+						href={items.length >= maxLearners ? '/facilitator/account/plan' : '/facilitator/learners/add'}
 						aria-disabled={items.length >= maxLearners}
 						style={{ padding:'10px 14px', border:'1px solid #111', borderRadius:8, background: items.length >= maxLearners ? '#999' : '#111', color:'#fff', textDecoration:'none', pointerEvents: items.length >= maxLearners ? 'none' : 'auto', opacity: items.length >= maxLearners ? 0.6 : 1 }}
 					>
@@ -207,7 +207,7 @@ export default function LearnersPage() {
 				<div style={{ marginTop:12, padding:12, border:'1px solid #eee', borderRadius:8, background:'#fff' }}>
 					<div style={{ fontWeight:600, marginBottom:6 }}>Learner limit reached</div>
 					<div style={{ color:'#444', marginBottom:8 }}>Your current plan allows up to {maxLearners} learner{maxLearners===1?'':'s'}. Upgrade to add more learners.</div>
-					<Link href="/facilitator/plan" style={{ padding:'8px 12px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff', textDecoration:'none' }}>View Plans</Link>
+					<Link href="/facilitator/account/plan" style={{ padding:'8px 12px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff', textDecoration:'none' }}>View Plans</Link>
 				</div>
 			)}
 

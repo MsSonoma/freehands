@@ -10,7 +10,7 @@ export default function ClientForward() {
   const tier = sp?.get('tier') || '';
   const to = useMemo(() => {
     const t = sp?.get('to') || '';
-    return typeof t === 'string' && t.startsWith('/') ? t : '/facilitator/plan';
+    return typeof t === 'string' && t.startsWith('/') ? t : '/facilitator/account/plan';
   }, [sp]);
   const [error, setError] = useState('');
 

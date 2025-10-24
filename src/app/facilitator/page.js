@@ -210,9 +210,7 @@ export default function FacilitatorPage() {
           <Link href="/facilitator/learners" style={cardStyle}>Learners</Link>
           <Link href="/facilitator/lessons" style={cardStyle}>Lessons</Link>
           <Link href="/facilitator/calendar" style={cardStyle}>Calendar</Link>
-          <Link href="/facilitator/plan" style={cardStyle}>Plan</Link>
-          <Link href="/facilitator/settings" style={cardStyle}>Settings</Link>
-          <Link href="/facilitator/tools" style={cardStyle}>Tools</Link>
+          <Link href="/facilitator/generator" style={cardStyle}>Generator</Link>
         </div>
 
         {/* Billing summary */}
@@ -253,6 +251,52 @@ export default function FacilitatorPage() {
             )
           )}
         </div>
+
+        {/* Mr. Mentor video button */}
+        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
+          <Link 
+            href="/facilitator/generator/counselor"
+            title="Mr. Mentor"
+            style={{
+              display: 'block',
+              width: 80,
+              height: 80,
+              border: '2px solid #111',
+              borderRadius: 12,
+              overflow: 'hidden',
+              padding: 0,
+              textDecoration: 'none',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+            }}
+          >
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block'
+              }}
+            >
+              <source src="/media/Mr Mentor.mp4" type="video/mp4" />
+            </video>
+          </Link>
+        </div>
+        <p style={{ textAlign: 'center', color: '#555', fontSize: 14, marginTop: 8 }}>
+          Talk to Mr. Mentor
+        </p>
       </div>
     </div>
   );
