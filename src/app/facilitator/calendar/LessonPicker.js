@@ -171,16 +171,22 @@ export default function LessonPicker({
   const filteredLessonsBySubject = getFilteredLessons()
   const totalCount = Object.values(filteredLessonsBySubject).reduce((sum, lessons) => sum + lessons.length, 0)
 
-  if (!selectedDate) {
-    return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <p className="text-gray-500 text-center">Select a date to schedule lessons</p>
-      </div>
-    )
-  }
-
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-300 overflow-hidden" style={{ height: 'fit-content' }}>
+      {/* Helpful prompt when no date selected */}
+      {!selectedDate && (
+        <div style={{ 
+          background: '#fef3c7', 
+          padding: '8px 12px', 
+          borderBottom: '1px solid #fbbf24',
+          fontSize: '13px',
+          color: '#92400e',
+          textAlign: 'center'
+        }}>
+          ← Select a date on the calendar to schedule lessons
+        </div>
+      )}
+      
       {/* Compact Header with filters */}
       <div style={{ background: 'linear-gradient(to right, #eff6ff, #e0e7ff)', padding: '10px 12px', borderBottom: '1px solid #d1d5db' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -252,7 +258,7 @@ export default function LessonPicker({
       </div>
 
       {/* Compact Lessons List */}
-      <div style={{ height: '300px', overflowY: 'auto' }}>
+      <div style={{ height: '400px', overflowY: 'auto' }}>
         {totalCount === 0 ? (
           <div style={{ padding: '24px', textAlign: 'center', color: '#9ca3af', fontSize: '14px' }}>
             {Object.keys(allLessons).length === 0 ? 'Loading lessons...' : 'No lessons match your filters'}
@@ -306,22 +312,24 @@ export default function LessonPicker({
                           </div>
                         </div>
                         <button
-                          onClick={() => !scheduled && handleSchedule(lesson.key)}
-                          disabled={scheduled || loading}
+                          onClick={() => !scheduled && selectedDate && handleSchedule(lesson.key)}
+                          disabled={scheduled || loading || !selectedDate}
                           style={{
                             padding: scheduled ? '3px 10px' : '5px 12px',
                             fontSize: '12px',
                             fontWeight: '600',
                             borderRadius: '4px',
                             border: 'none',
-                            cursor: scheduled ? 'default' : 'pointer',
+                            cursor: scheduled || !selectedDate ? 'default' : 'pointer',
                             transition: 'all 0.15s',
-                            background: scheduled ? '#d1fae5' : '#3b82f6',
-                            color: scheduled ? '#065f46' : '#ffffff',
-                            whiteSpace: 'nowrap'
+                            background: scheduled ? '#d1fae5' : !selectedDate ? '#d1d5db' : '#3b82f6',
+                            color: scheduled ? '#065f46' : !selectedDate ? '#9ca3af' : '#ffffff',
+                            whiteSpace: 'nowrap',
+                            opacity: !selectedDate ? 0.6 : 1
                           }}
-                          onMouseEnter={(e) => !scheduled && (e.currentTarget.style.background = '#2563eb')}
-                          onMouseLeave={(e) => !scheduled && (e.currentTarget.style.background = '#3b82f6')}
+                          onMouseEnter={(e) => !scheduled && selectedDate && (e.currentTarget.style.background = '#2563eb')}
+                          onMouseLeave={(e) => !scheduled && selectedDate && (e.currentTarget.style.background = '#3b82f6')}
+                          title={!selectedDate ? 'Select a date first' : scheduled ? 'Already scheduled' : 'Add to schedule'}
                         >
                           {scheduled ? '✓' : 'Add'}
                         </button>

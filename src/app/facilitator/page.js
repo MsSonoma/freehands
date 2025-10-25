@@ -210,7 +210,6 @@ export default function FacilitatorPage() {
           <Link href="/facilitator/learners" style={cardStyle}>Learners</Link>
           <Link href="/facilitator/lessons" style={cardStyle}>Lessons</Link>
           <Link href="/facilitator/calendar" style={cardStyle}>Calendar</Link>
-          <Link href="/facilitator/generator" style={cardStyle}>Generator</Link>
         </div>
 
         {/* Billing summary */}
@@ -225,32 +224,6 @@ export default function FacilitatorPage() {
             </button>
           </div>
         </section>
-
-        {/* Auth control moved below Billing */}
-        <div style={{ marginTop: 12, marginBottom: 0 }}>
-          {hasSupabaseEnv() && (
-            session ? (
-              <button
-                onClick={async () => {
-                  const supabase = getSupabaseClient();
-                  try { 
-                    await supabase?.auth?.signOut?.();
-                    // Clear session storage on logout
-                    try {
-                      sessionStorage.removeItem('facilitator_section_active');
-                    } catch (e) {}
-                  } catch (e) {}
-                  router.push('/auth/login')
-                }}
-                style={authCardStyle}
-              >
-                Logout
-              </button>
-            ) : (
-              <Link href="/auth/login" style={authCardStyle}>Login</Link>
-            )
-          )}
-        </div>
 
         {/* Mr. Mentor video button */}
         <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>

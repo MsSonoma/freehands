@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
@@ -8,7 +8,7 @@ import { ensurePinAllowed } from '@/app/lib/pinGate'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
 import GatedOverlay from '@/app/components/GatedOverlay'
 
-const SUBJECTS = ['math', 'science', 'language arts', 'social studies']
+const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'generated']
 const GRADES = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
 export default function FacilitatorLessonsPage() {
@@ -19,7 +19,7 @@ export default function FacilitatorLessonsPage() {
   const [learners, setLearners] = useState([])
   const [selectedLearnerId, setSelectedLearnerId] = useState(null)
   const [allLessons, setAllLessons] = useState({}) // { subject: [lessons] }
-  const [approvedLessons, setApprovedLessons] = useState({}) // { 'subject/lesson_file': true }
+  const [availableLessons, setAvailableLessons] = useState({}) // { 'subject/lesson_file': true } - lessons shown to learner
   const [scheduledLessons, setScheduledLessons] = useState({}) // { 'subject/lesson_file': true } - lessons scheduled for today
   const [futureScheduledLessons, setFutureScheduledLessons] = useState({}) // { 'subject/lesson_file': 'YYYY-MM-DD' } - lessons scheduled for future dates
   const [activeGoldenKeys, setActiveGoldenKeys] = useState({}) // { 'subject/lesson_file': true }
@@ -195,10 +195,9 @@ export default function FacilitatorLessonsPage() {
     return () => { cancelled = true }
   }, []) // No dependency - fetch once on mount
 
-  // Load approved lessons for selected learner and set grade filters to learner's grade
+  // Load data for selected learner
   useEffect(() => {
     if (!selectedLearnerId) {
-      setApprovedLessons({})
       setActiveGoldenKeys({})
       setGradeFilters({})
       setMedals({})
@@ -208,16 +207,16 @@ export default function FacilitatorLessonsPage() {
     ;(async () => {
       try {
         const supabase = getSupabaseClient()
-        // Try to load with all fields first
+        // Load active_golden_keys, lesson_notes, approved_lessons, and grade
         let data, error
-        const result = await supabase.from('learners').select('approved_lessons, active_golden_keys, lesson_notes, grade').eq('id', selectedLearnerId).maybeSingle()
+        const result = await supabase.from('learners').select('active_golden_keys, lesson_notes, approved_lessons, grade').eq('id', selectedLearnerId).maybeSingle()
         data = result.data
         error = result.error
         
         // If error, try without newer columns (might not exist yet)
         if (error) {
           console.warn('[Facilitator Lessons] Error loading with all fields, trying without:', error)
-          const fallbackResult = await supabase.from('learners').select('approved_lessons, grade').eq('id', selectedLearnerId).maybeSingle()
+          const fallbackResult = await supabase.from('learners').select('grade').eq('id', selectedLearnerId).maybeSingle()
           data = fallbackResult.data
           error = fallbackResult.error
           if (error) {
@@ -229,7 +228,6 @@ export default function FacilitatorLessonsPage() {
         console.log('[Facilitator Lessons] Loaded data for learner:', selectedLearnerId, data)
         
         // Load scheduled lessons (today and future)
-        let mergedApproved = data?.approved_lessons || {}
         let scheduled = {}
         let futureScheduled = {}
         try {
@@ -286,12 +284,11 @@ export default function FacilitatorLessonsPage() {
         }
         
         if (!cancelled) {
-          setApprovedLessons(mergedApproved)
           setScheduledLessons(scheduled)
           setFutureScheduledLessons(futureScheduled)
           setActiveGoldenKeys(data?.active_golden_keys || {})
           setLessonNotes(data?.lesson_notes || {})
-          setLessonNotes(data?.lesson_notes || {})
+          setAvailableLessons(data?.approved_lessons || {})
           
           // Set grade filters to learner's grade for all subjects
           if (data?.grade) {
@@ -308,49 +305,58 @@ export default function FacilitatorLessonsPage() {
         
         // Fetch medals for this learner
         const medalsData = await getMedalsForLearner(selectedLearnerId)
+        console.log('[Facilitator Lessons] Medals data:', medalsData, 'Keys:', Object.keys(medalsData || {}))
         if (!cancelled) {
           setMedals(medalsData || {})
         }
       } catch (err) {
         console.error('[Facilitator Lessons] Failed to load learner data:', err)
-        setApprovedLessons({})
         setActiveGoldenKeys({})
         setGradeFilters({})
         setMedals({})
+        setAvailableLessons({})
       }
     })()
     return () => { cancelled = true }
   }, [selectedLearnerId, refreshTrigger])
 
-  async function toggleApproval(subject, lessonFile, isGenerated = false) {
+  async function toggleAvailability(subject, lessonFile, isGenerated = false) {
     if (!selectedLearnerId) return
-    // For generated lessons, use 'facilitator' prefix instead of 'generated'
-    const prefix = isGenerated ? 'facilitator' : subject
-    const lessonKey = `${prefix}/${lessonFile}`
-    const newApproved = { ...approvedLessons }
-    
-    if (newApproved[lessonKey]) {
-      delete newApproved[lessonKey]
-    } else {
-      newApproved[lessonKey] = true
-    }
-    
-    setApprovedLessons(newApproved)
-    setSaving(true)
     
     try {
+      setSaving(true)
       const supabase = getSupabaseClient()
-      const { error } = await supabase.from('learners').update({ approved_lessons: newApproved }).eq('id', selectedLearnerId)
-      if (error) {
-        console.error('[Facilitator Lessons] Save error:', error)
-        throw error
+      const lessonKey = `${subject}/${lessonFile}`
+      
+      // Read current approved_lessons
+      const { data: currentData } = await supabase
+        .from('learners')
+        .select('approved_lessons')
+        .eq('id', selectedLearnerId)
+        .maybeSingle()
+      
+      const currentApproved = currentData?.approved_lessons || {}
+      const newApproved = { ...currentApproved }
+      
+      // Toggle availability
+      if (newApproved[lessonKey]) {
+        delete newApproved[lessonKey]
+      } else {
+        newApproved[lessonKey] = true
       }
-      console.log('[Facilitator Lessons] Successfully saved approved lessons for learner:', selectedLearnerId, newApproved)
-    } catch (e) {
-      console.error('[Facilitator Lessons] Failed to save:', e)
-      alert('Failed to save: ' + (e?.message || e?.hint || 'Unknown error'))
-      // Revert on error
-      setApprovedLessons(approvedLessons)
+      
+      // Update database
+      const { error } = await supabase
+        .from('learners')
+        .update({ approved_lessons: newApproved })
+        .eq('id', selectedLearnerId)
+      
+      if (error) throw error
+      
+      // Update local state
+      setAvailableLessons(newApproved)
+    } catch (err) {
+      console.error('[Facilitator Lessons] Failed to toggle lesson availability:', err)
     } finally {
       setSaving(false)
     }
@@ -484,7 +490,24 @@ export default function FacilitatorLessonsPage() {
   return (
     <>
       <main style={{ padding: '12px 24px', maxWidth: 1200, margin: '0 auto', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
-        <h1 style={{ marginBottom: 16 }}>Manage Approved Lessons</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h1 style={{ margin: 0 }}>Manage Lessons</h1>
+          <button
+            onClick={() => router.push('/facilitator/generator/lesson-maker')}
+            style={{
+              padding: '10px 20px',
+              background: '#111',
+              color: '#fff',
+              border: '1px solid #111',
+              borderRadius: 8,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontSize: 14
+            }}
+          >
+            Generate Lesson
+          </button>
+        </div>
       
       {learners.length === 0 ? (
         <div>
@@ -521,19 +544,38 @@ export default function FacilitatorLessonsPage() {
 
           {SUBJECTS.map(subject => {
             const lessons = allLessons[subject] || []
-            // For facilitator lessons, only show approved ones
-            const displayLessons = subject === 'generated' 
-              ? lessons.filter(l => l.approved === true)
-              : lessons
-            const filteredLessons = filterLessonsByGrade(displayLessons, subject)
+            
+            // Include lessons that have medals even if they're not in the allLessons list
+            const medalsForSubject = Object.keys(medals)
+              .filter(key => key.startsWith(`${subject}/`) || (subject === 'generated' && key.startsWith('facilitator/')))
+              .map(key => {
+                const file = key.split('/')[1]
+                // Check if this lesson is already in the list
+                const exists = lessons.find(l => l.file === file)
+                if (exists) return null
+                
+                // Create a placeholder lesson for medals-only entries
+                return {
+                  file,
+                  title: file.replace(/-/g, ' ').replace(/\.json$/, ''),
+                  subject,
+                  isGenerated: key.startsWith('facilitator/'),
+                  medalsOnly: true // Flag to show this was added for medals
+                }
+              })
+              .filter(Boolean)
+            
+            console.log(`[Facilitator Lessons] Subject: ${subject}, Lessons: ${lessons.length}, MedalsOnly: ${medalsForSubject.length}, Total medals: ${Object.keys(medals).length}`)
+            
+            const allLessonsForSubject = [...lessons, ...medalsForSubject]
+            const filteredLessons = filterLessonsByGrade(allLessonsForSubject, subject)
             const displaySubject = subject === 'generated' ? 'Generated Lessons' : 
                                    subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
             
             // Always show generated subject even when empty; hide others if empty
-            if (displayLessons.length === 0 && subject !== 'generated') return null
+            if (filteredLessons.length === 0 && subject !== 'generated') return null
 
             const isExpanded = expandedSubjects[subject]
-            const approvedCount = filteredLessons.filter(l => approvedLessons[`${subject}/${l.file}`]).length
             const selectedGrade = gradeFilters[subject] || 'all'
 
             return (
@@ -560,7 +602,7 @@ export default function FacilitatorLessonsPage() {
                       padding: '2px 8px',
                       borderRadius: 12
                     }}>
-                      {approvedCount}/{filteredLessons.length}
+                      {filteredLessons.length}
                     </span>
                   </div>
                   <div onClick={(e) => e.stopPropagation()}>
@@ -619,7 +661,6 @@ export default function FacilitatorLessonsPage() {
                               const lessonKey = lesson.isGenerated 
                                 ? `facilitator/${lesson.file}` 
                                 : `${subject}/${lesson.file}`
-                              const isApproved = !!approvedLessons[lessonKey]
                               const isScheduled = !!scheduledLessons[lessonKey]
                               const futureDate = futureScheduledLessons[lessonKey]
                               const hasActiveKey = activeGoldenKeys[lessonKey] === true
@@ -633,8 +674,7 @@ export default function FacilitatorLessonsPage() {
                               return (
                                 <div key={lesson.file} style={{
                                   padding: '10px 12px',
-                                  borderBottom: '1px solid #f3f4f6',
-                                  background: isApproved ? '#f0fdf4' : '#fff'
+                                  borderBottom: '1px solid #f3f4f6'
                                 }}>
                                   {/* Main lesson info with floating buttons */}
                                   <div style={{ 
@@ -643,24 +683,30 @@ export default function FacilitatorLessonsPage() {
                                     gap: 8,
                                     flexWrap: 'wrap'
                                   }}>
+                                    {/* Checkbox for making lesson available to learner */}
+                                    <input
+                                      type="checkbox"
+                                      checked={!!availableLessons[lessonKey]}
+                                      onChange={() => toggleAvailability(subject, lesson.file, lesson.isGenerated)}
+                                      disabled={saving}
+                                      style={{
+                                        marginTop: 4,
+                                        cursor: saving ? 'not-allowed' : 'pointer',
+                                        width: 18,
+                                        height: 18
+                                      }}
+                                      title="Show this lesson to learner"
+                                    />
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                                      <input
-                                        type="checkbox"
-                                        checked={isApproved}
-                                        onChange={() => toggleApproval(subject, lesson.file, lesson.isGenerated)}
-                                        id={`lesson-${lessonKey}`}
-                                        className="brand-checkbox"
-                                      />
                                       {isScheduled && <span style={{ fontSize: 14 }} title="Scheduled for today">📅</span>}
                                       {!isScheduled && futureDate && <span style={{ fontSize: 14, opacity: 0.5 }} title={`Scheduled for ${futureDate}`}>📅</span>}
                                       {hasActiveKey && <span style={{ fontSize: 14 }} title="Golden Key Active">�</span>}
                                       {medalEmoji && <span style={{ fontSize: 16 }} title={`${medalInfo.medalTier} - ${medalInfo.bestPercent}%`}>{medalEmoji}</span>}
                                     </div>
                                     <div style={{ flex: 1, minWidth: 150 }}>
-                                      <label htmlFor={`lesson-${lessonKey}`} style={{ cursor: 'pointer' }}>
-                                        <div style={{ fontWeight: 600, color: '#1f2937', fontSize: 14 }}>
-                                          {lesson.isGenerated && '✨ '}{lesson.title}
-                                        </div>
+                                      <div style={{ fontWeight: 600, color: '#1f2937', fontSize: 14 }}>
+                                        {lesson.isGenerated && '✨ '}{lesson.title}
+                                      </div>
                                         <div style={{ color: '#6b7280', fontSize: 13, marginTop: 2 }}>
                                           {lesson.grade && `Grade ${lesson.grade}`}
                                           {lesson.grade && lesson.difficulty && ' • '}
@@ -671,7 +717,6 @@ export default function FacilitatorLessonsPage() {
                                             </span>
                                           )}
                                         </div>
-                                      </label>
                                     </div>
 
                                     {/* Compact action buttons */}
@@ -912,7 +957,6 @@ export default function FacilitatorLessonsPage() {
                         const lessonKey = lesson.isGenerated 
                           ? `facilitator/${lesson.file}` 
                           : `${subject}/${lesson.file}`
-                        const isApproved = !!approvedLessons[lessonKey]
                         const isScheduled = !!scheduledLessons[lessonKey]
                         const futureDate = futureScheduledLessons[lessonKey]
                         const hasActiveKey = activeGoldenKeys[lessonKey] === true
@@ -926,8 +970,7 @@ export default function FacilitatorLessonsPage() {
                         return (
                           <div key={lesson.file} style={{
                             padding: '10px 12px',
-                            borderBottom: '1px solid #f3f4f6',
-                            background: isApproved ? '#f0fdf4' : '#fff'
+                            borderBottom: '1px solid #f3f4f6'
                           }}>
                             {/* Main lesson info with floating buttons */}
                             <div style={{ 
@@ -936,24 +979,30 @@ export default function FacilitatorLessonsPage() {
                               gap: 8,
                               flexWrap: 'wrap'
                             }}>
+                              {/* Checkbox for making lesson available to learner */}
+                              <input
+                                type="checkbox"
+                                checked={!!availableLessons[lessonKey]}
+                                onChange={() => toggleAvailability(subject, lesson.file, lesson.isGenerated)}
+                                disabled={saving}
+                                style={{
+                                  marginTop: 4,
+                                  cursor: saving ? 'not-allowed' : 'pointer',
+                                  width: 18,
+                                  height: 18
+                                }}
+                                title="Show this lesson to learner"
+                              />
                               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                                <input
-                                  type="checkbox"
-                                  checked={isApproved}
-                                  onChange={() => toggleApproval(subject, lesson.file, lesson.isGenerated)}
-                                  id={`lesson-${lessonKey}`}
-                                  className="brand-checkbox"
-                                />
                                 {isScheduled && <span style={{ fontSize: 14 }} title="Scheduled for today">📅</span>}
                                 {!isScheduled && futureDate && <span style={{ fontSize: 14, opacity: 0.5 }} title={`Scheduled for ${futureDate}`}>📅</span>}
                                 {hasActiveKey && <span style={{ fontSize: 14 }} title="Golden Key Active">�</span>}
                                 {medalEmoji && <span style={{ fontSize: 16 }} title={`${medalInfo.medalTier} - ${medalInfo.bestPercent}%`}>{medalEmoji}</span>}
                               </div>
                               <div style={{ flex: 1, minWidth: 150 }}>
-                                <label htmlFor={`lesson-${lessonKey}`} style={{ cursor: 'pointer' }}>
-                                  <div style={{ fontWeight: 600, color: '#1f2937', fontSize: 14 }}>
-                                    {lesson.isGenerated && '✨ '}{lesson.title}
-                                  </div>
+                                <div style={{ fontWeight: 600, color: '#1f2937', fontSize: 14 }}>
+                                  {lesson.isGenerated && '✨ '}{lesson.title}
+                                </div>
                                   <div style={{ color: '#6b7280', fontSize: 13, marginTop: 2 }}>
                                     {lesson.grade && `Grade ${lesson.grade}`}
                                     {lesson.grade && lesson.difficulty && ' • '}
@@ -964,7 +1013,6 @@ export default function FacilitatorLessonsPage() {
                                       </span>
                                     )}
                                   </div>
-                                </label>
                               </div>
 
                               {/* Compact action buttons */}

@@ -1,13 +1,18 @@
-// Facilitator Generator
-export const metadata = { title: 'Generator | Ms. Sonoma' }
+// Redirect to lessons page (Generator is now integrated into Lessons)
+"use client";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-import { Suspense } from 'react'
-import ClientGenerator from './ClientGenerator'
-
-export default function FacilitatorGeneratorPage(){
+export default function FacilitatorGeneratorPage() {
+  const router = useRouter();
+  
+  useEffect(() => {
+    router.replace('/facilitator/lessons');
+  }, [router]);
+  
   return (
-    <Suspense fallback={<main style={{ padding:24 }}><p>Loading…</p></main>}> 
-      <ClientGenerator />
-    </Suspense>
-  )
+    <main style={{ padding: 24 }}>
+      <p>Redirecting to Lessons...</p>
+    </main>
+  );
 }

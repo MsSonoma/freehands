@@ -10,7 +10,6 @@ import ClipboardOverlay from './ClipboardOverlay'
 import GoalsClipboardOverlay from './GoalsClipboardOverlay'
 import CalendarOverlay from './overlays/CalendarOverlay'
 import LessonsOverlay from './overlays/LessonsOverlay'
-import GeneratedLessonsOverlay from './overlays/GeneratedLessonsOverlay'
 import LessonMakerOverlay from './overlays/LessonMakerOverlay'
 
 export default function CounselorClient() {
@@ -1081,9 +1080,6 @@ export default function CounselorClient() {
                   learnerId={selectedLearnerId}
                 />
               )}
-              {activeScreen === 'generated' && (
-                <GeneratedLessonsOverlay learnerId={selectedLearnerId} />
-              )}
               {activeScreen === 'maker' && (
                 <LessonMakerOverlay tier={tier} />
               )}
@@ -1435,32 +1431,6 @@ export default function CounselorClient() {
                           
                           <button
                             onClick={() => {
-                              setActiveScreen('generated')
-                              setMenuOpen(false)
-                            }}
-                            title="Generated Lessons"
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 8,
-                              padding: '8px 12px',
-                              border: '2px solid',
-                              borderColor: activeScreen === 'generated' ? '#3b82f6' : '#d1d5db',
-                              borderRadius: 6,
-                              background: activeScreen === 'generated' ? '#dbeafe' : '#fff',
-                              cursor: 'pointer',
-                              fontSize: 14,
-                              fontWeight: 500,
-                              transition: 'all 0.2s',
-                              justifyContent: 'flex-start'
-                            }}
-                          >
-                            <span style={{ fontSize: 20, width: 32, textAlign: 'center', flexShrink: 0 }}>✨</span>
-                            <span>Generated</span>
-                          </button>
-                          
-                          <button
-                            onClick={() => {
                               setActiveScreen('calendar')
                               setMenuOpen(false)
                             }}
@@ -1567,15 +1537,15 @@ export default function CounselorClient() {
                       🎨
                     </button>
                     <button
-                      onClick={() => setActiveScreen('generated')}
-                      title="Generated Lessons"
+                      onClick={() => setActiveScreen('calendar')}
+                      title="Calendar"
                       style={{
                         width: 40,
                         height: 40,
                         border: '2px solid',
-                        borderColor: activeScreen === 'generated' ? '#3b82f6' : '#d1d5db',
+                        borderColor: activeScreen === 'calendar' ? '#3b82f6' : '#d1d5db',
                         borderRadius: 6,
-                        background: activeScreen === 'generated' ? '#dbeafe' : '#fff',
+                        background: activeScreen === 'calendar' ? '#dbeafe' : '#fff',
                         cursor: 'pointer',
                         fontSize: 20,
                         display: 'flex',

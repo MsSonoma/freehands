@@ -445,6 +445,36 @@ export default function FacilitatorAccountPage() {
             </a>
           </div>
         </section>
+
+        {/* Logout button */}
+        <section style={{ marginTop: 16 }}>
+          <button
+            onClick={async () => {
+              const supabase = getSupabaseClient();
+              try { 
+                await supabase?.auth?.signOut?.();
+                // Clear session storage on logout
+                try {
+                  sessionStorage.removeItem('facilitator_section_active');
+                } catch (e) {}
+              } catch (e) {}
+              router.push('/auth/login')
+            }}
+            style={{
+              padding: '10px 20px',
+              background: '#111',
+              color: '#fff',
+              border: '1px solid #111',
+              borderRadius: 8,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontSize: 14,
+              width: '100%'
+            }}
+          >
+            Logout
+          </button>
+        </section>
       </div>
     </main>
     

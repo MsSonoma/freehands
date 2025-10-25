@@ -14,9 +14,9 @@ const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'generat
 function LessonsPageInner(){
   const router = useRouter()
 
-  const [approvedLessons, setApprovedLessons] = useState({})
   const [scheduledLessons, setScheduledLessons] = useState({}) // { 'subject/lesson_file': true } - lessons scheduled for today
   const [allLessons, setAllLessons] = useState({})
+  const [availableLessons, setAvailableLessons] = useState({}) // { 'subject/lesson_file': true } - lessons marked as available by facilitator
   const [loading, setLoading] = useState(true)
   const [lessonsLoading, setLessonsLoading] = useState(true)
   const [medals, setMedals] = useState({})
@@ -175,21 +175,12 @@ function LessonsPageInner(){
 
   useEffect(() => {
     if (!learnerId) {
-      setApprovedLessons({})
       setActiveGoldenKeys({})
       setLoading(false)
       return
     }
     // Demo learner doesn't need database lookup
     if (learnerId === 'demo') {
-      // Auto-approve all demo lessons for the demo learner
-      const demoApproved = {}
-      if (allLessons['demo']) {
-        allLessons['demo'].forEach(lesson => {
-          demoApproved[`demo/${lesson.file}`] = true
-        })
-      }
-      setApprovedLessons(demoApproved)
       setActiveGoldenKeys({})
       setLoading(false)
       return
@@ -198,27 +189,19 @@ function LessonsPageInner(){
     ;(async () => {
       try {
         const supabase = getSupabaseClient()
-        // Try to load with all fields first
+        // Load active golden keys, lesson notes, and approved lessons
         let data, error
-        const result = await supabase.from('learners').select('approved_lessons, active_golden_keys, lesson_notes').eq('id', learnerId).maybeSingle()
+        const result = await supabase.from('learners').select('active_golden_keys, lesson_notes, approved_lessons').eq('id', learnerId).maybeSingle()
         data = result.data
         error = result.error
         
-        // If error, try without newer columns
+        // If error, use empty defaults
         if (error) {
-          console.warn('[Learn Lessons] Error loading with all fields, trying without:', error)
-          const fallbackResult = await supabase.from('learners').select('approved_lessons').eq('id', learnerId).maybeSingle()
-          data = fallbackResult.data
-          error = fallbackResult.error
-          if (error) {
-            console.warn('[Learn Lessons] Could not load learner data (may not exist in database yet):', learnerId)
-            // Don't throw - just use empty defaults
-            data = null
-          }
+          console.warn('[Learn Lessons] Error loading learner data:', error)
+          data = null
         }
         
-        // Load today's scheduled lessons and merge with approved lessons
-        let mergedApproved = data?.approved_lessons || {}
+        // Load today's scheduled lessons
         let scheduled = {}
         try {
           const today = new Date().toISOString().split('T')[0]
@@ -238,10 +221,9 @@ function LessonsPageInner(){
               const scheduledLessons = scheduleData.lessons || []
               console.log('[Learn Lessons] Scheduled lessons for today:', scheduledLessons)
               
-              // Add scheduled lessons to available lessons and track them separately
+              // Track scheduled lessons
               scheduledLessons.forEach(item => {
                 if (item.lesson_key) {
-                  mergedApproved[item.lesson_key] = true
                   scheduled[item.lesson_key] = true
                 }
               })
@@ -253,24 +235,23 @@ function LessonsPageInner(){
           console.warn('[Learn Lessons] Could not load scheduled lessons:', schedErr)
         }
         
-        console.log('[Learn Lessons] Loaded approved + scheduled lessons for learner:', learnerId, mergedApproved)
         if (!cancelled) {
-          setApprovedLessons(mergedApproved)
           setScheduledLessons(scheduled)
           setActiveGoldenKeys(data?.active_golden_keys || {})
           setLessonNotes(data?.lesson_notes || {})
+          setAvailableLessons(data?.approved_lessons || {})
         }
       } catch (err) {
         console.error('[Learn Lessons] Failed to load:', err)
         if (!cancelled) {
-          setApprovedLessons({})
           setActiveGoldenKeys({})
+          setAvailableLessons({})
         }
       }
       if (!cancelled) setLoading(false)
     })()
     return () => { cancelled = true }
-  }, [learnerId, allLessons, refreshTrigger])
+  }, [learnerId, refreshTrigger])
 
   async function openLesson(subject, fileBaseName){
     const ent = featuresForTier(planTier)
@@ -375,20 +356,23 @@ function LessonsPageInner(){
 
   const lessonsBySubject = useMemo(() => {
     const grouped = {}
-    Object.keys(approvedLessons).forEach(lessonKey => {
-      const [subject, file] = lessonKey.split('/')
-      if (!subject || !file) return
+    SUBJECTS.forEach(subject => {
       const subjectLessons = allLessons[subject] || []
-      const lesson = subjectLessons.find(l => l.file === file)
-      if (lesson) {
-        if (!grouped[subject]) grouped[subject] = []
-        grouped[subject].push(lesson)
+      // Filter by available lessons - only show lessons marked by facilitator
+      const availableForSubject = subjectLessons.filter(lesson => {
+        const lessonKey = lesson.isGenerated 
+          ? `facilitator/${lesson.file}`
+          : `${subject}/${lesson.file}`
+        return availableLessons[lessonKey] === true
+      })
+      if (availableForSubject.length > 0) {
+        grouped[subject] = availableForSubject
       }
     })
     return grouped
-  }, [approvedLessons, allLessons])
+  }, [allLessons, availableLessons])
 
-  const hasApprovedLessons = Object.keys(lessonsBySubject).length > 0
+  const hasLessons = Object.keys(lessonsBySubject).length > 0
 
   return (
     <main style={{ padding:24, maxWidth:980, margin:'0 auto' }}>
@@ -424,11 +408,11 @@ function LessonsPageInner(){
             }
           `}</style>
         </div>
-      ) : !hasApprovedLessons ? (
+      ) : !hasLessons ? (
         <div style={{ textAlign:'center', marginTop:32 }}>
-          <p style={{ color:'#6b7280' }}>No lessons have been approved for this learner yet.</p>
+          <p style={{ color:'#6b7280' }}>No lessons available yet.</p>
           <p style={{ color:'#9ca3af', fontSize:14 }}>
-            Ask your facilitator to approve lessons in the Facilitator portal.
+            Ask your facilitator to add lessons in the Facilitator portal.
           </p>
         </div>
       ) : (
