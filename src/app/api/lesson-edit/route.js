@@ -48,8 +48,8 @@ export async function PUT(req) {
       return NextResponse.json({ error: 'Invalid lesson key format' }, { status: 400 })
     }
 
-    // Handle facilitator lessons
-    if (subject === 'facilitator') {
+    // Handle generated/facilitator lessons (stored in Supabase)
+    if (subject === 'generated' || subject === 'facilitator') {
       // Fetch existing lesson from Supabase
       const admin = svc ? createClient(url, svc, { auth: { persistSession: false } }) : null
       const storageClient = admin || supabase
@@ -88,12 +88,12 @@ export async function PUT(req) {
       
       return NextResponse.json({ 
         success: true, 
-        message: 'Facilitator lesson updated',
+        message: 'Generated lesson updated',
         lessonKey: lessonKey
       })
     }
     
-    // Handle public/installed lessons (math, science, language arts, social studies)
+    // Handle public/installed lessons (math, science, language arts, social studies, general)
     const normalizedSubject = subject.replace(/_/g, ' ')
     const filePath = path.join(process.cwd(), 'public', 'lessons', normalizedSubject, filename)
     

@@ -12,7 +12,7 @@ export default function AwardsPage() {
   const [medalsLoading, setMedalsLoading] = useState(true)
   const [lessonsLoading, setLessonsLoading] = useState(true)
 
-  const subjects = ['math', 'science', 'language arts', 'social studies', 'generated']
+  const subjects = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
 
   useEffect(() => {
     try {

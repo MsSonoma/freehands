@@ -315,26 +315,81 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
   const btnAddStyle = { ...btnStyle, background: '#059669', borderColor: '#059669' }
 
   return (
-    <div style={compact 
-      ? { padding: 8, background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb' }
-      : { padding: 20, background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb' }
-    }>
-      <h2 style={compact 
-        ? { marginTop: 0, marginBottom: 12, fontSize: 14 }
-        : { marginTop: 0, marginBottom: 20 }
-      }>Edit Lesson</h2>
-
-      {errors.length > 0 && (
-        <div style={compact
-          ? { padding: 8, background: '#fee2e2', border: '1px solid #dc2626', borderRadius: 6, marginBottom: 8, fontSize: 11 }
-          : { padding: 12, background: '#fee2e2', border: '1px solid #dc2626', borderRadius: 8, marginBottom: 16 }
-        }>
-          <strong>Please fix these errors:</strong>
-          <ul style={{ margin: '4px 0 0', paddingLeft: 16, fontSize: compact ? 10 : 13 }}>
-            {errors.map((err, i) => <li key={i}>{err}</li>)}
-          </ul>
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100%',
+      background: '#fff', 
+      borderRadius: compact ? 8 : 12, 
+      border: '1px solid #e5e7eb',
+      overflow: 'hidden'
+    }}>
+      {/* Sticky Header with Title, Save, and Close */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: compact ? '12px 16px' : '16px 24px',
+        borderBottom: '2px solid #e5e7eb',
+        background: '#fff',
+        position: 'sticky',
+        top: 0,
+        zIndex: 10
+      }}>
+        <h2 style={{ 
+          margin: 0, 
+          fontSize: compact ? 16 : 20,
+          fontWeight: 600 
+        }}>Edit Lesson</h2>
+        
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button 
+            style={{
+              ...btnStyle,
+              background: '#059669',
+              borderColor: '#059669'
+            }}
+            onClick={handleSave} 
+            disabled={busy}
+          >
+            {busy ? 'Saving...' : '💾 Save'}
+          </button>
+          <button 
+            style={{
+              padding: '6px 12px',
+              background: 'transparent',
+              border: 'none',
+              fontSize: 24,
+              cursor: 'pointer',
+              color: '#6b7280',
+              lineHeight: 1
+            }}
+            onClick={onCancel} 
+            disabled={busy}
+            title="Close without saving"
+          >
+            ×
+          </button>
         </div>
-      )}
+      </div>
+
+      {/* Scrollable Content */}
+      <div style={{
+        flex: 1,
+        overflow: 'auto',
+        padding: compact ? 8 : 20
+      }}>
+        {errors.length > 0 && (
+          <div style={compact
+            ? { padding: 8, background: '#fee2e2', border: '1px solid #dc2626', borderRadius: 6, marginBottom: 8, fontSize: 11 }
+            : { padding: 12, background: '#fee2e2', border: '1px solid #dc2626', borderRadius: 8, marginBottom: 16 }
+          }>
+            <strong>Please fix these errors:</strong>
+            <ul style={{ margin: '4px 0 0', paddingLeft: 16, fontSize: compact ? 10 : 13 }}>
+              {errors.map((err, i) => <li key={i}>{err}</li>)}
+            </ul>
+          </div>
+        )}
 
       {/* Basic Info */}
       <div style={sectionStyle}>
@@ -380,12 +435,17 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
           </div>
           <div>
             <label style={labelStyle}>Subject</label>
-            <input
+            <select
               style={inputStyle}
-              value={lesson.subject || ''}
+              value={lesson.subject || 'math'}
               onChange={(e) => updateField('subject', e.target.value)}
-              placeholder="e.g., math"
-            />
+            >
+              <option value="math">Math</option>
+              <option value="science">Science</option>
+              <option value="language arts">Language Arts</option>
+              <option value="social studies">Social Studies</option>
+              <option value="general">General</option>
+            </select>
           </div>
         </div>
 
@@ -447,20 +507,6 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
         onChange={(newQuestions) => updateField('sample', newQuestions)}
         styles={{ sectionStyle, labelStyle, inputStyle, textareaStyle, btnAddStyle, btnDangerStyle }}
       />
-
-      {/* Action Buttons */}
-      <div style={{ 
-        marginTop: compact ? 12 : 24, 
-        display: 'flex', 
-        gap: compact ? 6 : 12, 
-        justifyContent: 'flex-end' 
-      }}>
-        <button style={btnSecondaryStyle} onClick={onCancel} disabled={busy}>
-          Cancel
-        </button>
-        <button style={btnStyle} onClick={handleSave} disabled={busy}>
-          {busy ? 'Saving...' : 'Save Changes'}
-        </button>
       </div>
     </div>
   )

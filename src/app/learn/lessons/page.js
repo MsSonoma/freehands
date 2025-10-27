@@ -9,7 +9,7 @@ import { ensurePinAllowed } from '@/app/lib/pinGate'
 import LoadingProgress from '@/components/LoadingProgress'
 import GoldenKeyCounter from '@/app/learn/GoldenKeyCounter'
 
-const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'generated']
+const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
 
 function LessonsPageInner(){
   const router = useRouter()
@@ -57,14 +57,14 @@ function LessonsPageInner(){
     return () => clearTimeout(timer)
   }, [])
 
-  // Poll for newly scheduled lessons every 2 minutes
+  // Poll for newly scheduled lessons every 30 seconds
   useEffect(() => {
     if (!learnerId) return
     
     const pollInterval = setInterval(() => {
       console.log('[Learn Lessons] Polling for schedule changes')
       setRefreshTrigger(prev => prev + 1)
-    }, 2 * 60 * 1000) // 2 minutes
+    }, 30 * 1000) // 30 seconds
     
     return () => clearInterval(pollInterval)
   }, [learnerId])
@@ -358,19 +358,21 @@ function LessonsPageInner(){
     const grouped = {}
     SUBJECTS.forEach(subject => {
       const subjectLessons = allLessons[subject] || []
-      // Filter by available lessons - only show lessons marked by facilitator
+      // Filter by available lessons - show lessons that are EITHER:
+      // 1. Marked available by facilitator (checkbox), OR
+      // 2. Scheduled for today (calendar)
       const availableForSubject = subjectLessons.filter(lesson => {
         const lessonKey = lesson.isGenerated 
-          ? `facilitator/${lesson.file}`
+          ? `generated/${lesson.file}`
           : `${subject}/${lesson.file}`
-        return availableLessons[lessonKey] === true
+        return availableLessons[lessonKey] === true || scheduledLessons[lessonKey] === true
       })
       if (availableForSubject.length > 0) {
         grouped[subject] = availableForSubject
       }
     })
     return grouped
-  }, [allLessons, availableLessons])
+  }, [allLessons, availableLessons, scheduledLessons])
 
   const hasLessons = Object.keys(lessonsBySubject).length > 0
 

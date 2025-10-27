@@ -208,6 +208,8 @@ export default function CounselorClient() {
 
   // Load goals notes when selection changes
   useEffect(() => {
+    if (!hasAccess || !tierChecked) return
+    
     let cancelled = false
     ;(async () => {
       try {
@@ -216,7 +218,9 @@ export default function CounselorClient() {
           params.append('learner_id', selectedLearnerId)
         }
         
-        const response = await fetch(`/api/goals-notes?${params.toString()}`)
+        const response = await fetch(`/api/goals-notes?${params.toString()}`, {
+          credentials: 'include'
+        })
         if (response.ok && !cancelled) {
           const data = await response.json()
           setGoalsNotes(data.goals_notes || '')
@@ -228,7 +232,7 @@ export default function CounselorClient() {
       }
     })()
     return () => { cancelled = true }
-  }, [selectedLearnerId])
+  }, [hasAccess, tierChecked, selectedLearnerId])
 
   // Load existing draft summary on mount and when learner changes
   useEffect(() => {
@@ -265,6 +269,22 @@ export default function CounselorClient() {
     })()
     
     return () => { cancelled = true }
+  }, [hasAccess, tierChecked, selectedLearnerId])
+
+  // Preload overlay data in background after page is ready
+  useEffect(() => {
+    if (!hasAccess || !tierChecked) return
+    
+    // Delay preload to let visible content load first
+    const preloadTimer = setTimeout(() => {
+      console.log('[Mr. Mentor] Triggering background preload of overlays')
+      // Trigger loads by dispatching events to overlays
+      window.dispatchEvent(new CustomEvent('preload-overlays', { 
+        detail: { learnerId: selectedLearnerId } 
+      }))
+    }, 1000) // 1 second delay after page load
+    
+    return () => clearTimeout(preloadTimer)
   }, [hasAccess, tierChecked, selectedLearnerId])
 
   // Dispatch title to header (like session page)
@@ -1002,8 +1022,8 @@ export default function CounselorClient() {
                     background: '#1f2937',
                     color: '#fff',
                     border: 'none',
-                    width: 'clamp(34px, 6.2vw, 52px)',
-                    height: 'clamp(34px, 6.2vw, 52px)',
+                    width: 'clamp(48px, 10vw, 64px)',
+                    height: 'clamp(48px, 10vw, 64px)',
                     display: 'grid',
                     placeItems: 'center',
                     borderRadius: '50%',
@@ -1058,33 +1078,32 @@ export default function CounselorClient() {
             </>
           )}
 
-          {/* Overlays - shown on top when activeScreen is not 'mentor' */}
-          {activeScreen !== 'mentor' && (
-            <div style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              background: '#fff',
-              zIndex: 5,
-              overflow: 'hidden'
-            }}>
-              {activeScreen === 'calendar' && (
-                <CalendarOverlay 
-                  learnerId={selectedLearnerId}
-                />
-              )}
-              {activeScreen === 'lessons' && (
-                <LessonsOverlay 
-                  learnerId={selectedLearnerId}
-                />
-              )}
-              {activeScreen === 'maker' && (
-                <LessonMakerOverlay tier={tier} />
-              )}
+          {/* Overlays - always rendered but hidden when not active */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: '#fff',
+            zIndex: 5,
+            overflow: 'hidden',
+            display: activeScreen !== 'mentor' ? 'block' : 'none'
+          }}>
+            <div style={{ display: activeScreen === 'calendar' ? 'block' : 'none', height: '100%' }}>
+              <CalendarOverlay 
+                learnerId={selectedLearnerId}
+              />
             </div>
-          )}
+            <div style={{ display: activeScreen === 'lessons' ? 'block' : 'none', height: '100%' }}>
+              <LessonsOverlay 
+                learnerId={selectedLearnerId}
+              />
+            </div>
+            <div style={{ display: activeScreen === 'maker' ? 'block' : 'none', height: '100%' }}>
+              <LessonMakerOverlay tier={tier} />
+            </div>
+          </div>
         </div>
 
         {/* Caption panel */}
@@ -1425,7 +1444,7 @@ export default function CounselorClient() {
                               justifyContent: 'flex-start'
                             }}
                           >
-                            <span style={{ fontSize: 20, width: 32, textAlign: 'center', flexShrink: 0 }}>🎨</span>
+                            <span style={{ fontSize: 20, width: 32, textAlign: 'center', flexShrink: 0 }}>✨</span>
                             <span>Generator</span>
                           </button>
                           
@@ -1526,26 +1545,6 @@ export default function CounselorClient() {
                         borderColor: activeScreen === 'maker' ? '#3b82f6' : '#d1d5db',
                         borderRadius: 6,
                         background: activeScreen === 'maker' ? '#dbeafe' : '#fff',
-                        cursor: 'pointer',
-                        fontSize: 20,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      🎨
-                    </button>
-                    <button
-                      onClick={() => setActiveScreen('calendar')}
-                      title="Calendar"
-                      style={{
-                        width: 40,
-                        height: 40,
-                        border: '2px solid',
-                        borderColor: activeScreen === 'calendar' ? '#3b82f6' : '#d1d5db',
-                        borderRadius: 6,
-                        background: activeScreen === 'calendar' ? '#dbeafe' : '#fff',
                         cursor: 'pointer',
                         fontSize: 20,
                         display: 'flex',

@@ -1,6 +1,6 @@
 // Compact calendar view for Mr. Mentor overlay
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 
 export default function CalendarOverlay({ learnerId }) {
@@ -16,34 +16,15 @@ export default function CalendarOverlay({ learnerId }) {
   const currentYear = currentMonth.getFullYear()
   const currentMonthIndex = currentMonth.getMonth()
   
-  useEffect(() => {
-    if (learnerId && learnerId !== 'none') {
-      loadSchedule()
-      
-      // Poll for updates every 2 minutes
-      const pollInterval = setInterval(() => {
-        console.log('[CalendarOverlay] Polling for schedule updates')
-        loadSchedule()
-      }, 2 * 60 * 1000)
-      
-      return () => clearInterval(pollInterval)
-    } else {
+  const loadScheduleForLearner = useCallback(async (targetLearnerId) => {
+    if (!targetLearnerId || targetLearnerId === 'none') {
       setScheduledLessons({})
-      setScheduledForSelectedDate([])
+      return
     }
-  }, [learnerId])
-
-  useEffect(() => {
-    if (selectedDate && scheduledLessons[selectedDate]) {
-      setScheduledForSelectedDate(scheduledLessons[selectedDate])
-    } else {
-      setScheduledForSelectedDate([])
-    }
-  }, [selectedDate, scheduledLessons])
-
-  const loadSchedule = async () => {
-    if (!learnerId || learnerId === 'none') {
-      setScheduledLessons({})
+    
+    // Skip reload if schedule already loaded
+    if (Object.keys(scheduledLessons).length > 0) {
+      console.log('[CalendarOverlay] Schedule already loaded, skipping')
       return
     }
     
@@ -59,7 +40,7 @@ export default function CalendarOverlay({ learnerId }) {
       }
 
       // Get all scheduled lessons for this learner
-      const response = await fetch(`/api/lesson-schedule?learnerId=${learnerId}`, {
+      const response = await fetch(`/api/lesson-schedule?learnerId=${targetLearnerId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -91,7 +72,46 @@ export default function CalendarOverlay({ learnerId }) {
       console.error('[CalendarOverlay] Failed to load schedule:', err)
       setScheduledLessons({})
     }
-  }
+  }, [scheduledLessons])
+
+  const loadSchedule = useCallback(async () => {
+    return loadScheduleForLearner(learnerId)
+  }, [learnerId, loadScheduleForLearner])
+
+  // Listen for preload event to trigger initial load
+  useEffect(() => {
+    const handlePreload = () => {
+      console.log('[CalendarOverlay] Received preload event, loading schedule')
+      if (learnerId && learnerId !== 'none') {
+        loadSchedule()
+      }
+    }
+    
+    window.addEventListener('preload-overlays', handlePreload)
+    return () => window.removeEventListener('preload-overlays', handlePreload)
+  }, [learnerId, loadSchedule])
+  
+  useEffect(() => {
+    if (learnerId && learnerId !== 'none') {
+      loadSchedule()
+      
+      // Poll for updates every 2 minutes
+      const pollInterval = setInterval(() => {
+        console.log('[CalendarOverlay] Polling for schedule updates')
+        loadSchedule()
+      }, 2 * 60 * 1000)
+      
+      return () => clearInterval(pollInterval)
+    }
+  }, [learnerId, loadSchedule])
+
+  useEffect(() => {
+    if (selectedDate && scheduledLessons[selectedDate]) {
+      setScheduledForSelectedDate(scheduledLessons[selectedDate])
+    } else {
+      setScheduledForSelectedDate([])
+    }
+  }, [selectedDate, scheduledLessons])
 
   const daysInMonth = (date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
@@ -133,7 +153,9 @@ export default function CalendarOverlay({ learnerId }) {
       background: '#fff', 
       display: 'flex', 
       flexDirection: 'column',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      border: '1px solid #6b7280',
+      borderRadius: 8
     }}>
       {/* Header */}
       <div style={{ 
@@ -184,38 +206,23 @@ export default function CalendarOverlay({ learnerId }) {
 
       {/* Calendar Grid */}
       <div style={{ flex: 1, padding: 12, overflowY: 'auto' }}>
-        {(!learnerId || learnerId === 'none') ? (
+        <>
           <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            height: '100%',
-            color: '#9ca3af',
-            fontSize: 13,
-            fontStyle: 'italic',
-            textAlign: 'center',
-            padding: 20
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(7, 1fr)', 
+            gap: 4,
+            marginBottom: 8
           }}>
-            Select a learner to view their calendar
-          </div>
-        ) : (
-          <>
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(7, 1fr)', 
-              gap: 4,
-              marginBottom: 8
-        }}>
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-            <div key={day} style={{ 
-              textAlign: 'center', 
-              fontSize: 11,
-              fontWeight: 700,
-              color: '#6b7280',
-              padding: '4px 0'
-            }}>
-              {day}
-            </div>
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+              <div key={day} style={{ 
+                textAlign: 'center', 
+                fontSize: 11,
+                fontWeight: 700,
+                color: '#6b7280',
+                padding: '4px 0'
+              }}>
+                {day}
+              </div>
           ))}
         </div>
         
@@ -304,13 +311,12 @@ export default function CalendarOverlay({ learnerId }) {
               </div>
             ) : (
               <div style={{ fontSize: 12, color: '#9ca3af', fontStyle: 'italic' }}>
-                No lessons scheduled
+                {(!learnerId || learnerId === 'none') ? 'Select a learner to schedule lessons' : 'No lessons scheduled'}
               </div>
             )}
           </div>
         )}
-          </>
-        )}
+        </>
       </div>
     </div>
   )

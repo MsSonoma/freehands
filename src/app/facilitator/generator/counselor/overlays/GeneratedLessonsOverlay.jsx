@@ -237,7 +237,7 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
     }
   }
 
-  const subjects = ['all', 'math', 'science', 'language arts', 'social studies', 'generated']
+  const subjects = ['all', 'math', 'science', 'language arts', 'social studies', 'general', 'generated']
   const grades = ['all', 'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
   const filteredItems = items.filter(item => {
@@ -257,7 +257,9 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
       background: '#fff', 
       display: 'flex', 
       flexDirection: 'column',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      border: '1px solid #6b7280',
+      borderRadius: 8
     }}>
       {/* Show editor if editing */}
       {editingLesson ? (

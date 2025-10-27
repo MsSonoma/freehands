@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
 
-const subjects = ['math', 'language arts', 'science', 'social studies']
+const subjects = ['math', 'language arts', 'science', 'social studies', 'general']
 const difficulties = ['beginner', 'intermediate', 'advanced']
 
 export default function LessonMakerOverlay({ tier }) {
@@ -23,6 +23,8 @@ export default function LessonMakerOverlay({ tier }) {
   const [quotaLoading, setQuotaLoading] = useState(true)
 
   const ent = featuresForTier(tier)
+  
+  const isFormValid = form.grade.trim() && form.title.trim() && form.description.trim()
 
   useEffect(() => {
     loadQuota()
@@ -33,16 +35,31 @@ export default function LessonMakerOverlay({ tier }) {
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
-      if (!token) return
+      if (!token) {
+        setQuotaLoading(false)
+        return
+      }
       
       const res = await fetch('/api/usage/check-generation-quota', {
         headers: { Authorization: `Bearer ${token}` }
       })
+      
+      if (!res.ok) {
+        console.error('Quota check failed:', res.status, res.statusText)
+        // If quota check fails, allow generation (fail open for premium users)
+        setQuotaInfo({ allowed: true, source: 'fallback' })
+        setQuotaLoading(false)
+        return
+      }
+      
       const data = await res.json()
+      console.log('Quota info:', data)
       setQuotaInfo(data)
       setQuotaLoading(false)
     } catch (e) {
       console.error('Failed to check quota:', e)
+      // If quota check fails, allow generation (fail open for premium users)
+      setQuotaInfo({ allowed: true, source: 'fallback' })
       setQuotaLoading(false)
     }
   }
@@ -50,7 +67,14 @@ export default function LessonMakerOverlay({ tier }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    if (quotaInfo && !quotaInfo.allowed) {
+    // Validate required fields
+    if (!form.grade.trim() || !form.title.trim() || !form.description.trim()) {
+      setMessage('Please fill in all required fields (Grade, Title, Description)')
+      return
+    }
+    
+    // Check quota (only block if we have explicit denial from API)
+    if (quotaInfo && quotaInfo.allowed === false) {
       setMessage('Generation limit reached. Upgrade to increase your quota.')
       return
     }
@@ -105,7 +129,9 @@ export default function LessonMakerOverlay({ tier }) {
       background: '#fff', 
       display: 'flex', 
       flexDirection: 'column',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      border: '1px solid #6b7280',
+      borderRadius: 8
     }}>
       {/* Header */}
       <div style={{ 
@@ -295,16 +321,16 @@ export default function LessonMakerOverlay({ tier }) {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={busy || !ent.facilitatorTools || (quotaInfo && !quotaInfo.allowed)}
+            disabled={busy}
             style={{
               padding: '10px 16px',
               fontSize: 13,
               fontWeight: 700,
-              background: busy || !ent.facilitatorTools || (quotaInfo && !quotaInfo.allowed) ? '#d1d5db' : '#3b82f6',
+              background: busy ? '#d1d5db' : '#3b82f6',
               color: '#fff',
               border: 'none',
               borderRadius: 8,
-              cursor: busy || !ent.facilitatorTools || (quotaInfo && !quotaInfo.allowed) ? 'not-allowed' : 'pointer',
+              cursor: busy ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s'
             }}
           >

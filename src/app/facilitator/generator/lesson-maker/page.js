@@ -10,7 +10,7 @@ import Toast from '@/components/Toast'
 import { validateLessonQuality, buildValidationChangeRequest } from '@/app/lib/lessonValidation'
 
 
-const subjects = ['math','language arts','science','social studies']
+const subjects = ['math','language arts','science','social studies','general']
 const difficulties = ['beginner','intermediate','advanced']
 
 export default function LessonMakerPage(){
@@ -288,8 +288,8 @@ export default function LessonMakerPage(){
       {message && <p style={{ marginTop:12 }}>{message}</p>}
       
       <div style={{ marginTop:24, paddingTop:24, borderTop:'1px solid #e5e7eb' }}>
-        <a href="/facilitator/tools/generated" style={{ ...btn, textDecoration:'none', background:'#374151', borderColor:'#374151' }}>
-          View Generated Lessons
+        <a href="/facilitator/lessons" style={{ ...btn, textDecoration:'none', background:'#374151', borderColor:'#374151' }}>
+          View Lessons
         </a>
       </div>
 
@@ -298,7 +298,7 @@ export default function LessonMakerPage(){
         show={!hasAccess}
         gateType={gateType}
         feature="Lesson Maker"
-        emoji="🎨"
+        emoji="✨"
         description="Create custom AI-generated lessons tailored to your grade level, subject, and difficulty. Available exclusively to Premium subscribers."
         benefits={[
           'Custom vocabulary and definitions',

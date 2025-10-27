@@ -24,7 +24,7 @@ export async function GET(request) {
     // Get profile with usage data
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('stripe_subscription_tier, lifetime_generations_used, weekly_generation_date, weekly_generations_used')
+      .select('plan_tier, lifetime_generations_used, weekly_generation_date, weekly_generations_used')
       .eq('id', user.id)
       .single();
 
@@ -32,8 +32,10 @@ export async function GET(request) {
       return Response.json({ allowed: false, reason: 'Profile not found' }, { status: 404 });
     }
 
-    const tier = profile.stripe_subscription_tier || 'free';
+    const tier = (profile.plan_tier || 'free').toLowerCase();
     const entitlement = ENTITLEMENTS[tier] || ENTITLEMENTS.free;
+    
+    console.log('Quota check - tier:', tier, 'entitlement:', entitlement);
     
     const lifetimeLimit = entitlement.lifetimeGenerations;
     const weeklyLimit = entitlement.weeklyGenerations;
@@ -43,6 +45,16 @@ export async function GET(request) {
       return Response.json({ 
         allowed: false, 
         reason: 'No generations available on free tier',
+        tier 
+      });
+    }
+
+    // Premium/Lifetime tiers have unlimited generations
+    if (lifetimeLimit === Infinity) {
+      return Response.json({ 
+        allowed: true,
+        source: 'unlimited',
+        remaining: Infinity,
         tier 
       });
     }

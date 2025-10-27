@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 export default function ClipboardOverlay({
   summary,
@@ -11,6 +12,11 @@ export default function ClipboardOverlay({
   show
 }) {
   const [editedSummary, setEditedSummary] = useState(summary || '')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     setEditedSummary(summary || '')
@@ -30,9 +36,9 @@ export default function ClipboardOverlay({
     }
   }
 
-  if (!show) return null
+  if (!show || !mounted) return null
 
-  return (
+  const overlayContent = (
     <div style={{
       position: 'fixed',
       top: 0,
@@ -43,29 +49,33 @@ export default function ClipboardOverlay({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 2000,
-      padding: '20px',
-      paddingTop: '80px'
+      paddingTop: '40px',
+      zIndex: 99999,
+      padding: '16px'
     }}>
       {/* Clipboard styled container */}
       <div style={{
         position: 'relative',
         background: 'linear-gradient(135deg, #8B4513 0%, #A0522D 50%, #8B4513 100%)',
         borderRadius: '8px 8px 16px 16px',
-        maxWidth: '500px',
+        maxWidth: '460px',
         width: '100%',
+        height: '85vh',
+        maxHeight: '760px',
+        display: 'flex',
+        flexDirection: 'column',
         boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.2), inset 0 -2px 4px rgba(0, 0, 0, 0.3)',
         border: '3px solid #654321',
-        overflow: 'hidden'
+        overflow: 'visible'
       }}>
         {/* Clipboard clip at top */}
         <div style={{
           position: 'absolute',
-          top: '-12px',
+          top: '-28px',
           left: '50%',
           transform: 'translateX(-50%)',
           width: '120px',
-          height: '50px',
+          height: '70px',
           background: 'linear-gradient(180deg, #C0C0C0 0%, #A8A8A8 50%, #808080 100%)',
           borderRadius: '8px 8px 0 0',
           boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.4)',
@@ -74,23 +84,26 @@ export default function ClipboardOverlay({
 
         {/* Content area */}
         <div style={{
-          padding: '45px 35px 35px',
+          padding: '40px 28px 28px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '6px',
+          gap: '10px',
           background: '#FEFDF8',
-          margin: '16px',
+          margin: '14px',
           borderRadius: '0px',
-          boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.1)'
+          boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.1)',
+          flex: 1,
+          overflow: 'hidden'
         }}>
           {/* Header */}
           <div style={{
             textAlign: 'center',
-            paddingBottom: '2px'
+            paddingBottom: '6px',
+            flexShrink: 0
           }}>
             <h2 style={{
               margin: 0,
-              fontSize: '1.5rem',
+              fontSize: '1.35rem',
               fontWeight: 700,
               color: '#4A2511',
               fontFamily: 'Georgia, serif'
@@ -98,8 +111,8 @@ export default function ClipboardOverlay({
               Conversation Summary
             </h2>
             <p style={{
-              margin: '8px 0 0',
-              fontSize: '0.875rem',
+              margin: '6px 0 0',
+              fontSize: '0.8125rem',
               color: '#8B6F47',
               fontFamily: 'Georgia, serif'
             }}>
@@ -108,25 +121,26 @@ export default function ClipboardOverlay({
           </div>
 
           {/* Editable summary textarea */}
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <textarea
               value={editedSummary}
               onChange={handleChange}
               placeholder="No summary yet..."
               style={{
-                width: 'calc(100% - 30px)',
-                minHeight: '340px',
-                padding: '15px',
-                fontSize: '1rem',
+                width: '100%',
+                flex: 1,
+                minHeight: 0,
+                padding: '14px',
+                fontSize: '0.9375rem',
                 lineHeight: '1.6',
                 border: 'none',
                 borderRadius: '0px',
-                resize: 'vertical',
+                resize: 'none',
                 fontFamily: 'Georgia, serif',
                 background: '#FEFDF8',
                 color: '#4A2511',
                 outline: 'none',
-                boxSizing: 'content-box'
+                boxSizing: 'border-box'
               }}
             />
           </div>
@@ -135,7 +149,8 @@ export default function ClipboardOverlay({
           <div style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '8px'
+            gap: '8px',
+            flexShrink: 0
           }}>
             {/* Top row: Save and Export */}
             <div style={{
@@ -148,7 +163,7 @@ export default function ClipboardOverlay({
                 disabled={!editedSummary.trim()}
                 style={{
                   flex: 1,
-                  padding: '10px 16px',
+                  padding: '9px 14px',
                   fontSize: '0.875rem',
                   fontWeight: 500,
                   background: editedSummary.trim() ? 'transparent' : '#f3f4f6',
@@ -177,7 +192,7 @@ export default function ClipboardOverlay({
                 onClick={onExport}
                 style={{
                   flex: 1,
-                  padding: '10px 16px',
+                  padding: '9px 14px',
                   fontSize: '0.875rem',
                   fontWeight: 500,
                   background: 'transparent',
@@ -208,7 +223,7 @@ export default function ClipboardOverlay({
                 onClick={handleDelete}
                 style={{
                   flex: 1,
-                  padding: '10px 16px',
+                  padding: '9px 14px',
                   fontSize: '0.875rem',
                   fontWeight: 500,
                   background: 'transparent',
@@ -233,7 +248,7 @@ export default function ClipboardOverlay({
                 onClick={onClose}
                 style={{
                   flex: 1,
-                  padding: '10px 16px',
+                  padding: '9px 14px',
                   fontSize: '0.875rem',
                   fontWeight: 500,
                   background: 'transparent',
@@ -258,4 +273,6 @@ export default function ClipboardOverlay({
       </div>
     </div>
   )
+
+  return createPortal(overlayContent, document.body)
 }

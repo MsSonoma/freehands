@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
-import { createClient } from '@supabase/supabase-js';
 
 // Always read from disk on each request so newly added files appear without restart
 export const dynamic = 'force-dynamic';
@@ -32,33 +34,40 @@ export async function GET(request) {
         return NextResponse.json({ error: 'Supabase configuration missing' }, { status: 500 });
       }
       
-      // Get the current user from auth header
-      const auth = request.headers.get('authorization') || '';
-      const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+      // Get the current user from cookies
+      const cookieStore = await cookies()
       
-      let userId = null;
-      if (token) {
-        try {
-          const { createClient } = await import('@supabase/supabase-js');
-          const userClient = createClient(supabaseUrl, anonKey, { 
-            global: { headers: { Authorization: `Bearer ${token}` } }, 
-            auth: { persistSession: false } 
-          });
-          const { data: { user } } = await userClient.auth.getUser();
-          userId = user?.id;
-        } catch (err) {
-          console.error('[FACILITATOR] Auth error:', err);
+      const userClient = createServerClient(
+        supabaseUrl,
+        anonKey,
+        {
+          cookies: {
+            getAll() {
+              return cookieStore.getAll()
+            },
+            setAll(cookiesToSet) {
+              // Not needed for read-only operations
+            },
+          },
         }
-      }
+      )
       
-      if (!userId) {
-        console.log('[FACILITATOR] No authenticated user');
+      const { data: { session }, error: sessionError } = await userClient.auth.getSession()
+      
+      console.log('[GENERATED] Session check:', { 
+        hasSession: !!session, 
+        userId: session?.user?.id,
+        sessionError: sessionError?.message 
+      })
+      
+      if (!session?.user) {
+        console.log('[GENERATED] No authenticated user');
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
       
-      console.log('[FACILITATOR] User ID:', userId);
+      const userId = session.user.id
+      console.log('[GENERATED] User ID:', userId);
       
-      const { createClient } = await import('@supabase/supabase-js');
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
       
       // List all lessons in the user's generated-lessons folder

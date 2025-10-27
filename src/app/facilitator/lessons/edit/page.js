@@ -45,13 +45,10 @@ function EditLessonContent() {
         const { data: { session } } = await supabase.auth.getSession()
         const token = session?.access_token
         
-        const headers = {}
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`
-        }
-        
         const res = await fetch(`/api/lesson-file?key=${encodeURIComponent(lessonKey)}`, {
-          headers
+          headers: token ? {
+            'Authorization': `Bearer ${token}`
+          } : {}
         })
         
         if (!res.ok) {

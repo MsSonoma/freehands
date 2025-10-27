@@ -1,7 +1,8 @@
 // Persistent goals clipboard for Mr. Mentor
 // Stores long-term goals/notes per learner or for facilitator
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { getSupabaseClient } from '@/app/lib/supabaseClient'
 
 const MAX_CHARS = 600
 
@@ -19,48 +20,110 @@ export default function GoalsClipboardOverlay({
   const charCount = text.length
   const charsRemaining = MAX_CHARS - charCount
 
-  useEffect(() => {
-    if (visible && onSave) {
-      // Load existing goals when overlay opens
-      loadGoals()
-    }
-  }, [visible, learnerId])
-
-  const loadGoals = async () => {
+  const loadGoals = useCallback(async () => {
     try {
+      console.log('[GoalsClipboard] Loading goals for learnerId:', learnerId)
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      
+      console.log('[GoalsClipboard] Token available:', !!token)
+      
       const params = new URLSearchParams()
       if (learnerId && learnerId !== 'none') {
         params.append('learner_id', learnerId)
       }
       
-      const response = await fetch(`/api/goals-notes?${params.toString()}`)
+      const headers = {}
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+      
+      const url = `/api/goals-notes?${params.toString()}`
+      console.log('[GoalsClipboard] Fetching from:', url)
+      
+      const response = await fetch(url, { headers })
+      console.log('[GoalsClipboard] Load response status:', response.status, response.ok)
+      
       if (response.ok) {
         const data = await response.json()
+        console.log('[GoalsClipboard] Loaded goals data:', data)
+        console.log('[GoalsClipboard] goals_notes value:', data.goals_notes)
         setText(data.goals_notes || '')
+      } else {
+        console.error('[GoalsClipboard] Failed to load goals, status:', response.status)
+        const errorText = await response.text()
+        console.error('[GoalsClipboard] Error response:', errorText)
       }
     } catch (err) {
       console.error('[GoalsClipboard] Failed to load goals:', err)
     }
-  }
+  }, [learnerId])
+
+  useEffect(() => {
+    console.log('[GoalsClipboard] useEffect triggered, visible:', visible, 'learnerId:', learnerId)
+    if (visible) {
+      // Load existing goals when overlay opens
+      loadGoals()
+    } else {
+      // Clear text when overlay closes to ensure fresh load next time
+      setText('')
+    }
+  }, [visible, learnerId, loadGoals])
 
   const handleSave = async () => {
     setSaving(true)
     setSaveStatus('')
     
     try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      
+      console.log('[GoalsClipboard] Save starting, token available:', !!token, 'learnerId:', learnerId)
+      
       const body = { goals_notes: text }
       if (learnerId && learnerId !== 'none') {
         body.learner_id = learnerId
       }
       
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+      
+      console.log('[GoalsClipboard] Sending save request with body:', body)
+      
       const response = await fetch('/api/goals-notes', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(body)
       })
 
+      console.log('[GoalsClipboard] Save response status:', response.status, response.ok)
+
       if (!response.ok) {
-        throw new Error('Failed to save goals')
+        let errorData = {}
+        const contentType = response.headers.get('content-type')
+        console.log('[GoalsClipboard] Error response content-type:', contentType)
+        console.log('[GoalsClipboard] Full response:', response)
+        
+        try {
+          const responseText = await response.text()
+          console.log('[GoalsClipboard] Raw response text:', responseText)
+          
+          if (contentType?.includes('application/json')) {
+            errorData = JSON.parse(responseText)
+          } else {
+            errorData = { error: responseText || 'Unknown error' }
+          }
+        } catch (e) {
+          console.error('[GoalsClipboard] Failed to parse response:', e)
+          errorData = { error: 'Failed to parse error response' }
+        }
+        
+        console.error('[GoalsClipboard] Save failed with error:', errorData)
+        throw new Error(errorData.error || `Failed to save goals (${response.status})`)
       }
 
       setSaveStatus('Saved!')
@@ -73,7 +136,7 @@ export default function GoalsClipboardOverlay({
       }, 2000)
     } catch (err) {
       console.error('[GoalsClipboard] Save failed:', err)
-      setSaveStatus('Save failed')
+      setSaveStatus(`Save failed: ${err.message}`)
     } finally {
       setSaving(false)
     }
@@ -106,28 +169,30 @@ export default function GoalsClipboardOverlay({
         style={{
           background: '#fff',
           borderRadius: 12,
-          maxWidth: 600,
+          maxWidth: 480,
           width: '100%',
-          maxHeight: '80vh',
+          maxHeight: '85vh',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+          boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+          overflow: 'hidden'
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div style={{
-          padding: '16px 20px',
+          padding: '12px 16px',
           borderBottom: '1px solid #e5e7eb',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          flexShrink: 0
         }}>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 600, color: '#1f2937' }}>
+            <div style={{ fontSize: 16, fontWeight: 600, color: '#1f2937' }}>
               📋 {contextText}
             </div>
-            <div style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>
+            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
               Persistent notes that Mr. Mentor always sees
             </div>
           </div>
@@ -150,15 +215,14 @@ export default function GoalsClipboardOverlay({
         {/* Content */}
         <div style={{ 
           flex: 1, 
-          padding: 20,
+          padding: 14,
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: 12
+          gap: 10
         }}>
-          <div style={{ fontSize: 14, color: '#374151' }}>
+          <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.4 }}>
             Set goals, preferences, or context that should guide all conversations with Mr. Mentor.
-            These notes persist across sessions and help Mr. Mentor understand your priorities.
           </div>
 
           <textarea
@@ -168,17 +232,19 @@ export default function GoalsClipboardOverlay({
                 setText(e.target.value)
               }
             }}
-            placeholder="Examples:&#10;• Focus on building Emma's confidence in math&#10;• Looking for gentle, engaging science lessons&#10;• Working toward more independent learning&#10;• Need help balancing academics with creative time"
+            placeholder="Examples:&#10;• Focus on building confidence in math&#10;• Looking for gentle, engaging lessons&#10;• Working toward more independence&#10;• Need help balancing academics"
             style={{
               width: '100%',
-              minHeight: 200,
-              padding: 12,
+              minHeight: 120,
+              maxHeight: 180,
+              padding: 10,
               border: '1px solid #d1d5db',
               borderRadius: 8,
-              fontSize: 14,
+              fontSize: 13,
               fontFamily: 'inherit',
               resize: 'vertical',
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
+              lineHeight: 1.5
             }}
           />
 
@@ -206,21 +272,22 @@ export default function GoalsClipboardOverlay({
 
         {/* Footer */}
         <div style={{
-          padding: '12px 20px',
+          padding: '10px 16px',
           borderTop: '1px solid #e5e7eb',
           display: 'flex',
-          gap: 12,
-          justifyContent: 'flex-end'
+          gap: 10,
+          justifyContent: 'flex-end',
+          flexShrink: 0
         }}>
           <button
             onClick={onClose}
             style={{
-              padding: '8px 16px',
+              padding: '7px 14px',
               border: '1px solid #d1d5db',
               borderRadius: 6,
               background: '#fff',
               color: '#374151',
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: 600,
               cursor: 'pointer'
             }}
@@ -231,12 +298,12 @@ export default function GoalsClipboardOverlay({
             onClick={handleSave}
             disabled={saving}
             style={{
-              padding: '8px 16px',
+              padding: '7px 14px',
               border: 'none',
               borderRadius: 6,
               background: saving ? '#9ca3af' : '#2563eb',
               color: '#fff',
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: 600,
               cursor: saving ? 'wait' : 'pointer'
             }}
