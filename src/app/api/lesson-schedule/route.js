@@ -43,7 +43,13 @@ export async function GET(request) {
 
     // Get active lessons for today (used by learner view)
     if (action === 'active' && learnerId) {
-      const today = new Date().toISOString().split('T')[0]
+      // Use local date, not UTC
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      const day = String(now.getDate()).padStart(2, '0')
+      const today = `${year}-${month}-${day}`
+      
       const { data, error } = await adminSupabase
         .from('lesson_schedule')
         .select('lesson_key')

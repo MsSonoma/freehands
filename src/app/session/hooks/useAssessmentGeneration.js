@@ -30,6 +30,36 @@ export function useAssessmentGeneration({
 
   const shuffleArr = (arr) => shuffle(arr);
 
+  // Remove duplicate questions from an array based on question text
+  const deduplicateQuestions = (arr) => {
+    const seen = new Set();
+    const result = [];
+    
+    for (const item of arr) {
+      if (!item) continue;
+      
+      const questionText = (
+        item.question || 
+        item.prompt || 
+        item.q || 
+        item.Q || 
+        ''
+      ).toString().trim().toLowerCase();
+      
+      if (!questionText) {
+        result.push(item);
+        continue;
+      }
+      
+      if (!seen.has(questionText)) {
+        seen.add(questionText);
+        result.push(item);
+      }
+    }
+    
+    return result;
+  };
+
   // Select a blended set (for math): ~70% from samples/categories and ~30% from word problems
   const selectMixed = (samples = [], wpArr = [], target = 0, isTest = false) => {
     const wpAvail = Array.isArray(wpArr) ? wpArr : [];
@@ -42,7 +72,11 @@ export function useAssessmentGeneration({
       return { ...core, sourceType: 'word', questionType: 'sa' };
     });
     const baseSel = shuffle(baseAvail).slice(0, baseCount).map(q => ({ ...q, sourceType: 'sample', questionType: 'sa' }));
-    return shuffle([...wpSel, ...baseSel]);
+    
+    // Deduplicate before final shuffle
+    const combined = [...wpSel, ...baseSel];
+    const deduplicated = deduplicateQuestions(combined);
+    return shuffle(deduplicated);
   };
 
   // Math-specific: build mixed worksheet/test from samples, words, and categories
@@ -75,10 +109,17 @@ export function useAssessmentGeneration({
     const remaining = Math.max(0, remainder - saPick.length - fibPick.length);
     const otherPick = shuffleArr(others).slice(0, remaining);
     const baseSel = shuffleArr([...saPick, ...fibPick, ...otherPick]);
-    const mixed = shuffleArr([...wpSel, ...baseSel]);
+    
+    // Combine word problems and category questions, then deduplicate
+    const combined = [...wpSel, ...baseSel];
+    const deduplicated = deduplicateQuestions(combined);
+    const mixed = shuffleArr(deduplicated);
     
     try { 
-      console.debug('[PoolTagging] Mixed select types:', Array.from(new Set(mixed.map(x => x?.questionType || 'sa')))); 
+      console.debug('[PoolTagging] Mixed select types:', Array.from(new Set(mixed.map(x => x?.questionType || 'sa'))));
+      if (combined.length !== deduplicated.length) {
+        console.debug('[PoolTagging] Removed', combined.length - deduplicated.length, 'duplicate questions from mixed selection');
+      }
     } catch {}
     
     return mixed;
@@ -100,10 +141,17 @@ export function useAssessmentGeneration({
     const others = shuffle([...tf, ...mc]);
     const remaining = Math.max(0, target - saPick.length - fibPick.length);
     const otherPick = others.slice(0, remaining);
-    const built = shuffle([...saPick, ...fibPick, ...otherPick]);
+    
+    // Combine all questions and deduplicate before final shuffle
+    const combined = [...saPick, ...fibPick, ...otherPick];
+    const deduplicated = deduplicateQuestions(combined);
+    const built = shuffle(deduplicated);
     
     try { 
-      console.debug('[PoolTagging] Non-math category types:', Array.from(new Set(built.map(x => x?.questionType || 'sa')))); 
+      console.debug('[PoolTagging] Non-math category types:', Array.from(new Set(built.map(x => x?.questionType || 'sa'))));
+      if (combined.length !== deduplicated.length) {
+        console.debug('[PoolTagging] Removed', combined.length - deduplicated.length, 'duplicate questions from category selection');
+      }
     } catch {}
     
     return built;

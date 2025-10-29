@@ -11,6 +11,22 @@ import GatedOverlay from '@/app/components/GatedOverlay'
 const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
 const GRADES = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
+function normalizeApprovedLessonKeys(map = {}) {
+  let changed = false
+  const normalized = {}
+  Object.entries(map || {}).forEach(([key, value]) => {
+    if (typeof key === 'string' && key.startsWith('Facilitator Lessons/')) {
+      const suffix = key.slice('Facilitator Lessons/'.length)
+      const normalizedKey = `general/${suffix}`
+      normalized[normalizedKey] = value
+      changed = true
+    } else if (key) {
+      normalized[key] = value
+    }
+  })
+  return { normalized, changed }
+}
+
 export default function FacilitatorLessonsPage() {
   const router = useRouter()
   const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true })
@@ -310,7 +326,15 @@ export default function FacilitatorLessonsPage() {
           setFutureScheduledLessons(futureScheduled)
           setActiveGoldenKeys(data?.active_golden_keys || {})
           setLessonNotes(data?.lesson_notes || {})
-          setAvailableLessons(data?.approved_lessons || {})
+          const { normalized: approvedNormalized, changed: approvedChanged } = normalizeApprovedLessonKeys(data?.approved_lessons || {})
+          setAvailableLessons(approvedNormalized)
+          if (approvedChanged) {
+            try {
+              await supabase.from('learners').update({ approved_lessons: approvedNormalized }).eq('id', selectedLearnerId)
+            } catch (normalizeErr) {
+              console.warn('[Facilitator Lessons] Failed to normalize approved lesson keys:', normalizeErr)
+            }
+          }
           
           // Set grade filter to learner's grade
           if (data?.grade && selectedGrade === 'all') {
@@ -341,6 +365,8 @@ export default function FacilitatorLessonsPage() {
   async function toggleAvailability(lessonKey) {
     if (!selectedLearnerId) return
     
+    console.log('[toggleAvailability] Called with key:', lessonKey)
+    
     try {
       setSaving(true)
       const supabase = getSupabaseClient()
@@ -352,26 +378,49 @@ export default function FacilitatorLessonsPage() {
         .eq('id', selectedLearnerId)
         .maybeSingle()
       
-      const currentApproved = currentData?.approved_lessons || {}
+      console.log('[toggleAvailability] Current data from DB:', currentData?.approved_lessons)
+      
+  const { normalized: currentApproved, changed } = normalizeApprovedLessonKeys(currentData?.approved_lessons || {})
       const newApproved = { ...currentApproved }
       
+      console.log('[toggleAvailability] Normalized current approved:', currentApproved)
+      console.log('[toggleAvailability] Key to toggle:', lessonKey)
+      console.log('[toggleAvailability] Current state for this key:', newApproved[lessonKey])
+      
+      // Also check for legacy facilitator/ key
+      const legacyKey = lessonKey.replace('general/', 'facilitator/')
+      const isCurrentlyChecked = newApproved[lessonKey] || newApproved[legacyKey]
+      
       // Toggle availability
-      if (newApproved[lessonKey]) {
+      if (isCurrentlyChecked) {
+        // Remove both the new key and any legacy key
         delete newApproved[lessonKey]
+        delete newApproved[legacyKey]
+        console.log('[toggleAvailability] Removed key:', lessonKey, '(and legacy key if existed)')
       } else {
+        // Always add with the NEW key format (general/)
         newApproved[lessonKey] = true
+        console.log('[toggleAvailability] Added key:', lessonKey)
       }
       
+      console.log('[toggleAvailability] New approved lessons:', newApproved)
+      
       // Update database
+      const updatePayload = { approved_lessons: newApproved }
+      if (changed) {
+        updatePayload.approved_lessons = newApproved
+      }
       const { error } = await supabase
         .from('learners')
-        .update({ approved_lessons: newApproved })
+        .update(updatePayload)
         .eq('id', selectedLearnerId)
       
       if (error) throw error
       
+      console.log('[toggleAvailability] Successfully saved to database')
+      
       // Update local state
-      setAvailableLessons(newApproved)
+  setAvailableLessons(newApproved)
     } catch (err) {
       console.error('[Facilitator Lessons] Failed to toggle lesson availability:', err)
     } finally {
@@ -396,6 +445,14 @@ export default function FacilitatorLessonsPage() {
         const lessonKey = lesson.isGenerated 
           ? `generated/${lesson.file}` 
           : `${subject}/${lesson.file}`
+        
+        console.log('[getFilteredLessons] Lesson:', {
+          title: lesson.title,
+          subject,
+          file: lesson.file,
+          isGenerated: lesson.isGenerated,
+          lessonKey
+        })
         
         const hasMetalData = medals[lessonKey]
         
@@ -717,7 +774,7 @@ export default function FacilitatorLessonsPage() {
               color: '#6b7280'
             }}>
               <div style={{ fontSize: 16, marginBottom: 8 }}>
-                Click "Load Lessons" to view lessons
+                Click &quot;Load Lessons&quot; to view lessons
               </div>
             </div>
           ) : lessonsLoading ? (
@@ -795,7 +852,7 @@ export default function FacilitatorLessonsPage() {
                       {/* Checkbox for making lesson available to learner */}
                       <input
                         type="checkbox"
-                        checked={!!availableLessons[lessonKey]}
+                        checked={!!availableLessons[lessonKey] || !!availableLessons[lessonKey.replace('general/', 'facilitator/')]}
                         onChange={() => toggleAvailability(lessonKey)}
                         disabled={saving}
                         style={{

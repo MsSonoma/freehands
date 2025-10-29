@@ -25,6 +25,7 @@ const waitForBeat = (ms = 240) => new Promise((resolve) => setTimeout(resolve, m
 export function useAudioPlayback({
   // State setters
   setIsSpeaking,
+  setShowRepeatButton,
   setShowOpeningActions,
   setCaptionIndex,
   setCaptionsDone,
@@ -342,6 +343,7 @@ export function useAudioPlayback({
 
         audio.onplay = () => {
           try { setIsSpeaking(true); } catch {}
+          try { setShowRepeatButton(false); } catch {}
           // When duration is known on play, re-arm guard precisely
           try {
             if (Number.isFinite(audio.duration) && audio.duration > 0) {
@@ -359,6 +361,10 @@ export function useAudioPlayback({
         audio.onended = () => {
           try {
             setIsSpeaking(false);
+            // Show repeat button if audio is available
+            if (lastAudioBase64Ref.current) {
+              setShowRepeatButton(true);
+            }
             // Pause video when the TTS finishes to surface controls
             if (videoRef.current) { try { videoRef.current.pause(); } catch {} }
             // Clear HTMLAudio paused offset on natural end

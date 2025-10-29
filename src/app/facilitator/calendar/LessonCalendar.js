@@ -63,7 +63,12 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
     onDateSelect(dateStr)
   }
 
-  const today = new Date().toISOString().split('T')[0]
+  // Calculate today using local timezone
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const today = `${year}-${month}-${day}`
   const calendarDays = generateCalendarDays()
 
   return (

@@ -23,6 +23,44 @@ function shuffleArray(arr) {
 }
 
 /**
+ * Remove duplicate questions from an array based on question text.
+ * Keeps the first occurrence of each unique question.
+ * 
+ * @param {Array} arr - Array of question objects
+ * @returns {Array} Array with duplicates removed
+ */
+function deduplicateQuestions(arr) {
+  const seen = new Set();
+  const result = [];
+  
+  for (const item of arr) {
+    if (!item) continue;
+    
+    // Get question text from various possible fields
+    const questionText = (
+      item.question || 
+      item.prompt || 
+      item.q || 
+      item.Q || 
+      ''
+    ).toString().trim().toLowerCase();
+    
+    if (!questionText) {
+      // If no question text, keep it (might be malformed but let validation catch it)
+      result.push(item);
+      continue;
+    }
+    
+    if (!seen.has(questionText)) {
+      seen.add(questionText);
+      result.push(item);
+    }
+  }
+  
+  return result;
+}
+
+/**
  * Build question/answer pool from lesson data.
  * Normalizes questions, filters by subject rules, and shuffles.
  * Uses TF/MC/FIB/SA question types from all subjects.
@@ -66,9 +104,19 @@ export function buildQAPool(lessonData, subjectParam) {
 
   // All subjects: Use TF/MC/FIB/SA question types
   const pool = [...tf, ...mcValid, ...fib, ...sa];
+  
+  // Deduplicate questions to prevent repeats within the pool
+  const deduplicated = deduplicateQuestions(pool);
+  
   // Log unique questionTypes for dev validation
-  try { console.debug('[PoolTagging] Comp/Ex pool types:', Array.from(new Set(pool.map(x => x?.questionType || 'sa')))); } catch {}
-  return shuffleArray(pool);
+  try { 
+    console.debug('[PoolTagging] Comp/Ex pool types:', Array.from(new Set(deduplicated.map(x => x?.questionType || 'sa'))));
+    if (pool.length !== deduplicated.length) {
+      console.debug('[PoolTagging] Removed', pool.length - deduplicated.length, 'duplicate questions from pool');
+    }
+  } catch {}
+  
+  return shuffleArray(deduplicated);
 }
 
 /**

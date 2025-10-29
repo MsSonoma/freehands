@@ -135,8 +135,9 @@ export async function GET(request) {
       return NextResponse.json(results);
     }
     
-    // For non-facilitator subjects, read from filesystem as before
-    const subjectFolder = subject;
+  // For non-facilitator subjects, read from filesystem as before
+  // Map 'general' to the shared Facilitator Lessons folder on disk
+  const subjectFolder = (subject === 'general') ? 'Facilitator Lessons' : subject;
     const lessonsDir = path.join(process.cwd(), 'public', 'lessons', subjectFolder);
     if (!fs.existsSync(lessonsDir)) return NextResponse.json([]); // no lessons yet
     const entries = fs.readdirSync(lessonsDir).filter(f => f.toLowerCase().endsWith('.json'));

@@ -11,6 +11,21 @@ import GoldenKeyCounter from '@/app/learn/GoldenKeyCounter'
 
 const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
 
+function normalizeApprovedLessonKeys(map = {}) {
+  const normalized = {}
+  let changed = false
+  Object.entries(map || {}).forEach(([key, value]) => {
+    if (typeof key === 'string' && key.startsWith('Facilitator Lessons/')) {
+      const suffix = key.slice('Facilitator Lessons/'.length)
+      normalized[`general/${suffix}`] = value
+      changed = true
+    } else if (key) {
+      normalized[key] = value
+    }
+  })
+  return { normalized, changed }
+}
+
 function LessonsPageInner(){
   const router = useRouter()
 
@@ -152,15 +167,32 @@ function LessonsPageInner(){
       
       for (const subject of SUBJECTS) {
         try {
+          // Use token for generated lessons endpoint
           const headers = subject === 'generated' && token 
             ? { 'Authorization': `Bearer ${token}` }
             : {}
-          const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { 
+            
+          // For generated lessons, use the facilitator endpoint
+          const endpoint = subject === 'generated' && token
+            ? '/api/facilitator/lessons/list'
+            : `/api/lessons/${encodeURIComponent(subject)}`
+            
+          const res = await fetch(endpoint, { 
             cache: 'no-store',
             headers 
           })
           const list = res.ok ? await res.json() : []
-          lessonsMap[subject] = Array.isArray(list) ? list : []
+          
+          // Mark generated lessons with isGenerated flag
+          const processedList = subject === 'generated'
+            ? list.map(lesson => ({ ...lesson, isGenerated: true }))
+            : list
+          
+          lessonsMap[subject] = Array.isArray(processedList) ? processedList : []
+          // Debug log for general subject
+          if (subject === 'general') {
+            console.log('[Learn Lessons] Loaded general lessons from API:', processedList)
+          }
         } catch {
           lessonsMap[subject] = []
         }
@@ -204,7 +236,13 @@ function LessonsPageInner(){
         // Load today's scheduled lessons
         let scheduled = {}
         try {
-          const today = new Date().toISOString().split('T')[0]
+          // Get today's date in local timezone, not UTC
+          const now = new Date()
+          const year = now.getFullYear()
+          const month = String(now.getMonth() + 1).padStart(2, '0')
+          const day = String(now.getDate()).padStart(2, '0')
+          const today = `${year}-${month}-${day}`
+          
           const { data: { session } } = await supabase.auth.getSession()
           const token = session?.access_token
           
@@ -239,7 +277,10 @@ function LessonsPageInner(){
           setScheduledLessons(scheduled)
           setActiveGoldenKeys(data?.active_golden_keys || {})
           setLessonNotes(data?.lesson_notes || {})
-          setAvailableLessons(data?.approved_lessons || {})
+          const { normalized: approvedNormalized } = normalizeApprovedLessonKeys(data?.approved_lessons || {})
+          console.log('[Learn Lessons] Loaded approved lessons:', approvedNormalized)
+          console.log('[Learn Lessons] Original approved lessons from DB:', data?.approved_lessons)
+          setAvailableLessons(approvedNormalized)
         }
       } catch (err) {
         console.error('[Learn Lessons] Failed to load:', err)
@@ -365,12 +406,28 @@ function LessonsPageInner(){
         const lessonKey = lesson.isGenerated 
           ? `generated/${lesson.file}`
           : `${subject}/${lesson.file}`
-        return availableLessons[lessonKey] === true || scheduledLessons[lessonKey] === true
+        // Also check legacy facilitator/ key for general lessons
+        const legacyKey = lessonKey.replace('general/', 'facilitator/')
+        const isAvailable = availableLessons[lessonKey] === true || availableLessons[legacyKey] === true || scheduledLessons[lessonKey] === true || scheduledLessons[legacyKey] === true
+        // Debug logging for general subject
+        if (subject === 'general') {
+          console.log('[Learn Lessons] General lesson filter:', {
+            lessonKey,
+            file: lesson.file,
+            isAvailable,
+            inApproved: availableLessons[lessonKey],
+            inScheduled: scheduledLessons[lessonKey]
+          })
+        }
+        return isAvailable
       })
       if (availableForSubject.length > 0) {
         grouped[subject] = availableForSubject
       }
     })
+    // Debug log final grouped lessons
+    console.log('[Learn Lessons] Grouped lessons by subject:', Object.keys(grouped))
+    console.log('[Learn Lessons] Available lessons keys:', Object.keys(availableLessons))
     return grouped
   }, [allLessons, availableLessons, scheduledLessons])
 

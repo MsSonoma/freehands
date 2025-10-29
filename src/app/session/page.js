@@ -137,6 +137,7 @@ function SessionPageInner() {
 
   // Core session state that many effects/handlers depend on must be initialized first
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [showRepeatButton, setShowRepeatButton] = useState(false);
   const [phase, setPhase] = useState("discussion");
   const [subPhase, setSubPhase] = useState("greeting");
   
@@ -1162,7 +1163,9 @@ function SessionPageInner() {
   const { WORKSHEET_CUE_VARIANTS } = require('./constants/worksheetCues.js');
 
   const subjectSegment = (subjectParam || "math").toLowerCase();
-  const subjectFolderSegment = subjectSegment === 'generated' ? 'Generated Lessons' : subjectSegment;
+  const subjectFolderSegment = subjectSegment === 'generated'
+    ? 'Generated Lessons'
+    : (subjectSegment === 'general' ? 'Facilitator Lessons' : subjectSegment);
   // Preserve original casing of the lesson filename; only normalize subject segment
   const lessonFilename = manifestInfo.file || "";
   const lessonFilePath = lessonFilename
@@ -2075,9 +2078,10 @@ function SessionPageInner() {
     webAudioPausedAtRef,
     syntheticRef
   } = useAudioPlayback({
-    // State setters
-    setIsSpeaking,
-    setShowOpeningActions,
+  // State setters
+  setIsSpeaking,
+  setShowRepeatButton,
+  setShowOpeningActions,
     setCaptionIndex,
     setCaptionsDone,
     setCaptionSentences,
@@ -2214,6 +2218,9 @@ function SessionPageInner() {
     // Set speaking to false
     try { setIsSpeaking(false); } catch {}
     
+    // Hide repeat button since we're skipping
+    try { setShowRepeatButton(false); } catch {}
+    
     // Show opening actions if in the right phase/state
     try {
       if (
@@ -2232,6 +2239,35 @@ function SessionPageInner() {
     webAudioPausedAtRef.current = 0;
     htmlAudioPausedAtRef.current = 0;
   }, [phase, subPhase, askState, riddleState, poemState, clearSynthetic, clearSpeechGuard]);
+
+  // Repeat speech: replay the last TTS audio without updating captions
+  const handleRepeatSpeech = useCallback(async () => {
+    console.log('[handleRepeatSpeech] Repeating last speech');
+    
+    // Check if we have audio to replay
+    if (!lastAudioBase64Ref.current) {
+      console.warn('[handleRepeatSpeech] No audio available to repeat');
+      return;
+    }
+    
+    // Hide repeat button while playing
+    setShowRepeatButton(false);
+    
+    // Set speaking state
+    setIsSpeaking(true);
+    
+    try {
+      // Replay audio without updating captions (pass empty array for sentences)
+      await playAudioFromBase64(lastAudioBase64Ref.current, [], 0);
+    } catch (err) {
+      console.error('[handleRepeatSpeech] Failed to replay audio:', err);
+      setIsSpeaking(false);
+      // Show repeat button again since replay failed
+      if (lastAudioBase64Ref.current) {
+        setShowRepeatButton(true);
+      }
+    }
+  }, [playAudioFromBase64]);
 
   // Helper: speak arbitrary frontend text via unified captions + TTS
   // (defined here after playAudioFromBase64 is available, and updates the ref for early callbacks)
@@ -6140,6 +6176,8 @@ function SessionPageInner() {
         calculateLessonProgress={calculateLessonProgress}
         handleTimeUp={handleTimeUp}
         handleTimerPauseToggle={handleTimerPauseToggle}
+        showRepeatButton={showRepeatButton}
+        handleRepeatSpeech={handleRepeatSpeech}
       />
       {/* Worksheet end-of-phase Review button removed per requirements */}
     </div>
@@ -6906,7 +6944,7 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
   );
 }
 
-function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, isLastWorksheetQuestion, onOpenReview, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle }) {
+function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle, showRepeatButton, handleRepeatSpeech }) {
   // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
   // Remove horizontal clamp: let the video occupy the full available width of its column
   const containerMaxWidth = 'none';
@@ -7078,30 +7116,41 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
             </svg>
           </button>
         )}
+        {/* Repeat button when not speaking and audio available */}
+        {!isSpeaking && showRepeatButton && (
+          <button
+            type="button"
+            onClick={handleRepeatSpeech}
+            aria-label="Repeat"
+            title="Repeat"
+            style={{
+              position: 'absolute',
+              bottom: 16,
+              left: 16,
+              background: '#1f2937',
+              color: '#fff',
+              border: 'none',
+              width: 'var(--ctrlSize)',
+              height: 'var(--ctrlSize)',
+              display: 'grid',
+              placeItems: 'center',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+              zIndex: 10
+            }}
+          >
+            {/* Repeat icon: circular arrow */}
+            <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 1v6h-6" />
+              <path d="M7 23v-6h6" />
+              <path d="M3.51 9a9 9 0 0114.13-3.36L17 7" />
+              <path d="M20.49 15A9 9 0 015.36 18.36L7 17" />
+            </svg>
+          </button>
+        )}
         {skipPendingLessonLoad && (
           <div style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(31,41,55,0.85)', color: '#fff', padding: '6px 12px', borderRadius: 8, fontSize: 'clamp(0.75rem, 1.4vw, 0.9rem)', fontWeight: 600, letterSpacing: 0.4, boxShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>Loading lesson… skip will apply</div>
-        )}
-        {/* Last-worksheet safety: show explicit Review button to enter facilitator override */}
-        {(phase === 'worksheet' && subPhase === 'worksheet-active' && isLastWorksheetQuestion && typeof onOpenReview === 'function') && (
-          <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 10002, pointerEvents: 'auto' }}>
-            <button
-              type="button"
-              onClick={onOpenReview}
-              style={{
-                background: '#2563EB',
-                color: '#fff',
-                fontWeight: 800,
-                letterSpacing: 0.3,
-                borderRadius: 12,
-                padding: '10px 18px',
-                border: 'none',
-                cursor: 'pointer',
-                boxShadow: '0 6px 16px rgba(0,0,0,0.25)'
-              }}
-            >
-              Review
-            </button>
-          </div>
         )}
       </div>
     </div>

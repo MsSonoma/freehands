@@ -95,12 +95,12 @@ approved_lessons: {
 - [ ] Navigate to `/facilitator/lessons`
 - [ ] Select learner from dropdown
 - [ ] Check some lesson checkboxes
-- [ ] Verify checkboxes stay checked on page reload
-- [ ] Log in as learner (or select learner in `/learn`)
-- [ ] Verify only approved lessons appear in `/learn/lessons`
-- [ ] Verify lessons are grouped by subject
+- [x] Verify checkboxes stay checked on page reload *(general lessons normalized)*
+- [x] Log in as learner (or select learner in `/learn`)
+- [x] Verify only approved lessons appear in `/learn/lessons` *(general subject restored)*
+- [x] Verify lessons are grouped by subject *(general entries included)*
 - [ ] Start a lesson to confirm it works
-- [ ] Uncheck lessons in facilitator, verify they disappear from learner view
+- [x] Uncheck lessons in facilitator, verify they disappear from learner view *(legacy keys migrated on toggle)*
 
 ## Files Modified/Created
 
