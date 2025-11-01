@@ -1,6 +1,6 @@
 // Compact lessons list view for Mr. Mentor overlay
 'use client'
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
@@ -8,6 +8,38 @@ import LessonEditor from '@/components/LessonEditor'
 
 const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
 const GRADES = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+
+function normalizeApprovedLessonKeys(raw) {
+  const normalized = {}
+  let changed = false
+
+  if (Array.isArray(raw)) {
+    for (const key of raw) {
+      if (typeof key !== 'string' || !key) continue
+      let finalKey = key
+      if (key.startsWith('Facilitator Lessons/')) {
+        finalKey = `general/${key.slice('Facilitator Lessons/'.length)}`
+        changed = true
+      }
+      if (finalKey !== key) changed = true
+      normalized[finalKey] = true
+    }
+    if (raw.length > 0) changed = true
+  } else if (raw && typeof raw === 'object') {
+    Object.entries(raw).forEach(([key, value]) => {
+      if (!value || typeof key !== 'string' || !key) return
+      let finalKey = key
+      if (key.startsWith('Facilitator Lessons/')) {
+        finalKey = `general/${key.slice('Facilitator Lessons/'.length)}`
+        changed = true
+      }
+      if (finalKey !== key) changed = true
+      normalized[finalKey] = true
+    })
+  }
+
+  return { normalized, changed }
+}
 
 export default function LessonsOverlay({ learnerId }) {
   const router = useRouter()
@@ -154,14 +186,15 @@ export default function LessonsOverlay({ learnerId }) {
         .eq('id', learnerId)
         .maybeSingle()
 
-      if (approvedData?.approved_lessons && Array.isArray(approvedData.approved_lessons)) {
-        const approvedMap = {}
-        approvedData.approved_lessons.forEach(key => {
-          approvedMap[key] = true
-        })
-        setApprovedLessons(approvedMap)
-      } else {
-        setApprovedLessons({})
+      const { normalized: approvedMap, changed: approvedChanged } = normalizeApprovedLessonKeys(approvedData?.approved_lessons)
+      setApprovedLessons(approvedMap)
+
+      if (approvedChanged) {
+        try {
+          await supabase.from('learners').update({ approved_lessons: approvedMap }).eq('id', learnerId)
+        } catch (normErr) {
+          console.warn('[LessonsOverlay] Failed to normalize approved lesson keys:', normErr)
+        }
       }
 
       setLessonNotes(approvedData?.lesson_notes || {})
@@ -459,6 +492,38 @@ export default function LessonsOverlay({ learnerId }) {
     }
   }
 
+  const toggleLessonApproval = useCallback(async (lessonKey) => {
+    if (!learnerId || learnerId === 'none') return
+
+    const previous = { ...approvedLessons }
+    const legacyKey = lessonKey.replace('general/', 'facilitator/')
+    const next = { ...previous }
+    const isCurrentlyApproved = !!next[lessonKey] || !!next[legacyKey]
+
+    if (isCurrentlyApproved) {
+      delete next[lessonKey]
+      delete next[legacyKey]
+    } else {
+      next[lessonKey] = true
+    }
+
+    setApprovedLessons(next)
+    setSaving(true)
+
+    try {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Not authenticated')
+      const { error } = await supabase.from('learners').update({ approved_lessons: next }).eq('id', learnerId)
+      if (error) throw error
+    } catch (err) {
+      console.error('[LessonsOverlay] Failed to update lesson availability:', err)
+      alert('Failed to update lesson availability. Please try again.')
+      setApprovedLessons(previous)
+    } finally {
+      setSaving(false)
+    }
+  }, [approvedLessons, learnerId])
+
   const filteredLessons = getFilteredLessons()
 
   return (
@@ -561,7 +626,8 @@ export default function LessonsOverlay({ learnerId }) {
           <div>
             {filteredLessons.map(lesson => {
               const { lessonKey, subject, displayGrade } = lesson
-              const isApproved = approvedLessons[lessonKey]
+              const legacyKey = lessonKey.replace('general/', 'facilitator/')
+              const isApproved = !!approvedLessons[lessonKey] || !!approvedLessons[legacyKey]
               const isScheduled = scheduledLessons[lessonKey]
               const futureDate = futureScheduledLessons[lessonKey]
               const medal = medals[lessonKey]
@@ -585,8 +651,20 @@ export default function LessonsOverlay({ learnerId }) {
                     gap: 6,
                     flexWrap: 'wrap'
                   }}>
+                    <input
+                      type="checkbox"
+                      checked={isApproved}
+                      onChange={() => toggleLessonApproval(lessonKey)}
+                      disabled={saving || !learnerId || learnerId === 'none'}
+                      style={{
+                        marginTop: 2,
+                        cursor: (saving || !learnerId || learnerId === 'none') ? 'not-allowed' : 'pointer',
+                        width: 16,
+                        height: 16
+                      }}
+                      title="Show this lesson to learner"
+                    />
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                      {isApproved && <span style={{ fontSize: 14 }}>✅</span>}
                       {isScheduled && <span style={{ fontSize: 12 }} title="Scheduled for today">📅</span>}
                       {!isScheduled && futureDate && <span style={{ fontSize: 12, opacity: 0.5 }} title={`Scheduled for ${futureDate}`}>📅</span>}
                       {medal && <span style={{ fontSize: 14 }}>{emojiForTier(medal.medalTier)}</span>}

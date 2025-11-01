@@ -45,9 +45,23 @@ export default function LessonMakerOverlay({ tier }) {
       })
       
       if (!res.ok) {
-        console.error('Quota check failed:', res.status, res.statusText)
-        // If quota check fails, allow generation (fail open for premium users)
-        setQuotaInfo({ allowed: true, source: 'fallback' })
+        // Try to capture response body for better diagnostics
+        let bodyText = ''
+        try {
+          const txt = await res.text()
+          bodyText = txt
+          try { JSON.parse(txt); bodyText = JSON.stringify(JSON.parse(txt)) } catch (e) {}
+        } catch (e) {}
+
+        if (res.status === 404) {
+          // Missing profile rows are common on new accounts; fail open without noisy errors
+          console.warn('Quota check missing profile; falling back to unlimited allowance.')
+          setQuotaInfo({ allowed: true, source: 'fallback', reason: 'profile-missing' })
+        } else {
+          console.error('Quota check failed:', res.status, res.statusText, 'body:', bodyText, 'url: /api/usage/check-generation-quota')
+          // If quota check fails for other reasons, allow generation (fail open for premium users)
+          setQuotaInfo({ allowed: true, source: 'fallback' })
+        }
         setQuotaLoading(false)
         return
       }
@@ -141,7 +155,7 @@ export default function LessonMakerOverlay({ tier }) {
         flexShrink: 0
       }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: '#1f2937' }}>
-          🎨 Lesson Generator
+          ✨ Lesson Generator
         </div>
       </div>
 

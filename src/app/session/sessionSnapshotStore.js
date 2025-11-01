@@ -11,6 +11,10 @@
 //   captionSentences, captionIndex,
 //   usedTestCuePhrases,
 //
+//   // Story persistence fields
+//   storyState, storyUsedThisGate, storyTranscript,
+//   storySetupStep, storyCharacters, storySetting, storyPlot, storyPhase,
+//
 //   // Normalized resume pointer (authoritative minimal state)
 //   // kind: 'phase-entrance' | 'question' | 'teaching-stage'
 //   // phase: 'discussion'|'teaching'|'comprehension'|'exercise'|'worksheet'|'test'
@@ -43,8 +47,28 @@ function sanitizeCaptionSentences(arr) {
   });
 }
 
+function sanitizeStoryTranscript(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .map((entry) => {
+      if (!entry) return null;
+      if (typeof entry === 'string') {
+        const trimmed = entry.trim();
+        if (!trimmed) return null;
+        return { role: 'assistant', text: trimmed };
+      }
+      const text = typeof entry.text === 'string' ? entry.text.trim() : '';
+      if (!text) return null;
+      const role = entry.role === 'user' ? 'user' : 'assistant';
+      return { role, text };
+    })
+    .filter(Boolean);
+}
+
 export function normalizeSnapshot(obj) {
   if (!obj || typeof obj !== 'object') return null;
+  const storyStateOptions = ['inactive', 'awaiting-setup', 'awaiting-turn', 'ending'];
+  const storySetupOptions = ['characters', 'setting', 'plot', 'complete'];
   const out = {
     phase: obj.phase || 'discussion',
     subPhase: obj.subPhase || 'greeting',
@@ -84,6 +108,19 @@ export function normalizeSnapshot(obj) {
     captionIndex: Number.isFinite(obj.captionIndex) ? obj.captionIndex : 0,
 
     usedTestCuePhrases: Array.isArray(obj.usedTestCuePhrases) ? obj.usedTestCuePhrases : [],
+
+    storyState: (typeof obj.storyState === 'string' && storyStateOptions.includes(obj.storyState))
+      ? obj.storyState
+      : 'inactive',
+    storySetupStep: (typeof obj.storySetupStep === 'string' && storySetupOptions.includes(obj.storySetupStep))
+      ? obj.storySetupStep
+      : '',
+    storyCharacters: typeof obj.storyCharacters === 'string' ? obj.storyCharacters : '',
+    storySetting: typeof obj.storySetting === 'string' ? obj.storySetting : '',
+    storyPlot: typeof obj.storyPlot === 'string' ? obj.storyPlot : '',
+    storyPhase: typeof obj.storyPhase === 'string' ? obj.storyPhase : '',
+    storyUsedThisGate: !!obj.storyUsedThisGate,
+    storyTranscript: sanitizeStoryTranscript(obj.storyTranscript || []),
 
     // Normalized resume pointer (kept minimal and safe)
     resume: (() => {

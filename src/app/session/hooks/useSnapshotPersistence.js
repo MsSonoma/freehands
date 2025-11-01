@@ -12,13 +12,16 @@ import { updateTranscriptLiveSegment } from '../../lib/transcriptsClient';
  * @param {Object} deps - Dependencies object containing:
  *   - State values: phase, subPhase, showBegin, ticker, teachingStage, stageRepeats,
  *     qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, 
- *     storyUsedThisGate, storyTranscript, currentCompIndex, currentExIndex,
+ *     storyUsedThisGate, storyState, storySetupStep, storyCharacters, storySetting,
+ *     storyPlot, storyPhase, storyTranscript, currentCompIndex, currentExIndex,
  *     currentWorksheetIndex, testActiveIndex, currentCompProblem, currentExerciseProblem,
  *     testUserAnswers, testCorrectByIndex, testCorrectCount, testFinalPercent,
  *     captionSentences, captionIndex, usedTestCuePhrases, generatedWorksheet, generatedTest
  *   - State setters: setPhase, setSubPhase, setShowBegin, setTicker, setTeachingStage,
  *     setStageRepeats, setQaAnswersUnlocked, setJokeUsedThisGate, setRiddleUsedThisGate,
- *     setPoemUsedThisGate, setStoryUsedThisGate, setStoryTranscript, setCurrentCompIndex,
+ *     setPoemUsedThisGate, setStoryUsedThisGate, setStoryState, setStorySetupStep,
+ *     setStoryCharacters, setStorySetting, setStoryPlot, setStoryPhase,
+ *     setStoryTranscript, setCurrentCompIndex,
  *     setCurrentExIndex, setCurrentWorksheetIndex, setTestActiveIndex, setCurrentCompProblem,
  *     setCurrentExerciseProblem, setTestUserAnswers, setTestCorrectByIndex, setTestCorrectCount,
  *     setTestFinalPercent, setCaptionSentences, setCaptionIndex, setUsedTestCuePhrases,
@@ -45,6 +48,12 @@ export function useSnapshotPersistence({
   riddleUsedThisGate,
   poemUsedThisGate,
   storyUsedThisGate,
+  storyState,
+  storySetupStep,
+  storyCharacters,
+  storySetting,
+  storyPlot,
+  storyPhase,
   storyTranscript,
   currentCompIndex,
   currentExIndex,
@@ -75,6 +84,12 @@ export function useSnapshotPersistence({
   setRiddleUsedThisGate,
   setPoemUsedThisGate,
   setStoryUsedThisGate,
+  setStoryState,
+  setStorySetupStep,
+  setStoryCharacters,
+  setStorySetting,
+  setStoryPlot,
+  setStoryPhase,
   setStoryTranscript,
   setCurrentCompIndex,
   setCurrentExIndex,
@@ -121,6 +136,36 @@ export function useSnapshotPersistence({
   WORKSHEET_TARGET,
   TEST_TARGET,
 }) {
+  const buildStorySignature = useCallback(() => {
+    const list = Array.isArray(storyTranscript) ? storyTranscript : [];
+    const len = list.length;
+    const rawLast = len ? list[len - 1] : null;
+    let lastRole = null;
+    let lastText = null;
+    if (rawLast) {
+      if (typeof rawLast === 'string') {
+        lastRole = 'assistant';
+        lastText = rawLast.slice(0, 120);
+      } else if (typeof rawLast === 'object') {
+        lastRole = rawLast.role === 'user' ? 'user' : 'assistant';
+        if (typeof rawLast.text === 'string') {
+          lastText = rawLast.text.slice(0, 120);
+        }
+      }
+    }
+    return {
+      state: storyState || 'inactive',
+      step: storySetupStep || '',
+      chars: storyCharacters || '',
+      setting: storySetting || '',
+      plot: storyPlot || '',
+      phase: storyPhase || '',
+      len,
+      lastRole,
+      lastText,
+    };
+  }, [storyTranscript, storyState, storySetupStep, storyCharacters, storySetting, storyPlot, storyPhase]);
+
   const scheduleSaveSnapshot = useCallback((label = '') => {
     // Generally do not save until restore has run at least once to avoid clobbering, except for explicit user-driven labels
     if (!restoredSnapshotRef.current && label === 'state-change') return;
@@ -154,6 +199,7 @@ export function useSnapshotPersistence({
         }
         const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
         // Build a compact signature that only changes when a meaningful resume point changes
+        const storySig = buildStorySignature();
         const sigObj = {
           phase, subPhase,
           teachingStage,
@@ -169,6 +215,7 @@ export function useSnapshotPersistence({
             cLen: Array.isArray(testCorrectByIndex) ? testCorrectByIndex.length : 0,
             fin: (typeof testFinalPercent === 'number' ? testFinalPercent : null),
           },
+          story: storySig,
         };
         const sig = JSON.stringify(sigObj);
         // Skip redundant autosaves when nothing meaningful changed; allow explicit labels to force-save (e.g., restart/skip/jump)
@@ -218,6 +265,12 @@ export function useSnapshotPersistence({
           teachingStage,
           stageRepeats,
           qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, storyUsedThisGate,
+          storyState,
+          storySetupStep,
+          storyCharacters,
+          storySetting,
+          storyPlot,
+          storyPhase,
           storyTranscript,
           currentCompIndex, currentExIndex, currentWorksheetIndex,
           testActiveIndex,
@@ -258,10 +311,11 @@ export function useSnapshotPersistence({
         lastSavedSigRef.current = sig;
       } catch {}
     }, 200);
-  }, [phase, subPhase, showBegin, teachingStage, qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, storyUsedThisGate, storyTranscript, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testCorrectCount, testFinalPercent, usedTestCuePhrases, getSnapshotStorageKey, lessonParam, effectiveLessonTitle, transcriptSessionId, restoredSnapshotRef, snapshotSaveTimerRef, pendingSaveRetriesRef, lastSavedSigRef, activeQuestionBodyRef, captionSentencesRef, captionSentences, captionIndex, ticker, sessionStartRef]);
+  }, [phase, subPhase, showBegin, teachingStage, qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, storyUsedThisGate, storyState, storySetupStep, storyCharacters, storySetting, storyPlot, storyPhase, storyTranscript, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testCorrectCount, testFinalPercent, usedTestCuePhrases, getSnapshotStorageKey, lessonParam, effectiveLessonTitle, transcriptSessionId, restoredSnapshotRef, snapshotSaveTimerRef, pendingSaveRetriesRef, lastSavedSigRef, activeQuestionBodyRef, captionSentencesRef, captionSentences, captionIndex, ticker, sessionStartRef, buildStorySignature]);
 
   // Memoized signature of meaningful resume-relevant state. Changes here will cause an autosave.
   const snapshotSigMemo = useMemo(() => {
+    const storySig = buildStorySignature();
     const sigObj = {
       phase, subPhase,
       teachingStage,
@@ -277,9 +331,10 @@ export function useSnapshotPersistence({
         cLen: Array.isArray(testCorrectByIndex) ? testCorrectByIndex.length : 0,
         fin: (typeof testFinalPercent === 'number' ? testFinalPercent : null),
       },
+      story: storySig,
     };
     try { return JSON.stringify(sigObj); } catch { return '' }
-  }, [phase, subPhase, teachingStage, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, storyUsedThisGate, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testFinalPercent, activeQuestionBodyRef]);
+  }, [phase, subPhase, teachingStage, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, storyUsedThisGate, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testFinalPercent, activeQuestionBodyRef, buildStorySignature]);
 
   // Save on ticker change to support resume at each count increment (coalesced with timer)
   useEffect(() => {
@@ -403,6 +458,12 @@ export function useSnapshotPersistence({
         try { setRiddleUsedThisGate(!!snap.riddleUsedThisGate); } catch {}
         try { setPoemUsedThisGate(!!snap.poemUsedThisGate); } catch {}
         try { setStoryUsedThisGate(!!snap.storyUsedThisGate); } catch {}
+  try { setStoryState(typeof snap.storyState === 'string' ? snap.storyState : 'inactive'); } catch {}
+  try { setStorySetupStep(typeof snap.storySetupStep === 'string' ? snap.storySetupStep : ''); } catch {}
+  try { setStoryCharacters(typeof snap.storyCharacters === 'string' ? snap.storyCharacters : ''); } catch {}
+  try { setStorySetting(typeof snap.storySetting === 'string' ? snap.storySetting : ''); } catch {}
+  try { setStoryPlot(typeof snap.storyPlot === 'string' ? snap.storyPlot : ''); } catch {}
+  try { setStoryPhase(typeof snap.storyPhase === 'string' ? snap.storyPhase : ''); } catch {}
         try { setStoryTranscript(Array.isArray(snap.storyTranscript) ? snap.storyTranscript : []); } catch {}
         // Three-stage teaching state
         try { if (typeof snap.teachingStage === 'string') setTeachingStage(snap.teachingStage); } catch {}
@@ -505,6 +566,12 @@ export function useSnapshotPersistence({
     setRiddleUsedThisGate,
     setPoemUsedThisGate,
     setStoryUsedThisGate,
+  setStoryState,
+  setStorySetupStep,
+  setStoryCharacters,
+  setStorySetting,
+  setStoryPlot,
+  setStoryPhase,
     setStoryTranscript,
     setTeachingStage,
     setStageRepeats,

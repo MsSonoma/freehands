@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server'
 import fs from 'node:fs'
 import path from 'node:path'
 import textToSpeech from '@google-cloud/text-to-speech'
+import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
 
 const { TextToSpeechClient } = textToSpeech
 
@@ -524,14 +525,17 @@ async function executeSearchLessons(args, request) {
             })
           }
           
-          // Add to results with lessonKey
+          // Add to results with normalized lessonKey
           filtered.forEach(lesson => {
+            const combinedKey = `${subj}/${lesson.file}`
+            const normalizedKey = normalizeLessonKey(combinedKey)
             allLessons.push({
               title: lesson.title,
               grade: lesson.grade || lesson.gradeLevel,
-              subject: subj,
+              subject: normalizedKey.split('/')[0],
               difficulty: lesson.difficulty,
-              lessonKey: `${subj}/${lesson.file}`,
+              lessonKey: normalizedKey,
+              rawLessonKey: combinedKey,
               blurb: lesson.blurb
             })
           })
@@ -566,8 +570,11 @@ async function executeGetLessonDetails(args, request) {
       return { error: 'Authentication required' }
     }
     
-    const { lessonKey } = args
-    const [subject, filename] = lessonKey.split('/')
+  const { lessonKey } = args
+  const normalizedLessonKey = normalizeLessonKey(lessonKey)
+  const [subject, filename] = lessonKey.split('/')
+  const subjectLower = (subject || '').toLowerCase()
+  const normalizedSubject = (normalizedLessonKey.split('/')[0] || subjectLower)
     
     if (!subject || !filename) {
       return { error: 'Invalid lesson key format. Expected "subject/filename.json"' }
@@ -575,8 +582,8 @@ async function executeGetLessonDetails(args, request) {
     
     let lessonData
     
-    // Handle facilitator lessons differently (they're in Supabase, not public folder)
-    if (subject === 'facilitator') {
+    // Handle facilitator-generated lessons differently (they're in Supabase, not the public folder)
+    if (subjectLower === 'facilitator' || subjectLower === 'generated') {
       // Get userId from auth token
       const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
       if (!token) {
@@ -605,7 +612,7 @@ async function executeGetLessonDetails(args, request) {
         }
         
         // Fetch from facilitator lessons API
-        const facilitatorUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/facilitator/lessons/get?file=${encodeURIComponent(filename)}&userId=${encodeURIComponent(userId)}`
+  const facilitatorUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/facilitator/lessons/get?file=${encodeURIComponent(filename)}&userId=${encodeURIComponent(userId)}`
         const facilitatorResponse = await fetch(facilitatorUrl)
         
         if (!facilitatorResponse.ok) {
@@ -618,7 +625,7 @@ async function executeGetLessonDetails(args, request) {
       }
     } else {
       // Fetch from public folder via API endpoint for standard lessons
-      const lessonUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/lesson-file?key=${encodeURIComponent(lessonKey)}`
+  const lessonUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/lesson-file?key=${encodeURIComponent(normalizedLessonKey)}`
       
       console.log('[GET_LESSON_DETAILS] Fetching:', lessonUrl)
       
@@ -640,12 +647,12 @@ async function executeGetLessonDetails(args, request) {
     
     // Return a summary of the lesson (not the full content to keep prompt size down)
     return {
-      success: true,
-      lessonKey: lessonKey,
+  success: true,
+  lessonKey: normalizedLessonKey,
       title: lessonData.title,
       grade: lessonData.grade || lessonData.gradeLevel,
       difficulty: lessonData.difficulty,
-      subject: lessonData.subject || subject,
+  subject: lessonData.subject || normalizedSubject,
       blurb: lessonData.blurb,
       vocabulary: (lessonData.vocab || []).slice(0, 5).map(v => typeof v === 'string' ? v : v.term),
       teachingNotes: lessonData.teachingNotes,
@@ -779,7 +786,7 @@ async function executeLessonScheduling(args, request) {
       return { error: 'Authentication required' }
     }
     
-    console.log('[Mr. Mentor] Scheduling lesson with args:', JSON.stringify(args, null, 2))
+  console.log('[Mr. Mentor] Scheduling lesson with args:', JSON.stringify(args, null, 2))
     
     // Validate required parameters
     if (!args.learnerName) {
@@ -792,7 +799,9 @@ async function executeLessonScheduling(args, request) {
       return { error: 'Missing scheduledDate - need date in YYYY-MM-DD format' }
     }
     
-    // Look up the learner by name via Supabase
+  const normalizedLessonKey = normalizeLessonKey(args.lessonKey)
+
+  // Look up the learner by name via Supabase
     const { createClient } = await import('@supabase/supabase-js')
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -830,7 +839,7 @@ async function executeLessonScheduling(args, request) {
       },
       body: JSON.stringify({
         learnerId: matchingLearner.id,
-        lessonKey: args.lessonKey,
+        lessonKey: normalizedLessonKey,
         scheduledDate: args.scheduledDate
       })
     })
@@ -845,8 +854,8 @@ async function executeLessonScheduling(args, request) {
     console.log('[Mr. Mentor] Scheduling succeeded')
     return {
       success: true,
-      scheduledDate: args.scheduledDate,
-      lessonKey: args.lessonKey,
+  scheduledDate: args.scheduledDate,
+  lessonKey: normalizedLessonKey,
       learnerName: matchingLearner.name,
       message: `Lesson has been scheduled for ${matchingLearner.name} on ${args.scheduledDate}.`
     }
@@ -1068,7 +1077,7 @@ export async function POST(req) {
     let systemPrompt = MENTOR_SYSTEM_PROMPT
     
     if (goalsNotes) {
-      systemPrompt += `\n\n=== PERSISTENT GOALS & PRIORITIES ===\nThe facilitator has set these persistent goals that should guide all conversations:\n\n${goalsNotes}\n\n=== END PERSISTENT GOALS ===\n\nIMPORTANT: These goals persist across all conversations. Reference them when relevant, and help the facilitator work toward them. The facilitator can update these goals anytime using the Goals clipboard button (📋) on screen.`
+      systemPrompt += `\n\n=== PERSISTENT GOALS & PRIORITIES ===\nThe facilitator has set these persistent goals that should guide all conversations:\n\nPersistent Goals:\n${goalsNotes}\n\n=== END PERSISTENT GOALS ===\n\nIMPORTANT: These goals persist across all conversations. Reference them when relevant, and help the facilitator work toward them. The facilitator can update these goals anytime using the Goals clipboard button (📋) on screen.`
     }
     
     if (learnerTranscript) {

@@ -19,6 +19,8 @@ import { appendTranscriptSegment } from '../../lib/transcriptsClient';
  *     setCurrentWorksheetIndex, setCurrentCompProblem, setCurrentExerciseProblem,
  *     setTestUserAnswers, setTestCorrectByIndex, setTestCorrectCount, setTestFinalPercent,
  *     setJokeUsedThisGate, setRiddleUsedThisGate, setPoemUsedThisGate, setStoryUsedThisGate,
+ *     setStoryState, setStorySetupStep, setStoryCharacters, setStorySetting, setStoryPlot,
+ *     setStoryPhase, setStoryTranscript,
  *     setTimerPaused, setTicker, setCaptionSentences, setCaptionIndex, setTranscriptSessionId,
  *     setLoading
  *   - Refs: preferHtmlAudioOnceRef, forceNextPlaybackRef, activeQuestionBodyRef,
@@ -71,6 +73,13 @@ export function useResumeRestart({
   setRiddleUsedThisGate,
   setPoemUsedThisGate,
   setStoryUsedThisGate,
+  setStoryState,
+  setStorySetupStep,
+  setStoryCharacters,
+  setStorySetting,
+  setStoryPlot,
+  setStoryPhase,
+  setStoryTranscript,
   setTimerPaused,
   setTicker,
   setCaptionSentences,
@@ -358,6 +367,13 @@ export function useResumeRestart({
       setRiddleUsedThisGate(false);
       setPoemUsedThisGate(false);
       setStoryUsedThisGate(false);
+      setStoryState('inactive');
+      setStorySetupStep('');
+      setStoryCharacters('');
+      setStorySetting('');
+      setStoryPlot('');
+      setStoryPhase('');
+      setStoryTranscript([]);
       setTicker(0);
       setOfferResume(false);
     } catch {}
@@ -365,7 +381,7 @@ export function useResumeRestart({
     try { setTimeout(() => { try { scheduleSaveSnapshot('restart'); } catch {} }, 60); } catch {}
     // Turn off loading spinner now that restart is complete
     try { setLoading(false); } catch {}
-  }, [lessonParam, lessonData, manifestInfo, effectiveLessonTitle, transcriptSessionId, WORKSHEET_TARGET, TEST_TARGET, abortAllActivity, captionSentencesRef, sessionStartRef, transcriptSegmentStartIndexRef, getSnapshotStorageKey, getAssessmentStorageKey, clearAssessments, setCaptionSentences, setCaptionIndex, setTranscriptSessionId, setShowBegin, setPhase, setSubPhase, setCanSend, setGeneratedWorksheet, setGeneratedTest, setCurrentWorksheetIndex, worksheetIndexRef, setCurrentCompProblem, setCurrentExerciseProblem, setTestUserAnswers, setTestCorrectByIndex, setTestCorrectCount, setTestFinalPercent, setQaAnswersUnlocked, setJokeUsedThisGate, setRiddleUsedThisGate, setPoemUsedThisGate, setStoryUsedThisGate, setTicker, setOfferResume, scheduleSaveSnapshot, setLoading]);
+  }, [lessonParam, lessonData, manifestInfo, effectiveLessonTitle, transcriptSessionId, WORKSHEET_TARGET, TEST_TARGET, abortAllActivity, captionSentencesRef, sessionStartRef, transcriptSegmentStartIndexRef, getSnapshotStorageKey, getAssessmentStorageKey, clearAssessments, setCaptionSentences, setCaptionIndex, setTranscriptSessionId, setShowBegin, setPhase, setSubPhase, setCanSend, setGeneratedWorksheet, setGeneratedTest, setCurrentWorksheetIndex, worksheetIndexRef, setCurrentCompProblem, setCurrentExerciseProblem, setTestUserAnswers, setTestCorrectByIndex, setTestCorrectCount, setTestFinalPercent, setQaAnswersUnlocked, setJokeUsedThisGate, setRiddleUsedThisGate, setPoemUsedThisGate, setStoryUsedThisGate, setStoryState, setStorySetupStep, setStoryCharacters, setStorySetting, setStoryPlot, setStoryPhase, setStoryTranscript, setTicker, setOfferResume, scheduleSaveSnapshot, setLoading]);
 
   return {
     handleResumeClick,

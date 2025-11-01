@@ -48,7 +48,7 @@ export const ENTITLEMENTS = {
     goldenKeyFeatures: true,
     lifetimeGenerations: Infinity,
     weeklyGenerations: Infinity,
-    mentorSessions: 5, // 5 included, then requires addon
+    mentorSessions: Infinity, // Currently unlimited; future addon will separate tiers
   },
   'premium-plus': {
     // Premium with Mr. Mentor addon ($20/month)

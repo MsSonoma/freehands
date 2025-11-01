@@ -228,7 +228,7 @@ export default function FacilitatorPage() {
         {/* Mr. Mentor video button */}
         <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
           <Link 
-            href="/facilitator/generator/counselor"
+            href="/facilitator/mr-mentor"
             title="Mr. Mentor"
             style={{
               display: 'block',

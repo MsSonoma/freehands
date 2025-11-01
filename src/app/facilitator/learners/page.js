@@ -108,6 +108,11 @@ export default function LearnersPage() {
 				localStorage.setItem('learner_id', String(learner.id));
 				if (learner.name != null) localStorage.setItem('learner_name', learner.name);
 				if (learner.grade != null) localStorage.setItem('learner_grade', String(learner.grade));
+				const humorValue = normalizeHumorLevel(learner.humor_level);
+				localStorage.setItem('learner_humor_level', humorValue);
+				if (learner?.id != null) {
+					localStorage.setItem(`learner_humor_level_${learner.id}`, humorValue);
+				}
 
 				// Clear any global target overrides so learner-specific targets are used
 				localStorage.removeItem('target_comprehension');
@@ -129,6 +134,7 @@ export default function LearnersPage() {
 				localStorage.removeItem('learner_id');
 				localStorage.removeItem('learner_name');
 				localStorage.removeItem('learner_grade');
+				localStorage.removeItem('learner_humor_level');
 				setSelectedLearnerId(null);
 			}
 		} catch {}
@@ -167,8 +173,18 @@ export default function LearnersPage() {
 				}:{}),
 				...(updated.golden_keys !== undefined ? {
 					golden_keys: Number(updated.golden_keys)
-				}:{})
+				}:{} ),
+				...(updated.humor_level !== undefined ? {
+					humor_level: normalizeHumorLevel(updated.humor_level)
+				}:{} )
 			} : x));
+			if (typeof window !== 'undefined' && String(selectedLearnerId) === String(id) && updated?.humor_level !== undefined) {
+				const humorValue = normalizeHumorLevel(updated.humor_level);
+				try {
+					localStorage.setItem('learner_humor_level', humorValue);
+					localStorage.setItem(`learner_humor_level_${id}`, humorValue);
+				} catch {}
+			}
 			// Show saved notification
 			setSavedId(id);
 			// Clear saved notification after 2 seconds
@@ -436,6 +452,13 @@ function TimerDial({ value, onChange, ariaLabel }){
 const range = (a,b)=>Array.from({length:b-a+1},(_,i)=>String(a+i));
 const GRADES = ['K',...range(1,12)];
 const TARGETS = range(3,20);
+const HUMOR_LEVELS = ['calm', 'funny', 'hilarious'];
+
+const normalizeHumorLevel = (value) => {
+	if (typeof value !== 'string') return 'calm';
+	const v = value.trim().toLowerCase();
+	return HUMOR_LEVELS.includes(v) ? v : 'calm';
+};
 
 function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, onDelete }){
 	console.log('🎯 LearnerRow render, item:', item);
@@ -447,6 +470,7 @@ function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, o
 	const [test, setTest] = useState(String(item.test ?? item.targets?.test ?? 3));
 	const [sessionTimer, setSessionTimer] = useState(String(item.session_timer_minutes || '60'));
 	const [goldenKeys, setGoldenKeys] = useState(String(item.golden_keys ?? 0));
+	const [humorLevel, setHumorLevel] = useState(normalizeHumorLevel(item.humor_level));
 	console.log('⏱️ LearnerRow initial sessionTimer state:', sessionTimer, 'from item.session_timer_minutes:', item.session_timer_minutes);
 
 	// Sync state with prop changes (e.g., after save updates the item)
@@ -459,7 +483,12 @@ function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, o
 		if (item.golden_keys !== undefined) {
 			setGoldenKeys(String(item.golden_keys));
 		}
-	}, [item.session_timer_minutes, item.golden_keys]);
+		if (item.humor_level !== undefined) {
+			setHumorLevel(normalizeHumorLevel(item.humor_level));
+		} else {
+			setHumorLevel('calm');
+		}
+	}, [item.session_timer_minutes, item.golden_keys, item.humor_level]);
 
     // Responsive redesign: remove fixed 616px dial grid and allow wrapping on small screens.
     // Use flex for top row and auto-fit grid for dials.
@@ -494,7 +523,7 @@ function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, o
 						</div>
           </div>
 					<div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'flex-end', alignItems:'center', flex:'1 1 320px' }}>
-            <button onClick={()=>onSave({ name, grade, targets:{ comprehension, exercise, worksheet, test }, session_timer_minutes: Number(sessionTimer), golden_keys: Number(goldenKeys) })} disabled={saving} style={{ ...actionBtnStyle, color:'#0b1220' }}>{saving ? 'Saving…' : 'Save'}<span aria-hidden style={{ fontSize:16, lineHeight:1 }}>💾</span></button>
+						<button onClick={()=>onSave({ name, grade, targets:{ comprehension, exercise, worksheet, test }, session_timer_minutes: Number(sessionTimer), golden_keys: Number(goldenKeys), humor_level: humorLevel })} disabled={saving} style={{ ...actionBtnStyle, color:'#0b1220' }}>{saving ? 'Saving…' : 'Save'}<span aria-hidden style={{ fontSize:16, lineHeight:1 }}>💾</span></button>
             {saved && (
 			  <div style={{ padding:'8px 12px', background:'#d4f8d4', color:'#2d5a2d', borderRadius:8, fontSize:'clamp(0.9rem, 1.6vw, 1rem)', fontWeight:500 }}>Saved</div>
             )}
@@ -510,6 +539,10 @@ function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, o
 									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
 			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Grade</div>
             <Dial value={grade} onChange={e => setGrade(e.target.value)} options={GRADES} ariaLabel="Grade" title="Grade" />
+									</div>
+									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
+							<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Humor</div>
+					            <Select value={humorLevel} onChange={e => setHumorLevel(normalizeHumorLevel(e.target.value))} options={HUMOR_LEVELS} ariaLabel="Humor level" title="Humor level" />
 									</div>
 									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
 			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Comprehension</div>

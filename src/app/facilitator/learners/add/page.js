@@ -14,6 +14,7 @@ const grades = [
 
 const numericRange = (min, max) => Array.from({ length: (max - min + 1) }, (_, i) => String(min + i));
 const targetOptions = numericRange(3, 20);
+const humorLevels = ['calm', 'funny', 'hilarious'];
 
 export default function AddLearnerPage() {
 	const router = useRouter();
@@ -24,6 +25,7 @@ export default function AddLearnerPage() {
 	const [exercise, setExercise] = useState('3');
 	const [worksheet, setWorksheet] = useState('3');
 	const [test, setTest] = useState('3');
+	const [humorLevel, setHumorLevel] = useState('calm');
 	const [saving, setSaving] = useState(false);
 		const [planTier, setPlanTier] = useState('free');
 		const [maxLearners, setMaxLearners] = useState(Infinity);
@@ -98,6 +100,7 @@ export default function AddLearnerPage() {
 						worksheet,
 						test,
 					},
+					humor_level: humorLevel,
 				});
 					router.push('/facilitator/learners');
 			} finally {
@@ -135,6 +138,15 @@ export default function AddLearnerPage() {
 					<select value={grade} onChange={(e) => setGrade(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8 }}>
 						{grades.map((g) => (
 							<option key={g} value={g}>{g}</option>
+						))}
+					</select>
+				</label>
+
+				<label style={{ display: 'grid', gap: 6 }}>
+					<span>Humor Level</span>
+					<select value={humorLevel} onChange={(e) => setHumorLevel(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8 }}>
+						{humorLevels.map((level) => (
+							<option key={level} value={level}>{level.charAt(0).toUpperCase() + level.slice(1)}</option>
 						))}
 					</select>
 				</label>

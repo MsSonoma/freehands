@@ -13,6 +13,9 @@ let supabaseLearnersMode = null; // null|'flat'|'json'|'disabled'
 let supabaseOwnerColumn = null; // null|'facilitator_id'|'owner_id'|'user_id'|'none'
 let supabaseLearnersHasCreatedAt = undefined; // undefined => unknown; boolean once probed
 
+const HUMOR_LEVELS = ['calm', 'funny', 'hilarious'];
+const DEFAULT_HUMOR_LEVEL = 'calm';
+
 function isUuid(v) {
   return typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 }
@@ -29,8 +32,21 @@ function isUndefinedColumnOrTable(error) {
   );
 }
 
+function resolveHumorLevel(value, fallback = DEFAULT_HUMOR_LEVEL) {
+  if (typeof value !== 'string') return fallback;
+  const normalized = value.trim().toLowerCase();
+  return HUMOR_LEVELS.includes(normalized) ? normalized : fallback;
+}
+
 function readLocal() {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; }
+  try {
+    const raw = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+    if (!Array.isArray(raw)) return [];
+    return raw.map(item => ({
+      ...item,
+      humor_level: resolveHumorLevel(item?.humor_level ?? null, DEFAULT_HUMOR_LEVEL),
+    }));
+  } catch { return []; }
 }
 function writeLocal(list) {
   localStorage.setItem(LS_KEY, JSON.stringify(list));
@@ -98,18 +114,21 @@ export async function createLearner(payload) {
       throw new Error(`You've reached the maximum learners for your ${planTier} plan (${ent.learnersMax}). Upgrade your plan to add more.`);
     }
     const flat = toFlatTargets(payload);
+    const { humor_level: flatHumorLevel, ...targetValues } = flat;
     const tryFlat = supabaseLearnersMode !== 'json';
+    const humorLevel = flatHumorLevel ?? resolveHumorLevel(payload.humor_level, DEFAULT_HUMOR_LEVEL);
     if (tryFlat) {
       const { data, error } = await insertWithOwner(supabase, {
         name: payload.name,
         grade: payload.grade,
-        comprehension: flat.comprehension,
-        exercise: flat.exercise,
-        worksheet: flat.worksheet,
-        test: flat.test,
+        comprehension: targetValues.comprehension,
+        exercise: targetValues.exercise,
+        worksheet: targetValues.worksheet,
+        test: targetValues.test,
         session_timer_minutes: payload.session_timer_minutes,
         golden_keys: payload.golden_keys !== undefined ? Number(payload.golden_keys) : 0,
         active_golden_keys: payload.active_golden_keys || {},
+        humor_level: humorLevel,
       }, uid);
       if (!error) { supabaseLearnersMode = 'flat'; return normalizeRow(data); }
       if (!isUndefinedColumnOrTable(error)) throw new Error(error.message || 'Failed to create learner');
@@ -119,7 +138,8 @@ export async function createLearner(payload) {
     const { data: data2, error: error2 } = await insertWithOwner(supabase, {
       name: payload.name,
       grade: payload.grade,
-      targets: flat,
+      targets: targetValues,
+      humor_level: humorLevel,
     }, uid);
     if (!error2) { supabaseLearnersMode = 'json'; return normalizeRow(data2); }
     if (isUndefinedColumnOrTable(error2)) { supabaseLearnersMode = 'disabled'; return createLocal(payload); }
@@ -190,19 +210,22 @@ export async function updateLearner(id, updates) {
     const uid = userData?.user?.id;
     if (!uid) throw new Error('Please log in to update learners');
     const flat = toFlatTargets(updates);
+    const { humor_level: flatHumorLevel, ...targetValues } = flat;
+    const humorLevel = flatHumorLevel ?? (updates.humor_level !== undefined ? resolveHumorLevel(updates.humor_level, DEFAULT_HUMOR_LEVEL) : undefined);
     console.log('📦 toFlatTargets returned:', flat);
     const tryFlat = supabaseLearnersMode !== 'json';
     if (tryFlat) {
       const updatePayload = {
         name: updates.name,
         grade: updates.grade,
-        comprehension: flat.comprehension,
-        exercise: flat.exercise,
-        worksheet: flat.worksheet,
-        test: flat.test,
+        comprehension: targetValues.comprehension,
+        exercise: targetValues.exercise,
+        worksheet: targetValues.worksheet,
+        test: targetValues.test,
         session_timer_minutes: updates.session_timer_minutes,
         golden_keys: updates.golden_keys !== undefined ? Number(updates.golden_keys) : undefined,
         active_golden_keys: updates.active_golden_keys !== undefined ? updates.active_golden_keys : undefined,
+        ...(typeof humorLevel === 'string' ? { humor_level: humorLevel } : {}),
       };
       console.log('📤 Sending to Supabase (flat mode):', updatePayload);
       const { data, error } = await updateWithOwner(supabase, id, updatePayload, uid);
@@ -218,7 +241,8 @@ export async function updateLearner(id, updates) {
     const { data: data2, error: error2 } = await updateWithOwner(supabase, id, {
       name: updates.name,
       grade: updates.grade,
-      targets: flat,
+      targets: targetValues,
+      ...(typeof humorLevel === 'string' ? { humor_level: humorLevel } : {}),
     }, uid);
     if (!error2) { supabaseLearnersMode = 'json'; return normalizeRow(data2); }
     if (isUndefinedColumnOrTable(error2)) { supabaseLearnersMode = 'disabled'; return updateLocal(id, updates); }
@@ -252,6 +276,7 @@ export async function deleteLearner(id) {
 function normalizeRow(row) {
   if (!row) return row;
   const c = (v)=> (v == null ? undefined : Number(v));
+  const humorLevel = resolveHumorLevel(row.humor_level ?? row.preferences?.humor_level ?? null, DEFAULT_HUMOR_LEVEL);
   const merged = {
     ...row,
     comprehension: c(row.comprehension ?? row.targets?.comprehension),
@@ -261,6 +286,7 @@ function normalizeRow(row) {
     session_timer_minutes: c(row.session_timer_minutes),
     golden_keys: c(row.golden_keys),
     active_golden_keys: row.active_golden_keys || {},
+    humor_level: humorLevel,
   };
   // console.log('🔄 normalizeRow input:', row, 'output:', merged); // Removed: excessive logging
   return merged;
@@ -277,6 +303,10 @@ function toFlatTargets(obj) {
     golden_keys: obj.golden_keys !== undefined ? Number(obj.golden_keys) : undefined,
     active_golden_keys: obj.active_golden_keys !== undefined ? obj.active_golden_keys : undefined,
   };
+  const humor = resolveHumorLevel(obj.humor_level ?? t.humor_level ?? null, null);
+  if (typeof humor === 'string') {
+    result.humor_level = humor;
+  }
   console.log('🔄 toFlatTargets input:', obj, 'output:', result);
   return result;
 }
@@ -285,14 +315,17 @@ function createLocal(payload) {
   const list = readLocal();
   const id = Date.now().toString(36);
   const flat = toFlatTargets(payload);
+  const { humor_level: flatHumorLevel, ...targetValues } = flat;
+  const humorLevel = flatHumorLevel ?? resolveHumorLevel(payload.humor_level, DEFAULT_HUMOR_LEVEL);
   const item = { 
     id, 
     name: payload.name, 
     grade: payload.grade, 
-    ...flat,
+    ...targetValues,
     session_timer_minutes: payload.session_timer_minutes !== undefined ? Number(payload.session_timer_minutes) : 60,
     golden_keys: payload.golden_keys !== undefined ? Number(payload.golden_keys) : 0,
-    active_golden_keys: payload.active_golden_keys || {}
+    active_golden_keys: payload.active_golden_keys || {},
+    humor_level: humorLevel,
   };
   list.unshift(item); writeLocal(list); return item;
 }
@@ -302,14 +335,17 @@ function updateLocal(id, updates) {
   const idx = list.findIndex(x => x.id === id);
   if (idx !== -1) {
     const flat = toFlatTargets(updates);
+    const { humor_level: flatHumorLevel, ...targetValues } = flat;
+    const humorLevel = flatHumorLevel ?? (updates.humor_level !== undefined ? resolveHumorLevel(updates.humor_level, DEFAULT_HUMOR_LEVEL) : (list[idx].humor_level ?? DEFAULT_HUMOR_LEVEL));
     const updated = { 
       ...list[idx], 
       name: updates.name, 
       grade: updates.grade, 
-      ...flat,
+      ...targetValues,
       ...(updates.session_timer_minutes !== undefined ? { session_timer_minutes: Number(updates.session_timer_minutes) } : {}),
       ...(updates.golden_keys !== undefined ? { golden_keys: Number(updates.golden_keys) } : {}),
-      ...(updates.active_golden_keys !== undefined ? { active_golden_keys: updates.active_golden_keys } : {})
+      ...(updates.active_golden_keys !== undefined ? { active_golden_keys: updates.active_golden_keys } : {}),
+      humor_level: humorLevel,
     };
     list[idx] = updated; writeLocal(list); return updated;
   }

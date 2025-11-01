@@ -11,6 +11,8 @@ export default function ClientGenerator(){
   const [tier, setTier] = useState('free')
   const [loading, setLoading] = useState(true)
   const [pinChecked, setPinChecked] = useState(false)
+  const [accessToken, setAccessToken] = useState(null)
+  const [quotaState, setQuotaState] = useState({ status: 'idle', data: null, error: '' })
 
   // Check PIN requirement on mount
   useEffect(() => {
@@ -38,6 +40,7 @@ export default function ClientGenerator(){
         const supabase = getSupabaseClient()
         if (supabase) {
           const { data: { session } } = await supabase.auth.getSession()
+          if (!cancelled) setAccessToken(session?.access_token || null)
           const uid = session?.user?.id
           if (uid) {
             const { data } = await supabase.from('profiles').select('plan_tier').eq('id', uid).maybeSingle()
@@ -50,12 +53,107 @@ export default function ClientGenerator(){
     return () => { cancelled = true }
   }, [pinChecked])
 
+  useEffect(() => {
+    const ent = featuresForTier(tier)
+    const lifetimeLimit = ent.lifetimeGenerations
+    if (!accessToken || !Number.isFinite(lifetimeLimit) || lifetimeLimit <= 0) {
+      setQuotaState(prev => (prev.status === 'idle' && !prev.data && !prev.error) ? prev : { status: 'idle', data: null, error: '' })
+      return
+    }
+
+    let cancelled = false
+    setQuotaState({ status: 'loading', data: null, error: '' })
+    ;(async () => {
+      try {
+        const res = await fetch('/api/usage/check-generation-quota', {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        })
+        const body = await res.json().catch(() => ({}))
+        if (cancelled) return
+        if (!res.ok) {
+          setQuotaState({ status: 'error', data: body, error: body?.reason || 'Unable to load generator usage.' })
+          return
+        }
+        setQuotaState({ status: 'ready', data: body, error: '' })
+      } catch (err) {
+        if (!cancelled) setQuotaState({ status: 'error', data: null, error: 'Unable to load generator usage.' })
+      }
+    })()
+
+    return () => { cancelled = true }
+  }, [accessToken, tier])
+
   if (!pinChecked) {
     return <main style={{ padding: 24 }}><p>Loading…</p></main>
   }
 
   const ent = featuresForTier(tier)
   const hasAccess = ent.facilitatorTools
+
+  const formatPlanLabel = (value) => value.split(/[-_]/).map(part => part ? part[0].toUpperCase() + part.slice(1) : part).join(' ')
+  const lifetimeLimit = ent.lifetimeGenerations
+  const weeklyLimit = ent.weeklyGenerations
+  const generatorAllowanceBanner = Number.isFinite(lifetimeLimit) ? (() => {
+    const planLabel = formatPlanLabel(tier)
+    const pieces = []
+
+    if (lifetimeLimit <= 0) {
+      pieces.push(`Your ${planLabel} plan does not include AI lesson generations.`)
+      pieces.push('Upgrade to unlock the Lesson Generator.')
+    } else {
+      const limitLabel = lifetimeLimit === 1 ? '1 AI lesson generation' : `${lifetimeLimit} AI lesson generations`
+      pieces.push(`Your ${planLabel} plan includes ${limitLabel} total.`)
+      if (quotaState.status === 'loading') {
+  pieces.push('Checking how many you have left...')
+      } else if (quotaState.status === 'error') {
+        pieces.push('We could not load your remaining balance right now.')
+      } else if (quotaState.data) {
+        const info = quotaState.data
+        if (info.allowed === false) {
+          if (Number.isFinite(info.limit) && Number.isFinite(info.used)) {
+            const usedLabel = info.used === 1 ? '1 generation' : `${info.used} generations`
+            pieces.push(`You have used ${usedLabel}.`)
+          } else if (info.reason) {
+            pieces.push(info.reason)
+          }
+        } else if (Number.isFinite(info.remaining)) {
+          const remainingLabel = info.remaining === 1 ? '1 generation left' : `${info.remaining} generations left`
+          pieces.push(`You have ${remainingLabel}.`)
+          if (info.source === 'weekly' && Number.isFinite(info.limit)) {
+            const weeklyLabel = info.limit === 1 ? '1 generation per week' : `${info.limit} generations per week`
+            pieces.push(`Weekly allowance: ${weeklyLabel}.`)
+          }
+        }
+      }
+
+      const weeklyInfoAlreadyShown = quotaState.data?.source === 'weekly'
+      if (weeklyLimit > 0 && !weeklyInfoAlreadyShown) {
+        const weeklyLabel = weeklyLimit === 1 ? '1 generation each week' : `${weeklyLimit} generations each week`
+        pieces.push(`After that, you get ${weeklyLabel}.`)
+      }
+    }
+
+    const message = pieces.filter(Boolean).join(' ')
+    if (!message) return null
+
+    return (
+      <div style={{ marginBottom: 16 }}>
+        <div style={{
+          border: '1px solid #bfdbfe',
+          background: '#eff6ff',
+          color: '#1d4ed8',
+          padding: 12,
+          borderRadius: 10,
+          fontSize: 14,
+          lineHeight: 1.5
+        }}>
+          {message}
+        </div>
+      </div>
+    )
+  })() : null
 
   return (
     <main style={{ padding: 24 }}>
@@ -64,6 +162,7 @@ export default function ClientGenerator(){
         <p>Loading…</p>
       ) : (
         <>
+          {generatorAllowanceBanner}
           {!hasAccess && (
             <div style={{ 
               border:'2px solid #fbbf24', 
@@ -126,7 +225,7 @@ export default function ClientGenerator(){
               <h3 style={{ marginTop:0 }}>Lesson Generator</h3>
               <p style={{ color:'#555' }}>Use AI to draft a lesson aligned to your grade, subject, and difficulty. Saved under Generated Lessons.</p>
               <Link 
-                href="/facilitator/generator/lesson-maker" 
+                href="/facilitator/lesson-generator" 
                 style={{ 
                   display:'inline-block', 
                   padding:'8px 12px', 

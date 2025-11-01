@@ -1,73 +1,8 @@
-// Kid-friendly joke catalog with simple timing metadata.
-// Usage idea:
-//   import { jokesBySubject, renderJoke } from '@/app/lib/jokes'
-//   const joke = jokesBySubject.math[0]
-//   const textToSend = renderJoke(joke) // lines joined with blank lines for pacing
-//   // Optionally honor pausesMs between lines in your UI/TTS timing
+// Calm humor jokes catalog split from the legacy jokes module.
+// Entries remain intentionally gentle and steady for learners preferring low-energy humor.
 
-/**
- * @typedef {Object} Joke
- * @property {string} id            Stable unique id per subject, e.g., 'math-01'
- * @property {('math'|'science'|'language arts'|'social studies')} subject
- * @property {string[]} lines       Consecutive short sentences (6–12 words each)
- * @property {number[]} pausesMs    Pause after each line (milliseconds), length matches lines
- */
-
-/**
- * Join joke lines with blank lines to create a natural beat in text.
- * Consumers may still honor pausesMs for audio/video timing.
- * @param {Joke} joke
- */
-export function renderJoke(joke) {
-  try {
-    return Array.isArray(joke?.lines) ? joke.lines.join('\n\n') : '';
-  } catch { return '' }
-}
-
-/**
- * Get the array of jokes for a given subject.
- * @param {('math'|'science'|'language arts'|'social studies')} subject
- * @returns {Joke[]}
- */
-export function getJokesForSubject(subject) {
-  return jokesBySubject[subject] || [];
-}
-
-/**
- * Deterministic, non-repeating picker per subject using localStorage.
- * - Initializes with a random start index to avoid sync repetition across users.
- * - Advances by one each call and wraps around.
- * - Safe on SSR: returns first joke without persistence when window is undefined.
- * @param {('math'|'science'|'language arts'|'social studies')} subject
- * @returns {Joke | null}
- */
-export function pickNextJoke(subject) {
-  console.log('[pickNextJoke] Called with subject:', subject);
-  const list = getJokesForSubject(subject);
-  console.log('[pickNextJoke] Got list with length:', list?.length);
-  if (!list.length) return null;
-  if (typeof window === 'undefined') return list[0];
-  try {
-    const key = `joke_idx_${subject.replace(/\s+/g,'_')}`;
-    let idx = Number.parseInt(localStorage.getItem(key) || '', 10);
-    if (!Number.isFinite(idx) || idx < 0 || idx >= list.length) {
-      // Randomize start to reduce repetition across devices
-      idx = Math.floor(Math.random() * list.length);
-    } else {
-      // Advance to next
-      idx = (idx + 1) % list.length;
-    }
-    localStorage.setItem(key, String(idx));
-    const result = list[idx];
-    console.log('[pickNextJoke] Returning joke:', result?.id);
-    return result;
-  } catch {
-    return list[Math.floor(Math.random() * list.length)];
-  }
-}
-
-/** @type {Record<'math'|'science'|'language arts'|'social studies', Joke[]>} */
-export const jokesBySubject = {
+/** @type {Record<'math'|'science'|'language arts'|'social studies', Array<{ id: string, subject: 'math'|'science'|'language arts'|'social studies', lines: string[], pausesMs: number[] }>>} */
+const calmCatalog = {
   math: [
     { id: "math-01", subject: "math", lines: [
       "Why does zero always stay calm?",
@@ -1036,6 +971,208 @@ export const jokesBySubject = {
       "Countries rely on each other for needs."
     ], pausesMs: [0, 950] },
   ],
+  general: [
+    { id: "general-01", subject: "general", lines: [
+      "What do you call a bear with no teeth?",
+      "A gummy bear!"
+    ], pausesMs: [0, 900] },
+    { id: "general-02", subject: "general", lines: [
+      "Why do bees have sticky hair?",
+      "Because they use honeycombs!"
+    ], pausesMs: [0, 900] },
+    { id: "general-03", subject: "general", lines: [
+      "What do you call a sleeping bull?",
+      "A bulldozer!"
+    ], pausesMs: [0, 900] },
+    { id: "general-04", subject: "general", lines: [
+      "Why did the bicycle fall over?",
+      "Because it was two-tired!"
+    ], pausesMs: [0, 900] },
+    { id: "general-05", subject: "general", lines: [
+      "What kind of shoes do ninjas wear?",
+      "Sneakers!"
+    ], pausesMs: [0, 900] },
+    { id: "general-06", subject: "general", lines: [
+      "Why do ducks have feathers?",
+      "To cover their quacks!"
+    ], pausesMs: [0, 900] },
+    { id: "general-07", subject: "general", lines: [
+      "What do you call a fish without eyes?",
+      "A fsh!"
+    ], pausesMs: [0, 900] },
+    { id: "general-08", subject: "general", lines: [
+      "Why did the cookie go to the doctor?",
+      "Because it felt crumbly!"
+    ], pausesMs: [0, 900] },
+    { id: "general-09", subject: "general", lines: [
+      "What do you call a pile of cats?",
+      "A meow-tain!"
+    ], pausesMs: [0, 900] },
+    { id: "general-10", subject: "general", lines: [
+      "Why do elephants never use computers?",
+      "They're afraid of the mouse!"
+    ], pausesMs: [0, 900] },
+    { id: "general-11", subject: "general", lines: [
+      "What do you get when you cross a snake and a pie?",
+      "A pie-thon!"
+    ], pausesMs: [0, 900] },
+    { id: "general-12", subject: "general", lines: [
+      "Why did the banana go to the doctor?",
+      "It wasn't peeling well!"
+    ], pausesMs: [0, 900] },
+    { id: "general-13", subject: "general", lines: [
+      "What do you call a dog magician?",
+      "A labracadabrador!"
+    ], pausesMs: [0, 900] },
+    { id: "general-14", subject: "general", lines: [
+      "Why do birds fly south for winter?",
+      "It's too far to walk!"
+    ], pausesMs: [0, 900] },
+    { id: "general-15", subject: "general", lines: [
+      "What do you call a snowman with a six-pack?",
+      "An abdominal snowman!"
+    ], pausesMs: [0, 900] },
+    { id: "general-16", subject: "general", lines: [
+      "Why did the tomato turn red?",
+      "Because it saw the salad dressing!"
+    ], pausesMs: [0, 900] },
+    { id: "general-17", subject: "general", lines: [
+      "What do you call a lazy kangaroo?",
+      "A pouch potato!"
+    ], pausesMs: [0, 900] },
+    { id: "general-18", subject: "general", lines: [
+      "Why don't skeletons fight each other?",
+      "They don't have the guts!"
+    ], pausesMs: [0, 900] },
+    { id: "general-19", subject: "general", lines: [
+      "What do you call a cow with no legs?",
+      "Ground beef!"
+    ], pausesMs: [0, 900] },
+    { id: "general-20", subject: "general", lines: [
+      "Why do cows wear bells?",
+      "Because their horns don't work!"
+    ], pausesMs: [0, 900] },
+    { id: "general-21", subject: "general", lines: [
+      "What do you call a pig that does karate?",
+      "A pork chop!"
+    ], pausesMs: [0, 900] },
+    { id: "general-22", subject: "general", lines: [
+      "Why did the scarecrow win an award?",
+      "Because he was outstanding in his field!"
+    ], pausesMs: [0, 900] },
+    { id: "general-23", subject: "general", lines: [
+      "What do you call a group of musical whales?",
+      "An orca-stra!"
+    ], pausesMs: [0, 900] },
+    { id: "general-24", subject: "general", lines: [
+      "Why don't oysters share their pearls?",
+      "Because they're shellfish!"
+    ], pausesMs: [0, 900] },
+    { id: "general-25", subject: "general", lines: [
+      "What do you call a cat that bowls?",
+      "An alley cat!"
+    ], pausesMs: [0, 900] },
+    { id: "general-26", subject: "general", lines: [
+      "Why did the computer go to the doctor?",
+      "Because it had a virus!"
+    ], pausesMs: [0, 900] },
+    { id: "general-27", subject: "general", lines: [
+      "What do you call a rabbit with fleas?",
+      "Bugs Bunny!"
+    ], pausesMs: [0, 900] },
+    { id: "general-28", subject: "general", lines: [
+      "Why did the orange stop rolling?",
+      "It ran out of juice!"
+    ], pausesMs: [0, 900] },
+    { id: "general-29", subject: "general", lines: [
+      "What do you call a dinosaur with an extensive vocabulary?",
+      "A thesaurus!"
+    ], pausesMs: [0, 900] },
+    { id: "general-30", subject: "general", lines: [
+      "Why did the belt go to jail?",
+      "For holding up a pair of pants!"
+    ], pausesMs: [0, 900] },
+    { id: "general-31", subject: "general", lines: [
+      "What do you call a bear in the rain?",
+      "A drizzly bear!"
+    ], pausesMs: [0, 900] },
+    { id: "general-32", subject: "general", lines: [
+      "Why did the chicken join a band?",
+      "Because it had the drumsticks!"
+    ], pausesMs: [0, 900] },
+    { id: "general-33", subject: "general", lines: [
+      "What do you call a shoe made from a banana?",
+      "A slipper!"
+    ], pausesMs: [0, 900] },
+    { id: "general-34", subject: "general", lines: [
+      "Why do mushrooms get invited to parties?",
+      "Because they're fungi!"
+    ], pausesMs: [0, 900] },
+    { id: "general-35", subject: "general", lines: [
+      "What do you call a sleeping dinosaur?",
+      "A dino-snore!"
+    ], pausesMs: [0, 900] },
+    { id: "general-36", subject: "general", lines: [
+      "Why did the pencil go to school?",
+      "To get a little sharper!"
+    ], pausesMs: [0, 900] },
+    { id: "general-37", subject: "general", lines: [
+      "What do you call a monkey in a minefield?",
+      "A baboom!"
+    ], pausesMs: [0, 900] },
+    { id: "general-38", subject: "general", lines: [
+      "Why did the clock get detention?",
+      "Because it kept tocking in class!"
+    ], pausesMs: [0, 900] },
+    { id: "general-39", subject: "general", lines: [
+      "What do you call a fly without wings?",
+      "A walk!"
+    ], pausesMs: [0, 900] },
+    { id: "general-40", subject: "general", lines: [
+      "Why do seagulls fly over the sea?",
+      "Because if they flew over the bay they'd be bagels!"
+    ], pausesMs: [0, 900] },
+    { id: "general-41", subject: "general", lines: [
+      "What do you call a sleeping pizza?",
+      "A piZZZa!"
+    ], pausesMs: [0, 900] },
+    { id: "general-42", subject: "general", lines: [
+      "Why did the golfer bring two pairs of pants?",
+      "In case he got a hole in one!"
+    ], pausesMs: [0, 900] },
+    { id: "general-43", subject: "general", lines: [
+      "What do you call a train that sneezes?",
+      "Achoo-choo train!"
+    ], pausesMs: [0, 900] },
+    { id: "general-44", subject: "general", lines: [
+      "Why did the sun go to school?",
+      "To get a little brighter!"
+    ], pausesMs: [0, 900] },
+    { id: "general-45", subject: "general", lines: [
+      "What do you call a sheep covered in chocolate?",
+      "A candy baa!"
+    ], pausesMs: [0, 900] },
+    { id: "general-46", subject: "general", lines: [
+      "Why did the tree go to the dentist?",
+      "It needed a root canal!"
+    ], pausesMs: [0, 900] },
+    { id: "general-47", subject: "general", lines: [
+      "What do you call a dancing lamb?",
+      "A baa-llerina!"
+    ], pausesMs: [0, 900] },
+    { id: "general-48", subject: "general", lines: [
+      "Why did the nose feel sad?",
+      "It was tired of being picked on!"
+    ], pausesMs: [0, 900] },
+    { id: "general-49", subject: "general", lines: [
+      "What do you call a duck that gets all A's?",
+      "A wise quacker!"
+    ], pausesMs: [0, 900] },
+    { id: "general-50", subject: "general", lines: [
+      "Why did the moon go to the bank?",
+      "To change its quarters!"
+    ], pausesMs: [0, 900] },
+  ],
 };
 
-export default jokesBySubject;
+export default calmCatalog;

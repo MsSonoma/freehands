@@ -13,7 +13,7 @@ import { appendTranscriptSegment, updateTranscriptLiveSegment } from "../lib/tra
 import { getLearner, updateLearner } from "@/app/facilitator/learners/clientApi";
 // SpinnerScreen removed here; reverting to in-panel overlay spinner
 import { generateOpening } from "../lib/opening";
-import { pickNextJoke, renderJoke } from "../lib/jokes";
+import { pickNextJoke, renderJoke, normalizeHumorLevel } from "../lib/jokes";
 const { COMPREHENSION_INTROS, EXERCISE_INTROS, WORKSHEET_INTROS, TEST_INTROS } = require('./constants/phaseIntros.js');
 import { pickNextRiddle, renderRiddle } from "../lib/riddles";
 import { getStoredAssessments, saveAssessments, clearAssessments } from './assessment/assessmentStore';
@@ -83,6 +83,15 @@ async function ensureRuntimeTargets(forceReload = false) {
           EXERCISE_TARGET = n(learner.exercise ?? learner.targets?.exercise) ?? EXERCISE_TARGET;
           WORKSHEET_TARGET = n(learner.worksheet ?? learner.targets?.worksheet) ?? WORKSHEET_TARGET;
           TEST_TARGET = n(learner.test ?? learner.targets?.test) ?? TEST_TARGET;
+          const humorLevel = normalizeHumorLevel(learner.humor_level);
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('learner_humor_level', humorLevel);
+              if (learnerId && learnerId !== 'demo') {
+                localStorage.setItem(`learner_humor_level_${learnerId}`, humorLevel);
+              }
+            } catch {}
+          }
         }
       } catch (e) {
         console.warn('[Session] Failed to load learner data:', e);
@@ -100,6 +109,15 @@ async function ensureRuntimeTargets(forceReload = false) {
               EXERCISE_TARGET = n(match.exercise ?? match.targets?.exercise) ?? EXERCISE_TARGET;
               WORKSHEET_TARGET = n(match.worksheet ?? match.targets?.worksheet) ?? WORKSHEET_TARGET;
               TEST_TARGET = n(match.test ?? match.targets?.test) ?? TEST_TARGET;
+              const humorLevel = normalizeHumorLevel(match.humor_level);
+              if (typeof window !== 'undefined') {
+                try {
+                  localStorage.setItem('learner_humor_level', humorLevel);
+                  if (match.id) {
+                    localStorage.setItem(`learner_humor_level_${match.id}`, humorLevel);
+                  }
+                } catch {}
+              }
             }
           }
         }
@@ -2371,6 +2389,13 @@ function SessionPageInner() {
     setRiddleUsedThisGate,
     setPoemUsedThisGate,
     setStoryUsedThisGate,
+  setStoryState,
+  setStorySetupStep,
+  setStoryCharacters,
+  setStorySetting,
+  setStoryPlot,
+  setStoryPhase,
+  setStoryTranscript,
     setFillInFunUsedThisGate,
     setCanSend,
     setLoading,
@@ -2795,6 +2820,12 @@ function SessionPageInner() {
     riddleUsedThisGate,
     poemUsedThisGate,
     storyUsedThisGate,
+  storyState,
+  storySetupStep,
+  storyCharacters,
+  storySetting,
+  storyPlot,
+  storyPhase,
     storyTranscript,
     currentCompIndex,
     currentExIndex,
@@ -2825,6 +2856,12 @@ function SessionPageInner() {
     setRiddleUsedThisGate,
     setPoemUsedThisGate,
     setStoryUsedThisGate,
+  setStoryState,
+  setStorySetupStep,
+  setStoryCharacters,
+  setStorySetting,
+  setStoryPlot,
+  setStoryPhase,
     setStoryTranscript,
     setCurrentCompIndex,
     setCurrentExIndex,
@@ -3976,6 +4013,22 @@ function SessionPageInner() {
     };
   }, [handleDownloadWorksheet, handleDownloadTest, handleDownloadWorksheetTestCombined, handleRefreshWorksheetAndTest]);
 
+  const resetTestProgress = (listOverride = null) => {
+    const list = Array.isArray(listOverride)
+      ? listOverride
+      : (Array.isArray(generatedTest) ? generatedTest : []);
+    const total = list.length;
+    const target = (typeof TEST_TARGET === 'number' && TEST_TARGET > 0) ? TEST_TARGET : total;
+    const limit = Math.max(0, Math.min(target, total));
+
+    setTestActiveIndex(0);
+    setTestUserAnswers(() => (limit > 0 ? Array.from({ length: limit }, () => '') : []));
+    setTestCorrectByIndex(() => (limit > 0 ? Array.from({ length: limit }) : []));
+    setTestCorrectCount(0);
+    setTestFinalPercent(null);
+    setUsedTestCuePhrases([]);
+  };
+
   const beginWorksheetPhase = async () => {
     // End any prior API/audio/mic activity before starting fresh
     try { abortAllActivity(true); } catch {}
@@ -4021,6 +4074,7 @@ function SessionPageInner() {
   };
 
   const beginTestPhase = async () => {
+    let testListForReset = Array.isArray(generatedTest) ? generatedTest : null;
     // End any prior API/audio/mic activity before starting fresh
     try { abortAllActivity(true); } catch {}
     // Ensure audio/mic unlocked via Begin
@@ -4066,6 +4120,7 @@ function SessionPageInner() {
         }
         if (built && built.length) {
           setGeneratedTest(built);
+          testListForReset = built;
           try {
             const key = getAssessmentStorageKey();
             if (key) { const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none'; saveAssessments(key, { worksheet: generatedWorksheet || [], test: built, comprehension: compPool || [], exercise: exercisePool || [] }, { learnerId: lid }); }
@@ -4090,9 +4145,6 @@ function SessionPageInner() {
   setPoemUsedThisGate(false);
   setStoryUsedThisGate(false);
   setFillInFunUsedThisGate(false);
-    // Reset model-validated correctness tracking
-    setUsedTestCuePhrases([]);
-  setTestCorrectByIndex([]);
                 // Fallback snapshot from selection page - now learner-specific
                 const currentLearnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
                 if (currentLearnerId && currentLearnerId !== 'demo') {
@@ -4116,13 +4168,13 @@ function SessionPageInner() {
                   if (!isNaN(lw)) WORKSHEET_TARGET = lw;
                   if (!isNaN(lt)) TEST_TARGET = lt;
                 }
-    setTestCorrectCount(0);
-    // Do NOT speak the first question here - it will be spoken when Go is pressed
-    // This prevents the question buttons from interfering with Ask/Joke/Riddle/Poem/Story/Fill-in-fun
-    setTestActiveIndex(0);
-    setSubPhase('test-active');
+  // Reset all test progress so prior attempts do not auto-complete the phase
+  resetTestProgress(testListForReset);
+  // Do NOT speak the first question here - it will be spoken when Go is pressed
+  // This prevents the question buttons from interfering with Ask/Joke/Riddle/Poem/Story/Fill-in-fun
+  setSubPhase('test-active');
     setCanSend(false);
-    try { showTipOverride('Starting test�', 3000); } catch {}
+    try { showTipOverride('Starting test...', 3000); } catch {}
 
     // Speak a short test intro (random); first question is gated behind Go button
     try {
@@ -4437,6 +4489,7 @@ function SessionPageInner() {
       return;
     }
     if (phase === 'worksheet') {
+      resetTestProgress();
       setPhase('test');
       setSubPhase('test-awaiting-begin');
       setTicker(0);
@@ -4493,6 +4546,7 @@ function SessionPageInner() {
       setTimeout(() => { try { scheduleSaveSnapshot('skip-back'); } catch {} }, 50);
     } catch {}
     if (phase === 'congrats') {
+      resetTestProgress();
       setPhase('test');
       setSubPhase('test-awaiting-begin');
       setCanSend(false);
@@ -4601,6 +4655,7 @@ function SessionPageInner() {
     }
     // From worksheet ? test (awaiting begin)
     if (phase === 'worksheet') {
+      resetTestProgress();
       setPhase('test');
       setSubPhase('test-awaiting-begin');
       setTicker(0);
@@ -5501,6 +5556,7 @@ function SessionPageInner() {
         if (atTarget) {
           try { scheduleSaveSnapshot('worksheet-complete'); } catch {}
           try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for the worksheet. Now let's begin the test.`); } catch {}
+          resetTestProgress();
           setPhase('test');
           setSubPhase('test-awaiting-begin');
           setTicker(0);
@@ -6076,6 +6132,7 @@ function SessionPageInner() {
 
       const goTest = () => {
         ensureBaseSessionSetup();
+        resetTestProgress();
         setPhase('test');
         setSubPhase('test-awaiting-begin');
         setShowBegin(false);

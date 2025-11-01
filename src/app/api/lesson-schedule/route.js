@@ -1,6 +1,7 @@
 // API endpoint for lesson schedule management
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -60,7 +61,12 @@ export async function GET(request) {
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
 
-      return NextResponse.json({ lessons: data || [] })
+      const lessons = (data || []).map(item => ({
+        ...item,
+        lesson_key: normalizeLessonKey(item.lesson_key)
+      }))
+
+      return NextResponse.json({ lessons })
     }
 
     // Get schedule for date range
@@ -94,8 +100,13 @@ export async function GET(request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log('[lesson-schedule] Found', data?.length || 0, 'scheduled lessons')
-    return NextResponse.json({ schedule: data || [] })
+    const schedule = (data || []).map(item => ({
+      ...item,
+      lesson_key: normalizeLessonKey(item.lesson_key)
+    }))
+
+    console.log('[lesson-schedule] Found', schedule.length, 'scheduled lessons')
+    return NextResponse.json({ schedule })
   } catch (error) {
     console.error('Schedule GET error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -113,6 +124,8 @@ export async function POST(request) {
         { status: 400 }
       )
     }
+
+    const normalizedLessonKey = normalizeLessonKey(lessonKey)
 
     const authHeader = request.headers.get('authorization')
     console.log('[POST schedule] Auth header present:', !!authHeader)
@@ -156,7 +169,7 @@ export async function POST(request) {
       .upsert({
         facilitator_id: user.id,
         learner_id: learnerId,
-        lesson_key: lessonKey,
+        lesson_key: normalizedLessonKey,
         scheduled_date: scheduledDate
       }, {
         onConflict: 'learner_id,lesson_key,scheduled_date'
@@ -168,7 +181,9 @@ export async function POST(request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, data })
+    const normalizedData = data ? { ...data, lesson_key: normalizeLessonKey(data.lesson_key) } : null
+
+    return NextResponse.json({ success: true, data: normalizedData })
   } catch (error) {
     console.error('Schedule POST error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -178,9 +193,9 @@ export async function POST(request) {
 export async function DELETE(request) {
   try {
     const { searchParams } = new URL(request.url)
-    const scheduleId = searchParams.get('id')
-    const learnerId = searchParams.get('learnerId')
-    const lessonKey = searchParams.get('lessonKey')
+  const scheduleId = searchParams.get('id')
+  const learnerId = searchParams.get('learnerId')
+  const lessonKey = searchParams.get('lessonKey')
     const scheduledDate = searchParams.get('scheduledDate')
 
     const authHeader = request.headers.get('authorization')
@@ -215,10 +230,18 @@ export async function DELETE(request) {
     if (scheduleId) {
       query = query.eq('id', scheduleId)
     } else if (learnerId && lessonKey && scheduledDate) {
+      const normalizedLessonKey = normalizeLessonKey(lessonKey)
+      const keySet = Array.from(new Set([normalizedLessonKey, lessonKey].filter(Boolean)))
+
       query = query
         .eq('learner_id', learnerId)
-        .eq('lesson_key', lessonKey)
         .eq('scheduled_date', scheduledDate)
+
+      if (keySet.length === 1) {
+        query = query.eq('lesson_key', keySet[0])
+      } else {
+        query = query.in('lesson_key', keySet)
+      }
     } else {
       return NextResponse.json(
         { error: 'Either id or (learnerId, lessonKey, scheduledDate) required' },
