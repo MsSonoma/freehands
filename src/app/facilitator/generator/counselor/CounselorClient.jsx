@@ -6,6 +6,7 @@ import { ensurePinAllowed } from '@/app/lib/pinGate'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
 import { fetchLearnerTranscript } from '@/app/lib/learnerTranscript'
+import { validateLessonQuality, buildValidationChangeRequest } from '@/app/lib/lessonValidation'
 import ClipboardOverlay from './ClipboardOverlay'
 import GoalsClipboardOverlay from './GoalsClipboardOverlay'
 import CalendarOverlay from './overlays/CalendarOverlay'
@@ -558,6 +559,93 @@ export default function CounselorClient() {
     setIsSpeaking(false)
   }, [])
 
+  // Helper: Handle lesson generation with client-side validation and fixing (like lesson-maker)
+  const handleLessonGeneration = async (toolResult, token) => {
+    try {
+      console.log('[Mr. Mentor] Handling lesson generation result:', toolResult)
+      
+      // Emit validation toast
+      enqueueToolThoughts([{
+        id: `validate-${Date.now()}`,
+        name: 'validate_lesson',
+        phase: 'start',
+        message: 'Validating lesson quality...'
+      }])
+      
+      const validation = validateLessonQuality(toolResult.lesson)
+      
+      if (!validation.passed && validation.issues.length > 0) {
+        console.log('[Mr. Mentor] Validation failed, auto-fixing:', validation.issues)
+        
+        enqueueToolThoughts([{
+          id: `validate-error-${Date.now()}`,
+          name: 'validate_lesson',
+          phase: 'error',
+          message: `Found ${validation.issues.length} quality issues`
+        }])
+        
+        // Emit improvement toast
+        enqueueToolThoughts([{
+          id: `improve-${Date.now()}`,
+          name: 'improve_lesson',
+          phase: 'start',
+          message: 'Improving lesson quality...'
+        }])
+        
+        const changeRequest = buildValidationChangeRequest(validation.issues)
+        
+        const fixResponse = await fetch('/api/facilitator/lessons/request-changes', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            file: toolResult.lessonFile,
+            userId: toolResult.userId,
+            changeRequest: changeRequest
+          })
+        })
+        
+        const fixResult = await fixResponse.json()
+        
+        if (fixResponse.ok) {
+          console.log('[Mr. Mentor] Auto-fix successful')
+          enqueueToolThoughts([{
+            id: `improve-success-${Date.now()}`,
+            name: 'improve_lesson',
+            phase: 'success',
+            message: 'Lesson quality improved'
+          }])
+        } else {
+          console.error('[Mr. Mentor] Auto-fix failed:', fixResult.error)
+          enqueueToolThoughts([{
+            id: `improve-error-${Date.now()}`,
+            name: 'improve_lesson',
+            phase: 'error',
+            message: 'Could not improve all quality issues'
+          }])
+        }
+      } else {
+        console.log('[Mr. Mentor] Validation passed')
+        enqueueToolThoughts([{
+          id: `validate-success-${Date.now()}`,
+          name: 'validate_lesson',
+          phase: 'success',
+          message: 'Lesson quality validated'
+        }])
+      }
+    } catch (err) {
+      console.error('[Mr. Mentor] Lesson generation handling error:', err)
+      enqueueToolThoughts([{
+        id: `system-error-${Date.now()}`,
+        name: 'system',
+        phase: 'error',
+        message: 'Error during lesson validation'
+      }])
+    }
+  }
+
   // Send message to Mr. Mentor
   const sendMessage = useCallback(async () => {
     const message = userInput.trim()
@@ -643,6 +731,17 @@ export default function CounselorClient() {
       if (Array.isArray(data.toolLog) && data.toolLog.length > 0) {
         enqueueToolThoughts(data.toolLog)
       }
+      
+      // Check if the response includes lesson generation data that needs validation
+      if (data.toolResults) {
+        for (const toolResult of data.toolResults) {
+          if (toolResult.lesson && toolResult.lessonFile && toolResult.userId) {
+            // Handle lesson generation: validate and fix if needed
+            await handleLessonGeneration(toolResult, token)
+          }
+        }
+      }
+      
       const mentorReply = data.reply || ''
 
       if (!mentorReply) {

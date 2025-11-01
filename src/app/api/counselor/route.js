@@ -853,21 +853,17 @@ async function executeLessonGeneration(args, request, toolLog) {
     if (!authHeader) {
       return { error: 'Authentication required' }
     }
-    const baseUrl = resolveBaseUrl(request)
+    
     pushToolLog(toolLog, {
       name: 'generate_lesson',
       phase: 'start',
       context: { title: args?.title }
     })
     
-    // Import validation functions
-    const { validateLessonQuality, buildValidationChangeRequest } = await import('@/app/lib/lessonValidation')
-    
-    // STEP 1: Call the lesson generation API directly (avoid HTTP timeout stacking)
+    // Call the lesson generation API directly (avoid HTTP timeout stacking)
     console.log('[Mr. Mentor] Generating lesson...')
     console.log('[Mr. Mentor] Generate args:', JSON.stringify(args, null, 2))
     
-    let result
     try {
       // Import and call the generate route's POST handler directly
       const { POST: generatePOST } = await import('@/app/api/facilitator/lessons/generate/route')
@@ -897,8 +893,27 @@ async function executeLessonGeneration(args, request, toolLog) {
         return { error: responseData.error || 'Lesson generation failed' }
       }
       
-      result = responseData
-      console.log('[Mr. Mentor] Generate result keys:', Object.keys(result))
+      console.log('[Mr. Mentor] Generate result keys:', Object.keys(responseData))
+      
+      pushToolLog(toolLog, {
+        name: 'generate_lesson',
+        phase: 'success',
+        context: { title: responseData.lesson?.title }
+      })
+      
+      // Build the lessonKey in the format needed for scheduling: "facilitator/filename.json"
+      const lessonKey = `facilitator/${responseData.file}`
+      
+      // Return the generated lesson data so frontend can validate and fix if needed
+      return {
+        success: true,
+        lessonFile: responseData.file,
+        lessonKey: lessonKey,
+        lessonTitle: responseData.lesson?.title,
+        userId: responseData.userId,
+        lesson: responseData.lesson,
+        message: `Lesson "${responseData.lesson?.title}" has been generated. The system will now validate its quality.`
+      }
     } catch (genError) {
       console.error('[Mr. Mentor] Generation error:', genError)
       pushToolLog(toolLog, {
@@ -907,141 +922,6 @@ async function executeLessonGeneration(args, request, toolLog) {
         context: { title: args?.title, message: genError.message }
       })
       return { error: 'Lesson generation failed: ' + genError.message }
-    }
-    
-    // Build the lessonKey in the format needed for scheduling: "facilitator/filename.json"
-    const lessonKey = `facilitator/${result.file}`
-    
-    // STEP 2: Validate the lesson quality
-    console.log('[Mr. Mentor] Validating lesson quality...')
-        pushToolLog(toolLog, {
-          name: 'validate_lesson',
-          phase: 'start',
-          context: { title: result.lesson?.title }
-        })
-    const validation = validateLessonQuality(result.lesson)
-    
-    if (!validation.passed && validation.issues.length > 0) {
-      console.log('[Mr. Mentor] Validation failed, auto-fixing:', validation.issues)
-          pushToolLog(toolLog, {
-            name: 'validate_lesson',
-            phase: 'error',
-            context: { issueCount: validation.issues.length }
-          })
-      
-      // STEP 3: Auto-fix with request-changes API (call directly to avoid timeout stacking)
-      try {
-            pushToolLog(toolLog, {
-              name: 'improve_lesson',
-              phase: 'start',
-              context: { title: result.lesson?.title }
-            })
-        const changeRequest = buildValidationChangeRequest(validation.issues)
-        
-        // Import and call the request-changes route's POST handler directly
-        const { POST: requestChangesPOST } = await import('@/app/api/facilitator/lessons/request-changes/route')
-        
-        const mockFixRequest = new Request('http://localhost/api/facilitator/lessons/request-changes', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': authHeader
-          },
-          body: JSON.stringify({
-            file: result.file,
-            userId: result.userId,
-            changeRequest: changeRequest
-          })
-        })
-        
-        const fixResponse = await requestChangesPOST(mockFixRequest)
-        const fixResult = await fixResponse.json()
-        
-        if (fixResponse.ok) {
-          console.log('[Mr. Mentor] Auto-fix successful')
-          pushToolLog(toolLog, {
-            name: 'improve_lesson',
-            phase: 'success',
-            context: { title: result.lesson?.title }
-          })
-          pushToolLog(toolLog, {
-            name: 'generate_lesson',
-            phase: 'success',
-            context: { title: result.lesson?.title }
-          })
-          return {
-            success: true,
-            lessonFile: result.file,
-            lessonKey: lessonKey,
-            lessonTitle: result.lesson?.title,
-            message: `Lesson "${result.lesson?.title}" has been created and optimized for quality. You can now schedule it using the lesson key: ${lessonKey}`
-          }
-        } else {
-          console.error('[Mr. Mentor] Auto-fix failed:', fixResult.error)
-          pushToolLog(toolLog, {
-            name: 'improve_lesson',
-            phase: 'error',
-            context: { message: fixResult.error }
-          })
-          pushToolLog(toolLog, {
-            name: 'generate_lesson',
-            phase: 'success',
-            context: { title: result.lesson?.title }
-          })
-          // Still return success but with warning
-          return {
-            success: true,
-            lessonFile: result.file,
-            lessonKey: lessonKey,
-            lessonTitle: result.lesson?.title,
-            message: `Lesson "${result.lesson?.title}" has been created successfully. You can now schedule it using the lesson key: ${lessonKey}\n\nNote: Some quality improvements may be needed.`
-          }
-        }
-      } catch (fixError) {
-        console.error('[Mr. Mentor] Auto-fix error:', fixError)
-        pushToolLog(toolLog, {
-          name: 'improve_lesson',
-          phase: 'error',
-          context: { message: fixError?.message || String(fixError) }
-        })
-        pushToolLog(toolLog, {
-          name: 'generate_lesson',
-          phase: 'success',
-          context: { title: result.lesson?.title }
-        })
-        // Still return success but with warning
-        return {
-          success: true,
-          lessonFile: result.file,
-          lessonKey: lessonKey,
-          lessonTitle: result.lesson?.title,
-          message: `Lesson "${result.lesson?.title}" has been created successfully. You can now schedule it using the lesson key: ${lessonKey}`
-        }
-      }
-    } else {
-      // Passed validation on first try
-      console.log('[Mr. Mentor] Validation passed')
-      if (validation.warnings.length > 0) {
-        console.log('[Mr. Mentor] Warnings:', validation.warnings)
-      }
-      pushToolLog(toolLog, {
-        name: 'validate_lesson',
-        phase: 'success',
-        context: { warningCount: validation.warnings.length }
-      })
-      pushToolLog(toolLog, {
-        name: 'generate_lesson',
-        phase: 'success',
-        context: { title: result.lesson?.title }
-      })
-      
-      return {
-        success: true,
-        lessonFile: result.file,
-        lessonKey: lessonKey,
-        lessonTitle: result.lesson?.title,
-        message: `Lesson "${result.lesson?.title}" has been created successfully. You can now schedule it using the lesson key: ${lessonKey}`
-      }
     }
   } catch (err) {
     console.error('[Mr. Mentor] Lesson generation error:', err)
