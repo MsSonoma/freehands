@@ -34,6 +34,32 @@ const MENTOR_AUDIO_CONFIG = {
   speakingRate: 0.88
 }
 
+const FALLBACK_LOCAL_BASE_URL = 'http://localhost:3001'
+
+function resolveBaseUrl(request) {
+  const envBase = (process.env.NEXT_PUBLIC_BASE_URL || '').trim()
+  if (envBase) {
+    return envBase.replace(/\/+$/, '')
+  }
+
+  try {
+    const url = new URL(request.url)
+    if (url.protocol && url.host) {
+      return `${url.protocol}//${url.host}`.replace(/\/+$/, '')
+    }
+  } catch {
+    // ignore
+  }
+
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host')
+  if (host) {
+    const protocol = request.headers.get('x-forwarded-proto') || 'https'
+    return `${protocol}://${host}`.replace(/\/+$/, '')
+  }
+
+  return FALLBACK_LOCAL_BASE_URL
+}
+
 // Mr. Mentor's core therapeutic system prompt
 const MENTOR_SYSTEM_PROMPT = `You are Mr. Mentor, a warm, caring professional counselor and educational consultant specializing in supporting homeschool facilitators and parents.
 
@@ -230,6 +256,98 @@ function createCallId() {
   const timePart = Date.now().toString(36)
   const randomPart = Math.random().toString(36).slice(2, 8)
   return `${timePart}-${randomPart}`
+}
+
+function pushToolLog(toolLog, entry) {
+  if (!Array.isArray(toolLog)) return
+  const message = buildToolLogMessage(entry?.name, entry?.phase, entry?.context)
+  if (!message) return
+  toolLog.push({
+    id: entry?.id || createCallId(),
+    timestamp: Date.now(),
+    name: entry?.name,
+    phase: entry?.phase,
+    message,
+    context: entry?.context || {}
+  })
+}
+
+function buildToolLogMessage(name, phase, context = {}) {
+  switch (name) {
+    case 'search_lessons':
+      if (phase === 'start') {
+        const topic = context.searchTerm ? ` for "${context.searchTerm}"` : ''
+        return `Searching the lesson library${topic}...`
+      }
+      if (phase === 'success') {
+        const count = Number(context.count || 0)
+        if (count <= 0) return 'No matching lessons yet.'
+        return `Found ${count} lesson${count === 1 ? '' : 's'}.`
+      }
+      if (phase === 'error') return 'Could not search the lesson library.'
+      break
+    case 'get_lesson_details':
+      if (phase === 'start') return 'Reviewing lesson details...'
+      if (phase === 'success') return 'Finished reviewing the lesson.'
+      if (phase === 'error') return 'Could not review the lesson.'
+      break
+    case 'generate_lesson':
+      if (phase === 'start') return 'Designing a new lesson...'
+      if (phase === 'success') return 'Lesson draft is ready.'
+      if (phase === 'error') return 'Lesson generation did not finish.'
+      break
+    case 'validate_lesson':
+      if (phase === 'start') return 'Validating the new lesson...'
+      if (phase === 'success') return 'Lesson quality checks passed.'
+      if (phase === 'error') return 'Lesson needs a few improvements.'
+      break
+    case 'improve_lesson':
+      if (phase === 'start') return 'Polishing the lesson...'
+      if (phase === 'success') return 'Lesson improvements applied.'
+      if (phase === 'error') return 'Unable to improve the lesson automatically.'
+      break
+    case 'schedule_lesson':
+      if (phase === 'start') return 'Adding the lesson to the schedule...'
+      if (phase === 'success') {
+        const learner = context.learnerName ? ` for ${context.learnerName}` : ''
+        const date = context.scheduledDate ? ` on ${context.scheduledDate}` : ''
+        return `Lesson scheduled${learner}${date}.`
+      }
+      if (phase === 'error') return 'Could not schedule the lesson.'
+      break
+    case 'edit_lesson':
+      if (phase === 'start') return 'Improving the lesson...'
+      if (phase === 'success') return 'Lesson updates are saved.'
+      if (phase === 'error') return 'Lesson updates could not be applied.'
+      break
+    case 'get_capabilities':
+      if (phase === 'start') return 'Checking available tools...'
+      if (phase === 'success') return 'Tool overview ready.'
+      if (phase === 'error') return 'Could not refresh tool overview.'
+      break
+    case 'get_conversation_memory':
+      if (phase === 'start') return 'Reviewing prior notes...'
+      if (phase === 'success') {
+        const turnCount = Number(context.turnCount || 0)
+        return turnCount > 0 ? 'Pulled in previous conversation notes.' : 'No prior notes on this topic.'
+      }
+      if (phase === 'error') return 'Could not load prior notes.'
+      break
+    case 'search_conversation_history':
+      if (phase === 'start') return 'Looking back through our conversations...'
+      if (phase === 'success') {
+        const count = Number(context.count || 0)
+        if (count <= 0) return 'No past conversations found on that topic.'
+        return `Found ${count} related conversation${count === 1 ? '' : 's'}.`
+      }
+      if (phase === 'error') return 'Conversation search did not work.'
+      break
+    default:
+      if (phase === 'start') return 'Working on it...'
+      if (phase === 'success') return 'All set.'
+      if (phase === 'error') return 'Something went wrong.'
+  }
+  return ''
 }
 
 function previewText(text, max = 600) {
@@ -449,7 +567,7 @@ function getCapabilitiesInfo(args) {
 }
 
 // Helper function to search for lessons
-async function executeSearchLessons(args, request) {
+async function executeSearchLessons(args, request, toolLog) {
   try {
     const authHeader = request.headers.get('authorization')
     if (!authHeader) {
@@ -457,14 +575,21 @@ async function executeSearchLessons(args, request) {
     }
     
     const { subject, grade, searchTerm } = args
+  const baseUrl = resolveBaseUrl(request)
+    pushToolLog(toolLog, {
+      name: 'search_lessons',
+      phase: 'start',
+      context: { subject, grade, searchTerm }
+    })
     
-    // Get lessons from all subjects
-    const subjects = subject ? [subject] : ['math', 'science', 'language arts', 'social studies', 'facilitator']
-    const allLessons = []
+  // Get lessons from all subjects
+  const subjects = subject ? [subject] : ['math', 'science', 'language arts', 'social studies', 'facilitator']
+  const allLessons = []
     
     for (const subj of subjects) {
       try {
-        const lessonResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/lessons/${subj}`, {
+  const lessonEndpoint = new URL(`/api/lessons/${encodeURIComponent(subj)}`, baseUrl)
+  const lessonResponse = await fetch(lessonEndpoint, {
           method: 'GET',
           headers: {
             'Authorization': authHeader
@@ -548,7 +673,7 @@ async function executeSearchLessons(args, request) {
     // Limit results to avoid overwhelming the prompt
     const limitedResults = allLessons.slice(0, 30)
     
-    return {
+    const payload = {
       success: true,
       count: limitedResults.length,
       totalFound: allLessons.length,
@@ -557,13 +682,26 @@ async function executeSearchLessons(args, request) {
         ? 'No lessons found matching your criteria.' 
         : `Found ${allLessons.length} lessons${limitedResults.length < allLessons.length ? `, showing first ${limitedResults.length}` : ''}.`
     }
+
+    pushToolLog(toolLog, {
+      name: 'search_lessons',
+      phase: 'success',
+      context: { count: limitedResults.length }
+    })
+
+    return payload
   } catch (err) {
+    pushToolLog(toolLog, {
+      name: 'search_lessons',
+      phase: 'error',
+      context: { message: err?.message || String(err) }
+    })
     return { error: err.message || String(err) }
   }
 }
 
 // Helper function to get lesson details
-async function executeGetLessonDetails(args, request) {
+async function executeGetLessonDetails(args, request, toolLog) {
   try {
     const authHeader = request.headers.get('authorization')
     if (!authHeader) {
@@ -575,6 +713,13 @@ async function executeGetLessonDetails(args, request) {
   const [subject, filename] = lessonKey.split('/')
   const subjectLower = (subject || '').toLowerCase()
   const normalizedSubject = (normalizedLessonKey.split('/')[0] || subjectLower)
+  const baseUrl = resolveBaseUrl(request)
+
+    pushToolLog(toolLog, {
+      name: 'get_lesson_details',
+      phase: 'start',
+      context: { lessonKey: normalizedLessonKey }
+    })
     
     if (!subject || !filename) {
       return { error: 'Invalid lesson key format. Expected "subject/filename.json"' }
@@ -611,25 +756,38 @@ async function executeGetLessonDetails(args, request) {
           return { error: 'User not authenticated' }
         }
         
-        // Fetch from facilitator lessons API
-  const facilitatorUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/facilitator/lessons/get?file=${encodeURIComponent(filename)}&userId=${encodeURIComponent(userId)}`
-        const facilitatorResponse = await fetch(facilitatorUrl)
+    // Fetch from facilitator lessons API
+    const facilitatorUrl = new URL('/api/facilitator/lessons/get', baseUrl)
+    facilitatorUrl.searchParams.set('file', filename)
+    facilitatorUrl.searchParams.set('userId', userId)
+    const facilitatorResponse = await fetch(facilitatorUrl)
         
         if (!facilitatorResponse.ok) {
+          pushToolLog(toolLog, {
+            name: 'get_lesson_details',
+            phase: 'error',
+            context: { lessonKey: normalizedLessonKey, message: 'Facilitator lesson not found' }
+          })
           return { error: 'Facilitator lesson not found' }
         }
         
         lessonData = await facilitatorResponse.json()
       } catch (err) {
+        pushToolLog(toolLog, {
+          name: 'get_lesson_details',
+          phase: 'error',
+          context: { lessonKey: normalizedLessonKey, message: err?.message || String(err) }
+        })
         return { error: `Failed to fetch facilitator lesson: ${err.message}` }
       }
     } else {
-      // Fetch from public folder via API endpoint for standard lessons
-  const lessonUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/lesson-file?key=${encodeURIComponent(normalizedLessonKey)}`
+    // Fetch from public folder via API endpoint for standard lessons
+    const lessonUrl = new URL('/api/lesson-file', baseUrl)
+    lessonUrl.searchParams.set('key', normalizedLessonKey)
       
-      console.log('[GET_LESSON_DETAILS] Fetching:', lessonUrl)
+    console.log('[GET_LESSON_DETAILS] Fetching:', lessonUrl.toString())
       
-      const lessonResponse = await fetch(lessonUrl, {
+    const lessonResponse = await fetch(lessonUrl, {
         method: 'GET',
         headers: {
           'Authorization': authHeader
@@ -639,6 +797,11 @@ async function executeGetLessonDetails(args, request) {
       if (!lessonResponse.ok) {
         const errorText = await lessonResponse.text()
         console.error('[GET_LESSON_DETAILS] Fetch failed:', lessonResponse.status, errorText)
+        pushToolLog(toolLog, {
+          name: 'get_lesson_details',
+          phase: 'error',
+          context: { lessonKey: normalizedLessonKey, message: errorText }
+        })
         return { error: `Lesson file not found: ${errorText}` }
       }
       
@@ -646,7 +809,7 @@ async function executeGetLessonDetails(args, request) {
     }
     
     // Return a summary of the lesson (not the full content to keep prompt size down)
-    return {
+    const payload = {
   success: true,
   lessonKey: normalizedLessonKey,
       title: lessonData.title,
@@ -665,25 +828,52 @@ async function executeGetLessonDetails(args, request) {
       },
       message: `Retrieved details for "${lessonData.title}"`
     }
+
+    pushToolLog(toolLog, {
+      name: 'get_lesson_details',
+      phase: 'success',
+      context: { lessonKey: normalizedLessonKey }
+    })
+
+    return payload
   } catch (err) {
+    pushToolLog(toolLog, {
+      name: 'get_lesson_details',
+      phase: 'error',
+      context: { message: err?.message || String(err) }
+    })
     return { error: err.message || String(err) }
   }
 }
 
 // Helper function to execute lesson generation with validation and auto-fix
-async function executeLessonGeneration(args, request) {
+async function executeLessonGeneration(args, request, toolLog) {
   try {
     const authHeader = request.headers.get('authorization')
     if (!authHeader) {
       return { error: 'Authentication required' }
     }
+    const baseUrl = resolveBaseUrl(request)
+    pushToolLog(toolLog, {
+      name: 'generate_lesson',
+      phase: 'start',
+      context: { title: args?.title }
+    })
     
     // Import validation functions
     const { validateLessonQuality, buildValidationChangeRequest } = await import('@/app/lib/lessonValidation')
     
     // STEP 1: Call the lesson generation API
     console.log('[Mr. Mentor] Generating lesson...')
-    const genResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/facilitator/lessons/generate`, {
+    
+    // Use absolute URL construction but prefer localhost for server-side calls
+    const host = request.headers.get('host') || 'localhost:3001'
+    const protocol = host.includes('localhost') ? 'http' : 'https'
+    const generateUrl = `${protocol}://${host}/api/facilitator/lessons/generate`
+    
+    console.log('[Mr. Mentor] Generate URL:', generateUrl)
+    
+    const genResponse = await fetch(generateUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -694,7 +884,15 @@ async function executeLessonGeneration(args, request) {
     
     const result = await genResponse.json()
     
+    console.log('[Mr. Mentor] Generate response status:', genResponse.status)
+    console.log('[Mr. Mentor] Generate result:', result)
+    
     if (!genResponse.ok) {
+          pushToolLog(toolLog, {
+            name: 'generate_lesson',
+            phase: 'error',
+            context: { title: args?.title, message: result.error }
+          })
       return { error: result.error || 'Lesson generation failed' }
     }
     
@@ -703,15 +901,35 @@ async function executeLessonGeneration(args, request) {
     
     // STEP 2: Validate the lesson quality
     console.log('[Mr. Mentor] Validating lesson quality...')
+        pushToolLog(toolLog, {
+          name: 'validate_lesson',
+          phase: 'start',
+          context: { title: result.lesson?.title }
+        })
     const validation = validateLessonQuality(result.lesson)
     
     if (!validation.passed && validation.issues.length > 0) {
       console.log('[Mr. Mentor] Validation failed, auto-fixing:', validation.issues)
+          pushToolLog(toolLog, {
+            name: 'validate_lesson',
+            phase: 'error',
+            context: { issueCount: validation.issues.length }
+          })
       
       // STEP 3: Auto-fix with request-changes API
       try {
+            pushToolLog(toolLog, {
+              name: 'improve_lesson',
+              phase: 'start',
+              context: { title: result.lesson?.title }
+            })
         const changeRequest = buildValidationChangeRequest(validation.issues)
-        const fixResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/facilitator/lessons/request-changes`, {
+        
+        const host = request.headers.get('host') || 'localhost:3001'
+        const protocol = host.includes('localhost') ? 'http' : 'https'
+        const fixUrl = `${protocol}://${host}/api/facilitator/lessons/request-changes`
+        
+        const fixResponse = await fetch(fixUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -728,6 +946,16 @@ async function executeLessonGeneration(args, request) {
         
         if (fixResponse.ok) {
           console.log('[Mr. Mentor] Auto-fix successful')
+          pushToolLog(toolLog, {
+            name: 'improve_lesson',
+            phase: 'success',
+            context: { title: result.lesson?.title }
+          })
+          pushToolLog(toolLog, {
+            name: 'generate_lesson',
+            phase: 'success',
+            context: { title: result.lesson?.title }
+          })
           return {
             success: true,
             lessonFile: result.file,
@@ -737,6 +965,16 @@ async function executeLessonGeneration(args, request) {
           }
         } else {
           console.error('[Mr. Mentor] Auto-fix failed:', fixResult.error)
+          pushToolLog(toolLog, {
+            name: 'improve_lesson',
+            phase: 'error',
+            context: { message: fixResult.error }
+          })
+          pushToolLog(toolLog, {
+            name: 'generate_lesson',
+            phase: 'success',
+            context: { title: result.lesson?.title }
+          })
           // Still return success but with warning
           return {
             success: true,
@@ -748,6 +986,16 @@ async function executeLessonGeneration(args, request) {
         }
       } catch (fixError) {
         console.error('[Mr. Mentor] Auto-fix error:', fixError)
+        pushToolLog(toolLog, {
+          name: 'improve_lesson',
+          phase: 'error',
+          context: { message: fixError?.message || String(fixError) }
+        })
+        pushToolLog(toolLog, {
+          name: 'generate_lesson',
+          phase: 'success',
+          context: { title: result.lesson?.title }
+        })
         // Still return success but with warning
         return {
           success: true,
@@ -763,6 +1011,16 @@ async function executeLessonGeneration(args, request) {
       if (validation.warnings.length > 0) {
         console.log('[Mr. Mentor] Warnings:', validation.warnings)
       }
+      pushToolLog(toolLog, {
+        name: 'validate_lesson',
+        phase: 'success',
+        context: { warningCount: validation.warnings.length }
+      })
+      pushToolLog(toolLog, {
+        name: 'generate_lesson',
+        phase: 'success',
+        context: { title: result.lesson?.title }
+      })
       
       return {
         success: true,
@@ -774,17 +1032,28 @@ async function executeLessonGeneration(args, request) {
     }
   } catch (err) {
     console.error('[Mr. Mentor] Lesson generation error:', err)
+    pushToolLog(toolLog, {
+      name: 'generate_lesson',
+      phase: 'error',
+      context: { message: err?.message || String(err) }
+    })
     return { error: err.message || String(err) }
   }
 }
 
 // Helper function to execute lesson scheduling
-async function executeLessonScheduling(args, request) {
+async function executeLessonScheduling(args, request, toolLog) {
   try {
     const authHeader = request.headers.get('authorization')
     if (!authHeader) {
       return { error: 'Authentication required' }
     }
+    const baseUrl = resolveBaseUrl(request)
+    pushToolLog(toolLog, {
+      name: 'schedule_lesson',
+      phase: 'start',
+      context: { learnerName: args.learnerName, scheduledDate: args.scheduledDate }
+    })
     
   console.log('[Mr. Mentor] Scheduling lesson with args:', JSON.stringify(args, null, 2))
     
@@ -823,6 +1092,11 @@ async function executeLessonScheduling(args, request) {
     )
     
     if (!matchingLearner) {
+      pushToolLog(toolLog, {
+        name: 'schedule_lesson',
+        phase: 'error',
+        context: { message: `Learner ${args.learnerName} not found` }
+      })
       return { 
         error: `Could not find a learner named "${args.learnerName}". Available learners: ${learners.map(l => l.name).join(', ')}` 
       }
@@ -831,7 +1105,8 @@ async function executeLessonScheduling(args, request) {
     console.log(`[Mr. Mentor] Found learner: ${matchingLearner.name} (${matchingLearner.id})`)
     
     // Call the lesson schedule API with the learner ID
-    const schedResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/lesson-schedule`, {
+  const scheduleUrl = new URL('/api/lesson-schedule', baseUrl)
+  const schedResponse = await fetch(scheduleUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -848,10 +1123,20 @@ async function executeLessonScheduling(args, request) {
     
     if (!schedResponse.ok) {
       console.error('[Mr. Mentor] Scheduling failed:', result)
+      pushToolLog(toolLog, {
+        name: 'schedule_lesson',
+        phase: 'error',
+        context: { message: result.error || 'Lesson scheduling failed' }
+      })
       return { error: result.error || 'Lesson scheduling failed', details: result }
     }
     
     console.log('[Mr. Mentor] Scheduling succeeded')
+    pushToolLog(toolLog, {
+      name: 'schedule_lesson',
+      phase: 'success',
+      context: { learnerName: matchingLearner.name, scheduledDate: args.scheduledDate }
+    })
     return {
       success: true,
   scheduledDate: args.scheduledDate,
@@ -861,26 +1146,38 @@ async function executeLessonScheduling(args, request) {
     }
   } catch (err) {
     console.error('[Mr. Mentor] Scheduling exception:', err)
+    pushToolLog(toolLog, {
+      name: 'schedule_lesson',
+      phase: 'error',
+      context: { message: err?.message || String(err) }
+    })
     return { error: err.message || String(err) }
   }
 }
 
 // Helper function to execute lesson editing
-async function executeLessonEdit(args, request) {
+async function executeLessonEdit(args, request, toolLog) {
   try {
     const authHeader = request.headers.get('authorization')
     if (!authHeader) {
       return { error: 'Authentication required' }
     }
+    const baseUrl = resolveBaseUrl(request)
     
     const { lessonKey, updates } = args
     
     if (!lessonKey || !updates) {
       return { error: 'Missing lessonKey or updates' }
     }
+    pushToolLog(toolLog, {
+      name: 'edit_lesson',
+      phase: 'start',
+      context: { lessonKey }
+    })
     
     // Call the lesson edit API
-    const editResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/lesson-edit`, {
+  const editUrl = new URL('/api/lesson-edit', baseUrl)
+  const editResponse = await fetch(editUrl, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -892,36 +1189,57 @@ async function executeLessonEdit(args, request) {
     const result = await editResponse.json()
     
     if (!editResponse.ok) {
+      pushToolLog(toolLog, {
+        name: 'edit_lesson',
+        phase: 'error',
+        context: { lessonKey, message: result.error }
+      })
       return { error: result.error || 'Lesson edit failed' }
     }
     
+    pushToolLog(toolLog, {
+      name: 'edit_lesson',
+      phase: 'success',
+      context: { lessonKey }
+    })
     return {
       success: true,
       lessonKey: lessonKey,
       message: `Lesson "${lessonKey}" has been updated successfully.`
     }
   } catch (err) {
+    pushToolLog(toolLog, {
+      name: 'edit_lesson',
+      phase: 'error',
+      context: { message: err?.message || String(err) }
+    })
     return { error: err.message || String(err) }
   }
 }
 
 // Helper function to get conversation memory
-async function executeGetConversationMemory(args, request) {
+async function executeGetConversationMemory(args, request, toolLog) {
   try {
     const authHeader = request.headers.get('authorization')
     if (!authHeader) {
       return { error: 'Authentication required' }
     }
+    const baseUrl = resolveBaseUrl(request)
     
     const { learner_id = null } = args
+    pushToolLog(toolLog, {
+      name: 'get_conversation_memory',
+      phase: 'start',
+      context: { learnerId: learner_id }
+    })
     
     // Build URL with query params
-    const url = new URL(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/conversation-memory`)
+    const url = new URL('/api/conversation-memory', baseUrl)
     if (learner_id) {
       url.searchParams.set('learner_id', learner_id)
     }
     
-    const memoryResponse = await fetch(url.toString(), {
+    const memoryResponse = await fetch(url, {
       method: 'GET',
       headers: {
         'Authorization': authHeader
@@ -931,10 +1249,20 @@ async function executeGetConversationMemory(args, request) {
     const result = await memoryResponse.json()
     
     if (!memoryResponse.ok) {
+      pushToolLog(toolLog, {
+        name: 'get_conversation_memory',
+        phase: 'error',
+        context: { message: result.error }
+      })
       return { error: result.error || 'Failed to fetch conversation memory' }
     }
     
     if (!result.conversation_update) {
+      pushToolLog(toolLog, {
+        name: 'get_conversation_memory',
+        phase: 'success',
+        context: { turnCount: 0 }
+      })
       return {
         success: true,
         has_memory: false,
@@ -942,6 +1270,12 @@ async function executeGetConversationMemory(args, request) {
       }
     }
     
+    pushToolLog(toolLog, {
+      name: 'get_conversation_memory',
+      phase: 'success',
+      context: { turnCount: result.conversation_update.turn_count }
+    })
+
     return {
       success: true,
       has_memory: true,
@@ -952,32 +1286,43 @@ async function executeGetConversationMemory(args, request) {
       message: `Retrieved conversation memory with ${result.conversation_update.turn_count} turns.`
     }
   } catch (err) {
+    pushToolLog(toolLog, {
+      name: 'get_conversation_memory',
+      phase: 'error',
+      context: { message: err?.message || String(err) }
+    })
     return { error: err.message || String(err) }
   }
 }
 
 // Helper function to search conversation history
-async function executeSearchConversationHistory(args, request) {
+async function executeSearchConversationHistory(args, request, toolLog) {
   try {
     const authHeader = request.headers.get('authorization')
     if (!authHeader) {
       return { error: 'Authentication required' }
     }
+    const baseUrl = resolveBaseUrl(request)
     
     const { search, include_archive = false } = args
     
     if (!search || search.trim() === '') {
       return { error: 'Search query required' }
     }
+    pushToolLog(toolLog, {
+      name: 'search_conversation_history',
+      phase: 'start',
+      context: { search }
+    })
     
     // Build URL with query params
-    const url = new URL(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/conversation-memory`)
+    const url = new URL('/api/conversation-memory', baseUrl)
     url.searchParams.set('search', search)
     if (include_archive) {
       url.searchParams.set('include_archive', 'true')
     }
     
-    const searchResponse = await fetch(url.toString(), {
+    const searchResponse = await fetch(url, {
       method: 'GET',
       headers: {
         'Authorization': authHeader
@@ -987,10 +1332,20 @@ async function executeSearchConversationHistory(args, request) {
     const result = await searchResponse.json()
     
     if (!searchResponse.ok) {
+      pushToolLog(toolLog, {
+        name: 'search_conversation_history',
+        phase: 'error',
+        context: { message: result.error }
+      })
       return { error: result.error || 'Search failed' }
     }
     
     if (!result.results || result.results.length === 0) {
+      pushToolLog(toolLog, {
+        name: 'search_conversation_history',
+        phase: 'success',
+        context: { count: 0 }
+      })
       return {
         success: true,
         count: 0,
@@ -1008,6 +1363,12 @@ async function executeSearchConversationHistory(args, request) {
       archived: r.archived || false
     }))
     
+    pushToolLog(toolLog, {
+      name: 'search_conversation_history',
+      phase: 'success',
+      context: { count: result.count }
+    })
+
     return {
       success: true,
       count: result.count,
@@ -1015,6 +1376,11 @@ async function executeSearchConversationHistory(args, request) {
       message: `Found ${result.count} conversation(s) matching "${search}".`
     }
   } catch (err) {
+    pushToolLog(toolLog, {
+      name: 'search_conversation_history',
+      phase: 'error',
+      context: { message: err?.message || String(err) }
+    })
     return { error: err.message || String(err) }
   }
 }
@@ -1025,6 +1391,7 @@ export async function POST(req) {
   
   console.log(`${logPrefix} POST request received`)
   console.log(`${logPrefix} Headers:`, Object.fromEntries(req.headers.entries()))
+  const baseUrl = resolveBaseUrl(req)
   
   try {
     // Parse request body
@@ -1090,7 +1457,7 @@ export async function POST(req) {
         const authHeader = req.headers.get('authorization')
         if (authHeader) {
           const learnerId = learnerTranscript ? null : null // Extract learner ID if needed from transcript
-          const memoryUrl = new URL(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/conversation-memory`)
+          const memoryUrl = new URL('/api/conversation-memory', baseUrl)
           if (learnerId) {
             memoryUrl.searchParams.set('learner_id', learnerId)
           }
@@ -1377,8 +1744,9 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Failed to get response from Mr. Mentor.' }, { status: response.status })
     }
 
-    const assistantMessage = parsedBody?.choices?.[0]?.message
-    const toolCalls = assistantMessage?.tool_calls
+  const assistantMessage = parsedBody?.choices?.[0]?.message
+  const toolCalls = assistantMessage?.tool_calls
+  const toolLog = []
     
     // Handle function calls
     if (toolCalls && toolCalls.length > 0) {
@@ -1397,19 +1765,19 @@ export async function POST(req) {
           if (functionName === 'get_capabilities') {
             result = getCapabilitiesInfo(functionArgs)
           } else if (functionName === 'search_lessons') {
-            result = await executeSearchLessons(functionArgs, req)
+            result = await executeSearchLessons(functionArgs, req, toolLog)
           } else if (functionName === 'get_lesson_details') {
-            result = await executeGetLessonDetails(functionArgs, req)
+            result = await executeGetLessonDetails(functionArgs, req, toolLog)
           } else if (functionName === 'generate_lesson') {
-            result = await executeLessonGeneration(functionArgs, req)
+            result = await executeLessonGeneration(functionArgs, req, toolLog)
           } else if (functionName === 'schedule_lesson') {
-            result = await executeLessonScheduling(functionArgs, req)
+            result = await executeLessonScheduling(functionArgs, req, toolLog)
           } else if (functionName === 'edit_lesson') {
-            result = await executeLessonEdit(functionArgs, req)
+            result = await executeLessonEdit(functionArgs, req, toolLog)
           } else if (functionName === 'get_conversation_memory') {
-            result = await executeGetConversationMemory(functionArgs, req)
+            result = await executeGetConversationMemory(functionArgs, req, toolLog)
           } else if (functionName === 'search_conversation_history') {
-            result = await executeSearchConversationHistory(functionArgs, req)
+            result = await executeSearchConversationHistory(functionArgs, req, toolLog)
           } else {
             result = { error: 'Unknown function' }
           }
@@ -1490,7 +1858,8 @@ export async function POST(req) {
       return NextResponse.json({
         reply: mentorReply,
         audio: audioContent,
-        functionCalls: toolCalls.map(tc => ({ name: tc.function.name, args: JSON.parse(tc.function.arguments) }))
+        functionCalls: toolCalls.map(tc => ({ name: tc.function.name, args: JSON.parse(tc.function.arguments) })),
+        toolLog
       })
     }
 
@@ -1508,7 +1877,8 @@ export async function POST(req) {
 
     return NextResponse.json({
       reply: mentorReply,
-      audio: audioContent
+      audio: audioContent,
+      toolLog
     })
 
   } catch (error) {

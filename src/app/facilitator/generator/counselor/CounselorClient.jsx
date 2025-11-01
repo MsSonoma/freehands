@@ -11,6 +11,7 @@ import GoalsClipboardOverlay from './GoalsClipboardOverlay'
 import CalendarOverlay from './overlays/CalendarOverlay'
 import LessonsOverlay from './overlays/LessonsOverlay'
 import LessonMakerOverlay from './overlays/LessonMakerOverlay'
+import MentorThoughtBubble from './MentorThoughtBubble'
 
 export default function CounselorClient() {
   const router = useRouter()
@@ -77,6 +78,8 @@ export default function CounselorClient() {
   const [videoMaxHeight, setVideoMaxHeight] = useState(null)
   const [captionPanelFlex, setCaptionPanelFlex] = useState('0 0 50%')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [toolThoughtQueue, setToolThoughtQueue] = useState([])
+  const [activeToolThought, setActiveToolThought] = useState(null)
 
   // Calculate caption panel height based on screen height
   useEffect(() => {
@@ -418,6 +421,52 @@ export default function CounselorClient() {
     }
   }, [])
 
+  const enqueueToolThoughts = useCallback((entries) => {
+    if (!Array.isArray(entries) || entries.length === 0) return
+    setToolThoughtQueue(prev => {
+      const existing = new Set(prev.map(item => item.internalId))
+      if (activeToolThought) existing.add(activeToolThought.internalId)
+
+      const normalized = entries
+        .filter(entry => entry && entry.message)
+        .map(entry => {
+          const timestamp = Number(entry.timestamp) || Date.now()
+          const phase = entry.phase || 'default'
+          const baseId = entry.id || `${timestamp}-${Math.random().toString(36).slice(2, 8)}`
+          const internalId = `${baseId}-${phase}`
+          return {
+            internalId,
+            id: baseId,
+            name: entry.name,
+            phase,
+            message: entry.message,
+            timestamp
+          }
+        })
+        .sort((a, b) => a.timestamp - b.timestamp)
+
+      const deduped = normalized.filter(item => !existing.has(item.internalId))
+      if (deduped.length === 0) return prev
+      const merged = [...prev, ...deduped]
+      return merged.slice(-20)
+    })
+  }, [activeToolThought])
+
+  useEffect(() => {
+    if (activeToolThought) return
+    if (toolThoughtQueue.length === 0) return
+    setActiveToolThought(toolThoughtQueue[0])
+    setToolThoughtQueue(prev => prev.slice(1))
+  }, [toolThoughtQueue, activeToolThought])
+
+  useEffect(() => {
+    if (!activeToolThought) return
+    const timer = setTimeout(() => {
+      setActiveToolThought(null)
+    }, 3600)
+    return () => clearTimeout(timer)
+  }, [activeToolThought])
+
   // Split text into sentences for caption display
   const splitIntoSentences = (text) => {
     if (!text) return []
@@ -588,6 +637,10 @@ export default function CounselorClient() {
       }
 
       const data = await response.json()
+
+      if (Array.isArray(data.toolLog) && data.toolLog.length > 0) {
+        enqueueToolThoughts(data.toolLog)
+      }
       const mentorReply = data.reply || ''
 
       if (!mentorReply) {
@@ -640,11 +693,19 @@ export default function CounselorClient() {
 
     } catch (err) {
       console.error('[Mr. Mentor] Request failed:', err)
+      enqueueToolThoughts([
+        {
+          id: `error-${Date.now()}`,
+          name: 'system',
+          phase: 'error',
+          message: 'I hit a connection snag reaching the server. Please try once more.'
+        }
+      ])
       setError('Failed to reach Mr. Mentor. Please try again.')
     } finally {
       setLoading(false)
     }
-  }, [userInput, loading, conversationHistory, playAudio, learnerTranscript, selectedLearnerId, sessionStarted, currentSessionTokens])
+  }, [userInput, loading, conversationHistory, playAudio, learnerTranscript, goalsNotes, selectedLearnerId, sessionStarted, currentSessionTokens, enqueueToolThoughts])
 
   // Helper: Update draft summary after each exchange (not saved to memory until approved)
   const updateDraftSummary = async (conversationHistory, token) => {
@@ -1199,6 +1260,8 @@ export default function CounselorClient() {
               <LessonMakerOverlay tier={tier} />
             </div>
           </div>
+
+          <MentorThoughtBubble thought={activeToolThought} />
         </div>
 
         {/* Caption panel */}

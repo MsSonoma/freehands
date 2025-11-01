@@ -7,6 +7,9 @@
     },
     "src/app/api/facilitator/lessons/generate/route.js": {
       "maxDuration": 60
+    },
+    "src/app/api/counselor/route.js": {
+      "maxDuration": 60
     }
   }
 }

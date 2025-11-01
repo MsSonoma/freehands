@@ -20,6 +20,19 @@ async function readUserAndTier(request){
     if (admin) {
       const { data } = await admin.from('profiles').select('plan_tier').eq('id', user.id).maybeSingle()
       plan = (data?.plan_tier || 'free').toLowerCase()
+    } else {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('plan_tier')
+          .eq('id', user.id)
+          .maybeSingle()
+        if (!error && data?.plan_tier) {
+          plan = data.plan_tier.toLowerCase()
+        }
+      } catch {
+        // ignore
+      }
     }
     return { user, plan_tier: plan }
   } catch {
