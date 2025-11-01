@@ -1288,8 +1288,9 @@ export async function POST(req) {
   
   try {
     // Parse request body
-    let userMessage = ''
-    let conversationHistory = []
+  let userMessage = ''
+  let conversationHistory = []
+  let followup = null
     
     const contentType = (req.headers?.get?.('content-type') || '').toLowerCase()
     let learnerTranscript = null
@@ -1302,6 +1303,7 @@ export async function POST(req) {
         conversationHistory = Array.isArray(body.history) ? body.history : []
         learnerTranscript = body.learner_transcript || null
         goalsNotes = body.goals_notes || null
+        followup = body.followup || null
         console.log(`${logPrefix} Received message with ${conversationHistory.length} history items`)
         if (learnerTranscript) {
           console.log(`${logPrefix} Learner context provided (${learnerTranscript.length} chars)`)
@@ -1319,7 +1321,9 @@ export async function POST(req) {
       return NextResponse.json({ error: `Invalid request format: ${parseErr.message}` }, { status: 400 })
     }
 
-    if (!userMessage) {
+    const isFollowup = followup && typeof followup === 'object'
+
+    if (!isFollowup && !userMessage) {
       console.warn(`${logPrefix} Empty message received`)
       return NextResponse.json({ error: 'Message is required.' }, { status: 400 })
     }
@@ -1376,11 +1380,14 @@ export async function POST(req) {
     }
 
     // Build conversation messages
-    const messages = [
+    const baseMessages = [
       { role: 'system', content: systemPrompt },
-      ...conversationHistory,
-      { role: 'user', content: userMessage }
+      ...conversationHistory
     ]
+
+    const messages = (!isFollowup || userMessage)
+      ? [...baseMessages, { role: 'user', content: userMessage }]
+      : baseMessages
 
     // Define available functions
     const tools = [
@@ -1600,9 +1607,98 @@ export async function POST(req) {
       }
     ]
 
-    // Call OpenAI
-    console.log(`${logPrefix} Calling OpenAI with ${messages.length} messages`)
-    
+    if (isFollowup) {
+      console.log(`${logPrefix} Processing follow-up continuation request`)
+
+      const assistantMessage = followup?.assistantMessage
+      const functionResults = Array.isArray(followup?.functionResults) ? followup.functionResults : []
+
+      if (!assistantMessage || functionResults.length === 0) {
+        console.error(`${logPrefix} Follow-up missing assistant message or function results`)
+        return NextResponse.json({ error: 'Follow-up context missing. Please retry the request.' }, { status: 400 })
+      }
+
+      const followUpMessages = [
+        ...messages,
+        assistantMessage,
+        ...functionResults
+      ]
+
+      const validationSummaries = Array.isArray(followup?.validationSummaries) ? followup.validationSummaries : []
+
+      if (validationSummaries.length > 0) {
+        const summaryLines = validationSummaries.map((summary) => {
+          const title = summary.lessonTitle ? `"${summary.lessonTitle}"` : 'the lesson'
+          const status = summary.status || 'completed'
+          const issues = typeof summary.issueCount === 'number' ? `${summary.issueCount} issue(s)` : 'issues'
+          if (status === 'fixed') {
+            return `${title}: validation found ${issues} and they were improved automatically.`
+          }
+          if (status === 'passed') {
+            return `${title}: validation passed${summary.warningCount ? ` with ${summary.warningCount} warning(s)` : ''}.`
+          }
+          if (status === 'needs_attention') {
+            return `${title}: some issues remain that need manual review.`
+          }
+          if (status === 'error') {
+            return `${title}: validation encountered an error (${summary.error || 'unknown error'}).`
+          }
+          return `${title}: validation status ${status}.`
+        })
+
+        const summaryPrompt = `Facilitator update on lesson quality:\n${summaryLines.join('\n')}\nPlease respond with guidance that reflects these results and outline any recommended next steps.`
+        followUpMessages.push({ role: 'user', content: summaryPrompt })
+      } else {
+        followUpMessages.push({
+          role: 'user',
+          content: 'Facilitator update: lesson generation completed. Share the results with the facilitator and suggest next steps.'
+        })
+      }
+
+      console.log(`${logPrefix} Calling OpenAI for follow-up continuation with ${followUpMessages.length} messages`)
+
+      const followUpResponse = await fetch(OPENAI_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: OPENAI_MODEL,
+          messages: followUpMessages,
+          max_tokens: 1500,
+          temperature: 0.8
+        })
+      })
+
+      if (!followUpResponse.ok) {
+        console.error(`${logPrefix} Follow-up OpenAI request failed with status ${followUpResponse.status}`)
+        const errorBody = await followUpResponse.text()
+        console.error(`${logPrefix} Follow-up error body:`, errorBody)
+        return NextResponse.json({ error: 'Failed to complete Mr. Mentor follow-up.' }, { status: followUpResponse.status })
+      }
+
+      const followUpBody = await followUpResponse.json()
+      const mentorReply = followUpBody?.choices?.[0]?.message?.content?.trim() ?? ''
+
+      if (!mentorReply) {
+        console.warn(`${logPrefix} Empty follow-up reply from OpenAI`)
+        return NextResponse.json({ error: 'Mr. Mentor had no response.' }, { status: 500 })
+      }
+
+      console.log(`${logPrefix} Follow-up reply:\n${previewText(mentorReply)}`)
+
+      const audioContent = await synthesizeAudio(mentorReply, logPrefix)
+
+      return NextResponse.json({
+        reply: mentorReply,
+        audio: audioContent,
+        toolLog: Array.isArray(followup?.toolLog) ? followup.toolLog : [],
+        usage: followUpBody?.usage || null,
+        needsFollowUp: false
+      })
+    }
+
     const requestBody = {
       model: OPENAI_MODEL,
       messages: messages,
@@ -1732,7 +1828,13 @@ export async function POST(req) {
           audio: null,
           functionCalls: toolCalls.map(tc => ({ name: tc.function.name, args: JSON.parse(tc.function.arguments) })),
           toolLog,
-          toolResults: parsedToolResults
+          toolResults: parsedToolResults,
+          followUp: {
+            assistantMessage,
+            functionResults
+          },
+          needsFollowUp: true,
+          usage: parsedBody?.usage || null
         })
       }
       

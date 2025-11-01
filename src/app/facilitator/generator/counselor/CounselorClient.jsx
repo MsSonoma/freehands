@@ -561,6 +561,17 @@ export default function CounselorClient() {
 
   // Helper: Handle lesson generation with client-side validation and fixing (like lesson-maker)
   const handleLessonGeneration = async (toolResult, token) => {
+    const summary = {
+      lessonFile: toolResult.lessonFile,
+      lessonTitle: toolResult.lesson?.title || toolResult.lessonTitle || 'Lesson',
+      status: 'pending',
+      issueCount: 0,
+      warningCount: 0,
+      fixApplied: false,
+      message: '',
+      error: null
+    }
+
     try {
       console.log('[Mr. Mentor] Handling lesson generation result:', toolResult)
       
@@ -573,6 +584,14 @@ export default function CounselorClient() {
       }])
       
       const validation = validateLessonQuality(toolResult.lesson)
+      summary.issueCount = validation.issues.length
+      summary.warningCount = validation.warnings.length
+      summary.status = validation.passed ? 'passed' : 'needs_attention'
+      summary.message = validation.passed
+        ? (validation.warnings.length > 0
+            ? `Validation passed with ${validation.warnings.length} warning(s)`
+            : 'Validation passed')
+        : `Found ${validation.issues.length} quality issue(s)`
       
       if (!validation.passed && validation.issues.length > 0) {
         console.log('[Mr. Mentor] Validation failed, auto-fixing:', validation.issues)
@@ -611,6 +630,9 @@ export default function CounselorClient() {
         
         if (fixResponse.ok) {
           console.log('[Mr. Mentor] Auto-fix successful')
+          summary.status = 'fixed'
+          summary.fixApplied = true
+          summary.message = 'Lesson quality improved automatically'
           enqueueToolThoughts([{
             id: `improve-success-${Date.now()}`,
             name: 'improve_lesson',
@@ -619,6 +641,9 @@ export default function CounselorClient() {
           }])
         } else {
           console.error('[Mr. Mentor] Auto-fix failed:', fixResult.error)
+          summary.fixApplied = false
+          summary.error = fixResult?.error || 'Auto-fix failed'
+          summary.status = 'needs_attention'
           enqueueToolThoughts([{
             id: `improve-error-${Date.now()}`,
             name: 'improve_lesson',
@@ -635,6 +660,7 @@ export default function CounselorClient() {
           message: 'Lesson quality validated'
         }])
       }
+      return summary
     } catch (err) {
       console.error('[Mr. Mentor] Lesson generation handling error:', err)
       enqueueToolThoughts([{
@@ -643,8 +669,53 @@ export default function CounselorClient() {
         phase: 'error',
         message: 'Error during lesson validation'
       }])
+      summary.status = 'error'
+      summary.error = err?.message || String(err)
+      summary.message = 'Validation error'
+      return summary
     }
   }
+
+  const continueLessonFollowUp = useCallback(async ({ followUpPayload, validationSummaries, toolResults, token, history }) => {
+    const headers = { 'Content-Type': 'application/json' }
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
+    const body = {
+      history,
+      followup: {
+        assistantMessage: followUpPayload.assistantMessage,
+        functionResults: followUpPayload.functionResults,
+        toolResults,
+        validationSummaries
+      },
+      learner_transcript: learnerTranscript || null,
+      goals_notes: goalsNotes || null
+    }
+
+    const response = await fetch('/api/counselor', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body)
+    })
+
+    if (!response.ok) {
+      let errorMessage = `Follow-up failed with status ${response.status}`
+      try {
+        const errorData = await response.json()
+        console.error('[Mr. Mentor] Follow-up error response:', errorData)
+        if (errorData.error) {
+          errorMessage += `: ${errorData.error}`
+        }
+      } catch (parseErr) {
+        console.error('[Mr. Mentor] Could not parse follow-up error response:', parseErr)
+      }
+      throw new Error(errorMessage)
+    }
+
+    return response.json()
+  }, [learnerTranscript, goalsNotes])
 
   // Send message to Mr. Mentor
   const sendMessage = useCallback(async () => {
@@ -727,22 +798,43 @@ export default function CounselorClient() {
       }
 
       const data = await response.json()
+      let responseData = data
 
       if (Array.isArray(data.toolLog) && data.toolLog.length > 0) {
         enqueueToolThoughts(data.toolLog)
       }
-      
-      // Check if the response includes lesson generation data that needs validation
-      if (data.toolResults) {
-        for (const toolResult of data.toolResults) {
+
+      const initialToolResults = Array.isArray(data.toolResults) ? data.toolResults : []
+      const validationSummaries = []
+
+      if (initialToolResults.length > 0) {
+        for (const toolResult of initialToolResults) {
           if (toolResult.lesson && toolResult.lessonFile && toolResult.userId) {
-            // Handle lesson generation: validate and fix if needed
-            await handleLessonGeneration(toolResult, token)
+            const summary = await handleLessonGeneration(toolResult, token)
+            if (summary) {
+              validationSummaries.push(summary)
+            }
           }
         }
       }
+
+      if (data.needsFollowUp && data.followUp) {
+        const followUpData = await continueLessonFollowUp({
+          followUpPayload: data.followUp,
+          validationSummaries,
+          toolResults: initialToolResults,
+          token,
+          history: updatedHistory
+        })
+
+        if (Array.isArray(followUpData.toolLog) && followUpData.toolLog.length > 0) {
+          enqueueToolThoughts(followUpData.toolLog)
+        }
+
+        responseData = followUpData
+      }
       
-      const mentorReply = data.reply || ''
+      const mentorReply = responseData.reply || ''
 
       if (!mentorReply) {
         throw new Error('Empty response from Mr. Mentor')
@@ -762,28 +854,37 @@ export default function CounselorClient() {
       setCaptionIndex(0)
 
       // Play audio if available
-      if (data.audio) {
-        await playAudio(data.audio)
+      if (responseData.audio) {
+        await playAudio(responseData.audio)
       }
 
       // Track token usage for this exchange
-      if (token && data.usage && data.usage.total_tokens) {
-        const tokensUsed = data.usage.total_tokens
-        const newTotal = currentSessionTokens + tokensUsed
+      if (token) {
+        let tokensUsed = 0
+        if (data.usage && data.usage.total_tokens) {
+          tokensUsed += data.usage.total_tokens
+        }
+        if (responseData !== data && responseData.usage && responseData.usage.total_tokens) {
+          tokensUsed += responseData.usage.total_tokens
+        }
+
+        if (tokensUsed > 0) {
+          const newTotal = currentSessionTokens + tokensUsed
         setCurrentSessionTokens(newTotal)
-        
-        // Send token count to backend
-        await fetch('/api/usage/mentor/increment', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ 
-            action: 'add_tokens',
-            tokens: tokensUsed
+          
+          // Send token count to backend
+          await fetch('/api/usage/mentor/increment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ 
+              action: 'add_tokens',
+              tokens: tokensUsed
+            })
           })
-        })
+        }
       }
 
       // Update draft summary in background (async, non-blocking)
@@ -806,7 +907,7 @@ export default function CounselorClient() {
     } finally {
       setLoading(false)
     }
-  }, [userInput, loading, conversationHistory, playAudio, learnerTranscript, goalsNotes, selectedLearnerId, sessionStarted, currentSessionTokens, enqueueToolThoughts])
+  }, [userInput, loading, conversationHistory, playAudio, learnerTranscript, goalsNotes, selectedLearnerId, sessionStarted, currentSessionTokens, enqueueToolThoughts, handleLessonGeneration, continueLessonFollowUp])
 
   // Helper: Update draft summary after each exchange (not saved to memory until approved)
   const updateDraftSummary = async (conversationHistory, token) => {
