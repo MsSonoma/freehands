@@ -872,29 +872,43 @@ async function executeLessonGeneration(args, request, toolLog) {
     const generateUrl = `${protocol}://${host}/api/facilitator/lessons/generate`
     
     console.log('[Mr. Mentor] Generate URL:', generateUrl)
+    console.log('[Mr. Mentor] Generate args:', JSON.stringify(args, null, 2))
     
-    const genResponse = await fetch(generateUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': authHeader
-      },
-      body: JSON.stringify(args)
-    })
-    
-    const result = await genResponse.json()
+    let genResponse
+    try {
+      genResponse = await fetch(generateUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authHeader
+        },
+        body: JSON.stringify(args)
+      })
+    } catch (fetchError) {
+      console.error('[Mr. Mentor] Fetch error:', fetchError)
+      pushToolLog(toolLog, {
+        name: 'generate_lesson',
+        phase: 'error',
+        context: { title: args?.title, message: 'Network error: ' + fetchError.message }
+      })
+      return { error: 'Could not connect to lesson generation service: ' + fetchError.message }
+    }
     
     console.log('[Mr. Mentor] Generate response status:', genResponse.status)
-    console.log('[Mr. Mentor] Generate result:', result)
     
     if (!genResponse.ok) {
-          pushToolLog(toolLog, {
-            name: 'generate_lesson',
-            phase: 'error',
-            context: { title: args?.title, message: result.error }
-          })
+      const result = await genResponse.json()
+      console.error('[Mr. Mentor] Generate failed:', result)
+      pushToolLog(toolLog, {
+        name: 'generate_lesson',
+        phase: 'error',
+        context: { title: args?.title, message: result.error }
+      })
       return { error: result.error || 'Lesson generation failed' }
     }
+    
+    const result = await genResponse.json()
+    console.log('[Mr. Mentor] Generate result keys:', Object.keys(result))
     
     // Build the lessonKey in the format needed for scheduling: "facilitator/filename.json"
     const lessonKey = `facilitator/${result.file}`

@@ -627,10 +627,12 @@ export default function CounselorClient() {
         let errorMessage = `Request failed with status ${response.status}`
         try {
           const errorData = await response.json()
+          console.error('[Mr. Mentor] Error response:', errorData)
           if (errorData.error) {
             errorMessage += `: ${errorData.error}`
           }
-        } catch {
+        } catch (parseErr) {
+          console.error('[Mr. Mentor] Could not parse error response:', parseErr)
           // If response isn't JSON, use default message
         }
         throw new Error(errorMessage)
