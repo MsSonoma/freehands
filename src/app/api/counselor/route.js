@@ -20,6 +20,7 @@ const TTS_CACHE_MAX = 200
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
+export const maxDuration = 60 // Extended timeout for OpenAI + tool execution
 
 // Mr. Mentor's voice - warm, caring American male
 const MENTOR_VOICE = {
