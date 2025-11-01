@@ -863,20 +863,17 @@ async function executeLessonGeneration(args, request, toolLog) {
     // Import validation functions
     const { validateLessonQuality, buildValidationChangeRequest } = await import('@/app/lib/lessonValidation')
     
-    // STEP 1: Call the lesson generation API
+    // STEP 1: Call the lesson generation API directly (avoid HTTP timeout stacking)
     console.log('[Mr. Mentor] Generating lesson...')
-    
-    // Use absolute URL construction but prefer localhost for server-side calls
-    const host = request.headers.get('host') || 'localhost:3001'
-    const protocol = host.includes('localhost') ? 'http' : 'https'
-    const generateUrl = `${protocol}://${host}/api/facilitator/lessons/generate`
-    
-    console.log('[Mr. Mentor] Generate URL:', generateUrl)
     console.log('[Mr. Mentor] Generate args:', JSON.stringify(args, null, 2))
     
-    let genResponse
+    let result
     try {
-      genResponse = await fetch(generateUrl, {
+      // Import and call the generate route's POST handler directly
+      const { POST: generatePOST } = await import('@/app/api/facilitator/lessons/generate/route')
+      
+      // Create a mock request object with the args and auth header
+      const mockRequest = new Request('http://localhost/api/facilitator/lessons/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -884,31 +881,33 @@ async function executeLessonGeneration(args, request, toolLog) {
         },
         body: JSON.stringify(args)
       })
-    } catch (fetchError) {
-      console.error('[Mr. Mentor] Fetch error:', fetchError)
+      
+      const genResponse = await generatePOST(mockRequest)
+      const responseData = await genResponse.json()
+      
+      console.log('[Mr. Mentor] Generate response status:', genResponse.status)
+      
+      if (!genResponse.ok) {
+        console.error('[Mr. Mentor] Generate failed:', responseData)
+        pushToolLog(toolLog, {
+          name: 'generate_lesson',
+          phase: 'error',
+          context: { title: args?.title, message: responseData.error }
+        })
+        return { error: responseData.error || 'Lesson generation failed' }
+      }
+      
+      result = responseData
+      console.log('[Mr. Mentor] Generate result keys:', Object.keys(result))
+    } catch (genError) {
+      console.error('[Mr. Mentor] Generation error:', genError)
       pushToolLog(toolLog, {
         name: 'generate_lesson',
         phase: 'error',
-        context: { title: args?.title, message: 'Network error: ' + fetchError.message }
+        context: { title: args?.title, message: genError.message }
       })
-      return { error: 'Could not connect to lesson generation service: ' + fetchError.message }
+      return { error: 'Lesson generation failed: ' + genError.message }
     }
-    
-    console.log('[Mr. Mentor] Generate response status:', genResponse.status)
-    
-    if (!genResponse.ok) {
-      const result = await genResponse.json()
-      console.error('[Mr. Mentor] Generate failed:', result)
-      pushToolLog(toolLog, {
-        name: 'generate_lesson',
-        phase: 'error',
-        context: { title: args?.title, message: result.error }
-      })
-      return { error: result.error || 'Lesson generation failed' }
-    }
-    
-    const result = await genResponse.json()
-    console.log('[Mr. Mentor] Generate result keys:', Object.keys(result))
     
     // Build the lessonKey in the format needed for scheduling: "facilitator/filename.json"
     const lessonKey = `facilitator/${result.file}`
@@ -930,7 +929,7 @@ async function executeLessonGeneration(args, request, toolLog) {
             context: { issueCount: validation.issues.length }
           })
       
-      // STEP 3: Auto-fix with request-changes API
+      // STEP 3: Auto-fix with request-changes API (call directly to avoid timeout stacking)
       try {
             pushToolLog(toolLog, {
               name: 'improve_lesson',
@@ -939,11 +938,10 @@ async function executeLessonGeneration(args, request, toolLog) {
             })
         const changeRequest = buildValidationChangeRequest(validation.issues)
         
-        const host = request.headers.get('host') || 'localhost:3001'
-        const protocol = host.includes('localhost') ? 'http' : 'https'
-        const fixUrl = `${protocol}://${host}/api/facilitator/lessons/request-changes`
+        // Import and call the request-changes route's POST handler directly
+        const { POST: requestChangesPOST } = await import('@/app/api/facilitator/lessons/request-changes/route')
         
-        const fixResponse = await fetch(fixUrl, {
+        const mockFixRequest = new Request('http://localhost/api/facilitator/lessons/request-changes', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -956,6 +954,7 @@ async function executeLessonGeneration(args, request, toolLog) {
           })
         })
         
+        const fixResponse = await requestChangesPOST(mockFixRequest)
         const fixResult = await fixResponse.json()
         
         if (fixResponse.ok) {
