@@ -1745,12 +1745,12 @@ export async function POST(req) {
       
       console.log(`${logPrefix} Mr. Mentor follow-up reply:\n${previewText(mentorReply)}`)
       
-      // Synthesize audio and return
-      let audioContent = await synthesizeAudio(mentorReply, logPrefix)
+      // Skip TTS for tool-calling responses to save time (client will show captions only)
+      console.log(`${logPrefix} Skipping TTS for tool-calling response to avoid timeout`)
       
       return NextResponse.json({
         reply: mentorReply,
-        audio: audioContent,
+        audio: null,
         functionCalls: toolCalls.map(tc => ({ name: tc.function.name, args: JSON.parse(tc.function.arguments) })),
         toolLog
       })
