@@ -1700,6 +1700,41 @@ export async function POST(req) {
           content: JSON.stringify(result)
         })
       }
+
+      const parsedToolResults = functionResults.map(fr => {
+        try {
+          return JSON.parse(fr.content)
+        } catch {
+          return { error: 'Failed to parse tool result' }
+        }
+      })
+
+      const hasHeavyToolCall = toolCalls.some(tc => tc.function.name === 'generate_lesson')
+      const firstErrorResult = parsedToolResults.find(result => result?.error)
+
+      if (hasHeavyToolCall || firstErrorResult) {
+        let mentorReplyText
+
+        if (firstErrorResult) {
+          mentorReplyText = `I ran into an issue: ${firstErrorResult.error}`
+        } else {
+          const generationResult = parsedToolResults.find(result => result?.lessonTitle || result?.lesson)
+          mentorReplyText = generationResult?.message
+            || (generationResult?.lessonTitle
+              ? `I just generated "${generationResult.lessonTitle}". I'll validate it now.`
+              : 'I just generated a new lesson and will validate it now.')
+        }
+
+        console.log(`${logPrefix} Skipping follow-up OpenAI call; returning early with tool results`)
+
+        return NextResponse.json({
+          reply: mentorReplyText,
+          audio: null,
+          functionCalls: toolCalls.map(tc => ({ name: tc.function.name, args: JSON.parse(tc.function.arguments) })),
+          toolLog,
+          toolResults: parsedToolResults
+        })
+      }
       
       // Call OpenAI again with function results to get final response
       const followUpMessages = [
@@ -1748,21 +1783,12 @@ export async function POST(req) {
       // Skip TTS for tool-calling responses to save time (client will show captions only)
       console.log(`${logPrefix} Skipping TTS for tool-calling response to avoid timeout`)
       
-      // Extract actual tool results from function results for client-side processing
-      const toolResults = functionResults.map(fr => {
-        try {
-          return JSON.parse(fr.content)
-        } catch {
-          return { error: 'Failed to parse tool result' }
-        }
-      })
-      
       return NextResponse.json({
         reply: mentorReply,
         audio: null,
         functionCalls: toolCalls.map(tc => ({ name: tc.function.name, args: JSON.parse(tc.function.arguments) })),
         toolLog,
-        toolResults // Include parsed results so frontend can handle lesson validation
+        toolResults: parsedToolResults // Include parsed results so frontend can handle lesson validation
       })
     }
 
