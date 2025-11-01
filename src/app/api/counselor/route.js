@@ -1748,11 +1748,21 @@ export async function POST(req) {
       // Skip TTS for tool-calling responses to save time (client will show captions only)
       console.log(`${logPrefix} Skipping TTS for tool-calling response to avoid timeout`)
       
+      // Extract actual tool results from function results for client-side processing
+      const toolResults = functionResults.map(fr => {
+        try {
+          return JSON.parse(fr.content)
+        } catch {
+          return { error: 'Failed to parse tool result' }
+        }
+      })
+      
       return NextResponse.json({
         reply: mentorReply,
         audio: null,
         functionCalls: toolCalls.map(tc => ({ name: tc.function.name, args: JSON.parse(tc.function.arguments) })),
-        toolLog
+        toolLog,
+        toolResults // Include parsed results so frontend can handle lesson validation
       })
     }
 
