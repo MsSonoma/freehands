@@ -43,13 +43,23 @@ async function readUserAndTier(request){
 
 function buildChangePrompt(existingLesson, changeRequest){
   const lessonText = JSON.stringify(existingLesson, null, 2)
-  return `You are an education content editor. You have an existing lesson in JSON format. The user has requested changes to this lesson. Apply the requested changes while maintaining the structure and ensuring at least 10 questions in each question type (sample, truefalse, multiplechoice, fillintheblank, shortanswer).
+  return `You are an education content editor. You have an existing lesson in JSON format. The user has requested changes to this lesson. Apply the requested changes while maintaining the structure and ensuring quality standards.
 
 Existing lesson:
 ${lessonText}
 
 Change request:
 ${changeRequest}
+
+CRITICAL REQUIREMENTS - YOU MUST FOLLOW THESE EXACTLY:
+1. Each question type (sample, truefalse, multiplechoice, fillintheblank, shortanswer) needs at least 10 complete questions
+2. For shortanswer and fillintheblank:
+   - EVERY SINGLE QUESTION must have at least 3 items in the "expectedAny" array
+   - Include the main answer, synonyms, alternative phrasings, and common variations
+   - Example: ["photosynthesis", "making food", "food production", "creating energy from light"]
+3. True/false questions must have complete question text (not blank)
+4. Multiple choice must have exactly 4 distinct choices and a correct index (0-3)
+5. Fill-in-the-blank questions must contain _____ placeholder
 
 Return the updated lesson as valid JSON only. No markdown. No commentary. Keep all existing fields unless the change request specifically modifies them. Ensure kid-safe language and age-appropriate content.`
 }
