@@ -61,6 +61,7 @@ export default function CalendarOverlay({ learnerId }) {
         const dateStr = item.scheduled_date
         if (!grouped[dateStr]) grouped[dateStr] = []
         grouped[dateStr].push({
+          id: item.id, // Include the schedule ID
           lesson_title: item.lesson_key?.split('/')[1]?.replace('.json', '').replace(/_/g, ' ') || 'Lesson',
           subject: item.lesson_key?.split('/')[0] || 'Unknown',
           grade: 'Various',
@@ -436,7 +437,7 @@ export default function CalendarOverlay({ learnerId }) {
                       </div>
                     </div>
                     <button
-                      onClick={() => setRescheduling(`${selectedDate}-${idx}`)}
+                      onClick={() => setRescheduling(lesson.id)}
                       style={{
                         padding: '3px 8px',
                         fontSize: 10,
@@ -481,100 +482,97 @@ export default function CalendarOverlay({ learnerId }) {
       </div>
       
       {/* Reschedule popup modal */}
-      {rescheduling && selectedDate && scheduledForSelectedDate.length > 0 && (() => {
-        const idx = parseInt(rescheduling.split('-')[1])
-        const lesson = scheduledForSelectedDate[idx]
-        return lesson ? (
+      {rescheduling && scheduledForSelectedDate.find(item => item.id === rescheduling) && (
+        <div 
+          style={{ 
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000
+          }}
+          onClick={() => setRescheduling(null)}
+        >
           <div 
-            style={{ 
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0,0,0,0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10000
+            style={{
+              background: '#fff',
+              borderRadius: 8,
+              padding: 20,
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+              maxWidth: 320,
+              width: '90%'
             }}
-            onClick={() => setRescheduling(null)}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div 
+            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#1f2937' }}>
+              📅 Reschedule Lesson
+            </div>
+            <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 16 }}>
+              {scheduledForSelectedDate.find(item => item.id === rescheduling)?.lesson_title}
+            </div>
+            
+            <input
+              type="date"
+              defaultValue={selectedDate}
               style={{
-                background: '#fff',
-                borderRadius: 8,
-                padding: 20,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                maxWidth: 320,
-                width: '90%'
+                width: '100%',
+                padding: '10px',
+                border: '1px solid #d1d5db',
+                borderRadius: 6,
+                fontSize: 14,
+                marginBottom: 16,
+                boxSizing: 'border-box'
               }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#1f2937' }}>
-                📅 Reschedule Lesson
-              </div>
-              <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 16 }}>
-                {lesson.lesson_title}
-              </div>
-              
-              <input
-                type="date"
-                defaultValue={selectedDate}
+              id="reschedule-date-overlay"
+            />
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => {
+                  const dateInput = document.getElementById('reschedule-date-overlay')
+                  const lesson = scheduledForSelectedDate.find(item => item.id === rescheduling)
+                  if (dateInput?.value && lesson) {
+                    handleRescheduleLesson(lesson.lesson_key, selectedDate, dateInput.value)
+                  }
+                }}
                 style={{
-                  width: '100%',
+                  flex: 1,
+                  padding: '10px',
+                  border: 'none',
+                  borderRadius: 6,
+                  background: '#2563eb',
+                  color: '#fff',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Reschedule
+              </button>
+              <button
+                onClick={() => setRescheduling(null)}
+                style={{
+                  flex: 1,
                   padding: '10px',
                   border: '1px solid #d1d5db',
                   borderRadius: 6,
+                  background: '#fff',
+                  color: '#374151',
                   fontSize: 14,
-                  marginBottom: 16,
-                  boxSizing: 'border-box'
+                  cursor: 'pointer'
                 }}
-                id="reschedule-date-overlay"
-              />
-
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  onClick={() => {
-                    const dateInput = document.getElementById('reschedule-date-overlay')
-                    if (dateInput?.value) {
-                      handleRescheduleLesson(lesson.lesson_key, selectedDate, dateInput.value)
-                    }
-                  }}
-                  style={{
-                    flex: 1,
-                    padding: '10px',
-                    border: 'none',
-                    borderRadius: 6,
-                    background: '#2563eb',
-                    color: '#fff',
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Reschedule
-                </button>
-                <button
-                  onClick={() => setRescheduling(null)}
-                  style={{
-                    flex: 1,
-                    padding: '10px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: 6,
-                    background: '#fff',
-                    color: '#374151',
-                    fontSize: 14,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
+              >
+                Cancel
+              </button>
             </div>
           </div>
-        ) : null
-      })()}
+        </div>
+      )}
     </div>
   )
 }
