@@ -421,7 +421,7 @@ export default function CalendarOverlay({ learnerId }) {
                 {scheduledForSelectedDate.map((lesson, idx) => (
                   <div key={idx} style={{ 
                     display: 'flex',
-                    flexDirection: 'column',
+                    alignItems: 'center',
                     gap: 6,
                     padding: 8, 
                     background: '#fff', 
@@ -429,71 +429,44 @@ export default function CalendarOverlay({ learnerId }) {
                     border: '1px solid #e5e7eb',
                     fontSize: 12
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 600, color: '#1f2937' }}>{lesson.lesson_title}</div>
-                        <div style={{ color: '#6b7280', fontSize: 11 }}>
-                          {lesson.subject} • {lesson.grade}
-                        </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, color: '#1f2937' }}>{lesson.lesson_title}</div>
+                      <div style={{ color: '#6b7280', fontSize: 11 }}>
+                        {lesson.subject} • {lesson.grade}
                       </div>
-                      <button
-                        onClick={() => setRescheduling(rescheduling === idx ? null : idx)}
-                        style={{
-                          padding: '3px 8px',
-                          fontSize: 10,
-                          fontWeight: 600,
-                          borderRadius: 4,
-                          border: 'none',
-                          cursor: 'pointer',
-                          background: rescheduling === idx ? '#dbeafe' : '#eff6ff',
-                          color: '#1e40af',
-                          transition: 'background 0.15s'
-                        }}
-                      >
-                        Reschedule
-                      </button>
-                      <button
-                        onClick={() => handleRemoveScheduledLesson(lesson.lesson_key, selectedDate)}
-                        style={{
-                          padding: '3px 8px',
-                          fontSize: 10,
-                          fontWeight: 600,
-                          borderRadius: 4,
-                          border: 'none',
-                          cursor: 'pointer',
-                          background: '#fee2e2',
-                          color: '#991b1b',
-                          transition: 'background 0.15s'
-                        }}
-                      >
-                        Remove
-                      </button>
                     </div>
-                    
-                    {/* Mini date picker for rescheduling */}
-                    {rescheduling === idx && (
-                      <div style={{ paddingLeft: 4 }}>
-                        <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>
-                          Select new date:
-                        </div>
-                        <input
-                          type="date"
-                          onChange={(e) => {
-                            if (e.target.value) {
-                              handleRescheduleLesson(lesson.lesson_key, selectedDate, e.target.value)
-                            }
-                          }}
-                          style={{
-                            fontSize: 11,
-                            padding: '3px 6px',
-                            border: '1px solid #d1d5db',
-                            borderRadius: 4,
-                            cursor: 'pointer',
-                            width: '100%'
-                          }}
-                        />
-                      </div>
-                    )}
+                    <button
+                      onClick={() => setRescheduling(`${selectedDate}-${idx}`)}
+                      style={{
+                        padding: '3px 8px',
+                        fontSize: 10,
+                        fontWeight: 600,
+                        borderRadius: 4,
+                        border: 'none',
+                        cursor: 'pointer',
+                        background: '#eff6ff',
+                        color: '#1e40af',
+                        transition: 'background 0.15s'
+                      }}
+                    >
+                      Reschedule
+                    </button>
+                    <button
+                      onClick={() => handleRemoveScheduledLesson(lesson.lesson_key, selectedDate)}
+                      style={{
+                        padding: '3px 8px',
+                        fontSize: 10,
+                        fontWeight: 600,
+                        borderRadius: 4,
+                        border: 'none',
+                        cursor: 'pointer',
+                        background: '#fee2e2',
+                        color: '#991b1b',
+                        transition: 'background 0.15s'
+                      }}
+                    >
+                      Remove
+                    </button>
                   </div>
                 ))}
               </div>
@@ -506,6 +479,102 @@ export default function CalendarOverlay({ learnerId }) {
         )}
         </>
       </div>
+      
+      {/* Reschedule popup modal */}
+      {rescheduling && selectedDate && scheduledForSelectedDate.length > 0 && (() => {
+        const idx = parseInt(rescheduling.split('-')[1])
+        const lesson = scheduledForSelectedDate[idx]
+        return lesson ? (
+          <div 
+            style={{ 
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10000
+            }}
+            onClick={() => setRescheduling(null)}
+          >
+            <div 
+              style={{
+                background: '#fff',
+                borderRadius: 8,
+                padding: 20,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                maxWidth: 320,
+                width: '90%'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#1f2937' }}>
+                📅 Reschedule Lesson
+              </div>
+              <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 16 }}>
+                {lesson.lesson_title}
+              </div>
+              
+              <input
+                type="date"
+                defaultValue={selectedDate}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  marginBottom: 16,
+                  boxSizing: 'border-box'
+                }}
+                id="reschedule-date-overlay"
+              />
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => {
+                    const dateInput = document.getElementById('reschedule-date-overlay')
+                    if (dateInput?.value) {
+                      handleRescheduleLesson(lesson.lesson_key, selectedDate, dateInput.value)
+                    }
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    border: 'none',
+                    borderRadius: 6,
+                    background: '#2563eb',
+                    color: '#fff',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Reschedule
+                </button>
+                <button
+                  onClick={() => setRescheduling(null)}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: 6,
+                    background: '#fff',
+                    color: '#374151',
+                    fontSize: 14,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null
+      })()}
     </div>
   )
 }
