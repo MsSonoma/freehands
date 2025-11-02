@@ -660,6 +660,17 @@ export default function CounselorClient() {
           message: 'Lesson quality validated'
         }])
       }
+      
+      // Dispatch event to refresh lessons overlay
+      try {
+        window.dispatchEvent(new CustomEvent('mr-mentor:lesson-generated', {
+          detail: { lessonFile: summary.lessonFile, lessonTitle: summary.lessonTitle }
+        }))
+        console.log('[Mr. Mentor] Dispatched lesson-generated event')
+      } catch (err) {
+        console.warn('[Mr. Mentor] Could not dispatch lesson event:', err)
+      }
+      
       return summary
     } catch (err) {
       console.error('[Mr. Mentor] Lesson generation handling error:', err)
@@ -813,6 +824,22 @@ export default function CounselorClient() {
             const summary = await handleLessonGeneration(toolResult, token)
             if (summary) {
               validationSummaries.push(summary)
+            }
+          }
+          
+          // Dispatch events for schedule_lesson success
+          if (toolResult.success && toolResult.scheduled) {
+            try {
+              window.dispatchEvent(new CustomEvent('mr-mentor:lesson-scheduled', {
+                detail: {
+                  learnerName: toolResult.learnerName,
+                  scheduledDate: toolResult.scheduledDate,
+                  lessonTitle: toolResult.lessonTitle
+                }
+              }))
+              console.log('[Mr. Mentor] Dispatched lesson-scheduled event')
+            } catch (err) {
+              console.warn('[Mr. Mentor] Could not dispatch schedule event:', err)
             }
           }
         }

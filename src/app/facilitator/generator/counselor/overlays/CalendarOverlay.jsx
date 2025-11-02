@@ -87,8 +87,19 @@ export default function CalendarOverlay({ learnerId }) {
       }
     }
     
+    const handleLessonScheduled = () => {
+      console.log('[CalendarOverlay] Lesson scheduled, reloading')
+      // Clear cache and reload
+      setScheduledLessons({})
+      loadSchedule()
+    }
+    
     window.addEventListener('preload-overlays', handlePreload)
-    return () => window.removeEventListener('preload-overlays', handlePreload)
+    window.addEventListener('mr-mentor:lesson-scheduled', handleLessonScheduled)
+    return () => {
+      window.removeEventListener('preload-overlays', handlePreload)
+      window.removeEventListener('mr-mentor:lesson-scheduled', handleLessonScheduled)
+    }
   }, [learnerId, loadSchedule])
   
   useEffect(() => {

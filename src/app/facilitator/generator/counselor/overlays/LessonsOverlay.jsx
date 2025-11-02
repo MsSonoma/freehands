@@ -274,8 +274,19 @@ export default function LessonsOverlay({ learnerId }) {
       }
     }
     
+    const handleLessonGenerated = () => {
+      console.log('[LessonsOverlay] Lesson generated, reloading')
+      // Clear cache and reload
+      setAllLessons({})
+      loadLessons()
+    }
+    
     window.addEventListener('preload-overlays', handlePreload)
-    return () => window.removeEventListener('preload-overlays', handlePreload)
+    window.addEventListener('mr-mentor:lesson-generated', handleLessonGenerated)
+    return () => {
+      window.removeEventListener('preload-overlays', handlePreload)
+      window.removeEventListener('mr-mentor:lesson-generated', handleLessonGenerated)
+    }
   }, [learnerId, loadLessons, loadLearnerData])
 
   // Load learner data when learner changes
