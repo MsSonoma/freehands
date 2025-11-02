@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
+export const maxDuration = 60 // Extended timeout for OpenAI lesson editing
 
 async function readUserAndTier(request){
   try {
@@ -60,7 +61,7 @@ async function callModel(prompt){
     throw new Error('OpenAI API key not configured')
   }
   const body = {
-    model: process.env.SONOMA_OPENAI_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    model: process.env.SONOMA_OPENAI_MODEL || process.env.OPENAI_MODEL || 'gpt-4o',
     messages: [
       { role:'system', content:'Return only valid JSON. No markdown. No commentary.' },
       { role:'user', content: prompt }
