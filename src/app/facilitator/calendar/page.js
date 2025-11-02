@@ -23,6 +23,7 @@ export default function CalendarPage() {
   const [tier, setTier] = useState('free')
   const [hasAccess, setHasAccess] = useState(false)
   const [tableExists, setTableExists] = useState(true)
+  const [rescheduling, setRescheduling] = useState(null) // Track which lesson is being rescheduled
 
   // Check PIN requirement on mount
   useEffect(() => {
@@ -293,6 +294,50 @@ export default function CalendarPage() {
     }
   }
 
+  const handleRescheduleLesson = async (item, newDate) => {
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) return
+
+      // Delete old schedule entry
+      const deleteResponse = await fetch(
+        `/api/lesson-schedule?id=${item.id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      if (!deleteResponse.ok) throw new Error('Failed to remove old schedule')
+
+      // Create new schedule entry with new date
+      const scheduleResponse = await fetch('/api/lesson-schedule', {
+        method: 'POST',
+        headers: {
+          'authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          learnerId: selectedLearnerId,
+          lessonKey: item.lesson_key,
+          scheduledDate: newDate
+        })
+      })
+
+      if (!scheduleResponse.ok) throw new Error('Failed to reschedule lesson')
+
+      setRescheduling(null)
+      await loadSchedule()
+    } catch (err) {
+      console.error('Error rescheduling lesson:', err)
+      alert('Failed to reschedule lesson')
+    }
+  }
+
   if (authLoading || loading) {
     return <div style={{ padding: '24px' }}><p>Loading…</p></div>
   }
@@ -394,35 +439,79 @@ export default function CalendarPage() {
                             key={item.id}
                             style={{
                               display: 'flex',
-                              alignItems: 'center',
-                              gap: '10px',
+                              flexDirection: 'column',
+                              gap: '8px',
                               padding: '8px 12px',
                               borderBottom: '1px solid #e5e7eb'
                             }}
                           >
-                            <div style={{ flex: '1', minWidth: 0 }}>
-                              <div style={{ fontSize: '13px', fontWeight: '600', color: '#111827' }}>
-                                {lessonName}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div style={{ flex: '1', minWidth: 0 }}>
+                                <div style={{ fontSize: '13px', fontWeight: '600', color: '#111827' }}>
+                                  {lessonName}
+                                </div>
                               </div>
+                              <button
+                                onClick={() => setRescheduling(rescheduling === item.id ? null : item.id)}
+                                style={{
+                                  padding: '3px 10px',
+                                  fontSize: '11px',
+                                  fontWeight: '600',
+                                  borderRadius: '4px',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  background: rescheduling === item.id ? '#dbeafe' : '#eff6ff',
+                                  color: '#1e40af',
+                                  transition: 'background 0.15s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#dbeafe'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = rescheduling === item.id ? '#dbeafe' : '#eff6ff'}
+                              >
+                                Reschedule
+                              </button>
+                              <button
+                                onClick={() => handleRemoveScheduledLesson(item)}
+                                style={{
+                                  padding: '3px 10px',
+                                  fontSize: '11px',
+                                  fontWeight: '600',
+                                  borderRadius: '4px',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  background: '#fee2e2',
+                                  color: '#991b1b',
+                                  transition: 'background 0.15s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#fecaca'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = '#fee2e2'}
+                              >
+                                Remove
+                              </button>
                             </div>
-                            <button
-                              onClick={() => handleRemoveScheduledLesson(item)}
-                              style={{
-                                padding: '3px 10px',
-                                fontSize: '11px',
-                                fontWeight: '600',
-                                borderRadius: '4px',
-                                border: 'none',
-                                cursor: 'pointer',
-                                background: '#fee2e2',
-                                color: '#991b1b',
-                                transition: 'background 0.15s'
-                              }}
-                              onMouseEnter={(e) => e.currentTarget.style.background = '#fecaca'}
-                              onMouseLeave={(e) => e.currentTarget.style.background = '#fee2e2'}
-                            >
-                              Remove
-                            </button>
+                            
+                            {/* Mini date picker for rescheduling */}
+                            {rescheduling === item.id && (
+                              <div style={{ paddingLeft: '8px' }}>
+                                <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>
+                                  Select new date:
+                                </div>
+                                <input
+                                  type="date"
+                                  onChange={(e) => {
+                                    if (e.target.value) {
+                                      handleRescheduleLesson(item, e.target.value)
+                                    }
+                                  }}
+                                  style={{
+                                    fontSize: '12px',
+                                    padding: '4px 8px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer'
+                                  }}
+                                />
+                              </div>
+                            )}
                           </div>
                         )
                       })}

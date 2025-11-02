@@ -9,6 +9,7 @@ export default function CalendarOverlay({ learnerId }) {
   const [scheduledLessons, setScheduledLessons] = useState({})
   const [scheduledForSelectedDate, setScheduledForSelectedDate] = useState([])
   const [tableExists, setTableExists] = useState(true)
+  const [rescheduling, setRescheduling] = useState(null) // Track which lesson is being rescheduled
 
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December']
@@ -77,6 +78,118 @@ export default function CalendarOverlay({ learnerId }) {
   const loadSchedule = useCallback(async () => {
     return loadScheduleForLearner(learnerId)
   }, [learnerId, loadScheduleForLearner])
+
+  const handleRemoveScheduledLesson = async (lessonKey, dateStr) => {
+    if (!confirm('Remove this lesson from the schedule?')) return
+
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) return
+
+      // Find the schedule ID by querying
+      const findResponse = await fetch(
+        `/api/lesson-schedule?learnerId=${learnerId}&startDate=${dateStr}&endDate=${dateStr}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      )
+
+      if (!findResponse.ok) throw new Error('Failed to find schedule entry')
+      
+      const findResult = await findResponse.json()
+      const schedules = findResult.schedule || []
+      const scheduleItem = schedules.find(s => s.lesson_key === lessonKey && s.scheduled_date === dateStr)
+      
+      if (!scheduleItem) throw new Error('Schedule entry not found')
+
+      const deleteResponse = await fetch(
+        `/api/lesson-schedule?id=${scheduleItem.id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      if (!deleteResponse.ok) throw new Error('Failed to remove lesson')
+
+      setScheduledLessons({})
+      await loadSchedule()
+    } catch (err) {
+      console.error('Error removing lesson:', err)
+      alert('Failed to remove lesson')
+    }
+  }
+
+  const handleRescheduleLesson = async (lessonKey, oldDate, newDate) => {
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) return
+
+      // Find the schedule ID
+      const findResponse = await fetch(
+        `/api/lesson-schedule?learnerId=${learnerId}&startDate=${oldDate}&endDate=${oldDate}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      )
+
+      if (!findResponse.ok) throw new Error('Failed to find schedule entry')
+      
+      const findResult = await findResponse.json()
+      const schedules = findResult.schedule || []
+      const scheduleItem = schedules.find(s => s.lesson_key === lessonKey && s.scheduled_date === oldDate)
+      
+      if (!scheduleItem) throw new Error('Schedule entry not found')
+
+      // Delete old schedule entry
+      const deleteResponse = await fetch(
+        `/api/lesson-schedule?id=${scheduleItem.id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      if (!deleteResponse.ok) throw new Error('Failed to remove old schedule')
+
+      // Create new schedule entry with new date
+      const scheduleResponse = await fetch('/api/lesson-schedule', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          learnerId: learnerId,
+          lessonKey: lessonKey,
+          scheduledDate: newDate
+        })
+      })
+
+      if (!scheduleResponse.ok) throw new Error('Failed to reschedule lesson')
+
+      setRescheduling(null)
+      setScheduledLessons({})
+      await loadSchedule()
+    } catch (err) {
+      console.error('Error rescheduling lesson:', err)
+      alert('Failed to reschedule lesson')
+    }
+  }
 
   // Listen for preload event to trigger initial load
   useEffect(() => {
@@ -307,16 +420,80 @@ export default function CalendarOverlay({ learnerId }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {scheduledForSelectedDate.map((lesson, idx) => (
                   <div key={idx} style={{ 
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 6,
                     padding: 8, 
                     background: '#fff', 
                     borderRadius: 6,
                     border: '1px solid #e5e7eb',
                     fontSize: 12
                   }}>
-                    <div style={{ fontWeight: 600, color: '#1f2937' }}>{lesson.lesson_title}</div>
-                    <div style={{ color: '#6b7280', fontSize: 11 }}>
-                      {lesson.subject} • {lesson.grade}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, color: '#1f2937' }}>{lesson.lesson_title}</div>
+                        <div style={{ color: '#6b7280', fontSize: 11 }}>
+                          {lesson.subject} • {lesson.grade}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setRescheduling(rescheduling === idx ? null : idx)}
+                        style={{
+                          padding: '3px 8px',
+                          fontSize: 10,
+                          fontWeight: 600,
+                          borderRadius: 4,
+                          border: 'none',
+                          cursor: 'pointer',
+                          background: rescheduling === idx ? '#dbeafe' : '#eff6ff',
+                          color: '#1e40af',
+                          transition: 'background 0.15s'
+                        }}
+                      >
+                        Reschedule
+                      </button>
+                      <button
+                        onClick={() => handleRemoveScheduledLesson(lesson.lesson_key, selectedDate)}
+                        style={{
+                          padding: '3px 8px',
+                          fontSize: 10,
+                          fontWeight: 600,
+                          borderRadius: 4,
+                          border: 'none',
+                          cursor: 'pointer',
+                          background: '#fee2e2',
+                          color: '#991b1b',
+                          transition: 'background 0.15s'
+                        }}
+                      >
+                        Remove
+                      </button>
                     </div>
+                    
+                    {/* Mini date picker for rescheduling */}
+                    {rescheduling === idx && (
+                      <div style={{ paddingLeft: 4 }}>
+                        <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>
+                          Select new date:
+                        </div>
+                        <input
+                          type="date"
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              handleRescheduleLesson(lesson.lesson_key, selectedDate, e.target.value)
+                            }
+                          }}
+                          style={{
+                            fontSize: 11,
+                            padding: '3px 6px',
+                            border: '1px solid #d1d5db',
+                            borderRadius: 4,
+                            cursor: 'pointer',
+                            width: '100%'
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
