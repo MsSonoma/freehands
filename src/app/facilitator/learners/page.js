@@ -376,14 +376,21 @@ function Dial({ value, onChange, options, ariaLabel, title }){
 	);
 }
 
-// TimerDial component specifically for session timer (displays in hours)
+// TimerDial component specifically for session timer (displays in hours and 15-minute increments)
 function TimerDial({ value, onChange, ariaLabel }){
-	const TIMER_OPTIONS = ['60', '120', '180', '240', '300']; // minutes
-	const TIMER_LABELS = { '60': '1h', '120': '2h', '180': '3h', '240': '4h', '300': '5h' };
+	const TIMER_OPTIONS = ['15', '30', '45', '60', '75', '90', '105', '120', '135', '150', '165', '180', '195', '210', '225', '240', '255', '270', '285', '300']; // minutes: 15min increments up to 5h
+	const TIMER_LABELS = { 
+		'15': '15m', '30': '30m', '45': '45m', 
+		'60': '1h', '75': '1h 15m', '90': '1h 30m', '105': '1h 45m',
+		'120': '2h', '135': '2h 15m', '150': '2h 30m', '165': '2h 45m',
+		'180': '3h', '195': '3h 15m', '210': '3h 30m', '225': '3h 45m',
+		'240': '4h', '255': '4h 15m', '270': '4h 30m', '285': '4h 45m',
+		'300': '5h'
+	};
 
 	const labels = TIMER_OPTIONS.map(v => TIMER_LABELS[v]);
 	let idx = TIMER_OPTIONS.indexOf(String(value));
-	if (idx === -1) idx = 0; // default to 1 hour
+	if (idx === -1) idx = 3; // default to 1 hour (60 minutes)
 
 	const setIdx = (newIdx) => {
 		const clamped = Math.max(0, Math.min(TIMER_OPTIONS.length - 1, newIdx));
@@ -416,7 +423,7 @@ function TimerDial({ value, onChange, ariaLabel }){
 			role="spinbutton"
 			aria-label={ariaLabel}
 			aria-valuemin={1}
-			aria-valuemax={5}
+			aria-valuemax={20}
 			aria-valuenow={idx + 1}
 			aria-valuetext={labels[idx]}
 			tabIndex={0}
