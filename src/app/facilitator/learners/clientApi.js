@@ -216,15 +216,15 @@ export async function updateLearner(id, updates) {
     const tryFlat = supabaseLearnersMode !== 'json';
     if (tryFlat) {
       const updatePayload = {
-        name: updates.name,
-        grade: updates.grade,
-        comprehension: targetValues.comprehension,
-        exercise: targetValues.exercise,
-        worksheet: targetValues.worksheet,
-        test: targetValues.test,
-        session_timer_minutes: updates.session_timer_minutes,
-        golden_keys: updates.golden_keys !== undefined ? Number(updates.golden_keys) : undefined,
-        active_golden_keys: updates.active_golden_keys !== undefined ? updates.active_golden_keys : undefined,
+        ...(updates.name !== undefined ? { name: updates.name } : {}),
+        ...(updates.grade !== undefined ? { grade: updates.grade } : {}),
+        ...(targetValues.comprehension !== undefined ? { comprehension: targetValues.comprehension } : {}),
+        ...(targetValues.exercise !== undefined ? { exercise: targetValues.exercise } : {}),
+        ...(targetValues.worksheet !== undefined ? { worksheet: targetValues.worksheet } : {}),
+        ...(targetValues.test !== undefined ? { test: targetValues.test } : {}),
+        ...(updates.session_timer_minutes !== undefined ? { session_timer_minutes: updates.session_timer_minutes } : {}),
+        ...(updates.golden_keys !== undefined ? { golden_keys: Number(updates.golden_keys) } : {}),
+        ...(updates.active_golden_keys !== undefined ? { active_golden_keys: updates.active_golden_keys } : {}),
         ...(typeof humorLevel === 'string' ? { humor_level: humorLevel } : {}),
       };
       console.log('📤 Sending to Supabase (flat mode):', updatePayload);
@@ -238,12 +238,13 @@ export async function updateLearner(id, updates) {
       if (!isUndefinedColumnOrTable(error)) throw new Error(error.message || 'Failed to update learner');
       // fallthrough to JSON mode
     }
-    const { data: data2, error: error2 } = await updateWithOwner(supabase, id, {
-      name: updates.name,
-      grade: updates.grade,
-      targets: targetValues,
+    const jsonPayload = {
+      ...(updates.name !== undefined ? { name: updates.name } : {}),
+      ...(updates.grade !== undefined ? { grade: updates.grade } : {}),
+      ...(Object.keys(targetValues).length > 0 ? { targets: targetValues } : {}),
       ...(typeof humorLevel === 'string' ? { humor_level: humorLevel } : {}),
-    }, uid);
+    };
+    const { data: data2, error: error2 } = await updateWithOwner(supabase, id, jsonPayload, uid);
     if (!error2) { supabaseLearnersMode = 'json'; return normalizeRow(data2); }
     if (isUndefinedColumnOrTable(error2)) { supabaseLearnersMode = 'disabled'; return updateLocal(id, updates); }
     throw new Error(error2.message || 'Failed to update learner');
