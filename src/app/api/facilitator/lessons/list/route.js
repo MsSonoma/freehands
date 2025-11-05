@@ -39,7 +39,15 @@ export async function GET(request){
     
     const userId = user.id
     
+    // OPTIMIZATION: Accept filenames query parameter to only load specific files
+    const { searchParams } = new URL(request.url)
+    const filenamesParam = searchParams.get('filenames')
+    const requestedFiles = filenamesParam ? filenamesParam.split(',').filter(Boolean) : null
+    
     console.log('[LIST API] Fetching lessons for user:', userId)
+    if (requestedFiles) {
+      console.log('[LIST API] Filtering to', requestedFiles.length, 'specific files:', requestedFiles)
+    }
     
     // Only list files in THIS user's folder
     const { data: files, error: listError } = await supabase.storage
@@ -58,6 +66,11 @@ export async function GET(request){
     // Process each file in the user's folder
     for (const fileObj of files || []) {
       if (!fileObj.name.toLowerCase().endsWith('.json')) continue
+      
+      // OPTIMIZATION: Skip files not in the requested list
+      if (requestedFiles && !requestedFiles.includes(fileObj.name)) {
+        continue
+      }
       
       console.log('[LIST API] Processing file:', fileObj.name)
       

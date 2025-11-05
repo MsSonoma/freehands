@@ -145,16 +145,12 @@ function LessonsPageInner(){
   useEffect(() => {
     let cancelled = false
     ;(async () => {
+      if (!learnerId) {
+        setLessonsLoading(false)
+        return
+      }
+
       setLessonsLoading(true)
-      // Get auth token for facilitator lessons
-      let token = null
-      try {
-        const supabase = getSupabaseClient()
-        if (supabase) {
-          const { data: { session } } = await supabase.auth.getSession()
-          token = session?.access_token || null
-        }
-      } catch {}
       
       const lessonsMap = {}
       
@@ -167,34 +163,33 @@ function LessonsPageInner(){
         } catch {
           lessonsMap['demo'] = []
         }
-      }
-      
-      for (const subject of SUBJECTS) {
+      } else if (learnerId) {
+        // OPTIMIZED: Call single API that returns only checked/scheduled lessons
         try {
-          // Use token for generated lessons endpoint
-          const headers = subject === 'generated' && token 
-            ? { 'Authorization': `Bearer ${token}` }
-            : {}
-            
-          // For generated lessons, use the facilitator endpoint
-          const endpoint = subject === 'generated' && token
-            ? '/api/facilitator/lessons/list'
-            : `/api/lessons/${encodeURIComponent(subject)}`
-            
-          const res = await fetch(endpoint, { 
-            cache: 'no-store',
-            headers 
+          const res = await fetch(`/api/learner/available-lessons?learner_id=${learnerId}`, {
+            cache: 'no-store'
           })
-          const list = res.ok ? await res.json() : []
           
-          // Mark generated lessons with isGenerated flag
-          const processedList = subject === 'generated'
-            ? list.map(lesson => ({ ...lesson, isGenerated: true }))
-            : list
-          
-          lessonsMap[subject] = Array.isArray(processedList) ? processedList : []
-        } catch {
-          lessonsMap[subject] = []
+          if (res.ok) {
+            const { lessons, scheduledKeys: debugScheduledKeys, rawSchedule: debugRawSchedule, approvedKeys: debugApprovedKeys } = await res.json()
+            console.log('[Learn Lessons] Loaded', lessons.length, 'available lessons from server')
+            if (debugScheduledKeys || debugRawSchedule || debugApprovedKeys) {
+              console.log('[Learn Lessons] Debug available lessons payload:', {
+                scheduledKeys: debugScheduledKeys,
+                rawSchedule: debugRawSchedule,
+                approvedKeys: debugApprovedKeys
+              })
+            }
+            
+            // Group by subject
+            for (const lesson of lessons) {
+              const subject = lesson.isGenerated ? 'generated' : (lesson.subject || 'general')
+              if (!lessonsMap[subject]) lessonsMap[subject] = []
+              lessonsMap[subject].push(lesson)
+            }
+          }
+        } catch (err) {
+          console.error('[Learn Lessons] Error loading available lessons:', err)
         }
       }
       
@@ -204,7 +199,7 @@ function LessonsPageInner(){
       }
     })()
     return () => { cancelled = true }
-  }, [learnerId])
+  }, [learnerId, availableLessons, scheduledLessons])
 
   useEffect(() => {
     if (!learnerId) {
@@ -294,75 +289,6 @@ function LessonsPageInner(){
     })()
     return () => { cancelled = true }
   }, [learnerId, refreshTrigger])
-
-  // Check for existing snapshots for approved lessons only (localStorage only for performance)
-  useEffect(() => {
-    if (!learnerId || lessonsLoading || Object.keys(availableLessons).length === 0) return
-    let cancelled = false
-    
-    const checkLocalSnapshots = () => {
-      const snapshotsFound = {}
-      const KEY_PREFIX = 'lesson_session:'
-      const suffix = `:L:${learnerId}`
-      
-      console.log('[Learn Lessons] Checking snapshots for', Object.keys(availableLessons).length, 'checkmarked lessons')
-      
-      try {
-        // Check each checkmarked lesson for snapshots
-        for (const approvedLessonKey of Object.keys(availableLessons)) {
-          if (!availableLessons[approvedLessonKey]) continue
-          
-          // Extract filename from key
-          const filename = approvedLessonKey.includes('/') 
-            ? approvedLessonKey.split('/')[1] 
-            : approvedLessonKey
-          
-          // Try multiple key formats to find snapshot
-          const keysToTry = [
-            approvedLessonKey, // Original key as stored in DB
-            filename, // Just filename
-            `general/${filename}`, // With general/ prefix
-            `generated/${filename}`, // With generated/ prefix
-            approvedLessonKey.replace('facilitator/', 'general/'), // Legacy format
-            approvedLessonKey.replace('generated/', 'general/') // Another variant
-          ]
-          
-          let foundSnapshot = false
-          for (const keyVariant of keysToTry) {
-            const storageKey = `${KEY_PREFIX}${keyVariant}${suffix}`
-            
-            try {
-              const raw = localStorage.getItem(storageKey)
-              if (raw) {
-                const parsed = JSON.parse(raw)
-                if (parsed && parsed.savedAt) {
-                  // Store snapshot under the ORIGINAL approved key so metadata API lessonKey matches
-                  snapshotsFound[approvedLessonKey] = true
-                  foundSnapshot = true
-                  console.log('[Learn Lessons] Found snapshot - stored as:', keyVariant, '-> mapped to:', approvedLessonKey)
-                  break
-                }
-              }
-            } catch {}
-          }
-        }
-        
-        console.log('[Learn Lessons] Snapshot check complete. Found:', Object.keys(snapshotsFound).length, 'snapshots')
-        if (Object.keys(snapshotsFound).length > 0) {
-          console.log('[Learn Lessons] Snapshot keys:', Object.keys(snapshotsFound))
-        }
-      } catch (err) {
-        console.error('[Learn Lessons] Error checking snapshots:', err)
-      }
-      
-      if (!cancelled) {
-        setLessonSnapshots(snapshotsFound)
-      }
-    }
-    
-    checkLocalSnapshots()
-    return () => { cancelled = true }
-  }, [learnerId, availableLessons, lessonsLoading])
 
   async function openLesson(subject, fileBaseName){
     const ent = featuresForTier(planTier)
@@ -499,6 +425,12 @@ function LessonsPageInner(){
           })
         }
         return isAvailable
+      }).map(lesson => {
+        // Add lessonKey to each lesson object for snapshot lookup
+        const lessonKey = lesson.isGenerated 
+          ? `generated/${lesson.file}`
+          : `${subject}/${lesson.file}`
+        return { ...lesson, lessonKey }
       })
       if (availableForSubject.length > 0) {
         grouped[subject] = availableForSubject
@@ -511,6 +443,73 @@ function LessonsPageInner(){
   }, [allLessons, availableLessons, scheduledLessons])
 
   const hasLessons = Object.keys(lessonsBySubject).length > 0
+
+  // Check for existing snapshots from server - must use lesson.id not filename
+  useEffect(() => {
+    if (!learnerId || lessonsLoading) return
+    
+    // Wait for lessons to be loaded with their IDs
+    const allLoadedLessons = Object.values(lessonsBySubject).flat()
+    if (allLoadedLessons.length === 0) return
+    
+    let cancelled = false
+    
+    ;(async () => {
+      try {
+        const supabase = getSupabaseClient()
+        if (!supabase) {
+          if (!cancelled) setLessonSnapshots({})
+          return
+        }
+        
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+        if (!token) {
+          if (!cancelled) setLessonSnapshots({})
+          return
+        }
+        
+        console.log('[Learn Lessons] Checking server snapshots for', allLoadedLessons.length, 'loaded lessons')
+        
+        const snapshotsFound = {}
+        
+        // Check each loaded lesson for a snapshot using its ID
+        for (const lesson of allLoadedLessons) {
+          if (cancelled) break
+          
+          // Use lesson.id if available, fallback to filename without extension
+          const lessonId = lesson.id || lesson.file?.replace(/\.json$/i, '') || lesson.lessonKey?.split('/').pop()?.replace(/\.json$/i, '')
+          if (!lessonId) continue
+          
+          try {
+            const res = await fetch(
+              `/api/snapshots?learner_id=${encodeURIComponent(learnerId)}&lesson_key=${encodeURIComponent(lessonId)}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            )
+            
+            if (res.ok) {
+              const { snapshot } = await res.json()
+              if (snapshot && snapshot.savedAt) {
+                // Store under the lessonKey for display
+                snapshotsFound[lesson.lessonKey] = true
+                console.log('[Learn Lessons] Found snapshot for', lesson.lessonKey, '(id:', lessonId + ')')
+              }
+            }
+          } catch (e) {
+            console.warn('[Learn Lessons] Failed to check snapshot for', lesson.lessonKey, e)
+          }
+        }
+        
+        console.log('[Learn Lessons] Snapshot check complete. Found:', Object.keys(snapshotsFound).length, 'snapshots')
+        if (!cancelled) setLessonSnapshots(snapshotsFound)
+      } catch (e) {
+        console.error('[Learn Lessons] Error checking snapshots:', e)
+        if (!cancelled) setLessonSnapshots({})
+      }
+    })()
+    
+    return () => { cancelled = true }
+  }, [learnerId, lessonsBySubject, lessonsLoading])
 
   return (
     <main style={{ padding:24, maxWidth:980, margin:'0 auto' }}>

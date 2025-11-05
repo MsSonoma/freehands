@@ -146,7 +146,7 @@ export function normalizeSnapshot(obj) {
 
 export async function getStoredSnapshot(lessonKey, { learnerId } = {}) {
   if (typeof window === 'undefined') return null;
-  // Try remote first when authenticated
+  // Read from server only (no localStorage fallback)
   try {
     const supabase = (await import('@/app/lib/supabaseClient')).getSupabaseClient?.();
     const hasEnv = (await import('@/app/lib/supabaseClient')).hasSupabaseEnv?.();
@@ -164,61 +164,16 @@ export async function getStoredSnapshot(lessonKey, { learnerId } = {}) {
       }
     }
   } catch (e) {
-    // fall through to local
+    console.warn('[sessionSnapshotStore] Failed to load snapshot from server', e);
   }
-  // Local fallback
-  try {
-    const k = buildKey(lessonKey, learnerId);
-    const raw = localStorage.getItem(k);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      return normalizeSnapshot(parsed);
-    }
-    // Legacy/local compatibility: search for any prior keys that used a suffixed lessonKey variant
-    // such as `${lessonKey}:W<T>:T<U>` (order may vary) before the `:L:<learnerId>` suffix.
-    // Choose the most recent by savedAt.
-    let best = null;
-    let bestAt = 0;
-    const PREFIX = KEY_PREFIX;
-    const suffix = `:L:${learnerId || 'none'}`;
-    const canon = canonicalLessonKey(lessonKey);
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key || !key.startsWith(PREFIX)) continue;
-      if (!key.endsWith(suffix)) continue;
-      // Extract the lessonKey portion between prefix and suffix
-      const middle = key.slice(PREFIX.length, key.length - suffix.length);
-      // Accept exact match or legacy variants that start with the provided lessonKey
-      if (!middle) continue;
-      // Match canonical or extension variant and legacy suffixed forms
-      const middleCanon = canonicalLessonKey(middle);
-      if (middleCanon !== canon && !middleCanon.startsWith(`${canon}:`)) continue;
-      try {
-        const val = localStorage.getItem(key);
-        if (!val) continue;
-        const parsed = JSON.parse(val);
-        const norm = normalizeSnapshot(parsed);
-        const t = Date.parse(norm?.savedAt || '') || 0;
-        if (t >= bestAt) { best = norm; bestAt = t; }
-      } catch { /* ignore parse errors */ }
-    }
-    if (best) return best;
-    return null;
-  } catch (e) {
-    console.warn('[sessionSnapshotStore] Failed to load snapshot', e);
-    return null;
-  }
+  return null;
 }
 
 export async function saveSnapshot(lessonKey, snapshot, { learnerId } = {}) {
   if (typeof window === 'undefined') return;
   const payload = normalizeSnapshot({ ...(snapshot || {}), savedAt: new Date().toISOString() });
-  // Write local immediately
-  try {
-    const k = buildKey(lessonKey, learnerId);
-    localStorage.setItem(k, JSON.stringify(payload));
-  } catch (e) { console.warn('[sessionSnapshotStore] Failed to save local snapshot', e); }
-  // Best-effort remote
+  console.log('[sessionSnapshotStore] Saving snapshot - lessonKey:', lessonKey, 'learnerId:', learnerId);
+  // Save to server only (no localStorage)
   try {
     const supabaseMod = await import('@/app/lib/supabaseClient');
     const supabase = supabaseMod.getSupabaseClient?.();
@@ -227,27 +182,26 @@ export async function saveSnapshot(lessonKey, snapshot, { learnerId } = {}) {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (token) {
-        await fetch('/api/snapshots', {
+        const response = await fetch('/api/snapshots', {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
           body: JSON.stringify({ learner_id: learnerId, lesson_key: lessonKey, data: payload })
-        }).catch(() => {});
+        });
+        console.log('[sessionSnapshotStore] Snapshot save response:', response.status, response.ok);
+      } else {
+        console.warn('[sessionSnapshotStore] No auth token available');
       }
+    } else {
+      console.warn('[sessionSnapshotStore] Supabase not available or no learnerId');
     }
   } catch (e) {
-    // ignore, local already saved
+    console.warn('[sessionSnapshotStore] Failed to save snapshot to server', e);
   }
 }
 
 export async function clearSnapshot(lessonKey, { learnerId } = {}) {
   if (typeof window === 'undefined') return;
-  try {
-    const k = buildKey(lessonKey, learnerId);
-    localStorage.removeItem(k);
-  } catch (e) {
-    console.warn('[sessionSnapshotStore] Failed to clear local snapshot', e);
-  }
-  // Best-effort remote delete
+  // Delete from server only (no localStorage)
   try {
     const supabaseMod = await import('@/app/lib/supabaseClient');
     const supabase = supabaseMod.getSupabaseClient?.();
@@ -260,50 +214,15 @@ export async function clearSnapshot(lessonKey, { learnerId } = {}) {
         await fetch(url, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
       }
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) {
+    console.warn('[sessionSnapshotStore] Failed to clear snapshot from server', e);
+  }
 }
 
-// Consolidate legacy/variant keys down to the canonical key for the given lessonKey + learner.
-// Keeps the most recent snapshot and removes other matching variant keys.
+// Consolidate legacy/variant keys - no-op now that snapshots are server-only
 export async function consolidateSnapshots(lessonKey, { learnerId } = {}) {
-  if (typeof window === 'undefined') return;
-  try {
-    const targetKey = buildKey(lessonKey, learnerId);
-    const PREFIX = KEY_PREFIX;
-    const suffix = `:L:${learnerId || 'none'}`;
-    const canon = canonicalLessonKey(lessonKey);
-    let newest = null;
-    let newestAt = 0;
-    const candidates = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (!k || !k.startsWith(PREFIX)) continue;
-      if (!k.endsWith(suffix)) continue;
-      const middle = k.slice(PREFIX.length, k.length - suffix.length);
-      if (!middle) continue;
-      const midCanon = canonicalLessonKey(middle);
-      if (midCanon !== canon && !midCanon.startsWith(`${canon}:`)) continue;
-      candidates.push(k);
-      try {
-        const raw = localStorage.getItem(k);
-        if (!raw) continue;
-        const parsed = JSON.parse(raw);
-        const norm = normalizeSnapshot(parsed);
-        const t = Date.parse(norm?.savedAt || '') || 0;
-        if (t >= newestAt) { newest = norm; newestAt = t; }
-      } catch { /* ignore parse errors */ }
-    }
-    if (!candidates.length) return;
-    if (newest) {
-      try { localStorage.setItem(targetKey, JSON.stringify({ ...newest, savedAt: new Date().toISOString() })); } catch {}
-    }
-    for (const k of candidates) {
-      if (k === targetKey) continue;
-      try { localStorage.removeItem(k); } catch {}
-    }
-  } catch (e) {
-    console.warn('[sessionSnapshotStore] consolidate failed', e);
-  }
+  // No-op: snapshots are stored server-side only
+  return;
 }
 
 const api = { getStoredSnapshot, saveSnapshot, clearSnapshot, consolidateSnapshots };

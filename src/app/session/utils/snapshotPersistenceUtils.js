@@ -8,14 +8,20 @@
 
 /**
  * Build canonical storage key from lesson identifiers.
- * Strips .json extension to avoid key forking.
+ * Always returns just the filename without subject prefix or .json extension.
+ * This ensures snapshots are stored/retrieved with a consistent key format.
+ * 
+ * Examples:
+ * - "generated/4th_Procrastination_beginner.json" -> "4th_Procrastination_beginner"
+ * - "4th_Procrastination_beginner.json" -> "4th_Procrastination_beginner"
+ * - "4th_Procrastination_beginner" -> "4th_Procrastination_beginner"
  * 
  * @param {Object} params - Parameters for key generation
  * @param {Object} params.lessonData - Lesson data object (may have .id)
  * @param {Object} params.manifestInfo - Manifest info object (may have .file)
  * @param {string} params.lessonParam - Lesson parameter string
  * @param {Object} params.override - Override object with .data, .manifest, or .param
- * @returns {string} Canonical storage key
+ * @returns {string} Canonical storage key (filename without subject/extension)
  */
 export function getSnapshotStorageKey({ lessonData, manifestInfo, lessonParam, override }) {
   try {
@@ -23,11 +29,20 @@ export function getSnapshotStorageKey({ lessonData, manifestInfo, lessonParam, o
     const m = override?.manifest ?? manifestInfo;
     const p = override?.param ?? lessonParam;
     let base = (d && d.id) || (m && m.file) || p || '';
-    // Canonicalize: strip trailing .json if present so we never fork keys by extension
+    
+    // Normalize: strip subject prefix if present (e.g., "generated/file.json" -> "file.json")
+    if (base.includes('/')) {
+      base = base.split('/').pop();
+    }
+    
+    // Strip .json extension
     base = String(base).replace(/\.json$/i, '');
+    
     return `${base}`;
   } catch {
-    return (lessonParam || '').replace(/\.json$/i, '');
+    const fallback = (lessonParam || '');
+    const withoutPrefix = fallback.includes('/') ? fallback.split('/').pop() : fallback;
+    return withoutPrefix.replace(/\.json$/i, '');
   }
 }
 
