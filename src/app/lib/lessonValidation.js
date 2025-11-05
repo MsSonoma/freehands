@@ -108,10 +108,8 @@ export function validateLessonQuality(lesson) {
     })
   }
 
-  // Check sample questions
-  if (!lesson.sample || !Array.isArray(lesson.sample) || lesson.sample.length === 0) {
-    warnings.push('No sample questions defined')
-  }
+  // REMOVED: sample array validation - deprecated zombie code
+  // See docs/KILL_SAMPLE_ARRAY.md - sample array must never be used or validated
 
   const passed = issues.length === 0
   return { passed, issues, warnings }

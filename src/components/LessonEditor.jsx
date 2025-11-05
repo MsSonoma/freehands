@@ -74,17 +74,8 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
       if (fibKey !== 'fillintheblank') delete normalized[fibKey]
     }
     
-    // Normalize sample Q&A
-    if (normalized.sample) {
-      normalized.sample = toArray(normalized.sample).map(q => {
-        const answers = q.expectedAny || q.expected || q.answers || q.answer || q.sample || q.a || q.A
-        const answerArray = toArray(answers)
-        return {
-          question: q.question || q.q || q.Q || '',
-          expectedAny: answerArray.length > 0 ? answerArray : ['']
-        }
-      })
-    }
+    // REMOVED: sample array normalization - deprecated zombie code
+    // See docs/KILL_SAMPLE_ARRAY.md - sample array must never be used
     
     // Normalize vocabulary
     if (normalized.vocab) {
@@ -221,13 +212,8 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
       }
     })
     
-    // Sample Q&A validation
-    const sample = toArray(lesson.sample || [])
-    sample.forEach((q, idx) => {
-      if (!q.question?.trim()) {
-        errs.push(`Sample question #${idx + 1} is missing question text`)
-      }
-    })
+    // REMOVED: Sample Q&A validation - deprecated zombie code
+    // See docs/KILL_SAMPLE_ARRAY.md
     
     setErrors(errs)
     return errs.length === 0
@@ -243,9 +229,10 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
     }
     
     // Clean each question type - remove empty questions
+    // REMOVED: 'sample' from list - deprecated zombie code
     const questionTypes = [
       'multiplechoice', 'truefalse', 'shortanswer', 
-      'fillintheblank', 'sample'
+      'fillintheblank'
     ]
     
     questionTypes.forEach(type => {
@@ -501,12 +488,8 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
         styles={{ sectionStyle, labelStyle, inputStyle, textareaStyle, btnAddStyle, btnDangerStyle }}
       />
 
-      {/* Sample Q&A */}
-      <SampleQAEditor
-        questions={toArray(lesson.sample || [])}
-        onChange={(newQuestions) => updateField('sample', newQuestions)}
-        styles={{ sectionStyle, labelStyle, inputStyle, textareaStyle, btnAddStyle, btnDangerStyle }}
-      />
+      {/* REMOVED: Sample Q&A section - deprecated zombie code */}
+      {/* See docs/KILL_SAMPLE_ARRAY.md */}
       </div>
     </div>
   )
@@ -1017,97 +1000,6 @@ function FillInBlankEditor({ questions, onChange, styles }) {
   )
 }
 
-// Sample Q&A Editor (similar to short answer)
-function SampleQAEditor({ questions, onChange, styles }) {
-  console.log('[SampleQAEditor] Received questions:', questions)
-  
-  const addQuestion = () => {
-    onChange([...questions, { question: '', expectedAny: [''] }])
-  }
+// REMOVED: SampleQAEditor component - deprecated zombie code
+// See docs/KILL_SAMPLE_ARRAY.md - sample array must never be used or edited
 
-  const updateQuestion = (index, field, value) => {
-    const updated = [...questions]
-    updated[index] = { ...updated[index], [field]: value }
-    onChange(updated)
-  }
-
-  const updateAnswer = (qIndex, aIndex, value) => {
-    const updated = [...questions]
-    const answers = [...(updated[qIndex].expectedAny || [])]
-    answers[aIndex] = value
-    updated[qIndex] = { ...updated[qIndex], expectedAny: answers }
-    onChange(updated)
-  }
-
-  const addAnswer = (qIndex) => {
-    const updated = [...questions]
-    const answers = [...(updated[qIndex].expectedAny || []), '']
-    updated[qIndex] = { ...updated[qIndex], expectedAny: answers }
-    onChange(updated)
-  }
-
-  const removeAnswer = (qIndex, aIndex) => {
-    const updated = [...questions]
-    const answers = updated[qIndex].expectedAny.filter((_, i) => i !== aIndex)
-    updated[qIndex] = { ...updated[qIndex], expectedAny: answers }
-    onChange(updated)
-  }
-
-  const removeQuestion = (index) => {
-    onChange(questions.filter((_, i) => i !== index))
-  }
-
-  return (
-    <div style={styles.sectionStyle}>
-      <h3 style={{ marginTop: 0, marginBottom: 12 }}>Sample Q&A (Teaching Examples)</h3>
-      <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 12px' }}>
-        These are sample questions used during the teaching phase.
-      </p>
-      {questions.length === 0 ? (
-        <p style={{ color: '#6b7280', fontSize: 14 }}>No sample Q&A yet. Add one below.</p>
-      ) : (
-        questions.map((q, qIdx) => (
-          <div key={qIdx} style={{ marginBottom: 16, padding: 12, border: '1px solid #d1d5db', borderRadius: 6, background: '#fff' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <strong>Question {qIdx + 1}</strong>
-              <button style={styles.btnDangerStyle} onClick={() => removeQuestion(qIdx)}>
-                Remove Question
-              </button>
-            </div>
-            
-            <label style={styles.labelStyle}>Question Text</label>
-            <input
-              style={styles.inputStyle}
-              value={q.question || q.q || ''}
-              onChange={(e) => updateQuestion(qIdx, 'question', e.target.value)}
-              placeholder="Enter the sample question"
-            />
-
-            <label style={{ ...styles.labelStyle, marginTop: 12 }}>Sample Answers</label>
-            {(q.expectedAny || []).map((answer, aIdx) => (
-              <div key={aIdx} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
-                <input
-                  style={{ ...styles.inputStyle, flex: 1 }}
-                  value={answer}
-                  onChange={(e) => updateAnswer(qIdx, aIdx, e.target.value)}
-                  placeholder={`Sample answer ${aIdx + 1}`}
-                />
-                {(q.expectedAny || []).length > 1 && (
-                  <button style={{ ...styles.btnDangerStyle, padding: '4px 8px' }} onClick={() => removeAnswer(qIdx, aIdx)}>
-                    ×
-                  </button>
-                )}
-              </div>
-            ))}
-            <button style={{ ...styles.btnAddStyle, padding: '4px 8px', fontSize: 12 }} onClick={() => addAnswer(qIdx)}>
-              + Add Sample Answer
-            </button>
-          </div>
-        ))
-      )}
-      <button style={styles.btnAddStyle} onClick={addQuestion}>
-        + Add Sample Question
-      </button>
-    </div>
-  )
-}

@@ -66,7 +66,6 @@ function buildPrompt({ title, subject, difficulty, grade, description, notes, vo
   "blurb": "string",
   "vocab": [{"term": "string", "definition": "string"}],
   "teachingNotes": "string",
-  "sample": [{"question": "string", "expectedAny": ["string"]}],
   "truefalse": [{"question": "COMPLETE QUESTION TEXT HERE", "answer": true|false, "expectedAny": ["true"|"false"]}],
   "multiplechoice": [{"question": "string", "choices": ["A", "B", "C", "D"], "correct": 0-3, "expectedAny": ["correct answer text"]}],
   "fillintheblank": [{"question": "COMPLETE SENTENCE WITH _____ BLANK", "expectedAny": ["answer"]}],
@@ -123,8 +122,8 @@ async function callModel(prompt){
       id: 'Dev_Lesson', title: 'Dev Lesson', grade: '3rd', difficulty: 'Beginner',
       blurb: 'A development stub lesson.', vocab:[{term:'term',definition:'definition'}], 
       teachingNotes:'Use concrete examples and hands-on activities. Address common misconceptions. Connect to real-world scenarios.',
-      sample:[{question:'What is 1+1?', expectedAny:['2']}], truefalse:[{question:'2 is even.', answer:true}],
-      multiplechoice:[{question:'Pick 2', choices:['1','2','3','4'], correct:1}],
+      truefalse:[{question:'2 is even.', answer:true, expectedAny:['true']}],
+      multiplechoice:[{question:'Pick 2', choices:['1','2','3','4'], correct:1, expectedAny:['2']}],
       fillintheblank:[{question:'__ is the result of 1+1.', expectedAny:['2']}],
       shortanswer:[{question:'Explain even numbers.', expectedAny:['divisible by 2']}] 
     }

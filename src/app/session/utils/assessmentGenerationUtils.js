@@ -6,20 +6,19 @@
 
 import { isShortAnswerItem } from '../utils/questionFormatting';
 import { promptKey } from '../utils/questionFormatting';
+import { betterShuffle } from '@/app/lib/betterRandom';
 
 /**
- * Shuffle array using Fisher-Yates algorithm.
+ * Shuffle array using Fisher-Yates algorithm with better randomization.
+ * Uses crypto-random when available to avoid predictable patterns.
  * 
  * @param {Array} arr - Array to shuffle
  * @returns {Array} Shuffled copy of array
  */
 function shuffleArray(arr) {
-  const copy = [...arr];
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
+  // Use better shuffle with entropy from current session
+  const sessionSeed = typeof window !== 'undefined' ? window.location.href : '';
+  return betterShuffle(arr, { addEntropy: true, sessionSeed });
 }
 
 /**
@@ -164,74 +163,10 @@ export function ensureExactCount(base = [], target = 0, pools = [], allowDuplica
   return out.slice(0, target);
 }
 
-/**
- * Initialize sample deck with shuffled samples.
- * Resets deck and tracking refs for non-repeating draws across phases.
- * 
- * @param {object} data - Lesson data containing samples
- * @param {object} refs - React refs { sampleDeckRef, sampleIndexRef, usedSampleSetRef }
- */
-export function initSampleDeck(data, refs) {
-  const { sampleDeckRef, sampleIndexRef, usedSampleSetRef } = refs;
-  try {
-    const raw = Array.isArray(data?.sample) ? data.sample : [];
-    sampleDeckRef.current = shuffleArray(raw);
-    sampleIndexRef.current = 0;
-    usedSampleSetRef.current = new Set();
-  } catch {
-    sampleDeckRef.current = [];
-    sampleIndexRef.current = 0;
-    usedSampleSetRef.current = new Set();
-  }
-}
-
-/**
- * Draw one sample from deck without repeating until full cycle completes.
- * When deck exhausted, reshuffles and allows repeats in new cycle.
- * 
- * @param {object} refs - React refs { sampleDeckRef, sampleIndexRef, usedSampleSetRef }
- * @returns {object|null} Sample item or null if deck empty
- */
-export function drawSampleUnique(refs) {
-  const { sampleDeckRef, sampleIndexRef, usedSampleSetRef } = refs;
-  const deck = sampleDeckRef.current || [];
-  if (!deck.length) return null;
-  
-  if (sampleIndexRef.current >= deck.length) {
-    // Completed a full cycle: reshuffle and reset (now repeats are allowed again)
-    sampleDeckRef.current = shuffleArray(deck);
-    sampleIndexRef.current = 0;
-    usedSampleSetRef.current = new Set();
-  }
-  
-  const item = sampleDeckRef.current[sampleIndexRef.current++];
-  const key = String(item?.prompt || item?.question || '').trim();
-  if (key) usedSampleSetRef.current.add(key);
-  
-  // Tag items from sample array with sourceType to aid detection
-  if (item && !item.sourceType) {
-    return { ...item, sourceType: 'short' };
-  }
-  
-  return item || null;
-}
-
-/**
- * Reserve multiple samples from deck.
- * 
- * @param {number} count - Number of samples to reserve
- * @param {object} refs - React refs { sampleDeckRef, sampleIndexRef, usedSampleSetRef }
- * @returns {Array} Array of reserved samples
- */
-export function reserveSamples(count, refs) {
-  const out = [];
-  for (let i = 0; i < count; i += 1) {
-    const it = drawSampleUnique(refs);
-    if (!it) break;
-    out.push(it);
-  }
-  return out;
-}
+// REMOVED: initSampleDeck, drawSampleUnique, reserveSamples
+// The sample array is deprecated and no longer used.
+// All problems should use proper categories: TF, MC, FIB, SA, WP
+// See docs/KILL_SAMPLE_ARRAY.md for why this was removed.
 
 /**
  * Initialize word problem deck with shuffled word problems.

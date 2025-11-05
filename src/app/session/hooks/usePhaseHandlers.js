@@ -44,7 +44,7 @@ export function usePhaseHandlers({
   
   // Functions
   speakFrontend,
-  drawSampleUnique,
+  // REMOVED: drawSampleUnique - sample array deprecated
   buildQAPool
 }) {
 
@@ -58,9 +58,7 @@ export function usePhaseHandlers({
         firstComp = generatedComprehension[currentCompIndex];
         setCurrentCompIndex(currentCompIndex + 1);
       }
-      if (!firstComp) {
-        let tries = 0; while (tries < 5) { const s = drawSampleUnique(); if (s) { firstComp = s; break; } tries += 1; }
-      }
+      // REMOVED: drawSampleUnique fallback - sample array deprecated
       if (!firstComp && compPool.length) {
         firstComp = compPool[0];
         setCompPool(compPool.slice(1));
@@ -91,7 +89,8 @@ export function usePhaseHandlers({
   }, [
     phase, currentCompProblem, generatedComprehension, currentCompIndex, compPool,
     setShowOpeningActions, setCurrentCompProblem, setSubPhase, setQaAnswersUnlocked, setCanSend,
-    setCurrentCompIndex, setCompPool, activeQuestionBodyRef, speakFrontend, drawSampleUnique, buildQAPool
+    setCurrentCompIndex, setCompPool, activeQuestionBodyRef, speakFrontend, buildQAPool
+    // REMOVED: drawSampleUnique from deps - sample array deprecated
   ]);
 
   const handleGoExercise = useCallback(async () => {
@@ -104,7 +103,7 @@ export function usePhaseHandlers({
         first = generatedExercise[currentExIndex];
         setCurrentExIndex(currentExIndex + 1);
       }
-      if (!first) { let tries = 0; while (tries < 5) { const s = drawSampleUnique(); if (s) { first = s; break; } tries += 1; } }
+      // REMOVED: drawSampleUnique fallback - sample array deprecated
       if (!first && exercisePool.length) { const [head, ...rest] = exercisePool; first = head; setExercisePool(rest); }
       if (!first) { const refilled = buildQAPool(); if (refilled.length) { const [head, ...rest] = refilled; first = head; setExercisePool(rest); } }
       if (first) { setCurrentExerciseProblem(first); item = first; setSubPhase('exercise-start'); }
@@ -126,7 +125,8 @@ export function usePhaseHandlers({
   }, [
     phase, currentExerciseProblem, generatedExercise, currentExIndex, exercisePool,
     setShowOpeningActions, setCurrentExerciseProblem, setSubPhase, setQaAnswersUnlocked, setCanSend,
-    setCurrentExIndex, setExercisePool, activeQuestionBodyRef, speakFrontend, drawSampleUnique, buildQAPool
+    setCurrentExIndex, setExercisePool, activeQuestionBodyRef, speakFrontend, buildQAPool
+    // REMOVED: drawSampleUnique from deps - sample array deprecated
   ]);
 
   const handleGoWorksheet = useCallback(async () => {

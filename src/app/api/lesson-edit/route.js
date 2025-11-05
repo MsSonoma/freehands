@@ -10,7 +10,7 @@ export const runtime = 'nodejs'
  * PUT /api/lesson-edit
  * Edit a lesson (facilitator or public lessons)
  * Body: { lessonKey, updates }
- * updates can include: title, blurb, teachingNotes, vocab, sample, truefalse, multiplechoice, shortanswer, fillintheblank
+ * updates can include: title, blurb, teachingNotes, vocab, truefalse, multiplechoice, shortanswer, fillintheblank
  */
 export async function PUT(req) {
   try {

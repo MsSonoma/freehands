@@ -144,12 +144,9 @@ async function processFile(file) {
     }
   }
 
-  // Sample questions (used in comprehension/exercise)
-  if (Array.isArray(json.sample)) {
-    for (const it of json.sample) {
-      if (ensureAnyOf(it)) changed = true;
-    }
-  }
+  // REMOVED: Sample array processing - deprecated zombie code
+  // See docs/KILL_SAMPLE_ARRAY.md - sample array must never be used
+  // If you see this being processed, it means the zombie has returned - kill it again!
 
   // Word problems (math)
   if (Array.isArray(json.wordProblems)) {

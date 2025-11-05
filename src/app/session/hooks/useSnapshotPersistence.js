@@ -16,7 +16,8 @@ import { updateTranscriptLiveSegment } from '../../lib/transcriptsClient';
  *     storyPlot, storyPhase, storyTranscript, currentCompIndex, currentExIndex,
  *     currentWorksheetIndex, testActiveIndex, currentCompProblem, currentExerciseProblem,
  *     testUserAnswers, testCorrectByIndex, testCorrectCount, testFinalPercent,
- *     captionSentences, captionIndex, usedTestCuePhrases, generatedWorksheet, generatedTest
+ *     congratsStarted, congratsDone, captionSentences, captionIndex, usedTestCuePhrases, 
+ *     generatedWorksheet, generatedTest
  *   - State setters: setPhase, setSubPhase, setShowBegin, setTicker, setTeachingStage,
  *     setStageRepeats, setQaAnswersUnlocked, setJokeUsedThisGate, setRiddleUsedThisGate,
  *     setPoemUsedThisGate, setStoryUsedThisGate, setStoryState, setStorySetupStep,
@@ -24,9 +25,9 @@ import { updateTranscriptLiveSegment } from '../../lib/transcriptsClient';
  *     setStoryTranscript, setCurrentCompIndex,
  *     setCurrentExIndex, setCurrentWorksheetIndex, setTestActiveIndex, setCurrentCompProblem,
  *     setCurrentExerciseProblem, setTestUserAnswers, setTestCorrectByIndex, setTestCorrectCount,
- *     setTestFinalPercent, setCaptionSentences, setCaptionIndex, setUsedTestCuePhrases,
- *     setLoading, setOfferResume, setCanSend, setShowOpeningActions, setTtsLoadingCount,
- *     setIsSpeaking
+ *     setTestFinalPercent, setCongratsStarted, setCongratsDone, setCaptionSentences, 
+ *     setCaptionIndex, setUsedTestCuePhrases, setLoading, setOfferResume, setCanSend, 
+ *     setShowOpeningActions, setTtsLoadingCount, setIsSpeaking
  *   - Refs: restoredSnapshotRef, restoreFoundRef, didRunRestoreRef, snapshotSaveTimerRef,
  *     pendingSaveRetriesRef, lastSavedSigRef, activeQuestionBodyRef, captionSentencesRef,
  *     worksheetIndexRef, sessionStartRef, preferHtmlAudioOnceRef, resumeAppliedRef
@@ -65,6 +66,8 @@ export function useSnapshotPersistence({
   testCorrectByIndex,
   testCorrectCount,
   testFinalPercent,
+  congratsStarted,
+  congratsDone,
   captionSentences,
   captionIndex,
   usedTestCuePhrases,
@@ -101,6 +104,8 @@ export function useSnapshotPersistence({
   setTestCorrectByIndex,
   setTestCorrectCount,
   setTestFinalPercent,
+  setCongratsStarted,
+  setCongratsDone,
   setCaptionSentences,
   setCaptionIndex,
   setUsedTestCuePhrases,
@@ -276,6 +281,7 @@ export function useSnapshotPersistence({
           testActiveIndex,
           currentCompProblem, currentExerciseProblem,
           testUserAnswers, testCorrectByIndex, testCorrectCount, testFinalPercent,
+          congratsStarted, congratsDone,
           captionSentences: Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current : (Array.isArray(captionSentences) ? captionSentences : []),
           captionIndex,
           usedTestCuePhrases,
@@ -311,7 +317,7 @@ export function useSnapshotPersistence({
         lastSavedSigRef.current = sig;
       } catch {}
     }, 200);
-  }, [phase, subPhase, showBegin, teachingStage, qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, storyUsedThisGate, storyState, storySetupStep, storyCharacters, storySetting, storyPlot, storyPhase, storyTranscript, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testCorrectCount, testFinalPercent, usedTestCuePhrases, getSnapshotStorageKey, lessonParam, effectiveLessonTitle, transcriptSessionId, restoredSnapshotRef, snapshotSaveTimerRef, pendingSaveRetriesRef, lastSavedSigRef, activeQuestionBodyRef, captionSentencesRef, captionSentences, captionIndex, ticker, sessionStartRef, buildStorySignature]);
+  }, [phase, subPhase, showBegin, teachingStage, qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, storyUsedThisGate, storyState, storySetupStep, storyCharacters, storySetting, storyPlot, storyPhase, storyTranscript, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testCorrectCount, testFinalPercent, congratsStarted, congratsDone, usedTestCuePhrases, getSnapshotStorageKey, lessonParam, effectiveLessonTitle, transcriptSessionId, restoredSnapshotRef, snapshotSaveTimerRef, pendingSaveRetriesRef, lastSavedSigRef, activeQuestionBodyRef, captionSentencesRef, captionSentences, captionIndex, ticker, sessionStartRef, buildStorySignature]);
 
   // Memoized signature of meaningful resume-relevant state. Changes here will cause an autosave.
   const snapshotSigMemo = useMemo(() => {
@@ -487,6 +493,23 @@ export function useSnapshotPersistence({
         try { typeof snap.testCorrectCount === 'number' && setTestCorrectCount(snap.testCorrectCount); } catch {}
         try { (typeof snap.testFinalPercent === 'number' || snap.testFinalPercent === null) && setTestFinalPercent(snap.testFinalPercent); } catch {}
         try { Array.isArray(snap.usedTestCuePhrases) && setUsedTestCuePhrases(snap.usedTestCuePhrases); } catch {}
+        // Congrats state restoration - ensures Complete Lesson button persists on refresh
+        // CRITICAL FALLBACK: If we're restoring a congrats phase snapshot from before this fix was deployed,
+        // the snapshot won't have congratsStarted/congratsDone. In that case, auto-set them so the
+        // Complete Lesson button appears and users aren't stuck.
+        try {
+          if (snap.phase === 'congrats') {
+            // If old snapshot without these fields, default them to true so button shows
+            const started = (snap.congratsStarted !== undefined) ? !!snap.congratsStarted : true;
+            const done = (snap.congratsDone !== undefined) ? !!snap.congratsDone : true;
+            setCongratsStarted(started);
+            setCongratsDone(done);
+            console.log('[Snapshot] Congrats phase detected - completion states set', { congratsStarted: started, congratsDone: done, fromSnapshot: snap.congratsDone !== undefined });
+          } else {
+            setCongratsStarted(!!snap.congratsStarted);
+            setCongratsDone(!!snap.congratsDone);
+          }
+        } catch {}
         // Captions/transcript
         try {
           const lines = Array.isArray(snap.captionSentences) ? snap.captionSentences : [];

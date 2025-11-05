@@ -52,7 +52,7 @@ Change request:
 ${changeRequest}
 
 CRITICAL REQUIREMENTS - YOU MUST FOLLOW THESE EXACTLY:
-1. Each question type (sample, truefalse, multiplechoice, fillintheblank, shortanswer) needs at least 10 complete questions
+1. Each question type (truefalse, multiplechoice, fillintheblank, shortanswer) needs at least 10 complete questions
 2. For shortanswer and fillintheblank:
    - EVERY SINGLE QUESTION must have at least 3 items in the "expectedAny" array
    - Include the main answer, synonyms, alternative phrasings, and common variations

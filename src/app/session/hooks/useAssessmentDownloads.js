@@ -48,7 +48,7 @@ export function useAssessmentDownloads({
   createPdfForItems,
   shareOrPreviewPdf,
   ensureRuntimeTargets,
-  reserveSamples,
+  // REMOVED: reserveSamples - deprecated zombie code
   reserveWords,
   jsPDF,
   
@@ -76,7 +76,7 @@ export function useAssessmentDownloads({
     let source = null;
 
     if (subjectParam === 'math') {
-      const samples = Array.isArray(lessonData.sample) ? lessonData.sample.map(q => ({ ...q, sourceType: 'sample' })) : [];
+      // REMOVED: samples array - deprecated zombie code
       const words = Array.isArray(lessonData.wordProblems) ? lessonData.wordProblems.map(q => ({ ...q, sourceType: 'word' })) : [];
       const tf = Array.isArray(lessonData.truefalse) ? lessonData.truefalse.map(q => ({ ...q, sourceType: 'tf' })) : [];
       const mc = Array.isArray(lessonData.multiplechoice) ? lessonData.multiplechoice.map(q => ({ ...q, sourceType: 'mc' })) : [];
@@ -92,10 +92,10 @@ export function useAssessmentDownloads({
         ? wpSel.map(q => ({ ...q, expected: q.expected ?? q.answer, sourceType: 'word' }))
         : wpSel;
       
-      // Cap SA/FIB to 10% each in remainder from samples+categories
+      // Cap SA/FIB to 10% each in remainder from categories only
       const remainder = Math.max(0, target - wpMapped.length);
       const cap = Math.max(0, Math.floor(target * 0.10));
-      const fromBase = shuffle([...samples, ...cats]);
+      const fromBase = shuffle(cats); // Use only categories, no samples
       const saArr = fromBase.filter(q => /short\s*answer|shortanswer/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'short');
       const fibArr = fromBase.filter(q => /fill\s*in\s*the\s*blank|fillintheblank/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'fib');
       const others = fromBase.filter(q => !saArr.includes(q) && !fibArr.includes(q));
@@ -105,7 +105,7 @@ export function useAssessmentDownloads({
       const otherPick = others.slice(0, remaining);
       const base = shuffle([...wpMapped, ...saPick, ...fibPick, ...otherPick]);
       const used = new Set(base.map(promptKey));
-      const remBase = shuffle([...samples, ...cats]).filter(q => !used.has(promptKey(q)));
+      const remBase = shuffle(cats).filter(q => !used.has(promptKey(q)));
       const remWords = shuffle(words).filter(q => !used.has(promptKey(q)));
       source = ensureExactCount(base, target, [remBase, remWords]);
     } else {
@@ -742,7 +742,7 @@ export function useAssessmentDownloads({
       let gT = [];
       
       if (subjectParam === 'math') {
-        const samples = reserveSamples(WORKSHEET_TARGET + TEST_TARGET);
+        // REMOVED: reserveSamples - deprecated zombie code
         const words = reserveWords(WORKSHEET_TARGET + TEST_TARGET);
         
         const takeMixed = (target, isTest) => {
@@ -750,10 +750,10 @@ export function useAssessmentDownloads({
           const wpSel = (words || []).slice(0, desiredWp).map(q => ({ ...(isTest ? ({ ...q, expected: q.expected ?? q.answer }) : q), sourceType: 'word' }));
           const remainder = Math.max(0, target - wpSel.length);
           const cap = Math.max(0, Math.floor(target * 0.10));
-          const fromSamples = (samples || []).map(q => ({ ...q, sourceType: 'sample' }));
-          const sa = fromSamples.filter(q => /short\s*answer|shortanswer/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'short');
-          const fib = fromSamples.filter(q => /fill\s*in\s*the\s*blank|fillintheblank/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'fib');
-          const others = fromSamples.filter(q => !sa.includes(q) && !fib.includes(q));
+          // REMOVED: fromSamples - use only categories, no sample array
+          const sa = []; // Empty since we no longer use samples
+          const fib = [];
+          const others = [];
           const shuffleArr = (arr) => shuffle(arr);
           const saPick = shuffleArr(sa).slice(0, Math.min(cap, sa.length));
           const fibPick = shuffleArr(fib).slice(0, Math.min(cap, fib.length));
@@ -829,7 +829,8 @@ export function useAssessmentDownloads({
   }, [
     ensurePinAllowed, getSnapshotStorageKey, clearAssessments, setGeneratedWorksheet, setGeneratedTest,
     setCurrentWorksheetIndex, worksheetIndexRef, setTestActiveIndex, setTestUserAnswers,
-    ensureRuntimeTargets, lessonData, getAssessmentStorageKey, subjectParam, reserveSamples,
+    ensureRuntimeTargets, lessonData, getAssessmentStorageKey, subjectParam,
+    // REMOVED: reserveSamples - deprecated zombie code
     reserveWords, WORKSHEET_TARGET, TEST_TARGET, promptKey, ensureExactCount, saveAssessments,
     compPool, exercisePool
   ]);

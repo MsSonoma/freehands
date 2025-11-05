@@ -314,7 +314,7 @@ export function useDiscussionHandlers({
     try { setShowOpeningActions(false); } catch {}
     // Use lessonData.subject if available, otherwise fall back to subjectParam
     let subject = (lessonData?.subject || subjectParam || 'math').toLowerCase();
-    const validSubjects = ['math', 'science', 'language arts', 'social studies'];
+    const validSubjects = ['math', 'science', 'language arts', 'social studies', 'general'];
     if (!validSubjects.includes(subject)) {
       subject = 'math';
     }

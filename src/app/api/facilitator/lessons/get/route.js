@@ -67,8 +67,8 @@ export async function GET(request){
       return normalized
     }
     
-    // Normalize all question arrays
-    const questionArrays = ['sample', 'truefalse', 'multiplechoice', 'shortanswer', 'fillintheblank', 'worksheet', 'test']
+    // Normalize all question arrays (removed 'sample' - deprecated zombie code)
+    const questionArrays = ['truefalse', 'multiplechoice', 'shortanswer', 'fillintheblank', 'worksheet', 'test']
     for (const key of questionArrays) {
       if (Array.isArray(lesson[key])) {
         lesson[key] = lesson[key].map(normalizeQuestion)

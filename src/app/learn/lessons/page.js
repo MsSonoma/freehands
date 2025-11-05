@@ -8,6 +8,7 @@ import { getLearner, updateLearner } from '@/app/facilitator/learners/clientApi'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
 import LoadingProgress from '@/components/LoadingProgress'
 import GoldenKeyCounter from '@/app/learn/GoldenKeyCounter'
+import { getStoredSnapshot } from '@/app/session/sessionSnapshotStore'
 
 const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
 
@@ -46,6 +47,7 @@ function LessonsPageInner(){
   const [lessonNotes, setLessonNotes] = useState({}) // { 'subject/lesson_file': 'note text' }
   const [editingNote, setEditingNote] = useState(null) // lesson key currently being edited
   const [saving, setSaving] = useState(false)
+  const [lessonSnapshots, setLessonSnapshots] = useState({}) // { 'subject/lesson_file': true } - lessons with saved snapshots
 
   // Set up midnight refresh timer
   useEffect(() => {
@@ -76,12 +78,14 @@ function LessonsPageInner(){
   useEffect(() => {
     if (!learnerId) return
     
-    const pollInterval = setInterval(() => {
-      console.log('[Learn Lessons] Polling for schedule changes')
-      setRefreshTrigger(prev => prev + 1)
-    }, 30 * 1000) // 30 seconds
+    // DISABLED: Polling causes too many reloads, schedule changes are rare
+    // Users can manually refresh if needed
+    // const pollInterval = setInterval(() => {
+    //   console.log('[Learn Lessons] Polling for schedule changes')
+    //   setRefreshTrigger(prev => prev + 1)
+    // }, 30 * 1000) // 30 seconds
     
-    return () => clearInterval(pollInterval)
+    // return () => clearInterval(pollInterval)
   }, [learnerId])
 
   useEffect(() => {
@@ -189,14 +193,11 @@ function LessonsPageInner(){
             : list
           
           lessonsMap[subject] = Array.isArray(processedList) ? processedList : []
-          // Debug log for general subject
-          if (subject === 'general') {
-            console.log('[Learn Lessons] Loaded general lessons from API:', processedList)
-          }
         } catch {
           lessonsMap[subject] = []
         }
       }
+      
       if (!cancelled) {
         setAllLessons(lessonsMap)
         setLessonsLoading(false)
@@ -293,6 +294,75 @@ function LessonsPageInner(){
     })()
     return () => { cancelled = true }
   }, [learnerId, refreshTrigger])
+
+  // Check for existing snapshots for approved lessons only (localStorage only for performance)
+  useEffect(() => {
+    if (!learnerId || lessonsLoading || Object.keys(availableLessons).length === 0) return
+    let cancelled = false
+    
+    const checkLocalSnapshots = () => {
+      const snapshotsFound = {}
+      const KEY_PREFIX = 'lesson_session:'
+      const suffix = `:L:${learnerId}`
+      
+      console.log('[Learn Lessons] Checking snapshots for', Object.keys(availableLessons).length, 'checkmarked lessons')
+      
+      try {
+        // Check each checkmarked lesson for snapshots
+        for (const approvedLessonKey of Object.keys(availableLessons)) {
+          if (!availableLessons[approvedLessonKey]) continue
+          
+          // Extract filename from key
+          const filename = approvedLessonKey.includes('/') 
+            ? approvedLessonKey.split('/')[1] 
+            : approvedLessonKey
+          
+          // Try multiple key formats to find snapshot
+          const keysToTry = [
+            approvedLessonKey, // Original key as stored in DB
+            filename, // Just filename
+            `general/${filename}`, // With general/ prefix
+            `generated/${filename}`, // With generated/ prefix
+            approvedLessonKey.replace('facilitator/', 'general/'), // Legacy format
+            approvedLessonKey.replace('generated/', 'general/') // Another variant
+          ]
+          
+          let foundSnapshot = false
+          for (const keyVariant of keysToTry) {
+            const storageKey = `${KEY_PREFIX}${keyVariant}${suffix}`
+            
+            try {
+              const raw = localStorage.getItem(storageKey)
+              if (raw) {
+                const parsed = JSON.parse(raw)
+                if (parsed && parsed.savedAt) {
+                  // Store snapshot under the ORIGINAL approved key so metadata API lessonKey matches
+                  snapshotsFound[approvedLessonKey] = true
+                  foundSnapshot = true
+                  console.log('[Learn Lessons] Found snapshot - stored as:', keyVariant, '-> mapped to:', approvedLessonKey)
+                  break
+                }
+              }
+            } catch {}
+          }
+        }
+        
+        console.log('[Learn Lessons] Snapshot check complete. Found:', Object.keys(snapshotsFound).length, 'snapshots')
+        if (Object.keys(snapshotsFound).length > 0) {
+          console.log('[Learn Lessons] Snapshot keys:', Object.keys(snapshotsFound))
+        }
+      } catch (err) {
+        console.error('[Learn Lessons] Error checking snapshots:', err)
+      }
+      
+      if (!cancelled) {
+        setLessonSnapshots(snapshotsFound)
+      }
+    }
+    
+    checkLocalSnapshots()
+    return () => { cancelled = true }
+  }, [learnerId, availableLessons, lessonsLoading])
 
   async function openLesson(subject, fileBaseName){
     const ent = featuresForTier(planTier)
@@ -408,15 +478,24 @@ function LessonsPageInner(){
           : `${subject}/${lesson.file}`
         // Also check legacy facilitator/ key for general lessons
         const legacyKey = lessonKey.replace('general/', 'facilitator/')
-        const isAvailable = availableLessons[lessonKey] === true || availableLessons[legacyKey] === true || scheduledLessons[lessonKey] === true || scheduledLessons[legacyKey] === true
+        // Also check just the filename (no subject prefix) for backwards compatibility
+        const filenameOnly = lesson.file
+        const isAvailable = availableLessons[lessonKey] === true 
+          || availableLessons[legacyKey] === true 
+          || availableLessons[filenameOnly] === true
+          || scheduledLessons[lessonKey] === true 
+          || scheduledLessons[legacyKey] === true
+          || scheduledLessons[filenameOnly] === true
         // Debug logging for general subject
         if (subject === 'general') {
           console.log('[Learn Lessons] General lesson filter:', {
             lessonKey,
+            legacyKey,
+            filenameOnly,
             file: lesson.file,
             isAvailable,
-            inApproved: availableLessons[lessonKey],
-            inScheduled: scheduledLessons[lessonKey]
+            inApproved: availableLessons[lessonKey] || availableLessons[legacyKey] || availableLessons[filenameOnly],
+            inScheduled: scheduledLessons[lessonKey] || scheduledLessons[legacyKey] || scheduledLessons[filenameOnly]
           })
         }
         return isAvailable
@@ -513,7 +592,18 @@ function LessonsPageInner(){
                     style={btn}
                     onClick={()=>{ openLesson('demo', l.file) }}
                   >
-                    Start Lesson
+                    {(() => {
+                      const lessonKey = `demo/${l.file}`
+                      const hasSnapshot = lessonSnapshots[lessonKey]
+                      // Debug log to see format mismatch
+                      if (!window._loggedSnapshotCheck && Object.keys(lessonSnapshots).length > 0) {
+                        console.log('[Learn Lessons] Button check - Looking for:', lessonKey)
+                        console.log('[Learn Lessons] Button check - Available keys:', Object.keys(lessonSnapshots).slice(0, 3))
+                        console.log('[Learn Lessons] Button check - Found?', hasSnapshot)
+                        window._loggedSnapshotCheck = true
+                      }
+                      return hasSnapshot ? 'Continue' : 'Start Lesson'
+                    })()}
                   </button>
                 </div>
               )
@@ -733,7 +823,7 @@ function LessonsPageInner(){
                           }
                         }}
                       >
-                        Start Lesson
+                        {lessonSnapshots[lessonKey] ? 'Continue' : 'Start Lesson'}
                       </button>
                     </div>
                   </div>

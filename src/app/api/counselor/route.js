@@ -481,7 +481,7 @@ function getCapabilitiesInfo(args) {
       when_to_use: 'When facilitator asks to change/fix/update/edit a lesson, correct errors, add vocabulary, improve questions, etc.',
       parameters: {
         lessonKey: 'Required. Format: "subject/filename.json" (from search results)',
-        updates: 'Required. Object with fields to update. Can include: title, blurb, teachingNotes, vocab (array of {term, definition}), sample, truefalse, multiplechoice, shortanswer, fillintheblank (arrays of questions)'
+        updates: 'Required. Object with fields to update. Can include: title, blurb, teachingNotes, vocab (array of {term, definition}), truefalse, multiplechoice, shortanswer, fillintheblank (arrays of questions)'
       },
       returns: 'Success confirmation that lesson was updated',
       notes: 'Can edit ANY lesson - both pre-installed subject lessons AND custom facilitator lessons. Get current lesson with get_lesson_details first, then send only the fields that need to change.',
@@ -821,7 +821,7 @@ async function executeGetLessonDetails(args, request, toolLog) {
       vocabulary: (lessonData.vocab || []).slice(0, 5).map(v => typeof v === 'string' ? v : v.term),
       teachingNotes: lessonData.teachingNotes,
       questionCounts: {
-        sample: (lessonData.sample || []).length,
+        // REMOVED: sample - deprecated zombie code
         truefalse: (lessonData.truefalse || []).length,
         multiplechoice: (lessonData.multiplechoice || []).length,
         fillintheblank: (lessonData.fillintheblank || []).length,
@@ -1533,16 +1533,12 @@ export async function POST(req) {
               },
               updates: {
                 type: 'object',
-                description: 'Object containing the fields to update. Can include: title, blurb, teachingNotes, vocab (array), sample (array), truefalse (array), multiplechoice (array), shortanswer (array), fillintheblank (array)',
+                description: 'Object containing the fields to update. Can include: title, blurb, teachingNotes, vocab (array), truefalse (array), multiplechoice (array), shortanswer (array), fillintheblank (array)',
                 properties: {
                   title: { type: 'string' },
                   blurb: { type: 'string' },
                   teachingNotes: { type: 'string' },
                   vocab: { 
-                    type: 'array',
-                    items: { type: 'object' }
-                  },
-                  sample: { 
                     type: 'array',
                     items: { type: 'object' }
                   },

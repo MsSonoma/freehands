@@ -9,6 +9,7 @@ import { featuresForTier } from '@/app/lib/entitlements';
 import { ensurePinAllowed } from '@/app/lib/pinGate';
 import { useAccessControl } from '@/app/hooks/useAccessControl';
 import GatedOverlay from '@/app/components/GatedOverlay';
+import TutorialGuard from '@/components/TutorialGuard';
 
 export default function LearnersPage() {
 	const router = useRouter();
@@ -201,7 +202,7 @@ export default function LearnersPage() {
 	}
 
 	return (
-		<>
+		<TutorialGuard>
 			<main style={{ padding: 24, overflowX: 'hidden', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
 			<div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap' }}>
 				<h1 style={{ marginTop:0, marginBottom:0 }}>Learners</h1>
@@ -272,7 +273,7 @@ export default function LearnersPage() {
 				'Sync learner data across all your devices'
 			]}
 		/>
-		</>
+		</TutorialGuard>
 	);
 }
 

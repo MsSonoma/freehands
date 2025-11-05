@@ -32,7 +32,8 @@ import { getJokePrompt } from './utils/openingSignals';
 import { normalizeBase64Audio, base64ToArrayBuffer, makeSilentWavDataUrl, ensureAudioContext, stopWebAudioSource, playViaWebAudio, unlockAudioPlayback, requestAudioAndMicPermissions, playVideoWithRetry } from './utils/audioUtils';
 import { clearCaptionTimers as clearCaptionTimersUtil, scheduleCaptionsForAudio as scheduleCaptionsForAudioUtil, scheduleCaptionsForDuration as scheduleCaptionsForDurationUtil } from './utils/captionUtils';
 import { clearSynthetic as clearSyntheticUtil, finishSynthetic as finishSyntheticUtil, pauseSynthetic as pauseSyntheticUtil, resumeSynthetic as resumeSyntheticUtil } from './utils/syntheticPlaybackUtils';
-import { buildQAPool as buildQAPoolUtil, ensureExactCount as ensureExactCountUtil, initSampleDeck as initSampleDeckUtil, drawSampleUnique as drawSampleUniqueUtil, reserveSamples as reserveSamplesUtil, initWordDeck as initWordDeckUtil, drawWordUnique as drawWordUniqueUtil } from './utils/assessmentGenerationUtils';
+import { buildQAPool as buildQAPoolUtil, ensureExactCount as ensureExactCountUtil, initWordDeck as initWordDeckUtil, drawWordUnique as drawWordUniqueUtil } from './utils/assessmentGenerationUtils';
+// REMOVED: initSampleDeck, drawSampleUnique, reserveSamples - sample array deprecated
 import { getSnapshotStorageKey as getSnapshotStorageKeyUtil, scheduleSaveSnapshotCore } from './utils/snapshotPersistenceUtils';
 import { clearSpeechGuard as clearSpeechGuardUtil, forceStopSpeaking as forceStopSpeakingUtil, armSpeechGuard as armSpeechGuardUtil, armSpeechGuardThrottled as armSpeechGuardThrottledUtil } from './utils/speechGuardUtils';
 import { checkLearnerInput } from './utils/profanityFilter';
@@ -1047,6 +1048,9 @@ function SessionPageInner() {
   const [usedTestCuePhrases, setUsedTestCuePhrases] = useState([]); // unique cue phrases detected so far in test review
   const [testCorrectCount, setTestCorrectCount] = useState(0); // authoritative correct count derived from cue phrases
   const [testFinalPercent, setTestFinalPercent] = useState(null); // final percent shown after grading until lesson completion
+  // Congrats phase state tracking for completion button persistence
+  const [congratsStarted, setCongratsStarted] = useState(false);
+  const [congratsDone, setCongratsDone] = useState(false);
   // Model-validated correctness tracking during test review
   // Concise bounded-leniency guidance (applies only to open-ended judging, not TF/MC)
   const JUDGING_LENIENCY_OPEN_ENDED = 'Judge open-ended answers with bounded leniency: ignore fillers and politeness, be case-insensitive, ignore punctuation, and collapse spaces. Map number words zero�twenty to digits and allow simple forms like "one hundred twenty". Accept simple plural/tense changes in acceptable phrases but require all core keywords from an acceptable variant. If multiple different numbers appear, treat as incorrect. Do not apply this leniency to true/false or multiple choice.';
@@ -1307,8 +1311,8 @@ function SessionPageInner() {
           setLessonData(data);
           setLessonDataError("");
           setDownloadError("");
-          // Initialize non-repeating decks for samples and word problems
-          initSampleDeck(data);
+          // Initialize non-repeating decks for word problems
+          // REMOVED: initSampleDeck(data) - sample array deprecated
           initWordDeck(data);
           // Attempt to restore persisted assessments for this lesson (id preferred, fallback to filename), invalidate if content changed
           if (!cancelled) {
@@ -1364,17 +1368,17 @@ function SessionPageInner() {
               let gW = [];
               let gT = [];
               if (subjectParam === 'math') {
-                const samples = reserveSamples(WORKSHEET_TARGET + TEST_TARGET);
+                // REMOVED: reserveSamples - deprecated zombie code
                 const words = reserveWords(WORKSHEET_TARGET + TEST_TARGET);
-                // Include category pools in addition to samples
+                // Include category pools only (no samples)
                 const tf = Array.isArray(data.truefalse) ? data.truefalse.map(q => ({ ...q, sourceType: 'tf', questionType: 'tf' })) : [];
                 const mc = Array.isArray(data.multiplechoice) ? data.multiplechoice.map(q => ({ ...q, sourceType: 'mc', questionType: 'mc' })) : [];
                 const fib = Array.isArray(data.fillintheblank) ? data.fillintheblank.map(q => ({ ...q, sourceType: 'fib', questionType: 'sa' })) : [];
                 const sa = Array.isArray(data.shortanswer) ? data.shortanswer.map(q => ({ ...q, sourceType: 'short', questionType: 'sa' })) : [];
                 const cats = [...tf, ...mc, ...fib, ...sa];
-                if ((samples && samples.length) || (words && words.length) || cats.length) {
-                  gW = takeMixedHook(WORKSHEET_TARGET, false, { samples, words, data });
-                  gT = takeMixedHook(TEST_TARGET, true, { samples, words, data });
+                if ((words && words.length) || cats.length) {
+                  gW = takeMixedHook(WORKSHEET_TARGET, false, { words, data });
+                  gT = takeMixedHook(TEST_TARGET, true, { words, data });
                   setGeneratedWorksheet(gW);
                   setGeneratedTest(gT);
                 }
@@ -1999,22 +2003,8 @@ function SessionPageInner() {
     return ensureExactCountUtil(base, target, pools, allowDuplicatesAsLastResort);
   }, []);
 
-  // Global, non-repeating sample deck across phases
-  const sampleDeckRef = useRef([]);
-  const sampleIndexRef = useRef(0);
-  const usedSampleSetRef = useRef(new Set());
-  
-  const initSampleDeck = useCallback((data) => {
-    initSampleDeckUtil(data, { sampleDeckRef, sampleIndexRef, usedSampleSetRef });
-  }, []);
-  
-  const drawSampleUnique = useCallback(() => {
-    return drawSampleUniqueUtil({ sampleDeckRef, sampleIndexRef, usedSampleSetRef });
-  }, []);
-  
-  const reserveSamples = useCallback((count) => {
-    return reserveSamplesUtil(count, { sampleDeckRef, sampleIndexRef, usedSampleSetRef });
-  }, []);
+  // REMOVED: sample deck - deprecated and no longer used
+  // See docs/KILL_SAMPLE_ARRAY.md for why this was removed
 
   // Word problem deck (math) with non-repeating behavior
   const wordDeckRef = useRef([]);
@@ -2051,8 +2041,8 @@ function SessionPageInner() {
     subjectParam,
     WORKSHEET_TARGET,
     TEST_TARGET,
-    reserveSamples,
     reserveWords,
+    // REMOVED: reserveSamples - sample array deprecated
   });
 
   // Transient placeholder override for the input field (non-intrusive and time-limited)
@@ -2497,7 +2487,7 @@ function SessionPageInner() {
     
     // Functions
     speakFrontend,
-    drawSampleUnique,
+    // REMOVED: drawSampleUnique - deprecated zombie code
     buildQAPool
   });
 
@@ -2837,6 +2827,8 @@ function SessionPageInner() {
     testCorrectByIndex,
     testCorrectCount,
     testFinalPercent,
+    congratsStarted,
+    congratsDone,
     captionSentences,
     captionIndex,
     usedTestCuePhrases,
@@ -2873,6 +2865,8 @@ function SessionPageInner() {
     setTestCorrectByIndex,
     setTestCorrectCount,
     setTestFinalPercent,
+    setCongratsStarted,
+    setCongratsDone,
     setCaptionSentences,
     setCaptionIndex,
     setUsedTestCuePhrases,
@@ -3638,7 +3632,7 @@ function SessionPageInner() {
       return copy;
     };
     const buildMathSet = (target = 0, isTest = false) => {
-      const samples = Array.isArray(lessonData.sample) ? lessonData.sample.map(q => ({ ...q, sourceType: 'sample' })) : [];
+      // REMOVED: samples array - deprecated
       const words = Array.isArray(lessonData.wordProblems) ? lessonData.wordProblems.map(q => ({ ...q, sourceType: 'word' })) : [];
       const tf = Array.isArray(lessonData.truefalse) ? lessonData.truefalse.map(q => ({ ...q, sourceType: 'tf' })) : [];
       const mc = Array.isArray(lessonData.multiplechoice) ? lessonData.multiplechoice.map(q => ({ ...q, sourceType: 'mc' })) : [];
@@ -3649,7 +3643,7 @@ function SessionPageInner() {
       const wpSel = shuffle2(words).slice(0, Math.min(desiredWp, words.length)).map(q => ({ ...(isTest ? ({ ...q, expected: q.expected ?? q.answer }) : q) }));
       const remainder = Math.max(0, target - wpSel.length);
       const cap = Math.max(0, Math.floor(target * 0.10));
-      const fromBase = shuffle2([...samples, ...cats]);
+      const fromBase = shuffle2(cats);
       const saArr = fromBase.filter(q => /short\s*answer|shortanswer/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'short');
       const fibArr = fromBase.filter(q => /fill\s*in\s*the\s*blank|fillintheblank/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'fib');
       const others = fromBase.filter(q => !saArr.includes(q) && !fibArr.includes(q));
@@ -3659,7 +3653,7 @@ function SessionPageInner() {
       const otherPick = others.slice(0, remaining);
       const base = shuffle2([...wpSel, ...saPick, ...fibPick, ...otherPick]);
       const used = new Set(base.map(promptKey));
-      const remBase = shuffle2([...samples, ...cats]).filter(q => !used.has(promptKey(q)));
+      const remBase = shuffle2(cats).filter(q => !used.has(promptKey(q)));
       const remWords = shuffle2(words).filter(q => !used.has(promptKey(q)));
       return ensureExactCount(base, target, [remBase, remWords]);
     };
@@ -3981,7 +3975,7 @@ function SessionPageInner() {
     createPdfForItems,
     shareOrPreviewPdf,
     ensureRuntimeTargets,
-    reserveSamples,
+    // REMOVED: reserveSamples - deprecated zombie code
     reserveWords,
     jsPDF,
     WORKSHEET_TARGET,
@@ -4094,12 +4088,17 @@ function SessionPageInner() {
         };
         let built = null;
         if (subjectParam === 'math') {
-          const samples = Array.isArray(lessonData.sample) ? lessonData.sample : [];
+          // REMOVED: samples array - deprecated
           const words = Array.isArray(lessonData.wordProblems) ? lessonData.wordProblems : [];
-          if (samples.length || words.length) {
+          const tf = Array.isArray(lessonData.truefalse) ? lessonData.truefalse : [];
+          const mc = Array.isArray(lessonData.multiplechoice) ? lessonData.multiplechoice : [];
+          const fib = Array.isArray(lessonData.fillintheblank) ? lessonData.fillintheblank : [];
+          const sa = Array.isArray(lessonData.shortanswer) ? lessonData.shortanswer : [];
+          const cats = [...tf, ...mc, ...fib, ...sa];
+          if (words.length || cats.length) {
             const desiredWp = Math.round(TEST_TARGET * 0.3);
             const wpSel = shuffle(words).slice(0, Math.min(desiredWp, words.length)).map(q => ({ ...q, expected: q.expected ?? q.answer, sourceType: 'word' }));
-            const baseSel = shuffle(samples).slice(0, Math.max(0, TEST_TARGET - wpSel.length)).map(q => ({ ...q, sourceType: 'sample' }));
+            const baseSel = shuffle(cats).slice(0, Math.max(0, TEST_TARGET - wpSel.length));
             built = shuffle([...wpSel, ...baseSel]);
           }
         } else {
@@ -4274,9 +4273,7 @@ function SessionPageInner() {
   const congratsSpokenRef = useRef(false);
   // Defer auto-review transitions while final TTS feedback is playing
   const reviewDeferRef = useRef(false);
-  const [congratsStarted, setCongratsStarted] = useState(false);
   const [congratsSpeaking, setCongratsSpeaking] = useState(false);
-  const [congratsDone, setCongratsDone] = useState(false);
   useEffect(() => {
     if (phase === 'congrats' && typeof testFinalPercent === 'number' && congratsStarted && !congratsSpokenRef.current) {
       const learnerName = (typeof window !== 'undefined' ? (localStorage.getItem('learner_name') || '') : '').trim();
@@ -5104,9 +5101,7 @@ function SessionPageInner() {
           pick = generatedComprehension[currentCompIndex];
           setCurrentCompIndex(currentCompIndex + 1);
         }
-        if (!pick) {
-          let tries = 0; while (tries < 5) { const s = drawSampleUnique(); if (s) { pick = s; break; } tries += 1; }
-        }
+        // REMOVED: drawSampleUnique fallback - deprecated zombie code
         if (!pick && compPool.length) {
           pick = compPool[0];
           setCompPool(compPool.slice(1));
@@ -5151,19 +5146,7 @@ function SessionPageInner() {
           console.log('[Comprehension] Selected from generatedComprehension, will set index to:', idx + 1);
         }
         if (!nextProblem) {
-          console.log('[Comprehension] Trying drawSampleUnique...');
-          let tries = 0;
-          while (tries < 5) {
-            const s = drawSampleUnique();
-            const isSame = (() => { try { const t=(s?.question ?? formatQuestionForSpeech(s)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t===c; } catch { return false; }})();
-            if (s && !isSame) { 
-              nextProblem = s; 
-              console.log('[Comprehension] Selected from drawSampleUnique'); 
-              break; 
-            }
-            tries += 1;
-          }
-          if (!nextProblem) console.log('[Comprehension] drawSampleUnique failed after', tries, 'tries');
+          // REMOVED: drawSampleUnique fallback - deprecated zombie code
         }
         if (!nextProblem && compPool.length) {
           console.log('[Comprehension] Trying compPool, length:', compPool.length);
@@ -5329,9 +5312,7 @@ function SessionPageInner() {
           first = generatedExercise[currentExIndex];
           setCurrentExIndex(currentExIndex + 1);
         }
-        if (!first) {
-          let tries = 0; while (tries < 5 && !first) { const c = drawSampleUnique(); if (c) { first = c; break; } tries += 1; }
-        }
+        // REMOVED: drawSampleUnique fallback - deprecated zombie code
         if (!first && exercisePool.length) {
           const [head, ...rest] = exercisePool;
           if (head) first = head;
@@ -5369,15 +5350,7 @@ function SessionPageInner() {
           while (idx < generatedExercise.length && (()=>{ try { const t=(generatedExercise[idx]?.question ?? formatQuestionForSpeech(generatedExercise[idx])).trim(); return t===currText; } catch { return false; }})()) idx += 1;
           if (idx < generatedExercise.length) { nextProblem = generatedExercise[idx]; setCurrentExIndex(idx + 1); }
         }
-        if (!nextProblem) {
-          let tries = 0;
-          while (tries < 5) {
-            const s = drawSampleUnique();
-            const isSame = (() => { try { const t=(s?.question ?? formatQuestionForSpeech(s)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t===c; } catch { return false; }})();
-            if (s && !isSame) { nextProblem = s; break; }
-            tries += 1;
-          }
-        }
+        // REMOVED: drawSampleUnique fallback - deprecated zombie code
         if (!nextProblem && exercisePool.length) {
           const [head, ...rest] = exercisePool;
           const headSame = (()=>{ try { const t=(head?.question ?? formatQuestionForSpeech(head)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t===c; } catch { return false; }})();

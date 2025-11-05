@@ -5,6 +5,8 @@
  * Provides shuffle utilities, mixed selection (math), and category-based building (non-math).
  */
 
+import { betterShuffle } from '@/app/lib/betterRandom';
+
 export function useAssessmentGeneration({
   // Lesson data
   lessonData,
@@ -15,17 +17,14 @@ export function useAssessmentGeneration({
   TEST_TARGET,
   
   // Deck utilities
-  reserveSamples,
   reserveWords,
 }) {
-  // Fisher-Yates shuffle implementation
+  // REMOVED: reserveSamples parameter - sample array is deprecated
+  // See docs/KILL_SAMPLE_ARRAY.md
+  // Use better shuffle with crypto-random and entropy for more varied results
   const shuffle = (arr) => {
-    const copy = [...arr];
-    for (let i = copy.length - 1; i > 0; i -= 1) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [copy[i], copy[j]] = [copy[j], copy[i]];
-    }
-    return copy;
+    const sessionSeed = typeof window !== 'undefined' ? window.location.href : '';
+    return betterShuffle(arr, { addEntropy: true, sessionSeed });
   };
 
   const shuffleArr = (arr) => shuffle(arr);
@@ -60,10 +59,11 @@ export function useAssessmentGeneration({
     return result;
   };
 
-  // Select a blended set (for math): ~70% from samples/categories and ~30% from word problems
-  const selectMixed = (samples = [], wpArr = [], target = 0, isTest = false) => {
+  // Select a blended set (for math): ~70% from categories and ~30% from word problems
+  // REMOVED: samples parameter - no longer using deprecated sample array
+  const selectMixed = (categories = [], wpArr = [], target = 0, isTest = false) => {
     const wpAvail = Array.isArray(wpArr) ? wpArr : [];
-    const baseAvail = Array.isArray(samples) ? samples : [];
+    const baseAvail = Array.isArray(categories) ? categories : [];
     const desiredWp = Math.round(target * 0.3);
     const wpCount = Math.min(Math.max(0, desiredWp), wpAvail.length);
     const baseCount = Math.max(0, target - wpCount);
@@ -71,7 +71,7 @@ export function useAssessmentGeneration({
       const core = isTest ? ({ ...q, expected: q.expected ?? q.answer }) : q;
       return { ...core, sourceType: 'word', questionType: 'sa' };
     });
-    const baseSel = shuffle(baseAvail).slice(0, baseCount).map(q => ({ ...q, sourceType: 'sample', questionType: 'sa' }));
+    const baseSel = shuffle(baseAvail).slice(0, baseCount);
     
     // Deduplicate before final shuffle
     const combined = [...wpSel, ...baseSel];
@@ -79,13 +79,14 @@ export function useAssessmentGeneration({
     return shuffle(deduplicated);
   };
 
-  // Math-specific: build mixed worksheet/test from samples, words, and categories
+  // Math-specific: build mixed worksheet/test from categories, words
+  // REMOVED: samples parameter - no longer using deprecated sample array
   // Caps Short Answer and Fill-in-the-Blank at 10% each
-  const takeMixed = (target, isTest, { samples, words, data }) => {
+  const takeMixed = (target, isTest, { words, data }) => {
     const desiredWp = Math.round(target * 0.3);
     const wpSel = (words || []).slice(0, desiredWp).map(q => ({ ...(isTest ? ({ ...q, expected: q.expected ?? q.answer }) : q), sourceType: 'word', questionType: 'sa' }));
     
-    // Cap SA/FIB to 15% each in the remainder from samples+categories
+    // Cap SA/FIB to 15% each in the remainder from categories
     const remainder = Math.max(0, target - wpSel.length);
     const cap = Math.max(0, Math.floor(target * 0.15));
     
@@ -95,10 +96,7 @@ export function useAssessmentGeneration({
     const sa = Array.isArray(data.shortanswer) ? data.shortanswer.map(q => ({ ...q, sourceType: 'short', questionType: 'sa' })) : [];
     const cats = [...tf, ...mc, ...fib, ...sa];
     
-    const fromBase = [
-      ...((samples || []).map(q => ({ ...q, sourceType: 'sample', questionType: 'sa' }))),
-      ...cats
-    ];
+    const fromBase = cats;
     
     const saArr = fromBase.filter(q => /short\s*answer|shortanswer/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'short');
     const fibArr = fromBase.filter(q => /fill\s*in\s*the\s*blank|fillintheblank/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'fib');
@@ -165,8 +163,7 @@ export function useAssessmentGeneration({
     let gT = [];
 
     if (subjectParam === 'math') {
-      // Math: mixed approach with samples, words, and categories
-      const samples = reserveSamples(WORKSHEET_TARGET + TEST_TARGET);
+      // Math: mixed approach with words and categories (NO MORE SAMPLES)
       const words = reserveWords(WORKSHEET_TARGET + TEST_TARGET);
       
       const tf = Array.isArray(lessonData.truefalse) ? lessonData.truefalse.map(q => ({ ...q, sourceType: 'tf', questionType: 'tf' })) : [];
@@ -175,9 +172,9 @@ export function useAssessmentGeneration({
       const sa = Array.isArray(lessonData.shortanswer) ? lessonData.shortanswer.map(q => ({ ...q, sourceType: 'short', questionType: 'sa' })) : [];
       const cats = [...tf, ...mc, ...fib, ...sa];
       
-      if ((samples && samples.length) || (words && words.length) || cats.length) {
-        gW = takeMixed(WORKSHEET_TARGET, false, { samples, words, data: lessonData });
-        gT = takeMixed(TEST_TARGET, true, { samples, words, data: lessonData });
+      if ((words && words.length) || cats.length) {
+        gW = takeMixed(WORKSHEET_TARGET, false, { words, data: lessonData });
+        gT = takeMixed(TEST_TARGET, true, { words, data: lessonData });
       }
     } else {
       // Non-math: category-based approach
