@@ -171,14 +171,35 @@ function LessonsPageInner(){
           })
           
           if (res.ok) {
-            const { lessons, scheduledKeys: debugScheduledKeys, rawSchedule: debugRawSchedule, approvedKeys: debugApprovedKeys } = await res.json()
+            const {
+              lessons,
+              scheduledKeys: serverScheduledKeys,
+              rawSchedule: serverRawSchedule,
+              approvedKeys: serverApprovedKeys,
+              staleApprovedKeys,
+              staleScheduledKeys
+            } = await res.json()
             console.log('[Learn Lessons] Loaded', lessons.length, 'available lessons from server')
-            if (debugScheduledKeys || debugRawSchedule || debugApprovedKeys) {
+            if (serverScheduledKeys || serverRawSchedule || serverApprovedKeys) {
               console.log('[Learn Lessons] Debug available lessons payload:', {
-                scheduledKeys: debugScheduledKeys,
-                rawSchedule: debugRawSchedule,
-                approvedKeys: debugApprovedKeys
+                scheduledKeys: serverScheduledKeys,
+                rawSchedule: serverRawSchedule,
+                approvedKeys: serverApprovedKeys,
+                staleApprovedKeys,
+                staleScheduledKeys
               })
+            }
+            let cleanupTriggered = false
+            if (Array.isArray(staleApprovedKeys) && staleApprovedKeys.length > 0) {
+              cleanupTriggered = true
+              console.warn('[Learn Lessons] Cleared stale approved lesson keys:', staleApprovedKeys)
+            }
+            if (Array.isArray(staleScheduledKeys) && staleScheduledKeys.length > 0) {
+              cleanupTriggered = true
+              console.warn('[Learn Lessons] Cleared stale scheduled lesson keys:', staleScheduledKeys)
+            }
+            if (cleanupTriggered) {
+              setRefreshTrigger(prev => prev + 1)
             }
             
             // Group by subject

@@ -11,6 +11,32 @@ const LESSONS_ROOT = path.join(process.cwd(), 'public', 'lessons')
 const FACILITATOR_FOLDER = 'Facilitator Lessons'
 const STOCK_SUBJECTS = new Set(['math', 'science', 'social studies', 'language arts'])
 
+function buildApprovedLookup(raw = {}) {
+  const normalized = {}
+  const rawLookup = {}
+  Object.entries(raw || {}).forEach(([key, value]) => {
+    if (!value) return
+    const normalizedKey = normalizeLessonKey(key) || key
+    if (!normalizedKey) return
+    normalized[normalizedKey] = true
+    if (!rawLookup[normalizedKey]) rawLookup[normalizedKey] = []
+    if (!rawLookup[normalizedKey].includes(key)) {
+      rawLookup[normalizedKey].push(key)
+    }
+  })
+  return { normalized, rawLookup }
+}
+
+function mapFromKeys(keys = []) {
+  const map = {}
+  keys.forEach(key => {
+    if (key) {
+      map[key] = true
+    }
+  })
+  return map
+}
+
 async function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -47,13 +73,16 @@ export async function GET(request) {
     
     const approvedLessons = learnerData.approved_lessons || {}
     const facilitatorId = learnerData.facilitator_id
-    
-  // Get today's scheduled lessons using local date (not UTC)
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  const today = `${year}-${month}-${day}`
+    const { normalized: approvedNormalizedMap } = buildApprovedLookup(approvedLessons)
+    const approvedKeys = Object.keys(approvedNormalizedMap)
+
+    // Get today's scheduled lessons using local date (not UTC)
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const today = `${year}-${month}-${day}`
+
     const { data: scheduleData, error: scheduleError } = await supabase
       .from('lesson_schedule')
       .select('lesson_key')
@@ -64,134 +93,196 @@ export async function GET(request) {
       console.error('[Available Lessons API] Failed to load schedule rows:', scheduleError)
     }
 
-    console.log('[Available Lessons API] Raw schedule rows for', learnerId, today, ':', scheduleData)
+    const scheduleRows = Array.isArray(scheduleData) ? scheduleData : []
+    console.log('[Available Lessons API] Raw schedule rows for', learnerId, today, ':', scheduleRows)
 
-    const scheduledKeys = (scheduleData || [])
-      .filter(item => item?.lesson_key)
-      .map(item => normalizeLessonKey(item.lesson_key))
+    const scheduledKeys = scheduleRows
+      .map(item => item?.lesson_key ? normalizeLessonKey(item.lesson_key) : null)
+      .filter(Boolean)
 
     // Combine approved and scheduled (normalized for consistency)
-    const approvedKeys = Object.keys(approvedLessons || {}).map(key => normalizeLessonKey(key))
-    const allKeys = [...approvedKeys, ...scheduledKeys]
-    const uniqueKeys = [...new Set(allKeys)].filter(Boolean)
-    
+    const uniqueKeys = [...new Set([...approvedKeys, ...scheduledKeys])].filter(Boolean)
     console.log('[Available Lessons API] Learner:', learnerId, 'Approved:', approvedKeys, 'Scheduled:', scheduledKeys)
-    
-    // Now fetch the actual lesson data for each key
+
+    // Track stale entries for cleanup
+    const approvedKeySet = new Set(approvedKeys)
+    const scheduledKeySet = new Set(scheduledKeys)
+    const staleApprovedKeys = new Set()
+    const staleScheduledKeys = new Set()
     const lessons = []
-    
+
     for (const key of uniqueKeys) {
-      const parts = key.split('/')
+      const normalizedKey = normalizeLessonKey(key)
+      if (!normalizedKey) continue
+      const parts = normalizedKey.split('/')
       const rawSubject = parts[0] || ''
       const subject = rawSubject.toLowerCase()
-      const filename = parts.slice(1).join('/') || key
+      const filename = parts.slice(1).join('/') || normalizedKey
 
-      try {
-        let lessonData = null
+      let lessonData = null
+      let missingReason = null
 
-        // Generated lessons always live in facilitator storage
-  if (subject === 'generated') {
-          if (facilitatorId) {
-            const { data, error } = await supabase.storage
-              .from('lessons')
-              .download(`facilitator-lessons/${facilitatorId}/${filename}`)
-            
-            if (!error && data) {
-              const text = await data.text()
-              lessonData = JSON.parse(text)
-              lessonData.isGenerated = true
-              lessonData.subject = 'generated'
-              lessonData.file = filename
-            } else {
-              console.error('[Available Lessons API] Error loading generated lesson:', key, error)
-            }
+      if (!parts || parts.length < 2) {
+        missingReason = 'invalid-key'
+      } else if (subject === 'generated') {
+        if (facilitatorId) {
+          const { data, error } = await supabase.storage
+            .from('lessons')
+            .download(`facilitator-lessons/${facilitatorId}/${filename}`)
+
+          if (!error && data) {
+            const text = await data.text()
+            lessonData = JSON.parse(text)
+            lessonData.isGenerated = true
+            lessonData.subject = 'generated'
+            lessonData.file = filename
           } else {
-            console.warn('[Available Lessons API] Missing facilitator for generated lesson:', key)
+            if (error?.status === 404) {
+              missingReason = 'not-found'
+            }
+            console.error('[Available Lessons API] Error loading generated lesson:', normalizedKey, error)
           }
-        } else if (subject === 'general') {
-          // General lessons default to the shared facilitator library on disk
-          const facilitatorFilePath = path.join(LESSONS_ROOT, FACILITATOR_FOLDER, filename)
-          try {
-            const raw = await fs.promises.readFile(facilitatorFilePath, 'utf8')
-            lessonData = JSON.parse(raw)
+        } else {
+          missingReason = 'missing-facilitator'
+          console.warn('[Available Lessons API] Missing facilitator for generated lesson:', normalizedKey)
+        }
+      } else if (subject === 'general') {
+        const facilitatorFilePath = path.join(LESSONS_ROOT, FACILITATOR_FOLDER, filename)
+        let diskMissing = false
+        let storageMissing = false
+
+        try {
+          const raw = await fs.promises.readFile(facilitatorFilePath, 'utf8')
+          lessonData = JSON.parse(raw)
+          lessonData.subject = 'general'
+          lessonData.file = filename
+        } catch (readErr) {
+          if (readErr.code === 'ENOENT') {
+            diskMissing = true
+          } else {
+            console.error('[Available Lessons API] Error reading general lesson from disk:', normalizedKey, readErr)
+          }
+        }
+
+        if (!lessonData && facilitatorId) {
+          const { data, error } = await supabase.storage
+            .from('lessons')
+            .download(`facilitator-lessons/${facilitatorId}/${filename}`)
+
+          if (!error && data) {
+            const text = await data.text()
+            lessonData = JSON.parse(text)
             lessonData.subject = 'general'
             lessonData.file = filename
-          } catch (readErr) {
-            if (readErr.code !== 'ENOENT') {
-              console.error('[Available Lessons API] Error reading general lesson from disk:', key, readErr)
-            }
-            // Fallback: attempt facilitator storage (older uploads)
-            if (!lessonData && facilitatorId) {
-              const { data, error } = await supabase.storage
-                .from('lessons')
-                .download(`facilitator-lessons/${facilitatorId}/${filename}`)
-              
-              if (!error && data) {
-                const text = await data.text()
-                lessonData = JSON.parse(text)
-                lessonData.subject = 'general'
-                lessonData.file = filename
-              } else if (error) {
-                console.error('[Available Lessons API] Error loading general lesson from storage:', key, error)
-              }
-            }
+          } else if (error?.status === 404) {
+            storageMissing = true
+          } else if (error) {
+            console.error('[Available Lessons API] Error loading general lesson from storage:', normalizedKey, error)
           }
-        } else if (STOCK_SUBJECTS.has(subject)) {
-          // Stock lessons are bundled on disk inside public/lessons/<subject>
-          const subjectFolder = subject.replace(/_/g, ' ')
-          const stockFilePath = path.join(LESSONS_ROOT, subjectFolder, filename)
+        }
+
+        if (!lessonData && (diskMissing || storageMissing || (!facilitatorId && diskMissing))) {
+          missingReason = 'not-found'
+        }
+      } else if (STOCK_SUBJECTS.has(subject)) {
+        const subjectFolder = subject.replace(/_/g, ' ')
+        const stockFilePath = path.join(LESSONS_ROOT, subjectFolder, filename)
+        try {
+          const raw = await fs.promises.readFile(stockFilePath, 'utf8')
+          lessonData = JSON.parse(raw)
+          lessonData.subject = subject
+          lessonData.file = filename
+        } catch (readErr) {
+          if (readErr.code === 'ENOENT') {
+            missingReason = 'not-found'
+            console.warn('[Available Lessons API] Stock lesson not found on disk:', normalizedKey)
+          } else {
+            console.error('[Available Lessons API] Error reading stock lesson from disk:', normalizedKey, readErr)
+          }
+        }
+      } else {
+        const legacySubject = rawSubject.replace(/_/g, ' ')
+        const legacySubjectLower = legacySubject.toLowerCase()
+        if (STOCK_SUBJECTS.has(legacySubjectLower)) {
+          const legacyPath = path.join(LESSONS_ROOT, legacySubjectLower, filename)
           try {
-            const raw = await fs.promises.readFile(stockFilePath, 'utf8')
+            const raw = await fs.promises.readFile(legacyPath, 'utf8')
             lessonData = JSON.parse(raw)
-            lessonData.subject = subject
+            lessonData.subject = legacySubjectLower
             lessonData.file = filename
-          } catch (readErr) {
-            if (readErr.code === 'ENOENT') {
-              console.warn('[Available Lessons API] Stock lesson not found on disk:', key)
+          } catch (legacyErr) {
+            if (legacyErr.code === 'ENOENT') {
+              missingReason = 'not-found'
+              console.warn('[Available Lessons API] Legacy stock lesson not found on disk:', normalizedKey)
             } else {
-              console.error('[Available Lessons API] Error reading stock lesson from disk:', key, readErr)
+              console.error('[Available Lessons API] Legacy stock read error:', normalizedKey, legacyErr)
             }
           }
         } else {
-          const legacySubject = rawSubject.replace(/_/g, ' ')
-          const legacySubjectLower = legacySubject.toLowerCase()
-          if (STOCK_SUBJECTS.has(legacySubjectLower)) {
-            const legacyPath = path.join(LESSONS_ROOT, legacySubjectLower, filename)
-            try {
-              const raw = await fs.promises.readFile(legacyPath, 'utf8')
-              lessonData = JSON.parse(raw)
-              lessonData.subject = legacySubjectLower
-              lessonData.file = filename
-            } catch (legacyErr) {
-              if (legacyErr.code === 'ENOENT') {
-                console.warn('[Available Lessons API] Legacy stock lesson not found on disk:', key)
-              } else {
-                console.error('[Available Lessons API] Legacy stock read error:', key, legacyErr)
-              }
-            }
-          } else {
-            console.warn('[Available Lessons API] Unrecognized lesson key format:', key)
-          }
+          missingReason = 'invalid-key'
+          console.warn('[Available Lessons API] Unrecognized lesson key format:', normalizedKey)
         }
+      }
 
-        if (lessonData) {
-          lessonData.lessonKey = key
-          lessonData.subject = lessonData.subject || subject || rawSubject || 'general'
-          lessons.push(lessonData)
+      if (lessonData) {
+        lessonData.lessonKey = normalizedKey
+        lessonData.subject = lessonData.subject || subject || rawSubject || 'general'
+        lessonData.file = lessonData.file || filename
+        lessons.push(lessonData)
+      } else {
+        if (approvedKeySet.has(normalizedKey) && missingReason) {
+          staleApprovedKeys.add(normalizedKey)
         }
-      } catch (err) {
-        console.error('[Available Lessons API] Error loading', key, err)
+        if (scheduledKeySet.has(normalizedKey) && missingReason) {
+          staleScheduledKeys.add(normalizedKey)
+        }
       }
     }
-    
-    console.log('[Available Lessons API] Returning', lessons.length, 'lessons')
+
+    const validApprovedKeys = approvedKeys.filter(key => !staleApprovedKeys.has(key))
+    const validScheduledKeys = scheduledKeys.filter(key => !staleScheduledKeys.has(key))
+    const cleanedApprovedMap = mapFromKeys(validApprovedKeys)
+
+    if (staleApprovedKeys.size > 0) {
+      console.warn('[Available Lessons API] Removing stale approved lesson keys for learner', learnerId, Array.from(staleApprovedKeys))
+      const { error: cleanupError } = await supabase
+        .from('learners')
+        .update({ approved_lessons: cleanedApprovedMap })
+        .eq('id', learnerId)
+      if (cleanupError) {
+        console.error('[Available Lessons API] Failed to clean approved lessons map:', cleanupError)
+      }
+    }
+
+    if (staleScheduledKeys.size > 0) {
+      console.warn('[Available Lessons API] Removing stale scheduled lesson keys for learner', learnerId, Array.from(staleScheduledKeys))
+      const staleList = Array.from(staleScheduledKeys)
+      const { error: scheduleCleanupError } = await supabase
+        .from('lesson_schedule')
+        .delete()
+        .eq('learner_id', learnerId)
+        .eq('scheduled_date', today)
+        .in('lesson_key', staleList)
+      if (scheduleCleanupError) {
+        console.error('[Available Lessons API] Failed to clean schedule entries:', scheduleCleanupError)
+      }
+    }
+
+    const filteredScheduleRows = scheduleRows.filter(item => {
+      const normalizedKey = item?.lesson_key ? normalizeLessonKey(item.lesson_key) : null
+      return normalizedKey && !staleScheduledKeys.has(normalizedKey)
+    })
+
+    console.log('[Available Lessons API] Returning', lessons.length, 'lessons after cleanup')
 
     const responseBody = {
       lessons,
-      scheduledKeys,
-      approvedKeys,
-      rawSchedule: scheduleData || [],
-      scheduleError: scheduleError ? scheduleError.message || String(scheduleError) : null
+      scheduledKeys: validScheduledKeys,
+      approvedKeys: validApprovedKeys,
+      rawSchedule: filteredScheduleRows,
+      scheduleError: scheduleError ? scheduleError.message || String(scheduleError) : null,
+      staleApprovedKeys: Array.from(staleApprovedKeys),
+      staleScheduledKeys: Array.from(staleScheduledKeys)
     }
 
     return NextResponse.json(responseBody)
