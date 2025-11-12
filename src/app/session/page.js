@@ -193,10 +193,13 @@ function SessionPageInner() {
     return `${subjectParam}/${lessonParam}`;
   }, [subjectParam, lessonParam]);
 
-  const { endSession: endTrackedSession } = useSessionTracking(
+  const {
+    startSession: startTrackedSession,
+    endSession: endTrackedSession,
+  } = useSessionTracking(
     trackingLearnerId,
     lessonSessionKey,
-    Boolean(trackingLearnerId && lessonSessionKey)
+    false
   );
   
   // Force target reload when learner changes
@@ -3831,6 +3834,20 @@ function SessionPageInner() {
     // Ensure audio and mic permissions are handled as part of Begin (in-gesture)
   // mic permission will be requested only when user starts recording
 
+    // Kick off Supabase session tracking once the learner actually begins this lesson
+    if (trackingLearnerId && lessonSessionKey && typeof startTrackedSession === 'function') {
+      try {
+        const supabaseSessionId = await startTrackedSession();
+        if (supabaseSessionId) {
+          try { console.info('[Begin] Supabase lesson session started:', supabaseSessionId); } catch {}
+        } else {
+          console.warn('[Begin] Supabase session start returned null');
+        }
+      } catch (sessionErr) {
+        console.warn('[Begin] Supabase session start failed:', sessionErr);
+      }
+    }
+
     // Immediately update UI so it feels responsive
     setShowBegin(false);
     setPhase("discussion");
@@ -4800,6 +4817,7 @@ function SessionPageInner() {
     getAssessmentStorageKey,
     clearAssessments,
     scheduleSaveSnapshot,
+  startTrackedSession,
     // Constants
     COMPREHENSION_INTROS,
     EXERCISE_INTROS,
@@ -5861,13 +5879,6 @@ function SessionPageInner() {
 
   // Shared Complete Lesson handler used by VideoPanel (and any other triggers)
   const onCompleteLesson = useCallback(async () => {
-    if (trackingLearnerId) {
-      const allowed = await ensurePinAllowed('active-session');
-      if (!allowed) {
-        return;
-      }
-    }
-
     // Check if golden key was earned (completed within time limit)
     let earnedKey = false;
     try {

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useMemo, useCallback, useEffect, useState, useRef } from 'react';
 import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
+import { ensurePinAllowed } from '@/app/lib/pinGate';
 
 export default function HeaderBar() {
 	const pathname = usePathname() || '/';
@@ -358,10 +359,26 @@ export default function HeaderBar() {
 		return null; // No explicit mapping => hide back
 	}, [pathname]);
 
-	const handleBack = useCallback(() => {
-		if (backHref) router.push(backHref);
-		else router.back();
-	}, [backHref, router]);
+	const goWithPin = useCallback(async (pushHref) => {
+		if (pathname.startsWith('/session')) {
+			const allowed = await ensurePinAllowed('session-exit');
+			if (!allowed) return false;
+		}
+		if (pushHref) {
+			router.push(pushHref);
+		} else {
+			router.back();
+		}
+		return true;
+	}, [pathname, router]);
+
+	const handleBack = useCallback(async () => {
+		if (backHref) {
+			await goWithPin(backHref);
+		} else {
+			await goWithPin(null);
+		}
+	}, [backHref, goWithPin]);
 
 		// Branded back button style (match Session button color)
 		const BRAND_ACCENT = '#c7442e';
@@ -546,8 +563,36 @@ export default function HeaderBar() {
 								>
 									{/* Always available links first so they appear at the top of the hamburger */}
 									<div style={{ display:'flex', flexDirection:'column', borderBottom: pathname.startsWith('/session') ? '1px solid #f3f4f6' : 'none' }}>
-										<Link href="/learn" role="menuitem" onClick={() => setNavOpen(false)} style={MOBILE_MENU_ITEM_STYLE}>Learn</Link>
-										<Link href="/facilitator" role="menuitem" onClick={() => setNavOpen(false)} style={{ ...MOBILE_MENU_ITEM_STYLE, borderTop:'1px solid #f3f4f6' }}>
+										<Link
+											href="/learn"
+											role="menuitem"
+											onClick={async (e) => {
+												if (pathname.startsWith('/session')) {
+													e.preventDefault();
+													const ok = await goWithPin('/learn');
+													if (ok) setNavOpen(false);
+												} else {
+													setNavOpen(false);
+												}
+											}}
+											style={MOBILE_MENU_ITEM_STYLE}
+										>
+											Learn
+										</Link>
+										<Link
+											href="/facilitator"
+											role="menuitem"
+											onClick={async (e) => {
+												if (pathname.startsWith('/session')) {
+													e.preventDefault();
+													const ok = await goWithPin('/facilitator');
+													if (ok) setNavOpen(false);
+												} else {
+													setNavOpen(false);
+												}
+											}}
+											style={{ ...MOBILE_MENU_ITEM_STYLE, borderTop:'1px solid #f3f4f6' }}
+										>
 											{facilitatorName || 'Facilitator'}
 										</Link>
 									</div>
@@ -628,8 +673,28 @@ export default function HeaderBar() {
 										)}
 								</div>
 							)}
-							<Link href="/learn" style={{ textDecoration:'none', color:'#111', fontWeight:500 }}>Learn</Link>
-							<Link href="/facilitator" style={{ textDecoration:'none', color:'#111', fontWeight:500 }}>
+							<Link
+								href="/learn"
+								onClick={(e) => {
+									if (pathname.startsWith('/session')) {
+										e.preventDefault();
+										goWithPin('/learn');
+									}
+								}}
+								style={{ textDecoration:'none', color:'#111', fontWeight:500 }}
+							>
+								Learn
+							</Link>
+							<Link
+								href="/facilitator"
+								onClick={(e) => {
+									if (pathname.startsWith('/session')) {
+										e.preventDefault();
+										goWithPin('/facilitator');
+									}
+								}}
+								style={{ textDecoration:'none', color:'#111', fontWeight:500 }}
+							>
 								{facilitatorName || 'Facilitator'}
 							</Link>
 						</>

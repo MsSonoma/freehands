@@ -5,6 +5,22 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+function getCookieValue(cookieHeader, name) {
+  if (!cookieHeader || !name) return null
+  const parts = cookieHeader.split(';')
+  for (const part of parts) {
+    const trimmed = part.trim()
+    if (trimmed.startsWith(`${name}=`)) {
+      try {
+        return decodeURIComponent(trimmed.slice(name.length + 1))
+      } catch {
+        return null
+      }
+    }
+  }
+  return null
+}
+
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
@@ -36,8 +52,14 @@ export async function GET(request) {
     
     // Fallback to cookie-based session
     if (!session) {
-      const { data: sessionData } = await supabase.auth.getSession()
-      session = sessionData.session
+      const cookieHeader = request.headers.get('cookie')
+      const accessToken = getCookieValue(cookieHeader, 'sb-access-token')
+      if (accessToken) {
+        const { data: { user }, error } = await supabase.auth.getUser(accessToken)
+        if (!error && user) {
+          session = { user }
+        }
+      }
     }
     
     if (!session?.user) {
@@ -128,9 +150,15 @@ export async function POST(request) {
     
     // Fallback to cookie-based session
     if (!session) {
-      const { data: sessionData } = await supabase.auth.getSession()
-      session = sessionData.session
-      console.log('[goals-notes POST] Cookie auth result:', { hasSession: !!session })
+      const cookieHeader = request.headers.get('cookie')
+      const accessToken = getCookieValue(cookieHeader, 'sb-access-token')
+      if (accessToken) {
+        const { data: { user }, error } = await supabase.auth.getUser(accessToken)
+        console.log('[goals-notes POST] Cookie auth result:', { hasUser: !!user, error: error?.message })
+        if (!error && user) {
+          session = { user }
+        }
+      }
     }
     
     if (!session?.user) {

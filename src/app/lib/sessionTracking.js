@@ -32,28 +32,6 @@ export async function startLessonSession(learnerId, lessonId) {
     }
 
     const activeSessions = Array.isArray(existingSessions) ? existingSessions : [];
-    const sameLessonSession = activeSessions.find((session) => session.lesson_id === lessonId);
-
-    if (sameLessonSession) {
-      // Close any stray sessions for this learner before reusing the active record.
-      const straySessionIds = activeSessions
-        .filter((session) => session.id !== sameLessonSession.id)
-        .map((session) => session.id);
-
-      if (straySessionIds.length > 0) {
-        const { error: closeStraysError } = await supabase
-          .from('lesson_sessions')
-          .update({ ended_at: nowIso })
-          .in('id', straySessionIds);
-
-        if (closeStraysError) {
-          console.warn('[sessionTracking] Failed to close stray sessions for learner:', closeStraysError);
-        }
-      }
-
-      console.info('[sessionTracking] Reusing active session for learner:', sameLessonSession.id);
-      return sameLessonSession.id;
-    }
 
     if (activeSessions.length > 0) {
       const activeIds = activeSessions.map((session) => session.id);
@@ -64,6 +42,8 @@ export async function startLessonSession(learnerId, lessonId) {
 
       if (closeActiveError) {
         console.warn('[sessionTracking] Failed to close existing sessions before starting new one:', closeActiveError);
+      } else {
+        console.info('[sessionTracking] Closed', activeIds.length, 'previous active session(s) for learner');
       }
     }
 

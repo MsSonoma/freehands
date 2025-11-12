@@ -29,7 +29,7 @@ import { appendTranscriptSegment } from '../../lib/transcriptsClient';
  *     teachExamples, speakFrontend, ensureQuestionMark, formatQuestionForSpeech,
  *     beginComprehensionPhase, beginSkippedExercise, beginWorksheetPhase, beginTestPhase,
  *     abortAllActivity, getSnapshotStorageKey, getAssessmentStorageKey, clearAssessments,
- *     scheduleSaveSnapshot
+ *     scheduleSaveSnapshot, startTrackedSession
  *   - Constants: COMPREHENSION_INTROS, EXERCISE_INTROS, WORKSHEET_INTROS, TEST_INTROS
  * @returns {Object} { handleResumeClick, handleRestartClick }
  */
@@ -112,6 +112,7 @@ export function useResumeRestart({
   getAssessmentStorageKey,
   clearAssessments,
   scheduleSaveSnapshot,
+  startTrackedSession,
   // Constants
   COMPREHENSION_INTROS,
   EXERCISE_INTROS,
@@ -123,6 +124,18 @@ export function useResumeRestart({
     try { unlockAudioPlayback(); } catch {}
     try { preferHtmlAudioOnceRef.current = true; } catch {}
     try { forceNextPlaybackRef.current = true; } catch {}
+    if (typeof startTrackedSession === 'function') {
+      try {
+        const supabaseSessionId = await startTrackedSession();
+        if (supabaseSessionId) {
+          try { console.info('[Resume] Supabase lesson session started:', supabaseSessionId); } catch {}
+        } else {
+          console.warn('[Resume] Supabase session start returned null');
+        }
+      } catch (sessionErr) {
+        console.warn('[Resume] Supabase session start failed:', sessionErr);
+      }
+    }
     // Decide what to resume based on phase/subPhase
     try {
       if (phase === 'discussion') {
@@ -267,7 +280,7 @@ export function useResumeRestart({
         return;
       }
     } catch {}
-  }, [phase, subPhase, teachingStage, qaAnswersUnlocked, currentCompProblem, currentExerciseProblem, currentWorksheetIndex, testActiveIndex, generatedWorksheet, generatedTest, worksheetIndexRef, setOfferResume, unlockAudioPlayback, preferHtmlAudioOnceRef, forceNextPlaybackRef, startDiscussionStep, setSubPhase, setCanSend, teachDefinitions, promptGateRepeat, teachExamples, COMPREHENSION_INTROS, speakFrontend, setShowOpeningActions, ensureQuestionMark, formatQuestionForSpeech, activeQuestionBodyRef, setQaAnswersUnlocked, beginComprehensionPhase, EXERCISE_INTROS, beginSkippedExercise, WORKSHEET_INTROS, beginWorksheetPhase, TEST_INTROS, beginTestPhase]);
+  }, [phase, subPhase, teachingStage, qaAnswersUnlocked, currentCompProblem, currentExerciseProblem, currentWorksheetIndex, testActiveIndex, generatedWorksheet, generatedTest, worksheetIndexRef, setOfferResume, unlockAudioPlayback, preferHtmlAudioOnceRef, forceNextPlaybackRef, startDiscussionStep, setSubPhase, setCanSend, teachDefinitions, promptGateRepeat, teachExamples, COMPREHENSION_INTROS, speakFrontend, setShowOpeningActions, ensureQuestionMark, formatQuestionForSpeech, activeQuestionBodyRef, setQaAnswersUnlocked, beginComprehensionPhase, EXERCISE_INTROS, beginSkippedExercise, WORKSHEET_INTROS, beginWorksheetPhase, TEST_INTROS, beginTestPhase, startTrackedSession]);
 
   const handleRestartClick = useCallback(async () => {
     // Confirm irreversible action before proceeding

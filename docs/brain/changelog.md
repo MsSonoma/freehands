@@ -1,3 +1,7 @@
+2025-11-12T17:40:00Z | Copilot | Goals-notes API now honors Supabase cookie tokens for Mentor overlay loads.
+2025-11-12T17:25:00Z | Copilot | Complete Lesson button no longer requires facilitator PIN.
+2025-11-12T17:10:00Z | Copilot | Session header nav now routes through PIN guard before leaving lesson.
+2025-11-12T16:20:00Z | Copilot | Begin/Resume now start Supabase lesson sessions and always insert fresh rows.
 2025-11-12T15:04:58Z | Copilot | Added PIN guard screen before loading Mentor UI; kept takeover hash fix.
 2025-11-12T14:50:16Z | Copilot | Mentor session API now validates hashed facilitator PINs like other gates.
 2025-11-12T14:43:21Z | Copilot | Fixed SessionTakeoverDialog to use isBusy flag instead of undefined loading var.
@@ -15,7 +19,3 @@
 2025-11-11T20:45:00Z | Copilot | Added mentor session cleanup helpers, force-end flow, and npm script.
 2025-11-08T17:26:00Z | Copilot | Recipe parser now honors Units metadata for per-jar BOM quantities.
 2025-11-08T17:05:00Z | Copilot | Installed Python env and fixed pyproject to drop unused hatch SCM hook.
-2025-11-08T14:28:50Z | Copilot | Added missing lessonNotes state to stop overlay runtime error.
-2025-11-05T23:31:37Z | Copilot | Fixed learner-scoped overlay init so isLearnerScoped resolves before use.
-2025-11-05T23:18:08Z | Copilot | Stop mentor lesson overlay from fetching generated sets while learner scoped.
-2025-11-05T23:08:25Z | Copilot | Reverted generated overlay wiring so mentor ignores that screen.
