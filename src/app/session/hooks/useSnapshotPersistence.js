@@ -683,12 +683,56 @@ export function useSnapshotPersistence({
       }
     };
     const ensureTest = () => {
-      if (subPhase === 'review-start') {
-        // Allowed resume point; nothing to reconcile
+      const list = Array.isArray(generatedTest) ? generatedTest : [];
+      const limit = list.length
+        ? Math.min((typeof TEST_TARGET === 'number' && TEST_TARGET > 0) ? TEST_TARGET : list.length, list.length)
+        : 0;
+      const answeredCount = Array.isArray(testUserAnswers)
+        ? testUserAnswers.filter((v) => typeof v === 'string' && v.trim().length > 0).length
+        : 0;
+      const judgedCount = Array.isArray(testCorrectByIndex)
+        ? testCorrectByIndex.filter((v) => typeof v === 'boolean').length
+        : 0;
+      const hasScore = typeof testFinalPercent === 'number' && Number.isFinite(testFinalPercent);
+      const hasReviewProgress = answeredCount > 0 || judgedCount > 0 || hasScore;
+
+      if (typeof subPhase === 'string' && subPhase.startsWith('review')) {
+        if (!hasReviewProgress) {
+          const fallbackIdx = clamp(Number(testActiveIndex) || 0, 0, Math.max(0, limit - 1));
+          if (limit > 0) {
+            try { setTestActiveIndex(fallbackIdx); } catch {}
+          } else {
+            try { setTestActiveIndex(0); } catch {}
+          }
+          try {
+            setTestCorrectByIndex((prev) => {
+              if (!Array.isArray(prev)) return prev;
+              if (prev.every((item) => typeof item === 'undefined')) return prev;
+              return prev.map(() => undefined);
+            });
+          } catch {}
+          try { setTestCorrectCount(0); } catch {}
+          try { setTestFinalPercent(null); } catch {}
+          if (Array.isArray(testUserAnswers)) {
+            try {
+              setTestUserAnswers((prev) => {
+                if (!Array.isArray(prev)) return prev;
+                return prev.map(() => '');
+              });
+            } catch {}
+          }
+          if (!qaAnswersUnlocked) {
+            try { setShowOpeningActions(true); } catch {}
+            try { setCanSend(false); } catch {}
+            try { setShowBegin(false); } catch {}
+          }
+          try { setSubPhase(limit > 0 ? 'test-active' : 'test-awaiting-begin'); } catch {}
+        }
         return;
       }
-      if (Array.isArray(generatedTest) && generatedTest.length > 0) {
-        const i = clamp(Number(testActiveIndex) || 0, 0, Math.max(0, generatedTest.length - 1));
+
+      if (list.length > 0) {
+        const i = clamp(Number(testActiveIndex) || 0, 0, Math.max(0, list.length - 1));
         try { setTestActiveIndex(i); } catch {}
         if (subPhase === 'test-active') {
           if (!qaAnswersUnlocked) {
@@ -741,7 +785,7 @@ export function useSnapshotPersistence({
       // Now that resume state is reconciled, hide the initial loading overlay
       try { setLoading(false); } catch {}
     }
-  }, [phase, subPhase, currentCompProblem, currentExerciseProblem, currentWorksheetIndex, testActiveIndex, generatedWorksheet, generatedTest, qaAnswersUnlocked, showBegin, restoredSnapshotRef, resumeAppliedRef, restoreFoundRef, setShowOpeningActions, setCanSend, setShowBegin, setSubPhase, setCurrentWorksheetIndex, setTestActiveIndex, preferHtmlAudioOnceRef, setOfferResume, setLoading]);
+  }, [phase, subPhase, currentCompProblem, currentExerciseProblem, currentWorksheetIndex, testActiveIndex, generatedWorksheet, generatedTest, qaAnswersUnlocked, showBegin, testUserAnswers, testCorrectByIndex, testFinalPercent, TEST_TARGET, restoredSnapshotRef, resumeAppliedRef, restoreFoundRef, setShowOpeningActions, setCanSend, setShowBegin, setSubPhase, setCurrentWorksheetIndex, setTestActiveIndex, setTestCorrectByIndex, setTestCorrectCount, setTestFinalPercent, setTestUserAnswers, preferHtmlAudioOnceRef, setOfferResume, setLoading]);
 
   return {
     scheduleSaveSnapshot,

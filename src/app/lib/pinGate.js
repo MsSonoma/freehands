@@ -14,6 +14,7 @@ const DEFAULT_PREFS = {
     refresh: true,           // re-generate worksheet & test
     timer: true,             // pause/resume session timer
     facilitatorPage: true,   // accessing facilitator page
+    activeSession: true,     // leaving an active learner session / accessing lessons mid-session
 };
 
 function readPrefsLocal() {
@@ -58,6 +59,8 @@ function mapActionToPrefKey(action) {
         case 'refresh': return 'refresh';
         case 'timer': return 'timer';
         case 'facilitator-page': return 'facilitatorPage';
+		case 'active-session':
+		case 'session-exit': return 'activeSession';
 		default: return null;
 	}
 }

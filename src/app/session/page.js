@@ -43,6 +43,7 @@ import { usePhaseHandlers } from './hooks/usePhaseHandlers';
 import { useAssessmentGeneration } from './hooks/useAssessmentGeneration';
 import { useTeachingFlow } from './hooks/useTeachingFlow';
 import { useAssessmentDownloads } from './hooks/useAssessmentDownloads';
+import { useSessionTracking } from '../hooks/useSessionTracking';
 import { useSnapshotPersistence } from './hooks/useSnapshotPersistence';
 import { useResumeRestart } from './hooks/useResumeRestart';
 import SessionTimer from './components/SessionTimer';
@@ -171,6 +172,32 @@ function SessionPageInner() {
   
   // Track whether this lesson has an active golden key (from URL or persisted in DB)
   const [hasGoldenKey, setHasGoldenKey] = useState(goldenKeyFromUrl);
+  const [trackingLearnerId, setTrackingLearnerId] = useState(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const storedId = localStorage.getItem('learner_id');
+      if (storedId && storedId !== 'demo') {
+        setTrackingLearnerId(storedId);
+      } else {
+        setTrackingLearnerId(null);
+      }
+    } catch {
+      setTrackingLearnerId(null);
+    }
+  }, []);
+
+  const lessonSessionKey = useMemo(() => {
+    if (!subjectParam || !lessonParam) return null;
+    return `${subjectParam}/${lessonParam}`;
+  }, [subjectParam, lessonParam]);
+
+  const { endSession: endTrackedSession } = useSessionTracking(
+    trackingLearnerId,
+    lessonSessionKey,
+    Boolean(trackingLearnerId && lessonSessionKey)
+  );
   
   // Force target reload when learner changes
   const reloadTargetsForCurrentLearner = useCallback(async () => {
@@ -5834,6 +5861,13 @@ function SessionPageInner() {
 
   // Shared Complete Lesson handler used by VideoPanel (and any other triggers)
   const onCompleteLesson = useCallback(async () => {
+    if (trackingLearnerId) {
+      const allowed = await ensurePinAllowed('active-session');
+      if (!allowed) {
+        return;
+      }
+    }
+
     // Check if golden key was earned (completed within time limit)
     let earnedKey = false;
     try {
@@ -5918,14 +5952,54 @@ function SessionPageInner() {
 
     // Stop any ongoing audio/speech/mic work first
     try { abortAllActivity(); } catch {}
-    const key = getAssessmentStorageKey();
-    if (key) {
+    const storageLearnerId = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
+
+    // Clear cached assessments first so generated sets rebuild next session
+    try {
+      const assessmentKey = getAssessmentStorageKey();
+      if (assessmentKey) {
+        await clearAssessments(assessmentKey, { learnerId: storageLearnerId });
+      }
+    } catch {}
+
+    // Clear resume snapshots so fresh lessons start without a Continue prompt
+    try {
+      const snapshotKeys = new Set();
       try {
-        const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
-        clearAssessments(key, { learnerId: lid });
-        try { clearSnapshot(key, { learnerId: lid }); } catch {}
-      } catch { /* ignore */ }
-    }
+        const key = getSnapshotStorageKey();
+        if (key) snapshotKeys.add(key);
+      } catch {}
+      try {
+        const key = getSnapshotStorageKey({ param: lessonParam });
+        if (key) snapshotKeys.add(key);
+      } catch {}
+      try {
+        const key = getSnapshotStorageKey({ manifest: manifestInfo });
+        if (key) snapshotKeys.add(key);
+      } catch {}
+      try {
+        if (lessonData?.id) {
+          const key = getSnapshotStorageKey({ data: lessonData });
+          if (key) snapshotKeys.add(key);
+        }
+      } catch {}
+
+      for (const key of snapshotKeys) {
+        try { await clearSnapshot(key, { learnerId: storageLearnerId }); } catch {}
+        try {
+          const variants = [
+            `${key}:W15:T10`,
+            `${key}:W20:T20`,
+            `${key}:W${Number(WORKSHEET_TARGET) || 15}:T${Number(TEST_TARGET) || 10}`,
+          ];
+          for (const variant of variants) {
+            try { await clearSnapshot(variant, { learnerId: storageLearnerId }); } catch {}
+            try { await clearSnapshot(`${variant}.json`, { learnerId: storageLearnerId }); } catch {}
+          }
+          try { await clearSnapshot(`${key}.json`, { learnerId: storageLearnerId }); } catch {}
+        } catch {}
+      }
+    } catch {}
     // Persist transcript segment (append-only) to Supabase Storage
     try {
       const learnerId = (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null) || null;
@@ -5949,6 +6023,9 @@ function SessionPageInner() {
         });
       }
     } catch (e) { console.warn('[Session] transcript append failed', e); }
+    if (trackingLearnerId) {
+      try { await endTrackedSession(); } catch {}
+    }
     sessionStartRef.current = null;
     try { transcriptSegmentStartIndexRef.current = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current.length : 0; } catch {}
     setShowBegin(true);
@@ -5971,7 +6048,7 @@ function SessionPageInner() {
         try { window.location.href = '/learn/lessons'; } catch {}
       }
     }
-  }, [effectiveLessonTitle, lessonParam, router, sessionTimerMinutes]);
+  }, [effectiveLessonTitle, lessonParam, router, sessionTimerMinutes, endTrackedSession, trackingLearnerId]);
 
   // No portrait spacer: timeline should sit directly under the header in portrait mode.
 

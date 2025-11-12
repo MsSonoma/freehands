@@ -17,7 +17,8 @@
     "clean:dev:3001": "npm run clean && powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\kill-port-3001.ps1 && set PORT=3001&& npm run dev",
     "kill:3001": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\kill-port-3001.ps1",
     "restart:dev:3001": "npm run kill:3001 && npm run dev:3001",
-    "doctor": "node scripts/doctor.mjs"
+    "doctor": "node scripts/doctor.mjs",
+    "mentor:cleanup-sessions": "node scripts/cleanup-stale-mentor-sessions.mjs"
   },
   "dependencies": {
     "@google-cloud/speech": "^6.7.1",

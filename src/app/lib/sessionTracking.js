@@ -17,14 +17,62 @@ export async function startLessonSession(learnerId, lessonId) {
   if (!learnerId || !lessonId || !hasSupabaseEnv()) return null;
 
   const supabase = getSupabaseClient();
+  const nowIso = new Date().toISOString();
 
   try {
+    // Ensure the learner has at most one active session at a time.
+    const { data: existingSessions, error: existingError } = await supabase
+      .from('lesson_sessions')
+      .select('id, lesson_id')
+      .eq('learner_id', learnerId)
+      .is('ended_at', null);
+
+    if (existingError) {
+      console.warn('[sessionTracking] Failed to check existing sessions:', existingError);
+    }
+
+    const activeSessions = Array.isArray(existingSessions) ? existingSessions : [];
+    const sameLessonSession = activeSessions.find((session) => session.lesson_id === lessonId);
+
+    if (sameLessonSession) {
+      // Close any stray sessions for this learner before reusing the active record.
+      const straySessionIds = activeSessions
+        .filter((session) => session.id !== sameLessonSession.id)
+        .map((session) => session.id);
+
+      if (straySessionIds.length > 0) {
+        const { error: closeStraysError } = await supabase
+          .from('lesson_sessions')
+          .update({ ended_at: nowIso })
+          .in('id', straySessionIds);
+
+        if (closeStraysError) {
+          console.warn('[sessionTracking] Failed to close stray sessions for learner:', closeStraysError);
+        }
+      }
+
+      console.info('[sessionTracking] Reusing active session for learner:', sameLessonSession.id);
+      return sameLessonSession.id;
+    }
+
+    if (activeSessions.length > 0) {
+      const activeIds = activeSessions.map((session) => session.id);
+      const { error: closeActiveError } = await supabase
+        .from('lesson_sessions')
+        .update({ ended_at: nowIso })
+        .in('id', activeIds);
+
+      if (closeActiveError) {
+        console.warn('[sessionTracking] Failed to close existing sessions before starting new one:', closeActiveError);
+      }
+    }
+
     const { data, error } = await supabase
       .from('lesson_sessions')
       .insert({
         learner_id: learnerId,
         lesson_id: lessonId,
-        started_at: new Date().toISOString(),
+        started_at: nowIso,
       })
       .select('id')
       .single();
@@ -262,5 +310,42 @@ export async function getLearnerSessions(learnerId, limit = 10) {
   } catch (err) {
     console.error('[sessionTracking] Exception in getLearnerSessions:', err);
     return [];
+  }
+}
+
+/**
+ * Fetch the active (un-ended) session for a learner, if any.
+ * Returns the most recent session with a null ended_at.
+ *
+ * @param {string} learnerId - Learner ID
+ * @returns {Promise<object|null>} Active session record or null
+ */
+export async function getActiveLessonSession(learnerId) {
+  if (!learnerId || !hasSupabaseEnv()) return null;
+
+  const supabase = getSupabaseClient();
+
+  try {
+    const { data, error } = await supabase
+      .from('lesson_sessions')
+      .select('id, lesson_id, started_at')
+      .eq('learner_id', learnerId)
+      .is('ended_at', null)
+      .order('started_at', { ascending: false })
+      .limit(1);
+
+    if (error) {
+      console.warn('[sessionTracking] Error fetching active session:', error);
+      return null;
+    }
+
+    if (Array.isArray(data) && data.length > 0) {
+      return data[0];
+    }
+
+    return null;
+  } catch (err) {
+    console.warn('[sessionTracking] Exception in getActiveLessonSession:', err);
+    return null;
   }
 }

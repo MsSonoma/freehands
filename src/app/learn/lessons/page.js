@@ -9,6 +9,7 @@ import { ensurePinAllowed } from '@/app/lib/pinGate'
 import LoadingProgress from '@/components/LoadingProgress'
 import GoldenKeyCounter from '@/app/learn/GoldenKeyCounter'
 import { getStoredSnapshot } from '@/app/session/sessionSnapshotStore'
+import { getActiveLessonSession } from '@/app/lib/sessionTracking'
 
 const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
 
@@ -25,6 +26,38 @@ function normalizeApprovedLessonKeys(map = {}) {
     }
   })
   return { normalized, changed }
+}
+
+function snapshotHasMeaningfulProgress(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object') return false
+
+  const phase = snapshot.phase || 'discussion'
+  const subPhase = snapshot.subPhase || 'greeting'
+  const resume = snapshot.resume || null
+
+  if (snapshot.showBegin === false) return true
+  if (snapshot.qaAnswersUnlocked) return true
+
+  const progressedPhases = new Set(['teaching', 'comprehension', 'exercise', 'worksheet', 'test', 'congrats'])
+  if (progressedPhases.has(phase)) return true
+  if (resume && typeof resume === 'object') {
+    if (resume.phase && progressedPhases.has(resume.phase)) return true
+    if (resume.kind === 'question') return true
+  }
+
+  if (subPhase && subPhase !== 'greeting') return true
+
+  if (typeof snapshot.currentCompIndex === 'number' && snapshot.currentCompIndex > 0) return true
+  if (typeof snapshot.currentExIndex === 'number' && snapshot.currentExIndex > 0) return true
+  if (typeof snapshot.currentWorksheetIndex === 'number' && snapshot.currentWorksheetIndex > 0) return true
+  if (typeof snapshot.testActiveIndex === 'number' && snapshot.testActiveIndex > 0) return true
+  if (snapshot.currentCompProblem) return true
+  if (snapshot.currentExerciseProblem) return true
+
+  if (Array.isArray(snapshot.testUserAnswers) && snapshot.testUserAnswers.some(v => v != null && String(v).trim().length > 0)) return true
+  if (Array.isArray(snapshot.storyTranscript) && snapshot.storyTranscript.length > 0) return true
+
+  return false
 }
 
 function LessonsPageInner(){
@@ -48,6 +81,7 @@ function LessonsPageInner(){
   const [editingNote, setEditingNote] = useState(null) // lesson key currently being edited
   const [saving, setSaving] = useState(false)
   const [lessonSnapshots, setLessonSnapshots] = useState({}) // { 'subject/lesson_file': true } - lessons with saved snapshots
+  const [sessionGateReady, setSessionGateReady] = useState(false)
 
   // Set up midnight refresh timer
   useEffect(() => {
@@ -131,6 +165,47 @@ function LessonsPageInner(){
   }, [])
 
   useEffect(() => {
+    let cancelled = false
+
+    if (!learnerId || learnerId === 'demo') {
+      setSessionGateReady(true)
+      return () => { cancelled = true }
+    }
+
+    setSessionGateReady(false)
+
+    ;(async () => {
+      try {
+        const active = await getActiveLessonSession(learnerId)
+        if (cancelled) return
+        if (active) {
+          const allowed = await ensurePinAllowed('active-session')
+          if (cancelled) return
+          if (!allowed) {
+            const lessonKey = active.lesson_id || ''
+            const [subject, ...rest] = lessonKey.split('/')
+            if (subject && rest.length) {
+              const lessonSlug = rest.join('/')
+              router.replace(`/session?subject=${encodeURIComponent(subject)}&lesson=${encodeURIComponent(lessonSlug)}`)
+            } else {
+              router.replace('/session')
+            }
+            return
+          }
+        }
+        if (!cancelled) setSessionGateReady(true)
+      } catch (err) {
+        console.warn('[Learn Lessons] Active session gate check failed:', err)
+        if (!cancelled) setSessionGateReady(true)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [learnerId, refreshTrigger, router])
+
+  useEffect(() => {
     (async () => {
       try {
         if (!learnerId) { setMedals({}); return; }
@@ -143,6 +218,8 @@ function LessonsPageInner(){
   }, [learnerId])
 
   useEffect(() => {
+    if (!sessionGateReady) return
+
     let cancelled = false
     ;(async () => {
       if (!learnerId) {
@@ -309,7 +386,7 @@ function LessonsPageInner(){
       if (!cancelled) setLoading(false)
     })()
     return () => { cancelled = true }
-  }, [learnerId, refreshTrigger])
+  }, [learnerId, refreshTrigger, sessionGateReady])
 
   async function openLesson(subject, fileBaseName){
     const ent = featuresForTier(planTier)
@@ -467,6 +544,7 @@ function LessonsPageInner(){
 
   // Check for existing snapshots from server - must use lesson.id not filename
   useEffect(() => {
+    if (!sessionGateReady) return
     if (!learnerId || lessonsLoading) return
     
     // Wait for lessons to be loaded with their IDs
@@ -510,10 +588,11 @@ function LessonsPageInner(){
             
             if (res.ok) {
               const { snapshot } = await res.json()
-              if (snapshot && snapshot.savedAt) {
-                // Store under the lessonKey for display
+              if (snapshot && snapshot.savedAt && snapshotHasMeaningfulProgress(snapshot)) {
                 snapshotsFound[lesson.lessonKey] = true
-                console.log('[Learn Lessons] Found snapshot for', lesson.lessonKey, '(id:', lessonId + ')')
+                console.log('[Learn Lessons] Found meaningful snapshot for', lesson.lessonKey, '(id:', lessonId + ')')
+              } else if (snapshot && snapshot.savedAt) {
+                console.log('[Learn Lessons] Ignoring fresh snapshot for', lesson.lessonKey, '(id:', lessonId + ')')
               }
             }
           } catch (e) {
@@ -530,7 +609,26 @@ function LessonsPageInner(){
     })()
     
     return () => { cancelled = true }
-  }, [learnerId, lessonsBySubject, lessonsLoading])
+  }, [learnerId, lessonsBySubject, lessonsLoading, sessionGateReady])
+
+  if (!sessionGateReady) {
+    return (
+      <main style={{ padding:24, maxWidth:980, margin:'0 auto' }}>
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:'320px', gap:12, marginTop:32 }}>
+          <div style={{
+            width:48,
+            height:48,
+            border:'4px solid #e5e7eb',
+            borderTop:'4px solid #111',
+            borderRadius:'50%',
+            animation:'spin 1s linear infinite'
+          }}></div>
+          <p style={{ color:'#6b7280', fontSize:15, textAlign:'center' }}>Hang tight—enter the facilitator PIN to unlock lessons.</p>
+          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main style={{ padding:24, maxWidth:980, margin:'0 auto' }}>

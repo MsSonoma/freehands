@@ -384,22 +384,22 @@ Assessment mapping
 - Lesson time is measurable from session start to end.
 - Non-Beta users are not blocked but can access tutorials optionally.
 
-19) Code/Debug/Record modes and changelog workflow [COPILOT]
+19) Code/Debug/Record modes and Up-to-speed log [COPILOT]
 - Modes (internal discipline; do not emit labels):
   - Code mode: implement the smallest viable change that satisfies the request; keep changes scoped and ASCII-clean.
   - Debug mode: reproduce, isolate root cause, apply the least-broad fix; avoid unrelated refactors.
-  - Record mode: document what changed and why to prevent drift; update the changelog entry.
+  - Record mode: document what changed and why to prevent drift; update both the Up-to-speed log and the changelog.
 - Read-first protocol:
-  - Before any Code or Debug action, scan the directly-related files and recent changelog entries (latest 20) in `docs/brain/changelog.md`.
+  - Before any Code or Debug action, scan the directly-related files and recent Up-to-speed entries (latest 20) in `docs/brain/up-to-speed.log`.
   - Prefer local sources over web; do not reference UI/runtime in [SONOMA].
-- Changelog "up-to-speed" contract:
-  - File: `docs/brain/changelog.md`. Create if missing.
+- Up-to-speed log contract:
+  - File: `docs/brain/up-to-speed.log`. Create if missing.
   - Order: newest entries at the top (reverse chronological).
   - Format per line: `YYYY-MM-DDTHH:MM:SSZ | Copilot | <summary up to 150 chars>`; ASCII-only; no secrets.
   - On each response, write a new entry at the top and trim the file to the most recent 20 entries.
   - If concurrent edits occur, rewrite to restore newest-first order and re-apply the 20-line trim.
 - Changelog discipline:
-  - For substantial rule or structure changes, include file references and a brief rationale in the entry.
+  - For substantial rule or structure changes, append a dated line to `docs/brain/changelog.md` with a brief rationale and file references.
 - Ownership boundaries:
   - Signals are read-only; do not modify `.github/Signals/*` or restate signal texts.
   - Syntax rules are BrainMaker-owned; propose changes via the user, do not edit directly.

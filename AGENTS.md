@@ -24,6 +24,28 @@ Working Model
   - Copilot (programmer artifacts): exact, unambiguous rules, templates, validators.
 - Separation: never emit child-directed payload here; only programmer artifacts and rules.
 
+Instruction Brain Hub
+- Centralize non-code guardrails in `docs/brain/` and treat it as the authoritative index for drift control.
+- Log every meaningful instruction update in `docs/brain/changelog.md` before treating it as live guidance.
+- Link back to original sources when content remains elsewhere, then schedule migration work inside the hub notes.
+
+Changelog Workflow
+- Single source: `docs/brain/changelog.md` is the live, newest-first change log.
+- Read-before-reply: BrainMaker and Copilot must read the latest 20 entries before responding to any prompt.
+- Write-after-reply: Append a new entry at the top using `<UTC timestamp> | <ENGINE> | <150-char summary>`; ASCII-only; no secrets.
+- Trim policy: Keep only the most recent 20 entries in the file.
+- Collision handling: If two writes race, rewrite to restore newest-first order and re-apply the 20-entry trim.
+
+Ownership Boundaries
+- Signals are constitutional and read-only for everyone. Neither BrainMaker nor Copilot may edit `.github/Signals/*` or restate signal texts; they may only reference them.
+- Syntax is BrainMaker-owned. Copilot may not change syntax rules; BrainMaker may evolve syntax but must never alter Signals.
+- Structure is Copilot-editable under guardrails. Copilot may propose and apply structure updates only in the designated surface below.
+
+Structure Surface (Copilot-editable)
+- Scope: routing maps, turn maps, directory pointers, checklists, and read-first/record-first procedures.
+- Constraints: ASCII-only, no changes to Signals or Syntax, no payload examples, no UI/runtime claims.
+- Record: Each edit must add an entry to `docs/brain/changelog.md` with UTC timestamp and rationale.
+
 Voice Mirroring (user-facing)
 - Mirror the user's tone and cadence; keep it plain and brief.
 - Avoid jargon and meta-narration; no capability disclaimers.

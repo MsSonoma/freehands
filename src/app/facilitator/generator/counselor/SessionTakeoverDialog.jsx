@@ -6,11 +6,14 @@ import { useState } from 'react'
 export default function SessionTakeoverDialog({ 
   existingSession, 
   onTakeover, 
-  onCancel 
+  onCancel, 
+  onForceEnd 
 }) {
   const [pinCode, setPinCode] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [loadingAction, setLoadingAction] = useState(null)
+
+  const isBusy = loadingAction !== null
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -21,13 +24,34 @@ export default function SessionTakeoverDialog({
     }
 
     setError('')
-    setLoading(true)
+    setLoadingAction('takeover')
 
     try {
       await onTakeover(pinCode)
     } catch (err) {
       setError(err.message || 'Failed to take over session')
-      setLoading(false)
+      setLoadingAction(null)
+    }
+  }
+
+  const handleForceEnd = async () => {
+    if (pinCode.length !== 4) {
+      setError('PIN must be 4 digits')
+      return
+    }
+
+    if (!onForceEnd) {
+      return
+    }
+
+    setError('')
+    setLoadingAction('force')
+
+    try {
+      await onForceEnd(pinCode)
+    } catch (err) {
+      setError(err.message || 'Failed to end session')
+      setLoadingAction(null)
     }
   }
 
@@ -123,7 +147,7 @@ export default function SessionTakeoverDialog({
               setError('')
             }}
             placeholder="••••"
-            disabled={loading}
+            disabled={isBusy}
             autoFocus
             style={{
               width: '100%',
@@ -136,7 +160,7 @@ export default function SessionTakeoverDialog({
               marginBottom: 12,
               outline: 'none',
               transition: 'border-color 0.2s',
-              backgroundColor: loading ? '#f9fafb' : '#fff'
+              backgroundColor: isBusy ? '#f9fafb' : '#fff'
             }}
             onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
             onBlur={(e) => {
@@ -159,7 +183,7 @@ export default function SessionTakeoverDialog({
             <button
               type="button"
               onClick={onCancel}
-              disabled={loading}
+              disabled={isBusy}
               style={{
                 flex: 1,
                 padding: '12px 20px',
@@ -169,8 +193,8 @@ export default function SessionTakeoverDialog({
                 border: '2px solid #d1d5db',
                 background: '#fff',
                 color: '#6b7280',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.5 : 1,
+                cursor: isBusy ? 'not-allowed' : 'pointer',
+                opacity: isBusy ? 0.5 : 1,
                 transition: 'all 0.2s'
               }}
             >
@@ -179,7 +203,7 @@ export default function SessionTakeoverDialog({
             
             <button
               type="submit"
-              disabled={loading || pinCode.length !== 4}
+              disabled={isBusy || pinCode.length !== 4}
               style={{
                 flex: 1,
                 padding: '12px 20px',
@@ -187,16 +211,50 @@ export default function SessionTakeoverDialog({
                 fontWeight: 600,
                 borderRadius: 8,
                 border: 'none',
-                background: (loading || pinCode.length !== 4) ? '#9ca3af' : '#2563eb',
+                background: (isBusy || pinCode.length !== 4) ? '#9ca3af' : '#2563eb',
                 color: '#fff',
-                cursor: (loading || pinCode.length !== 4) ? 'not-allowed' : 'pointer',
+                cursor: (isBusy || pinCode.length !== 4) ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s'
               }}
             >
-              {loading ? 'Taking Over...' : 'Take Over Session'}
+              {loadingAction === 'takeover' ? 'Taking Over...' : 'Take Over Session'}
             </button>
           </div>
         </form>
+
+        {onForceEnd && (
+          <div style={{ marginTop: 16 }}>
+            <button
+              type="button"
+              onClick={handleForceEnd}
+              disabled={isBusy || pinCode.length !== 4}
+              style={{
+                width: '100%',
+                padding: '12px 20px',
+                fontSize: 14,
+                fontWeight: 600,
+                borderRadius: 8,
+                border: '2px solid #f97316',
+                background: '#fff7ed',
+                color: '#c2410c',
+                cursor: (isBusy || pinCode.length !== 4) ? 'not-allowed' : 'pointer',
+                opacity: isBusy ? 0.7 : 1,
+                transition: 'all 0.2s'
+              }}
+            >
+              {loadingAction === 'force' ? 'Force Ending...' : 'Force End Session'}
+            </button>
+
+            <div style={{
+              marginTop: 8,
+              fontSize: 12,
+              color: '#7c2d12',
+              lineHeight: 1.4
+            }}>
+              Use this if the other device is frozen and will not release.
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

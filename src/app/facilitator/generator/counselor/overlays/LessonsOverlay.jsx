@@ -1,6 +1,6 @@
 // Compact lessons list view for Mr. Mentor overlay
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
@@ -62,32 +62,48 @@ export default function LessonsOverlay({ learnerId }) {
   const [schedulingLesson, setSchedulingLesson] = useState(null)
   const [learnerDataLoading, setLearnerDataLoading] = useState(false)
 
+  const isLearnerScoped = Boolean(learnerId && learnerId !== 'none')
+  const subjectOptions = useMemo(
+    () => (isLearnerScoped ? SUBJECTS.filter(subject => subject !== 'generated') : SUBJECTS),
+    [isLearnerScoped]
+  )
+
+  useEffect(() => {
+    if (selectedSubject === 'generated' && !subjectOptions.includes('generated')) {
+      setSelectedSubject('all')
+    }
+  }, [selectedSubject, subjectOptions])
+
+  useEffect(() => {
+    setAllLessons(prev => (Object.keys(prev).length === 0 ? prev : {}))
+  }, [isLearnerScoped])
+
   const loadLessons = useCallback(async () => {
-    // Don't reload if lessons are already loaded
     if (Object.keys(allLessons).length > 0) {
       console.log('[LessonsOverlay] Lessons already loaded, skipping')
       return
     }
-    
+
     setLoading(true)
     try {
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
       console.log('[LessonsOverlay] Session token available:', !!token)
-      
+
       const results = {}
-      
-      // Load lessons from public folders for each subject
-      for (const subject of SUBJECTS) {
+      const subjectsToFetch = isLearnerScoped
+        ? SUBJECTS.filter(subject => subject !== 'generated')
+        : SUBJECTS
+
+      for (const subject of subjectsToFetch) {
         try {
           console.log(`[LessonsOverlay] Fetching lessons for subject: ${subject}`)
-          const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { 
+          const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, {
             cache: 'no-store'
           })
           console.log(`[LessonsOverlay] Response for ${subject}:`, res.status, res.ok)
           if (!res.ok) {
-            // 401 on generated/other subjects is not an error, just means no access
             if (res.status === 401) {
               console.log(`[LessonsOverlay] No access to ${subject} lessons (authentication required)`)
               results[subject] = []
@@ -110,9 +126,8 @@ export default function LessonsOverlay({ learnerId }) {
           results[subject] = []
         }
       }
-      
-      // Load generated lessons from user's storage
-      if (token) {
+
+      if (token && !isLearnerScoped) {
         try {
           console.log('[LessonsOverlay] Fetching generated lessons')
           const res = await fetch('/api/facilitator/lessons/list', {
@@ -123,37 +138,33 @@ export default function LessonsOverlay({ learnerId }) {
           if (res.ok) {
             const generatedList = await res.json()
             console.log('[LessonsOverlay] Generated lessons:', generatedList.length)
-            // Sort generated lessons by creation time, newest first
             const sortedGeneratedList = generatedList.sort((a, b) => {
               const timeA = new Date(a.created_at || 0).getTime()
               const timeB = new Date(b.created_at || 0).getTime()
-              return timeB - timeA // Descending order (newest first)
+              return timeB - timeA
             })
-            
-            // Initialize generated subject array
+
             if (!results['generated']) results['generated'] = []
-            
-            // Add generated lessons to BOTH their specific subject AND the "generated" subject
+
             for (const lesson of sortedGeneratedList) {
               const subject = lesson.subject || 'math'
               const generatedLesson = {
                 ...lesson,
-                isGenerated: true // Mark as generated for display
+                isGenerated: true
               }
-              
-              // Add to specific subject (at the beginning to keep newest first)
+
               if (!results[subject]) results[subject] = []
               results[subject].unshift(generatedLesson)
-              
-              // Also add to "generated" subject for easy filtering
               results['generated'].push(generatedLesson)
             }
           }
         } catch (err) {
           console.error('Error loading generated lessons:', err)
         }
+      } else if (isLearnerScoped) {
+        console.log('[LessonsOverlay] Skipping generated lessons fetch for learner-specific view')
       }
-      
+
       console.log('[LessonsOverlay] All lessons loaded:', Object.keys(results).map(s => `${s}: ${results[s].length}`))
       setAllLessons(results)
     } catch (err) {
@@ -161,7 +172,7 @@ export default function LessonsOverlay({ learnerId }) {
     } finally {
       setLoading(false)
     }
-  }, [allLessons])
+  }, [allLessons, isLearnerScoped])
 
   const loadLearnerData = useCallback(async () => {
     if (!learnerId || learnerId === 'none') {
@@ -588,7 +599,7 @@ export default function LessonsOverlay({ learnerId }) {
             }}
           >
             <option value="all">All Subjects</option>
-            {SUBJECTS.map(subject => (
+            {subjectOptions.map(subject => (
               <option key={subject} value={subject} style={{ textTransform: 'capitalize' }}>
                 {subject === 'language arts' ? 'Language Arts' : 
                  subject === 'social studies' ? 'Social Studies' :

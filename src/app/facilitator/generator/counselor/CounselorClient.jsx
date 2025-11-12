@@ -32,6 +32,33 @@ export default function CounselorClient() {
   const [showTakeoverDialog, setShowTakeoverDialog] = useState(false)
   const [conflictingSession, setConflictingSession] = useState(null)
   const sessionPollInterval = useRef(null)
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  // Check PIN requirement on mount
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const allowed = await ensurePinAllowed('facilitator-page')
+        if (!allowed) {
+          router.push('/')
+          return
+        }
+      } catch (err) {
+        console.warn('[Mr. Mentor] PIN check failed:', err)
+      }
+      if (!cancelled) setPinChecked(true)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [router])
   
   // Learner selection
   const [learners, setLearners] = useState([])
@@ -60,7 +87,7 @@ export default function CounselorClient() {
   const [captionIndex, setCaptionIndex] = useState(0)
   
   // Screen overlay state
-  const [activeScreen, setActiveScreen] = useState('mentor') // 'mentor' | 'calendar' | 'lessons' | 'generated' | 'maker'
+  const [activeScreen, setActiveScreen] = useState('mentor') // 'mentor' | 'calendar' | 'lessons' | 'maker'
   
   // Audio/Video refs
   const videoRef = useRef(null)
@@ -90,47 +117,7 @@ export default function CounselorClient() {
   const [toolThoughtQueue, setToolThoughtQueue] = useState([])
   const [activeToolThought, setActiveToolThought] = useState(null)
 
-  // Calculate caption panel height based on screen height
-  useEffect(() => {
-    const updateCaptionHeight = () => {
-      const h = window.innerHeight
-      // Interpolate: 600px -> 20%, 1000px -> 30%
-      // Below 600: clamp to 20%, above 1000: clamp to 30%
-      let percent
-      if (h <= 600) {
-        percent = 20
-      } else if (h >= 1000) {
-        percent = 30
-      } else {
-        // Linear interpolation between 600 and 1000
-        const t = (h - 600) / (1000 - 600)
-        percent = 20 + (10 * t)
-      }
-      setCaptionPanelFlex(`0 0 ${percent}%`)
-    }
-    
-    updateCaptionHeight()
-    window.addEventListener('resize', updateCaptionHeight)
-    return () => window.removeEventListener('resize', updateCaptionHeight)
-  }, [])
-
-  // Check PIN requirement on mount
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const allowed = await ensurePinAllowed('facilitator-page');
-        if (!allowed) {
-          router.push('/');
-          return;
-        }
-        if (!cancelled) setPinChecked(true);
-      } catch (e) {
-        if (!cancelled) setPinChecked(true);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [router]);
+  // (startSessionPolling defined later, after session setup hooks)
 
   // Check premium tier
   useEffect(() => {
@@ -376,43 +363,91 @@ export default function CounselorClient() {
     }
   }, [])
 
-  // Initialize session: check for conflicts and load conversation from database
-  useEffect(() => {
-    if (!sessionId || !accessToken || !hasAccess || !tierChecked) return
-    
-    let cancelled = false
-    setSessionLoading(true)
-    
-    ;(async () => {
+  // (initializeMentorSession defined later, after polling helper)
+
+  // Poll session status to detect takeovers
+  const startSessionPolling = useCallback(() => {
+    if (sessionPollInterval.current) {
+      clearInterval(sessionPollInterval.current)
+    }
+
+    sessionPollInterval.current = setInterval(async () => {
+      if (!sessionId || !accessToken || !isMountedRef.current) return
+
       try {
-        // Check session status
-        const checkRes = await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
+        const res = await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
           headers: {
             'Authorization': `Bearer ${accessToken}`
           }
         })
-        
-        if (cancelled) return
-        
-        if (!checkRes.ok) {
-          console.error('[Session] Failed to check session status')
+
+        if (!res.ok || !isMountedRef.current) return
+
+        const data = await res.json()
+
+        if (!isMountedRef.current) return
+
+        const stopPolling = () => {
+          if (sessionPollInterval.current) {
+            clearInterval(sessionPollInterval.current)
+            sessionPollInterval.current = null
+          }
+        }
+
+        if (data.status === 'none') {
+          stopPolling()
+          setSessionStarted(false)
           setSessionLoading(false)
+          setConflictingSession(null)
+          setShowTakeoverDialog(false)
+          setConversationHistory([])
+          setDraftSummary('')
+          setCurrentSessionTokens(0)
           return
         }
-        
-        const checkData = await checkRes.json()
-        
-        // If another device has active session, show takeover dialog
-        if (checkData.status === 'taken' && checkData.session) {
-          setConflictingSession(checkData.session)
-          setShowTakeoverDialog(true)
+
+        if (data.status === 'taken' || !data.isOwner) {
+          stopPolling()
+
+          if (data.session) {
+            setConflictingSession(data.session)
+            setShowTakeoverDialog(true)
+            if (Array.isArray(data.session.conversation_history)) {
+              setConversationHistory(data.session.conversation_history)
+            }
+            setDraftSummary(data.session.draft_summary || '')
+            setCurrentSessionTokens(data.session.token_count || 0)
+          }
+
+          setSessionStarted(false)
           setSessionLoading(false)
-          return
         }
-        
-        // If no active session or we own it, create/resume
-        const deviceName = `${navigator.platform || 'Unknown'} - ${navigator.userAgent.split(/[()]/)[1] || 'Browser'}`
-        
+      } catch (err) {
+        console.error('[Session] Polling error:', err)
+      }
+    }, 8000)
+  }, [sessionId, accessToken])
+
+  const initializeMentorSession = useCallback(async () => {
+    if (!sessionId || !accessToken || !hasAccess || !tierChecked || !isMountedRef.current) {
+      return
+    }
+
+    setSessionLoading(true)
+
+    try {
+      const checkRes = await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      })
+
+      if (!isMountedRef.current) {
+        return
+      }
+
+      if (checkRes.status === 404) {
+        // Create new session record
         const createRes = await fetch('/api/mentor-session', {
           method: 'POST',
           headers: {
@@ -421,56 +456,68 @@ export default function CounselorClient() {
           },
           body: JSON.stringify({
             sessionId,
-            deviceName,
-            action: 'resume'
+            deviceName: `${navigator.platform || 'Unknown'} - ${navigator.userAgent.split(/[()]/)[1] || 'Browser'}`,
+            action: 'initialize'
           })
         })
-        
-        if (cancelled) return
-        
-        if (!createRes.ok) {
-          console.error('[Session] Failed to create/resume session')
-          setSessionLoading(false)
+
+        if (!isMountedRef.current) {
           return
         }
-        
-        const createData = await createRes.json()
-        
-        // Load conversation history from database
-        if (createData.session?.conversation_history && Array.isArray(createData.session.conversation_history)) {
-          setConversationHistory(createData.session.conversation_history)
-          setDraftSummary(createData.session.draft_summary || '')
-          
-          // Display last message in captions if available
-          const history = createData.session.conversation_history
-          if (history.length > 0) {
-            const lastMsg = history[history.length - 1]
-            if (lastMsg.role === 'assistant') {
-              setCaptionText(lastMsg.content)
-              const sentences = splitIntoSentences(lastMsg.content)
-              setCaptionSentences(sentences)
-              setCaptionIndex(sentences.length - 1)
-            }
-          }
+
+        if (!createRes.ok) {
+          const data = await createRes.json().catch(() => ({}))
+          throw new Error(data?.error || 'Failed to initialize mentor session')
         }
-        
+
+        setSessionStarted(true)
         setSessionLoading(false)
-        
-        // Start polling for session status
+        setConversationHistory([])
+        setDraftSummary('')
+        setCurrentSessionTokens(0)
         startSessionPolling()
-        
-      } catch (err) {
-        if (!cancelled) {
-          console.error('[Session] Initialization error:', err)
-          setSessionLoading(false)
-        }
+        return
       }
-    })()
-    
-    return () => {
-      cancelled = true
+
+      if (!checkRes.ok) {
+        const data = await checkRes.json().catch(() => ({}))
+        throw new Error(data?.error || 'Failed to check existing session')
+      }
+
+      const sessionData = await checkRes.json()
+
+      // Another device already owns this session; show takeover dialog
+      if (!sessionData.isOwner && sessionData.status === 'active') {
+        setSessionLoading(false)
+        setConflictingSession(sessionData)
+        setShowTakeoverDialog(true)
+        return
+      }
+
+      // Existing session found; restore data
+      if (Array.isArray(sessionData.conversation_history)) {
+        setConversationHistory(sessionData.conversation_history)
+      }
+      setDraftSummary(sessionData.draft_summary || '')
+      setCurrentSessionTokens(sessionData.token_count || 0)
+      setSessionStarted(true)
+      setSessionLoading(false)
+
+      // Resume polling
+      startSessionPolling()
+    } catch (err) {
+      if (!isMountedRef.current) {
+        return
+      }
+
+      console.error('[Session] Initialization error:', err)
+      setSessionLoading(false)
     }
-  }, [sessionId, accessToken, hasAccess, tierChecked])
+  }, [sessionId, accessToken, hasAccess, tierChecked, startSessionPolling])
+
+  useEffect(() => {
+    initializeMentorSession()
+  }, [initializeMentorSession])
 
   // Save conversation to database whenever it changes
   useEffect(() => {
@@ -498,42 +545,6 @@ export default function CounselorClient() {
     
     return () => clearTimeout(saveTimer)
   }, [conversationHistory, draftSummary, sessionId, accessToken, hasAccess, sessionLoading])
-
-  // Poll session status to detect takeovers
-  const startSessionPolling = useCallback(() => {
-    // Clear any existing interval
-    if (sessionPollInterval.current) {
-      clearInterval(sessionPollInterval.current)
-    }
-    
-    sessionPollInterval.current = setInterval(async () => {
-      if (!sessionId || !accessToken) return
-      
-      try {
-        const res = await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          }
-        })
-        
-        if (!res.ok) return
-        
-        const data = await res.json()
-        
-        // If session was taken over or deactivated, redirect
-        if (data.status === 'taken' || data.status === 'none' || !data.isOwner) {
-          clearInterval(sessionPollInterval.current)
-          sessionPollInterval.current = null
-          
-          // Show toast and redirect
-          alert('Your Mr. Mentor session has been taken over by another device.')
-          router.push('/facilitator')
-        }
-      } catch (err) {
-        console.error('[Session] Polling error:', err)
-      }
-    }, 8000) // Poll every 8 seconds
-  }, [sessionId, accessToken, router])
 
   // Stop polling on unmount
   useEffect(() => {
@@ -599,6 +610,47 @@ export default function CounselorClient() {
       // Start polling
       startSessionPolling()
       
+    } catch (err) {
+      throw err
+    }
+  }
+
+  const handleForceEndSession = async (pinCode) => {
+    if (!sessionId || !accessToken) {
+      throw new Error('Session not initialized')
+    }
+
+    if (!conflictingSession?.session_id) {
+      throw new Error('No conflicting session to end')
+    }
+
+    try {
+      const deviceName = `${navigator.platform || 'Unknown'} - ${navigator.userAgent.split(/[()]/)[1] || 'Browser'}`
+
+      const res = await fetch('/api/mentor-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          sessionId,
+          deviceName,
+          pinCode,
+          action: 'force_end',
+          targetSessionId: conflictingSession.session_id
+        })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to force end session')
+      }
+
+      setShowTakeoverDialog(false)
+      setConflictingSession(null)
+      await initializeMentorSession()
     } catch (err) {
       throw err
     }
@@ -1438,7 +1490,15 @@ export default function CounselorClient() {
     }
   }, [captionText, captionIndex])
 
-  if (!pinChecked || !tierChecked) {
+  if (!pinChecked) {
+    return (
+      <main style={{ padding: 24 }}>
+        <p>Checking facilitator PIN…</p>
+      </main>
+    )
+  }
+
+  if (!tierChecked) {
     return (
       <main style={{ padding: 24 }}>
         <p>Loading...</p>
@@ -1450,11 +1510,9 @@ export default function CounselorClient() {
   if (showTakeoverDialog && conflictingSession) {
     return (
       <SessionTakeoverDialog
-        existingSession={{
-          device_name: conflictingSession.device_name,
-          last_activity_at: conflictingSession.last_activity_at
-        }}
+        existingSession={conflictingSession}
         onTakeover={handleSessionTakeover}
+        onForceEnd={handleForceEndSession}
         onCancel={() => router.push('/facilitator')}
       />
     )

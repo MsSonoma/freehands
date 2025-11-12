@@ -39,10 +39,11 @@ Mr. Mentor now enforces **single-device access per facilitator** and persists co
 - Returns: `{ status: 'active' | 'taken' | 'none', session: {...}, isOwner: boolean }`
 
 **`POST /api/mentor-session`**
-- Create new session or take over existing session
-- Body: `{ sessionId, deviceName, pinCode?, action: 'resume' | 'takeover' }`
-- If another session exists and action is 'takeover', requires valid PIN
-- Returns: `{ session: {...}, status: 'active' | 'taken_over' }`
+- Create new session, take over, or force end an existing session
+- Body: `{ sessionId, deviceName, pinCode?, action: 'resume' | 'takeover' | 'force_end', targetSessionId? }`
+- If another session exists and action is 'takeover' or 'force_end', requires valid PIN
+- Automatically clears stale sessions older than `MENTOR_SESSION_TIMEOUT_MINUTES` (defaults to 15 minutes)
+- Returns: `{ session: {...}, status: 'active' | 'taken_over' | 'force_ended' }`
 
 **`PATCH /api/mentor-session`**
 - Update conversation history and draft summary
@@ -107,17 +108,21 @@ Modal dialog for session takeover:
 - Displays existing session info
 - 4-digit PIN input (numeric only)
 - Warning about consequences
+- "Force End Session" button to release a frozen session after PIN validation
 - Calls `onTakeover(pinCode)` callback
+- Calls `onForceEnd(pinCode)` when facilitator chooses to release without taking over
 - Calls `onCancel()` to return to facilitator page
 
 Props:
 ```jsx
 {
   existingSession: {
+      session_id: string,
     device_name: string,
     last_activity_at: string (ISO timestamp)
   },
   onTakeover: (pinCode: string) => Promise<void>,
+   onForceEnd?: (pinCode: string) => Promise<void>,
   onCancel: () => void
 }
 ```
@@ -141,7 +146,14 @@ Props:
 **New Functions**:
 - `startSessionPolling()`: Begins interval checking
 - `handleSessionTakeover(pinCode)`: Executes takeover with PIN validation
+- `handleForceEndSession(pinCode)`: Calls API force end path, then re-initializes session
 - `clearConversationAfterSave()`: Now deletes session in database
+
+## Maintenance
+
+- **Automatic cleanup**: GET and POST routes deactivate sessions whose `last_activity_at` or `created_at` exceed `MENTOR_SESSION_TIMEOUT_MINUTES` (default 15 minutes).
+- **Manual cleanup**: Run `npm run mentor:cleanup-sessions` to clear stale rows on demand. Pass `--minutes=30` to override the inactivity window when needed.
+- Set `MENTOR_SESSION_TIMEOUT_MINUTES` in the environment to tune the timeout for both the API and the cleanup script.
 
 ## Migration Instructions
 

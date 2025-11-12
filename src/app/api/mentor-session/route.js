@@ -2,6 +2,9 @@
 // Handles session creation, takeover, sync, and deactivation
 
 import { createClient } from '@supabase/supabase-js'
+import { scryptSync, timingSafeEqual } from 'node:crypto'
+
+export const runtime = 'nodejs'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -13,6 +16,133 @@ const supabase = createClient(
     }
   }
 )
+
+const SESSION_TIMEOUT_MINUTES = Math.max(
+  1,
+  Number.parseInt(process.env.MENTOR_SESSION_TIMEOUT_MINUTES ?? '15', 10)
+)
+const SESSION_TIMEOUT_MS = SESSION_TIMEOUT_MINUTES * 60 * 1000
+
+function getSessionActivityTimestamp(session) {
+  if (!session) return 0
+  const iso = session.last_activity_at || session.created_at
+  if (!iso) return 0
+  const ts = new Date(iso).getTime()
+  return Number.isFinite(ts) ? ts : 0
+}
+
+function isSessionStale(session, referenceMs = Date.now()) {
+  const lastActivity = getSessionActivityTimestamp(session)
+  if (!lastActivity) return false
+  return referenceMs - lastActivity > SESSION_TIMEOUT_MS
+}
+
+async function cleanupStaleSessions({ facilitatorId, now = new Date() } = {}) {
+  try {
+    let query = supabase
+      .from('mentor_sessions')
+      .select('id, session_id, facilitator_id, last_activity_at, created_at')
+      .eq('is_active', true)
+
+    if (facilitatorId) {
+      query = query.eq('facilitator_id', facilitatorId)
+    }
+
+    const { data: activeSessions, error } = await query
+
+    if (error) {
+      console.error('[mentor-session] Failed to fetch active sessions for cleanup:', error)
+      return []
+    }
+
+    const referenceMs = now.getTime()
+    const staleSessions = (activeSessions || []).filter((session) =>
+      isSessionStale(session, referenceMs)
+    )
+
+    if (staleSessions.length === 0) {
+      return []
+    }
+
+    const ids = staleSessions.map((session) => session.id)
+    const { error: deactivateError } = await supabase
+      .from('mentor_sessions')
+      .update({ is_active: false })
+      .in('id', ids)
+
+    if (deactivateError) {
+      console.error('[mentor-session] Failed to deactivate stale sessions:', deactivateError)
+      return []
+    }
+
+    staleSessions.forEach((session) => {
+      console.info(
+        '[mentor-session] Auto-deactivated stale session',
+        session.session_id,
+        'for facilitator',
+        session.facilitator_id
+      )
+    })
+
+    return staleSessions
+  } catch (err) {
+    console.error('[mentor-session] Unexpected error clearing stale sessions:', err)
+    return []
+  }
+}
+
+async function deactivateSessionById(sessionId) {
+  const { error } = await supabase
+    .from('mentor_sessions')
+    .update({ is_active: false })
+    .eq('id', sessionId)
+
+  if (error) {
+    console.error('[mentor-session] Failed to deactivate session by id:', sessionId, error)
+    return false
+  }
+
+  return true
+}
+
+function scryptHash(pin, salt) {
+  return `s1$${salt}$${scryptSync(pin, salt, 64, { N: 16384, r: 8, p: 1 }).toString('hex')}`
+}
+
+function verifyPinHash(pin, stored) {
+  if (typeof stored !== 'string') return false
+  const parts = stored.split('$')
+  if (parts.length !== 3 || parts[0] !== 's1') return false
+  const [, salt] = parts
+  const recomputed = scryptHash(pin, salt)
+  try {
+    return timingSafeEqual(Buffer.from(recomputed), Buffer.from(stored))
+  } catch {
+    return false
+  }
+}
+
+async function verifyPin(userId, pinCode) {
+  const { data: profile, error } = await supabase
+    .from('profiles')
+  .select('facilitator_pin_hash, pin_code')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  if (profile?.facilitator_pin_hash) {
+    return verifyPinHash(pinCode, profile.facilitator_pin_hash)
+  }
+
+  if (typeof profile?.pin_code === 'string') {
+    return profile.pin_code === pinCode
+  }
+
+  return false
+}
 
 export const maxDuration = 60
 
@@ -30,6 +160,9 @@ export async function GET(request) {
     if (authError || !user) {
       return Response.json({ error: 'Invalid token' }, { status: 401 })
     }
+
+    const now = new Date()
+    await cleanupStaleSessions({ facilitatorId: user.id, now })
 
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.get('sessionId')
@@ -89,11 +222,15 @@ export async function POST(request) {
     }
 
     const body = await request.json()
-    const { sessionId, deviceName, pinCode, action } = body
+    const { sessionId, deviceName, pinCode, action, targetSessionId } = body
 
     if (!sessionId) {
       return Response.json({ error: 'Session ID required' }, { status: 400 })
     }
+
+    const now = new Date()
+
+    await cleanupStaleSessions({ facilitatorId: user.id, now })
 
     // Check for existing active session
     const { data: existingSessions, error: fetchError } = await supabase
@@ -109,7 +246,83 @@ export async function POST(request) {
       return Response.json({ error: 'Database error' }, { status: 500 })
     }
 
-    const existingSession = existingSessions?.[0]
+    let existingSession = existingSessions?.[0] || null
+
+    if (existingSession && isSessionStale(existingSession, now.getTime())) {
+      const cleared = await deactivateSessionById(existingSession.id)
+      if (cleared) {
+        console.info(
+          '[mentor-session] Cleared stale session during POST for facilitator',
+          user.id,
+          'session',
+          existingSession.session_id
+        )
+      }
+      existingSession = null
+    }
+
+    if (action === 'force_end') {
+      if (!pinCode) {
+        return Response.json({
+          error: 'PIN required to force end session',
+          requiresPin: true
+        }, { status: 403 })
+      }
+
+      try {
+        const pinValid = await verifyPin(user.id, pinCode)
+        if (!pinValid) {
+          return Response.json({
+            error: 'Invalid PIN code',
+            requiresPin: true
+          }, { status: 403 })
+        }
+      } catch (pinErr) {
+        console.error('[mentor-session] Failed to verify PIN for force end:', pinErr)
+        return Response.json({ error: 'Failed to verify PIN' }, { status: 500 })
+      }
+
+      const targetId = targetSessionId || existingSession?.session_id
+      if (!targetId) {
+        return Response.json({ error: 'No target session available to force end' }, { status: 400 })
+      }
+
+      const { data: targetSessions, error: targetFetchError } = await supabase
+        .from('mentor_sessions')
+        .select('id, session_id')
+        .eq('facilitator_id', user.id)
+        .eq('session_id', targetId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      if (targetFetchError) {
+        console.error('[mentor-session] Failed to locate session for force end:', targetFetchError)
+        return Response.json({ error: 'Database error' }, { status: 500 })
+      }
+
+      const targetSession = targetSessions?.[0]
+      if (!targetSession) {
+        return Response.json({ status: 'already_inactive' })
+      }
+
+      const success = await deactivateSessionById(targetSession.id)
+      if (!success) {
+        return Response.json({ error: 'Failed to end session' }, { status: 500 })
+      }
+
+      console.info(
+        '[mentor-session] Force-ended session',
+        targetSession.session_id,
+        'for facilitator',
+        user.id
+      )
+
+      return Response.json({
+        status: 'force_ended',
+        clearedSessionId: targetSession.session_id
+      })
+    }
 
     // If taking over from another device, verify PIN
     if (existingSession && existingSession.session_id !== sessionId && action === 'takeover') {
@@ -121,29 +334,32 @@ export async function POST(request) {
         }, { status: 403 })
       }
 
-      // Validate PIN using the same gate logic
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('pin_code')
-        .eq('id', user.id)
-        .single()
-
-      if (!profile?.pin_code || profile.pin_code !== pinCode) {
-        return Response.json({ 
-          error: 'Invalid PIN code',
-          requiresPin: true
-        }, { status: 403 })
+      try {
+        const pinValid = await verifyPin(user.id, pinCode)
+        if (!pinValid) {
+          return Response.json({
+            error: 'Invalid PIN code',
+            requiresPin: true
+          }, { status: 403 })
+        }
+      } catch (pinErr) {
+        console.error('[mentor-session] Failed to verify PIN:', pinErr)
+        return Response.json({ error: 'Failed to verify PIN' }, { status: 500 })
       }
 
       // PIN validated, deactivate old session
-      const { error: deactivateError } = await supabase
-        .from('mentor_sessions')
-        .update({ is_active: false })
-        .eq('id', existingSession.id)
+      const deactivated = await deactivateSessionById(existingSession.id)
 
-      if (deactivateError) {
-        console.error('[mentor-session] Failed to deactivate old session:', deactivateError)
+      if (!deactivated) {
+        return Response.json({ error: 'Failed to deactivate previous session' }, { status: 500 })
       }
+
+      console.info(
+        '[mentor-session] Session takeover cleared previous session',
+        existingSession.session_id,
+        'for facilitator',
+        user.id
+      )
 
       // Create new session with existing conversation history
       const { data: newSession, error: createError } = await supabase
@@ -155,7 +371,7 @@ export async function POST(request) {
           conversation_history: existingSession.conversation_history || [],
           draft_summary: existingSession.draft_summary,
           is_active: true,
-          last_activity_at: new Date().toISOString()
+          last_activity_at: now.toISOString()
         })
         .select()
         .single()
@@ -184,7 +400,7 @@ export async function POST(request) {
           conversation_history: existingSession?.conversation_history || [],
           draft_summary: existingSession?.draft_summary,
           is_active: true,
-          last_activity_at: new Date().toISOString()
+          last_activity_at: now.toISOString()
         }, {
           onConflict: 'facilitator_id,is_active'
         })
@@ -207,6 +423,7 @@ export async function POST(request) {
       error: 'Another device has an active session',
       requiresPin: true,
       existingSession: {
+        session_id: existingSession.session_id,
         device_name: existingSession.device_name,
         last_activity_at: existingSession.last_activity_at
       }
