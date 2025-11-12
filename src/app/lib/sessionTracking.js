@@ -6,6 +6,71 @@
 
 import { getSupabaseClient, hasSupabaseEnv } from './supabaseClient';
 
+const SESSION_EVENT_TYPES = {
+  STARTED: 'started',
+  COMPLETED: 'completed',
+  RESTARTED: 'restarted',
+  EXITED: 'exited',
+  INCOMPLETE: 'incomplete',
+};
+
+const STALE_EXIT_MINUTES = 60;
+
+function minutesBetween(startIso, endIso) {
+  if (!startIso || !endIso) return null;
+  try {
+    const start = new Date(startIso);
+    const end = new Date(endIso);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+    const diffMs = end.getTime() - start.getTime();
+    return Math.max(0, Math.round(diffMs / 60000));
+  } catch {
+    return null;
+  }
+}
+
+async function logLessonSessionEvent({
+  supabase,
+  sessionId,
+  learnerId,
+  lessonId,
+  eventType,
+  occurredAt,
+  metadata,
+}) {
+  if (!sessionId || !learnerId || !lessonId || !eventType || !hasSupabaseEnv()) {
+    return false;
+  }
+
+  const payload = {
+    session_id: sessionId,
+    learner_id: learnerId,
+    lesson_id: lessonId,
+    event_type: eventType,
+    occurred_at: occurredAt || new Date().toISOString(),
+  };
+
+  if (metadata && typeof metadata === 'object' && Object.keys(metadata).length > 0) {
+    payload.metadata = metadata;
+  }
+
+  try {
+    const { error } = await supabase
+      .from('lesson_session_events')
+      .insert(payload);
+
+    if (error) {
+      console.warn('[sessionTracking] Failed to log session event:', eventType, error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.warn('[sessionTracking] Exception logging session event:', err);
+    return false;
+  }
+}
+
 /**
  * Start a new lesson session
  * 
@@ -23,7 +88,7 @@ export async function startLessonSession(learnerId, lessonId) {
     // Ensure the learner has at most one active session at a time.
     const { data: existingSessions, error: existingError } = await supabase
       .from('lesson_sessions')
-      .select('id, lesson_id')
+      .select('id, lesson_id, started_at')
       .eq('learner_id', learnerId)
       .is('ended_at', null);
 
@@ -34,17 +99,34 @@ export async function startLessonSession(learnerId, lessonId) {
     const activeSessions = Array.isArray(existingSessions) ? existingSessions : [];
 
     if (activeSessions.length > 0) {
-      const activeIds = activeSessions.map((session) => session.id);
-      const { error: closeActiveError } = await supabase
-        .from('lesson_sessions')
-        .update({ ended_at: nowIso })
-        .in('id', activeIds);
+      for (const session of activeSessions) {
+        const { id: activeId, lesson_id: activeLessonId, started_at: activeStartedAt } = session;
 
-      if (closeActiveError) {
-        console.warn('[sessionTracking] Failed to close existing sessions before starting new one:', closeActiveError);
-      } else {
-        console.info('[sessionTracking] Closed', activeIds.length, 'previous active session(s) for learner');
+        const { error: closeError } = await supabase
+          .from('lesson_sessions')
+          .update({ ended_at: nowIso })
+          .eq('id', activeId);
+
+        if (closeError) {
+          console.warn('[sessionTracking] Failed to close existing session before starting new one:', closeError);
+          continue;
+        }
+
+        const minutesActive = minutesBetween(activeStartedAt, nowIso);
+        await logLessonSessionEvent({
+          supabase,
+          sessionId: activeId,
+          learnerId,
+          lessonId: activeLessonId,
+          eventType: SESSION_EVENT_TYPES.RESTARTED,
+          occurredAt: nowIso,
+          metadata: {
+            resumed_with_lesson_id: lessonId,
+            minutes_active: minutesActive,
+          },
+        });
       }
+      console.info('[sessionTracking] Closed', activeSessions.length, 'previous active session(s) for learner');
     }
 
     const { data, error } = await supabase
@@ -63,6 +145,16 @@ export async function startLessonSession(learnerId, lessonId) {
     }
 
     console.info('[sessionTracking] Session started:', data.id);
+
+    await logLessonSessionEvent({
+      supabase,
+      sessionId: data.id,
+      learnerId,
+      lessonId,
+      eventType: SESSION_EVENT_TYPES.STARTED,
+      occurredAt: nowIso,
+    });
+
     return data.id;
   } catch (err) {
     console.error('[sessionTracking] Exception in startLessonSession:', err);
@@ -76,29 +168,88 @@ export async function startLessonSession(learnerId, lessonId) {
  * @param {string} sessionId - Session ID
  * @returns {Promise<boolean>} Success status
  */
-export async function endLessonSession(sessionId) {
+export async function endLessonSession(sessionId, options = {}) {
   if (!sessionId || !hasSupabaseEnv()) return false;
 
   const supabase = getSupabaseClient();
+  const reason = (options?.reason || SESSION_EVENT_TYPES.COMPLETED).toLowerCase();
+  const nowIso = new Date().toISOString();
 
   try {
-    const { error } = await supabase
+    const { data: sessionRow, error: fetchError } = await supabase
       .from('lesson_sessions')
-      .update({ ended_at: new Date().toISOString() })
-      .eq('id', sessionId);
+      .select('id, learner_id, lesson_id, started_at, ended_at')
+      .eq('id', sessionId)
+      .maybeSingle();
 
-    if (error) {
-      console.error('[sessionTracking] Error ending session:', error);
+    if (fetchError) {
+      console.error('[sessionTracking] Error loading session for end:', fetchError);
       return false;
     }
 
-    console.info('[sessionTracking] Session ended:', sessionId);
+    if (!sessionRow) {
+      console.warn('[sessionTracking] No session found for end:', sessionId);
+      return false;
+    }
+
+    if (!sessionRow.ended_at) {
+      const { error: updateError } = await supabase
+        .from('lesson_sessions')
+        .update({ ended_at: nowIso })
+        .eq('id', sessionId);
+
+      if (updateError) {
+        console.error('[sessionTracking] Error ending session:', updateError);
+        return false;
+      }
+    } else if (!options?.force) {
+      // Already ended. Avoid duplicate completed events unless forced.
+      if (reason === SESSION_EVENT_TYPES.COMPLETED) {
+        const { data: existingEvent } = await supabase
+          .from('lesson_session_events')
+          .select('id')
+          .eq('session_id', sessionId)
+          .eq('event_type', SESSION_EVENT_TYPES.COMPLETED)
+          .limit(1);
+
+        if (Array.isArray(existingEvent) && existingEvent.length > 0) {
+          return true;
+        }
+      }
+    }
+
+    const minutesActive = minutesBetween(sessionRow.started_at, nowIso);
+
+    const eventType = (
+      reason === SESSION_EVENT_TYPES.COMPLETED ? SESSION_EVENT_TYPES.COMPLETED :
+      reason === SESSION_EVENT_TYPES.EXITED ? SESSION_EVENT_TYPES.EXITED :
+      reason === SESSION_EVENT_TYPES.RESTARTED ? SESSION_EVENT_TYPES.RESTARTED :
+      reason === SESSION_EVENT_TYPES.INCOMPLETE ? SESSION_EVENT_TYPES.INCOMPLETE :
+      SESSION_EVENT_TYPES.COMPLETED
+    );
+
+    await logLessonSessionEvent({
+      supabase,
+      sessionId,
+      learnerId: sessionRow.learner_id,
+      lessonId: sessionRow.lesson_id,
+      eventType,
+      occurredAt: nowIso,
+      metadata: {
+        ...options?.metadata,
+        minutes_active: minutesActive,
+      },
+    });
+
+    console.info('[sessionTracking] Session ended:', sessionId, 'reason:', eventType);
     return true;
   } catch (err) {
     console.error('[sessionTracking] Exception in endLessonSession:', err);
     return false;
   }
 }
+
+export { SESSION_EVENT_TYPES, STALE_EXIT_MINUTES };
 
 /**
  * Log a repeat button click event

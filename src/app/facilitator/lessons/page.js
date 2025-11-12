@@ -1,5 +1,5 @@
 ﻿'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
@@ -7,6 +7,8 @@ import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
 import GatedOverlay from '@/app/components/GatedOverlay'
+import { useLessonHistory } from '@/app/hooks/useLessonHistory'
+import LessonHistoryModal from '@/app/components/LessonHistoryModal'
 
 const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
 const GRADES = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
@@ -53,6 +55,60 @@ export default function FacilitatorLessonsPage() {
   const [selectedLearner, setSelectedLearner] = useState(null) // Store full learner object
   const [learnerDataLoading, setLearnerDataLoading] = useState(false) // Loading learner-specific data
   const [showLessons, setShowLessons] = useState(false) // Whether to show lessons list
+  const [showHistoryModal, setShowHistoryModal] = useState(false)
+
+  const {
+    sessions: lessonHistorySessions,
+    events: lessonHistoryEvents,
+    lastCompleted: lessonHistoryLastCompleted,
+    inProgress: lessonHistoryInProgress,
+    loading: lessonHistoryLoading,
+    error: lessonHistoryError,
+    refresh: refreshLessonHistory,
+  } = useLessonHistory(selectedLearnerId, { limit: 150, refreshKey: refreshTrigger })
+
+  const completedLessonCount = useMemo(() => {
+    return Object.keys(lessonHistoryLastCompleted || {}).length
+  }, [lessonHistoryLastCompleted])
+
+  const activeLessonCount = useMemo(() => {
+    return Object.keys(lessonHistoryInProgress || {}).length
+  }, [lessonHistoryInProgress])
+
+  const lessonTitleLookup = useMemo(() => {
+    const map = {}
+    Object.entries(allLessons || {}).forEach(([subject, lessons]) => {
+      if (!Array.isArray(lessons)) return
+      lessons.forEach((lesson) => {
+        if (!lesson || !lesson.file) return
+        const key = lesson.isGenerated ? `generated/${lesson.file}` : `${subject}/${lesson.file}`
+        if (lesson.title) {
+          map[key] = lesson.title
+        }
+      })
+    })
+    return map
+  }, [allLessons])
+
+  const formatDateOnly = (isoString) => {
+    if (!isoString) return null
+    try {
+      const date = new Date(isoString)
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+    } catch {
+      return isoString
+    }
+  }
+
+  const formatDateTime = (isoString) => {
+    if (!isoString) return null
+    try {
+      const date = new Date(isoString)
+      return date.toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+    } catch {
+      return isoString
+    }
+  }
 
   // Set up midnight refresh timer
   useEffect(() => {
@@ -685,11 +741,10 @@ export default function FacilitatorLessonsPage() {
                 }}
               >
                 <option value="all">All Subjects</option>
-                {SUBJECTS.map(subject => (
+                {SUBJECTS.filter(subject => subject !== 'generated').map(subject => (
                   <option key={subject} value={subject} style={{ textTransform: 'capitalize' }}>
                     {subject === 'language arts' ? 'Language Arts' : 
                      subject === 'social studies' ? 'Social Studies' :
-                     subject === 'generated' ? 'Generated' :
                      subject.charAt(0).toUpperCase() + subject.slice(1)}
                   </option>
                 ))}
@@ -715,6 +770,33 @@ export default function FacilitatorLessonsPage() {
                   </option>
                 ))}
               </select>
+
+              {selectedLearnerId && (
+                <button
+                  onClick={() => setShowHistoryModal(true)}
+                  style={{
+                    padding: '10px 18px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: 6,
+                    background: '#fff',
+                    color: '#111827',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: lessonHistoryLoading ? 'wait' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    whiteSpace: 'nowrap'
+                  }}
+                  disabled={lessonHistoryLoading && !lessonHistorySessions.length}
+                  title={lessonHistoryLoading ? 'Loading history…' : 'View recent completions'}
+                >
+                  ✅ Completed Lessons{completedLessonCount ? ` (${completedLessonCount})` : ''}
+                  {activeLessonCount > 0 && (
+                    <span style={{ fontSize: 12, color: '#d97706' }}>⏳ {activeLessonCount}</span>
+                  )}
+                </button>
+              )}
 
               {!showLessons && (
                 <button
@@ -751,7 +833,7 @@ export default function FacilitatorLessonsPage() {
           {saving && <p style={{ color: '#555' }}>Saving...</p>}
 
           {/* Show appropriate state based on loading */}
-          {!selectedLearnerId ? (
+          {!showLessons ? (
             <div style={{
               background: '#f9fafb',
               border: '1px solid #e5e7eb',
@@ -760,22 +842,14 @@ export default function FacilitatorLessonsPage() {
               textAlign: 'center',
               color: '#6b7280'
             }}>
-              <div style={{ fontSize: 16, marginBottom: 8 }}>
-                Select a learner to begin
-              </div>
-            </div>
-          ) : !showLessons ? (
-            <div style={{
-              background: '#f9fafb',
-              border: '1px solid #e5e7eb',
-              borderRadius: 8,
-              padding: '48px 32px',
-              textAlign: 'center',
-              color: '#6b7280'
-            }}>
-              <div style={{ fontSize: 16, marginBottom: 8 }}>
+              <div style={{ fontSize: 16, marginBottom: selectedLearnerId ? 8 : 12 }}>
                 Click &quot;Load Lessons&quot; to view lessons
               </div>
+              {!selectedLearnerId && (
+                <div style={{ fontSize: 13, color: '#4b5563' }}>
+                  Select a learner to unlock availability, notes, and scheduling controls.
+                </div>
+              )}
             </div>
           ) : lessonsLoading ? (
             <div style={{
@@ -827,15 +901,19 @@ export default function FacilitatorLessonsPage() {
             }}>
               {filteredLessons.map(lesson => {
                 const { lessonKey, subject, displayGrade } = lesson
-                const isScheduled = !!scheduledLessons[lessonKey]
-                const futureDate = futureScheduledLessons[lessonKey]
-                const hasActiveKey = activeGoldenKeys[lessonKey] === true
-                const medalInfo = medals[lessonKey]
-                const hasCompleted = medalInfo && medalInfo.bestPercent > 0
-                const medalEmoji = medalInfo?.medalTier ? emojiForTier(medalInfo.medalTier) : null
-                const noteText = lessonNotes[lessonKey] || ''
-                const isEditingThisNote = editingNote === lessonKey
-                const isSchedulingThis = scheduling === lessonKey
+                const learnerSelected = Boolean(selectedLearnerId)
+                const isScheduled = learnerSelected && !!scheduledLessons[lessonKey]
+                const futureDate = learnerSelected ? futureScheduledLessons[lessonKey] : null
+                const hasActiveKey = learnerSelected && activeGoldenKeys[lessonKey] === true
+                const medalInfo = learnerSelected ? medals[lessonKey] : null
+                const hasCompleted = Boolean(learnerSelected && medalInfo && medalInfo.bestPercent > 0)
+                const medalEmoji = learnerSelected && medalInfo?.medalTier ? emojiForTier(medalInfo.medalTier) : null
+                const noteText = learnerSelected ? (lessonNotes[lessonKey] || '') : ''
+                const isEditingThisNote = learnerSelected && editingNote === lessonKey
+                const isSchedulingThis = learnerSelected && scheduling === lessonKey
+                const lastCompletedAt = learnerSelected ? lessonHistoryLastCompleted?.[lessonKey] : null
+                const inProgressAt = learnerSelected ? lessonHistoryInProgress?.[lessonKey] : null
+                const hasHistory = Boolean(learnerSelected && (lastCompletedAt || inProgressAt))
                 
                 return (
                   <div key={`${subject}-${lessonKey}`} style={{
@@ -850,19 +928,21 @@ export default function FacilitatorLessonsPage() {
                       flexWrap: 'wrap'
                     }}>
                       {/* Checkbox for making lesson available to learner */}
-                      <input
-                        type="checkbox"
-                        checked={!!availableLessons[lessonKey] || !!availableLessons[lessonKey.replace('general/', 'facilitator/')]}
-                        onChange={() => toggleAvailability(lessonKey)}
-                        disabled={saving}
-                        style={{
-                          marginTop: 4,
-                          cursor: saving ? 'not-allowed' : 'pointer',
-                          width: 18,
-                          height: 18
-                        }}
-                        title="Show this lesson to learner"
-                      />
+                      {learnerSelected && (
+                        <input
+                          type="checkbox"
+                          checked={!!availableLessons[lessonKey] || !!availableLessons[lessonKey.replace('general/', 'facilitator/')]}
+                          onChange={() => toggleAvailability(lessonKey)}
+                          disabled={saving}
+                          style={{
+                            marginTop: 4,
+                            cursor: saving ? 'not-allowed' : 'pointer',
+                            width: 18,
+                            height: 18
+                          }}
+                          title="Show this lesson to learner"
+                        />
+                      )}
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                         {isScheduled && <span style={{ fontSize: 14 }} title="Scheduled for today">📅</span>}
                         {!isScheduled && futureDate && <span style={{ fontSize: 14, opacity: 0.5 }} title={`Scheduled for ${futureDate}`}>📅</span>}
@@ -886,6 +966,21 @@ export default function FacilitatorLessonsPage() {
                             </span>
                           )}
                         </div>
+                        {hasHistory && (
+                          <div style={{ color: '#4b5563', fontSize: 12, marginTop: 4 }}>
+                            {inProgressAt && (
+                              <span>
+                                In progress since {formatDateTime(inProgressAt)}
+                              </span>
+                            )}
+                            {inProgressAt && lastCompletedAt && <span> • </span>}
+                            {lastCompletedAt && (
+                              <span>
+                                Last completed {formatDateOnly(lastCompletedAt)}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Compact action buttons */}
@@ -912,51 +1007,55 @@ export default function FacilitatorLessonsPage() {
                         ✏️ Edit
                       </button>
 
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          setEditingNote(isEditingThisNote ? null : lessonKey)
-                        }}
-                        style={{
-                          padding: '4px 10px',
-                          border: '1px solid #d1d5db',
-                          borderRadius: 4,
-                          background: noteText ? '#fef3c7' : '#fff',
-                          color: '#6b7280',
-                          fontSize: 12,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4
-                        }}
-                        title={noteText ? 'Edit note' : 'Add note'}
-                      >
-                        📝 {noteText ? 'Note' : 'Notes'}
-                      </button>
+                      {learnerSelected && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              setEditingNote(isEditingThisNote ? null : lessonKey)
+                            }}
+                            style={{
+                              padding: '4px 10px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: 4,
+                              background: noteText ? '#fef3c7' : '#fff',
+                              color: '#6b7280',
+                              fontSize: 12,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }}
+                            title={noteText ? 'Edit note' : 'Add note'}
+                          >
+                            📝 {noteText ? 'Note' : 'Notes'}
+                          </button>
 
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          setScheduling(isSchedulingThis ? null : lessonKey)
-                        }}
-                        style={{
-                          padding: '4px 10px',
-                          border: '1px solid #d1d5db',
-                          borderRadius: 4,
-                          background: '#fff',
-                          color: '#6b7280',
-                          fontSize: 12,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4
-                        }}
-                        title="Schedule lesson"
-                      >
-                        📅 Calendar
-                      </button>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              setScheduling(isSchedulingThis ? null : lessonKey)
+                            }}
+                            style={{
+                              padding: '4px 10px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: 4,
+                              background: '#fff',
+                              color: '#6b7280',
+                              fontSize: 12,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }}
+                            title="Schedule lesson"
+                          >
+                            📅 Calendar
+                          </button>
+                        </>
+                      )}
                     </div>
 
                     {/* Notes editing section */}
@@ -1123,7 +1222,19 @@ export default function FacilitatorLessonsPage() {
         </>
       )}
     </main>
-    
+
+    <LessonHistoryModal
+      open={showHistoryModal}
+      onClose={() => setShowHistoryModal(false)}
+      sessions={lessonHistorySessions}
+      events={lessonHistoryEvents}
+      medals={medals}
+      loading={lessonHistoryLoading}
+      error={lessonHistoryError}
+      onRefresh={refreshLessonHistory}
+      titleLookup={(lessonId) => lessonTitleLookup[lessonId]}
+    />
+
     <GatedOverlay
       show={!isAuthenticated}
       gateType={gateType}

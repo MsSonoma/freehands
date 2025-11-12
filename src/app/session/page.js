@@ -6035,7 +6035,11 @@ function SessionPageInner() {
       }
     } catch (e) { console.warn('[Session] transcript append failed', e); }
     if (trackingLearnerId) {
-      try { await endTrackedSession(); } catch {}
+      try {
+        await endTrackedSession('completed', {
+          earned_key: earnedKey,
+        });
+      } catch {}
     }
     sessionStartRef.current = null;
     try { transcriptSegmentStartIndexRef.current = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current.length : 0; } catch {}

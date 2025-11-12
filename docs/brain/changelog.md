@@ -1,3 +1,13 @@
+2025-11-12T20:44:10Z | Copilot | Persisted Mr Mentor sessions across visits and reset ID when ending chats.
+2025-11-12T19:38:33Z | Copilot | Removed Generated option from facilitator subject dropdown.
+2025-11-12T19:15:33Z | Copilot | Facilitator lessons list loads without learner and hides learner-only controls.
+2025-11-12T21:45:00Z | Copilot | Added printable plain-text export for lesson history modal.
+2025-11-12T21:20:00Z | Copilot | Lesson history modal now groups lessons and surfaces medal order.
+2025-11-12T20:55:00Z | Copilot | Auto-mark stale lesson sessions as incomplete during history fetch.
+2025-11-12T20:30:00Z | Copilot | Lesson history API now provides session event timelines across views.
+2025-11-12T19:45:00Z | Copilot | Added lesson history modal and last-completed badges across facilitator, mentor, and learner views.
+2025-11-12T19:00:00Z | Copilot | Updated Mentor landing copy to reflect single generator overlay.
+2025-11-12T18:45:00Z | Copilot | Mentor client now sends Supabase token when loading learner goals.
 2025-11-12T18:20:00Z | Copilot | Mentor PIN verification now tolerates deployments lacking hashed column.
 2025-11-12T18:05:00Z | Copilot | Mentor page now surfaces takeover PIN dialog immediately on load.
 2025-11-12T17:40:00Z | Copilot | Goals-notes API now honors Supabase cookie tokens for Mentor overlay loads.
@@ -9,13 +19,3 @@
 2025-11-12T14:43:21Z | Copilot | Fixed SessionTakeoverDialog to use isBusy flag instead of undefined loading var.
 2025-11-12T14:30:00Z | Copilot | Session polling now reopens takeover dialog instead of booting to facilitator.
 2025-11-12T14:21:31Z | Copilot | Reinstated Mr Mentor PIN gate effect so page unblocks.
-2025-11-12T14:18:55Z | Copilot | Restored CounselorClient wrapper so helper order change still builds.
-2025-11-12T01:46:00Z | Copilot | Reordered mentor session polling helper to stop TDZ ReferenceError.
-2025-11-12T01:37:00Z | Copilot | Stop test resumes from jumping into review with blank answers marked wrong.
-2025-11-12T01:18:00Z | Copilot | Moved snapshot effect before PIN gate return to keep hook order stable.
-2025-11-12T01:05:00Z | Copilot | Fixed useSessionTracking import path so session page builds.
-2025-11-12T00:58:00Z | Copilot | Added PIN gate for active sessions and cross-device lesson access.
-2025-11-12T00:32:00Z | Copilot | Enforced single active session per learner by reusing or auto-closing conflicts.
-2025-11-12T00:05:00Z | Copilot | Lesson list ignores fresh snapshots so untouched lessons show Start.
-2025-11-11T21:10:00Z | Copilot | Complete lesson now clears snapshot keys so new sessions start fresh.
-2025-11-11T20:45:00Z | Copilot | Added mentor session cleanup helpers, force-end flow, and npm script.

@@ -64,13 +64,17 @@ function isUndefinedColumnOrTable(error) {
 async function dbGetMedalsForLearner(db, userId, learnerId) {
   const { data, error } = await db
     .from('learner_medals')
-    .select('lesson_key, best_percent, medal_tier')
+    .select('lesson_key, best_percent, medal_tier, updated_at')
     .eq('user_id', userId)
     .eq('learner_id', learnerId);
   if (error) return { data: null, error };
   const out = {};
   for (const r of data || []) {
-    out[r.lesson_key] = { bestPercent: Number(r.best_percent) || 0, medalTier: r.medal_tier || tierForPercent(r.best_percent) || null };
+    out[r.lesson_key] = {
+      bestPercent: Number(r.best_percent) || 0,
+      medalTier: r.medal_tier || tierForPercent(r.best_percent) || null,
+      earnedAt: r.updated_at || null,
+    };
   }
   return { data: out, error: null };
 }
@@ -161,7 +165,15 @@ export async function GET(req) {
     }
     const all = await storageReadUserMedals(svc, 'learner-medals', user.id);
     const byLearner = (all && typeof all === 'object' ? all[learnerId] : null) || {};
-    return NextResponse.json({ medals: byLearner, fallback: 'storage' });
+    const normalized = {};
+    for (const [lessonKey, medal] of Object.entries(byLearner)) {
+      normalized[lessonKey] = {
+        bestPercent: Number(medal?.bestPercent) || 0,
+        medalTier: medal?.medalTier || null,
+        earnedAt: medal?.earnedAt || medal?.updatedAt || null,
+      };
+    }
+    return NextResponse.json({ medals: normalized, fallback: 'storage' });
   } catch (e) {
     // Soft-fail: provide empty medals and a hint; avoids console 500s
     return NextResponse.json({ medals: {}, hint: e?.message || 'Unexpected error' });
@@ -200,13 +212,17 @@ export async function POST(req) {
     }
     const all = await storageReadUserMedals(svc, 'learner-medals', user.id);
     const byLearner = (all && typeof all === 'object' ? all[learner_id] : null) || {};
-    const current = byLearner[lesson_key] || { bestPercent: 0, medalTier: null };
+    const current = byLearner[lesson_key] || { bestPercent: 0, medalTier: null, earnedAt: null };
     const newTier = tierForPercent(percent);
     const currentRank = TIER_RANK[current.medalTier || 'none'] || 0;
     const newRank = TIER_RANK[newTier || 'none'] || 0;
     const nextTier = newRank > currentRank ? newTier : current.medalTier;
     const bestPercent = Math.max(Number(current.bestPercent) || 0, Number(percent) || 0);
-    byLearner[lesson_key] = { bestPercent, medalTier: nextTier || null };
+    let earnedAt = current?.earnedAt || null;
+    if (bestPercent > (Number(current.bestPercent) || 0) || nextTier !== current.medalTier) {
+      earnedAt = new Date().toISOString();
+    }
+    byLearner[lesson_key] = { bestPercent, medalTier: nextTier || null, earnedAt };
     all[learner_id] = byLearner;
     await storageWriteUserMedals(svc, 'learner-medals', user.id, all);
     return NextResponse.json({ ok: true, fallback: 'storage' });

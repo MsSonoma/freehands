@@ -117,6 +117,39 @@ export default function CounselorClient() {
   const [toolThoughtQueue, setToolThoughtQueue] = useState([])
   const [activeToolThought, setActiveToolThought] = useState(null)
 
+  const generateSessionIdentifier = useCallback(() => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID()
+    }
+    return `session-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+  }, [])
+
+  const persistSessionIdentifier = useCallback((id) => {
+    if (typeof window === 'undefined' || !id) return
+    try {
+      sessionStorage.setItem('mr_mentor_session_id', id)
+    } catch {}
+    try {
+      localStorage.setItem('mr_mentor_active_session_id', id)
+    } catch {}
+  }, [])
+
+  const clearPersistedSessionIdentifier = useCallback(() => {
+    if (typeof window === 'undefined') return
+    try {
+      sessionStorage.removeItem('mr_mentor_session_id')
+    } catch {}
+    try {
+      localStorage.removeItem('mr_mentor_active_session_id')
+    } catch {}
+  }, [])
+
+  const assignSessionIdentifier = useCallback((id) => {
+    if (!id) return
+    persistSessionIdentifier(id)
+    setSessionId(id)
+  }, [persistSessionIdentifier])
+
   // (startSessionPolling defined later, after session setup hooks)
 
   // Check premium tier
@@ -246,7 +279,7 @@ export default function CounselorClient() {
 
   // Load goals notes when selection changes
   useEffect(() => {
-    if (!hasAccess || !tierChecked) return
+    if (!hasAccess || !tierChecked || !accessToken) return
     
     let cancelled = false
     ;(async () => {
@@ -257,7 +290,10 @@ export default function CounselorClient() {
         }
         
         const response = await fetch(`/api/goals-notes?${params.toString()}`, {
-          credentials: 'include'
+          credentials: 'include',
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
         })
         if (response.ok && !cancelled) {
           const data = await response.json()
@@ -270,7 +306,7 @@ export default function CounselorClient() {
       }
     })()
     return () => { cancelled = true }
-  }, [hasAccess, tierChecked, selectedLearnerId])
+  }, [accessToken, hasAccess, tierChecked, selectedLearnerId])
 
   // Load existing draft summary on mount and when learner changes
   useEffect(() => {
@@ -341,27 +377,27 @@ export default function CounselorClient() {
   // Generate and persist unique session ID on mount
   useEffect(() => {
     if (typeof window === 'undefined') return
-    
+
+    let resolvedId = null
+
     try {
-      let id = sessionStorage.getItem('mr_mentor_session_id')
-      if (!id) {
-        // Generate unique ID
-        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-          id = crypto.randomUUID()
-        } else {
-          // Fallback for older browsers
-          id = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-        }
-        sessionStorage.setItem('mr_mentor_session_id', id)
-      }
-      setSessionId(id)
+      resolvedId = localStorage.getItem('mr_mentor_active_session_id')
     } catch (err) {
-      console.error('[Session] Failed to generate session ID:', err)
-      // Fallback
-      const fallbackId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-      setSessionId(fallbackId)
+      console.warn('[Session] Failed to read persisted Mentor session id:', err)
     }
-  }, [])
+
+    if (!resolvedId) {
+      try {
+        resolvedId = sessionStorage.getItem('mr_mentor_session_id')
+      } catch {}
+    }
+
+    if (!resolvedId) {
+      resolvedId = generateSessionIdentifier()
+    }
+
+    assignSessionIdentifier(resolvedId)
+  }, [assignSessionIdentifier, generateSessionIdentifier])
 
   // (initializeMentorSession defined later, after polling helper)
 
@@ -446,8 +482,21 @@ export default function CounselorClient() {
         return
       }
 
-      if (checkRes.status === 404) {
-        // Create new session record
+      if (!checkRes.ok) {
+        const data = await checkRes.json().catch(() => ({}))
+        throw new Error(data?.error || 'Failed to check existing session')
+      }
+
+      const payload = await checkRes.json()
+
+      if (!isMountedRef.current) {
+        return
+      }
+
+      const { session: activeSession, status, isOwner } = payload || {}
+
+      if (!activeSession || status === 'none') {
+        const deviceName = `${navigator.platform || 'Unknown'} - ${navigator.userAgent.split(/[()]/)[1] || 'Browser'}`
         const createRes = await fetch('/api/mentor-session', {
           method: 'POST',
           headers: {
@@ -456,54 +505,58 @@ export default function CounselorClient() {
           },
           body: JSON.stringify({
             sessionId,
-            deviceName: `${navigator.platform || 'Unknown'} - ${navigator.userAgent.split(/[()]/)[1] || 'Browser'}`,
+            deviceName,
             action: 'initialize'
           })
         })
+
+        const createData = await createRes.json().catch(() => ({}))
+
+        if (!createRes.ok) {
+          throw new Error(createData?.error || 'Failed to initialize mentor session')
+        }
+
+        const createdSession = createData.session || createData
 
         if (!isMountedRef.current) {
           return
         }
 
-        if (!createRes.ok) {
-          const data = await createRes.json().catch(() => ({}))
-          throw new Error(data?.error || 'Failed to initialize mentor session')
+        if (createdSession?.session_id && createdSession.session_id !== sessionId) {
+          assignSessionIdentifier(createdSession.session_id)
+          return
         }
 
+        setConversationHistory(Array.isArray(createdSession?.conversation_history) ? createdSession.conversation_history : [])
+        setDraftSummary(createdSession?.draft_summary || '')
+        setCurrentSessionTokens(createdSession?.token_count || 0)
         setSessionStarted(true)
         setSessionLoading(false)
-        setConversationHistory([])
-        setDraftSummary('')
-        setCurrentSessionTokens(0)
+        setConflictingSession(null)
+        setShowTakeoverDialog(false)
         startSessionPolling()
         return
       }
 
-      if (!checkRes.ok) {
-        const data = await checkRes.json().catch(() => ({}))
-        throw new Error(data?.error || 'Failed to check existing session')
-      }
-
-      const sessionData = await checkRes.json()
-
-      // Another device already owns this session; show takeover dialog
-      if (!sessionData.isOwner && sessionData.status === 'active') {
+      if (!isOwner && activeSession) {
         setSessionLoading(false)
-        setConflictingSession(sessionData)
+        setConflictingSession(activeSession)
         setShowTakeoverDialog(true)
         return
       }
 
-      // Existing session found; restore data
-      if (Array.isArray(sessionData.conversation_history)) {
-        setConversationHistory(sessionData.conversation_history)
+      if (activeSession?.session_id && activeSession.session_id !== sessionId) {
+        assignSessionIdentifier(activeSession.session_id)
+        return
       }
-      setDraftSummary(sessionData.draft_summary || '')
-      setCurrentSessionTokens(sessionData.token_count || 0)
+
+      setConversationHistory(Array.isArray(activeSession?.conversation_history) ? activeSession.conversation_history : [])
+      setDraftSummary(activeSession?.draft_summary || '')
+      setCurrentSessionTokens(activeSession?.token_count || 0)
       setSessionStarted(true)
       setSessionLoading(false)
-
-      // Resume polling
+      setConflictingSession(null)
+      setShowTakeoverDialog(false)
       startSessionPolling()
     } catch (err) {
       if (!isMountedRef.current) {
@@ -513,7 +566,7 @@ export default function CounselorClient() {
       console.error('[Session] Initialization error:', err)
       setSessionLoading(false)
     }
-  }, [sessionId, accessToken, hasAccess, tierChecked, startSessionPolling])
+  }, [sessionId, accessToken, hasAccess, tierChecked, assignSessionIdentifier, startSessionPolling])
 
   useEffect(() => {
     initializeMentorSession()
@@ -1401,6 +1454,11 @@ export default function CounselorClient() {
       }
     }
     
+    if (sessionPollInterval.current) {
+      clearInterval(sessionPollInterval.current)
+      sessionPollInterval.current = null
+    }
+
     setConversationHistory([])
     setCaptionText('')
     setCaptionSentences([])
@@ -1410,6 +1468,12 @@ export default function CounselorClient() {
     setSessionStarted(false)
     setCurrentSessionTokens(0)
     setDraftSummary('')
+    setConflictingSession(null)
+    setShowTakeoverDialog(false)
+
+    clearPersistedSessionIdentifier()
+    const newSessionIdentifier = generateSessionIdentifier()
+    assignSessionIdentifier(newSessionIdentifier)
   }
 
   // Toggle mute
@@ -1885,8 +1949,7 @@ export default function CounselorClient() {
                 <p style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>Quick Access Screens:</p>
                 <ul style={{ paddingLeft: 24, marginBottom: 12, lineHeight: 1.6 }}>
                   <li><strong>📚 Lessons:</strong> Browse and review all available lessons</li>
-                  <li><strong>🎨 Generator:</strong> Create custom lessons for your learners</li>
-                  <li><strong>✨ Generated:</strong> View your previously generated lessons</li>
+                  <li><strong>✨ Generator:</strong> Create custom lessons for your learners</li>
                   <li><strong>📅 Calendar:</strong> Manage learner schedules and lesson plans</li>
                 </ul>
                 <p style={{ fontSize: 13, fontStyle: 'italic', color: '#9ca3af', marginTop: 12 }}>

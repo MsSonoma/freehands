@@ -118,6 +118,53 @@ create policy "lesson_sessions_update"
 grant select, insert, update on table public.lesson_sessions to authenticated;
 
 -- ============================================================================
+-- 3a. LESSON_SESSION_EVENTS: Point-in-time events for session lifecycle
+-- ============================================================================
+
+create table if not exists public.lesson_session_events (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid not null references public.lesson_sessions(id) on delete cascade,
+  learner_id uuid not null references public.learners(id) on delete cascade,
+  lesson_id text not null,
+  event_type text not null,
+  occurred_at timestamptz not null default now(),
+  metadata jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_lesson_session_events_session_id
+  on public.lesson_session_events(session_id);
+
+create index if not exists idx_lesson_session_events_learner_id
+  on public.lesson_session_events(learner_id, occurred_at desc);
+
+alter table public.lesson_session_events enable row level security;
+
+drop policy if exists "lesson_session_events_select" on public.lesson_session_events;
+create policy "lesson_session_events_select"
+  on public.lesson_session_events for select
+  using (
+    exists (
+      select 1 from public.learners l
+      where l.id = lesson_session_events.learner_id
+        and l.facilitator_id = auth.uid()
+    )
+  );
+
+drop policy if exists "lesson_session_events_insert" on public.lesson_session_events;
+create policy "lesson_session_events_insert"
+  on public.lesson_session_events for insert
+  with check (
+    exists (
+      select 1 from public.learners l
+      where l.id = lesson_session_events.learner_id
+        and l.facilitator_id = auth.uid()
+    )
+  );
+
+grant select, insert on table public.lesson_session_events to authenticated;
+
+-- ============================================================================
 -- 4. FACILITATOR_NOTES: Timestamped notes during lessons
 -- ============================================================================
 

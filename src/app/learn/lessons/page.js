@@ -10,6 +10,8 @@ import LoadingProgress from '@/components/LoadingProgress'
 import GoldenKeyCounter from '@/app/learn/GoldenKeyCounter'
 import { getStoredSnapshot } from '@/app/session/sessionSnapshotStore'
 import { getActiveLessonSession } from '@/app/lib/sessionTracking'
+import { useLessonHistory } from '@/app/hooks/useLessonHistory'
+import LessonHistoryModal from '@/app/components/LessonHistoryModal'
 
 const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
 
@@ -82,6 +84,55 @@ function LessonsPageInner(){
   const [saving, setSaving] = useState(false)
   const [lessonSnapshots, setLessonSnapshots] = useState({}) // { 'subject/lesson_file': true } - lessons with saved snapshots
   const [sessionGateReady, setSessionGateReady] = useState(false)
+  const [showHistoryModal, setShowHistoryModal] = useState(false)
+
+  const {
+    sessions: lessonHistorySessions,
+    events: lessonHistoryEvents,
+    lastCompleted: lessonHistoryLastCompleted,
+    inProgress: lessonHistoryInProgress,
+    loading: lessonHistoryLoading,
+    error: lessonHistoryError,
+    refresh: refreshLessonHistory,
+  } = useLessonHistory(learnerId, { limit: 150, refreshKey: refreshTrigger })
+
+  const completedLessonCount = useMemo(() => Object.keys(lessonHistoryLastCompleted || {}).length, [lessonHistoryLastCompleted])
+  const activeLessonCount = useMemo(() => Object.keys(lessonHistoryInProgress || {}).length, [lessonHistoryInProgress])
+
+  const lessonTitleLookup = useMemo(() => {
+    const map = {}
+    Object.entries(allLessons || {}).forEach(([subject, lessons]) => {
+      if (!Array.isArray(lessons)) return
+      lessons.forEach((lesson) => {
+        if (!lesson || !lesson.file) return
+        const key = lesson.isGenerated ? `generated/${lesson.file}` : `${subject}/${lesson.file}`
+        if (!map[key] && lesson.title) {
+          map[key] = lesson.title
+        }
+      })
+    })
+    return map
+  }, [allLessons])
+
+  const formatDateOnly = (isoString) => {
+    if (!isoString) return null
+    try {
+      const date = new Date(isoString)
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+    } catch {
+      return isoString
+    }
+  }
+
+  const formatDateTime = (isoString) => {
+    if (!isoString) return null
+    try {
+      const date = new Date(isoString)
+      return date.toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+    } catch {
+      return isoString
+    }
+  }
 
   // Set up midnight refresh timer
   useEffect(() => {
@@ -646,6 +697,34 @@ function LessonsPageInner(){
         onToggle={() => setGoldenKeySelected(prev => !prev)}
       />
 
+      {learnerId && learnerId !== 'demo' && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, marginTop: 12 }}>
+          <button
+            onClick={() => setShowHistoryModal(true)}
+            style={{
+              padding: '10px 20px',
+              border: '1px solid #d1d5db',
+              borderRadius: 8,
+              background: '#fff',
+              color: '#111827',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: lessonHistoryLoading ? 'wait' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+            disabled={lessonHistoryLoading && !lessonHistorySessions.length}
+            title={lessonHistoryLoading ? 'Loading history…' : 'See completed lessons'}
+          >
+            ✅ Completed Lessons{completedLessonCount ? ` (${completedLessonCount})` : ''}
+            {activeLessonCount > 0 && (
+              <span style={{ fontSize: 12, color: '#d97706' }}>⏳ {activeLessonCount}</span>
+            )}
+          </button>
+        </div>
+      )}
+
       {loading || lessonsLoading ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: 12, marginTop: 32 }}>
           <div style={{ 
@@ -746,6 +825,9 @@ function LessonsPageInner(){
                 const hasActiveKey = activeGoldenKeys[lessonKey] === true
                 const noteText = lessonNotes[lessonKey] || ''
                 const isEditingThisNote = editingNote === lessonKey
+                const lastCompletedAt = lessonHistoryLastCompleted?.[lessonKey]
+                const inProgressAt = lessonHistoryInProgress?.[lessonKey]
+                const hasHistory = Boolean(lastCompletedAt || inProgressAt)
                 
                 // For generated lessons, use lesson.subject; for others use the subject category
                 const subjectBadge = subject === 'generated' && l.subject
@@ -801,6 +883,17 @@ function LessonsPageInner(){
                           {l.grade && `Grade ${l.grade}`}
                           {l.grade && l.difficulty && '  '}
                           {l.difficulty && l.difficulty.charAt(0).toUpperCase() + l.difficulty.slice(1)}
+                        </div>
+                      )}
+                      {hasHistory && (
+                        <div style={{ fontSize:12, color:'#4b5563', marginTop:4 }}>
+                          {inProgressAt && (
+                            <span>In progress since {formatDateTime(inProgressAt)}</span>
+                          )}
+                          {inProgressAt && lastCompletedAt && <span> • </span>}
+                          {lastCompletedAt && (
+                            <span>Last completed {formatDateOnly(lastCompletedAt)}</span>
+                          )}
                         </div>
                       )}
                       
@@ -959,6 +1052,18 @@ function LessonsPageInner(){
       <LoadingProgress
         isLoading={sessionLoading}
         onComplete={() => setSessionLoading(false)}
+      />
+
+      <LessonHistoryModal
+        open={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+        sessions={lessonHistorySessions}
+        events={lessonHistoryEvents}
+        medals={medals}
+        loading={lessonHistoryLoading}
+        error={lessonHistoryError}
+        onRefresh={refreshLessonHistory}
+        titleLookup={(lessonId) => lessonTitleLookup[lessonId]}
       />
     </main>
   )

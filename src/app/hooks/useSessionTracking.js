@@ -24,6 +24,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true) {
   const [sessionId, setSessionId] = useState(null);
   const [tracking, setTracking] = useState(false);
   const sessionIdRef = useRef(null);
+  const sessionMetaRef = useRef({ learnerId, lessonId });
 
   // Start session
   const startSession = async () => {
@@ -43,6 +44,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true) {
     if (id) {
       sessionIdRef.current = id;
       setSessionId(id);
+      sessionMetaRef.current = { learnerId, lessonId };
       setTracking(false);
       return id;
     } else {
@@ -53,17 +55,24 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true) {
   };
 
   // End session
-  const endSession = async () => {
+  const endSession = async (reason = 'completed', metadata) => {
     if (!sessionIdRef.current) {
       console.warn('[useSessionTracking] No active session to end');
       return false;
     }
 
-    const success = await endLessonSession(sessionIdRef.current);
+    const meta = sessionMetaRef.current || { learnerId, lessonId };
+    const success = await endLessonSession(sessionIdRef.current, {
+      reason,
+      metadata,
+      learnerId: meta.learnerId,
+      lessonId: meta.lessonId,
+    });
     
     if (success) {
       sessionIdRef.current = null;
       setSessionId(null);
+      sessionMetaRef.current = { learnerId, lessonId };
     }
 
     return success;
@@ -108,7 +117,13 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true) {
     // Auto-end session on unmount
     return () => {
       if (sessionIdRef.current) {
-        endLessonSession(sessionIdRef.current);
+        const meta = sessionMetaRef.current || { learnerId, lessonId };
+        endLessonSession(sessionIdRef.current, {
+          reason: 'exited',
+          metadata: { trigger: 'unmount' },
+          learnerId: meta.learnerId,
+          lessonId: meta.lessonId,
+        });
       }
     };
   }, [autoStart, learnerId, lessonId]);

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
 import LessonEditor from '@/components/LessonEditor'
+import { useLessonHistory } from '@/app/hooks/useLessonHistory'
+import LessonHistoryModal from '@/app/components/LessonHistoryModal'
 
 const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
 const GRADES = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
@@ -61,6 +63,55 @@ export default function LessonsOverlay({ learnerId }) {
   const [lessonEditorSaving, setLessonEditorSaving] = useState(false)
   const [schedulingLesson, setSchedulingLesson] = useState(null)
   const [learnerDataLoading, setLearnerDataLoading] = useState(false)
+  const [showHistoryModal, setShowHistoryModal] = useState(false)
+
+  const {
+    sessions: lessonHistorySessions,
+    events: lessonHistoryEvents,
+    lastCompleted: lessonHistoryLastCompleted,
+    inProgress: lessonHistoryInProgress,
+    loading: lessonHistoryLoading,
+    error: lessonHistoryError,
+    refresh: refreshLessonHistory,
+  } = useLessonHistory(learnerId, { limit: 150 })
+
+  const completedLessonCount = useMemo(() => Object.keys(lessonHistoryLastCompleted || {}).length, [lessonHistoryLastCompleted])
+  const activeLessonCount = useMemo(() => Object.keys(lessonHistoryInProgress || {}).length, [lessonHistoryInProgress])
+
+  const lessonTitleLookup = useMemo(() => {
+    const map = {}
+    Object.entries(allLessons || {}).forEach(([subject, lessons]) => {
+      if (!Array.isArray(lessons)) return
+      lessons.forEach((lesson) => {
+        if (!lesson || !lesson.file) return
+        const key = lesson.isGenerated ? `generated/${lesson.file}` : `${subject}/${lesson.file}`
+        if (!map[key] && lesson.title) {
+          map[key] = lesson.title
+        }
+      })
+    })
+    return map
+  }, [allLessons])
+
+  const formatDateOnly = useCallback((isoString) => {
+    if (!isoString) return null
+    try {
+      const date = new Date(isoString)
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+    } catch {
+      return isoString
+    }
+  }, [])
+
+  const formatDateTime = useCallback((isoString) => {
+    if (!isoString) return null
+    try {
+      const date = new Date(isoString)
+      return date.toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+    } catch {
+      return isoString
+    }
+  }, [])
 
   const isLearnerScoped = Boolean(learnerId && learnerId !== 'none')
   const subjectOptions = useMemo(
@@ -626,6 +677,32 @@ export default function LessonsOverlay({ learnerId }) {
               </option>
             ))}
           </select>
+          {isLearnerScoped && (
+            <button
+              onClick={() => setShowHistoryModal(true)}
+              style={{
+                padding: '6px 10px',
+                border: '1px solid #d1d5db',
+                borderRadius: 4,
+                background: '#fff',
+                color: '#1f2937',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: lessonHistoryLoading ? 'wait' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                whiteSpace: 'nowrap'
+              }}
+              disabled={lessonHistoryLoading && !lessonHistorySessions.length}
+              title={lessonHistoryLoading ? 'Loading history…' : 'View completed lessons'}
+            >
+              ✅ Completed{completedLessonCount ? ` (${completedLessonCount})` : ''}
+              {activeLessonCount > 0 && (
+                <span style={{ fontSize: 11, color: '#d97706' }}>⏳ {activeLessonCount}</span>
+              )}
+            </button>
+          )}
         </div>
         <div style={{ fontSize: 11, color: '#6b7280', marginTop: 6 }}>
           {filteredLessons.length} lessons
@@ -656,6 +733,9 @@ export default function LessonsOverlay({ learnerId }) {
               const noteText = lessonNotes[lessonKey] || ''
               const isEditingThisNote = editingNote === lessonKey
               const isSchedulingThis = schedulingLesson === lessonKey
+              const lastCompletedAt = lessonHistoryLastCompleted?.[lessonKey]
+              const inProgressAt = lessonHistoryInProgress?.[lessonKey]
+              const hasHistory = Boolean(lastCompletedAt || inProgressAt)
 
               return (
                 <div
@@ -702,6 +782,17 @@ export default function LessonsOverlay({ learnerId }) {
                         {displayGrade && ` • Grade ${displayGrade}`}
                         {lesson.difficulty && ` • ${lesson.difficulty.charAt(0).toUpperCase() + lesson.difficulty.slice(1)}`}
                       </div>
+                      {hasHistory && (
+                        <div style={{ color: '#4b5563', fontSize: 11, marginTop: 3 }}>
+                          {inProgressAt && (
+                            <span>In progress since {formatDateTime(inProgressAt)}</span>
+                          )}
+                          {inProgressAt && lastCompletedAt && <span> • </span>}
+                          {lastCompletedAt && (
+                            <span>Last completed {formatDateOnly(lastCompletedAt)}</span>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Compact action buttons */}
@@ -998,6 +1089,18 @@ export default function LessonsOverlay({ learnerId }) {
           </div>
         </div>
       )}
+
+      <LessonHistoryModal
+        open={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+        sessions={lessonHistorySessions}
+        events={lessonHistoryEvents}
+        medals={medals}
+        loading={lessonHistoryLoading}
+        error={lessonHistoryError}
+        onRefresh={refreshLessonHistory}
+        titleLookup={(lessonId) => lessonTitleLookup[lessonId]}
+      />
     </div>
   )
 }
