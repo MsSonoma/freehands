@@ -123,11 +123,29 @@ function verifyPinHash(pin, stored) {
 }
 
 async function verifyPin(userId, pinCode) {
-  const { data: profile, error } = await supabase
+  let profile = null
+  let error = null
+
+  const attempt = await supabase
     .from('profiles')
-  .select('facilitator_pin_hash, pin_code')
+    .select('facilitator_pin_hash, pin_code')
     .eq('id', userId)
     .maybeSingle()
+
+  profile = attempt.data
+  error = attempt.error
+
+  if (error && error.code === '42703') {
+    console.warn('[mentor-session] Legacy schema detected; falling back to plain pin_code column')
+    const fallback = await supabase
+      .from('profiles')
+      .select('pin_code')
+      .eq('id', userId)
+      .maybeSingle()
+
+    profile = fallback.data
+    error = fallback.error
+  }
 
   if (error) {
     throw error

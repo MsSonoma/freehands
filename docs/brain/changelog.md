@@ -1,3 +1,5 @@
+2025-11-12T18:20:00Z | Copilot | Mentor PIN verification now tolerates deployments lacking hashed column.
+2025-11-12T18:05:00Z | Copilot | Mentor page now surfaces takeover PIN dialog immediately on load.
 2025-11-12T17:40:00Z | Copilot | Goals-notes API now honors Supabase cookie tokens for Mentor overlay loads.
 2025-11-12T17:25:00Z | Copilot | Complete Lesson button no longer requires facilitator PIN.
 2025-11-12T17:10:00Z | Copilot | Session header nav now routes through PIN guard before leaving lesson.
@@ -17,5 +19,3 @@
 2025-11-12T00:05:00Z | Copilot | Lesson list ignores fresh snapshots so untouched lessons show Start.
 2025-11-11T21:10:00Z | Copilot | Complete lesson now clears snapshot keys so new sessions start fresh.
 2025-11-11T20:45:00Z | Copilot | Added mentor session cleanup helpers, force-end flow, and npm script.
-2025-11-08T17:26:00Z | Copilot | Recipe parser now honors Units metadata for per-jar BOM quantities.
-2025-11-08T17:05:00Z | Copilot | Installed Python env and fixed pyproject to drop unused hatch SCM hook.
