@@ -2415,19 +2415,37 @@ function SessionPageInner() {
   const handleExplainVisualAid = useCallback(async (visualAid) => {
     console.log('[handleExplainVisualAid] Explaining visual aid:', visualAid);
     
-    if (!visualAid || !visualAid.description) {
-      console.warn('[handleExplainVisualAid] No description available');
+    if (!visualAid || !visualAid.url) {
+      console.warn('[handleExplainVisualAid] No visual aid URL available');
       return;
     }
 
-    // Close carousel first
-    setShowVisualAidsCarousel(false);
-
-    // Speak the description using Ms. Sonoma
+    // DO NOT close carousel - keep it open while explaining
+    // Generate a fresh explanation via API
     try {
-      await speakFrontendImpl(visualAid.description, {});
+      const response = await fetch('/api/visual-aids/explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUrl: visualAid.url,
+          description: visualAid.description
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate explanation');
+      }
+
+      const { explanation } = await response.json();
+      
+      // Speak the fresh explanation using Ms. Sonoma
+      await speakFrontendImpl(explanation, {});
     } catch (err) {
       console.error('[handleExplainVisualAid] Failed to explain visual aid:', err);
+      // Fallback to stored description if API fails
+      if (visualAid.description) {
+        await speakFrontendImpl(visualAid.description, {});
+      }
     }
   }, []);
 
