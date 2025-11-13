@@ -1,10 +1,13 @@
+// Force refresh - investigating visual aids button rendering
 import { useEffect, useState } from "react";
 import CurrentAssessmentPrompt from "./CurrentAssessmentPrompt.js";
 
 const COMPREHENSION_TARGET = 5;
 const EXERCISE_TARGET = 5;
 
-function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, isLastWorksheetQuestion, onOpenReview }) {
+function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, isLastWorksheetQuestion, onOpenReview, visualAids, onShowVisualAids }) {
+  console.log('🎯🎯🎯 [VideoPanel] TOP OF FUNCTION - visualAids:', visualAids, 'length:', visualAids?.length, 'handler:', typeof onShowVisualAids);
+  
   // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
   // Remove horizontal clamp: let the video occupy the full available width of its column
   const containerMaxWidth = 'none';
@@ -119,20 +122,37 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
           </div>
         )}
         {/* Begin overlays removed intentionally */}
-  {/* Primary control cluster (mute only; play/pause removed per request) */}
-  {!isShortHeight && (
+  {/* Primary control cluster (mute + visual aids) */}
   <div style={controlClusterStyle}>
-          <button type="button" onClick={onToggleMute} aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'} style={controlButtonBase}>
-            {muted ? (
-              <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
-            ) : (
-              <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M19 8a5 5 0 010 8" /><path d="M15 11a2 2 0 010 2" /></svg>
-            )}
-          </button>
-        </div>
-  )}
+    {/* Visual Aids button - only show if lesson has visual aids */}
+    {(() => {
+      const isArray = Array.isArray(visualAids);
+      const hasLength = visualAids && visualAids.length > 0;
+      const hasHandler = typeof onShowVisualAids === 'function';
+      console.log('[VideoPanel] Button render check:', { isArray, hasLength, hasHandler, visualAids });
+      return isArray && hasLength && hasHandler;
+    })() && (
+      <button 
+        type="button" 
+        onClick={onShowVisualAids} 
+        aria-label="Visual Aids" 
+        title="Visual Aids" 
+        style={controlButtonBase}
+      >
+        <span style={{ fontSize: '1.5em' }}>🖼️</span>
+      </button>
+    )}
+    
+    <button type="button" onClick={onToggleMute} aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'} style={controlButtonBase}>
+      {muted ? (
+        <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
+      ) : (
+        <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M19 8a5 5 0 010 8" /><path d="M15 11a2 2 0 010 2" /></svg>
+      )}
+    </button>
+  </div>
         {/* Skip button when speaking */}
-        {isSpeaking && !isShortHeight && typeof onSkip === 'function' && (
+        {isSpeaking && typeof onSkip === 'function' && (
           <button
             type="button"
             onClick={onSkip}

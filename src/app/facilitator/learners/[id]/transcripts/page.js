@@ -39,6 +39,7 @@ export default function LearnerTranscriptsPage({ params }) {
 
   useEffect(() => {
     if (!pinChecked) return;
+    if (!learnerId) return;
     let mounted = true;
     (async () => {
       try {
@@ -48,11 +49,17 @@ export default function LearnerTranscriptsPage({ params }) {
         const { data: { session } = { data: {} } } = supabase ? await supabase.auth.getSession() : { data: {} };
         const token = session?.access_token || '';
         const [meta, listResp] = await Promise.all([
-          learnerId ? getLearner(learnerId) : null,
-          learnerId ? fetch(`/api/facilitator/learners/${encodeURIComponent(learnerId)}/transcripts`, {
+          getLearner(learnerId),
+          fetch(`/api/facilitator/learners/${encodeURIComponent(learnerId)}/transcripts`, {
             cache: 'no-store',
             headers: token ? { Authorization: `Bearer ${token}` } : {},
-          }).then(r => r.json()).catch(() => ({ items: [] })) : { items: [] },
+          }).then(async (r) => {
+            if (!r.ok) {
+              const message = (await r.json().catch(() => ({})))?.error || `Failed with status ${r.status}`;
+              throw new Error(message);
+            }
+            return r.json();
+          }),
         ]);
         if (!mounted) return;
         setLearnerName(meta?.name || '');
@@ -60,12 +67,13 @@ export default function LearnerTranscriptsPage({ params }) {
       } catch (e) {
         if (!mounted) return;
         setError(e?.message || 'Failed to load transcripts');
+        setItems([]);
       } finally {
         if (mounted) setLoading(false);
       }
     })();
     return () => { mounted = false; };
-  }, [learnerId]);
+  }, [pinChecked, learnerId]);
 
   return (
     <main style={{ padding: 24 }}>

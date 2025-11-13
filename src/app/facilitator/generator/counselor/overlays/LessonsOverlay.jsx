@@ -1,10 +1,12 @@
 // Compact lessons list view for Mr. Mentor overlay
 'use client'
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
 import LessonEditor from '@/components/LessonEditor'
+import VisualAidsCarousel from '@/components/VisualAidsCarousel'
 import { useLessonHistory } from '@/app/hooks/useLessonHistory'
 import LessonHistoryModal from '@/app/components/LessonHistoryModal'
 
@@ -64,6 +66,15 @@ export default function LessonsOverlay({ learnerId }) {
   const [schedulingLesson, setSchedulingLesson] = useState(null)
   const [learnerDataLoading, setLearnerDataLoading] = useState(false)
   const [showHistoryModal, setShowHistoryModal] = useState(false)
+  
+  // Visual aids state
+  const [showVisualAidsCarousel, setShowVisualAidsCarousel] = useState(false)
+  const [visualAidsImages, setVisualAidsImages] = useState([])
+  const [generatingVisualAids, setGeneratingVisualAids] = useState(false)
+  const [generationProgress, setGenerationProgress] = useState('')
+  const [generationCount, setGenerationCount] = useState(0)
+  const [visualAidsError, setVisualAidsError] = useState('')
+  const MAX_GENERATIONS = 4
 
   const {
     sessions: lessonHistorySessions,
@@ -115,19 +126,9 @@ export default function LessonsOverlay({ learnerId }) {
 
   const isLearnerScoped = Boolean(learnerId && learnerId !== 'none')
   const subjectOptions = useMemo(
-    () => (isLearnerScoped ? SUBJECTS.filter(subject => subject !== 'generated') : SUBJECTS),
-    [isLearnerScoped]
+    () => SUBJECTS, // Show all subjects including 'generated' regardless of learner selection
+    []
   )
-
-  useEffect(() => {
-    if (selectedSubject === 'generated' && !subjectOptions.includes('generated')) {
-      setSelectedSubject('all')
-    }
-  }, [selectedSubject, subjectOptions])
-
-  useEffect(() => {
-    setAllLessons(prev => (Object.keys(prev).length === 0 ? prev : {}))
-  }, [isLearnerScoped])
 
   const loadLessons = useCallback(async () => {
     if (Object.keys(allLessons).length > 0) {
@@ -143,9 +144,7 @@ export default function LessonsOverlay({ learnerId }) {
       console.log('[LessonsOverlay] Session token available:', !!token)
 
       const results = {}
-      const subjectsToFetch = isLearnerScoped
-        ? SUBJECTS.filter(subject => subject !== 'generated')
-        : SUBJECTS
+      const subjectsToFetch = SUBJECTS.filter(subject => subject !== 'generated')
 
       for (const subject of subjectsToFetch) {
         try {
@@ -178,7 +177,7 @@ export default function LessonsOverlay({ learnerId }) {
         }
       }
 
-      if (token && !isLearnerScoped) {
+      if (token) {
         try {
           console.log('[LessonsOverlay] Fetching generated lessons')
           const res = await fetch('/api/facilitator/lessons/list', {
@@ -212,8 +211,6 @@ export default function LessonsOverlay({ learnerId }) {
         } catch (err) {
           console.error('Error loading generated lessons:', err)
         }
-      } else if (isLearnerScoped) {
-        console.log('[LessonsOverlay] Skipping generated lessons fetch for learner-specific view')
       }
 
       console.log('[LessonsOverlay] All lessons loaded:', Object.keys(results).map(s => `${s}: ${results[s].length}`))
@@ -223,7 +220,7 @@ export default function LessonsOverlay({ learnerId }) {
     } finally {
       setLoading(false)
     }
-  }, [allLessons, isLearnerScoped])
+  }, [allLessons])
 
   const loadLearnerData = useCallback(async () => {
     if (!learnerId || learnerId === 'none') {
@@ -403,11 +400,25 @@ export default function LessonsOverlay({ learnerId }) {
       })
     })
     
-    // Sort by subject, then grade, then title
+    // Sort: by subject first, then generated lessons at top of each subject (by creation date, newest first), then other lessons (by grade, title)
     filtered.sort((a, b) => {
+      // First, sort by subject
       if (a.subject !== b.subject) {
         return a.subject.localeCompare(b.subject)
       }
+      
+      // Within same subject: generated lessons come first
+      if (a.isGenerated && !b.isGenerated) return -1
+      if (!a.isGenerated && b.isGenerated) return 1
+      
+      // Both are generated: sort by creation date (newest first)
+      if (a.isGenerated && b.isGenerated) {
+        const timeA = new Date(a.created_at || 0).getTime()
+        const timeB = new Date(b.created_at || 0).getTime()
+        return timeB - timeA // Newest first
+      }
+      
+      // Both are non-generated: sort by grade, then title
       if (a.displayGrade !== b.displayGrade) {
         // Handle K specially
         if (a.displayGrade === 'K') return -1
@@ -454,6 +465,9 @@ export default function LessonsOverlay({ learnerId }) {
     setEditingLesson(lessonKey)
     setLessonEditorLoading(true)
     setLessonEditorData(null)
+    setVisualAidsImages([])
+    setGenerationCount(0)
+    setVisualAidsError('')
     
     try {
       const supabase = getSupabaseClient()
@@ -472,6 +486,9 @@ export default function LessonsOverlay({ learnerId }) {
       
       const lessonData = await res.json()
       setLessonEditorData(lessonData)
+      
+      // Load visual aids for this lesson
+      await loadVisualAidsForLesson(lessonKey)
     } catch (err) {
       console.error('[LessonsOverlay] Failed to load lesson for editing:', err)
       alert('Failed to load lesson: ' + err.message)
@@ -519,6 +536,271 @@ export default function LessonsOverlay({ learnerId }) {
     } finally {
       setLessonEditorSaving(false)
     }
+  }
+
+  // Visual aids handlers
+  const loadVisualAidsForLesson = async (lessonKey) => {
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      
+      const res = await fetch(`/api/visual-aids/load?lessonKey=${encodeURIComponent(lessonKey)}`, {
+        headers: token ? {
+          'Authorization': `Bearer ${token}`
+        } : {}
+      })
+      
+      if (!res.ok) {
+        console.error('Failed to load visual aids')
+        return
+      }
+      
+      const visualAidsData = await res.json()
+      setVisualAidsImages(visualAidsData.generatedImages || [])
+      setGenerationCount(visualAidsData.generationCount || 0)
+    } catch (err) {
+      console.error('Error loading visual aids:', err)
+    }
+  }
+
+  const saveVisualAidsData = async (images, count) => {
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      
+      const selectedImages = images.filter(img => img.selected)
+      
+      const res = await fetch('/api/visual-aids/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({
+          lessonKey: editingLesson,
+          generatedImages: images,
+          selectedImages: selectedImages,
+          generationCount: count
+        })
+      })
+      
+      if (!res.ok) {
+        console.error('Failed to auto-save visual aids data')
+      }
+    } catch (err) {
+      console.error('Error auto-saving visual aids:', err)
+    }
+  }
+
+  const handleGenerateVisualAids = async () => {
+    if (!lessonEditorData?.teachingNotes) {
+      setVisualAidsError('Teaching notes are required to generate visual aids')
+      return
+    }
+
+    // If we already have images, just open the carousel
+    if (visualAidsImages.length > 0) {
+      setShowVisualAidsCarousel(true)
+      return
+    }
+
+    // Check if limit reached
+    if (generationCount >= MAX_GENERATIONS) {
+      setVisualAidsError(`You've reached the maximum of ${MAX_GENERATIONS} generations for this lesson`)
+      return
+    }
+
+    setGeneratingVisualAids(true)
+    setGenerationProgress('Starting generation...')
+    setVisualAidsError('')
+
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      const newImages = []
+      for (let i = 0; i < 3; i++) {
+        setGenerationProgress(`Generating image ${i + 1} of 3...`)
+        
+        const res = await fetch('/api/visual-aids/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          body: JSON.stringify({
+            teachingNotes: lessonEditorData.teachingNotes,
+            lessonTitle: lessonEditorData.title,
+            count: 1
+          })
+        })
+
+        if (!res.ok) {
+          const errorData = await res.json()
+          throw new Error(errorData.error || 'Failed to generate visual aids')
+        }
+
+        const data = await res.json()
+        
+        if (data.images && data.images.length > 0) {
+          newImages.push(...data.images)
+          setVisualAidsImages(prev => [...prev, ...data.images])
+        }
+      }
+      
+      const newCount = generationCount + 1
+      setGenerationCount(newCount)
+      setGenerationProgress('Complete!')
+      setTimeout(() => setGenerationProgress(''), 1000)
+      
+      const allImages = [...visualAidsImages, ...newImages]
+      await saveVisualAidsData(allImages, newCount)
+      
+      if (newImages.length > 0) {
+        setShowVisualAidsCarousel(true)
+      }
+    } catch (err) {
+      setVisualAidsError(err.message || 'Failed to generate visual aids')
+      setGenerationProgress('')
+    } finally {
+      setGeneratingVisualAids(false)
+    }
+  }
+
+  const handleGenerateMore = async (customPrompt = '') => {
+    if (!lessonEditorData?.teachingNotes) return
+
+    if (generationCount >= MAX_GENERATIONS) {
+      setVisualAidsError(`You've reached the maximum of ${MAX_GENERATIONS} generations for this lesson`)
+      return
+    }
+
+    setGeneratingVisualAids(true)
+    setGenerationProgress('Generating 3 more images...')
+
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      const res = await fetch('/api/visual-aids/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({
+          teachingNotes: lessonEditorData.teachingNotes,
+          lessonTitle: lessonEditorData.title,
+          customPrompt: customPrompt.trim() || undefined,
+          count: 3
+        })
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to generate more visual aids')
+      }
+
+      const data = await res.json()
+      
+      let allImages = visualAidsImages
+      if (data.images && data.images.length > 0) {
+        allImages = [...visualAidsImages, ...data.images]
+        setVisualAidsImages(allImages)
+      }
+      
+      const newCount = generationCount + 1
+      setGenerationCount(newCount)
+      setGenerationProgress('Complete!')
+      setTimeout(() => setGenerationProgress(''), 1000)
+      
+      await saveVisualAidsData(allImages, newCount)
+    } catch (err) {
+      setVisualAidsError(err.message || 'Failed to generate more visual aids')
+      setGenerationProgress('')
+    } finally {
+      setGeneratingVisualAids(false)
+    }
+  }
+
+  const handleUploadImage = async (file) => {
+    try {
+      const reader = new FileReader()
+      const dataURL = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result)
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+
+      const newImage = {
+        url: dataURL,
+        prompt: `Uploaded: ${file.name}`,
+        description: '',
+        id: `upload-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        uploaded: true
+      }
+
+      const allImages = [...visualAidsImages, newImage]
+      setVisualAidsImages(allImages)
+      await saveVisualAidsData(allImages, generationCount)
+      
+      return newImage
+    } catch (err) {
+      console.error('Error uploading image:', err)
+      setVisualAidsError('Failed to upload image')
+      return null
+    }
+  }
+
+  const handleRewriteDescription = async (description, lessonTitle, purpose = 'visual-aid-description') => {
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      const res = await fetch('/api/ai/rewrite-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({
+          text: description,
+          context: lessonTitle,
+          purpose: purpose
+        })
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to rewrite text')
+      }
+
+      const data = await res.json()
+      return data.rewritten
+    } catch (err) {
+      console.error('Error rewriting text:', err)
+      setVisualAidsError('Failed to rewrite text')
+      return null
+    }
+  }
+
+  const handleSaveVisualAids = async (selectedImages) => {
+    const updatedImages = visualAidsImages.map(img => {
+      const isSelected = selectedImages.some(sel => sel.id === img.id)
+      return {
+        ...img,
+        selected: isSelected,
+        description: selectedImages.find(sel => sel.id === img.id)?.description || img.description
+      }
+    })
+    
+    setVisualAidsImages(updatedImages)
+    setShowVisualAidsCarousel(false)
+    
+    await saveVisualAidsData(updatedImages, generationCount)
   }
 
   const scheduleLesson = async (lessonKey, scheduledDate) => {
@@ -600,15 +882,16 @@ export default function LessonsOverlay({ learnerId }) {
   const filteredLessons = getFilteredLessons()
 
   return (
-    <div style={{ 
-      height: '100%', 
-      background: '#fff', 
-      display: 'flex', 
-      flexDirection: 'column',
-      overflow: 'hidden',
-      border: '1px solid #6b7280',
-      borderRadius: 8
-    }}>
+    <>
+      <div style={{ 
+        height: '100%', 
+        background: '#fff', 
+        display: 'flex', 
+        flexDirection: 'column',
+        overflow: 'hidden',
+        border: '1px solid #6b7280',
+        borderRadius: 8
+      }}>
       {/* Header */}
       <div style={{ 
         padding: '12px 16px', 
@@ -1070,17 +1353,73 @@ export default function LessonsOverlay({ learnerId }) {
                 Loading lesson data...
               </div>
             ) : lessonEditorData ? (
-              <LessonEditor
-                initialLesson={lessonEditorData}
-                onSave={saveLessonEdits}
-                onCancel={() => {
-                  if (window.confirm('Close editor without saving?')) {
-                    setEditingLesson(null)
-                    setLessonEditorData(null)
-                  }
-                }}
-                busy={lessonEditorSaving}
-              />
+              <>
+                {/* Header with Visual Aids button */}
+                <div style={{
+                  padding: '16px 20px',
+                  borderBottom: '1px solid #e5e7eb',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexShrink: 0,
+                  background: '#f9fafb'
+                }}>
+                  <div style={{ fontSize: 18, fontWeight: 600, color: '#1f2937' }}>
+                    Edit Lesson: {lessonEditorData.title}
+                  </div>
+                  <button
+                    onClick={handleGenerateVisualAids}
+                    disabled={!lessonEditorData?.teachingNotes || generatingVisualAids}
+                    style={{
+                      padding: '8px 16px',
+                      background: (!lessonEditorData?.teachingNotes || generatingVisualAids) ? '#e5e7eb' : '#3b82f6',
+                      color: (!lessonEditorData?.teachingNotes || generatingVisualAids) ? '#9ca3af' : '#fff',
+                      border: 'none',
+                      borderRadius: 8,
+                      cursor: (!lessonEditorData?.teachingNotes || generatingVisualAids) ? 'not-allowed' : 'pointer',
+                      fontSize: 14,
+                      fontWeight: 600
+                    }}
+                    title={!lessonEditorData?.teachingNotes ? 'Add teaching notes first' : (visualAidsImages.length > 0 ? 'View and manage visual aids' : 'Generate visual aids from teaching notes')}
+                  >
+                    {generatingVisualAids 
+                      ? (generationProgress || 'Generating...') 
+                      : (visualAidsImages.length > 0 ? '🖼️ Visual Aids' : '🖼️ Generate Visual Aids')}
+                  </button>
+                </div>
+                
+                {/* Visual aids error message */}
+                {visualAidsError && (
+                  <div style={{ 
+                    padding: 12, 
+                    background: '#fef2f2', 
+                    border: '1px solid #fecaca', 
+                    borderRadius: 8, 
+                    color: '#dc2626', 
+                    margin: '16px 20px 0 20px' 
+                  }}>
+                    {visualAidsError}
+                  </div>
+                )}
+                
+                {/* Lesson Editor */}
+                <div style={{ flex: 1, overflow: 'auto' }}>
+                  <LessonEditor
+                    initialLesson={lessonEditorData}
+                    onSave={saveLessonEdits}
+                    onCancel={() => {
+                      if (window.confirm('Close editor without saving?')) {
+                        setEditingLesson(null)
+                        setLessonEditorData(null)
+                        setVisualAidsImages([])
+                        setGenerationCount(0)
+                        setVisualAidsError('')
+                      }
+                    }}
+                    busy={lessonEditorSaving}
+                  />
+                </div>
+              </>
             ) : (
               <div style={{ textAlign: 'center', padding: 60, color: '#ef4444', fontSize: 16 }}>
                 Failed to load lesson data
@@ -1088,6 +1427,24 @@ export default function LessonsOverlay({ learnerId }) {
             )}
           </div>
         </div>
+      )}
+
+      {/* Visual Aids Carousel */}
+      {showVisualAidsCarousel && editingLesson && lessonEditorData && (
+        <VisualAidsCarousel
+          images={visualAidsImages}
+          onClose={() => setShowVisualAidsCarousel(false)}
+          onSave={handleSaveVisualAids}
+          onGenerateMore={handleGenerateMore}
+          onUploadImage={handleUploadImage}
+          onRewriteDescription={handleRewriteDescription}
+          generating={generatingVisualAids}
+          teachingNotes={lessonEditorData?.teachingNotes || ''}
+          lessonTitle={lessonEditorData?.title || ''}
+          generationProgress={generationProgress}
+          generationCount={generationCount}
+          maxGenerations={MAX_GENERATIONS}
+        />
       )}
 
       <LessonHistoryModal
@@ -1102,5 +1459,25 @@ export default function LessonsOverlay({ learnerId }) {
         titleLookup={(lessonId) => lessonTitleLookup[lessonId]}
       />
     </div>
+    
+    {/* Visual Aids Carousel - rendered outside main container for proper z-index using portal */}
+    {showVisualAidsCarousel && editingLesson && lessonEditorData && typeof document !== 'undefined' && createPortal(
+      <VisualAidsCarousel
+        images={visualAidsImages}
+        onClose={() => setShowVisualAidsCarousel(false)}
+        onSave={handleSaveVisualAids}
+        onGenerateMore={handleGenerateMore}
+        onUploadImage={handleUploadImage}
+        onRewriteDescription={handleRewriteDescription}
+        generating={generatingVisualAids}
+        teachingNotes={lessonEditorData?.teachingNotes || ''}
+        lessonTitle={lessonEditorData?.title || ''}
+        generationProgress={generationProgress}
+        generationCount={generationCount}
+        maxGenerations={MAX_GENERATIONS}
+      />,
+      document.body
+    )}
+    </>
   )
 }

@@ -47,6 +47,7 @@ import { useSessionTracking } from '../hooks/useSessionTracking';
 import { useSnapshotPersistence } from './hooks/useSnapshotPersistence';
 import { useResumeRestart } from './hooks/useResumeRestart';
 import SessionTimer from './components/SessionTimer';
+import SessionVisualAidsCarousel from './components/SessionVisualAidsCarousel';
 import GatedOverlay from '../components/GatedOverlay';
 
 export default function SessionPage(){
@@ -62,6 +63,39 @@ let COMPREHENSION_TARGET = 3;
 let EXERCISE_TARGET = 5;
 let WORKSHEET_TARGET = 15;
 let TEST_TARGET = 10;
+
+function mapToAssistantCaptionEntries(sentences) {
+  if (!Array.isArray(sentences)) return [];
+  return sentences.map((entry) => {
+    if (entry && typeof entry === 'object' && typeof entry.text === 'string') {
+      const role = entry.role === 'user' ? 'user' : 'assistant';
+      return { text: entry.text, role };
+    }
+    const text = typeof entry === 'string' ? entry : String(entry ?? '');
+    return { text, role: 'assistant' };
+  });
+}
+
+function normalizeTranscriptLines(entries) {
+  if (!Array.isArray(entries)) return [];
+  return entries
+    .map((entry) => {
+      if (!entry) return null;
+      if (typeof entry === 'string') {
+        const text = entry.replace(/\s+/g, ' ').trim();
+        if (!text) return null;
+        return { role: 'assistant', text };
+      }
+      if (typeof entry === 'object') {
+        const text = typeof entry.text === 'string' ? entry.text.trim() : '';
+        if (!text) return null;
+        const role = entry.role === 'user' ? 'user' : 'assistant';
+        return { role, text };
+      }
+      return null;
+    })
+    .filter(Boolean);
+}
 
 // Dynamically load per-user targets at runtime (recomputed on each call)
 async function ensureRuntimeTargets(forceReload = false) {
@@ -574,6 +608,9 @@ function SessionPageInner() {
   const [lessonDataLoading, setLessonDataLoading] = useState(false);
   const [lessonDataError, setLessonDataError] = useState("");
   const [downloadError, setDownloadError] = useState("");
+  // Visual aids state for displaying lesson visual aids
+  const [showVisualAidsCarousel, setShowVisualAidsCarousel] = useState(false);
+  const [visualAidsData, setVisualAidsData] = useState(null);
   // Generated assessment sets persisted for session (worksheet & test)
   const [generatedWorksheet, setGeneratedWorksheet] = useState(null);
   // Preserve original full worksheet source objects (with answer metadata) used to derive generatedWorksheet
@@ -1460,6 +1497,58 @@ function SessionPageInner() {
     };
   }, [lessonFilePath]);
 
+  // Load visual aids separately from database (facilitator-specific)
+  useEffect(() => {
+    if (!lessonSessionKey) {
+      console.log('[VISUAL_AIDS] No lessonSessionKey, skipping load');
+      return;
+    }
+    
+    console.log('[VISUAL_AIDS] Loading visual aids for lesson:', lessonSessionKey);
+    
+    let cancelled = false;
+    (async () => {
+      try {
+        const supabase = getSupabaseClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        
+        if (!token) {
+          console.log('[VISUAL_AIDS] No auth token');
+          if (!cancelled) setVisualAidsData(null);
+          return;
+        }
+        
+        const res = await fetch(`/api/visual-aids/load?lessonKey=${encodeURIComponent(lessonSessionKey)}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!res.ok) {
+          console.log('[VISUAL_AIDS] Load failed:', res.status, res.statusText);
+          if (!cancelled) setVisualAidsData(null);
+          return;
+        }
+        
+        const data = await res.json();
+        console.log('[VISUAL_AIDS] Loaded data:', data);
+        console.log('[VISUAL_AIDS] Selected images count:', data.selectedImages?.length || 0);
+        console.log('[VISUAL_AIDS] Selected images array:', data.selectedImages);
+        if (!cancelled) {
+          const images = data.selectedImages || [];
+          console.log('[VISUAL_AIDS] Setting visualAidsData to:', images);
+          setVisualAidsData(images);
+        }
+      } catch (err) {
+        console.error('[VISUAL_AIDS] Error loading visual aids:', err);
+        if (!cancelled) setVisualAidsData(null);
+      }
+    })();
+    
+    return () => { cancelled = true; };
+  }, [lessonSessionKey]);
+
   const waitForBeat = (ms = 240) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const clearCaptionTimers = () => clearCaptionTimersUtil(captionTimersRef);
@@ -1943,12 +2032,14 @@ function SessionPageInner() {
         newSentences = [normalizedOriginal];
       }
 
+  const assistantSentences = mapToAssistantCaptionEntries(newSentences);
+
       // Skip audio playback, transcript, and caption display if requested (for sentence-by-sentence gating)
       if (opts.skipAudio) {
         // Return text and sentences without updating UI - caller will handle display
         setLoading(false);
         setPhaseGuardSent((prev) => (prev[phaseKey] ? prev : { ...prev, [phaseKey]: true }));
-        return { success: true, data, text: replyText, sentences: newSentences };
+        return { success: true, data, text: replyText, sentences: assistantSentences };
       }
 
     setTranscript(replyText);
@@ -1976,7 +2067,7 @@ function SessionPageInner() {
       // Network + processing complete; stop showing loading placeholder BEFORE or while starting audio
       setLoading(false);
       
-  nextAll = [...nextAll, ...newSentences];
+  nextAll = [...nextAll, ...assistantSentences];
   captionSentencesRef.current = nextAll;
   setCaptionSentences(nextAll);
   // Set selection to the first reply sentence (skip the inserted items before reply)
@@ -1988,11 +2079,11 @@ function SessionPageInner() {
       if (opts.fastReturn) {
         // Fire-and-forget audio so caller can process reply (e.g., test review cue detection) immediately
         const replyStartIndex = prevLen + preReplyExtra;
-        playAudioFromBase64(data.audio, newSentences, replyStartIndex)
+        playAudioFromBase64(data.audio, assistantSentences, replyStartIndex)
           .catch(err => console.warn('[Session] Async audio playback failed (fastReturn).', err));
       } else {
         const replyStartIndex = prevLen + preReplyExtra;
-        await playAudioFromBase64(data.audio, newSentences, replyStartIndex);
+        await playAudioFromBase64(data.audio, assistantSentences, replyStartIndex);
         setIsSpeaking(false);
       }
 
@@ -2256,8 +2347,8 @@ function SessionPageInner() {
     // Set speaking to false
     try { setIsSpeaking(false); } catch {}
     
-    // Hide repeat button since we're skipping
-    try { setShowRepeatButton(false); } catch {}
+  // Hide repeat button during the skip action
+  try { setShowRepeatButton(false); } catch {}
     
     // Show opening actions if in the right phase/state
     try {
@@ -2276,6 +2367,13 @@ function SessionPageInner() {
     webAudioStartedAtRef.current = 0;
     webAudioPausedAtRef.current = 0;
     htmlAudioPausedAtRef.current = 0;
+
+    // Restore repeat button so the learner can hear the last line again
+    try {
+      if (lastAudioBase64Ref.current) {
+        setShowRepeatButton(true);
+      }
+    } catch {}
   }, [phase, subPhase, askState, riddleState, poemState, clearSynthetic, clearSpeechGuard]);
 
   // Repeat speech: replay the last TTS audio without updating captions
@@ -2307,6 +2405,32 @@ function SessionPageInner() {
     }
   }, [playAudioFromBase64]);
 
+  // Show visual aids carousel
+  const handleShowVisualAids = useCallback(() => {
+    console.log('[handleShowVisualAids] Opening visual aids carousel');
+    setShowVisualAidsCarousel(true);
+  }, []);
+
+  // Explain visual aid via Ms. Sonoma
+  const handleExplainVisualAid = useCallback(async (visualAid) => {
+    console.log('[handleExplainVisualAid] Explaining visual aid:', visualAid);
+    
+    if (!visualAid || !visualAid.description) {
+      console.warn('[handleExplainVisualAid] No description available');
+      return;
+    }
+
+    // Close carousel first
+    setShowVisualAidsCarousel(false);
+
+    // Speak the description using Ms. Sonoma
+    try {
+      await speakFrontendImpl(visualAid.description, {});
+    } catch (err) {
+      console.error('[handleExplainVisualAid] Failed to explain visual aid:', err);
+    }
+  }, []);
+
   // Helper: speak arbitrary frontend text via unified captions + TTS
   // (defined here after playAudioFromBase64 is available, and updates the ref for early callbacks)
   const speakFrontendImpl = useCallback(async (text, opts = {}) => {
@@ -2316,12 +2440,13 @@ function SessionPageInner() {
       const noCaptions = !!(opts && typeof opts === 'object' && opts.noCaptions);
       let sentences = splitIntoSentences(text);
       sentences = mergeMcChoiceFragments(sentences, mcLayout).map((s) => enforceNbspAfterMcLabels(s));
+      const assistantSentences = mapToAssistantCaptionEntries(sentences);
       // When noCaptions is set (e.g., resume after refresh), do not mutate caption state
       // so the transcript on screen does not duplicate. Still play TTS.
       let startIndexForBatch = 0;
       if (!noCaptions) {
         const prevLen = captionSentencesRef.current?.length || 0;
-        const nextAll = [...(captionSentencesRef.current || []), ...sentences];
+        const nextAll = [...(captionSentencesRef.current || []), ...assistantSentences];
         captionSentencesRef.current = nextAll;
         setCaptionSentences(nextAll);
         setCaptionIndex(prevLen);
@@ -2349,12 +2474,12 @@ function SessionPageInner() {
             // Let the playback engine manage isSpeaking lifecycle
             try { setIsSpeaking(true); } catch {}
             console.log('[speakFrontendImpl] About to play audio');
-            try { await playAudioFromBase64(b64, noCaptions ? [] : sentences, startIndexForBatch); } catch {}
+            try { await playAudioFromBase64(b64, noCaptions ? [] : assistantSentences, startIndexForBatch); } catch {}
             console.log('[speakFrontendImpl] Audio playback complete');
           } else {
             if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
             // Use unified synthetic playback so video + isSpeaking behave consistently
-            try { await playAudioFromBase64('', noCaptions ? [] : sentences, startIndexForBatch); } catch {}
+            try { await playAudioFromBase64('', noCaptions ? [] : assistantSentences, startIndexForBatch); } catch {}
           }
         }
       } catch (err) {
@@ -2625,9 +2750,10 @@ function SessionPageInner() {
         if (normalizedJoined.length < Math.floor(0.9 * normalizedOriginal.length)) {
           newSentences = [normalizedOriginal];
         }
+        const assistantSentences = mapToAssistantCaptionEntries(newSentences);
         prevLen = captionSentencesRef.current?.length || 0;
         let nextAll = [...(captionSentencesRef.current || [])];
-        nextAll = [...nextAll, ...newSentences];
+        nextAll = [...nextAll, ...assistantSentences];
         captionSentencesRef.current = nextAll;
         setCaptionSentences(nextAll);
         setCaptionIndex(prevLen);
@@ -2636,8 +2762,9 @@ function SessionPageInner() {
         try { console.warn('[Opening] caption prep failed; proceeding to TTS anyway', capErr?.name || capErr); } catch {}
         // Keep minimal single-sentence caption
         newSentences = [replyText];
+        const assistantSentences = mapToAssistantCaptionEntries(newSentences);
         prevLen = captionSentencesRef.current?.length || 0;
-        const nextAll = [...(captionSentencesRef.current || []), replyText];
+        const nextAll = [...(captionSentencesRef.current || []), ...assistantSentences];
         captionSentencesRef.current = nextAll;
         setCaptionSentences(nextAll);
         setCaptionIndex(prevLen);
@@ -2646,7 +2773,7 @@ function SessionPageInner() {
       // Request TTS for the local opening and play it using the same pipeline as API replies.
       setLoading(true);
       setTtsLoadingCount((c) => c + 1);
-      const replyStartIndex = prevLen; // we appended opening sentences at the end
+  const replyStartIndex = prevLen; // we appended opening sentences at the end
       try { console.info('[OpeningTTS] POST /api/tts starting�'); } catch {}
       let res;
       try {
@@ -2682,7 +2809,8 @@ function SessionPageInner() {
         // Prefer HTMLAudio for the very first Opening playback; clear automatically after attempt
         try { preferHtmlAudioOnceRef.current = true; } catch {}
         // Fire-and-forget to match fastReturn behavior; UI remains responsive
-        playAudioFromBase64(audioB64, newSentences, replyStartIndex)
+        const assistantSentences = captionSentencesRef.current.slice(replyStartIndex);
+        playAudioFromBase64(audioB64, assistantSentences, replyStartIndex)
           .catch(err => console.warn('[OpeningTTS] audio playback failed', err));
         // Safety: if we are not speaking within ~1.2s, attempt one recovery by switching path
         try {
@@ -2696,11 +2824,17 @@ function SessionPageInner() {
                 if (preferHtmlAudioOnceRef.current) {
                   // We still prefer HTML per flag; switch to WebAudio explicitly
                   try { console.warn('[OpeningTTS] Recovery: trying WebAudio path after initial silence'); } catch {}
-                  try { await playViaWebAudio(b64, newSentences, replyStartIndex); } catch (e) { try { console.warn('[OpeningTTS] Recovery WebAudio failed', e); } catch {} }
+                  try {
+                    const assistantSentences = captionSentencesRef.current.slice(replyStartIndex);
+                    await playViaWebAudio(b64, assistantSentences, replyStartIndex);
+                  } catch (e) { try { console.warn('[OpeningTTS] Recovery WebAudio failed', e); } catch {} }
                 } else {
                   try { console.warn('[OpeningTTS] Recovery: retrying via HTMLAudio path'); } catch {}
                   try { preferHtmlAudioOnceRef.current = true; } catch {}
-                  try { await playAudioFromBase64(b64, newSentences, replyStartIndex); } catch (e) { try { console.warn('[OpeningTTS] Recovery HTMLAudio failed', e); } catch {} }
+                  try {
+                    const assistantSentences = captionSentencesRef.current.slice(replyStartIndex);
+                    await playAudioFromBase64(b64, assistantSentences, replyStartIndex);
+                  } catch (e) { try { console.warn('[OpeningTTS] Recovery HTMLAudio failed', e); } catch {} }
                 }
               }
             } catch {}
@@ -2713,21 +2847,22 @@ function SessionPageInner() {
       setCanSend(true);
     } catch (e) {
       // Fallback: if anything fails, show a minimal safe opening and still TTS it
-      try { console.error('[Opening] generation failed, using fallback text', e); } catch {}
-  const fallback = `${learnerName ? `Hello, ${learnerName}.` : 'Hello.'} Today's lesson is ${lessonTitleExact}.\n\nYou're going to do amazing.\n\nWhat would you like to do first?`;
-      setTranscript(fallback);
-      let newSentences = splitIntoSentences(fallback);
-      newSentences = mergeMcChoiceFragments(newSentences).map((s) => enforceNbspAfterMcLabels(s));
-      const prevLen = captionSentencesRef.current?.length || 0;
-      const nextAll = [...(captionSentencesRef.current || []), ...newSentences];
-      captionSentencesRef.current = nextAll;
-      setCaptionSentences(nextAll);
-      setCaptionIndex(prevLen);
+    try { console.error('[Opening] generation failed, using fallback text', e); } catch {}
+    const fallback = `${learnerName ? `Hello, ${learnerName}.` : 'Hello.'} Today's lesson is ${lessonTitleExact}.\n\nYou're going to do amazing.\n\nWhat would you like to do first?`;
+    setTranscript(fallback);
+    let newSentences = splitIntoSentences(fallback);
+    newSentences = mergeMcChoiceFragments(newSentences).map((s) => enforceNbspAfterMcLabels(s));
+    const assistantSentences = mapToAssistantCaptionEntries(newSentences);
+    const prevLen = captionSentencesRef.current?.length || 0;
+    const nextAll = [...(captionSentencesRef.current || []), ...assistantSentences];
+    captionSentencesRef.current = nextAll;
+    setCaptionSentences(nextAll);
+    setCaptionIndex(prevLen);
       // Proceed to TTS the fallback so audio still plays
       try {
         setLoading(true);
         setTtsLoadingCount((c) => c + 1);
-        const replyStartIndex = prevLen;
+    const replyStartIndex = prevLen;
         try { console.info('[OpeningTTS] Fallback: POST /api/tts starting�'); } catch {}
         let res;
         let data;
@@ -2754,7 +2889,7 @@ function SessionPageInner() {
           setIsSpeaking(true);
           try { await waitForBeat(40); } catch {}
           try { preferHtmlAudioOnceRef.current = true; } catch {}
-          playAudioFromBase64(audioB64, newSentences, replyStartIndex).catch(() => {});
+          playAudioFromBase64(audioB64, assistantSentences, replyStartIndex).catch(() => {});
           try {
             openingReattemptedRef.current = false;
             setTimeout(async () => {
@@ -2762,7 +2897,7 @@ function SessionPageInner() {
                 if (!isSpeakingRef.current && lastAudioBase64Ref.current && !openingReattemptedRef.current) {
                   openingReattemptedRef.current = true;
                   const b64 = lastAudioBase64Ref.current;
-                  try { await playViaWebAudio(b64, newSentences, replyStartIndex); } catch {}
+                  try { await playViaWebAudio(b64, assistantSentences, replyStartIndex); } catch {}
                 }
               } catch {}
             }, 1200);
@@ -2774,7 +2909,7 @@ function SessionPageInner() {
       } catch {
         setLoading(false);
         setIsSpeaking(false);
-  }
+      }
       setSubPhase('awaiting-learner');
       setCanSend(true);
     }
@@ -4449,7 +4584,7 @@ function SessionPageInner() {
       // Append only the lines since the last segment start to avoid duplicating prior session text
       const startIdx = Math.max(0, Number(transcriptSegmentStartIndexRef.current) || 0);
       const all = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current : [];
-      const slice = all.slice(startIdx).filter((ln) => ln && typeof ln.text === 'string' && ln.text.trim().length > 0).map((ln) => ({ role: ln.role || 'assistant', text: ln.text }));
+      const slice = normalizeTranscriptLines(all.slice(startIdx));
       if (learnerId && learnerId !== 'demo' && slice.length > 0) {
         await appendTranscriptSegment({
           learnerId,
@@ -4562,7 +4697,7 @@ function SessionPageInner() {
       const lessonId = String(lessonParam || '').replace(/\.json$/i, '');
       const startIdx = Math.max(0, Number(transcriptSegmentStartIndexRef.current) || 0);
       const all = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current : [];
-      const slice = all.slice(startIdx).filter((ln) => ln && typeof ln.text === 'string' && ln.text.trim().length > 0).map((ln) => ({ role: ln.role || 'assistant', text: ln.text }));
+      const slice = normalizeTranscriptLines(all.slice(startIdx));
       if (learnerId && learnerId !== 'demo' && slice.length > 0) {
         await appendTranscriptSegment({
           learnerId,
@@ -6020,9 +6155,7 @@ function SessionPageInner() {
       const completedAt = new Date().toISOString();
       const all = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current : [];
       const startIdx = Math.max(0, Number(transcriptSegmentStartIndexRef.current) || 0);
-      const lines = all.slice(startIdx)
-        .filter((ln) => ln && typeof ln.text === 'string' && ln.text.trim().length > 0)
-        .map((ln) => ({ role: ln.role || 'assistant', text: ln.text }));
+      const lines = normalizeTranscriptLines(all.slice(startIdx));
       if (learnerId && learnerId !== 'demo' && lines.length > 0) {
         await appendTranscriptSegment({
           learnerId,
@@ -6124,7 +6257,7 @@ function SessionPageInner() {
         const lessonId = String(lessonParam || '').replace(/\.json$/i, '');
         const startIdx = Math.max(0, Number(transcriptSegmentStartIndexRef.current) || 0);
         const all = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current : [];
-        const slice = all.slice(startIdx).filter((ln) => ln && typeof ln.text === 'string' && ln.text.trim().length > 0).map((ln) => ({ role: ln.role || 'assistant', text: ln.text }));
+        const slice = normalizeTranscriptLines(all.slice(startIdx));
         if (learnerId && learnerId !== 'demo' && slice.length > 0) {
           await appendTranscriptSegment({
             learnerId,
@@ -6262,7 +6395,12 @@ function SessionPageInner() {
     <div ref={videoColRef} style={isMobileLandscape ? { flex:`0 0 ${videoColPercent}%`, display:'flex', flexDirection:'column', minWidth:0, minHeight:0, height: 'var(--msSideBySideH)' } : {}}>
   {/* Shared Complete Lesson handler */}
   { /* define once; stable ref for consumers */ }
-  {(() => { return null; })()}
+  {(() => { 
+    console.log('[VISUAL_AIDS] About to render VideoPanel with visualAids:', visualAidsData);
+    console.log('[VISUAL_AIDS] visualAidsData is array?', Array.isArray(visualAidsData));
+    console.log('[VISUAL_AIDS] visualAidsData length:', visualAidsData?.length);
+    return null; 
+  })()}
   <VideoPanel
         isMobileLandscape={isMobileLandscape}
         isShortHeight={isShortHeight}
@@ -6300,6 +6438,8 @@ function SessionPageInner() {
         handleTimerPauseToggle={handleTimerPauseToggle}
         showRepeatButton={showRepeatButton}
         handleRepeatSpeech={handleRepeatSpeech}
+        visualAids={visualAidsData}
+        onShowVisualAids={handleShowVisualAids}
       />
       {/* Worksheet end-of-phase Review button removed per requirements */}
     </div>
@@ -6944,6 +7084,17 @@ function SessionPageInner() {
         requiredTier="basic"
       />
     )}
+
+    {/* Visual Aids Carousel - for displaying lesson visual aids */}
+    {showVisualAidsCarousel && visualAidsData && (
+      <SessionVisualAidsCarousel
+        visualAids={visualAidsData}
+        onClose={() => setShowVisualAidsCarousel(false)}
+        onExplain={handleExplainVisualAid}
+        videoRef={videoRef}
+        isSpeaking={isSpeaking}
+      />
+    )}
     </>
   );
 }
@@ -7066,7 +7217,7 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
   );
 }
 
-function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle, showRepeatButton, handleRepeatSpeech }) {
+function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle, showRepeatButton, handleRepeatSpeech, visualAids, onShowVisualAids }) {
   // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
   // Remove horizontal clamp: let the video occupy the full available width of its column
   const containerMaxWidth = 'none';
@@ -7198,8 +7349,14 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
           </div>
         )}
         {/* Begin overlays removed intentionally */}
-  {/* Primary control cluster (mute only; play/pause removed per request) */}
+  {/* Primary control cluster (visual aids, mute) */}
   <div style={controlClusterStyle}>
+          {/* Visual aids button */}
+          {Array.isArray(visualAids) && visualAids.length > 0 && typeof onShowVisualAids === 'function' && (
+            <button type="button" onClick={onShowVisualAids} aria-label="Visual Aids" title="Visual Aids" style={controlButtonBase}>
+              <span style={{ fontSize: '1.5em' }}>🖼️</span>
+            </button>
+          )}
           <button type="button" onClick={onToggleMute} aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'} style={controlButtonBase}>
             {muted ? (
               <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>

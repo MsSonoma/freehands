@@ -9,6 +9,50 @@ import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
 const BUCKET = 'transcripts';
 const VROOT = 'v1';
 
+const INVALID_LINE_PATTERNS = [
+  /{"statusCode"\s*:\s*"400"\s*,\s*"error"\s*:\s*"InvalidJWT"/i,
+  /"exp"\s*claim\s*timestamp\s*check\s*failed/i,
+];
+
+function sanitizeTranscriptLines(lines) {
+  if (!Array.isArray(lines)) return [];
+  return lines
+    .map((entry) => {
+      if (!entry) return null;
+      if (typeof entry === 'string') {
+        const text = entry.replace(/\s+/g, ' ').trim();
+        if (!text) return null;
+        if (INVALID_LINE_PATTERNS.some((re) => re.test(text))) return null;
+        return { role: 'assistant', text };
+      }
+      if (typeof entry === 'object') {
+        const rawText = typeof entry.text === 'string' ? entry.text : '';
+        const text = rawText.replace(/\s+/g, ' ').trim();
+        if (!text) return null;
+        if (INVALID_LINE_PATTERNS.some((re) => re.test(text))) return null;
+        const role = entry.role === 'user' ? 'user' : 'assistant';
+        return { role, text };
+      }
+      return null;
+    })
+    .filter(Boolean);
+}
+
+function sanitizeLedgerSegments(ledger) {
+  if (!Array.isArray(ledger)) return [];
+  const out = [];
+  for (const seg of ledger) {
+    const lines = sanitizeTranscriptLines(seg?.lines);
+    if (!lines.length) continue;
+    const startedAt = seg?.startedAt || seg?.completedAt || new Date().toISOString();
+    const completedAt = seg?.completedAt ? seg.completedAt : undefined;
+    const entry = { startedAt, lines };
+    if (completedAt) entry.completedAt = completedAt;
+    out.push(entry);
+  }
+  return out;
+}
+
 function pad2(n) { return String(n).padStart(2, '0'); }
 function toLocalDateTime(ts) {
   try {
@@ -170,8 +214,16 @@ async function writeLedgerAndArtifacts(store, { basePath, lessonTitle, learnerNa
   const ledgerPath = `${basePath}/ledger.json`;
   const pdfPath = `${basePath}/transcript.pdf`;
   const txtPath = `${basePath}/transcript.txt`;
-  const ledgerBlob = new Blob([JSON.stringify(ledger)], { type: 'application/json' });
-  
+  const rtfPath = `${basePath}/transcript.rtf`;
+  const sanitizedLedger = sanitizeLedgerSegments(ledger);
+
+  if (!sanitizedLedger.length) {
+    try { await store.remove([ledgerPath, pdfPath, txtPath, rtfPath]); } catch {}
+    return { removed: true };
+  }
+
+  const ledgerBlob = new Blob([JSON.stringify(sanitizedLedger)], { type: 'application/json' });
+
   const ledgerResult = await store.upload(ledgerPath, ledgerBlob, { upsert: true, contentType: 'application/json' });
   if (ledgerResult.error) {
     console.error('[transcripts] Storage upload failed. Bucket "transcripts" may not exist or RLS policies may not be configured. See docs/transcripts-storage.md', ledgerResult.error);
@@ -179,25 +231,21 @@ async function writeLedgerAndArtifacts(store, { basePath, lessonTitle, learnerNa
   }
   
   // PDF
-  const pdfDoc = renderTranscriptPdf({ lessonTitle, learnerName, learnerId, lessonId, segments: ledger });
+  const pdfDoc = renderTranscriptPdf({ lessonTitle, learnerName, learnerId, lessonId, segments: sanitizedLedger });
   const pdfBlob = pdfDoc.output('blob');
   const pdfResult = await store.upload(pdfPath, pdfBlob, { upsert: true, contentType: 'application/pdf' });
   if (pdfResult.error) throw new Error(`PDF upload failed: ${pdfResult.error.message}`);
   
   // TXT
-  const txt = renderTranscriptText({ lessonTitle, learnerName, learnerId, lessonId, segments: ledger });
+  const txt = renderTranscriptText({ lessonTitle, learnerName, learnerId, lessonId, segments: sanitizedLedger });
   const txtBlob = new Blob([txt], { type: 'text/plain' });
   const txtResult = await store.upload(txtPath, txtBlob, { upsert: true, contentType: 'text/plain; charset=utf-8' });
   if (txtResult.error) throw new Error(`TXT upload failed: ${txtResult.error.message}`);
   
-  // RTF
-  const rtfPath = `${basePath}/transcript.rtf`;
-  const rtf = renderTranscriptRtf({ lessonTitle, learnerName, learnerId, lessonId, segments: ledger });
-  const rtfBlob = new Blob([rtf], { type: 'application/rtf' });
-  const rtfResult = await store.upload(rtfPath, rtfBlob, { upsert: true, contentType: 'application/rtf' });
-  if (rtfResult.error) throw new Error(`RTF upload failed: ${rtfResult.error.message}`);
+  // Clean up legacy RTF file if it exists
+  try { await store.remove([rtfPath]); } catch {}
   
-  return { pdfPath, txtPath, rtfPath };
+  return { pdfPath, txtPath };
 }
 
 export async function appendTranscriptSegment({ learnerId, learnerName, lessonId, lessonTitle, segment, sessionId }) {
@@ -212,16 +260,25 @@ export async function appendTranscriptSegment({ learnerId, learnerName, lessonId
     const store = supabase.storage.from(BUCKET);
     const baseLessonPath = `${VROOT}/${ownerId}/${learnerId}/${lessonId}`;
     const sessionBasePath = sessionId ? `${baseLessonPath}/sessions/${sessionId}` : null;
+    const sanitizedSegment = {
+      startedAt: segment?.startedAt || new Date().toISOString(),
+      completedAt: segment?.completedAt || new Date().toISOString(),
+      lines: sanitizeTranscriptLines(segment?.lines),
+    };
+
+    const cloneSegment = () => ({
+      startedAt: sanitizedSegment.startedAt,
+      completedAt: sanitizedSegment.completedAt,
+      lines: sanitizedSegment.lines.map((ln) => ({ ...ln })),
+    });
 
     // 1) Update per-session ledger/PDF when sessionId provided
     let lastSessionFile = null;
     if (sessionBasePath) {
-      let sLedger = await loadLedger(store, `${sessionBasePath}/ledger.json`);
-      sLedger.push({
-        startedAt: segment?.startedAt || new Date().toISOString(),
-        completedAt: segment?.completedAt || new Date().toISOString(),
-        lines: Array.isArray(segment?.lines) ? segment.lines : [],
-      });
+      let sLedger = sanitizeLedgerSegments(await loadLedger(store, `${sessionBasePath}/ledger.json`));
+      if (sanitizedSegment.lines.length) {
+        sLedger.push(cloneSegment());
+      }
       const sesOut = await writeLedgerAndArtifacts(store, {
         basePath: sessionBasePath, lessonTitle, learnerName, learnerId, lessonId, ledger: sLedger,
       });
@@ -229,12 +286,10 @@ export async function appendTranscriptSegment({ learnerId, learnerName, lessonId
     }
 
     // 2) Always update consolidated per-lesson ledger/PDF for facilitator convenience
-    let ledger = await loadLedger(store, `${baseLessonPath}/ledger.json`);
-    ledger.push({
-      startedAt: segment?.startedAt || new Date().toISOString(),
-      completedAt: segment?.completedAt || new Date().toISOString(),
-      lines: Array.isArray(segment?.lines) ? segment.lines : [],
-    });
+    let ledger = sanitizeLedgerSegments(await loadLedger(store, `${baseLessonPath}/ledger.json`));
+    if (sanitizedSegment.lines.length) {
+      ledger.push(cloneSegment());
+    }
     const consolidatedOut = await writeLedgerAndArtifacts(store, {
       basePath: baseLessonPath, lessonTitle, learnerName, learnerId, lessonId, ledger,
     });
@@ -269,16 +324,22 @@ export async function updateTranscriptLiveSegment({ learnerId, learnerName, less
 
     const nowIso = new Date().toISOString();
     const safeStarted = startedAt || nowIso;
-    const safeLines = Array.isArray(lines) ? lines : [];
+    const safeLines = sanitizeTranscriptLines(lines);
 
     // Helper to upsert one ledger
     const upsertOne = async (basePath) => {
-      let ledger = await loadLedger(store, `${basePath}/ledger.json`);
-      if (ledger.length > 0 && ledger[ledger.length - 1]?.startedAt === safeStarted) {
-        ledger[ledger.length - 1] = { ...ledger[ledger.length - 1], completedAt: nowIso, lines: safeLines };
+      let ledger = sanitizeLedgerSegments(await loadLedger(store, `${basePath}/ledger.json`));
+      const idx = ledger.findIndex((seg) => seg?.startedAt === safeStarted);
+      if (safeLines.length === 0) {
+        if (idx !== -1) ledger.splice(idx, 1);
+      } else if (idx !== -1) {
+        ledger[idx] = { ...ledger[idx], completedAt: nowIso, lines: safeLines.map((ln) => ({ ...ln })) };
       } else {
-        // Avoid creating empty segments
-        ledger.push({ startedAt: safeStarted, completedAt: nowIso, lines: safeLines });
+        ledger.push({
+          startedAt: safeStarted,
+          completedAt: nowIso,
+          lines: safeLines.map((ln) => ({ ...ln })),
+        });
       }
       const out = await writeLedgerAndArtifacts(store, { basePath, lessonTitle, learnerName, learnerId, lessonId, ledger });
       return out?.txtPath || out?.pdfPath;
@@ -371,4 +432,10 @@ export default {
   appendTranscriptSegment,
   updateTranscriptLiveSegment,
   listLearnerTranscriptPdfs,
+};
+
+export {
+  sanitizeTranscriptLines,
+  sanitizeLedgerSegments,
+  writeLedgerAndArtifacts,
 };
