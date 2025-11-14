@@ -46,6 +46,7 @@ export function useResumeRestart({
   generatedWorksheet,
   generatedTest,
   lessonParam,
+  lessonKey,
   lessonData,
   manifestInfo,
   effectiveLessonTitle,
@@ -296,8 +297,9 @@ export function useResumeRestart({
     // Reset timer state for restart
     try {
       if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('session_timer_state');
-        console.info('[Restart] Timer reset');
+        const storageKey = lessonKey ? `session_timer_state:${lessonKey}` : 'session_timer_state';
+        sessionStorage.removeItem(storageKey);
+        console.info('[Restart] Timer reset for lesson:', lessonKey || 'default');
       }
       if (setTimerPaused) {
         setTimerPaused(false);

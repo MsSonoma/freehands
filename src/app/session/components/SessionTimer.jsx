@@ -10,6 +10,8 @@ import { useState, useEffect, useRef } from 'react';
  * @param {boolean} isPaused - Whether the timer is paused
  * @param {function} onTimeUp - Callback when timer reaches zero
  * @param {function} onPauseToggle - Callback to request pause/resume (PIN required only for pausing)
+ * @param {string} lessonKey - Unique identifier for the lesson (e.g., 'math/lesson_name') for scoped timer storage
+ * @param {function} onTimerClick - Callback when timer is clicked (for facilitator controls)
  */
 export default function SessionTimer({ 
   totalMinutes = 60, 
@@ -17,6 +19,8 @@ export default function SessionTimer({
   isPaused = false,
   onTimeUp,
   onPauseToggle,
+  lessonKey = null,
+  onTimerClick,
   className = ''
 }) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -24,9 +28,12 @@ export default function SessionTimer({
   const [pausedAt, setPausedAt] = useState(null);
   const intervalRef = useRef(null);
 
+  // Generate lesson-specific storage key
+  const storageKey = lessonKey ? `session_timer_state:${lessonKey}` : 'session_timer_state';
+
   // Initialize from sessionStorage
   useEffect(() => {
-    const stored = sessionStorage.getItem('session_timer_state');
+    const stored = sessionStorage.getItem(storageKey);
     if (stored) {
       try {
         const state = JSON.parse(stored);
@@ -37,18 +44,18 @@ export default function SessionTimer({
     } else {
       setStartTime(Date.now());
     }
-  }, []);
+  }, [storageKey]);
 
   // Persist state to sessionStorage
   useEffect(() => {
     if (startTime !== null) {
-      sessionStorage.setItem('session_timer_state', JSON.stringify({
+      sessionStorage.setItem(storageKey, JSON.stringify({
         elapsedSeconds,
         startTime,
         pausedAt
       }));
     }
-  }, [elapsedSeconds, startTime, pausedAt]);
+  }, [elapsedSeconds, startTime, pausedAt, storageKey]);
 
   // Update elapsed time
   useEffect(() => {
@@ -110,6 +117,12 @@ export default function SessionTimer({
 
   const displayTime = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
+  const handleTimerClick = () => {
+    if (onTimerClick) {
+      onTimerClick(elapsedSeconds);
+    }
+  };
+
   return (
     <div className={`session-timer ${className}`} style={{
       display: 'flex',
@@ -124,8 +137,12 @@ export default function SessionTimer({
       fontWeight: 'bold',
       color: color,
       transition: 'color 0.3s ease',
-      backdropFilter: 'blur(4px)'
-    }}>
+      backdropFilter: 'blur(4px)',
+      cursor: onTimerClick ? 'pointer' : 'default'
+    }}
+    onClick={handleTimerClick}
+    title={onTimerClick ? 'Click to adjust timer (requires PIN)' : undefined}
+    >
       <span>⏱️</span>
       <span>{displayTime}</span>
       {onPauseToggle && (

@@ -88,6 +88,43 @@ export async function POST(req) {
           continue
         }
 
+        // Generate kid-friendly description for Ms. Sonoma to read
+        const descriptionRequest = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${openaiKey}`
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are Ms. Sonoma, a warm and encouraging teacher. Convert technical image descriptions into simple, friendly explanations that a child aged 6-12 can understand. Use 2-3 short sentences. Be enthusiastic but clear. Speak directly to the child using "you" and "we". IMPORTANT: Always complete your sentences - never cut off mid-sentence. Use plain text only - no asterisks, markdown, bold, italics, or special formatting.'
+              },
+              {
+                role: 'user',
+                content: `Convert this image prompt into a kid-friendly explanation:\n\n${imagePrompt}\n\nMake it sound warm and encouraging, like you're explaining what's in the picture to help them learn. Make sure to complete all sentences. Use plain text only - no asterisks or special formatting.`
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 150
+          })
+        })
+
+        let description = imagePrompt // Fallback to technical prompt
+        if (descriptionRequest.ok) {
+          const descData = await descriptionRequest.json()
+          const rawDescription = descData.choices?.[0]?.message?.content?.trim() || imagePrompt
+          // Strip all markdown formatting (asterisks, underscores, hashtags, etc.)
+          description = rawDescription
+            .replace(/\*\*/g, '')  // Remove bold **text**
+            .replace(/\*/g, '')    // Remove any remaining asterisks
+            .replace(/_/g, '')     // Remove underscores
+            .replace(/#{1,6}\s/g, '') // Remove headers
+            .trim()
+        }
+
         // Generate image using DALL-E 3
         const imageRequest = await fetch('https://api.openai.com/v1/images/generations', {
           method: 'POST',
@@ -117,6 +154,7 @@ export async function POST(req) {
           images.push({
             url: imageUrl,
             prompt: imagePrompt,
+            description: description,
             id: `img-${Date.now()}-${i}`
           })
         }

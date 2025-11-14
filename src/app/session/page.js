@@ -47,6 +47,7 @@ import { useSessionTracking } from '../hooks/useSessionTracking';
 import { useSnapshotPersistence } from './hooks/useSnapshotPersistence';
 import { useResumeRestart } from './hooks/useResumeRestart';
 import SessionTimer from './components/SessionTimer';
+import TimerControlOverlay from './components/TimerControlOverlay';
 import SessionVisualAidsCarousel from './components/SessionVisualAidsCarousel';
 import GatedOverlay from '../components/GatedOverlay';
 
@@ -204,6 +205,9 @@ function SessionPageInner() {
   const difficultyParam = (searchParams?.get('difficulty') || 'beginner').toLowerCase();
   const goldenKeyFromUrl = searchParams?.get('goldenKey') === 'true';
   
+  // Compute lesson key from params
+  const lessonKey = useMemo(() => `${subjectParam}/${lessonParam}`, [subjectParam, lessonParam]);
+  
   // Track whether this lesson has an active golden key (from URL or persisted in DB)
   const [hasGoldenKey, setHasGoldenKey] = useState(goldenKeyFromUrl);
   const [trackingLearnerId, setTrackingLearnerId] = useState(null);
@@ -226,6 +230,15 @@ function SessionPageInner() {
     if (!subjectParam || !lessonParam) return null;
     return `${subjectParam}/${lessonParam}`;
   }, [subjectParam, lessonParam]);
+
+  // Normalized key for visual aids (strips folder prefixes so same lesson from different routes shares visual aids)
+  const visualAidsLessonKey = useMemo(() => {
+    if (!lessonParam) return null;
+    // Strip folder prefixes like generated/, facilitator/, math/, etc.
+    const normalizedLesson = lessonParam.replace(/^(generated|facilitator|math|science|language-arts|social-studies|demo)\//, '');
+    console.log('[VISUAL_AIDS] Normalizing lesson key:', lessonParam, '->', normalizedLesson);
+    return normalizedLesson;
+  }, [lessonParam]);
 
   const {
     startSession: startTrackedSession,
@@ -307,6 +320,7 @@ function SessionPageInner() {
   const [timerPaused, setTimerPaused] = useState(false);
   const [sessionTimerMinutes, setSessionTimerMinutes] = useState(60); // Default 1 hour
   const [goldenKeyEarned, setGoldenKeyEarned] = useState(false);
+  const [completingLesson, setCompletingLesson] = useState(false); // Track if completion is in progress
   
   // Learner grade state (for grade-appropriate speech)
   const [learnerGrade, setLearnerGrade] = useState('');
@@ -414,7 +428,6 @@ function SessionPageInner() {
           }
           
           // Check for active golden key on this lesson
-          const lessonKey = `${subjectParam}/${lessonParam}`;
           const activeKeys = learner?.active_golden_keys || {};
           if (activeKeys[lessonKey]) {
             setHasGoldenKey(true);
@@ -496,6 +509,98 @@ function SessionPageInner() {
     }
     setTimerPaused(prev => !prev);
   }, [timerPaused]);
+
+  // Handle timer click - open controls with PIN
+  const handleTimerClick = useCallback(async (currentElapsedSeconds) => {
+    const ok = await ensurePinAllowed('timer');
+    if (!ok) return;
+    setShowTimerControls(true);
+  }, []);
+
+  // Handle timer time adjustment
+  const handleUpdateTime = useCallback((newElapsedSeconds) => {
+    // Update the timer state through sessionStorage
+    if (lessonKey) {
+      try {
+        const storageKey = `session_timer_state:${lessonKey}`;
+        const storedState = sessionStorage.getItem(storageKey);
+        if (storedState) {
+          const parsed = JSON.parse(storedState);
+          parsed.elapsedSeconds = newElapsedSeconds;
+          sessionStorage.setItem(storageKey, JSON.stringify(parsed));
+          // Force timer re-render by triggering a state update
+          setTimerPaused(prev => prev);
+        }
+      } catch (err) {
+        console.error('[Session] Failed to update timer state:', err);
+      }
+    }
+    setShowTimerControls(false);
+  }, [lessonKey]);
+
+  // Handle golden key application from timer controls
+  const handleApplyGoldenKey = useCallback(async () => {
+    if (!hasGoldenKey) return;
+    
+    try {
+      const learnerId = sessionStorage.getItem('learner_id');
+      if (!learnerId) {
+        alert('No learner selected');
+        return;
+      }
+
+      // Import learner API
+      const { getLearner, updateLearner } = await import('@/app/facilitator/learners/clientApi');
+      const learner = await getLearner(learnerId);
+      if (!learner) {
+        alert('Learner not found');
+        return;
+      }
+
+      // Clear the active golden key for this lesson
+      const activeKeys = { ...(learner.active_golden_keys || {}) };
+      delete activeKeys[lessonKey];
+
+      // Award the golden key completion
+      await updateLearner(learnerId, {
+        name: learner.name,
+        grade: learner.grade,
+        targets: {
+          comprehension: learner.comprehension,
+          exercise: learner.exercise,
+          worksheet: learner.worksheet,
+          test: learner.test
+        },
+        session_timer_minutes: learner.session_timer_minutes,
+        golden_keys: (learner.golden_keys || 0) + 1,
+        active_golden_keys: activeKeys
+      });
+      
+      // Update local state
+      setHasGoldenKey(false);
+      setIsGoldenKeySuspended(false);
+      
+      // Show success and close overlay
+      alert('Golden key applied! Lesson marked as complete.');
+      setShowTimerControls(false);
+      
+    } catch (err) {
+      console.error('[Session] Failed to apply golden key:', err);
+      alert('Failed to apply golden key. Please try again.');
+    }
+  }, [hasGoldenKey, lessonKey]);
+
+  // Handle golden key suspension
+  const handleSuspendGoldenKey = useCallback(() => {
+    setIsGoldenKeySuspended(true);
+    setShowTimerControls(false);
+  }, []);
+
+  // Handle golden key unsuspension
+  const handleUnsuspendGoldenKey = useCallback(() => {
+    setIsGoldenKeySuspended(false);
+    setShowTimerControls(false);
+  }, []);
 
   // Handle timer completion
   const handleTimeUp = useCallback(() => {
@@ -591,6 +696,23 @@ function SessionPageInner() {
   const sessionStartRef = useRef(null); // timestamp for current in-app session segment
   // Track the starting caption index for the current transcript segment (so ledger appends don't duplicate)
   const transcriptSegmentStartIndexRef = useRef(0);
+  // Track if lesson completion is already in progress to prevent duplicate golden key awards
+  const completionInProgressRef = useRef(false);
+  // Facilitator timer controls
+  const [showTimerControls, setShowTimerControls] = useState(false);
+  const [isGoldenKeySuspended, setIsGoldenKeySuspended] = useState(false);
+
+  // Clear timer state when returning to Begin screen (new lesson or after completion)
+  useEffect(() => {
+    if (showBegin && lessonKey) {
+      try {
+        const storageKey = `session_timer_state:${lessonKey}`;
+        sessionStorage.removeItem(storageKey);
+        console.log('[Session] Cleared timer state for lesson:', lessonKey);
+      } catch {}
+    }
+  }, [showBegin, lessonKey]);
+
   // isSpeaking/phase/subPhase defined earlier; do not redeclare here
   const [transcript, setTranscript] = useState("");
   // Start with loading=true so the existing overlay spinner shows during initial restore
@@ -1499,12 +1621,12 @@ function SessionPageInner() {
 
   // Load visual aids separately from database (facilitator-specific)
   useEffect(() => {
-    if (!lessonSessionKey) {
-      console.log('[VISUAL_AIDS] No lessonSessionKey, skipping load');
+    if (!visualAidsLessonKey) {
+      console.log('[VISUAL_AIDS] No visualAidsLessonKey, skipping load');
       return;
     }
     
-    console.log('[VISUAL_AIDS] Loading visual aids for lesson:', lessonSessionKey);
+    console.log('[VISUAL_AIDS] Loading visual aids for lesson:', visualAidsLessonKey);
     
     let cancelled = false;
     (async () => {
@@ -1519,7 +1641,7 @@ function SessionPageInner() {
           return;
         }
         
-        const res = await fetch(`/api/visual-aids/load?lessonKey=${encodeURIComponent(lessonSessionKey)}`, {
+        const res = await fetch(`/api/visual-aids/load?lessonKey=${encodeURIComponent(visualAidsLessonKey)}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -1547,7 +1669,7 @@ function SessionPageInner() {
     })();
     
     return () => { cancelled = true; };
-  }, [lessonSessionKey]);
+  }, [visualAidsLessonKey]);
 
   const waitForBeat = (ms = 240) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -2415,38 +2537,13 @@ function SessionPageInner() {
   const handleExplainVisualAid = useCallback(async (visualAid) => {
     console.log('[handleExplainVisualAid] Explaining visual aid:', visualAid);
     
-    if (!visualAid || !visualAid.url) {
-      console.warn('[handleExplainVisualAid] No visual aid URL available');
+    if (!visualAid || !visualAid.description) {
+      console.warn('[handleExplainVisualAid] No description available');
       return;
     }
 
-    // DO NOT close carousel - keep it open while explaining
-    // Generate a fresh explanation via API
-    try {
-      const response = await fetch('/api/visual-aids/explain', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageUrl: visualAid.url,
-          description: visualAid.description
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate explanation');
-      }
-
-      const { explanation } = await response.json();
-      
-      // Speak the fresh explanation using Ms. Sonoma
-      await speakFrontendImpl(explanation, {});
-    } catch (err) {
-      console.error('[handleExplainVisualAid] Failed to explain visual aid:', err);
-      // Fallback to stored description if API fails
-      if (visualAid.description) {
-        await speakFrontendImpl(visualAid.description, {});
-      }
-    }
+    // Read the pre-generated description (created during image generation)
+    await speakFrontendImpl(visualAid.description, {});
   }, []);
 
   // Helper: speak arbitrary frontend text via unified captions + TTS
@@ -3975,9 +4072,10 @@ function SessionPageInner() {
     
     // Reset timer state for new session
     try {
-      sessionStorage.removeItem('session_timer_state');
+      const storageKey = lessonKey ? `session_timer_state:${lessonKey}` : 'session_timer_state';
+      sessionStorage.removeItem(storageKey);
       setTimerPaused(false);
-      console.info('[Begin] Timer reset for new session');
+      console.info('[Begin] Timer reset for new session:', lessonKey || 'default');
     } catch (e) {
       console.warn('[Begin] Failed to reset timer:', e);
     }
@@ -4402,11 +4500,9 @@ function SessionPageInner() {
     if (typeof testFinalPercent !== 'number') return;
     try {
       const learnerId = (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null) || null;
-      const subjectLower = (subjectParam || 'math').toLowerCase();
-      const lessonKey = `${subjectLower}/${lessonParam}`;
       if (learnerId && lessonKey) upsertMedal(learnerId, lessonKey, testFinalPercent);
     } catch {}
-  }, [phase, testFinalPercent, subjectParam, lessonParam]);
+  }, [phase, testFinalPercent, lessonKey]);
 
   // Begin Comprehension manually when arriving at comprehension-start (e.g., via skip)
   const beginComprehensionPhase = async () => {
@@ -4569,8 +4665,6 @@ function SessionPageInner() {
     // Persist medal
     try {
       const learnerId = (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null) || null;
-      const subjectLower = (subjectParam || 'math').toLowerCase();
-      const lessonKey = `${subjectLower}/${lessonParam}`;
       if (learnerId && lessonKey && typeof safePercent === 'number') {
         upsertMedal(learnerId, lessonKey, safePercent);
       }
@@ -4911,6 +5005,7 @@ function SessionPageInner() {
     generatedWorksheet,
     generatedTest,
     lessonParam,
+    lessonKey,
     lessonData,
     manifestInfo,
     effectiveLessonTitle,
@@ -6032,187 +6127,212 @@ function SessionPageInner() {
 
   // Shared Complete Lesson handler used by VideoPanel (and any other triggers)
   const onCompleteLesson = useCallback(async () => {
-    // Check if golden key was earned (completed within time limit)
-    let earnedKey = false;
+    // Prevent multiple simultaneous completions
+    if (completionInProgressRef.current) {
+      console.log('[Complete Lesson] Already in progress, ignoring duplicate click');
+      return;
+    }
+    completionInProgressRef.current = true;
+    setCompletingLesson(true);
+
     try {
-      const timerState = sessionStorage.getItem('session_timer_state');
-      if (timerState) {
-        const state = JSON.parse(timerState);
-        const totalSeconds = sessionTimerMinutes * 60;
-        const elapsed = state.elapsedSeconds || 0;
-        if (elapsed <= totalSeconds) {
-          earnedKey = true;
-          setGoldenKeyEarned(true);
-          // Increment golden key in database
-          const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
-          if (learnerId && learnerId !== 'demo') {
-            try {
-              const { getLearner, updateLearner } = await import('@/app/facilitator/learners/clientApi');
-              const learner = await getLearner(learnerId);
-              if (learner) {
-                await updateLearner(learnerId, {
-                  name: learner.name,
-                  grade: learner.grade,
-                  targets: {
-                    comprehension: learner.comprehension,
-                    exercise: learner.exercise,
-                    worksheet: learner.worksheet,
-                    test: learner.test
-                  },
-                  session_timer_minutes: learner.session_timer_minutes,
-                  golden_keys: (learner.golden_keys || 0) + 1
-                });
+      // Check if golden key was earned (completed within time limit)
+      let earnedKey = false;
+      try {
+        const storageKey = lessonKey ? `session_timer_state:${lessonKey}` : 'session_timer_state';
+        const timerState = sessionStorage.getItem(storageKey);
+        if (timerState) {
+          const state = JSON.parse(timerState);
+          const totalSeconds = sessionTimerMinutes * 60;
+          const elapsed = state.elapsedSeconds || 0;
+          if (elapsed <= totalSeconds) {
+            earnedKey = true;
+            setGoldenKeyEarned(true);
+            // Increment golden key in database
+            const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
+            if (learnerId && learnerId !== 'demo') {
+              try {
+                const { getLearner, updateLearner } = await import('@/app/facilitator/learners/clientApi');
+                const learner = await getLearner(learnerId);
+                if (learner) {
+                  await updateLearner(learnerId, {
+                    name: learner.name,
+                    grade: learner.grade,
+                    targets: {
+                      comprehension: learner.comprehension,
+                      exercise: learner.exercise,
+                      worksheet: learner.worksheet,
+                      test: learner.test
+                    },
+                    session_timer_minutes: learner.session_timer_minutes,
+                    golden_keys: (learner.golden_keys || 0) + 1
+                  });
+                }
+              } catch (err) {
+                console.error('[Golden Key] Failed to increment key:', err);
               }
-            } catch (err) {
-              console.error('[Golden Key] Failed to increment key:', err);
             }
           }
         }
-      }
-    } catch {}
+      } catch {}
 
-    // Show golden key message if earned
-    if (earnedKey && typeof window !== 'undefined') {
-      alert('🔑 Congratulations! You earned the Golden Key! This unlocks the poem and story in your next lesson!');
-    }
+      // Golden key message will be shown on the lessons page instead of blocking here
+      // This allows immediate navigation without requiring a second button press
 
-    // Clear timer state
-    try {
-      sessionStorage.removeItem('session_timer_state');
-    } catch {}
+      // Clear timer state for completed lesson
+      try {
+        const storageKey = lessonKey ? `session_timer_state:${lessonKey}` : 'session_timer_state';
+        sessionStorage.removeItem(storageKey);
+        console.info('[Complete Lesson] Cleared timer state for:', lessonKey || 'default');
+      } catch {}
 
-    // Clear active golden key for this lesson if it was used
-    if (hasGoldenKey) {
-      const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
-      if (learnerId && learnerId !== 'demo') {
-        try {
-          const { getLearner, updateLearner } = await import('@/app/facilitator/learners/clientApi');
-          const learner = await getLearner(learnerId);
-          if (learner) {
-            const lessonKey = `${subjectParam}/${lessonParam}`;
-            const activeKeys = { ...(learner.active_golden_keys || {}) };
-            delete activeKeys[lessonKey];
-            
-            await updateLearner(learnerId, {
-              name: learner.name,
-              grade: learner.grade,
-              targets: {
-                comprehension: learner.comprehension,
-                exercise: learner.exercise,
-                worksheet: learner.worksheet,
-                test: learner.test
-              },
-              session_timer_minutes: learner.session_timer_minutes,
-              golden_keys: learner.golden_keys,
-              active_golden_keys: activeKeys
-            });
-            console.info('[Golden Key] Cleared active golden key for completed lesson:', lessonKey);
+      // Clear active golden key for this lesson if it was used
+      if (hasGoldenKey) {
+        const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
+        if (learnerId && learnerId !== 'demo') {
+          try {
+            const { getLearner, updateLearner } = await import('@/app/facilitator/learners/clientApi');
+            const learner = await getLearner(learnerId);
+            if (learner) {
+              const activeKeys = { ...(learner.active_golden_keys || {}) };
+              delete activeKeys[lessonKey];
+              
+              await updateLearner(learnerId, {
+                name: learner.name,
+                grade: learner.grade,
+                targets: {
+                  comprehension: learner.comprehension,
+                  exercise: learner.exercise,
+                  worksheet: learner.worksheet,
+                  test: learner.test
+                },
+                session_timer_minutes: learner.session_timer_minutes,
+                golden_keys: learner.golden_keys,
+                active_golden_keys: activeKeys
+              });
+              console.info('[Golden Key] Cleared active golden key for completed lesson:', lessonKey);
+            }
+          } catch (err) {
+            console.error('[Golden Key] Failed to clear active golden key:', err);
           }
-        } catch (err) {
-          console.error('[Golden Key] Failed to clear active golden key:', err);
         }
       }
-    }
 
-    // Stop any ongoing audio/speech/mic work first
-    try { abortAllActivity(); } catch {}
-    const storageLearnerId = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
+      // Stop any ongoing audio/speech/mic work first
+      try { abortAllActivity(); } catch {}
+      const storageLearnerId = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
 
-    // Clear cached assessments first so generated sets rebuild next session
-    try {
-      const assessmentKey = getAssessmentStorageKey();
-      if (assessmentKey) {
-        await clearAssessments(assessmentKey, { learnerId: storageLearnerId });
-      }
-    } catch {}
+      // Clear cached assessments first so generated sets rebuild next session
+      try {
+        const assessmentKey = getAssessmentStorageKey();
+        if (assessmentKey) {
+          await clearAssessments(assessmentKey, { learnerId: storageLearnerId });
+        }
+      } catch {}
 
-    // Clear resume snapshots so fresh lessons start without a Continue prompt
-    try {
-      const snapshotKeys = new Set();
+      // Clear resume snapshots so fresh lessons start without a Continue prompt
       try {
-        const key = getSnapshotStorageKey();
-        if (key) snapshotKeys.add(key);
-      } catch {}
-      try {
-        const key = getSnapshotStorageKey({ param: lessonParam });
-        if (key) snapshotKeys.add(key);
-      } catch {}
-      try {
-        const key = getSnapshotStorageKey({ manifest: manifestInfo });
-        if (key) snapshotKeys.add(key);
-      } catch {}
-      try {
-        if (lessonData?.id) {
-          const key = getSnapshotStorageKey({ data: lessonData });
+        const snapshotKeys = new Set();
+        try {
+          const key = getSnapshotStorageKey();
           if (key) snapshotKeys.add(key);
+        } catch {}
+        try {
+          const key = getSnapshotStorageKey({ param: lessonParam });
+          if (key) snapshotKeys.add(key);
+        } catch {}
+        try {
+          const key = getSnapshotStorageKey({ manifest: manifestInfo });
+          if (key) snapshotKeys.add(key);
+        } catch {}
+        try {
+          if (lessonData?.id) {
+            const key = getSnapshotStorageKey({ data: lessonData });
+            if (key) snapshotKeys.add(key);
+          }
+        } catch {}
+
+        for (const key of snapshotKeys) {
+          try { await clearSnapshot(key, { learnerId: storageLearnerId }); } catch {}
+          try {
+            const variants = [
+              `${key}:W15:T10`,
+              `${key}:W20:T20`,
+              `${key}:W${Number(WORKSHEET_TARGET) || 15}:T${Number(TEST_TARGET) || 10}`,
+            ];
+            for (const variant of variants) {
+              try { await clearSnapshot(variant, { learnerId: storageLearnerId }); } catch {}
+              try { await clearSnapshot(`${variant}.json`, { learnerId: storageLearnerId }); } catch {}
+            }
+            try { await clearSnapshot(`${key}.json`, { learnerId: storageLearnerId }); } catch {}
+          } catch {}
         }
       } catch {}
-
-      for (const key of snapshotKeys) {
-        try { await clearSnapshot(key, { learnerId: storageLearnerId }); } catch {}
+      // Persist transcript segment (append-only) to Supabase Storage
+      try {
+        const learnerId = (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null) || null;
+        const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || null;
+        const lessonId = String(lessonParam || '').replace(/\.json$/i, '');
+        const startedAt = sessionStartRef.current || new Date().toISOString();
+        const completedAt = new Date().toISOString();
+        const all = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current : [];
+        const startIdx = Math.max(0, Number(transcriptSegmentStartIndexRef.current) || 0);
+        const lines = normalizeTranscriptLines(all.slice(startIdx));
+        if (learnerId && learnerId !== 'demo' && lines.length > 0) {
+          await appendTranscriptSegment({
+            learnerId,
+            learnerName,
+            lessonId,
+            lessonTitle: effectiveLessonTitle,
+            segment: { startedAt, completedAt, lines },
+            sessionId: transcriptSessionId || undefined,
+          });
+        }
+      } catch (e) { console.warn('[Session] transcript append failed', e); }
+      if (trackingLearnerId) {
         try {
-          const variants = [
-            `${key}:W15:T10`,
-            `${key}:W20:T20`,
-            `${key}:W${Number(WORKSHEET_TARGET) || 15}:T${Number(TEST_TARGET) || 10}`,
-          ];
-          for (const variant of variants) {
-            try { await clearSnapshot(variant, { learnerId: storageLearnerId }); } catch {}
-            try { await clearSnapshot(`${variant}.json`, { learnerId: storageLearnerId }); } catch {}
-          }
-          try { await clearSnapshot(`${key}.json`, { learnerId: storageLearnerId }); } catch {}
+          await endTrackedSession('completed', {
+            earned_key: earnedKey,
+          });
         } catch {}
       }
-    } catch {}
-    // Persist transcript segment (append-only) to Supabase Storage
-    try {
-      const learnerId = (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null) || null;
-      const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || null;
-      const lessonId = String(lessonParam || '').replace(/\.json$/i, '');
-      const startedAt = sessionStartRef.current || new Date().toISOString();
-      const completedAt = new Date().toISOString();
-      const all = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current : [];
-      const startIdx = Math.max(0, Number(transcriptSegmentStartIndexRef.current) || 0);
-      const lines = normalizeTranscriptLines(all.slice(startIdx));
-      if (learnerId && learnerId !== 'demo' && lines.length > 0) {
-        await appendTranscriptSegment({
-          learnerId,
-          learnerName,
-          lessonId,
-          lessonTitle: effectiveLessonTitle,
-          segment: { startedAt, completedAt, lines },
-          sessionId: transcriptSessionId || undefined,
-        });
-      }
-    } catch (e) { console.warn('[Session] transcript append failed', e); }
-    if (trackingLearnerId) {
+      sessionStartRef.current = null;
+      try { transcriptSegmentStartIndexRef.current = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current.length : 0; } catch {}
+      
+      // Skip setShowBegin(true) during completion to prevent visual flash back to Begin state
+      // The navigation happens immediately anyway, and all cleanup is already done
+      // setShowBegin(true); // Removed - causes unresponsive-looking flash before exit
+      
+      setPhase('discussion');
+      setSubPhase('greeting');
+      setCanSend(false);
+      setGeneratedWorksheet(null);
+      setGeneratedTest(null);
+      setCurrentWorksheetIndex(0);
+      worksheetIndexRef.current = 0;
+      // Navigate to lessons
       try {
-        await endTrackedSession('completed', {
-          earned_key: earnedKey,
-        });
-      } catch {}
-    }
-    sessionStartRef.current = null;
-    try { transcriptSegmentStartIndexRef.current = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current.length : 0; } catch {}
-    setShowBegin(true);
-    setPhase('discussion');
-    setSubPhase('greeting');
-    setCanSend(false);
-    setGeneratedWorksheet(null);
-    setGeneratedTest(null);
-    setCurrentWorksheetIndex(0);
-    worksheetIndexRef.current = 0;
-    // Navigate to lessons
-    try {
-      if (router && typeof router.push === 'function') {
-        router.push('/learn/lessons');
-      } else if (typeof window !== 'undefined') {
-        window.location.href = '/learn/lessons';
+        // Pass golden key earned status via sessionStorage for non-blocking notification
+        if (earnedKey && typeof window !== 'undefined') {
+          try {
+            sessionStorage.setItem('just_earned_golden_key', 'true');
+          } catch {}
+        }
+        
+        if (router && typeof router.push === 'function') {
+          router.push('/learn/lessons');
+        } else if (typeof window !== 'undefined') {
+          window.location.href = '/learn/lessons';
+        }
+      } catch {
+        if (typeof window !== 'undefined') {
+          try { window.location.href = '/learn/lessons'; } catch {}
+        }
       }
-    } catch {
-      if (typeof window !== 'undefined') {
-        try { window.location.href = '/learn/lessons'; } catch {}
-      }
+    } finally {
+      // Always reset the lock, even if navigation fails
+      completionInProgressRef.current = false;
+      setCompletingLesson(false);
     }
   }, [effectiveLessonTitle, lessonParam, router, sessionTimerMinutes, endTrackedSession, trackingLearnerId]);
 
@@ -6438,6 +6558,7 @@ function SessionPageInner() {
         testCorrectCount={testCorrectCount}
         testFinalPercent={testFinalPercent}
         lessonParam={lessonParam}
+        lessonKey={lessonKey}
         muted={muted}
         onToggleMute={toggleMute}
         onSkip={handleSkipSpeech}
@@ -6454,6 +6575,7 @@ function SessionPageInner() {
         calculateLessonProgress={calculateLessonProgress}
         handleTimeUp={handleTimeUp}
         handleTimerPauseToggle={handleTimerPauseToggle}
+        handleTimerClick={handleTimerClick}
         showRepeatButton={showRepeatButton}
         handleRepeatSpeech={handleRepeatSpeech}
         visualAids={visualAidsData}
@@ -6685,12 +6807,23 @@ function SessionPageInner() {
             const percent = typeof testFinalPercent === 'number' ? testFinalPercent : null;
             const tier = (percent != null) ? tierForPercent(percent) : null;
             const medal = tier ? emojiForTier(tier) : '';
-            const btnStyle = { background:'#c7442e', color:'#fff', borderRadius:10, padding:'10px 18px', fontWeight:800, fontSize:'clamp(1rem, 2.2vw, 1.125rem)', border:'none', boxShadow:'0 2px 12px rgba(199,68,46,0.28)', cursor:'pointer' };
+            const btnStyle = { 
+              background: completingLesson ? '#999' : '#c7442e', 
+              color:'#fff', 
+              borderRadius:10, 
+              padding:'10px 18px', 
+              fontWeight:800, 
+              fontSize:'clamp(1rem, 2.2vw, 1.125rem)', 
+              border:'none', 
+              boxShadow: completingLesson ? 'none' : '0 2px 12px rgba(199,68,46,0.28)', 
+              cursor: completingLesson ? 'not-allowed' : 'pointer',
+              opacity: completingLesson ? 0.6 : 1
+            };
             return (
               <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:14, padding:'6px 12px' }}>
-                <button type="button" style={btnStyle} onClick={() => {
+                <button type="button" style={btnStyle} disabled={completingLesson} onClick={() => {
                   try { onCompleteLesson && onCompleteLesson(); } catch {}
-                }}>Complete Lesson</button>
+                }}>{completingLesson ? 'Completing...' : 'Complete Lesson'}</button>
                 <div aria-label="Medal" style={{ fontSize:'clamp(1.2rem, 2.4vw, 1.5rem)' }}>{medal}</div>
               </div>
             );
@@ -7113,6 +7246,34 @@ function SessionPageInner() {
         isSpeaking={isSpeaking}
       />
     )}
+
+    {/* Timer Controls Overlay - facilitator can adjust timer and golden key */}
+    {showTimerControls && sessionTimerMinutes > 0 && (
+      <TimerControlOverlay
+        isOpen={showTimerControls}
+        onClose={() => setShowTimerControls(false)}
+        currentElapsedSeconds={(() => {
+          try {
+            const storageKey = `session_timer_state:${lessonKey}`;
+            const timerState = sessionStorage.getItem(storageKey);
+            if (timerState) {
+              const state = JSON.parse(timerState);
+              return state.elapsedSeconds || 0;
+            }
+          } catch {}
+          return 0;
+        })()}
+        totalMinutes={sessionTimerMinutes}
+        isPaused={timerPaused}
+        hasGoldenKey={hasGoldenKey}
+        isGoldenKeySuspended={isGoldenKeySuspended}
+        onUpdateTime={handleUpdateTime}
+        onTogglePause={handleTimerPauseToggle}
+        onApplyGoldenKey={handleApplyGoldenKey}
+        onSuspendGoldenKey={handleSuspendGoldenKey}
+        onUnsuspendGoldenKey={handleUnsuspendGoldenKey}
+      />
+    )}
     </>
   );
 }
@@ -7235,7 +7396,7 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
   );
 }
 
-function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle, showRepeatButton, handleRepeatSpeech, visualAids, onShowVisualAids }) {
+function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, lessonKey, muted, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle, handleTimerClick, showRepeatButton, handleRepeatSpeech, visualAids, onShowVisualAids }) {
   // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
   // Remove horizontal clamp: let the video occupy the full available width of its column
   const containerMaxWidth = 'none';
@@ -7332,6 +7493,8 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
               isPaused={timerPaused}
               onTimeUp={handleTimeUp}
               onPauseToggle={handleTimerPauseToggle}
+              lessonKey={lessonKey}
+              onTimerClick={handleTimerClick}
             />
           </div>
         )}

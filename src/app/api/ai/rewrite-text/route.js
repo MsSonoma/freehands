@@ -48,6 +48,23 @@ Requirements:
 
 Rewritten description:`
       },
+      'visual-aid-prompt-from-notes': {
+        system: 'You are an expert at creating visual aid generation prompts for educational content.',
+        user: `Based on these teaching notes, create a concise prompt that will guide AI image generation to create helpful visual aids for this lesson.
+
+Lesson: ${context || 'Educational lesson'}
+Teaching Notes:
+${text}
+
+Create a prompt that will help generate 3 different educational illustrations. Focus on:
+- Key concepts that would benefit from visual representation
+- Style guidance (kid-friendly, colorful, clear, educational)
+- What types of visuals would help explain the material (diagrams, examples, step-by-step, etc.)
+
+Keep the prompt under 100 words. Make it specific enough to generate relevant images but flexible enough to allow variety.
+
+Prompt:`
+      },
       'generation-prompt': {
         system: 'You are an expert at crafting AI image generation prompts for educational content.',
         user: `Improve this image generation prompt to be more specific and effective for DALL-E 3.
@@ -91,7 +108,7 @@ Improved text:`
         { role: 'user', content: promptConfig.user }
       ],
       temperature: 0.7,
-      max_tokens: purpose === 'generation-prompt' ? 200 : 150
+      max_tokens: purpose === 'visual-aid-prompt-from-notes' ? 200 : (purpose === 'generation-prompt' ? 200 : 150)
     })
 
     const rewritten = completion.choices[0]?.message?.content?.trim() || text

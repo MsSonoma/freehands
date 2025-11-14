@@ -16,6 +16,11 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
   const [showChangeModal, setShowChangeModal] = useState(null)
   const [editingLesson, setEditingLesson] = useState(null)
   const [busy, setBusy] = useState(false)
+  
+  // AI Rewrite loading states
+  const [rewritingDescription, setRewritingDescription] = useState(false)
+  const [rewritingTeachingNotes, setRewritingTeachingNotes] = useState(false)
+  const [rewritingVocabDefinition, setRewritingVocabDefinition] = useState({})
 
   useEffect(() => {
     loadLessons()
@@ -196,6 +201,94 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
     }
   }
 
+  // AI Rewrite handlers
+  const handleRewriteDescription = async (text, context, purpose) => {
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      const res = await fetch('/api/ai/rewrite-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({ text, context, purpose })
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to rewrite text')
+      }
+
+      const data = await res.json()
+      return data.rewritten
+    } catch (err) {
+      console.error('Error rewriting text:', err)
+      setError('Failed to rewrite text')
+      return null
+    }
+  }
+
+  const handleRewriteLessonDescription = async (description) => {
+    setRewritingDescription(true)
+    const lessonTitle = editingLesson?.lesson?.title || 'Lesson'
+    const rewritten = await handleRewriteDescription(description, lessonTitle, 'lesson-description')
+    setRewritingDescription(false)
+    
+    if (rewritten && editingLesson) {
+      setEditingLesson(prev => ({
+        ...prev,
+        lesson: {
+          ...prev.lesson,
+          blurb: rewritten
+        }
+      }))
+    }
+  }
+
+  const handleRewriteLessonTeachingNotes = async (notes) => {
+    setRewritingTeachingNotes(true)
+    const lessonTitle = editingLesson?.lesson?.title || 'Lesson'
+    const rewritten = await handleRewriteDescription(notes, lessonTitle, 'teaching-notes')
+    setRewritingTeachingNotes(false)
+    
+    if (rewritten && editingLesson) {
+      setEditingLesson(prev => ({
+        ...prev,
+        lesson: {
+          ...prev.lesson,
+          teachingNotes: rewritten
+        }
+      }))
+    }
+  }
+
+  const handleRewriteVocabDefinition = async (definition, term, index) => {
+    setRewritingVocabDefinition(prev => ({ ...prev, [index]: true }))
+    const lessonTitle = editingLesson?.lesson?.title || 'Lesson'
+    const context = `${lessonTitle} - Term: ${term}`
+    const rewritten = await handleRewriteDescription(definition, context, 'vocabulary-definition')
+    
+    setRewritingVocabDefinition(prev => ({ ...prev, [index]: false }))
+    
+    if (rewritten && editingLesson) {
+      setEditingLesson(prev => {
+        const newVocab = [...(prev.lesson.vocab || [])]
+        if (newVocab[index]) {
+          newVocab[index] = { ...newVocab[index], definition: rewritten }
+        }
+        return {
+          ...prev,
+          lesson: {
+            ...prev.lesson,
+            vocab: newVocab
+          }
+        }
+      })
+    }
+  }
+
   const handleRequestChanges = async () => {
     if (!showChangeModal) return
     const { file, userId } = showChangeModal
@@ -304,6 +397,12 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
               onCancel={() => setEditingLesson(null)}
               busy={busy}
               compact={true}
+              onRewriteDescription={handleRewriteLessonDescription}
+              onRewriteTeachingNotes={handleRewriteLessonTeachingNotes}
+              onRewriteVocabDefinition={handleRewriteVocabDefinition}
+              rewritingDescription={rewritingDescription}
+              rewritingTeachingNotes={rewritingTeachingNotes}
+              rewritingVocabDefinition={rewritingVocabDefinition}
             />
           </div>
         </div>

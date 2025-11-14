@@ -1,11 +1,24 @@
 'use client'
 import { useState, useEffect } from 'react'
+import AIRewriteButton from './AIRewriteButton'
 
 /**
  * LessonEditor - Structured editor for lesson JSON
  * Allows facilitators to edit lessons in a form-based interface while maintaining JSON integrity
  */
-export default function LessonEditor({ initialLesson, onSave, onCancel, busy = false, compact = false }) {
+export default function LessonEditor({ 
+  initialLesson, 
+  onSave, 
+  onCancel, 
+  busy = false, 
+  compact = false,
+  onRewriteDescription,
+  onRewriteTeachingNotes,
+  onRewriteVocabDefinition,
+  rewritingDescription = false,
+  rewritingTeachingNotes = false,
+  rewritingVocabDefinition = {}
+}) {
   const [lesson, setLesson] = useState(initialLesson || {})
   const [errors, setErrors] = useState([])
 
@@ -443,6 +456,16 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
           onChange={(e) => updateField('blurb', e.target.value)}
           placeholder="Brief overview of the lesson"
         />
+        {onRewriteDescription && (
+          <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 6 }}>
+            <AIRewriteButton
+              text={lesson.blurb || ''}
+              onRewrite={() => onRewriteDescription(lesson.blurb || '')}
+              loading={rewritingDescription}
+              size="small"
+            />
+          </div>
+        )}
 
         <label style={{ ...labelStyle, marginTop: compact ? 6 : 12 }}>Teaching Notes</label>
         <textarea
@@ -451,6 +474,16 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
           onChange={(e) => updateField('teachingNotes', e.target.value)}
           placeholder="Notes for the teacher"
         />
+        {onRewriteTeachingNotes && (
+          <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 6 }}>
+            <AIRewriteButton
+              text={lesson.teachingNotes || ''}
+              onRewrite={() => onRewriteTeachingNotes(lesson.teachingNotes || '')}
+              loading={rewritingTeachingNotes}
+              size="small"
+            />
+          </div>
+        )}
       </div>
 
       {/* Vocabulary */}
@@ -458,6 +491,8 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
         vocab={toArray(lesson.vocab || [])}
         onChange={(newVocab) => updateField('vocab', newVocab)}
         styles={{ sectionStyle, labelStyle, inputStyle, btnAddStyle, btnDangerStyle }}
+        onRewriteDefinition={onRewriteVocabDefinition}
+        rewritingDefinition={rewritingVocabDefinition}
       />
 
       {/* Multiple Choice Questions */}
@@ -496,7 +531,7 @@ export default function LessonEditor({ initialLesson, onSave, onCancel, busy = f
 }
 
 // Vocabulary Editor Component
-function VocabularyEditor({ vocab, onChange, styles }) {
+function VocabularyEditor({ vocab, onChange, styles, onRewriteDefinition, rewritingDefinition = {} }) {
   const addTerm = () => {
     onChange([...vocab, { term: '', definition: '' }])
   }
@@ -581,7 +616,15 @@ function VocabularyEditor({ vocab, onChange, styles }) {
               />
             </div>
             
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+              {onRewriteDefinition && (
+                <AIRewriteButton
+                  text={item.definition || item.def || ''}
+                  onRewrite={() => onRewriteDefinition(item.definition || item.def || '', item.term || '', idx)}
+                  loading={rewritingDefinition[idx] || false}
+                  size="small"
+                />
+              )}
               <button style={styles.btnDangerStyle} onClick={() => removeTerm(idx)}>
                 Remove
               </button>

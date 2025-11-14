@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
+import AIRewriteButton from '@/components/AIRewriteButton'
 
 const subjects = ['math', 'language arts', 'science', 'social studies', 'general']
 const difficulties = ['beginner', 'intermediate', 'advanced']
@@ -21,6 +22,11 @@ export default function LessonMakerOverlay({ tier }) {
   const [message, setMessage] = useState('')
   const [quotaInfo, setQuotaInfo] = useState(null)
   const [quotaLoading, setQuotaLoading] = useState(true)
+  
+  // AI Rewrite loading states
+  const [rewritingDescription, setRewritingDescription] = useState(false)
+  const [rewritingVocab, setRewritingVocab] = useState(false)
+  const [rewritingNotes, setRewritingNotes] = useState(false)
 
   const ent = featuresForTier(tier)
   
@@ -75,6 +81,109 @@ export default function LessonMakerOverlay({ tier }) {
       // If quota check fails, allow generation (fail open for premium users)
       setQuotaInfo({ allowed: true, source: 'fallback' })
       setQuotaLoading(false)
+    }
+  }
+
+  // AI Rewrite handlers
+  const handleRewriteDescription = async () => {
+    if (!form.description.trim()) return
+    setRewritingDescription(true)
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      const res = await fetch('/api/ai/rewrite-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({
+          text: form.description,
+          context: form.title || 'lesson description',
+          purpose: 'lesson-description'
+        })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (data.rewritten) {
+          setForm({ ...form, description: data.rewritten })
+        }
+      }
+    } catch (err) {
+      console.error('Error rewriting description:', err)
+    } finally {
+      setRewritingDescription(false)
+    }
+  }
+
+  const handleRewriteVocab = async () => {
+    if (!form.vocab.trim()) return
+    setRewritingVocab(true)
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      const res = await fetch('/api/ai/rewrite-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({
+          text: form.vocab,
+          context: form.title || 'vocabulary terms',
+          purpose: 'vocabulary-terms'
+        })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (data.rewritten) {
+          setForm({ ...form, vocab: data.rewritten })
+        }
+      }
+    } catch (err) {
+      console.error('Error rewriting vocab:', err)
+    } finally {
+      setRewritingVocab(false)
+    }
+  }
+
+  const handleRewriteNotes = async () => {
+    if (!form.notes.trim()) return
+    setRewritingNotes(true)
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      const res = await fetch('/api/ai/rewrite-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({
+          text: form.notes,
+          context: form.title || 'additional notes',
+          purpose: 'lesson-notes'
+        })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (data.rewritten) {
+          setForm({ ...form, notes: data.rewritten })
+        }
+      }
+    } catch (err) {
+      console.error('Error rewriting notes:', err)
+    } finally {
+      setRewritingNotes(false)
     }
   }
 
@@ -284,6 +393,14 @@ export default function LessonMakerOverlay({ tier }) {
                 boxSizing: 'border-box'
               }}
             />
+            <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 4 }}>
+              <AIRewriteButton
+                text={form.description}
+                onRewrite={handleRewriteDescription}
+                loading={rewritingDescription}
+                size="small"
+              />
+            </div>
           </div>
 
           {/* Notes (optional) */}
@@ -307,6 +424,14 @@ export default function LessonMakerOverlay({ tier }) {
                 boxSizing: 'border-box'
               }}
             />
+            <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 4 }}>
+              <AIRewriteButton
+                text={form.notes}
+                onRewrite={handleRewriteNotes}
+                loading={rewritingNotes}
+                size="small"
+              />
+            </div>
           </div>
 
           {/* Vocab (optional) */}
@@ -330,6 +455,14 @@ export default function LessonMakerOverlay({ tier }) {
                 boxSizing: 'border-box'
               }}
             />
+            <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 4 }}>
+              <AIRewriteButton
+                text={form.vocab}
+                onRewrite={handleRewriteVocab}
+                loading={rewritingVocab}
+                size="small"
+              />
+            </div>
           </div>
 
           {/* Submit Button */}

@@ -465,13 +465,30 @@ export default function CounselorClient() {
   }, [sessionId, accessToken])
 
   const initializeMentorSession = useCallback(async () => {
-    if (!sessionId || !accessToken || !hasAccess || !tierChecked || !isMountedRef.current) {
+    console.log('[Session] initializeMentorSession called with:', { sessionId, accessToken: !!accessToken, hasAccess, tierChecked })
+    console.log('[Session] Detailed check:', { 
+      hasSessionId: !!sessionId, 
+      hasAccessToken: !!accessToken, 
+      hasAccess, 
+      tierChecked, 
+      isMounted: isMountedRef.current 
+    })
+    
+    if (!sessionId || !accessToken || !hasAccess || !tierChecked) {
+      console.log('[Session] Early exit - missing dependencies', {
+        missingSessionId: !sessionId,
+        missingAccessToken: !accessToken,
+        missingHasAccess: !hasAccess,
+        missingTierChecked: !tierChecked
+      })
       return
     }
 
+    console.log('[Session] Setting loading to true')
     setSessionLoading(true)
 
     try {
+      console.log('[Session] Checking existing session...')
       const checkRes = await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`
@@ -479,15 +496,19 @@ export default function CounselorClient() {
       })
 
       if (!isMountedRef.current) {
+        console.log('[Session] Unmounted after first fetch, clearing loading')
+        setSessionLoading(false)
         return
       }
 
       if (!checkRes.ok) {
+        console.log('[Session] Check response not ok:', checkRes.status)
         const data = await checkRes.json().catch(() => ({}))
         throw new Error(data?.error || 'Failed to check existing session')
       }
 
       const payload = await checkRes.json()
+      console.log('[Session] Check response:', { status: payload?.status, isOwner: payload?.isOwner, hasSession: !!payload?.session })
 
       if (!isMountedRef.current) {
         return
@@ -496,6 +517,7 @@ export default function CounselorClient() {
       const { session: activeSession, status, isOwner } = payload || {}
 
       if (!activeSession || status === 'none') {
+        console.log('[Session] No active session, creating new one')
         const deviceName = `${navigator.platform || 'Unknown'} - ${navigator.userAgent.split(/[()]/)[1] || 'Browser'}`
         const createRes = await fetch('/api/mentor-session', {
           method: 'POST',
@@ -511,6 +533,7 @@ export default function CounselorClient() {
         })
 
         const createData = await createRes.json().catch(() => ({}))
+        console.log('[Session] Create response:', { ok: createRes.ok, data: createData })
 
         if (!createRes.ok) {
           throw new Error(createData?.error || 'Failed to initialize mentor session')
@@ -519,14 +542,19 @@ export default function CounselorClient() {
         const createdSession = createData.session || createData
 
         if (!isMountedRef.current) {
+          console.log('[Session] Unmounted after create, clearing loading')
+          setSessionLoading(false)
           return
         }
 
         if (createdSession?.session_id && createdSession.session_id !== sessionId) {
+          console.log('[Session] Session ID mismatch, reassigning:', { expected: sessionId, received: createdSession.session_id })
+          setSessionLoading(false)
           assignSessionIdentifier(createdSession.session_id)
           return
         }
 
+        console.log('[Session] New session created successfully, clearing loading')
         setConversationHistory(Array.isArray(createdSession?.conversation_history) ? createdSession.conversation_history : [])
         setDraftSummary(createdSession?.draft_summary || '')
         setCurrentSessionTokens(createdSession?.token_count || 0)
@@ -539,6 +567,7 @@ export default function CounselorClient() {
       }
 
       if (!isOwner && activeSession) {
+        console.log('[Session] Not owner, showing takeover dialog')
         setSessionLoading(false)
         setConflictingSession(activeSession)
         setShowTakeoverDialog(true)
@@ -546,10 +575,13 @@ export default function CounselorClient() {
       }
 
       if (activeSession?.session_id && activeSession.session_id !== sessionId) {
+        console.log('[Session] Active session ID mismatch, reassigning:', { expected: sessionId, received: activeSession.session_id })
+        setSessionLoading(false)
         assignSessionIdentifier(activeSession.session_id)
         return
       }
 
+      console.log('[Session] Loading existing session, clearing loading')
       setConversationHistory(Array.isArray(activeSession?.conversation_history) ? activeSession.conversation_history : [])
       setDraftSummary(activeSession?.draft_summary || '')
       setCurrentSessionTokens(activeSession?.token_count || 0)
@@ -560,6 +592,7 @@ export default function CounselorClient() {
       startSessionPolling()
     } catch (err) {
       if (!isMountedRef.current) {
+        console.log('[Session] Error but unmounted, clearing loading')
         return
       }
 
@@ -568,9 +601,28 @@ export default function CounselorClient() {
     }
   }, [sessionId, accessToken, hasAccess, tierChecked, assignSessionIdentifier, startSessionPolling])
 
+  // Initialize session when all dependencies are ready
   useEffect(() => {
+    console.log('[Session] useEffect triggered:', { sessionId, hasAccessToken: !!accessToken, hasAccess, tierChecked })
+    
+    // Only attempt initialization when all required dependencies are ready
+    if (!sessionId || !accessToken || !hasAccess || !tierChecked) {
+      console.log('[Session] Dependencies not ready yet')
+      // If we're still waiting for dependencies, keep loading state true only if we haven't checked yet
+      if (tierChecked && (!hasAccess || !accessToken)) {
+        // Dependencies are checked but we don't have access - stop loading
+        console.log('[Session] Tier checked but no access/token, stopping loading')
+        setSessionLoading(false)
+      }
+      return
+    }
+    
+    console.log('[Session] All dependencies ready, calling initializeMentorSession')
+    // All dependencies ready - initialize
     initializeMentorSession()
-  }, [initializeMentorSession])
+    
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, accessToken, hasAccess, tierChecked])
 
   // Save conversation to database whenever it changes
   useEffect(() => {

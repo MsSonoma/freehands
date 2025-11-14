@@ -85,6 +85,7 @@ function LessonsPageInner(){
   const [lessonSnapshots, setLessonSnapshots] = useState({}) // { 'subject/lesson_file': true } - lessons with saved snapshots
   const [sessionGateReady, setSessionGateReady] = useState(false)
   const [showHistoryModal, setShowHistoryModal] = useState(false)
+  const [showGoldenKeyToast, setShowGoldenKeyToast] = useState(false) // Show golden key earned notification
 
   const {
     sessions: lessonHistorySessions,
@@ -172,6 +173,21 @@ function LessonsPageInner(){
     
     // return () => clearInterval(pollInterval)
   }, [learnerId])
+
+  // Check for golden key earned notification
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const justEarned = sessionStorage.getItem('just_earned_golden_key');
+      if (justEarned === 'true') {
+        sessionStorage.removeItem('just_earned_golden_key');
+        setShowGoldenKeyToast(true);
+        // Auto-hide after 5 seconds
+        const timer = setTimeout(() => setShowGoldenKeyToast(false), 5000);
+        return () => clearTimeout(timer);
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     let mounted = true
@@ -683,6 +699,53 @@ function LessonsPageInner(){
 
   return (
     <main style={{ padding:24, maxWidth:980, margin:'0 auto' }}>
+      {/* Golden Key Earned Toast Notification */}
+      {showGoldenKeyToast && (
+        <div style={{
+          position: 'fixed',
+          top: 20,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 9999,
+          background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+          color: '#78350f',
+          padding: '16px 24px',
+          borderRadius: 12,
+          boxShadow: '0 10px 40px rgba(251, 191, 36, 0.4), 0 4px 12px rgba(0, 0, 0, 0.1)',
+          fontWeight: 700,
+          fontSize: 16,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          animation: 'slideDown 0.3s ease-out',
+          border: '2px solid #fcd34d',
+          maxWidth: '90vw'
+        }}>
+          <span style={{ fontSize: 28 }}>🔑</span>
+          <div>
+            <div style={{ fontWeight: 800, marginBottom: 4 }}>Golden Key Earned!</div>
+            <div style={{ fontSize: 14, fontWeight: 600, opacity: 0.9 }}>
+              Unlocks poem and story in your next lesson
+            </div>
+          </div>
+          <button
+            onClick={() => setShowGoldenKeyToast(false)}
+            style={{
+              marginLeft: 8,
+              background: 'rgba(120, 53, 15, 0.1)',
+              border: 'none',
+              borderRadius: 6,
+              padding: '4px 8px',
+              cursor: 'pointer',
+              fontSize: 18,
+              lineHeight: 1,
+              color: '#78350f'
+            }}
+            aria-label="Dismiss"
+          >×</button>
+        </div>
+      )}
+      
       <h1 style={{ margin:'8px 0 4px', textAlign:'center' }}>Select a Lesson</h1>
       {learnerName && (
         <div style={{ textAlign:'center', marginBottom:16, fontSize:16, color:'#666' }}>

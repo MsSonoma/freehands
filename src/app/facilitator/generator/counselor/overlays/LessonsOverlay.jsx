@@ -75,6 +75,11 @@ export default function LessonsOverlay({ learnerId }) {
   const [generationCount, setGenerationCount] = useState(0)
   const [visualAidsError, setVisualAidsError] = useState('')
   const MAX_GENERATIONS = 4
+  
+  // AI Rewrite loading states
+  const [rewritingDescription, setRewritingDescription] = useState(false)
+  const [rewritingTeachingNotes, setRewritingTeachingNotes] = useState(false)
+  const [rewritingVocabDefinition, setRewritingVocabDefinition] = useState({})
 
   const {
     sessions: lessonHistorySessions,
@@ -133,6 +138,7 @@ export default function LessonsOverlay({ learnerId }) {
   const loadLessons = useCallback(async () => {
     if (Object.keys(allLessons).length > 0) {
       console.log('[LessonsOverlay] Lessons already loaded, skipping')
+      setLoading(false)
       return
     }
 
@@ -322,6 +328,15 @@ export default function LessonsOverlay({ learnerId }) {
       setLearnerDataLoading(false)
     }
   }, [learnerId, selectedGrade])
+
+  // Initial load on mount
+  useEffect(() => {
+    console.log('[LessonsOverlay] Component mounted, triggering initial load')
+    loadLessons()
+    if (learnerId && learnerId !== 'none') {
+      loadLearnerData()
+    }
+  }, []) // Only run once on mount
 
   // Listen for preload event to trigger initial load
   useEffect(() => {
@@ -801,6 +816,81 @@ export default function LessonsOverlay({ learnerId }) {
     setShowVisualAidsCarousel(false)
     
     await saveVisualAidsData(updatedImages, generationCount)
+  }
+
+  // Lesson editor-specific rewrite handlers
+  const handleRewriteLessonDescription = async (description) => {
+    setRewritingDescription(true)
+    const lessonTitle = lessonEditorData?.title || 'Lesson'
+    const rewritten = await handleRewriteDescription(description, lessonTitle, 'lesson-description')
+    setRewritingDescription(false)
+    
+    if (rewritten) {
+      setLessonEditorData(prev => ({
+        ...prev,
+        blurb: rewritten
+      }))
+    }
+  }
+
+  const handleRewriteLessonTeachingNotes = async (notes) => {
+    setRewritingTeachingNotes(true)
+    const lessonTitle = lessonEditorData?.title || 'Lesson'
+    const rewritten = await handleRewriteDescription(notes, lessonTitle, 'teaching-notes')
+    setRewritingTeachingNotes(false)
+    
+    if (rewritten) {
+      setLessonEditorData(prev => ({
+        ...prev,
+        teachingNotes: rewritten
+      }))
+    }
+  }
+
+  const handleRewriteVocabDefinition = async (definition, term, index) => {
+    setRewritingVocabDefinition(prev => ({ ...prev, [index]: true }))
+    const lessonTitle = lessonEditorData?.title || 'Lesson'
+    const context = `${lessonTitle} - Term: ${term}`
+    
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      const res = await fetch('/api/ai/rewrite-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({
+          text: definition,
+          context: context,
+          purpose: 'vocabulary-definition'
+        })
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to rewrite vocabulary definition')
+      }
+
+      const data = await res.json()
+      const rewritten = data.rewritten
+      
+      if (rewritten) {
+        setLessonEditorData(prev => {
+          const newVocab = [...(prev.vocab || [])]
+          if (newVocab[index]) {
+            newVocab[index] = { ...newVocab[index], definition: rewritten }
+          }
+          return { ...prev, vocab: newVocab }
+        })
+      }
+    } catch (err) {
+      console.error('Error rewriting vocabulary definition:', err)
+    } finally {
+      setRewritingVocabDefinition(prev => ({ ...prev, [index]: false }))
+    }
   }
 
   const scheduleLesson = async (lessonKey, scheduledDate) => {
@@ -1417,6 +1507,12 @@ export default function LessonsOverlay({ learnerId }) {
                       }
                     }}
                     busy={lessonEditorSaving}
+                    onRewriteDescription={handleRewriteLessonDescription}
+                    onRewriteTeachingNotes={handleRewriteLessonTeachingNotes}
+                    onRewriteVocabDefinition={handleRewriteVocabDefinition}
+                    rewritingDescription={rewritingDescription}
+                    rewritingTeachingNotes={rewritingTeachingNotes}
+                    rewritingVocabDefinition={rewritingVocabDefinition}
                   />
                 </div>
               </>

@@ -1,0 +1,380 @@
+"use client";
+
+import { useState, useEffect } from 'react';
+
+/**
+ * TimerControlOverlay - Facilitator control panel for timer and golden key
+ * PIN-protected overlay that allows facilitators to:
+ * - Adjust remaining time
+ * - Pause/resume timer
+ * - Apply or suspend golden key for the current lesson
+ * 
+ * @param {boolean} isOpen - Whether the overlay is visible
+ * @param {function} onClose - Callback to close the overlay
+ * @param {number} currentElapsedSeconds - Current elapsed time in seconds
+ * @param {number} totalMinutes - Total time allocated in minutes
+ * @param {boolean} isPaused - Whether timer is currently paused
+ * @param {function} onUpdateTime - Callback to update elapsed time (seconds)
+ * @param {function} onTogglePause - Callback to pause/resume timer
+ * @param {boolean} hasGoldenKey - Whether lesson has an active golden key
+ * @param {boolean} isGoldenKeySuspended - Whether golden key effect is suspended
+ * @param {function} onApplyGoldenKey - Callback to apply golden key to lesson
+ * @param {function} onSuspendGoldenKey - Callback to suspend golden key effect
+ * @param {function} onUnsuspendGoldenKey - Callback to restore golden key effect
+ */
+export default function TimerControlOverlay({
+  isOpen,
+  onClose,
+  currentElapsedSeconds = 0,
+  totalMinutes = 60,
+  isPaused = false,
+  onUpdateTime,
+  onTogglePause,
+  hasGoldenKey = false,
+  isGoldenKeySuspended = false,
+  onApplyGoldenKey,
+  onSuspendGoldenKey,
+  onUnsuspendGoldenKey
+}) {
+  const totalSeconds = totalMinutes * 60;
+  const remainingSeconds = Math.max(0, totalSeconds - currentElapsedSeconds);
+  
+  const [adjustMinutes, setAdjustMinutes] = useState(0);
+  const [saving, setSaving] = useState(false);
+
+  // Reset adjustment when opening
+  useEffect(() => {
+    if (isOpen) {
+      setAdjustMinutes(0);
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleApplyTimeAdjustment = async () => {
+    if (adjustMinutes === 0) return;
+    
+    setSaving(true);
+    try {
+      const adjustSeconds = adjustMinutes * 60;
+      const newElapsed = Math.max(0, Math.min(totalSeconds, currentElapsedSeconds - adjustSeconds));
+      await onUpdateTime?.(newElapsed);
+      setAdjustMinutes(0);
+    } catch (error) {
+      console.error('[Timer Control] Failed to adjust time:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleTogglePause = async () => {
+    setSaving(true);
+    try {
+      await onTogglePause?.();
+    } catch (error) {
+      console.error('[Timer Control] Failed to toggle pause:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleApplyGoldenKey = async () => {
+    setSaving(true);
+    try {
+      await onApplyGoldenKey?.();
+    } catch (error) {
+      console.error('[Timer Control] Failed to apply golden key:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggleSuspendGoldenKey = async () => {
+    setSaving(true);
+    try {
+      if (isGoldenKeySuspended) {
+        await onUnsuspendGoldenKey?.();
+      } else {
+        await onSuspendGoldenKey?.();
+      }
+    } catch (error) {
+      console.error('[Timer Control] Failed to toggle golden key suspension:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const formatTime = (seconds) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  const previewRemaining = Math.max(0, remainingSeconds + (adjustMinutes * 60));
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 10002,
+        background: 'rgba(0, 0, 0, 0.6)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+        backdropFilter: 'blur(4px)'
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: '#fff',
+          borderRadius: 16,
+          padding: 24,
+          maxWidth: 480,
+          width: '100%',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+          maxHeight: '90vh',
+          overflowY: 'auto'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#111' }}>Timer Controls</h2>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: 28,
+              cursor: 'pointer',
+              color: '#6b7280',
+              lineHeight: 1,
+              padding: 0
+            }}
+          >×</button>
+        </div>
+
+        {/* Current Status */}
+        <div style={{
+          background: '#f9fafb',
+          padding: 16,
+          borderRadius: 8,
+          marginBottom: 20
+        }}>
+          <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>Current Status</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: '#111', fontFamily: 'monospace' }}>
+            {formatTime(remainingSeconds)} <span style={{ fontSize: 14, fontWeight: 400 }}>remaining</span>
+          </div>
+          <div style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>
+            {isPaused ? '⏸️ Paused' : '▶️ Running'}
+          </div>
+        </div>
+
+        {/* Time Adjustment */}
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 8 }}>
+            Adjust Time
+          </label>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+            <button
+              onClick={() => setAdjustMinutes(prev => prev - 5)}
+              disabled={saving}
+              style={{
+                padding: '8px 16px',
+                border: '1px solid #d1d5db',
+                borderRadius: 6,
+                background: '#fff',
+                cursor: 'pointer',
+                fontSize: 16,
+                fontWeight: 600
+              }}
+            >-5 min</button>
+            <button
+              onClick={() => setAdjustMinutes(prev => prev - 1)}
+              disabled={saving}
+              style={{
+                padding: '8px 16px',
+                border: '1px solid #d1d5db',
+                borderRadius: 6,
+                background: '#fff',
+                cursor: 'pointer',
+                fontSize: 16,
+                fontWeight: 600
+              }}
+            >-1 min</button>
+            <input
+              type="number"
+              value={adjustMinutes}
+              onChange={(e) => setAdjustMinutes(parseInt(e.target.value) || 0)}
+              disabled={saving}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: 6,
+                fontSize: 16,
+                fontWeight: 600,
+                textAlign: 'center',
+                fontFamily: 'monospace'
+              }}
+            />
+            <button
+              onClick={() => setAdjustMinutes(prev => prev + 1)}
+              disabled={saving}
+              style={{
+                padding: '8px 16px',
+                border: '1px solid #d1d5db',
+                borderRadius: 6,
+                background: '#fff',
+                cursor: 'pointer',
+                fontSize: 16,
+                fontWeight: 600
+              }}
+            >+1 min</button>
+            <button
+              onClick={() => setAdjustMinutes(prev => prev + 5)}
+              disabled={saving}
+              style={{
+                padding: '8px 16px',
+                border: '1px solid #d1d5db',
+                borderRadius: 6,
+                background: '#fff',
+                cursor: 'pointer',
+                fontSize: 16,
+                fontWeight: 600
+              }}
+            >+5 min</button>
+          </div>
+          {adjustMinutes !== 0 && (
+            <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>
+              New remaining: <strong>{formatTime(previewRemaining)}</strong>
+            </div>
+          )}
+          <button
+            onClick={handleApplyTimeAdjustment}
+            disabled={adjustMinutes === 0 || saving}
+            style={{
+              width: '100%',
+              padding: '10px',
+              border: 'none',
+              borderRadius: 8,
+              background: adjustMinutes === 0 || saving ? '#d1d5db' : '#c7442e',
+              color: '#fff',
+              fontSize: 16,
+              fontWeight: 600,
+              cursor: adjustMinutes === 0 || saving ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {saving ? 'Applying...' : 'Apply Time Adjustment'}
+          </button>
+        </div>
+
+        {/* Pause/Resume */}
+        <div style={{ marginBottom: 24 }}>
+          <button
+            onClick={handleTogglePause}
+            disabled={saving}
+            style={{
+              width: '100%',
+              padding: '12px',
+              border: '1px solid #d1d5db',
+              borderRadius: 8,
+              background: '#fff',
+              fontSize: 16,
+              fontWeight: 600,
+              cursor: saving ? 'not-allowed' : 'pointer',
+              color: '#111'
+            }}
+          >
+            {isPaused ? '▶️ Resume Timer' : '⏸️ Pause Timer'}
+          </button>
+        </div>
+
+        {/* Golden Key Controls */}
+        <div style={{
+          borderTop: '1px solid #e5e7eb',
+          paddingTop: 20
+        }}>
+          <h3 style={{ margin: '0 0 12px', fontSize: 18, fontWeight: 600, color: '#111' }}>🔑 Golden Key</h3>
+          
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>
+              Status: <strong>{hasGoldenKey ? (isGoldenKeySuspended ? 'Active (Suspended)' : 'Active') : 'Not Applied'}</strong>
+            </div>
+          </div>
+
+          {!hasGoldenKey ? (
+            <button
+              onClick={handleApplyGoldenKey}
+              disabled={saving}
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: 'none',
+                borderRadius: 8,
+                background: saving ? '#d1d5db' : 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                color: '#78350f',
+                fontSize: 16,
+                fontWeight: 700,
+                cursor: saving ? 'not-allowed' : 'pointer',
+                boxShadow: '0 2px 8px rgba(251, 191, 36, 0.3)'
+              }}
+            >
+              Apply Golden Key to This Lesson
+            </button>
+          ) : (
+            <button
+              onClick={handleToggleSuspendGoldenKey}
+              disabled={saving}
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '1px solid #d1d5db',
+                borderRadius: 8,
+                background: '#fff',
+                color: '#111',
+                fontSize: 16,
+                fontWeight: 600,
+                cursor: saving ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {isGoldenKeySuspended ? 'Unsuspend Golden Key Effect' : 'Suspend Golden Key Effect'}
+            </button>
+          )}
+          
+          <div style={{ fontSize: 12, color: '#6b7280', marginTop: 8, lineStyle: 1.4 }}>
+            {isGoldenKeySuspended 
+              ? 'Key is applied but suspended - learner won\'t see poem/story features until unsuspended.'
+              : hasGoldenKey 
+                ? 'Golden key unlocks poem and story features for this lesson.'
+                : 'Applying a golden key will unlock poem and story features for this lesson.'}
+          </div>
+        </div>
+
+        {/* Close Button */}
+        <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 20, marginTop: 20 }}>
+          <button
+            onClick={onClose}
+            style={{
+              width: '100%',
+              padding: '12px',
+              border: '1px solid #d1d5db',
+              borderRadius: 8,
+              background: '#fff',
+              fontSize: 16,
+              fontWeight: 600,
+              cursor: 'pointer',
+              color: '#111'
+            }}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -13,6 +13,7 @@ export default function VisualAidsCarousel({
   onGenerateMore,
   onUploadImage,
   onRewriteDescription,
+  onGeneratePrompt, // NEW: function to generate initial prompt (handles auth)
   generating = false,
   teachingNotes = '',
   lessonTitle = '',
@@ -27,6 +28,28 @@ export default function VisualAidsCarousel({
   const [uploading, setUploading] = useState(false)
   const [rewritingIndex, setRewritingIndex] = useState(null)
   const [rewritingPrompt, setRewritingPrompt] = useState(false)
+  const [generatingPrompt, setGeneratingPrompt] = useState(false)
+
+  // Generate initial prompt from teaching notes when overlay opens
+  useEffect(() => {
+    const generateInitialPrompt = async () => {
+      if (teachingNotes && !generationPrompt && images.length === 0 && onGeneratePrompt) {
+        setGeneratingPrompt(true)
+        try {
+          const prompt = await onGeneratePrompt(teachingNotes, lessonTitle)
+          if (prompt) {
+            setGenerationPrompt(prompt)
+          }
+        } catch (err) {
+          console.error('Failed to generate initial prompt:', err)
+        } finally {
+          setGeneratingPrompt(false)
+        }
+      }
+    }
+    
+    generateInitialPrompt()
+  }, [teachingNotes, lessonTitle, images.length, onGeneratePrompt])
 
   useEffect(() => {
     // Pre-select images that were already selected
@@ -139,37 +162,173 @@ export default function VisualAidsCarousel({
       <div style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0, 0, 0, 0.8)',
+        background: 'rgba(0, 0, 0, 0.85)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 9999
+        zIndex: 9999,
+        padding: 20
       }}>
         <div style={{
           background: '#fff',
           borderRadius: 16,
           padding: 32,
-          maxWidth: 500,
-          width: '90%',
-          textAlign: 'center'
+          maxWidth: 600,
+          width: '90%'
         }}>
-          <p style={{ fontSize: 16, color: '#6b7280', marginBottom: 20 }}>
-            {generating ? 'Generating visual aids...' : 'No images available yet'}
+          <h2 style={{ margin: 0, marginBottom: 20, fontSize: 20, fontWeight: 700, color: '#111827' }}>
+            Generate Visual Aids
+          </h2>
+
+          {/* AI Warning */}
+          <div style={{
+            background: '#fef3c7',
+            border: '2px solid #fbbf24',
+            borderRadius: 12,
+            padding: 16,
+            marginBottom: 24,
+            fontSize: 13,
+            color: '#92400e'
+          }}>
+            <strong>⚠️ AI-Generated Content:</strong> Review all images and descriptions carefully before use.
+            AI may produce inaccurate or unexpected results.
+          </div>
+
+          <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 16, lineHeight: 1.6 }}>
+            We've created a custom prompt based on your teaching notes. Review and edit it below to refine
+            what types of visual aids will be generated.
           </p>
-          <button
-            onClick={onClose}
-            style={{
-              padding: '10px 20px',
-              background: '#6b7280',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 8,
-              cursor: 'pointer',
-              fontWeight: 600
-            }}
-          >
-            Close
-          </button>
+
+          {/* Custom Prompt Input */}
+          <div style={{ marginBottom: 24 }}>
+            <label style={{
+              display: 'block',
+              fontSize: 13,
+              fontWeight: 600,
+              color: '#374151',
+              marginBottom: 8
+            }}>
+              Generation Guidance
+            </label>
+            {generatingPrompt ? (
+              <div style={{
+                width: '100%',
+                minHeight: 80,
+                padding: 12,
+                fontSize: 14,
+                color: '#6b7280',
+                background: '#f9fafb',
+                border: '2px solid #d1d5db',
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                Generating custom prompt from teaching notes...
+              </div>
+            ) : (
+              <textarea
+                value={generationPrompt}
+                onChange={(e) => setGenerationPrompt(e.target.value)}
+                placeholder="Describe what types of visuals would help explain this lesson..."
+                style={{
+                  width: '100%',
+                  minHeight: 80,
+                  padding: 12,
+                  fontSize: 14,
+                  color: '#374151',
+                  background: '#fff',
+                  border: '2px solid #d1d5db',
+                  borderRadius: 8,
+                  resize: 'vertical',
+                  fontFamily: 'inherit'
+                }}
+              />
+            )}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              marginTop: 6
+            }}>
+              <AIRewriteButton
+                text={generationPrompt}
+                onRewrite={handleRewritePrompt}
+                loading={rewritingPrompt}
+                size="small"
+              />
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'space-between' }}>
+            <div>
+              <input
+                type="file"
+                id="upload-visual-aid-empty"
+                accept="image/*"
+                multiple
+                onChange={handleUpload}
+                style={{ display: 'none' }}
+              />
+              <button
+                onClick={() => document.getElementById('upload-visual-aid-empty').click()}
+                disabled={uploading}
+                style={{
+                  padding: '12px 24px',
+                  background: uploading ? '#9ca3af' : '#10b981',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: uploading ? 'wait' : 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14
+                }}
+              >
+                {uploading ? '📤 Uploading...' : '📤 Upload'}
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={onClose}
+                style={{
+                  padding: '12px 24px',
+                  background: '#fff',
+                  color: '#374151',
+                  border: '2px solid #d1d5db',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => onGenerateMore(generationPrompt)}
+                disabled={generating || generationCount >= maxGenerations}
+                style={{
+                  padding: '12px 32px',
+                  background: (generating || generationCount >= maxGenerations) ? '#9ca3af' : '#6366f1',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: (generating || generationCount >= maxGenerations) ? 'not-allowed' : 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14
+                }}
+              >
+                {generating ? (generationProgress || 'Generating...') : 'Generate Images (x3)'}
+              </button>
+            </div>
+          </div>
+
+          {/* Generation Counter */}
+          {generationCount > 0 && (
+            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 12, textAlign: 'right' }}>
+              {generationCount}/{maxGenerations} generations used
+              {generationCount >= maxGenerations && ' - Limit reached'}
+            </div>
+          )}
         </div>
       </div>
     )
@@ -618,22 +777,24 @@ export default function VisualAidsCarousel({
             >
               Cancel
             </button>
-            <button
-              onClick={handleSave}
-              disabled={selectedImages.size === 0}
-              style={{
-                padding: '10px 20px',
-                background: selectedImages.size === 0 ? '#9ca3af' : '#059669',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 8,
-                cursor: selectedImages.size === 0 ? 'not-allowed' : 'pointer',
-                fontWeight: 600,
-                fontSize: 14
-              }}
-            >
-              Save Images ({selectedImages.size})
-            </button>
+            {generationCount > 0 && (
+              <button
+                onClick={handleSave}
+                disabled={selectedImages.size === 0}
+                style={{
+                  padding: '10px 20px',
+                  background: selectedImages.size === 0 ? '#9ca3af' : '#059669',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: selectedImages.size === 0 ? 'not-allowed' : 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14
+                }}
+              >
+                Save Images ({selectedImages.size})
+              </button>
+            )}
           </div>
         </div>
       </div>

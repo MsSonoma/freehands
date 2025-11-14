@@ -35,12 +35,16 @@ export async function GET(req) {
       return NextResponse.json({ error: 'Missing lessonKey' }, { status: 400 })
     }
 
+    // Normalize lesson key by stripping folder prefixes (must match save normalization)
+    const normalizedLessonKey = lessonKey.replace(/^(generated|facilitator|math|science|language-arts|social-studies|demo)\//, '')
+    console.log('[VISUAL_AIDS_LOAD] Normalizing lesson key:', lessonKey, '->', normalizedLessonKey)
+
     // Fetch visual aids for this facilitator + lesson
     const { data, error } = await supabase
       .from('visual_aids')
       .select('*')
       .eq('facilitator_id', user.id)
-      .eq('lesson_key', lessonKey)
+      .eq('lesson_key', normalizedLessonKey)
       .single()
 
     if (error) {

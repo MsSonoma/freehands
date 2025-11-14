@@ -175,7 +175,8 @@ export async function ensurePinAllowed(action = 'action') {
 				}
 				
 				// When entering facilitator section, mark it active
-				if (action === 'facilitator-page') {
+				// This includes both facilitator-page access and session-exit (leaving a learner session)
+				if (action === 'facilitator-page' || action === 'session-exit' || action === 'active-session') {
 					setInFacilitatorSection(true);
 				}
 				

@@ -22,6 +22,11 @@ function EditLessonContent() {
   const [generationProgress, setGenerationProgress] = useState('')
   const [generationCount, setGenerationCount] = useState(0)
   const MAX_GENERATIONS = 4
+  
+  // AI Rewrite loading states
+  const [rewritingDescription, setRewritingDescription] = useState(false)
+  const [rewritingTeachingNotes, setRewritingTeachingNotes] = useState(false)
+  const [rewritingVocabDefinition, setRewritingVocabDefinition] = useState({})
 
   // Check PIN requirement on mount
   useEffect(() => {
@@ -155,7 +160,7 @@ function EditLessonContent() {
   }
 
   // Auto-save visual aids data to database (separate from lesson file)
-  const saveVisualAidsData = async (images, count) => {
+  const saveVisualAidsData = async (images, count, shouldReload = false) => {
     try {
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
@@ -179,6 +184,22 @@ function EditLessonContent() {
       
       if (!res.ok) {
         console.error('Failed to auto-save visual aids data')
+        return
+      }
+
+      // Only reload if explicitly requested (e.g., after user saves selections)
+      if (shouldReload) {
+        const loadRes = await fetch(`/api/visual-aids/load?lessonKey=${encodeURIComponent(lessonKey)}`, {
+          headers: token ? {
+            'Authorization': `Bearer ${token}`
+          } : {}
+        })
+
+        if (loadRes.ok) {
+          const visualAidsData = await loadRes.json()
+          setVisualAidsImages(visualAidsData.generatedImages || [])
+          setGenerationCount(visualAidsData.generationCount || 0)
+        }
       }
     } catch (err) {
       console.error('Error auto-saving visual aids:', err)
@@ -191,77 +212,8 @@ function EditLessonContent() {
       return
     }
 
-    // If we already have images, just open the carousel (don't generate new ones)
-    if (visualAidsImages.length > 0) {
-      setShowVisualAidsCarousel(true)
-      return
-    }
-
-    // Check if limit reached (shouldn't happen on first generation, but safe check)
-    if (generationCount >= MAX_GENERATIONS) {
-      setError(`You've reached the maximum of ${MAX_GENERATIONS} generations for this lesson`)
-      return
-    }
-
-    // First time - generate initial 3 images
-    setGeneratingVisualAids(true)
-    setGenerationProgress('Starting generation...')
-    setError('')
-
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-
-      // Generate images one at a time to show progress
-      const newImages = []
-      for (let i = 0; i < 3; i++) {
-        setGenerationProgress(`Generating image ${i + 1} of 3...`)
-        
-        const res = await fetch('/api/visual-aids/generate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : ''
-          },
-          body: JSON.stringify({
-            teachingNotes: lesson.teachingNotes,
-            lessonTitle: lesson.title,
-            count: 1
-          })
-        })
-
-        if (!res.ok) {
-          const errorData = await res.json()
-          throw new Error(errorData.error || 'Failed to generate visual aids')
-        }
-
-        const data = await res.json()
-        
-        if (data.images && data.images.length > 0) {
-          newImages.push(...data.images)
-          setVisualAidsImages(prev => [...prev, ...data.images])
-        }
-      }
-      
-      const newCount = generationCount + 1
-      setGenerationCount(newCount)
-      setGenerationProgress('Complete!')
-      setTimeout(() => setGenerationProgress(''), 1000)
-      
-      // Auto-save the generated images and count to the lesson file
-      const allImages = [...visualAidsImages, ...newImages]
-      await saveVisualAidsData(allImages, newCount)
-      
-      if (newImages.length > 0) {
-        setShowVisualAidsCarousel(true)
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to generate visual aids')
-      setGenerationProgress('')
-    } finally {
-      setGeneratingVisualAids(false)
-    }
+    // Open the carousel first (user can edit prompt before generating)
+    setShowVisualAidsCarousel(true)
   }
 
   const handleGenerateMore = async (customPrompt = '') => {
@@ -276,7 +228,8 @@ function EditLessonContent() {
     }
 
     setGeneratingVisualAids(true)
-    setGenerationProgress('Generating 3 more images...')
+    const isFirstGeneration = visualAidsImages.length === 0
+    setGenerationProgress(isFirstGeneration ? 'Generating 3 images...' : 'Generating 3 more images...')
 
     try {
       const supabase = getSupabaseClient()
@@ -388,6 +341,79 @@ function EditLessonContent() {
     }
   }
 
+  // AI Rewrite handlers for Lesson Editor
+  const handleRewriteLessonDescription = async (text) => {
+    if (!text.trim()) return
+    setRewritingDescription(true)
+    try {
+      const rewritten = await handleRewriteDescription(text, lesson?.title || 'lesson', 'lesson-description')
+      if (rewritten && lesson) {
+        setLesson({ ...lesson, blurb: rewritten })
+      }
+    } finally {
+      setRewritingDescription(false)
+    }
+  }
+
+  const handleRewriteLessonTeachingNotes = async (text) => {
+    if (!text.trim()) return
+    setRewritingTeachingNotes(true)
+    try {
+      const rewritten = await handleRewriteDescription(text, lesson?.title || 'lesson', 'teaching-notes')
+      if (rewritten && lesson) {
+        setLesson({ ...lesson, teachingNotes: rewritten })
+      }
+    } finally {
+      setRewritingTeachingNotes(false)
+    }
+  }
+
+  const handleRewriteVocabDefinition = async (definition, term, index) => {
+    if (!definition.trim()) return
+    setRewritingVocabDefinition(prev => ({ ...prev, [index]: true }))
+    try {
+      const rewritten = await handleRewriteDescription(definition, term || 'vocabulary term', 'vocabulary-definition')
+      if (rewritten && lesson && lesson.vocab && lesson.vocab[index]) {
+        const updatedVocab = [...lesson.vocab]
+        updatedVocab[index] = { ...updatedVocab[index], definition: rewritten }
+        setLesson({ ...lesson, vocab: updatedVocab })
+      }
+    } finally {
+      setRewritingVocabDefinition(prev => ({ ...prev, [index]: false }))
+    }
+  }
+
+  const handleGeneratePrompt = async (teachingNotes, lessonTitle) => {
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      const res = await fetch('/api/ai/rewrite-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({
+          text: teachingNotes,
+          context: lessonTitle,
+          purpose: 'visual-aid-prompt-from-notes'
+        })
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to generate prompt')
+      }
+
+      const data = await res.json()
+      return data.rewritten
+    } catch (err) {
+      console.error('Error generating prompt:', err)
+      return null
+    }
+  }
+
   const handleSaveVisualAids = async (selectedImages) => {
     const updatedImages = visualAidsImages.map(img => {
       const isSelected = selectedImages.some(sel => sel.id === img.id)
@@ -398,11 +424,10 @@ function EditLessonContent() {
       }
     })
     
-    setVisualAidsImages(updatedImages)
     setShowVisualAidsCarousel(false)
     
-    // Auto-save the selection
-    await saveVisualAidsData(updatedImages, generationCount)
+    // Auto-save the selection and reload to get permanent URLs
+    await saveVisualAidsData(updatedImages, generationCount, true)
   }
 
   if (!pinChecked || loading) {
@@ -492,6 +517,12 @@ function EditLessonContent() {
           onSave={handleSave}
           onCancel={handleCancel}
           busy={saving}
+          onRewriteDescription={handleRewriteLessonDescription}
+          onRewriteTeachingNotes={handleRewriteLessonTeachingNotes}
+          onRewriteVocabDefinition={handleRewriteVocabDefinition}
+          rewritingDescription={rewritingDescription}
+          rewritingTeachingNotes={rewritingTeachingNotes}
+          rewritingVocabDefinition={rewritingVocabDefinition}
         />
       )}
 
@@ -503,6 +534,7 @@ function EditLessonContent() {
           onGenerateMore={handleGenerateMore}
           onUploadImage={handleUploadImage}
           onRewriteDescription={handleRewriteDescription}
+          onGeneratePrompt={handleGeneratePrompt}
           generating={generatingVisualAids}
           teachingNotes={lesson?.teachingNotes || ''}
           lessonTitle={lesson?.title || ''}
