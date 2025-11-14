@@ -51,7 +51,7 @@ export default function CounselorClient() {
           return
         }
       } catch (err) {
-        console.warn('[Mr. Mentor] PIN check failed:', err)
+        // Silent error handling
       }
       if (!cancelled) setPinChecked(true)
     })()
@@ -244,7 +244,7 @@ export default function CounselorClient() {
           }
         }
       } catch (err) {
-        console.error('[Mr. Mentor] Failed to load learners:', err)
+        // Silent error handling
       }
     })()
     return () => { cancelled = true }
@@ -266,11 +266,10 @@ export default function CounselorClient() {
           const transcript = await fetchLearnerTranscript(selectedLearnerId, supabase)
           if (!cancelled) {
             setLearnerTranscript(transcript)
-            console.log('[Mr. Mentor] Loaded learner transcript:', transcript.substring(0, 200))
           }
         }
       } catch (err) {
-        console.error('[Mr. Mentor] Failed to load learner transcript:', err)
+        // Silent error handling
         if (!cancelled) setLearnerTranscript('')
       }
     })()
@@ -298,10 +297,9 @@ export default function CounselorClient() {
         if (response.ok && !cancelled) {
           const data = await response.json()
           setGoalsNotes(data.goals_notes || '')
-          console.log('[Mr. Mentor] Loaded goals notes:', data.goals_notes?.substring(0, 100))
         }
       } catch (err) {
-        console.error('[Mr. Mentor] Failed to load goals notes:', err)
+        // Silent error handling
         if (!cancelled) setGoalsNotes('')
       }
     })()
@@ -334,11 +332,10 @@ export default function CounselorClient() {
           const data = await response.json()
           if (data.draft?.draft_summary) {
             setDraftSummary(data.draft.draft_summary)
-            console.log('[Mr. Mentor] Loaded existing draft summary')
           }
         }
       } catch (err) {
-        console.warn('[Mr. Mentor] Failed to load existing draft:', err)
+        // Silent error handling
       }
     })()
     
@@ -351,7 +348,6 @@ export default function CounselorClient() {
     
     // Delay preload to let visible content load first
     const preloadTimer = setTimeout(() => {
-      console.log('[Mr. Mentor] Triggering background preload of overlays')
       // Trigger loads by dispatching events to overlays
       window.dispatchEvent(new CustomEvent('preload-overlays', { 
         detail: { learnerId: selectedLearnerId } 
@@ -383,7 +379,7 @@ export default function CounselorClient() {
     try {
       resolvedId = localStorage.getItem('mr_mentor_active_session_id')
     } catch (err) {
-      console.warn('[Session] Failed to read persisted Mentor session id:', err)
+      // Silent error handling
     }
 
     if (!resolvedId) {
@@ -459,36 +455,19 @@ export default function CounselorClient() {
           setSessionLoading(false)
         }
       } catch (err) {
-        console.error('[Session] Polling error:', err)
+        // Silent error handling
       }
     }, 8000)
   }, [sessionId, accessToken])
 
   const initializeMentorSession = useCallback(async () => {
-    console.log('[Session] initializeMentorSession called with:', { sessionId, accessToken: !!accessToken, hasAccess, tierChecked })
-    console.log('[Session] Detailed check:', { 
-      hasSessionId: !!sessionId, 
-      hasAccessToken: !!accessToken, 
-      hasAccess, 
-      tierChecked, 
-      isMounted: isMountedRef.current 
-    })
-    
     if (!sessionId || !accessToken || !hasAccess || !tierChecked) {
-      console.log('[Session] Early exit - missing dependencies', {
-        missingSessionId: !sessionId,
-        missingAccessToken: !accessToken,
-        missingHasAccess: !hasAccess,
-        missingTierChecked: !tierChecked
-      })
       return
     }
 
-    console.log('[Session] Setting loading to true')
     setSessionLoading(true)
 
     try {
-      console.log('[Session] Checking existing session...')
       const checkRes = await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`
@@ -496,19 +475,16 @@ export default function CounselorClient() {
       })
 
       if (!isMountedRef.current) {
-        console.log('[Session] Unmounted after first fetch, clearing loading')
         setSessionLoading(false)
         return
       }
 
       if (!checkRes.ok) {
-        console.log('[Session] Check response not ok:', checkRes.status)
         const data = await checkRes.json().catch(() => ({}))
         throw new Error(data?.error || 'Failed to check existing session')
       }
 
       const payload = await checkRes.json()
-      console.log('[Session] Check response:', { status: payload?.status, isOwner: payload?.isOwner, hasSession: !!payload?.session })
 
       if (!isMountedRef.current) {
         return
@@ -517,7 +493,6 @@ export default function CounselorClient() {
       const { session: activeSession, status, isOwner } = payload || {}
 
       if (!activeSession || status === 'none') {
-        console.log('[Session] No active session, creating new one')
         const deviceName = `${navigator.platform || 'Unknown'} - ${navigator.userAgent.split(/[()]/)[1] || 'Browser'}`
         const createRes = await fetch('/api/mentor-session', {
           method: 'POST',
@@ -533,7 +508,6 @@ export default function CounselorClient() {
         })
 
         const createData = await createRes.json().catch(() => ({}))
-        console.log('[Session] Create response:', { ok: createRes.ok, data: createData })
 
         if (!createRes.ok) {
           throw new Error(createData?.error || 'Failed to initialize mentor session')
@@ -542,19 +516,17 @@ export default function CounselorClient() {
         const createdSession = createData.session || createData
 
         if (!isMountedRef.current) {
-          console.log('[Session] Unmounted after create, clearing loading')
+          setSessionLoading(false)
           setSessionLoading(false)
           return
         }
 
         if (createdSession?.session_id && createdSession.session_id !== sessionId) {
-          console.log('[Session] Session ID mismatch, reassigning:', { expected: sessionId, received: createdSession.session_id })
           setSessionLoading(false)
           assignSessionIdentifier(createdSession.session_id)
           return
         }
 
-        console.log('[Session] New session created successfully, clearing loading')
         setConversationHistory(Array.isArray(createdSession?.conversation_history) ? createdSession.conversation_history : [])
         setDraftSummary(createdSession?.draft_summary || '')
         setCurrentSessionTokens(createdSession?.token_count || 0)
@@ -567,7 +539,6 @@ export default function CounselorClient() {
       }
 
       if (!isOwner && activeSession) {
-        console.log('[Session] Not owner, showing takeover dialog')
         setSessionLoading(false)
         setConflictingSession(activeSession)
         setShowTakeoverDialog(true)
@@ -575,13 +546,11 @@ export default function CounselorClient() {
       }
 
       if (activeSession?.session_id && activeSession.session_id !== sessionId) {
-        console.log('[Session] Active session ID mismatch, reassigning:', { expected: sessionId, received: activeSession.session_id })
         setSessionLoading(false)
         assignSessionIdentifier(activeSession.session_id)
         return
       }
 
-      console.log('[Session] Loading existing session, clearing loading')
       setConversationHistory(Array.isArray(activeSession?.conversation_history) ? activeSession.conversation_history : [])
       setDraftSummary(activeSession?.draft_summary || '')
       setCurrentSessionTokens(activeSession?.token_count || 0)
@@ -592,32 +561,26 @@ export default function CounselorClient() {
       startSessionPolling()
     } catch (err) {
       if (!isMountedRef.current) {
-        console.log('[Session] Error but unmounted, clearing loading')
         return
       }
 
-      console.error('[Session] Initialization error:', err)
+      // Silent error handling
       setSessionLoading(false)
     }
   }, [sessionId, accessToken, hasAccess, tierChecked, assignSessionIdentifier, startSessionPolling])
 
   // Initialize session when all dependencies are ready
   useEffect(() => {
-    console.log('[Session] useEffect triggered:', { sessionId, hasAccessToken: !!accessToken, hasAccess, tierChecked })
-    
     // Only attempt initialization when all required dependencies are ready
     if (!sessionId || !accessToken || !hasAccess || !tierChecked) {
-      console.log('[Session] Dependencies not ready yet')
       // If we're still waiting for dependencies, keep loading state true only if we haven't checked yet
       if (tierChecked && (!hasAccess || !accessToken)) {
         // Dependencies are checked but we don't have access - stop loading
-        console.log('[Session] Tier checked but no access/token, stopping loading')
         setSessionLoading(false)
       }
       return
     }
     
-    console.log('[Session] All dependencies ready, calling initializeMentorSession')
     // All dependencies ready - initialize
     initializeMentorSession()
     
@@ -644,7 +607,7 @@ export default function CounselorClient() {
           })
         })
       } catch (err) {
-        console.error('[Session] Failed to save conversation:', err)
+        // Silent error handling
       }
     }, 1000) // Save 1 second after last change
     
@@ -910,15 +873,13 @@ export default function CounselorClient() {
         } catch {}
       }
     } catch (err) {
-      console.error('[Mr. Mentor] Audio playback failed:', err)
+      // Silent error handling
       setIsSpeaking(false)
     }
   }, [muted])
 
   // Skip speech: stop audio and video, jump to end of response
   const handleSkipSpeech = useCallback(() => {
-    console.log('[Mr. Mentor] Skipping current speech')
-    
     // Stop audio
     if (audioRef.current) {
       try {
@@ -959,8 +920,6 @@ export default function CounselorClient() {
     }
 
     try {
-      console.log('[Mr. Mentor] Handling lesson generation result:', toolResult)
-      
       // Emit validation toast
       enqueueToolThoughts([{
         id: `validate-${Date.now()}`,
@@ -980,8 +939,6 @@ export default function CounselorClient() {
         : `Found ${validation.issues.length} quality issue(s)`
       
       if (!validation.passed && validation.issues.length > 0) {
-        console.log('[Mr. Mentor] Validation failed, auto-fixing:', validation.issues)
-        
         enqueueToolThoughts([{
           id: `validate-error-${Date.now()}`,
           name: 'validate_lesson',
@@ -1015,7 +972,6 @@ export default function CounselorClient() {
         const fixResult = await fixResponse.json()
         
         if (fixResponse.ok) {
-          console.log('[Mr. Mentor] Auto-fix successful')
           summary.status = 'fixed'
           summary.fixApplied = true
           summary.message = 'Lesson quality improved automatically'
@@ -1026,7 +982,6 @@ export default function CounselorClient() {
             message: 'Lesson quality improved'
           }])
         } else {
-          console.error('[Mr. Mentor] Auto-fix failed:', fixResult.error)
           summary.fixApplied = false
           summary.error = fixResult?.error || 'Auto-fix failed'
           summary.status = 'needs_attention'
@@ -1038,7 +993,6 @@ export default function CounselorClient() {
           }])
         }
       } else {
-        console.log('[Mr. Mentor] Validation passed')
         enqueueToolThoughts([{
           id: `validate-success-${Date.now()}`,
           name: 'validate_lesson',
@@ -1052,14 +1006,13 @@ export default function CounselorClient() {
         window.dispatchEvent(new CustomEvent('mr-mentor:lesson-generated', {
           detail: { lessonFile: summary.lessonFile, lessonTitle: summary.lessonTitle }
         }))
-        console.log('[Mr. Mentor] Dispatched lesson-generated event')
       } catch (err) {
-        console.warn('[Mr. Mentor] Could not dispatch lesson event:', err)
+        // Silent error handling
       }
       
       return summary
     } catch (err) {
-      console.error('[Mr. Mentor] Lesson generation handling error:', err)
+      // Silent error handling
       enqueueToolThoughts([{
         id: `system-error-${Date.now()}`,
         name: 'system',
@@ -1101,12 +1054,12 @@ export default function CounselorClient() {
       let errorMessage = `Follow-up failed with status ${response.status}`
       try {
         const errorData = await response.json()
-        console.error('[Mr. Mentor] Follow-up error response:', errorData)
+        // Silent error handling
         if (errorData.error) {
           errorMessage += `: ${errorData.error}`
         }
       } catch (parseErr) {
-        console.error('[Mr. Mentor] Could not parse follow-up error response:', parseErr)
+        // Silent error handling
       }
       throw new Error(errorMessage)
     }
@@ -1183,13 +1136,12 @@ export default function CounselorClient() {
         let errorMessage = `Request failed with status ${response.status}`
         try {
           const errorData = await response.json()
-          console.error('[Mr. Mentor] Error response:', errorData)
+          // Silent error handling
           if (errorData.error) {
             errorMessage += `: ${errorData.error}`
           }
         } catch (parseErr) {
-          console.error('[Mr. Mentor] Could not parse error response:', parseErr)
-          // If response isn't JSON, use default message
+          // Silent error handling
         }
         throw new Error(errorMessage)
       }
@@ -1223,9 +1175,8 @@ export default function CounselorClient() {
                   lessonTitle: toolResult.lessonTitle
                 }
               }))
-              console.log('[Mr. Mentor] Dispatched lesson-scheduled event')
             } catch (err) {
-              console.warn('[Mr. Mentor] Could not dispatch schedule event:', err)
+              // Silent error handling
             }
           }
         }
@@ -1302,12 +1253,11 @@ export default function CounselorClient() {
 
       // Update draft summary in background (async, non-blocking)
       updateDraftSummary(finalHistory, token).catch(err => {
-        console.warn('[Mr. Mentor] Failed to update draft summary:', err)
-        // Don't block the UI or show error - this is a background operation
+        // Silent error handling - don't block the UI
       })
 
     } catch (err) {
-      console.error('[Mr. Mentor] Request failed:', err)
+      // Silent error handling
       enqueueToolThoughts([
         {
           id: `error-${Date.now()}`,
@@ -1325,14 +1275,10 @@ export default function CounselorClient() {
   // Helper: Update draft summary after each exchange (not saved to memory until approved)
   const updateDraftSummary = async (conversationHistory, token) => {
     try {
-      console.log('[Mr. Mentor] Updating draft summary...')
-      
       // Only send the last 2 turns (user + assistant) to update incrementally
       const recentTurns = conversationHistory.slice(-2)
       
       const learnerId = selectedLearnerId !== 'none' ? selectedLearnerId : null
-      
-      console.log('[Mr. Mentor] Sending draft update:', { learnerId, turnCount: recentTurns.length })
       
       const response = await fetch('/api/conversation-drafts', {
         method: 'POST',
@@ -1348,22 +1294,12 @@ export default function CounselorClient() {
       
       if (response.ok) {
         const data = await response.json()
-        console.log('[Mr. Mentor] Draft response:', data)
         if (data.draft?.draft_summary) {
           setDraftSummary(data.draft.draft_summary)
-          console.log('[Mr. Mentor] Draft summary updated:', data.draft.draft_summary.substring(0, 50) + '...')
-        } else {
-          console.warn('[Mr. Mentor] No draft_summary in response')
         }
-      } else {
-        const errorData = await response.json().catch(() => ({}))
-        console.error('[Mr. Mentor] Draft update failed:', response.status, errorData)
       }
-      
-      console.log('[Mr. Mentor] Draft summary update complete')
     } catch (err) {
       // Silent failure - don't interrupt user experience
-      console.warn('[Mr. Mentor] Draft update failed:', err)
     }
   }
 
@@ -1431,7 +1367,7 @@ export default function CounselorClient() {
       
       alert('Conversation saved to memory!')
     } catch (err) {
-      console.error('[Mr. Mentor] Failed to save:', err)
+      // Silent error handling
       alert('Failed to save conversation. Please try again.')
     }
   }, [conversationHistory, selectedLearnerId])
@@ -1463,7 +1399,7 @@ export default function CounselorClient() {
       
       alert('Conversation deleted.')
     } catch (err) {
-      console.error('[Mr. Mentor] Failed to delete:', err)
+      // Silent error handling
       alert('Failed to delete conversation.')
     }
   }, [selectedLearnerId])
@@ -1480,7 +1416,7 @@ export default function CounselorClient() {
           }
         })
       } catch (e) {
-        console.error('Failed to end mentor session:', e)
+        // Silent error handling
       }
     }
     
@@ -1502,7 +1438,7 @@ export default function CounselorClient() {
           })
         }
       } catch (e) {
-        console.error('Failed to end mentor session:', e)
+        // Silent error handling
       }
     }
     
@@ -1709,15 +1645,6 @@ export default function CounselorClient() {
   })() : null
 
   const videoEffectiveHeight = videoMaxHeight && Number.isFinite(videoMaxHeight) ? videoMaxHeight : null
-
-  // Debug logging
-  console.log('[Mr. Mentor Layout]', {
-    isMobileLandscape,
-    videoMaxHeight,
-    videoEffectiveHeight,
-    windowHeight: typeof window !== 'undefined' ? window.innerHeight : 'N/A',
-    calculatedPercentage: videoEffectiveHeight && typeof window !== 'undefined' ? (videoEffectiveHeight / window.innerHeight * 100).toFixed(1) + '%' : 'N/A'
-  })
 
   return (
     <div style={{
