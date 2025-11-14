@@ -198,7 +198,6 @@ export async function getLearner(id) {
 }
 
 export async function updateLearner(id, updates) {
-  console.log('🔧 updateLearner called with:', { id, updates });
   const supabase = getSupabaseClient();
   if (supabase && hasSupabaseEnv()) {
     if (supabaseLearnersMode === 'disabled') return updateLocal(id, updates);
@@ -212,7 +211,6 @@ export async function updateLearner(id, updates) {
     const flat = toFlatTargets(updates);
     const { humor_level: flatHumorLevel, ...targetValues } = flat;
     const humorLevel = flatHumorLevel ?? (updates.humor_level !== undefined ? resolveHumorLevel(updates.humor_level, DEFAULT_HUMOR_LEVEL) : undefined);
-    console.log('📦 toFlatTargets returned:', flat);
     const tryFlat = supabaseLearnersMode !== 'json';
     if (tryFlat) {
       const updatePayload = {
@@ -227,12 +225,10 @@ export async function updateLearner(id, updates) {
         ...(updates.active_golden_keys !== undefined ? { active_golden_keys: updates.active_golden_keys } : {}),
         ...(typeof humorLevel === 'string' ? { humor_level: humorLevel } : {}),
       };
-      console.log('📤 Sending to Supabase (flat mode):', updatePayload);
       const { data, error } = await updateWithOwner(supabase, id, updatePayload, uid);
       if (!error) { 
         supabaseLearnersMode = 'flat'; 
         const normalized = normalizeRow(data);
-        console.log('✅ Supabase update successful, normalized:', normalized);
         return normalized;
       }
       if (!isUndefinedColumnOrTable(error)) throw new Error(error.message || 'Failed to update learner');
@@ -308,7 +304,6 @@ function toFlatTargets(obj) {
   if (typeof humor === 'string') {
     result.humor_level = humor;
   }
-  console.log('🔄 toFlatTargets input:', obj, 'output:', result);
   return result;
 }
 
