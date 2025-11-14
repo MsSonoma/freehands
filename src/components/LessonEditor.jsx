@@ -33,7 +33,6 @@ export default function LessonEditor({
   // Normalize lesson data to consistent field names
   const normalizeLessonData = (lessonData) => {
     const normalized = JSON.parse(JSON.stringify(lessonData))
-    console.log('[LessonEditor] Original lesson data:', lessonData)
     
     // Normalize multiple choice questions
     if (normalized.multiplechoice) {
@@ -62,7 +61,6 @@ export default function LessonEditor({
       normalized.shortanswer = toArray(normalized.shortanswer).map(q => {
         const answers = q.expectedAny || q.expected || q.answers || q.answer || q.a || q.A
         const answerArray = toArray(answers)
-        console.log('[Normalize SA] Question:', q.question, 'Raw answers:', answers, 'Array:', answerArray)
         return {
           question: q.question || q.q || q.Q || '',
           expectedAny: answerArray.length > 0 ? answerArray : ['']
@@ -101,7 +99,6 @@ export default function LessonEditor({
       })
     }
     
-    console.log('[LessonEditor] Normalized lesson data:', normalized)
     return normalized
   }
 
@@ -279,18 +276,11 @@ export default function LessonEditor({
   }
 
   const handleSave = () => {
-    console.log('[LessonEditor] handleSave called')
-    console.log('[LessonEditor] Current lesson state:', JSON.stringify(lesson, null, 2).substring(0, 500))
-    
     if (!validateLesson()) {
-      console.log('[LessonEditor] Validation failed, not saving')
       return
     }
     
     const cleanedLesson = cleanLesson(lesson)
-    console.log('[LessonEditor] Cleaned lesson data:', JSON.stringify(cleanedLesson, null, 2).substring(0, 500))
-    console.log('[LessonEditor] Calling onSave with cleaned lesson')
-    
     onSave(cleanedLesson)
   }
 
@@ -641,8 +631,6 @@ function VocabularyEditor({ vocab, onChange, styles, onRewriteDefinition, rewrit
 
 // Multiple Choice Editor Component
 function MultipleChoiceEditor({ questions, onChange, styles }) {
-  console.log('[MultipleChoiceEditor] Received questions:', questions)
-  
   const addQuestion = () => {
     onChange([...questions, { question: '', choices: ['', '', '', ''], correct: 0 }])
   }
@@ -812,8 +800,6 @@ function TrueFalseEditor({ questions, onChange, styles }) {
 
 // Short Answer Editor Component
 function ShortAnswerEditor({ questions, onChange, styles }) {
-  console.log('[ShortAnswerEditor] Received questions:', questions)
-  
   const addQuestion = () => {
     onChange([...questions, { question: '', expectedAny: [''] }])
   }
@@ -950,8 +936,6 @@ function ShortAnswerEditor({ questions, onChange, styles }) {
 
 // Fill in the Blank Editor (similar to short answer)
 function FillInBlankEditor({ questions, onChange, styles }) {
-  console.log('[FillInBlankEditor] Received questions:', questions)
-  
   const addQuestion = () => {
     onChange([...questions, { question: '', expectedAny: [''] }])
   }
