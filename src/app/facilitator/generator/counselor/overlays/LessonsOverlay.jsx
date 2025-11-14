@@ -137,7 +137,6 @@ export default function LessonsOverlay({ learnerId }) {
 
   const loadLessons = useCallback(async () => {
     if (Object.keys(allLessons).length > 0) {
-      console.log('[LessonsOverlay] Lessons already loaded, skipping')
       setLoading(false)
       return
     }
@@ -147,53 +146,38 @@ export default function LessonsOverlay({ learnerId }) {
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
-      console.log('[LessonsOverlay] Session token available:', !!token)
 
       const results = {}
       const subjectsToFetch = SUBJECTS.filter(subject => subject !== 'generated')
 
       for (const subject of subjectsToFetch) {
         try {
-          console.log(`[LessonsOverlay] Fetching lessons for subject: ${subject}`)
           const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, {
             cache: 'no-store'
           })
-          console.log(`[LessonsOverlay] Response for ${subject}:`, res.status, res.ok)
           if (!res.ok) {
             if (res.status === 401) {
-              console.log(`[LessonsOverlay] No access to ${subject} lessons (authentication required)`)
               results[subject] = []
               continue
             }
-            let errorDetail = ''
-            try {
-              const errorData = await res.json()
-              errorDetail = errorData.detail || errorData.error || ''
-            } catch {}
-            console.error(`Failed to load ${subject} lessons:`, res.status, errorDetail)
             results[subject] = []
             continue
           }
           const list = await res.json()
           results[subject] = Array.isArray(list) ? list : []
-          console.log(`[LessonsOverlay] Loaded ${results[subject].length} lessons for ${subject}`)
         } catch (err) {
-          console.error(`Error loading ${subject} lessons:`, err)
           results[subject] = []
         }
       }
 
       if (token) {
         try {
-          console.log('[LessonsOverlay] Fetching generated lessons')
           const res = await fetch('/api/facilitator/lessons/list', {
             cache: 'no-store',
             headers: { Authorization: `Bearer ${token}` }
           })
-          console.log('[LessonsOverlay] Generated lessons response:', res.status, res.ok)
           if (res.ok) {
             const generatedList = await res.json()
-            console.log('[LessonsOverlay] Generated lessons:', generatedList.length)
             const sortedGeneratedList = generatedList.sort((a, b) => {
               const timeA = new Date(a.created_at || 0).getTime()
               const timeB = new Date(b.created_at || 0).getTime()
@@ -215,14 +199,13 @@ export default function LessonsOverlay({ learnerId }) {
             }
           }
         } catch (err) {
-          console.error('Error loading generated lessons:', err)
+          // Silent error handling
         }
       }
 
-      console.log('[LessonsOverlay] All lessons loaded:', Object.keys(results).map(s => `${s}: ${results[s].length}`))
       setAllLessons(results)
     } catch (err) {
-      console.error('Failed to load lessons:', err)
+      // Silent error handling
     } finally {
       setLoading(false)
     }
@@ -258,7 +241,7 @@ export default function LessonsOverlay({ learnerId }) {
         try {
           await supabase.from('learners').update({ approved_lessons: approvedMap }).eq('id', learnerId)
         } catch (normErr) {
-          console.warn('[LessonsOverlay] Failed to normalize approved lesson keys:', normErr)
+          // Silent error handling
         }
       }
 
@@ -311,14 +294,14 @@ export default function LessonsOverlay({ learnerId }) {
           }
         }
       } catch (schedErr) {
-        console.warn('[LessonsOverlay] Could not load scheduled lessons:', schedErr)
+        // Silent error handling
       }
 
       // Load medals
       const medalsData = await getMedalsForLearner(learnerId)
       setMedals(medalsData || {})
     } catch (err) {
-      console.error('Failed to load learner data:', err)
+      // Silent error handling
       setApprovedLessons({})
       setLessonNotes({})
       setScheduledLessons({})
@@ -331,7 +314,6 @@ export default function LessonsOverlay({ learnerId }) {
 
   // Initial load on mount
   useEffect(() => {
-    console.log('[LessonsOverlay] Component mounted, triggering initial load')
     loadLessons()
     if (learnerId && learnerId !== 'none') {
       loadLearnerData()
@@ -341,7 +323,6 @@ export default function LessonsOverlay({ learnerId }) {
   // Listen for preload event to trigger initial load
   useEffect(() => {
     const handlePreload = () => {
-      console.log('[LessonsOverlay] Received preload event, loading data')
       loadLessons()
       if (learnerId && learnerId !== 'none') {
         loadLearnerData()
@@ -349,7 +330,6 @@ export default function LessonsOverlay({ learnerId }) {
     }
     
     const handleLessonGenerated = () => {
-      console.log('[LessonsOverlay] Lesson generated, reloading')
       // Clear cache and reload
       setAllLessons({})
       loadLessons()
@@ -466,9 +446,9 @@ export default function LessonsOverlay({ learnerId }) {
       const supabase = getSupabaseClient()
       const { error } = await supabase.from('learners').update({ lesson_notes: newNotes }).eq('id', learnerId)
       if (error) throw error
-      console.log('[LessonsOverlay] Successfully saved note for lesson:', lessonKey)
+      // Note saved successfully
     } catch (e) {
-      console.error('[LessonsOverlay] Failed to save note:', e)
+      // Silent error handling
       alert('Failed to save note')
       setLessonNotes(lessonNotes) // Revert
     } finally {
@@ -505,7 +485,7 @@ export default function LessonsOverlay({ learnerId }) {
       // Load visual aids for this lesson
       await loadVisualAidsForLesson(lessonKey)
     } catch (err) {
-      console.error('[LessonsOverlay] Failed to load lesson for editing:', err)
+      // Silent error handling
       alert('Failed to load lesson: ' + err.message)
       setEditingLesson(null)
     } finally {
@@ -543,10 +523,9 @@ export default function LessonsOverlay({ learnerId }) {
       // Success - close editor
       setEditingLesson(null)
       setLessonEditorData(null)
-      // Don't navigate away - just show success message
-      console.log('[LessonsOverlay] Lesson saved successfully')
+      // Lesson saved successfully
     } catch (err) {
-      console.error('[LessonsOverlay] Failed to save lesson:', err)
+      // Silent error handling
       alert('Failed to save lesson: ' + err.message)
     } finally {
       setLessonEditorSaving(false)
@@ -567,7 +546,7 @@ export default function LessonsOverlay({ learnerId }) {
       })
       
       if (!res.ok) {
-        console.error('Failed to load visual aids')
+        // Failed to load visual aids
         return
       }
       
@@ -575,7 +554,7 @@ export default function LessonsOverlay({ learnerId }) {
       setVisualAidsImages(visualAidsData.generatedImages || [])
       setGenerationCount(visualAidsData.generationCount || 0)
     } catch (err) {
-      console.error('Error loading visual aids:', err)
+      // Silent error handling
     }
   }
 
@@ -602,10 +581,10 @@ export default function LessonsOverlay({ learnerId }) {
       })
       
       if (!res.ok) {
-        console.error('Failed to auto-save visual aids data')
+        // Failed to auto-save visual aids data
       }
     } catch (err) {
-      console.error('Error auto-saving visual aids:', err)
+      // Silent error handling
     }
   }
 
@@ -764,7 +743,7 @@ export default function LessonsOverlay({ learnerId }) {
       
       return newImage
     } catch (err) {
-      console.error('Error uploading image:', err)
+      // Silent error handling
       setVisualAidsError('Failed to upload image')
       return null
     }
@@ -796,7 +775,7 @@ export default function LessonsOverlay({ learnerId }) {
       const data = await res.json()
       return data.rewritten
     } catch (err) {
-      console.error('Error rewriting text:', err)
+      // Silent error handling
       setVisualAidsError('Failed to rewrite text')
       return null
     }
@@ -887,7 +866,7 @@ export default function LessonsOverlay({ learnerId }) {
         })
       }
     } catch (err) {
-      console.error('Error rewriting vocabulary definition:', err)
+      // Silent error handling
     } finally {
       setRewritingVocabDefinition(prev => ({ ...prev, [index]: false }))
     }
@@ -930,7 +909,7 @@ export default function LessonsOverlay({ learnerId }) {
       setSchedulingLesson(null)
       alert(`Lesson scheduled for ${scheduledDate}`)
     } catch (e) {
-      console.error('[LessonsOverlay] Failed to schedule:', e)
+      // Silent error handling
       alert('Failed to schedule: ' + e.message)
     } finally {
       setSaving(false)
@@ -961,7 +940,7 @@ export default function LessonsOverlay({ learnerId }) {
       const { error } = await supabase.from('learners').update({ approved_lessons: next }).eq('id', learnerId)
       if (error) throw error
     } catch (err) {
-      console.error('[LessonsOverlay] Failed to update lesson availability:', err)
+      // Silent error handling
       alert('Failed to update lesson availability. Please try again.')
       setApprovedLessons(previous)
     } finally {
