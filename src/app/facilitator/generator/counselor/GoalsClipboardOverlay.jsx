@@ -22,12 +22,9 @@ export default function GoalsClipboardOverlay({
 
   const loadGoals = useCallback(async () => {
     try {
-      console.log('[GoalsClipboard] Loading goals for learnerId:', learnerId)
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
-      
-      console.log('[GoalsClipboard] Token available:', !!token)
       
       const params = new URLSearchParams()
       if (learnerId && learnerId !== 'none') {
@@ -40,28 +37,19 @@ export default function GoalsClipboardOverlay({
       }
       
       const url = `/api/goals-notes?${params.toString()}`
-      console.log('[GoalsClipboard] Fetching from:', url)
       
       const response = await fetch(url, { headers })
-      console.log('[GoalsClipboard] Load response status:', response.status, response.ok)
       
       if (response.ok) {
         const data = await response.json()
-        console.log('[GoalsClipboard] Loaded goals data:', data)
-        console.log('[GoalsClipboard] goals_notes value:', data.goals_notes)
         setText(data.goals_notes || '')
-      } else {
-        console.error('[GoalsClipboard] Failed to load goals, status:', response.status)
-        const errorText = await response.text()
-        console.error('[GoalsClipboard] Error response:', errorText)
       }
     } catch (err) {
-      console.error('[GoalsClipboard] Failed to load goals:', err)
+      // Silent error handling
     }
   }, [learnerId])
 
   useEffect(() => {
-    console.log('[GoalsClipboard] useEffect triggered, visible:', visible, 'learnerId:', learnerId)
     if (visible) {
       // Load existing goals when overlay opens
       loadGoals()
@@ -80,8 +68,6 @@ export default function GoalsClipboardOverlay({
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
       
-      console.log('[GoalsClipboard] Save starting, token available:', !!token, 'learnerId:', learnerId)
-      
       const body = { goals_notes: text }
       if (learnerId && learnerId !== 'none') {
         body.learner_id = learnerId
@@ -92,25 +78,18 @@ export default function GoalsClipboardOverlay({
         headers['Authorization'] = `Bearer ${token}`
       }
       
-      console.log('[GoalsClipboard] Sending save request with body:', body)
-      
       const response = await fetch('/api/goals-notes', {
         method: 'POST',
         headers,
         body: JSON.stringify(body)
       })
 
-      console.log('[GoalsClipboard] Save response status:', response.status, response.ok)
-
       if (!response.ok) {
         let errorData = {}
         const contentType = response.headers.get('content-type')
-        console.log('[GoalsClipboard] Error response content-type:', contentType)
-        console.log('[GoalsClipboard] Full response:', response)
         
         try {
           const responseText = await response.text()
-          console.log('[GoalsClipboard] Raw response text:', responseText)
           
           if (contentType?.includes('application/json')) {
             errorData = JSON.parse(responseText)
@@ -118,11 +97,9 @@ export default function GoalsClipboardOverlay({
             errorData = { error: responseText || 'Unknown error' }
           }
         } catch (e) {
-          console.error('[GoalsClipboard] Failed to parse response:', e)
           errorData = { error: 'Failed to parse error response' }
         }
         
-        console.error('[GoalsClipboard] Save failed with error:', errorData)
         throw new Error(errorData.error || `Failed to save goals (${response.status})`)
       }
 
@@ -135,7 +112,6 @@ export default function GoalsClipboardOverlay({
         setSaveStatus('')
       }, 2000)
     } catch (err) {
-      console.error('[GoalsClipboard] Save failed:', err)
       setSaveStatus(`Save failed: ${err.message}`)
     } finally {
       setSaving(false)
