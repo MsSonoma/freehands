@@ -76,7 +76,6 @@ export async function POST(req) {
         })
 
         if (!promptRequest.ok) {
-          console.error('[VISUAL_AIDS] Prompt generation failed:', await promptRequest.text())
           continue
         }
 
@@ -84,7 +83,6 @@ export async function POST(req) {
         const imagePrompt = promptData.choices?.[0]?.message?.content?.trim()
 
         if (!imagePrompt) {
-          console.error('[VISUAL_AIDS] No prompt generated')
           continue
         }
 
@@ -143,7 +141,6 @@ export async function POST(req) {
         })
 
         if (!imageRequest.ok) {
-          console.error('[VISUAL_AIDS] Image generation failed:', await imageRequest.text())
           continue
         }
 
@@ -159,7 +156,6 @@ export async function POST(req) {
           })
         }
       } catch (err) {
-        console.error('[VISUAL_AIDS] Error generating image:', err)
         // Continue to next image
       }
     }
@@ -174,7 +170,6 @@ export async function POST(req) {
     })
     
   } catch (err) {
-    console.error('[VISUAL_AIDS] Error:', err)
     return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
   }
 }
