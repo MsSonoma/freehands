@@ -79,7 +79,6 @@ export default function LearnerTutorial() {
         setCompleting(false);
       }
     } catch (err) {
-      console.error('[LearnerTutorial] Error:', err);
       setError('Something went wrong. Please try again.');
       setCompleting(false);
     }

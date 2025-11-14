@@ -103,7 +103,6 @@ export default function FacilitatorTutorial() {
         setCompleting(false);
       }
     } catch (err) {
-      console.error('[FacilitatorTutorial] Error:', err);
       setError('Something went wrong. Please try again.');
       setCompleting(false);
     }
