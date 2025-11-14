@@ -1,3 +1,4 @@
+2025-11-15T00:07:00Z | Copilot | Removed 11 console.log from LessonEditor (normalization, save, sub-editors). Build clean. Committed.
 2025-11-15T00:06:00Z | Copilot | Removed 7 console.error from lessons/edit page (visual aids handlers). Build clean. Committed.
 2025-11-15T00:05:00Z | Copilot | Removed 13 console logs from lesson-maker page (error handlers + validation). Build clean. Committed.
 2025-11-15T00:04:00Z | Copilot | Removed console.error from PostLessonSurvey. Build clean. Committed.
