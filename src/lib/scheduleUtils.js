@@ -15,14 +15,12 @@ export async function getActiveScheduledLessons(learnerId, date = null) {
     )
 
     if (!response.ok) {
-      console.error('Failed to fetch scheduled lessons')
       return []
     }
 
     const data = await response.json()
     return data.lessons || []
   } catch (error) {
-    console.error('Error fetching scheduled lessons:', error)
     return []
   }
 }
@@ -71,7 +69,6 @@ export async function getLessonScheduleDates(learnerId, lessonKey) {
       .filter(item => item.lesson_key === lessonKey)
       .map(item => item.scheduled_date)
   } catch (error) {
-    console.error('Error fetching lesson schedule dates:', error)
     return []
   }
 }
