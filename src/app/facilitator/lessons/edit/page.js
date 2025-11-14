@@ -102,7 +102,6 @@ function EditLessonContent() {
         })
         
         if (!res.ok) {
-          console.error('Failed to load visual aids')
           return
         }
         
@@ -113,7 +112,7 @@ function EditLessonContent() {
           setGenerationCount(visualAidsData.generationCount || 0)
         }
       } catch (err) {
-        console.error('Error loading visual aids:', err)
+        // Silent error handling
       }
     })()
     
@@ -183,7 +182,6 @@ function EditLessonContent() {
       })
       
       if (!res.ok) {
-        console.error('Failed to auto-save visual aids data')
         return
       }
 
@@ -202,7 +200,7 @@ function EditLessonContent() {
         }
       }
     } catch (err) {
-      console.error('Error auto-saving visual aids:', err)
+      // Silent error handling
     }
   }
 
@@ -303,7 +301,6 @@ function EditLessonContent() {
       
       return newImage
     } catch (err) {
-      console.error('Error uploading image:', err)
       setError('Failed to upload image')
       return null
     }
@@ -335,7 +332,6 @@ function EditLessonContent() {
       const data = await res.json()
       return data.rewritten
     } catch (err) {
-      console.error('Error rewriting text:', err)
       setError('Failed to rewrite text')
       return null
     }
@@ -409,7 +405,6 @@ function EditLessonContent() {
       const data = await res.json()
       return data.rewritten
     } catch (err) {
-      console.error('Error generating prompt:', err)
       return null
     }
   }
