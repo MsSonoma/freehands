@@ -75,7 +75,6 @@ export default function LessonMakerPage(){
           setQuotaLoading(false)
         }
       } catch (e) {
-        console.error('Failed to check generation quota:', e)
         if (!cancelled) setQuotaLoading(false)
       }
     })()
@@ -111,7 +110,7 @@ export default function LessonMakerPage(){
         }
       }
     } catch (err) {
-      console.error('Error rewriting description:', err)
+      // Silent error handling
     } finally {
       setRewritingDescription(false)
     }
@@ -145,7 +144,7 @@ export default function LessonMakerPage(){
         }
       }
     } catch (err) {
-      console.error('Error rewriting vocab:', err)
+      // Silent error handling
     } finally {
       setRewritingVocab(false)
     }
@@ -179,7 +178,7 @@ export default function LessonMakerPage(){
         }
       }
     } catch (err) {
-      console.error('Error rewriting notes:', err)
+      // Silent error handling
     } finally {
       setRewritingNotes(false)
     }
@@ -234,7 +233,7 @@ export default function LessonMakerPage(){
         const quotaData = await quotaRes.json()
         setQuotaInfo(quotaData)
       } catch (e) {
-        console.error('Failed to update generation quota:', e)
+        // Silent error handling
       }
       
       // STEP 2: Validate the lesson
@@ -242,8 +241,6 @@ export default function LessonMakerPage(){
       const validation = validateLessonQuality(js.lesson)
       
       if (!validation.passed && validation.issues.length > 0) {
-        console.log('[Lesson Maker] Validation failed:', validation.issues)
-        
         // STEP 3: Auto-fix with request-changes API
         setToast({ message: 'Improving lesson quality...', type: 'info' })
         
@@ -264,25 +261,18 @@ export default function LessonMakerPage(){
           
           const fixJs = await fixRes.json().catch(() => null)
           if (fixRes.ok) {
-            console.log('[Lesson Maker] Auto-fix successful')
             setToast({ message: 'Lesson ready!', type: 'success' })
             setMessage(`Lesson generated, validated, and optimized: ${generatedFile}`)
           } else {
-            console.error('[Lesson Maker] Auto-fix failed:', fixJs?.error)
             setToast({ message: 'Lesson generated with quality warnings', type: 'warning' })
             setMessage(`Lesson generated: ${generatedFile}\n\nQuality issues detected:\n${validation.issues.join('\n')}`)
           }
         } catch (fixError) {
-          console.error('[Lesson Maker] Auto-fix error:', fixError)
           setToast({ message: 'Lesson generated with quality warnings', type: 'warning' })
           setMessage(`Lesson generated: ${generatedFile}\n\nQuality issues detected:\n${validation.issues.join('\n')}`)
         }
       } else {
         // Passed validation on first try!
-        console.log('[Lesson Maker] Validation passed')
-        if (validation.warnings.length > 0) {
-          console.log('[Lesson Maker] Warnings:', validation.warnings)
-        }
         setToast({ message: 'Lesson ready!', type: 'success' })
         
         // Show success message
@@ -295,12 +285,10 @@ export default function LessonMakerPage(){
       
       // Handle storage errors (not blocking)
       if (js?.storageError) {
-        console.error('Storage error:', js.storageError)
         setMessage(prev => prev + `\n\nNote: Storage warning: ${js.storageError}`)
       }
       
     } catch (e) {
-      console.error('[Lesson Maker] Error:', e)
       setMessage('Error: ' + (e?.message || String(e)))
       setToast({ message: 'Error generating lesson', type: 'error' })
     } finally {
