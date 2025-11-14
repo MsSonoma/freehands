@@ -76,7 +76,6 @@ export default function PostLessonSurvey() {
       setStep('survey');
       setPassword(''); // Clear password from memory
     } catch (err) {
-      console.error('[PostLessonSurvey] Auth error:', err);
       setAuthError('Something went wrong. Please try again.');
       setAuthenticating(false);
       setPassword('');
@@ -110,7 +109,6 @@ export default function PostLessonSurvey() {
         });
 
       if (error) {
-        console.error('[PostLessonSurvey] Submit error:', error);
         setSubmitError('Could not save survey. Please try again.');
         setSubmitting(false);
         return;
@@ -119,7 +117,6 @@ export default function PostLessonSurvey() {
       // Survey submitted, show completion
       setStep('complete');
     } catch (err) {
-      console.error('[PostLessonSurvey] Exception:', err);
       setSubmitError('Something went wrong. Please try again.');
       setSubmitting(false);
     }
