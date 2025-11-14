@@ -131,35 +131,20 @@ export async function ensurePinAllowed(action = 'action') {
 		const prefKey = mapActionToPrefKey(action);
 		const shouldGate = Boolean(hasPin && (prefKey ? (prefs?.[prefKey] ?? DEFAULT_PREFS[prefKey]) : true));
 		
-		// Enhanced debug logging for all actions
-		console.log('[PIN Gate]', action, 'action:', { 
-			hasPin, 
-			prefKey, 
-			prefValue: prefs?.[prefKey], 
-			defaultValue: DEFAULT_PREFS[prefKey], 
-			shouldGate, 
-			prefs,
-			isInFacilitatorSection: isInFacilitatorSection()
-		});
-		
 		if (!shouldGate) {
-			console.log('[PIN Gate] Not gating - shouldGate is false');
 			return true;
 		}
 		
 		// For facilitator-page action: if already in facilitator section, skip PIN check
 		if (action === 'facilitator-page' && isInFacilitatorSection()) {
-			console.log('[PIN Gate] Skipping PIN - already in facilitator section');
 			return true;
 		}
 
 		// If another PIN prompt is already active, wait for it instead of creating a duplicate
 		if (activePinPrompt) {
-			console.log('[PIN Gate] Another PIN prompt is active, waiting for it...');
 			return await activePinPrompt;
 		}
 
-		console.log('[PIN Gate] Prompting for PIN... (facilitator section flag was:', isInFacilitatorSection(), ')');
 		// Create the PIN prompt and store it globally
 		activePinPrompt = (async () => {
 			try {
