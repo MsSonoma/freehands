@@ -2380,8 +2380,6 @@ function SessionPageInner() {
 
   // Skip speech: stop TTS, video, captions and jump to end of current response turn
   const handleSkipSpeech = useCallback(() => {
-    console.log('[handleSkipSpeech] Skipping current speech');
-    
     // Stop all audio playback
     if (audioRef.current) {
       try { audioRef.current.pause(); } catch {}
@@ -2444,11 +2442,8 @@ function SessionPageInner() {
 
   // Repeat speech: replay the last TTS audio without updating captions
   const handleRepeatSpeech = useCallback(async () => {
-    console.log('[handleRepeatSpeech] Repeating last speech');
-    
     // Check if we have audio to replay
     if (!lastAudioBase64Ref.current) {
-      console.warn('[handleRepeatSpeech] No audio available to repeat');
       return;
     }
     
@@ -2462,7 +2457,6 @@ function SessionPageInner() {
       // Replay audio without updating captions (pass empty array for sentences)
       await playAudioFromBase64(lastAudioBase64Ref.current, [], 0);
     } catch (err) {
-      console.error('[handleRepeatSpeech] Failed to replay audio:', err);
       setIsSpeaking(false);
       // Show repeat button again since replay failed
       if (lastAudioBase64Ref.current) {
@@ -2473,16 +2467,12 @@ function SessionPageInner() {
 
   // Show visual aids carousel
   const handleShowVisualAids = useCallback(() => {
-    console.log('[handleShowVisualAids] Opening visual aids carousel');
     setShowVisualAidsCarousel(true);
   }, []);
 
   // Explain visual aid via Ms. Sonoma
   const handleExplainVisualAid = useCallback(async (visualAid) => {
-    console.log('[handleExplainVisualAid] Explaining visual aid:', visualAid);
-    
     if (!visualAid || !visualAid.description) {
-      console.warn('[handleExplainVisualAid] No description available');
       return;
     }
 
@@ -2493,7 +2483,6 @@ function SessionPageInner() {
   // Helper: speak arbitrary frontend text via unified captions + TTS
   // (defined here after playAudioFromBase64 is available, and updates the ref for early callbacks)
   const speakFrontendImpl = useCallback(async (text, opts = {}) => {
-    console.log('[speakFrontendImpl] Called with text:', text?.substring(0, 50), 'opts:', opts);
     try {
       const mcLayout = opts && typeof opts === 'object' ? (opts.mcLayout || 'inline') : 'inline';
       const noCaptions = !!(opts && typeof opts === 'object' && opts.noCaptions);
@@ -2514,7 +2503,6 @@ function SessionPageInner() {
         // Keep current caption index; batch will be empty so no scheduling occurs
         try { startIndexForBatch = Number(captionIndexRef.current || 0); } catch { startIndexForBatch = 0; }
       }
-      console.log('[speakFrontendImpl] About to fetch TTS');
       let dec = false;
       try {
         setTtsLoadingCount((c) => c + 1);
@@ -2527,14 +2515,11 @@ function SessionPageInner() {
           const data = await res.json().catch(() => ({}));
           let b64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
           if (b64) b64 = normalizeBase64Audio(b64);
-          console.log('[speakFrontendImpl] Got audio, length:', b64?.length || 0);
           if (b64) {
             if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
             // Let the playback engine manage isSpeaking lifecycle
             try { setIsSpeaking(true); } catch {}
-            console.log('[speakFrontendImpl] About to play audio');
             try { await playAudioFromBase64(b64, noCaptions ? [] : assistantSentences, startIndexForBatch); } catch {}
-            console.log('[speakFrontendImpl] Audio playback complete');
           } else {
             if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
             // Use unified synthetic playback so video + isSpeaking behave consistently
@@ -2542,11 +2527,11 @@ function SessionPageInner() {
           }
         }
       } catch (err) {
-        console.error('[speakFrontendImpl] Error:', err);
+        // Silent error handling
       }
       finally { if (!dec) setTtsLoadingCount((c) => Math.max(0, c - 1)); }
     } catch (err) {
-      console.error('[speakFrontendImpl] Outer error:', err);
+      // Silent error handling
     }
   }, [playAudioFromBase64, setTtsLoadingCount, setIsSpeaking, setCaptionSentences, setCaptionIndex, captionSentencesRef, captionIndexRef]);
 
@@ -2736,15 +2721,11 @@ function SessionPageInner() {
   
 
   const startDiscussionStep = async () => {
-    try { console.info('[Opening] startDiscussionStep entered'); } catch {}
-    try { console.info('[Opening] generateOpening typeof =', typeof generateOpening); } catch {}
-    
     // CRITICAL: Unlock audio during user gesture (Begin click) - required for Chrome
     try {
-      console.info('[Opening] Unlocking audio playback for Chrome');
       await unlockAudioPlaybackWrapped();
     } catch (e) {
-      console.warn('[Opening] Audio unlock failed', e);
+      // Silent error handling
     }
     
     // Ensure we are not starting in a muted state
@@ -2756,7 +2737,6 @@ function SessionPageInner() {
     // Keep it playing (muted and looping) so audio code doesn't need to restart it
     try {
       if (videoRef.current) {
-        console.info('[Opening] Starting video during Begin for Chrome autoplay');
         if (videoRef.current.readyState < 2) {
           videoRef.current.load();
           // Wait a moment for load to register
@@ -2766,11 +2746,10 @@ function SessionPageInner() {
         const playPromise = videoRef.current.play();
         if (playPromise && playPromise.then) {
           await playPromise;
-          console.info('[Opening] Video playing and unlocked for Chrome');
         }
       }
     } catch (e) {
-      console.warn('[Opening] Video play failed', e);
+      // Silent error handling
     }
     
   // Unified discussion is now generated locally: Greeting + Encouragement + next-step prompt (no joke/silly question)
@@ -2780,9 +2759,7 @@ function SessionPageInner() {
     const lessonTitleExact = (effectiveLessonTitle && typeof effectiveLessonTitle === 'string' && effectiveLessonTitle.trim()) ? effectiveLessonTitle.trim() : 'the lesson';
     const safeSubject = (subjectParam || '').trim() || 'math';
     try {
-      try { console.info('[Opening] about to call generateOpening'); } catch {}
       const openingText = generateOpening({ name: learnerName || 'friend', lessonTitle: lessonTitleExact, subject: safeSubject });
-      try { console.info('[Opening] generated text len=', (openingText || '').length); } catch {}
       // Hygiene similar to unified-discussion cleanup when coming from API
       let replyText = String(openingText || '')
         .replace(/\b(exercise|worksheet|test|exam|quiz|answer key)\b/gi, '')
@@ -2793,14 +2770,12 @@ function SessionPageInner() {
         .trim();
 
       // Inject into transcript and captions locally (isolate errors so TTS still proceeds)
-      try { console.info('[Opening] setting transcript and preparing captions'); } catch {}
       setTranscript(replyText);
       setError("");
       let prevLen = 0;
       let newSentences = [];
       try {
         // Prepare captions from the full reply
-        try { console.info('[Opening] splitIntoSentences start'); } catch {}
         newSentences = splitIntoSentences(replyText);
         newSentences = mergeMcChoiceFragments(newSentences);
         newSentences = newSentences.map((s) => enforceNbspAfterMcLabels(s));
@@ -2816,9 +2791,7 @@ function SessionPageInner() {
         captionSentencesRef.current = nextAll;
         setCaptionSentences(nextAll);
         setCaptionIndex(prevLen);
-        try { console.info('[Opening] captions prepared; sentences=', newSentences.length, 'startIndex=', prevLen); } catch {}
       } catch (capErr) {
-        try { console.warn('[Opening] caption prep failed; proceeding to TTS anyway', capErr?.name || capErr); } catch {}
         // Keep minimal single-sentence caption
         newSentences = [replyText];
         const assistantSentences = mapToAssistantCaptionEntries(newSentences);
