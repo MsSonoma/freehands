@@ -41,8 +41,6 @@ export async function GET(request) {
     // Normalize learner_id: convert string "null" or empty string to actual null
     const normalizedLearnerId = (learner_id === 'null' || learner_id === '' || !learner_id) ? null : learner_id
     
-    console.log(`[Conversation Drafts] GET request for facilitator ${user.id}, learner ${normalizedLearnerId || 'none'}`)
-
     // Fetch draft
     // Note: Use .is() for null values, .eq() for non-null values
     let query = supabase
@@ -59,18 +57,14 @@ export async function GET(request) {
     const { data: draft, error: fetchError } = await query.maybeSingle()
 
     if (fetchError) {
-      console.error('[Conversation Drafts] Fetch error:', fetchError)
       return NextResponse.json({ error: 'Failed to fetch draft' }, { status: 500 })
     }
     
-    console.log(`[Conversation Drafts] GET successful, draft found: ${!!draft}, summary length: ${draft?.draft_summary?.length || 0}`)
-
     return NextResponse.json({
       draft: draft || null
     })
 
   } catch (error) {
-    console.error('[Conversation Drafts] Unexpected error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -98,14 +92,8 @@ export async function POST(request) {
     const body = await request.json()
     const { learner_id = null, conversation_turns = [] } = body
     
-    console.log(`[Conversation Drafts] Raw learner_id from body:`, learner_id, `type:`, typeof learner_id)
-    
     // Normalize learner_id: convert string "null" or empty string to actual null
     const normalizedLearnerId = (learner_id === 'null' || learner_id === '' || !learner_id) ? null : learner_id
-    
-    console.log(`[Conversation Drafts] Normalized learner_id:`, normalizedLearnerId, `type:`, typeof normalizedLearnerId)
-
-    console.log(`[Conversation Drafts] Updating draft for facilitator ${user.id}, learner ${normalizedLearnerId || 'none'}, turns: ${conversation_turns.length}`)
 
     // Fetch existing draft
     // Note: Use .is() for null values, .eq() for non-null values
@@ -123,21 +111,16 @@ export async function POST(request) {
     const { data: existing, error: fetchError } = await query.maybeSingle()
 
     if (fetchError) {
-      console.error('[Conversation Drafts] Error fetching existing:', fetchError)
       return NextResponse.json({ error: 'Failed to check existing draft', details: fetchError.message }, { status: 500 })
     }
 
     // Generate summary using OpenAI
-    console.log('[Conversation Drafts] Generating summary with OpenAI...')
     const summaryText = await generateDraftSummary(conversation_turns, existing?.draft_summary)
 
     if (!summaryText) {
-      console.error('[Conversation Drafts] Summary generation failed - check OpenAI API key and logs above')
       return NextResponse.json({ error: 'Failed to generate summary', details: 'OpenAI call failed or returned empty' }, { status: 500 })
     }
     
-    console.log(`[Conversation Drafts] Generated summary: ${summaryText.length} chars`)
-
     // Update or insert draft
     if (existing) {
       // Update existing draft
@@ -154,12 +137,9 @@ export async function POST(request) {
         .single()
 
       if (updateError) {
-        console.error('[Conversation Drafts] Update error:', updateError)
         return NextResponse.json({ error: 'Failed to update draft' }, { status: 500 })
       }
 
-      console.log(`[Conversation Drafts] Updated draft ${updated.id}, now ${updated.turn_count} total turns`)
-      
       return NextResponse.json({
         success: true,
         message: 'Draft updated',
@@ -181,12 +161,9 @@ export async function POST(request) {
         .single()
 
       if (insertError) {
-        console.error('[Conversation Drafts] Insert error:', insertError)
         return NextResponse.json({ error: 'Failed to create draft' }, { status: 500 })
       }
 
-      console.log(`[Conversation Drafts] Created new draft ${created.id}`)
-      
       return NextResponse.json({
         success: true,
         message: 'Draft created',
@@ -195,7 +172,6 @@ export async function POST(request) {
     }
 
   } catch (error) {
-    console.error('[Conversation Drafts] Unexpected error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -243,11 +219,8 @@ export async function DELETE(request) {
     const { error: deleteError } = await query
 
     if (deleteError) {
-      console.error('[Conversation Drafts] Delete error:', deleteError)
       return NextResponse.json({ error: 'Failed to delete draft' }, { status: 500 })
     }
-
-    console.log(`[Conversation Drafts] Deleted draft for facilitator ${user.id}, learner ${learner_id || 'none'}`)
 
     return NextResponse.json({
       success: true,
@@ -255,7 +228,6 @@ export async function DELETE(request) {
     })
 
   } catch (error) {
-    console.error('[Conversation Drafts] Unexpected error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -265,7 +237,6 @@ async function generateDraftSummary(conversationTurns, existingSummary = null) {
   try {
     const apiKey = process.env.OPENAI_API_KEY
     if (!apiKey) {
-      console.error('[Conversation Drafts] Missing OpenAI API key')
       return null
     }
 
@@ -305,8 +276,7 @@ ${conversationTurns.map(t => `${t.role === 'user' ? 'User' : 'Assistant'}: ${t.c
     })
 
     if (!response.ok) {
-      const errorBody = await response.text().catch(() => 'Unable to read error body')
-      console.error('[Conversation Drafts] OpenAI request failed:', response.status, errorBody)
+      // Silent error
       return null
     }
 
@@ -314,17 +284,13 @@ ${conversationTurns.map(t => `${t.role === 'user' ? 'User' : 'Assistant'}: ${t.c
     const summaryText = data.choices[0]?.message?.content?.trim() || ''
     
     if (!summaryText) {
-      console.error('[Conversation Drafts] OpenAI returned empty summary')
       return null
     }
-    
-    console.log(`[Conversation Drafts] OpenAI summary generated: ${summaryText.length} chars`)
     
     // Return the summary as-is (GPT should respect the length constraint in the prompt)
     return summaryText
 
   } catch (error) {
-    console.error('[Conversation Drafts] Summary generation error:', error)
     return null
   }
 }
