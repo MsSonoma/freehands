@@ -646,11 +646,8 @@ function SessionPageInner() {
   // Use a ref so early functions can call it before it's fully defined
   const speakFrontendRef = useRef(null);
   const speakFrontend = useCallback(async (...args) => {
-    console.log('[speakFrontend] Wrapper called, ref is:', speakFrontendRef.current ? 'set' : 'null', 'args:', args);
     if (speakFrontendRef.current) {
       return speakFrontendRef.current(...args);
-    } else {
-      console.warn('[speakFrontend] Ref is null, cannot execute');
     }
   }, []);
 
@@ -662,7 +659,6 @@ function SessionPageInner() {
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === 'learner_id' || e.key === 'learner_name') {
-        console.log('[Session] Learner changed, reloading targets...');
         reloadTargetsForCurrentLearner();
       }
     };
@@ -687,7 +683,6 @@ function SessionPageInner() {
       try {
         const storageKey = `session_timer_state:${lessonKey}`;
         sessionStorage.removeItem(storageKey);
-        console.log('[Session] Cleared timer state for lesson:', lessonKey);
       } catch {}
     }
   }, [showBegin, lessonKey]);
@@ -1139,21 +1134,17 @@ function SessionPageInner() {
       if (videoRef.current) {
         // Trigger video load immediately
         videoRef.current.load();
-        console.info('[Session] Video preload initiated on mount');
         
         // Track video playing state for Chrome autoplay coordination
         const video = videoRef.current;
         const onPlay = () => {
           videoPlayingRef.current = true;
-          console.info('[Session] Video playing, flag set to true');
         };
         const onPause = () => {
           videoPlayingRef.current = false;
-          console.info('[Session] Video paused, flag set to false');
         };
         const onEnded = () => {
           videoPlayingRef.current = false;
-          console.info('[Session] Video ended, flag set to false');
         };
         
         video.addEventListener('play', onPlay);
@@ -1169,7 +1160,7 @@ function SessionPageInner() {
         };
       }
     } catch (e) {
-      console.warn('[Session] Video preload failed', e);
+      // Silent error handling
     }
   }, []);
 
