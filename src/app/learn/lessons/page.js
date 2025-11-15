@@ -390,7 +390,6 @@ function LessonsPageInner(){
           const token = session?.access_token
           
           if (!token) {
-            console.warn('[Learn Lessons] No auth token available for schedule fetch')
           } else {
             const scheduleResponse = await fetch(`/api/lesson-schedule?learnerId=${learnerId}&action=active`, {
               headers: {
@@ -476,7 +475,6 @@ function LessonsPageInner(){
           })
         }
       } catch (e) {
-        console.error('[Golden Key] Failed to consume key:', e)
       }
     }
     
@@ -512,12 +510,9 @@ function LessonsPageInner(){
       const supabase = getSupabaseClient()
       const { error } = await supabase.from('learners').update({ lesson_notes: newNotes }).eq('id', learnerId)
       if (error) {
-        console.error('[Learn Lessons] Note save error:', error)
         throw error
       }
-      console.log('[Learn Lessons] Successfully saved note for lesson:', lessonKey)
     } catch (e) {
-      console.error('[Learn Lessons] Failed to save note:', e)
       alert('Failed to save note: ' + (e?.message || e?.hint || 'Unknown error'))
       // Revert on error
       setLessonNotes(lessonNotes)
@@ -553,18 +548,6 @@ function LessonsPageInner(){
           || scheduledLessons[lessonKey] === true 
           || scheduledLessons[legacyKey] === true
           || scheduledLessons[filenameOnly] === true
-        // Debug logging for general subject
-        if (subject === 'general') {
-          console.log('[Learn Lessons] General lesson filter:', {
-            lessonKey,
-            legacyKey,
-            filenameOnly,
-            file: lesson.file,
-            isAvailable,
-            inApproved: availableLessons[lessonKey] || availableLessons[legacyKey] || availableLessons[filenameOnly],
-            inScheduled: scheduledLessons[lessonKey] || scheduledLessons[legacyKey] || scheduledLessons[filenameOnly]
-          })
-        }
         return isAvailable
       }).map(lesson => {
         // Add lessonKey to each lesson object for snapshot lookup
@@ -577,9 +560,6 @@ function LessonsPageInner(){
         grouped[subject] = availableForSubject
       }
     })
-    // Debug log final grouped lessons
-    console.log('[Learn Lessons] Grouped lessons by subject:', Object.keys(grouped))
-    console.log('[Learn Lessons] Available lessons keys:', Object.keys(availableLessons))
     return grouped
   }, [allLessons, availableLessons, scheduledLessons])
 
@@ -611,8 +591,6 @@ function LessonsPageInner(){
           return
         }
         
-        console.log('[Learn Lessons] Checking server snapshots for', allLoadedLessons.length, 'loaded lessons')
-        
         const snapshotsFound = {}
         
         // Check each loaded lesson for a snapshot using its ID
@@ -633,20 +611,14 @@ function LessonsPageInner(){
               const { snapshot } = await res.json()
               if (snapshot && snapshot.savedAt && snapshotHasMeaningfulProgress(snapshot)) {
                 snapshotsFound[lesson.lessonKey] = true
-                console.log('[Learn Lessons] Found meaningful snapshot for', lesson.lessonKey, '(id:', lessonId + ')')
-              } else if (snapshot && snapshot.savedAt) {
-                console.log('[Learn Lessons] Ignoring fresh snapshot for', lesson.lessonKey, '(id:', lessonId + ')')
               }
             }
           } catch (e) {
-            console.warn('[Learn Lessons] Failed to check snapshot for', lesson.lessonKey, e)
           }
         }
         
-        console.log('[Learn Lessons] Snapshot check complete. Found:', Object.keys(snapshotsFound).length, 'snapshots')
         if (!cancelled) setLessonSnapshots(snapshotsFound)
       } catch (e) {
-        console.error('[Learn Lessons] Error checking snapshots:', e)
         if (!cancelled) setLessonSnapshots({})
       }
     })()
@@ -831,13 +803,6 @@ function LessonsPageInner(){
                     {(() => {
                       const lessonKey = `demo/${l.file}`
                       const hasSnapshot = lessonSnapshots[lessonKey]
-                      // Debug log to see format mismatch
-                      if (!window._loggedSnapshotCheck && Object.keys(lessonSnapshots).length > 0) {
-                        console.log('[Learn Lessons] Button check - Looking for:', lessonKey)
-                        console.log('[Learn Lessons] Button check - Available keys:', Object.keys(lessonSnapshots).slice(0, 3))
-                        console.log('[Learn Lessons] Button check - Found?', hasSnapshot)
-                        window._loggedSnapshotCheck = true
-                      }
                       return hasSnapshot ? 'Continue' : 'Start Lesson'
                     })()}
                   </button>
