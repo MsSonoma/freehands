@@ -124,7 +124,7 @@ function loadTtsCredentials() {
       }
     }
   } catch (fileError) {
-    console.error('[Ms. Sonoma API] Failed to load Google TTS credentials:', fileError)
+    // Failed to load Google TTS credentials
   }
 
   return null
@@ -138,7 +138,7 @@ async function getTtsClient() {
   const credentials = loadTtsCredentials()
   if (!credentials) {
     // Do NOT cache the null result; allow future calls to retry after envs are added
-    console.warn('[Ms. Sonoma API] Google TTS credentials are not configured; voice playback disabled.')
+    // Google TTS credentials not configured
     return null
   }
 
@@ -146,7 +146,7 @@ async function getTtsClient() {
     try {
       return new TextToSpeechClient({ credentials })
     } catch (error) {
-      console.error('[Ms. Sonoma API] Failed to initialize Google TTS client:', error)
+      // Failed to initialize Google TTS client
       // Reset to allow future retries
       ttsClientPromise = undefined
       return null
@@ -185,27 +185,27 @@ export async function POST(req) {
           const body = JSON.parse(raw)
           const instruction = body.instruction || ''
           innertext = body.innertext || ''
-          console.log(`${logPrefix} got structured body`, { instruction: !!instruction, innertext: !!innertext })
+          // Got structured body
           instructions = instruction
         } catch {
           // If JSON parse fails, treat the entire body as plain-text instructions
           instructions = raw.trim()
-          console.warn(`${logPrefix} Invalid JSON; using raw text body as instructions.`)
+          // Invalid JSON; using raw text body as instructions
         }
       } else if (contentType.includes('application/x-www-form-urlencoded')) {
         const form = await req.formData()
         instructions = form.get('instruction')?.toString() || form.get('instructions')?.toString() || ''
         innertext = form.get('innertext')?.toString() ?? ''
-        console.warn(`${logPrefix} Received URL-encoded form payload; consider sending JSON for best compatibility.`)
+        // Received URL-encoded form payload
       } else {
         // Fallback: treat entire body as text instructions
         const textBody = (await req.text())?.trim()
         instructions = textBody
-        console.warn(`${logPrefix} Non-JSON payload received; treating request body as instructions text.`)
+        // Non-JSON payload received
       }
     } catch (parseErr) {
       // If anything unexpected happens, default to empty instructions
-      console.warn(`${logPrefix} Failed to read request body:`, parseErr)
+      // Failed to read request body
       instructions = ''
     }
 
@@ -213,38 +213,35 @@ export async function POST(req) {
     const trimmedInnertext = typeof innertext === 'string' ? innertext.trim() : ''
 
     if (!trimmedInstructions) {
-      console.warn(`${logPrefix} Missing instructions payload`)
+      // Missing instructions payload
       return NextResponse.json({ error: 'Instructions are required.' }, { status: 400 })
     }
 
-    console.log(`${logPrefix} -> instructions:\n${previewText(trimmedInstructions)}`)
-    if (trimmedInnertext) {
-      console.log(`${logPrefix} -> innertext:\n${previewText(trimmedInnertext)}`)
-    }
+    // Received instructions
     // Stateless API: only the provided instructions are sent to the LLM (no system message)
 
     // Keys by provider
     const openaiKey = process.env.OPENAI_API_KEY
     const anthropicKey = process.env.ANTHROPIC_API_KEY
     if (PROVIDER === 'openai' && !openaiKey) {
-      console.error(`${logPrefix} OPENAI_API_KEY is not configured`)
+      // OPENAI_API_KEY not configured
       // Dev fallback: allow local testing without LLM while still providing TTS when available
       if (process.env.NODE_ENV !== 'production') {
         const { stub, audio } = await buildDevStubWithOptionalTts(trimmedInstructions, trimmedInnertext)
         providerUsed = 'dev-stub'
-        console.log(`${logPrefix} <- reply (${providerUsed}):\n${previewText(stub)}`)
+        // Dev stub reply
         return NextResponse.json({ reply: stub, audio }, { status: 200 })
       }
       return NextResponse.json({ error: 'Ms. Sonoma is unavailable.' }, { status: 500 })
     }
     if (PROVIDER === 'anthropic' && !anthropicKey) {
-      console.error(`${logPrefix} ANTHROPIC_API_KEY is not configured for Anthropic provider`)
+      // ANTHROPIC_API_KEY not configured
       if (openaiKey) {
-        console.warn(`${logPrefix} Falling back to OpenAI provider because Anthropic key missing`)
+        // Falling back to OpenAI provider
       } else if (process.env.NODE_ENV !== 'production') {
         const { stub, audio } = await buildDevStubWithOptionalTts(trimmedInstructions, trimmedInnertext)
         providerUsed = 'dev-stub'
-        console.log(`${logPrefix} <- reply (${providerUsed}):\n${previewText(stub)}`)
+        // Dev stub reply
         return NextResponse.json({ reply: stub, audio }, { status: 200 })
       } else {
         return NextResponse.json({ error: 'Ms. Sonoma is unavailable.' }, { status: 500 })
@@ -281,7 +278,7 @@ export async function POST(req) {
       if (!aRes.ok) {
         // Try fallback model on 400/404 model errors
         if ((aRes.status === 400 || aRes.status === 404) && ANTHROPIC_MODEL_FALLBACK && ANTHROPIC_MODEL_FALLBACK !== anthropicModel) {
-          console.warn(`${logPrefix} Anthropic model unavailable, retrying with fallback:`, ANTHROPIC_MODEL_FALLBACK)
+          // Anthropic model unavailable, retrying with fallback
           aRes = await fetchWithRetry(ANTHROPIC_URL, {
             method: 'POST',
             headers: {
@@ -300,7 +297,7 @@ export async function POST(req) {
         }
       }
       if (!aRes.ok) {
-        console.error(`${logPrefix} Anthropic request failed:`, aJson)
+        // Anthropic request failed
         // Optional fallback to OpenAI if configured
         if (openaiKey) {
           const { reply, errorStatus } = await callOpenAI(userMessages, openaiKey, undefined, logPrefix)
@@ -311,7 +308,7 @@ export async function POST(req) {
           return NextResponse.json({ error: 'Anthropic request failed.' }, { status: aRes.status })
         }
       } else {
-        console.log(`${logPrefix} Anthropic response:`, aJson)
+        // Anthropic response received
         const c = Array.isArray(aJson?.content) ? aJson.content.find(p => p.type === 'text') : null
         msSonomaReply = (c?.text || '').trim()
       }
@@ -321,7 +318,7 @@ export async function POST(req) {
       const { reply, errorStatus, raw } = await callOpenAI(userMessages, openaiKey, OPENAI_MODEL_DEFAULT, logPrefix)
       if (!reply) return NextResponse.json({ error: 'OpenAI request failed.' }, { status: errorStatus || 500 })
       msSonomaReply = reply
-      if (raw) console.log(`${logPrefix} OpenAI response:`, raw)
+      // OpenAI response received
     }
 
     let audioContent = undefined
@@ -354,21 +351,17 @@ export async function POST(req) {
             } catch {}
           }
         } catch (ttsError) {
-          console.error(`${logPrefix} Text-to-Speech synthesis failed:`, ttsError)
+          // Text-to-Speech synthesis failed
         }
       }
       }
     }
 
-    if (msSonomaReply) {
-      console.log(`${logPrefix} <- reply (${providerUsed}):\n${previewText(msSonomaReply)}`)
-    } else {
-      console.log(`${logPrefix} <- reply (${providerUsed}): (empty reply)`)
-    }
+    // Reply generated
 
   return NextResponse.json({ reply: msSonomaReply, audio: audioContent })
   } catch (error) {
-    console.error(`${logPrefix} Unexpected error:`, error)
+    // Unexpected error
     return NextResponse.json({ error: 'Ms. Sonoma is unavailable.' }, { status: 500 })
   }
 }
@@ -451,13 +444,13 @@ async function callOpenAI(userMessages, apiKey, modelOverride, logPrefix) {
     let parsedBody
     try { parsedBody = JSON.parse(rawBody) } catch { parsedBody = rawBody }
     if (!response.ok) {
-      console.error(`${logTag} OpenAI request failed:`, parsedBody)
+      // OpenAI request failed
       return { reply: '', errorStatus: response.status, raw: parsedBody }
     }
     const reply = parsedBody?.choices?.[0]?.message?.content?.trim() ?? ''
     return { reply, raw: parsedBody }
   } catch (e) {
-    console.error(`${logTag} OpenAI call error:`, e)
+    // OpenAI call error
     return { reply: '', errorStatus: 500 }
   }
 }
