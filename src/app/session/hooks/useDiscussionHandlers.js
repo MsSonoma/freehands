@@ -528,7 +528,7 @@ export function useDiscussionHandlers({
             }
           }
         } catch (err) {
-          console.warn('[Story] Failed to generate suggestions:', err);
+          // Suggestions generation failed - use fallback
         }
         
         try { setLoading(false); } catch {}
@@ -538,7 +538,6 @@ export function useDiscussionHandlers({
       }
     } else {
       // New story - start with setup
-      console.log('[STORY] Starting new story - collecting characters');
       setStoryTranscript([]);
       setStoryCharacters('');
       setStorySetting('');
@@ -549,7 +548,6 @@ export function useDiscussionHandlers({
       await speakFrontend('Who are the characters in the story?');
       setCanSend(true);
     }
-    console.log('[STORY] handleStoryStart complete');
   }, [
     hasGoldenKey, setShowOpeningActions, setStoryUsedThisGate, setStoryTranscript, setStoryState, 
     setStorySetupStep, setStoryCharacters, setStorySetting, setStoryPlot, setStoryPhase,
@@ -636,7 +634,7 @@ export function useDiscussionHandlers({
           responseText = (data && data.reply) ? data.reply : responseText;
         }
       } catch (err) {
-        console.warn('[Story] API call failed:', err);
+        // API call failed - use fallback responseText
       }
       
       const setupTranscript = [
@@ -708,7 +706,7 @@ export function useDiscussionHandlers({
         responseText = (data && data.reply) ? data.reply : responseText;
       }
     } catch (err) {
-      console.warn('[Story] API call failed:', err);
+      // API call failed - use fallback responseText
     }
     
     setStoryTranscript([...updatedTranscript, { role: 'assistant', text: responseText }]);
@@ -798,7 +796,7 @@ export function useDiscussionHandlers({
         responseText = (data && data.reply) ? data.reply : responseText;
       }
     } catch (err) {
-      console.warn('[Story] API call failed:', err);
+      // API call failed - use fallback responseText
     }
     
     setStoryTranscript([]);
@@ -834,7 +832,6 @@ export function useDiscussionHandlers({
 
   // Fill-in-Fun handlers
   const handleFillInFunStart = useCallback(async () => {
-    console.log('[FILL-IN-FUN] Button clicked, starting handler');
     if (fillInFunUsedThisGate) return;
     
     try { setShowOpeningActions(false); } catch {}
@@ -862,7 +859,6 @@ export function useDiscussionHandlers({
       }
       
       const data = await response.json();
-      console.log('[FILL-IN-FUN] Got template:', data);
       
       setFillInFunTemplate(data);
       setFillInFunCollectedWords({});
@@ -877,7 +873,7 @@ export function useDiscussionHandlers({
       setCanSend(true);
       
     } catch (error) {
-      console.error('[FILL-IN-FUN] Error generating template:', error);
+      // Error generating template - use fallback
       setLoading(false);
       await speakFrontend('Oops! Something went wrong. Let us try something else.');
       setFillInFunState('inactive');
@@ -930,8 +926,6 @@ export function useDiscussionHandlers({
         const regex = new RegExp(`\\{${label}\\}`, 'g');
         finalStory = finalStory.replace(regex, newCollected[label]);
       });
-      
-      console.log('[FILL-IN-FUN] Final story:', finalStory);
       
       setFillInFunState('awaiting-ok');
       await speakFrontend(`Here is your story! ${finalStory}`);
