@@ -119,12 +119,8 @@ export default function FacilitatorLessonsPage() {
       tomorrow.setHours(0, 0, 0, 0)
       const msUntilMidnight = tomorrow.getTime() - now.getTime()
       
-      console.log('[Facilitator Lessons] Scheduling refresh in', Math.round(msUntilMidnight / 1000 / 60), 'minutes at midnight')
-      
       const timer = setTimeout(() => {
-        console.log('[Facilitator Lessons] Midnight refresh triggered')
         setRefreshTrigger(prev => prev + 1)
-        // Schedule next midnight refresh
         scheduleNextMidnightRefresh()
       }, msUntilMidnight)
       
@@ -140,9 +136,8 @@ export default function FacilitatorLessonsPage() {
     if (!selectedLearnerId) return
     
     const pollInterval = setInterval(() => {
-      console.log('[Facilitator Lessons] Polling for schedule changes')
       setRefreshTrigger(prev => prev + 1)
-    }, 2 * 60 * 1000) // 2 minutes
+    }, 2 * 60 * 1000)
     
     return () => clearInterval(pollInterval)
   }, [selectedLearnerId])
@@ -203,15 +198,11 @@ export default function FacilitatorLessonsPage() {
       // Load lessons from public folders for each subject
       for (const subject of SUBJECTS) {
         try {
-          console.log(`[FRONTEND] Fetching lessons for subject: ${subject}`);
           const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { 
             cache: 'no-store'
           })
-          console.log(`[FRONTEND] Response for ${subject}:`, res.status, res.ok);
           if (!res.ok) {
-            // For "generated" subject, 401 is expected if not authenticated - don't log as error
             if (subject === 'generated' && res.status === 401) {
-              console.log(`[FRONTEND] Generated lessons require authentication, skipping`);
               lessonsMap[subject] = []
               continue
             }
@@ -220,15 +211,12 @@ export default function FacilitatorLessonsPage() {
               const errorData = await res.json()
               errorDetail = errorData.detail || errorData.error || ''
             } catch {}
-            console.error(`[FRONTEND] Failed to load ${subject} lessons:`, res.status, errorDetail);
             lessonsMap[subject] = []
             continue
           }
           const list = await res.json()
-          console.log(`[FRONTEND] Lessons for ${subject}:`, list.length);
           lessonsMap[subject] = Array.isArray(list) ? list : []
         } catch (err) {
-          console.error(`[FRONTEND] Error fetching ${subject}:`, err);
           lessonsMap[subject] = []
         }
       }
@@ -236,47 +224,38 @@ export default function FacilitatorLessonsPage() {
       // Load generated lessons from user's storage
       if (token) {
         try {
-          console.log('[FRONTEND] Fetching generated lessons')
           const res = await fetch('/api/facilitator/lessons/list', {
             cache: 'no-store',
             headers: { Authorization: `Bearer ${token}` }
           })
-          console.log('[FRONTEND] Generated lessons response:', res.status, res.ok)
           if (res.ok) {
             const generatedList = await res.json()
-            console.log('[FRONTEND] Generated lessons:', generatedList.length)
-            // Sort generated lessons by creation time, newest first
             const sortedGeneratedList = generatedList.sort((a, b) => {
               const timeA = new Date(a.created_at || 0).getTime()
               const timeB = new Date(b.created_at || 0).getTime()
-              return timeB - timeA // Descending order (newest first)
+              return timeB - timeA
             })
             
-            // Initialize generated subject array
             if (!lessonsMap['generated']) lessonsMap['generated'] = []
             
-            // Add generated lessons to BOTH their specific subject AND the "generated" subject
             for (const lesson of sortedGeneratedList) {
               const subject = lesson.subject || 'math'
               const generatedLesson = {
                 ...lesson,
-                isGenerated: true // Mark as generated for display
+                isGenerated: true
               }
               
-              // Add to specific subject (at the beginning to keep newest first)
               if (!lessonsMap[subject]) lessonsMap[subject] = []
               lessonsMap[subject].unshift(generatedLesson)
               
-              // Also add to "generated" subject for easy filtering
               lessonsMap['generated'].push(generatedLesson)
             }
           }
         } catch (err) {
-          console.error('[FRONTEND] Error loading generated lessons:', err)
+          // Silent fail
         }
       }
       
-      console.log('[FRONTEND] All lessons loaded:', lessonsMap);
       if (!cancelled) {
         setAllLessons(lessonsMap)
         setLessonsLoading(false)
@@ -307,21 +286,15 @@ export default function FacilitatorLessonsPage() {
         data = result.data
         error = result.error
         
-        // If error, try without newer columns (might not exist yet)
         if (error) {
-          console.warn('[Facilitator Lessons] Error loading with all fields, trying without:', error)
           const fallbackResult = await supabase.from('learners').select('grade').eq('id', selectedLearnerId).maybeSingle()
           data = fallbackResult.data
           error = fallbackResult.error
           if (error) {
-            console.error('[Facilitator Lessons] Load error:', error)
             throw error
           }
         }
         
-        console.log('[Facilitator Lessons] Loaded data for learner:', selectedLearnerId, data)
-        
-        // Load scheduled lessons (today and future)
         let scheduled = {}
         let futureScheduled = {}
         try {
@@ -329,10 +302,7 @@ export default function FacilitatorLessonsPage() {
           const { data: { session } } = await supabase.auth.getSession()
           const token = session?.access_token
           
-          if (!token) {
-            console.warn('[Facilitator Lessons] No auth token available for schedule fetch')
-          } else {
-            // Get today's scheduled lessons
+          if (token) {
             const scheduleResponse = await fetch(`/api/lesson-schedule?learnerId=${selectedLearnerId}&action=active`, {
               headers: {
                 'Authorization': `Bearer ${token}`
@@ -341,19 +311,14 @@ export default function FacilitatorLessonsPage() {
             if (scheduleResponse.ok) {
               const scheduleData = await scheduleResponse.json()
               const scheduledLessons = scheduleData.lessons || []
-              console.log('[Facilitator Lessons] Scheduled lessons for today:', scheduledLessons)
               
-              // Track scheduled lessons separately - don't merge into approved
               scheduledLessons.forEach(item => {
                 if (item.lesson_key) {
                   scheduled[item.lesson_key] = true
                 }
               })
-            } else {
-              console.warn('[Facilitator Lessons] Schedule fetch failed:', scheduleResponse.status)
             }
             
-            // Get all scheduled lessons for this learner (future dates)
             const futureEnd = new Date()
             futureEnd.setFullYear(futureEnd.getFullYear() + 1)
             const allScheduleResponse = await fetch(`/api/lesson-schedule?learnerId=${selectedLearnerId}&startDate=${today}&endDate=${futureEnd.toISOString().split('T')[0]}`, {
@@ -364,7 +329,6 @@ export default function FacilitatorLessonsPage() {
             if (allScheduleResponse.ok) {
               const allScheduleData = await allScheduleResponse.json()
               const allScheduledLessons = allScheduleData.schedule || []
-              console.log('[Facilitator Lessons] All scheduled lessons:', allScheduledLessons)
               
               allScheduledLessons.forEach(item => {
                 if (item.lesson_key && item.scheduled_date && item.scheduled_date > today) {
@@ -374,7 +338,7 @@ export default function FacilitatorLessonsPage() {
             }
           }
         } catch (schedErr) {
-          console.warn('[Facilitator Lessons] Could not load scheduled lessons:', schedErr)
+          // Silent fail
         }
         
         if (!cancelled) {
@@ -388,7 +352,7 @@ export default function FacilitatorLessonsPage() {
             try {
               await supabase.from('learners').update({ approved_lessons: approvedNormalized }).eq('id', selectedLearnerId)
             } catch (normalizeErr) {
-              console.warn('[Facilitator Lessons] Failed to normalize approved lesson keys:', normalizeErr)
+              // Silent fail
             }
           }
           
@@ -399,14 +363,11 @@ export default function FacilitatorLessonsPage() {
           }
         }
         
-        // Fetch medals for this learner
         const medalsData = await getMedalsForLearner(selectedLearnerId)
-        console.log('[Facilitator Lessons] Medals data:', medalsData, 'Keys:', Object.keys(medalsData || {}))
         if (!cancelled) {
           setMedals(medalsData || {})
         }
       } catch (err) {
-        console.error('[Facilitator Lessons] Failed to load learner data:', err)
         setActiveGoldenKeys({})
         setGradeFilters({})
         setMedals({})
@@ -421,47 +382,29 @@ export default function FacilitatorLessonsPage() {
   async function toggleAvailability(lessonKey) {
     if (!selectedLearnerId) return
     
-    console.log('[toggleAvailability] Called with key:', lessonKey)
-    
     try {
       setSaving(true)
       const supabase = getSupabaseClient()
       
-      // Read current approved_lessons
       const { data: currentData } = await supabase
         .from('learners')
         .select('approved_lessons')
         .eq('id', selectedLearnerId)
         .maybeSingle()
       
-      console.log('[toggleAvailability] Current data from DB:', currentData?.approved_lessons)
-      
-  const { normalized: currentApproved, changed } = normalizeApprovedLessonKeys(currentData?.approved_lessons || {})
+      const { normalized: currentApproved, changed } = normalizeApprovedLessonKeys(currentData?.approved_lessons || {})
       const newApproved = { ...currentApproved }
       
-      console.log('[toggleAvailability] Normalized current approved:', currentApproved)
-      console.log('[toggleAvailability] Key to toggle:', lessonKey)
-      console.log('[toggleAvailability] Current state for this key:', newApproved[lessonKey])
-      
-      // Also check for legacy facilitator/ key
       const legacyKey = lessonKey.replace('general/', 'facilitator/')
       const isCurrentlyChecked = newApproved[lessonKey] || newApproved[legacyKey]
       
-      // Toggle availability
       if (isCurrentlyChecked) {
-        // Remove both the new key and any legacy key
         delete newApproved[lessonKey]
         delete newApproved[legacyKey]
-        console.log('[toggleAvailability] Removed key:', lessonKey, '(and legacy key if existed)')
       } else {
-        // Always add with the NEW key format (general/)
         newApproved[lessonKey] = true
-        console.log('[toggleAvailability] Added key:', lessonKey)
       }
       
-      console.log('[toggleAvailability] New approved lessons:', newApproved)
-      
-      // Update database
       const updatePayload = { approved_lessons: newApproved }
       if (changed) {
         updatePayload.approved_lessons = newApproved
@@ -473,12 +416,9 @@ export default function FacilitatorLessonsPage() {
       
       if (error) throw error
       
-      console.log('[toggleAvailability] Successfully saved to database')
-      
-      // Update local state
-  setAvailableLessons(newApproved)
+      setAvailableLessons(newApproved)
     } catch (err) {
-      console.error('[Facilitator Lessons] Failed to toggle lesson availability:', err)
+      // Silent fail
     } finally {
       setSaving(false)
     }
@@ -497,18 +437,9 @@ export default function FacilitatorLessonsPage() {
       if (selectedSubject !== 'all' && subject !== selectedSubject) return
       
       lessons.forEach(lesson => {
-        // Check if lesson has medal data even if not in approved list
         const lessonKey = lesson.isGenerated 
           ? `generated/${lesson.file}` 
           : `${subject}/${lesson.file}`
-        
-        console.log('[getFilteredLessons] Lesson:', {
-          title: lesson.title,
-          subject,
-          file: lesson.file,
-          isGenerated: lesson.isGenerated,
-          lessonKey
-        })
         
         const hasMetalData = medals[lessonKey]
         
@@ -571,14 +502,10 @@ export default function FacilitatorLessonsPage() {
       const supabase = getSupabaseClient()
       const { error } = await supabase.from('learners').update({ lesson_notes: newNotes }).eq('id', selectedLearnerId)
       if (error) {
-        console.error('[Facilitator Lessons] Note save error:', error)
         throw error
       }
-      console.log('[Facilitator Lessons] Successfully saved note for lesson:', lessonKey)
     } catch (e) {
-      console.error('[Facilitator Lessons] Failed to save note:', e)
       alert('Failed to save note: ' + (e?.message || e?.hint || 'Unknown error'))
-      // Revert on error
       setLessonNotes(lessonNotes)
     } finally {
       setSaving(false)
@@ -617,12 +544,10 @@ export default function FacilitatorLessonsPage() {
         throw new Error(error.error || 'Failed to schedule')
       }
 
-      // Trigger refresh to update the calendar emoji
       setRefreshTrigger(prev => prev + 1)
       setScheduling(null)
       alert(`Lesson scheduled for ${scheduledDate}`)
     } catch (e) {
-      console.error('[Facilitator Lessons] Failed to schedule:', e)
       alert('Failed to schedule: ' + e.message)
       setScheduling(null)
     }
@@ -635,8 +560,6 @@ export default function FacilitatorLessonsPage() {
   }
 
   const filteredLessons = getFilteredLessons()
-
-  console.log('[Lessons Page] Rendering main content:', { loading, lessonsLoading, learnersCount: learners.length })
 
   return (
     <>
