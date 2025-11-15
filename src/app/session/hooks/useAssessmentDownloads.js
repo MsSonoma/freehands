@@ -369,7 +369,7 @@ export function useAssessmentDownloads({
         await shareOrPreviewPdf(blob, fileName, previewWin);
       } catch { doc.save(fileName); }
     } catch (e) {
-      console.warn('[Session] Failed to build answers PDF', e);
+      // Failed to build answers PDF
       setDownloadError('Failed to generate answers PDF.');
     }
   }, [
@@ -686,7 +686,7 @@ export function useAssessmentDownloads({
         await shareOrPreviewPdf(blob, fileName, previewWin);
       } catch { doc.save(fileName); }
     } catch (e) {
-      console.warn('[Session] Failed combined worksheet/test PDF', e);
+      // Failed combined worksheet/test PDF
       setDownloadError('Failed to generate combined worksheet/test PDF.');
     }
   }, [
