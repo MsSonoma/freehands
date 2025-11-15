@@ -179,7 +179,6 @@ export function useSnapshotPersistence({
       try {
         // Double-guard inside timer as well
         if (!restoredSnapshotRef.current && label === 'state-change') {
-          try { console.debug('[Snapshot] skip before restore', { label, at: new Date().toISOString() }); } catch {}
           return;
         }
   const storedKey = getSnapshotStorageKey();
@@ -192,13 +191,12 @@ export function useSnapshotPersistence({
             if (used < 5) {
               map[keyLbl] = used + 1;
               pendingSaveRetriesRef.current = map;
-              try { console.debug('[Snapshot] key not ready; retry scheduled', { label, attempt: used + 1, at: new Date().toISOString() }); } catch {}
               setTimeout(() => { try { scheduleSaveSnapshot(label); } catch {} }, 400);
             } else {
-              try { console.debug('[Snapshot] key not ready; giving up after retries', { label, at: new Date().toISOString() }); } catch {}
+              // Retry limit reached - give up
             }
           } else {
-            try { console.debug('[Snapshot] save skipped (no key yet)', { label, at: new Date().toISOString() }); } catch {}
+            // Save skipped - no key yet
           }
           return;
         }
@@ -290,10 +288,8 @@ export function useSnapshotPersistence({
           resume,
         };
         if (!storedKey || String(storedKey).trim().length === 0) {
-          try { console.debug('[Snapshot] save skipped (no key yet)', { learnerId: lid, phase, subPhase, label, at: new Date().toISOString() }); } catch {}
           return;
         }
-  try { console.debug('[Snapshot] save', { key: storedKey, learnerId: lid, phase, subPhase, label, restored: restoredSnapshotRef.current, at: new Date().toISOString() }); } catch {}
         await saveSnapshot(storedKey, payload, { learnerId: lid });
 
         // Also update live transcript segment to keep facilitator PDF in sync with the on-screen transcript
@@ -350,21 +346,12 @@ export function useSnapshotPersistence({
 
   // Restore snapshot as early as possible (run once when a stable key can be derived)
   useEffect(() => {
-    console.log('[Snapshot] restore effect running', { 
-      didRunRestore: didRunRestoreRef.current, 
-      restoredSnapshot: restoredSnapshotRef.current,
-      lessonParam,
-      manifestFile: manifestInfo?.file,
-      lessonDataId: lessonData?.id
-    });
     if (didRunRestoreRef.current || restoredSnapshotRef.current) {
-      console.log('[Snapshot] restore skipped - already attempted');
       return;
     }
 
     // Wait for lessonData.id before attempting restore - this is the most reliable key
     if (!lessonData?.id) {
-      console.log('[Snapshot] waiting for lessonData.id');
       return;
     }
 
@@ -383,12 +370,9 @@ export function useSnapshotPersistence({
         try { const k = getSnapshotStorageKey({ manifest: manifestInfo }); if (k && !candidates.includes(k)) candidates.push(k); } catch {}
         try { if (lessonData?.id) { const k = getSnapshotStorageKey({ data: lessonData }); if (k && !candidates.includes(k)) candidates.push(k); } } catch {}
 
-        console.log('[Snapshot] restore keys generated', { keys: candidates.filter((k) => typeof k === 'string' && k.trim().length > 0) });
-
         // Only proceed when we have at least one non-empty key; otherwise, postpone restore
         const keys = candidates.filter((k) => typeof k === 'string' && k.trim().length > 0);
         if (keys.length === 0) {
-          try { console.debug('[Snapshot] restore postponed (no key yet)', { at: new Date().toISOString() }); } catch {}
           return; // do not mark didRunRestore/restored flags so we can try again when deps update
         }
 
@@ -401,10 +385,6 @@ export function useSnapshotPersistence({
             if (s) {
               const t = Date.parse(s.savedAt || '') || 0;
               if (t >= newestAt) { snap = s; newestAt = t; }
-              // Only log candidates when they're actually viable (reduces noise)
-              if (t > 0) {
-                try { console.debug('[Snapshot] candidate', { key: keyLike, note, savedAt: s.savedAt }); } catch {}
-              }
             }
           } catch { /* ignore */ }
         };
@@ -422,16 +402,13 @@ export function useSnapshotPersistence({
             await consider(`${v}.json`, 'legacy-ext');
           }
         }
-        if (snap) { try { console.log('[Snapshot] restore hit - snapshot found!', { key: 'NEWEST', learnerId: lid, savedAt: snap.savedAt, phase: snap.phase, subPhase: snap.subPhase, showBegin: snap.showBegin }); } catch {} }
         // If we didn't find a snapshot yet, decide whether to postpone based on source readiness
         const sourcesReady = Boolean(lessonParam) && (Boolean(manifestInfo?.file) || Boolean(lessonData?.id));
-        console.log('[Snapshot] restore check', { snap: !!snap, sourcesReady, lessonParam, manifestFile: manifestInfo?.file, lessonDataId: lessonData?.id });
         if (!snap) {
           if (!sourcesReady) {
             // Postpone finalize; dependencies will change when manifest/data load, allowing another attempt
             // Reset the flag so we can retry when dependencies change
             didRunRestoreRef.current = false;
-            try { console.debug('[Snapshot] no snapshot yet; will retry when sources are ready', { at: new Date().toISOString() }); } catch {}
             // Do NOT set loading=false or restoredSnapshotRef=true here; we'll retry
             return;
           }
@@ -441,7 +418,6 @@ export function useSnapshotPersistence({
           try { setOfferResume(false); } catch {}
           // Hide loading immediately in no-snapshot case so UI becomes interactive
           try { setLoading(false); } catch {}
-          try { console.debug('[Snapshot] no snapshot found; restore complete', { at: new Date().toISOString() }); } catch {}
           return;
         }
         // Found a snapshot: apply it
@@ -504,7 +480,6 @@ export function useSnapshotPersistence({
             const done = (snap.congratsDone !== undefined) ? !!snap.congratsDone : true;
             setCongratsStarted(started);
             setCongratsDone(done);
-            console.log('[Snapshot] Congrats phase detected - completion states set', { congratsStarted: started, congratsDone: done, fromSnapshot: snap.congratsDone !== undefined });
           } else {
             setCongratsStarted(!!snap.congratsStarted);
             setCongratsDone(!!snap.congratsDone);
@@ -536,15 +511,12 @@ export function useSnapshotPersistence({
         try {
           // Do not surface Resume/Restart when the snapshot is effectively the global beginning
           const atGlobalStart = ((snap.phase || 'discussion') === 'discussion') && !!snap.showBegin;
-          console.log('[Snapshot] resume offer check', { atGlobalStart, phase: snap.phase, showBegin: snap.showBegin, willOfferResume: !atGlobalStart });
           setOfferResume(!atGlobalStart);
         } catch {}
         // Mark as restored NOW that we've successfully applied the snapshot
         restoreFoundRef.current = true;
         restoredSnapshotRef.current = true;
-        try { console.log('[Snapshot] ✅ restore complete - snapshot applied', { phase: snap.phase, subPhase: snap.subPhase, teachingStage: snap.teachingStage, offerResume: true }); } catch {}
       } catch (err) {
-        try { console.warn('[Snapshot] restore failed', err); } catch {}
         // On error, mark as restored so we don't keep retrying and can start saving
         restoredSnapshotRef.current = true;
         restoreFoundRef.current = false;
