@@ -65,7 +65,6 @@ export async function POST(request){
       .remove([storagePath])
     
     if (deleteError) {
-      console.error('Storage delete error:', deleteError)
       return NextResponse.json({ error: 'Failed to delete' }, { status: 500 })
     }
     return NextResponse.json({ ok:true })

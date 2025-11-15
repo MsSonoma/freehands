@@ -71,16 +71,9 @@ export async function PUT(req) {
     }
 
     const storagePath = `facilitator-lessons/${targetUserId}/${file}`
-    console.log('[UPDATE_LESSON] Received request')
-    console.log('[UPDATE_LESSON] Storage path:', storagePath)
-    console.log('[UPDATE_LESSON] File:', file)
-    console.log('[UPDATE_LESSON] UserId:', targetUserId)
-    console.log('[UPDATE_LESSON] User ID:', user.id)
 
     // Prepare the lesson content
     const lessonContent = JSON.stringify(lesson, null, 2)
-    console.log('[UPDATE_LESSON] Lesson content preview:', lessonContent.substring(0, 200))
-    console.log('[UPDATE_LESSON] Using storage client:', admin ? 'admin (service role)' : 'user client')
     
     // Try to upload/update the file with upsert
     const { data: uploadData, error: uploadError } = await storageClient
@@ -91,10 +84,7 @@ export async function PUT(req) {
         upsert: true
       })
 
-    console.log('[UPDATE_LESSON] Upload result:', { data: uploadData, error: uploadError })
-
     if (uploadError) {
-      console.error('[UPDATE_LESSON] Upload error:', uploadError)
       return NextResponse.json({ error: `Failed to update lesson: ${uploadError.message}`, details: uploadError }, { status: 500 })
     }
 
@@ -109,7 +99,7 @@ export async function PUT(req) {
     })
 
   } catch (err) {
-    console.error('[UPDATE_LESSON] Error:', err)
+    // General error
     return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 })
   }
 }

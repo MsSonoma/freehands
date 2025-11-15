@@ -140,13 +140,12 @@ export async function POST(request){
       })
     
     if (uploadError) {
-      console.error('Update upload error:', uploadError)
       return NextResponse.json({ error: 'Failed to save updated lesson' }, { status: 500 })
     }
     
     return NextResponse.json({ ok:true, file, message:'Lesson updated successfully' })
   } catch (e) {
-    console.error('Request changes error:', e)
+    // General error
     return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })
   }
 }

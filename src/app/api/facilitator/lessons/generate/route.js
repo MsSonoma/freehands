@@ -202,7 +202,6 @@ export async function POST(request){
           })
         
         if (uploadError) {
-          console.error('Storage upload error:', uploadError)
           storageError = uploadError.message || JSON.stringify(uploadError)
           // Don't fail the request - return lesson data for download
         } else {
@@ -213,7 +212,6 @@ export async function POST(request){
           storageUrl = urlData?.publicUrl || null
         }
       } catch (err) {
-        console.error('Storage error:', err)
         storageError = err.message || String(err)
       }
     } else {

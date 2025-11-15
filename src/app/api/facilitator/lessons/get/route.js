@@ -37,7 +37,6 @@ export async function GET(request){
       .download(storagePath)
     
     if (downloadError || !fileData) {
-      console.error('Download error:', downloadError)
       return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
     }
     
@@ -77,7 +76,7 @@ export async function GET(request){
     
     return NextResponse.json(lesson)
   } catch (e) {
-    console.error('Get lesson error:', e)
+    // General error
     return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })
   }
 }
