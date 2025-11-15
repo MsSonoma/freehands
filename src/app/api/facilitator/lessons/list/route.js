@@ -44,20 +44,12 @@ export async function GET(request){
     const filenamesParam = searchParams.get('filenames')
     const requestedFiles = filenamesParam ? filenamesParam.split(',').filter(Boolean) : null
     
-    console.log('[LIST API] Fetching lessons for user:', userId)
-    if (requestedFiles) {
-      console.log('[LIST API] Filtering to', requestedFiles.length, 'specific files:', requestedFiles)
-    }
-    
     // Only list files in THIS user's folder
     const { data: files, error: listError } = await supabase.storage
       .from('lessons')
       .list(`facilitator-lessons/${userId}`, { limit: 1000 })
     
-    console.log('[LIST API] Files found:', files?.length, 'Error:', listError)
-    
     if (listError) {
-      console.error('Storage list error:', listError)
       return NextResponse.json([])
     }
     
@@ -72,14 +64,11 @@ export async function GET(request){
         continue
       }
       
-      console.log('[LIST API] Processing file:', fileObj.name)
-      
       try {
         // Bypass storage SDK and use direct REST API with service role
         const filePath = `facilitator-lessons/${userId}/${fileObj.name}`
         const storageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/lessons/${filePath}`
         
-        console.log('[LIST API] Fetching directly via REST API:', storageUrl)
         const response = await fetch(storageUrl, {
           headers: {
             'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
@@ -88,9 +77,7 @@ export async function GET(request){
         })
         
         if (!response.ok) {
-          console.error('[LIST API] REST fetch error:', response.status, response.statusText)
-          const errorBody = await response.text().catch(() => 'Unable to read error body')
-          console.error('[LIST API] Error body:', errorBody)
+          // Silent error - skip this file
           continue
         }
         
@@ -99,7 +86,6 @@ export async function GET(request){
         const subj = (js.subject || '').toString().toLowerCase()
         const approved = js.approved === true
         const needsUpdate = js.needsUpdate === true
-        console.log('[LIST API] Parsed lesson:', fileObj.name, 'Subject:', subj)
         out.push({ 
           file: fileObj.name,
           userId: userId,
@@ -111,14 +97,12 @@ export async function GET(request){
           needsUpdate 
         })
       } catch (parseError) {
-        console.error('Parse error for', fileObj.name, parseError)
+        // Silent error - skip this file
       }
     }
     
-    console.log('[LIST API] Returning', out.length, 'lessons')
     return NextResponse.json(out)
   } catch (e) {
-    console.error('List error:', e)
     return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })
   }
 }
