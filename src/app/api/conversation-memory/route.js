@@ -129,7 +129,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Conversation turns required' }, { status: 400 })
     }
 
-    console.log(`[Conversation Memory] Updating memory for facilitator ${user.id}, learner ${learner_id || 'none'}, turns: ${conversation_turns.length}, override: ${!!summary_override}`)
+    // Updating memory for facilitator
 
     // Get existing conversation update
     const { data: existing, error: fetchError } = await supabase
@@ -140,7 +140,7 @@ export async function POST(request) {
       .maybeSingle()
 
     if (fetchError) {
-      console.error('[Conversation Memory] Error fetching existing:', fetchError)
+      // Error fetching existing conversation
       return NextResponse.json({ error: 'Database error' }, { status: 500 })
     }
 
@@ -157,7 +157,7 @@ export async function POST(request) {
           force_regenerate ? null : existing?.summary
         )
       } catch (summaryError) {
-        console.error('[Conversation Memory] Summary generation failed:', summaryError)
+        // Summary generation failed
         return NextResponse.json({ error: 'Failed to generate summary' }, { status: 500 })
       }
     }
@@ -180,11 +180,11 @@ export async function POST(request) {
         .single()
 
       if (updateError) {
-        console.error('[Conversation Memory] Update error:', updateError)
+        // Update error
         return NextResponse.json({ error: 'Failed to update conversation memory' }, { status: 500 })
       }
 
-      console.log(`[Conversation Memory] Updated record ${updated.id}, now ${updated.turn_count} total turns`)
+      // Updated record successfully
 
       return NextResponse.json({
         success: true,
@@ -206,11 +206,11 @@ export async function POST(request) {
         .single()
 
       if (insertError) {
-        console.error('[Conversation Memory] Insert error:', insertError)
+        // Insert error
         return NextResponse.json({ error: 'Failed to create conversation memory' }, { status: 500 })
       }
 
-      console.log(`[Conversation Memory] Created new record ${created.id}`)
+      // Created new record successfully
 
       return NextResponse.json({
         success: true,
@@ -219,7 +219,7 @@ export async function POST(request) {
       })
     }
   } catch (error) {
-    console.error('[Conversation Memory] Unexpected error:', error)
+    // Unexpected error
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -240,7 +240,7 @@ export async function GET(request) {
 
     // Search across conversation summaries (fuzzy)
     if (search) {
-      console.log(`[Conversation Memory] Searching for: "${search}"`)
+      // Searching conversation summaries
 
       // Use PostgreSQL full-text search with ranking
       let query = supabase
@@ -257,7 +257,7 @@ export async function GET(request) {
       const { data: currentResults, error: currentError } = await query
 
       if (currentError) {
-        console.error('[Conversation Memory] Search error:', currentError)
+        // Search error
         return NextResponse.json({ error: 'Search failed' }, { status: 500 })
       }
 
@@ -294,7 +294,7 @@ export async function GET(request) {
         results = fallbackResults || []
       }
 
-      console.log(`[Conversation Memory] Found ${results.length} results for "${search}"`)
+      // Found search results
 
       return NextResponse.json({
         success: true,
@@ -319,7 +319,7 @@ export async function GET(request) {
     const { data, error } = await query.maybeSingle()
 
     if (error) {
-      console.error('[Conversation Memory] Fetch error:', error)
+      // Fetch error
       return NextResponse.json({ error: 'Failed to fetch conversation memory' }, { status: 500 })
     }
 
@@ -331,14 +331,14 @@ export async function GET(request) {
       })
     }
 
-    console.log(`[Conversation Memory] Retrieved record ${data.id} with ${data.turn_count} turns`)
+    // Retrieved record successfully
 
     return NextResponse.json({
       success: true,
       conversation_update: data
     })
   } catch (error) {
-    console.error('[Conversation Memory] Unexpected error:', error)
+    // Unexpected error
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -369,18 +369,18 @@ export async function DELETE(request) {
     const { error } = await query
 
     if (error) {
-      console.error('[Conversation Memory] Delete error:', error)
+      // Delete error
       return NextResponse.json({ error: 'Failed to delete conversation memory' }, { status: 500 })
     }
 
-    console.log(`[Conversation Memory] Deleted conversation memory for facilitator ${user.id}, learner ${learnerId || 'none'}`)
+    // Deleted conversation memory successfully
 
     return NextResponse.json({
       success: true,
       message: 'Conversation memory cleared (archived for history)'
     })
   } catch (error) {
-    console.error('[Conversation Memory] Unexpected error:', error)
+    // Unexpected error
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
