@@ -90,11 +90,10 @@ export async function GET(request) {
       .eq('scheduled_date', today)
 
     if (scheduleError) {
-      console.error('[Available Lessons API] Failed to load schedule rows:', scheduleError)
+      // Silent error - return empty schedule
     }
 
     const scheduleRows = Array.isArray(scheduleData) ? scheduleData : []
-    console.log('[Available Lessons API] Raw schedule rows for', learnerId, today, ':', scheduleRows)
 
     const scheduledKeys = scheduleRows
       .map(item => item?.lesson_key ? normalizeLessonKey(item.lesson_key) : null)
@@ -102,7 +101,6 @@ export async function GET(request) {
 
     // Combine approved and scheduled (normalized for consistency)
     const uniqueKeys = [...new Set([...approvedKeys, ...scheduledKeys])].filter(Boolean)
-    console.log('[Available Lessons API] Learner:', learnerId, 'Approved:', approvedKeys, 'Scheduled:', scheduledKeys)
 
     // Track stale entries for cleanup
     const approvedKeySet = new Set(approvedKeys)
@@ -140,11 +138,11 @@ export async function GET(request) {
             if (error?.status === 404) {
               missingReason = 'not-found'
             }
-            console.error('[Available Lessons API] Error loading generated lesson:', normalizedKey, error)
+            // Silent error logging
           }
         } else {
           missingReason = 'missing-facilitator'
-          console.warn('[Available Lessons API] Missing facilitator for generated lesson:', normalizedKey)
+          // Silent warning
         }
       } else if (subject === 'general') {
         const facilitatorFilePath = path.join(LESSONS_ROOT, FACILITATOR_FOLDER, filename)
@@ -160,7 +158,7 @@ export async function GET(request) {
           if (readErr.code === 'ENOENT') {
             diskMissing = true
           } else {
-            console.error('[Available Lessons API] Error reading general lesson from disk:', normalizedKey, readErr)
+            // Silent error
           }
         }
 
@@ -177,7 +175,7 @@ export async function GET(request) {
           } else if (error?.status === 404) {
             storageMissing = true
           } else if (error) {
-            console.error('[Available Lessons API] Error loading general lesson from storage:', normalizedKey, error)
+            // Silent error
           }
         }
 
@@ -195,9 +193,9 @@ export async function GET(request) {
         } catch (readErr) {
           if (readErr.code === 'ENOENT') {
             missingReason = 'not-found'
-            console.warn('[Available Lessons API] Stock lesson not found on disk:', normalizedKey)
+            // Silent warning
           } else {
-            console.error('[Available Lessons API] Error reading stock lesson from disk:', normalizedKey, readErr)
+            // Silent error
           }
         }
       } else {
@@ -213,14 +211,14 @@ export async function GET(request) {
           } catch (legacyErr) {
             if (legacyErr.code === 'ENOENT') {
               missingReason = 'not-found'
-              console.warn('[Available Lessons API] Legacy stock lesson not found on disk:', normalizedKey)
+              // Silent warning
             } else {
-              console.error('[Available Lessons API] Legacy stock read error:', normalizedKey, legacyErr)
+              // Silent error
             }
           }
         } else {
           missingReason = 'invalid-key'
-          console.warn('[Available Lessons API] Unrecognized lesson key format:', normalizedKey)
+          // Silent warning
         }
       }
 
@@ -244,18 +242,18 @@ export async function GET(request) {
     const cleanedApprovedMap = mapFromKeys(validApprovedKeys)
 
     if (staleApprovedKeys.size > 0) {
-      console.warn('[Available Lessons API] Removing stale approved lesson keys for learner', learnerId, Array.from(staleApprovedKeys))
+      // Silent cleanup logging
       const { error: cleanupError } = await supabase
         .from('learners')
         .update({ approved_lessons: cleanedApprovedMap })
         .eq('id', learnerId)
       if (cleanupError) {
-        console.error('[Available Lessons API] Failed to clean approved lessons map:', cleanupError)
+        // Silent error
       }
     }
 
     if (staleScheduledKeys.size > 0) {
-      console.warn('[Available Lessons API] Removing stale scheduled lesson keys for learner', learnerId, Array.from(staleScheduledKeys))
+      // Silent cleanup logging
       const staleList = Array.from(staleScheduledKeys)
       const { error: scheduleCleanupError } = await supabase
         .from('lesson_schedule')
@@ -264,7 +262,7 @@ export async function GET(request) {
         .eq('scheduled_date', today)
         .in('lesson_key', staleList)
       if (scheduleCleanupError) {
-        console.error('[Available Lessons API] Failed to clean schedule entries:', scheduleCleanupError)
+        // Silent error
       }
     }
 
@@ -272,8 +270,6 @@ export async function GET(request) {
       const normalizedKey = item?.lesson_key ? normalizeLessonKey(item.lesson_key) : null
       return normalizedKey && !staleScheduledKeys.has(normalizedKey)
     })
-
-    console.log('[Available Lessons API] Returning', lessons.length, 'lessons after cleanup')
 
     const responseBody = {
       lessons,
@@ -288,7 +284,6 @@ export async function GET(request) {
     return NextResponse.json(responseBody)
     
   } catch (error) {
-    console.error('[Available Lessons API] Error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

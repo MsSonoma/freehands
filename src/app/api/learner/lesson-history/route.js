@@ -79,7 +79,6 @@ export async function GET(request) {
       .limit(limit)
 
     if (sessionError) {
-      console.error('[Lesson History API] Failed to load sessions:', sessionError)
       return NextResponse.json({ error: 'Failed to load lesson sessions' }, { status: 500 })
     }
 
@@ -117,13 +116,13 @@ export async function GET(request) {
 
       if (eventsError) {
         if (eventsError?.code !== '42P01') {
-          console.warn('[Lesson History API] Failed to load session events:', eventsError)
+          // Silent warning - table may not exist yet
         }
       } else if (Array.isArray(eventRows)) {
         events = eventRows
       }
     } catch (eventsFetchError) {
-      console.warn('[Lesson History API] Unexpected error loading session events:', eventsFetchError)
+      // Silent warning - events fetch failed
     }
 
     const eventsBySession = new Map()
@@ -183,14 +182,14 @@ export async function GET(request) {
             .single()
 
           if (insertError) {
-            console.warn('[Lesson History API] Failed to insert incomplete event:', insertError)
+            // Silent warning - insert failed
           } else if (insertedEvent) {
             events.push(insertedEvent)
             sessionEvents.push(insertedEvent)
             eventsBySession.set(session.id, sessionEvents)
           }
         } catch (insertException) {
-          console.warn('[Lesson History API] Exception inserting incomplete event:', insertException)
+          // Silent warning - insert exception
         }
       }
 
@@ -203,10 +202,10 @@ export async function GET(request) {
             .is('ended_at', null)
 
           if (updateError) {
-            console.warn('[Lesson History API] Failed to mark session incomplete:', updateError)
+            // Silent warning - update failed
           }
         } catch (updateException) {
-          console.warn('[Lesson History API] Exception updating session as incomplete:', updateException)
+          // Silent warning - update exception
         }
       }
 
@@ -232,7 +231,6 @@ export async function GET(request) {
       summary
     })
   } catch (error) {
-    console.error('[Lesson History API] Unexpected error:', error)
     return NextResponse.json({ error: error.message || 'Unexpected error' }, { status: 500 })
   }
 }
