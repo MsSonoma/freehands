@@ -75,59 +75,45 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    console.log('[PIN API] POST /api/facilitator/pin - Starting');
     const { url, service } = getEnv();
     if (!url || !service) {
-      console.error('[PIN API] Missing Supabase config:', { hasUrl: !!url, hasService: !!service });
       return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
     }
     const user = await getUserFromAuthHeader(req);
     if (!user) {
-      console.error('[PIN API] No user from auth header');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.log('[PIN API] User authenticated:', user.id);
 
   const body = await req.json().catch(() => ({}));
   const newPin = `${body?.pin ?? ''}`;
     const currentPin = body?.currentPin != null ? `${body.currentPin}` : null;
-    console.log('[PIN API] Request body parsed:', { hasPinField: !!body?.pin, hasCurrentPin: !!currentPin, hasPrefs: !!body?.prefs });
     const v = validatePin(newPin);
     if (v) {
-      console.error('[PIN API] PIN validation failed:', v);
       return NextResponse.json({ error: v }, { status: 400 });
     }
 
     const svc = createClient(url, service, { auth: { persistSession: false } });
-    console.log('[PIN API] Created service client');
 
     // If a PIN already exists, require currentPin and verify
-    console.log('[PIN API] Checking for existing PIN');
     const { data: row, error: readErr } = await svc
       .from('profiles')
       .select('facilitator_pin_hash')
       .eq('id', user.id)
       .maybeSingle();
     if (readErr) {
-      console.error('[PIN API] Error reading profile:', readErr);
       return NextResponse.json({ error: readErr.message || 'Failed to read' }, { status: 500 });
     }
-    console.log('[PIN API] Profile read result:', { hasRow: !!row, hasExistingPin: !!row?.facilitator_pin_hash });
 
     if (row?.facilitator_pin_hash) {
       if (!currentPin) {
-        console.error('[PIN API] Existing PIN found but no currentPin provided');
         return NextResponse.json({ error: 'Current PIN required' }, { status: 400 });
       }
       const ok = verifyPin(currentPin, row.facilitator_pin_hash);
       if (!ok) {
-        console.error('[PIN API] Current PIN verification failed');
         return NextResponse.json({ error: 'Current PIN is incorrect' }, { status: 403 });
       }
-      console.log('[PIN API] Current PIN verified');
     }
 
-    console.log('[PIN API] Creating new PIN hash');
     const hash = makeNewHash(newPin);
     // Allow optional prefs update in same call
     const prefs = (body && typeof body.prefs === 'object') ? body.prefs : undefined;
@@ -137,19 +123,15 @@ export async function POST(req) {
       updated_at: new Date().toISOString() 
     };
     if (prefs) payload.facilitator_pin_prefs = prefs;
-    console.log('[PIN API] Upserting profile with payload:', { hasHash: !!payload.facilitator_pin_hash, hasPrefs: !!payload.facilitator_pin_prefs });
     const { error: upsertErr } = await svc
       .from('profiles')
       .upsert(payload, { onConflict: 'id' });
     if (upsertErr) {
-      console.error('[PIN API] Upsert failed:', upsertErr);
       return NextResponse.json({ error: upsertErr.message || 'Failed to save' }, { status: 500 });
     }
 
-    console.log('[PIN API] Success! PIN saved');
     return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error('[PIN API] Unexpected error:', e);
     return NextResponse.json({ error: e?.message || 'Unexpected error' }, { status: 500 });
   }
 }
