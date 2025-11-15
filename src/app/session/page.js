@@ -3958,11 +3958,10 @@ function SessionPageInner() {
         const learner = await getLearner(learnerId);
         if (learner?.session_timer_minutes) {
           setSessionTimerMinutes(Number(learner.session_timer_minutes));
-          console.info('[Begin] Timer duration loaded:', learner.session_timer_minutes, 'minutes');
         }
       }
     } catch (e) {
-      console.warn('[Begin] Failed to reload timer setting:', e);
+      // Failed to reload timer setting
     }
     
     // Reset timer state for new session
@@ -3970,9 +3969,8 @@ function SessionPageInner() {
       const storageKey = lessonKey ? `session_timer_state:${lessonKey}` : 'session_timer_state';
       sessionStorage.removeItem(storageKey);
       setTimerPaused(false);
-      console.info('[Begin] Timer reset for new session:', lessonKey || 'default');
     } catch (e) {
-      console.warn('[Begin] Failed to reset timer:', e);
+      // Failed to reset timer
     }
     
     // End any prior API/audio/mic activity before starting fresh; keep captions continuity at Discussion opening
@@ -3984,13 +3982,8 @@ function SessionPageInner() {
     if (trackingLearnerId && lessonSessionKey && typeof startTrackedSession === 'function') {
       try {
         const supabaseSessionId = await startTrackedSession();
-        if (supabaseSessionId) {
-          try { console.info('[Begin] Supabase lesson session started:', supabaseSessionId); } catch {}
-        } else {
-          console.warn('[Begin] Supabase session start returned null');
-        }
       } catch (sessionErr) {
-        console.warn('[Begin] Supabase session start failed:', sessionErr);
+        // Supabase session start failed
       }
     }
 
@@ -4001,7 +3994,6 @@ function SessionPageInner() {
     setSubPhase("unified-discussion");
     setCanSend(false);
   try { scheduleSaveSnapshot('begin-discussion'); } catch {}
-    try { console.info('[Begin] UI updated ? discussion/unified-discussion'); } catch {}
 
     // Non-blocking: load targets and generate pools in the background
     // so Opening can start speaking right away.
@@ -4028,7 +4020,6 @@ function SessionPageInner() {
           setCurrentExIndex(0);
           setCurrentCompProblem(null);
           setCurrentExerciseProblem(null);
-          try { console.info('[Begin] Targets/pools ready'); } catch {}
         } catch (e) {
           // Defer to on-the-fly selection if needed
           setGeneratedComprehension(null);
@@ -4037,15 +4028,13 @@ function SessionPageInner() {
           setCurrentExIndex(0);
           setCurrentCompProblem(null);
           setCurrentExerciseProblem(null);
-          try { console.warn('[Begin] Pool generation failed; will select on the fly', e?.name || e); } catch {}
         }
       } catch (e) {
-        try { console.warn('[Begin] ensureRuntimeTargets failed', e?.name || e); } catch {}
+        // ensureRuntimeTargets failed
       }
     })();
 
     // Kick off the Opening immediately (does its own loading state for TTS)
-    try { console.info('[Begin] Starting Opening step�'); } catch {}
     await startDiscussionStep();
   };
 
@@ -4421,7 +4410,6 @@ function SessionPageInner() {
     // Persist the entrance to comprehension-start immediately
   // Persist the entrance to comprehension-start immediately (single-snapshot resume pointer)
   try { scheduleSaveSnapshot('begin-comprehension'); } catch {}
-    try { console.log('[Session] Begin Comprehension clicked', { phase, subPhase, currentCompIndex, compPoolLen: Array.isArray(compPool) ? compPool.length : 0 }); } catch {}
   setCanSend(false);
     // Do NOT arm the first question here - it will be armed when Go is pressed
     // This prevents the question buttons from interfering with Ask/Joke/Riddle/Poem/Story/Fill-in-fun
@@ -4984,28 +4972,12 @@ function SessionPageInner() {
       const isFIB = isFillInBlank(problem);
       const useBackend = isSA || isFIB;
       
-      console.log('[judgeAnswer] Question type check:', {
-        isSA,
-        isFIB,
-        useBackend,
-        question: problem.question || problem.prompt || '',
-        learnerAnswer
-      });
-      
       if (useBackend) {
         // Use backend API for short-answer and fill-in-blank questions
         const expectedPrimary = problem.answer || problem.expected || '';
         const expectedAnyArr = expectedAnyList(problem);
         const keywords = Array.isArray(problem.keywords) ? problem.keywords : [];
         const minKeywords = typeof problem.minKeywords === 'number' ? problem.minKeywords : (keywords.length > 0 ? 1 : 0);
-        
-        console.log('[judgeAnswer] Sending to backend:', {
-          question: problem.question || problem.prompt || '',
-          expectedPrimary,
-          expectedAnyArr,
-          keywords,
-          minKeywords
-        });
         
         try {
           const response = await fetch('/api/judge-short-answer', {
@@ -5022,15 +4994,12 @@ function SessionPageInner() {
           });
           
           if (!response.ok) {
-            console.warn('[judgeAnswer] Backend API failed, falling back to local judging');
             return isAnswerCorrectLocal(learnerAnswer, acceptable, problem);
           }
           
           const data = await response.json();
-          console.log('[judgeAnswer] Backend response:', data);
           return !!data.correct;
         } catch (apiError) {
-          console.warn('[judgeAnswer] Backend API error, falling back to local judging:', apiError);
           return isAnswerCorrectLocal(learnerAnswer, acceptable, problem);
         }
       } else {
@@ -5038,7 +5007,6 @@ function SessionPageInner() {
         return isAnswerCorrectLocal(learnerAnswer, acceptable, problem);
       }
     } catch (error) {
-      console.error('[judgeAnswer] Error:', error);
       // Fallback to local judging on any error
       return isAnswerCorrectLocal(learnerAnswer, acceptable, problem);
     }
@@ -5058,7 +5026,6 @@ function SessionPageInner() {
     // Check for profanity and block if detected
     const profanityCheck = checkLearnerInput(trimmed);
     if (!profanityCheck.allowed) {
-      console.log('[Session] Profanity detected and blocked:', { filtered: profanityCheck.filtered });
       // Show rejection message and clear input
       setLearnerInput("");
       await speakFrontend(profanityCheck.message || "Let's use kind words.");
