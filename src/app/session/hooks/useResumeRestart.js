@@ -128,13 +128,9 @@ export function useResumeRestart({
     if (typeof startTrackedSession === 'function') {
       try {
         const supabaseSessionId = await startTrackedSession();
-        if (supabaseSessionId) {
-          try { console.info('[Resume] Supabase lesson session started:', supabaseSessionId); } catch {}
-        } else {
-          console.warn('[Resume] Supabase session start returned null');
-        }
+        // Session started - proceed with resume
       } catch (sessionErr) {
-        console.warn('[Resume] Supabase session start failed:', sessionErr);
+        // Session start failed - proceed anyway
       }
     }
     // Decide what to resume based on phase/subPhase
@@ -287,7 +283,7 @@ export function useResumeRestart({
     // Confirm irreversible action before proceeding
     try {
       const ans = typeof window !== 'undefined' ? window.prompt("Restart will clear saved progress and cannot be reversed. Type 'ok' to confirm.") : null;
-      if (!ans || String(ans).trim().toLowerCase() !== 'ok') { try { console.info('[Restart] cancelled by user'); } catch {} return; }
+      if (!ans || String(ans).trim().toLowerCase() !== 'ok') { return; }
     } catch {}
     
     // Immediately hide the Resume/Restart buttons and show loading spinner
@@ -299,13 +295,12 @@ export function useResumeRestart({
       if (typeof window !== 'undefined') {
         const storageKey = lessonKey ? `session_timer_state:${lessonKey}` : 'session_timer_state';
         sessionStorage.removeItem(storageKey);
-        console.info('[Restart] Timer reset for lesson:', lessonKey || 'default');
       }
       if (setTimerPaused) {
         setTimerPaused(false);
       }
     } catch (e) {
-      console.warn('[Restart] Failed to reset timer:', e);
+      // Timer reset failed - continue
     }
     
     // Stop all activity and cut the current transcript segment so nothing is lost
