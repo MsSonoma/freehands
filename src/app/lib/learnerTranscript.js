@@ -148,7 +148,7 @@ export async function fetchLearnerTranscript(learnerId, supabase) {
       .maybeSingle();
     
     if (error || !learner) {
-      console.error('[Learner Transcript] Failed to fetch learner:', error);
+      // Failed to fetch learner
       return '';
     }
     
@@ -158,7 +158,7 @@ export async function fetchLearnerTranscript(learnerId, supabase) {
     // Build transcript
     return await buildLearnerTranscript(learner, medals);
   } catch (err) {
-    console.error('[Learner Transcript] Error building transcript:', err);
+    // Error building transcript
     return '';
   }
 }

@@ -42,7 +42,7 @@ export async function checkFacilitatorTutorialGate(userId) {
       .maybeSingle();
 
     if (error) {
-      console.error('[tutorialGuards] Error fetching profile:', error);
+      // Error fetching profile
       return { gateType: GATE_TYPE.NONE, redirectTo: null, profile: null };
     }
 
@@ -72,7 +72,7 @@ export async function checkFacilitatorTutorialGate(userId) {
     // All gates passed
     return { gateType: GATE_TYPE.NONE, redirectTo: null, profile };
   } catch (err) {
-    console.error('[tutorialGuards] Exception in checkFacilitatorTutorialGate:', err);
+    // Exception in checkFacilitatorTutorialGate
     return { gateType: GATE_TYPE.NONE, redirectTo: null, profile: null };
   }
 }
@@ -111,7 +111,7 @@ export async function checkLearnerTutorialGate(userId, learnerId) {
       .maybeSingle();
 
     if (error && error.code !== 'PGRST116') { // PGRST116 = no rows
-      console.error('[tutorialGuards] Error checking learner tutorial:', error);
+      // Error checking learner tutorial
       return { gateType: GATE_TYPE.NONE, redirectTo: null, completed: false };
     }
 
@@ -125,7 +125,7 @@ export async function checkLearnerTutorialGate(userId, learnerId) {
 
     return { gateType: GATE_TYPE.NONE, redirectTo: null, completed: true };
   } catch (err) {
-    console.error('[tutorialGuards] Exception in checkLearnerTutorialGate:', err);
+    // Exception in checkLearnerTutorialGate
     return { gateType: GATE_TYPE.NONE, redirectTo: null, completed: false };
   }
 }
@@ -151,7 +151,7 @@ export async function checkSurveyGate(sessionId) {
       .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
-      console.error('[tutorialGuards] Error checking survey:', error);
+      // Error checking survey
       return { surveyRequired: true, surveyCompleted: false };
     }
 
@@ -160,7 +160,7 @@ export async function checkSurveyGate(sessionId) {
       surveyCompleted: !!survey?.submitted_at,
     };
   } catch (err) {
-    console.error('[tutorialGuards] Exception in checkSurveyGate:', err);
+    // Exception in checkSurveyGate
     return { surveyRequired: true, surveyCompleted: false };
   }
 }
@@ -183,13 +183,13 @@ export async function markSignupVideoCompleted(userId) {
       .eq('id', userId);
 
     if (error) {
-      console.error('[tutorialGuards] Error marking video completed:', error);
+      // Error marking video completed
       return false;
     }
 
     return true;
   } catch (err) {
-    console.error('[tutorialGuards] Exception in markSignupVideoCompleted:', err);
+    // Exception in markSignupVideoCompleted
     return false;
   }
 }
@@ -212,13 +212,13 @@ export async function markFacilitatorTutorialCompleted(userId) {
       .eq('id', userId);
 
     if (error) {
-      console.error('[tutorialGuards] Error marking tutorial completed:', error);
+      // Error marking tutorial completed
       return false;
     }
 
     return true;
   } catch (err) {
-    console.error('[tutorialGuards] Exception in markFacilitatorTutorialCompleted:', err);
+    // Exception in markFacilitatorTutorialCompleted
     return false;
   }
 }
@@ -243,13 +243,13 @@ export async function markLearnerTutorialCompleted(learnerId) {
       });
 
     if (error) {
-      console.error('[tutorialGuards] Error marking learner tutorial completed:', error);
+      // Error marking learner tutorial completed
       return false;
     }
 
     return true;
   } catch (err) {
-    console.error('[tutorialGuards] Exception in markLearnerTutorialCompleted:', err);
+    // Exception in markLearnerTutorialCompleted
     return false;
   }
 }

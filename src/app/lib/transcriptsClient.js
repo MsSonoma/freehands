@@ -198,7 +198,7 @@ async function loadLedger(store, path) {
     if (dl.error) {
       // 404 is expected for new ledgers; other errors may indicate config issues
       if (dl.error.statusCode !== 404 && dl.error.statusCode !== '404') {
-        console.warn(`[transcripts] Download error for ${path}:`, dl.error);
+        // Download error (not 404)
       }
       return [];
     }
@@ -226,7 +226,7 @@ async function writeLedgerAndArtifacts(store, { basePath, lessonTitle, learnerNa
 
   const ledgerResult = await store.upload(ledgerPath, ledgerBlob, { upsert: true, contentType: 'application/json' });
   if (ledgerResult.error) {
-    console.error('[transcripts] Storage upload failed. Bucket "transcripts" may not exist or RLS policies may not be configured. See docs/transcripts-storage.md', ledgerResult.error);
+    // Storage upload failed - check bucket/RLS configuration
     throw new Error(`Storage upload failed: ${ledgerResult.error.message}`);
   }
   
@@ -299,9 +299,7 @@ export async function appendTranscriptSegment({ learnerId, learnerName, lessonId
     // Storage errors are often due to missing bucket or RLS policies
     const isStorageError = e?.message?.includes('Storage') || e?.message?.includes('upload failed');
     if (isStorageError) {
-      console.error('[transcripts] Storage configuration required. Please set up the "transcripts" bucket and RLS policies per docs/transcripts-storage.md', e);
-    } else {
-      console.warn('[transcripts] append failed', e);
+      // Storage configuration error
     }
     return { ok: false, reason: 'error', error: e };
   }
@@ -356,9 +354,7 @@ export async function updateTranscriptLiveSegment({ learnerId, learnerName, less
   } catch (e) {
     const isStorageError = e?.message?.includes('Storage') || e?.message?.includes('upload failed');
     if (isStorageError) {
-      console.error('[transcripts] Storage configuration required. Please set up the "transcripts" bucket and RLS policies per docs/transcripts-storage.md', e);
-    } else {
-      console.warn('[transcripts] live update failed', e);
+      // Storage configuration error
     }
     return { ok: false, reason: 'error', error: e };
   }
