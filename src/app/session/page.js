@@ -1376,7 +1376,6 @@ function SessionPageInner() {
               if (res.ok) {
                 const data = await res.json();
                 try { setLessonData(data); } catch {}
-                try { console.info('[LessonLoad] Loaded generated lesson', lessonFilename); } catch {}
                 return data;
               }
             }
@@ -1390,7 +1389,6 @@ function SessionPageInner() {
         if (res.ok) {
           const data = await res.json();
           try { setLessonData(data); } catch {}
-          try { console.info('[LessonLoad] Loaded lesson via', lessonFilePath); } catch {}
           return data;
         }
         // Fallback: try common subject folders to locate the lesson file if subjectParam is missing/mismatched
@@ -1404,7 +1402,6 @@ function SessionPageInner() {
             if (r.ok) {
               const data = await r.json();
               try { setLessonData(data); } catch {}
-              try { console.info('[LessonLoad] Loaded lesson via fallback', altPath); } catch {}
               return data;
             }
           } catch {}
@@ -1570,7 +1567,6 @@ function SessionPageInner() {
           }
         }
       } catch (e) {
-        console.error("[Session] Lesson resource fetch failed:", e);
         if (!cancelled) {
           setLessonData(null);
           setLessonDataError("Lesson resources are unavailable.");
@@ -1909,11 +1905,6 @@ function SessionPageInner() {
   const phaseKey = (rawPhaseKey === 'teaching' || rawPhaseKey === 'comprehension') ? 'discussion' : rawPhaseKey;
       // Send only the provided instructions (no system message)
       const userContent = `${instructions}`;
-      console.log("[Session] Calling Ms. Sonoma", {
-        phaseKey,
-        userInstructionPreview: userContent.slice(0, 200),
-        sessionMeta: { step: session?.step, subject: session?.subject, difficulty: session?.difficulty }
-      });
       // Create AbortController so we can cancel on skip
       const ctrl = new AbortController();
       sonomaAbortRef.current = ctrl;
@@ -1935,9 +1926,6 @@ function SessionPageInner() {
       // Dev-only: sometimes the route compiles on first touch and returns 404 briefly.
       // If that happens, pre-warm the route, wait a beat, and retry (forcing full system registration).
       if (res && res.status === 404) {
-        try {
-          console.warn('[Session] /api/sonoma returned 404; retrying after short delay to allow dev compile...')
-        } catch {}
         // Pre-warm the route (GET) to trigger compilation/registration in dev
         try { await fetch('/api/sonoma', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(()=>{}) } catch {}
         await new Promise(r => setTimeout(r, 900));
@@ -1955,8 +1943,6 @@ function SessionPageInner() {
       if (!res.ok) {
         throw new Error(`Request failed with ${res.status}`);
       }
-
-      console.log("[Session] Ms. Sonoma replied:", data);
 
       // Enforce step-specific reply hygiene
       let replyText = data.reply || "";
@@ -2177,11 +2163,9 @@ function SessionPageInner() {
       // Some runtimes surface aborts with name 'AbortError', others pass through the reason (e.g., 'skip')
       const isAbort = err?.name === 'AbortError' || err === 'skip' || err?.message === 'skip' || err?.cause === 'skip';
       if (isAbort) {
-        console.warn('[Session] Ms. Sonoma request aborted');
         setLoading(false);
         return { success: false, aborted: true };
       }
-      console.error("[Session] Ms. Sonoma API call failed:", err);
       setTranscript("Ms. Sonoma is unavailable.");
       setError("We could not reach Ms. Sonoma.");
       // Keep previous caption on screen to avoid a blank stall
