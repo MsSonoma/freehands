@@ -72,11 +72,9 @@ export default function CalendarPage() {
     }
   }, [selectedLearnerId])
 
-  // Refresh schedule when page becomes visible (e.g., switching back from Mr. Mentor)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && selectedLearnerId) {
-        console.log('[Calendar] Page visible again, refreshing schedule...')
         loadSchedule()
       }
     }
@@ -118,7 +116,6 @@ export default function CalendarPage() {
       setHasAccess(ent.facilitatorTools)
       setLoading(false)
     } catch (err) {
-      console.error('Error checking access:', err)
       setHasAccess(false)
       setLoading(false)
     }
@@ -139,12 +136,11 @@ export default function CalendarPage() {
       if (error) throw error
       setLearners(data || [])
       
-      // Auto-select first learner
       if (data && data.length > 0) {
         setSelectedLearnerId(data[0].id)
       }
     } catch (err) {
-      console.error('Error loading learners:', err)
+      // Silent fail
     }
   }
 
@@ -152,14 +148,11 @@ export default function CalendarPage() {
     try {
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
-      console.log('[Calendar] Session check:', { hasSession: !!session, hasToken: !!session?.access_token })
       
       if (!session?.access_token) {
-        console.error('No valid session found')
         return
       }
 
-      // Load schedule for next 3 months
       const startDate = new Date()
       const endDate = new Date()
       endDate.setMonth(endDate.getMonth() + 3)
@@ -180,27 +173,16 @@ export default function CalendarPage() {
         try {
           errorData = JSON.parse(errorText)
         } catch {
-          console.error('Failed to parse error response:', errorText)
+          // Silent fail on parse error
         }
         
-        console.error('Failed to load schedule:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData,
-          rawText: errorText
-        })
-        
-        // If table doesn't exist, just set empty schedule
         if (errorData.error?.includes('lesson_schedule') || errorData.error?.includes('does not exist') || errorData.error?.includes('relation')) {
-          console.warn('lesson_schedule table not found. Please run the migration first.')
           setScheduledLessons({})
           setTableExists(false)
           return
         }
         
-        // If 401, might be auth issue - show user-friendly message
         if (response.status === 401) {
-          console.error('Authentication failed. Try logging out and back in.')
           setScheduledLessons({})
           return
         }
@@ -213,7 +195,6 @@ export default function CalendarPage() {
       const data = await response.json()
       const schedule = data.schedule || []
 
-      // Group by date
       const grouped = {}
       schedule.forEach(item => {
         if (!grouped[item.scheduled_date]) {
@@ -224,8 +205,6 @@ export default function CalendarPage() {
 
       setScheduledLessons(grouped)
     } catch (err) {
-      console.error('Error loading schedule:', err)
-      // Set empty schedule on error to allow page to work
       setScheduledLessons({})
     }
   }
@@ -257,11 +236,9 @@ export default function CalendarPage() {
         throw new Error(error.error || 'Failed to schedule lesson')
       }
 
-      // Reload schedule
       await loadSchedule()
       alert('Lesson scheduled successfully!')
     } catch (err) {
-      console.error('Error scheduling lesson:', err)
       alert(err.message || 'Failed to schedule lesson')
     }
   }
@@ -289,7 +266,6 @@ export default function CalendarPage() {
 
       await loadSchedule()
     } catch (err) {
-      console.error('Error removing lesson:', err)
       alert('Failed to remove lesson')
     }
   }
@@ -333,7 +309,6 @@ export default function CalendarPage() {
       setRescheduling(null)
       await loadSchedule()
     } catch (err) {
-      console.error('Error rescheduling lesson:', err)
       alert('Failed to reschedule lesson')
     }
   }

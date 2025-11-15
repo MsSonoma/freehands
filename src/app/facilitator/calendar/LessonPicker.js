@@ -48,7 +48,7 @@ export default function LessonPicker({
         setLearnerGrade(String(data.grade))
       }
     } catch (err) {
-      console.error('Error loading learner grade:', err)
+      // Silent fail
     }
   }
 
@@ -64,7 +64,7 @@ export default function LessonPicker({
       
       setApprovedLessons(data?.approved_lessons || {})
     } catch (err) {
-      console.error('Error loading approved lessons:', err)
+      // Silent fail
     }
   }
 
@@ -86,13 +86,12 @@ export default function LessonPicker({
           const list = res.ok ? await res.json() : []
           lessonsMap[subject] = Array.isArray(list) ? list : []
         } catch (err) {
-          console.error(`[LessonPicker] Error fetching ${subject}:`, err)
           lessonsMap[subject] = []
         }
       }
       setAllLessons(lessonsMap)
     } catch (err) {
-      console.error('[LessonPicker] Error loading lessons:', err)
+      // Silent fail
     }
   }
 
