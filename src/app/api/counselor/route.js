@@ -225,7 +225,7 @@ function loadTtsCredentials() {
       if (raw) return decodeCredentials(raw) || JSON.parse(raw)
     }
   } catch (fileError) {
-    console.error('[Mr. Mentor API] Failed to load Google TTS credentials:', fileError)
+    // Credentials load failed - TTS will be unavailable
   }
   return null
 }
@@ -235,7 +235,7 @@ async function getTtsClient() {
 
   const credentials = loadTtsCredentials()
   if (!credentials) {
-    console.warn('[Mr. Mentor API] Google TTS credentials not configured; voice playback disabled.')
+    // No credentials - voice playback disabled
     return null
   }
 
@@ -243,7 +243,7 @@ async function getTtsClient() {
     try {
       return new TextToSpeechClient({ credentials })
     } catch (error) {
-      console.error('[Mr. Mentor API] Failed to initialize Google TTS client:', error)
+      // TTS client init failed
       ttsClientPromise = undefined
       return null
     }
@@ -376,7 +376,6 @@ async function synthesizeAudio(text, logPrefix) {
   // Check cache first (use cleaned text as key)
   if (ttsCache.has(cleanTextForTTS)) {
     audioContent = ttsCache.get(cleanTextForTTS)
-    console.log(`${logPrefix} Using cached TTS audio`)
   } else {
     const ttsClient = await getTtsClient()
     if (ttsClient) {
@@ -399,10 +398,9 @@ async function synthesizeAudio(text, logPrefix) {
             const firstKey = ttsCache.keys().next().value
             ttsCache.delete(firstKey)
           }
-          console.log(`${logPrefix} Synthesized and cached TTS audio`)
         }
       } catch (ttsError) {
-        console.error(`${logPrefix} TTS synthesis failed:`, ttsError)
+        // TTS synthesis failed - will return undefined
       }
     }
   }
