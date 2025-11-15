@@ -107,14 +107,6 @@ export function buildQAPool(lessonData, subjectParam) {
   // Deduplicate questions to prevent repeats within the pool
   const deduplicated = deduplicateQuestions(pool);
   
-  // Log unique questionTypes for dev validation
-  try { 
-    console.debug('[PoolTagging] Comp/Ex pool types:', Array.from(new Set(deduplicated.map(x => x?.questionType || 'sa'))));
-    if (pool.length !== deduplicated.length) {
-      console.debug('[PoolTagging] Removed', pool.length - deduplicated.length, 'duplicate questions from pool');
-    }
-  } catch {}
-  
   return shuffleArray(deduplicated);
 }
 

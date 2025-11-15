@@ -51,13 +51,11 @@ export async function playVideoWithRetry(video, maxRetries = 3, initialDelay = 1
         await playPromise;
       }
       // Success - video is playing
-      console.info('[Session] Video playback started successfully on attempt', attempt + 1);
       return;
     } catch (err) {
       attempt++;
       if (attempt >= maxRetries) {
         // Final attempt failed; log but don't throw to avoid breaking the session
-        console.warn('[Session] Video play failed after', maxRetries, 'attempts:', err?.name || err?.message || err);
         return;
       }
       // Wait before retry with exponential backoff
@@ -165,7 +163,6 @@ export function ensureAudioContext(refs) {
       audioCtxRef.current = ctx;
       webAudioGainRef.current = gain;
     } catch (e) {
-      console.warn('[Session] Failed to create AudioContext', e);
       return null;
     }
   }
@@ -245,9 +242,7 @@ export async function playViaWebAudio(
     // Ensure context is running before we decode and start; if it was created while suspended,
     // resuming here avoids a silent start on some browsers.
     try {
-      try { console.info('[Session] WebAudio state before resume:', ctx?.state); } catch {}
       if (ctx.state === 'suspended') { await ctx.resume(); }
-      try { console.info('[Session] WebAudio state after resume:', ctx?.state); } catch {}
       // If the context is still not running (common after refresh without a user gesture),
       // bail out so the caller can fall back to HTMLAudio or synthetic playback.
       if (ctx.state !== 'running') {
@@ -257,7 +252,6 @@ export async function playViaWebAudio(
     const arr = base64ToArrayBuffer(b64);
     const buffer = await ctx.decodeAudioData(arr.slice(0));
     webAudioBufferRef.current = buffer;
-    try { console.info('[Session] WebAudio decode ok; duration(s)=', Number(buffer?.duration || 0).toFixed(2)); } catch {}
     const src = ctx.createBufferSource();
     src.buffer = buffer;
     try {
@@ -314,17 +308,13 @@ export async function playViaWebAudio(
         resolve();
       };
       try {
-        try { console.info('[Session] Starting WebAudio source now at', ctx?.currentTime); } catch {}
         webAudioStartedAtRef.current = ctx.currentTime;
         webAudioPausedAtRef.current = 0;
         
         // Start video immediately with audio (don't block)
         try {
           if (videoRef.current && !videoPlayingRef.current) {
-            console.info('[Session] WebAudio starting video');
             playVideoWithRetry(videoRef.current);
-          } else if (videoPlayingRef.current) {
-            console.info('[Session] Video already playing, continuing');
           }
         } catch {}
         
@@ -338,12 +328,10 @@ export async function playViaWebAudio(
         try { armSpeechGuard(buffer.duration || 0, 'webaudio:start'); } catch {}
         src.start(0);
       } catch (e) { 
-        console.warn('[Session] WebAudio start failed', e); 
         resolve(); 
       }
     });
   } catch (e) {
-    console.warn('[Session] WebAudio decode/play failed', e);
     throw e;
   }
 }
@@ -366,9 +354,7 @@ export async function unlockAudioPlayback(refs, audioUnlockedRef, setAudioUnlock
     if (ctx && ctx.state === 'suspended') {
       try {
         await ctx.resume();
-        console.info('[Session] AudioContext resumed during unlock, state:', ctx.state);
       } catch (e) {
-        console.warn('[Session] Failed to resume AudioContext during unlock', e);
       }
     }
     
@@ -404,7 +390,6 @@ export async function unlockAudioPlayback(refs, audioUnlockedRef, setAudioUnlock
     try { if (typeof window !== 'undefined') localStorage.setItem('ms_audioUnlocked', 'true'); } catch {}
     try { setAudioUnlocked(true); } catch {}
   } catch (e) {
-    console.warn('[Session] Audio unlock attempt failed', e);
   }
 }
 
@@ -456,7 +441,6 @@ export function requestAudioAndMicPermissions(
         })
         .catch((err) => {
           try {
-            console.info('[Session] Mic permission request failed or denied', err?.name || err);
             // Surface a brief, non-blocking tip so users know typing still works
             try { showTipOverride('Mic access denied. You can still type answers.', 5000); } catch {}
             // Persist denied state to guide banner visibility

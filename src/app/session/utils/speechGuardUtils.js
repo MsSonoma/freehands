@@ -39,8 +39,6 @@ export function forceStopSpeaking(
   setShowOpeningActions,
   stopWebAudioSource
 ) {
-  try { console.warn('[Session] Speech guard fired; forcing stop. reason=', reason); } catch {}
-  
   const { audioRef, videoRef, speechGuardTimerRef } = refs;
   
   if (audioRef.current) {
@@ -85,7 +83,6 @@ export function armSpeechGuard(seconds, label, speechGuardTimerRef, forceStopSpe
   const sec = Math.max(0, Number(seconds) || 0);
   // No upper cap: allow long audio; add a small safety fudge
   const ms = Math.max(1800, Math.floor(sec * 1000) + 3000);
-  try { console.info('[Session] Arming speech guard for ~', Math.round(ms/1000), 's', label ? `(${label})` : ''); } catch {}
   speechGuardTimerRef.current = setTimeout(() => forceStopSpeakingCallback('guard:' + (label || 'unknown')), ms);
 }
 

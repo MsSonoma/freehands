@@ -119,9 +119,6 @@ export async function scheduleSaveSnapshotCore({
     try {
       // Double-guard inside timer as well
       if (!restoredSnapshotRef.current && label === 'state-change') {
-        try {
-          console.debug('[Snapshot] skip before restore', { label, at: new Date().toISOString() });
-        } catch {}
         return;
       }
 
@@ -135,30 +132,14 @@ export async function scheduleSaveSnapshotCore({
           if (used < 5) {
             map[keyLbl] = used + 1;
             pendingSaveRetriesRef.current = map;
-            try {
-              console.debug('[Snapshot] key not ready; retry scheduled', {
-                label,
-                attempt: used + 1,
-                at: new Date().toISOString(),
-              });
-            } catch {}
             setTimeout(() => {
               try {
                 scheduleSaveSnapshot(label);
               } catch {}
             }, 400);
           } else {
-            try {
-              console.debug('[Snapshot] key not ready; giving up after retries', {
-                label,
-                at: new Date().toISOString(),
-              });
-            } catch {}
           }
         } else {
-          try {
-            console.debug('[Snapshot] save skipped (no key yet)', { label, at: new Date().toISOString() });
-          } catch {}
         }
         return;
       }
@@ -301,18 +282,6 @@ export async function scheduleSaveSnapshotCore({
         return;
       }
 
-      try {
-        console.debug('[Snapshot] save', {
-          key: storedKey,
-          learnerId: lid,
-          phase,
-          subPhase,
-          label,
-          restored: restoredSnapshotRef.current,
-          at: new Date().toISOString(),
-        });
-      } catch {}
-
       await saveSnapshot(storedKey, payload, { learnerId: lid });
 
       // Also update live transcript segment to keep facilitator PDF in sync
@@ -343,9 +312,6 @@ export async function scheduleSaveSnapshotCore({
 
       lastSavedSigRef.current = sig;
     } catch (err) {
-      try {
-        console.debug('[Snapshot] save error', { label, err, at: new Date().toISOString() });
-      } catch {}
     }
   }, 300);
 }
