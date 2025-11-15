@@ -2148,7 +2148,7 @@ function SessionPageInner() {
         // Fire-and-forget audio so caller can process reply (e.g., test review cue detection) immediately
         const replyStartIndex = prevLen + preReplyExtra;
         playAudioFromBase64(data.audio, assistantSentences, replyStartIndex)
-          .catch(err => console.warn('[Session] Async audio playback failed (fastReturn).', err));
+          .catch(() => {});
       } else {
         const replyStartIndex = prevLen + preReplyExtra;
         await playAudioFromBase64(data.audio, assistantSentences, replyStartIndex);
@@ -2806,23 +2806,17 @@ function SessionPageInner() {
       setLoading(true);
       setTtsLoadingCount((c) => c + 1);
   const replyStartIndex = prevLen; // we appended opening sentences at the end
-      try { console.info('[OpeningTTS] POST /api/tts starting�'); } catch {}
       let res;
       try {
         res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: replyText }) });
-        try { console.info('[OpeningTTS] /api/tts status=', res.status, 'ok=', res.ok); } catch {}
         var data = await res.json().catch(() => ({}));
-        try { console.info('[OpeningTTS] /api/tts payload keys=', Object.keys(data || {})); } catch {}
         var audioB64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
-        // Dev warm-up: if route wasn�t ready (404) or no audio returned, pre-warm and retry once
+        // Dev warm-up: if route wasn't ready (404) or no audio returned, pre-warm and retry once
         if ((!res.ok && res.status === 404) || !audioB64) {
-          try { console.warn('[OpeningTTS] No audio or 404 from /api/tts; warming route and retrying once�'); } catch {}
           try { await fetch('/api/tts', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(() => {}); } catch {}
           try { await waitForBeat(400); } catch {}
           res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: replyText }) });
-          try { console.info('[OpeningTTS] /api/tts retry status=', res.status, 'ok=', res.ok); } catch {}
           data = await res.json().catch(() => ({}));
-          try { console.info('[OpeningTTS] /api/tts retry payload keys=', Object.keys(data || {})); } catch {}
           audioB64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
         }
       } finally {
@@ -2832,7 +2826,6 @@ function SessionPageInner() {
       // Match API flow: stop showing loading before kicking off audio
       setLoading(false);
       if (audioB64) {
-        try { console.info('[OpeningTTS] using Google TTS, len=', audioB64.length); } catch {}
         // Stash payload so gesture-based unlock can retry immediately if needed
         try { lastAudioBase64Ref.current = audioB64; } catch {}
         setIsSpeaking(true);
@@ -2843,7 +2836,7 @@ function SessionPageInner() {
         // Fire-and-forget to match fastReturn behavior; UI remains responsive
         const assistantSentences = captionSentencesRef.current.slice(replyStartIndex);
         playAudioFromBase64(audioB64, assistantSentences, replyStartIndex)
-          .catch(err => console.warn('[OpeningTTS] audio playback failed', err));
+          .catch(() => {});
         // Safety: if we are not speaking within ~1.2s, attempt one recovery by switching path
         try {
           openingReattemptedRef.current = false;
@@ -2855,31 +2848,26 @@ function SessionPageInner() {
                 // Flip preference: if we tried HTML first, force WebAudio; otherwise, force HTML once
                 if (preferHtmlAudioOnceRef.current) {
                   // We still prefer HTML per flag; switch to WebAudio explicitly
-                  try { console.warn('[OpeningTTS] Recovery: trying WebAudio path after initial silence'); } catch {}
                   try {
                     const assistantSentences = captionSentencesRef.current.slice(replyStartIndex);
                     await playViaWebAudio(b64, assistantSentences, replyStartIndex);
-                  } catch (e) { try { console.warn('[OpeningTTS] Recovery WebAudio failed', e); } catch {} }
+                  } catch {}
                 } else {
-                  try { console.warn('[OpeningTTS] Recovery: retrying via HTMLAudio path'); } catch {}
                   try { preferHtmlAudioOnceRef.current = true; } catch {}
                   try {
                     const assistantSentences = captionSentencesRef.current.slice(replyStartIndex);
                     await playAudioFromBase64(b64, assistantSentences, replyStartIndex);
-                  } catch (e) { try { console.warn('[OpeningTTS] Recovery HTMLAudio failed', e); } catch {} }
+                  } catch {}
                 }
               }
             } catch {}
           }, 1200);
         } catch {}
-      } else {
-        console.warn('[OpeningTTS] No audio in TTS response for Opening');
       }
       setSubPhase('awaiting-learner');
       setCanSend(true);
     } catch (e) {
       // Fallback: if anything fails, show a minimal safe opening and still TTS it
-    try { console.error('[Opening] generation failed, using fallback text', e); } catch {}
     const fallback = `${learnerName ? `Hello, ${learnerName}.` : 'Hello.'} Today's lesson is ${lessonTitleExact}.\n\nYou're going to do amazing.\n\nWhat would you like to do first?`;
     setTranscript(fallback);
     let newSentences = splitIntoSentences(fallback);
@@ -2895,13 +2883,11 @@ function SessionPageInner() {
         setLoading(true);
         setTtsLoadingCount((c) => c + 1);
     const replyStartIndex = prevLen;
-        try { console.info('[OpeningTTS] Fallback: POST /api/tts starting�'); } catch {}
         let res;
         let data;
         let audioB64;
         try {
           res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: fallback }) });
-          try { console.info('[OpeningTTS] Fallback status=', res.status, 'ok=', res.ok); } catch {}
           data = await res.json().catch(() => ({}));
           audioB64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
           if ((!res.ok && res.status === 404) || !audioB64) {
@@ -2935,7 +2921,6 @@ function SessionPageInner() {
             }, 1200);
           } catch {}
         } else {
-          try { console.warn('[OpeningTTS] Fallback had no audio'); } catch {}
           setIsSpeaking(false);
         }
       } catch {
@@ -3646,7 +3631,6 @@ function SessionPageInner() {
         setDownloadError('Failed to generate or preview the PDF.');
       }
     } catch (e) {
-      console.error('[PDF] Failed to generate PDF', e);
       setDownloadError('Failed to generate PDF.');
     }
   }
@@ -3922,11 +3906,9 @@ function SessionPageInner() {
   }, [lessonData, generatedWorksheet, generatedTest, compPool.length]);
 
   const beginSession = async () => {
-    try { console.info('[Begin] Clicked: starting session'); } catch {}
     
     // Skip quota checks for demo lessons - they're unlimited
     const isDemoLesson = subjectParam === 'demo';
-    console.info('[Begin] Subject param:', subjectParam, 'isDemoLesson:', isDemoLesson);
     
     // Check lesson quota before allowing session to start
     if (!isDemoLesson) {
@@ -3954,7 +3936,6 @@ function SessionPageInner() {
               setShowQuotaGate(true);
               return; // Stop session start
             }
-            console.info('[Begin] Lesson quota check passed:', data);
             
             // Increment lesson counter
             await fetch('/api/usage/increment-lesson', {
@@ -3963,12 +3944,9 @@ function SessionPageInner() {
                 'authorization': `Bearer ${session.access_token}`
               }
             });
-          } else {
-            console.warn('[Begin] Quota check failed, allowing session anyway');
           }
         }
       } catch (e) {
-        console.warn('[Begin] Failed to check lesson quota:', e);
         // Allow session to continue on error to avoid blocking learners
       }
     }
