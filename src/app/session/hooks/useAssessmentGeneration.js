@@ -113,13 +113,6 @@ export function useAssessmentGeneration({
     const deduplicated = deduplicateQuestions(combined);
     const mixed = shuffleArr(deduplicated);
     
-    try { 
-      console.debug('[PoolTagging] Mixed select types:', Array.from(new Set(mixed.map(x => x?.questionType || 'sa'))));
-      if (combined.length !== deduplicated.length) {
-        console.debug('[PoolTagging] Removed', combined.length - deduplicated.length, 'duplicate questions from mixed selection');
-      }
-    } catch {}
-    
     return mixed;
   };
 
@@ -144,13 +137,6 @@ export function useAssessmentGeneration({
     const combined = [...saPick, ...fibPick, ...otherPick];
     const deduplicated = deduplicateQuestions(combined);
     const built = shuffle(deduplicated);
-    
-    try { 
-      console.debug('[PoolTagging] Non-math category types:', Array.from(new Set(built.map(x => x?.questionType || 'sa'))));
-      if (combined.length !== deduplicated.length) {
-        console.debug('[PoolTagging] Removed', combined.length - deduplicated.length, 'duplicate questions from category selection');
-      }
-    } catch {}
     
     return built;
   };
