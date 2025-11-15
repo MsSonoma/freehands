@@ -26,15 +26,12 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true) {
   const sessionIdRef = useRef(null);
   const sessionMetaRef = useRef({ learnerId, lessonId });
 
-  // Start session
   const startSession = async () => {
     if (!learnerId || !lessonId) {
-      console.warn('[useSessionTracking] Missing learnerId or lessonId');
       return null;
     }
 
     if (sessionIdRef.current) {
-      console.warn('[useSessionTracking] Session already started');
       return sessionIdRef.current;
     }
 
@@ -49,15 +46,12 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true) {
       return id;
     } else {
       setTracking(false);
-      console.error('[useSessionTracking] Failed to start session');
       return null;
     }
   };
 
-  // End session
   const endSession = async (reason = 'completed', metadata) => {
     if (!sessionIdRef.current) {
-      console.warn('[useSessionTracking] No active session to end');
       return false;
     }
 
@@ -78,30 +72,24 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true) {
     return success;
   };
 
-  // Log repeat event
   const logRepeat = async (sentenceId) => {
     if (!sessionIdRef.current) {
-      console.warn('[useSessionTracking] No active session for repeat event');
       return false;
     }
 
     return await logRepeatEvent(sessionIdRef.current, sentenceId);
   };
 
-  // Add facilitator note
   const addNote = async (text) => {
     if (!sessionIdRef.current) {
-      console.warn('[useSessionTracking] No active session for note');
       return false;
     }
 
     return await addFacilitatorNote(sessionIdRef.current, text);
   };
 
-  // Add transcript line
   const addTranscript = async (speaker, text) => {
     if (!sessionIdRef.current) {
-      console.warn('[useSessionTracking] No active session for transcript');
       return false;
     }
 

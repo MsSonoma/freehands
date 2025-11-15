@@ -87,7 +87,6 @@ export function useAccessControl({
           }
         }
       } catch (error) {
-        console.error('[useAccessControl] Error:', error)
         if (!cancelled) {
           setIsAuthenticated(false)
           setTier('free')

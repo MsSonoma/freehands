@@ -92,7 +92,6 @@ export function useLessonHistory(learnerId, options = {}) {
         })
       } catch (error) {
         if (cancelled) return
-        console.error('[useLessonHistory] Failed to load history:', error)
         setState({
           sessions: [],
           events: [],
