@@ -81,7 +81,7 @@ export default function SignupVideoGate() {
         setCompleting(false);
       }
     } catch (err) {
-      console.error('[SignupVideoGate] Error:', err);
+      // SignupVideoGate error
       setError('Something went wrong. Please try again.');
       setCompleting(false);
     }

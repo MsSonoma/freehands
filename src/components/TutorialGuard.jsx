@@ -46,7 +46,7 @@ export default function TutorialGuard({ children }) {
           }
         }
       } catch (err) {
-        console.error('[TutorialGuard] Error:', err);
+        // TutorialGuard error - fail open to avoid blocking
         if (!cancelled) {
           setAllowed(true); // Fail open to avoid blocking on error
           setChecking(false);

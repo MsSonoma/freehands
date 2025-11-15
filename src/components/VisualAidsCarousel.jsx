@@ -41,7 +41,7 @@ export default function VisualAidsCarousel({
             setGenerationPrompt(prompt)
           }
         } catch (err) {
-          console.error('Failed to generate initial prompt:', err)
+          // Failed to generate initial prompt
         } finally {
           setGeneratingPrompt(false)
         }
