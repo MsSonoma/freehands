@@ -116,10 +116,10 @@ export function useTeachingFlow({
       );
       
       if (!result.success) {
-        console.warn('[GateRepeat] Failed to generate example questions');
+        // Failed to generate example questions - silent
       }
     } catch (err) {
-      console.warn('[GateRepeat] Error generating example questions:', err);
+      // Error generating example questions - silent
     }
     
     setSubPhase('awaiting-gate');
@@ -170,14 +170,6 @@ export function useTeachingFlow({
     const lessonTitle = getCleanLessonTitle();
     const vocabCsv = terms.join(', ');
     
-    try {
-      if (!terms.length) {
-        console.warn('[Definitions] No vocab terms found. Lesson keys:', Object.keys(loaded || {}));
-      } else {
-        console.info('[Definitions] Injecting vocab terms:', terms);
-      }
-    } catch {}
-    
     const instruction = [
       '',
       `Grade: ${gradeText || ''}`.trim(),
@@ -218,7 +210,6 @@ export function useTeachingFlow({
       const sentences = splitIntoSentences(result.text).filter(s => s.trim());
       
       if (sentences.length === 0) {
-        console.warn('[Definitions] No sentences found after splitting');
         return false;
       }
       
@@ -229,9 +220,6 @@ export function useTeachingFlow({
       setVocabSentenceIndex(0);
       isInSentenceModeRef.current = true;
       setIsInSentenceMode(true);
-      
-      console.info('[Definitions] Split into', sentences.length, 'sentences for gating');
-      console.info('[Definitions] Set isInSentenceMode to TRUE');
       
       // Speak the first sentence
       try { await speakFrontend(sentences[0]); } catch {}
@@ -296,13 +284,6 @@ export function useTeachingFlow({
     setSubPhase('teaching-3stage');
     setPhase('teaching');
     
-    try {
-      const loaded = await ensureLessonDataReady();
-      const v = getAvailableVocab(loaded || undefined);
-      const detectedCount = Array.isArray(v) ? v.length : 0;
-      console.info('[Teaching] Start: forcing definitions first; detectedVocabCount=', detectedCount);
-    } catch {}
-    
     setTeachingStage('definitions');
     try { scheduleSaveSnapshot('begin-teaching-definitions'); } catch {}
     
@@ -318,7 +299,6 @@ export function useTeachingFlow({
    * Handle "Yes" button - repeat current sentence or stage
    */
   const handleGateYes = async () => {
-    try { console.info('[Gate] YES clicked: repeat', teachingStage); } catch {}
     
     if (teachingStage === 'definitions') {
       // If we have sentences, just repeat the current one
@@ -357,7 +337,6 @@ export function useTeachingFlow({
    * Handle "No" button - advance to next sentence or next stage
    */
   const handleGateNo = async () => {
-    try { console.info('[Gate] NO clicked: next', teachingStage); } catch {}
     
     if (teachingStage === 'definitions') {
       // If we have sentences stored, try to advance to the next one
@@ -370,10 +349,6 @@ export function useTeachingFlow({
           vocabSentenceIndexRef.current = nextIndex;
           setVocabSentenceIndex(nextIndex);
           
-          try { 
-            console.info('[Gate] Advancing to sentence', nextIndex + 1, 'of', vocabSentencesRef.current.length); 
-          } catch {}
-          
           const nextSentence = vocabSentencesRef.current[nextIndex];
           try { await speakFrontend(nextSentence); } catch {}
           // Don't call promptGateRepeat - just show gate buttons again
@@ -383,14 +358,12 @@ export function useTeachingFlow({
         }
         
         // No more sentences - NOW call promptGateRepeat for the final gate
-        try { console.info('[Gate] All vocab sentences covered; showing final gate'); } catch {}
         vocabSentencesRef.current = []; // Clear vocab sentences
         setVocabSentences([]);
         vocabSentenceIndexRef.current = 0;
         setVocabSentenceIndex(0);
         isInSentenceModeRef.current = false; // Now in final gate mode
         setIsInSentenceMode(false);
-        console.info('[Gate] Set isInSentenceMode to FALSE for final gate');
         
         // Show the "Do you have any questions?" gate AFTER all sentences
         await promptGateRepeat();
