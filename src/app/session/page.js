@@ -131,7 +131,7 @@ async function ensureRuntimeTargets(forceReload = false) {
           }
         }
       } catch (e) {
-        console.warn('[Session] Failed to load learner data:', e);
+        // Silent error handling
       }
     } else if (learnerName && learnerName !== 'Demo Learner') {
       try {
@@ -183,7 +183,7 @@ async function ensureRuntimeTargets(forceReload = false) {
       if (!Number.isNaN(lt) && lt > 0) TEST_TARGET = lt;
     }
   } catch (error) {
-    console.error('[Session] Error loading runtime targets:', error);
+    // Silent error handling
   }
 }
   
@@ -331,11 +331,6 @@ function SessionPageInner() {
   // Ask feature gate state (for demo lessons)
   const [showAskGate, setShowAskGate] = useState(false);
   
-  // Debug: Log when showAskGate changes
-  useEffect(() => {
-    console.log('[Ask Gate] showAskGate state changed to:', showAskGate);
-  }, [showAskGate]);
-  
   // User tier state for feature gating
   const [userTier, setUserTier] = useState('free');
   
@@ -349,16 +344,13 @@ function SessionPageInner() {
   // Helper: get Ask button click handler (demo lessons show gate, others require tier)
   const getAskButtonHandler = useCallback((originalHandler) => {
     const isDemoLesson = subjectParam === 'demo';
-    console.log('[Ask Button] getAskButtonHandler called - isDemoLesson:', isDemoLesson, 'askFeatureAllowed:', askFeatureAllowed);
     if (isDemoLesson || !askFeatureAllowed) {
       // Demo lessons or users without feature: show gate
       return () => {
-        console.log('[Ask Button] Showing ask gate overlay');
         setShowAskGate(true);
       };
     }
     // Users with feature: execute original handler
-    console.log('[Ask Button] Returning original handler');
     return originalHandler;
   }, [subjectParam, askFeatureAllowed]);
   
@@ -390,7 +382,6 @@ function SessionPageInner() {
           
           if (profile?.plan_tier) {
             setUserTier(profile.plan_tier);
-            console.info('[Session] User tier loaded:', profile.plan_tier);
           } else {
             setUserTier('free');
           }
@@ -398,7 +389,6 @@ function SessionPageInner() {
           setUserTier('free');
         }
       } catch (e) {
-        console.warn('[Session] Failed to load user tier:', e);
         setUserTier('free');
       }
     })();
@@ -413,15 +403,12 @@ function SessionPageInner() {
           const learner = await getLearner(learnerId);
           if (learner?.session_timer_minutes) {
             setSessionTimerMinutes(Number(learner.session_timer_minutes));
-            console.info('[Session] Timer duration loaded:', learner.session_timer_minutes, 'minutes');
           } else {
             setSessionTimerMinutes(60); // Reset to default if not set
-            console.info('[Session] No timer setting found, using default 60 minutes');
           }
           // Load learner grade
           if (learner?.grade) {
             setLearnerGrade(learner.grade);
-            console.info('[Session] Learner grade loaded:', learner.grade);
           } else {
             setLearnerGrade(''); // Clear if not set
           }
@@ -430,11 +417,9 @@ function SessionPageInner() {
           const activeKeys = learner?.active_golden_keys || {};
           if (activeKeys[lessonKey]) {
             setHasGoldenKey(true);
-            console.info('[Golden Key] Found active golden key for this lesson:', lessonKey);
           } else if (goldenKeyFromUrl) {
             // New golden key usage - save it to the database
             setHasGoldenKey(true);
-            console.info('[Golden Key] Saving new golden key usage for lesson:', lessonKey);
             try {
               await updateLearner(learnerId, {
                 name: learner.name,
@@ -452,9 +437,8 @@ function SessionPageInner() {
                   [lessonKey]: true
                 }
               });
-              console.info('[Golden Key] Successfully saved golden key usage');
             } catch (err) {
-              console.error('[Golden Key] Failed to save golden key usage:', err);
+              // Silent error handling
             }
           }
         } else {
@@ -462,7 +446,6 @@ function SessionPageInner() {
           setLearnerGrade(''); // Clear grade for demo
         }
       } catch (e) {
-        console.warn('[Session] Failed to load timer setting and grade:', e);
         setSessionTimerMinutes(60); // Fallback to default on error
         setLearnerGrade('');
       }
@@ -481,15 +464,13 @@ function SessionPageInner() {
               const learner = await getLearner(learnerId);
               if (learner?.session_timer_minutes) {
                 setSessionTimerMinutes(Number(learner.session_timer_minutes));
-                console.info('[Session] Timer duration updated from storage change:', learner.session_timer_minutes, 'minutes');
               }
               if (learner?.grade) {
                 setLearnerGrade(learner.grade);
-                console.info('[Session] Learner grade updated from storage change:', learner.grade);
               }
             }
           } catch (e) {
-            console.warn('[Session] Failed to reload timer setting and grade:', e);
+            // Silent error handling
           }
         })();
       }
@@ -531,7 +512,7 @@ function SessionPageInner() {
           setTimerPaused(prev => prev);
         }
       } catch (err) {
-        console.error('[Session] Failed to update timer state:', err);
+        // Silent error handling
       }
     }
     setShowTimerControls(false);
@@ -584,7 +565,6 @@ function SessionPageInner() {
       setShowTimerControls(false);
       
     } catch (err) {
-      console.error('[Session] Failed to apply golden key:', err);
       alert('Failed to apply golden key. Please try again.');
     }
   }, [hasGoldenKey, lessonKey]);
