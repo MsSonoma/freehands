@@ -545,31 +545,24 @@ function PinManager({ email }) {
 
   const save = async () => {
     setMsg(''); setSaving(true)
-    console.log('[PIN Save] Starting save process, hasPin:', hasPin, 'pinLength:', pin?.length)
     try {
       if (!pin || pin.length < 4 || pin.length > 8 || /\D/.test(pin)) throw new Error('Use a 4–8 digit PIN')
       if (pin !== pin2) throw new Error('PINs do not match')
-      // Save via server API only
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
-      console.log('[PIN Save] Got session, hasToken:', !!token)
       if (!token) throw new Error('Sign in required')
-      console.log('[PIN Save] Calling API with prefs:', prefs)
       const res = await fetch('/api/facilitator/pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ pin, currentPin: hasPin ? currentPin : null, prefs })
       })
       const js = await res.json().catch(()=>({}))
-      console.log('[PIN Save] API response:', { ok: res.ok, status: res.status, body: js })
       if (!res.ok || !js?.ok) throw new Error(js?.error || 'Failed to save')
       setHasPin(true)
-      console.log('[PIN Save] Success! setHasPin(true) called')
       setMsg('Saved!')
       setPin(''); setPin2(''); setCurrentPin('')
     } catch (e) {
-      console.error('[PIN Save] Final error:', e)
       setMsg(e?.message || 'Failed to save')
     } finally { setSaving(false) }
   }
@@ -611,10 +604,8 @@ function PinManager({ email }) {
           body: JSON.stringify({ pin, currentPin: hasPin ? currentPin : null, prefs })
         })
         const js = await res.json().catch(()=>({}))
-        console.log('[Client PIN] API response:', { status: res.status, ok: res.ok, body: js })
         if (!res.ok || !js?.ok) {
           const errorMsg = js?.error || `Failed to save (${res.status})`
-          console.error('[Client PIN] API error:', errorMsg)
           throw new Error(errorMsg)
         }
         setHasPin(true)
