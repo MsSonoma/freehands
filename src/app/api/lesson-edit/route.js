@@ -120,7 +120,7 @@ export async function PUT(req) {
     })
     
   } catch (err) {
-    console.error('[LESSON_EDIT] Error:', err)
+    // General error
     return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
   }
 }

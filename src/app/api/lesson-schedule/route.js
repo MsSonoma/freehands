@@ -16,7 +16,6 @@ export async function GET(request) {
 
     const authHeader = request.headers.get('authorization')
     if (!authHeader) {
-      console.error('[lesson-schedule] Missing authorization header')
       return NextResponse.json({ error: 'Missing authorization' }, { status: 401 })
     }
 
@@ -24,7 +23,6 @@ export async function GET(request) {
     const token = authHeader.replace('Bearer ', '').trim()
     
     if (!token) {
-      console.error('[lesson-schedule] Empty token')
       return NextResponse.json({ error: 'Invalid authorization token' }, { status: 401 })
     }
     
@@ -36,11 +34,8 @@ export async function GET(request) {
     // Validate the user's token
     const { data: { user }, error: userError } = await adminSupabase.auth.getUser(token)
     if (userError || !user) {
-      console.error('[lesson-schedule] Auth error:', userError?.message || 'No user')
       return NextResponse.json({ error: 'Unauthorized', details: userError?.message }, { status: 401 })
     }
-    
-    console.log('[lesson-schedule] Authenticated user:', user.id)
 
     // Get active lessons for today (used by learner view)
     if (action === 'active' && learnerId) {
@@ -71,16 +66,8 @@ export async function GET(request) {
 
     // Get schedule for date range
     if (!learnerId) {
-      console.error('[lesson-schedule] Missing learnerId')
       return NextResponse.json({ error: 'learnerId required' }, { status: 400 })
     }
-
-    console.log('[lesson-schedule] Fetching schedule for:', {
-      learnerId,
-      facilitatorId: user.id,
-      startDate,
-      endDate
-    })
 
     let query = adminSupabase
       .from('lesson_schedule')
@@ -96,7 +83,6 @@ export async function GET(request) {
     const { data, error } = await query
 
     if (error) {
-      console.error('[lesson-schedule] Query error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -105,10 +91,9 @@ export async function GET(request) {
       lesson_key: normalizeLessonKey(item.lesson_key)
     }))
 
-    console.log('[lesson-schedule] Found', schedule.length, 'scheduled lessons')
     return NextResponse.json({ schedule })
   } catch (error) {
-    console.error('Schedule GET error:', error)
+    // General GET error
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -128,7 +113,6 @@ export async function POST(request) {
     const normalizedLessonKey = normalizeLessonKey(lessonKey)
 
     const authHeader = request.headers.get('authorization')
-    console.log('[POST schedule] Auth header present:', !!authHeader)
     
     if (!authHeader) {
       return NextResponse.json({ error: 'Missing authorization' }, { status: 401 })
@@ -141,15 +125,11 @@ export async function POST(request) {
       { auth: { persistSession: false, autoRefreshToken: false } }
     )
 
-    console.log('[POST schedule] Validating user with token...')
     const { data: { user }, error: userError } = await adminSupabase.auth.getUser(token)
     
     if (userError || !user) {
-      console.error('[POST schedule] Auth error:', userError)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    
-    console.log('[POST schedule] User validated:', user.id)
 
     // Verify the learner belongs to this facilitator
     const { data: learner, error: learnerError } = await adminSupabase
@@ -185,7 +165,7 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true, data: normalizedData })
   } catch (error) {
-    console.error('Schedule POST error:', error)
+    // General POST error
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -199,7 +179,6 @@ export async function DELETE(request) {
     const scheduledDate = searchParams.get('scheduledDate')
 
     const authHeader = request.headers.get('authorization')
-    console.log('[DELETE schedule] Auth header present:', !!authHeader)
     
     if (!authHeader) {
       return NextResponse.json({ error: 'Missing authorization' }, { status: 401 })
@@ -212,15 +191,11 @@ export async function DELETE(request) {
       { auth: { persistSession: false, autoRefreshToken: false } }
     )
 
-    console.log('[DELETE schedule] Validating user with token...')
     const { data: { user }, error: userError } = await adminSupabase.auth.getUser(token)
     
     if (userError || !user) {
-      console.error('[DELETE schedule] Auth error:', userError)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    
-    console.log('[DELETE schedule] User validated:', user.id)
 
     let query = adminSupabase
       .from('lesson_schedule')
@@ -257,7 +232,7 @@ export async function DELETE(request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Schedule DELETE error:', error)
+    // General DELETE error
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
