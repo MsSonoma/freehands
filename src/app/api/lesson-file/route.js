@@ -30,7 +30,6 @@ export async function GET(request) {
       const token = auth.startsWith('Bearer ') ? auth.slice(7) : null
       
       if (!token) {
-        console.log('[LESSON_FILE] No authorization token')
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
       
@@ -46,25 +45,19 @@ export async function GET(request) {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
-        console.log('[LESSON_FILE] No user found from token')
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
-      
-      console.log('[LESSON_FILE] Authenticated user:', user.id)
       
       // Use service role client for storage access
       const storageClient = svc ? createClient(url, svc, { auth: { persistSession: false } }) : supabase
       
       const filePath = `facilitator-lessons/${user.id}/${filename}`
       
-      console.log('[LESSON_FILE] Downloading from storage:', { bucket: 'lessons', filePath })
-      
       const { data, error } = await storageClient.storage
         .from('lessons')
         .download(filePath)
       
       if (error) {
-        console.error('[LESSON_FILE] Supabase storage error:', error)
         return NextResponse.json({ error: 'Lesson file not found' }, { status: 404 })
       }
       
@@ -92,7 +85,7 @@ export async function GET(request) {
     
     return NextResponse.json(lessonData)
   } catch (err) {
-    console.error('[LESSON_FILE] Error:', err)
+    // General error
     return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
   }
 }

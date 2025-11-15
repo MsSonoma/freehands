@@ -61,7 +61,7 @@ Rewritten description:`
     })
     
   } catch (err) {
-    console.error('[REWRITE_DESCRIPTION] Error:', err)
+    // General error
     return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
   }
 }
