@@ -25,7 +25,6 @@ export default function CalendarOverlay({ learnerId }) {
     
     // Skip reload if schedule already loaded
     if (Object.keys(scheduledLessons).length > 0) {
-      console.log('[CalendarOverlay] Schedule already loaded, skipping')
       return
     }
     
@@ -35,7 +34,6 @@ export default function CalendarOverlay({ learnerId }) {
       const token = session?.access_token
 
       if (!token) {
-        console.warn('[CalendarOverlay] No auth token available')
         setScheduledLessons({})
         return
       }
@@ -48,7 +46,6 @@ export default function CalendarOverlay({ learnerId }) {
       })
 
       if (!response.ok) {
-        console.error('[CalendarOverlay] Failed to load schedule:', response.status)
         setScheduledLessons({})
         return
       }
@@ -71,7 +68,6 @@ export default function CalendarOverlay({ learnerId }) {
       setScheduledLessons(grouped)
       setTableExists(true)
     } catch (err) {
-      console.error('[CalendarOverlay] Failed to load schedule:', err)
       setScheduledLessons({})
     }
   }, [scheduledLessons])
@@ -123,7 +119,6 @@ export default function CalendarOverlay({ learnerId }) {
       setScheduledLessons({})
       await loadSchedule()
     } catch (err) {
-      console.error('Error removing lesson:', err)
       alert('Failed to remove lesson')
     }
   }
@@ -187,7 +182,6 @@ export default function CalendarOverlay({ learnerId }) {
       setScheduledLessons({})
       await loadSchedule()
     } catch (err) {
-      console.error('Error rescheduling lesson:', err)
       alert('Failed to reschedule lesson')
     }
   }
@@ -195,14 +189,12 @@ export default function CalendarOverlay({ learnerId }) {
   // Listen for preload event to trigger initial load
   useEffect(() => {
     const handlePreload = () => {
-      console.log('[CalendarOverlay] Received preload event, loading schedule')
       if (learnerId && learnerId !== 'none') {
         loadSchedule()
       }
     }
     
     const handleLessonScheduled = () => {
-      console.log('[CalendarOverlay] Lesson scheduled, reloading')
       // Clear cache and reload
       setScheduledLessons({})
       loadSchedule()
@@ -222,7 +214,6 @@ export default function CalendarOverlay({ learnerId }) {
       
       // Poll for updates every 2 minutes
       const pollInterval = setInterval(() => {
-        console.log('[CalendarOverlay] Polling for schedule updates')
         loadSchedule()
       }, 2 * 60 * 1000)
       

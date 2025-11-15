@@ -118,7 +118,6 @@ Improved text:`
     })
     
   } catch (err) {
-    console.error('[AI_REWRITE] Error:', err)
     return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
   }
 }

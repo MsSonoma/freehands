@@ -1261,8 +1261,6 @@ export async function POST(req) {
   const callId = createCallId()
   const logPrefix = `[Mr. Mentor][${callId}]`
   
-  console.log(`${logPrefix} POST request received`)
-  console.log(`${logPrefix} Headers:`, Object.fromEntries(req.headers.entries()))
   const baseUrl = resolveBaseUrl(req)
   
   try {

@@ -61,10 +61,8 @@ export default function LessonMakerOverlay({ tier }) {
 
         if (res.status === 404) {
           // Missing profile rows are common on new accounts; fail open without noisy errors
-          console.warn('Quota check missing profile; falling back to unlimited allowance.')
           setQuotaInfo({ allowed: true, source: 'fallback', reason: 'profile-missing' })
         } else {
-          console.error('Quota check failed:', res.status, res.statusText, 'body:', bodyText, 'url: /api/usage/check-generation-quota')
           // If quota check fails for other reasons, allow generation (fail open for premium users)
           setQuotaInfo({ allowed: true, source: 'fallback' })
         }
@@ -73,11 +71,9 @@ export default function LessonMakerOverlay({ tier }) {
       }
       
       const data = await res.json()
-      console.log('Quota info:', data)
       setQuotaInfo(data)
       setQuotaLoading(false)
     } catch (e) {
-      console.error('Failed to check quota:', e)
       // If quota check fails, allow generation (fail open for premium users)
       setQuotaInfo({ allowed: true, source: 'fallback' })
       setQuotaLoading(false)
@@ -113,7 +109,7 @@ export default function LessonMakerOverlay({ tier }) {
         }
       }
     } catch (err) {
-      console.error('Error rewriting description:', err)
+      // Rewrite failed - user can retry
     } finally {
       setRewritingDescription(false)
     }
@@ -147,7 +143,7 @@ export default function LessonMakerOverlay({ tier }) {
         }
       }
     } catch (err) {
-      console.error('Error rewriting vocab:', err)
+      // Rewrite failed - user can retry
     } finally {
       setRewritingVocab(false)
     }
@@ -181,7 +177,7 @@ export default function LessonMakerOverlay({ tier }) {
         }
       }
     } catch (err) {
-      console.error('Error rewriting notes:', err)
+      // Rewrite failed - user can retry
     } finally {
       setRewritingNotes(false)
     }
@@ -240,7 +236,6 @@ export default function LessonMakerOverlay({ tier }) {
       loadQuota()
     } catch (err) {
       setMessage('Failed to generate lesson')
-      console.error(err)
     } finally {
       setBusy(false)
     }

@@ -49,7 +49,6 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
         setGradeFilter('all')
       }
     } catch (err) {
-      console.error('Failed to load learner grade:', err)
       setGradeFilter('all')
     }
   }
@@ -224,7 +223,6 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
       const data = await res.json()
       return data.rewritten
     } catch (err) {
-      console.error('Error rewriting text:', err)
       setError('Failed to rewrite text')
       return null
     }

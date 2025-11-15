@@ -270,15 +270,7 @@ export async function scheduleSaveSnapshotCore({
       };
 
       if (!storedKey || String(storedKey).trim().length === 0) {
-        try {
-          console.debug('[Snapshot] save skipped (no key yet)', {
-            learnerId: lid,
-            phase,
-            subPhase,
-            label,
-            at: new Date().toISOString(),
-          });
-        } catch {}
+        // Save skipped - no key available yet
         return;
       }
 
