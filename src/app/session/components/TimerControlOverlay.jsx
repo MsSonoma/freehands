@@ -61,7 +61,7 @@ export default function TimerControlOverlay({
       await onUpdateTime?.(newElapsed);
       setAdjustMinutes(0);
     } catch (error) {
-      console.error('[Timer Control] Failed to adjust time:', error);
+      // Failed to adjust time
     } finally {
       setSaving(false);
     }
@@ -72,7 +72,7 @@ export default function TimerControlOverlay({
     try {
       await onTogglePause?.();
     } catch (error) {
-      console.error('[Timer Control] Failed to toggle pause:', error);
+      // Failed to toggle pause
     } finally {
       setSaving(false);
     }
@@ -83,7 +83,7 @@ export default function TimerControlOverlay({
     try {
       await onApplyGoldenKey?.();
     } catch (error) {
-      console.error('[Timer Control] Failed to apply golden key:', error);
+      // Failed to apply golden key
     } finally {
       setSaving(false);
     }
@@ -98,7 +98,7 @@ export default function TimerControlOverlay({
         await onSuspendGoldenKey?.();
       }
     } catch (error) {
-      console.error('[Timer Control] Failed to toggle golden key suspension:', error);
+      // Failed to toggle golden key suspension
     } finally {
       setSaving(false);
     }

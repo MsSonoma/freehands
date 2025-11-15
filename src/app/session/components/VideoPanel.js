@@ -6,8 +6,6 @@ const COMPREHENSION_TARGET = 5;
 const EXERCISE_TARGET = 5;
 
 function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, isLastWorksheetQuestion, onOpenReview, visualAids, onShowVisualAids }) {
-  console.log('🎯🎯🎯 [VideoPanel] TOP OF FUNCTION - visualAids:', visualAids, 'length:', visualAids?.length, 'handler:', typeof onShowVisualAids);
-  
   // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
   // Remove horizontal clamp: let the video occupy the full available width of its column
   const containerMaxWidth = 'none';
@@ -129,7 +127,6 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
       const isArray = Array.isArray(visualAids);
       const hasLength = visualAids && visualAids.length > 0;
       const hasHandler = typeof onShowVisualAids === 'function';
-      console.log('[VideoPanel] Button render check:', { isArray, hasLength, hasHandler, visualAids });
       return isArray && hasLength && hasHandler;
     })() && (
       <button 

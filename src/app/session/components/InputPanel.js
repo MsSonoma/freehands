@@ -41,10 +41,10 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
       }
     } catch (e) {
       if (e?.name === 'AbortError') {
-        console.warn('[STT] aborted');
+        // STT aborted
         return;
       }
-      console.warn('[STT] transcription failed', e);
+      // Transcription failed
       setErrorMsg('Transcription failed');
     } finally {
       setUploading(false);
@@ -69,7 +69,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
           }
         } catch {}
       };
-      mr.onerror = (e) => { console.warn('[Mic] recorder error', e?.error || e); setIsRecording(false); setErrorMsg('Recording error'); };
+      mr.onerror = (e) => { setIsRecording(false); setErrorMsg('Recording error'); };
       mr.onstop = async () => {
         try { stream.getTracks().forEach(tr => tr.stop()); } catch {}
         const out = new Blob(chunksRef.current, { type: 'audio/webm' });
@@ -79,7 +79,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
       mr.start();
       autoStopRef.current = setTimeout(() => { try { mr.state !== 'inactive' && mr.stop(); } catch {} }, 30000);
     } catch (e) {
-      console.warn('[Mic] getUserMedia failed', e);
+      // Mic permission denied
       setErrorMsg('Mic permission denied');
       try {
         if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError' || e.name === 'NotFoundError')) {
