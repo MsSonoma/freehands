@@ -21,17 +21,14 @@ export async function POST(req) {
     const body = await req.json()
     const subject = body.subject || 'general'
     const lessonTitle = body.lessonTitle || ''
-    
-    console.log(`${logPrefix} Getting random Fill-in-Fun template for subject: ${subject}`)
 
     // Get a random template from the library
     const template = getRandomTemplate()
     
-    console.log(`${logPrefix} Successfully selected template with ${template.words.length} words`)
     return NextResponse.json(template, { status: 200 })
 
   } catch (error) {
-    console.error(`${logPrefix} Error:`, error)
+    // General error
     return NextResponse.json({ 
       error: 'Failed to get Fill-in-Fun template.' 
     }, { status: 500 })

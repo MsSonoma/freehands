@@ -47,7 +47,6 @@ export async function POST(request) {
     }
 
     if (!OPENAI_API_KEY) {
-      console.error('[judge-short-answer] OPENAI_API_KEY not configured');
       return NextResponse.json(
         { error: 'API key not configured' },
         { status: 500 }
@@ -138,7 +137,6 @@ export async function POST(request) {
 
     if (!openaiResponse.ok) {
       const errorText = await openaiResponse.text();
-      console.error('[judge-short-answer] OpenAI API error:', openaiResponse.status, errorText);
       return NextResponse.json(
         { error: 'OpenAI API request failed', details: errorText },
         { status: openaiResponse.status }
@@ -156,7 +154,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('[judge-short-answer] Error:', error);
+    // General error
     return NextResponse.json(
       { error: 'Internal server error', message: error.message },
       { status: 500 }
