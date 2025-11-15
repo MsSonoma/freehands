@@ -144,10 +144,7 @@ function LessonsPageInner(){
       tomorrow.setHours(0, 0, 0, 0)
       const msUntilMidnight = tomorrow.getTime() - now.getTime()
       
-      console.log('[Learn Lessons] Scheduling refresh in', Math.round(msUntilMidnight / 1000 / 60), 'minutes at midnight')
-      
       const timer = setTimeout(() => {
-        console.log('[Learn Lessons] Midnight refresh triggered')
         setRefreshTrigger(prev => prev + 1)
         // Schedule next midnight refresh
         scheduleNextMidnightRefresh()
@@ -262,7 +259,6 @@ function LessonsPageInner(){
         }
         if (!cancelled) setSessionGateReady(true)
       } catch (err) {
-        console.warn('[Learn Lessons] Active session gate check failed:', err)
         if (!cancelled) setSessionGateReady(true)
       }
     })()
@@ -323,24 +319,12 @@ function LessonsPageInner(){
               staleApprovedKeys,
               staleScheduledKeys
             } = await res.json()
-            console.log('[Learn Lessons] Loaded', lessons.length, 'available lessons from server')
-            if (serverScheduledKeys || serverRawSchedule || serverApprovedKeys) {
-              console.log('[Learn Lessons] Debug available lessons payload:', {
-                scheduledKeys: serverScheduledKeys,
-                rawSchedule: serverRawSchedule,
-                approvedKeys: serverApprovedKeys,
-                staleApprovedKeys,
-                staleScheduledKeys
-              })
-            }
             let cleanupTriggered = false
             if (Array.isArray(staleApprovedKeys) && staleApprovedKeys.length > 0) {
               cleanupTriggered = true
-              console.warn('[Learn Lessons] Cleared stale approved lesson keys:', staleApprovedKeys)
             }
             if (Array.isArray(staleScheduledKeys) && staleScheduledKeys.length > 0) {
               cleanupTriggered = true
-              console.warn('[Learn Lessons] Cleared stale scheduled lesson keys:', staleScheduledKeys)
             }
             if (cleanupTriggered) {
               setRefreshTrigger(prev => prev + 1)
@@ -354,7 +338,6 @@ function LessonsPageInner(){
             }
           }
         } catch (err) {
-          console.error('[Learn Lessons] Error loading available lessons:', err)
         }
       }
       
@@ -390,7 +373,6 @@ function LessonsPageInner(){
         
         // If error, use empty defaults
         if (error) {
-          console.warn('[Learn Lessons] Error loading learner data:', error)
           data = null
         }
         
@@ -418,7 +400,6 @@ function LessonsPageInner(){
             if (scheduleResponse.ok) {
               const scheduleData = await scheduleResponse.json()
               const scheduledLessons = scheduleData.lessons || []
-              console.log('[Learn Lessons] Scheduled lessons for today:', scheduledLessons)
               
               // Track scheduled lessons
               scheduledLessons.forEach(item => {
@@ -427,11 +408,9 @@ function LessonsPageInner(){
                 }
               })
             } else {
-              console.warn('[Learn Lessons] Schedule fetch failed:', scheduleResponse.status)
             }
           }
         } catch (schedErr) {
-          console.warn('[Learn Lessons] Could not load scheduled lessons:', schedErr)
         }
         
         if (!cancelled) {
@@ -439,12 +418,9 @@ function LessonsPageInner(){
           setActiveGoldenKeys(data?.active_golden_keys || {})
           setLessonNotes(data?.lesson_notes || {})
           const { normalized: approvedNormalized } = normalizeApprovedLessonKeys(data?.approved_lessons || {})
-          console.log('[Learn Lessons] Loaded approved lessons:', approvedNormalized)
-          console.log('[Learn Lessons] Original approved lessons from DB:', data?.approved_lessons)
           setAvailableLessons(approvedNormalized)
         }
       } catch (err) {
-        console.error('[Learn Lessons] Failed to load:', err)
         if (!cancelled) {
           setActiveGoldenKeys({})
           setAvailableLessons({})

@@ -20,9 +20,7 @@ export function getRiddlesForSubject(subject) {
 }
 
 export function pickNextRiddle(subject) {
-  console.log('[pickNextRiddle] Called with subject:', subject);
   const list = getRiddlesForSubject(subject);
-  console.log('[pickNextRiddle] Got list with length:', list?.length);
   if (!list.length) return null;
   if (typeof window === 'undefined') return list[0];
   try {
@@ -32,7 +30,6 @@ export function pickNextRiddle(subject) {
     else idx = (idx + 1) % list.length;
     localStorage.setItem(key, String(idx));
     const result = list[idx];
-    console.log('[pickNextRiddle] Returning riddle:', result?.id);
     return result;
   } catch { return list[Math.floor(Math.random() * list.length)]; }
 }

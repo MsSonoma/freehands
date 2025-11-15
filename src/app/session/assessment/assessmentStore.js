@@ -39,7 +39,6 @@ export async function getStoredAssessments(lessonId, { learnerId } = {}) {
 			return normalizeShape(parsed);
 		}
 	} catch (e) {
-		console.warn('[assessmentStore] Failed to parse stored assessments', e);
 	}
 	return null;
 }
@@ -72,7 +71,7 @@ export async function saveAssessments(lessonId, { worksheet = [], test = [], com
 
 export async function clearAssessments(lessonId, { learnerId } = {}) {
 	if (typeof window === 'undefined') return;
-	try { localStorage.removeItem(buildKey(lessonId)); } catch (e) { console.warn('[assessmentStore] Failed to clear local assessments', e); }
+	try { localStorage.removeItem(buildKey(lessonId)); } catch (e) { }
 	// Best-effort remote delete
 	try {
 		const supabaseMod = await import('@/app/lib/supabaseClient');
@@ -98,7 +97,6 @@ export function clearAllAssessments() {
 			if (k.startsWith(KEY_PREFIX)) localStorage.removeItem(k);
 		}
 	} catch (e) {
-		console.warn('[assessmentStore] Failed to clear all assessments', e);
 	}
 }
 
