@@ -33,7 +33,6 @@ export default function GoldenKeyCounter({ learnerId, selected, onToggle }) {
           setKeyCount(0)
         }
       } catch (err) {
-        console.error('[GoldenKeyCounter] Error fetching learner:', err)
         if (mounted) setKeyCount(0)
       } finally {
         if (mounted) setLoading(false)

@@ -50,8 +50,6 @@ export default function LearnersPage() {
 			setLoading(true);
 			try {
 				const data = await listLearners();
-				console.log('📋 listLearners returned:', data);
-				// Fetch plan_tier if possible to compute max learners
 				let tier = 'free';
 				if (hasSupabaseEnv()) {
 					try {
@@ -69,7 +67,6 @@ export default function LearnersPage() {
 					setPlanTier(tier);
 					setMaxLearners(ent.learnersMax);
 					setItems(data);
-					console.log('✅ setItems called with:', data);
 				}
 			} catch (err) {
                 const msg = err?.message || String(err) || 'Failed to load learners';
@@ -153,13 +150,10 @@ export default function LearnersPage() {
 
 	const handleInlineSave = async (idx, updated) => {
 		const id = items[idx].id;
-		console.log('🔍 handleInlineSave called with:', { idx, id, updated });
 		setSavingId(id);
-		setSavedId(null); // Clear any existing saved notification
+		setSavedId(null);
 			try {
-				console.log('💾 Calling updateLearner with id:', id, 'updates:', updated);
 				const result = await updateLearner(id, updated);
-				console.log('✅ updateLearner returned:', result);
 			setItems(prev => prev.map((x,i) => i===idx ? { 
 				...x, 
 				...updated, 
@@ -469,7 +463,6 @@ const normalizeHumorLevel = (value) => {
 };
 
 function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, onDelete }){
-	console.log('🎯 LearnerRow render, item:', item);
 	const [name, setName] = useState(item.name || '');
 	const [grade, setGrade] = useState(item.grade || 'K');
 	const [comprehension, setComprehension] = useState(String(item.comprehension ?? item.targets?.comprehension ?? 3));
@@ -479,13 +472,9 @@ function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, o
 	const [sessionTimer, setSessionTimer] = useState(String(item.session_timer_minutes || '60'));
 	const [goldenKeys, setGoldenKeys] = useState(String(item.golden_keys ?? 0));
 	const [humorLevel, setHumorLevel] = useState(normalizeHumorLevel(item.humor_level));
-	console.log('⏱️ LearnerRow initial sessionTimer state:', sessionTimer, 'from item.session_timer_minutes:', item.session_timer_minutes);
 
-	// Sync state with prop changes (e.g., after save updates the item)
 	useEffect(() => {
-		console.log('🔄 LearnerRow useEffect triggered, item.session_timer_minutes:', item.session_timer_minutes);
 		if (item.session_timer_minutes !== undefined) {
-			console.log('✅ Setting sessionTimer to:', String(item.session_timer_minutes));
 			setSessionTimer(String(item.session_timer_minutes));
 		}
 		if (item.golden_keys !== undefined) {
