@@ -4590,7 +4590,9 @@ function SessionPageInner() {
           sessionId: transcriptSessionId || undefined,
         });
       }
-    } catch (e) { try { console.warn('[Skip] transcript append failed', e); } catch {} }
+    } catch (e) {
+      // Skip transcript append failed
+    }
     // Clear snapshot so the new position becomes the fresh baseline immediately
     try {
       const key = getSnapshotStorageKey();
@@ -4703,7 +4705,9 @@ function SessionPageInner() {
           sessionId: transcriptSessionId || undefined,
         });
       }
-    } catch (e) { try { console.warn('[SkipBack] transcript append failed', e); } catch {} }
+    } catch (e) {
+      // SkipBack transcript append failed
+    }
     try {
       const key = getSnapshotStorageKey();
       if (key) {
@@ -5185,12 +5189,8 @@ function SessionPageInner() {
             originalQuestion: trimmed
           }
         );
-        
-        if (!exampleQuestionsResult.success) {
-          console.warn('[Ask] Failed to generate example questions');
-        }
       } catch (err) {
-        console.warn('[Ask] Error in confirmation flow:', err);
+        // Error in confirmation flow
       }
       setAskState('awaiting-confirmation');
       // Keep input disabled while awaiting button choice
@@ -5244,8 +5244,6 @@ function SessionPageInner() {
         : `That makes ${nextCount} correct answers.`;
       const nearTarget = (ticker === COMPREHENSION_TARGET - 1);
       const atTarget = (nextCount === COMPREHENSION_TARGET);
-      
-      console.log('[Comprehension] Start of phase:', { ticker, nextCount, nearTarget, atTarget, COMPREHENSION_TARGET, currentCompProblem: !!currentCompProblem });
 
       // Ensure a current problem; if none, select one. If no input, just speak the question and return.
       let problem = currentCompProblem;
@@ -5289,22 +5287,17 @@ function SessionPageInner() {
 
       // Draw the next problem now (avoid duplicates); only used when current is correct and not final
       let nextProblem = null;
-      console.log('[Comprehension] Pre-selection check:', { nearTarget, atTarget, willTryPreselect: !nearTarget && !atTarget, hasGeneratedComprehension: !!generatedComprehension, generatedComprehensionLength: generatedComprehension?.length, currentCompIndex, currentProblemText: problem?.question?.substring(0, 50) });
       if (!nearTarget && !atTarget) {
         if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
           let idx = currentCompIndex;
-          const candidateText = generatedComprehension[idx]?.question?.substring(0, 50);
-          console.log('[Comprehension] Trying generatedComprehension at idx:', idx, 'text:', candidateText);
           // Simply take the next item from the pre-generated array (duplicates already handled during generation)
           nextProblem = generatedComprehension[idx]; 
           setCurrentCompIndex(idx + 1); 
-          console.log('[Comprehension] Selected from generatedComprehension, will set index to:', idx + 1);
         }
         if (!nextProblem) {
           // REMOVED: drawSampleUnique fallback - deprecated zombie code
         }
         if (!nextProblem && compPool.length) {
-          console.log('[Comprehension] Trying compPool, length:', compPool.length);
           const [head, ...rest] = compPool;
           const headSame = (()=>{ try { const t=(head?.question ?? formatQuestionForSpeech(head)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t===c; } catch { return false; }})();
           if (head && !headSame) { nextProblem = head; setCompPool(rest); }
@@ -5315,8 +5308,6 @@ function SessionPageInner() {
           }
         }
       }
-      
-      console.log('[Comprehension] After pre-selection, nextProblem:', !!nextProblem);
 
       // Build acceptable answers for local judging
   // Accept both schema variants: some items use `answer`, others use `expected`
@@ -5361,9 +5352,8 @@ function SessionPageInner() {
       let correct = false;
       try {
         correct = await judgeAnswer(trimmed, acceptable, problem);
-        console.log('[Comprehension] judgeAnswer result:', { correct, trimmed, ticker, nearTarget, atTarget, hasNextProblem: !!nextProblem });
       } catch (err) {
-        console.error('[Comprehension] judgeAnswer error:', err);
+        // judgeAnswer error
       }
 
       setLearnerInput('');
@@ -5387,9 +5377,7 @@ function SessionPageInner() {
           return;
         }
         setTicker(ticker + 1);
-        console.log('[Comprehension] After correct answer:', { nearTarget, atTarget, hasNextProblem: !!nextProblem, ticker: ticker + 1 });
         if (!nearTarget && nextProblem) {
-          console.log('[Comprehension] Taking path: ask next question');
           setCurrentCompProblem(nextProblem);
           try { scheduleSaveSnapshot('qa-correct-next'); } catch {}
           const nextQ = ensureQuestionMark(formatQuestionForSpeech(nextProblem, { layout: 'multiline' }));
@@ -5402,7 +5390,6 @@ function SessionPageInner() {
         }
         // No more unique questions available - complete the phase early
         if (!nextProblem && !nearTarget && !atTarget) {
-          console.log('[Comprehension] Taking path: no more questions, ending phase early');
           try { scheduleSaveSnapshot('comprehension-complete'); } catch {}
           try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for comprehension. Now let's begin the exercise.`); } catch {}
           setPhase('exercise');
@@ -5413,7 +5400,6 @@ function SessionPageInner() {
           setCanSend(false);
           return;
         }
-        console.log('[Comprehension] Taking path: near/at target or other condition - just celebrate');
         try { scheduleSaveSnapshot('qa-correct-progress'); } catch {}
         try { await speakFrontend(`${celebration}. ${progressPhrase}`); } catch {}
   setCanSend(true);
@@ -5546,7 +5532,7 @@ function SessionPageInner() {
       try { 
         correct = await judgeAnswer(trimmed, acceptableE, problem); 
         if (!correct) {
-          console.log('[Exercise] Answer marked incorrect:', { learnerAnswer: trimmed, acceptableE, problemAnswer: problem.answer, problemExpected: problem.expected, problemA: problem.A, problema: problem.a, anyOfE });
+          // Answer marked incorrect
         }
       } catch {}
 
@@ -5599,7 +5585,6 @@ function SessionPageInner() {
         const acceptableE2 = anyOfE2 && anyOfE2.length ? Array.from(new Set(anyOfE2.map(String))) : [expectedPrimaryE2, ...expectedSynsE2];
         const correctTextE = deriveCorrectAnswerText(problem, acceptableE2, expectedPrimaryE2) || expectedPrimaryE2 || '';
         const revealE = correctTextE ? `Not quite right. The correct answer is ${correctTextE}.` : 'Not quite right.';
-        try { console.log('[Exercise] Third try reveal:', { correctTextE, expectedPrimaryE2, acceptableE2, problemAnswer: problem.answer, problemExpected: problem.expected, problemA: problem.A, problema: problem.a }); } catch {}
         try { await speakFrontend(`${revealE} ${currQ}`, { mcLayout: 'multiline' }); } catch {}
       } else if (wrongNE === 2) {
         const supportiveE = pickHint(HINT_SECOND, qKeyE);
@@ -5720,7 +5705,6 @@ function SessionPageInner() {
         const acceptableW2 = anyOfW2 && anyOfW2.length ? Array.from(new Set(anyOfW2.map(String))) : [expectedPrimaryW2, ...expectedSynsW2];
         const correctTextW = deriveCorrectAnswerText(problem, acceptableW2, expectedPrimaryW2) || expectedPrimaryW2 || '';
         const revealW = correctTextW ? `Not quite right. The correct answer is ${correctTextW}.` : 'Not quite right.';
-        try { console.log('[Worksheet] Third try reveal:', { correctTextW, expectedPrimaryW2, acceptableW2, problemAnswer: problem.answer, problemExpected: problem.expected, problemA: problem.A, problema: problem.a }); } catch {}
         try { await speakFrontend(`${revealW} ${currQ}`, { mcLayout: 'multiline' }); } catch {}
       } else if (wrongNW === 2) {
         const supportiveW = pickHint(HINT_SECOND, qKeyW);
@@ -5991,7 +5975,6 @@ function SessionPageInner() {
   const onCompleteLesson = useCallback(async () => {
     // Prevent multiple simultaneous completions
     if (completionInProgressRef.current) {
-      console.log('[Complete Lesson] Already in progress, ignoring duplicate click');
       return;
     }
     completionInProgressRef.current = true;
@@ -6031,7 +6014,7 @@ function SessionPageInner() {
                   });
                 }
               } catch (err) {
-                console.error('[Golden Key] Failed to increment key:', err);
+                // Failed to increment key
               }
             }
           }
@@ -6045,7 +6028,6 @@ function SessionPageInner() {
       try {
         const storageKey = lessonKey ? `session_timer_state:${lessonKey}` : 'session_timer_state';
         sessionStorage.removeItem(storageKey);
-        console.info('[Complete Lesson] Cleared timer state for:', lessonKey || 'default');
       } catch {}
 
       // Clear active golden key for this lesson if it was used
@@ -6072,10 +6054,9 @@ function SessionPageInner() {
                 golden_keys: learner.golden_keys,
                 active_golden_keys: activeKeys
               });
-              console.info('[Golden Key] Cleared active golden key for completed lesson:', lessonKey);
             }
           } catch (err) {
-            console.error('[Golden Key] Failed to clear active golden key:', err);
+            // Failed to clear active golden key
           }
         }
       }
@@ -6150,7 +6131,9 @@ function SessionPageInner() {
             sessionId: transcriptSessionId || undefined,
           });
         }
-      } catch (e) { console.warn('[Session] transcript append failed', e); }
+      } catch (e) {
+        // Session transcript append failed
+      }
       if (trackingLearnerId) {
         try {
           await endTrackedSession('completed', {
@@ -6268,7 +6251,9 @@ function SessionPageInner() {
             sessionId: transcriptSessionId || undefined,
           });
         }
-      } catch (e) { try { console.warn('[TimelineJump] transcript append failed', e); } catch {} }
+      } catch (e) {
+        // TimelineJump transcript append failed
+      }
       try {
         const key = getSnapshotStorageKey();
         if (key) {
@@ -6395,12 +6380,6 @@ function SessionPageInner() {
     <div ref={videoColRef} style={isMobileLandscape ? { flex:`0 0 ${videoColPercent}%`, display:'flex', flexDirection:'column', minWidth:0, minHeight:0, height: 'var(--msSideBySideH)' } : {}}>
   {/* Shared Complete Lesson handler */}
   { /* define once; stable ref for consumers */ }
-  {(() => { 
-    console.log('[VISUAL_AIDS] About to render VideoPanel with visualAids:', visualAidsData);
-    console.log('[VISUAL_AIDS] visualAidsData is array?', Array.isArray(visualAidsData));
-    console.log('[VISUAL_AIDS] visualAidsData length:', visualAidsData?.length);
-    return null; 
-  })()}
   <VideoPanel
         isMobileLandscape={isMobileLandscape}
         isShortHeight={isShortHeight}
@@ -6894,14 +6873,12 @@ function SessionPageInner() {
                 // Button labels: "Repeat Sentence"/"Next Sentence" during sentence navigation, "Restart Vocab"/"Next: Examples" at final gate
                 let repeatLabel = 'Restart Vocab';
                 let nextLabel = 'Next: Examples';
-                console.log('[Gate Button 2] teachingStage:', teachingStage, 'isInSentenceMode:', isInSentenceMode);
                 if (teachingStage === 'examples') {
                   repeatLabel = 'Repeat Examples';
                   nextLabel = 'Next';
                 } else if (teachingStage === 'definitions' && isInSentenceMode) {
                   repeatLabel = 'Repeat Sentence';
                   nextLabel = 'Next Sentence';
-                  console.log('[Gate Button 2] Setting labels to "Repeat Sentence"/"Next Sentence" for sentence mode');
                 }
                 const ariaLabel = teachingStage === 'examples' ? 'Teaching gate: repeat examples or move to next stage' : 'Teaching gate: repeat vocab or move to next stage';
                 if (isShortHeight) return null; // already rendered in controls row above
