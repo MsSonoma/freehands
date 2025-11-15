@@ -79,7 +79,7 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('Error checking mentor quota:', error);
+    // Error checking mentor quota
     return Response.json({ 
       allowed: false, 
       reason: 'Server error' 

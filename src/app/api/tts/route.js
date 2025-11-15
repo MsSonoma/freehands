@@ -42,7 +42,7 @@ function loadTtsCredentials() {
       if (raw) return decodeCredentials(raw) || JSON.parse(raw)
     }
   } catch (err) {
-    console.error('[TTS] Failed to load Google credentials', err)
+    // Failed to load Google credentials
   }
   return null
 }
@@ -51,12 +51,13 @@ async function getTtsClient() {
   if (ttsClientPromise) return ttsClientPromise
   const credentials = loadTtsCredentials()
   if (!credentials) {
-    console.warn('[TTS] Google TTS credentials are not configured.')
+    // Google TTS credentials not configured
     return null
   }
   ttsClientPromise = (async () => {
     try { return new TextToSpeechClient({ credentials }) } catch (e) {
-      console.error('[TTS] Failed to init client', e); ttsClientPromise = undefined; return null
+      // Failed to init client
+      ttsClientPromise = undefined; return null
     }
   })()
   ttsClientPromise.catch(() => { ttsClientPromise = undefined })
@@ -105,10 +106,10 @@ export async function POST(req) {
     const base64 = res?.audioContent
       ? (typeof res.audioContent === 'string' ? res.audioContent : Buffer.from(res.audioContent).toString('base64'))
       : undefined
-    try { console.log('[TTS] Synth ok; chars=', text.length, 'b64len=', base64 ? base64.length : 0) } catch {}
+    // Synth ok
     return NextResponse.json({ reply: text, audio: base64 })
   } catch (e) {
-    console.error('[TTS] Synthesis failed', e)
+    // Synthesis failed
     return NextResponse.json({ error: 'tts_failed' }, { status: 500 })
   }
 }

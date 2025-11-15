@@ -85,7 +85,7 @@ export async function POST(request) {
       .eq('id', user.id);
 
     if (updateError) {
-      console.error('Error updating mentor session:', updateError);
+      // Error updating mentor session
       return Response.json({ success: false, reason: 'Update failed' }, { status: 500 });
     }
 
@@ -95,7 +95,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Error incrementing mentor session:', error);
+    // Error incrementing mentor session
     return Response.json({ 
       success: false, 
       reason: 'Server error' 

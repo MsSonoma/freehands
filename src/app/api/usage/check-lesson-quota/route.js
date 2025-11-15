@@ -62,7 +62,7 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('Error checking lesson quota:', error);
+    // Error checking lesson quota
     return Response.json({ 
       allowed: false, 
       reason: 'Server error' 

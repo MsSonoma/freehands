@@ -71,7 +71,7 @@ export async function POST(request) {
       .eq('id', user.id);
 
     if (updateError) {
-      console.error('Error updating generation count:', updateError);
+      // Error updating generation count
       return Response.json({ success: false, reason: 'Update failed' }, { status: 500 });
     }
 
@@ -81,7 +81,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Error incrementing generation:', error);
+    // Error incrementing generation
     return Response.json({ 
       success: false, 
       reason: 'Server error' 

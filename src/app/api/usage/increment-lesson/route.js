@@ -52,7 +52,7 @@ export async function POST(request) {
       .eq('id', user.id);
 
     if (updateError) {
-      console.error('Error updating lesson count:', updateError);
+      // Error updating lesson count
       return Response.json({ success: false, reason: 'Update failed' }, { status: 500 });
     }
 
@@ -63,7 +63,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Error incrementing lesson:', error);
+    // Error incrementing lesson
     return Response.json({ 
       success: false, 
       reason: 'Server error' 

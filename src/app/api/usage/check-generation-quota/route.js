@@ -35,7 +35,7 @@ export async function GET(request) {
     const tier = (profile.plan_tier || 'free').toLowerCase();
     const entitlement = ENTITLEMENTS[tier] || ENTITLEMENTS.free;
     
-    console.log('Quota check - tier:', tier, 'entitlement:', entitlement);
+    // Quota check
     
     const lifetimeLimit = entitlement.lifetimeGenerations;
     const weeklyLimit = entitlement.weeklyGenerations;
@@ -111,7 +111,7 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('Error checking generation quota:', error);
+    // Error checking generation quota
     return Response.json({ 
       allowed: false, 
       reason: 'Server error' 

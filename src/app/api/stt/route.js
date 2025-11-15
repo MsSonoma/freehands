@@ -97,7 +97,7 @@ export async function POST(req) {
       .trim()
     return NextResponse.json({ transcript })
   } catch (err) {
-    console.error('[STT] Google Speech error', err)
+    // Google Speech error
     return NextResponse.json({ error: 'Transcription failed.' }, { status: 500 })
   }
 }
