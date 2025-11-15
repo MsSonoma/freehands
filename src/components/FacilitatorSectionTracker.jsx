@@ -19,7 +19,6 @@ export default function FacilitatorSectionTracker() {
     // Only clear the flag when leaving the facilitator section entirely
     // (from /facilitator/* to non-facilitator path)
     if (wasInFacilitator && !isInFacilitator) {
-      console.log('[FacilitatorSectionTracker] Leaving facilitator section, clearing flag');
       setInFacilitatorSection(false);
     }
     

@@ -1,3 +1,6 @@
+2025-11-15T00:12:00Z | Copilot | Removed 65 console logs from CounselorClient (session init, learner loading, chat handlers, tool calls, draft updates). Build clean. Committed.
+2025-11-15T00:11:00Z | Copilot | Removed 20 console logs from LessonsOverlay (loading, notes, scheduling, editing, visual aids). Build clean. Committed.
+2025-11-15T00:10:00Z | Copilot | Removed 19 console logs from GoalsClipboardOverlay (load callbacks, save handler). Build clean. Committed.
 2025-11-15T00:09:00Z | Copilot | Removed 5 console.error from visual-aids API route. Build clean. Committed.
 2025-11-15T00:08:00Z | Copilot | Removed 5 console.log from learners clientApi (update debug statements). Build clean. Committed.
 2025-11-15T00:07:00Z | Copilot | Removed 11 console.log from LessonEditor (normalization, save, sub-editors). Build clean. Committed.

@@ -164,7 +164,7 @@ export async function getStoredSnapshot(lessonKey, { learnerId } = {}) {
       }
     }
   } catch (e) {
-    console.warn('[sessionSnapshotStore] Failed to load snapshot from server', e);
+    // Silent error handling
   }
   return null;
 }
@@ -172,7 +172,6 @@ export async function getStoredSnapshot(lessonKey, { learnerId } = {}) {
 export async function saveSnapshot(lessonKey, snapshot, { learnerId } = {}) {
   if (typeof window === 'undefined') return;
   const payload = normalizeSnapshot({ ...(snapshot || {}), savedAt: new Date().toISOString() });
-  console.log('[sessionSnapshotStore] Saving snapshot - lessonKey:', lessonKey, 'learnerId:', learnerId);
   // Save to server only (no localStorage)
   try {
     const supabaseMod = await import('@/app/lib/supabaseClient');
@@ -187,15 +186,10 @@ export async function saveSnapshot(lessonKey, snapshot, { learnerId } = {}) {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
           body: JSON.stringify({ learner_id: learnerId, lesson_key: lessonKey, data: payload })
         });
-        console.log('[sessionSnapshotStore] Snapshot save response:', response.status, response.ok);
-      } else {
-        console.warn('[sessionSnapshotStore] No auth token available');
       }
-    } else {
-      console.warn('[sessionSnapshotStore] Supabase not available or no learnerId');
     }
   } catch (e) {
-    console.warn('[sessionSnapshotStore] Failed to save snapshot to server', e);
+    // Silent error handling
   }
 }
 
@@ -215,7 +209,7 @@ export async function clearSnapshot(lessonKey, { learnerId } = {}) {
       }
     }
   } catch (e) {
-    console.warn('[sessionSnapshotStore] Failed to clear snapshot from server', e);
+    // Silent error handling
   }
 }
 
