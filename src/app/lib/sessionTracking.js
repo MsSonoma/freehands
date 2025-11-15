@@ -60,13 +60,11 @@ async function logLessonSessionEvent({
       .insert(payload);
 
     if (error) {
-      console.warn('[sessionTracking] Failed to log session event:', eventType, error);
       return false;
     }
 
     return true;
   } catch (err) {
-    console.warn('[sessionTracking] Exception logging session event:', err);
     return false;
   }
 }
@@ -93,7 +91,7 @@ export async function startLessonSession(learnerId, lessonId) {
       .is('ended_at', null);
 
     if (existingError) {
-      console.warn('[sessionTracking] Failed to check existing sessions:', existingError);
+      // Silent fail on check
     }
 
     const activeSessions = Array.isArray(existingSessions) ? existingSessions : [];
@@ -108,7 +106,6 @@ export async function startLessonSession(learnerId, lessonId) {
           .eq('id', activeId);
 
         if (closeError) {
-          console.warn('[sessionTracking] Failed to close existing session before starting new one:', closeError);
           continue;
         }
 
@@ -126,7 +123,6 @@ export async function startLessonSession(learnerId, lessonId) {
           },
         });
       }
-      console.info('[sessionTracking] Closed', activeSessions.length, 'previous active session(s) for learner');
     }
 
     const { data, error } = await supabase
@@ -140,11 +136,8 @@ export async function startLessonSession(learnerId, lessonId) {
       .single();
 
     if (error) {
-      console.error('[sessionTracking] Error starting session:', error);
       return null;
     }
-
-    console.info('[sessionTracking] Session started:', data.id);
 
     await logLessonSessionEvent({
       supabase,
@@ -157,7 +150,6 @@ export async function startLessonSession(learnerId, lessonId) {
 
     return data.id;
   } catch (err) {
-    console.error('[sessionTracking] Exception in startLessonSession:', err);
     return null;
   }
 }
@@ -183,12 +175,10 @@ export async function endLessonSession(sessionId, options = {}) {
       .maybeSingle();
 
     if (fetchError) {
-      console.error('[sessionTracking] Error loading session for end:', fetchError);
       return false;
     }
 
     if (!sessionRow) {
-      console.warn('[sessionTracking] No session found for end:', sessionId);
       return false;
     }
 
@@ -199,11 +189,9 @@ export async function endLessonSession(sessionId, options = {}) {
         .eq('id', sessionId);
 
       if (updateError) {
-        console.error('[sessionTracking] Error ending session:', updateError);
         return false;
       }
     } else if (!options?.force) {
-      // Already ended. Avoid duplicate completed events unless forced.
       if (reason === SESSION_EVENT_TYPES.COMPLETED) {
         const { data: existingEvent } = await supabase
           .from('lesson_session_events')
@@ -241,10 +229,8 @@ export async function endLessonSession(sessionId, options = {}) {
       },
     });
 
-    console.info('[sessionTracking] Session ended:', sessionId, 'reason:', eventType);
     return true;
   } catch (err) {
-    console.error('[sessionTracking] Exception in endLessonSession:', err);
     return false;
   }
 }
@@ -273,13 +259,11 @@ export async function logRepeatEvent(sessionId, sentenceId) {
       });
 
     if (error) {
-      console.error('[sessionTracking] Error logging repeat event:', error);
       return false;
     }
 
     return true;
   } catch (err) {
-    console.error('[sessionTracking] Exception in logRepeatEvent:', err);
     return false;
   }
 }
@@ -306,13 +290,11 @@ export async function addFacilitatorNote(sessionId, text) {
       });
 
     if (error) {
-      console.error('[sessionTracking] Error adding note:', error);
       return false;
     }
 
     return true;
   } catch (err) {
-    console.error('[sessionTracking] Exception in addFacilitatorNote:', err);
     return false;
   }
 }
@@ -341,13 +323,11 @@ export async function addTranscriptLine(sessionId, speaker, text) {
       });
 
     if (error) {
-      console.error('[sessionTracking] Error adding transcript line:', error);
       return false;
     }
 
     return true;
   } catch (err) {
-    console.error('[sessionTracking] Exception in addTranscriptLine:', err);
     return false;
   }
 }
@@ -371,13 +351,11 @@ export async function getSessionTranscript(sessionId) {
       .order('ts', { ascending: true });
 
     if (error) {
-      console.error('[sessionTracking] Error fetching transcript:', error);
       return [];
     }
 
     return data || [];
   } catch (err) {
-    console.error('[sessionTracking] Exception in getSessionTranscript:', err);
     return [];
   }
 }
@@ -401,13 +379,11 @@ export async function getSessionMetrics(sessionId) {
       .maybeSingle();
 
     if (error) {
-      console.error('[sessionTracking] Error fetching metrics:', error);
       return null;
     }
 
     return data;
   } catch (err) {
-    console.error('[sessionTracking] Exception in getSessionMetrics:', err);
     return null;
   }
 }
@@ -433,13 +409,11 @@ export async function getLearnerSessions(learnerId, limit = 10) {
       .limit(limit);
 
     if (error) {
-      console.error('[sessionTracking] Error fetching sessions:', error);
       return [];
     }
 
     return data || [];
   } catch (err) {
-    console.error('[sessionTracking] Exception in getLearnerSessions:', err);
     return [];
   }
 }
@@ -466,7 +440,6 @@ export async function getActiveLessonSession(learnerId) {
       .limit(1);
 
     if (error) {
-      console.warn('[sessionTracking] Error fetching active session:', error);
       return null;
     }
 
@@ -476,7 +449,6 @@ export async function getActiveLessonSession(learnerId) {
 
     return null;
   } catch (err) {
-    console.warn('[sessionTracking] Exception in getActiveLessonSession:', err);
     return null;
   }
 }
