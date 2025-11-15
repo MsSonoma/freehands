@@ -16,8 +16,6 @@ export async function downloadAndStoreImage(imageUrl, supabase, facilitatorId, l
     const sanitizedLessonKey = lessonKey.replace(/\.json$/, '').replace(/[^a-zA-Z0-9_-]/g, '_')
     const storagePath = `${facilitatorId}/${sanitizedLessonKey}/${imageId}.png`
 
-    console.log('[DOWNLOAD_IMAGE] Uploading to:', storagePath)
-
     // Upload to Supabase Storage
     const { data, error } = await supabase.storage
       .from('visual-aids')
@@ -27,7 +25,7 @@ export async function downloadAndStoreImage(imageUrl, supabase, facilitatorId, l
       })
 
     if (error) {
-      console.error('[DOWNLOAD_IMAGE] Upload error:', error)
+      // Upload error - throw to caller
       throw error
     }
 
@@ -35,13 +33,11 @@ export async function downloadAndStoreImage(imageUrl, supabase, facilitatorId, l
     const { data: urlData } = supabase.storage
       .from('visual-aids')
       .getPublicUrl(storagePath)
-
-    console.log('[DOWNLOAD_IMAGE] Stored successfully:', urlData.publicUrl)
     
     return urlData.publicUrl
 
   } catch (err) {
-    console.error('[DOWNLOAD_IMAGE] Error:', err)
+    // Download/storage error - throw to caller
     throw err
   }
 }

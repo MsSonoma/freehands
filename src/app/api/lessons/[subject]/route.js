@@ -24,14 +24,12 @@ export async function GET(request) {
     
     // If subject is "generated", fetch ALL generated lessons from the current user's folder
     if (subject === 'generated') {
-      console.log('[GENERATED] Fetching generated lessons...');
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
       
       if (!supabaseUrl || !supabaseServiceKey || !anonKey) {
-        console.log('[GENERATED] Missing Supabase config');
-        return NextResponse.json({ error: 'Supabase configuration missing' }, { status: 500 });
+        return NextResponse.json({ error: 'Supabase configuration missing' }, { status: 500 })
       }
       
       // Get the current user from cookies
@@ -54,19 +52,11 @@ export async function GET(request) {
       
       const { data: { session }, error: sessionError } = await userClient.auth.getSession()
       
-      console.log('[GENERATED] Session check:', { 
-        hasSession: !!session, 
-        userId: session?.user?.id,
-        sessionError: sessionError?.message 
-      })
-      
       if (!session?.user) {
-        console.log('[GENERATED] No authenticated user');
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
       
       const userId = session.user.id
-      console.log('[GENERATED] User ID:', userId);
       
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
       
@@ -81,21 +71,17 @@ export async function GET(request) {
             offset: 0,
           });
         
-        console.log('[GENERATED] Items found:', files?.length || 0);
-        
         if (filesError) {
-          console.error('[GENERATED] Error listing files:', filesError);
+          // Error listing files
           return NextResponse.json(results);
         }
         
         if (!files || files.length === 0) {
-          console.log('[GENERATED] No files found in facilitator-lessons/', userId);
-          return NextResponse.json(results);
+          return NextResponse.json(results)
         }
         
         // Filter for JSON files only (skip any folders)
         const jsonFiles = files.filter(f => f.name && f.name.toLowerCase().endsWith('.json') && f.id !== null);
-        console.log('[GENERATED] JSON files:', jsonFiles.length);
         
         // Download and parse each file
         for (const file of jsonFiles) {
@@ -105,7 +91,7 @@ export async function GET(request) {
               .download(`facilitator-lessons/${userId}/${file.name}`);
             
             if (downloadError || !fileData) {
-              console.error('[FACILITATOR] Download error for', file.name, downloadError);
+              // Download error - skip file
               continue;
             }
             
@@ -124,14 +110,13 @@ export async function GET(request) {
               needsUpdate: lessonData.needsUpdate || false
             });
           } catch (err) {
-            console.error(`[FACILITATOR] Error processing ${file.name}:`, err);
+            // Error processing file - skip
           }
         }
       } catch (err) {
-        console.error('[FACILITATOR] Error in facilitator lessons fetch:', err);
+        // Error in facilitator lessons fetch
       }
       
-      console.log('[FACILITATOR] Total lessons found:', results.length);
       return NextResponse.json(results);
     }
     

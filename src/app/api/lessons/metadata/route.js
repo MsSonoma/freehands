@@ -16,8 +16,6 @@ export async function POST(request) {
     if (!Array.isArray(lessons) || lessons.length === 0) {
       return NextResponse.json([]);
     }
-
-    console.log('[Metadata API] Fetching metadata for', lessons.length, 'specific lessons');
     
     const results = [];
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -98,23 +96,19 @@ export async function POST(request) {
               }
             }
           } catch (err) {
-            console.error('[Metadata API] Error searching Supabase Storage:', err);
+            // Error searching Supabase Storage
           }
         }
         
-        // If still not found, log it
-        if (!results.find(r => r.lessonKey === lessonKey)) {
-          console.log('[Metadata API] Lesson not found in filesystem or storage:', lessonKey);
-        }
+        // If still not found, skip it
       } catch (err) {
-        console.error('[Metadata API] Error loading lesson:', lessonKey, err);
+        // Error loading lesson - skip
       }
     }
 
-    console.log('[Metadata API] Returning', results.length, 'lesson metadata objects');
     return NextResponse.json(results);
   } catch (e) {
-    console.error('[Metadata API] Error:', e);
+    // General error
     return NextResponse.json({ error: 'Failed to fetch lesson metadata', detail: e?.message || String(e) }, { status: 500 });
   }
 }

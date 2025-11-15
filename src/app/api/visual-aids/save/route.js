@@ -39,19 +39,15 @@ export async function POST(req) {
 
     // Normalize lesson key by stripping folder prefixes (so same lesson from different routes shares visual aids)
     const normalizedLessonKey = lessonKey.replace(/^(generated|facilitator|math|science|language-arts|social-studies|demo)\//, '')
-    console.log('[VISUAL_AIDS_SAVE] Normalizing lesson key:', lessonKey, '->', normalizedLessonKey)
 
     // Download and store selected images permanently
     let permanentSelectedImages = []
     if (selectedImages && selectedImages.length > 0) {
-      console.log('[VISUAL_AIDS_SAVE] Downloading', selectedImages.length, 'selected images...')
-      
       permanentSelectedImages = await Promise.all(
         selectedImages.map(async (img) => {
           try {
             // Check if URL is already a permanent Supabase Storage URL
             if (img.url && img.url.includes('/storage/v1/object/public/visual-aids/')) {
-              console.log('[VISUAL_AIDS_SAVE] Already permanent URL:', img.id)
               return img
             }
 
@@ -69,14 +65,11 @@ export async function POST(req) {
               url: permanentUrl
             }
           } catch (err) {
-            console.error('[VISUAL_AIDS_SAVE] Failed to download image:', img.id, err)
-            // Keep original URL if download fails
+            // Failed to download image - keep original URL
             return img
           }
         })
       )
-      
-      console.log('[VISUAL_AIDS_SAVE] Downloaded', permanentSelectedImages.length, 'images successfully')
     }
 
     // Upsert visual aids record
@@ -96,7 +89,7 @@ export async function POST(req) {
       .single()
 
     if (error) {
-      console.error('[VISUAL_AIDS_SAVE] Error:', error)
+      // Upsert error
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -106,7 +99,7 @@ export async function POST(req) {
     })
     
   } catch (err) {
-    console.error('[VISUAL_AIDS_SAVE] Error:', err)
+    // General error
     return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
   }
 }

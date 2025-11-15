@@ -37,7 +37,6 @@ export async function GET(req) {
 
     // Normalize lesson key by stripping folder prefixes (must match save normalization)
     const normalizedLessonKey = lessonKey.replace(/^(generated|facilitator|math|science|language-arts|social-studies|demo)\//, '')
-    console.log('[VISUAL_AIDS_LOAD] Normalizing lesson key:', lessonKey, '->', normalizedLessonKey)
 
     // Fetch visual aids for this facilitator + lesson
     const { data, error } = await supabase
@@ -57,7 +56,7 @@ export async function GET(req) {
           maxGenerations: 4
         })
       }
-      console.error('[VISUAL_AIDS_LOAD] Error:', error)
+      // Other database error
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -69,7 +68,7 @@ export async function GET(req) {
     })
     
   } catch (err) {
-    console.error('[VISUAL_AIDS_LOAD] Error:', err)
+    // General error
     return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
   }
 }
