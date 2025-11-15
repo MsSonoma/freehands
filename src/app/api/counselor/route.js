@@ -1277,42 +1277,28 @@ export async function POST(req) {
     try {
       if (contentType.includes('application/json')) {
         const body = await req.json()
-        console.log(`${logPrefix} Parsed body:`, JSON.stringify(body).substring(0, 200))
         userMessage = (body.message || '').trim()
         conversationHistory = Array.isArray(body.history) ? body.history : []
         learnerTranscript = body.learner_transcript || null
         goalsNotes = body.goals_notes || null
         followup = body.followup || null
-        console.log(`${logPrefix} Received message with ${conversationHistory.length} history items`)
-        if (learnerTranscript) {
-          console.log(`${logPrefix} Learner context provided (${learnerTranscript.length} chars)`)
-        }
-        if (goalsNotes) {
-          console.log(`${logPrefix} Goals notes provided (${goalsNotes.length} chars)`)
-        }
       } else {
         const textBody = await req.text()
         userMessage = textBody.trim()
-        console.warn(`${logPrefix} Non-JSON payload; treating as message text`)
       }
     } catch (parseErr) {
-      console.error(`${logPrefix} Failed to parse request:`, parseErr)
       return NextResponse.json({ error: `Invalid request format: ${parseErr.message}` }, { status: 400 })
     }
 
     const isFollowup = followup && typeof followup === 'object'
 
     if (!isFollowup && !userMessage) {
-      console.warn(`${logPrefix} Empty message received`)
       return NextResponse.json({ error: 'Message is required.' }, { status: 400 })
     }
-
-    console.log(`${logPrefix} User message:\n${previewText(userMessage)}`)
 
     // Check for OpenAI API key
     const apiKey = process.env.OPENAI_API_KEY
     if (!apiKey) {
-      console.error(`${logPrefix} OPENAI_API_KEY not configured`)
       return NextResponse.json({ error: 'Mr. Mentor is unavailable.' }, { status: 500 })
     }
 
@@ -1348,13 +1334,11 @@ export async function POST(req) {
             if (memoryData.conversation_update) {
               const memory = memoryData.conversation_update
               systemPrompt += `\n\n=== CONVERSATION MEMORY ===\nYou have context from previous conversations with this facilitator${learnerId ? ' about this learner' : ''}.\n\nPrevious Summary (${memory.turn_count} turns):\n${memory.summary}\n\nLast Update: ${new Date(memory.updated_at).toLocaleDateString()}\n\n=== END CONVERSATION MEMORY ===\n\nUse this context to provide continuity. Reference past discussions naturally when relevant. If they mention something you discussed before, acknowledge it.`
-              console.log(`${logPrefix} Loaded conversation memory with ${memory.turn_count} turns`)
             }
           }
         }
       } catch (memErr) {
-        console.warn(`${logPrefix} Failed to load conversation memory:`, memErr)
-        // Continue without memory - don't fail the request
+        // Failed to load conversation memory - continue without it
       }
     }
 
@@ -1583,13 +1567,10 @@ export async function POST(req) {
     ]
 
     if (isFollowup) {
-      console.log(`${logPrefix} Processing follow-up continuation request`)
-
       const assistantMessage = followup?.assistantMessage
       const functionResults = Array.isArray(followup?.functionResults) ? followup.functionResults : []
 
       if (!assistantMessage || functionResults.length === 0) {
-        console.error(`${logPrefix} Follow-up missing assistant message or function results`)
         return NextResponse.json({ error: 'Follow-up context missing. Please retry the request.' }, { status: 400 })
       }
 
@@ -1630,8 +1611,6 @@ export async function POST(req) {
         })
       }
 
-      console.log(`${logPrefix} Calling OpenAI for follow-up continuation with ${followUpMessages.length} messages`)
-
       const followUpResponse = await fetch(OPENAI_URL, {
         method: 'POST',
         headers: {
@@ -1647,9 +1626,7 @@ export async function POST(req) {
       })
 
       if (!followUpResponse.ok) {
-        console.error(`${logPrefix} Follow-up OpenAI request failed with status ${followUpResponse.status}`)
         const errorBody = await followUpResponse.text()
-        console.error(`${logPrefix} Follow-up error body:`, errorBody)
         return NextResponse.json({ error: 'Failed to complete Mr. Mentor follow-up.' }, { status: followUpResponse.status })
       }
 
@@ -1657,11 +1634,8 @@ export async function POST(req) {
       const mentorReply = followUpBody?.choices?.[0]?.message?.content?.trim() ?? ''
 
       if (!mentorReply) {
-        console.warn(`${logPrefix} Empty follow-up reply from OpenAI`)
         return NextResponse.json({ error: 'Mr. Mentor had no response.' }, { status: 500 })
       }
-
-      console.log(`${logPrefix} Follow-up reply:\n${previewText(mentorReply)}`)
 
       const audioContent = await synthesizeAudio(mentorReply, logPrefix)
 
@@ -1683,8 +1657,6 @@ export async function POST(req) {
       tool_choice: 'auto'
     }
     
-    console.log(`${logPrefix} Request body size: ${JSON.stringify(requestBody).length} chars`)
-    
     const response = await fetch(OPENAI_URL, {
       method: 'POST',
       headers: {
@@ -1703,8 +1675,6 @@ export async function POST(req) {
     }
 
     if (!response.ok) {
-      console.error(`${logPrefix} OpenAI request failed with status ${response.status}`)
-      console.error(`${logPrefix} OpenAI error details:`, JSON.stringify(parsedBody, null, 2))
       return NextResponse.json({ error: 'Failed to get response from Mr. Mentor.' }, { status: response.status })
     }
 
@@ -1714,15 +1684,11 @@ export async function POST(req) {
     
     // Handle function calls
     if (toolCalls && toolCalls.length > 0) {
-      console.log(`${logPrefix} Processing ${toolCalls.length} function call(s)`)
-      
       const functionResults = []
       
       for (const toolCall of toolCalls) {
         const functionName = toolCall.function.name
         const functionArgs = JSON.parse(toolCall.function.arguments)
-        
-        console.log(`${logPrefix} Calling function: ${functionName} with args:`, JSON.stringify(functionArgs, null, 2))
         
         let result
         try {
@@ -1746,21 +1712,7 @@ export async function POST(req) {
             result = { error: 'Unknown function' }
           }
           
-          // Log result for debugging (truncate large results)
-          const resultPreview = result?.error ? result : { 
-            success: result?.success, 
-            count: result?.count || result?.lessons?.length,
-            message: result?.message,
-            title: result?.title
-          }
-          console.log(`${logPrefix} Function ${functionName} result:`, resultPreview)
-          
-          // Check if result contains an error
-          if (result?.error) {
-            console.error(`${logPrefix} Function ${functionName} returned error:`, result.error)
-          }
         } catch (err) {
-          console.error(`${logPrefix} Function ${functionName} exception:`, err.message, err.stack)
           result = { error: err.message || String(err) }
         }
         
@@ -1796,8 +1748,6 @@ export async function POST(req) {
               : 'I just generated a new lesson and will validate it now.')
         }
 
-        console.log(`${logPrefix} Skipping follow-up OpenAI call; returning early with tool results`)
-
         return NextResponse.json({
           reply: mentorReplyText,
           audio: null,
@@ -1820,9 +1770,6 @@ export async function POST(req) {
         ...functionResults
       ]
       
-      console.log(`${logPrefix} Calling OpenAI again with function results (${functionResults.length} results)`)
-      console.log(`${logPrefix} Follow-up message count: ${followUpMessages.length}`)
-      
       const followUpResponse = await fetch(OPENAI_URL, {
         method: 'POST',
         headers: {
@@ -1838,28 +1785,18 @@ export async function POST(req) {
       })
       
       if (!followUpResponse.ok) {
-        console.error(`${logPrefix} Follow-up OpenAI request failed with status ${followUpResponse.status}`)
         const errorBody = await followUpResponse.text()
-        console.error(`${logPrefix} Follow-up error body:`, errorBody)
         return NextResponse.json({ error: 'Failed to get follow-up response from Mr. Mentor.' }, { status: followUpResponse.status })
       }
       
       const followUpBody = await followUpResponse.json()
       const mentorReply = followUpBody?.choices?.[0]?.message?.content?.trim() ?? ''
       
-      console.log(`${logPrefix} Follow-up response received, length: ${mentorReply.length}`)
-      
       if (!mentorReply) {
-        console.warn(`${logPrefix} Empty follow-up reply from OpenAI`)
-        console.warn(`${logPrefix} Full response:`, JSON.stringify(followUpBody, null, 2))
         return NextResponse.json({ error: 'Mr. Mentor had no response.' }, { status: 500 })
       }
       
-      console.log(`${logPrefix} Mr. Mentor follow-up reply:\n${previewText(mentorReply)}`)
-      
       // Skip TTS for tool-calling responses to save time (client will show captions only)
-      console.log(`${logPrefix} Skipping TTS for tool-calling response to avoid timeout`)
-      
       return NextResponse.json({
         reply: mentorReply,
         audio: null,
@@ -1872,11 +1809,8 @@ export async function POST(req) {
     const mentorReply = assistantMessage?.content?.trim() ?? ''
     
     if (!mentorReply) {
-      console.warn(`${logPrefix} Empty reply from OpenAI`)
       return NextResponse.json({ error: 'Mr. Mentor had no response.' }, { status: 500 })
     }
-
-    console.log(`${logPrefix} Mr. Mentor reply:\n${previewText(mentorReply)}`)
 
     // Synthesize audio
     const audioContent = await synthesizeAudio(mentorReply, logPrefix)
@@ -1888,7 +1822,6 @@ export async function POST(req) {
     })
 
   } catch (error) {
-    console.error(`${logPrefix} Unexpected error:`, error)
     return NextResponse.json({ error: 'Mr. Mentor is unavailable.' }, { status: 500 })
   }
 }
