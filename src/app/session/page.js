@@ -236,7 +236,6 @@ function SessionPageInner() {
     if (!lessonParam) return null;
     // Strip folder prefixes like generated/, facilitator/, math/, etc.
     const normalizedLesson = lessonParam.replace(/^(generated|facilitator|math|science|language-arts|social-studies|demo)\//, '');
-    console.log('[VISUAL_AIDS] Normalizing lesson key:', lessonParam, '->', normalizedLesson);
     return normalizedLesson;
   }, [lessonParam]);
 
@@ -1622,11 +1621,8 @@ function SessionPageInner() {
   // Load visual aids separately from database (facilitator-specific)
   useEffect(() => {
     if (!visualAidsLessonKey) {
-      console.log('[VISUAL_AIDS] No visualAidsLessonKey, skipping load');
       return;
     }
-    
-    console.log('[VISUAL_AIDS] Loading visual aids for lesson:', visualAidsLessonKey);
     
     let cancelled = false;
     (async () => {
@@ -1636,7 +1632,6 @@ function SessionPageInner() {
         const token = session?.access_token;
         
         if (!token) {
-          console.log('[VISUAL_AIDS] No auth token');
           if (!cancelled) setVisualAidsData(null);
           return;
         }
@@ -1648,22 +1643,16 @@ function SessionPageInner() {
         });
         
         if (!res.ok) {
-          console.log('[VISUAL_AIDS] Load failed:', res.status, res.statusText);
           if (!cancelled) setVisualAidsData(null);
           return;
         }
         
         const data = await res.json();
-        console.log('[VISUAL_AIDS] Loaded data:', data);
-        console.log('[VISUAL_AIDS] Selected images count:', data.selectedImages?.length || 0);
-        console.log('[VISUAL_AIDS] Selected images array:', data.selectedImages);
         if (!cancelled) {
           const images = data.selectedImages || [];
-          console.log('[VISUAL_AIDS] Setting visualAidsData to:', images);
           setVisualAidsData(images);
         }
       } catch (err) {
-        console.error('[VISUAL_AIDS] Error loading visual aids:', err);
         if (!cancelled) setVisualAidsData(null);
       }
     })();
