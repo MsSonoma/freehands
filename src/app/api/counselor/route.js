@@ -665,7 +665,7 @@ async function executeSearchLessons(args, request, toolLog) {
           })
         }
       } catch (err) {
-        console.error(`Failed to fetch lessons for ${subj}:`, err)
+        // Failed to fetch lessons for this subject
       }
     }
     
@@ -784,8 +784,6 @@ async function executeGetLessonDetails(args, request, toolLog) {
     const lessonUrl = new URL('/api/lesson-file', baseUrl)
     lessonUrl.searchParams.set('key', normalizedLessonKey)
       
-    console.log('[GET_LESSON_DETAILS] Fetching:', lessonUrl.toString())
-      
     const lessonResponse = await fetch(lessonUrl, {
         method: 'GET',
         headers: {
@@ -795,7 +793,6 @@ async function executeGetLessonDetails(args, request, toolLog) {
       
       if (!lessonResponse.ok) {
         const errorText = await lessonResponse.text()
-        console.error('[GET_LESSON_DETAILS] Fetch failed:', lessonResponse.status, errorText)
         pushToolLog(toolLog, {
           name: 'get_lesson_details',
           phase: 'error',
@@ -860,9 +857,6 @@ async function executeLessonGeneration(args, request, toolLog) {
     })
     
     // Call the lesson generation API directly (avoid HTTP timeout stacking)
-    console.log('[Mr. Mentor] Generating lesson...')
-    console.log('[Mr. Mentor] Generate args:', JSON.stringify(args, null, 2))
-    
     try {
       // Import and call the generate route's POST handler directly
       const { POST: generatePOST } = await import('@/app/api/facilitator/lessons/generate/route')
@@ -880,10 +874,7 @@ async function executeLessonGeneration(args, request, toolLog) {
       const genResponse = await generatePOST(mockRequest)
       const responseData = await genResponse.json()
       
-      console.log('[Mr. Mentor] Generate response status:', genResponse.status)
-      
       if (!genResponse.ok) {
-        console.error('[Mr. Mentor] Generate failed:', responseData)
         pushToolLog(toolLog, {
           name: 'generate_lesson',
           phase: 'error',
@@ -891,8 +882,6 @@ async function executeLessonGeneration(args, request, toolLog) {
         })
         return { error: responseData.error || 'Lesson generation failed' }
       }
-      
-      console.log('[Mr. Mentor] Generate result keys:', Object.keys(responseData))
       
       pushToolLog(toolLog, {
         name: 'generate_lesson',
@@ -914,7 +903,6 @@ async function executeLessonGeneration(args, request, toolLog) {
         message: `Lesson "${responseData.lesson?.title}" has been generated. The system will now validate its quality.`
       }
     } catch (genError) {
-      console.error('[Mr. Mentor] Generation error:', genError)
       pushToolLog(toolLog, {
         name: 'generate_lesson',
         phase: 'error',
@@ -923,7 +911,6 @@ async function executeLessonGeneration(args, request, toolLog) {
       return { error: 'Lesson generation failed: ' + genError.message }
     }
   } catch (err) {
-    console.error('[Mr. Mentor] Lesson generation error:', err)
     pushToolLog(toolLog, {
       name: 'generate_lesson',
       phase: 'error',
@@ -946,8 +933,6 @@ async function executeLessonScheduling(args, request, toolLog) {
       phase: 'start',
       context: { learnerName: args.learnerName, scheduledDate: args.scheduledDate }
     })
-    
-  console.log('[Mr. Mentor] Scheduling lesson with args:', JSON.stringify(args, null, 2))
     
     // Validate required parameters
     if (!args.learnerName) {
@@ -994,8 +979,6 @@ async function executeLessonScheduling(args, request, toolLog) {
       }
     }
     
-    console.log(`[Mr. Mentor] Found learner: ${matchingLearner.name} (${matchingLearner.id})`)
-    
     // Call the lesson schedule API with the learner ID
   const scheduleUrl = new URL('/api/lesson-schedule', baseUrl)
   const schedResponse = await fetch(scheduleUrl, {
@@ -1014,7 +997,6 @@ async function executeLessonScheduling(args, request, toolLog) {
     const result = await schedResponse.json()
     
     if (!schedResponse.ok) {
-      console.error('[Mr. Mentor] Scheduling failed:', result)
       pushToolLog(toolLog, {
         name: 'schedule_lesson',
         phase: 'error',
@@ -1023,7 +1005,6 @@ async function executeLessonScheduling(args, request, toolLog) {
       return { error: result.error || 'Lesson scheduling failed', details: result }
     }
     
-    console.log('[Mr. Mentor] Scheduling succeeded')
     pushToolLog(toolLog, {
       name: 'schedule_lesson',
       phase: 'success',
@@ -1037,7 +1018,6 @@ async function executeLessonScheduling(args, request, toolLog) {
       message: `Lesson has been scheduled for ${matchingLearner.name} on ${args.scheduledDate}.`
     }
   } catch (err) {
-    console.error('[Mr. Mentor] Scheduling exception:', err)
     pushToolLog(toolLog, {
       name: 'schedule_lesson',
       phase: 'error',
