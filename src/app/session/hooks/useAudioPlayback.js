@@ -207,7 +207,6 @@ export function useAudioPlayback({
         try {
           const ctx = ensureAudioContextFromParent();
           if (ctx) {
-            try { console.info('[Session] playAudioFromBase64: using WebAudio path for playback'); } catch {}
             await playViaWebAudioFromParent(normalizedB64, batchSentences || [], startIndex);
             // First playback completed via WebAudio; clear the one-time preference if it was set accidentally
             if (preferHtmlAudioOnceRef.current) preferHtmlAudioOnceRef.current = false;
@@ -220,14 +219,13 @@ export function useAudioPlayback({
         try {
           audioRef.current.pause();
         } catch (pauseError) {
-          console.warn("[Session] Unable to pause existing audio.", pauseError);
+          // Unable to pause existing audio
         }
         audioRef.current.src = "";
         audioRef.current = null;
       }
 
       // HTMLAudio fallback path
-      try { console.info('[Session] playAudioFromBase64: using HTMLAudio path for playback'); } catch {}
       const arrBuf = base64ToArrayBuffer(normalizedB64);
       const blob = new Blob([arrBuf], { type: "audio/mpeg" });
       const url = URL.createObjectURL(blob);
@@ -403,7 +401,6 @@ export function useAudioPlayback({
         {
           let playPromise;
           const allowAuto = (!userPaused || forceNextPlaybackRef.current);
-          try { console.info('[Session] HTMLAudio: allowAuto=', allowAuto, 'muted=', !!mutedRef.current, 'userPaused=', !!userPaused, 'forceNext=', !!forceNextPlaybackRef.current); } catch {}
           if (allowAuto) {
             playPromise = audio.play();
             // Reset the force flag after first autoplay attempt
@@ -413,7 +410,7 @@ export function useAudioPlayback({
           }
           if (playPromise && playPromise.catch) {
             playPromise.catch((err) => {
-              console.warn('[Session] Audio autoplay blocked or failed. Falling back to WebAudio.', err);
+              // Audio autoplay blocked or failed - fall back to WebAudio
               try { setIsSpeaking(false); } catch {}
               clearSpeechGuard();
               // If audio cannot start, pause the background video to avoid a perpetual "speaking" feel
@@ -457,7 +454,6 @@ export function useAudioPlayback({
                 } catch {}
                 // Attempt WebAudio fallback using the same payload
                 try {
-                  try { console.info('[Session] HTMLAudio failed; retrying via WebAudio'); } catch {}
                   await playViaWebAudioFromParent(normalizedB64, batchSentences || [], startIndex);
                 } catch {
                   /* give up silently */
@@ -474,7 +470,7 @@ export function useAudioPlayback({
         }
       });
     } catch (audioError) {
-      console.error("[Session] Failed to play audio from base64.", audioError);
+      // Failed to play audio from base64
       const sentences = batchSentences || [];
       if (sentences.length) {
         setCaptionIndex(startIndex + sentences.length - 1);
