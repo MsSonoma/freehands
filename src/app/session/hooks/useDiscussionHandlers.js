@@ -96,7 +96,6 @@ export function useDiscussionHandlers({
   
   // Joke handler
   const handleTellJoke = useCallback(async () => {
-    console.log('[JOKE] Button clicked, starting handler, jokeUsedThisGate:', jokeUsedThisGate);
     if (jokeUsedThisGate) return;
     try { setShowOpeningActions(false); } catch {}
     try {
@@ -106,12 +105,9 @@ export function useDiscussionHandlers({
       if (!validSubjects.includes(subjectKey)) {
         subjectKey = 'math';
       }
-      console.log('[JOKE] Subject key:', subjectKey);
       const jokeObj = pickNextJoke(subjectKey);
-      console.log('[JOKE] Picked joke:', jokeObj);
       const text = renderJoke(jokeObj) || '';
       if (!text) { setShowOpeningActions(true); setJokeUsedThisGate(true); return; }
-      console.log('[JOKE] Joke text:', text);
       
       let sentences = splitIntoSentences(text);
       sentences = mergeMcChoiceFragments(sentences).map((s) => enforceNbspAfterMcLabels(s));
@@ -121,7 +117,6 @@ export function useDiscussionHandlers({
       setCaptionSentences(nextAll);
       setCaptionIndex(prevLen);
       
-      console.log('[JOKE] About to fetch TTS');
       let dec = false;
       try {
         setTtsLoadingCount((c) => c + 1);
@@ -134,13 +129,10 @@ export function useDiscussionHandlers({
           const data = await res.json().catch(() => ({}));
           let b64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
           if (b64) b64 = normalizeBase64Audio(b64);
-          console.log('[JOKE] Got audio, length:', b64.length);
           if (b64) {
             if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
             setIsSpeaking(true);
-            console.log('[JOKE] About to play audio');
             try { await playAudioFromBase64(b64, sentences, prevLen); } catch {}
-            console.log('[JOKE] Audio complete');
           } else {
             if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
             try { await playAudioFromBase64('', sentences, prevLen); } catch {}
@@ -150,7 +142,6 @@ export function useDiscussionHandlers({
         if (!dec) setTtsLoadingCount((c) => Math.max(0, c - 1));
       }
     } catch {}
-    console.log('[JOKE] Setting jokeUsedThisGate to true');
     setJokeUsedThisGate(true);
     setTimeout(() => setShowOpeningActions(true), 400);
   }, [jokeUsedThisGate, subjectParam, lessonData, captionSentencesRef, setCaptionSentences, setCaptionIndex, setTtsLoadingCount, setIsSpeaking, playAudioFromBase64, setShowOpeningActions, setJokeUsedThisGate]);
@@ -310,7 +301,6 @@ export function useDiscussionHandlers({
 
   // Riddle handlers
   const handleTellRiddle = useCallback(async () => {
-    console.log('[RIDDLE] Button clicked, starting handler');
     try { setShowOpeningActions(false); } catch {}
     // Use lessonData.subject if available, otherwise fall back to subjectParam
     let subject = (lessonData?.subject || subjectParam || 'math').toLowerCase();
@@ -318,26 +308,20 @@ export function useDiscussionHandlers({
     if (!validSubjects.includes(subject)) {
       subject = 'math';
     }
-    console.log('[RIDDLE] Subject:', subject);
     const pick = pickNextRiddle(subject);
-    console.log('[RIDDLE] Picked riddle:', pick);
     if (!pick) {
       setShowOpeningActions(true);
       setRiddleUsedThisGate(true);
       return;
     }
     const text = renderRiddle(pick) || '';
-    console.log('[RIDDLE] Riddle text:', text);
     setCurrentRiddle({ ...pick, text, answer: pick.answer });
     setRiddleState('presented');
     setCanSend(false);
     try { setAbortKey((k) => k + 1); } catch {}
-    console.log('[RIDDLE] About to call speakFrontend, speakFrontend is:', typeof speakFrontend);
     await speakFrontend(`Here is a riddle. ${text}`);
-    console.log('[RIDDLE] speakFrontend completed');
     setRiddleState('awaiting-solve');
     setRiddleUsedThisGate(true);
-    console.log('[RIDDLE] Handler complete');
   }, [subjectParam, lessonData, setShowOpeningActions, setRiddleUsedThisGate, setCurrentRiddle, setRiddleState, setCanSend, setAbortKey, speakFrontend]);
 
   const judgeRiddleAttempt = useCallback(async (_attempt) => {
@@ -387,7 +371,7 @@ export function useDiscussionHandlers({
             return;
           }
         } catch (e) {
-          console.warn('[Poem] Failed to check golden keys:', e);
+          // Golden key check failed - continue
         }
       }
     }
@@ -421,32 +405,28 @@ export function useDiscussionHandlers({
 
   // Story handlers
   const handleStoryStart = useCallback(async () => {
-    console.log('[STORY] handleStoryStart called');
     
     // Check if golden key is required and available
     // Skip check if this session has a golden key enabled
     if (!hasGoldenKey) {
       const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
       if (learnerId && learnerId !== 'demo') {
-        try {
-          const keysRaw = localStorage.getItem(`golden_keys_${learnerId}`);
-          const keys = keysRaw ? JSON.parse(keysRaw) : [];
-          if (keys.length === 0) {
-            await speakFrontend('You need a golden key to unlock the story. Complete a lesson within the time limit to earn one!');
-            return;
-          }
-        } catch (e) {
-          console.warn('[Story] Failed to check golden keys:', e);
+      try {
+        const keysRaw = localStorage.getItem(`golden_keys_${learnerId}`);
+        const keys = keysRaw ? JSON.parse(keysRaw) : [];
+        if (keys.length === 0) {
+          await speakFrontend('Need a golden key to unlock story. Complete a lesson within time limit to earn one!');
+          return;
         }
+      } catch (e) {
+        // Golden key check failed - continue
       }
     }
-    
-    try { setShowOpeningActions(false); } catch {}
+  }    try { setShowOpeningActions(false); } catch {}
     try { setStoryUsedThisGate(true); } catch {}
     
     // Check if this is a continuation from a previous phase
     if (storyTranscript.length > 0) {
-      console.log('[STORY] Continuing existing story');
       try { setLoading(true); } catch {}
       
       // Determine the prompt based on actual phase
@@ -479,7 +459,7 @@ export function useDiscussionHandlers({
               }
             }
           } catch (err) {
-            console.warn('[Story] Failed to generate summary:', err);
+            // Summary generation failed - use fallback
           }
         }
         
@@ -514,7 +494,7 @@ export function useDiscussionHandlers({
               }
             }
           } catch (err) {
-            console.warn('[Story] Failed to generate summary:', err);
+            // Summary generation failed - use fallback
           }
         }
         
