@@ -196,6 +196,13 @@ export async function GET(request) {
     // Check if the requesting session is the active one
     const isOwner = activeSession.session_id === sessionId
 
+    console.info(
+      '[mentor-session] GET returning session:',
+      'session_id=', activeSession.session_id,
+      'conversation_history.length=', activeSession.conversation_history?.length || 0,
+      'isOwner=', isOwner
+    )
+
     return Response.json({
       session: activeSession,
       status: isOwner ? 'active' : 'taken',
