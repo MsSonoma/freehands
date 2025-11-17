@@ -20,8 +20,6 @@ export default function LessonMakerOverlay({ tier }) {
   })
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
-  const [quotaInfo, setQuotaInfo] = useState(null)
-  const [quotaLoading, setQuotaLoading] = useState(true)
   
   // AI Rewrite loading states
   const [rewritingDescription, setRewritingDescription] = useState(false)
@@ -31,54 +29,6 @@ export default function LessonMakerOverlay({ tier }) {
   const ent = featuresForTier(tier)
   
   const isFormValid = form.grade.trim() && form.title.trim() && form.description.trim()
-
-  useEffect(() => {
-    loadQuota()
-  }, [])
-
-  const loadQuota = async () => {
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-      if (!token) {
-        setQuotaLoading(false)
-        return
-      }
-      
-      const res = await fetch('/api/usage/check-generation-quota', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      
-      if (!res.ok) {
-        // Try to capture response body for better diagnostics
-        let bodyText = ''
-        try {
-          const txt = await res.text()
-          bodyText = txt
-          try { JSON.parse(txt); bodyText = JSON.stringify(JSON.parse(txt)) } catch (e) {}
-        } catch (e) {}
-
-        if (res.status === 404) {
-          // Missing profile rows are common on new accounts; fail open without noisy errors
-          setQuotaInfo({ allowed: true, source: 'fallback', reason: 'profile-missing' })
-        } else {
-          // If quota check fails for other reasons, allow generation (fail open for premium users)
-          setQuotaInfo({ allowed: true, source: 'fallback' })
-        }
-        setQuotaLoading(false)
-        return
-      }
-      
-      const data = await res.json()
-      setQuotaInfo(data)
-      setQuotaLoading(false)
-    } catch (e) {
-      // If quota check fails, allow generation (fail open for premium users)
-      setQuotaInfo({ allowed: true, source: 'fallback' })
-      setQuotaLoading(false)
-    }
-  }
 
   // AI Rewrite handlers
   const handleRewriteDescription = async () => {
@@ -189,12 +139,6 @@ export default function LessonMakerOverlay({ tier }) {
     // Validate required fields
     if (!form.grade.trim() || !form.title.trim() || !form.description.trim()) {
       setMessage('Please fill in all required fields (Grade, Title, Description)')
-      return
-    }
-    
-    // Check quota (only block if we have explicit denial from API)
-    if (quotaInfo && quotaInfo.allowed === false) {
-      setMessage('Generation limit reached. Upgrade to increase your quota.')
       return
     }
     

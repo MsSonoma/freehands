@@ -12,7 +12,6 @@ export default function ClientGenerator(){
   const [loading, setLoading] = useState(true)
   const [pinChecked, setPinChecked] = useState(false)
   const [accessToken, setAccessToken] = useState(null)
-  const [quotaState, setQuotaState] = useState({ status: 'idle', data: null, error: '' })
 
   // Check PIN requirement on mount
   useEffect(() => {
@@ -53,38 +52,6 @@ export default function ClientGenerator(){
     return () => { cancelled = true }
   }, [pinChecked])
 
-  useEffect(() => {
-    const ent = featuresForTier(tier)
-    const lifetimeLimit = ent.lifetimeGenerations
-    if (!accessToken || !Number.isFinite(lifetimeLimit) || lifetimeLimit <= 0) {
-      setQuotaState(prev => (prev.status === 'idle' && !prev.data && !prev.error) ? prev : { status: 'idle', data: null, error: '' })
-      return
-    }
-
-    let cancelled = false
-    setQuotaState({ status: 'loading', data: null, error: '' })
-    ;(async () => {
-      try {
-        const res = await fetch('/api/usage/check-generation-quota', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
-        })
-        const body = await res.json().catch(() => ({}))
-        if (cancelled) return
-        if (!res.ok) {
-          setQuotaState({ status: 'error', data: body, error: body?.reason || 'Unable to load generator usage.' })
-          return
-        }
-        setQuotaState({ status: 'ready', data: body, error: '' })
-      } catch (err) {
-        if (!cancelled) setQuotaState({ status: 'error', data: null, error: 'Unable to load generator usage.' })
-      }
-    })()
-
-    return () => { cancelled = true }
-  }, [accessToken, tier])
-
   if (!pinChecked) {
     return <main style={{ padding: 24 }}><p>Loading…</p></main>
   }
@@ -105,31 +72,8 @@ export default function ClientGenerator(){
     } else {
       const limitLabel = lifetimeLimit === 1 ? '1 AI lesson generation' : `${lifetimeLimit} AI lesson generations`
       pieces.push(`Your ${planLabel} plan includes ${limitLabel} total.`)
-      if (quotaState.status === 'loading') {
-  pieces.push('Checking how many you have left...')
-      } else if (quotaState.status === 'error') {
-        pieces.push('We could not load your remaining balance right now.')
-      } else if (quotaState.data) {
-        const info = quotaState.data
-        if (info.allowed === false) {
-          if (Number.isFinite(info.limit) && Number.isFinite(info.used)) {
-            const usedLabel = info.used === 1 ? '1 generation' : `${info.used} generations`
-            pieces.push(`You have used ${usedLabel}.`)
-          } else if (info.reason) {
-            pieces.push(info.reason)
-          }
-        } else if (Number.isFinite(info.remaining)) {
-          const remainingLabel = info.remaining === 1 ? '1 generation left' : `${info.remaining} generations left`
-          pieces.push(`You have ${remainingLabel}.`)
-          if (info.source === 'weekly' && Number.isFinite(info.limit)) {
-            const weeklyLabel = info.limit === 1 ? '1 generation per week' : `${info.limit} generations per week`
-            pieces.push(`Weekly allowance: ${weeklyLabel}.`)
-          }
-        }
-      }
 
-      const weeklyInfoAlreadyShown = quotaState.data?.source === 'weekly'
-      if (weeklyLimit > 0 && !weeklyInfoAlreadyShown) {
+      if (weeklyLimit > 0) {
         const weeklyLabel = weeklyLimit === 1 ? '1 generation each week' : `${weeklyLimit} generations each week`
         pieces.push(`After that, you get ${weeklyLabel}.`)
       }

@@ -55,32 +55,6 @@ export default function LessonMakerPage(){
     return () => { cancelled = true; };
   }, [router]);
 
-  // Check generation quota on mount
-  useEffect(() => {
-    if (!pinChecked || !isAuthenticated || !hasAccess) return
-    let cancelled = false
-    ;(async () => {
-      try {
-        const supabase = getSupabaseClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        const token = session?.access_token
-        if (!token) return
-        
-        const res = await fetch('/api/usage/check-generation-quota', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const data = await res.json()
-        if (!cancelled) {
-          setQuotaInfo(data)
-          setQuotaLoading(false)
-        }
-      } catch (e) {
-        if (!cancelled) setQuotaLoading(false)
-      }
-    })()
-    return () => { cancelled = true }
-  }, [isAuthenticated, hasAccess])
-
   // AI Rewrite handlers
   const handleRewriteDescription = async () => {
     if (!form.description.trim()) return
@@ -219,22 +193,6 @@ export default function LessonMakerPage(){
       
       generatedFile = js.file
       generatedUserId = js.userId
-      
-      // Increment usage counter after successful generation
-      try {
-        await fetch('/api/usage/increment-generation', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        // Refresh quota info
-        const quotaRes = await fetch('/api/usage/check-generation-quota', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const quotaData = await quotaRes.json()
-        setQuotaInfo(quotaData)
-      } catch (e) {
-        // Silent error handling
-      }
       
       // STEP 2: Validate the lesson
       setToast({ message: 'Validating lesson quality...', type: 'info' })
