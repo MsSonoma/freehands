@@ -75,15 +75,6 @@ async function cleanupStaleSessions({ facilitatorId, now = new Date() } = {}) {
       return []
     }
 
-    staleSessions.forEach((session) => {
-      console.info(
-        '[mentor-session] Auto-deactivated stale session',
-        session.session_id,
-        'for facilitator',
-        session.facilitator_id
-      )
-    })
-
     return staleSessions
   } catch (err) {
     console.error('[mentor-session] Unexpected error clearing stale sessions:', err)
@@ -212,14 +203,6 @@ export async function GET(request) {
     // Check if the requesting session is the active one
     const isOwner = activeSession.session_id === sessionId
 
-    console.info(
-      '[mentor-session] GET returning session:',
-      'session_id=', activeSession.session_id,
-      'conversation_history.length=', sessionWithConversation.conversation_history?.length || 0,
-      'from conversation_drafts=', draftData?.recent_turns?.length || 0,
-      'isOwner=', isOwner
-    )
-
     return Response.json({
       session: sessionWithConversation,
       status: isOwner ? 'active' : 'taken',
@@ -275,15 +258,7 @@ export async function POST(request) {
     let existingSession = existingSessions?.[0] || null
 
     if (existingSession && isSessionStale(existingSession, now.getTime())) {
-      const cleared = await deactivateSessionById(existingSession.id)
-      if (cleared) {
-        console.info(
-          '[mentor-session] Cleared stale session during POST for facilitator',
-          user.id,
-          'session',
-          existingSession.session_id
-        )
-      }
+      await deactivateSessionById(existingSession.id)
       existingSession = null
     }
 
@@ -337,13 +312,6 @@ export async function POST(request) {
         return Response.json({ error: 'Failed to end session' }, { status: 500 })
       }
 
-      console.info(
-        '[mentor-session] Force-ended session',
-        targetSession.session_id,
-        'for facilitator',
-        user.id
-      )
-
       return Response.json({
         status: 'force_ended',
         clearedSessionId: targetSession.session_id
@@ -384,13 +352,6 @@ export async function POST(request) {
         return Response.json({ error: 'Failed to deactivate previous session' }, { status: 500 })
       }
 
-      console.info(
-        '[mentor-session] Session takeover cleared previous session',
-        existingSession.session_id,
-        'for facilitator',
-        user.id
-      )
-
       // Fetch actual conversation from conversation_drafts table
       // Mr. Mentor conversations have NULL learner_id (facilitator-only tool)
       const { data: draftData } = await supabase
@@ -402,13 +363,6 @@ export async function POST(request) {
 
       const conversationToCopy = draftData?.recent_turns || existingSession.conversation_history || []
       const draftSummaryToCopy = draftData?.draft_summary || existingSession.draft_summary || ''
-
-      console.info(
-        '[mentor-session] TAKEOVER copying conversation_history:',
-        'from conversation_drafts.recent_turns.length=', draftData?.recent_turns?.length || 0,
-        'from mentor_sessions.conversation_history.length=', existingSession.conversation_history?.length || 0,
-        'final length=', conversationToCopy.length
-      )
 
       // Create new session with existing conversation history
       const { data: newSession, error: createError } = await supabase
@@ -427,18 +381,12 @@ export async function POST(request) {
 
       if (createError) {
         console.error('[mentor-session] Failed to create new session:', createError)
-        console.error('[mentor-session] Create error details:', JSON.stringify(createError))
         return Response.json({ 
           error: 'Failed to create session', 
           details: createError.message,
           code: createError.code
         }, { status: 500 })
       }
-
-      console.info(
-        '[mentor-session] TAKEOVER created new session with conversation_history:',
-        'newSession.conversation_history.length=', newSession.conversation_history?.length || 0
-      )
 
       return Response.json({
         session: newSession,
@@ -532,13 +480,6 @@ export async function PATCH(request) {
 
     const body = await request.json()
     const { sessionId, conversationHistory, draftSummary } = body
-
-    console.info(
-      '[mentor-session] PATCH received:',
-      'sessionId=', sessionId,
-      'conversationHistory.length=', conversationHistory?.length || 0,
-      'draftSummary.length=', draftSummary?.length || 0
-    )
 
     if (!sessionId) {
       return Response.json({ error: 'Session ID required' }, { status: 400 })
