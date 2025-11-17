@@ -52,6 +52,13 @@ const INTENT_PATTERNS = {
     keywords: ['generate', 'create', 'make', 'build', 'new lesson'],
     confidence: (text) => {
       const normalized = normalizeText(text)
+      
+      // Check if it's an FAQ-style question about generation (how to)
+      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
+      if (faqPatterns.some(p => normalized.includes(p))) {
+        return 0 // Defer to FAQ intent
+      }
+      
       return INTENT_PATTERNS.generate.keywords.some(kw => normalized.includes(kw)) ? 0.8 : 0
     }
   },
@@ -60,6 +67,13 @@ const INTENT_PATTERNS = {
     keywords: ['schedule', 'add to calendar', 'put on', 'assign for', 'plan for'],
     confidence: (text) => {
       const normalized = normalizeText(text)
+      
+      // Check if it's an FAQ-style question about scheduling (how to)
+      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
+      if (faqPatterns.some(p => normalized.includes(p))) {
+        return 0 // Defer to FAQ intent
+      }
+      
       return INTENT_PATTERNS.schedule.keywords.some(kw => normalized.includes(kw)) ? 0.8 : 0
     }
   },
@@ -68,6 +82,13 @@ const INTENT_PATTERNS = {
     keywords: ['edit', 'change', 'modify', 'update', 'fix', 'correct'],
     confidence: (text) => {
       const normalized = normalizeText(text)
+      
+      // Check if it's an FAQ-style question about editing (how to)
+      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
+      if (faqPatterns.some(p => normalized.includes(p))) {
+        return 0 // Defer to FAQ intent
+      }
+      
       return INTENT_PATTERNS.edit.keywords.some(kw => normalized.includes(kw)) ? 0.8 : 0
     }
   },
@@ -84,7 +105,8 @@ const INTENT_PATTERNS = {
     keywords: ['what is', 'what are', 'how do i', 'how does', 'how can i', 'explain', 'tell me about', 'help with', 'how to', 'show me', 'where is', 'what does', 'can you explain'],
     confidence: (text) => {
       const normalized = normalizeText(text)
-      return INTENT_PATTERNS.faq.keywords.some(kw => normalized.includes(kw)) ? 0.7 : 0
+      // Higher confidence (0.9) to prioritize FAQ over action intents when patterns match
+      return INTENT_PATTERNS.faq.keywords.some(kw => normalized.includes(kw)) ? 0.9 : 0
     }
   }
 }
