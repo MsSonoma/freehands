@@ -112,7 +112,7 @@ export default function SessionTakeoverDialog({
           </label>
           
           <input
-            type="password"
+            type="text"
             inputMode="numeric"
             pattern="[0-9]*"
             maxLength={4}
@@ -126,8 +126,14 @@ export default function SessionTakeoverDialog({
             disabled={loading}
             autoFocus
             autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
             data-lpignore="true"
             data-form-type="other"
+            data-1p-ignore="true"
+            name="pin-code-single-use"
+            id={`pin-${Math.random()}`}
             style={{
               width: '100%',
               padding: 12,
@@ -139,7 +145,8 @@ export default function SessionTakeoverDialog({
               marginBottom: 12,
               outline: 'none',
               transition: 'border-color 0.2s',
-              backgroundColor: loading ? '#f9fafb' : '#fff'
+              backgroundColor: loading ? '#f9fafb' : '#fff',
+              WebkitTextSecurity: 'disc'
             }}
             onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
             onBlur={(e) => {
