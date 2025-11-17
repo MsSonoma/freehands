@@ -381,6 +381,15 @@ export default function CounselorClient() {
           }
         })
 
+        // Stop polling on auth errors
+        if (res.status === 401) {
+          if (sessionPollInterval.current) {
+            clearInterval(sessionPollInterval.current)
+            sessionPollInterval.current = null
+          }
+          return
+        }
+
         if (!res.ok || !isMountedRef.current) return
 
         const data = await res.json()
