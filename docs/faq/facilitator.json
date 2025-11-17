@@ -1,0 +1,66 @@
+{
+  "category": "Mr. Mentor & Facilitator Tools",
+  "features": [
+    {
+      "id": "mr-mentor",
+      "title": "Mr. Mentor",
+      "keywords": [
+        "mr mentor",
+        "mentor",
+        "counselor",
+        "facilitator chat",
+        "talk to mentor",
+        "ask mentor"
+      ],
+      "description": "Mr. Mentor is your AI teaching assistant. He helps you generate lessons, schedule activities, get teaching advice, and understand pedagogical best practices. He's knowledgeable about child development, learning strategies, and how to adapt lessons for different learners.",
+      "howToUse": "Just talk to me naturally! Say things like 'Generate a math lesson' or 'How should I teach fractions to a struggling learner?' I understand conversational language and can help with lesson planning, scheduling, editing, and teaching guidance.",
+      "relatedFeatures": ["lesson-generation", "teaching-advice"]
+    },
+    {
+      "id": "calendar-view",
+      "title": "Calendar View",
+      "keywords": [
+        "calendar",
+        "calendar view",
+        "schedule view",
+        "lesson calendar",
+        "monthly view",
+        "weekly view"
+      ],
+      "description": "The Calendar View shows all scheduled lessons in a visual calendar format. You can see what's planned for each day, drag and drop to reschedule lessons, and get an overview of your learner's learning plan. Different lesson types are color-coded for easy identification.",
+      "howToUse": "Click the 'Calendar' button to open the calendar overlay. You'll see all scheduled lessons for the selected learner. Click on a lesson to view details, drag to reschedule, or click a date to schedule a new lesson.",
+      "relatedFeatures": ["lesson-scheduling", "learner-profiles"]
+    },
+    {
+      "id": "clipboard-summary",
+      "title": "Clipboard Summary",
+      "keywords": [
+        "clipboard",
+        "summary",
+        "conversation summary",
+        "draft summary",
+        "save summary",
+        "session notes"
+      ],
+      "description": "The Clipboard Summary creates a concise record of your conversation with Mr. Mentor. It captures key decisions, lessons created, advice given, and action items. You can review and save these summaries to track your planning over time.",
+      "howToUse": "Click the 'Clipboard' button to see a draft summary of our conversation. Review it, make edits if needed, then save it. Summaries are stored with the learner's profile for future reference.",
+      "relatedFeatures": ["mr-mentor", "goals-notes"]
+    },
+    {
+      "id": "teaching-advice",
+      "title": "Teaching Advice",
+      "keywords": [
+        "teaching advice",
+        "how to teach",
+        "teaching tips",
+        "pedagogy",
+        "teaching strategies",
+        "help teaching",
+        "teaching guidance"
+      ],
+      "description": "Teaching Advice provides personalized guidance on how to approach topics, adapt lessons for different learning styles, handle challenges, and implement best practices. I draw on educational research and child development principles to give practical, actionable suggestions.",
+      "howToUse": "Ask me questions like 'How should I teach multiplication to a visual learner?' or 'What's the best way to introduce fractions?' I'll provide strategies, tips, and approaches tailored to your learner's needs.",
+      "relatedFeatures": ["mr-mentor", "learner-transcript"]
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "category": "Ms. Sonoma Session",
+  "features": [
+    {
+      "id": "session-flow",
+      "title": "Session Flow",
+      "keywords": [
+        "session flow",
+        "lesson phases",
+        "teaching flow",
+        "how lessons work",
+        "session structure",
+        "lesson structure"
+      ],
+      "description": "The Session Flow guides learners through a structured lesson with Ms. Sonoma. Each session has five phases: Discussion (introduce topic), Teaching (vocabulary and examples), Comprehension (questions), Exercise (practice problems), and Worksheet (independent work). Each phase includes play time (games and exploration) and work time (focused learning).",
+      "howToUse": "When you start a lesson with Ms. Sonoma, she'll guide the learner through each phase automatically. Click 'Begin' to start play time, then 'Go' when ready for work time. Ms. Sonoma provides gentle guidance and encouragement throughout.",
+      "relatedFeatures": ["phase-timers", "games", "golden-key"]
+    },
+    {
+      "id": "phase-timers",
+      "title": "Phase Timers",
+      "keywords": [
+        "timer",
+        "timers",
+        "phase timer",
+        "play time",
+        "work time",
+        "time limit",
+        "how long",
+        "session time"
+      ],
+      "description": "Phase Timers help structure each part of the lesson. Every phase has a play timer (for games and exploration) and a work timer (for actual learning). You can configure how long each timer lasts for each learner. Timers are color-coded: green for play time, and green/yellow/red for work time.",
+      "howToUse": "Timers start automatically when you click 'Begin' (play time) or 'Go' (work time). You can configure timer durations from the Learners page by clicking the 'Timers' button. Set different times for each phase based on your learner's attention span.",
+      "relatedFeatures": ["session-flow", "golden-key"]
+    },
+    {
+      "id": "games",
+      "title": "Learning Games",
+      "keywords": [
+        "games",
+        "joke",
+        "riddle",
+        "poem",
+        "story",
+        "fill-in-fun",
+        "play games",
+        "fun activities"
+      ],
+      "description": "Learning Games make lesson time engaging and fun. Available games include Joke (tell jokes), Riddle (solve riddles), Poem (hear poems), Story (listen to stories), and Fill-in-Fun (word completion games). Games are available during play time phases and help break up learning with joy.",
+      "howToUse": "During play time, click the game buttons (Joke, Riddle, Poem, Story, Fill-in-Fun) to play. Games are repeatable during each play time period. They're a great way to keep learners engaged and excited about learning.",
+      "relatedFeatures": ["session-flow", "phase-timers"]
+    },
+    {
+      "id": "golden-key",
+      "title": "Golden Key",
+      "keywords": [
+        "golden key",
+        "bonus time",
+        "reward",
+        "earn key",
+        "golden key bonus",
+        "extra play time"
+      ],
+      "description": "The Golden Key is a special reward earned by completing 4 out of 5 work phases without running out of time. When earned, it unlocks bonus play time that can be used at the end of the lesson for extra games and celebration. It encourages focused work and rewards effort.",
+      "howToUse": "The golden key appears automatically when your learner successfully completes enough work phases on time. The bonus time is added to the final celebration phase. You can configure how much bonus time the key provides in the timer settings.",
+      "relatedFeatures": ["phase-timers", "session-flow", "games"]
+    },
+    {
+      "id": "repeat-button",
+      "title": "Repeat Button",
+      "keywords": [
+        "repeat",
+        "repeat button",
+        "hear again",
+        "say again",
+        "replay",
+        "listen again"
+      ],
+      "description": "The Repeat Button lets learners hear Ms. Sonoma's last response again. This is helpful if they didn't catch something the first time, need extra processing time, or want to review an instruction. The audio and captions replay exactly.",
+      "howToUse": "Look for the circular arrow button near Ms. Sonoma's video. Click it anytime to hear the last thing she said again. You can repeat as many times as needed.",
+      "relatedFeatures": ["session-flow"]
+    }
+  ]
+}

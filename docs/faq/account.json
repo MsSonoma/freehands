@@ -1,0 +1,68 @@
+{
+  "category": "Account & Settings",
+  "features": [
+    {
+      "id": "pin-security",
+      "title": "PIN Security",
+      "keywords": [
+        "pin",
+        "security pin",
+        "facilitator pin",
+        "password",
+        "lock screen",
+        "secure access"
+      ],
+      "description": "PIN Security protects facilitator features from unauthorized access. You set a 4-digit PIN when you first access facilitator tools. The PIN is required to access Mr. Mentor, lesson management, learner profiles, and other adult features.",
+      "howToUse": "When you first access facilitator features, you'll be prompted to create a PIN. Remember this PIN - you'll need it to access the facilitator dashboard and Mr. Mentor. You can change your PIN in account settings.",
+      "relatedFeatures": ["account-settings"]
+    },
+    {
+      "id": "subscription-tiers",
+      "title": "Subscription Tiers",
+      "keywords": [
+        "subscription",
+        "tier",
+        "plan",
+        "upgrade",
+        "pricing",
+        "free tier",
+        "paid plan",
+        "features included"
+      ],
+      "description": "Subscription Tiers determine which features you have access to. The Free tier includes basic lessons with Ms. Sonoma. Paid tiers unlock Mr. Mentor, lesson generation, calendar scheduling, multiple learners, and advanced features. Beta users get special early access.",
+      "howToUse": "View your current tier in account settings. To upgrade, click 'Upgrade Plan' and choose the tier that fits your needs. Beta users have access to all features during the beta period.",
+      "relatedFeatures": ["account-settings"]
+    },
+    {
+      "id": "mute-audio",
+      "title": "Mute Audio",
+      "keywords": [
+        "mute",
+        "unmute",
+        "sound",
+        "audio",
+        "volume",
+        "turn off sound",
+        "silence"
+      ],
+      "description": "Mute Audio lets you silence Ms. Sonoma's or Mr. Mentor's voice while keeping captions visible. This is useful when you need quiet or want to read along without audio. Your mute preference is saved across sessions.",
+      "howToUse": "Look for the speaker icon button (usually bottom-right of the video). Click to mute or unmute. When muted, you'll see a muted speaker icon. Captions continue to display even when audio is muted.",
+      "relatedFeatures": ["session-flow", "mr-mentor"]
+    },
+    {
+      "id": "session-takeover",
+      "title": "Session Takeover",
+      "keywords": [
+        "session takeover",
+        "switch device",
+        "multiple devices",
+        "different device",
+        "take over session",
+        "active session"
+      ],
+      "description": "Session Takeover allows you to continue a conversation on a different device. If you start talking to Mr. Mentor on your laptop and want to switch to your tablet, you can take over the session. The system prevents multiple devices from being active simultaneously.",
+      "howToUse": "If you try to access Mr. Mentor on a device while already active elsewhere, you'll see a takeover dialog. Click 'Take Over' to move the session to the current device. The other device will be disconnected automatically.",
+      "relatedFeatures": ["mr-mentor", "pin-security"]
+    }
+  ]
+}

@@ -1141,6 +1141,12 @@ export default function CounselorClient() {
       return "Searching through our conversation history..."
     }
     
+    if (flow === 'faq') {
+      if (awaitingInput === 'faq_feature_select') return "Looking up feature information..."
+      if (awaitingInput === 'faq_feature_confirm') return "Preparing the explanation..."
+      return "Searching the knowledge base..."
+    }
+    
     if (awaitingInput === 'lesson_selection') {
       return "Reviewing lesson options..."
     }

@@ -1,0 +1,87 @@
+{
+  "category": "Lessons",
+  "features": [
+    {
+      "id": "lesson-generation",
+      "title": "Lesson Generation",
+      "keywords": [
+        "generate lesson",
+        "create lesson",
+        "make lesson",
+        "new lesson",
+        "generate custom lesson",
+        "lesson generator",
+        "ai lesson",
+        "custom lesson"
+      ],
+      "description": "The Lesson Generation feature allows you to create custom lessons tailored to your learner's grade level, subject, and difficulty. Simply tell me what topic you'd like to cover, and I'll generate a complete lesson with vocabulary, teaching notes, comprehension questions, exercises, worksheets, and assessments. You can review and edit the lesson before scheduling it.",
+      "howToUse": "To generate a lesson, say something like 'Generate a 4th grade math lesson about division' or 'Create a beginner science lesson on photosynthesis.' I'll ask you for any missing details like grade level, subject, difficulty, and title, then create the lesson for you.",
+      "relatedFeatures": ["lesson-scheduling", "lesson-editing"]
+    },
+    {
+      "id": "lesson-scheduling",
+      "title": "Lesson Scheduling",
+      "keywords": [
+        "schedule lesson",
+        "calendar",
+        "lesson calendar",
+        "schedule for",
+        "add to calendar",
+        "plan lesson",
+        "when should we do",
+        "book lesson"
+      ],
+      "description": "The Lesson Scheduling feature lets you assign lessons to specific dates on your learner's calendar. You can schedule lessons you've generated or choose from the library. Scheduled lessons appear on the calendar view where you can see your learner's learning plan at a glance.",
+      "howToUse": "To schedule a lesson, say 'Schedule [lesson name] for November 24th' or 'Add fractions lesson to the calendar for Monday.' I'll help you find the right lesson and pick a date. You can also use the calendar overlay to drag and drop lessons.",
+      "relatedFeatures": ["lesson-generation", "calendar-view"]
+    },
+    {
+      "id": "lesson-editing",
+      "title": "Lesson Editing",
+      "keywords": [
+        "edit lesson",
+        "modify lesson",
+        "change lesson",
+        "update lesson",
+        "fix lesson",
+        "revise lesson",
+        "customize lesson"
+      ],
+      "description": "The Lesson Editing feature allows you to customize any lesson to better fit your learner's needs. You can edit the title, difficulty level, vocabulary words, teaching notes, comprehension questions, exercises, worksheets, and test questions. You can also add visual aids like images.",
+      "howToUse": "To edit a lesson, say 'Edit the division lesson' or 'I want to change the vocabulary in the photosynthesis lesson.' I'll open the lesson editor where you can make changes. Your edits are saved automatically.",
+      "relatedFeatures": ["lesson-generation", "visual-aids"]
+    },
+    {
+      "id": "lesson-library",
+      "title": "Lesson Library",
+      "keywords": [
+        "lesson library",
+        "all lessons",
+        "my lessons",
+        "lesson list",
+        "view lessons",
+        "browse lessons",
+        "find lesson"
+      ],
+      "description": "The Lesson Library is where all your lessons are stored and organized. You can browse lessons by grade, subject, and difficulty. Each lesson shows a preview with its title, grade level, subject, difficulty, and key vocabulary. From here you can schedule, edit, or review any lesson.",
+      "howToUse": "To access your lessons, click the 'Lessons' button or say 'Show me my lessons' or 'I want to see the lesson library.' You can search, filter, and sort to find specific lessons quickly.",
+      "relatedFeatures": ["lesson-generation", "lesson-scheduling", "lesson-editing"]
+    },
+    {
+      "id": "visual-aids",
+      "title": "Visual Aids",
+      "keywords": [
+        "visual aids",
+        "images",
+        "pictures",
+        "lesson images",
+        "add image",
+        "upload image",
+        "lesson pictures"
+      ],
+      "description": "Visual Aids let you add images to your lessons to enhance learning. You can upload your own images or use AI-generated images. Visual aids appear during the teaching phase to help illustrate concepts and keep learners engaged.",
+      "howToUse": "When editing a lesson, you'll see a Visual Aids section where you can add images. Click 'Add Visual Aid' to upload an image or generate one with AI. You can add captions and reorder images as needed.",
+      "relatedFeatures": ["lesson-editing"]
+    }
+  ]
+}

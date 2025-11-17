@@ -6,12 +6,15 @@
  * - Parameter gathering for generation/scheduling/editing
  * - Confirmation flows
  * - Conversation memory search
+ * - FAQ and feature explanations
  * 
  * Only forwards to API when:
  * - User explicitly bypasses ("Different issue")
  * - Free-form discussion after lesson selected
  * - Complex queries that need LLM reasoning
  */
+
+import { searchFeatures, getFeatureById } from '../../../../docs/faq/faqLoader'
 
 // Fuzzy string matching for normalization
 function normalizeText(text) {
@@ -74,6 +77,14 @@ const INTENT_PATTERNS = {
     confidence: (text) => {
       const normalized = normalizeText(text)
       return INTENT_PATTERNS.recall.keywords.some(kw => normalized.includes(kw)) ? 0.7 : 0
+    }
+  },
+  
+  faq: {
+    keywords: ['what is', 'what are', 'how do i', 'how does', 'how can i', 'explain', 'tell me about', 'help with', 'how to', 'show me', 'where is', 'what does', 'can you explain'],
+    confidence: (text) => {
+      const normalized = normalizeText(text)
+      return INTENT_PATTERNS.faq.keywords.some(kw => normalized.includes(kw)) ? 0.7 : 0
     }
   }
 }
@@ -498,6 +509,9 @@ export class MentorInterceptor {
       case 'recall':
         return await this.handleRecall(userMessage, context)
       
+      case 'faq':
+        return await this.handleFaq(userMessage, context)
+      
       default:
         return {
           handled: false,
@@ -591,6 +605,48 @@ export class MentorInterceptor {
    */
   async handleParameterInput(userMessage, context) {
     const { allLessons, selectedLearnerId, learnerName } = context
+    
+    // Handle FAQ feature selection (when multiple matches)
+    if (this.state.awaitingInput === 'faq_feature_select') {
+      const candidates = this.state.context.faqCandidates || []
+      
+      // Try to match by number
+      const numberMatch = userMessage.match(/\b(\d+)\b/)
+      if (numberMatch) {
+        const index = parseInt(numberMatch[1]) - 1
+        if (index >= 0 && index < candidates.length) {
+          const featureId = candidates[index]
+          this.state.context.selectedFeatureId = featureId
+          this.state.awaitingInput = 'faq_feature_confirm'
+          
+          const feature = getFeatureById(featureId)
+          return {
+            handled: true,
+            response: `You selected ${feature.title}. Is that correct?`
+          }
+        }
+      }
+      
+      // Try to match by feature name
+      const normalizedInput = normalizeText(userMessage)
+      for (const featureId of candidates) {
+        const feature = getFeatureById(featureId)
+        if (feature && normalizeText(feature.title).includes(normalizedInput)) {
+          this.state.context.selectedFeatureId = featureId
+          this.state.awaitingInput = 'faq_feature_confirm'
+          
+          return {
+            handled: true,
+            response: `You selected ${feature.title}. Is that correct?`
+          }
+        }
+      }
+      
+      return {
+        handled: true,
+        response: "I couldn't match that to one of the options. Could you try saying the number or exact feature name?"
+      }
+    }
     
     // Handle post-generation schedule prompt
     if (this.state.awaitingInput === 'post_generation_schedule') {
@@ -1212,6 +1268,104 @@ export class MentorInterceptor {
     
     this.state.context.recallMatches = matches
     this.state.context.recallIndex = 1
+    
+    return {
+      handled: true,
+      response
+    }
+  }
+  
+  /**
+   * Handle FAQ and feature explanation requests
+   */
+  async handleFaq(userMessage, context) {
+    // Check if awaiting feature selection confirmation
+    if (this.state.awaitingInput === 'faq_feature_confirm') {
+      const featureId = this.state.context.selectedFeatureId
+      const feature = getFeatureById(featureId)
+      
+      if (!feature) {
+        this.reset()
+        return {
+          handled: true,
+          response: "I couldn't find that feature. What else can I help you with?"
+        }
+      }
+      
+      // Check if user confirmed by saying the feature name
+      const normalized = normalizeText(userMessage)
+      const normalizedTitle = normalizeText(feature.title)
+      
+      if (normalized.includes(normalizedTitle) || normalizedTitle.includes(normalized) || detectConfirmation(userMessage) === 'yes') {
+        // User confirmed - provide explanation
+        this.reset()
+        
+        let response = `${feature.title}: ${feature.description}\n\n`
+        response += `${feature.howToUse}`
+        
+        if (feature.relatedFeatures && feature.relatedFeatures.length > 0) {
+          response += `\n\nThis is related to: ${feature.relatedFeatures.map(id => {
+            const related = getFeatureById(id)
+            return related ? related.title : id
+          }).join(', ')}.`
+        }
+        
+        return {
+          handled: true,
+          response
+        }
+      } else if (detectConfirmation(userMessage) === 'no') {
+        // User rejected - reset
+        this.reset()
+        return {
+          handled: true,
+          response: "No problem. What else would you like to know about?"
+        }
+      } else {
+        // Unclear - ask again
+        return {
+          handled: true,
+          response: `Are you asking about ${feature.title}? Please say yes, no, or the feature name to confirm.`
+        }
+      }
+    }
+    
+    // Search for matching features
+    const matches = searchFeatures(userMessage)
+    
+    if (matches.length === 0) {
+      // No matches - forward to API
+      return {
+        handled: false,
+        apiForward: { message: userMessage }
+      }
+    }
+    
+    if (matches.length === 1) {
+      // Single match - ask for confirmation before explaining
+      const match = matches[0]
+      this.state.flow = 'faq'
+      this.state.awaitingInput = 'faq_feature_confirm'
+      this.state.context.selectedFeatureId = match.feature.id
+      
+      return {
+        handled: true,
+        response: `It looks like you're asking about ${match.feature.title}. Is that correct?`
+      }
+    }
+    
+    // Multiple matches - list candidates
+    this.state.flow = 'faq'
+    this.state.awaitingInput = 'faq_feature_select'
+    
+    const topMatches = matches.slice(0, 5)
+    const featureList = topMatches.map((m, idx) => `${idx + 1}. ${m.feature.title}`).join('\n')
+    
+    // Store all match IDs for selection
+    this.state.context.faqCandidates = topMatches.map(m => m.feature.id)
+    
+    let response = `I found several features that might match what you're asking about:\n\n${featureList}\n\n`
+    response += `Which one would you like to learn about? You can say the name or number.`
     
     return {
       handled: true,

@@ -1,0 +1,68 @@
+{
+  "category": "Learners",
+  "features": [
+    {
+      "id": "learner-profiles",
+      "title": "Learner Profiles",
+      "keywords": [
+        "learner profile",
+        "add learner",
+        "create learner",
+        "new learner",
+        "student profile",
+        "learner settings",
+        "manage learners"
+      ],
+      "description": "Learner Profiles store information about each student including their name, grade level, and learning preferences. Each learner has their own conversation history with Ms. Sonoma, their own lesson calendar, and personalized goals and notes. You can manage multiple learners from the facilitator dashboard.",
+      "howToUse": "To create a learner profile, go to the Learners page from the facilitator dashboard. Click 'Add Learner' and enter their name and grade level. You can edit learner details anytime by clicking on their profile.",
+      "relatedFeatures": ["learner-dropdown", "learner-transcript", "goals-notes"]
+    },
+    {
+      "id": "learner-dropdown",
+      "title": "Learner Selection",
+      "keywords": [
+        "select learner",
+        "choose learner",
+        "switch learner",
+        "learner dropdown",
+        "pick learner",
+        "change learner"
+      ],
+      "description": "The Learner Dropdown lets you select which learner you're working with. When you select a learner, all features (lessons, calendar, conversations, goals) are filtered to that specific learner. This keeps each learner's work separate and organized.",
+      "howToUse": "Look for the dropdown menu at the top of the screen. Click it to see all your learners and select the one you want to work with. The selected learner's name will appear in the dropdown.",
+      "relatedFeatures": ["learner-profiles"]
+    },
+    {
+      "id": "learner-transcript",
+      "title": "Learner Transcript",
+      "keywords": [
+        "transcript",
+        "learner transcript",
+        "conversation history",
+        "session history",
+        "learning history",
+        "past lessons",
+        "what we covered"
+      ],
+      "description": "The Learner Transcript is a detailed record of all lessons completed with Ms. Sonoma, including what was taught, how the learner responded, and their comprehension progress. It helps you track learning over time and see patterns in understanding.",
+      "howToUse": "The transcript loads automatically when you select a learner. I can reference it when you ask questions like 'What did we cover last time?' or 'How is Emma doing with fractions?' The transcript helps me give context-aware guidance.",
+      "relatedFeatures": ["learner-profiles", "goals-notes"]
+    },
+    {
+      "id": "goals-notes",
+      "title": "Goals and Notes",
+      "keywords": [
+        "goals",
+        "notes",
+        "learner goals",
+        "learning goals",
+        "notes about learner",
+        "observations",
+        "progress notes"
+      ],
+      "description": "Goals and Notes let you keep persistent observations about each learner. Record learning goals, challenges, breakthroughs, behavioral notes, or anything else important. These notes help provide continuity and personalized guidance across sessions.",
+      "howToUse": "Click the 'Goals' button to open the goals clipboard. Type your notes and observations. They're saved automatically and persist across sessions. I can reference these notes to give better advice tailored to each learner's needs.",
+      "relatedFeatures": ["learner-profiles", "learner-transcript"]
+    }
+  ]
+}
