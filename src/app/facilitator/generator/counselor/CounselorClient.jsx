@@ -14,6 +14,7 @@ import LessonsOverlay from './overlays/LessonsOverlay'
 import LessonMakerOverlay from './overlays/LessonMakerOverlay'
 import MentorThoughtBubble from './MentorThoughtBubble'
 import SessionTakeoverDialog from './SessionTakeoverDialog'
+import MentorInterceptor from './MentorInterceptor'
 
 export default function CounselorClient() {
   const router = useRouter()
@@ -72,6 +73,12 @@ export default function CounselorClient() {
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  
+  // MentorInterceptor instance
+  const interceptorRef = useRef(null)
+  if (!interceptorRef.current) {
+    interceptorRef.current = new MentorInterceptor()
+  }
   
   // Draft summary state
   const [draftSummary, setDraftSummary] = useState('')
@@ -1029,6 +1036,53 @@ export default function CounselorClient() {
 
     return response.json()
   }, [learnerTranscript, goalsNotes])
+  
+  // Load all lessons for interceptor
+  const loadAllLessons = useCallback(async () => {
+    const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general']
+    const results = []
+    
+    for (const subject of SUBJECTS) {
+      try {
+        const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, {
+          cache: 'no-store'
+        })
+        if (res.ok) {
+          const list = await res.json()
+          if (Array.isArray(list)) {
+            results.push(...list)
+          }
+        }
+      } catch (err) {
+        // Silent error - continue with other subjects
+      }
+    }
+    
+    // Load generated lessons
+    const supabase = getSupabaseClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+    
+    if (token) {
+      try {
+        const res = await fetch('/api/facilitator/lessons/list', {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (res.ok) {
+          const generatedList = await res.json()
+          results.push(...generatedList.map(lesson => ({
+            ...lesson,
+            isGenerated: true
+          })))
+        }
+      } catch (err) {
+        // Silent error
+      }
+    }
+    
+    return results
+  }, [])
 
   // Send message to Mr. Mentor
   const sendMessage = useCallback(async () => {
@@ -1040,6 +1094,114 @@ export default function CounselorClient() {
     setUserInput('')
 
     try {
+      // Try interceptor first
+      const learnerName = learners.find(l => l.id === selectedLearnerId)?.name
+      const allLessons = await loadAllLessons()
+      
+      const interceptResult = await interceptorRef.current.process(message, {
+        allLessons,
+        selectedLearnerId,
+        learnerName,
+        conversationHistory
+      })
+      
+      if (interceptResult.handled) {
+        // Add user message to conversation
+        const updatedHistory = [
+          ...conversationHistory,
+          { role: 'user', content: message }
+        ]
+        
+        // Handle action if present
+        if (interceptResult.action) {
+          const action = interceptResult.action
+          
+          if (action.type === 'schedule') {
+            // Schedule the lesson
+            const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+            
+            if (token) {
+              try {
+                await fetch('/api/facilitator/lessons/schedule', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify({
+                    learner_id: selectedLearnerId,
+                    lesson_key: action.lessonKey,
+                    scheduled_date: action.scheduledDate
+                  })
+                })
+                
+                // Dispatch event to refresh calendar
+                window.dispatchEvent(new Event('mr-mentor:lesson-scheduled'))
+              } catch (err) {
+                // Error handled by response
+              }
+            }
+          } else if (action.type === 'generate') {
+            // Trigger generation overlay
+            setActiveScreen('maker')
+            // Could populate fields here if needed
+          } else if (action.type === 'edit') {
+            // Trigger lesson editor
+            setActiveScreen('lessons')
+            // Could pass edit instructions as context
+          }
+        }
+        
+        // Add interceptor response to conversation
+        const finalHistory = [
+          ...updatedHistory,
+          { role: 'assistant', content: interceptResult.response }
+        ]
+        setConversationHistory(finalHistory)
+        
+        // Display interceptor response in captions
+        setCaptionText(interceptResult.response)
+        const sentences = splitIntoSentences(interceptResult.response)
+        setCaptionSentences(sentences)
+        setCaptionIndex(0)
+        
+        // Play TTS for interceptor response
+        try {
+          const supabase = getSupabaseClient()
+          const { data: { session } } = await supabase.auth.getSession()
+          const token = session?.access_token
+          
+          if (token) {
+            const ttsResponse = await fetch('/api/text-to-speech', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ text: interceptResult.response })
+            })
+            
+            if (ttsResponse.ok) {
+              const ttsData = await ttsResponse.json()
+              if (ttsData.audio) {
+                await playAudio(ttsData.audio)
+              }
+            }
+          }
+        } catch (err) {
+          // Silent TTS error
+        }
+        
+        setLoading(false)
+        return
+      }
+      
+      // Interceptor didn't handle - forward to API
+      const forwardMessage = interceptResult.apiForward?.message || message
+      const forwardContext = interceptResult.apiForward?.context || {}
+
       // Start session if this is the first message
       if (!sessionStarted) {
         const supabase = getSupabaseClient()
@@ -1062,13 +1224,13 @@ export default function CounselorClient() {
       // Add user message to conversation
       const updatedHistory = [
         ...conversationHistory,
-        { role: 'user', content: message }
+        { role: 'user', content: forwardMessage }
       ]
       setConversationHistory(updatedHistory)
 
       // Display user message in captions
-      setCaptionText(message)
-      setCaptionSentences([message])
+      setCaptionText(forwardMessage)
+      setCaptionSentences([forwardMessage])
       setCaptionIndex(0)
 
       // Get auth token for function calling
@@ -1085,13 +1247,15 @@ export default function CounselorClient() {
         method: 'POST',
         headers: headers,
         body: JSON.stringify({
-          message: message,
+          message: forwardMessage,
           // Send previous conversation history (API will append current message to build full context)
           history: conversationHistory,
           // Include learner context if a learner is selected
           learner_transcript: learnerTranscript || null,
           // Include persistent goals notes
-          goals_notes: goalsNotes || null
+          goals_notes: goalsNotes || null,
+          // Include any context from interceptor
+          interceptor_context: Object.keys(forwardContext).length > 0 ? forwardContext : undefined
         })
       })
 
