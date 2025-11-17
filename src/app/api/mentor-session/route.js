@@ -123,9 +123,10 @@ function verifyPinHash(pin, stored) {
 }
 
 async function verifyPin(userId, pinCode) {
+  // Try to get facilitator_pin_hash first (modern schema)
   const { data: profile, error } = await supabase
     .from('profiles')
-  .select('facilitator_pin_hash, pin_code')
+    .select('facilitator_pin_hash')
     .eq('id', userId)
     .maybeSingle()
 
@@ -133,14 +134,15 @@ async function verifyPin(userId, pinCode) {
     throw error
   }
 
-  if (profile?.facilitator_pin_hash) {
+  if (!profile) {
+    return false
+  }
+
+  if (profile.facilitator_pin_hash) {
     return verifyPinHash(pinCode, profile.facilitator_pin_hash)
   }
 
-  if (typeof profile?.pin_code === 'string') {
-    return profile.pin_code === pinCode
-  }
-
+  // No PIN set
   return false
 }
 
