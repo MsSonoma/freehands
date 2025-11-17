@@ -1177,9 +1177,9 @@ export default function CounselorClient() {
         setCaptionSentences(sentences)
         setCaptionIndex(0)
         
-        // Play TTS for interceptor response (matching Ms. Sonoma pattern)
+        // Play TTS for interceptor response (Mr. Mentor's voice)
         try {
-          const ttsResponse = await fetch('/api/tts', {
+          const ttsResponse = await fetch('/api/mentor-tts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text: interceptResult.response })
