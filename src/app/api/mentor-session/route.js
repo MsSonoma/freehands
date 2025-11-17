@@ -194,10 +194,12 @@ export async function GET(request) {
     }
 
     // Fetch actual conversation from conversation_drafts to merge with session
+    // Mr. Mentor conversations have NULL learner_id (facilitator-only tool)
     const { data: draftData } = await supabase
       .from('conversation_drafts')
       .select('recent_turns, draft_summary')
       .eq('facilitator_id', user.id)
+      .is('learner_id', null)
       .maybeSingle()
 
     // Merge conversation_drafts data into the session
@@ -390,10 +392,12 @@ export async function POST(request) {
       )
 
       // Fetch actual conversation from conversation_drafts table
+      // Mr. Mentor conversations have NULL learner_id (facilitator-only tool)
       const { data: draftData } = await supabase
         .from('conversation_drafts')
         .select('recent_turns, draft_summary')
         .eq('facilitator_id', user.id)
+        .is('learner_id', null)
         .maybeSingle()
 
       const conversationToCopy = draftData?.recent_turns || existingSession.conversation_history || []
