@@ -505,6 +505,13 @@ export async function PATCH(request) {
     const body = await request.json()
     const { sessionId, conversationHistory, draftSummary } = body
 
+    console.info(
+      '[mentor-session] PATCH received:',
+      'sessionId=', sessionId,
+      'conversationHistory.length=', conversationHistory?.length || 0,
+      'draftSummary.length=', draftSummary?.length || 0
+    )
+
     if (!sessionId) {
       return Response.json({ error: 'Session ID required' }, { status: 400 })
     }
