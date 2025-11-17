@@ -80,6 +80,8 @@ export default function LessonsOverlay({ learnerId }) {
   const [rewritingDescription, setRewritingDescription] = useState(false)
   const [rewritingTeachingNotes, setRewritingTeachingNotes] = useState(false)
   const [rewritingVocabDefinition, setRewritingVocabDefinition] = useState({})
+  const [loadError, setLoadError] = useState(false)
+  const [retryCount, setRetryCount] = useState(0)
 
   const {
     sessions: lessonHistorySessions,
@@ -135,13 +137,14 @@ export default function LessonsOverlay({ learnerId }) {
     []
   )
 
-  const loadLessons = useCallback(async () => {
-    if (Object.keys(allLessons).length > 0) {
+  const loadLessons = useCallback(async (force = false) => {
+    if (!force && Object.keys(allLessons).length > 0) {
       setLoading(false)
       return
     }
 
     setLoading(true)
+    setLoadError(false)
     try {
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
@@ -204,12 +207,27 @@ export default function LessonsOverlay({ learnerId }) {
       }
 
       setAllLessons(results)
+      setLoadError(false)
+      setRetryCount(0)
     } catch (err) {
-      // Silent error handling
+      console.error('[LessonsOverlay] Failed to load lessons:', err)
+      setLoadError(true)
     } finally {
       setLoading(false)
     }
   }, [allLessons])
+
+  // Auto-retry on error with exponential backoff
+  useEffect(() => {
+    if (loadError && retryCount < 3) {
+      const delay = Math.min(1000 * Math.pow(2, retryCount), 10000) // 1s, 2s, 4s max
+      const timer = setTimeout(() => {
+        setRetryCount(prev => prev + 1)
+        loadLessons(true)
+      }, delay)
+      return () => clearTimeout(timer)
+    }
+  }, [loadError, retryCount, loadLessons])
 
   const loadLearnerData = useCallback(async () => {
     if (!learnerId || learnerId === 'none') {
@@ -323,7 +341,7 @@ export default function LessonsOverlay({ learnerId }) {
   // Listen for preload event to trigger initial load
   useEffect(() => {
     const handlePreload = () => {
-      loadLessons()
+      loadLessons(true) // Force reload on preload event
       if (learnerId && learnerId !== 'none') {
         loadLearnerData()
       }
@@ -332,7 +350,9 @@ export default function LessonsOverlay({ learnerId }) {
     const handleLessonGenerated = () => {
       // Clear cache and reload
       setAllLessons({})
-      loadLessons()
+      setRetryCount(0)
+      setLoadError(false)
+      loadLessons(true)
     }
     
     window.addEventListener('preload-overlays', handlePreload)
@@ -1066,6 +1086,32 @@ export default function LessonsOverlay({ learnerId }) {
         {loading ? (
           <div style={{ textAlign: 'center', padding: 20, color: '#9ca3af', fontSize: 12 }}>
             Loading lessons...
+            {retryCount > 0 && <div style={{ marginTop: 8, fontSize: 11 }}>Retry {retryCount}/3...</div>}
+          </div>
+        ) : loadError && retryCount >= 3 ? (
+          <div style={{ textAlign: 'center', padding: 20 }}>
+            <div style={{ color: '#ef4444', fontSize: 13, marginBottom: 12 }}>
+              Failed to load lessons after {retryCount} attempts
+            </div>
+            <button
+              onClick={() => {
+                setRetryCount(0)
+                setLoadError(false)
+                loadLessons(true)
+              }}
+              style={{
+                background: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: 6,
+                padding: '8px 16px',
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: 'pointer'
+              }}
+            >
+              Retry Now
+            </button>
           </div>
         ) : filteredLessons.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 20, color: '#9ca3af', fontSize: 12 }}>
