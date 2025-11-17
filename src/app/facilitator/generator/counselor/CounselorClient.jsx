@@ -1177,31 +1177,22 @@ export default function CounselorClient() {
         setCaptionSentences(sentences)
         setCaptionIndex(0)
         
-        // Play TTS for interceptor response
+        // Play TTS for interceptor response (matching Ms. Sonoma pattern)
         try {
-          const supabase = getSupabaseClient()
-          const { data: { session } } = await supabase.auth.getSession()
-          const token = session?.access_token
+          const ttsResponse = await fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: interceptResult.response })
+          })
           
-          if (token) {
-            const ttsResponse = await fetch('/api/text-to-speech', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({ text: interceptResult.response })
-            })
-            
-            if (ttsResponse.ok) {
-              const ttsData = await ttsResponse.json()
-              if (ttsData.audio) {
-                await playAudio(ttsData.audio)
-              }
+          if (ttsResponse.ok) {
+            const ttsData = await ttsResponse.json()
+            if (ttsData.audio) {
+              await playAudio(ttsData.audio)
             }
           }
         } catch (err) {
-          // Silent TTS error
+          // Silent TTS error - don't block UX
         }
         
         setLoading(false)
