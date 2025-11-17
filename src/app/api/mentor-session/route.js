@@ -374,12 +374,21 @@ export async function POST(request) {
         user.id
       )
 
-      // Log what conversation we're copying
-      const conversationToCopy = existingSession.conversation_history || []
+      // Fetch actual conversation from conversation_drafts table
+      const { data: draftData } = await supabase
+        .from('conversation_drafts')
+        .select('recent_turns, draft_summary')
+        .eq('facilitator_id', user.id)
+        .maybeSingle()
+
+      const conversationToCopy = draftData?.recent_turns || existingSession.conversation_history || []
+      const draftSummaryToCopy = draftData?.draft_summary || existingSession.draft_summary || ''
+
       console.info(
         '[mentor-session] TAKEOVER copying conversation_history:',
-        'length=', conversationToCopy.length,
-        'data=', JSON.stringify(conversationToCopy).substring(0, 200)
+        'from conversation_drafts.recent_turns.length=', draftData?.recent_turns?.length || 0,
+        'from mentor_sessions.conversation_history.length=', existingSession.conversation_history?.length || 0,
+        'final length=', conversationToCopy.length
       )
 
       // Create new session with existing conversation history
@@ -390,7 +399,7 @@ export async function POST(request) {
           session_id: sessionId,
           device_name: deviceName || 'Unknown device',
           conversation_history: conversationToCopy,
-          draft_summary: existingSession.draft_summary,
+          draft_summary: draftSummaryToCopy,
           is_active: true,
           last_activity_at: now.toISOString()
         })
