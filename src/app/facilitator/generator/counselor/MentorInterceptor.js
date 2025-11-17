@@ -96,31 +96,57 @@ function extractLessonParams(text) {
   const normalized = normalizeText(text)
   const params = {}
   
-  // Extract grade
+  // Extract grade with normalization
   const gradeMatch = text.match(/\b(\d+)(st|nd|rd|th)?\s*(grade)?\b/i) || 
                      text.match(/\b(k|kindergarten)\b/i)
   if (gradeMatch) {
-    params.grade = gradeMatch[1].toLowerCase() === 'k' || gradeMatch[1].toLowerCase() === 'kindergarten'
-      ? 'K'
-      : `${gradeMatch[1]}${gradeMatch[2] || 'th'}`
-  }
-  
-  // Extract subject
-  const subjects = ['math', 'science', 'language arts', 'social studies', 'general']
-  for (const subject of subjects) {
-    if (normalized.includes(subject)) {
-      params.subject = subject
-      break
+    const gradeNum = gradeMatch[1].toLowerCase()
+    if (gradeNum === 'k' || gradeNum === 'kindergarten') {
+      params.grade = 'K'
+    } else {
+      // Normalize to format like "4th", "5th", etc
+      const num = parseInt(gradeNum)
+      if (num >= 1 && num <= 12) {
+        const suffix = num === 1 ? 'st' : num === 2 ? 'nd' : num === 3 ? 'rd' : 'th'
+        params.grade = `${num}${suffix}`
+      }
     }
   }
   
-  // Extract difficulty
-  const difficulties = ['beginner', 'intermediate', 'advanced']
-  for (const diff of difficulties) {
-    if (normalized.includes(diff)) {
-      params.difficulty = diff.charAt(0).toUpperCase() + diff.slice(1)
-      break
+  // Extract subject with normalization
+  const subjectMappings = {
+    'math': ['math', 'mathematics', 'arithmetic'],
+    'science': ['science', 'biology', 'chemistry', 'physics'],
+    'language arts': ['language arts', 'english', 'reading', 'writing', 'ela'],
+    'social studies': ['social studies', 'history', 'geography', 'civics'],
+    'general': ['general', 'other', 'misc', 'miscellaneous']
+  }
+  
+  for (const [canonical, variants] of Object.entries(subjectMappings)) {
+    for (const variant of variants) {
+      if (normalized.includes(variant)) {
+        params.subject = canonical
+        break
+      }
     }
+    if (params.subject) break
+  }
+  
+  // Extract difficulty with normalization
+  const difficultyMappings = {
+    'Beginner': ['beginner', 'easy', 'basic', 'simple', 'intro', 'introductory'],
+    'Intermediate': ['intermediate', 'medium', 'moderate', 'average', 'mid'],
+    'Advanced': ['advanced', 'hard', 'difficult', 'challenging', 'expert']
+  }
+  
+  for (const [canonical, variants] of Object.entries(difficultyMappings)) {
+    for (const variant of variants) {
+      if (normalized.includes(variant)) {
+        params.difficulty = canonical
+        break
+      }
+    }
+    if (params.difficulty) break
   }
   
   return params
@@ -577,14 +603,48 @@ export class MentorInterceptor {
     this.state.flow = 'generate'
     this.state.context = extractLessonParams(userMessage)
     
-    // Extract topic/description
-    const topicMatch = userMessage.match(/(?:on|about|for)\s+([^,.]+)/i)
+    // Extract topic/description from initial message
+    const topicMatch = userMessage.match(/(?:on|about|for|covering)\s+([^,.]+)/i)
     if (topicMatch) {
-      this.state.context.topic = topicMatch[1].trim()
+      this.state.context.topicDescription = topicMatch[1].trim()
+    } else if (userMessage.length > 20) {
+      // Whole message might be the topic description
+      this.state.context.topicDescription = userMessage
     }
     
     // Start gathering missing parameters
     return await this.gatherGenerationParameters(context)
+  }
+  
+  /**
+   * Normalize lesson title using GPT-4o-mini
+   */
+  async normalizeLessonTitle(userInput, context) {
+    const { topicDescription, grade, subject, difficulty } = context
+    
+    try {
+      const response = await fetch('/api/normalize-lesson-title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userInput,
+          topicDescription,
+          grade,
+          subject,
+          difficulty
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Normalization API failed')
+      }
+      
+      const data = await response.json()
+      return data.title || userInput
+    } catch (err) {
+      // Fallback to user input if API fails
+      return userInput
+    }
   }
   
   /**
@@ -602,8 +662,8 @@ export class MentorInterceptor {
       }
     }
     
-    // Check for topic/title
-    if (!ctx.topic && !ctx.title) {
+    // Check for topic/description (user's raw input)
+    if (!ctx.topicDescription && !ctx.title) {
       this.state.awaitingInput = 'generate_topic'
       return {
         handled: true,
@@ -638,16 +698,23 @@ export class MentorInterceptor {
       }
     }
     
+    // Ask for a clean title if we don't have one yet
+    if (!ctx.title) {
+      this.state.awaitingInput = 'generate_title'
+      return {
+        handled: true,
+        response: "What should I title the lesson?"
+      }
+    }
+    
     // All parameters gathered - confirm
-    const title = ctx.title || ctx.topic
-    this.state.context.title = title
-    this.state.context.description = ctx.description || `Learn about ${title}`
+    this.state.context.description = ctx.description || ctx.topicDescription || `Learn about ${ctx.title}`
     this.state.awaitingConfirmation = true
     this.state.awaitingInput = null
     
     return {
       handled: true,
-      response: `Should I generate the lesson "${title}" (${ctx.grade} ${ctx.subject}, ${ctx.difficulty})?`
+      response: `Should I generate the lesson "${ctx.title}" (${ctx.grade} ${ctx.subject}, ${ctx.difficulty})?`
     }
   }
   
@@ -658,7 +725,7 @@ export class MentorInterceptor {
     const ctx = this.state.context
     
     if (this.state.awaitingInput === 'generate_topic') {
-      ctx.topic = userMessage
+      ctx.topicDescription = userMessage
       this.state.awaitingInput = null
       return await this.gatherGenerationParameters(context)
     }
@@ -699,6 +766,21 @@ export class MentorInterceptor {
       return {
         handled: true,
         response: "Please choose: beginner, intermediate, or advanced."
+      }
+    }
+    
+    if (this.state.awaitingInput === 'generate_title') {
+      // Use GPT-4o-mini to normalize the title
+      try {
+        const normalizedTitle = await this.normalizeLessonTitle(userMessage, ctx)
+        ctx.title = normalizedTitle
+        this.state.awaitingInput = null
+        return await this.gatherGenerationParameters(context)
+      } catch (err) {
+        // Fallback to user's input if API fails
+        ctx.title = userMessage
+        this.state.awaitingInput = null
+        return await this.gatherGenerationParameters(context)
       }
     }
     
