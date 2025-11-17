@@ -388,15 +388,13 @@ export async function POST(request) {
       const conversationToCopy = draftData?.recent_turns || existingSession.conversation_history || []
       const draftSummaryToCopy = draftData?.draft_summary || existingSession.draft_summary || ''
 
-      // Create new session with existing conversation history
+      // Create new session WITHOUT conversation_history (conversations live in conversation_drafts)
       const { data: newSession, error: createError } = await supabase
         .from('mentor_sessions')
         .insert({
           facilitator_id: user.id,
           session_id: sessionId,
           device_name: deviceName || 'Unknown device',
-          conversation_history: conversationToCopy,
-          draft_summary: draftSummaryToCopy,
           is_active: true,
           last_activity_at: now.toISOString()
         })
@@ -412,8 +410,13 @@ export async function POST(request) {
         }, { status: 500 })
       }
 
+      // Return session with conversation merged from conversation_drafts
       return Response.json({
-        session: newSession,
+        session: {
+          ...newSession,
+          conversation_history: conversationToCopy,
+          draft_summary: draftSummaryToCopy
+        },
         status: 'taken_over',
         message: 'Session taken over successfully'
       })
