@@ -154,6 +154,18 @@ export async function GET(request) {
       return Response.json({ error: 'Invalid token' }, { status: 401 })
     }
 
+    // Check for Premium tier
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('plan_tier')
+      .eq('id', user.id)
+      .maybeSingle()
+    
+    const planTier = (profile?.plan_tier || 'free').toLowerCase()
+    if (planTier !== 'premium' && planTier !== 'premium-plus' && planTier !== 'lifetime') {
+      return Response.json({ error: 'Premium plan required' }, { status: 403 })
+    }
+
     const now = new Date()
     await cleanupStaleSessions({ facilitatorId: user.id, now })
 
@@ -228,6 +240,18 @@ export async function POST(request) {
     
     if (authError || !user) {
       return Response.json({ error: 'Invalid token' }, { status: 401 })
+    }
+
+    // Check for Premium tier
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('plan_tier')
+      .eq('id', user.id)
+      .maybeSingle()
+    
+    const planTier = (profile?.plan_tier || 'free').toLowerCase()
+    if (planTier !== 'premium' && planTier !== 'premium-plus' && planTier !== 'lifetime') {
+      return Response.json({ error: 'Premium plan required' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -478,6 +502,18 @@ export async function PATCH(request) {
       return Response.json({ error: 'Invalid token' }, { status: 401 })
     }
 
+    // Check for Premium tier
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('plan_tier')
+      .eq('id', user.id)
+      .maybeSingle()
+    
+    const planTier = (profile?.plan_tier || 'free').toLowerCase()
+    if (planTier !== 'premium' && planTier !== 'premium-plus' && planTier !== 'lifetime') {
+      return Response.json({ error: 'Premium plan required' }, { status: 403 })
+    }
+
     const body = await request.json()
     const { sessionId, conversationHistory, draftSummary } = body
 
@@ -545,6 +581,18 @@ export async function DELETE(request) {
     
     if (authError || !user) {
       return Response.json({ error: 'Invalid token' }, { status: 401 })
+    }
+
+    // Check for Premium tier
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('plan_tier')
+      .eq('id', user.id)
+      .maybeSingle()
+    
+    const planTier = (profile?.plan_tier || 'free').toLowerCase()
+    if (planTier !== 'premium' && planTier !== 'premium-plus' && planTier !== 'lifetime') {
+      return Response.json({ error: 'Premium plan required' }, { status: 403 })
     }
 
     const { searchParams } = new URL(request.url)
