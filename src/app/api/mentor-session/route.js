@@ -193,18 +193,33 @@ export async function GET(request) {
       })
     }
 
+    // Fetch actual conversation from conversation_drafts to merge with session
+    const { data: draftData } = await supabase
+      .from('conversation_drafts')
+      .select('recent_turns, draft_summary')
+      .eq('facilitator_id', user.id)
+      .maybeSingle()
+
+    // Merge conversation_drafts data into the session
+    const sessionWithConversation = {
+      ...activeSession,
+      conversation_history: draftData?.recent_turns || activeSession.conversation_history || [],
+      draft_summary: draftData?.draft_summary || activeSession.draft_summary || ''
+    }
+
     // Check if the requesting session is the active one
     const isOwner = activeSession.session_id === sessionId
 
     console.info(
       '[mentor-session] GET returning session:',
       'session_id=', activeSession.session_id,
-      'conversation_history.length=', activeSession.conversation_history?.length || 0,
+      'conversation_history.length=', sessionWithConversation.conversation_history?.length || 0,
+      'from conversation_drafts=', draftData?.recent_turns?.length || 0,
       'isOwner=', isOwner
     )
 
     return Response.json({
-      session: activeSession,
+      session: sessionWithConversation,
       status: isOwner ? 'active' : 'taken',
       isOwner
     })
