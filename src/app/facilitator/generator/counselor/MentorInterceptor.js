@@ -14,7 +14,7 @@
  * - Complex queries that need LLM reasoning
  */
 
-import { searchFeatures, getFeatureById } from '@/app/lib/faq/faqLoader'
+import { searchFeatures, getFeatureById } from '@/lib/faq/faqLoader'
 
 // Fuzzy string matching for normalization
 function normalizeText(text) {
