@@ -113,23 +113,110 @@ function extractLessonParams(text) {
     }
   }
   
-  // Extract subject with normalization
-  const subjectMappings = {
-    'math': ['math', 'mathematics', 'arithmetic'],
-    'science': ['science', 'biology', 'chemistry', 'physics'],
-    'language arts': ['language arts', 'english', 'reading', 'writing', 'ela'],
-    'social studies': ['social studies', 'history', 'geography', 'civics'],
-    'general': ['general', 'other', 'misc', 'miscellaneous']
+  // Extract subject with comprehensive topic-to-subject mapping
+  const subjectTopicMappings = {
+    'math': [
+      // Basic operations
+      'addition', 'subtraction', 'multiplication', 'division', 'multiply', 'divide', 'add', 'subtract',
+      // Advanced math
+      'algebra', 'geometry', 'calculus', 'trigonometry', 'statistics', 'probability',
+      // Number concepts
+      'fractions', 'decimals', 'percentages', 'ratios', 'proportions', 'integers', 'numbers',
+      // Math skills
+      'word problems', 'equations', 'graphing', 'measurement', 'estimation', 'rounding',
+      // Specific topics
+      'place value', 'prime numbers', 'factors', 'multiples', 'exponents', 'square roots',
+      'coordinates', 'angles', 'shapes', 'perimeter', 'area', 'volume', 'symmetry',
+      // General
+      'math', 'mathematics', 'arithmetic', 'counting', 'number sense'
+    ],
+    'science': [
+      // Life science
+      'biology', 'plants', 'animals', 'cells', 'organisms', 'ecosystems', 'habitats',
+      'photosynthesis', 'food chain', 'adaptations', 'classification', 'life cycle',
+      'human body', 'anatomy', 'organs', 'systems', 'digestion', 'respiration', 'circulation',
+      // Physical science
+      'physics', 'chemistry', 'matter', 'energy', 'force', 'motion', 'gravity',
+      'atoms', 'molecules', 'elements', 'compounds', 'reactions', 'states of matter',
+      'electricity', 'magnetism', 'light', 'sound', 'waves', 'heat', 'temperature',
+      // Earth science
+      'geology', 'rocks', 'minerals', 'fossils', 'soil', 'landforms', 'volcanoes', 'earthquakes',
+      'weather', 'climate', 'water cycle', 'atmosphere', 'seasons', 'clouds', 'precipitation',
+      'solar system', 'planets', 'stars', 'moon', 'sun', 'space', 'astronomy',
+      // General
+      'science', 'scientific method', 'experiments', 'observations', 'hypothesis'
+    ],
+    'language arts': [
+      // Reading
+      'reading', 'comprehension', 'phonics', 'sight words', 'fluency', 'vocabulary',
+      'main idea', 'details', 'inference', 'context clues', 'summarizing', 'predicting',
+      // Writing
+      'writing', 'essays', 'paragraphs', 'sentences', 'composition', 'creative writing',
+      'narratives', 'persuasive', 'informative', 'opinion', 'descriptive',
+      // Grammar
+      'grammar', 'punctuation', 'capitalization', 'spelling', 'parts of speech',
+      'nouns', 'verbs', 'adjectives', 'adverbs', 'pronouns', 'conjunctions', 'prepositions',
+      'subjects', 'predicates', 'clauses', 'phrases', 'tenses', 'sentence structure',
+      // Literature
+      'literature', 'stories', 'poetry', 'poems', 'fiction', 'nonfiction', 'genre',
+      'characters', 'setting', 'plot', 'theme', 'conflict', 'resolution', 'point of view',
+      // General
+      'english', 'ela', 'language', 'literacy', 'communication'
+    ],
+    'social studies': [
+      // History
+      'history', 'historical', 'timeline', 'ancient', 'medieval', 'modern',
+      'american history', 'world history', 'civil war', 'revolution', 'exploration',
+      'colonies', 'pioneers', 'settlers', 'immigrants', 'presidents', 'leaders',
+      // Geography
+      'geography', 'maps', 'continents', 'countries', 'states', 'cities', 'regions',
+      'landforms', 'oceans', 'rivers', 'mountains', 'compass', 'cardinal directions',
+      'longitude', 'latitude', 'equator', 'hemispheres', 'climate zones',
+      // Civics/Government
+      'government', 'civics', 'constitution', 'democracy', 'elections', 'voting',
+      'laws', 'rights', 'responsibilities', 'citizenship', 'branches of government',
+      'legislative', 'executive', 'judicial', 'congress', 'senate', 'house',
+      // Economics
+      'economics', 'economy', 'money', 'trade', 'goods', 'services', 'supply', 'demand',
+      'producers', 'consumers', 'resources', 'scarcity', 'entrepreneurship',
+      // Culture
+      'culture', 'traditions', 'customs', 'diversity', 'communities', 'society',
+      'holidays', 'celebrations', 'beliefs', 'values',
+      // General
+      'social studies', 'society'
+    ]
   }
   
-  for (const [canonical, variants] of Object.entries(subjectMappings)) {
-    for (const variant of variants) {
-      if (normalized.includes(variant)) {
+  // Check topic keywords first (most specific)
+  for (const [canonical, keywords] of Object.entries(subjectTopicMappings)) {
+    for (const keyword of keywords) {
+      if (normalized.includes(keyword)) {
         params.subject = canonical
         break
       }
     }
     if (params.subject) break
+  }
+  
+  // Fallback to direct subject name matching
+  if (!params.subject) {
+    const directSubjectMappings = {
+      'math': ['math', 'mathematics', 'arithmetic'],
+      'science': ['science'],
+      'language arts': ['language arts', 'english', 'ela'],
+      'social studies': ['social studies'],
+      'general': ['general', 'other', 'misc', 'miscellaneous']
+    }
+    
+    for (const [canonical, variants] of Object.entries(directSubjectMappings)) {
+      for (const variant of variants) {
+        if (normalized.includes(variant)) {
+          params.subject = canonical
+          break
+        }
+      }
+      if (params.subject) break
+    }
   }
   
   // Extract difficulty with normalization
