@@ -367,6 +367,14 @@ export async function POST(request) {
         user.id
       )
 
+      // Log what conversation we're copying
+      const conversationToCopy = existingSession.conversation_history || []
+      console.info(
+        '[mentor-session] TAKEOVER copying conversation_history:',
+        'length=', conversationToCopy.length,
+        'data=', JSON.stringify(conversationToCopy).substring(0, 200)
+      )
+
       // Create new session with existing conversation history
       const { data: newSession, error: createError } = await supabase
         .from('mentor_sessions')
@@ -374,7 +382,7 @@ export async function POST(request) {
           facilitator_id: user.id,
           session_id: sessionId,
           device_name: deviceName || 'Unknown device',
-          conversation_history: existingSession.conversation_history || [],
+          conversation_history: conversationToCopy,
           draft_summary: existingSession.draft_summary,
           is_active: true,
           last_activity_at: now.toISOString()
@@ -391,6 +399,11 @@ export async function POST(request) {
           code: createError.code
         }, { status: 500 })
       }
+
+      console.info(
+        '[mentor-session] TAKEOVER created new session with conversation_history:',
+        'newSession.conversation_history.length=', newSession.conversation_history?.length || 0
+      )
 
       return Response.json({
         session: newSession,
