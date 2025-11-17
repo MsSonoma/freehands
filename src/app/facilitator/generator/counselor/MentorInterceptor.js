@@ -392,15 +392,284 @@ export class MentorInterceptor {
    * Handle parameter input during a flow
    */
   async handleParameterInput(userMessage, context) {
-    // Implementation continues...
-    return { handled: false }
+    const { allLessons, selectedLearnerId, learnerName } = context
+    
+    // Handle lesson selection from search results
+    if (this.state.awaitingInput === 'lesson_selection') {
+      const results = this.state.context.searchResults || []
+      
+      // Try to match by number
+      const numberMatch = userMessage.match(/\b(\d+)\b/)
+      if (numberMatch) {
+        const index = parseInt(numberMatch[1]) - 1
+        if (index >= 0 && index < results.length) {
+          this.state.selectedLesson = results[index]
+          this.state.awaitingInput = 'lesson_action'
+          
+          return {
+            handled: true,
+            response: `Would you like to schedule, edit, or discuss ${this.state.selectedLesson.title}?`
+          }
+        }
+      }
+      
+      // Try to match by title
+      const normalizedInput = normalizeText(userMessage)
+      for (const lesson of results) {
+        if (normalizeText(lesson.title).includes(normalizedInput) || 
+            normalizedInput.includes(normalizeText(lesson.title))) {
+          this.state.selectedLesson = lesson
+          this.state.awaitingInput = 'lesson_action'
+          
+          return {
+            handled: true,
+            response: `Would you like to schedule, edit, or discuss ${lesson.title}?`
+          }
+        }
+      }
+      
+      return {
+        handled: true,
+        response: "I couldn't find that lesson in the list. Could you try saying the number or the exact lesson name?"
+      }
+    }
+    
+    // Handle lesson action choice
+    if (this.state.awaitingInput === 'lesson_action') {
+      const normalized = normalizeText(userMessage)
+      
+      if (normalized.includes('schedule')) {
+        this.state.flow = 'schedule'
+        this.state.context.lessonKey = this.state.selectedLesson.lessonKey
+        this.state.awaitingInput = 'schedule_date'
+        
+        if (selectedLearnerId) {
+          return {
+            handled: true,
+            response: `What date would you like to schedule ${this.state.selectedLesson.title} for ${learnerName || 'this learner'}?`
+          }
+        } else {
+          return {
+            handled: true,
+            response: "Please select a learner from the dropdown first, then we can schedule the lesson."
+          }
+        }
+      }
+      
+      if (normalized.includes('edit')) {
+        this.state.flow = 'edit'
+        this.state.context.lessonKey = this.state.selectedLesson.lessonKey
+        this.state.awaitingInput = 'edit_changes'
+        
+        return {
+          handled: true,
+          response: `What would you like me to change in ${this.state.selectedLesson.title}?`
+        }
+      }
+      
+      if (normalized.includes('discuss')) {
+        // Forward to API with lesson context
+        return {
+          handled: false,
+          apiForward: {
+            message: userMessage,
+            context: {
+              selectedLesson: this.state.selectedLesson
+            }
+          }
+        }
+      }
+      
+      return {
+        handled: true,
+        response: "Would you like to schedule it, edit it, or discuss it? Please choose one."
+      }
+    }
+    
+    // Handle generation parameters
+    if (this.state.flow === 'generate') {
+      return await this.handleGenerateParameterInput(userMessage, context)
+    }
+    
+    // Handle schedule date input
+    if (this.state.awaitingInput === 'schedule_date') {
+      const date = extractDate(userMessage)
+      
+      if (!date) {
+        return {
+          handled: true,
+          response: "I couldn't understand that date. Please try saying something like 'Monday', 'December 18th', or '2025-12-18'."
+        }
+      }
+      
+      this.state.context.scheduledDate = date
+      this.state.awaitingConfirmation = true
+      this.state.awaitingInput = null
+      
+      const lesson = this.state.selectedLesson
+      const formattedDate = new Date(date).toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'long', 
+        day: 'numeric',
+        year: 'numeric'
+      })
+      
+      return {
+        handled: true,
+        response: `Should I schedule ${lesson.title} (${lesson.grade} ${lesson.subject}, ${lesson.difficulty}) on ${formattedDate}?`
+      }
+    }
+    
+    // Handle edit changes input
+    if (this.state.awaitingInput === 'edit_changes') {
+      this.state.context.editInstructions = userMessage
+      this.state.awaitingConfirmation = true
+      this.state.awaitingInput = null
+      
+      return {
+        handled: true,
+        response: `Should I make these changes to ${this.state.selectedLesson.title}?`
+      }
+    }
+    
+    return {
+      handled: false,
+      apiForward: { message: userMessage }
+    }
   }
   
   /**
    * Handle lesson generation flow
    */
   async handleGenerate(userMessage, context) {
-    // Implementation continues...
+    this.state.flow = 'generate'
+    this.state.context = extractLessonParams(userMessage)
+    
+    // Extract topic/description
+    const topicMatch = userMessage.match(/(?:on|about|for)\s+([^,.]+)/i)
+    if (topicMatch) {
+      this.state.context.topic = topicMatch[1].trim()
+    }
+    
+    // Start gathering missing parameters
+    return await this.gatherGenerationParameters(context)
+  }
+  
+  /**
+   * Gather parameters for lesson generation
+   */
+  async gatherGenerationParameters(context) {
+    const { selectedLearnerId, learnerName } = context
+    const ctx = this.state.context
+    
+    // Check for learner
+    if (!selectedLearnerId) {
+      return {
+        handled: true,
+        response: "Please select a learner from the dropdown first, then I can help generate a lesson."
+      }
+    }
+    
+    // Check for topic/title
+    if (!ctx.topic && !ctx.title) {
+      this.state.awaitingInput = 'generate_topic'
+      return {
+        handled: true,
+        response: "What topic should this lesson cover?"
+      }
+    }
+    
+    // Check for grade
+    if (!ctx.grade) {
+      this.state.awaitingInput = 'generate_grade'
+      return {
+        handled: true,
+        response: `What grade level is this lesson for ${learnerName || 'the learner'}?`
+      }
+    }
+    
+    // Check for subject
+    if (!ctx.subject) {
+      this.state.awaitingInput = 'generate_subject'
+      return {
+        handled: true,
+        response: "What subject is this lesson? (math, science, language arts, social studies, or general)"
+      }
+    }
+    
+    // Check for difficulty
+    if (!ctx.difficulty) {
+      this.state.awaitingInput = 'generate_difficulty'
+      return {
+        handled: true,
+        response: "What difficulty level? (beginner, intermediate, or advanced)"
+      }
+    }
+    
+    // All parameters gathered - confirm
+    const title = ctx.title || ctx.topic
+    this.state.context.title = title
+    this.state.context.description = ctx.description || `Learn about ${title}`
+    this.state.awaitingConfirmation = true
+    this.state.awaitingInput = null
+    
+    return {
+      handled: true,
+      response: `Should I generate the lesson "${title}" (${ctx.grade} ${ctx.subject}, ${ctx.difficulty})?`
+    }
+  }
+  
+  /**
+   * Handle generation parameter inputs
+   */
+  async handleGenerateParameterInput(userMessage, context) {
+    const ctx = this.state.context
+    
+    if (this.state.awaitingInput === 'generate_topic') {
+      ctx.topic = userMessage
+      this.state.awaitingInput = null
+      return await this.gatherGenerationParameters(context)
+    }
+    
+    if (this.state.awaitingInput === 'generate_grade') {
+      const params = extractLessonParams(userMessage)
+      if (params.grade) {
+        ctx.grade = params.grade
+        this.state.awaitingInput = null
+        return await this.gatherGenerationParameters(context)
+      }
+      return {
+        handled: true,
+        response: "I couldn't understand that grade. Please say something like '4th grade' or 'K'."
+      }
+    }
+    
+    if (this.state.awaitingInput === 'generate_subject') {
+      const params = extractLessonParams(userMessage)
+      if (params.subject) {
+        ctx.subject = params.subject
+        this.state.awaitingInput = null
+        return await this.gatherGenerationParameters(context)
+      }
+      return {
+        handled: true,
+        response: "Please choose: math, science, language arts, social studies, or general."
+      }
+    }
+    
+    if (this.state.awaitingInput === 'generate_difficulty') {
+      const params = extractLessonParams(userMessage)
+      if (params.difficulty) {
+        ctx.difficulty = params.difficulty
+        this.state.awaitingInput = null
+        return await this.gatherGenerationParameters(context)
+      }
+      return {
+        handled: true,
+        response: "Please choose: beginner, intermediate, or advanced."
+      }
+    }
+    
     return { handled: false }
   }
   
@@ -408,32 +677,285 @@ export class MentorInterceptor {
    * Handle lesson scheduling flow
    */
   async handleSchedule(userMessage, context) {
-    // Implementation continues...
-    return { handled: false }
+    const { selectedLearnerId, learnerName, allLessons } = context
+    
+    if (!selectedLearnerId) {
+      return {
+        handled: true,
+        response: "Please select a learner from the dropdown first, then I can schedule a lesson."
+      }
+    }
+    
+    this.state.flow = 'schedule'
+    
+    // Extract date
+    const date = extractDate(userMessage)
+    if (date) {
+      this.state.context.scheduledDate = date
+    }
+    
+    // Extract lesson info
+    const params = extractLessonParams(userMessage)
+    
+    // If we have lesson context from previous interaction
+    if (this.state.selectedLesson) {
+      this.state.context.lessonKey = this.state.selectedLesson.lessonKey
+      
+      if (date) {
+        // Have both lesson and date - confirm
+        this.state.awaitingConfirmation = true
+        
+        const lesson = this.state.selectedLesson
+        const formattedDate = new Date(date).toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          month: 'long', 
+          day: 'numeric',
+          year: 'numeric'
+        })
+        
+        return {
+          handled: true,
+          response: `Should I schedule ${lesson.title} (${lesson.grade} ${lesson.subject}, ${lesson.difficulty}) on ${formattedDate} for ${learnerName}?`
+        }
+      } else {
+        // Have lesson, need date
+        this.state.awaitingInput = 'schedule_date'
+        return {
+          handled: true,
+          response: `What date would you like to schedule ${this.state.selectedLesson.title} for ${learnerName}?`
+        }
+      }
+    }
+    
+    // Need to find the lesson first
+    if (Object.keys(params).length > 0 || userMessage.length > 10) {
+      const results = this.searchLessons(allLessons, params, userMessage)
+      
+      if (results.length === 0) {
+        return {
+          handled: true,
+          response: "I couldn't find a lesson matching that description. Could you be more specific about the lesson you want to schedule?"
+        }
+      }
+      
+      if (results.length === 1) {
+        // Only one match - use it
+        this.state.selectedLesson = results[0]
+        this.state.context.lessonKey = results[0].lessonKey
+        
+        if (date) {
+          // Confirm
+          this.state.awaitingConfirmation = true
+          
+          const formattedDate = new Date(date).toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            month: 'long', 
+            day: 'numeric',
+            year: 'numeric'
+          })
+          
+          return {
+            handled: true,
+            response: `Should I schedule ${results[0].title} (${results[0].grade} ${results[0].subject}, ${results[0].difficulty}) on ${formattedDate} for ${learnerName}?`
+          }
+        } else {
+          // Need date
+          this.state.awaitingInput = 'schedule_date'
+          return {
+            handled: true,
+            response: `What date would you like to schedule ${results[0].title} for ${learnerName}?`
+          }
+        }
+      }
+      
+      // Multiple matches - let them choose
+      const lessonList = results.slice(0, 5).map((lesson, idx) => 
+        `${idx + 1}. ${lesson.title} - ${lesson.grade} ${lesson.subject} (${lesson.difficulty})`
+      ).join('\n')
+      
+      this.state.context.searchResults = results
+      this.state.awaitingInput = 'lesson_selection'
+      
+      return {
+        handled: true,
+        response: `I found multiple lessons. Which one would you like to schedule?\n\n${lessonList}\n\nSay the number or lesson name.`
+      }
+    }
+    
+    // Not enough info
+    this.state.awaitingInput = 'schedule_lesson_search'
+    return {
+      handled: true,
+      response: "What lesson would you like to schedule?"
+    }
   }
   
   /**
    * Handle lesson editing flow
    */
   async handleEdit(userMessage, context) {
-    // Implementation continues...
-    return { handled: false }
+    const { allLessons } = context
+    
+    this.state.flow = 'edit'
+    
+    // If we have lesson context from previous interaction
+    if (this.state.selectedLesson) {
+      this.state.context.lessonKey = this.state.selectedLesson.lessonKey
+      this.state.awaitingInput = 'edit_changes'
+      
+      return {
+        handled: true,
+        response: `What would you like me to change in ${this.state.selectedLesson.title}?`
+      }
+    }
+    
+    // Try to find lesson from message
+    const params = extractLessonParams(userMessage)
+    const results = this.searchLessons(allLessons, params, userMessage)
+    
+    if (results.length === 0) {
+      this.state.awaitingInput = 'edit_lesson_search'
+      return {
+        handled: true,
+        response: "What lesson would you like to edit?"
+      }
+    }
+    
+    if (results.length === 1) {
+      // Only one match
+      this.state.selectedLesson = results[0]
+      this.state.context.lessonKey = results[0].lessonKey
+      
+      this.state.awaitingConfirmation = true
+      this.state.awaitingInput = null
+      
+      return {
+        handled: true,
+        response: `Do you want to edit ${results[0].title} (${results[0].grade} ${results[0].subject}, ${results[0].difficulty})?`
+      }
+    }
+    
+    // Multiple matches
+    const lessonList = results.slice(0, 5).map((lesson, idx) => 
+      `${idx + 1}. ${lesson.title} - ${lesson.grade} ${lesson.subject} (${lesson.difficulty})`
+    ).join('\n')
+    
+    this.state.context.searchResults = results
+    this.state.awaitingInput = 'lesson_selection'
+    
+    return {
+      handled: true,
+      response: `I found multiple lessons. Which one would you like to edit?\n\n${lessonList}\n\nSay the number or lesson name.`
+    }
   }
   
   /**
    * Handle conversation recall
    */
   async handleRecall(userMessage, context) {
-    // Implementation continues...
-    return { handled: false }
+    const { conversationHistory = [] } = context
+    
+    // Extract search terms
+    const normalized = normalizeText(userMessage)
+    const searchTerms = normalized
+      .replace(/remember|recall|last time|previously|earlier|before|when we|talked about|discussed/g, '')
+      .trim()
+    
+    if (!searchTerms) {
+      return {
+        handled: true,
+        response: "What would you like me to recall from our previous conversations?"
+      }
+    }
+    
+    // Search conversation history
+    const matches = conversationHistory
+      .filter(turn => {
+        const turnText = normalizeText(turn.content || turn.text || '')
+        return turnText.includes(searchTerms) || searchTerms.includes(turnText)
+      })
+      .slice(0, 3)
+    
+    if (matches.length === 0) {
+      return {
+        handled: true,
+        response: `I don't recall discussing ${searchTerms} in our previous conversations. Could you provide more details?`
+      }
+    }
+    
+    // Return first match and offer to see more
+    const firstMatch = matches[0]
+    let response = `I recall we discussed: "${firstMatch.content || firstMatch.text}"`
+    
+    if (matches.length > 1) {
+      response += `\n\nI found ${matches.length} conversations about this. Would you like to hear more?`
+    }
+    
+    this.state.context.recallMatches = matches
+    this.state.context.recallIndex = 1
+    
+    return {
+      handled: true,
+      response
+    }
   }
   
   /**
    * Execute confirmed action
    */
   async executeAction() {
-    // Implementation continues...
-    return { handled: false }
+    const flow = this.state.flow
+    const ctx = this.state.context
+    
+    if (flow === 'schedule') {
+      const lesson = this.state.selectedLesson
+      
+      return {
+        handled: true,
+        action: {
+          type: 'schedule',
+          lessonKey: ctx.lessonKey,
+          scheduledDate: ctx.scheduledDate
+        },
+        response: `I've scheduled ${lesson.title} for ${new Date(ctx.scheduledDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}.`
+      }
+    }
+    
+    if (flow === 'generate') {
+      return {
+        handled: true,
+        action: {
+          type: 'generate',
+          title: ctx.title,
+          subject: ctx.subject,
+          grade: ctx.grade,
+          difficulty: ctx.difficulty,
+          description: ctx.description,
+          vocab: ctx.vocab || '',
+          notes: ctx.notes || ''
+        },
+        response: `Generating ${ctx.title}... This will take about 30-60 seconds.`
+      }
+    }
+    
+    if (flow === 'edit') {
+      const lesson = this.state.selectedLesson
+      
+      return {
+        handled: true,
+        action: {
+          type: 'edit',
+          lessonKey: ctx.lessonKey,
+          editInstructions: ctx.editInstructions
+        },
+        response: `I'm editing ${lesson.title} now...`
+      }
+    }
+    
+    this.reset()
+    return {
+      handled: false
+    }
   }
 }
 
