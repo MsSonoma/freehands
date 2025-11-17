@@ -694,47 +694,6 @@ export default function CounselorClient() {
     }
   }
 
-  const handleForceEndSession = async (pinCode) => {
-    if (!sessionId || !accessToken) {
-      throw new Error('Session not initialized')
-    }
-
-    if (!conflictingSession?.session_id) {
-      throw new Error('No conflicting session to end')
-    }
-
-    try {
-      const deviceName = `${navigator.platform || 'Unknown'} - ${navigator.userAgent.split(/[()]/)[1] || 'Browser'}`
-
-      const res = await fetch('/api/mentor-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
-        },
-        body: JSON.stringify({
-          sessionId,
-          deviceName,
-          pinCode,
-          action: 'force_end',
-          targetSessionId: conflictingSession.session_id
-        })
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to force end session')
-      }
-
-      setShowTakeoverDialog(false)
-      setConflictingSession(null)
-      await initializeMentorSession()
-    } catch (err) {
-      throw err
-    }
-  }
-
   // Detect landscape orientation
   useEffect(() => {
     const check = () => {
@@ -1594,7 +1553,6 @@ export default function CounselorClient() {
       <SessionTakeoverDialog
         existingSession={conflictingSession}
         onTakeover={handleSessionTakeover}
-        onForceEnd={handleForceEndSession}
         onCancel={() => router.push('/facilitator')}
       />
     )
