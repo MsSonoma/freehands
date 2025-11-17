@@ -444,6 +444,7 @@ function SessionPageInner() {
           } else if (goldenKeyFromUrl) {
             // New golden key usage - save it to the database
             setHasGoldenKey(true);
+            setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
             try {
               await updateLearner(learnerId, {
                 name: learner.name,
