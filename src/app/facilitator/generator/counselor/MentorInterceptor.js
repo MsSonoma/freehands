@@ -820,7 +820,7 @@ export class MentorInterceptor {
    * Gather parameters for lesson generation
    */
   async gatherGenerationParameters(context) {
-    const { selectedLearnerId, learnerName } = context
+    const { selectedLearnerId, learnerName, learnerGrade } = context
     const ctx = this.state.context
     
     // Check for learner
@@ -840,12 +840,23 @@ export class MentorInterceptor {
       }
     }
     
-    // Check for grade
+    // Check for grade - use learner's grade if available
     if (!ctx.grade) {
-      this.state.awaitingInput = 'generate_grade'
-      return {
-        handled: true,
-        response: `What grade level is this lesson for ${learnerName || 'the learner'}?`
+      if (learnerGrade) {
+        // Learner has a grade - ask for confirmation
+        this.state.context.suggestedGrade = learnerGrade
+        this.state.awaitingInput = 'generate_grade_confirm'
+        return {
+          handled: true,
+          response: `Is this lesson for ${learnerName}'s grade (${learnerGrade})?`
+        }
+      } else {
+        // No learner grade - ask what grade
+        this.state.awaitingInput = 'generate_grade'
+        return {
+          handled: true,
+          response: `What grade level is this lesson for ${learnerName || 'the learner'}?`
+        }
       }
     }
     
@@ -897,6 +908,31 @@ export class MentorInterceptor {
       ctx.topicDescription = userMessage
       this.state.awaitingInput = null
       return await this.gatherGenerationParameters(context)
+    }
+    
+    if (this.state.awaitingInput === 'generate_grade_confirm') {
+      // User is confirming learner's grade
+      const confirmation = detectConfirmation(userMessage)
+      
+      if (confirmation === 'yes') {
+        // Use the suggested grade
+        ctx.grade = ctx.suggestedGrade
+        this.state.awaitingInput = null
+        return await this.gatherGenerationParameters(context)
+      } else if (confirmation === 'no') {
+        // Ask for a different grade
+        this.state.awaitingInput = 'generate_grade'
+        return {
+          handled: true,
+          response: "What grade level should this lesson be for?"
+        }
+      } else {
+        // Unclear response
+        return {
+          handled: true,
+          response: `Is this for ${ctx.suggestedGrade}? Please say yes or no.`
+        }
+      }
     }
     
     if (this.state.awaitingInput === 'generate_grade') {

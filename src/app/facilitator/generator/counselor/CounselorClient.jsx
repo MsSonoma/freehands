@@ -1111,6 +1111,7 @@ export default function CounselorClient() {
     // Flow and input-based thoughts
     if (flow === 'generate') {
       if (awaitingInput === 'generate_topic') return "Thinking about lesson topics..."
+      if (awaitingInput === 'generate_grade_confirm') return "Checking learner's grade level..."
       if (awaitingInput === 'generate_grade') return "Considering grade levels..."
       if (awaitingInput === 'generate_subject') return "Identifying the subject area..."
       if (awaitingInput === 'generate_difficulty') return "Determining difficulty level..."
@@ -1164,7 +1165,9 @@ export default function CounselorClient() {
 
     try {
       // Try interceptor first
-      const learnerName = learners.find(l => l.id === selectedLearnerId)?.name
+      const selectedLearner = learners.find(l => l.id === selectedLearnerId)
+      const learnerName = selectedLearner?.name
+      const learnerGrade = selectedLearner?.grade
       const allLessons = await loadAllLessons()
       
       setLoadingThought(getLoadingThought(
@@ -1177,6 +1180,7 @@ export default function CounselorClient() {
         allLessons,
         selectedLearnerId,
         learnerName,
+        learnerGrade,
         conversationHistory
       })
       
