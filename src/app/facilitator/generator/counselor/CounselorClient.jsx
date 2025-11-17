@@ -24,7 +24,6 @@ export default function CounselorClient() {
   const [sessionStarted, setSessionStarted] = useState(false)
   const [currentSessionTokens, setCurrentSessionTokens] = useState(0)
   const [accessToken, setAccessToken] = useState(null)
-  const [mentorQuotaState, setMentorQuotaState] = useState({ status: 'idle', data: null, error: '' })
   
   // Session management state
   const [sessionId, setSessionId] = useState(null)
@@ -198,39 +197,6 @@ export default function CounselorClient() {
     })()
     return () => { cancelled = true }
   }, [pinChecked])
-
-  useEffect(() => {
-    if (!tierChecked) return
-    const ent = featuresForTier(tier)
-    const sessionLimit = ent.mentorSessions
-    if (!accessToken || !Number.isFinite(sessionLimit) || sessionLimit <= 0) {
-      setMentorQuotaState(prev => (prev.status === 'idle' && !prev.data && !prev.error) ? prev : { status: 'idle', data: null, error: '' })
-      return
-    }
-
-    let cancelled = false
-    setMentorQuotaState({ status: 'loading', data: null, error: '' })
-    ;(async () => {
-      try {
-        const res = await fetch('/api/usage/mentor/check', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
-        })
-        const body = await res.json().catch(() => ({}))
-        if (cancelled) return
-        if (!res.ok) {
-          setMentorQuotaState({ status: 'error', data: body, error: body?.reason || 'Unable to load Mr. Mentor usage.' })
-          return
-        }
-        setMentorQuotaState({ status: 'ready', data: body, error: '' })
-      } catch (err) {
-        if (!cancelled) setMentorQuotaState({ status: 'error', data: null, error: 'Unable to load Mr. Mentor usage.' })
-      }
-    })()
-
-    return () => { cancelled = true }
-  }, [accessToken, tier, tierChecked])
 
   // Load learners list
   useEffect(() => {
@@ -1582,55 +1548,20 @@ export default function CounselorClient() {
   }
 
   const ent = featuresForTier(tier)
-  const formatPlanLabel = (value) => value.split(/[-_]/).map(part => part ? part[0].toUpperCase() + part.slice(1) : part).join(' ')
   const mentorLimit = ent.mentorSessions
-  const mentorAllowanceBanner = Number.isFinite(mentorLimit) ? (() => {
-    const planLabel = formatPlanLabel(tier)
-    const parts = []
-
-    if (mentorLimit <= 0) {
-      parts.push(`Your ${planLabel} plan does not include Mr. Mentor sessions yet.`)
-      parts.push('Upgrade to Premium for unlimited access.')
-    } else {
-      const limitLabel = mentorLimit === 1 ? '1 Mr. Mentor session' : `${mentorLimit} Mr. Mentor sessions`
-      parts.push(`Your ${planLabel} plan includes ${limitLabel}.`)
-      if (mentorQuotaState.status === 'loading') {
-        parts.push('Checking how many you have left...')
-      } else if (mentorQuotaState.status === 'error') {
-        parts.push('We could not load your remaining balance right now.')
-      } else if (mentorQuotaState.data) {
-        const info = mentorQuotaState.data
-        if (info.allowed === false) {
-          if (Number.isFinite(info.limit) && Number.isFinite(info.used)) {
-            const usedLabel = info.used === 1 ? '1 session' : `${info.used} sessions`
-            parts.push(`You have used ${usedLabel}.`)
-          } else if (info.reason) {
-            parts.push(info.reason)
-          }
-        } else if (Number.isFinite(info.remaining)) {
-          const remainingLabel = info.remaining === 1 ? '1 session left' : `${info.remaining} sessions left`
-          parts.push(`You have ${remainingLabel}.`)
-        }
-      }
-    }
-
-    const message = parts.filter(Boolean).join(' ')
-    if (!message) return null
-
-    return (
-      <div style={{
-        border: '1px solid #fcd34d',
-        background: '#fef3c7',
-        color: '#92400e',
-        padding: 12,
-        borderRadius: 10,
-        fontSize: 14,
-        lineHeight: 1.5
-      }}>
-        {message}
-      </div>
-    )
-  })() : null
+  const mentorAllowanceBanner = mentorLimit === 0 ? (
+    <div style={{
+      border: '1px solid #fcd34d',
+      background: '#fef3c7',
+      color: '#92400e',
+      padding: 12,
+      borderRadius: 10,
+      fontSize: 14,
+      lineHeight: 1.5
+    }}>
+      Mr. Mentor is a Premium feature. Upgrade to Premium for unlimited access.
+    </div>
+  ) : null
 
   const videoEffectiveHeight = videoMaxHeight && Number.isFinite(videoMaxHeight) ? videoMaxHeight : null
 
