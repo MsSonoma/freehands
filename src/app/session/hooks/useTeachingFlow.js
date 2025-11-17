@@ -40,6 +40,9 @@ export function useTeachingFlow({
   mergeMcChoiceFragments,
   enforceNbspAfterMcLabels,
   
+  // Timer functions
+  markWorkPhaseComplete,
+  
   // Lesson context
   subjectParam,
   difficultyParam,
@@ -57,6 +60,12 @@ export function useTeachingFlow({
   const vocabSentencesRef = useRef([]);
   const vocabSentenceIndexRef = useRef(0);
   const isInSentenceModeRef = useRef(false);
+  
+  // Sentence-by-sentence gating state for examples
+  const [exampleSentences, setExampleSentences] = useState([]);
+  const [exampleSentenceIndex, setExampleSentenceIndex] = useState(0);
+  const exampleSentencesRef = useRef([]);
+  const exampleSentenceIndexRef = useRef(0);
   
   /**
    * Gate prompt: "Do you have any questions?" + example questions
@@ -84,6 +93,16 @@ export function useTeachingFlow({
         const totalSentences = vocabSentencesRef.current.length;
         
         stageLabel = `vocabulary definition (sentence ${sentenceNum} of ${totalSentences})`;
+        contextInfo = `The sentence we just covered was: "${currentSentence}"`;
+      }
+      
+      // For examples stage with sentence-by-sentence gating, reference the specific sentence
+      if (teachingStage === 'examples' && exampleSentencesRef.current.length > 0) {
+        const currentSentence = exampleSentencesRef.current[exampleSentenceIndexRef.current];
+        const sentenceNum = exampleSentenceIndexRef.current + 1;
+        const totalSentences = exampleSentencesRef.current.length;
+        
+        stageLabel = `example (sentence ${sentenceNum} of ${totalSentences})`;
         contextInfo = `The sentence we just covered was: "${currentSentence}"`;
       }
       
@@ -231,12 +250,24 @@ export function useTeachingFlow({
   };
 
   /**
-   * Teach examples stage
+   * Teach examples stage - sentence-by-sentence gating
    */
   const teachExamples = async (isRepeat = false) => {
     setCanSend(false);
     setSubPhase('teaching-3stage');
     
+    // If we already have example sentences stored, handle repeat/next
+    if (exampleSentencesRef.current.length > 0) {
+      const currentSentence = exampleSentencesRef.current[exampleSentenceIndexRef.current];
+      if (currentSentence) {
+        // Speak the current sentence (whether repeat or continuing)
+        try { await speakFrontend(currentSentence); } catch {}
+        return true;
+      }
+      return false;
+    }
+    
+    // First time through: speak intro and get all examples from GPT
     if (!isRepeat) {
       try { await speakFrontend("Now let's see this in action."); } catch {}
     }
@@ -258,6 +289,7 @@ export function useTeachingFlow({
       'Always respond with natural spoken text only. Do not use emojis, decorative characters, repeated punctuation, ASCII art, bullet lines, or other symbols that would be awkward to read aloud.'
     ].join('\n');
     
+    // Get full examples from GPT but skip audio playback (we'll play sentence-by-sentence)
     const result = await callMsSonoma(
       instruction,
       '',
@@ -271,8 +303,31 @@ export function useTeachingFlow({
         teachingNotes: notes || undefined,
         vocab: [],
         stage: 'examples'
-      }
+      },
+      { skipAudio: true } // Skip audio - we'll play sentence-by-sentence
     );
+    
+    if (result.success && result.text) {
+      // Split the GPT response into sentences
+      const sentences = splitIntoSentences(result.text).filter(s => s.trim());
+      
+      if (sentences.length === 0) {
+        return false;
+      }
+      
+      // Store all sentences for sentence-by-sentence gating
+      exampleSentencesRef.current = sentences;
+      setExampleSentences(sentences);
+      exampleSentenceIndexRef.current = 0;
+      setExampleSentenceIndex(0);
+      isInSentenceModeRef.current = true;
+      setIsInSentenceMode(true);
+      
+      // Speak the first sentence
+      try { await speakFrontend(sentences[0]); } catch {}
+      
+      return true;
+    }
     
     return !!result.success;
   };
@@ -324,6 +379,20 @@ export function useTeachingFlow({
     }
     
     if (teachingStage === 'examples') {
+      // If we have sentences, just repeat the current one
+      if (exampleSentencesRef.current.length > 0) {
+        const currentSentence = exampleSentencesRef.current[exampleSentenceIndexRef.current];
+        if (currentSentence) {
+          // Use noCaptions to avoid re-transcribing
+          try { await speakFrontend(currentSentence, { noCaptions: true }); } catch {}
+          // Don't call promptGateRepeat - just show gate buttons again
+          setSubPhase('awaiting-gate');
+          setCanSend(false);
+          return;
+        }
+      }
+      
+      // Fallback: repeat the whole stage (shouldn't happen normally)
       const ok = await teachExamples(true);
       if (ok) {
         setStageRepeats((s) => ({ ...s, examples: (s.examples || 0) + 1 }));
@@ -379,7 +448,38 @@ export function useTeachingFlow({
     }
     
     if (teachingStage === 'examples') {
-      // Done with teaching: transition to comprehension
+      // If we have sentences stored, try to advance to the next one
+      if (exampleSentencesRef.current.length > 0) {
+        const nextIndex = exampleSentenceIndexRef.current + 1;
+        
+        // Check if there are more sentences
+        if (nextIndex < exampleSentencesRef.current.length) {
+          // Advance to next sentence
+          exampleSentenceIndexRef.current = nextIndex;
+          setExampleSentenceIndex(nextIndex);
+          
+          const nextSentence = exampleSentencesRef.current[nextIndex];
+          try { await speakFrontend(nextSentence); } catch {}
+          // Don't call promptGateRepeat - just show gate buttons again
+          setSubPhase('awaiting-gate');
+          setCanSend(false);
+          return;
+        }
+        
+        // No more sentences - NOW call promptGateRepeat for the final gate
+        exampleSentencesRef.current = []; // Clear example sentences
+        setExampleSentences([]);
+        exampleSentenceIndexRef.current = 0;
+        setExampleSentenceIndex(0);
+        isInSentenceModeRef.current = false; // Now in final gate mode
+        setIsInSentenceMode(false);
+        
+        // Show the "Do you have any questions?" gate AFTER all sentences
+        await promptGateRepeat();
+        return;
+      }
+      
+      // Final gate "No" - Done with teaching: transition to comprehension
       setTeachingStage('idle');
       await moveToComprehensionWithCue();
       return;
@@ -437,6 +537,10 @@ export function useTeachingFlow({
           setTtsLoadingCount((c) => Math.max(0, c - 1));
           b64 = b64.replace(/^data:audio\/[a-zA-Z0-9.-]+;base64,/, '').trim();
           try { await playAudioFromBase64(b64, sentences, prevLen); } catch {}
+          // Mark discussion phase as successfully completed before advancing to comprehension
+          if (markWorkPhaseComplete) {
+            markWorkPhaseComplete('discussion');
+          }
           setPhase('comprehension');
           setSubPhase('comprehension-start');
           setCurrentCompProblem(null);
@@ -453,6 +557,10 @@ export function useTeachingFlow({
       // No audio path: use synthetic playback for consistent behavior
       setTtsLoadingCount((c) => Math.max(0, c - 1));
       try { await playAudioFromBase64('', sentences, prevLen); } catch {}
+      // Mark discussion phase as successfully completed before advancing to comprehension
+      if (markWorkPhaseComplete) {
+        markWorkPhaseComplete('discussion');
+      }
       setPhase('comprehension');
       setSubPhase('comprehension-start');
       setCurrentCompProblem(null);

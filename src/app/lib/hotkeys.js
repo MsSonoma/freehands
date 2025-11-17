@@ -3,10 +3,9 @@
 export const DEFAULT_HOTKEYS = Object.freeze({
   beginSend: 'Enter',            // Begin overlays + Send in input
   micHold: 'NumpadAdd',          // Hold to record voice
-  skipLeft: 'ArrowLeft',         // Skip backward between major phases
-  skipRight: 'ArrowRight',       // Skip forward between major phases
-  muteToggle: 'NumpadMultiply',  // Toggle mute
-  playPauseToggle: ''            // Toggle play/pause (empty = disabled)
+  skip: 'ArrowRight',            // Skip forward
+  repeat: 'ArrowLeft',           // Repeat last speech
+  muteToggle: 'NumpadMultiply'   // Toggle mute
 });
 
 const LS_KEY = 'facilitator_hotkeys';

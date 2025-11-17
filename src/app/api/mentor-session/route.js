@@ -447,7 +447,7 @@ export async function PATCH(request) {
     }
 
     const body = await request.json()
-    const { sessionId, conversationHistory, draftSummary } = body
+    const { sessionId, conversationHistory, draftSummary, tokenCount } = body
 
     if (!sessionId) {
       return Response.json({ error: 'Session ID required' }, { status: 400 })
@@ -480,6 +480,10 @@ export async function PATCH(request) {
 
     if (draftSummary !== undefined) {
       updates.draft_summary = draftSummary
+    }
+
+    if (tokenCount !== undefined) {
+      updates.token_count = tokenCount
     }
 
     const { error: updateError } = await supabase

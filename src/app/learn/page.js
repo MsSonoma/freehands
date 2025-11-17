@@ -25,7 +25,7 @@ export default function LearnPage() {
   }
 
   return (
-    <main style={{ minHeight:'calc(100dvh - 56px)', padding:'16px 24px' }}>
+    <main style={{ padding:'16px 24px' }}>
       <div style={{ width:'100%', maxWidth:560, textAlign:'center', margin:'0 auto' }}>
         <h1 style={{ margin:'4px 0 8px' }}>{noLearner ? 'Learning Portal' : `Hi, ${learner.name}!`}</h1>
         

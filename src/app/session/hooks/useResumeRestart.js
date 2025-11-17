@@ -11,17 +11,17 @@ import { appendTranscriptSegment } from '../../lib/transcriptsClient';
  * 
  * @param {Object} deps - Dependencies object containing:
  *   - State values: phase, subPhase, teachingStage, qaAnswersUnlocked, currentCompProblem,
- *     currentExerciseProblem, currentWorksheetIndex, testActiveIndex, generatedWorksheet,
- *     generatedTest, lessonParam, lessonData, manifestInfo, effectiveLessonTitle,
- *     transcriptSessionId, WORKSHEET_TARGET, TEST_TARGET
+ *     currentExerciseProblem, currentWorksheetIndex, testActiveIndex, generatedComprehension,
+ *     generatedExercise, generatedWorksheet, generatedTest, lessonParam, lessonData,
+ *     manifestInfo, effectiveLessonTitle, transcriptSessionId, WORKSHEET_TARGET, TEST_TARGET
  *   - State setters: setOfferResume, setSubPhase, setCanSend, setShowOpeningActions,
  *     setQaAnswersUnlocked, setShowBegin, setPhase, setGeneratedWorksheet, setGeneratedTest,
  *     setCurrentWorksheetIndex, setCurrentCompProblem, setCurrentExerciseProblem,
  *     setTestUserAnswers, setTestCorrectByIndex, setTestCorrectCount, setTestFinalPercent,
- *     setJokeUsedThisGate, setRiddleUsedThisGate, setPoemUsedThisGate, setStoryUsedThisGate,
  *     setStoryState, setStorySetupStep, setStoryCharacters, setStorySetting, setStoryPlot,
  *     setStoryPhase, setStoryTranscript,
- *     setTimerPaused, setTicker, setCaptionSentences, setCaptionIndex, setTranscriptSessionId,
+ *     setTimerPaused, setCurrentTimerMode, setWorkPhaseCompletions,
+ *     setTicker, setCaptionSentences, setCaptionIndex, setTranscriptSessionId,
  *     setLoading
  *   - Refs: preferHtmlAudioOnceRef, forceNextPlaybackRef, activeQuestionBodyRef,
  *     worksheetIndexRef, captionSentencesRef, sessionStartRef, transcriptSegmentStartIndexRef
@@ -41,8 +41,12 @@ export function useResumeRestart({
   qaAnswersUnlocked,
   currentCompProblem,
   currentExerciseProblem,
+  currentCompIndex,
+  currentExIndex,
   currentWorksheetIndex,
   testActiveIndex,
+  generatedComprehension,
+  generatedExercise,
   generatedWorksheet,
   generatedTest,
   lessonParam,
@@ -64,16 +68,14 @@ export function useResumeRestart({
   setGeneratedWorksheet,
   setGeneratedTest,
   setCurrentWorksheetIndex,
+  setCurrentCompIndex,
+  setCurrentExIndex,
   setCurrentCompProblem,
   setCurrentExerciseProblem,
   setTestUserAnswers,
   setTestCorrectByIndex,
   setTestCorrectCount,
   setTestFinalPercent,
-  setJokeUsedThisGate,
-  setRiddleUsedThisGate,
-  setPoemUsedThisGate,
-  setStoryUsedThisGate,
   setStoryState,
   setStorySetupStep,
   setStoryCharacters,
@@ -82,6 +84,8 @@ export function useResumeRestart({
   setStoryPhase,
   setStoryTranscript,
   setTimerPaused,
+  setCurrentTimerMode,
+  setWorkPhaseCompletions,
   setTicker,
   setCaptionSentences,
   setCaptionIndex,
@@ -149,6 +153,24 @@ export function useResumeRestart({
         return;
       }
       if (phase === 'comprehension') {
+        // If we have a current problem, use it; otherwise try to reconstruct from index
+        let problemToAsk = currentCompProblem;
+        if (!problemToAsk && Array.isArray(generatedComprehension) && currentCompIndex >= 0 && currentCompIndex < generatedComprehension.length) {
+          problemToAsk = generatedComprehension[currentCompIndex];
+        }
+        
+        if (problemToAsk) {
+          try {
+            const formatted = ensureQuestionMark(formatQuestionForSpeech(problemToAsk, { layout: 'multiline' }));
+            activeQuestionBodyRef.current = formatted;
+            setQaAnswersUnlocked(true);
+            setCanSend(false);
+            // Audible re-read without duplicating captions on screen
+            await speakFrontend(formatted, { mcLayout: 'multiline', noCaptions: true });
+          } catch {}
+          setCanSend(true);
+          return;
+        }
         // Phase entrance: Begin was clicked but Go has not been pressed yet
         if (subPhase === 'comprehension-active' && !qaAnswersUnlocked) {
           try {
@@ -159,24 +181,29 @@ export function useResumeRestart({
           try { setCanSend(true); } catch {}
           return;
         }
-        // If we were already on a question, re-ask that exact question; otherwise restart at the entrance
-        if (subPhase === 'comprehension-active' && currentCompProblem) {
-          try {
-            const formatted = ensureQuestionMark(formatQuestionForSpeech(currentCompProblem, { layout: 'multiline' }));
-            activeQuestionBodyRef.current = formatted;
-            setQaAnswersUnlocked(true);
-            setCanSend(false);
-            // Audible re-read without duplicating captions on screen
-            await speakFrontend(formatted, { mcLayout: 'multiline', noCaptions: true });
-          } catch {}
-          setCanSend(true);
-          return;
-        }
+        // Otherwise restart at the entrance
         setSubPhase('comprehension-start');
         await beginComprehensionPhase();
         return;
       }
       if (phase === 'exercise') {
+        // If we have a current problem, use it; otherwise try to reconstruct from index
+        let problemToAsk = currentExerciseProblem;
+        if (!problemToAsk && Array.isArray(generatedExercise) && currentExIndex >= 0 && currentExIndex < generatedExercise.length) {
+          problemToAsk = generatedExercise[currentExIndex];
+        }
+        
+        if (problemToAsk) {
+          try {
+            const formatted = ensureQuestionMark(formatQuestionForSpeech(problemToAsk, { layout: 'multiline' }));
+            activeQuestionBodyRef.current = formatted;
+            setQaAnswersUnlocked(true);
+            setCanSend(false);
+            await speakFrontend(formatted, { mcLayout: 'multiline', noCaptions: true });
+          } catch {}
+          setCanSend(true);
+          return;
+        }
         // Phase entrance: Begin was clicked but Go has not been pressed yet
         if (subPhase === 'exercise-start' && !qaAnswersUnlocked) {
           try {
@@ -187,18 +214,7 @@ export function useResumeRestart({
           try { setCanSend(true); } catch {}
           return;
         }
-        // If we were already on a question, re-ask that exact question; otherwise restart at the entrance
-        if (subPhase === 'exercise-start' && currentExerciseProblem) {
-          try {
-            const formatted = ensureQuestionMark(formatQuestionForSpeech(currentExerciseProblem, { layout: 'multiline' }));
-            activeQuestionBodyRef.current = formatted;
-            setQaAnswersUnlocked(true);
-            setCanSend(false);
-            await speakFrontend(formatted, { mcLayout: 'multiline', noCaptions: true });
-          } catch {}
-          setCanSend(true);
-          return;
-        }
+        // Otherwise restart at the entrance
         setSubPhase('exercise-awaiting-begin');
         await beginSkippedExercise();
         return;
@@ -277,7 +293,7 @@ export function useResumeRestart({
         return;
       }
     } catch {}
-  }, [phase, subPhase, teachingStage, qaAnswersUnlocked, currentCompProblem, currentExerciseProblem, currentWorksheetIndex, testActiveIndex, generatedWorksheet, generatedTest, worksheetIndexRef, setOfferResume, unlockAudioPlayback, preferHtmlAudioOnceRef, forceNextPlaybackRef, startDiscussionStep, setSubPhase, setCanSend, teachDefinitions, promptGateRepeat, teachExamples, COMPREHENSION_INTROS, speakFrontend, setShowOpeningActions, ensureQuestionMark, formatQuestionForSpeech, activeQuestionBodyRef, setQaAnswersUnlocked, beginComprehensionPhase, EXERCISE_INTROS, beginSkippedExercise, WORKSHEET_INTROS, beginWorksheetPhase, TEST_INTROS, beginTestPhase, startTrackedSession]);
+  }, [phase, subPhase, teachingStage, qaAnswersUnlocked, currentCompProblem, currentExerciseProblem, currentWorksheetIndex, testActiveIndex, currentCompIndex, currentExIndex, generatedComprehension, generatedExercise, generatedWorksheet, generatedTest, worksheetIndexRef, setOfferResume, unlockAudioPlayback, preferHtmlAudioOnceRef, forceNextPlaybackRef, startDiscussionStep, setSubPhase, setCanSend, teachDefinitions, promptGateRepeat, teachExamples, COMPREHENSION_INTROS, speakFrontend, setShowOpeningActions, ensureQuestionMark, formatQuestionForSpeech, activeQuestionBodyRef, setQaAnswersUnlocked, beginComprehensionPhase, EXERCISE_INTROS, beginSkippedExercise, WORKSHEET_INTROS, beginWorksheetPhase, TEST_INTROS, beginTestPhase, startTrackedSession]);
 
   const handleRestartClick = useCallback(async () => {
     // Confirm irreversible action before proceeding
@@ -365,6 +381,8 @@ export function useResumeRestart({
       setGeneratedWorksheet(null);
       setGeneratedTest(null);
       setCurrentWorksheetIndex(0);
+      setCurrentCompIndex(0);
+      setCurrentExIndex(0);
       worksheetIndexRef.current = 0;
       setCurrentCompProblem(null);
       setCurrentExerciseProblem(null);
@@ -373,10 +391,6 @@ export function useResumeRestart({
       setTestCorrectCount(0);
       setTestFinalPercent(null);
       setQaAnswersUnlocked(false);
-      setJokeUsedThisGate(false);
-      setRiddleUsedThisGate(false);
-      setPoemUsedThisGate(false);
-      setStoryUsedThisGate(false);
       setStoryState('inactive');
       setStorySetupStep('');
       setStoryCharacters('');
@@ -384,6 +398,15 @@ export function useResumeRestart({
       setStoryPlot('');
       setStoryPhase('');
       setStoryTranscript([]);
+      // Reset timer state
+      setCurrentTimerMode({});
+      setWorkPhaseCompletions({
+        discussion: false,
+        reading: false,
+        writing: false,
+        math: false,
+        science: false
+      });
       setTicker(0);
       setOfferResume(false);
     } catch {}
@@ -391,7 +414,7 @@ export function useResumeRestart({
     try { setTimeout(() => { try { scheduleSaveSnapshot('restart'); } catch {} }, 60); } catch {}
     // Turn off loading spinner now that restart is complete
     try { setLoading(false); } catch {}
-  }, [lessonParam, lessonData, manifestInfo, effectiveLessonTitle, transcriptSessionId, WORKSHEET_TARGET, TEST_TARGET, abortAllActivity, captionSentencesRef, sessionStartRef, transcriptSegmentStartIndexRef, getSnapshotStorageKey, getAssessmentStorageKey, clearAssessments, setCaptionSentences, setCaptionIndex, setTranscriptSessionId, setShowBegin, setPhase, setSubPhase, setCanSend, setGeneratedWorksheet, setGeneratedTest, setCurrentWorksheetIndex, worksheetIndexRef, setCurrentCompProblem, setCurrentExerciseProblem, setTestUserAnswers, setTestCorrectByIndex, setTestCorrectCount, setTestFinalPercent, setQaAnswersUnlocked, setJokeUsedThisGate, setRiddleUsedThisGate, setPoemUsedThisGate, setStoryUsedThisGate, setStoryState, setStorySetupStep, setStoryCharacters, setStorySetting, setStoryPlot, setStoryPhase, setStoryTranscript, setTicker, setOfferResume, scheduleSaveSnapshot, setLoading]);
+  }, [lessonParam, lessonData, manifestInfo, effectiveLessonTitle, transcriptSessionId, WORKSHEET_TARGET, TEST_TARGET, abortAllActivity, captionSentencesRef, sessionStartRef, transcriptSegmentStartIndexRef, getSnapshotStorageKey, getAssessmentStorageKey, clearAssessments, setCaptionSentences, setCaptionIndex, setTranscriptSessionId, setShowBegin, setPhase, setSubPhase, setCanSend, setGeneratedWorksheet, setGeneratedTest, setCurrentWorksheetIndex, worksheetIndexRef, setCurrentCompProblem, setCurrentExerciseProblem, setTestUserAnswers, setTestCorrectByIndex, setTestCorrectCount, setTestFinalPercent, setQaAnswersUnlocked, setStoryState, setStorySetupStep, setStoryCharacters, setStorySetting, setStoryPlot, setStoryPhase, setStoryTranscript, setCurrentTimerMode, setWorkPhaseCompletions, setTicker, setOfferResume, scheduleSaveSnapshot, setLoading]);
 
   return {
     handleResumeClick,

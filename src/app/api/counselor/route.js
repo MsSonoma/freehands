@@ -1794,10 +1794,12 @@ export async function POST(req) {
         return NextResponse.json({ error: 'Mr. Mentor had no response.' }, { status: 500 })
       }
       
-      // Skip TTS for tool-calling responses to save time (client will show captions only)
+      // Generate audio for tool-calling responses
+      const audioContent = await synthesizeAudio(mentorReply, logPrefix)
+      
       return NextResponse.json({
         reply: mentorReply,
-        audio: null,
+        audio: audioContent,
         functionCalls: toolCalls.map(tc => ({ name: tc.function.name, args: JSON.parse(tc.function.arguments) })),
         toolLog,
         toolResults: parsedToolResults // Include parsed results so frontend can handle lesson validation

@@ -10,6 +10,8 @@ import { ensurePinAllowed } from '@/app/lib/pinGate';
 import { useAccessControl } from '@/app/hooks/useAccessControl';
 import GatedOverlay from '@/app/components/GatedOverlay';
 import TutorialGuard from '@/components/TutorialGuard';
+import PhaseTimersOverlay from '@/app/session/components/PhaseTimersOverlay';
+import { loadPhaseTimersForLearner } from '@/app/session/utils/phaseTimerDefaults';
 
 export default function LearnersPage() {
 	const router = useRouter();
@@ -171,7 +173,19 @@ export default function LearnersPage() {
 				}:{} ),
 				...(updated.humor_level !== undefined ? {
 					humor_level: normalizeHumorLevel(updated.humor_level)
-				}:{} )
+				}:{} ),
+				// Phase timer fields
+				...(updated.discussion_play_min !== undefined ? { discussion_play_min: Number(updated.discussion_play_min) } : {}),
+				...(updated.discussion_work_min !== undefined ? { discussion_work_min: Number(updated.discussion_work_min) } : {}),
+				...(updated.comprehension_play_min !== undefined ? { comprehension_play_min: Number(updated.comprehension_play_min) } : {}),
+				...(updated.comprehension_work_min !== undefined ? { comprehension_work_min: Number(updated.comprehension_work_min) } : {}),
+				...(updated.exercise_play_min !== undefined ? { exercise_play_min: Number(updated.exercise_play_min) } : {}),
+				...(updated.exercise_work_min !== undefined ? { exercise_work_min: Number(updated.exercise_work_min) } : {}),
+				...(updated.worksheet_play_min !== undefined ? { worksheet_play_min: Number(updated.worksheet_play_min) } : {}),
+				...(updated.worksheet_work_min !== undefined ? { worksheet_work_min: Number(updated.worksheet_work_min) } : {}),
+				...(updated.test_play_min !== undefined ? { test_play_min: Number(updated.test_play_min) } : {}),
+				...(updated.test_work_min !== undefined ? { test_work_min: Number(updated.test_work_min) } : {}),
+				...(updated.golden_key_bonus_min !== undefined ? { golden_key_bonus_min: Number(updated.golden_key_bonus_min) } : {})
 			} : x));
 			if (typeof window !== 'undefined' && String(selectedLearnerId) === String(id) && updated?.humor_level !== undefined) {
 				const humorValue = normalizeHumorLevel(updated.humor_level);
@@ -472,6 +486,8 @@ function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, o
 	const [sessionTimer, setSessionTimer] = useState(String(item.session_timer_minutes || '60'));
 	const [goldenKeys, setGoldenKeys] = useState(String(item.golden_keys ?? 0));
 	const [humorLevel, setHumorLevel] = useState(normalizeHumorLevel(item.humor_level));
+	const [showTimersOverlay, setShowTimersOverlay] = useState(false);
+	const [phaseTimers, setPhaseTimers] = useState(() => loadPhaseTimersForLearner(item));
 
 	useEffect(() => {
 		if (item.session_timer_minutes !== undefined) {
@@ -485,7 +501,9 @@ function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, o
 		} else {
 			setHumorLevel('calm');
 		}
-	}, [item.session_timer_minutes, item.golden_keys, item.humor_level]);
+		// Reload phase timers from learner profile
+		setPhaseTimers(loadPhaseTimersForLearner(item));
+	}, [item.session_timer_minutes, item.golden_keys, item.humor_level, item]);
 
     // Responsive redesign: remove fixed 616px dial grid and allow wrapping on small screens.
     // Use flex for top row and auto-fit grid for dials.
@@ -558,8 +576,26 @@ function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, o
             <Dial value={test} onChange={e => setTest(e.target.value)} options={TARGETS} ariaLabel="Test" />
 									</div>
 									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
-			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Timer</div>
-            <TimerDial value={sessionTimer} onChange={e => setSessionTimer(e.target.value)} ariaLabel="Session Timer" />
+			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Timers</div>
+			<button
+				onClick={() => setShowTimersOverlay(true)}
+				aria-label="Configure phase timers"
+				title="Configure phase timers"
+				style={{
+					padding: '10px 16px',
+					border: '1px solid #ddd',
+					borderRadius: 8,
+					background: '#fff',
+					cursor: 'pointer',
+					fontSize: 'clamp(0.9rem, 1.6vw, 1rem)',
+					color: '#0b1220',
+					fontWeight: 500,
+					width: '100%',
+					maxWidth: 130
+				}}
+			>
+				⏱️ Setup
+			</button>
 									</div>
 									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
 			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Golden Keys</div>
@@ -586,6 +622,28 @@ function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, o
 												</div>
 											)}
       </div>
+			
+			{/* Phase Timers Overlay */}
+			<PhaseTimersOverlay
+				isOpen={showTimersOverlay}
+				initialTimers={phaseTimers}
+				onClose={() => setShowTimersOverlay(false)}
+				onSave={(updatedTimers) => {
+					setPhaseTimers(updatedTimers);
+					setShowTimersOverlay(false);
+					// updatedTimers is already in the flat format with keys like discussion_play_min
+					// Call parent save with current values + timer updates
+					onSave({
+						name,
+						grade,
+						targets: { comprehension, exercise, worksheet, test },
+						session_timer_minutes: Number(sessionTimer),
+						golden_keys: Number(goldenKeys),
+						humor_level: humorLevel,
+						...updatedTimers  // Spread all 11 timer fields directly
+					});
+				}}
+			/>
 								{/* Close outer card container */}
 								</div>
     );

@@ -47,9 +47,12 @@ import { useSessionTracking } from '../hooks/useSessionTracking';
 import { useSnapshotPersistence } from './hooks/useSnapshotPersistence';
 import { useResumeRestart } from './hooks/useResumeRestart';
 import SessionTimer from './components/SessionTimer';
+import PhaseTimersOverlay from './components/PhaseTimersOverlay';
+import PlayTimeExpiredOverlay from './components/PlayTimeExpiredOverlay';
 import TimerControlOverlay from './components/TimerControlOverlay';
 import SessionVisualAidsCarousel from './components/SessionVisualAidsCarousel';
 import GatedOverlay from '../components/GatedOverlay';
+import { loadPhaseTimersForLearner, TIMER_TYPES } from './utils/phaseTimerDefaults';
 
 export default function SessionPage(){
   return (
@@ -269,9 +272,8 @@ function SessionPageInner() {
   const [showOpeningActions, setShowOpeningActions] = useState(false);
   // Gate quick-answer buttons until the learner presses "Start the lesson" for the first item in each Q&A phase
   const [qaAnswersUnlocked, setQaAnswersUnlocked] = useState(false);
-  const [jokeUsedThisGate, setJokeUsedThisGate] = useState(false);
-  const [riddleUsedThisGate, setRiddleUsedThisGate] = useState(false);
-  const [poemUsedThisGate, setPoemUsedThisGate] = useState(false);
+  // REMOVED: jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, storyUsedThisGate, fillInFunUsedThisGate
+  // Games are now repeatable during play time; timer is the limiting factor
   // Track when the current caption batch has fully displayed (end-of-captions signal)
   const [captionsDone, setCaptionsDone] = useState(false);
   // Ad-hoc Q&A flow state
@@ -292,7 +294,7 @@ function SessionPageInner() {
   // Story state
   // storyState: 'inactive' | 'awaiting-setup' | 'awaiting-turn' | 'ending'
   const [storyState, setStoryState] = useState('inactive');
-  const [storyUsedThisGate, setStoryUsedThisGate] = useState(false);
+  // REMOVED: storyUsedThisGate - stories now repeatable during play time
   // Story transcript: array of {role: 'user'|'assistant', text: string}
   const [storyTranscript, setStoryTranscript] = useState([]);
   // Story setup: tracks collection of characters, setting, and plot
@@ -305,7 +307,7 @@ function SessionPageInner() {
   // Fill-in-Fun state
   // fillInFunState: 'inactive' | 'loading' | 'collecting-words' | 'awaiting-ok'
   const [fillInFunState, setFillInFunState] = useState('inactive');
-  const [fillInFunUsedThisGate, setFillInFunUsedThisGate] = useState(false);
+  // REMOVED: fillInFunUsedThisGate - Fill-in-Fun now repeatable during play time
   // Template structure: { template: string, words: [{type, label, prompt}] }
   const [fillInFunTemplate, setFillInFunTemplate] = useState(null);
   // Collected words: { label1: 'word1', label2: 'word2', ... }
@@ -318,7 +320,21 @@ function SessionPageInner() {
   // Session Timer state
   const [timerPaused, setTimerPaused] = useState(false);
   const [sessionTimerMinutes, setSessionTimerMinutes] = useState(60); // Default 1 hour
-  const [goldenKeyEarned, setGoldenKeyEarned] = useState(false);
+  
+  // Phase-based timer system (11 timers: 5 phases × 2 types + 1 golden key bonus)
+  const [phaseTimers, setPhaseTimers] = useState(null); // Loaded from learner profile
+  const [currentTimerMode, setCurrentTimerMode] = useState({}); // { discussion: 'play'|'work', comprehension: 'play'|'work', ... }
+  const [workPhaseCompletions, setWorkPhaseCompletions] = useState({
+    discussion: false,
+    comprehension: false,
+    exercise: false,
+    worksheet: false,
+    test: false
+  }); // Tracks which work phases completed without timing out (for golden key earning)
+  const [showPlayTimeExpired, setShowPlayTimeExpired] = useState(false);
+  const [playExpiredPhase, setPlayExpiredPhase] = useState(null); // Which phase's play timer expired
+  const [goldenKeyEarned, setGoldenKeyEarned] = useState(false); // True if earned during this session
+  const [goldenKeyBonus, setGoldenKeyBonus] = useState(0); // Bonus minutes from golden key
   const [completingLesson, setCompletingLesson] = useState(false); // Track if completion is in progress
   
   // Learner grade state (for grade-appropriate speech)
@@ -358,13 +374,6 @@ function SessionPageInner() {
   const isAskButtonDisabled = useMemo(() => {
     return false; // Always enabled so users can click to see gate
   }, []);
-  
-  // Helper: check if golden key features (Poem/Story) are allowed
-  const goldenKeyFeaturesAllowed = useMemo(() => {
-    // Golden key features require an active golden key on this lesson
-    // All tiers can use them if they have a golden key
-    return hasGoldenKey;
-  }, [hasGoldenKey]);
   
   // Load user tier from profile
   useEffect(() => {
@@ -413,10 +422,25 @@ function SessionPageInner() {
             setLearnerGrade(''); // Clear if not set
           }
           
+          // Load phase timer settings (11 timers)
+          const timers = loadPhaseTimersForLearner(learner);
+          setPhaseTimers(timers);
+          
+          // Initialize currentTimerMode to 'play' for all phases
+          setCurrentTimerMode({
+            discussion: null, // Not started yet
+            comprehension: null,
+            exercise: null,
+            worksheet: null,
+            test: null
+          });
+          
           // Check for active golden key on this lesson
           const activeKeys = learner?.active_golden_keys || {};
           if (activeKeys[lessonKey]) {
             setHasGoldenKey(true);
+            // Apply golden key bonus to goldenKeyBonus state
+            setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
           } else if (goldenKeyFromUrl) {
             // New golden key usage - save it to the database
             setHasGoldenKey(true);
@@ -589,15 +613,121 @@ function SessionPageInner() {
     }
   }, []);
 
+  // Phase-based timer helpers
+  
+  // Start play timer for a phase (called when "Begin [Phase]" button is clicked)
+  const startPhasePlayTimer = useCallback((phaseName) => {
+    setCurrentTimerMode(prev => ({
+      ...prev,
+      [phaseName]: 'play'
+    }));
+  }, []);
+  
+  // Transition from play to work timer (called when "Go" button is clicked during play mode)
+  const transitionToWorkTimer = useCallback((phaseName) => {
+    // Clear the play timer storage so work timer starts fresh
+    const playTimerKey = lessonKey 
+      ? `session_timer_state:${lessonKey}:${phaseName}:play`
+      : `session_timer_state:${phaseName}:play`;
+    try {
+      sessionStorage.removeItem(playTimerKey);
+    } catch {}
+    
+    setCurrentTimerMode(prev => ({
+      ...prev,
+      [phaseName]: 'work'
+    }));
+  }, [lessonKey]);
+  
+  // Handle play timer expiration (show 30-second countdown overlay)
+  const handlePlayTimeUp = useCallback((phaseName) => {
+    setShowPlayTimeExpired(true);
+    setPlayExpiredPhase(phaseName);
+  }, []);
+  
+  // Handle PlayTimeExpiredOverlay countdown completion (auto-advance to work mode)
+  const handlePlayExpiredComplete = useCallback(() => {
+    setShowPlayTimeExpired(false);
+    if (playExpiredPhase) {
+      transitionToWorkTimer(playExpiredPhase);
+    }
+    setPlayExpiredPhase(null);
+  }, [playExpiredPhase, transitionToWorkTimer]);
+  
+  // Handle work timer expiration (display 00:00 in red, allow continuing)
+  const handleWorkTimeUp = useCallback((phaseName) => {
+    // Work timer expired - mark this phase as NOT completed (timed out)
+    // Timer will display 00:00 in red but session can continue
+    setWorkPhaseCompletions(prev => ({
+      ...prev,
+      [phaseName]: false // Explicitly mark as failed due to timeout
+    }));
+  }, []);
+  
+  // Mark work phase as completed (called when advancing to next phase with time remaining)
+  const markWorkPhaseComplete = useCallback((phaseName) => {
+    setWorkPhaseCompletions(prev => ({
+      ...prev,
+      [phaseName]: true
+    }));
+  }, []);
+  
+  // Check if golden key should be earned (4/5 work phases completed)
+  const checkGoldenKeyEarn = useCallback(() => {
+    const completedCount = Object.values(workPhaseCompletions).filter(Boolean).length;
+    if (completedCount >= 4 && !goldenKeyEarned) {
+      setGoldenKeyEarned(true);
+      // TODO: Persist golden key to database
+      return true;
+    }
+    return false;
+  }, [workPhaseCompletions, goldenKeyEarned]);
+  
+  // Get current phase timer duration (in minutes)
+  const getCurrentPhaseTimerDuration = useCallback((phaseName, timerType) => {
+    if (!phaseTimers || !phaseName || !timerType) return 5; // Default fallback
+    const key = `${phaseName.toLowerCase()}_${timerType}_min`;
+    return phaseTimers[key] || 5;
+  }, [phaseTimers]);
+
+  // Helper to get the current phase name from phase state
+  const getCurrentPhaseName = useCallback(() => {
+    // Map phase state to phase timer key
+    // Teaching phase uses discussion timer (they're grouped together)
+    if (phase === 'discussion' || phase === 'teaching') return 'discussion';
+    if (phase === 'comprehension') return 'comprehension';
+    if (phase === 'exercise') return 'exercise';
+    if (phase === 'worksheet') return 'worksheet';
+    if (phase === 'test') return 'test';
+    return null;
+  }, [phase]);
+
+  // Check if we're currently in play or work mode
+  const isInPlayMode = useCallback(() => {
+    const currentPhase = getCurrentPhaseName();
+    if (!currentPhase) return false;
+    return currentTimerMode[currentPhase] === 'play';
+  }, [getCurrentPhaseName, currentTimerMode]);
+
+  // Handle timer time-up callback (determines if play or work timer expired)
+  const handlePhaseTimerTimeUp = useCallback(() => {
+    const currentPhase = getCurrentPhaseName();
+    if (!currentPhase) return;
+    
+    const mode = currentTimerMode[currentPhase];
+    if (mode === 'play') {
+      handlePlayTimeUp(currentPhase);
+    } else if (mode === 'work') {
+      handleWorkTimeUp(currentPhase);
+    }
+  }, [getCurrentPhaseName, currentTimerMode, handlePlayTimeUp, handleWorkTimeUp]);
+
   // Reset opening actions visibility on begin and on major phase changes
   useEffect(() => {
     if (phase === 'discussion' && subPhase === 'unified-discussion') {
       setShowOpeningActions(false);
-      setJokeUsedThisGate(false);
-      setRiddleUsedThisGate(false);
-      setPoemUsedThisGate(false);
-      setFillInFunUsedThisGate(false);
-      // Story persists across phases - don't reset storyUsedThisGate or clear transcript
+      // Game usage gates removed - games are now repeatable during play time
+      // Story persists across phases - don't reset or clear transcript
       // Only clear story when starting a completely new session
     }
   }, [phase, subPhase]);
@@ -2574,10 +2704,6 @@ function SessionPageInner() {
     handleFillInFunBack,
   } = useDiscussionHandlers({
     setShowOpeningActions,
-    setJokeUsedThisGate,
-    setRiddleUsedThisGate,
-    setPoemUsedThisGate,
-    setStoryUsedThisGate,
   setStoryState,
   setStorySetupStep,
   setStoryCharacters,
@@ -2585,7 +2711,6 @@ function SessionPageInner() {
   setStoryPlot,
   setStoryPhase,
   setStoryTranscript,
-    setFillInFunUsedThisGate,
     setCanSend,
     setLoading,
     setAskState,
@@ -2611,8 +2736,6 @@ function SessionPageInner() {
     setCaptionIndex,
     setLearnerInput,
     setAbortKey,
-    jokeUsedThisGate,
-    fillInFunUsedThisGate,
     subjectParam,
     lessonData,
     phase,
@@ -2687,7 +2810,10 @@ function SessionPageInner() {
     // Functions
     speakFrontend,
     // REMOVED: drawSampleUnique - deprecated zombie code
-    buildQAPool
+    buildQAPool,
+    
+    // Phase timer functions
+    transitionToWorkTimer
   });
 
   // Use hook-provided phase handlers
@@ -2829,6 +2955,8 @@ function SessionPageInner() {
         // Stash payload so gesture-based unlock can retry immediately if needed
         try { lastAudioBase64Ref.current = audioB64; } catch {}
         setIsSpeaking(true);
+        // CRITICAL: Also update the ref immediately to prevent double-playback in recovery timeout
+        try { isSpeakingRef.current = true; } catch {}
         // Give the UI a brief beat to commit !loading before starting audio
         try { await waitForBeat(60); } catch {}
         // Prefer HTMLAudio for the very first Opening playback; clear automatically after attempt
@@ -2905,6 +3033,8 @@ function SessionPageInner() {
         if (audioB64) {
           try { lastAudioBase64Ref.current = audioB64; } catch {}
           setIsSpeaking(true);
+          // CRITICAL: Also update the ref immediately to prevent double-playback in recovery timeout
+          try { isSpeakingRef.current = true; } catch {}
           try { await waitForBeat(40); } catch {}
           try { preferHtmlAudioOnceRef.current = true; } catch {}
           playAudioFromBase64(audioB64, assistantSentences, replyStartIndex).catch(() => {});
@@ -2988,10 +3118,6 @@ function SessionPageInner() {
     teachingStage,
     stageRepeats,
     qaAnswersUnlocked,
-    jokeUsedThisGate,
-    riddleUsedThisGate,
-    poemUsedThisGate,
-    storyUsedThisGate,
   storyState,
   storySetupStep,
   storyCharacters,
@@ -3018,6 +3144,8 @@ function SessionPageInner() {
     generatedExercise,
     generatedWorksheet,
     generatedTest,
+    currentTimerMode,
+    workPhaseCompletions,
     // State setters
     setPhase,
     setSubPhase,
@@ -3026,10 +3154,6 @@ function SessionPageInner() {
     setTeachingStage,
     setStageRepeats,
     setQaAnswersUnlocked,
-    setJokeUsedThisGate,
-    setRiddleUsedThisGate,
-    setPoemUsedThisGate,
-    setStoryUsedThisGate,
   setStoryState,
   setStorySetupStep,
   setStoryCharacters,
@@ -3060,6 +3184,8 @@ function SessionPageInner() {
     setShowOpeningActions,
     setTtsLoadingCount,
     setIsSpeaking,
+    setCurrentTimerMode,
+    setWorkPhaseCompletions,
     // Refs
     restoredSnapshotRef,
     restoreFoundRef,
@@ -3966,8 +4092,34 @@ function SessionPageInner() {
     
     // Reset timer state for new session
     try {
+      // Clear old single-timer storage
       const storageKey = lessonKey ? `session_timer_state:${lessonKey}` : 'session_timer_state';
       sessionStorage.removeItem(storageKey);
+      
+      // Clear all phase-specific timer storage
+      const phases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
+      const timerTypes = ['play', 'work'];
+      phases.forEach(phase => {
+        timerTypes.forEach(type => {
+          const phaseKey = lessonKey 
+            ? `session_timer_state:${lessonKey}:${phase}:${type}`
+            : `session_timer_state:${phase}:${type}`;
+          sessionStorage.removeItem(phaseKey);
+        });
+      });
+      
+      // Reset phase timer mode state
+      setCurrentTimerMode({});
+      
+      // Reset work phase completions for golden key tracking
+      setWorkPhaseCompletions({
+        discussion: false,
+        comprehension: false,
+        exercise: false,
+        worksheet: false,
+        test: false
+      });
+      
       setTimerPaused(false);
     } catch (e) {
       // Failed to reset timer
@@ -3994,6 +4146,9 @@ function SessionPageInner() {
     setSubPhase("unified-discussion");
     setCanSend(false);
   try { scheduleSaveSnapshot('begin-discussion'); } catch {}
+
+    // Start the discussion play timer
+    startPhasePlayTimer('discussion');
 
     // Non-blocking: load targets and generate pools in the background
     // so Opening can start speaking right away.
@@ -4095,6 +4250,8 @@ function SessionPageInner() {
     splitIntoSentences,
     mergeMcChoiceFragments,
     enforceNbspAfterMcLabels,
+    // Timer functions
+    markWorkPhaseComplete,
     // Lesson context
     subjectParam,
     difficultyParam,
@@ -4222,17 +4379,16 @@ function SessionPageInner() {
     setShowBegin(false);
     // Gate quick-answer buttons until the learner presses Go button
     setQaAnswersUnlocked(false);
-    setJokeUsedThisGate(false);
-    setRiddleUsedThisGate(false);
-    setPoemUsedThisGate(false);
-    setStoryUsedThisGate(false);
-    setFillInFunUsedThisGate(false);
+    
     // Immediately advance subPhase so the "Begin Worksheet" button disappears
     setSubPhase('worksheet-active');
     worksheetIndexRef.current = 0;
     setCurrentWorksheetIndex(0);
     setTicker(0);
     setCanSend(false);
+    
+    // Start the worksheet play timer
+    startPhasePlayTimer('worksheet');
     // Do NOT speak the first question here - it will be spoken when Go is pressed
     // This prevents the question buttons from interfering with Ask/Joke/Riddle/Poem/Story/Fill-in-fun
     const opener = WORKSHEET_INTROS[Math.floor(Math.random() * WORKSHEET_INTROS.length)];
@@ -4318,12 +4474,8 @@ function SessionPageInner() {
     setShowBegin(false);
   // Gate quick-answer buttons until Start the lesson
   setQaAnswersUnlocked(false);
-  setJokeUsedThisGate(false);
-  setRiddleUsedThisGate(false);
-  setPoemUsedThisGate(false);
-  setStoryUsedThisGate(false);
-  setFillInFunUsedThisGate(false);
-                // Fallback snapshot from selection page - now learner-specific
+  
+  // Fallback snapshot from selection page - now learner-specific
                 const currentLearnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
                 if (currentLearnerId && currentLearnerId !== 'demo') {
                   // Use learner-specific target overrides
@@ -4352,6 +4504,10 @@ function SessionPageInner() {
   // This prevents the question buttons from interfering with Ask/Joke/Riddle/Poem/Story/Fill-in-fun
   setSubPhase('test-active');
     setCanSend(false);
+    
+    // Start the test play timer
+    startPhasePlayTimer('test');
+    
     try { showTipOverride('Starting test...', 3000); } catch {}
 
     // Speak a short test intro (random); first question is gated behind Go button
@@ -4402,12 +4558,10 @@ function SessionPageInner() {
   if (subPhase !== 'comprehension-start' && subPhase !== 'comprehension-active') setSubPhase('comprehension-start');
   // Gate quick-answer buttons until Start the lesson
   setQaAnswersUnlocked(false);
-  setJokeUsedThisGate(false);
-  setRiddleUsedThisGate(false);
-  setPoemUsedThisGate(false);
-  setStoryUsedThisGate(false);
-  setFillInFunUsedThisGate(false);
-    // Persist the entrance to comprehension-start immediately
+  
+  // Start the comprehension play timer
+  startPhasePlayTimer('comprehension');
+  
   // Persist the entrance to comprehension-start immediately (single-snapshot resume pointer)
   try { scheduleSaveSnapshot('begin-comprehension'); } catch {}
   setCanSend(false);
@@ -4435,6 +4589,8 @@ function SessionPageInner() {
     const correct = Array.isArray(testCorrectByIndex) ? testCorrectByIndex.filter(Boolean).length : 0;
     const safePercent = Math.round((correct / Math.max(1, Math.max(1, total))) * 100);
     try { setTestFinalPercent(safePercent); } catch {}
+    // Mark test phase as successfully completed before advancing to congrats
+    markWorkPhaseComplete('test');
     setPhase('congrats');
     setSubPhase('congrats-done');
   setTicker(0);
@@ -4442,8 +4598,10 @@ function SessionPageInner() {
   try { scheduleSaveSnapshot('begin-worksheet'); } catch {}
     // Auto-start congrats speech so captions immediately return to transcript
     try { setCongratsStarted(true); } catch {}
+    // Check if learner earned golden key (4/5 work phases completed)
+    checkGoldenKeyEarn();
     // Persist medal on effect when congrats
-  }, [generatedTest, testCorrectByIndex, speakFrontend]);
+  }, [generatedTest, testCorrectByIndex, speakFrontend, markWorkPhaseComplete, checkGoldenKeyEarn]);
 
   // Speak congrats summary once upon entering congrats
   const congratsSpokenRef = useRef(false);
@@ -4858,13 +5016,13 @@ function SessionPageInner() {
   setSubPhase('exercise-start');
   // Gate quick-answer buttons until Start the lesson
   setQaAnswersUnlocked(false);
-  setJokeUsedThisGate(false);
-  setRiddleUsedThisGate(false);
-  setPoemUsedThisGate(false);
-  setStoryUsedThisGate(false);
-  setFillInFunUsedThisGate(false);
+  
   // Persist phase entrance for Exercise
   try { scheduleSaveSnapshot('begin-exercise'); } catch {}
+  
+    // Start the exercise play timer
+    startPhasePlayTimer('exercise');
+    
     // Frontend-only: brief intro; first question is gated behind Go button
     const opener = EXERCISE_INTROS[Math.floor(Math.random() * EXERCISE_INTROS.length)];
     try {
@@ -4887,8 +5045,12 @@ function SessionPageInner() {
     qaAnswersUnlocked,
     currentCompProblem,
     currentExerciseProblem,
+    currentCompIndex,
+    currentExIndex,
     currentWorksheetIndex,
     testActiveIndex,
+    generatedComprehension,
+    generatedExercise,
     generatedWorksheet,
     generatedTest,
     lessonParam,
@@ -4910,17 +5072,24 @@ function SessionPageInner() {
     setGeneratedWorksheet,
     setGeneratedTest,
     setCurrentWorksheetIndex,
+    setCurrentCompIndex,
+    setCurrentExIndex,
     setCurrentCompProblem,
     setCurrentExerciseProblem,
     setTestUserAnswers,
     setTestCorrectByIndex,
     setTestCorrectCount,
     setTestFinalPercent,
-    setJokeUsedThisGate,
-    setRiddleUsedThisGate,
-    setPoemUsedThisGate,
-    setStoryUsedThisGate,
     setTimerPaused,
+    setCurrentTimerMode,
+    setWorkPhaseCompletions,
+    setStoryState,
+    setStorySetupStep,
+    setStoryCharacters,
+    setStorySetting,
+    setStoryPlot,
+    setStoryPhase,
+    setStoryTranscript,
     setTicker,
     setCaptionSentences,
     setCaptionIndex,
@@ -5367,6 +5536,10 @@ function SessionPageInner() {
         const celebration = CELEBRATE_CORRECT[Math.floor(Math.random() * CELEBRATE_CORRECT.length)];
         if (atTarget) {
           try { scheduleSaveSnapshot('comprehension-complete'); } catch {}
+          
+          // Mark comprehension work phase as complete (advancing with time remaining)
+          markWorkPhaseComplete('comprehension');
+          
           try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for comprehension. Now let's begin the exercise.`); } catch {}
           setPhase('exercise');
           setSubPhase('exercise-awaiting-begin');
@@ -5391,6 +5564,10 @@ function SessionPageInner() {
         // No more unique questions available - complete the phase early
         if (!nextProblem && !nearTarget && !atTarget) {
           try { scheduleSaveSnapshot('comprehension-complete'); } catch {}
+          
+          // Mark comprehension work phase as complete (advancing with time remaining)
+          markWorkPhaseComplete('comprehension');
+          
           try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for comprehension. Now let's begin the exercise.`); } catch {}
           setPhase('exercise');
           setSubPhase('exercise-awaiting-begin');
@@ -5547,6 +5724,10 @@ function SessionPageInner() {
         const celebration = CELEBRATE_CORRECT[Math.floor(Math.random() * CELEBRATE_CORRECT.length)];
         if (atTarget) {
           try { scheduleSaveSnapshot('exercise-complete'); } catch {}
+          
+          // Mark exercise work phase as complete (advancing with time remaining)
+          markWorkPhaseComplete('exercise');
+          
           try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for the exercise. Now let's move on to the worksheet.`); } catch {}
           setPhase('worksheet');
           setSubPhase('worksheet-awaiting-begin');
@@ -5668,6 +5849,10 @@ function SessionPageInner() {
         const celebration = CELEBRATE_CORRECT[Math.floor(Math.random() * CELEBRATE_CORRECT.length)];
         if (atTarget) {
           try { scheduleSaveSnapshot('worksheet-complete'); } catch {}
+          
+          // Mark worksheet work phase as complete (advancing with time remaining)
+          markWorkPhaseComplete('worksheet');
+          
           try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for the worksheet. Now let's begin the test.`); } catch {}
           resetTestProgress();
           setPhase('test');
@@ -5901,7 +6086,7 @@ function SessionPageInner() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [showBegin, phase, subPhase, loading, isSpeaking, beginSession, beginComprehensionPhase, beginSkippedExercise, beginWorksheetPhase, beginTestPhase, hotkeys]);
 
-  // Global hotkeys for mute toggle
+  // Global hotkeys for mute toggle, skip, and repeat
   useEffect(() => {
     const onKeyDown = (e) => {
       const code = e.code || e.key;
@@ -5909,17 +6094,29 @@ function SessionPageInner() {
       if (isTextEntryTarget(target)) return; // don't steal keys while typing in inputs/textareas
       if (!hotkeys) return;
 
-      const { muteToggle } = { ...DEFAULT_HOTKEYS, ...hotkeys };
+      const { muteToggle, skip, repeat } = { ...DEFAULT_HOTKEYS, ...hotkeys };
 
       if (muteToggle && code === muteToggle) {
         e.preventDefault();
         toggleMute?.();
         return;
       }
+
+      if (skip && code === skip && isSpeaking && typeof handleSkipSpeech === 'function') {
+        e.preventDefault();
+        handleSkipSpeech();
+        return;
+      }
+
+      if (repeat && code === repeat && !isSpeaking && showRepeatButton && typeof handleRepeatSpeech === 'function') {
+        e.preventDefault();
+        handleRepeatSpeech();
+        return;
+      }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [hotkeys, toggleMute]);
+  }, [hotkeys, toggleMute, isSpeaking, handleSkipSpeech, showRepeatButton, handleRepeatSpeech]);
 
   const renderDiscussionControls = () => {
     if (subPhase === "awaiting-learner") {
@@ -6417,6 +6614,15 @@ function SessionPageInner() {
         handleTimeUp={handleTimeUp}
         handleTimerPauseToggle={handleTimerPauseToggle}
         handleTimerClick={handleTimerClick}
+        phaseTimers={phaseTimers}
+        currentTimerMode={currentTimerMode}
+        getCurrentPhaseName={getCurrentPhaseName}
+        getCurrentPhaseTimerDuration={getCurrentPhaseTimerDuration}
+        goldenKeyBonus={goldenKeyBonus}
+        showPlayTimeExpired={showPlayTimeExpired}
+        playExpiredPhase={playExpiredPhase}
+        handlePlayExpiredComplete={handlePlayExpiredComplete}
+        handlePhaseTimerTimeUp={handlePhaseTimerTimeUp}
         showRepeatButton={showRepeatButton}
         handleRepeatSpeech={handleRepeatSpeech}
         visualAids={visualAidsData}
@@ -6690,19 +6896,15 @@ function SessionPageInner() {
               const goBtn = { ...btn, background:'#c7442e', boxShadow:'0 2px 12px rgba(199,68,46,0.28)' };
               const disabledBtn = { ...btn, opacity:0.5, cursor:'not-allowed' };
               
-              // Poem/Story require an active golden key on this lesson
-              const poemDisabled = poemUsedThisGate || !goldenKeyFeaturesAllowed;
-              const storyDisabled = storyUsedThisGate || !goldenKeyFeaturesAllowed;
-              
               return (
                 <div style={wrap} aria-label="Opening actions">
                   <button type="button" style={btn} onClick={getAskButtonHandler(handleAskQuestionStart)}>Ask</button>
-                  <button type="button" style={jokeUsedThisGate ? disabledBtn : btn} onClick={jokeUsedThisGate ? undefined : handleTellJoke} disabled={jokeUsedThisGate}> Joke</button>
-                  <button type="button" style={riddleUsedThisGate ? disabledBtn : btn} onClick={riddleUsedThisGate ? undefined : handleTellRiddle} disabled={riddleUsedThisGate}>Riddle</button>
-                  <button type="button" style={poemDisabled ? disabledBtn : btn} onClick={poemDisabled ? undefined : handlePoemStart} disabled={poemDisabled} title={!goldenKeyFeaturesAllowed ? 'Use a Golden Key to unlock' : undefined}>Poem</button>
-                  <button type="button" style={storyDisabled ? disabledBtn : btn} onClick={storyDisabled ? undefined : handleStoryStart} disabled={storyDisabled} title={!goldenKeyFeaturesAllowed ? 'Use a Golden Key to unlock' : undefined}>Story</button>
-                  <button type="button" style={fillInFunUsedThisGate ? disabledBtn : btn} onClick={fillInFunUsedThisGate ? undefined : handleFillInFunStart} disabled={fillInFunUsedThisGate}>Fill-in-Fun</button>
-                  <button type="button" style={goBtn} onClick={lessonData ? handleStartLesson : undefined} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson�'}>Go</button>
+                  <button type="button" style={btn} onClick={handleTellJoke}>Joke</button>
+                  <button type="button" style={btn} onClick={handleTellRiddle}>Riddle</button>
+                  <button type="button" style={btn} onClick={handlePoemStart}>Poem</button>
+                  <button type="button" style={btn} onClick={handleStoryStart}>Story</button>
+                  <button type="button" style={btn} onClick={handleFillInFunStart}>Fill-in-Fun</button>
+                  <button type="button" style={goBtn} onClick={lessonData ? handleStartLesson : undefined} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson…'}>Go</button>
                 </div>
               );
             } catch {}
@@ -6735,19 +6937,15 @@ function SessionPageInner() {
                 handleStartLesson
               );
               
-              // Poem/Story require an active golden key on this lesson
-              const poemDisabled = poemUsedThisGate || !goldenKeyFeaturesAllowed;
-              const storyDisabled = storyUsedThisGate || !goldenKeyFeaturesAllowed;
-              
               return (
                 <div style={wrap} aria-label="Phase opening actions">
                   <button type="button" style={btn} onClick={getAskButtonHandler(handleAskQuestionStart)}>Ask</button>
-                  <button type="button" style={jokeUsedThisGate ? disabledBtn : btn} onClick={jokeUsedThisGate ? undefined : handleTellJoke} disabled={jokeUsedThisGate}> Joke</button>
-                  <button type="button" style={riddleUsedThisGate ? disabledBtn : btn} onClick={riddleUsedThisGate ? undefined : handleTellRiddle} disabled={riddleUsedThisGate}>Riddle</button>
-                  <button type="button" style={poemDisabled ? disabledBtn : btn} onClick={poemDisabled ? undefined : handlePoemStart} disabled={poemDisabled} title={!goldenKeyFeaturesAllowed ? 'Use a Golden Key to unlock' : undefined}>Poem</button>
-                  <button type="button" style={storyDisabled ? disabledBtn : btn} onClick={storyDisabled ? undefined : handleStoryStart} disabled={storyDisabled} title={!goldenKeyFeaturesAllowed ? 'Use a Golden Key to unlock' : undefined}>Story</button>
-                  <button type="button" style={fillInFunUsedThisGate ? disabledBtn : btn} onClick={fillInFunUsedThisGate ? undefined : handleFillInFunStart} disabled={fillInFunUsedThisGate}>Fill-in-Fun</button>
-                  <button type="button" style={goBtn} onClick={onGo} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson�'}>Go</button>
+                  <button type="button" style={btn} onClick={handleTellJoke}>Joke</button>
+                  <button type="button" style={btn} onClick={handleTellRiddle}>Riddle</button>
+                  <button type="button" style={btn} onClick={handlePoemStart}>Poem</button>
+                  <button type="button" style={btn} onClick={handleStoryStart}>Story</button>
+                  <button type="button" style={btn} onClick={handleFillInFunStart}>Fill-in-Fun</button>
+                  <button type="button" style={goBtn} onClick={onGo} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson…'}>Go</button>
                 </div>
               );
             } catch {}
@@ -7235,7 +7433,7 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
   );
 }
 
-function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, lessonKey, muted, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle, handleTimerClick, showRepeatButton, handleRepeatSpeech, visualAids, onShowVisualAids }) {
+function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, lessonKey, muted, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle, handleTimerClick, phaseTimers, currentTimerMode, getCurrentPhaseName, getCurrentPhaseTimerDuration, goldenKeyBonus, showPlayTimeExpired, playExpiredPhase, handlePlayExpiredComplete, handlePhaseTimerTimeUp, showRepeatButton, handleRepeatSpeech, visualAids, onShowVisualAids }) {
   // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
   // Remove horizontal clamp: let the video occupy the full available width of its column
   const containerMaxWidth = 'none';
@@ -7318,7 +7516,8 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
         />
         {/* Session Timer - overlay in top left */}
-        {sessionTimerMinutes > 0 && !showBegin && (
+        {/* Phase-based timer: Show when phaseTimers loaded and in an active phase */}
+        {phaseTimers && !showBegin && getCurrentPhaseName() && currentTimerMode[getCurrentPhaseName()] && (
           <div style={{ 
             position: 'absolute',
             top: 8,
@@ -7326,17 +7525,29 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
             zIndex: 10001
           }}>
             <SessionTimer
-              key={`timer-${sessionTimerMinutes}`}
-              totalMinutes={sessionTimerMinutes}
+              key={`phase-timer-${getCurrentPhaseName()}-${currentTimerMode[getCurrentPhaseName()]}`}
+              phase={getCurrentPhaseName()}
+              timerType={currentTimerMode[getCurrentPhaseName()]}
+              totalMinutes={getCurrentPhaseTimerDuration(getCurrentPhaseName(), currentTimerMode[getCurrentPhaseName()])}
+              goldenKeyBonus={currentTimerMode[getCurrentPhaseName()] === 'play' ? goldenKeyBonus : 0}
               lessonProgress={calculateLessonProgress()}
               isPaused={timerPaused}
-              onTimeUp={handleTimeUp}
+              onTimeUp={handlePhaseTimerTimeUp}
               onPauseToggle={handleTimerPauseToggle}
               lessonKey={lessonKey}
               onTimerClick={handleTimerClick}
             />
           </div>
         )}
+        
+        {/* Play time expired overlay */}
+        {showPlayTimeExpired && playExpiredPhase && (
+          <PlayTimeExpiredOverlay
+            phaseName={playExpiredPhase}
+            onComplete={handlePlayExpiredComplete}
+          />
+        )}
+        
         {/* No black screen during test */}
         {(phase === 'comprehension' || phase === 'exercise') && (
           <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(17,24,39,0.78)', color: '#fff', padding: '6px 10px', borderRadius: 8, fontSize: 'clamp(0.85rem, 1.6vw, 1rem)', fontWeight: 600, letterSpacing: 0.3, boxShadow: '0 2px 6px rgba(0,0,0,0.25)', zIndex: 10000, pointerEvents: 'none' }}>

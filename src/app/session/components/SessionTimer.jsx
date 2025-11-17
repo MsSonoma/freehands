@@ -1,35 +1,49 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
+import { TIMER_TYPE_EMOJI } from '../utils/phaseTimerDefaults';
 
 /**
- * SessionTimer - Displays a countdown timer that changes color based on lesson progress
+ * SessionTimer - Phase-aware countdown timer with play/work modes
  * 
- * @param {number} totalMinutes - Total time allocated for the session (60-300 minutes)
- * @param {number} lessonProgress - Percentage of lesson completed (0-100)
+ * @param {number} totalMinutes - Total time allocated (1-60 minutes)
+ * @param {number} lessonProgress - Percentage of lesson work completed (0-100)
  * @param {boolean} isPaused - Whether the timer is paused
  * @param {function} onTimeUp - Callback when timer reaches zero
- * @param {function} onPauseToggle - Callback to request pause/resume (PIN required only for pausing)
- * @param {string} lessonKey - Unique identifier for the lesson (e.g., 'math/lesson_name') for scoped timer storage
+ * @param {function} onPauseToggle - Callback to request pause/resume
+ * @param {string} lessonKey - Unique identifier for the lesson
+ * @param {string} phase - Current phase (discussion/comprehension/exercise/worksheet/test)
+ * @param {string} timerType - 'play' or 'work'
+ * @param {number} goldenKeyBonus - Additional minutes from golden key (applied to play timers)
  * @param {function} onTimerClick - Callback when timer is clicked (for facilitator controls)
  */
 export default function SessionTimer({ 
-  totalMinutes = 60, 
+  totalMinutes = 5, 
   lessonProgress = 0, 
   isPaused = false,
   onTimeUp,
   onPauseToggle,
   lessonKey = null,
+  phase = 'discussion',
+  timerType = 'play',
+  goldenKeyBonus = 0,
   onTimerClick,
   className = ''
 }) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [startTime, setStartTime] = useState(null);
+  const [startTime, setStartTime] = useState(Date.now()); // Initialize immediately, not in useEffect
   const [pausedAt, setPausedAt] = useState(null);
   const intervalRef = useRef(null);
 
-  // Generate lesson-specific storage key
-  const storageKey = lessonKey ? `session_timer_state:${lessonKey}` : 'session_timer_state';
+  // Calculate effective total (add golden key bonus to play timers)
+  const effectiveTotalMinutes = timerType === 'play' 
+    ? totalMinutes + (goldenKeyBonus || 0)
+    : totalMinutes;
+
+  // Generate phase-specific storage key
+  const storageKey = lessonKey 
+    ? `session_timer_state:${lessonKey}:${phase}:${timerType}` 
+    : `session_timer_state:${phase}:${timerType}`;
 
   // Initialize from sessionStorage
   useEffect(() => {
@@ -37,14 +51,27 @@ export default function SessionTimer({
     if (stored) {
       try {
         const state = JSON.parse(stored);
-        setElapsedSeconds(state.elapsedSeconds || 0);
-        setStartTime(state.startTime || Date.now());
-        setPausedAt(state.pausedAt || null);
-      } catch {}
+        // Validate that stored data matches current timer configuration
+        if (state.totalMinutes === effectiveTotalMinutes) {
+          setElapsedSeconds(state.elapsedSeconds || 0);
+          setStartTime(state.startTime || Date.now());
+          setPausedAt(state.pausedAt || null);
+        } else {
+          // Timer configuration changed - reset
+          setElapsedSeconds(0);
+          setStartTime(Date.now());
+          setPausedAt(null);
+        }
+      } catch {
+        // Invalid stored data - reset
+        setElapsedSeconds(0);
+        setStartTime(Date.now());
+        setPausedAt(null);
+      }
     } else {
       setStartTime(Date.now());
     }
-  }, [storageKey]);
+  }, [storageKey, effectiveTotalMinutes]);
 
   // Persist state to sessionStorage
   useEffect(() => {
@@ -52,10 +79,11 @@ export default function SessionTimer({
       sessionStorage.setItem(storageKey, JSON.stringify({
         elapsedSeconds,
         startTime,
-        pausedAt
+        pausedAt,
+        totalMinutes: effectiveTotalMinutes // Store for validation
       }));
     }
-  }, [elapsedSeconds, startTime, pausedAt, storageKey]);
+  }, [elapsedSeconds, startTime, pausedAt, storageKey, effectiveTotalMinutes]);
 
   // Update elapsed time
   useEffect(() => {
@@ -80,7 +108,7 @@ export default function SessionTimer({
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
         setElapsedSeconds(elapsed);
         
-        const totalSeconds = totalMinutes * 60;
+        const totalSeconds = effectiveTotalMinutes * 60;
         if (elapsed >= totalSeconds) {
           clearInterval(intervalRef.current);
           onTimeUp?.();
@@ -93,35 +121,53 @@ export default function SessionTimer({
         clearInterval(intervalRef.current);
       }
     };
-  }, [isPaused, startTime, pausedAt, totalMinutes, onTimeUp]);
+  }, [isPaused, startTime, pausedAt, effectiveTotalMinutes, onTimeUp]);
 
   // Calculate remaining time
-  const totalSeconds = totalMinutes * 60;
+  const totalSeconds = effectiveTotalMinutes * 60;
   const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
-  const hours = Math.floor(remainingSeconds / 3600);
-  const minutes = Math.floor((remainingSeconds % 3600) / 60);
+  const minutes = Math.floor(remainingSeconds / 60);
   const seconds = remainingSeconds % 60;
 
-  // Calculate progress ratios
+  // Calculate progress ratios (only for work timers)
   const timeProgress = (elapsedSeconds / totalSeconds) * 100; // % of time elapsed
   const progressDiff = lessonProgress - timeProgress; // positive = ahead, negative = behind
 
   // Color logic:
-  // Green: ahead of schedule or within 5% behind
-  // Yellow: 5-15% behind
-  // Red: more than 15% behind
-  let color = '#22c55e'; // green
-  if (progressDiff < -5) {
-    color = progressDiff < -15 ? '#ef4444' : '#eab308'; // red : yellow
+  // PLAY timers: always green (expected to use full time for games)
+  // WORK timers: green/yellow/red based on pace
+  //   - Green: ahead of schedule or within 5% behind
+  //   - Yellow: 5-15% behind
+  //   - Red: more than 15% behind or at 00:00
+  let color = '#22c55e'; // green by default
+  
+  if (timerType === 'work') {
+    if (remainingSeconds === 0) {
+      color = '#ef4444'; // red at timeout
+    } else if (progressDiff < -5) {
+      color = progressDiff < -15 ? '#ef4444' : '#eab308'; // red : yellow
+    }
   }
+  // Play timers stay green always
 
-  const displayTime = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  const displayTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
   const handleTimerClick = () => {
     if (onTimerClick) {
       onTimerClick(elapsedSeconds);
     }
   };
+
+  // Determine emoji based on timer type
+  const timerEmoji = TIMER_TYPE_EMOJI[timerType] || '⏱️';
+
+  // Build tooltip
+  let tooltipText = onTimerClick ? 'Click to adjust timer (requires PIN)' : undefined;
+  if (!tooltipText) {
+    tooltipText = timerType === 'play' 
+      ? 'Play time (for games before work)'
+      : 'Work time (complete phase tasks)';
+  }
 
   return (
     <div className={`session-timer ${className}`} style={{
@@ -141,10 +187,19 @@ export default function SessionTimer({
       cursor: onTimerClick ? 'pointer' : 'default'
     }}
     onClick={handleTimerClick}
-    title={onTimerClick ? 'Click to adjust timer (requires PIN)' : undefined}
+    title={tooltipText}
     >
-      <span>⏱️</span>
+      <span title={timerType === 'play' ? 'Play' : 'Work'}>{timerEmoji}</span>
       <span>{displayTime}</span>
+      {goldenKeyBonus > 0 && timerType === 'play' && (
+        <span style={{
+          fontSize: '0.75em',
+          color: '#fbbf24',
+          marginLeft: 4
+        }} title={`+${goldenKeyBonus} min golden key bonus`}>
+          ⚡
+        </span>
+      )}
       {onPauseToggle && (
         <button
           onClick={onPauseToggle}

@@ -45,12 +45,21 @@ export function usePhaseHandlers({
   // Functions
   speakFrontend,
   // REMOVED: drawSampleUnique - sample array deprecated
-  buildQAPool
+  buildQAPool,
+  
+  // Phase timer functions
+  transitionToWorkTimer
 }) {
 
   const handleGoComprehension = useCallback(async () => {
     try { setShowOpeningActions(false); } catch {}
     if (phase !== 'comprehension') return;
+    
+    // Transition from play to work timer
+    if (transitionToWorkTimer) {
+      transitionToWorkTimer('comprehension');
+    }
+    
     let item = currentCompProblem;
     if (!item) {
       let firstComp = null;
@@ -89,13 +98,19 @@ export function usePhaseHandlers({
   }, [
     phase, currentCompProblem, generatedComprehension, currentCompIndex, compPool,
     setShowOpeningActions, setCurrentCompProblem, setSubPhase, setQaAnswersUnlocked, setCanSend,
-    setCurrentCompIndex, setCompPool, activeQuestionBodyRef, speakFrontend, buildQAPool
+    setCurrentCompIndex, setCompPool, activeQuestionBodyRef, speakFrontend, buildQAPool, transitionToWorkTimer
     // REMOVED: drawSampleUnique from deps - sample array deprecated
   ]);
 
   const handleGoExercise = useCallback(async () => {
     try { setShowOpeningActions(false); } catch {}
     if (phase !== 'exercise') return;
+    
+    // Transition from play to work timer
+    if (transitionToWorkTimer) {
+      transitionToWorkTimer('exercise');
+    }
+    
     let item = currentExerciseProblem;
     if (!item) {
       let first = null;
@@ -125,13 +140,19 @@ export function usePhaseHandlers({
   }, [
     phase, currentExerciseProblem, generatedExercise, currentExIndex, exercisePool,
     setShowOpeningActions, setCurrentExerciseProblem, setSubPhase, setQaAnswersUnlocked, setCanSend,
-    setCurrentExIndex, setExercisePool, activeQuestionBodyRef, speakFrontend, buildQAPool
+    setCurrentExIndex, setExercisePool, activeQuestionBodyRef, speakFrontend, buildQAPool, transitionToWorkTimer
     // REMOVED: drawSampleUnique from deps - sample array deprecated
   ]);
 
   const handleGoWorksheet = useCallback(async () => {
     try { setShowOpeningActions(false); } catch {}
     if (phase !== 'worksheet') return;
+    
+    // Transition from play to work timer
+    if (transitionToWorkTimer) {
+      transitionToWorkTimer('worksheet');
+    }
+    
     const list = Array.isArray(generatedWorksheet) ? generatedWorksheet : [];
     const item = list[0];
     if (!item) { setShowOpeningActions(true); return; }
@@ -144,11 +165,17 @@ export function usePhaseHandlers({
       await speakFrontend(formatted, { mcLayout: 'multiline' });
     } catch {}
     setCanSend(true);
-  }, [phase, generatedWorksheet, setShowOpeningActions, setQaAnswersUnlocked, setCanSend, activeQuestionBodyRef, speakFrontend]);
+  }, [phase, generatedWorksheet, setShowOpeningActions, setQaAnswersUnlocked, setCanSend, activeQuestionBodyRef, speakFrontend, transitionToWorkTimer]);
 
   const handleGoTest = useCallback(async () => {
     try { setShowOpeningActions(false); } catch {}
     if (phase !== 'test') return;
+    
+    // Transition from play to work timer
+    if (transitionToWorkTimer) {
+      transitionToWorkTimer('test');
+    }
+    
     const list = Array.isArray(generatedTest) ? generatedTest : [];
     const item = list[0];
     if (!item) { setShowOpeningActions(true); return; }
@@ -160,11 +187,17 @@ export function usePhaseHandlers({
       await speakFrontend(formatted, { mcLayout: 'multiline' });
     } catch {}
     setCanSend(true);
-  }, [phase, generatedTest, setShowOpeningActions, setQaAnswersUnlocked, setCanSend, activeQuestionBodyRef, speakFrontend]);
+  }, [phase, generatedTest, setShowOpeningActions, setQaAnswersUnlocked, setCanSend, activeQuestionBodyRef, speakFrontend, transitionToWorkTimer]);
 
   // Handler: Start the lesson now (fallback/generic)
   const handleStartLesson = useCallback(async () => {
     try { setShowOpeningActions(false); } catch {}
+    
+    // If in discussion/teaching phase, transition from play to work timer
+    if ((phase === 'discussion' || phase === 'teaching') && transitionToWorkTimer) {
+      transitionToWorkTimer('discussion');
+    }
+    
     if (phase === 'comprehension' && currentCompProblem) {
       try {
         setQaAnswersUnlocked(true);
@@ -219,7 +252,7 @@ export function usePhaseHandlers({
   }, [
     phase, currentCompProblem, currentExerciseProblem, generatedWorksheet, generatedTest,
     setShowOpeningActions, setQaAnswersUnlocked, setCanSend, activeQuestionBodyRef,
-    speakFrontend, startThreeStageTeachingRef
+    speakFrontend, startThreeStageTeachingRef, transitionToWorkTimer
   ]);
 
   return {

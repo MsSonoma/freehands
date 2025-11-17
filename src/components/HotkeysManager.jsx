@@ -59,10 +59,9 @@ export default function HotkeysManager() {
   const fields = [
     { key:'beginSend', label:'Begin/Send' },
     { key:'micHold', label:'Mic (hold to record)' },
-    { key:'skipLeft', label:'Skip Left' },
-    { key:'skipRight', label:'Skip Right' },
+    { key:'skip', label:'Skip' },
+    { key:'repeat', label:'Repeat' },
     { key:'muteToggle', label:'Mute toggle' },
-    { key:'playPauseToggle', label:'Play/Pause toggle' },
   ]
 
   const resetDefaults = () => {

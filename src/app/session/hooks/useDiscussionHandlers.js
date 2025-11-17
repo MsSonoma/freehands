@@ -20,11 +20,6 @@ import { getGradeAndDifficultyStyle } from '../utils/constants';
 export function useDiscussionHandlers({
   // State setters
   setShowOpeningActions,
-  setJokeUsedThisGate,
-  setRiddleUsedThisGate,
-  setPoemUsedThisGate,
-  setStoryUsedThisGate,
-  setFillInFunUsedThisGate,
   setCanSend,
   setLoading,
   setAskState,
@@ -52,8 +47,6 @@ export function useDiscussionHandlers({
   setAbortKey,
   
   // State values
-  jokeUsedThisGate,
-  fillInFunUsedThisGate,
   subjectParam,
   lessonData,
   phase,
@@ -96,7 +89,6 @@ export function useDiscussionHandlers({
   
   // Joke handler
   const handleTellJoke = useCallback(async () => {
-    if (jokeUsedThisGate) return;
     try { setShowOpeningActions(false); } catch {}
     try {
       // Use lessonData.subject if available, otherwise fall back to subjectParam
@@ -107,7 +99,7 @@ export function useDiscussionHandlers({
       }
       const jokeObj = pickNextJoke(subjectKey);
       const text = renderJoke(jokeObj) || '';
-      if (!text) { setShowOpeningActions(true); setJokeUsedThisGate(true); return; }
+      if (!text) { setShowOpeningActions(true); return; }
       
       let sentences = splitIntoSentences(text);
       sentences = mergeMcChoiceFragments(sentences).map((s) => enforceNbspAfterMcLabels(s));
@@ -142,9 +134,8 @@ export function useDiscussionHandlers({
         if (!dec) setTtsLoadingCount((c) => Math.max(0, c - 1));
       }
     } catch {}
-    setJokeUsedThisGate(true);
     setTimeout(() => setShowOpeningActions(true), 400);
-  }, [jokeUsedThisGate, subjectParam, lessonData, captionSentencesRef, setCaptionSentences, setCaptionIndex, setTtsLoadingCount, setIsSpeaking, playAudioFromBase64, setShowOpeningActions, setJokeUsedThisGate]);
+  }, [subjectParam, lessonData, captionSentencesRef, setCaptionSentences, setCaptionIndex, setTtsLoadingCount, setIsSpeaking, playAudioFromBase64, setShowOpeningActions]);
 
   // Ask Question handlers
   const handleAskQuestionStart = useCallback(async () => {
@@ -311,7 +302,6 @@ export function useDiscussionHandlers({
     const pick = pickNextRiddle(subject);
     if (!pick) {
       setShowOpeningActions(true);
-      setRiddleUsedThisGate(true);
       return;
     }
     const text = renderRiddle(pick) || '';
@@ -321,8 +311,7 @@ export function useDiscussionHandlers({
     try { setAbortKey((k) => k + 1); } catch {}
     await speakFrontend(`Here is a riddle. ${text}`);
     setRiddleState('awaiting-solve');
-    setRiddleUsedThisGate(true);
-  }, [subjectParam, lessonData, setShowOpeningActions, setRiddleUsedThisGate, setCurrentRiddle, setRiddleState, setCanSend, setAbortKey, speakFrontend]);
+  }, [subjectParam, lessonData, setShowOpeningActions, setCurrentRiddle, setRiddleState, setCanSend, setAbortKey, speakFrontend]);
 
   const judgeRiddleAttempt = useCallback(async (_attempt) => {
     return { ok: false, text: '' };
@@ -377,12 +366,11 @@ export function useDiscussionHandlers({
     }
     
     try { setShowOpeningActions(false); } catch {}
-    try { setPoemUsedThisGate(true); } catch {}
     setPoemState('awaiting-topic');
     setShowPoemSuggestions(true);
     setCanSend(true);
     await speakFrontend('What would you like the poem to be about?');
-  }, [hasGoldenKey, setShowOpeningActions, setPoemUsedThisGate, setPoemState, setShowPoemSuggestions, setCanSend, speakFrontend]);
+  }, [hasGoldenKey, setShowOpeningActions, setPoemState, setShowPoemSuggestions, setCanSend, speakFrontend]);
 
   const handlePoemSuggestions = useCallback(async () => {
     setShowPoemSuggestions(false);
@@ -423,7 +411,6 @@ export function useDiscussionHandlers({
       }
     }
   }    try { setShowOpeningActions(false); } catch {}
-    try { setStoryUsedThisGate(true); } catch {}
     
     // Check if this is a continuation from a previous phase
     if (storyTranscript.length > 0) {
@@ -549,7 +536,7 @@ export function useDiscussionHandlers({
       setCanSend(true);
     }
   }, [
-    hasGoldenKey, setShowOpeningActions, setStoryUsedThisGate, setStoryTranscript, setStoryState, 
+    hasGoldenKey, setShowOpeningActions, setStoryTranscript, setStoryState, 
     setStorySetupStep, setStoryCharacters, setStorySetting, setStoryPlot, setStoryPhase,
     setCanSend, setLoading, speakFrontend, storyTranscript, phase, subPhase, learnerGrade, difficultyParam
   ]);
@@ -863,7 +850,6 @@ export function useDiscussionHandlers({
       setFillInFunTemplate(data);
       setFillInFunCollectedWords({});
       setFillInFunCurrentIndex(0);
-      setFillInFunUsedThisGate(true);
       setFillInFunState('collecting-words');
       setLoading(false);
       
@@ -881,9 +867,9 @@ export function useDiscussionHandlers({
       setCanSend(true);
     }
   }, [
-    fillInFunUsedThisGate, lessonData, subjectParam, speakFrontend,
+    lessonData, subjectParam, speakFrontend,
     setShowOpeningActions, setFillInFunState, setFillInFunTemplate,
-    setFillInFunCollectedWords, setFillInFunCurrentIndex, setFillInFunUsedThisGate,
+    setFillInFunCollectedWords, setFillInFunCurrentIndex,
     setCanSend, setLoading
   ]);
 

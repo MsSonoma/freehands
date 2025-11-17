@@ -11,23 +11,21 @@ import { updateTranscriptLiveSegment } from '../../lib/transcriptsClient';
  * 
  * @param {Object} deps - Dependencies object containing:
  *   - State values: phase, subPhase, showBegin, ticker, teachingStage, stageRepeats,
- *     qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, 
- *     storyUsedThisGate, storyState, storySetupStep, storyCharacters, storySetting,
+ *     qaAnswersUnlocked, storyState, storySetupStep, storyCharacters, storySetting,
  *     storyPlot, storyPhase, storyTranscript, currentCompIndex, currentExIndex,
  *     currentWorksheetIndex, testActiveIndex, currentCompProblem, currentExerciseProblem,
  *     testUserAnswers, testCorrectByIndex, testCorrectCount, testFinalPercent,
  *     congratsStarted, congratsDone, captionSentences, captionIndex, usedTestCuePhrases, 
- *     generatedWorksheet, generatedTest
+ *     generatedWorksheet, generatedTest, currentTimerMode, workPhaseCompletions
  *   - State setters: setPhase, setSubPhase, setShowBegin, setTicker, setTeachingStage,
- *     setStageRepeats, setQaAnswersUnlocked, setJokeUsedThisGate, setRiddleUsedThisGate,
- *     setPoemUsedThisGate, setStoryUsedThisGate, setStoryState, setStorySetupStep,
+ *     setStageRepeats, setQaAnswersUnlocked, setStoryState, setStorySetupStep,
  *     setStoryCharacters, setStorySetting, setStoryPlot, setStoryPhase,
  *     setStoryTranscript, setCurrentCompIndex,
  *     setCurrentExIndex, setCurrentWorksheetIndex, setTestActiveIndex, setCurrentCompProblem,
  *     setCurrentExerciseProblem, setTestUserAnswers, setTestCorrectByIndex, setTestCorrectCount,
  *     setTestFinalPercent, setCongratsStarted, setCongratsDone, setCaptionSentences, 
  *     setCaptionIndex, setUsedTestCuePhrases, setLoading, setOfferResume, setCanSend, 
- *     setShowOpeningActions, setTtsLoadingCount, setIsSpeaking
+ *     setShowOpeningActions, setTtsLoadingCount, setIsSpeaking, setCurrentTimerMode, setWorkPhaseCompletions
  *   - Refs: restoredSnapshotRef, restoreFoundRef, didRunRestoreRef, snapshotSaveTimerRef,
  *     pendingSaveRetriesRef, lastSavedSigRef, activeQuestionBodyRef, captionSentencesRef,
  *     worksheetIndexRef, sessionStartRef, preferHtmlAudioOnceRef, resumeAppliedRef
@@ -45,10 +43,6 @@ export function useSnapshotPersistence({
   teachingStage,
   stageRepeats,
   qaAnswersUnlocked,
-  jokeUsedThisGate,
-  riddleUsedThisGate,
-  poemUsedThisGate,
-  storyUsedThisGate,
   storyState,
   storySetupStep,
   storyCharacters,
@@ -75,6 +69,8 @@ export function useSnapshotPersistence({
   generatedExercise,
   generatedWorksheet,
   generatedTest,
+  currentTimerMode,
+  workPhaseCompletions,
   // State setters
   setPhase,
   setSubPhase,
@@ -83,10 +79,6 @@ export function useSnapshotPersistence({
   setTeachingStage,
   setStageRepeats,
   setQaAnswersUnlocked,
-  setJokeUsedThisGate,
-  setRiddleUsedThisGate,
-  setPoemUsedThisGate,
-  setStoryUsedThisGate,
   setStoryState,
   setStorySetupStep,
   setStoryCharacters,
@@ -117,6 +109,8 @@ export function useSnapshotPersistence({
   setShowOpeningActions,
   setTtsLoadingCount,
   setIsSpeaking,
+  setCurrentTimerMode,
+  setWorkPhaseCompletions,
   // Refs
   restoredSnapshotRef,
   restoreFoundRef,
@@ -174,8 +168,14 @@ export function useSnapshotPersistence({
   const scheduleSaveSnapshot = useCallback((label = '') => {
     // Generally do not save until restore has run at least once to avoid clobbering, except for explicit user-driven labels
     if (!restoredSnapshotRef.current && label === 'state-change') return;
+    
+    // For critical phase transitions, save IMMEDIATELY without debounce to avoid race conditions
+    const immediateLabels = ['begin-comprehension', 'begin-exercise', 'begin-worksheet', 'begin-test', 'exercise-complete', 'worksheet-complete', 'test-complete'];
+    const shouldSaveImmediately = immediateLabels.includes(label);
+    
     try { if (snapshotSaveTimerRef.current) clearTimeout(snapshotSaveTimerRef.current); } catch {}
-    snapshotSaveTimerRef.current = setTimeout(async () => {
+    
+    const performSave = async () => {
       try {
         // Double-guard inside timer as well
         if (!restoredSnapshotRef.current && label === 'state-change') {
@@ -207,7 +207,7 @@ export function useSnapshotPersistence({
           phase, subPhase,
           teachingStage,
           idx: { ci: currentCompIndex, ei: currentExIndex, wi: currentWorksheetIndex, ti: testActiveIndex },
-          gates: { qa: !!qaAnswersUnlocked, jk: !!jokeUsedThisGate, rd: !!riddleUsedThisGate, pm: !!poemUsedThisGate, st: !!storyUsedThisGate },
+          gates: { qa: !!qaAnswersUnlocked },
           cur: {
             c: currentCompProblem ? (currentCompProblem.id || currentCompProblem.key || currentCompProblem.question || currentCompProblem.prompt || '1') : null,
             e: currentExerciseProblem ? (currentExerciseProblem.id || currentExerciseProblem.key || currentExerciseProblem.question || currentExerciseProblem.prompt || '1') : null,
@@ -267,7 +267,7 @@ export function useSnapshotPersistence({
           ticker,
           teachingStage,
           stageRepeats,
-          qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, storyUsedThisGate,
+          qaAnswersUnlocked,
           storyState,
           storySetupStep,
           storyCharacters,
@@ -285,11 +285,14 @@ export function useSnapshotPersistence({
           usedTestCuePhrases,
           generatedComprehension,
           generatedExercise,
+          currentTimerMode,
+          workPhaseCompletions,
           resume,
         };
         if (!storedKey || String(storedKey).trim().length === 0) {
           return;
         }
+        console.log(`[SNAPSHOT SAVE] Key: ${storedKey}, Phase: ${phase}, SubPhase: ${subPhase}, CompIdx: ${currentCompIndex}, ExIdx: ${currentExIndex}, Label: ${label}`);
         await saveSnapshot(storedKey, payload, { learnerId: lid });
 
         // Also update live transcript segment to keep facilitator PDF in sync with the on-screen transcript
@@ -312,8 +315,15 @@ export function useSnapshotPersistence({
         } catch {}
         lastSavedSigRef.current = sig;
       } catch {}
-    }, 200);
-  }, [phase, subPhase, showBegin, teachingStage, qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, storyUsedThisGate, storyState, storySetupStep, storyCharacters, storySetting, storyPlot, storyPhase, storyTranscript, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testCorrectCount, testFinalPercent, congratsStarted, congratsDone, usedTestCuePhrases, getSnapshotStorageKey, lessonParam, effectiveLessonTitle, transcriptSessionId, restoredSnapshotRef, snapshotSaveTimerRef, pendingSaveRetriesRef, lastSavedSigRef, activeQuestionBodyRef, captionSentencesRef, captionSentences, captionIndex, ticker, sessionStartRef, buildStorySignature]);
+    };
+    
+    // Execute save immediately for phase transitions, or debounced for regular state changes
+    if (shouldSaveImmediately) {
+      performSave();
+    } else {
+      snapshotSaveTimerRef.current = setTimeout(performSave, 200);
+    }
+  }, [phase, subPhase, showBegin, teachingStage, qaAnswersUnlocked, storyState, storySetupStep, storyCharacters, storySetting, storyPlot, storyPhase, storyTranscript, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testCorrectCount, testFinalPercent, congratsStarted, congratsDone, usedTestCuePhrases, currentTimerMode, workPhaseCompletions, getSnapshotStorageKey, lessonParam, effectiveLessonTitle, transcriptSessionId, restoredSnapshotRef, snapshotSaveTimerRef, pendingSaveRetriesRef, lastSavedSigRef, activeQuestionBodyRef, captionSentencesRef, captionSentences, captionIndex, ticker, sessionStartRef, buildStorySignature]);
 
   // Memoized signature of meaningful resume-relevant state. Changes here will cause an autosave.
   const snapshotSigMemo = useMemo(() => {
@@ -322,7 +332,7 @@ export function useSnapshotPersistence({
       phase, subPhase,
       teachingStage,
       idx: { ci: currentCompIndex, ei: currentExIndex, wi: currentWorksheetIndex, ti: testActiveIndex },
-      gates: { qa: !!qaAnswersUnlocked, jk: !!jokeUsedThisGate, rd: !!riddleUsedThisGate, pm: !!poemUsedThisGate, st: !!storyUsedThisGate },
+      gates: { qa: !!qaAnswersUnlocked },
       cur: {
         c: currentCompProblem ? (currentCompProblem.id || currentCompProblem.key || currentCompProblem.question || currentCompProblem.prompt || '1') : null,
         e: currentExerciseProblem ? (currentExerciseProblem.id || currentExerciseProblem.key || currentExerciseProblem.question || currentExerciseProblem.prompt || '1') : null,
@@ -336,7 +346,7 @@ export function useSnapshotPersistence({
       story: storySig,
     };
     try { return JSON.stringify(sigObj); } catch { return '' }
-  }, [phase, subPhase, teachingStage, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, qaAnswersUnlocked, jokeUsedThisGate, riddleUsedThisGate, poemUsedThisGate, storyUsedThisGate, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testFinalPercent, activeQuestionBodyRef, buildStorySignature]);
+  }, [phase, subPhase, teachingStage, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, qaAnswersUnlocked, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testFinalPercent, activeQuestionBodyRef, buildStorySignature]);
 
   // Save on ticker change to support resume at each count increment (coalesced with timer)
   useEffect(() => {
@@ -384,6 +394,7 @@ export function useSnapshotPersistence({
             const s = await getStoredSnapshot(keyLike, { learnerId: lid });
             if (s) {
               const t = Date.parse(s.savedAt || '') || 0;
+              console.log(`[SNAPSHOT RESTORE CANDIDATE] Key: ${keyLike}, Note: ${note}, SavedAt: ${new Date(t).toISOString()}, Phase: ${s.phase}, SubPhase: ${s.subPhase}, CompIdx: ${s.currentCompIndex}, ExIdx: ${s.currentExIndex}`);
               if (t >= newestAt) { snap = s; newestAt = t; }
             }
           } catch { /* ignore */ }
@@ -421,6 +432,7 @@ export function useSnapshotPersistence({
           return;
         }
         // Found a snapshot: apply it
+        console.log(`[SNAPSHOT RESTORE SELECTED] Phase: ${snap.phase}, SubPhase: ${snap.subPhase}, CompIdx: ${snap.currentCompIndex}, ExIdx: ${snap.currentExIndex}, SavedAt: ${snap.savedAt}`);
         // Apply core flow state first
         try { setPhase(snap.phase || 'discussion'); } catch {}
         try { setSubPhase(snap.subPhase || 'greeting'); } catch {}
@@ -436,10 +448,7 @@ export function useSnapshotPersistence({
         try { setTicker(Number.isFinite(snap.ticker) ? snap.ticker : 0); } catch {}
         // Gates and flags
         try { setQaAnswersUnlocked(!!snap.qaAnswersUnlocked); } catch {}
-        try { setJokeUsedThisGate(!!snap.jokeUsedThisGate); } catch {}
-        try { setRiddleUsedThisGate(!!snap.riddleUsedThisGate); } catch {}
-        try { setPoemUsedThisGate(!!snap.poemUsedThisGate); } catch {}
-        try { setStoryUsedThisGate(!!snap.storyUsedThisGate); } catch {}
+        // Game usage gates removed - games are now repeatable
   try { setStoryState(typeof snap.storyState === 'string' ? snap.storyState : 'inactive'); } catch {}
   try { setStorySetupStep(typeof snap.storySetupStep === 'string' ? snap.storySetupStep : ''); } catch {}
   try { setStoryCharacters(typeof snap.storyCharacters === 'string' ? snap.storyCharacters : ''); } catch {}
@@ -493,6 +502,19 @@ export function useSnapshotPersistence({
           const ci = Number.isFinite(snap.captionIndex) ? snap.captionIndex : 0;
           setCaptionIndex(Math.max(0, Math.min(ci, Math.max(0, lines.length - 1))));
         } catch {}
+        
+        // Phase timer state restoration
+        try {
+          if (snap.currentTimerMode && typeof snap.currentTimerMode === 'object' && Object.keys(snap.currentTimerMode).length > 0) {
+            setCurrentTimerMode(snap.currentTimerMode);
+          }
+        } catch {}
+        try {
+          if (snap.workPhaseCompletions && typeof snap.workPhaseCompletions === 'object') {
+            setWorkPhaseCompletions(snap.workPhaseCompletions);
+          }
+        } catch {}
+        
         // Defer clearing loading until the resume reconciliation effect completes
         try { setTtsLoadingCount(0); } catch {}
         try { setIsSpeaking(false); } catch {}
@@ -557,10 +579,6 @@ export function useSnapshotPersistence({
     setShowBegin,
     setTicker,
     setQaAnswersUnlocked,
-    setJokeUsedThisGate,
-    setRiddleUsedThisGate,
-    setPoemUsedThisGate,
-    setStoryUsedThisGate,
   setStoryState,
   setStorySetupStep,
   setStoryCharacters,

@@ -33,6 +33,7 @@ export default function CounselorClient() {
   const [conflictingSession, setConflictingSession] = useState(null)
   const sessionPollInterval = useRef(null)
   const isMountedRef = useRef(true)
+  const initializedSessionIdRef = useRef(null)
 
   useEffect(() => {
     return () => {
@@ -94,6 +95,7 @@ export default function CounselorClient() {
   const buttonVideoRef = useRef(null)
   const audioRef = useRef(null)
   const captionBoxRef = useRef(null)
+  const lastAudioRef = useRef(null)
   
   // Mute state - persisted in localStorage
   const [muted, setMuted] = useState(() => {
@@ -581,6 +583,14 @@ export default function CounselorClient() {
       return
     }
     
+    // Don't re-initialize if we've already initialized this session ID
+    if (initializedSessionIdRef.current === sessionId) {
+      return
+    }
+    
+    // Mark this session ID as initialized
+    initializedSessionIdRef.current = sessionId
+    
     // All dependencies ready - initialize
     initializeMentorSession()
     
@@ -603,7 +613,8 @@ export default function CounselorClient() {
           body: JSON.stringify({
             sessionId,
             conversationHistory,
-            draftSummary
+            draftSummary,
+            tokenCount: currentSessionTokens
           })
         })
       } catch (err) {
@@ -612,7 +623,7 @@ export default function CounselorClient() {
     }, 1000) // Save 1 second after last change
     
     return () => clearTimeout(saveTimer)
-  }, [conversationHistory, draftSummary, sessionId, accessToken, hasAccess, sessionLoading])
+  }, [conversationHistory, draftSummary, currentSessionTokens, sessionId, accessToken, hasAccess, sessionLoading])
 
   // Stop polling on unmount
   useEffect(() => {
@@ -835,6 +846,9 @@ export default function CounselorClient() {
         audioRef.current = null
       }
 
+      // Save audio for repeat functionality
+      lastAudioRef.current = base64Audio
+
       const audio = new Audio(`data:audio/mp3;base64,${base64Audio}`)
       audio.muted = muted
       audio.volume = muted ? 0 : 1
@@ -905,6 +919,21 @@ export default function CounselorClient() {
     // Set speaking to false
     setIsSpeaking(false)
   }, [])
+
+  // Repeat last speech
+  const handleRepeat = useCallback(async () => {
+    if (!lastAudioRef.current) return
+    
+    // If currently speaking, stop first
+    if (isSpeaking) {
+      handleSkipSpeech()
+      // Small delay to ensure cleanup
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+    
+    // Play the last audio again
+    await playAudio(lastAudioRef.current)
+  }, [isSpeaking, handleSkipSpeech, playAudio])
 
   // Helper: Handle lesson generation with client-side validation and fixing (like lesson-maker)
   const handleLessonGeneration = async (toolResult, token) => {
@@ -1460,6 +1489,7 @@ export default function CounselorClient() {
     setShowTakeoverDialog(false)
 
     clearPersistedSessionIdentifier()
+    initializedSessionIdRef.current = null
     const newSessionIdentifier = generateSessionIdentifier()
     assignSessionIdentifier(newSessionIdentifier)
   }
@@ -1798,6 +1828,38 @@ export default function CounselorClient() {
                   <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="5 4 15 12 5 20 5 4" />
                     <line x1="19" y1="5" x2="19" y2="19" />
+                  </svg>
+                </button>
+              )}
+
+              {/* Repeat button (bottom-left, visible when not speaking and has audio) */}
+              {!isSpeaking && lastAudioRef.current && (
+                <button
+                  onClick={handleRepeat}
+                  aria-label="Repeat"
+                  title="Repeat last response"
+                  style={{
+                    position: 'absolute',
+                    bottom: 16,
+                    left: 16,
+                    background: '#1f2937',
+                    color: '#fff',
+                    border: 'none',
+                    width: 'clamp(48px, 10vw, 64px)',
+                    height: 'clamp(48px, 10vw, 64px)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                    zIndex: 10
+                  }}
+                >
+                  <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                    <path d="M21 3v5h-5" />
+                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                    <path d="M3 21v-5h5" />
                   </svg>
                 </button>
               )}
