@@ -242,6 +242,10 @@ function extractLessonParams(text) {
 // Extract date from text
 function extractDate(text) {
   const normalized = normalizeText(text)
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth() + 1
+  const currentDay = now.getDate()
   
   // Check for ISO format YYYY-MM-DD
   const isoMatch = text.match(/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/)
@@ -249,7 +253,34 @@ function extractDate(text) {
     return isoMatch[0]
   }
   
-  // Check for month/day patterns
+  // Check for numeric formats: MM/DD, MM/DD/YY, MM/DD/YYYY, DD/MM/YY, DD/MM/YYYY
+  // US format: 11/24 or 11/24/25 or 11/24/2025
+  const usDateMatch = text.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/)
+  if (usDateMatch) {
+    const month = parseInt(usDateMatch[1])
+    const day = parseInt(usDateMatch[2])
+    let year = usDateMatch[3] ? parseInt(usDateMatch[3]) : null
+    
+    // Validate month and day
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      // If no year provided, determine based on whether date has passed
+      if (!year) {
+        year = currentYear
+        if (month < currentMonth || (month === currentMonth && day < currentDay)) {
+          year = currentYear + 1
+        }
+      } else if (year < 100) {
+        // Two-digit year: assume 20XX
+        year = 2000 + year
+      }
+      
+      const monthStr = month.toString().padStart(2, '0')
+      const dayStr = day.toString().padStart(2, '0')
+      return `${year}-${monthStr}-${dayStr}`
+    }
+  }
+  
+  // Check for month/day patterns (including "24th", "1st", "2nd", "3rd")
   const months = {
     january: 1, jan: 1,
     february: 2, feb: 2,
@@ -266,11 +297,22 @@ function extractDate(text) {
   }
   
   for (const [monthName, monthNum] of Object.entries(months)) {
-    const dayMatch = text.match(new RegExp(`${monthName}\\s+(\\d{1,2})`, 'i'))
+    // Match patterns like "November 24th", "Nov 24", "november 3rd"
+    const dayMatch = text.match(new RegExp(`${monthName}\\s+(\\d{1,2})(?:st|nd|rd|th)?`, 'i'))
     if (dayMatch) {
-      const day = dayMatch[1].padStart(2, '0')
-      const month = monthNum.toString().padStart(2, '0')
-      return `2025-${month}-${day}`
+      const day = parseInt(dayMatch[1])
+      if (day >= 1 && day <= 31) {
+        const dayStr = day.toString().padStart(2, '0')
+        const monthStr = monthNum.toString().padStart(2, '0')
+        
+        // Determine year - if month has passed this year, use next year
+        let targetYear = currentYear
+        if (monthNum < currentMonth || (monthNum === currentMonth && day < currentDay)) {
+          targetYear = currentYear + 1
+        }
+        
+        return `${targetYear}-${monthStr}-${dayStr}`
+      }
     }
   }
   
@@ -294,6 +336,17 @@ function extractDate(text) {
       const targetDay = i
       const currentDay = today.getDay()
       const daysUntil = (targetDay - currentDay + 7) % 7 || 7
+      const nextDate = new Date(today)
+      nextDate.setDate(nextDate.getDate() + daysUntil)
+      return nextDate.toISOString().split('T')[0]
+    }
+    
+    // Also check for just the day name (this Monday, Monday, etc)
+    if (normalized.includes(daysOfWeek[i]) && !normalized.includes('next')) {
+      const targetDay = i
+      const currentDay = today.getDay()
+      let daysUntil = targetDay - currentDay
+      if (daysUntil <= 0) daysUntil += 7
       const nextDate = new Date(today)
       nextDate.setDate(nextDate.getDate() + daysUntil)
       return nextDate.toISOString().split('T')[0]
@@ -538,6 +591,35 @@ export class MentorInterceptor {
    */
   async handleParameterInput(userMessage, context) {
     const { allLessons, selectedLearnerId, learnerName } = context
+    
+    // Handle post-generation schedule prompt
+    if (this.state.awaitingInput === 'post_generation_schedule') {
+      const confirmation = detectConfirmation(userMessage)
+      
+      if (confirmation === 'yes') {
+        // Move to schedule flow with the generated lesson
+        this.state.flow = 'schedule'
+        this.state.context.lessonKey = this.state.selectedLesson.lessonKey
+        this.state.awaitingInput = 'schedule_date'
+        this.state.awaitingConfirmation = false
+        
+        return {
+          handled: true,
+          response: `What date would you like to schedule ${this.state.selectedLesson.title} for ${learnerName || 'this learner'}?`
+        }
+      } else if (confirmation === 'no') {
+        this.reset()
+        return {
+          handled: true,
+          response: "No problem. The lesson is ready in your lessons tab whenever you need it. How else can I help you?"
+        }
+      } else {
+        return {
+          handled: true,
+          response: "Would you like to schedule this lesson? Please say yes or no."
+        }
+      }
+    }
     
     // Handle lesson selection from search results
     if (this.state.awaitingInput === 'lesson_selection') {

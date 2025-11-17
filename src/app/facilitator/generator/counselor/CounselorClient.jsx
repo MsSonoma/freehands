@@ -124,6 +124,7 @@ export default function CounselorClient() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [toolThoughtQueue, setToolThoughtQueue] = useState([])
   const [activeToolThought, setActiveToolThought] = useState(null)
+  const [loadingThought, setLoadingThought] = useState(null)
 
   const generateSessionIdentifier = useCallback(() => {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -1094,12 +1095,70 @@ export default function CounselorClient() {
     return results
   }, [])
 
+  // Get loading thought based on interceptor state
+  const getLoadingThought = useCallback((flow, awaitingInput, action) => {
+    // Action-based thoughts (highest priority)
+    if (action?.type === 'generate') {
+      return "Generating your custom lesson with AI..."
+    }
+    if (action?.type === 'schedule') {
+      return "Adding this lesson to the calendar..."
+    }
+    if (action?.type === 'edit') {
+      return "Opening the lesson editor..."
+    }
+    
+    // Flow and input-based thoughts
+    if (flow === 'generate') {
+      if (awaitingInput === 'generate_topic') return "Thinking about lesson topics..."
+      if (awaitingInput === 'generate_grade') return "Considering grade levels..."
+      if (awaitingInput === 'generate_subject') return "Identifying the subject area..."
+      if (awaitingInput === 'generate_difficulty') return "Determining difficulty level..."
+      if (awaitingInput === 'generate_title') return "Crafting the perfect title..."
+      return "Preparing lesson parameters..."
+    }
+    
+    if (flow === 'schedule') {
+      if (awaitingInput === 'schedule_date') return "Looking at the calendar..."
+      if (awaitingInput === 'schedule_lesson_search') return "Searching for lessons to schedule..."
+      if (awaitingInput === 'post_generation_schedule') return "Reviewing the generated lesson..."
+      return "Scheduling the lesson..."
+    }
+    
+    if (flow === 'search') {
+      if (awaitingInput === 'lesson_selection') return "Found several matches, reviewing them..."
+      return "Searching through your lessons..."
+    }
+    
+    if (flow === 'edit') {
+      if (awaitingInput === 'edit_changes') return "Analyzing the requested changes..."
+      if (awaitingInput === 'edit_lesson_search') return "Looking for the lesson to edit..."
+      return "Preparing to edit the lesson..."
+    }
+    
+    if (flow === 'recall') {
+      return "Searching through our conversation history..."
+    }
+    
+    if (awaitingInput === 'lesson_selection') {
+      return "Reviewing lesson options..."
+    }
+    
+    if (awaitingInput === 'lesson_action') {
+      return "Considering what to do with this lesson..."
+    }
+    
+    // Generic loading
+    return "Thinking..."
+  }, [])
+
   // Send message to Mr. Mentor
   const sendMessage = useCallback(async () => {
     const message = userInput.trim()
     if (!message || loading) return
 
     setLoading(true)
+    setLoadingThought("Processing your request...")
     setError('')
     setUserInput('')
 
@@ -1107,6 +1166,12 @@ export default function CounselorClient() {
       // Try interceptor first
       const learnerName = learners.find(l => l.id === selectedLearnerId)?.name
       const allLessons = await loadAllLessons()
+      
+      setLoadingThought(getLoadingThought(
+        interceptorRef.current.state.flow,
+        interceptorRef.current.state.awaitingInput,
+        null
+      ))
       
       const interceptResult = await interceptorRef.current.process(message, {
         allLessons,
@@ -1116,6 +1181,15 @@ export default function CounselorClient() {
       })
       
       if (interceptResult.handled) {
+        // Update loading thought based on what we're doing
+        if (interceptResult.action) {
+          setLoadingThought(getLoadingThought(
+            interceptorRef.current.state.flow,
+            interceptorRef.current.state.awaitingInput,
+            interceptResult.action
+          ))
+        }
+        
         // Add user message to conversation
         const updatedHistory = [
           ...conversationHistory,
@@ -1127,6 +1201,7 @@ export default function CounselorClient() {
           const action = interceptResult.action
           
           if (action.type === 'schedule') {
+            setLoadingThought("Adding this lesson to the calendar...")
             // Schedule the lesson
             const supabase = getSupabaseClient()
             const { data: { session } } = await supabase.auth.getSession()
@@ -1154,9 +1229,73 @@ export default function CounselorClient() {
               }
             }
           } else if (action.type === 'generate') {
-            // Trigger generation overlay
-            setActiveScreen('maker')
-            // Could populate fields here if needed
+            setLoadingThought("Generating your custom lesson with AI...")
+            // Generate lesson via interceptor (keeps context)
+            if (token && selectedLearnerId) {
+              try {
+                // Call generation API
+                const genResponse = await fetch('/api/facilitator/lessons/generate', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify({
+                    learner_id: selectedLearnerId,
+                    title: action.title,
+                    subject: action.subject,
+                    grade: action.grade,
+                    difficulty: action.difficulty,
+                    description: action.description || '',
+                    vocab: action.vocab || '',
+                    teaching_notes: action.notes || ''
+                  })
+                })
+                
+                if (genResponse.ok) {
+                  const genData = await genResponse.json()
+                  
+                  // Store generated lesson in interceptor state for scheduling
+                  if (genData.lesson) {
+                    interceptorRef.current.state.selectedLesson = {
+                      title: genData.lesson.title,
+                      grade: genData.lesson.grade,
+                      subject: genData.lesson.subject,
+                      difficulty: genData.lesson.difficulty,
+                      lessonKey: `generated/${genData.lesson.file}`,
+                      file: genData.lesson.file,
+                      isGenerated: true,
+                      vocab: genData.lesson.vocab || [],
+                      teaching_notes: genData.lesson.teaching_notes || ''
+                    }
+                    
+                    // Update interceptor response with post-generation prompt
+                    const vocab = Array.isArray(genData.lesson.vocab) 
+                      ? genData.lesson.vocab.map(v => v.word || v).join(', ')
+                      : genData.lesson.vocab || 'None'
+                    
+                    const notes = genData.lesson.teaching_notes || 'None provided'
+                    
+                    interceptResult.response = `The lesson "${genData.lesson.title}" has been successfully generated and validated. The lesson is ready for you to review. Here's an overview of what this lesson includes:
+
+- Title: ${genData.lesson.title}
+- Grade: ${genData.lesson.grade}
+- Difficulty: ${genData.lesson.difficulty}
+- Vocabulary: ${vocab}
+- Teaching Notes: ${notes}
+
+As a next step, you might consider scheduling this lesson on a day that fits your learner's routine or supplementing it with additional activities that cater to their interests and learning style or adding some images to the visual aids. Also, keep an eye on their progress and be ready to provide additional support or adjustments as needed. But first, don't forget to review the lesson in the lessons tab where you can make any changes.
+
+Would you like to schedule this lesson for ${learnerName || 'this learner'}?`
+                    
+                    // Set state to await schedule confirmation
+                    interceptorRef.current.state.awaitingInput = 'post_generation_schedule'
+                  }
+                }
+              } catch (err) {
+                // Generation failed - will show in response
+              }
+            }
           } else if (action.type === 'edit') {
             // Trigger lesson editor
             setActiveScreen('lessons')
@@ -1178,6 +1317,7 @@ export default function CounselorClient() {
         setCaptionIndex(0)
         
         // Play TTS for interceptor response (Mr. Mentor's voice)
+        setLoadingThought("Preparing response...")
         try {
           const ttsResponse = await fetch('/api/mentor-tts', {
             method: 'POST',
@@ -1196,10 +1336,12 @@ export default function CounselorClient() {
         }
         
         setLoading(false)
+        setLoadingThought(null)
         return
       }
       
       // Interceptor didn't handle - forward to API
+      setLoadingThought("Consulting my knowledge base...")
       const forwardMessage = interceptResult.apiForward?.message || message
       const forwardContext = interceptResult.apiForward?.context || {}
 
@@ -1285,8 +1427,10 @@ export default function CounselorClient() {
       const validationSummaries = []
 
       if (initialToolResults.length > 0) {
+        setLoadingThought("Processing tool results...")
         for (const toolResult of initialToolResults) {
           if (toolResult.lesson && toolResult.lessonFile && toolResult.userId) {
+            setLoadingThought("Validating generated lesson...")
             const summary = await handleLessonGeneration(toolResult, token)
             if (summary) {
               validationSummaries.push(summary)
@@ -1295,6 +1439,7 @@ export default function CounselorClient() {
           
           // Dispatch events for schedule_lesson success
           if (toolResult.success && toolResult.scheduled) {
+            setLoadingThought("Updating calendar...")
             try {
               window.dispatchEvent(new CustomEvent('mr-mentor:lesson-scheduled', {
                 detail: {
@@ -1311,6 +1456,7 @@ export default function CounselorClient() {
       }
 
       if (data.needsFollowUp && data.followUp) {
+        setLoadingThought("Continuing with follow-up tasks...")
         const followUpData = await continueLessonFollowUp({
           followUpPayload: data.followUp,
           validationSummaries,
@@ -1326,6 +1472,7 @@ export default function CounselorClient() {
         responseData = followUpData
       }
       
+      setLoadingThought("Preparing my response...")
       const mentorReply = responseData.reply || ''
 
       if (!mentorReply) {
@@ -1397,8 +1544,9 @@ export default function CounselorClient() {
       setError('Failed to reach Mr. Mentor. Please try again.')
     } finally {
       setLoading(false)
+      setLoadingThought(null)
     }
-  }, [userInput, loading, conversationHistory, playAudio, learnerTranscript, goalsNotes, selectedLearnerId, sessionStarted, currentSessionTokens, enqueueToolThoughts, handleLessonGeneration, continueLessonFollowUp])
+  }, [userInput, loading, conversationHistory, playAudio, learnerTranscript, goalsNotes, selectedLearnerId, sessionStarted, currentSessionTokens, enqueueToolThoughts, handleLessonGeneration, continueLessonFollowUp, learners, loadAllLessons, getLoadingThought])
 
   // Helper: Update draft summary after each exchange (not saved to memory until approved)
   const updateDraftSummary = async (conversationHistory, token) => {
@@ -1993,7 +2141,11 @@ export default function CounselorClient() {
             </div>
           </div>
 
-          <MentorThoughtBubble thought={activeToolThought} />
+          <MentorThoughtBubble thought={
+            loading && loadingThought 
+              ? { message: loadingThought, phase: 'loading' }
+              : activeToolThought
+          } />
         </div>
 
         {/* Caption panel */}
