@@ -1040,7 +1040,7 @@ export default function CounselorClient() {
   // Load all lessons for interceptor
   const loadAllLessons = useCallback(async () => {
     const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general']
-    const results = []
+    const results = {}
     
     for (const subject of SUBJECTS) {
       try {
@@ -1050,7 +1050,7 @@ export default function CounselorClient() {
         if (res.ok) {
           const list = await res.json()
           if (Array.isArray(list)) {
-            results.push(...list)
+            results[subject] = list
           }
         }
       } catch (err) {
@@ -1071,10 +1071,20 @@ export default function CounselorClient() {
         })
         if (res.ok) {
           const generatedList = await res.json()
-          results.push(...generatedList.map(lesson => ({
+          results['generated'] = generatedList.map(lesson => ({
             ...lesson,
             isGenerated: true
-          })))
+          }))
+          
+          // Also add generated lessons to their subject buckets
+          for (const lesson of generatedList) {
+            const subject = lesson.subject || 'math'
+            if (!results[subject]) results[subject] = []
+            results[subject].push({
+              ...lesson,
+              isGenerated: true
+            })
+          }
         }
       } catch (err) {
         // Silent error

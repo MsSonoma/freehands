@@ -229,6 +229,38 @@ export class MentorInterceptor {
   async process(userMessage, context = {}) {
     const { allLessons = {}, selectedLearnerId, learnerName, conversationHistory = [] } = context
     
+    // Check for "more" in recall flow
+    if (this.state.flow === 'recall' && this.state.context.recallMatches) {
+      if (fuzzyMatch(userMessage, ['more', 'another', 'next', 'keep going', 'show more'])) {
+        const matches = this.state.context.recallMatches
+        const index = this.state.context.recallIndex || 1
+        
+        if (index >= matches.length) {
+          this.reset()
+          return {
+            handled: true,
+            response: "That's all I found about that topic. Anything else I can help with?"
+          }
+        }
+        
+        const nextMatch = matches[index]
+        this.state.context.recallIndex = index + 1
+        
+        let response = `I also recall: "${nextMatch.content || nextMatch.text}"`
+        
+        if (index + 1 < matches.length) {
+          response += `\n\nWould you like to hear more?`
+        } else {
+          response += `\n\nThat's everything I found.`
+        }
+        
+        return {
+          handled: true,
+          response
+        }
+      }
+    }
+    
     // Check for bypass command
     if (fuzzyMatch(userMessage, ['different issue', 'something else', 'nevermind', 'skip'])) {
       this.reset()
