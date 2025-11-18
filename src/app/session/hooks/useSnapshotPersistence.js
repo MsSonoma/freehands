@@ -528,10 +528,26 @@ export function useSnapshotPersistence({
             console.log('[SNAPSHOT RESTORE] Restoring timer modes:', snap.currentTimerMode);
             setCurrentTimerMode(snap.currentTimerMode);
           } else {
-            // If no timer modes in snapshot, set a default for current phase to ensure timer visibility
+            // If no timer modes in snapshot, determine correct mode based on phase/subPhase
             const currentPhaseName = snap.phase || 'discussion';
-            const fallbackMode = { [currentPhaseName]: 'work' };
-            console.log(`[SNAPSHOT RESTORE] No timer modes in snapshot, setting fallback for ${currentPhaseName}:`, fallbackMode);
+            const currentSubPhase = snap.subPhase || 'greeting';
+            
+            // Determine if we should be in play or work mode based on phase progression
+            let timerMode = 'play'; // Default to play mode
+            
+            // If we're past the initial phase entry points, we should be in work mode
+            if (
+              (currentPhaseName === 'discussion' && (currentSubPhase === 'awaiting-learner' || currentSubPhase === 'teaching-active')) ||
+              (currentPhaseName === 'comprehension' && currentSubPhase === 'comprehension-active') ||
+              (currentPhaseName === 'exercise' && currentSubPhase === 'exercise-active') ||
+              (currentPhaseName === 'worksheet' && currentSubPhase === 'worksheet-active') ||
+              (currentPhaseName === 'test' && currentSubPhase === 'test-active')
+            ) {
+              timerMode = 'work';
+            }
+            
+            const fallbackMode = { [currentPhaseName]: timerMode };
+            console.log(`[SNAPSHOT RESTORE] No timer modes in snapshot, inferred ${timerMode} mode for ${currentPhaseName}:${currentSubPhase}:`, fallbackMode);
             setCurrentTimerMode(fallbackMode);
           }
         } catch {}
