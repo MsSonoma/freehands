@@ -7584,7 +7584,13 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
             zIndex: 10001
           }}>
             <SessionTimer
-              key={`phase-timer-${getCurrentPhaseName()}-${currentTimerMode[getCurrentPhaseName()]}-${timerRefreshKey}`}
+              key={(() => {
+                const phaseName = getCurrentPhaseName();
+                const timerType = currentTimerMode[phaseName];
+                const key = `phase-timer-${phaseName}-${timerType}-${timerRefreshKey}`;
+                console.log(`[TIMER KEY DEBUG] Phase: ${phaseName}, Type: ${timerType}, RefreshKey: ${timerRefreshKey}, Key: ${key}`);
+                return key;
+              })()}
               phase={getCurrentPhaseName()}
               timerType={currentTimerMode[getCurrentPhaseName()]}
               totalMinutes={getCurrentPhaseTimerDuration(getCurrentPhaseName(), currentTimerMode[getCurrentPhaseName()])}
