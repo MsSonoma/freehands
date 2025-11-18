@@ -139,26 +139,9 @@ export function useResumeRestart({
       }
     }
     
-    // After snapshot restore, ensure timer is active for the current phase
-    try {
-      const phaseName = phase || 'discussion';
-      const currentPhaseMode = currentTimerMode[phaseName];
-      
-      console.log(`[RESUME] Phase: ${phaseName}, Current mode: ${currentPhaseMode}, All modes:`, currentTimerMode);
-      
-      // Set timer mode if the current phase doesn't have one
-      // This ensures timers appear while preserving restored modes
-      if (!currentPhaseMode) {
-        const newTimerMode = { ...currentTimerMode };
-        newTimerMode[phaseName] = 'work'; // Default to 'work' if no specific mode restored
-        setCurrentTimerMode(newTimerMode);
-        console.log(`[RESUME] Set timer mode for ${phaseName} to 'work'`);
-      } else {
-        console.log(`[RESUME] Preserving existing timer mode for ${phaseName}: ${currentPhaseMode}`);
-      }
-    } catch (err) {
-      console.warn('[RESUME] Failed to check timer mode:', err);
-    }
+    // Timer modes should already be set during snapshot restoration
+    console.log(`[RESUME] Current timer modes:`, currentTimerMode);
+    
     // Decide what to resume based on phase/subPhase
     try {
       if (phase === 'discussion') {

@@ -525,7 +525,14 @@ export function useSnapshotPersistence({
         // Phase timer state restoration
         try {
           if (snap.currentTimerMode && typeof snap.currentTimerMode === 'object' && Object.keys(snap.currentTimerMode).length > 0) {
+            console.log('[SNAPSHOT RESTORE] Restoring timer modes:', snap.currentTimerMode);
             setCurrentTimerMode(snap.currentTimerMode);
+          } else {
+            // If no timer modes in snapshot, set a default for current phase to ensure timer visibility
+            const currentPhaseName = snap.phase || 'discussion';
+            const fallbackMode = { [currentPhaseName]: 'work' };
+            console.log(`[SNAPSHOT RESTORE] No timer modes in snapshot, setting fallback for ${currentPhaseName}:`, fallbackMode);
+            setCurrentTimerMode(fallbackMode);
           }
         } catch {}
         try {
