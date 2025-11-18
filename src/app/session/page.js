@@ -525,9 +525,11 @@ function SessionPageInner() {
   // Handle timer time adjustment
   const handleUpdateTime = useCallback((newElapsedSeconds) => {
     // Update the timer state through sessionStorage
-    if (lessonKey) {
+    const currentPhase = getCurrentPhaseName();
+    if (lessonKey && currentPhase) {
       try {
-        const storageKey = `session_timer_state:${lessonKey}`;
+        const currentMode = currentTimerMode[currentPhase] || 'play';
+        const storageKey = `session_timer_state:${lessonKey}:${currentPhase}:${currentMode}`;
         const storedState = sessionStorage.getItem(storageKey);
         if (storedState) {
           const parsed = JSON.parse(storedState);
@@ -541,7 +543,7 @@ function SessionPageInner() {
       }
     }
     setShowTimerControls(false);
-  }, [lessonKey]);
+  }, [lessonKey, getCurrentPhaseName, currentTimerMode]);
 
   // Handle golden key application from timer controls
   const handleApplyGoldenKey = useCallback(async () => {
@@ -812,8 +814,15 @@ function SessionPageInner() {
   useEffect(() => {
     if (showBegin && lessonKey) {
       try {
-        const storageKey = `session_timer_state:${lessonKey}`;
-        sessionStorage.removeItem(storageKey);
+        // Clean up all phase-based timer states for this lesson
+        const phases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
+        const timerTypes = ['play', 'work'];
+        phases.forEach(phase => {
+          timerTypes.forEach(timerType => {
+            const storageKey = `session_timer_state:${lessonKey}:${phase}:${timerType}`;
+            sessionStorage.removeItem(storageKey);
+          });
+        });
       } catch {}
     }
   }, [showBegin, lessonKey]);
@@ -2860,8 +2869,8 @@ function SessionPageInner() {
     try { mutedRef.current = false; } catch {}
     try { forceNextPlaybackRef.current = true; } catch {}
     
-    // CRITICAL for Chrome: Unlock video autoplay by playing during user gesture
-    // Keep it playing (muted and looping) so audio code doesn't need to restart it
+    // CRITICAL for Chrome: Preload video during user gesture but don't play yet
+    // The video will start when TTS actually begins playing
     try {
       if (videoRef.current) {
         if (videoRef.current.readyState < 2) {
@@ -2869,10 +2878,17 @@ function SessionPageInner() {
           // Wait a moment for load to register
           await new Promise(r => setTimeout(r, 100));
         }
-        // Play video and keep it playing (it's muted and looping anyway)
-        const playPromise = videoRef.current.play();
-        if (playPromise && playPromise.then) {
-          await playPromise;
+        // Just seek to first frame to unlock autoplay, but don't start playing yet
+        try {
+          videoRef.current.currentTime = 0;
+        } catch (e) {
+          // Fallback: briefly play then pause to unlock autoplay
+          const playPromise = videoRef.current.play();
+          if (playPromise && playPromise.then) {
+            await playPromise.then(() => {
+              try { videoRef.current.pause(); } catch {}
+            });
+          }
         }
       }
     } catch (e) {
@@ -2966,32 +2982,6 @@ function SessionPageInner() {
         const assistantSentences = captionSentencesRef.current.slice(replyStartIndex);
         playAudioFromBase64(audioB64, assistantSentences, replyStartIndex)
           .catch(() => {});
-        // Safety: if we are not speaking within ~1.2s, attempt one recovery by switching path
-        try {
-          openingReattemptedRef.current = false;
-          setTimeout(async () => {
-            try {
-              if (!isSpeakingRef.current && lastAudioBase64Ref.current && !openingReattemptedRef.current) {
-                openingReattemptedRef.current = true;
-                const b64 = lastAudioBase64Ref.current;
-                // Flip preference: if we tried HTML first, force WebAudio; otherwise, force HTML once
-                if (preferHtmlAudioOnceRef.current) {
-                  // We still prefer HTML per flag; switch to WebAudio explicitly
-                  try {
-                    const assistantSentences = captionSentencesRef.current.slice(replyStartIndex);
-                    await playViaWebAudio(b64, assistantSentences, replyStartIndex);
-                  } catch {}
-                } else {
-                  try { preferHtmlAudioOnceRef.current = true; } catch {}
-                  try {
-                    const assistantSentences = captionSentencesRef.current.slice(replyStartIndex);
-                    await playAudioFromBase64(b64, assistantSentences, replyStartIndex);
-                  } catch {}
-                }
-              }
-            } catch {}
-          }, 1200);
-        } catch {}
       }
       setSubPhase('awaiting-learner');
       setCanSend(true);
@@ -3039,18 +3029,6 @@ function SessionPageInner() {
           try { await waitForBeat(40); } catch {}
           try { preferHtmlAudioOnceRef.current = true; } catch {}
           playAudioFromBase64(audioB64, assistantSentences, replyStartIndex).catch(() => {});
-          try {
-            openingReattemptedRef.current = false;
-            setTimeout(async () => {
-              try {
-                if (!isSpeakingRef.current && lastAudioBase64Ref.current && !openingReattemptedRef.current) {
-                  openingReattemptedRef.current = true;
-                  const b64 = lastAudioBase64Ref.current;
-                  try { await playViaWebAudio(b64, assistantSentences, replyStartIndex); } catch {}
-                }
-              } catch {}
-            }, 1200);
-          } catch {}
         } else {
           setIsSpeaking(false);
         }
@@ -6224,8 +6202,19 @@ function SessionPageInner() {
 
       // Clear timer state for completed lesson
       try {
+        // Clean up old timer format (transitional)
         const storageKey = lessonKey ? `session_timer_state:${lessonKey}` : 'session_timer_state';
         sessionStorage.removeItem(storageKey);
+        
+        // Clean up new phase-based timer states
+        const phases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
+        const timerTypes = ['play', 'work'];
+        phases.forEach(phase => {
+          timerTypes.forEach(timerType => {
+            const newStorageKey = `session_timer_state:${lessonKey}:${phase}:${timerType}`;
+            sessionStorage.removeItem(newStorageKey);
+          });
+        });
       } catch {}
 
       // Clear active golden key for this lesson if it was used
@@ -7292,11 +7281,15 @@ function SessionPageInner() {
         onClose={() => setShowTimerControls(false)}
         currentElapsedSeconds={(() => {
           try {
-            const storageKey = `session_timer_state:${lessonKey}`;
-            const timerState = sessionStorage.getItem(storageKey);
-            if (timerState) {
-              const state = JSON.parse(timerState);
-              return state.elapsedSeconds || 0;
+            const currentPhase = getCurrentPhaseName();
+            if (currentPhase) {
+              const currentMode = currentTimerMode[currentPhase] || 'play';
+              const storageKey = `session_timer_state:${lessonKey}:${currentPhase}:${currentMode}`;
+              const timerState = sessionStorage.getItem(storageKey);
+              if (timerState) {
+                const state = JSON.parse(timerState);
+                return state.elapsedSeconds || 0;
+              }
             }
           } catch {}
           return 0;
