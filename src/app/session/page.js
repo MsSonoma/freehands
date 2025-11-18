@@ -4768,6 +4768,8 @@ function SessionPageInner() {
     }
     if (phase === 'discussion' || phase === 'teaching') {
       // Move to Comprehension start (teaching/discussion are a single segment on the timeline)
+      // Mark discussion work phase as completed (user finished discussion work time)
+      markWorkPhaseComplete('discussion');
       ensureBaseSessionSetup();
       setShowBegin(false);
       setPhase('comprehension');
@@ -4935,6 +4937,8 @@ function SessionPageInner() {
     }
     // From discussion/teaching ? comprehension
     if (phase === 'discussion' || phase === 'teaching') {
+      // Mark discussion work phase as completed (user finished discussion work time)
+      markWorkPhaseComplete('discussion');
       ensureBaseSessionSetup();
       setShowBegin(false);
       setPhase('comprehension');
