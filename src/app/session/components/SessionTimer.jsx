@@ -103,6 +103,19 @@ export default function SessionTimer({
     intervalRef.current = setInterval(() => {
       if (startTime) {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        
+        // Debug logging for SessionTimer
+        if (elapsed < 0) {
+          console.log('SessionTimer Debug - Negative Elapsed:', {
+            elapsed,
+            startTime,
+            currentTime: Date.now(),
+            phase,
+            timerType,
+            storageKey
+          });
+        }
+        
         setElapsedSeconds(elapsed);
         
         const totalSeconds = effectiveTotalMinutes * 60;
@@ -123,6 +136,19 @@ export default function SessionTimer({
   // Calculate remaining time
   const totalSeconds = effectiveTotalMinutes * 60;
   const remainingSeconds = totalSeconds - elapsedSeconds;
+  
+  // Debug remaining time calculation
+  if (elapsedSeconds < 0 || remainingSeconds > totalSeconds) {
+    console.log('SessionTimer Remaining Time Debug:', {
+      elapsedSeconds,
+      totalSeconds,
+      remainingSeconds,
+      effectiveTotalMinutes,
+      phase,
+      timerType
+    });
+  }
+  
   // remainingSeconds can now exceed totalSeconds when elapsedSeconds is negative (time added)
   const minutes = Math.floor(Math.max(0, remainingSeconds) / 60);
   const seconds = Math.max(0, remainingSeconds) % 60;
