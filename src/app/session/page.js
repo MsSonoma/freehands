@@ -509,15 +509,10 @@ function SessionPageInner() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Handle timer pause/resume with PIN verification
+  // Handle timer pause/resume (no PIN required - overlay already authenticated)
   const handleTimerPauseToggle = useCallback(async () => {
-    // Only require PIN when pausing (not when resuming)
-    if (!timerPaused) {
-      const ok = await ensurePinAllowed('timer');
-      if (!ok) return;
-    }
     setTimerPaused(prev => !prev);
-  }, [timerPaused]);
+  }, []);
 
   // Handle timer click - open controls with PIN
   const handleTimerClick = useCallback(async (currentElapsedSeconds) => {
