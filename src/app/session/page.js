@@ -51,6 +51,7 @@ import PhaseTimersOverlay from './components/PhaseTimersOverlay';
 import PlayTimeExpiredOverlay from './components/PlayTimeExpiredOverlay';
 import TimerControlOverlay from './components/TimerControlOverlay';
 import SessionVisualAidsCarousel from './components/SessionVisualAidsCarousel';
+import GamesOverlay from './components/games/GamesOverlay';
 import GatedOverlay from '../components/GatedOverlay';
 import { loadPhaseTimersForLearner, TIMER_TYPES } from './utils/phaseTimerDefaults';
 
@@ -336,6 +337,9 @@ function SessionPageInner() {
   const [goldenKeyEarned, setGoldenKeyEarned] = useState(false); // True if earned during this session
   const [goldenKeyBonus, setGoldenKeyBonus] = useState(0); // Bonus minutes from golden key
   const [completingLesson, setCompletingLesson] = useState(false); // Track if completion is in progress
+  
+  // Games state
+  const [showGames, setShowGames] = useState(false);
   
   // Learner grade state (for grade-appropriate speech)
   const [learnerGrade, setLearnerGrade] = useState('');
@@ -6900,6 +6904,7 @@ function SessionPageInner() {
                   <button type="button" style={btn} onClick={handlePoemStart}>Poem</button>
                   <button type="button" style={btn} onClick={handleStoryStart}>Story</button>
                   <button type="button" style={btn} onClick={handleFillInFunStart}>Fill-in-Fun</button>
+                  <button type="button" style={btn} onClick={() => setShowGames(true)}>Games</button>
                   <button type="button" style={goBtn} onClick={lessonData ? handleStartLesson : undefined} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson…'}>Go</button>
                 </div>
               );
@@ -7085,6 +7090,11 @@ function SessionPageInner() {
                       style={{ ...btnBase, minWidth: 160, background: '#374151', opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
                       onClick={askState === 'inactive' ? getAskButtonHandler(handleAskQuestionStart) : undefined}
                     >Ask</button>
+                    <button
+                      type="button"
+                      style={{ ...btnBase, minWidth: 160, background: '#10b981' }}
+                      onClick={() => setShowGames(true)}
+                    >Games</button>
                   </div>
                 );
               }
@@ -7552,6 +7562,14 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
           <PlayTimeExpiredOverlay
             phaseName={playExpiredPhase}
             onComplete={handlePlayExpiredComplete}
+          />
+        )}
+        
+        {/* Games overlay */}
+        {showGames && (
+          <GamesOverlay
+            onClose={() => setShowGames(false)}
+            playTimer={true}
           />
         )}
         
