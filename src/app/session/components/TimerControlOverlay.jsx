@@ -200,7 +200,14 @@ export default function TimerControlOverlay({
     return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
-  const previewRemaining = Math.max(0, remainingSeconds + (adjustMinutes * 60));
+  // Calculate preview remaining time - can exceed original duration when adding time
+  const adjustSeconds = adjustMinutes * 60;
+  const previewElapsed = Math.max(0, currentElapsedSeconds - adjustSeconds);
+  
+  // If adjustment pushes elapsed time below 0, we've added more time than originally elapsed
+  // In that case, remaining time = original total + extra time added
+  const extraTimeAdded = Math.max(0, adjustSeconds - currentElapsedSeconds);
+  const previewRemaining = Math.max(0, totalSeconds - previewElapsed + extraTimeAdded);
 
   return (
     <div
