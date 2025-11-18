@@ -51,6 +51,13 @@ export default function SessionTimer({
   // Initialize from sessionStorage
   useEffect(() => {
     const stored = sessionStorage.getItem(storageKey);
+    console.log('SessionTimer Initialize Debug:', {
+      storageKey,
+      stored: stored ? JSON.parse(stored) : null,
+      phase,
+      timerType
+    });
+    
     if (stored) {
       try {
         const state = JSON.parse(stored);
@@ -59,6 +66,13 @@ export default function SessionTimer({
         setElapsedSeconds(state.elapsedSeconds || 0);
         setStartTime(state.startTime || Date.now());
         setPausedAt(state.pausedAt || null);
+        
+        console.log('SessionTimer Restored State:', {
+          elapsedSeconds: state.elapsedSeconds,
+          startTime: state.startTime,
+          pausedAt: state.pausedAt,
+          currentTime: Date.now()
+        });
       } catch {
         // Invalid stored data - reset
         setElapsedSeconds(0);
@@ -68,7 +82,7 @@ export default function SessionTimer({
     } else {
       setStartTime(Date.now());
     }
-  }, [storageKey]);
+  }, [storageKey, phase, timerType]);
 
   // Persist state to sessionStorage
   useEffect(() => {
