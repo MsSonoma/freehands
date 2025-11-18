@@ -4339,6 +4339,8 @@ function SessionPageInner() {
   };
 
   const beginWorksheetPhase = async () => {
+    // Mark exercise work phase as completed (user finished exercise work)
+    markWorkPhaseComplete('exercise');
     // End any prior API/audio/mic activity before starting fresh
     try { abortAllActivity(true); } catch {}
     // Ensure audio/mic unlocked via Begin
@@ -4382,6 +4384,8 @@ function SessionPageInner() {
   };
 
   const beginTestPhase = async () => {
+    // Mark worksheet work phase as completed (user finished worksheet work)
+    markWorkPhaseComplete('worksheet');
     let testListForReset = Array.isArray(generatedTest) ? generatedTest : null;
     // End any prior API/audio/mic activity before starting fresh
     try { abortAllActivity(true); } catch {}
@@ -4984,6 +4988,8 @@ function SessionPageInner() {
   // Begin Exercise manually when awaiting begin (either skipped or auto-transitioned)
   const beginSkippedExercise = async () => {
     if (phase !== 'exercise' || subPhase !== 'exercise-awaiting-begin') return;
+    // Mark comprehension work phase as completed (user finished comprehension work)
+    markWorkPhaseComplete('comprehension');
     // End any prior API/audio/mic activity before starting fresh
     try { abortAllActivity(); } catch {}
     // Ensure audio/mic unlocked via Begin
