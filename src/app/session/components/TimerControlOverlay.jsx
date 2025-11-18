@@ -119,6 +119,16 @@ export default function TimerControlOverlay({
       // Allow newElapsed to go negative to represent time added beyond original duration
       const newElapsed = currentElapsed - adjustSeconds;
       
+      // Debug logging
+      console.log('Timer Adjustment Debug:', {
+        adjustMinutes,
+        adjustSeconds,
+        currentElapsed,
+        newElapsed,
+        effectiveTotalMinutes,
+        totalSeconds
+      });
+      
       // Update the phase-specific timer state in sessionStorage
       try {
         const stored = sessionStorage.getItem(storageKey);
@@ -128,6 +138,12 @@ export default function TimerControlOverlay({
           // newElapsed = (Date.now() - newStartTime) / 1000
           // newStartTime = Date.now() - (newElapsed * 1000)
           const newStartTime = Date.now() - (newElapsed * 1000);
+          console.log('Setting sessionStorage:', {
+            newStartTime,
+            newElapsed,
+            currentTime: Date.now(),
+            storageKey
+          });
           state.startTime = newStartTime;
           state.elapsedSeconds = newElapsed;
           state.totalMinutes = effectiveTotalMinutes; // Keep original total
