@@ -56,7 +56,8 @@ export default function SessionTimer({
       storageKey,
       stored: stored ? JSON.parse(stored) : null,
       phase,
-      timerType
+      timerType,
+      allStoredKeys: Object.keys(sessionStorage).filter(k => k.startsWith('session_timer_state'))
     });
     
     if (stored) {
