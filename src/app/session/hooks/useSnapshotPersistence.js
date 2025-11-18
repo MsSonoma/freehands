@@ -287,6 +287,25 @@ export function useSnapshotPersistence({
           generatedExercise,
           currentTimerMode,
           workPhaseCompletions,
+          // Preserve timer states from sessionStorage
+          timerStates: (() => {
+            try {
+              const timerStates = {};
+              // Get all sessionStorage keys that match timer state pattern
+              for (let i = 0; i < sessionStorage.length; i++) {
+                const key = sessionStorage.key(i);
+                if (key && key.startsWith('session_timer_state:')) {
+                  const value = sessionStorage.getItem(key);
+                  if (value) {
+                    timerStates[key] = JSON.parse(value);
+                  }
+                }
+              }
+              return timerStates;
+            } catch {
+              return {};
+            }
+          })(),
           resume,
         };
         if (!storedKey || String(storedKey).trim().length === 0) {
@@ -514,6 +533,20 @@ export function useSnapshotPersistence({
             setWorkPhaseCompletions(snap.workPhaseCompletions);
           }
         } catch {}
+        
+        // Restore timer states to sessionStorage
+        try {
+          if (snap.timerStates && typeof snap.timerStates === 'object') {
+            console.log('[SNAPSHOT RESTORE] Restoring timer states:', snap.timerStates);
+            Object.entries(snap.timerStates).forEach(([key, value]) => {
+              if (key.startsWith('session_timer_state:') && value) {
+                sessionStorage.setItem(key, JSON.stringify(value));
+              }
+            });
+          }
+        } catch (err) {
+          console.warn('[SNAPSHOT RESTORE] Failed to restore timer states:', err);
+        }
         
         // Defer clearing loading until the resume reconciliation effect completes
         try { setTtsLoadingCount(0); } catch {}
