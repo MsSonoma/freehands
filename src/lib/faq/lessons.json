@@ -46,7 +46,7 @@
         "set date"
       ],
       "description": "The Lesson Scheduling feature lets you assign lessons to specific dates on your learner's calendar. You can schedule lessons you've generated or choose from the library. Scheduled lessons appear on the calendar view where you can see your learner's learning plan at a glance.",
-      "howToUse": "To schedule a lesson, say 'Schedule [lesson name] for November 24th' or 'Add fractions lesson to the calendar for Monday.' I'll help you find the right lesson and pick a date. You can also use the calendar overlay to drag and drop lessons.",
+      "howToUse": "To schedule a lesson, say 'Schedule [lesson name] for November 24th' or 'Add fractions lesson to the calendar for Monday.' I'll help you find the right lesson and pick a date. You can also click the 'Schedule' button on any lesson in the lessons overlay or lesson page and select a date. Or use the calendar overlay to drag and drop lessons.",
       "relatedFeatures": ["lesson-generation", "calendar-view"]
     },
     {

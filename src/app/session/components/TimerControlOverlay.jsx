@@ -11,8 +11,11 @@ import { useState, useEffect } from 'react';
  * 
  * @param {boolean} isOpen - Whether the overlay is visible
  * @param {function} onClose - Callback to close the overlay
- * @param {number} currentElapsedSeconds - Current elapsed time in seconds
+ * @param {string} lessonKey - Unique identifier for the lesson
+ * @param {string} phase - Current phase name
+ * @param {string} timerType - 'play' or 'work'
  * @param {number} totalMinutes - Total time allocated in minutes
+ * @param {number} goldenKeyBonus - Additional minutes from golden key (for play timers)
  * @param {boolean} isPaused - Whether timer is currently paused
  * @param {function} onUpdateTime - Callback to update elapsed time (seconds)
  * @param {function} onTogglePause - Callback to pause/resume timer
@@ -25,8 +28,11 @@ import { useState, useEffect } from 'react';
 export default function TimerControlOverlay({
   isOpen,
   onClose,
-  currentElapsedSeconds = 0,
-  totalMinutes = 60,
+  lessonKey,
+  phase,
+  timerType = 'play',
+  totalMinutes = 5,
+  goldenKeyBonus = 0,
   isPaused = false,
   onUpdateTime,
   onTogglePause,
@@ -36,7 +42,31 @@ export default function TimerControlOverlay({
   onSuspendGoldenKey,
   onUnsuspendGoldenKey
 }) {
-  const totalSeconds = totalMinutes * 60;
+  // Calculate effective total (add golden key bonus to play timers)
+  const effectiveTotalMinutes = timerType === 'play' 
+    ? totalMinutes + (goldenKeyBonus || 0)
+    : totalMinutes;
+  
+  const totalSeconds = effectiveTotalMinutes * 60;
+  
+  // Generate phase-specific storage key (matching SessionTimer)
+  const storageKey = lessonKey 
+    ? `session_timer_state:${lessonKey}:${phase}:${timerType}` 
+    : `session_timer_state:${phase}:${timerType}`;
+  
+  // Get current elapsed seconds from phase-specific storage
+  const getCurrentElapsedSeconds = () => {
+    try {
+      const stored = sessionStorage.getItem(storageKey);
+      if (stored) {
+        const state = JSON.parse(stored);
+        return state.elapsedSeconds || 0;
+      }
+    } catch {}
+    return 0;
+  };
+  
+  const currentElapsedSeconds = getCurrentElapsedSeconds();
   const remainingSeconds = Math.max(0, totalSeconds - currentElapsedSeconds);
   
   const [adjustMinutes, setAdjustMinutes] = useState(0);
@@ -57,7 +87,28 @@ export default function TimerControlOverlay({
     setSaving(true);
     try {
       const adjustSeconds = adjustMinutes * 60;
-      const newElapsed = Math.max(0, Math.min(totalSeconds, currentElapsedSeconds - adjustSeconds));
+      const currentElapsed = getCurrentElapsedSeconds();
+      const newElapsed = Math.max(0, Math.min(totalSeconds, currentElapsed - adjustSeconds));
+      
+      // Update the phase-specific timer state in sessionStorage
+      // We need to adjust startTime, not just elapsedSeconds, because SessionTimer
+      // calculates elapsed time as (Date.now() - startTime) / 1000
+      try {
+        const stored = sessionStorage.getItem(storageKey);
+        if (stored) {
+          const state = JSON.parse(stored);
+          // Calculate the new startTime by adding the time difference
+          // If we're reducing elapsed time (adding minutes), we push startTime forward
+          // If we're adding elapsed time (removing minutes), we push startTime backward
+          const timeDelta = (newElapsed - currentElapsed) * 1000; // convert to ms
+          state.startTime = (state.startTime || Date.now()) - timeDelta;
+          state.elapsedSeconds = newElapsed;
+          sessionStorage.setItem(storageKey, JSON.stringify(state));
+        }
+      } catch (error) {
+        // Silent error handling
+      }
+      
       await onUpdateTime?.(newElapsed);
       setAdjustMinutes(0);
     } catch (error) {
@@ -165,7 +216,12 @@ export default function TimerControlOverlay({
           borderRadius: 8,
           marginBottom: 20
         }}>
-          <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>Current Status</div>
+          <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>
+            Current Phase: <strong>{phase}</strong> ({timerType === 'play' ? '🎮 Play Time' : '📝 Work Time'})
+            {goldenKeyBonus > 0 && timerType === 'play' && (
+              <span style={{ color: '#fbbf24', marginLeft: 8 }}>🔑 +{goldenKeyBonus} min bonus</span>
+            )}
+          </div>
           <div style={{ fontSize: 24, fontWeight: 700, color: '#111', fontFamily: 'monospace' }}>
             {formatTime(remainingSeconds)} <span style={{ fontSize: 14, fontWeight: 400 }}>remaining</span>
           </div>
@@ -348,10 +404,10 @@ export default function TimerControlOverlay({
           
           <div style={{ fontSize: 12, color: '#6b7280', marginTop: 8, lineStyle: 1.4 }}>
             {isGoldenKeySuspended 
-              ? 'Key is applied but suspended - learner won\'t see poem/story features until unsuspended.'
+              ? 'Key is applied but suspended - bonus time is paused until unsuspended.'
               : hasGoldenKey 
-                ? 'Golden key unlocks poem and story features for this lesson.'
-                : 'Applying a golden key will unlock poem and story features for this lesson.'}
+                ? 'Golden key adds bonus time to play timers for this lesson.'
+                : 'Applying a golden key will add bonus time to play timers for this lesson.'}
           </div>
         </div>
 

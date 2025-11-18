@@ -1190,6 +1190,14 @@ export default function CounselorClient() {
         conversationHistory
       })
       
+      console.log('[CounselorClient] Interceptor result:', JSON.stringify({
+        handled: interceptResult.handled,
+        hasResponse: !!interceptResult.response,
+        hasAction: !!interceptResult.action,
+        response: interceptResult.response?.substring(0, 100),
+        fullResponse: interceptResult.response
+      }, null, 2))
+      
       if (interceptResult.handled) {
         // Update loading thought based on what we're doing
         if (interceptResult.action) {

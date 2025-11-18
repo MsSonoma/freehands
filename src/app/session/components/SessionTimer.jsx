@@ -10,24 +10,24 @@ import { TIMER_TYPE_EMOJI } from '../utils/phaseTimerDefaults';
  * @param {number} lessonProgress - Percentage of lesson work completed (0-100)
  * @param {boolean} isPaused - Whether the timer is paused
  * @param {function} onTimeUp - Callback when timer reaches zero
- * @param {function} onPauseToggle - Callback to request pause/resume
  * @param {string} lessonKey - Unique identifier for the lesson
  * @param {string} phase - Current phase (discussion/comprehension/exercise/worksheet/test)
  * @param {string} timerType - 'play' or 'work'
  * @param {number} goldenKeyBonus - Additional minutes from golden key (applied to play timers)
  * @param {function} onTimerClick - Callback when timer is clicked (for facilitator controls)
+ * @param {function} onTimeRemaining - Callback with remaining minutes (for external display)
  */
 export default function SessionTimer({ 
   totalMinutes = 5, 
   lessonProgress = 0, 
   isPaused = false,
   onTimeUp,
-  onPauseToggle,
   lessonKey = null,
   phase = 'discussion',
   timerType = 'play',
   goldenKeyBonus = 0,
   onTimerClick,
+  onTimeRemaining,
   className = ''
 }) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -129,6 +129,13 @@ export default function SessionTimer({
   const minutes = Math.floor(remainingSeconds / 60);
   const seconds = remainingSeconds % 60;
 
+  // Report remaining time to parent (for external displays like games overlay)
+  useEffect(() => {
+    if (onTimeRemaining) {
+      onTimeRemaining(minutes);
+    }
+  }, [minutes, onTimeRemaining]);
+
   // Calculate progress ratios (only for work timers)
   const timeProgress = (elapsedSeconds / totalSeconds) * 100; // % of time elapsed
   const progressDiff = lessonProgress - timeProgress; // positive = ahead, negative = behind
@@ -197,28 +204,16 @@ export default function SessionTimer({
           color: '#fbbf24',
           marginLeft: 4
         }} title={`+${goldenKeyBonus} min golden key bonus`}>
-          ⚡
+          🔑
         </span>
       )}
-      {onPauseToggle && (
-        <button
-          onClick={onPauseToggle}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '1rem',
-            padding: '2px 6px',
-            opacity: 0.8,
-            transition: 'opacity 0.2s'
-          }}
-          onMouseEnter={e => e.currentTarget.style.opacity = '1'}
-          onMouseLeave={e => e.currentTarget.style.opacity = '0.8'}
-          title={isPaused ? 'Resume' : 'Pause (requires PIN)'}
-        >
-          {isPaused ? '▶️' : '⏸️'}
-        </button>
-      )}
+      <span style={{
+        fontSize: '1rem',
+        padding: '2px 6px',
+        opacity: 0.8
+      }}>
+        {isPaused ? '▶️' : '⏸️'}
+      </span>
     </div>
   );
 }

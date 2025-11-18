@@ -347,30 +347,13 @@ export function useDiscussionHandlers({
 
   // Poem handlers
   const handlePoemStart = useCallback(async () => {
-    // Check if golden key is required and available
-    // Skip check if this session has a golden key enabled
-    if (!hasGoldenKey) {
-      const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
-      if (learnerId && learnerId !== 'demo') {
-        try {
-          const keysRaw = localStorage.getItem(`golden_keys_${learnerId}`);
-          const keys = keysRaw ? JSON.parse(keysRaw) : [];
-          if (keys.length === 0) {
-            await speakFrontend('You need a golden key to unlock the poem. Complete a lesson within the time limit to earn one!');
-            return;
-          }
-        } catch (e) {
-          // Golden key check failed - continue
-        }
-      }
-    }
-    
+    // Golden key only affects timer bonus, not access to poems
     try { setShowOpeningActions(false); } catch {}
     setPoemState('awaiting-topic');
     setShowPoemSuggestions(true);
     setCanSend(true);
     await speakFrontend('What would you like the poem to be about?');
-  }, [hasGoldenKey, setShowOpeningActions, setPoemState, setShowPoemSuggestions, setCanSend, speakFrontend]);
+  }, [setShowOpeningActions, setPoemState, setShowPoemSuggestions, setCanSend, speakFrontend]);
 
   const handlePoemSuggestions = useCallback(async () => {
     setShowPoemSuggestions(false);
@@ -393,24 +376,8 @@ export function useDiscussionHandlers({
 
   // Story handlers
   const handleStoryStart = useCallback(async () => {
-    
-    // Check if golden key is required and available
-    // Skip check if this session has a golden key enabled
-    if (!hasGoldenKey) {
-      const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
-      if (learnerId && learnerId !== 'demo') {
-      try {
-        const keysRaw = localStorage.getItem(`golden_keys_${learnerId}`);
-        const keys = keysRaw ? JSON.parse(keysRaw) : [];
-        if (keys.length === 0) {
-          await speakFrontend('Need a golden key to unlock story. Complete a lesson within time limit to earn one!');
-          return;
-        }
-      } catch (e) {
-        // Golden key check failed - continue
-      }
-    }
-  }    try { setShowOpeningActions(false); } catch {}
+    // Golden key only affects timer bonus, not access to stories
+    try { setShowOpeningActions(false); } catch {}
     
     // Check if this is a continuation from a previous phase
     if (storyTranscript.length > 0) {
@@ -536,7 +503,7 @@ export function useDiscussionHandlers({
       setCanSend(true);
     }
   }, [
-    hasGoldenKey, setShowOpeningActions, setStoryTranscript, setStoryState, 
+    setShowOpeningActions, setStoryTranscript, setStoryState, 
     setStorySetupStep, setStoryCharacters, setStorySetting, setStoryPlot, setStoryPhase,
     setCanSend, setLoading, speakFrontend, storyTranscript, phase, subPhase, learnerGrade, difficultyParam
   ]);

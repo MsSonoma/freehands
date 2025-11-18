@@ -460,23 +460,21 @@ export class MentorInterceptor {
       }
     }
     
-    // Check for bypass command
-    if (fuzzyMatch(userMessage, ['different issue', 'something else', 'nevermind', 'skip'])) {
-      this.reset()
-      return {
-        handled: false,
-        apiForward: { message: userMessage, bypassInterceptor: true }
-      }
-    }
-    
     // Handle confirmation if awaiting
     if (this.state.awaitingConfirmation) {
       const confirmation = detectConfirmation(userMessage)
+      console.log('[MentorInterceptor] Confirmation check:', {
+        userMessage,
+        confirmation,
+        awaitingConfirmation: this.state.awaitingConfirmation,
+        flow: this.state.flow
+      })
       
       if (confirmation === 'yes') {
         return await this.executeAction()
       } else if (confirmation === 'no') {
         this.reset()
+        console.log('[MentorInterceptor] User cancelled, returning handled response')
         return {
           handled: true,
           response: "No problem. How else can I help you?"
@@ -486,6 +484,15 @@ export class MentorInterceptor {
           handled: true,
           response: "I didn't catch that. Please say yes to confirm or no to cancel."
         }
+      }
+    }
+    
+    // Check for bypass command (only if not in a structured flow)
+    if (!this.state.flow && !this.state.awaitingInput && fuzzyMatch(userMessage, ['different issue', 'something else', 'nevermind', 'skip'])) {
+      this.reset()
+      return {
+        handled: false,
+        apiForward: { message: userMessage, bypassInterceptor: true }
       }
     }
     
@@ -628,6 +635,57 @@ export class MentorInterceptor {
   async handleParameterInput(userMessage, context) {
     const { allLessons, selectedLearnerId, learnerName } = context
     
+    // Handle FAQ feature confirmation
+    if (this.state.awaitingInput === 'faq_feature_confirm') {
+      const featureId = this.state.context.selectedFeatureId
+      const feature = getFeatureById(featureId)
+      
+      if (!feature) {
+        this.reset()
+        return {
+          handled: true,
+          response: "I couldn't find that feature. What else can I help you with?"
+        }
+      }
+      
+      // Check if user confirmed by saying the feature name
+      const normalized = normalizeText(userMessage)
+      const normalizedTitle = normalizeText(feature.title)
+      
+      if (normalized.includes(normalizedTitle) || normalizedTitle.includes(normalized) || detectConfirmation(userMessage) === 'yes') {
+        // User confirmed - provide explanation
+        this.reset()
+        
+        let response = `${feature.title}: ${feature.description}\n\n`
+        response += `${feature.howToUse}`
+        
+        if (feature.relatedFeatures && feature.relatedFeatures.length > 0) {
+          response += `\n\nThis is related to: ${feature.relatedFeatures.map(id => {
+            const related = getFeatureById(id)
+            return related ? related.title : id
+          }).join(', ')}.`
+        }
+        
+        return {
+          handled: true,
+          response
+        }
+      } else if (detectConfirmation(userMessage) === 'no') {
+        // User rejected - reset
+        this.reset()
+        return {
+          handled: true,
+          response: "No problem. What else would you like to know about?"
+        }
+      } else {
+        // Unclear - ask again
+        return {
+          handled: true,
+          response: `Are you asking about ${feature.title}? Please say yes, no, or the feature name to confirm.`
+        }
+      }
+    }
+    
     // Handle FAQ feature selection (when multiple matches)
     if (this.state.awaitingInput === 'faq_feature_select') {
       const candidates = this.state.context.faqCandidates || []
@@ -702,6 +760,56 @@ export class MentorInterceptor {
     // Handle lesson selection from search results
     if (this.state.awaitingInput === 'lesson_selection') {
       const results = this.state.context.searchResults || []
+      
+      // Check if user wants to abandon selection and do something else
+      const normalized = normalizeText(userMessage)
+      const isRejection = normalized.includes('none') || 
+                         normalized.includes('neither') || 
+                         normalized.includes('not those') ||
+                         normalized.includes('different') ||
+                         detectConfirmation(userMessage) === 'no'
+      
+      if (isRejection) {
+        // User doesn't want any of the search results
+        // Reset state and check if they're making a new request
+        this.reset()
+        
+        // Check if message contains a new intent (generate, schedule, edit, etc.)
+        const intents = {}
+        for (const [intentName, pattern] of Object.entries(INTENT_PATTERNS)) {
+          intents[intentName] = pattern.confidence(userMessage)
+        }
+        
+        const topIntent = Object.entries(intents)
+          .filter(([_, score]) => score > 0)
+          .sort((a, b) => b[1] - a[1])[0]
+        
+        if (topIntent) {
+          const [intent] = topIntent
+          
+          // Route to the new intent handler
+          switch (intent) {
+            case 'generate':
+              return await this.handleGenerate(userMessage, context)
+            case 'schedule':
+              return await this.handleSchedule(userMessage, context)
+            case 'edit':
+              return await this.handleEdit(userMessage, context)
+            case 'search':
+              return await this.handleSearch(userMessage, context)
+            case 'recall':
+              return await this.handleRecall(userMessage, context)
+            case 'faq':
+              return await this.handleFaq(userMessage, context)
+          }
+        }
+        
+        // No new intent detected - just acknowledge the rejection
+        return {
+          handled: true,
+          response: "No problem. What would you like to do instead?"
+        }
+      }
       
       // Try to match by number
       const numberMatch = userMessage.match(/\b(\d+)\b/)
@@ -1301,57 +1409,6 @@ export class MentorInterceptor {
    * Handle FAQ and feature explanation requests
    */
   async handleFaq(userMessage, context) {
-    // Check if awaiting feature selection confirmation
-    if (this.state.awaitingInput === 'faq_feature_confirm') {
-      const featureId = this.state.context.selectedFeatureId
-      const feature = getFeatureById(featureId)
-      
-      if (!feature) {
-        this.reset()
-        return {
-          handled: true,
-          response: "I couldn't find that feature. What else can I help you with?"
-        }
-      }
-      
-      // Check if user confirmed by saying the feature name
-      const normalized = normalizeText(userMessage)
-      const normalizedTitle = normalizeText(feature.title)
-      
-      if (normalized.includes(normalizedTitle) || normalizedTitle.includes(normalized) || detectConfirmation(userMessage) === 'yes') {
-        // User confirmed - provide explanation
-        this.reset()
-        
-        let response = `${feature.title}: ${feature.description}\n\n`
-        response += `${feature.howToUse}`
-        
-        if (feature.relatedFeatures && feature.relatedFeatures.length > 0) {
-          response += `\n\nThis is related to: ${feature.relatedFeatures.map(id => {
-            const related = getFeatureById(id)
-            return related ? related.title : id
-          }).join(', ')}.`
-        }
-        
-        return {
-          handled: true,
-          response
-        }
-      } else if (detectConfirmation(userMessage) === 'no') {
-        // User rejected - reset
-        this.reset()
-        return {
-          handled: true,
-          response: "No problem. What else would you like to know about?"
-        }
-      } else {
-        // Unclear - ask again
-        return {
-          handled: true,
-          response: `Are you asking about ${feature.title}? Please say yes, no, or the feature name to confirm.`
-        }
-      }
-    }
-    
     // Search for matching features
     const matches = searchFeatures(userMessage)
     
