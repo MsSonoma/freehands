@@ -140,17 +140,24 @@ export function useResumeRestart({
     }
     
     // After snapshot restore, ensure timer is active for the current phase
+    // Be very conservative - only set if currentTimerMode is completely empty
     try {
       const phaseName = phase || 'discussion';
-      // Set a default timer mode if none exists
-      if (!currentTimerMode[phaseName]) {
-        const newTimerMode = { ...currentTimerMode };
-        newTimerMode[phaseName] = 'work'; // Default to 'work' mode
+      const hasAnyTimerModes = Object.keys(currentTimerMode).length > 0;
+      
+      console.log(`[RESUME] Phase: ${phaseName}, Timer modes:`, currentTimerMode);
+      
+      // Only set a fallback if no timer modes exist at all
+      // This preserves snapshot-restored timer modes (play/work)
+      if (!hasAnyTimerModes) {
+        const newTimerMode = { [phaseName]: 'work' };
         setCurrentTimerMode(newTimerMode);
-        console.log(`[RESUME] Set timer mode for ${phaseName} to 'work'`);
+        console.log(`[RESUME] No timer modes found, set fallback for ${phaseName}`);
+      } else {
+        console.log(`[RESUME] Using existing timer modes, no changes needed`);
       }
     } catch (err) {
-      console.warn('[RESUME] Failed to set timer mode:', err);
+      console.warn('[RESUME] Failed to check timer mode:', err);
     }
     // Decide what to resume based on phase/subPhase
     try {
