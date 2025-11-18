@@ -525,7 +525,14 @@ function SessionPageInner() {
   // Handle timer time adjustment
   const handleUpdateTime = useCallback((newElapsedSeconds) => {
     // Update the timer state through sessionStorage
-    const currentPhase = getCurrentPhaseName();
+    // Map current phase to timer phase key (inline to avoid TDZ issues)
+    let currentPhase = null;
+    if (phase === 'discussion' || phase === 'teaching') currentPhase = 'discussion';
+    else if (phase === 'comprehension') currentPhase = 'comprehension';
+    else if (phase === 'exercise') currentPhase = 'exercise';
+    else if (phase === 'worksheet') currentPhase = 'worksheet';
+    else if (phase === 'test') currentPhase = 'test';
+    
     if (lessonKey && currentPhase) {
       try {
         const currentMode = currentTimerMode[currentPhase] || 'play';
@@ -543,7 +550,7 @@ function SessionPageInner() {
       }
     }
     setShowTimerControls(false);
-  }, [lessonKey, getCurrentPhaseName, currentTimerMode]);
+  }, [lessonKey, phase, currentTimerMode]);
 
   // Handle golden key application from timer controls
   const handleApplyGoldenKey = useCallback(async () => {
@@ -7280,7 +7287,14 @@ function SessionPageInner() {
         onClose={() => setShowTimerControls(false)}
         currentElapsedSeconds={(() => {
           try {
-            const currentPhase = getCurrentPhaseName();
+            // Map current phase to timer phase key (inline to avoid TDZ issues)
+            let currentPhase = null;
+            if (phase === 'discussion' || phase === 'teaching') currentPhase = 'discussion';
+            else if (phase === 'comprehension') currentPhase = 'comprehension';
+            else if (phase === 'exercise') currentPhase = 'exercise';
+            else if (phase === 'worksheet') currentPhase = 'worksheet';
+            else if (phase === 'test') currentPhase = 'test';
+            
             if (currentPhase) {
               const currentMode = currentTimerMode[currentPhase] || 'play';
               const storageKey = `session_timer_state:${lessonKey}:${currentPhase}:${currentMode}`;
