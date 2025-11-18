@@ -6046,6 +6046,9 @@ function SessionPageInner() {
   // Begin hotkey control for Begin overlays. When a Begin button is visible, the configured Begin/Send key triggers it.
   useEffect(() => {
     const onKeyDown = (e) => {
+      // Disable hotkeys when games overlay is active
+      if (showGames) return;
+      
       const code = e.code || e.key;
       const target = e.target;
       if (isTextEntryTarget(target)) return;
@@ -6084,11 +6087,14 @@ function SessionPageInner() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [showBegin, phase, subPhase, loading, isSpeaking, beginSession, beginComprehensionPhase, beginSkippedExercise, beginWorksheetPhase, beginTestPhase, hotkeys]);
+  }, [showBegin, phase, subPhase, loading, isSpeaking, beginSession, beginComprehensionPhase, beginSkippedExercise, beginWorksheetPhase, beginTestPhase, hotkeys, showGames]);
 
   // Global hotkeys for mute toggle, skip, and repeat
   useEffect(() => {
     const onKeyDown = (e) => {
+      // Disable hotkeys when games overlay is active
+      if (showGames) return;
+      
       const code = e.code || e.key;
       const target = e.target;
       if (isTextEntryTarget(target)) return; // don't steal keys while typing in inputs/textareas
@@ -6116,7 +6122,7 @@ function SessionPageInner() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [hotkeys, toggleMute, isSpeaking, handleSkipSpeech, showRepeatButton, handleRepeatSpeech]);
+  }, [hotkeys, toggleMute, isSpeaking, handleSkipSpeech, showRepeatButton, handleRepeatSpeech, showGames]);
 
   const renderDiscussionControls = () => {
     if (subPhase === "awaiting-learner") {
@@ -7854,6 +7860,9 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
   // Global hotkey: Hold configured key (default NumpadPlus) to record (keydown starts, keyup stops)
   useEffect(() => {
     const onKeyDown = (e) => {
+      // Disable hotkeys when games overlay is active
+      if (showGames) return;
+      
       const code = e.code || e.key;
       const micCode = (hotkeys?.micHold || DEFAULT_HOTKEYS.micHold);
       if (!micCode || code !== micCode) return;
@@ -7866,6 +7875,9 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
       }
     };
     const onKeyUp = (e) => {
+      // Disable hotkeys when games overlay is active
+      if (showGames) return;
+      
       const code = e.code || e.key;
       const micCode = (hotkeys?.micHold || DEFAULT_HOTKEYS.micHold);
       if (!micCode || code !== micCode) return;
@@ -7881,7 +7893,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [isRecording, uploading, sendDisabled, startRecording, stopRecording, hotkeys]);
+  }, [isRecording, uploading, sendDisabled, startRecording, stopRecording, hotkeys, showGames]);
 
   useEffect(() => () => {
     try { mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive' && mediaRecorderRef.current.stop(); } catch {}
