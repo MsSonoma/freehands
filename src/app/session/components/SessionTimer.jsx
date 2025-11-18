@@ -33,6 +33,7 @@ export default function SessionTimer({
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [startTime, setStartTime] = useState(Date.now()); // Initialize immediately, not in useEffect
   const [pausedAt, setPausedAt] = useState(null);
+  const [hasInitialized, setHasInitialized] = useState(false);
   const intervalRef = useRef(null);
 
   // Calculate effective total (add golden key bonus to play timers)
@@ -73,20 +74,29 @@ export default function SessionTimer({
           pausedAt: state.pausedAt,
           currentTime: Date.now()
         });
+        setHasInitialized(true);
       } catch {
         // Invalid stored data - reset
         setElapsedSeconds(0);
         setStartTime(Date.now());
         setPausedAt(null);
+        setHasInitialized(true);
       }
     } else {
       setStartTime(Date.now());
+      setHasInitialized(true);
     }
   }, [storageKey, phase, timerType]);
 
-  // Persist state to sessionStorage
+  // Persist state to sessionStorage (but only after initialization to avoid overwriting adjustments)
   useEffect(() => {
-    if (startTime !== null) {
+    if (startTime !== null && hasInitialized) {
+      console.log('SessionTimer Persisting State:', {
+        elapsedSeconds,
+        startTime,
+        pausedAt,
+        storageKey
+      });
       sessionStorage.setItem(storageKey, JSON.stringify({
         elapsedSeconds,
         startTime,
@@ -94,7 +104,7 @@ export default function SessionTimer({
         totalMinutes: effectiveTotalMinutes // Store for validation
       }));
     }
-  }, [elapsedSeconds, startTime, pausedAt, storageKey, effectiveTotalMinutes]);
+  }, [elapsedSeconds, startTime, pausedAt, storageKey, effectiveTotalMinutes, hasInitialized]);
 
   // Update elapsed time
   useEffect(() => {
