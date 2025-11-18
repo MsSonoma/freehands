@@ -5055,6 +5055,7 @@ function SessionPageInner() {
     setTestCorrectCount,
     setTestFinalPercent,
     setTimerPaused,
+    currentTimerMode,
     setCurrentTimerMode,
     setWorkPhaseCompletions,
     setStoryState,

@@ -84,6 +84,7 @@ export function useResumeRestart({
   setStoryPhase,
   setStoryTranscript,
   setTimerPaused,
+  currentTimerMode,
   setCurrentTimerMode,
   setWorkPhaseCompletions,
   setTicker,
@@ -136,6 +137,20 @@ export function useResumeRestart({
       } catch (sessionErr) {
         // Session start failed - proceed anyway
       }
+    }
+    
+    // After snapshot restore, ensure timer is active for the current phase
+    try {
+      const phaseName = phase || 'discussion';
+      // Set a default timer mode if none exists
+      if (!currentTimerMode[phaseName]) {
+        const newTimerMode = { ...currentTimerMode };
+        newTimerMode[phaseName] = 'work'; // Default to 'work' mode
+        setCurrentTimerMode(newTimerMode);
+        console.log(`[RESUME] Set timer mode for ${phaseName} to 'work'`);
+      }
+    } catch (err) {
+      console.warn('[RESUME] Failed to set timer mode:', err);
     }
     // Decide what to resume based on phase/subPhase
     try {
@@ -293,7 +308,7 @@ export function useResumeRestart({
         return;
       }
     } catch {}
-  }, [phase, subPhase, teachingStage, qaAnswersUnlocked, currentCompProblem, currentExerciseProblem, currentWorksheetIndex, testActiveIndex, currentCompIndex, currentExIndex, generatedComprehension, generatedExercise, generatedWorksheet, generatedTest, worksheetIndexRef, setOfferResume, unlockAudioPlayback, preferHtmlAudioOnceRef, forceNextPlaybackRef, startDiscussionStep, setSubPhase, setCanSend, teachDefinitions, promptGateRepeat, teachExamples, COMPREHENSION_INTROS, speakFrontend, setShowOpeningActions, ensureQuestionMark, formatQuestionForSpeech, activeQuestionBodyRef, setQaAnswersUnlocked, beginComprehensionPhase, EXERCISE_INTROS, beginSkippedExercise, WORKSHEET_INTROS, beginWorksheetPhase, TEST_INTROS, beginTestPhase, startTrackedSession]);
+  }, [phase, subPhase, teachingStage, qaAnswersUnlocked, currentCompProblem, currentExerciseProblem, currentWorksheetIndex, testActiveIndex, currentCompIndex, currentExIndex, generatedComprehension, generatedExercise, generatedWorksheet, generatedTest, worksheetIndexRef, setOfferResume, unlockAudioPlayback, preferHtmlAudioOnceRef, forceNextPlaybackRef, startDiscussionStep, setSubPhase, setCanSend, teachDefinitions, promptGateRepeat, teachExamples, COMPREHENSION_INTROS, speakFrontend, setShowOpeningActions, ensureQuestionMark, formatQuestionForSpeech, activeQuestionBodyRef, setQaAnswersUnlocked, beginComprehensionPhase, EXERCISE_INTROS, beginSkippedExercise, WORKSHEET_INTROS, beginWorksheetPhase, TEST_INTROS, beginTestPhase, startTrackedSession, currentTimerMode, setCurrentTimerMode]);
 
   const handleRestartClick = useCallback(async () => {
     // Confirm irreversible action before proceeding
