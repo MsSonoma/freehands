@@ -57,7 +57,15 @@ export default function SessionTimer({
       stored: stored ? JSON.parse(stored) : null,
       phase,
       timerType,
-      allStoredKeys: Object.keys(sessionStorage).filter(k => k.startsWith('session_timer_state'))
+      allStoredKeys: Object.keys(sessionStorage).filter(k => k.startsWith('session_timer_state')),
+      allStoredData: Object.keys(sessionStorage).filter(k => k.startsWith('session_timer_state')).reduce((acc, key) => {
+        try {
+          acc[key] = JSON.parse(sessionStorage.getItem(key));
+        } catch {
+          acc[key] = 'parse error';
+        }
+        return acc;
+      }, {})
     });
     
     if (stored) {

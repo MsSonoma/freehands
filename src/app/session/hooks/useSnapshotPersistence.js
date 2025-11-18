@@ -547,8 +547,9 @@ export function useSnapshotPersistence({
             
             // Work mode: user clicked "Go" and is doing the actual work
             if (
-              // Discussion work = teaching phase (vocab and examples)
+              // Discussion work = teaching phase (vocab and examples) OR awaiting-learner
               (currentPhase === 'teaching' && currentSubPhase === 'teaching-3stage') ||
+              (currentPhase === 'discussion' && currentSubPhase === 'awaiting-learner') ||
               // Other phases: active work after "Go"
               (currentPhase === 'comprehension' && currentSubPhase === 'comprehension-active') ||
               (currentPhase === 'exercise' && currentSubPhase === 'exercise-active') ||
