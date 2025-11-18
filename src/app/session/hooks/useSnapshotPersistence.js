@@ -528,42 +528,8 @@ export function useSnapshotPersistence({
             console.log('[SNAPSHOT RESTORE] Restoring timer modes:', snap.currentTimerMode);
             setCurrentTimerMode(snap.currentTimerMode);
           } else {
-            // If no timer modes in snapshot, determine correct mode based on phase/subPhase
-            const currentPhase = snap.phase || 'discussion';
-            const currentSubPhase = snap.subPhase || 'greeting';
-            
-            // Map phases to timer names (same logic as getCurrentPhaseName)
-            let timerPhaseName = 'discussion';
-            if (currentPhase === 'discussion' || currentPhase === 'teaching') {
-              timerPhaseName = 'discussion';
-            } else {
-              timerPhaseName = currentPhase; // comprehension, exercise, worksheet, test
-            }
-            
-            // Determine if we should be in play or work mode based on phase progression
-            // Play timer: "Begin" to "Go" (prep time)  
-            // Work timer: "Go" to "Begin" of next phase (actual work time)
-            let timerMode = 'play'; // Default to play mode
-            
-            // Work mode: user clicked "Go" and is doing the actual work
-            if (
-              // Discussion work = teaching phase (vocab and examples) OR awaiting-learner
-              (currentPhase === 'teaching' && currentSubPhase === 'teaching-3stage') ||
-              (currentPhase === 'discussion' && currentSubPhase === 'awaiting-learner') ||
-              // Other phases: active work after "Go"
-              (currentPhase === 'comprehension' && currentSubPhase === 'comprehension-active') ||
-              (currentPhase === 'exercise' && currentSubPhase === 'exercise-active') ||
-              (currentPhase === 'worksheet' && currentSubPhase === 'worksheet-active') ||
-              (currentPhase === 'test' && currentSubPhase === 'test-active')
-            ) {
-              timerMode = 'work';
-            }
-            
-            // Play mode: all other states (unified-discussion, comprehension-start, etc.)
-            
-            const fallbackMode = { [timerPhaseName]: timerMode };
-            console.log(`[SNAPSHOT RESTORE] No timer modes in snapshot, inferred ${timerMode} mode for ${currentPhase}:${currentSubPhase} -> timer:${timerPhaseName}:`, fallbackMode);
-            setCurrentTimerMode(fallbackMode);
+            console.log(`[SNAPSHOT RESTORE] ERROR: No timer modes in snapshot! This indicates timers were not properly initialized during normal operation. Phase: ${snap.phase}, SubPhase: ${snap.subPhase}`);
+            // Don't set any fallback - this should not happen if timers are working correctly
           }
         } catch {}
         try {
