@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 /**
  * TimerControlOverlay - Facilitator control panel for timer and golden key
@@ -55,29 +55,57 @@ export default function TimerControlOverlay({
     : `session_timer_state:${phase}:${timerType}`;
   
   // Get current elapsed seconds from phase-specific storage
-  const getCurrentElapsedSeconds = () => {
+  // This must match SessionTimer's calculation logic exactly
+  const getCurrentElapsedSeconds = useCallback(() => {
     try {
       const stored = sessionStorage.getItem(storageKey);
       if (stored) {
         const state = JSON.parse(stored);
+        
+        // If timer is paused, use stored elapsedSeconds
+        if (isPaused && state.pausedAt) {
+          return state.elapsedSeconds || 0;
+        }
+        
+        // If timer is running, calculate from startTime (matches SessionTimer logic)
+        if (state.startTime) {
+          const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+          return elapsed;
+        }
+        
+        // Fallback to stored elapsedSeconds
         return state.elapsedSeconds || 0;
       }
     } catch {}
     return 0;
-  };
+  }, [storageKey, isPaused]);
   
-  const currentElapsedSeconds = getCurrentElapsedSeconds();
+  const [currentElapsedSeconds, setCurrentElapsedSeconds] = useState(getCurrentElapsedSeconds());
   const remainingSeconds = Math.max(0, totalSeconds - currentElapsedSeconds);
   
   const [adjustMinutes, setAdjustMinutes] = useState(0);
   const [saving, setSaving] = useState(false);
 
-  // Reset adjustment when opening
+  // Update elapsed time every second when timer is running
+  useEffect(() => {
+    if (!isPaused) {
+      const interval = setInterval(() => {
+        setCurrentElapsedSeconds(getCurrentElapsedSeconds());
+      }, 1000);
+      return () => clearInterval(interval);
+    } else {
+      // Update once when paused to get accurate paused time
+      setCurrentElapsedSeconds(getCurrentElapsedSeconds());
+    }
+  }, [isPaused, getCurrentElapsedSeconds]);
+
+  // Reset adjustment when opening and update current time
   useEffect(() => {
     if (isOpen) {
       setAdjustMinutes(0);
+      setCurrentElapsedSeconds(getCurrentElapsedSeconds());
     }
-  }, [isOpen]);
+  }, [isOpen, getCurrentElapsedSeconds]);
 
   if (!isOpen) return null;
 
