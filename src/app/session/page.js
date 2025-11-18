@@ -7292,6 +7292,14 @@ function SessionPageInner() {
       />
     )}
 
+    {/* Games overlay - moved outside container to fix z-index stacking */}
+    {showGames && (
+      <GamesOverlay
+        onClose={() => setShowGames(false)}
+        playTimer={true}
+      />
+    )}
+
     {/* Timer Controls Overlay - facilitator can adjust timer and golden key */}
     {showTimerControls && sessionTimerMinutes > 0 && (
       <TimerControlOverlay
@@ -7564,14 +7572,6 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
           <PlayTimeExpiredOverlay
             phaseName={playExpiredPhase}
             onComplete={handlePlayExpiredComplete}
-          />
-        )}
-        
-        {/* Games overlay */}
-        {showGames && (
-          <GamesOverlay
-            onClose={() => setShowGames(false)}
-            playTimer={true}
           />
         )}
         
