@@ -6157,45 +6157,34 @@ function SessionPageInner() {
     setCompletingLesson(true);
 
     try {
-      // Check if golden key was earned (completed within time limit)
-      let earnedKey = false;
-      try {
-        const storageKey = lessonKey ? `session_timer_state:${lessonKey}` : 'session_timer_state';
-        const timerState = sessionStorage.getItem(storageKey);
-        if (timerState) {
-          const state = JSON.parse(timerState);
-          const totalSeconds = sessionTimerMinutes * 60;
-          const elapsed = state.elapsedSeconds || 0;
-          if (elapsed <= totalSeconds) {
-            earnedKey = true;
-            setGoldenKeyEarned(true);
-            // Increment golden key in database
-            const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
-            if (learnerId && learnerId !== 'demo') {
-              try {
-                const { getLearner, updateLearner } = await import('@/app/facilitator/learners/clientApi');
-                const learner = await getLearner(learnerId);
-                if (learner) {
-                  await updateLearner(learnerId, {
-                    name: learner.name,
-                    grade: learner.grade,
-                    targets: {
-                      comprehension: learner.comprehension,
-                      exercise: learner.exercise,
-                      worksheet: learner.worksheet,
-                      test: learner.test
-                    },
-                    session_timer_minutes: learner.session_timer_minutes,
-                    golden_keys: (learner.golden_keys || 0) + 1
-                  });
-                }
-              } catch (err) {
-                // Failed to increment key
-              }
+      // Check if golden key was earned (4/5 work phases completed without timing out)
+      const earnedKey = checkGoldenKeyEarn();
+      if (earnedKey) {
+        // Increment golden key in database
+        const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
+        if (learnerId && learnerId !== 'demo') {
+          try {
+            const { getLearner, updateLearner } = await import('@/app/facilitator/learners/clientApi');
+            const learner = await getLearner(learnerId);
+            if (learner) {
+              await updateLearner(learnerId, {
+                name: learner.name,
+                grade: learner.grade,
+                targets: {
+                  comprehension: learner.comprehension,
+                  exercise: learner.exercise,
+                  worksheet: learner.worksheet,
+                  test: learner.test
+                },
+                session_timer_minutes: learner.session_timer_minutes,
+                golden_keys: (learner.golden_keys || 0) + 1
+              });
             }
+          } catch (err) {
+            // Failed to increment key
           }
         }
-      } catch {}
+      }
 
       // Golden key message will be shown on the lessons page instead of blocking here
       // This allows immediate navigation without requiring a second button press
