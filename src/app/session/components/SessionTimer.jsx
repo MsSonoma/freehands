@@ -36,9 +36,12 @@ export default function SessionTimer({
   const intervalRef = useRef(null);
 
   // Calculate effective total (add golden key bonus to play timers)
-  const effectiveTotalMinutes = timerType === 'play' 
-    ? totalMinutes + (goldenKeyBonus || 0)
-    : totalMinutes;
+  // Also check for adjusted totalMinutes from timer adjustments
+  const [adjustedTotalMinutes, setAdjustedTotalMinutes] = useState(null);
+  
+  const effectiveTotalMinutes = adjustedTotalMinutes !== null 
+    ? adjustedTotalMinutes 
+    : (timerType === 'play' ? totalMinutes + (goldenKeyBonus || 0) : totalMinutes);
 
   // Generate phase-specific storage key
   const storageKey = lessonKey 

@@ -116,10 +116,10 @@ export default function TimerControlOverlay({
     try {
       const adjustSeconds = adjustMinutes * 60;
       const currentElapsed = getCurrentElapsedSeconds();
-      const newElapsed = Math.max(0, currentElapsed - adjustSeconds);
+      // Allow newElapsed to go negative to represent time added beyond original duration
+      const newElapsed = currentElapsed - adjustSeconds;
       
       // Update the phase-specific timer state in sessionStorage
-      // Calculate new startTime based on desired elapsed time
       try {
         const stored = sessionStorage.getItem(storageKey);
         if (stored) {
@@ -130,7 +130,7 @@ export default function TimerControlOverlay({
           const newStartTime = Date.now() - (newElapsed * 1000);
           state.startTime = newStartTime;
           state.elapsedSeconds = newElapsed;
-          state.totalMinutes = effectiveTotalMinutes; // Update stored total for consistency
+          state.totalMinutes = effectiveTotalMinutes; // Keep original total
           sessionStorage.setItem(storageKey, JSON.stringify(state));
         } else {
           // Create new timer state if none exists
