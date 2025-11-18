@@ -122,9 +122,10 @@ export default function SessionTimer({
 
   // Calculate remaining time
   const totalSeconds = effectiveTotalMinutes * 60;
-  const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
-  const minutes = Math.floor(remainingSeconds / 60);
-  const seconds = remainingSeconds % 60;
+  const remainingSeconds = totalSeconds - elapsedSeconds;
+  // remainingSeconds can now exceed totalSeconds when elapsedSeconds is negative (time added)
+  const minutes = Math.floor(Math.max(0, remainingSeconds) / 60);
+  const seconds = Math.max(0, remainingSeconds) % 60;
 
   // Report remaining time to parent (for external displays like games overlay)
   useEffect(() => {
