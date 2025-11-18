@@ -88,22 +88,32 @@ export default function TimerControlOverlay({
     try {
       const adjustSeconds = adjustMinutes * 60;
       const currentElapsed = getCurrentElapsedSeconds();
-      const newElapsed = Math.max(0, Math.min(totalSeconds, currentElapsed - adjustSeconds));
+      const newElapsed = Math.max(0, currentElapsed - adjustSeconds);
       
       // Update the phase-specific timer state in sessionStorage
-      // We need to adjust startTime, not just elapsedSeconds, because SessionTimer
-      // calculates elapsed time as (Date.now() - startTime) / 1000
+      // Calculate new startTime based on desired elapsed time
       try {
         const stored = sessionStorage.getItem(storageKey);
         if (stored) {
           const state = JSON.parse(stored);
-          // Calculate the new startTime by adding the time difference
-          // If we're reducing elapsed time (adding minutes), we push startTime forward
-          // If we're adding elapsed time (removing minutes), we push startTime backward
-          const timeDelta = (newElapsed - currentElapsed) * 1000; // convert to ms
-          state.startTime = (state.startTime || Date.now()) - timeDelta;
+          // Set startTime to achieve the desired elapsed time
+          // newElapsed = (Date.now() - newStartTime) / 1000
+          // newStartTime = Date.now() - (newElapsed * 1000)
+          const newStartTime = Date.now() - (newElapsed * 1000);
+          state.startTime = newStartTime;
           state.elapsedSeconds = newElapsed;
+          state.totalMinutes = effectiveTotalMinutes; // Update stored total for consistency
           sessionStorage.setItem(storageKey, JSON.stringify(state));
+        } else {
+          // Create new timer state if none exists
+          const newStartTime = Date.now() - (newElapsed * 1000);
+          const newState = {
+            startTime: newStartTime,
+            elapsedSeconds: newElapsed,
+            pausedAt: null,
+            totalMinutes: effectiveTotalMinutes
+          };
+          sessionStorage.setItem(storageKey, JSON.stringify(newState));
         }
       } catch (error) {
         // Silent error handling

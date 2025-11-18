@@ -523,33 +523,11 @@ function SessionPageInner() {
 
   // Handle timer time adjustment
   const handleUpdateTime = useCallback((newElapsedSeconds) => {
-    // Update the timer state through sessionStorage
-    // Map current phase to timer phase key (inline to avoid TDZ issues)
-    let currentPhase = null;
-    if (phase === 'discussion' || phase === 'teaching') currentPhase = 'discussion';
-    else if (phase === 'comprehension') currentPhase = 'comprehension';
-    else if (phase === 'exercise') currentPhase = 'exercise';
-    else if (phase === 'worksheet') currentPhase = 'worksheet';
-    else if (phase === 'test') currentPhase = 'test';
-    
-    if (lessonKey && currentPhase) {
-      try {
-        const currentMode = currentTimerMode[currentPhase] || 'play';
-        const storageKey = `session_timer_state:${lessonKey}:${currentPhase}:${currentMode}`;
-        const storedState = sessionStorage.getItem(storageKey);
-        if (storedState) {
-          const parsed = JSON.parse(storedState);
-          parsed.elapsedSeconds = newElapsedSeconds;
-          sessionStorage.setItem(storageKey, JSON.stringify(parsed));
-          // Force timer re-render by triggering a state update
-          setTimerPaused(prev => prev);
-        }
-      } catch (err) {
-        // Silent error handling
-      }
-    }
+    // TimerControlOverlay now handles sessionStorage updates directly
+    // Force SessionTimer to re-read its state by changing its key
+    setTimerRefreshKey(prev => prev + 1);
     setShowTimerControls(false);
-  }, [lessonKey, phase, currentTimerMode]);
+  }, []);
 
   // Handle golden key application from timer controls
   const handleApplyGoldenKey = useCallback(async () => {
@@ -814,6 +792,7 @@ function SessionPageInner() {
   const completionInProgressRef = useRef(false);
   // Facilitator timer controls
   const [showTimerControls, setShowTimerControls] = useState(false);
+  const [timerRefreshKey, setTimerRefreshKey] = useState(0);
   const [isGoldenKeySuspended, setIsGoldenKeySuspended] = useState(false);
 
   // Clear timer state when returning to Begin screen (new lesson or after completion)
@@ -6630,6 +6609,7 @@ function SessionPageInner() {
         onShowVisualAids={handleShowVisualAids}
         showGames={showGames}
         setShowGames={setShowGames}
+        timerRefreshKey={timerRefreshKey}
       />
       {/* Worksheet end-of-phase Review button removed per requirements */}
     </div>
@@ -7307,6 +7287,26 @@ function SessionPageInner() {
       <TimerControlOverlay
         isOpen={showTimerControls}
         onClose={() => setShowTimerControls(false)}
+        lessonKey={lessonKey}
+        phase={(() => {
+          // Map current phase to timer phase key
+          if (phase === 'discussion' || phase === 'teaching') return 'discussion';
+          else if (phase === 'comprehension') return 'comprehension';
+          else if (phase === 'exercise') return 'exercise';
+          else if (phase === 'worksheet') return 'worksheet';
+          else if (phase === 'test') return 'test';
+          return phase;
+        })()}
+        timerType={(() => {
+          // Get current timer mode for the phase
+          let currentPhase = null;
+          if (phase === 'discussion' || phase === 'teaching') currentPhase = 'discussion';
+          else if (phase === 'comprehension') currentPhase = 'comprehension';
+          else if (phase === 'exercise') currentPhase = 'exercise';
+          else if (phase === 'worksheet') currentPhase = 'worksheet';
+          else if (phase === 'test') currentPhase = 'test';
+          return currentPhase ? (currentTimerMode[currentPhase] || 'play') : 'play';
+        })()}
         currentElapsedSeconds={(() => {
           try {
             // Map current phase to timer phase key (inline to avoid TDZ issues)
@@ -7462,7 +7462,7 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
   );
 }
 
-function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, lessonKey, muted, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle, handleTimerClick, phaseTimers, currentTimerMode, getCurrentPhaseName, getCurrentPhaseTimerDuration, goldenKeyBonus, showPlayTimeExpired, playExpiredPhase, handlePlayExpiredComplete, handlePhaseTimerTimeUp, showRepeatButton, handleRepeatSpeech, visualAids, onShowVisualAids, showGames, setShowGames }) {
+function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, lessonKey, muted, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle, handleTimerClick, phaseTimers, currentTimerMode, getCurrentPhaseName, getCurrentPhaseTimerDuration, goldenKeyBonus, showPlayTimeExpired, playExpiredPhase, handlePlayExpiredComplete, handlePhaseTimerTimeUp, showRepeatButton, handleRepeatSpeech, visualAids, onShowVisualAids, showGames, setShowGames, timerRefreshKey }) {
   // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
   // Remove horizontal clamp: let the video occupy the full available width of its column
   const containerMaxWidth = 'none';
@@ -7554,7 +7554,7 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
             zIndex: 10001
           }}>
             <SessionTimer
-              key={`phase-timer-${getCurrentPhaseName()}-${currentTimerMode[getCurrentPhaseName()]}`}
+              key={`phase-timer-${getCurrentPhaseName()}-${currentTimerMode[getCurrentPhaseName()]}-${timerRefreshKey}`}
               phase={getCurrentPhaseName()}
               timerType={currentTimerMode[getCurrentPhaseName()]}
               totalMinutes={getCurrentPhaseTimerDuration(getCurrentPhaseName(), currentTimerMode[getCurrentPhaseName()])}

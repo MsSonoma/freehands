@@ -51,17 +51,11 @@ export default function SessionTimer({
     if (stored) {
       try {
         const state = JSON.parse(stored);
-        // Validate that stored data matches current timer configuration
-        if (state.totalMinutes === effectiveTotalMinutes) {
-          setElapsedSeconds(state.elapsedSeconds || 0);
-          setStartTime(state.startTime || Date.now());
-          setPausedAt(state.pausedAt || null);
-        } else {
-          // Timer configuration changed - reset
-          setElapsedSeconds(0);
-          setStartTime(Date.now());
-          setPausedAt(null);
-        }
+        // Always restore stored state - don't validate totalMinutes to allow timer adjustments
+        // The timer adjustment feature needs to be able to modify effective durations
+        setElapsedSeconds(state.elapsedSeconds || 0);
+        setStartTime(state.startTime || Date.now());
+        setPausedAt(state.pausedAt || null);
       } catch {
         // Invalid stored data - reset
         setElapsedSeconds(0);
@@ -71,7 +65,7 @@ export default function SessionTimer({
     } else {
       setStartTime(Date.now());
     }
-  }, [storageKey, effectiveTotalMinutes]);
+  }, [storageKey]);
 
   // Persist state to sessionStorage
   useEffect(() => {
