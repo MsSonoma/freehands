@@ -529,25 +529,39 @@ export function useSnapshotPersistence({
             setCurrentTimerMode(snap.currentTimerMode);
           } else {
             // If no timer modes in snapshot, determine correct mode based on phase/subPhase
-            const currentPhaseName = snap.phase || 'discussion';
+            const currentPhase = snap.phase || 'discussion';
             const currentSubPhase = snap.subPhase || 'greeting';
             
+            // Map phases to timer names (same logic as getCurrentPhaseName)
+            let timerPhaseName = 'discussion';
+            if (currentPhase === 'discussion' || currentPhase === 'teaching') {
+              timerPhaseName = 'discussion';
+            } else {
+              timerPhaseName = currentPhase; // comprehension, exercise, worksheet, test
+            }
+            
             // Determine if we should be in play or work mode based on phase progression
+            // Play timer: "Begin" to "Go" (prep time)  
+            // Work timer: "Go" to "Begin" of next phase (actual work time)
             let timerMode = 'play'; // Default to play mode
             
-            // If we're past the initial phase entry points, we should be in work mode
+            // Work mode: user clicked "Go" and is doing the actual work
             if (
-              (currentPhaseName === 'discussion' && (currentSubPhase === 'awaiting-learner' || currentSubPhase === 'teaching-active')) ||
-              (currentPhaseName === 'comprehension' && currentSubPhase === 'comprehension-active') ||
-              (currentPhaseName === 'exercise' && currentSubPhase === 'exercise-active') ||
-              (currentPhaseName === 'worksheet' && currentSubPhase === 'worksheet-active') ||
-              (currentPhaseName === 'test' && currentSubPhase === 'test-active')
+              // Discussion work = teaching phase (vocab and examples)
+              (currentPhase === 'teaching' && currentSubPhase === 'teaching-3stage') ||
+              // Other phases: active work after "Go"
+              (currentPhase === 'comprehension' && currentSubPhase === 'comprehension-active') ||
+              (currentPhase === 'exercise' && currentSubPhase === 'exercise-active') ||
+              (currentPhase === 'worksheet' && currentSubPhase === 'worksheet-active') ||
+              (currentPhase === 'test' && currentSubPhase === 'test-active')
             ) {
               timerMode = 'work';
             }
             
-            const fallbackMode = { [currentPhaseName]: timerMode };
-            console.log(`[SNAPSHOT RESTORE] No timer modes in snapshot, inferred ${timerMode} mode for ${currentPhaseName}:${currentSubPhase}:`, fallbackMode);
+            // Play mode: all other states (unified-discussion, comprehension-start, etc.)
+            
+            const fallbackMode = { [timerPhaseName]: timerMode };
+            console.log(`[SNAPSHOT RESTORE] No timer modes in snapshot, inferred ${timerMode} mode for ${currentPhase}:${currentSubPhase} -> timer:${timerPhaseName}:`, fallbackMode);
             setCurrentTimerMode(fallbackMode);
           }
         } catch {}
