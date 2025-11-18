@@ -7329,7 +7329,36 @@ function SessionPageInner() {
           } catch {}
           return 0;
         })()}
-        totalMinutes={sessionTimerMinutes}
+        totalMinutes={(() => {
+          // Get current phase timer duration
+          let currentPhase = null;
+          if (phase === 'discussion' || phase === 'teaching') currentPhase = 'discussion';
+          else if (phase === 'comprehension') currentPhase = 'comprehension';
+          else if (phase === 'exercise') currentPhase = 'exercise';
+          else if (phase === 'worksheet') currentPhase = 'worksheet';
+          else if (phase === 'test') currentPhase = 'test';
+          
+          if (currentPhase) {
+            const currentMode = currentTimerMode[currentPhase] || 'play';
+            return getCurrentPhaseTimerDuration(currentPhase, currentMode);
+          }
+          return 5; // fallback
+        })()}
+        goldenKeyBonus={(() => {
+          // Get current phase and return golden key bonus for play timers
+          let currentPhase = null;
+          if (phase === 'discussion' || phase === 'teaching') currentPhase = 'discussion';
+          else if (phase === 'comprehension') currentPhase = 'comprehension';
+          else if (phase === 'exercise') currentPhase = 'exercise';
+          else if (phase === 'worksheet') currentPhase = 'worksheet';
+          else if (phase === 'test') currentPhase = 'test';
+          
+          if (currentPhase) {
+            const currentMode = currentTimerMode[currentPhase] || 'play';
+            return currentMode === 'play' ? goldenKeyBonus : 0;
+          }
+          return 0;
+        })()}
         isPaused={timerPaused}
         hasGoldenKey={hasGoldenKey}
         isGoldenKeySuspended={isGoldenKeySuspended}
