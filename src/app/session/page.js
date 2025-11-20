@@ -229,6 +229,10 @@ function SessionPageInner() {
   const [hasGoldenKey, setHasGoldenKey] = useState(goldenKeyFromUrl);
   const [trackingLearnerId, setTrackingLearnerId] = useState(null);
 
+  // Session takeover UI state (hoist before hooks that reference them)
+  const [showTakeoverDialog, setShowTakeoverDialog] = useState(false);
+  const [conflictingSession, setConflictingSession] = useState(null);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
@@ -907,9 +911,7 @@ function SessionPageInner() {
   const [ttsLoadingCount, setTtsLoadingCount] = useState(0);
   const overlayLoading = loading || (ttsLoadingCount > 0);
 
-  // Session takeover detection
-  const [showTakeoverDialog, setShowTakeoverDialog] = useState(false);
-  const [conflictingSession, setConflictingSession] = useState(null);
+  // Session takeover detection (hoisted earlier)
 
   // Clear timer state only after initial loading completes and the Begin screen is actually visible
   useEffect(() => {
