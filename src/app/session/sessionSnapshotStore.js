@@ -272,21 +272,29 @@ export async function saveSnapshot(lessonKey, snapshot, { learnerId } = {}) {
   if (typeof window === 'undefined') return;
   const payload = normalizeSnapshot({ ...(snapshot || {}), savedAt: new Date().toISOString() });
   
+  console.log('[SNAPSHOT SAVE] Attempting save - learnerId:', learnerId, 'lessonKey:', lessonKey);
+  
   // Save to localStorage IMMEDIATELY for instant restore on refresh
   try {
     const lsKey = `atomic_snapshot:${learnerId}:${lessonKey}`;
     localStorage.setItem(lsKey, JSON.stringify(payload));
-  } catch {}
+    console.log('[SNAPSHOT SAVE] localStorage saved:', lsKey);
+  } catch (e) {
+    console.error('[SNAPSHOT SAVE] localStorage failed:', e);
+  }
   
   // Save to server (slower but persistent across devices)
   try {
     const supabaseMod = await import('@/app/lib/supabaseClient');
     const supabase = supabaseMod.getSupabaseClient?.();
     const hasEnv = supabaseMod.hasSupabaseEnv?.();
+    console.log('[SNAPSHOT SAVE] Supabase check - hasSupabase:', !!supabase, 'hasEnv:', hasEnv, 'learnerId:', learnerId);
     if (supabase && hasEnv && learnerId) {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
+      console.log('[SNAPSHOT SAVE] Auth session - hasSession:', !!session, 'hasToken:', !!token);
       if (token) {
+        console.log('[SNAPSHOT SAVE] Calling API /api/snapshots with learner_id:', learnerId, 'lesson_key:', lessonKey);
         const response = await fetch('/api/snapshots', {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -294,19 +302,24 @@ export async function saveSnapshot(lessonKey, snapshot, { learnerId } = {}) {
         });
         // Check if the save actually succeeded
         if (!response.ok) {
-          console.error('[ATOMIC SNAPSHOT] Database save FAILED. Status:', response.status, 'Key:', lessonKey);
+          console.error('[SNAPSHOT SAVE] Database save FAILED. Status:', response.status, 'Key:', lessonKey);
           const text = await response.text().catch(() => '(no response body)');
-          console.error('[ATOMIC SNAPSHOT] Error response:', text);
+          console.error('[SNAPSHOT SAVE] Error response:', text);
         } else {
           const json = await response.json().catch(() => null);
+          console.log('[SNAPSHOT SAVE] Database save response:', json);
           if (json && !json.ok) {
-            console.error('[ATOMIC SNAPSHOT] Database save returned ok:false. Response:', json);
+            console.error('[SNAPSHOT SAVE] Database save returned ok:false. Response:', json);
           }
         }
+      } else {
+        console.warn('[SNAPSHOT SAVE] No auth token - skipping database save');
       }
+    } else {
+      console.warn('[SNAPSHOT SAVE] Skipping database save - supabase:', !!supabase, 'hasEnv:', hasEnv, 'learnerId:', learnerId);
     }
   } catch (e) {
-    console.error('[ATOMIC SNAPSHOT] Save exception:', e);
+    console.error('[SNAPSHOT SAVE] Save exception:', e);
   }
 }
 
