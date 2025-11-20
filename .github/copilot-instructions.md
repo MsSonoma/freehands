@@ -9,6 +9,30 @@ Scope banner [COPILOT]
 - Out of scope: child-directed spoken text/persona outputs. If a request looks like payload, return developer templates or code that renders it, or ask for missing literals.
 - Ambiguity rule: When ambiguous, default to developer templates, not payload.
 
+BRAIN FILE PROTOCOL [COPILOT]
+Before making changes to core systems (snapshot persistence, teaching flow, comprehension judging, session tracking, etc.):
+1. CHECK: Does `docs/brain/{topic}.md` exist for this system?
+2. READ: If yes, read it completely - it is canonical truth about current design
+3. IMPLEMENT: Make code changes based on what the USER requested (not your assumptions)
+4. ASK: After changes work, ask user "Should I update docs/brain/{topic}.md to reflect these changes?"
+5. UPDATE: Only if user confirms, rewrite the brain file:
+   - Replace entire sections (kill zombies), don't append
+   - Keep "How It Works", "What NOT To Do", "Key Files" structure
+   - Be explicit about what was removed/deprecated
+6. LOG: Add one line to docs/brain/changelog.md: "Updated {topic}.md: {brief what changed}"
+
+CRITICAL GUARDRAILS:
+- Never write to brain files without user approval
+- Never append to brain files (always rewrite sections completely)
+- Never trust your memory over what's in the brain file
+- If brain file contradicts your understanding, the brain file is correct
+- Existing brain files: snapshot-persistence.md
+
+Topics needing brain files (create only when user approves):
+- teaching-flow.md (vocab/examples sentence flow, gates)
+- comprehension-judging.md (leniency modes, normalization, answer matching)
+- session-tracking.md (lesson_sessions table, event logging, NOT polling)
+
 Modal labels (two-axis)
 - Audience axis: [COPILOT] = programmer guidance; [SONOMA] = constraints for content sent to Ms. Sonoma (do not emit as spoken text here).
 - Exactness axis: [SAMPLE] = illustrative shape; variants allowed. [VERBATIM] = must match exactly after slot substitution.
