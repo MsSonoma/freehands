@@ -112,10 +112,17 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
 
     pollIntervalRef.current = setInterval(async () => {
       const currentSessionId = sessionIdRef.current;
-      if (!currentSessionId || !isMountedRef.current) return;
+      if (!currentSessionId || !isMountedRef.current) {
+        console.log('[SESSION TAKEOVER] Polling skipped - sessionId:', currentSessionId, 'mounted:', isMountedRef.current);
+        return;
+      }
+
+      console.log('[SESSION TAKEOVER] Polling session status for ID:', currentSessionId);
 
       try {
         const { active, session } = await checkSessionStatus(currentSessionId);
+
+        console.log('[SESSION TAKEOVER] Poll result - active:', active, 'session:', session);
 
         if (!isMountedRef.current) return;
 
@@ -138,6 +145,8 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
           if (typeof onSessionTakenOver === 'function') {
             onSessionTakenOver(session);
           }
+        } else if (active) {
+          console.log('[SESSION TAKEOVER] Session still active');
         }
       } catch (err) {
         console.error('[SESSION TAKEOVER] Polling error:', err);
