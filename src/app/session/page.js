@@ -193,6 +193,18 @@ async function ensureRuntimeTargets(forceReload = false) {
 }
   
 function SessionPageInner() {
+  // Generate or retrieve browser session ID (persists across refreshes in this tab)
+  // Used for session ownership and conflict detection
+  const [browserSessionId] = useState(() => {
+    if (typeof window === 'undefined') return null;
+    let sid = sessionStorage.getItem('lesson_session_id');
+    if (!sid) {
+      sid = crypto.randomUUID();
+      sessionStorage.setItem('lesson_session_id', sid);
+    }
+    return sid;
+  });
+
   // URL params defined earlier; reuse here without redeclaration
 
   // Core session state that many effects/handlers depend on must be initialized first
@@ -284,7 +296,7 @@ function SessionPageInner() {
 
   // Handle session takeover
   const handleSessionTakeover = useCallback(async (pinCode) => {
-    if (!trackingLearnerId || !lessonSessionKey) {
+    if (!trackingLearnerId || !lessonSessionKey || !browserSessionId) {
       throw new Error('Session not initialized');
     }
 
@@ -293,6 +305,18 @@ function SessionPageInner() {
       const isValid = await ensurePinAllowed(pinCode);
       if (!isValid) {
         throw new Error('Invalid PIN');
+      }
+
+      // Deactivate old session in database
+      if (conflictingSession?.id && typeof endTrackedSession === 'function') {
+        try {
+          await endTrackedSession('taken_over', { 
+            taken_over_by_session_id: browserSessionId,
+            taken_over_at: new Date().toISOString()
+          });
+        } catch (endErr) {
+          console.error('[SESSION] Failed to end old session:', endErr);
+        }
       }
 
       // Clear localStorage to force fresh server snapshot load
@@ -310,12 +334,15 @@ function SessionPageInner() {
     } catch (err) {
       throw err;
     }
-  }, [trackingLearnerId, lessonSessionKey]);
+  }, [trackingLearnerId, lessonSessionKey, browserSessionId, conflictingSession, endTrackedSession]);
 
   const handleCancelTakeover = useCallback(() => {
     setShowTakeoverDialog(false);
     setConflictingSession(null);
-    // User chose not to take over - stay on current screen
+    // User chose not to take over - redirect to learner dashboard
+    if (typeof window !== 'undefined') {
+      window.location.href = '/facilitator/learners';
+    }
   }, []);
 
   // Discussion: post-Opening action buttons state
@@ -3282,6 +3309,12 @@ function SessionPageInner() {
     transcriptSessionId,
     WORKSHEET_TARGET,
     TEST_TARGET,
+    // Session tracking
+    browserSessionId,
+    onSessionConflict: (existingSession) => {
+      setShowTakeoverDialog(true);
+      setTakeoverSessionInfo(existingSession);
+    },
   });
 
   // Helper: gather vocab from multiple potential sources/keys
@@ -4205,14 +4238,22 @@ function SessionPageInner() {
 
     // Kick off Supabase session tracking once the learner actually begins this lesson
     if (trackingLearnerId && lessonSessionKey && typeof startTrackedSession === 'function') {
-      console.log('[SESSION] Starting session tracking for learner:', trackingLearnerId, 'lesson:', lessonSessionKey);
+      console.log('[SESSION] Starting session tracking for learner:', trackingLearnerId, 'lesson:', lessonSessionKey, 'sessionId:', browserSessionId);
       try {
-        const supabaseSessionId = await startTrackedSession();
-        console.log('[SESSION] Session started, ID:', supabaseSessionId);
-        // DISABLED: Polling was causing performance issues and never worked
-        // if (supabaseSessionId && typeof startSessionPolling === 'function') {
-        //   startSessionPolling();
-        // }
+        // Extract device name from user agent
+        const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+        
+        const sessionResult = await startTrackedSession(browserSessionId, deviceName);
+        
+        // Check for conflict (another device has active session)
+        if (sessionResult?.conflict) {
+          console.log('[SESSION] Conflict detected at Begin:', sessionResult.existingSession);
+          setConflictingSession(sessionResult.existingSession);
+          setShowTakeoverDialog(true);
+          return; // Don't start lesson - wait for user to take over or cancel
+        }
+        
+        console.log('[SESSION] Session started, ID:', sessionResult?.id);
       } catch (sessionErr) {
         console.error('[SESSION] Session start failed:', sessionErr);
       }

@@ -268,11 +268,11 @@ export async function getStoredSnapshot(lessonKey, { learnerId } = {}) {
   return null;
 }
 
-export async function saveSnapshot(lessonKey, snapshot, { learnerId } = {}) {
-  if (typeof window === 'undefined') return;
+export async function saveSnapshot(lessonKey, snapshot, { learnerId, browserSessionId } = {}) {
+  if (typeof window === 'undefined') return { success: false };
   const payload = normalizeSnapshot({ ...(snapshot || {}), savedAt: new Date().toISOString() });
   
-  console.log('[SNAPSHOT SAVE] Attempting save - learnerId:', learnerId, 'lessonKey:', lessonKey);
+  console.log('[SNAPSHOT SAVE] Attempting save - learnerId:', learnerId, 'lessonKey:', lessonKey, 'sessionId:', browserSessionId);
   
   // Save to localStorage IMMEDIATELY for instant restore on refresh
   try {
@@ -290,6 +290,41 @@ export async function saveSnapshot(lessonKey, snapshot, { learnerId } = {}) {
     const hasEnv = supabaseMod.hasSupabaseEnv?.();
     console.log('[SNAPSHOT SAVE] Supabase check - hasSupabase:', !!supabase, 'hasEnv:', hasEnv, 'learnerId:', learnerId);
     if (supabase && hasEnv && learnerId) {
+      // Check for session conflict before saving snapshot
+      if (browserSessionId) {
+        const { data: activeSession, error: sessionCheckError } = await supabase
+          .from('lesson_sessions')
+          .select('id, session_id, device_name, last_activity_at')
+          .eq('learner_id', learnerId)
+          .eq('lesson_id', lessonKey)
+          .is('ended_at', null)
+          .maybeSingle();
+
+        if (sessionCheckError) {
+          console.error('[SNAPSHOT SAVE] Session check error:', sessionCheckError);
+        }
+
+        // If active session exists with different session_id, return conflict
+        if (activeSession && activeSession.session_id !== browserSessionId) {
+          console.log('[SNAPSHOT SAVE] CONFLICT DETECTED - existing:', activeSession.session_id, 'current:', browserSessionId);
+          return {
+            success: false,
+            conflict: true,
+            existingSession: activeSession
+          };
+        }
+
+        // Update last_activity_at for this session
+        if (activeSession && activeSession.session_id === browserSessionId) {
+          await supabase
+            .from('lesson_sessions')
+            .update({ last_activity_at: new Date().toISOString() })
+            .eq('id', activeSession.id)
+            .then(() => console.log('[SNAPSHOT SAVE] Updated last_activity_at'))
+            .catch(err => console.error('[SNAPSHOT SAVE] Failed to update last_activity_at:', err));
+        }
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       console.log('[SNAPSHOT SAVE] Auth session - hasSession:', !!session, 'hasToken:', !!token);
@@ -305,21 +340,27 @@ export async function saveSnapshot(lessonKey, snapshot, { learnerId } = {}) {
           console.error('[SNAPSHOT SAVE] Database save FAILED. Status:', response.status, 'Key:', lessonKey);
           const text = await response.text().catch(() => '(no response body)');
           console.error('[SNAPSHOT SAVE] Error response:', text);
+          return { success: false };
         } else {
           const json = await response.json().catch(() => null);
           console.log('[SNAPSHOT SAVE] Database save response:', json);
           if (json && !json.ok) {
             console.error('[SNAPSHOT SAVE] Database save returned ok:false. Response:', json);
+            return { success: false };
           }
+          return { success: true };
         }
       } else {
         console.warn('[SNAPSHOT SAVE] No auth token - skipping database save');
+        return { success: false };
       }
     } else {
       console.warn('[SNAPSHOT SAVE] Skipping database save - supabase:', !!supabase, 'hasEnv:', hasEnv, 'learnerId:', learnerId);
+      return { success: false };
     }
   } catch (e) {
     console.error('[SNAPSHOT SAVE] Save exception:', e);
+    return { success: false };
   }
 }
 

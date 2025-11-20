@@ -144,6 +144,9 @@ export function useSnapshotPersistence({
   transcriptSessionId,
   WORKSHEET_TARGET,
   TEST_TARGET,
+  // Session tracking
+  browserSessionId,
+  onSessionConflict,
 }) {
   const buildStorySignature = useCallback(() => {
     const list = Array.isArray(storyTranscript) ? storyTranscript : [];
@@ -251,7 +254,13 @@ export function useSnapshotPersistence({
         })(),
       };
       
-      await saveSnapshot(storedKey, payload, { learnerId: lid });
+      const result = await saveSnapshot(storedKey, payload, { learnerId: lid, browserSessionId });
+
+      // Check for session conflict
+      if (result?.conflict && typeof onSessionConflict === 'function') {
+        onSessionConflict(result.existingSession);
+        return;
+      }
 
       // Also update live transcript segment to keep facilitator PDF in sync with the on-screen transcript
       try {
@@ -272,7 +281,7 @@ export function useSnapshotPersistence({
         }
       } catch {}
     } catch {}
-  }, [phase, subPhase, showBegin, teachingStage, stageRepeats, qaAnswersUnlocked, storyState, storySetupStep, storyCharacters, storySetting, storyPlot, storyPhase, storyTranscript, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testCorrectCount, testFinalPercent, congratsStarted, congratsDone, usedTestCuePhrases, generatedComprehension, generatedExercise, generatedWorksheet, generatedTest, currentTimerMode, currentTimerModeRef, workPhaseCompletions, workPhaseCompletionsRef, getTeachingFlowSnapshot, getSnapshotStorageKey, lessonParam, effectiveLessonTitle, transcriptSessionId, restoredSnapshotRef, captionSentencesRef, captionSentences, captionIndex, ticker, sessionStartRef]);
+  }, [phase, subPhase, showBegin, teachingStage, stageRepeats, qaAnswersUnlocked, storyState, storySetupStep, storyCharacters, storySetting, storyPlot, storyPhase, storyTranscript, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testCorrectCount, testFinalPercent, congratsStarted, congratsDone, usedTestCuePhrases, generatedComprehension, generatedExercise, generatedWorksheet, generatedTest, currentTimerMode, currentTimerModeRef, workPhaseCompletions, workPhaseCompletionsRef, getTeachingFlowSnapshot, getSnapshotStorageKey, lessonParam, effectiveLessonTitle, transcriptSessionId, restoredSnapshotRef, captionSentencesRef, captionSentences, captionIndex, ticker, sessionStartRef, browserSessionId, onSessionConflict]);
 
   // ATOMIC SNAPSHOT: No automatic saves. Snapshots are saved explicitly at checkpoints only.
   // This removes ALL reconciliation, signature checking, and automatic drift correction.

@@ -32,25 +32,32 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
   const pollIntervalRef = useRef(null);
   const isMountedRef = useRef(true);
 
-  const startSession = async () => {
+  const startSession = async (browserSessionId = null, deviceName = null) => {
     if (!learnerId || !lessonId) {
       return null;
     }
 
     if (sessionIdRef.current) {
-      return sessionIdRef.current;
+      return { id: sessionIdRef.current };
     }
 
     setTracking(true);
-    const id = await startLessonSession(learnerId, lessonId);
+    const result = await startLessonSession(learnerId, lessonId, browserSessionId, deviceName);
     
-    if (id) {
-      sessionIdRef.current = id;
-      setSessionId(id);
+    // Check for conflict
+    if (result?.conflict) {
+      setTracking(false);
+      setConflictingSession(result.existingSession);
+      return result; // Return conflict to caller
+    }
+    
+    if (result?.id) {
+      sessionIdRef.current = result.id;
+      setSessionId(result.id);
       sessionMetaRef.current = { learnerId, lessonId };
       setTracking(false);
-      console.log('[SESSION TAKEOVER] sessionIdRef.current set to:', id);
-      return id;
+      console.log('[SESSION] sessionIdRef.current set to:', result.id);
+      return result;
     } else {
       setTracking(false);
       return null;

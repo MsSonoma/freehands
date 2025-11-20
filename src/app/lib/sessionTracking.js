@@ -74,16 +74,40 @@ async function logLessonSessionEvent({
  * 
  * @param {string} learnerId - Learner ID
  * @param {string} lessonId - Lesson key (e.g., "4th-multiplying-with-zeros")
- * @returns {Promise<string|null>} Session ID or null on failure
+ * @param {string} browserSessionId - Browser-generated session UUID
+ * @param {string} deviceName - Optional device name for display
+ * @returns {Promise<{id: string}|{conflict: true, existingSession: object}>} Session result
  */
-export async function startLessonSession(learnerId, lessonId) {
+export async function startLessonSession(learnerId, lessonId, browserSessionId = null, deviceName = null) {
   if (!learnerId || !lessonId || !hasSupabaseEnv()) return null;
 
   const supabase = getSupabaseClient();
   const nowIso = new Date().toISOString();
 
   try {
-    // Ensure the learner has at most one active session at a time.
+    // Check for existing active session (conflict detection at Begin)
+    const { data: existingActive, error: checkError } = await supabase
+      .from('lesson_sessions')
+      .select('id, session_id, device_name, last_activity_at, started_at')
+      .eq('learner_id', learnerId)
+      .eq('lesson_id', lessonId)
+      .is('ended_at', null)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('[SESSION] Conflict check error:', checkError);
+    }
+
+    // If active session exists with different session_id, return conflict
+    if (existingActive && browserSessionId && existingActive.session_id !== browserSessionId) {
+      console.log('[SESSION] Conflict detected - existing session:', existingActive.session_id, 'new:', browserSessionId);
+      return {
+        conflict: true,
+        existingSession: existingActive
+      };
+    }
+
+    // Close any existing active sessions for this learner+lesson (safety cleanup)
     const { data: existingSessions, error: existingError } = await supabase
       .from('lesson_sessions')
       .select('id, lesson_id, started_at')
@@ -125,17 +149,30 @@ export async function startLessonSession(learnerId, lessonId) {
       }
     }
 
+    // Create new session with ownership fields
+    const insertPayload = {
+      learner_id: learnerId,
+      lesson_id: lessonId,
+      started_at: nowIso,
+      last_activity_at: nowIso,
+    };
+
+    if (browserSessionId) {
+      insertPayload.session_id = browserSessionId;
+    }
+
+    if (deviceName) {
+      insertPayload.device_name = deviceName;
+    }
+
     const { data, error } = await supabase
       .from('lesson_sessions')
-      .insert({
-        learner_id: learnerId,
-        lesson_id: lessonId,
-        started_at: nowIso,
-      })
+      .insert(insertPayload)
       .select('id')
       .single();
 
     if (error) {
+      console.error('[SESSION] Insert error:', error);
       return null;
     }
 
@@ -148,8 +185,9 @@ export async function startLessonSession(learnerId, lessonId) {
       occurredAt: nowIso,
     });
 
-    return data.id;
+    return { id: data.id };
   } catch (err) {
+    console.error('[SESSION] Start session error:', err);
     return null;
   }
 }
