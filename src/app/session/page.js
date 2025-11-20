@@ -3303,6 +3303,7 @@ function SessionPageInner() {
     // Functions
     speakFrontend,
     getSnapshotStorageKey,
+    getCurrentPhaseTimerDuration,
     // Data
     lessonParam,
     lessonData,
@@ -3311,6 +3312,7 @@ function SessionPageInner() {
     transcriptSessionId,
     WORKSHEET_TARGET,
     TEST_TARGET,
+    lessonKey,
     // Session tracking
     browserSessionId,
     onSessionConflict: (existingSession) => {

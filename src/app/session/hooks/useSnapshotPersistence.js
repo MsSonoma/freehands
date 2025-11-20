@@ -144,6 +144,8 @@ export function useSnapshotPersistence({
   transcriptSessionId,
   WORKSHEET_TARGET,
   TEST_TARGET,
+  lessonKey,
+  getCurrentPhaseTimerDuration,
   // Session tracking
   browserSessionId,
   onSessionConflict,
@@ -203,6 +205,50 @@ export function useSnapshotPersistence({
         })()
         : null;
 
+      const resolveTimerPhase = () => {
+        if (phase === 'discussion' || phase === 'teaching') return 'discussion';
+        if (phase === 'comprehension') return 'comprehension';
+        if (phase === 'exercise') return 'exercise';
+        if (phase === 'worksheet') return 'worksheet';
+        if (phase === 'test') return 'test';
+        return null;
+      };
+
+      const timerSnapshot = (() => {
+        try {
+          if (typeof window === 'undefined') return null;
+          const activePhase = resolveTimerPhase();
+          if (!activePhase) return null;
+          const modeMap = currentTimerModeRef?.current || currentTimerMode || {};
+          const activeMode = modeMap[activePhase];
+          if (!activeMode) return null;
+          const key = lessonKey
+            ? `session_timer_state:${lessonKey}:${activePhase}:${activeMode}`
+            : `session_timer_state:${activePhase}:${activeMode}`;
+          const raw = sessionStorage.getItem(key);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw);
+          const elapsedSeconds = Number(parsed.elapsedSeconds);
+          const storedMinutes = Number(parsed.totalMinutes);
+          let targetSeconds = Number.isFinite(storedMinutes) ? Math.max(0, storedMinutes * 60) : null;
+          if (!Number.isFinite(targetSeconds) && typeof getCurrentPhaseTimerDuration === 'function') {
+            const minutes = getCurrentPhaseTimerDuration(activePhase, activeMode);
+            if (Number.isFinite(minutes)) {
+              targetSeconds = Math.max(0, minutes * 60);
+            }
+          }
+          return {
+            phase: activePhase,
+            mode: activeMode,
+            capturedAt: new Date().toISOString(),
+            elapsedSeconds: Number.isFinite(elapsedSeconds) ? elapsedSeconds : 0,
+            targetSeconds: Number.isFinite(targetSeconds) ? targetSeconds : 0,
+          };
+        } catch {
+          return null;
+        }
+      })();
+
       const payload = {
         // ATOMIC SNAPSHOT VERSION MARKER: Skip old snapshots from before atomic redesign
         snapshotVersion: 2, // v1 = old signature-based system, v2 = atomic checkpoint system
@@ -233,6 +279,7 @@ export function useSnapshotPersistence({
         teachingFlowState,
         currentTimerMode: timerModeSnapshot,
         workPhaseCompletions: workPhaseSnapshot,
+        timerSnapshot,
         // Preserve timer states from sessionStorage
         timerStates: (() => {
           try {
@@ -281,7 +328,7 @@ export function useSnapshotPersistence({
         }
       } catch {}
     } catch {}
-  }, [phase, subPhase, showBegin, teachingStage, stageRepeats, qaAnswersUnlocked, storyState, storySetupStep, storyCharacters, storySetting, storyPlot, storyPhase, storyTranscript, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testCorrectCount, testFinalPercent, congratsStarted, congratsDone, usedTestCuePhrases, generatedComprehension, generatedExercise, generatedWorksheet, generatedTest, currentTimerMode, currentTimerModeRef, workPhaseCompletions, workPhaseCompletionsRef, getTeachingFlowSnapshot, getSnapshotStorageKey, lessonParam, effectiveLessonTitle, transcriptSessionId, restoredSnapshotRef, captionSentencesRef, captionSentences, captionIndex, ticker, sessionStartRef, browserSessionId, onSessionConflict]);
+  }, [phase, subPhase, showBegin, teachingStage, stageRepeats, qaAnswersUnlocked, storyState, storySetupStep, storyCharacters, storySetting, storyPlot, storyPhase, storyTranscript, currentCompIndex, currentExIndex, currentWorksheetIndex, testActiveIndex, currentCompProblem, currentExerciseProblem, testUserAnswers, testCorrectByIndex, testCorrectCount, testFinalPercent, congratsStarted, congratsDone, usedTestCuePhrases, generatedComprehension, generatedExercise, generatedWorksheet, generatedTest, currentTimerMode, currentTimerModeRef, workPhaseCompletions, workPhaseCompletionsRef, getTeachingFlowSnapshot, getSnapshotStorageKey, lessonParam, effectiveLessonTitle, transcriptSessionId, restoredSnapshotRef, captionSentencesRef, captionSentences, captionIndex, ticker, sessionStartRef, lessonKey, getCurrentPhaseTimerDuration, browserSessionId, onSessionConflict]);
 
   // ATOMIC SNAPSHOT: No automatic saves. Snapshots are saved explicitly at checkpoints only.
   // This removes ALL reconciliation, signature checking, and automatic drift correction.
@@ -473,6 +520,41 @@ export function useSnapshotPersistence({
             });
           }
         } catch {}
+
+        // Apply primary timer snapshot with drift correction
+        try {
+          if (snap.timerSnapshot && typeof snap.timerSnapshot === 'object' && typeof window !== 'undefined') {
+            const { phase: timerPhaseName, mode: timerModeValue, capturedAt, elapsedSeconds, targetSeconds } = snap.timerSnapshot;
+            if (timerPhaseName && timerModeValue) {
+              const capturedMs = capturedAt ? Date.parse(capturedAt) : Date.now();
+              const drift = Number.isFinite(capturedMs)
+                ? Math.max(0, Math.floor((Date.now() - capturedMs) / 1000))
+                : 0;
+              const baseElapsed = Number(elapsedSeconds) || 0;
+              const target = Number(targetSeconds);
+              const adjustedElapsed = Math.max(0, Math.min(
+                baseElapsed + drift,
+                Number.isFinite(target) && target > 0 ? target : baseElapsed + drift
+              ));
+              const storageKey = lessonKey
+                ? `session_timer_state:${lessonKey}:${timerPhaseName}:${timerModeValue}`
+                : `session_timer_state:${timerPhaseName}:${timerModeValue}`;
+              const storedState = {
+                elapsedSeconds: adjustedElapsed,
+                startTime: Date.now() - (adjustedElapsed * 1000),
+                pausedAt: null,
+              };
+              if (Number.isFinite(target) && target > 0) {
+                storedState.totalMinutes = target / 60;
+              }
+              sessionStorage.setItem(storageKey, JSON.stringify(storedState));
+              setCurrentTimerMode((prev) => ({
+                ...(prev || {}),
+                [timerPhaseName]: timerModeValue,
+              }));
+            }
+          }
+        } catch {}
         
         // Defer clearing loading until the resume reconciliation effect completes
         try { setTtsLoadingCount(0); } catch {}
@@ -534,6 +616,7 @@ export function useSnapshotPersistence({
     getSnapshotStorageKey,
     speakFrontend,
     applyTeachingFlowSnapshot,
+    lessonKey,
     // Setters are stable from useState
     setLoading,
     setPhase,
