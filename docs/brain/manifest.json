@@ -1,0 +1,30 @@
+{
+  "snapshot-persistence": {
+    "file": "snapshot-persistence.md",
+    "systems": [
+      "snapshot saves",
+      "localStorage",
+      "database persistence",
+      "atomic gates",
+      "checkpoint gates",
+      "cross-device sync",
+      "snapshot restore"
+    ],
+    "last_updated": "2025-11-20T21:30:00Z",
+    "status": "canonical"
+  },
+  "MentorInterceptor": {
+    "file": "MentorInterceptor_Architecture.md",
+    "systems": [
+      "Mr. Mentor",
+      "counselor flows",
+      "generate flow",
+      "schedule flow",
+      "edit flow",
+      "recall flow",
+      "search flow"
+    ],
+    "last_updated": "2025-11-17T23:45:00Z",
+    "status": "canonical"
+  }
+}
