@@ -108,6 +108,8 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
       clearInterval(pollIntervalRef.current);
     }
 
+    console.log('[SESSION TAKEOVER] Starting polling for session takeover detection');
+
     pollIntervalRef.current = setInterval(async () => {
       const currentSessionId = sessionIdRef.current;
       if (!currentSessionId || !isMountedRef.current) return;
@@ -119,6 +121,8 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
 
         // Session was taken over by another device
         if (!active && session) {
+          console.log('[SESSION TAKEOVER] Session was closed by another device:', session);
+          
           // Stop polling
           if (pollIntervalRef.current) {
             clearInterval(pollIntervalRef.current);
@@ -136,7 +140,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
           }
         }
       } catch (err) {
-        // Silent error handling
+        console.error('[SESSION TAKEOVER] Polling error:', err);
       }
     }, 8000); // Poll every 8 seconds
   }, [onSessionTakenOver]);

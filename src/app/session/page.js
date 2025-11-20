@@ -247,12 +247,14 @@ function SessionPageInner() {
   const {
     startSession: startTrackedSession,
     endSession: endTrackedSession,
+    startPolling: startSessionPolling,
   } = useSessionTracking(
     trackingLearnerId,
     lessonSessionKey,
     false, // autoStart
     (session) => {
       // Session taken over callback
+      console.log('[SESSION TAKEOVER] Callback triggered, showing dialog for session:', session);
       setConflictingSession(session);
       setShowTakeoverDialog(true);
     }
@@ -4200,6 +4202,10 @@ function SessionPageInner() {
     if (trackingLearnerId && lessonSessionKey && typeof startTrackedSession === 'function') {
       try {
         const supabaseSessionId = await startTrackedSession();
+        // Start polling for session takeover detection
+        if (supabaseSessionId && typeof startSessionPolling === 'function') {
+          startSessionPolling();
+        }
       } catch (sessionErr) {
         // Supabase session start failed
       }
