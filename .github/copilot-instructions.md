@@ -22,6 +22,23 @@ Before making changes to core systems:
    - Keep "How It Works", "What NOT To Do", "Key Files" structure
 6. LOG: Add one line to docs/brain/changelog.md: "Updated {topic}.md: {brief what changed}"
 
+PRE-FLIGHT CHECKLIST (complete BEFORE any code changes to core systems):
+When user requests changes to snapshot persistence, teaching flow, comprehension, session tracking, or other core systems:
+
+1. Show this checklist filled out:
+   ```
+   BRAIN CHECK:
+   □ Checked manifest.json - relevant file: _______________
+   □ Read brain file - current design summary: _______________
+   □ User request: _______________
+   □ Conflicts with brain? YES/NO - explanation: _______________
+   □ Proceeding with: _______________
+   ```
+
+2. Wait for user confirmation before writing code
+
+3. This creates a visible checkpoint and prevents autopilot coding
+
 CRITICAL GUARDRAILS:
 - Never write to brain files without user approval
 - Never append to brain files (always rewrite sections completely to kill zombies)
