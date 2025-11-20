@@ -181,19 +181,12 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
       });
     }
 
-    // Auto-end session on unmount
+    // Cleanup on unmount - stop polling but don't end session
+    // Sessions should only end via explicit endSession() calls or browser close (beforeunload)
     return () => {
       isMountedRef.current = false;
       stopPolling();
-      if (sessionIdRef.current) {
-        const meta = sessionMetaRef.current || { learnerId, lessonId };
-        endLessonSession(sessionIdRef.current, {
-          reason: 'exited',
-          metadata: { trigger: 'unmount' },
-          learnerId: meta.learnerId,
-          lessonId: meta.lessonId,
-        });
-      }
+      // Don't auto-end session on component unmount to avoid closing during React remounts
     };
   }, [autoStart, learnerId, lessonId, startPolling, stopPolling]);
 
