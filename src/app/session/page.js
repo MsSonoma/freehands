@@ -4209,13 +4209,10 @@ function SessionPageInner() {
       try {
         const supabaseSessionId = await startTrackedSession();
         console.log('[SESSION] Session started, ID:', supabaseSessionId);
-        // Start polling for session takeover detection
-        if (supabaseSessionId && typeof startSessionPolling === 'function') {
-          console.log('[SESSION] Starting polling for takeover detection');
-          startSessionPolling();
-        } else {
-          console.warn('[SESSION] Cannot start polling - sessionId:', supabaseSessionId, 'polling function:', typeof startSessionPolling);
-        }
+        // DISABLED: Polling was causing performance issues and never worked
+        // if (supabaseSessionId && typeof startSessionPolling === 'function') {
+        //   startSessionPolling();
+        // }
       } catch (sessionErr) {
         console.error('[SESSION] Session start failed:', sessionErr);
       }
