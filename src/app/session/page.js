@@ -210,6 +210,9 @@ function SessionPageInner() {
   const difficultyParam = (searchParams?.get('difficulty') || 'beginner').toLowerCase();
   const goldenKeyFromUrl = searchParams?.get('goldenKey') === 'true';
   
+  // Get learner ID from URL first (cross-device compatible), then fallback to localStorage
+  const learnerIdFromUrl = searchParams?.get('learner_id');
+  
   // Compute lesson key from params
   const lessonKey = useMemo(() => `${subjectParam}/${lessonParam}`, [subjectParam, lessonParam]);
   
@@ -219,9 +222,23 @@ function SessionPageInner() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    
+    // Priority: URL param (cross-device) > localStorage (same-device fallback)
+    if (learnerIdFromUrl && learnerIdFromUrl !== 'demo') {
+      console.log('[SESSION] Using learner_id from URL:', learnerIdFromUrl);
+      setTrackingLearnerId(learnerIdFromUrl);
+      // Sync to localStorage so it persists for same-device refresh
+      try {
+        localStorage.setItem('learner_id', learnerIdFromUrl);
+      } catch {}
+      return;
+    }
+    
+    // Fallback to localStorage
     try {
       const storedId = localStorage.getItem('learner_id');
       if (storedId && storedId !== 'demo') {
+        console.log('[SESSION] Using learner_id from localStorage:', storedId);
         setTrackingLearnerId(storedId);
       } else {
         setTrackingLearnerId(null);
@@ -229,7 +246,7 @@ function SessionPageInner() {
     } catch {
       setTrackingLearnerId(null);
     }
-  }, []);
+  }, [learnerIdFromUrl]);
 
   const lessonSessionKey = useMemo(() => {
     if (!subjectParam || !lessonParam) return null;
@@ -4200,15 +4217,22 @@ function SessionPageInner() {
 
     // Kick off Supabase session tracking once the learner actually begins this lesson
     if (trackingLearnerId && lessonSessionKey && typeof startTrackedSession === 'function') {
+      console.log('[SESSION] Starting session tracking for learner:', trackingLearnerId, 'lesson:', lessonSessionKey);
       try {
         const supabaseSessionId = await startTrackedSession();
+        console.log('[SESSION] Session started, ID:', supabaseSessionId);
         // Start polling for session takeover detection
         if (supabaseSessionId && typeof startSessionPolling === 'function') {
+          console.log('[SESSION] Starting polling for takeover detection');
           startSessionPolling();
+        } else {
+          console.warn('[SESSION] Cannot start polling - sessionId:', supabaseSessionId, 'polling function:', typeof startSessionPolling);
         }
       } catch (sessionErr) {
-        // Supabase session start failed
+        console.error('[SESSION] Session start failed:', sessionErr);
       }
+    } else {
+      console.warn('[SESSION] Session tracking not started - learnerId:', trackingLearnerId, 'lessonKey:', lessonSessionKey, 'startFunc:', typeof startTrackedSession);
     }
 
     // Immediately update UI so it feels responsive
