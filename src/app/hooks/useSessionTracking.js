@@ -49,6 +49,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
       setSessionId(id);
       sessionMetaRef.current = { learnerId, lessonId };
       setTracking(false);
+      console.log('[SESSION TAKEOVER] sessionIdRef.current set to:', id);
       return id;
     } else {
       setTracking(false);
@@ -109,6 +110,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
     }
 
     console.log('[SESSION TAKEOVER] Starting polling for session takeover detection');
+    console.log('[SESSION TAKEOVER] Current sessionId in ref:', sessionIdRef.current);
 
     pollIntervalRef.current = setInterval(async () => {
       const currentSessionId = sessionIdRef.current;
