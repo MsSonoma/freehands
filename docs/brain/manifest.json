@@ -13,6 +13,20 @@
     "last_updated": "2025-11-20T21:30:00Z",
     "status": "canonical"
   },
+  "session-takeover": {
+    "file": "session-takeover.md",
+    "systems": [
+      "session ownership",
+      "device conflict detection",
+      "PIN-validated takeover",
+      "gate-based conflict resolution",
+      "timer state persistence",
+      "cross-device session transfer",
+      "learner lesson sessions"
+    ],
+    "last_updated": "2025-11-20T23:00:00Z",
+    "status": "canonical"
+  },
   "MentorInterceptor": {
     "file": "MentorInterceptor_Architecture.md",
     "systems": [

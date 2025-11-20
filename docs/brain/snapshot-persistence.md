@@ -6,6 +6,8 @@
 
 Snapshots save at explicit checkpoints only. No autosave, no polling, no drift correction.
 
+**Scope:** This document covers snapshot saves and restores for lesson state persistence. For session ownership and device conflict detection, see [session-takeover.md](session-takeover.md).
+
 ## How It Works
 
 ### Save Strategy: Dual Write
@@ -105,4 +107,4 @@ When user switches devices:
 4. Snapshot written to new device's localStorage
 5. Subsequent saves/restores use localStorage (fast)
 
-No overlay, no polling, no "takeover" - just fallback to database when localStorage empty.
+**Session conflicts** (same learner+lesson on two devices simultaneously): Handled by session-takeover system, see [session-takeover.md](session-takeover.md). Takeover dialog appears at first gate when conflict detected, requires PIN validation.
