@@ -225,6 +225,16 @@ function SessionPageInner() {
   // Compute lesson key from params
   const lessonKey = useMemo(() => `${subjectParam}/${lessonParam}`, [subjectParam, lessonParam]);
   
+  // Normalized lesson key for database queries (strips subject prefix and .json extension)
+  // Must match the normalization in getSnapshotStorageKey() for conflict detection to work
+  const normalizedLessonKey = useMemo(() => {
+    if (!lessonParam) return null;
+    // Strip subject prefix
+    const withoutPrefix = lessonParam.includes('/') ? lessonParam.split('/').pop() : lessonParam;
+    // Strip .json extension
+    return withoutPrefix.replace(/\.json$/i, '');
+  }, [lessonParam]);
+  
   // Track whether this lesson has an active golden key (from URL or persisted in DB)
   const [hasGoldenKey, setHasGoldenKey] = useState(goldenKeyFromUrl);
   const [trackingLearnerId, setTrackingLearnerId] = useState(null);
@@ -252,10 +262,7 @@ function SessionPageInner() {
     }
   }, []);
 
-  const lessonSessionKey = useMemo(() => {
-    if (!subjectParam || !lessonParam) return null;
-    return `${subjectParam}/${lessonParam}`;
-  }, [subjectParam, lessonParam]);
+  // lessonSessionKey removed - using lessonKey for both snapshots and session tracking
 
   // Normalized key for visual aids (strips folder prefixes so same lesson from different routes shares visual aids)
   const visualAidsLessonKey = useMemo(() => {
@@ -271,7 +278,7 @@ function SessionPageInner() {
     startPolling: startSessionPolling,
   } = useSessionTracking(
     trackingLearnerId,
-    lessonSessionKey,
+    normalizedLessonKey,
     false, // autoStart
     (session) => {
       // Session taken over callback
@@ -300,7 +307,7 @@ function SessionPageInner() {
 
   // Handle session takeover
   const handleSessionTakeover = useCallback(async (pinCode) => {
-    if (!trackingLearnerId || !lessonSessionKey || !browserSessionId) {
+    if (!trackingLearnerId || !normalizedLessonKey || !browserSessionId) {
       throw new Error('Session not initialized');
     }
 
@@ -324,7 +331,7 @@ function SessionPageInner() {
       }
 
       // Clear localStorage to force fresh server snapshot load
-      const lsKey = `atomic_snapshot:${trackingLearnerId}:${lessonSessionKey}`;
+      const lsKey = `atomic_snapshot:${trackingLearnerId}:${normalizedLessonKey}`;
       try {
         localStorage.removeItem(lsKey);
       } catch {}
@@ -338,7 +345,7 @@ function SessionPageInner() {
     } catch (err) {
       throw err;
     }
-  }, [trackingLearnerId, lessonSessionKey, browserSessionId, conflictingSession, endTrackedSession]);
+  }, [trackingLearnerId, normalizedLessonKey, browserSessionId, conflictingSession, endTrackedSession]);
 
   const handleCancelTakeover = useCallback(() => {
     setShowTakeoverDialog(false);
@@ -4241,8 +4248,8 @@ function SessionPageInner() {
   // mic permission will be requested only when user starts recording
 
     // Kick off Supabase session tracking once the learner actually begins this lesson
-    if (trackingLearnerId && lessonSessionKey && typeof startTrackedSession === 'function') {
-      console.log('[SESSION] Starting session tracking for learner:', trackingLearnerId, 'lesson:', lessonSessionKey, 'sessionId:', browserSessionId);
+    if (trackingLearnerId && normalizedLessonKey && typeof startTrackedSession === 'function') {
+      console.log('[SESSION] Starting session tracking for learner:', trackingLearnerId, 'lesson:', normalizedLessonKey, 'sessionId:', browserSessionId);
       try {
         // Extract device name from user agent
         const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
@@ -4262,7 +4269,7 @@ function SessionPageInner() {
         console.error('[SESSION] Session start failed:', sessionErr);
       }
     } else {
-      console.warn('[SESSION] Session tracking not started - learnerId:', trackingLearnerId, 'lessonKey:', lessonSessionKey, 'startFunc:', typeof startTrackedSession);
+      console.warn('[SESSION] Session tracking not started - learnerId:', trackingLearnerId, 'normalizedLessonKey:', normalizedLessonKey, 'startFunc:', typeof startTrackedSession);
     }
 
     // Immediately update UI so it feels responsive
