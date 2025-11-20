@@ -28,7 +28,8 @@ export function getSnapshotStorageKey({ lessonData, manifestInfo, lessonParam, o
     const d = override?.data ?? lessonData;
     const m = override?.manifest ?? manifestInfo;
     const p = override?.param ?? lessonParam;
-    let base = (d && d.id) || (m && m.file) || p || '';
+    // Priority: URL param (most reliable) > manifest file > lessonData.id (can be corrupted)
+    let base = p || (m && m.file) || (d && d.id) || '';
     
     // Normalize: strip subject prefix if present (e.g., "generated/file.json" -> "file.json")
     if (base.includes('/')) {

@@ -6,7 +6,7 @@
  * Supports sentence-by-sentence gating for vocab definitions.
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 export function useTeachingFlow({
   // State setters
@@ -66,6 +66,51 @@ export function useTeachingFlow({
   const [exampleSentenceIndex, setExampleSentenceIndex] = useState(0);
   const exampleSentencesRef = useRef([]);
   const exampleSentenceIndexRef = useRef(0);
+  
+  const getTeachingFlowSnapshot = useCallback(() => {
+    return {
+      vocabSentences: Array.isArray(vocabSentencesRef.current)
+        ? vocabSentencesRef.current.filter((s) => typeof s === 'string' && s.trim().length)
+        : [],
+      vocabSentenceIndex: Math.max(0, Number(vocabSentenceIndexRef.current) || 0),
+      exampleSentences: Array.isArray(exampleSentencesRef.current)
+        ? exampleSentencesRef.current.filter((s) => typeof s === 'string' && s.trim().length)
+        : [],
+      exampleSentenceIndex: Math.max(0, Number(exampleSentenceIndexRef.current) || 0),
+      isInSentenceMode: !!isInSentenceModeRef.current,
+    };
+  }, []);
+
+  const applyTeachingFlowSnapshot = useCallback((snap) => {
+    const safeArray = (arr) => (
+      Array.isArray(arr)
+        ? arr.map((s) => (typeof s === 'string' ? s : '')).filter((s) => s && s.trim())
+        : []
+    );
+    const vocabList = safeArray(snap?.vocabSentences);
+    const vocabIdx = Math.min(
+      vocabList.length > 0 ? vocabList.length - 1 : 0,
+      Math.max(0, Number(snap?.vocabSentenceIndex) || 0)
+    );
+    vocabSentencesRef.current = vocabList;
+    setVocabSentences(vocabList);
+    vocabSentenceIndexRef.current = vocabIdx;
+    setVocabSentenceIndex(vocabIdx);
+
+    const exampleList = safeArray(snap?.exampleSentences);
+    const exampleIdx = Math.min(
+      exampleList.length > 0 ? exampleList.length - 1 : 0,
+      Math.max(0, Number(snap?.exampleSentenceIndex) || 0)
+    );
+    exampleSentencesRef.current = exampleList;
+    setExampleSentences(exampleList);
+    exampleSentenceIndexRef.current = exampleIdx;
+    setExampleSentenceIndex(exampleIdx);
+
+    const inSentence = !!snap?.isInSentenceMode;
+    isInSentenceModeRef.current = inSentence;
+    setIsInSentenceMode(inSentence);
+  }, []);
   
   /**
    * Gate prompt: "Do you have any questions?" + example questions
@@ -149,19 +194,25 @@ export function useTeachingFlow({
    * Teach definitions stage - sentence-by-sentence gating
    */
   const teachDefinitions = async (isRepeat = false) => {
-    setCanSend(false);
-    setSubPhase('teaching-3stage');
-    
+    console.log('[TEACHING DEBUG] teachDefinitions called. vocabSentences.length:', vocabSentencesRef.current.length, 'isRepeat:', isRepeat);
     // If we already have vocab sentences stored, handle repeat/next
+    // DO NOT change subPhase - we're resuming from restore or repeating
     if (vocabSentencesRef.current.length > 0) {
+      console.log('[TEACHING DEBUG] Early return - sentences exist, NOT changing subPhase');
       const currentSentence = vocabSentencesRef.current[vocabSentenceIndexRef.current];
       if (currentSentence) {
         // Speak the current sentence (whether repeat or continuing)
-        try { await speakFrontend(currentSentence); } catch {}
+        // Use noCaptions to avoid re-transcribing (sentence already in transcript from before)
+        try { await speakFrontend(currentSentence, { noCaptions: true }); } catch {}
         return true;
       }
       return false;
     }
+    
+    // First time through: set phase and speak intro
+    console.log('[TEACHING DEBUG] First time - setting subPhase to teaching-3stage');
+    setCanSend(false);
+    setSubPhase('teaching-3stage');
     
     // First time through: speak intro and get all vocab definitions from GPT
     if (!isRepeat) {
@@ -240,8 +291,15 @@ export function useTeachingFlow({
       isInSentenceModeRef.current = true;
       setIsInSentenceMode(true);
       
+      // ATOMIC SNAPSHOT: Save BEFORE speaking so skip doesn't lose progress
+      try { await scheduleSaveSnapshot('vocab-sentence-1'); } catch {}
+      
       // Speak the first sentence
       try { await speakFrontend(sentences[0]); } catch {}
+      
+      // Set subPhase to awaiting-gate so buttons appear
+      setSubPhase('awaiting-gate');
+      setCanSend(false);
       
       return true;
     }
@@ -253,19 +311,22 @@ export function useTeachingFlow({
    * Teach examples stage - sentence-by-sentence gating
    */
   const teachExamples = async (isRepeat = false) => {
-    setCanSend(false);
-    setSubPhase('teaching-3stage');
-    
     // If we already have example sentences stored, handle repeat/next
+    // DO NOT change subPhase - we're resuming from restore or repeating
     if (exampleSentencesRef.current.length > 0) {
       const currentSentence = exampleSentencesRef.current[exampleSentenceIndexRef.current];
       if (currentSentence) {
         // Speak the current sentence (whether repeat or continuing)
-        try { await speakFrontend(currentSentence); } catch {}
+        // Use noCaptions to avoid re-transcribing (sentence already in transcript from before)
+        try { await speakFrontend(currentSentence, { noCaptions: true }); } catch {}
         return true;
       }
       return false;
     }
+    
+    // First time through: set phase and speak intro
+    setCanSend(false);
+    setSubPhase('teaching-3stage');
     
     // First time through: speak intro and get all examples from GPT
     if (!isRepeat) {
@@ -275,12 +336,32 @@ export function useTeachingFlow({
     const lessonTitle = getCleanLessonTitle();
     const notes = getTeachingNotes() || '';
     
+    // Get vocab list to provide context for examples
+    const loaded = await ensureLessonDataReady();
+    const vocabList = getAvailableVocab(loaded || undefined);
+    const hasAnyVocab = Array.isArray(vocabList) && vocabList.length > 0;
+    
+    // Extract vocab terms for context
+    const terms = hasAnyVocab
+      ? Array.from(new Map(
+          vocabList
+            .map(v => {
+              const raw = (typeof v === 'string') ? v : (v?.term || v?.word || v?.key || '');
+              const t = (raw || '').trim();
+              return t ? [t.toLowerCase(), t] : null;
+            })
+            .filter(Boolean)
+        ).values())
+      : [];
+    
+    const vocabContext = terms.length > 0 ? `Use these vocabulary words naturally in your examples: ${terms.join(', ')}.` : '';
+    
     const instruction = [
       '',
       `Teaching notes (for your internal guidance; integrate naturally—do not read verbatim): ${notes}`,
       '',
       'No intro: Do not greet or introduce yourself; begin immediately with the examples.',
-      'Examples: Show 2–3 tiny worked examples appropriate for this lesson. You compute every step. Be concise, warm, and playful. Do not add definitions or broad explanations beyond what is needed to show the steps. Do not do an introduction or a wrap; give only the examples.',
+      `Examples: Show 2–3 tiny worked examples appropriate for this lesson. ${vocabContext} You compute every step. Be concise, warm, and playful. Do not add definitions or broad explanations beyond what is needed to show the steps. Do not do an introduction or a wrap; give only the examples.`,
       '',
       'CRITICAL ACCURACY: All examples and facts must be scientifically and academically correct. Never demonstrate incorrect procedures, state false information, or contradict established knowledge. Verify accuracy before presenting. OVERRIDE: If teaching notes below specify particular examples or methods, base your examples on that guidance - paraphrase naturally in your own style, but preserve the meaning and facts exactly as given. Do not correct, contradict, or add different information.',
       '',
@@ -301,7 +382,7 @@ export function useTeachingFlow({
         lessonTitle: effectiveLessonTitle,
         step: isRepeat ? 'examples-repeat' : 'examples',
         teachingNotes: notes || undefined,
-        vocab: [],
+        vocab: hasAnyVocab ? vocabList : [],
         stage: 'examples'
       },
       { skipAudio: true } // Skip audio - we'll play sentence-by-sentence
@@ -323,8 +404,15 @@ export function useTeachingFlow({
       isInSentenceModeRef.current = true;
       setIsInSentenceMode(true);
       
+      // ATOMIC SNAPSHOT: Save BEFORE speaking so skip doesn't lose progress
+      try { await scheduleSaveSnapshot('example-sentence-1'); } catch {}
+      
       // Speak the first sentence
       try { await speakFrontend(sentences[0]); } catch {}
+      
+      // Set subPhase to awaiting-gate so buttons appear
+      setSubPhase('awaiting-gate');
+      setCanSend(false);
       
       return true;
     }
@@ -418,8 +506,19 @@ export function useTeachingFlow({
           vocabSentenceIndexRef.current = nextIndex;
           setVocabSentenceIndex(nextIndex);
           
+          // Show loading overlay during save
+          setTtsLoadingCount(prev => prev + 1);
+          
+          // ATOMIC SNAPSHOT: Save BEFORE speaking so skip doesn't lose progress
+          try { await scheduleSaveSnapshot(`vocab-sentence-${nextIndex + 1}`); } catch (err) {
+            console.error('[TEACHING FLOW] Save failed:', err);
+          }
+          
+          setTtsLoadingCount(prev => prev - 1);
+          
           const nextSentence = vocabSentencesRef.current[nextIndex];
           try { await speakFrontend(nextSentence); } catch {}
+          
           // Don't call promptGateRepeat - just show gate buttons again
           setSubPhase('awaiting-gate');
           setCanSend(false);
@@ -442,8 +541,8 @@ export function useTeachingFlow({
       // Final gate "No" - advance to Examples stage
       setTeachingStage('examples');
       try { scheduleSaveSnapshot('begin-teaching-examples'); } catch {}
-      const ok = await teachExamples(false);
-      if (ok) await promptGateRepeat();
+      await teachExamples(false);
+      // Don't call promptGateRepeat here - it will be called after all example sentences are done
       return;
     }
     
@@ -458,8 +557,19 @@ export function useTeachingFlow({
           exampleSentenceIndexRef.current = nextIndex;
           setExampleSentenceIndex(nextIndex);
           
+          // Show loading overlay during save
+          setTtsLoadingCount(prev => prev + 1);
+          
+          // ATOMIC SNAPSHOT: Save BEFORE speaking so skip doesn't lose progress
+          try { await scheduleSaveSnapshot(`example-sentence-${nextIndex + 1}`); } catch (err) {
+            console.error('[TEACHING FLOW] Save failed:', err);
+          }
+          
+          setTtsLoadingCount(prev => prev - 1);
+          
           const nextSentence = exampleSentencesRef.current[nextIndex];
           try { await speakFrontend(nextSentence); } catch {}
+          
           // Don't call promptGateRepeat - just show gate buttons again
           setSubPhase('awaiting-gate');
           setCanSend(false);
@@ -569,7 +679,6 @@ export function useTeachingFlow({
   };
 
   return {
-    promptGateRepeat,
     teachDefinitions,
     teachExamples,
     startTwoStageTeaching,
@@ -577,5 +686,7 @@ export function useTeachingFlow({
     handleGateNo,
     moveToComprehensionWithCue,
     isInSentenceMode, // Export sentence navigation mode flag
+    getTeachingFlowSnapshot,
+    applyTeachingFlowSnapshot,
   };
 }

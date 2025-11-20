@@ -47,6 +47,7 @@ import { useSessionTracking } from '../hooks/useSessionTracking';
 import { useSnapshotPersistence } from './hooks/useSnapshotPersistence';
 import { useResumeRestart } from './hooks/useResumeRestart';
 import SessionTimer from './components/SessionTimer';
+import SessionTakeoverDialog from './components/SessionTakeoverDialog';
 import PhaseTimersOverlay from './components/PhaseTimersOverlay';
 import PlayTimeExpiredOverlay from './components/PlayTimeExpiredOverlay';
 import TimerControlOverlay from './components/TimerControlOverlay';
@@ -249,7 +250,12 @@ function SessionPageInner() {
   } = useSessionTracking(
     trackingLearnerId,
     lessonSessionKey,
-    false
+    false, // autoStart
+    (session) => {
+      // Session taken over callback
+      setConflictingSession(session);
+      setShowTakeoverDialog(true);
+    }
   );
   
   // Force target reload when learner changes
@@ -268,6 +274,42 @@ function SessionPageInner() {
     // Load runtime & learner targets once on mount
     reloadTargetsForCurrentLearner();
   }, [reloadTargetsForCurrentLearner]);
+
+  // Handle session takeover
+  const handleSessionTakeover = useCallback(async (pinCode) => {
+    if (!trackingLearnerId || !lessonSessionKey) {
+      throw new Error('Session not initialized');
+    }
+
+    try {
+      // Validate PIN
+      const isValid = await ensurePinAllowed(pinCode);
+      if (!isValid) {
+        throw new Error('Invalid PIN');
+      }
+
+      // Clear localStorage to force fresh server snapshot load
+      const lsKey = `atomic_snapshot:${trackingLearnerId}:${lessonSessionKey}`;
+      try {
+        localStorage.removeItem(lsKey);
+      } catch {}
+
+      // Close dialog
+      setShowTakeoverDialog(false);
+      setConflictingSession(null);
+
+      // Reload page to restore fresh state from server
+      window.location.reload();
+    } catch (err) {
+      throw err;
+    }
+  }, [trackingLearnerId, lessonSessionKey]);
+
+  const handleCancelTakeover = useCallback(() => {
+    setShowTakeoverDialog(false);
+    setConflictingSession(null);
+    // User chose not to take over - stay on current screen
+  }, []);
 
   // Discussion: post-Opening action buttons state
   const [showOpeningActions, setShowOpeningActions] = useState(false);
@@ -324,14 +366,36 @@ function SessionPageInner() {
   
   // Phase-based timer system (11 timers: 5 phases × 2 types + 1 golden key bonus)
   const [phaseTimers, setPhaseTimers] = useState(null); // Loaded from learner profile
-  const [currentTimerMode, setCurrentTimerMode] = useState({}); // { discussion: 'play'|'work', comprehension: 'play'|'work', ... }
-  const [workPhaseCompletions, setWorkPhaseCompletions] = useState({
+  const [currentTimerMode, setCurrentTimerModeState] = useState({}); // { discussion: 'play'|'work', comprehension: 'play'|'work', ... }
+  const currentTimerModeRef = useRef(currentTimerMode);
+  const setCurrentTimerMode = useCallback((updater) => {
+    setCurrentTimerModeState(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : (updater || {});
+      currentTimerModeRef.current = next;
+      return next;
+    });
+  }, []);
+  const [workPhaseCompletions, setWorkPhaseCompletionsState] = useState({
     discussion: false,
     comprehension: false,
     exercise: false,
     worksheet: false,
     test: false
   }); // Tracks which work phases completed without timing out (for golden key earning)
+  const workPhaseCompletionsRef = useRef(workPhaseCompletions);
+  const setWorkPhaseCompletions = useCallback((updater) => {
+    setWorkPhaseCompletionsState(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : (updater || {
+        discussion: false,
+        comprehension: false,
+        exercise: false,
+        worksheet: false,
+        test: false,
+      });
+      workPhaseCompletionsRef.current = next;
+      return next;
+    });
+  }, []);
   const [showPlayTimeExpired, setShowPlayTimeExpired] = useState(false);
   const [playExpiredPhase, setPlayExpiredPhase] = useState(null); // Which phase's play timer expired
   const [goldenKeyEarned, setGoldenKeyEarned] = useState(false); // True if earned during this session
@@ -431,12 +495,18 @@ function SessionPageInner() {
           setPhaseTimers(timers);
           
           // Initialize currentTimerMode to 'play' for all phases
-          setCurrentTimerMode({
-            discussion: null, // Not started yet
-            comprehension: null,
-            exercise: null,
-            worksheet: null,
-            test: null
+          setCurrentTimerMode(prev => {
+            const hasExistingMode = prev && Object.values(prev).some((mode) => mode === 'play' || mode === 'work');
+            if (hasExistingMode) {
+              return prev;
+            }
+            return {
+              discussion: null, // Not started yet
+              comprehension: null,
+              exercise: null,
+              worksheet: null,
+              test: null
+            };
           });
           
           // Check for active golden key on this lesson
@@ -479,7 +549,7 @@ function SessionPageInner() {
         setLearnerGrade('');
       }
     })();
-  }, [subjectParam, lessonParam, goldenKeyFromUrl]); // Re-run when lesson changes
+  }, [subjectParam, lessonParam, goldenKeyFromUrl, lessonKey, setCurrentTimerMode]); // Re-run when lesson changes
   
   // Also listen for storage changes to pick up timer and grade updates from facilitator page
   useEffect(() => {
@@ -608,7 +678,7 @@ function SessionPageInner() {
       ...prev,
       [phaseName]: 'play'
     }));
-  }, []);
+  }, [setCurrentTimerMode]);
   
   // Transition from play to work timer (called when "Go" button is clicked during play mode)
   const transitionToWorkTimer = useCallback((phaseName) => {
@@ -624,7 +694,7 @@ function SessionPageInner() {
       ...prev,
       [phaseName]: 'work'
     }));
-  }, [lessonKey]);
+  }, [lessonKey, setCurrentTimerMode]);
   
   // Handle play timer expiration (show 30-second countdown overlay)
   const handlePlayTimeUp = useCallback((phaseName) => {
@@ -649,7 +719,7 @@ function SessionPageInner() {
       ...prev,
       [phaseName]: false // Explicitly mark as failed due to timeout
     }));
-  }, []);
+  }, [setWorkPhaseCompletions]);
   
   // Mark work phase as completed (called when advancing to next phase with time remaining)
   const markWorkPhaseComplete = useCallback((phaseName) => {
@@ -657,7 +727,7 @@ function SessionPageInner() {
       ...prev,
       [phaseName]: true
     }));
-  }, []);
+  }, [setWorkPhaseCompletions]);
   
   // Check if golden key should be earned (4/5 work phases completed)
   const checkGoldenKeyEarn = useCallback(() => {
@@ -795,23 +865,6 @@ function SessionPageInner() {
   const [timerRefreshKey, setTimerRefreshKey] = useState(0);
   const [isGoldenKeySuspended, setIsGoldenKeySuspended] = useState(false);
 
-  // Clear timer state when returning to Begin screen (new lesson or after completion)
-  useEffect(() => {
-    if (showBegin && lessonKey) {
-      try {
-        // Clean up all phase-based timer states for this lesson
-        const phases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
-        const timerTypes = ['play', 'work'];
-        phases.forEach(phase => {
-          timerTypes.forEach(timerType => {
-            const storageKey = `session_timer_state:${lessonKey}:${phase}:${timerType}`;
-            sessionStorage.removeItem(storageKey);
-          });
-        });
-      } catch {}
-    }
-  }, [showBegin, lessonKey]);
-
   // isSpeaking/phase/subPhase defined earlier; do not redeclare here
   const [transcript, setTranscript] = useState("");
   // Start with loading=true so the existing overlay spinner shows during initial restore
@@ -819,6 +872,27 @@ function SessionPageInner() {
   // TTS overlay: track TTS fetch activity separately; overlay shows when either API or TTS is loading
   const [ttsLoadingCount, setTtsLoadingCount] = useState(0);
   const overlayLoading = loading || (ttsLoadingCount > 0);
+
+  // Session takeover detection
+  const [showTakeoverDialog, setShowTakeoverDialog] = useState(false);
+  const [conflictingSession, setConflictingSession] = useState(null);
+
+  // Clear timer state only after initial loading completes and the Begin screen is actually visible
+  useEffect(() => {
+    if (loading) return;
+    if (!showBegin || !lessonKey) return;
+    try {
+      const phases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
+      const timerTypes = ['play', 'work'];
+      phases.forEach(phase => {
+        timerTypes.forEach(timerType => {
+          const storageKey = `session_timer_state:${lessonKey}:${phase}:${timerType}`;
+          sessionStorage.removeItem(storageKey);
+        });
+      });
+    } catch {}
+  }, [showBegin, lessonKey, loading]);
+
   const [error, setError] = useState("");
   const [canSend, setCanSend] = useState(false);
   const [learnerInput, setLearnerInput] = useState("");
@@ -3059,6 +3133,27 @@ function SessionPageInner() {
   const [teachingStage, setTeachingStage] = useState('idle'); // 'idle' | 'definitions' | 'examples'
   const [stageRepeats, setStageRepeats] = useState({ definitions: 0, explanation: 0, examples: 0 });
 
+  // Bridge teaching-flow snapshot helpers so persistence can reference them before the hook initializes
+  const teachingFlowSnapshotGetRef = useRef(null);
+  const teachingFlowSnapshotApplyRef = useRef(null);
+
+  const getTeachingFlowSnapshotBridge = useCallback(() => {
+    try {
+      if (typeof teachingFlowSnapshotGetRef.current === 'function') {
+        return teachingFlowSnapshotGetRef.current();
+      }
+    } catch {}
+    return null;
+  }, []);
+
+  const applyTeachingFlowSnapshotBridge = useCallback((snap) => {
+    try {
+      if (typeof teachingFlowSnapshotApplyRef.current === 'function') {
+        teachingFlowSnapshotApplyRef.current(snap);
+      }
+    } catch {}
+  }, []);
+
   // Session snapshot persistence (restore and save) � placed after state declarations to avoid TDZ
   const restoredSnapshotRef = useRef(false);
   const didRunRestoreRef = useRef(false); // ensure we attempt restore exactly once per mount
@@ -3073,7 +3168,7 @@ function SessionPageInner() {
   const pendingSaveRetriesRef = useRef({});
 
   // Snapshot persistence system (must be early to avoid TDZ errors in handleRestartClick)
-  const { scheduleSaveSnapshot, snapshotSigMemo } = useSnapshotPersistence({
+  const { scheduleSaveSnapshot } = useSnapshotPersistence({
     // State values
     phase,
     subPhase,
@@ -3109,7 +3204,9 @@ function SessionPageInner() {
     generatedWorksheet,
     generatedTest,
     currentTimerMode,
+  currentTimerModeRef,
     workPhaseCompletions,
+  workPhaseCompletionsRef,
     // State setters
     setPhase,
     setSubPhase,
@@ -3142,6 +3239,8 @@ function SessionPageInner() {
     setUsedTestCuePhrases,
     setGeneratedComprehension,
     setGeneratedExercise,
+  setGeneratedWorksheet,
+  setGeneratedTest,
     setLoading,
     setOfferResume,
     setCanSend,
@@ -3150,6 +3249,8 @@ function SessionPageInner() {
     setIsSpeaking,
     setCurrentTimerMode,
     setWorkPhaseCompletions,
+  getTeachingFlowSnapshot: getTeachingFlowSnapshotBridge,
+  applyTeachingFlowSnapshot: applyTeachingFlowSnapshotBridge,
     // Refs
     restoredSnapshotRef,
     restoreFoundRef,
@@ -3164,6 +3265,7 @@ function SessionPageInner() {
     preferHtmlAudioOnceRef,
     resumeAppliedRef,
     // Functions
+    speakFrontend,
     getSnapshotStorageKey,
     // Data
     lessonParam,
@@ -4186,6 +4288,8 @@ function SessionPageInner() {
     handleGateNo: handleGateNoHook,
     moveToComprehensionWithCue: moveToComprehensionWithCueHook,
     isInSentenceMode,
+    getTeachingFlowSnapshot,
+    applyTeachingFlowSnapshot,
   } = useTeachingFlow({
     // State setters
     setCanSend,
@@ -4224,6 +4328,10 @@ function SessionPageInner() {
     // Constants
     COMPREHENSION_CUE_PHRASE,
   });
+
+  // Keep bridge refs pointed at the latest hook helpers
+  teachingFlowSnapshotGetRef.current = getTeachingFlowSnapshot;
+  teachingFlowSnapshotApplyRef.current = applyTeachingFlowSnapshot;
 
   // Use hook-provided teaching flow functions
   const promptGateRepeat = promptGateRepeatHook;
@@ -4530,15 +4638,16 @@ function SessionPageInner() {
   // Start the comprehension play timer
   startPhasePlayTimer('comprehension');
   
-  // Persist the entrance to comprehension-start immediately (single-snapshot resume pointer)
-  try { scheduleSaveSnapshot('begin-comprehension'); } catch {}
   setCanSend(false);
     // Do NOT arm the first question here - it will be armed when Go is pressed
     // This prevents the question buttons from interfering with Ask/Joke/Riddle/Poem/Story/Fill-in-fun
     // Immediately enter active subPhase so the Begin button disappears right away
     setSubPhase('comprehension-active');
   // Persist the transition to comprehension-active so resume lands on the five-button view
-  try { scheduleSaveSnapshot('comprehension-active'); } catch {}
+  // Delay save to ensure state update has flushed
+  setTimeout(() => {
+    try { scheduleSaveSnapshot('comprehension-active'); } catch {}
+  }, 0);
     // New: Phase intro (random from pool); first question is gated behind Go button
     const intro = COMPREHENSION_INTROS[Math.floor(Math.random() * COMPREHENSION_INTROS.length)];
     try {
@@ -5071,6 +5180,7 @@ function SessionPageInner() {
     setTranscriptSessionId,
     setLoading,
     // Refs
+    restoredSnapshotRef,
     preferHtmlAudioOnceRef,
     forceNextPlaybackRef,
     activeQuestionBodyRef,
@@ -5096,7 +5206,8 @@ function SessionPageInner() {
     getAssessmentStorageKey,
     clearAssessments,
     scheduleSaveSnapshot,
-  startTrackedSession,
+    startTrackedSession,
+    getTeachingFlowSnapshot: getTeachingFlowSnapshotBridge,
     // Constants
     COMPREHENSION_INTROS,
     EXERCISE_INTROS,
@@ -5532,6 +5643,10 @@ function SessionPageInner() {
           // Remember the exact next question spoken
           activeQuestionBodyRef.current = nextQ;
           try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
+          
+          // ATOMIC SNAPSHOT: Save after answering comprehension question (includes next question in response)
+          try { await scheduleSaveSnapshot('comprehension-answered'); } catch {}
+          
           setSubPhase('comprehension-active');
           setCanSend(false);
           return;
@@ -5719,6 +5834,10 @@ function SessionPageInner() {
           // Remember the exact next exercise question spoken
           activeQuestionBodyRef.current = nextQ;
           try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
+          
+          // ATOMIC SNAPSHOT: Save after answering exercise question (includes next question in response)
+          try { await scheduleSaveSnapshot('exercise-answered'); } catch {}
+          
           // Re-enable input after the next question has been spoken. While speaking, input is locked by speakingLock.
           setCanSend(true);
           return;
@@ -5848,6 +5967,10 @@ function SessionPageInner() {
     // Remember the exact next worksheet question spoken
     activeQuestionBodyRef.current = nextQ;
         try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
+        
+        // ATOMIC SNAPSHOT: Save after answering worksheet question (includes next question in response)
+        try { await scheduleSaveSnapshot('worksheet-answered'); } catch {}
+        
         setCanSend(true);
         return;
       }
@@ -5950,6 +6073,10 @@ function SessionPageInner() {
             // Remember the exact next test question spoken
             activeQuestionBodyRef.current = nextQ;
             try { await speakFrontend(`${speech} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
+            
+            // ATOMIC SNAPSHOT: Save after answering test question (includes next question in response)
+            try { await scheduleSaveSnapshot('test-answered'); } catch {}
+            
             setTestActiveIndex(nextIdx);
             try { scheduleSaveSnapshot('test-advance'); } catch {}
             setCanSend(true);
@@ -6611,6 +6738,10 @@ function SessionPageInner() {
         showGames={showGames}
         setShowGames={setShowGames}
         timerRefreshKey={timerRefreshKey}
+        showTakeoverDialog={showTakeoverDialog}
+        conflictingSession={conflictingSession}
+        handleSessionTakeover={handleSessionTakeover}
+        handleCancelTakeover={handleCancelTakeover}
       />
       {/* Worksheet end-of-phase Review button removed per requirements */}
     </div>
@@ -6930,6 +7061,7 @@ function SessionPageInner() {
                   <button type="button" style={btn} onClick={handlePoemStart}>Poem</button>
                   <button type="button" style={btn} onClick={handleStoryStart}>Story</button>
                   <button type="button" style={btn} onClick={handleFillInFunStart}>Fill-in-Fun</button>
+                  <button type="button" style={btn} onClick={() => setShowGames(true)}>Games</button>
                   <button type="button" style={goBtn} onClick={onGo} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson…'}>Go</button>
                 </div>
               );
@@ -7047,7 +7179,8 @@ function SessionPageInner() {
           {(() => {
             try {
               // Show teaching gate Repeat Vocab/Examples and Next when awaiting-gate; hide while speaking
-              if (phase === 'teaching' && subPhase === 'awaiting-gate' && !isSpeaking && askState === 'inactive') {
+              const shouldShow = (phase === 'teaching' && subPhase === 'awaiting-gate' && !isSpeaking && askState === 'inactive');
+              if (shouldShow) {
                 const containerStyle = {
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 8,
                   paddingLeft: isMobileLandscape ? 12 : '4%', paddingRight: isMobileLandscape ? 12 : '4%', marginBottom: 6,
@@ -7074,11 +7207,6 @@ function SessionPageInner() {
                       style={{ ...btnBase, minWidth: 160, background: '#374151', opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
                       onClick={askState === 'inactive' ? getAskButtonHandler(handleAskQuestionStart) : undefined}
                     >Ask</button>
-                    <button
-                      type="button"
-                      style={{ ...btnBase, minWidth: 160, background: '#10b981' }}
-                      onClick={() => setShowGames(true)}
-                    >Games</button>
                   </div>
                 );
               }
@@ -7492,7 +7620,7 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
   );
 }
 
-function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, lessonKey, muted, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle, handleTimerClick, phaseTimers, currentTimerMode, getCurrentPhaseName, getCurrentPhaseTimerDuration, goldenKeyBonus, showPlayTimeExpired, playExpiredPhase, handlePlayExpiredComplete, handlePhaseTimerTimeUp, showRepeatButton, handleRepeatSpeech, visualAids, onShowVisualAids, showGames, setShowGames, timerRefreshKey }) {
+function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, lessonKey, muted, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle, handleTimerClick, phaseTimers, currentTimerMode, getCurrentPhaseName, getCurrentPhaseTimerDuration, goldenKeyBonus, showPlayTimeExpired, playExpiredPhase, handlePlayExpiredComplete, handlePhaseTimerTimeUp, showRepeatButton, handleRepeatSpeech, visualAids, onShowVisualAids, showGames, setShowGames, timerRefreshKey, showTakeoverDialog, conflictingSession, handleSessionTakeover, handleCancelTakeover }) {
   // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
   // Remove horizontal clamp: let the video occupy the full available width of its column
   const containerMaxWidth = 'none';
@@ -7588,7 +7716,6 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
                 const phaseName = getCurrentPhaseName();
                 const timerType = currentTimerMode[phaseName];
                 const key = `phase-timer-${phaseName}-${timerType}-${timerRefreshKey}`;
-                console.log(`[TIMER KEY DEBUG] Phase: ${phaseName}, Type: ${timerType}, RefreshKey: ${timerRefreshKey}, Key: ${key}`);
                 return key;
               })()}
               phase={getCurrentPhaseName()}
@@ -7610,6 +7737,15 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
           <PlayTimeExpiredOverlay
             phaseName={playExpiredPhase}
             onComplete={handlePlayExpiredComplete}
+          />
+        )}
+
+        {/* Session takeover dialog */}
+        {showTakeoverDialog && conflictingSession && (
+          <SessionTakeoverDialog
+            existingSession={conflictingSession}
+            onTakeover={handleSessionTakeover}
+            onCancel={handleCancelTakeover}
           />
         )}
         

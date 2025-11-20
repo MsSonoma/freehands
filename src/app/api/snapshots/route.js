@@ -160,6 +160,8 @@ async function dbGetSnapshot(db, userId, learnerId, lessonKey) {
     .eq('user_id', userId)
     .eq('learner_id', learnerId)
     .eq('lesson_key', lessonKey)
+    .order('updated_at', { ascending: false })
+    .limit(1)
     .maybeSingle();
   if (error) return { data: null, error };
   return { data: data?.data || null, error: null };
@@ -169,7 +171,7 @@ async function dbUpsertSnapshot(db, userId, learnerId, lessonKey, payload) {
   const row = { user_id: userId, learner_id: learnerId, lesson_key: lessonKey, data: payload, updated_at: new Date().toISOString() };
   const { error } = await db
     .from('learner_snapshots')
-    .upsert(row, { onConflict: 'user_id,learner_id,lesson_key' });
+    .upsert(row, { onConflict: 'user_id,learner_id,lesson_key', ignoreDuplicates: false });
   if (error) return { ok: false, error };
   return { ok: true };
 }

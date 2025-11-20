@@ -357,8 +357,10 @@ export function useAudioPlayback({
           } catch {}
         };
         audio.onended = () => {
+          console.log('[AUDIO DEBUG] audio.onended fired, setting isSpeaking=false');
           try {
             setIsSpeaking(false);
+            console.log('[AUDIO DEBUG] setIsSpeaking(false) called successfully');
             // Show repeat button if audio is available
             if (lastAudioBase64Ref.current) {
               setShowRepeatButton(true);

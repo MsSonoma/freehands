@@ -65,11 +65,76 @@ function sanitizeStoryTranscript(arr) {
     .filter(Boolean);
 }
 
+function sanitizeSentenceArray(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter((item) => item.length > 0);
+}
+
+function sanitizeTeachingFlowState(obj) {
+  if (!obj || typeof obj !== 'object') return null;
+  const vocabSentences = sanitizeSentenceArray(obj.vocabSentences);
+  const exampleSentences = sanitizeSentenceArray(obj.exampleSentences);
+  const vocabSentenceIndex = Math.max(0, Math.min(vocabSentences.length ? vocabSentences.length - 1 : 0, Number(obj.vocabSentenceIndex) || 0));
+  const exampleSentenceIndex = Math.max(0, Math.min(exampleSentences.length ? exampleSentences.length - 1 : 0, Number(obj.exampleSentenceIndex) || 0));
+  const hasContent = vocabSentences.length || exampleSentences.length || vocabSentenceIndex || exampleSentenceIndex || obj.isInSentenceMode;
+  if (!hasContent) return null;
+  return {
+    vocabSentences,
+    vocabSentenceIndex,
+    exampleSentences,
+    exampleSentenceIndex,
+    isInSentenceMode: !!obj.isInSentenceMode,
+  };
+}
+
+function sanitizeTimerMode(obj) {
+  if (!obj || typeof obj !== 'object') return {};
+  const out = {};
+  const allowedPhases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
+  allowedPhases.forEach((phase) => {
+    const mode = obj[phase];
+    if (mode === 'play' || mode === 'work') {
+      out[phase] = mode;
+    }
+  });
+  return out;
+}
+
+function sanitizeWorkPhaseCompletions(obj) {
+  if (!obj || typeof obj !== 'object') return {};
+  const out = {};
+  Object.entries(obj).forEach(([key, value]) => {
+    if (typeof key === 'string') {
+      out[key] = !!value;
+    }
+  });
+  return out;
+}
+
+function sanitizeTimerStates(obj) {
+  if (!obj || typeof obj !== 'object') return {};
+  const out = {};
+  Object.entries(obj).forEach(([key, value]) => {
+    if (typeof key === 'string' && key.startsWith('session_timer_state:')) {
+      try {
+        out[key] = JSON.parse(JSON.stringify(value));
+      } catch {
+        // Ignore unserializable entries
+      }
+    }
+  });
+  return out;
+}
+
 export function normalizeSnapshot(obj) {
   if (!obj || typeof obj !== 'object') return null;
   const storyStateOptions = ['inactive', 'awaiting-setup', 'awaiting-turn', 'ending'];
   const storySetupOptions = ['characters', 'setting', 'plot', 'complete'];
   const out = {
+    // Snapshot version marker (v2 = atomic checkpoint system, v1 or undefined = old signature-based)
+    snapshotVersion: Number.isFinite(obj.snapshotVersion) ? obj.snapshotVersion : undefined,
     phase: obj.phase || 'discussion',
     subPhase: obj.subPhase || 'greeting',
     showBegin: !!obj.showBegin,
@@ -104,10 +169,22 @@ export function normalizeSnapshot(obj) {
     testCorrectCount: Number.isFinite(obj.testCorrectCount) ? obj.testCorrectCount : 0,
     testFinalPercent: (typeof obj.testFinalPercent === 'number') ? obj.testFinalPercent : null,
 
+    congratsStarted: !!obj.congratsStarted,
+    congratsDone: !!obj.congratsDone,
+
     captionSentences: sanitizeCaptionSentences(obj.captionSentences || []),
     captionIndex: Number.isFinite(obj.captionIndex) ? obj.captionIndex : 0,
 
     usedTestCuePhrases: Array.isArray(obj.usedTestCuePhrases) ? obj.usedTestCuePhrases : [],
+
+    generatedComprehension: Array.isArray(obj.generatedComprehension) ? obj.generatedComprehension : null,
+    generatedExercise: Array.isArray(obj.generatedExercise) ? obj.generatedExercise : null,
+    generatedWorksheet: Array.isArray(obj.generatedWorksheet) ? obj.generatedWorksheet : null,
+    generatedTest: Array.isArray(obj.generatedTest) ? obj.generatedTest : null,
+
+    currentTimerMode: sanitizeTimerMode(obj.currentTimerMode),
+    workPhaseCompletions: sanitizeWorkPhaseCompletions(obj.workPhaseCompletions),
+    timerStates: sanitizeTimerStates(obj.timerStates),
 
     storyState: (typeof obj.storyState === 'string' && storyStateOptions.includes(obj.storyState))
       ? obj.storyState
@@ -121,6 +198,7 @@ export function normalizeSnapshot(obj) {
     storyPhase: typeof obj.storyPhase === 'string' ? obj.storyPhase : '',
     storyUsedThisGate: !!obj.storyUsedThisGate,
     storyTranscript: sanitizeStoryTranscript(obj.storyTranscript || []),
+  teachingFlowState: sanitizeTeachingFlowState(obj.teachingFlowState),
 
     // Normalized resume pointer (kept minimal and safe)
     resume: (() => {
@@ -146,7 +224,20 @@ export function normalizeSnapshot(obj) {
 
 export async function getStoredSnapshot(lessonKey, { learnerId } = {}) {
   if (typeof window === 'undefined') return null;
-  // Read from server only (no localStorage fallback)
+  
+  // Try localStorage first (instant, no replication lag)
+  try {
+    const lsKey = `atomic_snapshot:${learnerId}:${lessonKey}`;
+    const cached = localStorage.getItem(lsKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && typeof parsed === 'object') {
+        return normalizeSnapshot(parsed);
+      }
+    }
+  } catch {}
+  
+  // Fallback to server (cross-device or localStorage cleared)
   try {
     const supabase = (await import('@/app/lib/supabaseClient')).getSupabaseClient?.();
     const hasEnv = (await import('@/app/lib/supabaseClient')).hasSupabaseEnv?.();
@@ -159,7 +250,15 @@ export async function getStoredSnapshot(lessonKey, { learnerId } = {}) {
         if (resp.ok) {
           const json = await resp.json().catch(() => null);
           const data = json?.snapshot || null;
-          if (data) return normalizeSnapshot(data);
+          if (data) {
+            const normalized = normalizeSnapshot(data);
+            // Update localStorage with server data
+            try {
+              const lsKey = `atomic_snapshot:${learnerId}:${lessonKey}`;
+              localStorage.setItem(lsKey, JSON.stringify(normalized));
+            } catch {}
+            return normalized;
+          }
         }
       }
     }
@@ -172,7 +271,14 @@ export async function getStoredSnapshot(lessonKey, { learnerId } = {}) {
 export async function saveSnapshot(lessonKey, snapshot, { learnerId } = {}) {
   if (typeof window === 'undefined') return;
   const payload = normalizeSnapshot({ ...(snapshot || {}), savedAt: new Date().toISOString() });
-  // Save to server only (no localStorage)
+  
+  // Save to localStorage IMMEDIATELY for instant restore on refresh
+  try {
+    const lsKey = `atomic_snapshot:${learnerId}:${lessonKey}`;
+    localStorage.setItem(lsKey, JSON.stringify(payload));
+  } catch {}
+  
+  // Save to server (slower but persistent across devices)
   try {
     const supabaseMod = await import('@/app/lib/supabaseClient');
     const supabase = supabaseMod.getSupabaseClient?.();
@@ -186,10 +292,21 @@ export async function saveSnapshot(lessonKey, snapshot, { learnerId } = {}) {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
           body: JSON.stringify({ learner_id: learnerId, lesson_key: lessonKey, data: payload })
         });
+        // Check if the save actually succeeded
+        if (!response.ok) {
+          console.error('[ATOMIC SNAPSHOT] Database save FAILED. Status:', response.status, 'Key:', lessonKey);
+          const text = await response.text().catch(() => '(no response body)');
+          console.error('[ATOMIC SNAPSHOT] Error response:', text);
+        } else {
+          const json = await response.json().catch(() => null);
+          if (json && !json.ok) {
+            console.error('[ATOMIC SNAPSHOT] Database save returned ok:false. Response:', json);
+          }
+        }
       }
     }
   } catch (e) {
-    // Silent error handling
+    console.error('[ATOMIC SNAPSHOT] Save exception:', e);
   }
 }
 

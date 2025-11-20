@@ -333,6 +333,39 @@ export async function addTranscriptLine(sessionId, speaker, text) {
 }
 
 /**
+ * Check if a session is still active (not taken over by another device)
+ * 
+ * @param {string} sessionId - Session ID
+ * @returns {Promise<{active: boolean, session: object|null}>}
+ */
+export async function checkSessionStatus(sessionId) {
+  if (!sessionId || !hasSupabaseEnv()) {
+    return { active: false, session: null };
+  }
+
+  const supabase = getSupabaseClient();
+
+  try {
+    const { data, error } = await supabase
+      .from('lesson_sessions')
+      .select('id, learner_id, lesson_id, started_at, ended_at')
+      .eq('id', sessionId)
+      .maybeSingle();
+
+    if (error || !data) {
+      return { active: false, session: null };
+    }
+
+    // Session is active if ended_at is null
+    const active = data.ended_at === null;
+
+    return { active, session: data };
+  } catch (err) {
+    return { active: false, session: null };
+  }
+}
+
+/**
  * Get transcript for a session
  * 
  * @param {string} sessionId - Session ID

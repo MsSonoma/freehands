@@ -25,7 +25,7 @@ import { appendTranscriptSegment } from '../../lib/transcriptsClient';
  *     setLoading
  *   - Refs: preferHtmlAudioOnceRef, forceNextPlaybackRef, activeQuestionBodyRef,
  *     worksheetIndexRef, captionSentencesRef, sessionStartRef, transcriptSegmentStartIndexRef
- *   - Functions: unlockAudioPlayback, startDiscussionStep, teachDefinitions, promptGateRepeat,
+ *   - Functions: unlockAudioPlayback, startDiscussionStep, teachDefinitions,
  *     teachExamples, speakFrontend, ensureQuestionMark, formatQuestionForSpeech,
  *     beginComprehensionPhase, beginSkippedExercise, beginWorksheetPhase, beginTestPhase,
  *     abortAllActivity, getSnapshotStorageKey, getAssessmentStorageKey, clearAssessments,
@@ -93,6 +93,7 @@ export function useResumeRestart({
   setTranscriptSessionId,
   setLoading,
   // Refs
+  restoredSnapshotRef,
   preferHtmlAudioOnceRef,
   forceNextPlaybackRef,
   activeQuestionBodyRef,
@@ -104,7 +105,6 @@ export function useResumeRestart({
   unlockAudioPlayback,
   startDiscussionStep,
   teachDefinitions,
-  promptGateRepeat,
   teachExamples,
   speakFrontend,
   ensureQuestionMark,
@@ -119,13 +119,80 @@ export function useResumeRestart({
   clearAssessments,
   scheduleSaveSnapshot,
   startTrackedSession,
+  getTeachingFlowSnapshot,
   // Constants
   COMPREHENSION_INTROS,
   EXERCISE_INTROS,
   WORKSHEET_INTROS,
   TEST_INTROS,
 }) {
+  const inferTimerModeFromStorage = useCallback((phaseName) => {
+    if (!phaseName || typeof window === 'undefined') {
+      return null;
+    }
+
+    const buildKey = (type) => (
+      lessonKey
+        ? `session_timer_state:${lessonKey}:${phaseName}:${type}`
+        : `session_timer_state:${phaseName}:${type}`
+    );
+
+    const readState = (type) => {
+      try {
+        const raw = sessionStorage.getItem(buildKey(type));
+        if (!raw) return null;
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    };
+
+    const workState = readState('work');
+    const playState = readState('play');
+
+    if (workState && !playState) return 'work';
+    if (!workState && playState) return 'play';
+    if (workState && playState) {
+      const workStart = Number(workState.startTime) || 0;
+      const playStart = Number(playState.startTime) || 0;
+      return workStart >= playStart ? 'work' : 'play';
+    }
+
+    return null;
+  }, [lessonKey]);
+
   const handleResumeClick = useCallback(async () => {
+    // ATOMIC SNAPSHOT: Replay the last sentence when Resume is clicked (teaching phase only)
+    if (restoredSnapshotRef?.current) {
+      try { setOfferResume(false); } catch {}
+      
+      // Replay last sentence for teaching phase
+      if (phase === 'teaching' && subPhase === 'awaiting-gate' && typeof getTeachingFlowSnapshot === 'function') {
+        try {
+          const teachingFlowState = getTeachingFlowSnapshot();
+          if (teachingFlowState) {
+            const { vocabSentences, vocabSentenceIndex, exampleSentences, exampleSentenceIndex, isInSentenceMode } = teachingFlowState;
+            if (isInSentenceMode) {
+              let sentenceToReplay = null;
+              if (teachingStage === 'definitions' && Array.isArray(vocabSentences) && Number.isFinite(vocabSentenceIndex)) {
+                sentenceToReplay = vocabSentences[vocabSentenceIndex];
+              } else if (teachingStage === 'examples' && Array.isArray(exampleSentences) && Number.isFinite(exampleSentenceIndex)) {
+                sentenceToReplay = exampleSentences[exampleSentenceIndex];
+              }
+              if (sentenceToReplay && typeof speakFrontend === 'function') {
+                // Use noCaptions to avoid duplicating in transcript
+                setTimeout(() => {
+                  speakFrontend(sentenceToReplay, { noCaptions: true }).catch(() => {});
+                }, 100); // Small delay to ensure state is fully applied
+              }
+            }
+          }
+        } catch {}
+      }
+      
+      return;
+    }
+    
     try { setOfferResume(false); } catch {}
     try { unlockAudioPlayback(); } catch {}
     try { preferHtmlAudioOnceRef.current = true; } catch {}
@@ -139,8 +206,34 @@ export function useResumeRestart({
       }
     }
     
-    // Timer modes should already be set during snapshot restoration
-    console.log(`[RESUME] Current timer modes:`, currentTimerMode);
+    // Ensure timer mode exists for the current phase before resuming (fallback for legacy snapshots)
+    const timerPhaseName = (() => {
+      if (phase === 'discussion' || phase === 'teaching') return 'discussion';
+      if (phase === 'comprehension') return 'comprehension';
+      if (phase === 'exercise') return 'exercise';
+      if (phase === 'worksheet') return 'worksheet';
+      if (phase === 'test') return 'test';
+      return null;
+    })();
+    if (timerPhaseName) {
+      const existingMode = currentTimerMode?.[timerPhaseName];
+      if (existingMode !== 'play' && existingMode !== 'work') {
+        let inferredMode = inferTimerModeFromStorage(timerPhaseName);
+        if (!inferredMode) {
+          if (timerPhaseName === 'discussion') {
+            inferredMode = phase === 'discussion' ? 'play' : 'work';
+          } else {
+            inferredMode = qaAnswersUnlocked ? 'work' : 'play';
+          }
+        }
+        if (inferredMode) {
+          setCurrentTimerMode((prev) => ({
+            ...(prev || {}),
+            [timerPhaseName]: inferredMode,
+          }));
+        }
+      }
+    }
     
     // Decide what to resume based on phase/subPhase
     try {
@@ -150,11 +243,17 @@ export function useResumeRestart({
         return;
       }
       if (phase === 'teaching') {
-        // Restart the current teaching stage from the beginning
+        // Resume the active teaching stage without re-running the question prompt immediately
         setSubPhase('teaching-3stage');
         setCanSend(false);
-        if (teachingStage === 'definitions') { await teachDefinitions(false); await promptGateRepeat(); return; }
-        if (teachingStage === 'examples') { await teachExamples(false); await promptGateRepeat(); return; }
+        if (teachingStage === 'definitions') {
+          await teachDefinitions(true); // treat as repeat to skip duplicate intro
+          return;
+        }
+        if (teachingStage === 'examples') {
+          await teachExamples(true);
+          return;
+        }
         return;
       }
       if (phase === 'comprehension') {
@@ -298,7 +397,7 @@ export function useResumeRestart({
         return;
       }
     } catch {}
-  }, [phase, subPhase, teachingStage, qaAnswersUnlocked, currentCompProblem, currentExerciseProblem, currentWorksheetIndex, testActiveIndex, currentCompIndex, currentExIndex, generatedComprehension, generatedExercise, generatedWorksheet, generatedTest, worksheetIndexRef, setOfferResume, unlockAudioPlayback, preferHtmlAudioOnceRef, forceNextPlaybackRef, startDiscussionStep, setSubPhase, setCanSend, teachDefinitions, promptGateRepeat, teachExamples, COMPREHENSION_INTROS, speakFrontend, setShowOpeningActions, ensureQuestionMark, formatQuestionForSpeech, activeQuestionBodyRef, setQaAnswersUnlocked, beginComprehensionPhase, EXERCISE_INTROS, beginSkippedExercise, WORKSHEET_INTROS, beginWorksheetPhase, TEST_INTROS, beginTestPhase, startTrackedSession, currentTimerMode, setCurrentTimerMode]);
+  }, [phase, subPhase, teachingStage, qaAnswersUnlocked, currentCompProblem, currentExerciseProblem, currentWorksheetIndex, testActiveIndex, currentCompIndex, currentExIndex, generatedComprehension, generatedExercise, generatedWorksheet, generatedTest, worksheetIndexRef, setOfferResume, unlockAudioPlayback, preferHtmlAudioOnceRef, forceNextPlaybackRef, startDiscussionStep, setSubPhase, setCanSend, teachDefinitions, teachExamples, COMPREHENSION_INTROS, speakFrontend, setShowOpeningActions, ensureQuestionMark, formatQuestionForSpeech, activeQuestionBodyRef, setQaAnswersUnlocked, beginComprehensionPhase, EXERCISE_INTROS, beginSkippedExercise, WORKSHEET_INTROS, beginWorksheetPhase, TEST_INTROS, beginTestPhase, startTrackedSession, currentTimerMode, setCurrentTimerMode, inferTimerModeFromStorage]);
 
   const handleRestartClick = useCallback(async () => {
     // Confirm irreversible action before proceeding
