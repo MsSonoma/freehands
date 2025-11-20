@@ -210,9 +210,6 @@ function SessionPageInner() {
   const difficultyParam = (searchParams?.get('difficulty') || 'beginner').toLowerCase();
   const goldenKeyFromUrl = searchParams?.get('goldenKey') === 'true';
   
-  // Get learner ID from URL first (cross-device compatible), then fallback to localStorage
-  const learnerIdFromUrl = searchParams?.get('learner_id');
-  
   // Compute lesson key from params
   const lessonKey = useMemo(() => `${subjectParam}/${lessonParam}`, [subjectParam, lessonParam]);
   
@@ -223,18 +220,9 @@ function SessionPageInner() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
-    // Priority: URL param (cross-device) > localStorage (same-device fallback)
-    if (learnerIdFromUrl && learnerIdFromUrl !== 'demo') {
-      console.log('[SESSION] Using learner_id from URL:', learnerIdFromUrl);
-      setTrackingLearnerId(learnerIdFromUrl);
-      // Sync to localStorage so it persists for same-device refresh
-      try {
-        localStorage.setItem('learner_id', learnerIdFromUrl);
-      } catch {}
-      return;
-    }
-    
-    // Fallback to localStorage
+    // Learner profile is selected locally on each device (localStorage)
+    // Same learner can be selected on multiple devices
+    // Backend enforces ONE active lesson per learner globally
     try {
       const storedId = localStorage.getItem('learner_id');
       if (storedId && storedId !== 'demo') {
@@ -246,7 +234,7 @@ function SessionPageInner() {
     } catch {
       setTrackingLearnerId(null);
     }
-  }, [learnerIdFromUrl]);
+  }, []);
 
   const lessonSessionKey = useMemo(() => {
     if (!subjectParam || !lessonParam) return null;
