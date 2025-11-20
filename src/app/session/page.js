@@ -350,8 +350,20 @@ function SessionPageInner() {
             learnerId: trackingLearnerId,
             lessonId: normalizedLessonKey
           });
+          console.log('[SESSION TAKEOVER] Closed old session:', conflictingSession.id);
         } catch (endErr) {
           console.error('[SESSION] Failed to end old session:', endErr);
+        }
+      }
+
+      // Start NEW session for this device to take over
+      if (typeof startTrackedSession === 'function') {
+        try {
+          const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+          const newSession = await startTrackedSession(browserSessionId, deviceName);
+          console.log('[SESSION TAKEOVER] Started new session:', newSession?.id);
+        } catch (startErr) {
+          console.error('[SESSION TAKEOVER] Failed to start new session:', startErr);
         }
       }
 
