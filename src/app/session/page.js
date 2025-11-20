@@ -312,18 +312,43 @@ function SessionPageInner() {
     }
 
     try {
-      // Validate PIN
-      const isValid = await ensurePinAllowed(pinCode);
-      if (!isValid) {
+      // Validate PIN via server API (don't use ensurePinAllowed - it shows another dialog)
+      const mod = await import('@/app/lib/supabaseClient');
+      const getSupabaseClient = mod.getSupabaseClient;
+      const supabase = getSupabaseClient?.();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        throw new Error('Not logged in');
+      }
+      
+      const res = await fetch('/api/facilitator/pin/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ pin: pinCode })
+      });
+      
+      const result = await res.json();
+      if (!res.ok || !result?.ok) {
         throw new Error('Invalid PIN');
       }
 
       // Deactivate old session in database
-      if (conflictingSession?.id && typeof endTrackedSession === 'function') {
+      if (conflictingSession?.id) {
         try {
-          await endTrackedSession('taken_over', { 
-            taken_over_by_session_id: browserSessionId,
-            taken_over_at: new Date().toISOString()
+          // Import and call endLessonSession directly with the old session ID
+          const { endLessonSession } = await import('@/app/lib/sessionTracking');
+          await endLessonSession(conflictingSession.id, {
+            reason: 'taken_over',
+            metadata: { 
+              taken_over_by_session_id: browserSessionId,
+              taken_over_at: new Date().toISOString()
+            },
+            learnerId: trackingLearnerId,
+            lessonId: normalizedLessonKey
           });
         } catch (endErr) {
           console.error('[SESSION] Failed to end old session:', endErr);
@@ -7478,6 +7503,15 @@ function SessionPageInner() {
       />
     )}
 
+    {/* Session takeover dialog - outside container to avoid header/footer clipping */}
+    {showTakeoverDialog && conflictingSession && (
+      <SessionTakeoverDialog
+        existingSession={conflictingSession}
+        onTakeover={handleSessionTakeover}
+        onCancel={handleCancelTakeover}
+      />
+    )}
+
     {/* Timer Controls Overlay - facilitator can adjust timer and golden key */}
     {showTimerControls && sessionTimerMinutes > 0 && (
       <TimerControlOverlay
@@ -7804,15 +7838,6 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
           <PlayTimeExpiredOverlay
             phaseName={playExpiredPhase}
             onComplete={handlePlayExpiredComplete}
-          />
-        )}
-
-        {/* Session takeover dialog */}
-        {showTakeoverDialog && conflictingSession && (
-          <SessionTakeoverDialog
-            existingSession={conflictingSession}
-            onTakeover={handleSessionTakeover}
-            onCancel={handleCancelTakeover}
           />
         )}
         
