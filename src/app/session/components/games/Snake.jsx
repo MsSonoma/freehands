@@ -282,21 +282,6 @@ export default function Snake({ onExit }) {
 
 
 
-  const changeDirection = (newDirectionString) => {
-    const newDirection = DIRECTION[newDirectionString];
-    
-    // Prevent reversing into self
-    if (
-      (newDirection === DIRECTION.UP && direction === DIRECTION.DOWN) ||
-      (newDirection === DIRECTION.DOWN && direction === DIRECTION.UP) ||
-      (newDirection === DIRECTION.LEFT && direction === DIRECTION.RIGHT) ||
-      (newDirection === DIRECTION.RIGHT && direction === DIRECTION.LEFT)
-    ) {
-      return;
-    }
-    setDirection(newDirection);
-  };
-
   const TouchControls = () => (
     <div style={{
       display: 'grid',
@@ -306,8 +291,8 @@ export default function Snake({ onExit }) {
     }}>
       <div></div>
       <button
-        onTouchStart={(e) => { e.preventDefault(); changeDirection('UP'); }}
-        onClick={() => changeDirection('UP')}
+        onTouchStart={(e) => { e.preventDefault(); handleDirectionClick(DIRECTION.UP); }}
+        onClick={() => handleDirectionClick(DIRECTION.UP)}
         style={{
           padding: '8px',
           fontSize: '16px',
@@ -324,8 +309,8 @@ export default function Snake({ onExit }) {
       </button>
       <div></div>
       <button
-        onTouchStart={(e) => { e.preventDefault(); changeDirection('LEFT'); }}
-        onClick={() => changeDirection('LEFT')}
+        onTouchStart={(e) => { e.preventDefault(); handleDirectionClick(DIRECTION.LEFT); }}
+        onClick={() => handleDirectionClick(DIRECTION.LEFT)}
         style={{
           padding: '8px',
           fontSize: '16px',
@@ -342,8 +327,8 @@ export default function Snake({ onExit }) {
       </button>
       <div></div>
       <button
-        onTouchStart={(e) => { e.preventDefault(); changeDirection('RIGHT'); }}
-        onClick={() => changeDirection('RIGHT')}
+        onTouchStart={(e) => { e.preventDefault(); handleDirectionClick(DIRECTION.RIGHT); }}
+        onClick={() => handleDirectionClick(DIRECTION.RIGHT)}
         style={{
           padding: '8px',
           fontSize: '16px',
@@ -360,8 +345,8 @@ export default function Snake({ onExit }) {
       </button>
       <div></div>
       <button
-        onTouchStart={(e) => { e.preventDefault(); changeDirection('DOWN'); }}
-        onClick={() => changeDirection('DOWN')}
+        onTouchStart={(e) => { e.preventDefault(); handleDirectionClick(DIRECTION.DOWN); }}
+        onClick={() => handleDirectionClick(DIRECTION.DOWN)}
         style={{
           padding: '8px',
           fontSize: '16px',

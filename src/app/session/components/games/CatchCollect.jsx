@@ -73,6 +73,23 @@ export default function CatchCollect({ onBack }) {
     return () => clearInterval(spawnTimer);
   }, [gameStarted, gameOver]);
 
+  // Continuous basket movement based on touch controls
+  useEffect(() => {
+    if (!gameStarted || gameOver) return;
+
+    const moveBasket = () => {
+      if (keysPressed.current['ArrowLeft']) {
+        setBasketX(prev => Math.max(BASKET_WIDTH / 2, prev - BASKET_SPEED));
+      }
+      if (keysPressed.current['ArrowRight']) {
+        setBasketX(prev => Math.min(GAME_WIDTH - BASKET_WIDTH / 2, prev + BASKET_SPEED));
+      }
+    };
+
+    const movementInterval = setInterval(moveBasket, 1000 / 60);
+    return () => clearInterval(movementInterval);
+  }, [gameStarted, gameOver]);
+
   // Game loop - move items down and check collisions
   useEffect(() => {
     if (!gameStarted || gameOver) return;

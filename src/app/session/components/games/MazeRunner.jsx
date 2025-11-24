@@ -289,6 +289,42 @@ export default function MazeRunner({ onBack }) {
     setGameWon(false);
   };
 
+  // Move player function for touch controls
+  const movePlayer = useCallback((direction) => {
+    if (!gameStarted || gameWon) return;
+
+    let newX = playerPos.x;
+    let newY = playerPos.y;
+
+    if (direction === 'ArrowUp') {
+      newY -= 1;
+    } else if (direction === 'ArrowDown') {
+      newY += 1;
+    } else if (direction === 'ArrowLeft') {
+      newX -= 1;
+    } else if (direction === 'ArrowRight') {
+      newX += 1;
+    } else {
+      return;
+    }
+
+    // Check if move is valid (not a wall)
+    if (newY < 0 || newY >= currentMaze.grid.length || newX < 0 || newX >= currentMaze.grid[0].length) {
+      return;
+    }
+    if (currentMaze.grid[newY][newX] === 1) {
+      return;
+    }
+
+    setPlayerPos({ x: newX, y: newY });
+    setMoves(m => m + 1);
+
+    // Check if reached goal
+    if (newX === currentMaze.goal.x && newY === currentMaze.goal.y) {
+      setGameWon(true);
+    }
+  }, [gameStarted, gameWon, playerPos, currentMaze]);
+
   // Handle arrow key movement
   const handleKeyDown = useCallback((e) => {
     // Always prevent default for arrow keys to stop page scrolling

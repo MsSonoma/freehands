@@ -182,6 +182,9 @@ export default function SessionTimer({
       : 'Work time (complete phase tasks)';
   }
 
+  // Flash animation for play timer during last minute
+  const shouldFlash = timerType === 'play' && remainingSeconds > 0 && remainingSeconds <= 60;
+
   return (
     <div className={`session-timer ${className}`} style={{
       display: 'flex',
@@ -197,11 +200,18 @@ export default function SessionTimer({
       color: color,
       transition: 'color 0.3s ease',
       backdropFilter: 'blur(4px)',
-      cursor: onTimerClick ? 'pointer' : 'default'
+      cursor: onTimerClick ? 'pointer' : 'default',
+      animation: shouldFlash ? 'timerFlash 1s ease-in-out infinite' : 'none'
     }}
     onClick={handleTimerClick}
     title={tooltipText}
     >
+      <style>{`
+        @keyframes timerFlash {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+      `}</style>
       <span title={timerType === 'play' ? 'Play' : 'Work'}>{timerEmoji}</span>
       <span>{displayTime}</span>
       {goldenKeyBonus > 0 && timerType === 'play' && (

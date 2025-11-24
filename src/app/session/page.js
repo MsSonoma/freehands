@@ -441,6 +441,13 @@ function SessionPageInner() {
   const [fillInFunCurrentIndex, setFillInFunCurrentIndex] = useState(0);
   // When a snapshot is restored on mount, surface a Resume/Restart offer in the footer
   const [offerResume, setOfferResume] = useState(false);
+  
+  // Refs for Go handlers (to avoid TDZ in early callbacks)
+  const handleStartLessonRef = useRef(null);
+  const handleGoComprehensionRef = useRef(null);
+  const handleGoExerciseRef = useRef(null);
+  const handleGoWorksheetRef = useRef(null);
+  const handleGoTestRef = useRef(null);
 
   // Session Timer state
   const [timerPaused, setTimerPaused] = useState(false);
@@ -486,6 +493,8 @@ function SessionPageInner() {
   
   // Games state
   const [showGames, setShowGames] = useState(false);
+  const [showGoConfirmation, setShowGoConfirmation] = useState(false);
+  const [pendingGoAction, setPendingGoAction] = useState(null);
   
   // Learner grade state (for grade-appropriate speech)
   const [learnerGrade, setLearnerGrade] = useState('');
@@ -782,16 +791,35 @@ function SessionPageInner() {
   const handlePlayTimeUp = useCallback((phaseName) => {
     setShowPlayTimeExpired(true);
     setPlayExpiredPhase(phaseName);
+    // Close games overlay if it's open
+    setShowGames(false);
   }, []);
   
   // Handle PlayTimeExpiredOverlay countdown completion (auto-advance to work mode)
-  const handlePlayExpiredComplete = useCallback(() => {
+  const handlePlayExpiredComplete = useCallback(async () => {
     setShowPlayTimeExpired(false);
     if (playExpiredPhase) {
       transitionToWorkTimer(playExpiredPhase);
+      
+      // Automatically start the lesson based on the current phase
+      try {
+        if (playExpiredPhase === 'discussion' || phase === 'discussion' || phase === 'teaching') {
+          if (handleStartLessonRef.current) await handleStartLessonRef.current();
+        } else if (playExpiredPhase === 'comprehension' || phase === 'comprehension') {
+          if (handleGoComprehensionRef.current) await handleGoComprehensionRef.current();
+        } else if (playExpiredPhase === 'exercise' || phase === 'exercise') {
+          if (handleGoExerciseRef.current) await handleGoExerciseRef.current();
+        } else if (playExpiredPhase === 'worksheet' || phase === 'worksheet') {
+          if (handleGoWorksheetRef.current) await handleGoWorksheetRef.current();
+        } else if (playExpiredPhase === 'test' || phase === 'test') {
+          if (handleGoTestRef.current) await handleGoTestRef.current();
+        }
+      } catch (e) {
+        // Auto-start failed, user will need to click Go manually
+      }
     }
     setPlayExpiredPhase(null);
-  }, [playExpiredPhase, transitionToWorkTimer]);
+  }, [playExpiredPhase, phase, transitionToWorkTimer]);
   
   // Handle work timer expiration (display 00:00 in red, allow continuing)
   const handleWorkTimeUp = useCallback((phaseName) => {
@@ -2971,6 +2999,13 @@ function SessionPageInner() {
   const handleGoWorksheet = handleGoWorksheetHook;
   const handleGoTest = handleGoTestHook;
   const handleStartLesson = handleStartLessonHook;
+  
+  // Populate refs for early callbacks
+  handleGoComprehensionRef.current = handleGoComprehension;
+  handleGoExerciseRef.current = handleGoExercise;
+  handleGoWorksheetRef.current = handleGoWorksheet;
+  handleGoTestRef.current = handleGoTest;
+  handleStartLessonRef.current = handleStartLesson;
 
 
   useEffect(() => {
@@ -7115,6 +7150,12 @@ function SessionPageInner() {
               const goBtn = { ...btn, background:'#c7442e', boxShadow:'0 2px 12px rgba(199,68,46,0.28)' };
               const disabledBtn = { ...btn, opacity:0.5, cursor:'not-allowed' };
               
+              // Show confirmation before executing Go
+              const onGoWithConfirm = !lessonData ? undefined : () => {
+                setPendingGoAction(() => handleStartLesson);
+                setShowGoConfirmation(true);
+              };
+              
               return (
                 <div style={wrap} aria-label="Opening actions">
                   <button type="button" style={btn} onClick={getAskButtonHandler(handleAskQuestionStart)}>Ask</button>
@@ -7124,7 +7165,7 @@ function SessionPageInner() {
                   <button type="button" style={btn} onClick={handleStoryStart}>Story</button>
                   <button type="button" style={btn} onClick={handleFillInFunStart}>Fill-in-Fun</button>
                   <button type="button" style={btn} onClick={() => setShowGames(true)}>Games</button>
-                  <button type="button" style={goBtn} onClick={lessonData ? handleStartLesson : undefined} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson…'}>Go</button>
+                  <button type="button" style={goBtn} onClick={onGoWithConfirm} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson…'}>Go</button>
                 </div>
               );
             } catch {}
@@ -7149,13 +7190,19 @@ function SessionPageInner() {
               const goBtn = { ...btn, background:'#c7442e', boxShadow:'0 2px 12px rgba(199,68,46,0.28)' };
               const disabledBtn = { ...btn, opacity:0.5, cursor:'not-allowed' };
               // Phase-specific Go: trigger the first question for the active phase
-              const onGo = !lessonData ? undefined : (
+              const actualGoAction = !lessonData ? undefined : (
                 phase === 'comprehension' ? handleGoComprehension :
                 phase === 'exercise' ? handleGoExercise :
                 phase === 'worksheet' ? handleGoWorksheet :
                 phase === 'test' ? handleGoTest :
                 handleStartLesson
               );
+              
+              // Show confirmation before executing Go
+              const onGo = !lessonData ? undefined : () => {
+                setPendingGoAction(() => actualGoAction);
+                setShowGoConfirmation(true);
+              };
               
               return (
                 <div style={wrap} aria-label="Phase opening actions">
@@ -7414,9 +7461,12 @@ function SessionPageInner() {
                 );
               }
 
-              // Short-answer or fill-in-the-blank: show Ask-only button
+              // Short-answer or fill-in-the-blank: show Ask button with Back
               return (
                 <div style={containerStyle} aria-label="Ask about the current question">
+                  {askState === 'awaiting-confirmation' && (
+                    <button type="button" style={{ ...btnBase, minWidth: 100 }} onClick={handleAskBack}>Back</button>
+                  )}
                   <button
                     type="button"
                     style={{ ...btnBase, minWidth: 120, background: '#374151', opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}
@@ -7511,7 +7561,20 @@ function SessionPageInner() {
     {showGames && (
       <GamesOverlay
         onClose={() => setShowGames(false)}
-        playTimer={true}
+        playTimer={phaseTimers && getCurrentPhaseName() && currentTimerMode[getCurrentPhaseName()] === 'play' ? (
+          <SessionTimer
+            phase={getCurrentPhaseName()}
+            timerType="play"
+            totalMinutes={getCurrentPhaseTimerDuration(getCurrentPhaseName(), 'play')}
+            goldenKeyBonus={goldenKeyBonus}
+            lessonProgress={calculateLessonProgress()}
+            isPaused={timerPaused}
+            onTimeUp={handlePhaseTimerTimeUp}
+            onPauseToggle={handleTimerPauseToggle}
+            lessonKey={lessonKey}
+            onTimerClick={handleTimerClick}
+          />
+        ) : null}
       />
     )}
 
@@ -7610,6 +7673,96 @@ function SessionPageInner() {
         onSuspendGoldenKey={handleSuspendGoldenKey}
         onUnsuspendGoldenKey={handleUnsuspendGoldenKey}
       />
+    )}
+
+    {/* Go confirmation overlay */}
+    {showGoConfirmation && (
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.7)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 100000,
+        padding: '20px'
+      }}>
+        <div style={{
+          background: 'white',
+          borderRadius: '12px',
+          padding: '32px',
+          maxWidth: '400px',
+          textAlign: 'center',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
+        }}>
+          <div style={{
+            fontSize: '24px',
+            fontWeight: 700,
+            color: '#1f2937',
+            marginBottom: '16px'
+          }}>
+            Ready to start the lesson?
+          </div>
+          <div style={{
+            fontSize: '16px',
+            color: '#6b7280',
+            marginBottom: '24px'
+          }}>
+            Starting the lesson will end your play time.
+          </div>
+          <div style={{
+            display: 'flex',
+            gap: '12px',
+            justifyContent: 'center'
+          }}>
+            <button
+              onClick={() => {
+                setShowGoConfirmation(false);
+                setPendingGoAction(null);
+              }}
+              style={{
+                padding: '12px 24px',
+                fontSize: '16px',
+                fontWeight: 600,
+                background: '#6b7280',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}
+              onMouseEnter={(e) => e.target.style.background = '#4b5563'}
+              onMouseLeave={(e) => e.target.style.background = '#6b7280'}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                setShowGoConfirmation(false);
+                if (pendingGoAction) {
+                  pendingGoAction();
+                  setPendingGoAction(null);
+                }
+              }}
+              style={{
+                padding: '12px 24px',
+                fontSize: '16px',
+                fontWeight: 600,
+                background: '#10b981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}
+              onMouseEnter={(e) => e.target.style.background = '#059669'}
+              onMouseLeave={(e) => e.target.style.background = '#10b981'}
+            >
+              Start Lesson
+            </button>
+          </div>
+        </div>
+      </div>
     )}
     </>
   );
@@ -7848,7 +8001,8 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
         {/* Play time expired overlay */}
         {showPlayTimeExpired && playExpiredPhase && (
           <PlayTimeExpiredOverlay
-            phaseName={playExpiredPhase}
+            isOpen={showPlayTimeExpired}
+            phase={playExpiredPhase}
             onComplete={handlePlayExpiredComplete}
           />
         )}

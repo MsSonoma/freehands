@@ -196,14 +196,16 @@ export function useTeachingFlow({
   const teachDefinitions = async (isRepeat = false) => {
     console.log('[TEACHING DEBUG] teachDefinitions called. vocabSentences.length:', vocabSentencesRef.current.length, 'isRepeat:', isRepeat);
     // If we already have vocab sentences stored, handle repeat/next
-    // DO NOT change subPhase - we're resuming from restore or repeating
     if (vocabSentencesRef.current.length > 0) {
-      console.log('[TEACHING DEBUG] Early return - sentences exist, NOT changing subPhase');
+      console.log('[TEACHING DEBUG] Early return - sentences exist, speaking current sentence');
       const currentSentence = vocabSentencesRef.current[vocabSentenceIndexRef.current];
       if (currentSentence) {
+        // Ensure subPhase is set to awaiting-gate (in case we're resuming from snapshot)
+        setSubPhase('awaiting-gate');
+        setCanSend(false);
         // Speak the current sentence (whether repeat or continuing)
-        // Use noCaptions to avoid re-transcribing (sentence already in transcript from before)
-        try { await speakFrontend(currentSentence, { noCaptions: true }); } catch {}
+        // Use noCaptions ONLY if it's truly a repeat (isRepeat=true), otherwise show captions normally
+        try { await speakFrontend(currentSentence, isRepeat ? { noCaptions: true } : {}); } catch {}
         return true;
       }
       return false;
@@ -294,12 +296,12 @@ export function useTeachingFlow({
       // ATOMIC SNAPSHOT: Save BEFORE speaking so skip doesn't lose progress
       try { await scheduleSaveSnapshot('vocab-sentence-1'); } catch {}
       
-      // Speak the first sentence
-      try { await speakFrontend(sentences[0]); } catch {}
-      
-      // Set subPhase to awaiting-gate so buttons appear
+      // Set subPhase to awaiting-gate so buttons appear (do this BEFORE speaking)
       setSubPhase('awaiting-gate');
       setCanSend(false);
+      
+      // Speak the first sentence
+      try { await speakFrontend(sentences[0]); } catch {}
       
       return true;
     }

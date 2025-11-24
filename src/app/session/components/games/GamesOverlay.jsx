@@ -97,13 +97,7 @@ export default function GamesOverlay({ onClose, playTimer }) {
                 position: 'absolute',
                 top: 16,
                 left: 16,
-                background: '#1f2937',
-                color: '#fff',
-                padding: '8px 16px',
-                borderRadius: 8,
-                fontSize: 16,
-                fontWeight: 700,
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+                zIndex: 10001,
               }}
             >
               {playTimer}
@@ -264,14 +258,7 @@ export default function GamesOverlay({ onClose, playTimer }) {
             position: 'fixed',
             top: 16,
             left: 16,
-            background: '#1f2937',
-            color: '#fff',
-            padding: '8px 16px',
-            borderRadius: 8,
-            fontSize: 16,
-            fontWeight: 700,
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
-            zIndex: 10000,
+            zIndex: 10001,
           }}
         >
           {playTimer}
