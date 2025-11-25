@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import styles from './about.module.css';
 
 export default function AboutPage() {
@@ -61,7 +62,7 @@ export default function AboutPage() {
                     <h4>Prompt Injection Detection</h4>
                     <p>
                       Advanced pattern matching detects attempts to manipulate the AI 
-                      (e.g., "ignore previous instructions", "pretend you are", "forget everything"). 
+                      (e.g., &quot;ignore previous instructions&quot;, &quot;pretend you are&quot;, &quot;forget everything&quot;). 
                       These are blocked before reaching the AI.
                     </p>
                   </div>
@@ -72,7 +73,7 @@ export default function AboutPage() {
                   <div className={styles.layerContent}>
                     <h4>AI Moderation API</h4>
                     <p>
-                      Before any question reaches Ms. Sonoma, it passes through OpenAI's 
+                      Before any question reaches Ms. Sonoma, it passes through OpenAI&apos;s 
                       Moderation API, which uses machine learning to detect harmful content 
                       across multiple categories.
                     </p>
@@ -86,7 +87,7 @@ export default function AboutPage() {
                     <p>
                       Every request to Ms. Sonoma includes strict safety rules that cannot be 
                       overridden. She is instructed to only discuss the current lesson vocabulary 
-                      and to refuse all forbidden topics with a preset response.
+                      and to refuse all &quot;forbidden&quot; topics with a preset response.
                     </p>
                   </div>
                 </div>
@@ -107,7 +108,7 @@ export default function AboutPage() {
                   <div className={styles.layerContent}>
                     <h4>Lesson Scope Enforcement</h4>
                     <p>
-                      Ms. Sonoma only has access to the current lesson's vocabulary and teaching 
+                      Ms. Sonoma only has access to the current lesson&apos;s vocabulary and teaching 
                       notes. She cannot access other lessons, user data, or external information.
                     </p>
                   </div>
@@ -131,7 +132,7 @@ export default function AboutPage() {
               <ul className={styles.featureList}>
                 <li>
                   <strong>Lesson Rewriting:</strong> Uses AI to adapt lesson difficulty or reading level. 
-                  Requires PIN to access.
+                  Requires PIN to access (&quot;Rewrite Lesson&quot; button).
                 </li>
                 <li>
                   <strong>Visual Aid Generation:</strong> Creates images for lessons using DALL-E. 
@@ -177,14 +178,14 @@ export default function AboutPage() {
                   Simply toggle any feature off in the Learner management page, and that button will be 
                   greyed out and non-functional for that learner across all lessons.
                 </li>
-                <li>Don't set a PIN and all facilitator AI features remain locked</li>
+                <li>Don&apos;t set a PIN and all facilitator AI features remain locked</li>
               </ul>
 
               <p className={styles.cardText}>
                 <strong>Complete control over AI access:</strong> You can disable all four learner-facing 
                 AI features (Ask, Poem, Story, Fill-in-Fun) for each individual learner. This ensures 
                 they cannot interact with AI even if they click the buttons. Control is entirely in the 
-                facilitator's hands, not the learner's.
+                facilitator&apos;s hands, not the learner&apos;s.
               </p>
             </div>
 
@@ -231,7 +232,7 @@ export default function AboutPage() {
                   <strong>Select a lesson:</strong> Choose from pre-written curriculum aligned to standards
                 </li>
                 <li>
-                  <strong>Start teaching:</strong> Click "Teach This Lesson" to begin
+                  <strong>Start teaching:</strong> Click &quot;Teach This Lesson&quot; to begin
                 </li>
               </ol>
             </div>
@@ -243,8 +244,8 @@ export default function AboutPage() {
                 <h4>Teaching Phase</h4>
                 <p>
                   Ms. Sonoma introduces vocabulary with definitions and examples. 
-                  The learner can click "Repeat Vocab" to hear definitions again, 
-                  or "Next" to move forward.
+                  The learner can click &quot;Repeat Vocab&quot; to hear definitions again, 
+                  or &quot;Next&quot; to move forward.
                 </p>
               </div>
 
@@ -287,7 +288,7 @@ export default function AboutPage() {
                   <strong>Getting Unstuck:</strong> If a learner is stuck on a problem, they can 
                   ask Ms. Sonoma for the answer in Comprehension, Exercise, and Worksheet phases. 
                   Test phase does not allow answers to maintain assessment integrity. Facilitators 
-                  can access all answers through the Lesson Editor or the Facilitator's Answer Key 
+                  can access all answers through the Lesson Editor or the Facilitator&apos;s Answer Key 
                   if the Ask feature is disabled.
                 </p>
               </div>
@@ -295,8 +296,8 @@ export default function AboutPage() {
               <div className={styles.featureExplain}>
                 <h4>Notes Feature</h4>
                 <p>
-                  Facilitators can click "Notes" at any time to record observations 
-                  about the learner's progress, struggles, or insights. Notes are 
+                  Facilitators can click &quot;Notes&quot; at any time to record observations 
+                  about the learner&apos;s progress, struggles, or insights. Notes are 
                   timestamped and saved to the session report.
                 </p>
               </div>
@@ -358,7 +359,7 @@ export default function AboutPage() {
                 <h4>Lesson Scheduler</h4>
                 <p>
                   Plan ahead by scheduling lessons for specific dates. View your lesson calendar 
-                  and send scheduled lessons to your learner's portal for independent work.
+                  and send scheduled lessons to your learner&apos;s portal for independent work.
                 </p>
                 <p className={styles.protectionNote}>
                   <strong>Organization:</strong> Keep track of curriculum progress and upcoming lessons.
@@ -368,7 +369,7 @@ export default function AboutPage() {
               <div className={styles.featureExplain}>
                 <h4>Learner Portal Push</h4>
                 <p>
-                  Assign lessons directly to a learner's portal where they can access and complete 
+                  Assign lessons directly to a learner&apos;s portal where they can access and complete 
                   them independently. Monitor progress and review completed work.
                 </p>
                 <p className={styles.protectionNote}>
@@ -449,7 +450,7 @@ export default function AboutPage() {
                   then ask if truly stuck
                 </li>
                 <li>
-                  <strong>Keep PIN secure:</strong> Don't share your facilitator PIN 
+                  <strong>Keep PIN secure:</strong> Don&apos;t share your facilitator PIN 
                   with learners
                 </li>
               </ul>
@@ -495,7 +496,7 @@ export default function AboutPage() {
       </div>
 
       <div className={styles.footer}>
-        <a href="/" className={styles.backButton}>← Back to Home</a>
+        <Link href="/" className={styles.backButton}>← Back to Home</Link>
       </div>
     </main>
   );
