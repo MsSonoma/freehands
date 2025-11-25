@@ -39,7 +39,7 @@ export default function AboutPage() {
             <div className={styles.safetyCard}>
               <h3 className={styles.cardTitle}>Learner-Facing AI: Tightly Safeguarded</h3>
               <p className={styles.cardText}>
-                The only AI feature learners interact with is the <strong>"Ask"</strong> button 
+                The only AI feature learners interact with is the <strong>&quot;Ask&quot;</strong> button 
                 during lessons. This feature has six layers of protection:
               </p>
               
@@ -118,7 +118,7 @@ export default function AboutPage() {
               <div className={styles.highlight}>
                 <strong>Technical Implementation:</strong> All safety code is located in 
                 <code>src/lib/contentSafety.js</code> and enforced in <code>src/app/api/sonoma/route.js</code>. 
-                The system "fails closed" - if any safety check encounters an error, the content is blocked.
+                The system &quot;fails closed&quot; - if any safety check encounters an error, the content is blocked.
               </div>
             </div>
 
