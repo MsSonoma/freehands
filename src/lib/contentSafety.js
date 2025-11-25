@@ -72,7 +72,10 @@ function detectPromptInjection(text) {
     /act\s+as\s+(if|though)/i,
     /new\s+(instruction|command|prompt)/i,
     /override/i,
-    /jailbreak/i
+    /jailbreak/i,
+    /you\s+are\s+now/i,
+    /do\s+anything\s+now/i,
+    /\bdan\b/i
   ]
   
   return injectionPatterns.some(pattern => pattern.test(lower))

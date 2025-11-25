@@ -24,6 +24,8 @@ export function usePhaseHandlers({
   setCurrentExerciseProblem,
   setCurrentExIndex,
   setExercisePool,
+  setShowPlayTimeExpired,
+  setPlayExpiredPhase,
   
   // State values
   phase,
@@ -54,6 +56,15 @@ export function usePhaseHandlers({
   const handleGoComprehension = useCallback(async () => {
     try { setShowOpeningActions(false); } catch {}
     if (phase !== 'comprehension') return;
+    
+    // CRITICAL: If play time expired overlay is showing, dismiss it immediately
+    // User clicking "Go" overrides the countdown
+    if (setShowPlayTimeExpired) {
+      try { setShowPlayTimeExpired(false); } catch {}
+    }
+    if (setPlayExpiredPhase) {
+      try { setPlayExpiredPhase(null); } catch {}
+    }
     
     // Transition from play to work timer
     if (transitionToWorkTimer) {
@@ -106,6 +117,15 @@ export function usePhaseHandlers({
     try { setShowOpeningActions(false); } catch {}
     if (phase !== 'exercise') return;
     
+    // CRITICAL: If play time expired overlay is showing, dismiss it immediately
+    // User clicking "Go" overrides the countdown
+    if (setShowPlayTimeExpired) {
+      try { setShowPlayTimeExpired(false); } catch {}
+    }
+    if (setPlayExpiredPhase) {
+      try { setPlayExpiredPhase(null); } catch {}
+    }
+    
     // Transition from play to work timer
     if (transitionToWorkTimer) {
       transitionToWorkTimer('exercise');
@@ -148,6 +168,15 @@ export function usePhaseHandlers({
     try { setShowOpeningActions(false); } catch {}
     if (phase !== 'worksheet') return;
     
+    // CRITICAL: If play time expired overlay is showing, dismiss it immediately
+    // User clicking "Go" overrides the countdown
+    if (setShowPlayTimeExpired) {
+      try { setShowPlayTimeExpired(false); } catch {}
+    }
+    if (setPlayExpiredPhase) {
+      try { setPlayExpiredPhase(null); } catch {}
+    }
+    
     // Transition from play to work timer
     if (transitionToWorkTimer) {
       transitionToWorkTimer('worksheet');
@@ -171,6 +200,15 @@ export function usePhaseHandlers({
     try { setShowOpeningActions(false); } catch {}
     if (phase !== 'test') return;
     
+    // CRITICAL: If play time expired overlay is showing, dismiss it immediately
+    // User clicking "Go" overrides the countdown
+    if (setShowPlayTimeExpired) {
+      try { setShowPlayTimeExpired(false); } catch {}
+    }
+    if (setPlayExpiredPhase) {
+      try { setPlayExpiredPhase(null); } catch {}
+    }
+    
     // Transition from play to work timer
     if (transitionToWorkTimer) {
       transitionToWorkTimer('test');
@@ -192,6 +230,15 @@ export function usePhaseHandlers({
   // Handler: Start the lesson now (fallback/generic)
   const handleStartLesson = useCallback(async () => {
     try { setShowOpeningActions(false); } catch {}
+    
+    // CRITICAL: If play time expired overlay is showing, dismiss it immediately
+    // User clicking "Go" overrides the countdown
+    if (setShowPlayTimeExpired) {
+      try { setShowPlayTimeExpired(false); } catch {}
+    }
+    if (setPlayExpiredPhase) {
+      try { setPlayExpiredPhase(null); } catch {}
+    }
     
     // If in discussion/teaching phase, transition from play to work timer
     if ((phase === 'discussion' || phase === 'teaching') && transitionToWorkTimer) {

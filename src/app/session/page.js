@@ -2966,6 +2966,8 @@ function SessionPageInner() {
     setCurrentExerciseProblem,
     setCurrentExIndex,
     setExercisePool,
+    setShowPlayTimeExpired,
+    setPlayExpiredPhase,
     
     // State values
     phase,

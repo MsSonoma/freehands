@@ -317,6 +317,9 @@ export default function HeaderBar() {
 	// Compute back destination based on defined navigation chains.
 	const backHref = useMemo(() => {
 		if (pathname === '/') return null; // Home has no back button
+		
+		// About page returns to home
+		if (pathname === '/about') return '/';
 
 		// Learner chain: / -> /learn -> /learn/lessons -> /session
 		// Awards viewer returns to learn page
@@ -419,10 +422,6 @@ export default function HeaderBar() {
 			color: '#111'
 		};
 
-
-		// If we're on the homepage, render no header (the page should be headerless)
-		if (pathname === '/') return null;
-		
 		return (
 			<>
 			<header style={{
@@ -564,6 +563,22 @@ export default function HeaderBar() {
 									{/* Always available links first so they appear at the top of the hamburger */}
 									<div style={{ display:'flex', flexDirection:'column', borderBottom: pathname.startsWith('/session') ? '1px solid #f3f4f6' : 'none' }}>
 										<Link
+											href="/about"
+											role="menuitem"
+											onClick={async (e) => {
+												if (pathname.startsWith('/session')) {
+													e.preventDefault();
+													const ok = await goWithPin('/about');
+													if (ok) setNavOpen(false);
+												} else {
+													setNavOpen(false);
+												}
+											}}
+											style={MOBILE_MENU_ITEM_STYLE}
+										>
+											About
+										</Link>
+										<Link
 											href="/learn"
 											role="menuitem"
 											onClick={async (e) => {
@@ -575,7 +590,7 @@ export default function HeaderBar() {
 													setNavOpen(false);
 												}
 											}}
-											style={MOBILE_MENU_ITEM_STYLE}
+											style={{ ...MOBILE_MENU_ITEM_STYLE, borderTop:'1px solid #f3f4f6' }}
 										>
 											Learn
 										</Link>
@@ -673,6 +688,18 @@ export default function HeaderBar() {
 										)}
 								</div>
 							)}
+							<Link
+								href="/about"
+								onClick={(e) => {
+									if (pathname.startsWith('/session')) {
+										e.preventDefault();
+										goWithPin('/about');
+									}
+								}}
+								style={{ textDecoration:'none', color:'#111', fontWeight:500 }}
+							>
+								About
+							</Link>
 							<Link
 								href="/learn"
 								onClick={(e) => {

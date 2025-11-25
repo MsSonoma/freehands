@@ -1,0 +1,315 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  background: #fafafa;
+  min-height: 100vh;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  color: white;
+}
+
+.subtitle {
+  font-size: 1.125rem;
+  margin: 0;
+  opacity: 0.95;
+  color: white;
+}
+
+.nav {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 0;
+}
+
+.navButton,
+.navActive {
+  background: none;
+  border: none;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  color: #555;
+}
+
+.navButton:hover {
+  color: #667eea;
+  border-bottom-color: #667eea;
+}
+
+.navActive {
+  color: #667eea;
+  border-bottom-color: #667eea;
+}
+
+.content {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.section {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.sectionTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 2rem 0;
+  color: #333;
+  border-bottom: 3px solid #667eea;
+  padding-bottom: 0.5rem;
+}
+
+.safetyCard,
+.guideCard {
+  background: #f9f9f9;
+  border-left: 4px solid #667eea;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border-radius: 4px;
+}
+
+.cardTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  color: #333;
+}
+
+.cardText {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #555;
+  margin: 0 0 1rem 0;
+}
+
+.layersList {
+  margin: 1.5rem 0;
+}
+
+.layer {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.layerNumber {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.layerContent h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.layerContent p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #666;
+}
+
+.highlight {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  padding: 1rem;
+  margin: 1.5rem 0;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #856404;
+}
+
+.highlight code {
+  background: rgba(0,0,0,0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+}
+
+.featureList {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.featureList li {
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+  color: #555;
+}
+
+.featureList strong {
+  color: #333;
+}
+
+.stepList {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+  counter-reset: step-counter;
+  list-style: none;
+}
+
+.stepList li {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+  color: #555;
+  position: relative;
+  padding-left: 0.5rem;
+}
+
+.stepList li::before {
+  counter-increment: step-counter;
+  content: counter(step-counter);
+  position: absolute;
+  left: -2rem;
+  top: 0;
+  width: 28px;
+  height: 28px;
+  background: #667eea;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.featureExplain {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: white;
+  border-radius: 6px;
+}
+
+.featureExplain h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.featureExplain p {
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #666;
+}
+
+.protectionNote {
+  background: #e8f4f8;
+  border-left: 3px solid #0277bd;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: #01579b;
+}
+
+.footer {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e0e0e0;
+  text-align: center;
+}
+
+.backButton {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  background: #667eea;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.backButton:hover {
+  background: #764ba2;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+  }
+
+  .nav {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .navButton,
+  .navActive {
+    padding: 0.75rem 1rem;
+    border-left: 3px solid transparent;
+    border-bottom: none;
+  }
+
+  .navActive {
+    border-left-color: #667eea;
+    border-bottom-color: transparent;
+  }
+
+  .content {
+    padding: 1.5rem;
+  }
+
+  .layer {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .stepList li::before {
+    left: -1.75rem;
+  }
+}

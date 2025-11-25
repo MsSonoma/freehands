@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server'
 import fs from 'node:fs'
 import path from 'node:path'
 import textToSpeech from '@google-cloud/text-to-speech'
+import { validateInput, validateOutput, hardenInstructions, getFallbackResponse } from '@/lib/contentSafety'
 
 // Providers
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
@@ -217,6 +218,16 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Instructions are required.' }, { status: 400 })
     }
 
+    // CONTENT SAFETY: Validate learner input if present
+    if (trimmedInnertext) {
+      const inputValidation = validateInput(trimmedInnertext, 'general')
+      if (!inputValidation.safe) {
+        console.warn('[SAFETY] Blocked unsafe input:', inputValidation.reason)
+        const fallback = getFallbackResponse('input_rejected')
+        return NextResponse.json({ reply: fallback, audio: null }, { status: 200 })
+      }
+    }
+
     // Received instructions
     // Stateless API: only the provided instructions are sent to the LLM (no system message)
 
@@ -247,10 +258,13 @@ export async function POST(req) {
         return NextResponse.json({ error: 'Ms. Sonoma is unavailable.' }, { status: 500 })
       }
     }
+    // CONTENT SAFETY: Harden instructions with safety preamble
+    const hardenedInstructions = hardenInstructions(trimmedInstructions, 'educational content', [])
+    
     // Minimal user payload: single user message containing instructions + (optional) innertext
     const combined = trimmedInnertext
-      ? `${trimmedInstructions}\n\nLearner question: "${trimmedInnertext}"`
-      : trimmedInstructions
+      ? `${hardenedInstructions}\n\nLearner question: "${trimmedInnertext}"`
+      : hardenedInstructions
     const userMessages = [{ role: 'user', content: combined }]
   // (Removed duplicate user payload log to reduce noise; instructions + innertext logs above are sufficient.)
 
@@ -311,6 +325,13 @@ export async function POST(req) {
         // Anthropic response received
         const c = Array.isArray(aJson?.content) ? aJson.content.find(p => p.type === 'text') : null
         msSonomaReply = (c?.text || '').trim()
+        
+        // CONTENT SAFETY: Validate Anthropic output
+        const outputValidation = await validateOutput(msSonomaReply)
+        if (!outputValidation.safe) {
+          console.warn('[SAFETY] Blocked unsafe Anthropic output:', outputValidation.reason)
+          msSonomaReply = getFallbackResponse('output_rejected')
+        }
       }
     } else {
       // OpenAI Chat Completions API
@@ -319,6 +340,13 @@ export async function POST(req) {
       if (!reply) return NextResponse.json({ error: 'OpenAI request failed.' }, { status: errorStatus || 500 })
       msSonomaReply = reply
       // OpenAI response received
+      
+      // CONTENT SAFETY: Validate OpenAI output
+      const outputValidation = await validateOutput(msSonomaReply)
+      if (!outputValidation.safe) {
+        console.warn('[SAFETY] Blocked unsafe OpenAI output:', outputValidation.reason)
+        msSonomaReply = getFallbackResponse('output_rejected')
+      }
     }
 
     let audioContent = undefined

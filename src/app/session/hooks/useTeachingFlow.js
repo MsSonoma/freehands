@@ -293,8 +293,15 @@ export function useTeachingFlow({
       isInSentenceModeRef.current = true;
       setIsInSentenceMode(true);
       
+      // Show loading overlay during save (consistent with subsequent sentences)
+      setTtsLoadingCount(prev => prev + 1);
+      
       // ATOMIC SNAPSHOT: Save BEFORE speaking so skip doesn't lose progress
-      try { await scheduleSaveSnapshot('vocab-sentence-1'); } catch {}
+      try { await scheduleSaveSnapshot('vocab-sentence-1'); } catch (err) {
+        console.error('[TEACHING FLOW] First vocab sentence save failed:', err);
+      }
+      
+      setTtsLoadingCount(prev => prev - 1);
       
       // Set subPhase to awaiting-gate so buttons appear (do this BEFORE speaking)
       setSubPhase('awaiting-gate');
@@ -406,8 +413,15 @@ export function useTeachingFlow({
       isInSentenceModeRef.current = true;
       setIsInSentenceMode(true);
       
+      // Show loading overlay during save (consistent with subsequent sentences)
+      setTtsLoadingCount(prev => prev + 1);
+      
       // ATOMIC SNAPSHOT: Save BEFORE speaking so skip doesn't lose progress
-      try { await scheduleSaveSnapshot('example-sentence-1'); } catch {}
+      try { await scheduleSaveSnapshot('example-sentence-1'); } catch (err) {
+        console.error('[TEACHING FLOW] First example sentence save failed:', err);
+      }
+      
+      setTtsLoadingCount(prev => prev - 1);
       
       // Speak the first sentence
       try { await speakFrontend(sentences[0]); } catch {}

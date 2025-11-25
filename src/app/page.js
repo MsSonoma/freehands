@@ -34,6 +34,11 @@ export default function Home() {
             <a href="/learn" className={`${styles.cta} ${styles.ctaSecondary}`}>Learn</a>
             <a href="/facilitator" className={`${styles.cta} ${styles.ctaPrimary}`}>Facilitator</a>
           </div>
+          <div className={styles.aboutRow}>
+            <a href="/about" className={styles.aboutLink}>
+              About AI Safety & How to Use →
+            </a>
+          </div>
         </div>
       </div>
     </main>

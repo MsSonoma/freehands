@@ -11,6 +11,7 @@ import { useAccessControl } from '@/app/hooks/useAccessControl';
 import GatedOverlay from '@/app/components/GatedOverlay';
 import TutorialGuard from '@/components/TutorialGuard';
 import PhaseTimersOverlay from '@/app/session/components/PhaseTimersOverlay';
+import AIFeaturesOverlay from './components/AIFeaturesOverlay';
 import { loadPhaseTimersForLearner } from '@/app/session/utils/phaseTimerDefaults';
 
 export default function LearnersPage() {
@@ -171,10 +172,22 @@ export default function LearnersPage() {
 				...(updated.golden_keys !== undefined ? {
 					golden_keys: Number(updated.golden_keys)
 				}:{} ),
-				...(updated.humor_level !== undefined ? {
-					humor_level: normalizeHumorLevel(updated.humor_level)
-				}:{} ),
-				// Phase timer fields
+			...(updated.humor_level !== undefined ? {
+				humor_level: normalizeHumorLevel(updated.humor_level)
+			}:{} ),
+			...(updated.ask_disabled !== undefined ? {
+				ask_disabled: !!updated.ask_disabled
+			}:{} ),
+			...(updated.poem_disabled !== undefined ? {
+				poem_disabled: !!updated.poem_disabled
+			}:{} ),
+			...(updated.story_disabled !== undefined ? {
+				story_disabled: !!updated.story_disabled
+			}:{} ),
+			...(updated.fill_in_fun_disabled !== undefined ? {
+				fill_in_fun_disabled: !!updated.fill_in_fun_disabled
+			}:{} ),
+			// Phase timer fields
 				...(updated.discussion_play_min !== undefined ? { discussion_play_min: Number(updated.discussion_play_min) } : {}),
 				...(updated.discussion_work_min !== undefined ? { discussion_work_min: Number(updated.discussion_work_min) } : {}),
 				...(updated.comprehension_play_min !== undefined ? { comprehension_play_min: Number(updated.comprehension_play_min) } : {}),
@@ -486,7 +499,12 @@ function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, o
 	const [sessionTimer, setSessionTimer] = useState(String(item.session_timer_minutes || '60'));
 	const [goldenKeys, setGoldenKeys] = useState(String(item.golden_keys ?? 0));
 	const [humorLevel, setHumorLevel] = useState(normalizeHumorLevel(item.humor_level));
+	const [askDisabled, setAskDisabled] = useState(!!item.ask_disabled);
+	const [poemDisabled, setPoemDisabled] = useState(!!item.poem_disabled);
+	const [storyDisabled, setStoryDisabled] = useState(!!item.story_disabled);
+	const [fillInFunDisabled, setFillInFunDisabled] = useState(!!item.fill_in_fun_disabled);
 	const [showTimersOverlay, setShowTimersOverlay] = useState(false);
+	const [showAIFeaturesOverlay, setShowAIFeaturesOverlay] = useState(false);
 	const [phaseTimers, setPhaseTimers] = useState(() => loadPhaseTimersForLearner(item));
 
 	useEffect(() => {
@@ -501,9 +519,21 @@ function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, o
 		} else {
 			setHumorLevel('calm');
 		}
+		if (item.ask_disabled !== undefined) {
+			setAskDisabled(!!item.ask_disabled);
+		}
+		if (item.poem_disabled !== undefined) {
+			setPoemDisabled(!!item.poem_disabled);
+		}
+		if (item.story_disabled !== undefined) {
+			setStoryDisabled(!!item.story_disabled);
+		}
+		if (item.fill_in_fun_disabled !== undefined) {
+			setFillInFunDisabled(!!item.fill_in_fun_disabled);
+		}
 		// Reload phase timers from learner profile
 		setPhaseTimers(loadPhaseTimersForLearner(item));
-	}, [item.session_timer_minutes, item.golden_keys, item.humor_level, item]);
+	}, [item.session_timer_minutes, item.golden_keys, item.humor_level, item.ask_disabled, item.poem_disabled, item.story_disabled, item.fill_in_fun_disabled, item]);
 
     // Responsive redesign: remove fixed 616px dial grid and allow wrapping on small screens.
     // Use flex for top row and auto-fit grid for dials.
@@ -538,7 +568,7 @@ function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, o
 						</div>
           </div>
 					<div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'flex-end', alignItems:'center', flex:'1 1 320px' }}>
-						<button onClick={()=>onSave({ name, grade, targets:{ comprehension, exercise, worksheet, test }, session_timer_minutes: Number(sessionTimer), golden_keys: Number(goldenKeys), humor_level: humorLevel })} disabled={saving} style={{ ...actionBtnStyle, color:'#0b1220' }}>{saving ? 'Saving…' : 'Save'}<span aria-hidden style={{ fontSize:16, lineHeight:1 }}>💾</span></button>
+						<button onClick={()=>onSave({ name, grade, targets:{ comprehension, exercise, worksheet, test }, session_timer_minutes: Number(sessionTimer), golden_keys: Number(goldenKeys), humor_level: humorLevel, ask_disabled: askDisabled, poem_disabled: poemDisabled, story_disabled: storyDisabled, fill_in_fun_disabled: fillInFunDisabled })} disabled={saving} style={{ ...actionBtnStyle, color:'#0b1220' }}>{saving ? 'Saving…' : 'Save'}<span aria-hidden style={{ fontSize:16, lineHeight:1 }}>💾</span></button>
             {saved && (
 			  <div style={{ padding:'8px 12px', background:'#d4f8d4', color:'#2d5a2d', borderRadius:8, fontSize:'clamp(0.9rem, 1.6vw, 1rem)', fontWeight:500 }}>Saved</div>
             )}
@@ -555,12 +585,34 @@ function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, o
 			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Grade</div>
             <Dial value={grade} onChange={e => setGrade(e.target.value)} options={GRADES} ariaLabel="Grade" title="Grade" />
 									</div>
-									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
-							<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Humor</div>
-					            <Select value={humorLevel} onChange={e => setHumorLevel(normalizeHumorLevel(e.target.value))} options={HUMOR_LEVELS} ariaLabel="Humor level" title="Humor level" />
-									</div>
-									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
-			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Comprehension</div>
+								<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
+						<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Humor</div>
+				            <Select value={humorLevel} onChange={e => setHumorLevel(normalizeHumorLevel(e.target.value))} options={HUMOR_LEVELS} ariaLabel="Humor level" title="Humor level" />
+								</div>
+								<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
+			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>AI Features</div>
+			<button
+				onClick={() => setShowAIFeaturesOverlay(true)}
+				aria-label="Configure AI features"
+				title="Configure AI features"
+				style={{
+					padding: '10px 16px',
+					border: '1px solid #ddd',
+					borderRadius: 8,
+					background: '#fff',
+					cursor: 'pointer',
+					fontSize: 'clamp(0.9rem, 1.6vw, 1rem)',
+					color: '#0b1220',
+					fontWeight: 500,
+					width: '100%',
+					maxWidth: 130
+				}}
+			>
+				🤖 Setup
+			</button>
+								</div>
+								<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
+		<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Comprehension</div>
             <Dial value={comprehension} onChange={e => setComprehension(e.target.value)} options={TARGETS} ariaLabel="Comprehension" />
 									</div>
 									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
@@ -637,10 +689,43 @@ function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, o
 						name,
 						grade,
 						targets: { comprehension, exercise, worksheet, test },
+					session_timer_minutes: Number(sessionTimer),
+					golden_keys: Number(goldenKeys),
+					humor_level: humorLevel,
+					ask_disabled: askDisabled,
+					poem_disabled: poemDisabled,
+					story_disabled: storyDisabled,
+					fill_in_fun_disabled: fillInFunDisabled,
+					...updatedTimers  // Spread all 11 timer fields directly
+					});
+				}}
+			/>
+			
+			{/* AI Features Overlay */}
+			<AIFeaturesOverlay
+				isOpen={showAIFeaturesOverlay}
+				initialSettings={{
+					ask_disabled: askDisabled,
+					poem_disabled: poemDisabled,
+					story_disabled: storyDisabled,
+					fill_in_fun_disabled: fillInFunDisabled,
+				}}
+				onClose={() => setShowAIFeaturesOverlay(false)}
+				onSave={(updatedFeatures) => {
+					setAskDisabled(updatedFeatures.ask_disabled);
+					setPoemDisabled(updatedFeatures.poem_disabled);
+					setStoryDisabled(updatedFeatures.story_disabled);
+					setFillInFunDisabled(updatedFeatures.fill_in_fun_disabled);
+					setShowAIFeaturesOverlay(false);
+					// Save all current values including updated AI feature settings
+					onSave({
+						name,
+						grade,
+						targets: { comprehension, exercise, worksheet, test },
 						session_timer_minutes: Number(sessionTimer),
 						golden_keys: Number(goldenKeys),
 						humor_level: humorLevel,
-						...updatedTimers  // Spread all 11 timer fields directly
+						...updatedFeatures,
 					});
 				}}
 			/>

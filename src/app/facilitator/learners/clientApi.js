@@ -129,6 +129,10 @@ export async function createLearner(payload) {
         golden_keys: payload.golden_keys !== undefined ? Number(payload.golden_keys) : 0,
         active_golden_keys: payload.active_golden_keys || {},
         humor_level: humorLevel,
+        ask_disabled: !!payload.ask_disabled,
+        poem_disabled: !!payload.poem_disabled,
+        story_disabled: !!payload.story_disabled,
+        fill_in_fun_disabled: !!payload.fill_in_fun_disabled,
       }, uid);
       if (!error) { supabaseLearnersMode = 'flat'; return normalizeRow(data); }
       if (!isUndefinedColumnOrTable(error)) throw new Error(error.message || 'Failed to create learner');
@@ -224,6 +228,10 @@ export async function updateLearner(id, updates) {
         ...(updates.golden_keys !== undefined ? { golden_keys: Number(updates.golden_keys) } : {}),
         ...(updates.active_golden_keys !== undefined ? { active_golden_keys: updates.active_golden_keys } : {}),
         ...(typeof humorLevel === 'string' ? { humor_level: humorLevel } : {}),
+        ...(updates.ask_disabled !== undefined ? { ask_disabled: !!updates.ask_disabled } : {}),
+        ...(updates.poem_disabled !== undefined ? { poem_disabled: !!updates.poem_disabled } : {}),
+        ...(updates.story_disabled !== undefined ? { story_disabled: !!updates.story_disabled } : {}),
+        ...(updates.fill_in_fun_disabled !== undefined ? { fill_in_fun_disabled: !!updates.fill_in_fun_disabled } : {}),
       };
       const { data, error } = await updateWithOwner(supabase, id, updatePayload, uid);
       if (!error) { 
@@ -284,6 +292,10 @@ function normalizeRow(row) {
     golden_keys: c(row.golden_keys),
     active_golden_keys: row.active_golden_keys || {},
     humor_level: humorLevel,
+    ask_disabled: !!row.ask_disabled,
+    poem_disabled: !!row.poem_disabled,
+    story_disabled: !!row.story_disabled,
+    fill_in_fun_disabled: !!row.fill_in_fun_disabled,
   };
   // console.log('🔄 normalizeRow input:', row, 'output:', merged); // Removed: excessive logging
   return merged;
@@ -322,6 +334,10 @@ function createLocal(payload) {
     golden_keys: payload.golden_keys !== undefined ? Number(payload.golden_keys) : 0,
     active_golden_keys: payload.active_golden_keys || {},
     humor_level: humorLevel,
+    ask_disabled: !!payload.ask_disabled,
+    poem_disabled: !!payload.poem_disabled,
+    story_disabled: !!payload.story_disabled,
+    fill_in_fun_disabled: !!payload.fill_in_fun_disabled,
   };
   list.unshift(item); writeLocal(list); return item;
 }
@@ -342,6 +358,10 @@ function updateLocal(id, updates) {
       ...(updates.golden_keys !== undefined ? { golden_keys: Number(updates.golden_keys) } : {}),
       ...(updates.active_golden_keys !== undefined ? { active_golden_keys: updates.active_golden_keys } : {}),
       humor_level: humorLevel,
+      ...(updates.ask_disabled !== undefined ? { ask_disabled: !!updates.ask_disabled } : {}),
+      ...(updates.poem_disabled !== undefined ? { poem_disabled: !!updates.poem_disabled } : {}),
+      ...(updates.story_disabled !== undefined ? { story_disabled: !!updates.story_disabled } : {}),
+      ...(updates.fill_in_fun_disabled !== undefined ? { fill_in_fun_disabled: !!updates.fill_in_fun_disabled } : {}),
     };
     list[idx] = updated; writeLocal(list); return updated;
   }

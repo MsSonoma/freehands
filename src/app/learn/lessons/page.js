@@ -240,23 +240,11 @@ function LessonsPageInner(){
 
     ;(async () => {
       try {
+        // Just check for active session without PIN requirement
+        // The lessons page should be freely accessible
         const active = await getActiveLessonSession(learnerId)
         if (cancelled) return
-        if (active) {
-          const allowed = await ensurePinAllowed('active-session')
-          if (cancelled) return
-          if (!allowed) {
-            const lessonKey = active.lesson_id || ''
-            const [subject, ...rest] = lessonKey.split('/')
-            if (subject && rest.length) {
-              const lessonSlug = rest.join('/')
-              router.replace(`/session?subject=${encodeURIComponent(subject)}&lesson=${encodeURIComponent(lessonSlug)}`)
-            } else {
-              router.replace('/session')
-            }
-            return
-          }
-        }
+        // No PIN gate here - let learners view lessons freely
         if (!cancelled) setSessionGateReady(true)
       } catch (err) {
         if (!cancelled) setSessionGateReady(true)
