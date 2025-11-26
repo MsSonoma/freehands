@@ -537,14 +537,6 @@ function SessionPageInner() {
     return false; // Always enabled so users can click to see gate
   }, []);
   
-  // Helper: record first interaction snapshot (prevents infinite play hack via refresh)
-  const recordFirstInteraction = useCallback(() => {
-    if (!hasRecordedFirstInteraction) {
-      scheduleSaveSnapshot('first-interaction');
-      setHasRecordedFirstInteraction(true);
-    }
-  }, [hasRecordedFirstInteraction, scheduleSaveSnapshot]);
-  
   // Load user tier from profile
   useEffect(() => {
     (async () => {
@@ -3422,6 +3414,15 @@ function SessionPageInner() {
       setTakeoverSessionInfo(existingSession);
     },
   });
+
+  // Helper: record first interaction snapshot (prevents infinite play hack via refresh)
+  // Moved after useSnapshotPersistence to avoid TDZ error
+  const recordFirstInteraction = useCallback(() => {
+    if (!hasRecordedFirstInteraction) {
+      scheduleSaveSnapshot('first-interaction');
+      setHasRecordedFirstInteraction(true);
+    }
+  }, [hasRecordedFirstInteraction, scheduleSaveSnapshot]);
 
   // Helper: gather vocab from multiple potential sources/keys
   const getAvailableVocab = useCallback((dataOverride = null) => {
