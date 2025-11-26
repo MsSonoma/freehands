@@ -496,6 +496,9 @@ function SessionPageInner() {
   const [showGoConfirmation, setShowGoConfirmation] = useState(false);
   const [pendingGoAction, setPendingGoAction] = useState(null);
   
+  // First interaction snapshot gate (prevents infinite play hack via refresh)
+  const [hasRecordedFirstInteraction, setHasRecordedFirstInteraction] = useState(false);
+  
   // Learner grade state (for grade-appropriate speech)
   const [learnerGrade, setLearnerGrade] = useState('');
   
@@ -533,6 +536,14 @@ function SessionPageInner() {
   const isAskButtonDisabled = useMemo(() => {
     return false; // Always enabled so users can click to see gate
   }, []);
+  
+  // Helper: record first interaction snapshot (prevents infinite play hack via refresh)
+  const recordFirstInteraction = useCallback(() => {
+    if (!hasRecordedFirstInteraction) {
+      scheduleSaveSnapshot('first-interaction');
+      setHasRecordedFirstInteraction(true);
+    }
+  }, [hasRecordedFirstInteraction, scheduleSaveSnapshot]);
   
   // Load user tier from profile
   useEffect(() => {
@@ -692,7 +703,10 @@ function SessionPageInner() {
 
   // Handle golden key application from timer controls
   const handleApplyGoldenKey = useCallback(async () => {
-    if (!hasGoldenKey) return;
+    if (hasGoldenKey) {
+      alert('This lesson already has a golden key applied.');
+      return;
+    }
     
     try {
       const learnerId = sessionStorage.getItem('learner_id');
@@ -709,11 +723,17 @@ function SessionPageInner() {
         return;
       }
 
-      // Clear the active golden key for this lesson
-      const activeKeys = { ...(learner.active_golden_keys || {}) };
-      delete activeKeys[lessonKey];
+      // Check if learner has available golden keys
+      if (!learner.golden_keys || learner.golden_keys <= 0) {
+        alert('No golden keys available. Complete lessons to earn golden keys.');
+        return;
+      }
 
-      // Award the golden key completion
+      // Apply golden key to this lesson
+      const activeKeys = { ...(learner.active_golden_keys || {}) };
+      activeKeys[lessonKey] = true;
+
+      // Decrement available golden keys and mark this lesson as having one
       await updateLearner(learnerId, {
         name: learner.name,
         grade: learner.grade,
@@ -724,16 +744,17 @@ function SessionPageInner() {
           test: learner.test
         },
         session_timer_minutes: learner.session_timer_minutes,
-        golden_keys: (learner.golden_keys || 0) + 1,
+        golden_keys: (learner.golden_keys || 0) - 1,
         active_golden_keys: activeKeys
       });
       
       // Update local state
-      setHasGoldenKey(false);
+      setHasGoldenKey(true);
       setIsGoldenKeySuspended(false);
+      // goldenKeyBonus is already set from the lesson config in useEffect
       
       // Show success and close overlay
-      alert('Golden key applied! Lesson marked as complete.');
+      alert('Golden key applied! This lesson now has bonus play time.');
       setShowTimerControls(false);
       
     } catch (err) {
@@ -7160,14 +7181,14 @@ function SessionPageInner() {
               
               return (
                 <div style={wrap} aria-label="Opening actions">
-                  <button type="button" style={btn} onClick={getAskButtonHandler(handleAskQuestionStart)}>Ask</button>
-                  <button type="button" style={btn} onClick={handleTellJoke}>Joke</button>
-                  <button type="button" style={btn} onClick={handleTellRiddle}>Riddle</button>
-                  <button type="button" style={btn} onClick={handlePoemStart}>Poem</button>
-                  <button type="button" style={btn} onClick={handleStoryStart}>Story</button>
-                  <button type="button" style={btn} onClick={handleFillInFunStart}>Fill-in-Fun</button>
-                  <button type="button" style={btn} onClick={() => setShowGames(true)}>Games</button>
-                  <button type="button" style={goBtn} onClick={onGoWithConfirm} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson…'}>Go</button>
+                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); getAskButtonHandler(handleAskQuestionStart)(); }}>Ask</button>
+                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleTellJoke(); }}>Joke</button>
+                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleTellRiddle(); }}>Riddle</button>
+                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handlePoemStart(); }}>Poem</button>
+                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleStoryStart(); }}>Story</button>
+                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleFillInFunStart(); }}>Fill-in-Fun</button>
+                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); setShowGames(true); }}>Games</button>
+                  <button type="button" style={goBtn} onClick={() => { recordFirstInteraction(); onGoWithConfirm(); }} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson…'}>Go</button>
                 </div>
               );
             } catch {}
@@ -7208,14 +7229,14 @@ function SessionPageInner() {
               
               return (
                 <div style={wrap} aria-label="Phase opening actions">
-                  <button type="button" style={btn} onClick={getAskButtonHandler(handleAskQuestionStart)}>Ask</button>
-                  <button type="button" style={btn} onClick={handleTellJoke}>Joke</button>
-                  <button type="button" style={btn} onClick={handleTellRiddle}>Riddle</button>
-                  <button type="button" style={btn} onClick={handlePoemStart}>Poem</button>
-                  <button type="button" style={btn} onClick={handleStoryStart}>Story</button>
-                  <button type="button" style={btn} onClick={handleFillInFunStart}>Fill-in-Fun</button>
-                  <button type="button" style={btn} onClick={() => setShowGames(true)}>Games</button>
-                  <button type="button" style={goBtn} onClick={onGo} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson…'}>Go</button>
+                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); getAskButtonHandler(handleAskQuestionStart)(); }}>Ask</button>
+                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleTellJoke(); }}>Joke</button>
+                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleTellRiddle(); }}>Riddle</button>
+                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handlePoemStart(); }}>Poem</button>
+                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleStoryStart(); }}>Story</button>
+                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleFillInFunStart(); }}>Fill-in-Fun</button>
+                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); setShowGames(true); }}>Games</button>
+                  <button type="button" style={goBtn} onClick={() => { recordFirstInteraction(); onGo(); }} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson…'}>Go</button>
                 </div>
               );
             } catch {}

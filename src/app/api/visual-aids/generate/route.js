@@ -61,13 +61,13 @@ export async function POST(req) {
             messages: [
               {
                 role: 'system',
-                content: 'You create short, kid-friendly image prompts for educational visual aids. Each prompt should describe a clear, simple illustration that helps explain the lesson concept. Keep prompts under 100 words, focus on clarity and educational value. Make images colorful, engaging, and appropriate for children aged 6-12. IMPORTANT: Do NOT include any text, labels, words, letters, or written language in the images - focus purely on visual concepts, objects, scenes, and illustrations.'
+                content: 'You create image prompts for educational illustrations. Describe scenes, objects, characters, and actions that visually represent lesson concepts. CRITICAL RULES: 1) NEVER include text, words, letters, labels, captions, signs, writing, numbers, or any written language in your descriptions. 2) Describe only visual elements like colors, shapes, objects, people, animals, and scenery. 3) Use phrases like "a colorful scene showing" or "an illustration of" rather than "diagram" or "chart". Keep under 80 words. Make images cheerful, simple, and age-appropriate for elementary students.'
               },
               {
                 role: 'user',
                 content: customPrompt 
-                  ? `Create image prompt #${i + 1} for visual aid with this custom guidance:\n\n${customPrompt}\n\nLesson context:\nTitle: ${lessonTitle || 'Educational Lesson'}\nTeaching Notes: ${teachingNotes}`
-                  : `Create image prompt #${i + 1} for visual aid based on this lesson:\n\nTitle: ${lessonTitle || 'Educational Lesson'}\n\nTeaching Notes:\n${teachingNotes}\n\nCreate a distinct educational illustration that helps explain a key concept from these notes.`
+                  ? `Create an educational illustration prompt based on:\n\n${customPrompt}\n\nLesson: ${lessonTitle || 'Educational Lesson'}\nConcepts: ${teachingNotes}\n\nDescribe a visual scene with objects and actions only - absolutely no text or labels in the image.`
+                  : `Create an educational illustration prompt for this lesson:\n\nLesson: ${lessonTitle || 'Educational Lesson'}\nConcepts: ${teachingNotes}\n\nDescribe image #${i + 1}: Show a scene with objects, people, or nature that represents a key concept. Use only visual elements - no text, labels, or words anywhere in the image.`
               }
             ],
             temperature: 0.8,
@@ -123,7 +123,9 @@ export async function POST(req) {
             .trim()
         }
 
-        // Generate image using DALL-E 3
+        // Generate image using DALL-E 3 with explicit no-text instruction
+        const enhancedPrompt = `${imagePrompt} IMPORTANT: This image must contain absolutely NO text, words, letters, numbers, labels, captions, signs, or any written language of any kind. Show only visual elements.`
+        
         const imageRequest = await fetch('https://api.openai.com/v1/images/generations', {
           method: 'POST',
           headers: {
@@ -132,7 +134,7 @@ export async function POST(req) {
           },
           body: JSON.stringify({
             model: 'dall-e-3',
-            prompt: imagePrompt,
+            prompt: enhancedPrompt,
             n: 1,
             size: '1024x1024',
             quality: 'standard',

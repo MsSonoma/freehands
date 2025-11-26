@@ -29,6 +29,16 @@ Instruction Brain Hub
 - Log every meaningful instruction update in `docs/brain/changelog.md` before treating it as live guidance.
 - Link back to original sources when content remains elsewhere, then schedule migration work inside the hub notes.
 
+Brain File Enforcement (MANDATORY after code changes)
+- After completing ANY code changes (API routes, hooks, components, flows, prompts), IMMEDIATELY check:
+  1. Does `docs/brain/manifest.json` list a brain file for this system?
+  2. If YES: Show user exactly which section needs updating and ASK for approval
+  3. If NO: List what the brain file would document and ASK if it should be created
+- NEVER end a response with code changes without showing this check
+- Systems requiring brain files: APIs, hooks, flows, persistence, authentication, UI patterns, prompt engineering, data schemas, integrations
+- If you complete code changes and your response doesn't mention brain documentation, you FAILED this requirement
+- This check is NOT optional - it's a mandatory artifact like changelog entries
+
 Changelog Workflow
 - Single source: `docs/brain/changelog.md` is the live, newest-first change log.
 - Read-before-reply: BrainMaker and Copilot must read the latest 20 entries before responding to any prompt.

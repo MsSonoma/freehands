@@ -49,38 +49,39 @@ Requirements:
 Rewritten description:`
       },
       'visual-aid-prompt-from-notes': {
-        system: 'You are an expert at creating visual aid generation prompts for educational content.',
-        user: `Based on these teaching notes, create a concise prompt that will guide AI image generation to create helpful visual aids for this lesson.
+        system: 'You are an expert at creating prompts for educational image generation. You understand that AI-generated images with text are illegible and must be avoided.',
+        user: `Based on these teaching notes, create a concise prompt that will guide AI image generation to create helpful illustrations for this lesson.
 
 Lesson: ${context || 'Educational lesson'}
 Teaching Notes:
 ${text}
 
 Create a prompt that will help generate 3 different educational illustrations. Focus on:
-- Key concepts that would benefit from visual representation
-- Style guidance (kid-friendly, colorful, clear, educational)
-- What types of visuals would help explain the material (diagrams, examples, step-by-step, etc.)
+- Key concepts shown through VISUAL scenes, objects, and actions (not text or labels)
+- Style guidance (kid-friendly, colorful, simple, photographic or illustrated)
+- What types of visuals would help (real-world examples, nature scenes, everyday objects, step-by-step actions)
+- CRITICAL: Images must have NO text, words, labels, captions, or written language of any kind
 
-Keep the prompt under 100 words. Make it specific enough to generate relevant images but flexible enough to allow variety.
+Keep the prompt under 80 words. Make it specific enough to generate relevant images but flexible enough to allow variety. Emphasize visual-only representation.
 
 Prompt:`
       },
       'generation-prompt': {
-        system: 'You are an expert at crafting AI image generation prompts for educational content.',
+        system: 'You are an expert at crafting AI image generation prompts. You know that AI-generated text in images is gibberish and must be completely avoided.',
         user: `Improve this image generation prompt to be more specific and effective for DALL-E 3.
 
 ${context ? `Context: ${context}` : ''}
 Basic prompt: ${text}
 
 Requirements:
-- Be specific and descriptive
-- Include style guidance (educational, kid-friendly, clear)
-- Mention important details (diagrams, labels, colors if relevant)
-- Keep it concise but detailed
-- Focus on educational clarity
-- No emojis or special formatting
+- Be specific and descriptive about visual elements (objects, colors, scenes, actions)
+- Include style guidance (photographic, illustrated, kid-friendly, simple and clear)
+- Focus on showing concepts through imagery, not through text or labels
+- CRITICAL: The final image must contain NO text, words, letters, numbers, labels, captions, signs, or written language
+- Suggest visual metaphors or real-world examples instead of diagrams with text
+- Keep it concise but visually detailed
 
-Improved prompt:`
+Improved prompt (emphasize visual-only elements):`
       },
       'general': {
         system: 'You are a helpful writing assistant.',

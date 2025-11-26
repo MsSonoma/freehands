@@ -159,9 +159,10 @@ export async function ensurePinAllowed(action = 'action') {
 					return false;
 				}
 				
-				// When entering facilitator section, mark it active
-				// This includes both facilitator-page access and session-exit (leaving a learner session)
-				if (action === 'facilitator-page' || action === 'session-exit' || action === 'active-session') {
+				// ONLY set facilitator section flag when explicitly entering facilitator pages
+				// Do NOT set it for other actions like session-exit or active-session
+				// This prevents learners from bypassing PIN requirements on facilitator pages
+				if (action === 'facilitator-page') {
 					setInFacilitatorSection(true);
 				}
 				

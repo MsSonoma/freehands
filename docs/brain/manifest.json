@@ -8,9 +8,10 @@
       "atomic gates",
       "checkpoint gates",
       "cross-device sync",
-      "snapshot restore"
+      "snapshot restore",
+      "first-interaction gate"
     ],
-    "last_updated": "2025-11-20T21:30:00Z",
+    "last_updated": "2025-01-20T04:30:00Z",
     "status": "canonical"
   },
   "session-takeover": {
@@ -39,6 +40,59 @@
       "search flow"
     ],
     "last_updated": "2025-11-17T23:45:00Z",
+    "status": "canonical"
+  },
+  "visual-aids": {
+    "file": "visual-aids.md",
+    "systems": [
+      "visual aids generation",
+      "DALL-E 3 integration",
+      "prompt engineering no-text constraint",
+      "image storage",
+      "visual aids carousel",
+      "lesson visual aids",
+      "AI rewrite visual-aid purposes"
+    ],
+    "last_updated": "2025-11-25T19:45:00Z",
+    "status": "canonical"
+  },
+  "ms-sonoma-teaching-system": {
+    "file": "ms-sonoma-teaching-system.md",
+    "systems": [
+      "Ms. Sonoma",
+      "teaching flow",
+      "turn-based conversation",
+      "phase transitions",
+      "content safety",
+      "prompt engineering",
+      "leniency modes",
+      "brand signal anchors",
+      "normalization",
+      "slot policy",
+      "VERBATIM cues",
+      "comprehension evaluation",
+      "factual accuracy"
+    ],
+    "last_updated": "2025-11-25T00:00:00Z",
+    "status": "canonical"
+  },
+  "beta-program": {
+    "file": "beta-program.md",
+    "systems": [
+      "Beta tier",
+      "tutorial gating",
+      "facilitator tutorial",
+      "learner tutorial",
+      "post-lesson survey",
+      "password re-auth",
+      "golden key unlock",
+      "event instrumentation",
+      "repeat tracking",
+      "session duration",
+      "facilitator notes",
+      "transcript timestamps"
+    ],
+    "last_updated": "2025-11-25T00:00:00Z",
     "status": "canonical"
   }
 }

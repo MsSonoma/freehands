@@ -139,6 +139,10 @@ export function useDiscussionHandlers({
 
   // Ask Question handlers
   const handleAskQuestionStart = useCallback(async () => {
+    // Save snapshot to prevent infinite play timer hack via refresh
+    // This fires when user clicks Ask (or any button other than Begin)
+    try { scheduleSaveSnapshot('ask-question-start'); } catch {}
+    
     try { setShowOpeningActions(false); } catch {}
     const learnerName = (typeof window !== 'undefined' ? (localStorage.getItem('learner_name') || '') : '').trim();
     const name = learnerName || 'friend';

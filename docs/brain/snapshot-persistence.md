@@ -29,6 +29,12 @@ Snapshots save at explicit checkpoints only. No autosave, no polling, no drift c
 
 ## Checkpoint Gates (Where Snapshots Save)
 
+### Opening Phase
+- `first-interaction` - When user clicks any button except Begin (Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games, or Go)
+  - Prevents infinite play timer hack via refresh
+  - Fires once per session on first button click
+  - Persists timer state before user can exploit refresh
+
 ### Teaching Flow
 - `begin-teaching-definitions`
 - `vocab-sentence-1` (before TTS)
