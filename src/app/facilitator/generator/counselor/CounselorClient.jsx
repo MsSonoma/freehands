@@ -1249,6 +1249,10 @@ export default function CounselorClient() {
           } else if (action.type === 'generate') {
             setLoadingThought("Generating your custom lesson with AI...")
             // Generate lesson via interceptor (keeps context)
+            const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+            
             if (token && selectedLearnerId) {
               try {
                 // Call generation API
