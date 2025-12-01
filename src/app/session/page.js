@@ -1795,10 +1795,39 @@ function SessionPageInner() {
             const storageKey = getAssessmentStorageKey({ data, manifest: manifestInfo, param: lessonParam });
             const currentLearnerId = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
             const stored = storageKey ? (await getStoredAssessments(storageKey, { learnerId: currentLearnerId })) : null;
+            
+            // CRITICAL FIX: Validate cached assessments match current lesson content
+            // Check lesson title to prevent loading wrong lesson's questions (e.g., European exploration for Fractions)
+            const currentLessonTitle = (data?.title || data?.lessonTitle || '').toLowerCase().trim();
+            const currentFirstQuestion = Array.isArray(data.multiplechoice) && data.multiplechoice.length 
+              ? (data.multiplechoice[0]?.prompt || data.multiplechoice[0]?.question || '')
+              : (Array.isArray(data.truefalse) && data.truefalse.length 
+                  ? (data.truefalse[0]?.prompt || data.truefalse[0]?.question || '')
+                  : '');
+            
+            const storedFirstWorksheet = stored && Array.isArray(stored.worksheet) && stored.worksheet.length
+              ? (stored.worksheet[0]?.prompt || stored.worksheet[0]?.question || '')
+              : '';
+            
+            // Content mismatch if first worksheet question doesn't match any question in current lesson data
+            let lessonContentMismatch = false;
+            if (storedFirstWorksheet && currentFirstQuestion) {
+              const allCurrentQuestions = [
+                ...(Array.isArray(data.multiplechoice) ? data.multiplechoice : []),
+                ...(Array.isArray(data.truefalse) ? data.truefalse : []),
+                ...(Array.isArray(data.fillintheblank) ? data.fillintheblank : []),
+                ...(Array.isArray(data.shortanswer) ? data.shortanswer : []),
+                ...(Array.isArray(data.wordProblems) ? data.wordProblems : [])
+              ];
+              const questionTexts = allCurrentQuestions.map(q => (q?.prompt || q?.question || '').toLowerCase().trim());
+              const storedQuestionText = storedFirstWorksheet.toLowerCase().trim();
+              lessonContentMismatch = !questionTexts.includes(storedQuestionText);
+            }
+            
             // For math, do not derive mismatch from test content because tests are generated from samples
             const currentFirstTest = subjectParam === 'math' ? null : (Array.isArray(data.test) && data.test.length ? data.test[0].prompt : null);
             const storedFirstTest = subjectParam === 'math' ? null : (stored && Array.isArray(stored.test) && stored.test.length ? stored.test[0].prompt : null);
-            const contentMismatch = subjectParam === 'math' ? false : (storedFirstTest && currentFirstTest && storedFirstTest !== currentFirstTest);
+            const contentMismatch = lessonContentMismatch || (subjectParam === 'math' ? false : (storedFirstTest && currentFirstTest && storedFirstTest !== currentFirstTest));
             // Initialize comprehension/exercise pools (prefer persisted; else build fresh)
             if (stored && Array.isArray(stored.comprehension) && stored.comprehension.length) {
               setCompPool(stored.comprehension);
