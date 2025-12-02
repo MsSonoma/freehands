@@ -1293,11 +1293,26 @@ export default function CounselorClient() {
                     }
                     
                     // Update interceptor response with post-generation prompt
-                    const vocab = Array.isArray(genData.lesson.vocab) 
-                      ? genData.lesson.vocab.map(v => v.word || v).join(', ')
-                      : genData.lesson.vocab || 'None'
+                    let vocab = 'None'
+                    if (Array.isArray(genData.lesson.vocab) && genData.lesson.vocab.length > 0) {
+                      vocab = genData.lesson.vocab
+                        .map(v => {
+                          if (typeof v === 'string') return v
+                          if (v && typeof v === 'object') return v.word || v.term || v.name || JSON.stringify(v)
+                          return String(v)
+                        })
+                        .filter(Boolean)
+                        .join(', ')
+                    } else if (genData.lesson.vocab && typeof genData.lesson.vocab === 'string') {
+                      vocab = genData.lesson.vocab
+                    }
                     
-                    const notes = genData.lesson.teaching_notes || 'None provided'
+                    let notes = 'None provided'
+                    if (genData.lesson.teaching_notes && genData.lesson.teaching_notes.trim()) {
+                      notes = genData.lesson.teaching_notes.length > 150 
+                        ? genData.lesson.teaching_notes.substring(0, 150) + '...'
+                        : genData.lesson.teaching_notes
+                    }
                     
                     interceptResult.response = `The lesson "${genData.lesson.title}" has been successfully generated and validated. The lesson is ready for you to review. Here's an overview of what this lesson includes:
 
