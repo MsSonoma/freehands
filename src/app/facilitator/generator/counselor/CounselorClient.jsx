@@ -511,8 +511,8 @@ export default function CounselorClient() {
           return
         }
 
-        // Start with empty conversation history - don't load stale database data
-        setConversationHistory([])
+        // Load active conversation from database (will be cleared after save/delete)
+        setConversationHistory(Array.isArray(createdSession?.conversation_history) ? createdSession.conversation_history : [])
         setDraftSummary(createdSession?.draft_summary || '')
         setCurrentSessionTokens(createdSession?.token_count || 0)
         setSessionStarted(true)
@@ -536,8 +536,8 @@ export default function CounselorClient() {
         return
       }
 
-      // Start with empty conversation history - don't load stale database data
-      setConversationHistory([])
+      // Load active conversation from database (will be cleared after save/delete)
+      setConversationHistory(Array.isArray(activeSession?.conversation_history) ? activeSession.conversation_history : [])
       setDraftSummary(activeSession?.draft_summary || '')
       setCurrentSessionTokens(activeSession?.token_count || 0)
       setSessionStarted(true)
