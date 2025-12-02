@@ -429,9 +429,8 @@ export default function CounselorClient() {
           if (data.session) {
             setConflictingSession(data.session)
             setShowTakeoverDialog(true)
-            if (Array.isArray(data.session.conversation_history)) {
-              setConversationHistory(data.session.conversation_history)
-            }
+            // DON'T load conversation history here - only during takeover
+            // Loading it here overwrites fresh local conversation with stale database data
             setDraftSummary(data.session.draft_summary || '')
             setCurrentSessionTokens(data.session.token_count || 0)
           }
