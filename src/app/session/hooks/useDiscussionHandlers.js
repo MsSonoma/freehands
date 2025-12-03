@@ -790,8 +790,6 @@ export function useDiscussionHandlers({
 
   // Fill-in-Fun handlers
   const handleFillInFunStart = useCallback(async () => {
-    if (fillInFunUsedThisGate) return;
-    
     try { setShowOpeningActions(false); } catch {}
     setFillInFunState('loading');
     setCanSend(false);
