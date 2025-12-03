@@ -21,8 +21,6 @@ export default function PlatformJumper({ onBack }) {
 
   const gameLoopRef = useRef(null);
   const keysPressed = useRef({});
-  const leftIntervalRef = useRef(null);
-  const rightIntervalRef = useRef(null);
 
   // Orientation detection effect
   useEffect(() => {
@@ -534,54 +532,22 @@ export default function PlatformJumper({ onBack }) {
   }, [gameStarted, gameWon, gameLost, onGround, currentLevel]);
 
   const TouchControls = () => {
-    const moveLeft = () => {
-      setPlayerPos(prevPos => ({
-        x: Math.max(0, prevPos.x - MOVE_SPEED),
-        y: prevPos.y
-      }));
-    };
-
-    const moveRight = () => {
-      setPlayerPos(prevPos => ({
-        x: Math.min(GAME_WIDTH - PLAYER_SIZE, prevPos.x + MOVE_SPEED),
-        y: prevPos.y
-      }));
-    };
-
     const startMovingLeft = () => {
-      if (rightIntervalRef.current) {
-        clearInterval(rightIntervalRef.current);
-        rightIntervalRef.current = null;
-      }
-      if (!leftIntervalRef.current) {
-        moveLeft();
-        leftIntervalRef.current = setInterval(moveLeft, 16);
-      }
+      keysPressed.current['ArrowRight'] = false;
+      keysPressed.current['ArrowLeft'] = true;
     };
 
     const stopMovingLeft = () => {
-      if (leftIntervalRef.current) {
-        clearInterval(leftIntervalRef.current);
-        leftIntervalRef.current = null;
-      }
+      keysPressed.current['ArrowLeft'] = false;
     };
 
     const startMovingRight = () => {
-      if (leftIntervalRef.current) {
-        clearInterval(leftIntervalRef.current);
-        leftIntervalRef.current = null;
-      }
-      if (!rightIntervalRef.current) {
-        moveRight();
-        rightIntervalRef.current = setInterval(moveRight, 16);
-      }
+      keysPressed.current['ArrowLeft'] = false;
+      keysPressed.current['ArrowRight'] = true;
     };
 
     const stopMovingRight = () => {
-      if (rightIntervalRef.current) {
-        clearInterval(rightIntervalRef.current);
-        rightIntervalRef.current = null;
-      }
+      keysPressed.current['ArrowRight'] = false;
     };
 
     const handleJump = () => {
