@@ -213,7 +213,6 @@ export default function CatchCollect({ onBack }) {
   const TouchControls = () => {
     const handleLeftPress = useCallback(() => {
       keysPressed.current['ArrowLeft'] = true;
-      keysPressed.current['ArrowRight'] = false;
     }, []);
     
     const handleLeftRelease = useCallback(() => {
@@ -222,7 +221,6 @@ export default function CatchCollect({ onBack }) {
     
     const handleRightPress = useCallback(() => {
       keysPressed.current['ArrowRight'] = true;
-      keysPressed.current['ArrowLeft'] = false;
     }, []);
     
     const handleRightRelease = useCallback(() => {
