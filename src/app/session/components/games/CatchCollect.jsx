@@ -20,7 +20,8 @@ export default function CatchCollect({ onBack }) {
 
   const gameLoopRef = useRef(null);
   const itemIdCounter = useRef(0);
-  const keysPressed = useRef({});
+  const leftIntervalRef = useRef(null);
+  const rightIntervalRef = useRef(null);
 
   // Orientation detection effect
   useEffect(() => {
@@ -36,7 +37,7 @@ export default function CatchCollect({ onBack }) {
   const BASKET_WIDTH = 80;
   const BASKET_HEIGHT = 60;
   const ITEM_SIZE = 40;
-  const BASKET_SPEED = 20;
+  const BASKET_SPEED = 5;
   const FALL_SPEED = 3;
   const SPAWN_INTERVAL = 1500; // ms between new items
 
@@ -183,6 +184,62 @@ export default function CatchCollect({ onBack }) {
     setBasketX(prev => Math.min(GAME_WIDTH - BASKET_WIDTH / 2, prev + BASKET_SPEED));
   }, [gameStarted, gameOver]);
 
+  const startMovingLeft = useCallback(() => {
+    if (!gameStarted || gameOver) return;
+    // Stop any right movement
+    if (rightIntervalRef.current) {
+      clearInterval(rightIntervalRef.current);
+      rightIntervalRef.current = null;
+    }
+    // Start moving left if not already
+    if (!leftIntervalRef.current) {
+      moveLeft(); // Move immediately
+      leftIntervalRef.current = setInterval(moveLeft, 16); // Continue every ~60fps
+    }
+  }, [gameStarted, gameOver, moveLeft]);
+
+  const stopMovingLeft = useCallback(() => {
+    if (leftIntervalRef.current) {
+      clearInterval(leftIntervalRef.current);
+      leftIntervalRef.current = null;
+    }
+  }, []);
+
+  const startMovingRight = useCallback(() => {
+    if (!gameStarted || gameOver) return;
+    // Stop any left movement
+    if (leftIntervalRef.current) {
+      clearInterval(leftIntervalRef.current);
+      leftIntervalRef.current = null;
+    }
+    // Start moving right if not already
+    if (!rightIntervalRef.current) {
+      moveRight(); // Move immediately
+      rightIntervalRef.current = setInterval(moveRight, 16); // Continue every ~60fps
+    }
+  }, [gameStarted, gameOver, moveRight]);
+
+  const stopMovingRight = useCallback(() => {
+    if (rightIntervalRef.current) {
+      clearInterval(rightIntervalRef.current);
+      rightIntervalRef.current = null;
+    }
+  }, []);
+
+  // Clean up intervals when game ends
+  useEffect(() => {
+    if (gameOver || !gameStarted) {
+      if (leftIntervalRef.current) {
+        clearInterval(leftIntervalRef.current);
+        leftIntervalRef.current = null;
+      }
+      if (rightIntervalRef.current) {
+        clearInterval(rightIntervalRef.current);
+        rightIntervalRef.current = null;
+      }
+    }
+  }, [gameOver, gameStarted]);
+
   const TouchControls = () => {
     return (
     <div style={{
@@ -191,8 +248,12 @@ export default function CatchCollect({ onBack }) {
       gap: '20px'
     }}>
       <button
-        onClick={moveLeft}
-        onTouchStart={(e) => { e.preventDefault(); moveLeft(); }}
+        onMouseDown={startMovingLeft}
+        onMouseUp={stopMovingLeft}
+        onMouseLeave={stopMovingLeft}
+        onTouchStart={(e) => { e.preventDefault(); startMovingLeft(); }}
+        onTouchEnd={(e) => { e.preventDefault(); stopMovingLeft(); }}
+        onTouchCancel={(e) => { e.preventDefault(); stopMovingLeft(); }}
         style={{
           padding: '16px 24px',
           fontSize: '24px',
@@ -208,7 +269,7 @@ export default function CatchCollect({ onBack }) {
           alignItems: 'center',
           justifyContent: 'center',
           fontWeight: 'bold',
-          touchAction: 'manipulation',
+          touchAction: 'none',
           WebkitTouchCallout: 'none',
           WebkitUserSelect: 'none'
         }}
@@ -216,8 +277,12 @@ export default function CatchCollect({ onBack }) {
         ←
       </button>
       <button
-        onClick={moveRight}
-        onTouchStart={(e) => { e.preventDefault(); moveRight(); }}
+        onMouseDown={startMovingRight}
+        onMouseUp={stopMovingRight}
+        onMouseLeave={stopMovingRight}
+        onTouchStart={(e) => { e.preventDefault(); startMovingRight(); }}
+        onTouchEnd={(e) => { e.preventDefault(); stopMovingRight(); }}
+        onTouchCancel={(e) => { e.preventDefault(); stopMovingRight(); }}
         style={{
           padding: '16px 24px',
           fontSize: '24px',
@@ -233,7 +298,7 @@ export default function CatchCollect({ onBack }) {
           alignItems: 'center',
           justifyContent: 'center',
           fontWeight: 'bold',
-          touchAction: 'manipulation',
+          touchAction: 'none',
           WebkitTouchCallout: 'none',
           WebkitUserSelect: 'none'
         }}
