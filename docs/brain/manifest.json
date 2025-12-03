@@ -15,6 +15,23 @@
     "last_updated": "2025-12-02T03:15:00Z",
     "status": "canonical"
   },
+  "timer-system": {
+    "file": "timer-system.md",
+    "systems": [
+      "play timer",
+      "work timer",
+      "timer expiration",
+      "30-second countdown overlay",
+      "play time expired flow",
+      "work phase completion tracking",
+      "golden key timer bonus",
+      "timer state persistence",
+      "Go button override",
+      "first-interaction timer gate"
+    ],
+    "last_updated": "2025-12-03T00:00:00Z",
+    "status": "canonical"
+  },
   "lesson-assessment-architecture": {
     "file": "lesson-assessment-architecture.md",
     "systems": [

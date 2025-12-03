@@ -814,6 +814,9 @@ function SessionPageInner() {
     if (playExpiredPhase) {
       transitionToWorkTimer(playExpiredPhase);
       
+      // Hide play buttons immediately when timer expires to prevent interaction
+      setShowOpeningActions(false);
+      
       // Automatically start the lesson based on the current phase
       try {
         if (playExpiredPhase === 'discussion' || phase === 'discussion' || phase === 'teaching') {
@@ -5381,6 +5384,8 @@ function SessionPageInner() {
     setCaptionIndex,
     setTranscriptSessionId,
     setLoading,
+    setShowPlayTimeExpired,
+    setPlayExpiredPhase,
     // Refs
     restoredSnapshotRef,
     preferHtmlAudioOnceRef,

@@ -22,7 +22,7 @@ import { appendTranscriptSegment } from '../../lib/transcriptsClient';
  *     setStoryPhase, setStoryTranscript,
  *     setTimerPaused, setCurrentTimerMode, setWorkPhaseCompletions,
  *     setTicker, setCaptionSentences, setCaptionIndex, setTranscriptSessionId,
- *     setLoading
+ *     setLoading, setShowPlayTimeExpired, setPlayExpiredPhase
  *   - Refs: preferHtmlAudioOnceRef, forceNextPlaybackRef, activeQuestionBodyRef,
  *     worksheetIndexRef, captionSentencesRef, sessionStartRef, transcriptSegmentStartIndexRef
  *   - Functions: unlockAudioPlayback, startDiscussionStep, teachDefinitions,
@@ -92,6 +92,8 @@ export function useResumeRestart({
   setCaptionIndex,
   setTranscriptSessionId,
   setLoading,
+  setShowPlayTimeExpired,
+  setPlayExpiredPhase,
   // Refs
   restoredSnapshotRef,
   preferHtmlAudioOnceRef,
@@ -513,12 +515,15 @@ export function useResumeRestart({
       });
       setTicker(0);
       setOfferResume(false);
+      // Clear play time expired overlay if showing
+      if (setShowPlayTimeExpired) setShowPlayTimeExpired(false);
+      if (setPlayExpiredPhase) setPlayExpiredPhase(null);
     } catch {}
     // Seed a fresh snapshot of the reset state
     try { setTimeout(() => { try { scheduleSaveSnapshot('restart'); } catch {} }, 60); } catch {}
     // Turn off loading spinner now that restart is complete
     try { setLoading(false); } catch {}
-  }, [lessonParam, lessonData, manifestInfo, effectiveLessonTitle, transcriptSessionId, WORKSHEET_TARGET, TEST_TARGET, abortAllActivity, captionSentencesRef, sessionStartRef, transcriptSegmentStartIndexRef, getSnapshotStorageKey, getAssessmentStorageKey, clearAssessments, setCaptionSentences, setCaptionIndex, setTranscriptSessionId, setShowBegin, setPhase, setSubPhase, setCanSend, setGeneratedWorksheet, setGeneratedTest, setCurrentWorksheetIndex, worksheetIndexRef, setCurrentCompProblem, setCurrentExerciseProblem, setTestUserAnswers, setTestCorrectByIndex, setTestCorrectCount, setTestFinalPercent, setQaAnswersUnlocked, setStoryState, setStorySetupStep, setStoryCharacters, setStorySetting, setStoryPlot, setStoryPhase, setStoryTranscript, setCurrentTimerMode, setWorkPhaseCompletions, setTicker, setOfferResume, scheduleSaveSnapshot, setLoading]);
+  }, [lessonParam, lessonData, manifestInfo, effectiveLessonTitle, transcriptSessionId, WORKSHEET_TARGET, TEST_TARGET, abortAllActivity, captionSentencesRef, sessionStartRef, transcriptSegmentStartIndexRef, getSnapshotStorageKey, getAssessmentStorageKey, clearAssessments, setCaptionSentences, setCaptionIndex, setTranscriptSessionId, setShowBegin, setPhase, setSubPhase, setCanSend, setGeneratedWorksheet, setGeneratedTest, setCurrentWorksheetIndex, worksheetIndexRef, setCurrentCompProblem, setCurrentExerciseProblem, setTestUserAnswers, setTestCorrectByIndex, setTestCorrectCount, setTestFinalPercent, setQaAnswersUnlocked, setStoryState, setStorySetupStep, setStoryCharacters, setStorySetting, setStoryPlot, setStoryPhase, setStoryTranscript, setCurrentTimerMode, setWorkPhaseCompletions, setTicker, setOfferResume, scheduleSaveSnapshot, setLoading, setShowPlayTimeExpired, setPlayExpiredPhase]);
 
   return {
     handleResumeClick,
