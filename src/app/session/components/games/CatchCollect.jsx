@@ -242,13 +242,17 @@ export default function CatchCollect({ onBack }) {
 
   // Global touchend listener as fallback to ensure movement stops
   useEffect(() => {
-    const handleGlobalTouchEnd = () => {
+    const handleGlobalPointerUp = () => {
       stopMovingLeft();
       stopMovingRight();
     };
 
-    window.addEventListener('touchend', handleGlobalTouchEnd);
-    return () => window.removeEventListener('touchend', handleGlobalTouchEnd);
+    window.addEventListener('pointerup', handleGlobalPointerUp);
+    window.addEventListener('pointercancel', handleGlobalPointerUp);
+    return () => {
+      window.removeEventListener('pointerup', handleGlobalPointerUp);
+      window.removeEventListener('pointercancel', handleGlobalPointerUp);
+    };
   }, [stopMovingLeft, stopMovingRight]);
 
   const TouchControls = () => {
@@ -259,22 +263,21 @@ export default function CatchCollect({ onBack }) {
       gap: '20px'
     }}>
       <button
-        onMouseDown={startMovingLeft}
-        onMouseUp={stopMovingLeft}
-        onMouseLeave={stopMovingLeft}
-        onTouchStart={(e) => { 
-          e.preventDefault(); 
-          e.stopPropagation();
-          startMovingLeft(); 
+        onPointerDown={(e) => {
+          e.preventDefault();
+          startMovingLeft();
         }}
-        onTouchEnd={(e) => { 
-          e.preventDefault(); 
-          e.stopPropagation();
-          stopMovingLeft(); 
+        onPointerUp={(e) => {
+          e.preventDefault();
+          stopMovingLeft();
         }}
-        onTouchCancel={(e) => { 
-          e.preventDefault(); 
-          stopMovingLeft(); 
+        onPointerLeave={(e) => {
+          e.preventDefault();
+          stopMovingLeft();
+        }}
+        onPointerCancel={(e) => {
+          e.preventDefault();
+          stopMovingLeft();
         }}
         onContextMenu={(e) => e.preventDefault()}
         style={{
@@ -301,22 +304,21 @@ export default function CatchCollect({ onBack }) {
         ←
       </button>
       <button
-        onMouseDown={startMovingRight}
-        onMouseUp={stopMovingRight}
-        onMouseLeave={stopMovingRight}
-        onTouchStart={(e) => { 
-          e.preventDefault(); 
-          e.stopPropagation();
-          startMovingRight(); 
+        onPointerDown={(e) => {
+          e.preventDefault();
+          startMovingRight();
         }}
-        onTouchEnd={(e) => { 
-          e.preventDefault(); 
-          e.stopPropagation();
-          stopMovingRight(); 
+        onPointerUp={(e) => {
+          e.preventDefault();
+          stopMovingRight();
         }}
-        onTouchCancel={(e) => { 
-          e.preventDefault(); 
-          stopMovingRight(); 
+        onPointerLeave={(e) => {
+          e.preventDefault();
+          stopMovingRight();
+        }}
+        onPointerCancel={(e) => {
+          e.preventDefault();
+          stopMovingRight();
         }}
         onContextMenu={(e) => e.preventDefault()}
         style={{
