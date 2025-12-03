@@ -240,6 +240,17 @@ export default function CatchCollect({ onBack }) {
     }
   }, [gameOver, gameStarted]);
 
+  // Global touchend listener as fallback to ensure movement stops
+  useEffect(() => {
+    const handleGlobalTouchEnd = () => {
+      stopMovingLeft();
+      stopMovingRight();
+    };
+
+    window.addEventListener('touchend', handleGlobalTouchEnd);
+    return () => window.removeEventListener('touchend', handleGlobalTouchEnd);
+  }, [stopMovingLeft, stopMovingRight]);
+
   const TouchControls = () => {
     return (
     <div style={{
@@ -251,9 +262,21 @@ export default function CatchCollect({ onBack }) {
         onMouseDown={startMovingLeft}
         onMouseUp={stopMovingLeft}
         onMouseLeave={stopMovingLeft}
-        onTouchStart={(e) => { e.preventDefault(); startMovingLeft(); }}
-        onTouchEnd={(e) => { e.preventDefault(); stopMovingLeft(); }}
-        onTouchCancel={(e) => { e.preventDefault(); stopMovingLeft(); }}
+        onTouchStart={(e) => { 
+          e.preventDefault(); 
+          e.stopPropagation();
+          startMovingLeft(); 
+        }}
+        onTouchEnd={(e) => { 
+          e.preventDefault(); 
+          e.stopPropagation();
+          stopMovingLeft(); 
+        }}
+        onTouchCancel={(e) => { 
+          e.preventDefault(); 
+          stopMovingLeft(); 
+        }}
+        onContextMenu={(e) => e.preventDefault()}
         style={{
           padding: '16px 24px',
           fontSize: '24px',
@@ -271,7 +294,8 @@ export default function CatchCollect({ onBack }) {
           fontWeight: 'bold',
           touchAction: 'none',
           WebkitTouchCallout: 'none',
-          WebkitUserSelect: 'none'
+          WebkitUserSelect: 'none',
+          WebkitTapHighlightColor: 'transparent'
         }}
       >
         ←
@@ -280,9 +304,21 @@ export default function CatchCollect({ onBack }) {
         onMouseDown={startMovingRight}
         onMouseUp={stopMovingRight}
         onMouseLeave={stopMovingRight}
-        onTouchStart={(e) => { e.preventDefault(); startMovingRight(); }}
-        onTouchEnd={(e) => { e.preventDefault(); stopMovingRight(); }}
-        onTouchCancel={(e) => { e.preventDefault(); stopMovingRight(); }}
+        onTouchStart={(e) => { 
+          e.preventDefault(); 
+          e.stopPropagation();
+          startMovingRight(); 
+        }}
+        onTouchEnd={(e) => { 
+          e.preventDefault(); 
+          e.stopPropagation();
+          stopMovingRight(); 
+        }}
+        onTouchCancel={(e) => { 
+          e.preventDefault(); 
+          stopMovingRight(); 
+        }}
+        onContextMenu={(e) => e.preventDefault()}
         style={{
           padding: '16px 24px',
           fontSize: '24px',
@@ -300,7 +336,8 @@ export default function CatchCollect({ onBack }) {
           fontWeight: 'bold',
           touchAction: 'none',
           WebkitTouchCallout: 'none',
-          WebkitUserSelect: 'none'
+          WebkitUserSelect: 'none',
+          WebkitTapHighlightColor: 'transparent'
         }}
       >
         →
