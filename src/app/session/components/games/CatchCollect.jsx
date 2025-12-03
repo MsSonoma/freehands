@@ -79,16 +79,18 @@ export default function CatchCollect({ onBack }) {
 
     const moveBasket = () => {
       setBasketX(prev => {
-        let newX = prev;
         const leftPressed = keysPressed.current['ArrowLeft'];
         const rightPressed = keysPressed.current['ArrowRight'];
         
-        // Only move if one direction is pressed (not both)
+        let newX = prev;
+        
+        // If both pressed, don't move. If one pressed, move that direction
         if (leftPressed && !rightPressed) {
           newX = prev - BASKET_SPEED;
         } else if (rightPressed && !leftPressed) {
           newX = prev + BASKET_SPEED;
         }
+        // If neither pressed or both pressed, stay at current position
         
         return Math.max(BASKET_WIDTH / 2, Math.min(GAME_WIDTH - BASKET_WIDTH / 2, newX));
       });
@@ -208,19 +210,38 @@ export default function CatchCollect({ onBack }) {
     keysPressed.current = {};
   };
 
-  const TouchControls = () => (
+  const TouchControls = () => {
+    const handleLeftPress = useCallback(() => {
+      keysPressed.current['ArrowLeft'] = true;
+      keysPressed.current['ArrowRight'] = false;
+    }, []);
+    
+    const handleLeftRelease = useCallback(() => {
+      keysPressed.current['ArrowLeft'] = false;
+    }, []);
+    
+    const handleRightPress = useCallback(() => {
+      keysPressed.current['ArrowRight'] = true;
+      keysPressed.current['ArrowLeft'] = false;
+    }, []);
+    
+    const handleRightRelease = useCallback(() => {
+      keysPressed.current['ArrowRight'] = false;
+    }, []);
+
+    return (
     <div style={{
       display: 'flex',
       justifyContent: 'center',
       gap: '20px'
     }}>
       <button
-        onMouseDown={() => keysPressed.current['ArrowLeft'] = true}
-        onMouseUp={() => keysPressed.current['ArrowLeft'] = false}
-        onMouseLeave={() => keysPressed.current['ArrowLeft'] = false}
-        onTouchStart={(e) => { e.preventDefault(); keysPressed.current['ArrowLeft'] = true; }}
-        onTouchEnd={(e) => { e.preventDefault(); keysPressed.current['ArrowLeft'] = false; }}
-        onTouchCancel={(e) => { e.preventDefault(); keysPressed.current['ArrowLeft'] = false; }}
+        onMouseDown={handleLeftPress}
+        onMouseUp={handleLeftRelease}
+        onMouseLeave={handleLeftRelease}
+        onTouchStart={(e) => { e.preventDefault(); handleLeftPress(); }}
+        onTouchEnd={(e) => { e.preventDefault(); handleLeftRelease(); }}
+        onTouchCancel={(e) => { e.preventDefault(); handleLeftRelease(); }}
         style={{
           padding: '16px 24px',
           fontSize: '24px',
@@ -244,12 +265,12 @@ export default function CatchCollect({ onBack }) {
         ←
       </button>
       <button
-        onMouseDown={() => keysPressed.current['ArrowRight'] = true}
-        onMouseUp={() => keysPressed.current['ArrowRight'] = false}
-        onMouseLeave={() => keysPressed.current['ArrowRight'] = false}
-        onTouchStart={(e) => { e.preventDefault(); keysPressed.current['ArrowRight'] = true; }}
-        onTouchEnd={(e) => { e.preventDefault(); keysPressed.current['ArrowRight'] = false; }}
-        onTouchCancel={(e) => { e.preventDefault(); keysPressed.current['ArrowRight'] = false; }}
+        onMouseDown={handleRightPress}
+        onMouseUp={handleRightRelease}
+        onMouseLeave={handleRightRelease}
+        onTouchStart={(e) => { e.preventDefault(); handleRightPress(); }}
+        onTouchEnd={(e) => { e.preventDefault(); handleRightRelease(); }}
+        onTouchCancel={(e) => { e.preventDefault(); handleRightRelease(); }}
         style={{
           padding: '16px 24px',
           fontSize: '24px',
@@ -273,7 +294,8 @@ export default function CatchCollect({ onBack }) {
         →
       </button>
     </div>
-  );
+    );
+  };
 
   return (
     <div style={{
