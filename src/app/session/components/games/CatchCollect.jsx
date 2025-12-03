@@ -10,7 +10,7 @@ export default function CatchCollect({ onBack }) {
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [gameOver, setGameOver] = useState(false);
-  const [basketX, setBasketX] = useState(250); // Center of 600px wide game
+  const [basketX, setBasketX] = useState(300); // Center of 600px wide game
   const [fallingItems, setFallingItems] = useState([]);
   const [gameStarted, setGameStarted] = useState(false);
   const [highScore, setHighScore] = useState(0);
@@ -80,12 +80,16 @@ export default function CatchCollect({ onBack }) {
     const moveBasket = () => {
       setBasketX(prev => {
         let newX = prev;
-        if (keysPressed.current['ArrowLeft']) {
+        const leftPressed = keysPressed.current['ArrowLeft'];
+        const rightPressed = keysPressed.current['ArrowRight'];
+        
+        // Only move if one direction is pressed (not both)
+        if (leftPressed && !rightPressed) {
           newX = prev - BASKET_SPEED;
-        }
-        if (keysPressed.current['ArrowRight']) {
+        } else if (rightPressed && !leftPressed) {
           newX = prev + BASKET_SPEED;
         }
+        
         return Math.max(BASKET_WIDTH / 2, Math.min(GAME_WIDTH - BASKET_WIDTH / 2, newX));
       });
     };
@@ -186,9 +190,10 @@ export default function CatchCollect({ onBack }) {
     setScore(0);
     setLives(3);
     setGameOver(false);
-    setBasketX(250);
+    setBasketX(300);
     setFallingItems([]);
     itemIdCounter.current = 0;
+    keysPressed.current = {};
     setGameStarted(true);
   };
 
@@ -197,7 +202,7 @@ export default function CatchCollect({ onBack }) {
     setScore(0);
     setLives(3);
     setGameOver(false);
-    setBasketX(250);
+    setBasketX(300);
     setFallingItems([]);
     itemIdCounter.current = 0;
     keysPressed.current = {};
