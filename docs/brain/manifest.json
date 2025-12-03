@@ -9,9 +9,28 @@
       "checkpoint gates",
       "cross-device sync",
       "snapshot restore",
-      "first-interaction gate"
+      "first-interaction gate",
+      "complete lesson cleanup"
     ],
-    "last_updated": "2025-01-20T04:30:00Z",
+    "last_updated": "2025-12-02T03:15:00Z",
+    "status": "canonical"
+  },
+  "lesson-assessment-architecture": {
+    "file": "lesson-assessment-architecture.md",
+    "systems": [
+      "lesson assessment generation",
+      "question array persistence",
+      "comprehension questions",
+      "exercise questions",
+      "worksheet generation",
+      "test generation",
+      "atomic restore",
+      "localStorage assessment caching",
+      "buildQAPool",
+      "shuffle arrays",
+      "refresh button"
+    ],
+    "last_updated": "2025-12-02T03:00:00Z",
     "status": "canonical"
   },
   "session-takeover": {
@@ -71,9 +90,11 @@
       "slot policy",
       "VERBATIM cues",
       "comprehension evaluation",
-      "factual accuracy"
+      "factual accuracy",
+      "instruction hardening",
+      "creative features lenient validation"
     ],
-    "last_updated": "2025-11-25T00:00:00Z",
+    "last_updated": "2025-12-02T02:15:00Z",
     "status": "canonical"
   },
   "beta-program": {

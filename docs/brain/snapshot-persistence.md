@@ -8,6 +8,30 @@ Snapshots save at explicit checkpoints only. No autosave, no polling, no drift c
 
 **Scope:** This document covers snapshot saves and restores for lesson state persistence. For session ownership and device conflict detection, see [session-takeover.md](session-takeover.md).
 
+## Complete Lesson Cleanup
+
+When user clicks "Complete Lesson" button:
+
+1. **Set prevention flag** - `window.__PREVENT_SNAPSHOT_SAVE__ = true` blocks any snapshot saves during cleanup
+2. **Clear assessments** - `clearAssessments()` removes all 4 generated arrays (comprehension, exercise, worksheet, test) from localStorage and database
+3. **Clear snapshots** - `clearSnapshot()` removes resume state from localStorage and database using all possible key variations
+4. **Clear timer state** - Remove phase-based timer states from sessionStorage
+5. **Clear golden key** - Remove active golden key for this lesson if used
+6. **Save transcript** - Persist final transcript segment to Supabase Storage
+7. **Navigate away** - Redirect to /learn/lessons
+
+The prevention flag ensures no snapshot saves occur between clicking Complete Lesson and finishing cleanup. This prevents the lesson from showing "Continue" instead of "Start Lesson" on next visit.
+
+### Snapshot Save Guard
+
+`saveSnapshot()` checks `window.__PREVENT_SNAPSHOT_SAVE__` flag and returns `{success: false, blocked: true}` if set. This prevents race conditions where:
+- User clicks Complete Lesson
+- Snapshot auto-save triggers before clearSnapshot completes
+- Snapshot persists with `phase: 'congrats'`
+- Next visit shows "Continue" and loads to congrats screen
+
+With guard in place, completion cleanup is atomic - either all persistence cleared or none.
+
 ## How It Works
 
 ### Save Strategy: Dual Write

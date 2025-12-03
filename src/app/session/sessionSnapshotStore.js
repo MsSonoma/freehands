@@ -270,9 +270,16 @@ export async function getStoredSnapshot(lessonKey, { learnerId } = {}) {
 
 export async function saveSnapshot(lessonKey, snapshot, { learnerId, browserSessionId } = {}) {
   if (typeof window === 'undefined') return { success: false };
+  
+  // CRITICAL: Respect completion flag to prevent snapshot saves during lesson completion cleanup
+  if (typeof window !== 'undefined' && window.__PREVENT_SNAPSHOT_SAVE__) {
+    console.log('[SNAPSHOT SAVE] BLOCKED - lesson completion in progress');
+    return { success: false, blocked: true };
+  }
+  
   const payload = normalizeSnapshot({ ...(snapshot || {}), savedAt: new Date().toISOString() });
   
-  console.log('[SNAPSHOT SAVE] Attempting save - learnerId:', learnerId, 'lessonKey:', lessonKey, 'sessionId:', browserSessionId);
+  console.log('[SNAPSHOT SAVE] Attempting save - learnerId:', learnerId, 'lessonKey:', lessonKey, 'sessionId:', browserSessionId, 'phase:', payload.phase, 'testFinalPercent:', payload.testFinalPercent);
   
   // Save to localStorage IMMEDIATELY for instant restore on refresh
   try {
@@ -366,7 +373,31 @@ export async function saveSnapshot(lessonKey, snapshot, { learnerId, browserSess
 
 export async function clearSnapshot(lessonKey, { learnerId } = {}) {
   if (typeof window === 'undefined') return;
-  // Delete from server only (no localStorage)
+  
+  console.log('[SNAPSHOT CLEAR] Starting clear for lessonKey:', lessonKey, 'learnerId:', learnerId);
+  
+  // CRITICAL: Delete from localStorage first (this is what loads on refresh!)
+  // Try multiple possible localStorage key formats
+  const lsKeys = [
+    `atomic_snapshot:${learnerId}:${lessonKey}`,
+    `atomic_snapshot:${learnerId}:${lessonKey}.json`,
+    `snapshot:${learnerId}:${lessonKey}`,
+    `lesson_snapshot:${lessonKey}`,
+  ];
+  
+  for (const lsKey of lsKeys) {
+    try {
+      const existing = localStorage.getItem(lsKey);
+      if (existing) {
+        localStorage.removeItem(lsKey);
+        console.log('[SNAPSHOT CLEAR] localStorage REMOVED:', lsKey);
+      }
+    } catch (e) {
+      console.error('[SNAPSHOT CLEAR] localStorage removal failed for', lsKey, e);
+    }
+  }
+  
+  // Delete from server database
   try {
     const supabaseMod = await import('@/app/lib/supabaseClient');
     const supabase = supabaseMod.getSupabaseClient?.();
@@ -376,11 +407,16 @@ export async function clearSnapshot(lessonKey, { learnerId } = {}) {
       const token = session?.access_token;
       if (token) {
         const url = `/api/snapshots?learner_id=${encodeURIComponent(learnerId)}&lesson_key=${encodeURIComponent(lessonKey)}`;
-        await fetch(url, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+        const response = await fetch(url, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+        console.log('[SNAPSHOT CLEAR] Database delete response:', response.ok ? 'success' : `failed (${response.status})`);
+      } else {
+        console.warn('[SNAPSHOT CLEAR] No auth token for database delete');
       }
+    } else {
+      console.warn('[SNAPSHOT CLEAR] Skipping database delete - supabase:', !!supabase, 'hasEnv:', hasEnv, 'learnerId:', learnerId);
     }
   } catch (e) {
-    // Silent error handling
+    console.error('[SNAPSHOT CLEAR] Database deletion failed:', e);
   }
 }
 

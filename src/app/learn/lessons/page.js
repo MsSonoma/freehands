@@ -37,10 +37,15 @@ function snapshotHasMeaningfulProgress(snapshot) {
   const subPhase = snapshot.subPhase || 'greeting'
   const resume = snapshot.resume || null
 
+  // CRITICAL: Don't treat 'congrats' or 'test' as meaningful progress
+  // Lesson is complete - no point resuming to "Complete Lesson" button
+  // Test phase includes both in-progress tests AND completed tests (testFinalPercent may be null)
+  if (phase === 'congrats' || phase === 'test') return false
+
   if (snapshot.showBegin === false) return true
   if (snapshot.qaAnswersUnlocked) return true
 
-  const progressedPhases = new Set(['teaching', 'comprehension', 'exercise', 'worksheet', 'test', 'congrats'])
+  const progressedPhases = new Set(['teaching', 'comprehension', 'exercise', 'worksheet'])
   if (progressedPhases.has(phase)) return true
   if (resume && typeof resume === 'object') {
     if (resume.phase && progressedPhases.has(resume.phase)) return true

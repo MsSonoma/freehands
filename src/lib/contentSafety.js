@@ -15,25 +15,23 @@
  * This is a first-pass filter before LLM moderation.
  */
 const BANNED_KEYWORDS = [
-  // Violence & weapons
-  'kill', 'murder', 'death', 'die', 'weapon', 'gun', 'knife', 'bomb', 'blood',
-  'violence', 'fight', 'attack', 'hurt', 'stab', 'shoot',
+  // Extreme violence (removed: death, die, fight, attack, hurt - too common in educational contexts)
+  'kill', 'murder', 'stab', 'shoot',
   
-  // Sexual content
-  'sex', 'naked', 'nude', 'porn', 'xxx',
+  // Sexual content (removed: naked - common in art/history contexts)
+  'sex', 'nude', 'porn', 'xxx',
   
-  // Drugs & alcohol
-  'drug', 'cocaine', 'heroin', 'meth', 'weed', 'marijuana', 'alcohol', 'beer', 
-  'wine', 'drunk', 'high',
+  // Drugs (removed: alcohol, beer, wine - common in history/culture lessons)
+  'cocaine', 'heroin', 'meth',
   
-  // Profanity (sample - extend as needed)
-  'fuck', 'shit', 'damn', 'hell', 'ass', 'bitch', 'bastard', 'crap',
+  // Profanity (removed: hell, damn, ass, crap - too common in normal speech)
+  'fuck', 'shit', 'bitch', 'bastard',
   
-  // Hate speech
-  'hate', 'racist', 'nazi',
+  // Hate speech (removed: hate - too common in normal contexts like "I hate broccoli")
+  'nazi',
   
   // Personal info harvesting
-  'address', 'phone number', 'social security', 'credit card', 'password',
+  'phone number', 'social security', 'credit card', 'password',
   'bank account',
   
   // Prompt injection patterns
@@ -113,21 +111,24 @@ export function validateInput(text, feature = 'general') {
     return { safe: true, reason: '', sanitized: '' }
   }
   
-  // Check for banned keywords
-  if (containsBannedKeywords(sanitized)) {
-    return { 
-      safe: false, 
-      reason: 'banned_keyword',
-      sanitized 
-    }
-  }
-  
-  // Check for prompt injection
+  // Check for prompt injection (always block)
   if (detectPromptInjection(sanitized)) {
     return { 
       safe: false, 
       reason: 'prompt_injection',
       sanitized 
+    }
+  }
+  
+  // Only check banned keywords for non-creative features
+  // Creative features (poem, story) rely on instruction hardening instead
+  if (feature !== 'poem' && feature !== 'story') {
+    if (containsBannedKeywords(sanitized)) {
+      return { 
+        safe: false, 
+        reason: 'banned_keyword',
+        sanitized 
+      }
     }
   }
   
@@ -250,18 +251,25 @@ ${originalInstructions}`.trim()
 /**
  * Validate LLM response before sending to child
  * Returns { safe: boolean, reason: string }
+ * @param {boolean} skipModeration - Skip OpenAI Moderation API (for creative features like Poem/Story)
  */
-export async function validateOutput(text, apiKey) {
+export async function validateOutput(text, apiKey, skipModeration = false) {
   if (!text) {
     return { safe: true, reason: '' }
   }
   
-  // Quick keyword check
+  // Quick keyword check (always run - lightweight)
   if (containsBannedKeywords(text)) {
     return { safe: false, reason: 'output_contains_banned_keyword' }
   }
   
-  // Full moderation check
+  // Skip OpenAI Moderation API for creative features (too strict - flags "pajamas" as sexual)
+  // Instruction hardening + keyword check is sufficient for Poem/Story
+  if (skipModeration) {
+    return { safe: true, reason: '' }
+  }
+  
+  // Full moderation check (only for Ask feature and other non-creative content)
   const moderation = await checkContentModeration(text, apiKey)
   if (moderation.flagged) {
     return { 

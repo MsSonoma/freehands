@@ -1289,7 +1289,7 @@ export default function CounselorClient() {
                       file: genData.lesson.file,
                       isGenerated: true,
                       vocab: genData.lesson.vocab || [],
-                      teaching_notes: genData.lesson.teaching_notes || ''
+                      teaching_notes: genData.lesson.teachingNotes || genData.lesson.teaching_notes || ''
                     }
                     
                     // Update interceptor response with post-generation prompt
@@ -1308,10 +1308,11 @@ export default function CounselorClient() {
                     }
                     
                     let notes = 'None provided'
-                    if (genData.lesson.teaching_notes && genData.lesson.teaching_notes.trim()) {
-                      notes = genData.lesson.teaching_notes.length > 150 
-                        ? genData.lesson.teaching_notes.substring(0, 150) + '...'
-                        : genData.lesson.teaching_notes
+                    const teachingNotes = genData.lesson.teachingNotes || genData.lesson.teaching_notes || ''
+                    if (teachingNotes && teachingNotes.trim()) {
+                      notes = teachingNotes.length > 150 
+                        ? teachingNotes.substring(0, 150) + '...'
+                        : teachingNotes
                     }
                     
                     interceptResult.response = `The lesson "${genData.lesson.title}" has been successfully generated and validated. The lesson is ready for you to review. Here's an overview of what this lesson includes:
@@ -1328,6 +1329,9 @@ Would you like to schedule this lesson for ${learnerName || 'this learner'}?`
                     
                     // Set state to await schedule confirmation
                     interceptorRef.current.state.awaitingInput = 'post_generation_schedule'
+                    
+                    // Dispatch event to refresh lessons overlay
+                    window.dispatchEvent(new CustomEvent('mr-mentor:lesson-generated'))
                   }
                 }
               } catch (err) {

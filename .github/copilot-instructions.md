@@ -11,55 +11,24 @@ Before making changes to core systems:
 
 3. **IMPLEMENT**: Make code changes based on what the USER requested (not your assumptions)
 
-4. **DOCUMENT**: After changes work, ALWAYS check if system needs brain documentation:
-   - If brain file exists: Ask "Should I update [filename] to reflect these changes?"
-   - If NO brain file exists for this system: Create one and update it then present it to the user for approval
-   - NEVER skip documentation for core systems (APIs, flows, persistence, UI patterns, prompt engineering)
-   - If unsure whether system qualifies: ASK, don't assume it's not worth documenting
+4. **DOCUMENT**: After changes work, AUTOMATICALLY update brain documentation:
+   - If brain file exists: Update relevant section (rewrite completely, kill zombies, don't append)
+   - If NO brain file exists for core system: Create one using "How It Works", "What NOT To Do", "Key Files" structure
+   - Core systems: APIs, flows, persistence, authentication, UI patterns, prompt engineering, data schemas, integrations
+   - Update manifest.json (timestamp + keywords for new/updated files)
 
-5. **UPDATE**: Only if user confirms:
-   - If updating existing brain file: rewrite the relevant section completely (kill zombies), don't append
-   - If creating new brain file: use "How It Works", "What NOT To Do", "Key Files" structure
-   - Update manifest.json with new entry or last_updated timestamp
-   - List all relevant systems/keywords in manifest entry
-
-6. **LOG**: Add one line to docs/brain/changelog.md: "Updated {topic}.md: {brief what changed}" or "Created {topic}.md: {brief what it documents}"
-
----
-
-## PRE-FLIGHT CHECKLIST
-
-**Complete BEFORE any code changes to core systems**
-
-When user requests changes to snapshot persistence, teaching flow, comprehension, session tracking, or other core systems:
-
-1. **Show this checklist filled out**:
-   ```
-   BRAIN CHECK:
-   □ Checked manifest.json - relevant file: _______________
-   □ Read brain file - current design summary: _______________
-   □ User request: _______________
-   □ Conflicts with brain? YES/NO - explanation: _______________
-   □ Proceeding with: _______________
-   ```
-
-2. **Wait for user confirmation before writing code**
-
-3. This creates a visible checkpoint and prevents autopilot coding
+5. **LOG**: Include brain changes in changelog.md entry: "Updated {topic}.md section X" or "Created {topic}.md"
 
 ---
 
 ## CRITICAL GUARDRAILS
 
-- **Never write to brain files without user approval (user approval cannot be inferred it must be REQUESTED)**
 - **Never append to brain files** (always rewrite sections completely to kill zombies)
-- **Never create new brain files without user approval** (check manifest first for logical home)
-- **NEVER skip asking about brain documentation when making core system changes**
-- **Core systems requiring documentation**: APIs, flows, persistence, authentication, UI patterns, prompt engineering, data schemas, integrations
-- **If you make code changes and don't mention brain documentation, you violated protocol**
+- **Check manifest first**: if system is already listed, update that file, don't create duplicate
+- **Brain updates are automatic** (like changelog entries - just do them after code changes)
 - **Never trust your memory over what's in the brain file**
 - **If brain file contradicts your understanding, the brain file is correct**
-- **Manifest prevents duplicate files**: if a system is already listed, add to that file, don't create new one
+- **Core systems requiring documentation**: APIs, flows, persistence, authentication, UI patterns, prompt engineering, data schemas, integrations
 
 ---
 

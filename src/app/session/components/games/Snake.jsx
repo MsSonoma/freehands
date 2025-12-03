@@ -148,18 +148,20 @@ export default function Snake({ onExit }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [gameStarted, gameOver]);
 
-  // Touch/Click controls
+  // Touch/Click controls - use ref to ensure immediate response
   const handleDirectionClick = useCallback((newDir) => {
     if (!gameStarted || gameOver) return;
 
-    setDirection((currentDir) => {
-      // Prevent 180-degree turns
-      if (newDir === DIRECTION.UP && currentDir === DIRECTION.DOWN) return currentDir;
-      if (newDir === DIRECTION.DOWN && currentDir === DIRECTION.UP) return currentDir;
-      if (newDir === DIRECTION.LEFT && currentDir === DIRECTION.RIGHT) return currentDir;
-      if (newDir === DIRECTION.RIGHT && currentDir === DIRECTION.LEFT) return currentDir;
-      return newDir;
-    });
+    const currentDir = directionRef.current;
+    
+    // Prevent 180-degree turns
+    if (newDir === DIRECTION.UP && currentDir === DIRECTION.DOWN) return;
+    if (newDir === DIRECTION.DOWN && currentDir === DIRECTION.UP) return;
+    if (newDir === DIRECTION.LEFT && currentDir === DIRECTION.RIGHT) return;
+    if (newDir === DIRECTION.RIGHT && currentDir === DIRECTION.LEFT) return;
+    
+    directionRef.current = newDir;
+    setDirection(newDir);
   }, [gameStarted, gameOver]);
 
   // Start screen
@@ -286,77 +288,97 @@ export default function Snake({ onExit }) {
     <div style={{
       display: 'grid',
       gridTemplateColumns: 'repeat(3, 1fr)',
-      gap: '4px',
-      width: '120px'
+      gap: '8px',
+      width: '180px'
     }}>
       <div></div>
       <button
+        onMouseDown={(e) => { e.preventDefault(); handleDirectionClick(DIRECTION.UP); }}
         onTouchStart={(e) => { e.preventDefault(); handleDirectionClick(DIRECTION.UP); }}
-        onClick={() => handleDirectionClick(DIRECTION.UP)}
+        onTouchEnd={(e) => { e.preventDefault(); }}
         style={{
-          padding: '8px',
-          fontSize: '16px',
+          padding: '12px',
+          fontSize: '24px',
           background: '#10b981',
           color: 'white',
           border: 'none',
-          borderRadius: '4px',
+          borderRadius: '8px',
           cursor: 'pointer',
           userSelect: 'none',
-          height: '40px'
+          height: '56px',
+          fontWeight: 'bold',
+          touchAction: 'none',
+          WebkitTouchCallout: 'none',
+          WebkitUserSelect: 'none'
         }}
       >
         ↑
       </button>
       <div></div>
       <button
+        onMouseDown={(e) => { e.preventDefault(); handleDirectionClick(DIRECTION.LEFT); }}
         onTouchStart={(e) => { e.preventDefault(); handleDirectionClick(DIRECTION.LEFT); }}
-        onClick={() => handleDirectionClick(DIRECTION.LEFT)}
+        onTouchEnd={(e) => { e.preventDefault(); }}
         style={{
-          padding: '8px',
-          fontSize: '16px',
+          padding: '12px',
+          fontSize: '24px',
           background: '#10b981',
           color: 'white',
           border: 'none',
-          borderRadius: '4px',
+          borderRadius: '8px',
           cursor: 'pointer',
           userSelect: 'none',
-          height: '40px'
+          height: '56px',
+          fontWeight: 'bold',
+          touchAction: 'none',
+          WebkitTouchCallout: 'none',
+          WebkitUserSelect: 'none'
         }}
       >
         ←
       </button>
       <div></div>
       <button
+        onMouseDown={(e) => { e.preventDefault(); handleDirectionClick(DIRECTION.RIGHT); }}
         onTouchStart={(e) => { e.preventDefault(); handleDirectionClick(DIRECTION.RIGHT); }}
-        onClick={() => handleDirectionClick(DIRECTION.RIGHT)}
+        onTouchEnd={(e) => { e.preventDefault(); }}
         style={{
-          padding: '8px',
-          fontSize: '16px',
+          padding: '12px',
+          fontSize: '24px',
           background: '#10b981',
           color: 'white',
           border: 'none',
-          borderRadius: '4px',
+          borderRadius: '8px',
           cursor: 'pointer',
           userSelect: 'none',
-          height: '40px'
+          height: '56px',
+          fontWeight: 'bold',
+          touchAction: 'none',
+          WebkitTouchCallout: 'none',
+          WebkitUserSelect: 'none'
         }}
       >
         →
       </button>
       <div></div>
       <button
+        onMouseDown={(e) => { e.preventDefault(); handleDirectionClick(DIRECTION.DOWN); }}
         onTouchStart={(e) => { e.preventDefault(); handleDirectionClick(DIRECTION.DOWN); }}
-        onClick={() => handleDirectionClick(DIRECTION.DOWN)}
+        onTouchEnd={(e) => { e.preventDefault(); }}
         style={{
-          padding: '8px',
-          fontSize: '16px',
+          padding: '12px',
+          fontSize: '24px',
           background: '#10b981',
           color: 'white',
           border: 'none',
-          borderRadius: '4px',
+          borderRadius: '8px',
           cursor: 'pointer',
           userSelect: 'none',
-          height: '40px'
+          height: '56px',
+          fontWeight: 'bold',
+          touchAction: 'none',
+          WebkitTouchCallout: 'none',
+          WebkitUserSelect: 'none'
         }}
       >
         ↓

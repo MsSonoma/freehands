@@ -138,11 +138,6 @@ export default function LessonsOverlay({ learnerId }) {
   )
 
   const loadLessons = useCallback(async (force = false) => {
-    if (!force && Object.keys(allLessons).length > 0) {
-      setLoading(false)
-      return
-    }
-
     setLoading(true)
     setLoadError(false)
     try {
@@ -215,7 +210,7 @@ export default function LessonsOverlay({ learnerId }) {
     } finally {
       setLoading(false)
     }
-  }, [allLessons])
+  }, [])
 
   // Auto-retry on error with exponential backoff
   useEffect(() => {
@@ -670,8 +665,9 @@ export default function LessonsOverlay({ learnerId }) {
       setGenerationProgress('Complete!')
       setTimeout(() => setGenerationProgress(''), 1000)
       
-      const allImages = [...visualAidsImages, ...newImages]
-      await saveVisualAidsData(allImages, newCount)
+      // Don't save yet - wait for user to select and save from carousel
+      // const allImages = [...visualAidsImages, ...newImages]
+      // await saveVisualAidsData(allImages, newCount)
       
       if (newImages.length > 0) {
         setShowVisualAidsCarousel(true)
@@ -731,7 +727,8 @@ export default function LessonsOverlay({ learnerId }) {
       setGenerationProgress('Complete!')
       setTimeout(() => setGenerationProgress(''), 1000)
       
-      await saveVisualAidsData(allImages, newCount)
+      // Don't save yet - wait for user to select and save from carousel
+      // await saveVisualAidsData(allImages, newCount)
     } catch (err) {
       setVisualAidsError(err.message || 'Failed to generate more visual aids')
       setGenerationProgress('')
@@ -759,7 +756,8 @@ export default function LessonsOverlay({ learnerId }) {
 
       const allImages = [...visualAidsImages, newImage]
       setVisualAidsImages(allImages)
-      await saveVisualAidsData(allImages, generationCount)
+      // Don't save yet - wait for user to select and save from carousel
+      // await saveVisualAidsData(allImages, generationCount)
       
       return newImage
     } catch (err) {

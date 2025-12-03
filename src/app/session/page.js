@@ -1225,7 +1225,7 @@ function SessionPageInner() {
       return;
     }
   }, [phase, subPhase, currentCompProblem, isSpeaking, canSend]);
-
+  
   // Persist comprehension/exercise pools whenever they are initialized or change length (e.g., after consuming an item)
   useEffect(() => {
     const storageKey = getAssessmentStorageKey();
@@ -1237,14 +1237,14 @@ function SessionPageInner() {
         const payload = {
           worksheet: generatedWorksheet || [],
           test: generatedTest || [],
-          comprehension: Array.isArray(compPool) ? compPool : [],
-          exercise: Array.isArray(exercisePool) ? exercisePool : [],
+          comprehension: generatedComprehension || [],
+          exercise: generatedExercise || [],
         };
         saveAssessments(storageKey, payload, { learnerId: lid });
       } catch {}
     }, 150);
     return () => clearTimeout(t);
-  }, [compPool?.length, exercisePool?.length]);
+  }, [generatedComprehension?.length, generatedExercise?.length]);
   const [exerciseSkippedAwaitBegin, setExerciseSkippedAwaitBegin] = useState(false); // flag: exercise reached via skip and needs explicit begin
   const [worksheetSkippedAwaitBegin, setWorksheetSkippedAwaitBegin] = useState(false); // flag: worksheet reached via skip and needs enriched intro
   // Comprehension awaiting-begin lock to ignore late replies during skip/transition
@@ -1732,7 +1732,29 @@ function SessionPageInner() {
   }, [lessonData, lessonFilePath, subjectParam, lessonFilename, subjectFolderSegment]);
 
   // Build a normalized QA pool for comprehension/exercise
-  const buildQAPool = useCallback((dataOverride = null) => buildQAPoolUtil(dataOverride || lessonData, subjectParam), [lessonData, subjectParam]);
+  // CRITICAL: Validate lessonData matches current lesson to prevent content confusion
+  const buildQAPool = useCallback((dataOverride = null) => {
+    const sourceData = dataOverride || lessonData;
+    
+    // Validate: if lessonParam is set, ensure lessonData matches before building pool
+    // Prevents using stale lessonData from previous lesson during lesson transitions
+    if (lessonParam && sourceData && !dataOverride) {
+      const dataTitle = (sourceData.title || sourceData.lessonTitle || '').toLowerCase().trim();
+      const dataFilename = (sourceData.filename || '').toLowerCase().trim();
+      const paramLower = lessonParam.toLowerCase().trim();
+      
+      // Check if lesson data matches current lesson parameter
+      const titleMatch = dataTitle && (dataTitle.includes(paramLower) || paramLower.includes(dataTitle));
+      const filenameMatch = dataFilename && (dataFilename.includes(paramLower) || paramLower.includes(dataFilename));
+      
+      if (!titleMatch && !filenameMatch) {
+        console.warn('[buildQAPool] Lesson data mismatch detected - current param:', lessonParam, 'data title:', dataTitle, 'data filename:', dataFilename);
+        return []; // Return empty pool to force fresh generation
+      }
+    }
+    
+    return buildQAPoolUtil(sourceData, subjectParam);
+  }, [lessonData, subjectParam, lessonParam]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1828,50 +1850,70 @@ function SessionPageInner() {
             const currentFirstTest = subjectParam === 'math' ? null : (Array.isArray(data.test) && data.test.length ? data.test[0].prompt : null);
             const storedFirstTest = subjectParam === 'math' ? null : (stored && Array.isArray(stored.test) && stored.test.length ? stored.test[0].prompt : null);
             const contentMismatch = lessonContentMismatch || (subjectParam === 'math' ? false : (storedFirstTest && currentFirstTest && storedFirstTest !== currentFirstTest));
-            // Initialize comprehension/exercise pools (prefer persisted; else build fresh)
-            if (stored && Array.isArray(stored.comprehension) && stored.comprehension.length) {
-              setCompPool(stored.comprehension);
-            } else {
-              const initialPool = buildQAPool(data);
-              if (initialPool.length) setCompPool(initialPool);
-            }
-            if (stored && Array.isArray(stored.exercise) && stored.exercise.length) {
-              setExercisePool(stored.exercise);
-            } else {
-              const initialPool = buildQAPool(data);
-              if (initialPool.length) setExercisePool(initialPool);
-            }
+            // REMOVED: pool initialization - arrays are the only source
+            // Atomic restore: either all 4 arrays match lesson OR regenerate all 4 fresh
             setCurrentCompProblem(null);
             setCurrentExerciseProblem(null);
 
-            if (stored && stored.worksheet && stored.test && !contentMismatch) {
-              const wOk = Array.isArray(stored.worksheet) && stored.worksheet.length === WORKSHEET_TARGET;
-              const tOk = Array.isArray(stored.test) && stored.test.length === TEST_TARGET;
-              if (wOk && tOk) {
-                setGeneratedWorksheet(stored.worksheet);
-                setGeneratedTest(stored.test);
-                setCurrentWorksheetIndex(0);
-                worksheetIndexRef.current = 0;
-              } else {
-                // Counts changed since save; ignore stored arrays and regenerate fresh below without clearing persisted sets
-                setGeneratedWorksheet(null);
-                setGeneratedTest(null);
-              }
+            // Atomic all-or-nothing restore: validate all 4 arrays match current lesson
+            const compOk = stored && Array.isArray(stored.comprehension) && stored.comprehension.length > 0;
+            const exOk = stored && Array.isArray(stored.exercise) && stored.exercise.length > 0;
+            const wOk = stored && Array.isArray(stored.worksheet) && stored.worksheet.length === WORKSHEET_TARGET;
+            const tOk = stored && Array.isArray(stored.test) && stored.test.length === TEST_TARGET;
+            
+            if (!contentMismatch && compOk && exOk && wOk && tOk) {
+              // RESTORE all 4 arrays - student continues where they left off
+              setGeneratedComprehension(stored.comprehension);
+              setGeneratedExercise(stored.exercise);
+              setGeneratedWorksheet(stored.worksheet);
+              setGeneratedTest(stored.test);
+              setCurrentWorksheetIndex(0);
+              worksheetIndexRef.current = 0;
             } else {
-              // Content changed or nothing stored: ignore previous arrays and regenerate without clearing persisted sets
+              // REGENERATE all 4 fresh - content mismatch or incomplete data
+              setGeneratedComprehension(null);
+              setGeneratedExercise(null);
               setGeneratedWorksheet(null);
               setGeneratedTest(null);
               setCurrentWorksheetIndex(0);
               worksheetIndexRef.current = 0;
-              worksheetIndexRef.current = 0;
-              // NEW: Immediately generate fresh randomized worksheet/test sets so that
-              // (a) printing and spoken walkthrough always match, even if user downloads before starting
-              // (b) skipping directly to worksheet/test uses the exact same pre-generated arrays
+            }
+            
+            // If regenerating, build fresh arrays now
+            if (!compOk || !exOk || !wOk || !tOk || contentMismatch) {
               const shuffle = shuffleHook;
               const shuffleArr = shuffleArrHook;
               const selectMixed = selectMixedHook;
               let gW = [];
               let gT = [];
+              let gComp = [];
+              let gEx = [];
+              
+              // Generate comprehension and exercise arrays first
+              try {
+                const pool = buildQAPool();
+                const shuffled = Array.isArray(pool) ? (Array.from(pool)) : [];
+                for (let i = shuffled.length - 1; i > 0; i -= 1) {
+                  const j = Math.floor(Math.random() * (i + 1));
+                  [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                const totalNeeded = Math.max(0, (COMPREHENSION_TARGET || 0)) + Math.max(0, (EXERCISE_TARGET || 0));
+                let take = shuffled.slice(0, Math.min(totalNeeded, shuffled.length));
+                gComp = take.slice(0, Math.min(COMPREHENSION_TARGET, take.length));
+                gEx = take.slice(gComp.length, Math.min(gComp.length + EXERCISE_TARGET, take.length));
+                setGeneratedComprehension(gComp);
+                setGeneratedExercise(gEx);
+                setCurrentCompIndex(0);
+                setCurrentExIndex(0);
+              } catch (e) {
+                // Defer to on-the-fly selection if needed
+                setGeneratedComprehension([]);
+                setGeneratedExercise([]);
+                setCurrentCompIndex(0);
+                setCurrentExIndex(0);
+              }
+              
+              // Then generate worksheet and test arrays
               if (subjectParam === 'math') {
                 // REMOVED: reserveSamples - deprecated zombie code
                 const words = reserveWords(WORKSHEET_TARGET + TEST_TARGET);
@@ -1909,7 +1951,7 @@ function SessionPageInner() {
               if (storageKey) {
                 try {
                   const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
-                  await saveAssessments(storageKey, { worksheet: gW, test: gT, comprehension: compPool || [], exercise: exercisePool || [] }, { learnerId: lid });
+                  await saveAssessments(storageKey, { worksheet: gW, test: gT, comprehension: gComp, exercise: gEx }, { learnerId: lid });
                 } catch {}
               }
             }
@@ -4132,14 +4174,8 @@ function SessionPageInner() {
 
   const ensureBaseSessionSetup = useCallback(async () => {
     if (!lessonData) return;
-    // Always ensure QA pools at least once (idempotent refill if empty)
-    if (!compPool.length) {
-      const pool = buildQAPool();
-      if (pool.length) {
-        setCompPool(pool);
-        setExercisePool(pool);
-      }
-    }
+    // REMOVED: pool refill logic - arrays are generated once on lesson load
+    // Questions come from generatedComprehension/generatedExercise only
   // If assessments already generated, nothing further to do
     if (generatedWorksheet && generatedTest) return;
   // Try stored assessments first when id is available
@@ -4408,40 +4444,14 @@ function SessionPageInner() {
     // Start the discussion play timer
     startPhasePlayTimer('discussion');
 
-    // Non-blocking: load targets and generate pools in the background
+    // Non-blocking: load targets in the background
     // so Opening can start speaking right away.
     (async () => {
       try {
         await ensureRuntimeTargets(true); // Force fresh reload of targets
         ensureBaseSessionSetup();
-        // Build ephemeral provided question sets for comprehension and exercise
-        try {
-          const pool = buildQAPool();
-          const shuffled = Array.isArray(pool) ? (Array.from(pool)) : [];
-          for (let i = shuffled.length - 1; i > 0; i -= 1) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-          }
-          const totalNeeded = Math.max(0, (COMPREHENSION_TARGET || 0)) + Math.max(0, (EXERCISE_TARGET || 0));
-          // Don't duplicate questions - use only what's available
-          let take = shuffled.slice(0, Math.min(totalNeeded, shuffled.length));
-          const compArr = take.slice(0, Math.min(COMPREHENSION_TARGET, take.length));
-          const exArr = take.slice(compArr.length, Math.min(compArr.length + EXERCISE_TARGET, take.length));
-          setGeneratedComprehension(compArr);
-          setGeneratedExercise(exArr);
-          setCurrentCompIndex(0);
-          setCurrentExIndex(0);
-          setCurrentCompProblem(null);
-          setCurrentExerciseProblem(null);
-        } catch (e) {
-          // Defer to on-the-fly selection if needed
-          setGeneratedComprehension(null);
-          setGeneratedExercise(null);
-          setCurrentCompIndex(0);
-          setCurrentExIndex(0);
-          setCurrentCompProblem(null);
-          setCurrentExerciseProblem(null);
-        }
+        // REMOVED: ephemeral question set generation - now done atomically during lesson load
+        // All 4 arrays (comprehension, exercise, worksheet, test) generated together or restored together
       } catch (e) {
         // ensureRuntimeTargets failed
       }
@@ -5695,21 +5705,14 @@ function SessionPageInner() {
       // Ensure a current problem; if none, select one. If no input, just speak the question and return.
       let problem = currentCompProblem;
       if (!problem) {
-        // Try generated list first (now includes SA questions)
+        // Use generated array only - no fallbacks, no pools
         let pick = null;
         if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
           pick = generatedComprehension[currentCompIndex];
           setCurrentCompIndex(currentCompIndex + 1);
         }
-        // REMOVED: drawSampleUnique fallback - deprecated zombie code
-        if (!pick && compPool.length) {
-          pick = compPool[0];
-          setCompPool(compPool.slice(1));
-        }
-        if (!pick) {
-          const refilled = buildQAPool();
-          if (Array.isArray(refilled) && refilled.length) { pick = refilled[0]; setCompPool(refilled.slice(1)); }
-        }
+        // REMOVED: pool fallback logic - arrays are source of truth
+        // If array exhausted, phase is complete
         if (pick) {
           problem = pick;
           setCurrentCompProblem(pick);
@@ -6470,6 +6473,15 @@ function SessionPageInner() {
 
   // Shared Complete Lesson handler used by VideoPanel (and any other triggers)
   const onCompleteLesson = useCallback(async () => {
+    // CRITICAL: Stop any pending snapshot saves FIRST, before any state changes
+    // State changes trigger useEffect which can save snapshots
+    if (typeof window !== 'undefined') {
+      try {
+        window.__PREVENT_SNAPSHOT_SAVE__ = true;
+        console.log('[COMPLETE LESSON] Prevention flag set - blocking all snapshot saves');
+      } catch {}
+    }
+
     // Prevent multiple simultaneous completions
     if (completionInProgressRef.current) {
       return;
@@ -6575,22 +6587,37 @@ function SessionPageInner() {
         const snapshotKeys = new Set();
         try {
           const key = getSnapshotStorageKey();
-          if (key) snapshotKeys.add(key);
+          if (key) {
+            console.log('[COMPLETE LESSON] Snapshot key (default):', key);
+            snapshotKeys.add(key);
+          }
         } catch {}
         try {
           const key = getSnapshotStorageKey({ param: lessonParam });
-          if (key) snapshotKeys.add(key);
+          if (key) {
+            console.log('[COMPLETE LESSON] Snapshot key (param):', key);
+            snapshotKeys.add(key);
+          }
         } catch {}
         try {
           const key = getSnapshotStorageKey({ manifest: manifestInfo });
-          if (key) snapshotKeys.add(key);
+          if (key) {
+            console.log('[COMPLETE LESSON] Snapshot key (manifest):', key);
+            snapshotKeys.add(key);
+          }
         } catch {}
         try {
           if (lessonData?.id) {
             const key = getSnapshotStorageKey({ data: lessonData });
-            if (key) snapshotKeys.add(key);
+            if (key) {
+              console.log('[COMPLETE LESSON] Snapshot key (lessonData):', key);
+              snapshotKeys.add(key);
+            }
           }
         } catch {}
+
+        console.log('[COMPLETE LESSON] All snapshot keys to clear:', Array.from(snapshotKeys));
+        console.log('[COMPLETE LESSON] Learner ID:', storageLearnerId);
 
         for (const key of snapshotKeys) {
           try { await clearSnapshot(key, { learnerId: storageLearnerId }); } catch {}

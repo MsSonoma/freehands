@@ -246,6 +246,9 @@ export default function LessonMakerPage(){
         setMessage(prev => prev + `\n\nNote: Storage warning: ${js.storageError}`)
       }
       
+      // Notify lessons overlay to refresh
+      window.dispatchEvent(new CustomEvent('mr-mentor:lesson-generated'))
+      
     } catch (e) {
       setMessage('Error: ' + (e?.message || String(e)))
       setToast({ message: 'Error generating lesson', type: 'error' })

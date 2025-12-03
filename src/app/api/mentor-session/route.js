@@ -196,20 +196,12 @@ export async function GET(request) {
       })
     }
 
-    // Fetch actual conversation from conversation_drafts to merge with session
-    // Mr. Mentor conversations have NULL learner_id (facilitator-only tool)
-    const { data: draftData } = await supabase
-      .from('conversation_drafts')
-      .select('recent_turns, draft_summary')
-      .eq('facilitator_id', user.id)
-      .is('learner_id', null)
-      .maybeSingle()
-
-    // Merge conversation_drafts data into the session
+    // Conversation history is stored in mentor_sessions.conversation_history
+    // Don't merge from conversation_drafts - that's for a different purpose
     const sessionWithConversation = {
       ...activeSession,
-      conversation_history: draftData?.recent_turns || activeSession.conversation_history || [],
-      draft_summary: draftData?.draft_summary || activeSession.draft_summary || ''
+      conversation_history: activeSession.conversation_history || [],
+      draft_summary: activeSession.draft_summary || ''
     }
 
     // Check if the requesting session is the active one
@@ -369,32 +361,26 @@ export async function POST(request) {
         }, { status: 500 })
       }
 
-      // PIN validated, deactivate old session
+      // PIN validated, copy conversation from existing session
+      const conversationToCopy = existingSession.conversation_history || []
+      const draftSummaryToCopy = existingSession.draft_summary || ''
+
+      // Deactivate old session
       const deactivated = await deactivateSessionById(existingSession.id)
 
       if (!deactivated) {
         return Response.json({ error: 'Failed to deactivate previous session' }, { status: 500 })
       }
 
-      // Fetch actual conversation from conversation_drafts table
-      // Mr. Mentor conversations have NULL learner_id (facilitator-only tool)
-      const { data: draftData } = await supabase
-        .from('conversation_drafts')
-        .select('recent_turns, draft_summary')
-        .eq('facilitator_id', user.id)
-        .is('learner_id', null)
-        .maybeSingle()
-
-      const conversationToCopy = draftData?.recent_turns || existingSession.conversation_history || []
-      const draftSummaryToCopy = draftData?.draft_summary || existingSession.draft_summary || ''
-
-      // Create new session WITHOUT conversation_history (conversations live in conversation_drafts)
+      // Create new session with conversation copied from old session
       const { data: newSession, error: createError } = await supabase
         .from('mentor_sessions')
         .insert({
           facilitator_id: user.id,
           session_id: sessionId,
           device_name: deviceName || 'Unknown device',
+          conversation_history: conversationToCopy,
+          draft_summary: draftSummaryToCopy,
           is_active: true,
           last_activity_at: now.toISOString()
         })
@@ -410,13 +396,8 @@ export async function POST(request) {
         }, { status: 500 })
       }
 
-      // Return session with conversation merged from conversation_drafts
       return Response.json({
-        session: {
-          ...newSession,
-          conversation_history: conversationToCopy,
-          draft_summary: draftSummaryToCopy
-        },
+        session: newSession,
         status: 'taken_over',
         message: 'Session taken over successfully'
       })

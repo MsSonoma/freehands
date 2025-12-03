@@ -189,6 +189,19 @@ export function useSnapshotPersistence({
       return;
     }
     
+    // CRITICAL: Don't save snapshots when lesson is complete (congrats phase OR test phase with final results)
+    // No point resuming a completed lesson - it just loads to "Complete Lesson" button again
+    if (phase === 'congrats') {
+      console.log('[SNAPSHOT SAVE] Skipping save - lesson complete (congrats phase)');
+      return;
+    }
+    
+    // Also skip if we're in test phase and showing final results (testFinalPercent is set)
+    if (phase === 'test' && testFinalPercent != null) {
+      console.log('[SNAPSHOT SAVE] Skipping save - test complete, showing final results');
+      return;
+    }
+    
     try {
       const storedKey = getSnapshotStorageKey();
       if (!storedKey || String(storedKey).trim().length === 0) {
@@ -408,11 +421,26 @@ export function useSnapshotPersistence({
           return;
         }
         
+        // DIAGNOSTIC: Log what snapshot we found before any checks
+        console.log('[SNAPSHOT RESTORE] Found snapshot - phase:', snap.phase, 'testFinalPercent:', snap.testFinalPercent, 'snapshotVersion:', snap.snapshotVersion);
+        
         // ATOMIC SNAPSHOT VERSION CHECK: Skip old v1 snapshots from before atomic redesign
         // v1 snapshots have the old signature/reconciliation system that causes drift
         // Only accept v2 (atomic checkpoint) snapshots
         if (!snap.snapshotVersion || snap.snapshotVersion < 2) {
           // Old snapshot found - ignore it and start fresh
+          restoreFoundRef.current = false;
+          restoredSnapshotRef.current = true;
+          try { setOfferResume(false); } catch {}
+          try { setLoading(false); } catch {}
+          return;
+        }
+        
+        // CRITICAL: Skip snapshots from completed lessons (congrats OR test phase)
+        // Test phase snapshots occur when Complete Lesson clicked from results screen
+        // No point resuming - lesson is done, just loads to "Complete Lesson" button
+        if (snap.phase === 'congrats' || snap.phase === 'test') {
+          console.log('[SNAPSHOT RESTORE] Skipping completed lesson snapshot - phase:', snap.phase);
           restoreFoundRef.current = false;
           restoredSnapshotRef.current = true;
           try { setOfferResume(false); } catch {}

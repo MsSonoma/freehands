@@ -40,11 +40,13 @@ export async function POST(req) {
     // Normalize lesson key by stripping folder prefixes (so same lesson from different routes shares visual aids)
     const normalizedLessonKey = lessonKey.replace(/^(generated|facilitator|math|science|language-arts|social-studies|demo)\//, '')
     console.log('[VISUAL_AIDS_SAVE] Normalizing lesson key:', lessonKey, '->', normalizedLessonKey)
+    console.log('[VISUAL_AIDS_SAVE] Received', generatedImages?.length || 0, 'images')
 
     // Download and store ONLY selected images permanently
     // Unselected images are discarded and not saved
     let permanentSelectedImages = []
     const selectedImages = generatedImages.filter(img => img.selected)
+    console.log('[VISUAL_AIDS_SAVE] Filtered to', selectedImages.length, 'selected images')
     
     if (selectedImages && selectedImages.length > 0) {
       console.log('[VISUAL_AIDS_SAVE] Downloading', selectedImages.length, 'selected images...')

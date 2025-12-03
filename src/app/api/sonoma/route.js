@@ -327,7 +327,9 @@ export async function POST(req) {
         msSonomaReply = (c?.text || '').trim()
         
         // CONTENT SAFETY: Validate Anthropic output
-        const outputValidation = await validateOutput(msSonomaReply)
+        // Skip OpenAI Moderation API (too strict - blocks innocent words like "pajamas")
+        // Rely on instruction hardening + lightweight keyword check instead
+        const outputValidation = await validateOutput(msSonomaReply, anthropicKey, true)
         if (!outputValidation.safe) {
           console.warn('[SAFETY] Blocked unsafe Anthropic output:', outputValidation.reason)
           msSonomaReply = getFallbackResponse('output_rejected')
@@ -342,7 +344,9 @@ export async function POST(req) {
       // OpenAI response received
       
       // CONTENT SAFETY: Validate OpenAI output
-      const outputValidation = await validateOutput(msSonomaReply)
+      // Skip OpenAI Moderation API (too strict - blocks innocent words like "pajamas")
+      // Rely on instruction hardening + lightweight keyword check instead
+      const outputValidation = await validateOutput(msSonomaReply, openaiKey, true)
       if (!outputValidation.safe) {
         console.warn('[SAFETY] Blocked unsafe OpenAI output:', outputValidation.reason)
         msSonomaReply = getFallbackResponse('output_rejected')

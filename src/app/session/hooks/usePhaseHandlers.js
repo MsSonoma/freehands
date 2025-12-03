@@ -20,10 +20,9 @@ export function usePhaseHandlers({
   setQaAnswersUnlocked,
   setCanSend,
   setCurrentCompIndex,
-  setCompPool,
+  // REMOVED: setCompPool, setExercisePool - pools eliminated
   setCurrentExerciseProblem,
   setCurrentExIndex,
-  setExercisePool,
   setShowPlayTimeExpired,
   setPlayExpiredPhase,
   
@@ -32,11 +31,10 @@ export function usePhaseHandlers({
   currentCompProblem,
   generatedComprehension,
   currentCompIndex,
-  compPool,
+  // REMOVED: compPool, exercisePool - pools eliminated
   currentExerciseProblem,
   generatedExercise,
   currentExIndex,
-  exercisePool,
   generatedWorksheet,
   generatedTest,
   
@@ -46,8 +44,7 @@ export function usePhaseHandlers({
   
   // Functions
   speakFrontend,
-  // REMOVED: drawSampleUnique - sample array deprecated
-  buildQAPool,
+  // REMOVED: drawSampleUnique, buildQAPool - no refill logic needed
   
   // Phase timer functions
   transitionToWorkTimer
@@ -78,23 +75,7 @@ export function usePhaseHandlers({
         firstComp = generatedComprehension[currentCompIndex];
         setCurrentCompIndex(currentCompIndex + 1);
       }
-      // REMOVED: drawSampleUnique fallback - sample array deprecated
-      if (!firstComp && compPool.length) {
-        firstComp = compPool[0];
-        setCompPool(compPool.slice(1));
-      }
-      if (!firstComp) {
-        const refilled = buildQAPool();
-        if (Array.isArray(refilled) && refilled.length) { firstComp = refilled[0]; setCompPool(refilled.slice(1)); }
-      }
-      if (!firstComp) {
-        if (Array.isArray(generatedComprehension) && generatedComprehension.length) {
-          firstComp = generatedComprehension[currentCompIndex] || generatedComprehension[0];
-          setCurrentCompIndex((currentCompIndex || 0) + 1);
-        } else if (Array.isArray(compPool) && compPool.length) {
-          firstComp = compPool[0]; setCompPool(compPool.slice(1));
-        }
-      }
+      // REMOVED: pool fallback logic - arrays are source of truth, no refill
       if (firstComp) { setCurrentCompProblem(firstComp); item = firstComp; setSubPhase('comprehension-active'); }
     }
     if (!item) { setShowOpeningActions(true); return; }
@@ -107,10 +88,9 @@ export function usePhaseHandlers({
     } catch {}
     setCanSend(true);
   }, [
-    phase, currentCompProblem, generatedComprehension, currentCompIndex, compPool,
+    phase, currentCompProblem, generatedComprehension, currentCompIndex,
     setShowOpeningActions, setCurrentCompProblem, setSubPhase, setQaAnswersUnlocked, setCanSend,
-    setCurrentCompIndex, setCompPool, activeQuestionBodyRef, speakFrontend, buildQAPool, transitionToWorkTimer
-    // REMOVED: drawSampleUnique from deps - sample array deprecated
+    setCurrentCompIndex, activeQuestionBodyRef, speakFrontend, transitionToWorkTimer
   ]);
 
   const handleGoExercise = useCallback(async () => {
@@ -138,9 +118,7 @@ export function usePhaseHandlers({
         first = generatedExercise[currentExIndex];
         setCurrentExIndex(currentExIndex + 1);
       }
-      // REMOVED: drawSampleUnique fallback - sample array deprecated
-      if (!first && exercisePool.length) { const [head, ...rest] = exercisePool; first = head; setExercisePool(rest); }
-      if (!first) { const refilled = buildQAPool(); if (refilled.length) { const [head, ...rest] = refilled; first = head; setExercisePool(rest); } }
+      // REMOVED: pool fallback logic - arrays are source of truth, no refill
       if (first) { setCurrentExerciseProblem(first); item = first; setSubPhase('exercise-start'); }
     }
     if (!item) { setShowOpeningActions(true); return; }
@@ -158,10 +136,9 @@ export function usePhaseHandlers({
     } catch {}
     setCanSend(true);
   }, [
-    phase, currentExerciseProblem, generatedExercise, currentExIndex, exercisePool,
+    phase, currentExerciseProblem, generatedExercise, currentExIndex,
     setShowOpeningActions, setCurrentExerciseProblem, setSubPhase, setQaAnswersUnlocked, setCanSend,
-    setCurrentExIndex, setExercisePool, activeQuestionBodyRef, speakFrontend, buildQAPool, transitionToWorkTimer
-    // REMOVED: drawSampleUnique from deps - sample array deprecated
+    setCurrentExIndex, activeQuestionBodyRef, speakFrontend, transitionToWorkTimer
   ]);
 
   const handleGoWorksheet = useCallback(async () => {

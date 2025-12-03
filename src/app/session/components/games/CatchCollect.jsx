@@ -36,7 +36,7 @@ export default function CatchCollect({ onBack }) {
   const BASKET_WIDTH = 80;
   const BASKET_HEIGHT = 60;
   const ITEM_SIZE = 40;
-  const BASKET_SPEED = 15;
+  const BASKET_SPEED = 8;
   const FALL_SPEED = 3;
   const SPAWN_INTERVAL = 1500; // ms between new items
 
@@ -73,20 +73,24 @@ export default function CatchCollect({ onBack }) {
     return () => clearInterval(spawnTimer);
   }, [gameStarted, gameOver]);
 
-  // Continuous basket movement based on touch controls
+  // Continuous basket movement based on keys/touch
   useEffect(() => {
     if (!gameStarted || gameOver) return;
 
     const moveBasket = () => {
-      if (keysPressed.current['ArrowLeft']) {
-        setBasketX(prev => Math.max(BASKET_WIDTH / 2, prev - BASKET_SPEED));
-      }
-      if (keysPressed.current['ArrowRight']) {
-        setBasketX(prev => Math.min(GAME_WIDTH - BASKET_WIDTH / 2, prev + BASKET_SPEED));
-      }
+      setBasketX(prev => {
+        let newX = prev;
+        if (keysPressed.current['ArrowLeft']) {
+          newX = prev - BASKET_SPEED;
+        }
+        if (keysPressed.current['ArrowRight']) {
+          newX = prev + BASKET_SPEED;
+        }
+        return Math.max(BASKET_WIDTH / 2, Math.min(GAME_WIDTH - BASKET_WIDTH / 2, newX));
+      });
     };
 
-    const movementInterval = setInterval(moveBasket, 1000 / 60);
+    const movementInterval = setInterval(moveBasket, 16); // ~60 FPS
     return () => clearInterval(movementInterval);
   }, [gameStarted, gameOver]);
 
@@ -152,23 +156,31 @@ export default function CatchCollect({ onBack }) {
     };
   }, [gameStarted, gameOver, basketX]);
 
-  // Keyboard controls
+  // Keyboard controls - just track key state
   const handleKeyDown = useCallback((e) => {
     if (gameOver || !gameStarted) return;
 
-    if (e.key === 'ArrowLeft') {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       e.preventDefault();
-      setBasketX(prev => Math.max(BASKET_WIDTH / 2, prev - BASKET_SPEED));
-    } else if (e.key === 'ArrowRight') {
-      e.preventDefault();
-      setBasketX(prev => Math.min(GAME_WIDTH - BASKET_WIDTH / 2, prev + BASKET_SPEED));
+      keysPressed.current[e.key] = true;
     }
   }, [gameOver, gameStarted]);
 
+  const handleKeyUp = useCallback((e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      keysPressed.current[e.key] = false;
+    }
+  }, []);
+
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [handleKeyDown, handleKeyUp]);
 
   const startGame = () => {
     setScore(0);
@@ -188,13 +200,14 @@ export default function CatchCollect({ onBack }) {
     setBasketX(250);
     setFallingItems([]);
     itemIdCounter.current = 0;
+    keysPressed.current = {};
   };
 
   const TouchControls = () => (
     <div style={{
       display: 'flex',
       justifyContent: 'center',
-      gap: '12px'
+      gap: '20px'
     }}>
       <button
         onMouseDown={() => keysPressed.current['ArrowLeft'] = true}
@@ -202,17 +215,25 @@ export default function CatchCollect({ onBack }) {
         onMouseLeave={() => keysPressed.current['ArrowLeft'] = false}
         onTouchStart={(e) => { e.preventDefault(); keysPressed.current['ArrowLeft'] = true; }}
         onTouchEnd={(e) => { e.preventDefault(); keysPressed.current['ArrowLeft'] = false; }}
+        onTouchCancel={(e) => { e.preventDefault(); keysPressed.current['ArrowLeft'] = false; }}
         style={{
-          padding: '8px',
-          fontSize: '18px',
+          padding: '16px 24px',
+          fontSize: '24px',
           background: '#f59e0b',
           color: 'white',
           border: 'none',
-          borderRadius: '4px',
+          borderRadius: '8px',
           cursor: 'pointer',
           userSelect: 'none',
-          width: '40px',
-          height: '40px'
+          width: '80px',
+          height: '60px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 'bold',
+          touchAction: 'none',
+          WebkitTouchCallout: 'none',
+          WebkitUserSelect: 'none'
         }}
       >
         ←
@@ -223,17 +244,25 @@ export default function CatchCollect({ onBack }) {
         onMouseLeave={() => keysPressed.current['ArrowRight'] = false}
         onTouchStart={(e) => { e.preventDefault(); keysPressed.current['ArrowRight'] = true; }}
         onTouchEnd={(e) => { e.preventDefault(); keysPressed.current['ArrowRight'] = false; }}
+        onTouchCancel={(e) => { e.preventDefault(); keysPressed.current['ArrowRight'] = false; }}
         style={{
-          padding: '8px',
-          fontSize: '18px',
+          padding: '16px 24px',
+          fontSize: '24px',
           background: '#f59e0b',
           color: 'white',
           border: 'none',
-          borderRadius: '4px',
+          borderRadius: '8px',
           cursor: 'pointer',
           userSelect: 'none',
-          width: '40px',
-          height: '40px'
+          width: '80px',
+          height: '60px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 'bold',
+          touchAction: 'none',
+          WebkitTouchCallout: 'none',
+          WebkitUserSelect: 'none'
         }}
       >
         →
