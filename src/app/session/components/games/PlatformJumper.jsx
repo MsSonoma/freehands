@@ -721,9 +721,6 @@ export default function PlatformJumper({ onBack }) {
     </div>
     );
   };
-      </div>
-    );
-  };
 
   return (
     <div style={{
