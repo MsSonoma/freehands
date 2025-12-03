@@ -477,7 +477,7 @@ export function useTeachingFlow({
       const ok = await teachDefinitions(true);
       if (ok) {
         setStageRepeats((s) => ({ ...s, definitions: (s.definitions || 0) + 1 }));
-        await promptGateRepeat();
+        // Don't call promptGateRepeat - teachDefinitions already sets awaiting-gate after first sentence
       }
       return;
     }
@@ -500,7 +500,7 @@ export function useTeachingFlow({
       const ok = await teachExamples(true);
       if (ok) {
         setStageRepeats((s) => ({ ...s, examples: (s.examples || 0) + 1 }));
-        await promptGateRepeat();
+        // Don't call promptGateRepeat - teachExamples already sets awaiting-gate after first sentence
       }
       return;
     }

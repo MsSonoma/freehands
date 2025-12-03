@@ -7549,7 +7549,7 @@ function SessionPageInner() {
               // Short-answer or fill-in-the-blank: show Ask button with Back
               return (
                 <div style={containerStyle} aria-label="Ask about the current question">
-                  {askState === 'awaiting-confirmation' && (
+                  {(askState === 'awaiting-confirmation' || askState === 'awaiting-input') && (
                     <button type="button" style={{ ...btnBase, minWidth: 100 }} onClick={handleAskBack}>Back</button>
                   )}
                   <button
