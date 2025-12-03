@@ -36,7 +36,7 @@ export default function CatchCollect({ onBack }) {
   const BASKET_WIDTH = 80;
   const BASKET_HEIGHT = 60;
   const ITEM_SIZE = 40;
-  const BASKET_SPEED = 8;
+  const BASKET_SPEED = 20;
   const FALL_SPEED = 3;
   const SPAWN_INTERVAL = 1500; // ms between new items
 
@@ -71,33 +71,6 @@ export default function CatchCollect({ onBack }) {
     }, SPAWN_INTERVAL);
 
     return () => clearInterval(spawnTimer);
-  }, [gameStarted, gameOver]);
-
-  // Continuous basket movement based on keys/touch
-  useEffect(() => {
-    if (!gameStarted || gameOver) return;
-
-    const moveBasket = () => {
-      setBasketX(prev => {
-        const leftPressed = keysPressed.current['ArrowLeft'];
-        const rightPressed = keysPressed.current['ArrowRight'];
-        
-        let newX = prev;
-        
-        // If both pressed, don't move. If one pressed, move that direction
-        if (leftPressed && !rightPressed) {
-          newX = prev - BASKET_SPEED;
-        } else if (rightPressed && !leftPressed) {
-          newX = prev + BASKET_SPEED;
-        }
-        // If neither pressed or both pressed, stay at current position
-        
-        return Math.max(BASKET_WIDTH / 2, Math.min(GAME_WIDTH - BASKET_WIDTH / 2, newX));
-      });
-    };
-
-    const movementInterval = setInterval(moveBasket, 16); // ~60 FPS
-    return () => clearInterval(movementInterval);
   }, [gameStarted, gameOver]);
 
   // Game loop - move items down and check collisions
@@ -162,31 +135,23 @@ export default function CatchCollect({ onBack }) {
     };
   }, [gameStarted, gameOver, basketX]);
 
-  // Keyboard controls - just track key state
+  // Keyboard controls
   const handleKeyDown = useCallback((e) => {
     if (gameOver || !gameStarted) return;
 
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+    if (e.key === 'ArrowLeft') {
       e.preventDefault();
-      keysPressed.current[e.key] = true;
+      setBasketX(prev => Math.max(BASKET_WIDTH / 2, prev - BASKET_SPEED));
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      setBasketX(prev => Math.min(GAME_WIDTH - BASKET_WIDTH / 2, prev + BASKET_SPEED));
     }
   }, [gameOver, gameStarted]);
 
-  const handleKeyUp = useCallback((e) => {
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-      e.preventDefault();
-      keysPressed.current[e.key] = false;
-    }
-  }, []);
-
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, [handleKeyDown, handleKeyUp]);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 
   const startGame = () => {
     setScore(0);
@@ -195,7 +160,6 @@ export default function CatchCollect({ onBack }) {
     setBasketX(300);
     setFallingItems([]);
     itemIdCounter.current = 0;
-    keysPressed.current = {};
     setGameStarted(true);
   };
 
@@ -207,26 +171,19 @@ export default function CatchCollect({ onBack }) {
     setBasketX(300);
     setFallingItems([]);
     itemIdCounter.current = 0;
-    keysPressed.current = {};
   };
 
-  const TouchControls = () => {
-    const handleLeftPress = useCallback(() => {
-      keysPressed.current['ArrowLeft'] = true;
-    }, []);
-    
-    const handleLeftRelease = useCallback(() => {
-      keysPressed.current['ArrowLeft'] = false;
-    }, []);
-    
-    const handleRightPress = useCallback(() => {
-      keysPressed.current['ArrowRight'] = true;
-    }, []);
-    
-    const handleRightRelease = useCallback(() => {
-      keysPressed.current['ArrowRight'] = false;
-    }, []);
+  const moveLeft = useCallback(() => {
+    if (!gameStarted || gameOver) return;
+    setBasketX(prev => Math.max(BASKET_WIDTH / 2, prev - BASKET_SPEED));
+  }, [gameStarted, gameOver]);
 
+  const moveRight = useCallback(() => {
+    if (!gameStarted || gameOver) return;
+    setBasketX(prev => Math.min(GAME_WIDTH - BASKET_WIDTH / 2, prev + BASKET_SPEED));
+  }, [gameStarted, gameOver]);
+
+  const TouchControls = () => {
     return (
     <div style={{
       display: 'flex',
@@ -234,12 +191,8 @@ export default function CatchCollect({ onBack }) {
       gap: '20px'
     }}>
       <button
-        onMouseDown={handleLeftPress}
-        onMouseUp={handleLeftRelease}
-        onMouseLeave={handleLeftRelease}
-        onTouchStart={(e) => { e.preventDefault(); handleLeftPress(); }}
-        onTouchEnd={(e) => { e.preventDefault(); handleLeftRelease(); }}
-        onTouchCancel={(e) => { e.preventDefault(); handleLeftRelease(); }}
+        onClick={moveLeft}
+        onTouchStart={(e) => { e.preventDefault(); moveLeft(); }}
         style={{
           padding: '16px 24px',
           fontSize: '24px',
@@ -255,7 +208,7 @@ export default function CatchCollect({ onBack }) {
           alignItems: 'center',
           justifyContent: 'center',
           fontWeight: 'bold',
-          touchAction: 'none',
+          touchAction: 'manipulation',
           WebkitTouchCallout: 'none',
           WebkitUserSelect: 'none'
         }}
@@ -263,12 +216,8 @@ export default function CatchCollect({ onBack }) {
         ←
       </button>
       <button
-        onMouseDown={handleRightPress}
-        onMouseUp={handleRightRelease}
-        onMouseLeave={handleRightRelease}
-        onTouchStart={(e) => { e.preventDefault(); handleRightPress(); }}
-        onTouchEnd={(e) => { e.preventDefault(); handleRightRelease(); }}
-        onTouchCancel={(e) => { e.preventDefault(); handleRightRelease(); }}
+        onClick={moveRight}
+        onTouchStart={(e) => { e.preventDefault(); moveRight(); }}
         style={{
           padding: '16px 24px',
           fontSize: '24px',
@@ -284,7 +233,7 @@ export default function CatchCollect({ onBack }) {
           alignItems: 'center',
           justifyContent: 'center',
           fontWeight: 'bold',
-          touchAction: 'none',
+          touchAction: 'manipulation',
           WebkitTouchCallout: 'none',
           WebkitUserSelect: 'none'
         }}
