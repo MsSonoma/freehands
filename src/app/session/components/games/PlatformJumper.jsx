@@ -21,6 +21,8 @@ export default function PlatformJumper({ onBack }) {
 
   const gameLoopRef = useRef(null);
   const keysPressed = useRef({});
+  const leftIntervalRef = useRef(null);
+  const rightIntervalRef = useRef(null);
 
   // Orientation detection effect
   useEffect(() => {
@@ -531,153 +533,194 @@ export default function PlatformJumper({ onBack }) {
     };
   }, [gameStarted, gameWon, gameLost, onGround, currentLevel]);
 
-  const TouchControls = () => {
-    const startMovingLeft = () => {
-      keysPressed.current['ArrowRight'] = false;
-      keysPressed.current['ArrowLeft'] = true;
-    };
+  const moveLeft = useCallback(() => {
+    if (!gameStarted || gameWon || gameLost) return;
+    setPlayerPos(prev => ({ x: Math.max(0, prev.x - MOVE_SPEED), y: prev.y }));
+  }, [gameStarted, gameWon, gameLost]);
 
-    const stopMovingLeft = () => {
-      keysPressed.current['ArrowLeft'] = false;
-    };
+  const moveRight = useCallback(() => {
+    if (!gameStarted || gameWon || gameLost) return;
+    setPlayerPos(prev => ({ x: Math.min(GAME_WIDTH - PLAYER_SIZE, prev.x + MOVE_SPEED), y: prev.y }));
+  }, [gameStarted, gameWon, gameLost]);
 
-    const startMovingRight = () => {
-      keysPressed.current['ArrowLeft'] = false;
-      keysPressed.current['ArrowRight'] = true;
-    };
+  const startMovingLeft = useCallback(() => {
+    if (!gameStarted || gameWon || gameLost) return;
+    if (rightIntervalRef.current) {
+      clearInterval(rightIntervalRef.current);
+      rightIntervalRef.current = null;
+    }
+    if (!leftIntervalRef.current) {
+      moveLeft();
+      leftIntervalRef.current = setInterval(moveLeft, 16);
+    }
+  }, [gameStarted, gameWon, gameLost, moveLeft]);
 
-    const stopMovingRight = () => {
-      keysPressed.current['ArrowRight'] = false;
-    };
+  const stopMovingLeft = useCallback(() => {
+    if (leftIntervalRef.current) {
+      clearInterval(leftIntervalRef.current);
+      leftIntervalRef.current = null;
+    }
+  }, []);
 
-    const handleJump = () => {
-      if (onGround && !isJumping) {
-        setPlayerVelocity(v => ({ ...v, y: JUMP_STRENGTH }));
-        setIsJumping(true);
-        setOnGround(false);
+  const startMovingRight = useCallback(() => {
+    if (!gameStarted || gameWon || gameLost) return;
+    if (leftIntervalRef.current) {
+      clearInterval(leftIntervalRef.current);
+      leftIntervalRef.current = null;
+    }
+    if (!rightIntervalRef.current) {
+      moveRight();
+      rightIntervalRef.current = setInterval(moveRight, 16);
+    }
+  }, [gameStarted, gameWon, gameLost, moveRight]);
+
+  const stopMovingRight = useCallback(() => {
+    if (rightIntervalRef.current) {
+      clearInterval(rightIntervalRef.current);
+      rightIntervalRef.current = null;
+    }
+  }, []);
+
+  // Clean up intervals when game ends
+  useEffect(() => {
+    if (gameWon || gameLost || !gameStarted) {
+      if (leftIntervalRef.current) {
+        clearInterval(leftIntervalRef.current);
+        leftIntervalRef.current = null;
       }
+      if (rightIntervalRef.current) {
+        clearInterval(rightIntervalRef.current);
+        rightIntervalRef.current = null;
+      }
+    }
+  }, [gameWon, gameLost, gameStarted]);
+
+  // Global pointer listener as fallback
+  useEffect(() => {
+    const handleGlobalPointerUp = () => {
+      stopMovingLeft();
+      stopMovingRight();
     };
 
-    useEffect(() => {
-      const handleGlobalPointerUp = () => {
-        stopMovingLeft();
-        stopMovingRight();
-      };
+    window.addEventListener('pointerup', handleGlobalPointerUp);
+    window.addEventListener('pointercancel', handleGlobalPointerUp);
+    return () => {
+      window.removeEventListener('pointerup', handleGlobalPointerUp);
+      window.removeEventListener('pointercancel', handleGlobalPointerUp);
+    };
+  }, [stopMovingLeft, stopMovingRight]);
 
-      window.addEventListener('pointerup', handleGlobalPointerUp);
-      window.addEventListener('pointercancel', handleGlobalPointerUp);
-
-      return () => {
-        window.removeEventListener('pointerup', handleGlobalPointerUp);
-        window.removeEventListener('pointercancel', handleGlobalPointerUp);
-        stopMovingLeft();
-        stopMovingRight();
-      };
-    }, []);
-
+  const TouchControls = () => {
     return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-        alignItems: 'center'
-      }}>
-        <button
-          onPointerDown={(e) => { 
-            e.preventDefault();
-            startMovingLeft();
-          }}
-          onPointerUp={(e) => {
-            e.preventDefault();
-            stopMovingLeft();
-          }}
-          onPointerLeave={(e) => {
-            e.preventDefault();
-            stopMovingLeft();
-          }}
-          onPointerCancel={(e) => {
-            e.preventDefault();
-            stopMovingLeft();
-          }}
-          style={{
-            padding: '8px',
-            fontSize: '18px',
-            background: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            userSelect: 'none',
-            WebkitUserSelect: 'none',
-            WebkitTouchCallout: 'none',
-            WebkitTapHighlightColor: 'transparent',
-            touchAction: 'none',
-            width: '40px',
-            height: '40px'
-          }}
-        >
-          ←
-        </button>
-        <button
-          onPointerDown={(e) => {
-            e.preventDefault();
-            handleJump();
-          }}
-          style={{
-            padding: '8px',
-            fontSize: '12px',
-            background: '#10b981',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            userSelect: 'none',
-            WebkitUserSelect: 'none',
-            WebkitTouchCallout: 'none',
-            WebkitTapHighlightColor: 'transparent',
-            touchAction: 'none',
-            width: '50px',
-            height: '40px'
-          }}
-        >
-          JUMP
-        </button>
-        <button
-          onPointerDown={(e) => { 
-            e.preventDefault();
-            startMovingRight();
-          }}
-          onPointerUp={(e) => {
-            e.preventDefault();
-            stopMovingRight();
-          }}
-          onPointerLeave={(e) => {
-            e.preventDefault();
-            stopMovingRight();
-          }}
-          onPointerCancel={(e) => {
-            e.preventDefault();
-            stopMovingRight();
-          }}
-          style={{
-            padding: '8px',
-            fontSize: '18px',
-            background: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            userSelect: 'none',
-            WebkitUserSelect: 'none',
-            WebkitTouchCallout: 'none',
-            WebkitTapHighlightColor: 'transparent',
-            touchAction: 'none',
-            width: '40px',
-            height: '40px'
-          }}
-        >
-          →
-        </button>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px',
+      alignItems: 'center'
+    }}>
+      <button
+        onPointerDown={(e) => { 
+          e.preventDefault();
+          startMovingLeft();
+        }}
+        onPointerUp={(e) => {
+          e.preventDefault();
+          stopMovingLeft();
+        }}
+        onPointerLeave={(e) => {
+          e.preventDefault();
+          stopMovingLeft();
+        }}
+        onPointerCancel={(e) => {
+          e.preventDefault();
+          stopMovingLeft();
+        }}
+        style={{
+          padding: '8px',
+          fontSize: '18px',
+          background: '#3b82f6',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none',
+          WebkitTapHighlightColor: 'transparent',
+          touchAction: 'none',
+          width: '40px',
+          height: '40px'
+        }}
+      >
+        ←
+      </button>
+      <button
+        onPointerDown={(e) => {
+          e.preventDefault();
+          if (onGround && !isJumping) {
+            setPlayerVelocity(v => ({ ...v, y: JUMP_STRENGTH }));
+            setIsJumping(true);
+            setOnGround(false);
+          }
+        }}
+        style={{
+          padding: '8px',
+          fontSize: '12px',
+          background: '#10b981',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none',
+          WebkitTapHighlightColor: 'transparent',
+          touchAction: 'none',
+          width: '50px',
+          height: '40px'
+        }}
+      >
+        JUMP
+      </button>
+      <button
+        onPointerDown={(e) => { 
+          e.preventDefault();
+          startMovingRight();
+        }}
+        onPointerUp={(e) => {
+          e.preventDefault();
+          stopMovingRight();
+        }}
+        onPointerLeave={(e) => {
+          e.preventDefault();
+          stopMovingRight();
+        }}
+        onPointerCancel={(e) => {
+          e.preventDefault();
+          stopMovingRight();
+        }}
+        style={{
+          padding: '8px',
+          fontSize: '18px',
+          background: '#3b82f6',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none',
+          WebkitTapHighlightColor: 'transparent',
+          touchAction: 'none',
+          width: '40px',
+          height: '40px'
+        }}
+      >
+        →
+      </button>
+    </div>
+    );
+  };
       </div>
     );
   };
