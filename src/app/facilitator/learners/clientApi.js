@@ -232,6 +232,18 @@ export async function updateLearner(id, updates) {
         ...(updates.poem_disabled !== undefined ? { poem_disabled: !!updates.poem_disabled } : {}),
         ...(updates.story_disabled !== undefined ? { story_disabled: !!updates.story_disabled } : {}),
         ...(updates.fill_in_fun_disabled !== undefined ? { fill_in_fun_disabled: !!updates.fill_in_fun_disabled } : {}),
+        // Phase timer fields (11 total)
+        ...(updates.discussion_play_min !== undefined ? { discussion_play_min: Number(updates.discussion_play_min) } : {}),
+        ...(updates.discussion_work_min !== undefined ? { discussion_work_min: Number(updates.discussion_work_min) } : {}),
+        ...(updates.comprehension_play_min !== undefined ? { comprehension_play_min: Number(updates.comprehension_play_min) } : {}),
+        ...(updates.comprehension_work_min !== undefined ? { comprehension_work_min: Number(updates.comprehension_work_min) } : {}),
+        ...(updates.exercise_play_min !== undefined ? { exercise_play_min: Number(updates.exercise_play_min) } : {}),
+        ...(updates.exercise_work_min !== undefined ? { exercise_work_min: Number(updates.exercise_work_min) } : {}),
+        ...(updates.worksheet_play_min !== undefined ? { worksheet_play_min: Number(updates.worksheet_play_min) } : {}),
+        ...(updates.worksheet_work_min !== undefined ? { worksheet_work_min: Number(updates.worksheet_work_min) } : {}),
+        ...(updates.test_play_min !== undefined ? { test_play_min: Number(updates.test_play_min) } : {}),
+        ...(updates.test_work_min !== undefined ? { test_work_min: Number(updates.test_work_min) } : {}),
+        ...(updates.golden_key_bonus_min !== undefined ? { golden_key_bonus_min: Number(updates.golden_key_bonus_min) } : {}),
       };
       const { data, error } = await updateWithOwner(supabase, id, updatePayload, uid);
       if (!error) { 
@@ -296,6 +308,18 @@ function normalizeRow(row) {
     poem_disabled: !!row.poem_disabled,
     story_disabled: !!row.story_disabled,
     fill_in_fun_disabled: !!row.fill_in_fun_disabled,
+    // Phase timer fields
+    discussion_play_min: c(row.discussion_play_min),
+    discussion_work_min: c(row.discussion_work_min),
+    comprehension_play_min: c(row.comprehension_play_min),
+    comprehension_work_min: c(row.comprehension_work_min),
+    exercise_play_min: c(row.exercise_play_min),
+    exercise_work_min: c(row.exercise_work_min),
+    worksheet_play_min: c(row.worksheet_play_min),
+    worksheet_work_min: c(row.worksheet_work_min),
+    test_play_min: c(row.test_play_min),
+    test_work_min: c(row.test_work_min),
+    golden_key_bonus_min: c(row.golden_key_bonus_min),
   };
   // console.log('🔄 normalizeRow input:', row, 'output:', merged); // Removed: excessive logging
   return merged;
