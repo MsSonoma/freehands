@@ -5951,15 +5951,28 @@ function SessionPageInner() {
       // Pre-pick next problem if we won't be at target yet
       let nextProblem = null;
       if (!nearTarget && !atTarget) {
+        console.log('[EXERCISE NEXT] ticker:', ticker, 'nearTarget:', nearTarget, 'atTarget:', atTarget, 'currentExIndex:', currentExIndex, 'arrayLength:', generatedExercise?.length);
         if (Array.isArray(generatedExercise) && currentExIndex < generatedExercise.length) {
           const currText = (() => { try { return (problem?.question ?? formatQuestionForSpeech(problem)).trim(); } catch { return ''; } })();
           let idx = currentExIndex;
+          console.log('[EXERCISE NEXT] Starting idx:', idx, 'currText:', currText?.substring(0, 50));
           // Skip only if same question (allow SA now)
-          while (idx < generatedExercise.length && (()=>{ try { const t=(generatedExercise[idx]?.question ?? formatQuestionForSpeech(generatedExercise[idx])).trim(); return t===currText; } catch { return false; }})()) idx += 1;
-          if (idx < generatedExercise.length) { nextProblem = generatedExercise[idx]; setCurrentExIndex(idx + 1); }
+          while (idx < generatedExercise.length && (()=>{ try { const t=(generatedExercise[idx]?.question ?? formatQuestionForSpeech(generatedExercise[idx])).trim(); return t===currText; } catch { return false; }})()) {
+            console.log('[EXERCISE NEXT] Skipping duplicate at idx:', idx);
+            idx += 1;
+          }
+          console.log('[EXERCISE NEXT] After skip, idx:', idx, 'arrayLength:', generatedExercise.length);
+          if (idx < generatedExercise.length) { 
+            nextProblem = generatedExercise[idx]; 
+            setCurrentExIndex(idx + 1);
+            console.log('[EXERCISE NEXT] Got next problem from array, new currentExIndex:', idx + 1);
+          } else {
+            console.log('[EXERCISE NEXT] Array exhausted, idx >= length');
+          }
         }
         // REMOVED: drawSampleUnique fallback - deprecated zombie code
         if (!nextProblem && exercisePool.length) {
+          console.log('[EXERCISE NEXT] Trying pool fallback, pool length:', exercisePool.length);
           const [head, ...rest] = exercisePool;
           const headSame = (()=>{ try { const t=(head?.question ?? formatQuestionForSpeech(head)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t===c; } catch { return false; }})();
           if (head && !headSame) { nextProblem = head; setExercisePool(rest); }
@@ -6028,18 +6041,22 @@ function SessionPageInner() {
         }
         setTicker(ticker + 1);
         if (!nearTarget && nextProblem) {
+          // Update ref synchronously BEFORE setState for snapshot save
+          currentExerciseProblemRef.current = nextProblem;
           setCurrentExerciseProblem(nextProblem);
+          console.log('[EXERCISE ANSWER] Set currentExerciseProblem to nextProblem');
           try { scheduleSaveSnapshot('qa-correct-next'); } catch {}
           const nextQ = ensureQuestionMark(formatQuestionForSpeech(nextProblem, { layout: 'multiline' }));
           // Remember the exact next exercise question spoken
           activeQuestionBodyRef.current = nextQ;
           try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
           
-          // ATOMIC SNAPSHOT: Save after answering exercise question (includes next question in response)
-          try { await scheduleSaveSnapshot('exercise-answered'); } catch {}
-          
           // Re-enable input after the next question has been spoken. While speaking, input is locked by speakingLock.
           setCanSend(true);
+          return;
+        }
+        console.log('[EXERCISE ANSWER] No next problem - nearTarget:', nearTarget, 'nextProblem:', !!nextProblem);
+        try { scheduleSaveSnapshot('qa-correct-progress'); } catch {}
           return;
         }
         try { scheduleSaveSnapshot('qa-correct-progress'); } catch {}
