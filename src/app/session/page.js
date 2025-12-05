@@ -5953,35 +5953,15 @@ function SessionPageInner() {
       if (!nearTarget && !atTarget) {
         console.log('[EXERCISE NEXT] ticker:', ticker, 'nearTarget:', nearTarget, 'atTarget:', atTarget, 'currentExIndex:', currentExIndex, 'arrayLength:', generatedExercise?.length);
         if (Array.isArray(generatedExercise) && currentExIndex < generatedExercise.length) {
-          const currText = (() => { try { return (problem?.question ?? formatQuestionForSpeech(problem)).trim(); } catch { return ''; } })();
-          let idx = currentExIndex;
-          console.log('[EXERCISE NEXT] Starting idx:', idx, 'currText:', currText?.substring(0, 50));
-          // Skip only if same question (allow SA now)
-          while (idx < generatedExercise.length && (()=>{ try { const t=(generatedExercise[idx]?.question ?? formatQuestionForSpeech(generatedExercise[idx])).trim(); return t===currText; } catch { return false; }})()) {
-            console.log('[EXERCISE NEXT] Skipping duplicate at idx:', idx);
-            idx += 1;
-          }
-          console.log('[EXERCISE NEXT] After skip, idx:', idx, 'arrayLength:', generatedExercise.length);
-          if (idx < generatedExercise.length) { 
-            nextProblem = generatedExercise[idx]; 
-            setCurrentExIndex(idx + 1);
-            console.log('[EXERCISE NEXT] Got next problem from array, new currentExIndex:', idx + 1);
-          } else {
-            console.log('[EXERCISE NEXT] Array exhausted, idx >= length');
-          }
+          // Simply take the next item from array - no duplicate skipping needed since array is pre-generated
+          nextProblem = generatedExercise[currentExIndex];
+          setCurrentExIndex(currentExIndex + 1);
+          console.log('[EXERCISE NEXT] Got question from array at index:', currentExIndex, 'new index:', currentExIndex + 1);
+        } else {
+          console.log('[EXERCISE NEXT] Array exhausted or missing - currentExIndex:', currentExIndex, 'length:', generatedExercise?.length);
         }
-        // REMOVED: drawSampleUnique fallback - deprecated zombie code
-        if (!nextProblem && exercisePool.length) {
-          console.log('[EXERCISE NEXT] Trying pool fallback, pool length:', exercisePool.length);
-          const [head, ...rest] = exercisePool;
-          const headSame = (()=>{ try { const t=(head?.question ?? formatQuestionForSpeech(head)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t===c; } catch { return false; }})();
-          if (head && !headSame) { nextProblem = head; setExercisePool(rest); }
-          else {
-            const altIndex = rest.findIndex(q => q && (()=>{ try { const t=(q?.question ?? formatQuestionForSpeech(q)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t!==c; } catch { return true; }})());
-            if (altIndex >= 0) { nextProblem = rest[altIndex]; setExercisePool(rest.slice(altIndex + 1)); }
-            else { setExercisePool(rest); }
-          }
-        }
+      } else {
+        console.log('[EXERCISE NEXT] Near or at target - nearTarget:', nearTarget, 'atTarget:', atTarget);
       }
 
       // Build acceptable answers
