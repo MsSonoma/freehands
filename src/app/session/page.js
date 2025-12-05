@@ -1736,26 +1736,10 @@ function SessionPageInner() {
   // CRITICAL: Validate lessonData matches current lesson to prevent content confusion
   const buildQAPool = useCallback((dataOverride = null) => {
     const sourceData = dataOverride || lessonData;
-    
-    // Validate: if lessonParam is set, ensure lessonData matches before building pool
-    // Prevents using stale lessonData from previous lesson during lesson transitions
-    if (lessonParam && sourceData && !dataOverride) {
-      const dataTitle = (sourceData.title || sourceData.lessonTitle || '').toLowerCase().trim();
-      const dataFilename = (sourceData.filename || '').toLowerCase().trim();
-      const paramLower = lessonParam.toLowerCase().trim();
-      
-      // Check if lesson data matches current lesson parameter
-      const titleMatch = dataTitle && (dataTitle.includes(paramLower) || paramLower.includes(dataTitle));
-      const filenameMatch = dataFilename && (dataFilename.includes(paramLower) || paramLower.includes(dataFilename));
-      
-      if (!titleMatch && !filenameMatch) {
-        console.warn('[buildQAPool] Lesson data mismatch detected - current param:', lessonParam, 'data title:', dataTitle, 'data filename:', dataFilename);
-        return []; // Return empty pool to force fresh generation
-      }
-    }
-    
-    return buildQAPoolUtil(sourceData, subjectParam);
-  }, [lessonData, subjectParam, lessonParam]);
+    const pool = buildQAPoolUtil(sourceData, subjectParam);
+    console.log('[buildQAPool] Generated pool size:', pool.length, 'for lesson:', sourceData?.title || sourceData?.lessonTitle);
+    return pool;
+  }, [lessonData, subjectParam]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1902,11 +1886,13 @@ function SessionPageInner() {
                 let take = shuffled.slice(0, Math.min(totalNeeded, shuffled.length));
                 gComp = take.slice(0, Math.min(COMPREHENSION_TARGET, take.length));
                 gEx = take.slice(gComp.length, Math.min(gComp.length + EXERCISE_TARGET, take.length));
+                console.log('[ARRAY GEN] comprehension:', gComp.length, 'exercise:', gEx.length, 'from pool:', shuffled.length);
                 setGeneratedComprehension(gComp);
                 setGeneratedExercise(gEx);
                 setCurrentCompIndex(0);
                 setCurrentExIndex(0);
               } catch (e) {
+                console.error('[ARRAY GEN] Failed to generate arrays:', e);
                 // Defer to on-the-fly selection if needed
                 setGeneratedComprehension([]);
                 setGeneratedExercise([]);
