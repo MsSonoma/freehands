@@ -51,8 +51,12 @@ export function usePhaseHandlers({
 }) {
 
   const handleGoComprehension = useCallback(async () => {
+    console.log('[handleGoComprehension] START - phase:', phase, 'subPhase:', subPhase, 'currentCompProblem:', currentCompProblem);
     try { setShowOpeningActions(false); } catch {}
-    if (phase !== 'comprehension') return;
+    if (phase !== 'comprehension') {
+      console.log('[handleGoComprehension] EARLY RETURN - wrong phase');
+      return;
+    }
     
     // CRITICAL: If play time expired overlay is showing, dismiss it immediately
     // User clicking "Go" overrides the countdown
@@ -65,20 +69,28 @@ export function usePhaseHandlers({
     
     // Transition from play to work timer
     if (transitionToWorkTimer) {
+      console.log('[handleGoComprehension] Transitioning to work timer');
       transitionToWorkTimer('comprehension');
     }
     
     let item = currentCompProblem;
+    console.log('[handleGoComprehension] currentCompProblem:', item);
     if (!item) {
       let firstComp = null;
       if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
         firstComp = generatedComprehension[currentCompIndex];
         setCurrentCompIndex(currentCompIndex + 1);
+        console.log('[handleGoComprehension] Got first question from array:', firstComp);
       }
       // REMOVED: pool fallback logic - arrays are source of truth, no refill
       if (firstComp) { setCurrentCompProblem(firstComp); item = firstComp; setSubPhase('comprehension-active'); }
     }
-    if (!item) { setShowOpeningActions(true); return; }
+    if (!item) {
+      console.log('[handleGoComprehension] NO QUESTION - showing opening actions');
+      setShowOpeningActions(true);
+      return;
+    }
+    console.log('[handleGoComprehension] Speaking question:', item);
     try {
       setQaAnswersUnlocked(true);
       const formatted = ensureQuestionMark(formatQuestionForSpeech(item, { layout: 'multiline' }));
@@ -87,6 +99,7 @@ export function usePhaseHandlers({
       await speakFrontend(formatted, { mcLayout: 'multiline' });
     } catch {}
     setCanSend(true);
+    console.log('[handleGoComprehension] DONE');
   }, [
     phase, currentCompProblem, generatedComprehension, currentCompIndex,
     setShowOpeningActions, setCurrentCompProblem, setSubPhase, setQaAnswersUnlocked, setCanSend,
