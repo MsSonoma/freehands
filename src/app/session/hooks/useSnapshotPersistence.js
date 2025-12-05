@@ -488,8 +488,8 @@ export function useSnapshotPersistence({
           worksheetIndexRef.current = wi; setCurrentWorksheetIndex(wi);
         } catch {}
         try { setTestActiveIndex(Number.isFinite(snap.testActiveIndex) ? snap.testActiveIndex : 0); } catch {}
-        try { setCurrentCompProblem(snap.currentCompProblem || null); } catch {}
-        try { setCurrentExerciseProblem(snap.currentExerciseProblem || null); } catch {}
+        try { if (snap.currentCompProblem) setCurrentCompProblem(snap.currentCompProblem); } catch {}
+        try { if (snap.currentExerciseProblem) setCurrentExerciseProblem(snap.currentExerciseProblem); } catch {}
         // Generated question arrays - only restore if non-empty to prevent stale empty arrays from overwriting fresh generation
         try { Array.isArray(snap.generatedComprehension) && snap.generatedComprehension.length > 0 && setGeneratedComprehension(snap.generatedComprehension); } catch {}
         try { Array.isArray(snap.generatedExercise) && snap.generatedExercise.length > 0 && setGeneratedExercise(snap.generatedExercise); } catch {}
