@@ -44,6 +44,18 @@ export default function SessionTimer({
     ? adjustedTotalMinutes 
     : (timerType === 'play' ? totalMinutes + (goldenKeyBonus || 0) : totalMinutes);
 
+  // Debug: log when golden key bonus changes
+  useEffect(() => {
+    if (timerType === 'play') {
+      console.log('[TIMER] Golden key bonus changed:', {
+        phase,
+        totalMinutes,
+        goldenKeyBonus,
+        effectiveTotalMinutes
+      });
+    }
+  }, [goldenKeyBonus, phase, timerType, totalMinutes, effectiveTotalMinutes]);
+
   // Generate phase-specific storage key
   const storageKey = lessonKey 
     ? `session_timer_state:${lessonKey}:${phase}:${timerType}` 
