@@ -7820,10 +7820,10 @@ function SessionPageInner() {
               Cancel
             </button>
             <button
-              onClick={async () => {
+              onClick={() => {
                 setShowGoConfirmation(false);
                 if (pendingGoAction) {
-                  await pendingGoAction();
+                  pendingGoAction();
                   setPendingGoAction(null);
                 }
               }}
