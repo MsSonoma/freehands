@@ -5822,7 +5822,8 @@ function SessionPageInner() {
         setTicker(ticker + 1);
         if (!nearTarget && nextProblem) {
           setCurrentCompProblem(nextProblem);
-          try { scheduleSaveSnapshot('qa-correct-next'); } catch {}
+          console.log('[COMP ANSWER] Set currentCompProblem to nextProblem:', nextProblem?.question || formatQuestionForSpeech(nextProblem));
+          // REMOVED: scheduleSaveSnapshot('qa-correct-next') - too early, state not updated yet
           const nextQ = ensureQuestionMark(formatQuestionForSpeech(nextProblem, { layout: 'multiline' }));
           // Remember the exact next question spoken
           activeQuestionBodyRef.current = nextQ;
@@ -5830,6 +5831,7 @@ function SessionPageInner() {
           
           // ATOMIC SNAPSHOT: Save after answering comprehension question (includes next question in response)
           try { await scheduleSaveSnapshot('comprehension-answered'); } catch {}
+          console.log('[COMP ANSWER] Snapshot saved with currentCompProblem');
           
           setSubPhase('comprehension-active');
           setCanSend(false);
