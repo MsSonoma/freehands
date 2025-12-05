@@ -75,6 +75,7 @@ export function usePhaseHandlers({
     
     let item = currentCompProblem;
     console.log('[handleGoComprehension] currentCompProblem:', item);
+    console.log('[handleGoComprehension] generatedComprehension:', generatedComprehension, 'length:', generatedComprehension?.length, 'currentCompIndex:', currentCompIndex);
     if (!item) {
       let firstComp = null;
       if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
