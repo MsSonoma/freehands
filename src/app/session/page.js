@@ -7235,7 +7235,7 @@ function SessionPageInner() {
               
               // Show confirmation before executing Go
               const onGoWithConfirm = !lessonData ? undefined : () => {
-                setPendingGoAction(() => async () => await handleStartLesson());
+                setPendingGoAction(() => handleStartLesson);
                 setShowGoConfirmation(true);
               };
               
@@ -7283,7 +7283,7 @@ function SessionPageInner() {
               
               // Show confirmation before executing Go
               const onGo = !lessonData ? undefined : () => {
-                setPendingGoAction(() => async () => await actualGoAction());
+                setPendingGoAction(() => actualGoAction);
                 setShowGoConfirmation(true);
               };
               
