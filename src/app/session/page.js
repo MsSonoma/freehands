@@ -814,10 +814,8 @@ function SessionPageInner() {
     if (playExpiredPhase) {
       transitionToWorkTimer(playExpiredPhase);
       
-      // Hide play buttons immediately when timer expires to prevent interaction
-      setShowOpeningActions(false);
-      
       // Automatically start the lesson based on the current phase
+      // Each phase handler will hide opening actions as part of its flow
       try {
         if (playExpiredPhase === 'discussion' || phase === 'discussion' || phase === 'teaching') {
           if (handleStartLessonRef.current) await handleStartLessonRef.current();

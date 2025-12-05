@@ -48,13 +48,13 @@ When play timer reaches 00:00:
 3. **handlePlayExpiredComplete** fires when countdown completes:
    - Hides overlay (`showPlayTimeExpired = false`)
    - Transitions to work timer for expired phase
-   - **CRITICAL**: Sets `showOpeningActions = false` to hide play buttons
    - Automatically calls phase-specific start handler:
      - `handleStartLesson` for discussion/teaching
      - `handleGoComprehension` for comprehension
      - `handleGoExercise` for exercise
      - `handleGoWorksheet` for worksheet
      - `handleGoTest` for test
+   - Each phase handler hides play buttons as part of its normal flow
    - Clears `playExpiredPhase`
 
 ### Go Button Override
@@ -83,9 +83,14 @@ Defined in `src/app/session/utils/phaseTimerDefaults.js`:
 
 ## What NOT To Do
 
+❌ **Never hide play buttons manually in timer expiry handler**
+- Phase handlers (handleGoComprehension, etc.) already call `setShowOpeningActions(false)`
+- Setting it in handlePlayExpiredComplete creates race conditions and breaks phase transitions
+- Let each phase handler manage its own button visibility
+
 ❌ **Never allow play buttons to remain visible after timer expiry**
-- Must set `showOpeningActions = false` when transitioning from play to work after timer expiry
-- User should not be able to access Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games after play time expires
+- Timer expiry must automatically advance to work phase
+- Play buttons will be hidden by the phase handler that starts the work
 
 ❌ **Never require Go button click after timer expiry**
 - Timer expiry should bypass Go button confirmation
@@ -138,9 +143,11 @@ Defined in `src/app/session/utils/phaseTimerDefaults.js`:
 
 ## Recent Changes
 
+**2025-12-05**: CRITICAL FIX - Removed `setShowOpeningActions(false)` from `handlePlayExpiredComplete`. This was breaking all phase transitions because phase handlers already hide buttons as part of their normal flow. The premature state change created race conditions preventing Go button from working and timer from advancing phases. Each phase handler (handleGoComprehension, handleGoExercise, etc.) manages its own button visibility - timer handler should not interfere.
+
 **2025-12-03**: Fixed bug where 30-second countdown overlay persisted through lesson restart. Added `setShowPlayTimeExpired(false)` and `setPlayExpiredPhase(null)` to `handleRestartClick` in useResumeRestart.js so overlay is properly dismissed when user restarts the lesson.
 
-**2025-12-03**: Fixed bug where play buttons (Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games, Go) remained visible after play timer expired and 30-second countdown completed. Added `setShowOpeningActions(false)` to `handlePlayExpiredComplete` so buttons are hidden before auto-starting work phase. This ensures timer expiry bypasses Go button requirement as designed.
+**2025-12-03**: [REVERTED - see 2025-12-05] Fixed bug where play buttons (Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games, Go) remained visible after play timer expired and 30-second countdown completed. Added `setShowOpeningActions(false)` to `handlePlayExpiredComplete` so buttons are hidden before auto-starting work phase. This ensures timer expiry bypasses Go button requirement as designed.
 
 **2025-11-24**: Added Go button override - clicking Go during countdown immediately dismisses overlay and starts work timer without waiting for countdown to complete.
 

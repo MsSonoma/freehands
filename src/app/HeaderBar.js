@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useMemo, useCallback, useEffect, useState, useRef } from 'react';
 import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
-import { ensurePinAllowed } from '@/app/lib/pinGate';
+import { ensurePinAllowed, setInFacilitatorSection } from '@/app/lib/pinGate';
 
 export default function HeaderBar() {
 	const pathname = usePathname() || '/';
@@ -366,6 +366,11 @@ export default function HeaderBar() {
 		if (pathname.startsWith('/session')) {
 			const allowed = await ensurePinAllowed('session-exit');
 			if (!allowed) return false;
+			// If navigating to a facilitator page after successful PIN validation,
+			// set the facilitator section flag to prevent double PIN prompt
+			if (pushHref && pushHref.startsWith('/facilitator')) {
+				setInFacilitatorSection(true);
+			}
 		}
 		if (pushHref) {
 			router.push(pushHref);

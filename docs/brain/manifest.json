@@ -1,4 +1,21 @@
 {
+  "pin-protection": {
+    "file": "pin-protection.md",
+    "systems": [
+      "PIN protection",
+      "facilitator authentication",
+      "session exit gating",
+      "facilitator section tracking",
+      "PIN preferences",
+      "ensurePinAllowed",
+      "setInFacilitatorSection",
+      "FacilitatorSectionTracker",
+      "navigation PIN checks",
+      "double PIN prevention"
+    ],
+    "last_updated": "2025-12-03T04:00:00Z",
+    "status": "canonical"
+  },
   "snapshot-persistence": {
     "file": "snapshot-persistence.md",
     "systems": [
@@ -131,6 +148,22 @@
       "transcript timestamps"
     ],
     "last_updated": "2025-11-25T00:00:00Z",
+    "status": "canonical"
+  },
+  "riddle-system": {
+    "file": "riddle-system.md",
+    "systems": [
+      "riddles",
+      "wordplay riddles",
+      "localStorage rotation",
+      "pickNextRiddle",
+      "riddle transformation",
+      "lateral thinking",
+      "subject-specific riddles",
+      "hardcoded riddle catalog",
+      "riddle validation"
+    ],
+    "last_updated": "2025-12-03T00:00:00Z",
     "status": "canonical"
   }
 }
