@@ -748,6 +748,9 @@ function SessionPageInner() {
       setIsGoldenKeySuspended(false);
       // goldenKeyBonus is already set from the lesson config in useEffect
       
+      // Force timer to refresh and pick up the new golden key bonus
+      setTimerRefreshKey(prev => prev + 1);
+      
       // Show success and close overlay
       alert('Golden key applied! This lesson now has bonus play time.');
       setShowTimerControls(false);
