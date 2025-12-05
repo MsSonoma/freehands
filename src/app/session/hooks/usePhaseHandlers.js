@@ -51,7 +51,7 @@ export function usePhaseHandlers({
 }) {
 
   const handleGoComprehension = useCallback(async () => {
-    console.log('[handleGoComprehension] START - phase:', phase, 'subPhase:', subPhase, 'currentCompProblem:', currentCompProblem);
+    console.log('[handleGoComprehension] START - phase:', phase, 'currentCompProblem:', currentCompProblem);
     try { setShowOpeningActions(false); } catch {}
     if (phase !== 'comprehension') {
       console.log('[handleGoComprehension] EARLY RETURN - wrong phase');
