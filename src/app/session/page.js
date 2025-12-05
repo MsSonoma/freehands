@@ -746,13 +746,6 @@ function SessionPageInner() {
       // Get the golden key bonus from the learner's settings
       const bonusMinutes = learner.golden_key_bonus_min ?? 5; // Default to 5 if not set
       
-      console.log('[GOLDEN KEY APPLY] Learner data:', {
-        name: learner.name,
-        discussion_play_min: learner.discussion_play_min,
-        golden_key_bonus_min: learner.golden_key_bonus_min,
-        bonusMinutes
-      });
-      
       // Update local state
       setHasGoldenKey(true);
       setIsGoldenKeySuspended(false);
