@@ -704,7 +704,7 @@ function SessionPageInner() {
     }
     
     try {
-      const learnerId = sessionStorage.getItem('learner_id');
+      const learnerId = localStorage.getItem('learner_id');
       if (!learnerId) {
         alert('No learner selected');
         return;
