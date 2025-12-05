@@ -7235,6 +7235,7 @@ function SessionPageInner() {
               
               // Show confirmation before executing Go
               const onGoWithConfirm = !lessonData ? undefined : () => {
+                console.log('[DISCUSSION GO] Storing handleStartLesson:', handleStartLesson);
                 setPendingGoAction(() => handleStartLesson);
                 setShowGoConfirmation(true);
               };
@@ -7283,6 +7284,7 @@ function SessionPageInner() {
               
               // Show confirmation before executing Go
               const onGo = !lessonData ? undefined : () => {
+                console.log('[QA GO] phase:', phase, 'actualGoAction:', actualGoAction);
                 setPendingGoAction(() => actualGoAction);
                 setShowGoConfirmation(true);
               };
@@ -7821,10 +7823,16 @@ function SessionPageInner() {
             </button>
             <button
               onClick={() => {
+                console.log('[GO CONFIRM] Starting - pendingGoAction:', pendingGoAction);
                 setShowGoConfirmation(false);
                 if (pendingGoAction) {
+                  console.log('[GO CONFIRM] Calling pendingGoAction()...');
                   const handler = pendingGoAction();
-                  if (handler) handler();
+                  console.log('[GO CONFIRM] Got handler:', handler, 'typeof:', typeof handler);
+                  if (handler) {
+                    console.log('[GO CONFIRM] Calling handler()...');
+                    handler();
+                  }
                   setPendingGoAction(null);
                 }
               }}
