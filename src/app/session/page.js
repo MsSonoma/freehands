@@ -7235,7 +7235,7 @@ function SessionPageInner() {
               
               // Show confirmation before executing Go
               const onGoWithConfirm = !lessonData ? undefined : () => {
-                setPendingGoAction(() => handleStartLesson);
+                setPendingGoAction(() => async () => await handleStartLesson());
                 setShowGoConfirmation(true);
               };
               
@@ -7283,7 +7283,7 @@ function SessionPageInner() {
               
               // Show confirmation before executing Go
               const onGo = !lessonData ? undefined : () => {
-                setPendingGoAction(() => actualGoAction);
+                setPendingGoAction(() => async () => await actualGoAction());
                 setShowGoConfirmation(true);
               };
               
@@ -7820,10 +7820,10 @@ function SessionPageInner() {
               Cancel
             </button>
             <button
-              onClick={() => {
+              onClick={async () => {
                 setShowGoConfirmation(false);
                 if (pendingGoAction) {
-                  pendingGoAction();
+                  await pendingGoAction();
                   setPendingGoAction(null);
                 }
               }}
