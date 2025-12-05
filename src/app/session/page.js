@@ -5960,8 +5960,6 @@ function SessionPageInner() {
         } else {
           console.log('[EXERCISE NEXT] Array exhausted or missing - currentExIndex:', currentExIndex, 'length:', generatedExercise?.length);
         }
-      } else {
-        console.log('[EXERCISE NEXT] Near or at target - nearTarget:', nearTarget, 'atTarget:', atTarget);
       }
 
       // Build acceptable answers
@@ -6037,11 +6035,8 @@ function SessionPageInner() {
         }
         console.log('[EXERCISE ANSWER] No next problem - nearTarget:', nearTarget, 'nextProblem:', !!nextProblem);
         try { scheduleSaveSnapshot('qa-correct-progress'); } catch {}
-          return;
-        }
-        try { scheduleSaveSnapshot('qa-correct-progress'); } catch {}
         try { await speakFrontend(`${celebration}. ${progressPhrase}`); } catch {}
-  setCanSend(true);
+        setCanSend(true);
         return;
       }
 
