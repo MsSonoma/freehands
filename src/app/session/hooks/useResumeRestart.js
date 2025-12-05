@@ -165,11 +165,11 @@ export function useResumeRestart({
 
   const handleResumeClick = useCallback(async () => {
     // ATOMIC SNAPSHOT: Replay the last sentence when Resume is clicked (teaching phase only)
-    if (restoredSnapshotRef?.current) {
+    if (restoredSnapshotRef?.current && phase === 'teaching' && subPhase === 'awaiting-gate') {
       try { setOfferResume(false); } catch {}
       
       // Replay last sentence for teaching phase
-      if (phase === 'teaching' && subPhase === 'awaiting-gate' && typeof getTeachingFlowSnapshot === 'function') {
+      if (typeof getTeachingFlowSnapshot === 'function') {
         try {
           const teachingFlowState = getTeachingFlowSnapshot();
           if (teachingFlowState) {
