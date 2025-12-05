@@ -261,19 +261,26 @@ export function useResumeRestart({
       if (phase === 'comprehension') {
         // If we have a current problem, use it; otherwise try to reconstruct from index
         let problemToAsk = currentCompProblem;
+        console.log('[RESUME COMP] currentCompProblem:', currentCompProblem);
+        console.log('[RESUME COMP] currentCompIndex:', currentCompIndex);
+        console.log('[RESUME COMP] generatedComprehension length:', generatedComprehension?.length);
         if (!problemToAsk && Array.isArray(generatedComprehension) && currentCompIndex >= 0 && currentCompIndex < generatedComprehension.length) {
           problemToAsk = generatedComprehension[currentCompIndex];
+          console.log('[RESUME COMP] Reconstructed from array:', problemToAsk);
         }
         
         if (problemToAsk) {
           try {
             const formatted = ensureQuestionMark(formatQuestionForSpeech(problemToAsk, { layout: 'multiline' }));
+            console.log('[RESUME COMP] Re-reading question (noCaptions):', formatted);
             activeQuestionBodyRef.current = formatted;
             setQaAnswersUnlocked(true);
             setCanSend(false);
             // Audible re-read without duplicating captions on screen
             await speakFrontend(formatted, { mcLayout: 'multiline', noCaptions: true });
-          } catch {}
+          } catch (err) {
+            console.error('[RESUME COMP] speakFrontend error:', err);
+          }
           setCanSend(true);
           return;
         }
