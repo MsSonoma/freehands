@@ -245,6 +245,7 @@ export async function updateLearner(id, updates) {
         ...(updates.test_work_min !== undefined ? { test_work_min: Number(updates.test_work_min) } : {}),
         ...(updates.golden_key_bonus_min !== undefined ? { golden_key_bonus_min: Number(updates.golden_key_bonus_min) } : {}),
       };
+      console.log('[LEARNER UPDATE] Saving to database:', { id, updatePayload });
       const { data, error } = await updateWithOwner(supabase, id, updatePayload, uid);
       if (!error) { 
         supabaseLearnersMode = 'flat'; 
@@ -321,7 +322,13 @@ function normalizeRow(row) {
     test_work_min: c(row.test_work_min),
     golden_key_bonus_min: c(row.golden_key_bonus_min),
   };
-  // console.log('🔄 normalizeRow input:', row, 'output:', merged); // Removed: excessive logging
+  console.log('[LEARNER NORMALIZE] Input:', { 
+    id: row.id, 
+    golden_key_bonus_min: row.golden_key_bonus_min 
+  }, 'Output:', { 
+    id: merged.id, 
+    golden_key_bonus_min: merged.golden_key_bonus_min 
+  });
   return merged;
 }
 
