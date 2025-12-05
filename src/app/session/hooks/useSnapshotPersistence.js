@@ -490,11 +490,11 @@ export function useSnapshotPersistence({
         try { setTestActiveIndex(Number.isFinite(snap.testActiveIndex) ? snap.testActiveIndex : 0); } catch {}
         try { setCurrentCompProblem(snap.currentCompProblem || null); } catch {}
         try { setCurrentExerciseProblem(snap.currentExerciseProblem || null); } catch {}
-        // Generated question arrays
-        try { Array.isArray(snap.generatedComprehension) && setGeneratedComprehension(snap.generatedComprehension); } catch {}
-        try { Array.isArray(snap.generatedExercise) && setGeneratedExercise(snap.generatedExercise); } catch {}
-  try { Array.isArray(snap.generatedWorksheet) && setGeneratedWorksheet(snap.generatedWorksheet); } catch {}
-  try { Array.isArray(snap.generatedTest) && setGeneratedTest(snap.generatedTest); } catch {}
+        // Generated question arrays - only restore if non-empty to prevent stale empty arrays from overwriting fresh generation
+        try { Array.isArray(snap.generatedComprehension) && snap.generatedComprehension.length > 0 && setGeneratedComprehension(snap.generatedComprehension); } catch {}
+        try { Array.isArray(snap.generatedExercise) && snap.generatedExercise.length > 0 && setGeneratedExercise(snap.generatedExercise); } catch {}
+  try { Array.isArray(snap.generatedWorksheet) && snap.generatedWorksheet.length > 0 && setGeneratedWorksheet(snap.generatedWorksheet); } catch {}
+  try { Array.isArray(snap.generatedTest) && snap.generatedTest.length > 0 && setGeneratedTest(snap.generatedTest); } catch {}
         // Test arrays
         try { Array.isArray(snap.testUserAnswers) && setTestUserAnswers(snap.testUserAnswers); } catch {}
         try { Array.isArray(snap.testCorrectByIndex) && setTestCorrectByIndex(snap.testCorrectByIndex); } catch {}
