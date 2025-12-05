@@ -746,7 +746,11 @@ function SessionPageInner() {
       // Update local state
       setHasGoldenKey(true);
       setIsGoldenKeySuspended(false);
-      // goldenKeyBonus is already set from the lesson config in useEffect
+      
+      // Set the golden key bonus from phase timers
+      if (phaseTimers?.golden_key_bonus_min) {
+        setGoldenKeyBonus(phaseTimers.golden_key_bonus_min);
+      }
       
       // Force timer to refresh and pick up the new golden key bonus
       setTimerRefreshKey(prev => prev + 1);
@@ -758,7 +762,7 @@ function SessionPageInner() {
     } catch (err) {
       alert('Failed to apply golden key. Please try again.');
     }
-  }, [hasGoldenKey, lessonKey]);
+  }, [hasGoldenKey, lessonKey, phaseTimers]);
 
   // Handle golden key suspension
   const handleSuspendGoldenKey = useCallback(() => {
