@@ -191,6 +191,8 @@ export async function scheduleSaveSnapshotCore({
         },
       };
       const sig = JSON.stringify(sigObj);
+      
+      console.log('[SNAPSHOT SAVE] label:', label, 'currentCompProblem:', currentCompProblem?.question || currentCompProblem?.prompt || 'null');
 
       // Skip redundant autosaves when nothing meaningful changed; allow explicit labels to force-save
       if (label === 'state-change' && lastSavedSigRef.current === sig) {

@@ -59,6 +59,9 @@ export function useSnapshotPersistence({
   testActiveIndex,
   currentCompProblem,
   currentExerciseProblem,
+  // Refs for synchronous problem tracking  
+  currentCompProblemRef,
+  currentExerciseProblemRef,
   testUserAnswers,
   testCorrectByIndex,
   testCorrectCount,
@@ -279,7 +282,9 @@ export function useSnapshotPersistence({
         storyTranscript,
         currentCompIndex, currentExIndex, currentWorksheetIndex,
         testActiveIndex,
-        currentCompProblem, currentExerciseProblem,
+        // Use refs for currentCompProblem/currentExerciseProblem to get synchronous values
+        currentCompProblem: currentCompProblemRef?.current || currentCompProblem,
+        currentExerciseProblem: currentExerciseProblemRef?.current || currentExerciseProblem,
         testUserAnswers, testCorrectByIndex, testCorrectCount, testFinalPercent,
         congratsStarted, congratsDone,
         captionSentences: Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current : (Array.isArray(captionSentences) ? captionSentences : []),

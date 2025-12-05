@@ -408,6 +408,9 @@ function SessionPageInner() {
   const askReturnBodyRef = useRef('');
   // Track the last spoken Q&A question body (with MC/numbering formatting)
   const activeQuestionBodyRef = useRef('');
+  // Refs for Q&A current problems (updated synchronously for snapshot saves)
+  const currentCompProblemRef = useRef(null);
+  const currentExerciseProblemRef = useRef(null);
   const [askOriginalQuestion, setAskOriginalQuestion] = useState('');
   // Riddle state (hoisted before handlers to avoid TDZ in dependencies)
   const [riddleState, setRiddleState] = useState('inactive'); // 'inactive' | 'presented' | 'awaiting-solve'
@@ -3378,6 +3381,9 @@ function SessionPageInner() {
     testActiveIndex,
     currentCompProblem,
     currentExerciseProblem,
+    // Refs for synchronous problem tracking
+    currentCompProblemRef,
+    currentExerciseProblemRef,
     testUserAnswers,
     testCorrectByIndex,
     testCorrectCount,
@@ -5821,6 +5827,8 @@ function SessionPageInner() {
         }
         setTicker(ticker + 1);
         if (!nearTarget && nextProblem) {
+          // Update ref synchronously BEFORE setState for snapshot save
+          currentCompProblemRef.current = nextProblem;
           setCurrentCompProblem(nextProblem);
           console.log('[COMP ANSWER] Set currentCompProblem to nextProblem:', nextProblem?.question || formatQuestionForSpeech(nextProblem));
           // REMOVED: scheduleSaveSnapshot('qa-correct-next') - too early, state not updated yet
