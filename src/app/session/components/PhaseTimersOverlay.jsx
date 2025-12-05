@@ -44,19 +44,36 @@ export default function PhaseTimersOverlay({
 
   const handleTimerChange = (phase, type, value) => {
     const key = `${phase}_${type}_min`;
-    const numValue = Math.max(1, Math.min(60, parseInt(value) || 1)); // 1-60 min range
-    setTimers(prev => ({ ...prev, [key]: numValue }));
+    // Allow any input while typing, validation happens on save
+    setTimers(prev => ({ ...prev, [key]: value }));
   };
 
   const handleGoldenKeyChange = (value) => {
-    const numValue = Math.max(1, Math.min(60, parseInt(value) || 1));
-    setTimers(prev => ({ ...prev, golden_key_bonus_min: numValue }));
+    // Allow any input while typing, validation happens on save
+    setTimers(prev => ({ ...prev, golden_key_bonus_min: value }));
   };
 
   const handleSave = async () => {
+    // Validate all timer values before saving
+    const validated = {};
+    let hasError = false;
+    
+    Object.keys(timers).forEach(key => {
+      const value = parseInt(timers[key]);
+      if (isNaN(value) || value < 1 || value > 60) {
+        hasError = true;
+      }
+      validated[key] = Math.max(1, Math.min(60, value || 1));
+    });
+    
+    if (hasError) {
+      alert('Timer values must be between 1 and 60 minutes.');
+      return;
+    }
+    
     setSaving(true);
     try {
-      await onSave?.(timers);
+      await onSave?.(validated);
       onClose?.();
     } catch (error) {
       // Error saving timers
