@@ -7823,17 +7823,14 @@ function SessionPageInner() {
             </button>
             <button
               onClick={async () => {
-                console.log('[GO CONFIRM] Starting - pendingGoAction:', pendingGoAction);
+                console.log('[GO CONFIRM] Starting - pendingGoAction:', pendingGoAction, 'typeof:', typeof pendingGoAction);
                 setShowGoConfirmation(false);
-                if (pendingGoAction) {
-                  console.log('[GO CONFIRM] Unwrapping pendingGoAction...');
-                  const wrappedHandler = pendingGoAction();
-                  console.log('[GO CONFIRM] Got wrappedHandler:', wrappedHandler, 'typeof:', typeof wrappedHandler);
-                  if (wrappedHandler && typeof wrappedHandler === 'function') {
-                    console.log('[GO CONFIRM] Calling wrappedHandler()...');
-                    await wrappedHandler();
-                  }
+                if (pendingGoAction && typeof pendingGoAction === 'function') {
+                  console.log('[GO CONFIRM] Calling pendingGoAction directly...');
+                  await pendingGoAction();
                   setPendingGoAction(null);
+                } else {
+                  console.log('[GO CONFIRM] pendingGoAction is not a function!', typeof pendingGoAction);
                 }
               }}
               style={{
