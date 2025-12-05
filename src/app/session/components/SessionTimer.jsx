@@ -43,6 +43,20 @@ export default function SessionTimer({
   const effectiveTotalMinutes = adjustedTotalMinutes !== null 
     ? adjustedTotalMinutes 
     : (timerType === 'play' ? totalMinutes + (goldenKeyBonus || 0) : totalMinutes);
+  
+  // Debug logging for timer calculations
+  useEffect(() => {
+    if (timerType === 'play') {
+      console.log('[TIMER CALC]', {
+        phase,
+        timerType,
+        totalMinutes,
+        goldenKeyBonus,
+        effectiveTotalMinutes,
+        adjustedTotalMinutes
+      });
+    }
+  }, [phase, timerType, totalMinutes, goldenKeyBonus, effectiveTotalMinutes, adjustedTotalMinutes]);
 
   // Generate phase-specific storage key
   const storageKey = lessonKey 

@@ -743,14 +743,20 @@ function SessionPageInner() {
         active_golden_keys: activeKeys
       });
       
+      // Get the golden key bonus from the learner's settings
+      const bonusMinutes = learner.golden_key_bonus_min ?? 5; // Default to 5 if not set
+      
+      console.log('[GOLDEN KEY APPLY] Learner data:', {
+        name: learner.name,
+        discussion_play_min: learner.discussion_play_min,
+        golden_key_bonus_min: learner.golden_key_bonus_min,
+        bonusMinutes
+      });
+      
       // Update local state
       setHasGoldenKey(true);
       setIsGoldenKeySuspended(false);
-      
-      // Set the golden key bonus from phase timers
-      if (phaseTimers?.golden_key_bonus_min) {
-        setGoldenKeyBonus(phaseTimers.golden_key_bonus_min);
-      }
+      setGoldenKeyBonus(bonusMinutes);
       
       // Force timer to refresh and pick up the new golden key bonus
       setTimerRefreshKey(prev => prev + 1);
@@ -762,7 +768,7 @@ function SessionPageInner() {
     } catch (err) {
       alert('Failed to apply golden key. Please try again.');
     }
-  }, [hasGoldenKey, lessonKey, phaseTimers]);
+  }, [hasGoldenKey, lessonKey]);
 
   // Handle golden key suspension
   const handleSuspendGoldenKey = useCallback(() => {
