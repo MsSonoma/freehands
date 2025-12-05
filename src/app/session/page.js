@@ -1876,7 +1876,7 @@ function SessionPageInner() {
               
               // Generate comprehension and exercise arrays first
               try {
-                const pool = buildQAPool();
+                const pool = buildQAPool(data);
                 const shuffled = Array.isArray(pool) ? (Array.from(pool)) : [];
                 for (let i = shuffled.length - 1; i > 0; i -= 1) {
                   const j = Math.floor(Math.random() * (i + 1));
