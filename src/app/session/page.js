@@ -5302,21 +5302,24 @@ function SessionPageInner() {
     // Do NOT arm the first question here - it will be armed when Go is pressed
     // This prevents the question buttons from interfering with Ask/Joke/Riddle/Poem/Story/Fill-in-fun
   setExerciseSkippedAwaitBegin(false);
-  setSubPhase('exercise-start');
   // Gate quick-answer buttons until Start the lesson
   setQaAnswersUnlocked(false);
-  
-  // Persist phase entrance for Exercise
-  try { scheduleSaveSnapshot('begin-exercise'); } catch {}
   
     // Start the exercise play timer
     startPhasePlayTimer('exercise');
     
+  setCanSend(false);
+  setTicker(0);
     // Frontend-only: brief intro; first question is gated behind Go button
     const opener = EXERCISE_INTROS[Math.floor(Math.random() * EXERCISE_INTROS.length)];
+    // Immediately enter active subPhase so the Begin button disappears right away
+    setSubPhase('exercise-active');
+  // Persist the transition to exercise-active so resume lands on the five-button view
+  // Delay save to ensure state update has flushed
+  setTimeout(() => {
+    try { scheduleSaveSnapshot('begin-exercise'); } catch {}
+  }, 0);
     try {
-      setCanSend(false);
-      setTicker(0);
       await speakFrontend(opener);
     } catch {}
     // After intro, reveal Opening actions row
