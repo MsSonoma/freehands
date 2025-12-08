@@ -1847,9 +1847,9 @@ function SessionPageInner() {
             setCurrentCompProblem(null);
             setCurrentExerciseProblem(null);
 
-            // Atomic all-or-nothing restore: validate all 4 arrays match current lesson
-            const compOk = stored && Array.isArray(stored.comprehension) && stored.comprehension.length > 0;
-            const exOk = stored && Array.isArray(stored.exercise) && stored.exercise.length > 0;
+            // Atomic all-or-nothing restore: validate all 4 arrays match current lesson AND current targets
+            const compOk = stored && Array.isArray(stored.comprehension) && stored.comprehension.length === COMPREHENSION_TARGET;
+            const exOk = stored && Array.isArray(stored.exercise) && stored.exercise.length === EXERCISE_TARGET;
             const wOk = stored && Array.isArray(stored.worksheet) && stored.worksheet.length === WORKSHEET_TARGET;
             const tOk = stored && Array.isArray(stored.test) && stored.test.length === TEST_TARGET;
             
