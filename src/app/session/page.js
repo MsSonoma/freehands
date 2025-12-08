@@ -4160,7 +4160,7 @@ function SessionPageInner() {
       try { if (awaitingGuardRef.current) clearTimeout(awaitingGuardRef.current); } catch {}
       awaitingGuardRef.current = setTimeout(() => {
         // If we somehow left awaiting-begin without starting, and no audio is playing, restore it
-        if (phase === 'exercise' && subPhase !== 'exercise-start' && !isSpeaking) {
+        if (phase === 'exercise' && subPhase !== 'exercise-start' && subPhase !== 'exercise-active' && !isSpeaking) {
           setSubPhase('exercise-awaiting-begin');
         }
       }, 0);
@@ -4172,7 +4172,7 @@ function SessionPageInner() {
   // unless the user has actually started the exercise.
   useEffect(() => {
     try {
-      if (exerciseAwaitingLockRef.current && phase === 'exercise' && subPhase !== 'exercise-start' && subPhase !== 'exercise-awaiting-begin') {
+      if (exerciseAwaitingLockRef.current && phase === 'exercise' && subPhase !== 'exercise-start' && subPhase !== 'exercise-active' && subPhase !== 'exercise-awaiting-begin') {
         setSubPhase('exercise-awaiting-begin');
       }
     } catch {}
