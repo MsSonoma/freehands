@@ -162,10 +162,17 @@ export function useDiscussionHandlers({
     setAskState('inactive');
     setAskOriginalQuestion('');
     
-    // Only show opening actions in discussion awaiting-learner phase
-    // NEVER show them during active Q&A phases (comprehension-active, exercise-start, worksheet-active, test-active)
-    // Opening actions should only appear during entrance states (before Go is clicked)
-    if (phase === 'discussion' && subPhase === 'awaiting-learner') {
+    // Show opening actions in discussion phase or Q&A entrance states (before Go is clicked)
+    // Hide them only when actively answering questions (currentProblem exists)
+    const inDiscussion = (phase === 'discussion' && subPhase === 'awaiting-learner');
+    const inActiveQA = (
+      (phase === 'comprehension' && currentCompProblem) ||
+      (phase === 'exercise' && currentExerciseProblem) ||
+      (phase === 'worksheet' && currentWorksheetIndex >= 0 && generatedWorksheet && generatedWorksheet.length > 0) ||
+      (phase === 'test' && testActiveIndex >= 0 && generatedTest && generatedTest.length > 0)
+    );
+    
+    if (inDiscussion || !inActiveQA) {
       setShowOpeningActions(true);
     } else {
       setShowOpeningActions(false);
@@ -231,10 +238,17 @@ export function useDiscussionHandlers({
     setAskState('inactive');
     setAskOriginalQuestion('');
     
-    // Only show opening actions in discussion awaiting-learner phase
-    // NEVER show them during active Q&A phases (comprehension-active, exercise-start, worksheet-active, test-active)
-    // Opening actions should only appear during entrance states (before Go is clicked)
-    if (phase === 'discussion' && subPhase === 'awaiting-learner') {
+    // Show opening actions in discussion phase or Q&A entrance states (before Go is clicked)
+    // Hide them only when actively answering questions (currentProblem exists)
+    const inDiscussion = (phase === 'discussion' && subPhase === 'awaiting-learner');
+    const inActiveQA = (
+      (phase === 'comprehension' && currentCompProblem) ||
+      (phase === 'exercise' && currentExerciseProblem) ||
+      (phase === 'worksheet' && currentWorksheetIndex >= 0 && generatedWorksheet && generatedWorksheet.length > 0) ||
+      (phase === 'test' && testActiveIndex >= 0 && generatedTest && generatedTest.length > 0)
+    );
+    
+    if (inDiscussion || !inActiveQA) {
       setShowOpeningActions(true);
     } else {
       setShowOpeningActions(false);
