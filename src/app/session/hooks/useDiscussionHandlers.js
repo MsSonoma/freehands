@@ -162,16 +162,10 @@ export function useDiscussionHandlers({
     setAskState('inactive');
     setAskOriginalQuestion('');
     
-    // Determine if we should show opening actions after confirming Ask
-    // Show in discussion awaiting-learner, and in Q&A phases where opening actions are normally visible
-    const inQnAPhase = (
-      (phase === 'comprehension' && (subPhase === 'comprehension-active' || currentCompProblem)) ||
-      (phase === 'exercise' && (subPhase === 'exercise-start' || currentExerciseProblem)) ||
-      (phase === 'worksheet' && subPhase === 'worksheet-active') ||
-      (phase === 'test' && subPhase === 'test-active')
-    );
-    
-    if ((phase === 'discussion' && subPhase === 'awaiting-learner') || inQnAPhase) {
+    // Only show opening actions in discussion awaiting-learner phase
+    // NEVER show them during active Q&A phases (comprehension-active, exercise-start, worksheet-active, test-active)
+    // Opening actions should only appear during entrance states (before Go is clicked)
+    if (phase === 'discussion' && subPhase === 'awaiting-learner') {
       setShowOpeningActions(true);
     } else {
       setShowOpeningActions(false);
@@ -237,16 +231,10 @@ export function useDiscussionHandlers({
     setAskState('inactive');
     setAskOriginalQuestion('');
     
-    // Determine if we should show opening actions after returning from Ask
-    // Show in discussion awaiting-learner, and in Q&A phases where opening actions are normally visible
-    const inQnAPhase = (
-      (phase === 'comprehension' && (subPhase === 'comprehension-active' || currentCompProblem)) ||
-      (phase === 'exercise' && (subPhase === 'exercise-start' || currentExerciseProblem)) ||
-      (phase === 'worksheet' && subPhase === 'worksheet-active') ||
-      (phase === 'test' && subPhase === 'test-active')
-    );
-    
-    if ((phase === 'discussion' && subPhase === 'awaiting-learner') || inQnAPhase) {
+    // Only show opening actions in discussion awaiting-learner phase
+    // NEVER show them during active Q&A phases (comprehension-active, exercise-start, worksheet-active, test-active)
+    // Opening actions should only appear during entrance states (before Go is clicked)
+    if (phase === 'discussion' && subPhase === 'awaiting-learner') {
       setShowOpeningActions(true);
     } else {
       setShowOpeningActions(false);

@@ -126,9 +126,10 @@
       "comprehension evaluation",
       "factual accuracy",
       "instruction hardening",
-      "creative features lenient validation"
+      "creative features lenient validation",
+      "opening actions button visibility"
     ],
-    "last_updated": "2025-12-02T02:15:00Z",
+    "last_updated": "2025-12-08T23:15:00Z",
     "status": "canonical"
   },
   "beta-program": {
