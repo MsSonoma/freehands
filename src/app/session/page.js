@@ -3047,10 +3047,8 @@ function SessionPageInner() {
     setQaAnswersUnlocked,
     setCanSend,
     setCurrentCompIndex,
-    setCompPool,
     setCurrentExerciseProblem,
     setCurrentExIndex,
-    setExercisePool,
     setShowPlayTimeExpired,
     setPlayExpiredPhase,
     
@@ -3059,11 +3057,9 @@ function SessionPageInner() {
     currentCompProblem,
     generatedComprehension,
     currentCompIndex,
-    compPool,
     currentExerciseProblem,
     generatedExercise,
     currentExIndex,
-    exercisePool,
     generatedWorksheet,
     generatedTest,
     
@@ -4567,8 +4563,6 @@ function SessionPageInner() {
     subjectParam,
     generatedWorksheet,
     generatedTest,
-    compPool,
-    exercisePool,
     worksheetSourceFull,
     testSourceFull,
     setDownloadError,
@@ -4739,7 +4733,7 @@ function SessionPageInner() {
           testListForReset = built;
           try {
             const key = getAssessmentStorageKey();
-            if (key) { const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none'; saveAssessments(key, { worksheet: generatedWorksheet || [], test: built, comprehension: compPool || [], exercise: exercisePool || [] }, { learnerId: lid }); }
+            if (key) { const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none'; saveAssessments(key, { worksheet: generatedWorksheet || [], test: built, comprehension: [], exercise: [] }, { learnerId: lid }); }
           } catch {}
         } else {
           setSubPhase('test-empty');

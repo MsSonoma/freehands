@@ -20,8 +20,6 @@ export function useAssessmentDownloads({
   subjectParam,
   generatedWorksheet,
   generatedTest,
-  compPool,
-  exercisePool,
   worksheetSourceFull,
   testSourceFull,
   
@@ -163,8 +161,8 @@ export function useAssessmentDownloads({
             saveAssessments(key, { 
               worksheet: source, 
               test: generatedTest || [], 
-              comprehension: compPool || [], 
-              exercise: exercisePool || [] 
+              comprehension: [], 
+              exercise: [] 
             }, { learnerId: lid }); 
           } catch {}
         }
@@ -180,7 +178,7 @@ export function useAssessmentDownloads({
   }, [
     ensurePinAllowed, showTipOverride, setDownloadError, generatedWorksheet, lessonData,
     generateAssessmentIfNeeded, WORKSHEET_TARGET, setGeneratedWorksheet, getAssessmentStorageKey,
-    saveAssessments, generatedTest, compPool, exercisePool, createPdfForItems
+    saveAssessments, generatedTest, createPdfForItems
   ]);
 
   /**
@@ -209,8 +207,8 @@ export function useAssessmentDownloads({
             saveAssessments(key, { 
               worksheet: generatedWorksheet || [], 
               test: source, 
-              comprehension: compPool || [], 
-              exercise: exercisePool || [] 
+              comprehension: [], 
+              exercise: [] 
             }, { learnerId: lid }); 
           } catch {}
         }
@@ -226,7 +224,7 @@ export function useAssessmentDownloads({
   }, [
     ensurePinAllowed, showTipOverride, setDownloadError, generatedTest, lessonData,
     generateAssessmentIfNeeded, TEST_TARGET, setGeneratedTest, getAssessmentStorageKey,
-    saveAssessments, generatedWorksheet, compPool, exercisePool, createPdfForItems
+    saveAssessments, generatedWorksheet, createPdfForItems
   ]);
 
   /**
@@ -820,8 +818,8 @@ export function useAssessmentDownloads({
           await saveAssessments(storageKey, { 
             worksheet: gW, 
             test: gT, 
-            comprehension: compPool || [], 
-            exercise: exercisePool || [] 
+            comprehension: [], 
+            exercise: [] 
           }, { learnerId: lid }); 
         } catch {} 
       }
@@ -831,8 +829,7 @@ export function useAssessmentDownloads({
     setCurrentWorksheetIndex, worksheetIndexRef, setTestActiveIndex, setTestUserAnswers,
     ensureRuntimeTargets, lessonData, getAssessmentStorageKey, subjectParam,
     // REMOVED: reserveSamples - deprecated zombie code
-    reserveWords, WORKSHEET_TARGET, TEST_TARGET, promptKey, ensureExactCount, saveAssessments,
-    compPool, exercisePool
+    reserveWords, WORKSHEET_TARGET, TEST_TARGET, promptKey, ensureExactCount, saveAssessments
   ]);
 
   return {
