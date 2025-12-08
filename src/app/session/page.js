@@ -5735,17 +5735,6 @@ function SessionPageInner() {
         }
       }
 
-      // Draw the next problem now (avoid duplicates); only used when current is correct and not final
-      let nextProblem = null;
-      if (!nearTarget && !atTarget) {
-        if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
-          let idx = currentCompIndex;
-          // Simply take the next item from the pre-generated array (duplicates already handled during generation)
-          nextProblem = generatedComprehension[idx]; 
-          setCurrentCompIndex(idx + 1); 
-        }
-      }
-
       // Build acceptable answers for local judging
   // Accept both schema variants: some items use `answer`, others use `expected`
   const { primary: expectedPrimary, synonyms: expectedSyns } = expandExpectedAnswer(problem.answer ?? problem.expected);
@@ -5818,44 +5807,28 @@ function SessionPageInner() {
           return;
         }
         setTicker(ticker + 1);
-        if (!nearTarget && nextProblem) {
-          // Update ref synchronously BEFORE setState for snapshot save
-          currentCompProblemRef.current = nextProblem;
-          setCurrentCompProblem(nextProblem);
-          console.log('[COMP ANSWER] Set currentCompProblem to nextProblem:', nextProblem?.question || formatQuestionForSpeech(nextProblem));
-          // REMOVED: scheduleSaveSnapshot('qa-correct-next') - too early, state not updated yet
-          const nextQ = ensureQuestionMark(formatQuestionForSpeech(nextProblem, { layout: 'multiline' }));
-          // Remember the exact next question spoken
-          activeQuestionBodyRef.current = nextQ;
-          try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
-          
-          // ATOMIC SNAPSHOT: Save after answering comprehension question (includes next question in response)
-          try { await scheduleSaveSnapshot('comprehension-answered'); } catch {}
-          console.log('[COMP ANSWER] Snapshot saved with currentCompProblem');
-          
-          setSubPhase('comprehension-active');
-          setCanSend(false);
-          return;
-        }
-        // No more unique questions available - complete the phase early
-        if (!nextProblem && !nearTarget && !atTarget) {
+        
+        // Clear current problem so next question loads naturally from array
+        setCurrentCompProblem(null);
+        currentCompProblemRef.current = null;
+        
+        if (nearTarget) {
+          // Last question - phase complete
           try { scheduleSaveSnapshot('comprehension-complete'); } catch {}
-          
-          // Mark comprehension work phase as complete (advancing with time remaining)
           markWorkPhaseComplete('comprehension');
-          
           try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for comprehension. Now let's begin the exercise.`); } catch {}
           setPhase('exercise');
           setSubPhase('exercise-awaiting-begin');
           setExerciseSkippedAwaitBegin(true);
           setTicker(0);
-          setCurrentCompProblem(null);
           setCanSend(false);
-          return;
+        } else {
+          // More questions remaining
+          try { await speakFrontend(`${celebration}. ${progressPhrase}`); } catch {}
+          try { await scheduleSaveSnapshot('comprehension-answered'); } catch {}
+          setSubPhase('comprehension-active');
+          setCanSend(true);
         }
-        try { scheduleSaveSnapshot('qa-correct-progress'); } catch {}
-        try { await speakFrontend(`${celebration}. ${progressPhrase}`); } catch {}
-  setCanSend(true);
         return;
       }
 
@@ -5932,31 +5905,6 @@ function SessionPageInner() {
       const nearTarget = (ticker === EXERCISE_TARGET - 1);
       const atTarget = (nextCount === EXERCISE_TARGET);
 
-      // Pre-pick next problem if we won't be at target yet
-      let nextProblem = null;
-      if (!nearTarget && !atTarget) {
-        console.log('[EXERCISE NEXT] ticker:', ticker, 'nearTarget:', nearTarget, 'atTarget:', atTarget, 'currentExIndex:', currentExIndex, 'arrayLength:', generatedExercise?.length);
-        if (Array.isArray(generatedExercise) && currentExIndex < generatedExercise.length) {
-          // Simply take the next item from array - no duplicate skipping needed since array is pre-generated
-          nextProblem = generatedExercise[currentExIndex];
-          setCurrentExIndex(currentExIndex + 1);
-          console.log('[EXERCISE NEXT] Got question from array at index:', currentExIndex, 'new index:', currentExIndex + 1);
-        } else {
-          // DEFENSIVE: Array exhausted prematurely - complete phase early
-          console.error('[EXERCISE NEXT] Array exhausted prematurely at question', ticker + 1, '- currentExIndex:', currentExIndex, 'length:', generatedExercise?.length);
-          console.error('[EXERCISE NEXT] Completing phase early instead of showing buttons');
-          // Mark as complete and transition
-          markWorkPhaseComplete('exercise');
-          try { await speakFrontend('Great job! Moving to the worksheet.'); } catch {}
-          setPhase('worksheet');
-          setSubPhase('worksheet-awaiting-begin');
-          setTicker(0);
-          setCanSend(false);
-          setCurrentExerciseProblem(null);
-          return;
-        }
-      }
-
       // Build acceptable answers
   const { primary: expectedPrimaryE, synonyms: expectedSynsE } = expandExpectedAnswer(problem.answer ?? problem.expected ?? problem.A ?? problem.a);
       const anyOfE = expectedAnyList(problem);
@@ -6013,25 +5961,27 @@ function SessionPageInner() {
           return;
         }
         setTicker(ticker + 1);
-        if (!nearTarget && nextProblem) {
-          // Update ref synchronously BEFORE setState for snapshot save
-          currentExerciseProblemRef.current = nextProblem;
-          setCurrentExerciseProblem(nextProblem);
-          console.log('[EXERCISE ANSWER] Set currentExerciseProblem to nextProblem');
-          try { scheduleSaveSnapshot('qa-correct-next'); } catch {}
-          const nextQ = ensureQuestionMark(formatQuestionForSpeech(nextProblem, { layout: 'multiline' }));
-          // Remember the exact next exercise question spoken
-          activeQuestionBodyRef.current = nextQ;
-          try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
-          
-          // Re-enable input after the next question has been spoken. While speaking, input is locked by speakingLock.
+        
+        // Clear current problem so next question loads naturally from array
+        setCurrentExerciseProblem(null);
+        currentExerciseProblemRef.current = null;
+        
+        if (nearTarget) {
+          // Last question - phase complete
+          try { scheduleSaveSnapshot('exercise-complete'); } catch {}
+          markWorkPhaseComplete('exercise');
+          try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for the exercise. Now let's move on to the worksheet.`); } catch {}
+          setPhase('worksheet');
+          setSubPhase('worksheet-awaiting-begin');
+          setTicker(0);
+          setCanSend(false);
+        } else {
+          // More questions remaining
+          try { await speakFrontend(`${celebration}. ${progressPhrase}`); } catch {}
+          try { await scheduleSaveSnapshot('exercise-answered'); } catch {}
+          setSubPhase('exercise-active');
           setCanSend(true);
-          return;
         }
-        console.log('[EXERCISE ANSWER] No next problem - nearTarget:', nearTarget, 'nextProblem:', !!nextProblem);
-        try { scheduleSaveSnapshot('qa-correct-progress'); } catch {}
-        try { await speakFrontend(`${celebration}. ${progressPhrase}`); } catch {}
-        setCanSend(true);
         return;
       }
 
