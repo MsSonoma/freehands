@@ -5810,12 +5810,16 @@ function SessionPageInner() {
           markWorkPhaseComplete('comprehension');
           
           try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for comprehension. Now let's begin the exercise.`); } catch {}
-          setPhase('exercise');
-          setSubPhase('exercise-awaiting-begin');
-          setExerciseSkippedAwaitBegin(true);
-          setTicker(0);
-          setCurrentCompProblem(null);
-          setCanSend(false);
+          // Use setTimeout to ensure phase transition happens after isSpeaking state fully propagates
+          // This prevents race conditions when skip is pressed during transition speech
+          setTimeout(() => {
+            setPhase('exercise');
+            setSubPhase('exercise-awaiting-begin');
+            setExerciseSkippedAwaitBegin(true);
+            setTicker(0);
+            setCurrentCompProblem(null);
+            setCanSend(false);
+          }, 0);
           return;
         }
         setTicker(ticker + 1);
@@ -5827,11 +5831,14 @@ function SessionPageInner() {
           try { scheduleSaveSnapshot('comprehension-complete'); } catch {}
           markWorkPhaseComplete('comprehension');
           try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for comprehension. Now let's begin the exercise.`); } catch {}
-          setPhase('exercise');
-          setSubPhase('exercise-awaiting-begin');
-          setExerciseSkippedAwaitBegin(true);
-          setTicker(0);
-          setCanSend(false);
+          // Use setTimeout to ensure phase transition happens after isSpeaking state fully propagates
+          setTimeout(() => {
+            setPhase('exercise');
+            setSubPhase('exercise-awaiting-begin');
+            setExerciseSkippedAwaitBegin(true);
+            setTicker(0);
+            setCanSend(false);
+          }, 0);
         } else {
           // More questions remaining - load and speak next question immediately
           let nextProblem = null;
