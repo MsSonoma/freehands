@@ -2772,7 +2772,13 @@ function SessionPageInner() {
   const resumeSynthetic = resumeSyntheticHook;
 
   // Skip speech: stop TTS, video, captions and jump to end of current response turn
+  const skipJustFiredRef = useRef(false);
+
   const handleSkipSpeech = useCallback(() => {
+    // Mark that skip just fired to prevent Begin hotkey from auto-triggering
+    skipJustFiredRef.current = true;
+    setTimeout(() => { skipJustFiredRef.current = false; }, 300);
+    
     // Stop all audio playback
     if (audioRef.current) {
       try { audioRef.current.pause(); } catch {}
@@ -6323,6 +6329,9 @@ function SessionPageInner() {
     const onKeyDown = (e) => {
       // Disable hotkeys when games overlay is active
       if (showGames) return;
+      
+      // Prevent Begin hotkey from firing immediately after skip
+      if (skipJustFiredRef.current) return;
       
       const code = e.code || e.key;
       const target = e.target;
