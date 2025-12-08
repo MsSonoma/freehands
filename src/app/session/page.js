@@ -1889,11 +1889,12 @@ function SessionPageInner() {
                   const j = Math.floor(Math.random() * (i + 1));
                   [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
                 }
+                console.log('[ARRAY GEN] Using targets - COMPREHENSION:', COMPREHENSION_TARGET, 'EXERCISE:', EXERCISE_TARGET);
                 const totalNeeded = Math.max(0, (COMPREHENSION_TARGET || 0)) + Math.max(0, (EXERCISE_TARGET || 0));
                 let take = shuffled.slice(0, Math.min(totalNeeded, shuffled.length));
                 gComp = take.slice(0, Math.min(COMPREHENSION_TARGET, take.length));
                 gEx = take.slice(gComp.length, Math.min(gComp.length + EXERCISE_TARGET, take.length));
-                console.log('[ARRAY GEN] comprehension:', gComp.length, 'exercise:', gEx.length, 'from pool:', shuffled.length);
+                console.log('[ARRAY GEN] Generated arrays - comprehension:', gComp.length, 'exercise:', gEx.length, 'from pool:', shuffled.length);
                 // Validate array sizes match targets
                 if (gComp.length < COMPREHENSION_TARGET) {
                   console.error('[ARRAY GEN] WARNING: Comprehension array too short!', gComp.length, '<', COMPREHENSION_TARGET);
