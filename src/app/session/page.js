@@ -3409,6 +3409,11 @@ function SessionPageInner() {
   currentTimerModeRef,
     workPhaseCompletions,
   workPhaseCompletionsRef,
+  getTeachingFlowSnapshot: getTeachingFlowSnapshotBridge,
+  applyTeachingFlowSnapshot: applyTeachingFlowSnapshotBridge,
+    // Target sizes for validation
+    comprehensionTarget: COMPREHENSION_TARGET,
+    exerciseTarget: EXERCISE_TARGET,
     // State setters
     setPhase,
     setSubPhase,

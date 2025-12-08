@@ -81,6 +81,9 @@ export function useSnapshotPersistence({
   workPhaseCompletionsRef,
     getTeachingFlowSnapshot,
     applyTeachingFlowSnapshot,
+  // Target sizes for validation
+  comprehensionTarget,
+  exerciseTarget,
   // State setters
   setPhase,
   setSubPhase,
@@ -499,8 +502,8 @@ export function useSnapshotPersistence({
         } catch {}
         try { if (snap.currentExerciseProblem) setCurrentExerciseProblem(snap.currentExerciseProblem); } catch {}
         // Generated question arrays - only restore if non-empty to prevent stale empty arrays from overwriting fresh generation
-        try { Array.isArray(snap.generatedComprehension) && snap.generatedComprehension.length > 0 && setGeneratedComprehension(snap.generatedComprehension); } catch {}
-        try { Array.isArray(snap.generatedExercise) && snap.generatedExercise.length > 0 && setGeneratedExercise(snap.generatedExercise); } catch {}
+      try { Array.isArray(snap.generatedComprehension) && snap.generatedComprehension.length === comprehensionTarget && setGeneratedComprehension(snap.generatedComprehension); } catch {}
+      try { Array.isArray(snap.generatedExercise) && snap.generatedExercise.length === exerciseTarget && setGeneratedExercise(snap.generatedExercise); } catch {}
   try { Array.isArray(snap.generatedWorksheet) && snap.generatedWorksheet.length > 0 && setGeneratedWorksheet(snap.generatedWorksheet); } catch {}
   try { Array.isArray(snap.generatedTest) && snap.generatedTest.length > 0 && setGeneratedTest(snap.generatedTest); } catch {}
         // Test arrays
