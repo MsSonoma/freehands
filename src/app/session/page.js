@@ -4073,7 +4073,7 @@ function SessionPageInner() {
   );
   const inQnAForButtons = (
     (phase === 'comprehension' && subPhase === 'comprehension-active') ||
-    (phase === 'exercise' && subPhase === 'exercise-active') ||
+    (phase === 'exercise' && (subPhase === 'exercise-start' || subPhase === 'exercise-active')) ||
     (phase === 'worksheet' && subPhase === 'worksheet-active') ||
     (phase === 'test' && subPhase === 'test-active')
   );
@@ -7257,7 +7257,7 @@ function SessionPageInner() {
             try {
               const inQnA = (
                 (phase === 'comprehension' && subPhase === 'comprehension-active') ||
-                (phase === 'exercise' && subPhase === 'exercise-active') ||
+                (phase === 'exercise' && (subPhase === 'exercise-start' || subPhase === 'exercise-active')) ||
                 (phase === 'worksheet' && subPhase === 'worksheet-active') ||
                 (phase === 'test' && subPhase === 'test-active')
               );
