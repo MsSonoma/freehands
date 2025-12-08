@@ -5808,12 +5808,10 @@ function SessionPageInner() {
         }
         setTicker(ticker + 1);
         
-        // Clear current problem so next question loads naturally from array
-        setCurrentCompProblem(null);
-        currentCompProblemRef.current = null;
-        
         if (nearTarget) {
           // Last question - phase complete
+          setCurrentCompProblem(null);
+          currentCompProblemRef.current = null;
           try { scheduleSaveSnapshot('comprehension-complete'); } catch {}
           markWorkPhaseComplete('comprehension');
           try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for comprehension. Now let's begin the exercise.`); } catch {}
@@ -5823,11 +5821,28 @@ function SessionPageInner() {
           setTicker(0);
           setCanSend(false);
         } else {
-          // More questions remaining
-          try { await speakFrontend(`${celebration}. ${progressPhrase}`); } catch {}
-          try { await scheduleSaveSnapshot('comprehension-answered'); } catch {}
-          setSubPhase('comprehension-active');
-          setCanSend(true);
+          // More questions remaining - load and speak next question immediately
+          let nextProblem = null;
+          if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
+            nextProblem = generatedComprehension[currentCompIndex];
+            setCurrentCompIndex(currentCompIndex + 1);
+          }
+          
+          if (nextProblem) {
+            setCurrentCompProblem(nextProblem);
+            currentCompProblemRef.current = nextProblem;
+            const nextQ = ensureQuestionMark(formatQuestionForSpeech(nextProblem, { layout: 'multiline' }));
+            activeQuestionBodyRef.current = nextQ;
+            try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
+            try { await scheduleSaveSnapshot('comprehension-answered'); } catch {}
+            setSubPhase('comprehension-active');
+            setCanSend(false);
+          } else {
+            // Shouldn't happen if lesson validation is correct
+            console.error('[COMP] No next question at index', currentCompIndex);
+            try { await speakFrontend(`${celebration}. ${progressPhrase}`); } catch {}
+            setCanSend(true);
+          }
         }
         return;
       }
@@ -5962,12 +5977,10 @@ function SessionPageInner() {
         }
         setTicker(ticker + 1);
         
-        // Clear current problem so next question loads naturally from array
-        setCurrentExerciseProblem(null);
-        currentExerciseProblemRef.current = null;
-        
         if (nearTarget) {
           // Last question - phase complete
+          setCurrentExerciseProblem(null);
+          currentExerciseProblemRef.current = null;
           try { scheduleSaveSnapshot('exercise-complete'); } catch {}
           markWorkPhaseComplete('exercise');
           try { await speakFrontend(`${celebration}. ${progressPhrase} That's all for the exercise. Now let's move on to the worksheet.`); } catch {}
@@ -5976,11 +5989,28 @@ function SessionPageInner() {
           setTicker(0);
           setCanSend(false);
         } else {
-          // More questions remaining
-          try { await speakFrontend(`${celebration}. ${progressPhrase}`); } catch {}
-          try { await scheduleSaveSnapshot('exercise-answered'); } catch {}
-          setSubPhase('exercise-active');
-          setCanSend(true);
+          // More questions remaining - load and speak next question immediately
+          let nextProblem = null;
+          if (Array.isArray(generatedExercise) && currentExIndex < generatedExercise.length) {
+            nextProblem = generatedExercise[currentExIndex];
+            setCurrentExIndex(currentExIndex + 1);
+          }
+          
+          if (nextProblem) {
+            setCurrentExerciseProblem(nextProblem);
+            currentExerciseProblemRef.current = nextProblem;
+            const nextQ = ensureQuestionMark(formatQuestionForSpeech(nextProblem, { layout: 'multiline' }));
+            activeQuestionBodyRef.current = nextQ;
+            try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
+            try { await scheduleSaveSnapshot('exercise-answered'); } catch {}
+            setSubPhase('exercise-active');
+            setCanSend(false);
+          } else {
+            // Shouldn't happen if lesson validation is correct
+            console.error('[EXERCISE] No next question at index', currentExIndex);
+            try { await speakFrontend(`${celebration}. ${progressPhrase}`); } catch {}
+            setCanSend(true);
+          }
         }
         return;
       }
