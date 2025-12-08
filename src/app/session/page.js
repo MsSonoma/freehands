@@ -1213,9 +1213,7 @@ function SessionPageInner() {
     return getSnapshotStorageKeyUtil({ lessonData, manifestInfo, lessonParam, override });
   };
   const [currentWorksheetIndex, setCurrentWorksheetIndex] = useState(0);
-  // Sample-driven question pools (for comprehension & exercise)
-  const [compPool, setCompPool] = useState([]); // remaining shuffled problems for comprehension
-  const [exercisePool, setExercisePool] = useState([]); // remaining shuffled problems for exercise
+  // Current problems being asked (Q&A state)
   const [currentCompProblem, setCurrentCompProblem] = useState(null); // problem currently asked in comprehension awaiting learner answer
   const [currentExerciseProblem, setCurrentExerciseProblem] = useState(null); // problem currently asked in exercise awaiting learner answer
 
@@ -1896,6 +1894,13 @@ function SessionPageInner() {
                 gComp = take.slice(0, Math.min(COMPREHENSION_TARGET, take.length));
                 gEx = take.slice(gComp.length, Math.min(gComp.length + EXERCISE_TARGET, take.length));
                 console.log('[ARRAY GEN] comprehension:', gComp.length, 'exercise:', gEx.length, 'from pool:', shuffled.length);
+                // Validate array sizes match targets
+                if (gComp.length < COMPREHENSION_TARGET) {
+                  console.error('[ARRAY GEN] WARNING: Comprehension array too short!', gComp.length, '<', COMPREHENSION_TARGET);
+                }
+                if (gEx.length < EXERCISE_TARGET) {
+                  console.error('[ARRAY GEN] WARNING: Exercise array too short!', gEx.length, '<', EXERCISE_TARGET);
+                }
                 setGeneratedComprehension(gComp);
                 setGeneratedExercise(gEx);
                 setCurrentCompIndex(0);
@@ -4303,10 +4308,10 @@ function SessionPageInner() {
     if (gW || gT) {
       if (lessonData.id) {
   const key = getAssessmentStorageKey();
-  if (key) { try { const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none'; saveAssessments(key, { worksheet: gW || [], test: gT || [], comprehension: compPool || [], exercise: exercisePool || [] }, { learnerId: lid }); } catch {} }
+  if (key) { try { const lid = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none'; saveAssessments(key, { worksheet: gW || [], test: gT || [] }, { learnerId: lid }); } catch {} }
       }
     }
-  }, [lessonData, generatedWorksheet, generatedTest, compPool.length]);
+  }, [lessonData, generatedWorksheet, generatedTest]);
 
   const beginSession = async () => {
     
@@ -5745,19 +5750,6 @@ function SessionPageInner() {
           nextProblem = generatedComprehension[idx]; 
           setCurrentCompIndex(idx + 1); 
         }
-        if (!nextProblem) {
-          // REMOVED: drawSampleUnique fallback - deprecated zombie code
-        }
-        if (!nextProblem && compPool.length) {
-          const [head, ...rest] = compPool;
-          const headSame = (()=>{ try { const t=(head?.question ?? formatQuestionForSpeech(head)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t===c; } catch { return false; }})();
-          if (head && !headSame) { nextProblem = head; setCompPool(rest); }
-          else {
-            const altIndex = rest.findIndex(q => q && (()=>{ try { const t=(q?.question ?? formatQuestionForSpeech(q)).trim(); const c=(problem?.question ?? formatQuestionForSpeech(problem)).trim(); return t!==c; } catch { return true; }})());
-            if (altIndex >= 0) { nextProblem = rest[altIndex]; setCompPool(rest.slice(altIndex + 1)); }
-            else { setCompPool(rest); }
-          }
-        }
       }
 
       // Build acceptable answers for local judging
@@ -5920,22 +5912,20 @@ function SessionPageInner() {
           first = generatedExercise[currentExIndex];
           setCurrentExIndex(currentExIndex + 1);
         }
-        // REMOVED: drawSampleUnique fallback - deprecated zombie code
-        if (!first && exercisePool.length) {
-          const [head, ...rest] = exercisePool;
-          if (head) first = head;
-          setExercisePool(rest);
-        }
-        if (!first) {
-          const refilled = buildQAPool();
-          if (refilled.length) { const [head, ...rest] = refilled; first = head; setExercisePool(rest); }
-        }
         if (first) {
           setCurrentExerciseProblem(first);
           const q = ensureQuestionMark(formatQuestionForSpeech(first, { layout: 'multiline' }));
           // Track first exercise question asked
           activeQuestionBodyRef.current = q;
           try { await speakFrontend(q, { mcLayout: 'multiline' }); } catch {}
+        } else {
+          // DEFENSIVE: Array exhausted - complete phase early instead of showing opening actions
+          console.error('[EXERCISE] Array exhausted at start - no questions available');
+          try { await speakFrontend('Great job! Moving to the worksheet.'); } catch {}
+          setPhase('worksheet');
+          setSubPhase('worksheet-awaiting-begin');
+          setCanSend(false);
+          return;
         }
         setCanSend(true);
         return;
@@ -5958,7 +5948,18 @@ function SessionPageInner() {
           setCurrentExIndex(currentExIndex + 1);
           console.log('[EXERCISE NEXT] Got question from array at index:', currentExIndex, 'new index:', currentExIndex + 1);
         } else {
-          console.log('[EXERCISE NEXT] Array exhausted or missing - currentExIndex:', currentExIndex, 'length:', generatedExercise?.length);
+          // DEFENSIVE: Array exhausted prematurely - complete phase early
+          console.error('[EXERCISE NEXT] Array exhausted prematurely at question', ticker + 1, '- currentExIndex:', currentExIndex, 'length:', generatedExercise?.length);
+          console.error('[EXERCISE NEXT] Completing phase early instead of showing buttons');
+          // Mark as complete and transition
+          markWorkPhaseComplete('exercise');
+          try { await speakFrontend('Great job! Moving to the worksheet.'); } catch {}
+          setPhase('worksheet');
+          setSubPhase('worksheet-awaiting-begin');
+          setTicker(0);
+          setCanSend(false);
+          setCurrentExerciseProblem(null);
+          return;
         }
       }
 
