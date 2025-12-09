@@ -380,7 +380,7 @@ export default function CounselorClient() {
   // (initializeMentorSession defined later, after realtime subscription helper)
 
   // Replace polling with realtime subscription for instant conflict detection
-  const startRealtimeSubscription = useCallback(() => {
+  const startRealtimeSubscription = useCallback(async () => {
     if (!sessionId || !accessToken || !hasAccess) return
     
     // Clean up existing subscription
@@ -392,7 +392,14 @@ export default function CounselorClient() {
     const supabase = getSupabaseClient()
     if (!supabase) return
 
-    console.log('[Realtime] Starting subscription for session:', sessionId)
+    // Get user ID for filtering
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      console.error('[Realtime] Cannot start subscription - no user')
+      return
+    }
+
+    console.log('[Realtime] Starting subscription for session:', sessionId, 'user:', user.id)
 
     // Subscribe to mentor_sessions changes for this facilitator
     // Note: Can't filter by session_id in postgres_changes, so we filter in the callback
@@ -408,6 +415,11 @@ export default function CounselorClient() {
         const updatedSession = payload.new
         const oldSession = payload.old
 
+        // Only process updates for this user's sessions
+        if (updatedSession.facilitator_id !== user.id) {
+          return
+        }
+
         console.log('[Realtime] Session update detected:', { 
           updatedSessionId: updatedSession.session_id, 
           mySessionId: sessionId,
@@ -419,7 +431,7 @@ export default function CounselorClient() {
 
         // Check if THIS session was deactivated (taken over)
         if (updatedSession.session_id === sessionId && oldSession.is_active && !updatedSession.is_active) {
-          console.log('[Realtime] Session taken over by another device - ending session')
+          console.log('[Realtime] THIS SESSION taken over by another device - ending session')
           
           // Clear local state
           setConversationHistory([])
@@ -435,6 +447,12 @@ export default function CounselorClient() {
           
           // Optionally reload the page to force re-initialization
           // window.location.reload()
+        } else {
+          console.log('[Realtime] Update is for different session or not a takeover:', {
+            isSameSession: updatedSession.session_id === sessionId,
+            wasActive: oldSession.is_active,
+            isActive: updatedSession.is_active
+          })
         }
       })
       .subscribe((status) => {
@@ -693,6 +711,19 @@ export default function CounselorClient() {
         
         const result = await response.json().catch(() => ({}))
         console.log('[Mr. Mentor] PATCH response:', { ok: response.ok, status: response.status, result })
+        
+        // Handle 410 Gone - session was taken over by another device
+        if (response.status === 410) {
+          console.log('[Mr. Mentor] Session taken over (410) - clearing local state')
+          setConversationHistory([])
+          setDraftSummary('')
+          setCurrentSessionTokens(0)
+          setSessionStarted(false)
+          setSessionLoading(false)
+          setShowTakeoverDialog(false)
+          setConflictingSession(null)
+          alert('This session has been taken over by another device.')
+        }
       } catch (err) {
         console.error('[Mr. Mentor] Save error:', err)
       }
