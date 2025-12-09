@@ -7656,7 +7656,16 @@ function SessionPageInner() {
       />
     )}
 
-    {/* Timer Controls Overlay - facilitator can adjust timer and golden key */}
+    {/* Play time expired overlay - outside container to avoid z-index conflicts with opening actions */}
+    {showPlayTimeExpired && playExpiredPhase && (
+      <PlayTimeExpiredOverlay
+        isOpen={showPlayTimeExpired}
+        phase={playExpiredPhase}
+        onComplete={handlePlayExpiredComplete}
+      />
+    )}
+
+    {/* Timer Controls Overlay - facilitator can adjust timer and golden key */
     {showTimerControls && sessionTimerMinutes > 0 && (
       <TimerControlOverlay
         isOpen={showTimerControls}
@@ -8069,15 +8078,6 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
               onTimerClick={handleTimerClick}
             />
           </div>
-        )}
-        
-        {/* Play time expired overlay */}
-        {showPlayTimeExpired && playExpiredPhase && (
-          <PlayTimeExpiredOverlay
-            isOpen={showPlayTimeExpired}
-            phase={playExpiredPhase}
-            onComplete={handlePlayExpiredComplete}
-          />
         )}
         
         {/* No black screen during test */}
