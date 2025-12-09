@@ -1219,21 +1219,6 @@ function SessionPageInner() {
 
   // (session snapshot hooks moved below test state initialization to avoid TDZ)
 
-  // Comprehension input gating
-  // - While in comprehension-start (pre-first-question), keep input disabled.
-  // - After the first question is set (comprehension-active), enable input only once TTS finishes the prompt.
-  useEffect(() => {
-    if (phase !== 'comprehension') return;
-    if (subPhase === 'comprehension-start') {
-      if (canSend) setCanSend(false);
-      return;
-    }
-    if (subPhase === 'comprehension-active') {
-      if (currentCompProblem && !isSpeaking && !canSend) setCanSend(true);
-      return;
-    }
-  }, [phase, subPhase, currentCompProblem, isSpeaking, canSend]);
-  
   // Persist comprehension/exercise pools whenever they are initialized or change length (e.g., after consuming an item)
   useEffect(() => {
     const storageKey = getAssessmentStorageKey();
@@ -5860,7 +5845,7 @@ function SessionPageInner() {
             try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
             try { await scheduleSaveSnapshot('comprehension-answered'); } catch {}
             setSubPhase('comprehension-active');
-            setCanSend(false);
+            setCanSend(true);
           } else {
             // Shouldn't happen if lesson validation is correct
             console.error('[COMP] No next question at index', currentCompIndex);
