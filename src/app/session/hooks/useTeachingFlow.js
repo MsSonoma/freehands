@@ -68,6 +68,9 @@ export function useTeachingFlow({
   const exampleSentencesRef = useRef([]);
   const exampleSentenceIndexRef = useRef(0);
   
+  // Prefetch promise for examples GPT content (loaded in background during definitions gate)
+  const examplesGptPromiseRef = useRef(null);
+  
   const getTeachingFlowSnapshot = useCallback(() => {
     return {
       vocabSentences: Array.isArray(vocabSentencesRef.current)
@@ -112,6 +115,87 @@ export function useTeachingFlow({
     isInSentenceModeRef.current = inSentence;
     setIsInSentenceMode(inSentence);
   }, []);
+  
+  /**
+   * Prefetch examples GPT content in background
+   * Called after sample questions finish loading during definitions gate
+   */
+  const prefetchExamplesContent = useCallback(async () => {
+    // Don't prefetch if already loading or loaded
+    if (examplesGptPromiseRef.current) {
+      console.log('[TEACHING] Examples GPT already prefetching/loaded, skipping');
+      return;
+    }
+    
+    console.log('[TEACHING] Starting examples GPT prefetch');
+    
+    const lessonTitle = getCleanLessonTitle();
+    const notes = getTeachingNotes() || '';
+    
+    // Get vocab list to provide context for examples
+    const loaded = await ensureLessonDataReady();
+    const vocabList = getAvailableVocab(loaded || undefined);
+    const hasAnyVocab = Array.isArray(vocabList) && vocabList.length > 0;
+    
+    // Extract vocab terms for context
+    const terms = hasAnyVocab
+      ? Array.from(new Map(
+          vocabList
+            .map(v => {
+              const raw = (typeof v === 'string') ? v : (v?.term || v?.word || v?.key || '');
+              const t = (raw || '').trim();
+              return t ? [t.toLowerCase(), t] : null;
+            })
+            .filter(Boolean)
+        ).values())
+      : [];
+    
+    const vocabContext = terms.length > 0 ? `Use these vocabulary words naturally in your examples: ${terms.join(', ')}.` : '';
+    
+    const instruction = [
+      '',
+      `Teaching notes (for your internal guidance; integrate naturally—do not read verbatim): ${notes}`,
+      '',
+      'No intro: Do not greet or introduce yourself; begin immediately with the examples.',
+      `Examples: Show 2–3 tiny worked examples appropriate for this lesson. ${vocabContext} You compute every step. Be concise, warm, and playful. Do not add definitions or broad explanations beyond what is needed to show the steps. Do not do an introduction or a wrap; give only the examples.`,
+      '',
+      'CRITICAL ACCURACY: All examples and facts must be scientifically and academically correct. Never demonstrate incorrect procedures, state false information, or contradict established knowledge. Verify accuracy before presenting. OVERRIDE: If teaching notes below specify particular examples or methods, base your examples on that guidance - paraphrase naturally in your own style, but preserve the meaning and facts exactly as given. Do not correct, contradict, or add different information.',
+      '',
+      'Kid-friendly style rules: Use simple everyday words a 5–7 year old can understand. Keep sentences short (about 6–12 words). Avoid big words and jargon. If you must use one, add a quick kid-friendly meaning in parentheses. Use a warm, friendly tone with everyday examples. Speak directly to the learner using \"you\" and \"we\". One idea per sentence; do not pack many steps into one sentence.',
+      '',
+      'Always respond with natural spoken text only. Do not use emojis, decorative characters, repeated punctuation, ASCII art, bullet lines, or other symbols that would be awkward to read aloud.'
+    ].join('\n');
+    
+    // Start GPT call in background (don't await)
+    examplesGptPromiseRef.current = callMsSonoma(
+      instruction,
+      '',
+      {
+        phase: 'teaching',
+        subject: subjectParam,
+        difficulty: difficultyParam,
+        lesson: lessonParam,
+        lessonTitle: effectiveLessonTitle,
+        step: 'examples',
+        teachingNotes: notes || undefined,
+        vocab: hasAnyVocab ? vocabList : [],
+        stage: 'examples'
+      },
+      { skipAudio: true } // Skip audio - we'll play sentence-by-sentence
+    );
+    
+    console.log('[TEACHING] Examples GPT prefetch started');
+  }, [
+    callMsSonoma,
+    ensureLessonDataReady,
+    getAvailableVocab,
+    getCleanLessonTitle,
+    getTeachingNotes,
+    subjectParam,
+    difficultyParam,
+    lessonParam,
+    effectiveLessonTitle
+  ]);
   
   /**
    * Gate prompt: "Do you have any questions?" + example questions
@@ -187,12 +271,19 @@ export function useTeachingFlow({
       if (!result.success) {
         // Failed to generate example questions - silent
       }
+      
+      // If we just finished definitions stage, prefetch examples GPT content
+      // This gives maximum time to load while student processes the sample questions
+      if (teachingStage === 'definitions' && result.success && result.text) {
+        console.log('[TEACHING] Triggering examples GPT prefetch after sample questions loaded');
+        prefetchExamplesContent();
+      }
     } catch (err) {
       // Error generating example questions - silent
     }
     
     setSubPhase('awaiting-gate');
-    setCanSend(false); // gated via buttons
+    setCanSend(false);
   };
 
   /**
@@ -393,60 +484,70 @@ export function useTeachingFlow({
       try { await speakFrontend("Now let's see this in action."); } catch {}
     }
     
-    const lessonTitle = getCleanLessonTitle();
-    const notes = getTeachingNotes() || '';
-    
-    // Get vocab list to provide context for examples
-    const loaded = await ensureLessonDataReady();
-    const vocabList = getAvailableVocab(loaded || undefined);
-    const hasAnyVocab = Array.isArray(vocabList) && vocabList.length > 0;
-    
-    // Extract vocab terms for context
-    const terms = hasAnyVocab
-      ? Array.from(new Map(
-          vocabList
-            .map(v => {
-              const raw = (typeof v === 'string') ? v : (v?.term || v?.word || v?.key || '');
-              const t = (raw || '').trim();
-              return t ? [t.toLowerCase(), t] : null;
-            })
-            .filter(Boolean)
-        ).values())
-      : [];
-    
-    const vocabContext = terms.length > 0 ? `Use these vocabulary words naturally in your examples: ${terms.join(', ')}.` : '';
-    
-    const instruction = [
-      '',
-      `Teaching notes (for your internal guidance; integrate naturally—do not read verbatim): ${notes}`,
-      '',
-      'No intro: Do not greet or introduce yourself; begin immediately with the examples.',
-      `Examples: Show 2–3 tiny worked examples appropriate for this lesson. ${vocabContext} You compute every step. Be concise, warm, and playful. Do not add definitions or broad explanations beyond what is needed to show the steps. Do not do an introduction or a wrap; give only the examples.`,
-      '',
-      'CRITICAL ACCURACY: All examples and facts must be scientifically and academically correct. Never demonstrate incorrect procedures, state false information, or contradict established knowledge. Verify accuracy before presenting. OVERRIDE: If teaching notes below specify particular examples or methods, base your examples on that guidance - paraphrase naturally in your own style, but preserve the meaning and facts exactly as given. Do not correct, contradict, or add different information.',
-      '',
-      'Kid-friendly style rules: Use simple everyday words a 5–7 year old can understand. Keep sentences short (about 6–12 words). Avoid big words and jargon. If you must use one, add a quick kid-friendly meaning in parentheses. Use a warm, friendly tone with everyday examples. Speak directly to the learner using \"you\" and \"we\". One idea per sentence; do not pack many steps into one sentence.',
-      '',
-      'Always respond with natural spoken text only. Do not use emojis, decorative characters, repeated punctuation, ASCII art, bullet lines, or other symbols that would be awkward to read aloud.'
-    ].join('\n');
-    
-    // Get full examples from GPT but skip audio playback (we'll play sentence-by-sentence)
-    const result = await callMsSonoma(
-      instruction,
-      '',
-      {
-        phase: 'teaching',
-        subject: subjectParam,
-        difficulty: difficultyParam,
-        lesson: lessonParam,
-        lessonTitle: effectiveLessonTitle,
-        step: isRepeat ? 'examples-repeat' : 'examples',
-        teachingNotes: notes || undefined,
-        vocab: hasAnyVocab ? vocabList : [],
-        stage: 'examples'
-      },
-      { skipAudio: true } // Skip audio - we'll play sentence-by-sentence
-    );
+    // Check if we already prefetched the examples content
+    let result;
+    if (examplesGptPromiseRef.current) {
+      console.log('[TEACHING] Using prefetched examples GPT content');
+      result = await examplesGptPromiseRef.current;
+      examplesGptPromiseRef.current = null; // Clear after use
+    } else {
+      console.log('[TEACHING] No prefetch found, fetching examples GPT content now');
+      
+      const lessonTitle = getCleanLessonTitle();
+      const notes = getTeachingNotes() || '';
+      
+      // Get vocab list to provide context for examples
+      const loaded = await ensureLessonDataReady();
+      const vocabList = getAvailableVocab(loaded || undefined);
+      const hasAnyVocab = Array.isArray(vocabList) && vocabList.length > 0;
+      
+      // Extract vocab terms for context
+      const terms = hasAnyVocab
+        ? Array.from(new Map(
+            vocabList
+              .map(v => {
+                const raw = (typeof v === 'string') ? v : (v?.term || v?.word || v?.key || '');
+                const t = (raw || '').trim();
+                return t ? [t.toLowerCase(), t] : null;
+              })
+              .filter(Boolean)
+          ).values())
+        : [];
+      
+      const vocabContext = terms.length > 0 ? `Use these vocabulary words naturally in your examples: ${terms.join(', ')}.` : '';
+      
+      const instruction = [
+        '',
+        `Teaching notes (for your internal guidance; integrate naturally—do not read verbatim): ${notes}`,
+        '',
+        'No intro: Do not greet or introduce yourself; begin immediately with the examples.',
+        `Examples: Show 2–3 tiny worked examples appropriate for this lesson. ${vocabContext} You compute every step. Be concise, warm, and playful. Do not add definitions or broad explanations beyond what is needed to show the steps. Do not do an introduction or a wrap; give only the examples.`,
+        '',
+        'CRITICAL ACCURACY: All examples and facts must be scientifically and academically correct. Never demonstrate incorrect procedures, state false information, or contradict established knowledge. Verify accuracy before presenting. OVERRIDE: If teaching notes below specify particular examples or methods, base your examples on that guidance - paraphrase naturally in your own style, but preserve the meaning and facts exactly as given. Do not correct, contradict, or add different information.',
+        '',
+        'Kid-friendly style rules: Use simple everyday words a 5–7 year old can understand. Keep sentences short (about 6–12 words). Avoid big words and jargon. If you must use one, add a quick kid-friendly meaning in parentheses. Use a warm, friendly tone with everyday examples. Speak directly to the learner using \"you\" and \"we\". One idea per sentence; do not pack many steps into one sentence.',
+        '',
+        'Always respond with natural spoken text only. Do not use emojis, decorative characters, repeated punctuation, ASCII art, bullet lines, or other symbols that would be awkward to read aloud.'
+      ].join('\n');
+      
+      // Get full examples from GPT but skip audio playback (we'll play sentence-by-sentence)
+      result = await callMsSonoma(
+        instruction,
+        '',
+        {
+          phase: 'teaching',
+          subject: subjectParam,
+          difficulty: difficultyParam,
+          lesson: lessonParam,
+          lessonTitle: effectiveLessonTitle,
+          step: isRepeat ? 'examples-repeat' : 'examples',
+          teachingNotes: notes || undefined,
+          vocab: hasAnyVocab ? vocabList : [],
+          stage: 'examples'
+        },
+        { skipAudio: true } // Skip audio - we'll play sentence-by-sentence
+      );
+    }
     
     if (result.success && result.text) {
       // Split the GPT response into sentences
