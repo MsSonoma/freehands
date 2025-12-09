@@ -407,11 +407,22 @@ export default function CounselorClient() {
 
         // Check if THIS session was taken over
         if (!updatedSession.is_active) {
-          // Session was deactivated - show takeover dialog
-          setConflictingSession(updatedSession)
-          setShowTakeoverDialog(true)
+          console.log('[Realtime] Session taken over by another device - ending session')
+          
+          // Clear local state
+          setConversationHistory([])
+          setDraftSummary('')
+          setCurrentSessionTokens(0)
           setSessionStarted(false)
           setSessionLoading(false)
+          setShowTakeoverDialog(false)
+          setConflictingSession(null)
+          
+          // Show alert to user
+          alert('This session has been taken over by another device. Your conversation was saved.')
+          
+          // Optionally reload the page to force re-initialization
+          // window.location.reload()
         }
       })
       .subscribe()
