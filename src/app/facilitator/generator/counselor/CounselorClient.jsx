@@ -480,7 +480,7 @@ export default function CounselorClient() {
       }
 
       const payload = await checkRes.json()
-      console.log('[Mr. Mentor] GET response:', { status: payload.status, isOwner: payload.isOwner, hasConversation: !!payload.session?.conversation_history, conversationLength: payload.session?.conversation_history?.length })
+      console.log('[Mr. Mentor] GET response:', { status: payload.status, isOwner: payload.isOwner, hasConversation: !!payload.session?.conversation_history, conversationLength: payload.session?.conversation_history?.length, requestedSessionId: sessionId, activeSessionId: payload.session?.session_id })
 
       if (!isMountedRef.current) {
         return
