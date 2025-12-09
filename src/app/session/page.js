@@ -6576,10 +6576,19 @@ function SessionPageInner() {
         return;
       }
 
-      if (skip && code === skip && isSpeaking && typeof handleSkipSpeech === 'function') {
-        e.preventDefault();
-        handleSkipSpeech();
-        return;
+      if (skip && code === skip) {
+        // Skip has two uses: 1) Skip speech when speaking, 2) Next sentence during teaching gate
+        if (isSpeaking && typeof handleSkipSpeech === 'function') {
+          e.preventDefault();
+          handleSkipSpeech();
+          return;
+        }
+        // During teaching gate (awaiting-gate), ArrowRight acts as "Next Sentence"
+        if (phase === 'teaching' && subPhase === 'awaiting-gate' && typeof handleGateNo === 'function') {
+          e.preventDefault();
+          handleGateNo();
+          return;
+        }
       }
 
       if (repeat && code === repeat && !isSpeaking && showRepeatButton && typeof handleRepeatSpeech === 'function') {
@@ -6590,7 +6599,7 @@ function SessionPageInner() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [hotkeys, toggleMute, isSpeaking, handleSkipSpeech, showRepeatButton, handleRepeatSpeech, showGames]);
+  }, [hotkeys, toggleMute, isSpeaking, handleSkipSpeech, showRepeatButton, handleRepeatSpeech, showGames, phase, subPhase, handleGateNo]);
 
   const renderDiscussionControls = () => {
     if (subPhase === "awaiting-learner") {
