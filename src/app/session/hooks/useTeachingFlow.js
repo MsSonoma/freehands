@@ -282,6 +282,8 @@ export function useTeachingFlow({
       // Split the GPT response into sentences
       const sentences = splitIntoSentences(result.text).filter(s => s.trim());
       
+      console.log('[TEACHING] Split into', sentences.length, 'vocab sentences');
+      
       if (sentences.length === 0) {
         return false;
       }
@@ -293,6 +295,8 @@ export function useTeachingFlow({
       setVocabSentenceIndex(0);
       isInSentenceModeRef.current = true;
       setIsInSentenceMode(true);
+      
+      console.log('[TEACHING] Stored', vocabSentencesRef.current.length, 'sentences in ref');
       
       // Show loading overlay during save (consistent with subsequent sentences)
       setTtsLoadingCount(prev => prev + 1);
@@ -525,6 +529,7 @@ export function useTeachingFlow({
    * Handle "No" button - advance to next sentence or next stage
    */
   const handleGateNo = async () => {
+    console.log('[TEACHING] handleGateNo called - stage:', teachingStage, 'vocabSentences.length:', vocabSentencesRef.current.length, 'currentIndex:', vocabSentenceIndexRef.current);
     
     if (teachingStage === 'definitions') {
       // If we have sentences stored, try to advance to the next one
