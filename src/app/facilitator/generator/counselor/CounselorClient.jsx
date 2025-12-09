@@ -607,6 +607,15 @@ export default function CounselorClient() {
 
   // Save conversation to database whenever it changes
   useEffect(() => {
+    console.log('[Mr. Mentor] Save effect triggered:', { 
+      sessionId: !!sessionId, 
+      accessToken: !!accessToken, 
+      hasAccess, 
+      sessionLoading, 
+      conversationLength: conversationHistory.length,
+      willSave: sessionId && accessToken && hasAccess && !sessionLoading && conversationHistory.length > 0
+    })
+    
     if (!sessionId || !accessToken || !hasAccess || sessionLoading || conversationHistory.length === 0) return
     
     // Debounce database writes
@@ -616,22 +625,35 @@ export default function CounselorClient() {
         lastLocalUpdateTimestamp.current = Date.now()
         console.log('[Mr. Mentor] Saving conversation to DB:', conversationHistory.length, 'messages')
         
-        await fetch('/api/mentor-session', {
+        const payload = {
+          sessionId,
+          conversationHistory,
+          draftSummary,
+          tokenCount: currentSessionTokens,
+          lastLocalUpdateAt: new Date(lastLocalUpdateTimestamp.current).toISOString()
+        }
+        
+        console.log('[Mr. Mentor] PATCH payload:', { 
+          sessionId: payload.sessionId, 
+          conversationLength: payload.conversationHistory?.length,
+          hasDraft: !!payload.draftSummary,
+          tokenCount: payload.tokenCount,
+          timestamp: payload.lastLocalUpdateAt
+        })
+        
+        const response = await fetch('/api/mentor-session', {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`
           },
-          body: JSON.stringify({
-            sessionId,
-            conversationHistory,
-            draftSummary,
-            tokenCount: currentSessionTokens,
-            lastLocalUpdateAt: new Date(lastLocalUpdateTimestamp.current).toISOString()
-          })
+          body: JSON.stringify(payload)
         })
+        
+        const result = await response.json().catch(() => ({}))
+        console.log('[Mr. Mentor] PATCH response:', { ok: response.ok, status: response.status, result })
       } catch (err) {
-        // Silent error handling
+        console.error('[Mr. Mentor] Save error:', err)
       }
     }, 1000) // Save 1 second after last change
     

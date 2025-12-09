@@ -486,6 +486,14 @@ export async function PATCH(request) {
     const body = await request.json()
     const { sessionId, conversationHistory, draftSummary, tokenCount, lastLocalUpdateAt } = body
 
+    console.log('[PATCH] Received update:', { 
+      sessionId, 
+      conversationLength: conversationHistory?.length, 
+      hasDraft: !!draftSummary,
+      tokenCount,
+      timestamp: lastLocalUpdateAt
+    })
+
     if (!sessionId) {
       return Response.json({ error: 'Session ID required' }, { status: 400 })
     }
@@ -532,6 +540,8 @@ export async function PATCH(request) {
       .from('mentor_sessions')
       .update(updates)
       .eq('id', session.id)
+
+    console.log('[PATCH] Update result:', { error: updateError, updates })
 
     if (updateError) {
       return Response.json({ error: 'Failed to update session' }, { status: 500 })
