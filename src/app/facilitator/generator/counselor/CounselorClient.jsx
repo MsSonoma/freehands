@@ -38,6 +38,8 @@ export default function CounselorClient() {
   useEffect(() => {
     return () => {
       isMountedRef.current = false
+      // Clear initialization flag on unmount so conversation loads on remount/refresh
+      initializedSessionIdRef.current = null
     }
   }, [])
 
