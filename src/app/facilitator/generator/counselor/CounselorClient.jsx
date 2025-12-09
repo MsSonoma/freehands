@@ -410,13 +410,27 @@ export default function CounselorClient() {
         schema: 'public',
         table: 'mentor_sessions'
       }, (payload) => {
-        if (!isMountedRef.current) return
+        console.log('[Realtime] RAW event received:', {
+          event: payload.eventType,
+          table: payload.table,
+          hasNew: !!payload.new,
+          hasOld: !!payload.old
+        })
+
+        if (!isMountedRef.current) {
+          console.log('[Realtime] Ignoring - component unmounted')
+          return
+        }
 
         const updatedSession = payload.new
         const oldSession = payload.old
 
         // Only process updates for this user's sessions
         if (updatedSession.facilitator_id !== user.id) {
+          console.log('[Realtime] Ignoring - different user:', {
+            eventUserId: updatedSession.facilitator_id,
+            myUserId: user.id
+          })
           return
         }
 
