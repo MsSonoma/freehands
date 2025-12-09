@@ -199,6 +199,14 @@ export function useTeachingFlow({
     // If we already have vocab sentences stored, handle repeat/next
     if (vocabSentencesRef.current.length > 0) {
       console.log('[TEACHING DEBUG] Early return - sentences exist, speaking current sentence');
+      
+      // If NOT a repeat and we have sentences, reset to beginning (fresh start)
+      if (!isRepeat) {
+        console.log('[TEACHING DEBUG] Not a repeat - resetting to sentence 0');
+        vocabSentenceIndexRef.current = 0;
+        setVocabSentenceIndex(0);
+      }
+      
       const currentSentence = vocabSentencesRef.current[vocabSentenceIndexRef.current];
       if (currentSentence) {
         // Ensure subPhase is set to awaiting-gate (in case we're resuming from snapshot)
@@ -337,6 +345,13 @@ export function useTeachingFlow({
     // If we already have example sentences stored, handle repeat/next
     // DO NOT change subPhase - we're resuming from restore or repeating
     if (exampleSentencesRef.current.length > 0) {
+      
+      // If NOT a repeat and we have sentences, reset to beginning (fresh start)
+      if (!isRepeat) {
+        exampleSentenceIndexRef.current = 0;
+        setExampleSentenceIndex(0);
+      }
+      
       const currentSentence = exampleSentencesRef.current[exampleSentenceIndexRef.current];
       if (currentSentence) {
         // Speak the current sentence (whether repeat or continuing)
