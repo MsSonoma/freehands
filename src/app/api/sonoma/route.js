@@ -222,7 +222,6 @@ export async function POST(req) {
     if (trimmedInnertext) {
       const inputValidation = validateInput(trimmedInnertext, 'general')
       if (!inputValidation.safe) {
-        console.warn('[SAFETY] Blocked unsafe input:', inputValidation.reason)
         const fallback = getFallbackResponse('input_rejected')
         return NextResponse.json({ reply: fallback, audio: null }, { status: 200 })
       }
@@ -331,7 +330,6 @@ export async function POST(req) {
         // Rely on instruction hardening + lightweight keyword check instead
         const outputValidation = await validateOutput(msSonomaReply, anthropicKey, true)
         if (!outputValidation.safe) {
-          console.warn('[SAFETY] Blocked unsafe Anthropic output:', outputValidation.reason)
           msSonomaReply = getFallbackResponse('output_rejected')
         }
       }
@@ -348,7 +346,6 @@ export async function POST(req) {
       // Rely on instruction hardening + lightweight keyword check instead
       const outputValidation = await validateOutput(msSonomaReply, openaiKey, true)
       if (!outputValidation.safe) {
-        console.warn('[SAFETY] Blocked unsafe OpenAI output:', outputValidation.reason)
         msSonomaReply = getFallbackResponse('output_rejected')
       }
     }

@@ -77,7 +77,6 @@ Output: The Water Cycle`
     })
     
   } catch (error) {
-    console.error('[normalize-lesson-title] Error:', error)
     return NextResponse.json(
       { error: 'Failed to normalize title', details: error.message },
       { status: 500 }

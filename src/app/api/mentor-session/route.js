@@ -51,7 +51,6 @@ async function cleanupStaleSessions({ facilitatorId, now = new Date() } = {}) {
     const { data: activeSessions, error } = await query
 
     if (error) {
-      console.error('[mentor-session] Failed to fetch active sessions for cleanup:', error)
       return []
     }
 
@@ -71,13 +70,11 @@ async function cleanupStaleSessions({ facilitatorId, now = new Date() } = {}) {
       .in('id', ids)
 
     if (deactivateError) {
-      console.error('[mentor-session] Failed to deactivate stale sessions:', deactivateError)
       return []
     }
 
     return staleSessions
   } catch (err) {
-    console.error('[mentor-session] Unexpected error clearing stale sessions:', err)
     return []
   }
 }
@@ -89,7 +86,6 @@ async function deactivateSessionById(sessionId) {
     .eq('id', sessionId)
 
   if (error) {
-    console.error('[mentor-session] Failed to deactivate session by id:', sessionId, error)
     return false
   }
 
@@ -182,7 +178,6 @@ export async function GET(request) {
       .limit(1)
 
     if (error) {
-      console.error('[mentor-session] Failed to fetch session:', error)
       return Response.json({ error: 'Database error' }, { status: 500 })
     }
 
@@ -214,7 +209,6 @@ export async function GET(request) {
     })
 
   } catch (err) {
-    console.error('[mentor-session] GET error:', err)
     return Response.json({ error: 'Internal error' }, { status: 500 })
   }
 }
@@ -267,7 +261,6 @@ export async function POST(request) {
       .limit(1)
 
     if (fetchError) {
-      console.error('[mentor-session] Failed to fetch existing session:', fetchError)
       return Response.json({ error: 'Database error' }, { status: 500 })
     }
 
@@ -295,7 +288,6 @@ export async function POST(request) {
           }, { status: 403 })
         }
       } catch (pinErr) {
-        console.error('[mentor-session] Failed to verify PIN for force end:', pinErr)
         return Response.json({ error: 'Failed to verify PIN' }, { status: 500 })
       }
 
@@ -314,7 +306,6 @@ export async function POST(request) {
         .limit(1)
 
       if (targetFetchError) {
-        console.error('[mentor-session] Failed to locate session for force end:', targetFetchError)
         return Response.json({ error: 'Database error' }, { status: 500 })
       }
 
@@ -353,8 +344,6 @@ export async function POST(request) {
           }, { status: 403 })
         }
       } catch (pinErr) {
-        console.error('[mentor-session] Failed to verify PIN:', pinErr)
-        console.error('[mentor-session] PIN error stack:', pinErr.stack)
         return Response.json({ 
           error: 'Failed to verify PIN', 
           details: pinErr.message 
@@ -388,7 +377,6 @@ export async function POST(request) {
         .single()
 
       if (createError) {
-        console.error('[mentor-session] Failed to create new session:', createError)
         return Response.json({ 
           error: 'Failed to create session', 
           details: createError.message,
@@ -418,7 +406,6 @@ export async function POST(request) {
           .single()
 
         if (updateError) {
-          console.error('[mentor-session] Failed to update session:', updateError)
           return Response.json({ error: 'Failed to update session' }, { status: 500 })
         }
 
@@ -444,7 +431,6 @@ export async function POST(request) {
         .single()
 
       if (createError) {
-        console.error('[mentor-session] Failed to create session:', createError)
         return Response.json({ error: 'Failed to create session' }, { status: 500 })
       }
 
@@ -466,7 +452,6 @@ export async function POST(request) {
     }, { status: 409 })
 
   } catch (err) {
-    console.error('[mentor-session] POST error:', err)
     return Response.json({ error: 'Internal error' }, { status: 500 })
   }
 }
@@ -499,7 +484,7 @@ export async function PATCH(request) {
     }
 
     const body = await request.json()
-    const { sessionId, conversationHistory, draftSummary } = body
+    const { sessionId, conversationHistory, draftSummary, tokenCount, lastLocalUpdateAt } = body
 
     if (!sessionId) {
       return Response.json({ error: 'Session ID required' }, { status: 400 })
@@ -534,20 +519,27 @@ export async function PATCH(request) {
       updates.draft_summary = draftSummary
     }
 
+    if (tokenCount !== undefined) {
+      updates.token_count = tokenCount
+    }
+
+    // Add client timestamp if provided
+    if (lastLocalUpdateAt) {
+      updates.last_local_update_at = lastLocalUpdateAt
+    }
+
     const { error: updateError } = await supabase
       .from('mentor_sessions')
       .update(updates)
       .eq('id', session.id)
 
     if (updateError) {
-      console.error('[mentor-session] Failed to update session:', updateError)
       return Response.json({ error: 'Failed to update session' }, { status: 500 })
     }
 
     return Response.json({ success: true })
 
   } catch (err) {
-    console.error('[mentor-session] PATCH error:', err)
     return Response.json({ error: 'Internal error' }, { status: 500 })
   }
 }
@@ -594,14 +586,12 @@ export async function DELETE(request) {
       .eq('session_id', sessionId)
 
     if (error) {
-      console.error('[mentor-session] Failed to deactivate session:', error)
       return Response.json({ error: 'Failed to end session' }, { status: 500 })
     }
 
     return Response.json({ success: true })
 
   } catch (err) {
-    console.error('[mentor-session] DELETE error:', err)
     return Response.json({ error: 'Internal error' }, { status: 500 })
   }
 }

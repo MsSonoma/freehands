@@ -24,7 +24,32 @@ Visual aids are AI-generated educational images created using OpenAI's DALL-E 3.
 5. **Storage**:
    - DALL-E returns temporary URL (expires in 1 hour)
    - `/api/visual-aids/save` downloads image and uploads to Supabase `visual-aids` bucket
-   - Permanent URL stored in `lesson_visual_aids` table with lesson_key, facilitator_id
+   - **Retry logic**: Failed downloads retry 3 times with exponential backoff (1s, 2s, 4s delays)
+   - Permanent URL stored in `visual_aids` table with `lesson_key`, `facilitator_id`
+   - Images that fail all retry attempts are excluded from saved set
+
+### Download Retry Logic
+
+DALL-E temporary URLs expire after 1 hour. The save endpoint includes retry logic with exponential backoff to handle transient failures:
+
+- **3 total attempts**: Initial download + 2 retries
+- **Delays**: 1s, 2s, 4s between attempts
+- **Retryable errors**: Network timeouts (ETIMEDOUT, ECONNRESET), HTTP 403/404 (expired URLs), HTTP 429 (rate limits), HTTP 5xx (server errors)
+- **Non-retryable errors**: HTTP 400/401 (bad request/auth), invalid URL format
+- **Timeout protection**: 25s max execution time on Vercel (5s buffer under 30s limit)
+- **Failure handling**: Images that fail all retry attempts are filtered out and NOT saved to database
+
+**Why retry logic matters:**
+- Network glitches are common and usually resolve within seconds
+- DALL-E URLs occasionally return 403 temporarily even when not expired
+- Supabase Storage can have transient upload failures
+- Without retries, facilitators would lose generated images due to temporary network issues
+
+**What happens on failure:**
+- Failed images are excluded from the saved set
+- Successful images are still saved (partial save is better than total failure)
+- Clear error message if ALL images fail: "DALL-E URLs may have expired. Please regenerate."
+- Detailed logs for debugging (attempt number, error type, retry delays)
 
 ### Critical Constraint: NO TEXT IN IMAGES
 
@@ -93,9 +118,12 @@ During lesson sessions, visual aids appear in `SessionVisualAidsCarousel`:
 - ❌ Don't include teaching notes verbatim in prompts (often contain text-heavy concepts)
 
 **Never trust DALL-E URLs long-term:**
-- DALL-E temporary URLs expire after 1 hour
-- Always download and re-upload to Supabase permanent storage immediately
-- Display from permanent Supabase bucket URLs, not DALL-E URLs
+- ❌ DALL-E temporary URLs expire after 1 hour
+- ❌ Never save expired DALL-E URLs to database
+- ❌ Never fall back to original URL if download fails
+- ✅ Always download and re-upload to Supabase permanent storage immediately
+- ✅ Display from permanent Supabase bucket URLs, not DALL-E URLs
+- ✅ Filter out images that fail all retry attempts (don't save broken URLs)
 
 **Never skip the no-text enforcement suffix:**
 - Every DALL-E prompt must include the explicit no-text suffix

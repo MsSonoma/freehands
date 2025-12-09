@@ -105,9 +105,8 @@ export default function LoginPage() {
 					setResendLoading(true);
 					const supabase = getSupabaseClient();
 					// Prefer a configured public site URL for redirects to work on LAN or via tunnels
-					const emailRedirectTo = (typeof window !== 'undefined')
-					  ? (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin)
-					  : process.env.NEXT_PUBLIC_SITE_URL;
+					const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : undefined);
+					const emailRedirectTo = siteUrl ? `${siteUrl}/auth/callback` : undefined;
 					const { error } = await supabase.auth.resend({ type: 'signup', email, options: emailRedirectTo ? { emailRedirectTo } : undefined });
 					if (error) throw new Error(error.message || 'Could not resend confirmation');
 					setInfo('Confirmation email resent. Please check your inbox and spam folder.');

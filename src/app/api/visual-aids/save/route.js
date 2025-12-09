@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { downloadAndStoreImage } from '../lib/downloadImage'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 25 // Vercel timeout protection (30s max, 5s buffer)
 
 /**
  * POST/PUT /api/visual-aids/save
@@ -39,30 +40,24 @@ export async function POST(req) {
 
     // Normalize lesson key by stripping folder prefixes (so same lesson from different routes shares visual aids)
     const normalizedLessonKey = lessonKey.replace(/^(generated|facilitator|math|science|language-arts|social-studies|demo)\//, '')
-    console.log('[VISUAL_AIDS_SAVE] Normalizing lesson key:', lessonKey, '->', normalizedLessonKey)
-    console.log('[VISUAL_AIDS_SAVE] Received', generatedImages?.length || 0, 'images')
 
     // Download and store ONLY selected images permanently
     // Unselected images are discarded and not saved
     let permanentSelectedImages = []
     const selectedImages = generatedImages.filter(img => img.selected)
-    console.log('[VISUAL_AIDS_SAVE] Filtered to', selectedImages.length, 'selected images')
     
     if (selectedImages && selectedImages.length > 0) {
-      console.log('[VISUAL_AIDS_SAVE] Downloading', selectedImages.length, 'selected images...')
       
       permanentSelectedImages = await Promise.all(
         selectedImages.map(async (img) => {
           try {
             // Check if URL is already a permanent Supabase Storage URL
             if (img.url && img.url.includes('/storage/v1/object/public/visual-aids/')) {
-              console.log('[VISUAL_AIDS_SAVE] Already permanent URL:', img.id)
               return img
             }
 
             // Check if it's a data URL (uploaded file)
             if (img.url && img.url.startsWith('data:')) {
-              console.log('[VISUAL_AIDS_SAVE] Data URL (uploaded), downloading to storage:', img.id)
               // For uploaded files, we still need to convert data URL to permanent storage
               const permanentUrl = await downloadAndStoreImage(
                 img.url,
@@ -86,20 +81,26 @@ export async function POST(req) {
               img.id
             )
 
-            console.log('[VISUAL_AIDS_SAVE] Downloaded to permanent storage:', img.id)
             return {
               ...img,
               url: permanentUrl
             }
           } catch (err) {
-            console.error('[VISUAL_AIDS_SAVE] Failed to download image:', img.id, err)
-            // Keep original URL if download fails
-            return img
+            // Return null to filter out - don't save expired URLs
+            return null
           }
         })
       )
       
-      console.log('[VISUAL_AIDS_SAVE] Downloaded', permanentSelectedImages.length, 'images successfully')
+      // Filter out failed downloads (null values)
+      permanentSelectedImages = permanentSelectedImages.filter(img => img !== null)
+      
+      // If all images failed, return error
+      if (permanentSelectedImages.length === 0) {
+        return NextResponse.json({ 
+          error: 'All images failed to download after retries. DALL-E URLs may have expired. Please regenerate the images.'
+        }, { status: 500 })
+      }
     }
 
     // Save ONLY the selected images - unselected images are discarded

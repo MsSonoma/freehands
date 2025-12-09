@@ -122,7 +122,6 @@ export async function POST(request) {
             }
           }
         } catch (ttsError) {
-          console.error('[mentor-tts] Synthesis error:', ttsError)
         }
       }
     }
@@ -132,7 +131,6 @@ export async function POST(request) {
     })
     
   } catch (error) {
-    console.error('[mentor-tts] Error:', error)
     return NextResponse.json(
       { error: 'TTS generation failed' },
       { status: 500 }

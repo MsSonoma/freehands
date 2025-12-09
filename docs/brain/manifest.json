@@ -184,5 +184,24 @@
     ],
     "last_updated": "2025-12-03T00:00:00Z",
     "status": "canonical"
+  },
+  "mr-mentor-session-persistence": {
+    "file": "mr-mentor-session-persistence.md",
+    "systems": [
+      "Mr. Mentor session management",
+      "conversation persistence",
+      "device takeover",
+      "realtime subscriptions",
+      "draft summaries",
+      "turn limits",
+      "zombie cleanup",
+      "atomic gates",
+      "stale data prevention",
+      "mentor_sessions table",
+      "conversation_drafts table",
+      "conversation_updates table"
+    ],
+    "last_updated": "2025-12-09T00:00:00Z",
+    "status": "canonical"
   }
 }

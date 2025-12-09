@@ -9,7 +9,8 @@ export default function ClipboardOverlay({
   onDelete,
   onExport,
   onClose,
-  show
+  show,
+  forced = false  // NEW: Disable Cancel when forced
 }) {
   const [editedSummary, setEditedSummary] = useState(summary || '')
   const [mounted, setMounted] = useState(false)
@@ -113,10 +114,13 @@ export default function ClipboardOverlay({
             <p style={{
               margin: '6px 0 0',
               fontSize: '0.8125rem',
-              color: '#8B6F47',
-              fontFamily: 'Georgia, serif'
+              color: forced ? '#8B0000' : '#8B6F47',
+              fontFamily: 'Georgia, serif',
+              fontWeight: forced ? 600 : 400
             }}>
-              Review and edit your conversation summary
+              {forced 
+                ? 'This conversation has reached its limit. Please save, export, or delete to continue.' 
+                : 'Review and edit your conversation summary'}
             </p>
           </div>
 
@@ -244,29 +248,31 @@ export default function ClipboardOverlay({
               </button>
 
               {/* Cancel */}
-              <button
-                onClick={onClose}
-                style={{
-                  flex: 1,
-                  padding: '9px 14px',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  background: 'transparent',
-                  color: '#6b7280',
-                  border: '1px solid #D2B48C',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#F5E6D3'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'transparent'
-                }}
-              >
-                Cancel
-              </button>
+              {!forced && (
+                <button
+                  onClick={onClose}
+                  style={{
+                    flex: 1,
+                    padding: '9px 14px',
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                    background: 'transparent',
+                    color: '#6b7280',
+                    border: '1px solid #D2B48C',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#F5E6D3'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent'
+                  }}
+                >
+                  Cancel
+                </button>
+              )}
             </div>
           </div>
         </div>

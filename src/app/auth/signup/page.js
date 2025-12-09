@@ -26,7 +26,8 @@ export default function SignupPage() {
 				return;
 			}
 			const supabase = getSupabaseClient();
-					const emailRedirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
+					const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : undefined);
+					const emailRedirectTo = siteUrl ? `${siteUrl}/auth/callback` : undefined;
 					const { data, error: signUpError } = await supabase.auth.signUp({
 						email,
 						password,

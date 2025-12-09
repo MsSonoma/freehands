@@ -84,6 +84,10 @@ export default function CounselorClient() {
   const [draftSummary, setDraftSummary] = useState('')
   const [showClipboard, setShowClipboard] = useState(false)
   const [clipboardInstructions, setClipboardInstructions] = useState(false)
+  const [clipboardForced, setClipboardForced] = useState(false)
+  const [turnWarningShown, setTurnWarningShown] = useState(false)
+  const lastLocalUpdateTimestamp = useRef(Date.now())
+  const realtimeChannelRef = useRef(null)
   
   // Goals clipboard state
   const [showGoalsClipboard, setShowGoalsClipboard] = useState(false)
@@ -371,78 +375,82 @@ export default function CounselorClient() {
     assignSessionIdentifier(resolvedId)
   }, [assignSessionIdentifier, generateSessionIdentifier])
 
-  // (initializeMentorSession defined later, after polling helper)
+  // (initializeMentorSession defined later, after realtime subscription helper)
 
-  // Poll session status to detect takeovers
-  const startSessionPolling = useCallback(() => {
-    if (sessionPollInterval.current) {
-      clearInterval(sessionPollInterval.current)
+  // Replace polling with realtime subscription for instant conflict detection
+  const startRealtimeSubscription = useCallback(() => {
+    if (!sessionId || !accessToken || !hasAccess) return
+    
+    // Clean up existing subscription
+    if (realtimeChannelRef.current) {
+      realtimeChannelRef.current.unsubscribe()
+      realtimeChannelRef.current = null
     }
 
-    sessionPollInterval.current = setInterval(async () => {
-      if (!sessionId || !accessToken || !isMountedRef.current) return
+    const supabase = getSupabaseClient()
+    if (!supabase) return
 
-      try {
-        const res = await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          }
-        })
-
-        // Stop polling on auth errors
-        if (res.status === 401) {
-          if (sessionPollInterval.current) {
-            clearInterval(sessionPollInterval.current)
-            sessionPollInterval.current = null
-          }
-          return
-        }
-
-        if (!res.ok || !isMountedRef.current) return
-
-        const data = await res.json()
-
+    // Subscribe to mentor_sessions changes for this facilitator
+    const channel = supabase
+      .channel('mentor-session-changes')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'mentor_sessions',
+        filter: `session_id=eq.${sessionId}`
+      }, (payload) => {
         if (!isMountedRef.current) return
 
-        const stopPolling = () => {
-          if (sessionPollInterval.current) {
-            clearInterval(sessionPollInterval.current)
-            sessionPollInterval.current = null
-          }
-        }
+        const updatedSession = payload.new
 
-        if (data.status === 'none') {
-          stopPolling()
-          setSessionStarted(false)
-          setSessionLoading(false)
-          setConflictingSession(null)
-          setShowTakeoverDialog(false)
-          setConversationHistory([])
-          setDraftSummary('')
-          setCurrentSessionTokens(0)
-          return
-        }
-
-        if (data.status === 'taken' || !data.isOwner) {
-          stopPolling()
-
-          if (data.session) {
-            setConflictingSession(data.session)
-            setShowTakeoverDialog(true)
-            // DON'T load conversation history here - only during takeover
-            // Loading it here overwrites fresh local conversation with stale database data
-            setDraftSummary(data.session.draft_summary || '')
-            setCurrentSessionTokens(data.session.token_count || 0)
-          }
-
+        // Check if THIS session was taken over
+        if (!updatedSession.is_active) {
+          // Session was deactivated - show takeover dialog
+          setConflictingSession(updatedSession)
+          setShowTakeoverDialog(true)
           setSessionStarted(false)
           setSessionLoading(false)
         }
-      } catch (err) {
-        // Silent error handling
+      })
+      .subscribe()
+
+    realtimeChannelRef.current = channel
+  }, [sessionId, accessToken, hasAccess])
+
+  // Clean up realtime subscription on unmount
+  useEffect(() => {
+    return () => {
+      if (realtimeChannelRef.current) {
+        realtimeChannelRef.current.unsubscribe()
+        realtimeChannelRef.current = null
       }
-    }, 8000)
-  }, [sessionId, accessToken])
+    }
+  }, [])
+
+  // Monitor conversation length and enforce turn limits
+  useEffect(() => {
+    const turnCount = conversationHistory.length
+
+    // Warning at 30 turns
+    if (turnCount === 30 && !turnWarningShown) {
+      setTurnWarningShown(true)
+      alert('Your conversation is getting long. Consider starting a new conversation soon for better performance.')
+    }
+
+    // Force overlay at 50 turns
+    if (turnCount >= 50 && !showClipboard) {
+      setShowClipboard(true)
+      setClipboardForced(true)
+    }
+  }, [conversationHistory.length, showClipboard, turnWarningShown])
+
+  // Reset warning flag when new conversation starts
+  useEffect(() => {
+    if (conversationHistory.length === 0) {
+      setTurnWarningShown(false)
+      setClipboardForced(false)
+    }
+  }, [conversationHistory.length])
 
   const initializeMentorSession = useCallback(async () => {
     if (!sessionId || !accessToken || !hasAccess || !tierChecked) {
@@ -519,7 +527,7 @@ export default function CounselorClient() {
         setSessionLoading(false)
         setConflictingSession(null)
         setShowTakeoverDialog(false)
-        startSessionPolling()
+        startRealtimeSubscription()
         return
       }
 
@@ -544,7 +552,7 @@ export default function CounselorClient() {
       setSessionLoading(false)
       setConflictingSession(null)
       setShowTakeoverDialog(false)
-      startSessionPolling()
+      startRealtimeSubscription()
     } catch (err) {
       if (!isMountedRef.current) {
         return
@@ -553,7 +561,7 @@ export default function CounselorClient() {
       // Silent error handling
       setSessionLoading(false)
     }
-  }, [sessionId, accessToken, hasAccess, tierChecked, assignSessionIdentifier, startSessionPolling])
+  }, [sessionId, accessToken, hasAccess, tierChecked, assignSessionIdentifier, startRealtimeSubscription])
 
   // Initialize session when all dependencies are ready
   useEffect(() => {
@@ -588,6 +596,9 @@ export default function CounselorClient() {
     // Debounce database writes
     const saveTimer = setTimeout(async () => {
       try {
+        // Update local timestamp
+        lastLocalUpdateTimestamp.current = Date.now()
+        
         await fetch('/api/mentor-session', {
           method: 'PATCH',
           headers: {
@@ -598,7 +609,8 @@ export default function CounselorClient() {
             sessionId,
             conversationHistory,
             draftSummary,
-            tokenCount: currentSessionTokens
+            tokenCount: currentSessionTokens,
+            lastLocalUpdateAt: new Date(lastLocalUpdateTimestamp.current).toISOString()
           })
         })
       } catch (err) {
@@ -648,21 +660,31 @@ export default function CounselorClient() {
         throw new Error(data.error || 'Failed to take over session')
       }
       
-      // Load conversation from taken over session
+      // ATOMIC GATE: Only load conversation if database is newer than local
       if (data.session?.conversation_history && Array.isArray(data.session.conversation_history)) {
-        setConversationHistory(data.session.conversation_history)
-        setDraftSummary(data.session.draft_summary || '')
-        
-        // Display last message
-        const history = data.session.conversation_history
-        if (history.length > 0) {
-          const lastMsg = history[history.length - 1]
-          if (lastMsg.role === 'assistant') {
-            setCaptionText(lastMsg.content)
-            const sentences = splitIntoSentences(lastMsg.content)
-            setCaptionSentences(sentences)
-            setCaptionIndex(sentences.length - 1)
+        const dbTimestamp = new Date(data.session.last_activity_at).getTime()
+        const localTimestamp = lastLocalUpdateTimestamp.current
+
+        if (dbTimestamp > localTimestamp) {
+          // Database is newer - safe to load
+          const history = data.session.conversation_history
+          setConversationHistory(history)
+          setDraftSummary(data.session.draft_summary || '')
+          lastLocalUpdateTimestamp.current = dbTimestamp
+          
+          // Display last message
+          if (history.length > 0) {
+            const lastMsg = history[history.length - 1]
+            if (lastMsg.role === 'assistant') {
+              setCaptionText(lastMsg.content)
+              const sentences = splitIntoSentences(lastMsg.content)
+              setCaptionSentences(sentences)
+              setCaptionIndex(sentences.length - 1)
+            }
           }
+        } else {
+          // Database is stale - keep local conversation
+          console.warn('Ignoring stale database conversation from takeover')
         }
       }
       
@@ -670,8 +692,8 @@ export default function CounselorClient() {
       setConflictingSession(null)
       setSessionLoading(false)
       
-      // Start polling
-      startSessionPolling()
+      // Start realtime subscription
+      startRealtimeSubscription()
       
     } catch (err) {
       throw err
@@ -2306,6 +2328,10 @@ Would you like to schedule this lesson for ${learnerName || 'this learner'}?`
         onExport={exportConversation}
         onClose={() => {
           setShowClipboard(false)
+        }}
+        show={showClipboard}
+        forced={clipboardForced}
+      />
           setClipboardInstructions(false)
         }}
         show={showClipboard}
