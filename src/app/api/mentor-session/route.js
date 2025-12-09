@@ -530,10 +530,9 @@ export async function PATCH(request) {
       updates.draft_summary = draftSummary
     }
 
-    // TODO: Uncomment after migration 20251209200000_add_token_count_column.sql deployed
-    // if (tokenCount !== undefined) {
-    //   updates.token_count = tokenCount
-    // }
+    if (tokenCount !== undefined) {
+      updates.token_count = tokenCount
+    }
 
     const { error: updateError } = await supabase
       .from('mentor_sessions')
