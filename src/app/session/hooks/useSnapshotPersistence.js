@@ -393,31 +393,39 @@ export function useSnapshotPersistence({
         }
 
         // Collect all available snapshots among candidates and legacy variants, then pick the newest by savedAt
-        let snap = null;
-        let newestAt = 0;
-        const consider = async (keyLike, note = '') => {
-          try {
-            const s = await getStoredSnapshot(keyLike, { learnerId: lid });
-            if (s) {
-              const t = Date.parse(s.savedAt || '') || 0;
-              if (t >= newestAt) { snap = s; newestAt = t; }
-            }
-          } catch { /* ignore */ }
-        };
+        // Build all keys to check upfront
+        const allKeysToCheck = [];
         for (const c of keys) {
-          // canonical key
-          await consider(c, 'canonical');
-          // extension variant (.json)
-          await consider(`${c}.json`, 'ext-variant');
+          allKeysToCheck.push(c); // canonical key
+          allKeysToCheck.push(`${c}.json`); // extension variant
           // Remote legacy variants: append known target suffixes as previously used in assessments keying
           const variants = [
             `${c}:W15:T10`, `${c}:W20:T20`, `${c}:W${Number(WORKSHEET_TARGET) || 15}:T${Number(TEST_TARGET) || 10}`
           ];
           for (const v of variants) {
-            await consider(v, 'legacy');
-            await consider(`${v}.json`, 'legacy-ext');
+            allKeysToCheck.push(v); // legacy
+            allKeysToCheck.push(`${v}.json`); // legacy-ext
           }
         }
+        
+        // Fetch all snapshots in parallel instead of sequentially
+        const results = await Promise.allSettled(
+          allKeysToCheck.map(key => getStoredSnapshot(key, { learnerId: lid }))
+        );
+        
+        // Find the newest snapshot from results
+        let snap = null;
+        let newestAt = 0;
+        results.forEach((result) => {
+          if (result.status === 'fulfilled' && result.value) {
+            const s = result.value;
+            const t = Date.parse(s.savedAt || '') || 0;
+            if (t >= newestAt) {
+              snap = s;
+              newestAt = t;
+            }
+          }
+        });
         // If we didn't find a snapshot yet, finalize as not-found so saving can begin
         if (!snap) {
           // No snapshot found: finalize restore as not-found so saving can begin
