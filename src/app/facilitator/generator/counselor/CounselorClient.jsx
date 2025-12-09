@@ -412,7 +412,9 @@ export default function CounselorClient() {
           updatedSessionId: updatedSession.session_id, 
           mySessionId: sessionId,
           isActive: updatedSession.is_active,
-          wasActive: oldSession.is_active
+          wasActive: oldSession.is_active,
+          facilitatorId: updatedSession.facilitator_id,
+          deviceName: updatedSession.device_name
         })
 
         // Check if THIS session was deactivated (taken over)
@@ -511,6 +513,13 @@ export default function CounselorClient() {
 
       const { session: activeSession, status, isOwner } = payload || {}
 
+      console.log('[Mr. Mentor] Session check:', {
+        hasActiveSession: !!activeSession,
+        status,
+        isOwner,
+        willShowTakeover: !isOwner && !!activeSession
+      })
+
       if (!activeSession || status === 'none') {
         const deviceName = `${navigator.platform || 'Unknown'} - ${navigator.userAgent.split(/[()]/)[1] || 'Browser'}`
         const createRes = await fetch('/api/mentor-session', {
@@ -564,7 +573,15 @@ export default function CounselorClient() {
         return
       }
 
+      console.log('[Mr. Mentor] Checking takeover condition:', {
+        isOwner,
+        hasActiveSession: !!activeSession,
+        activeSessionId: activeSession?.session_id,
+        mySessionId: sessionId
+      })
+
       if (!isOwner && activeSession) {
+        console.log('[Mr. Mentor] Showing takeover dialog - another device owns this conversation')
         setSessionLoading(false)
         setConflictingSession(activeSession)
         setShowTakeoverDialog(true)
