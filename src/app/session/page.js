@@ -6263,6 +6263,19 @@ function SessionPageInner() {
     activeQuestionBodyRef.current = nextQ;
         try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
         
+        // Prefetch trigger: load next question OR closing line while student works
+        const isLastW = (nextIdx + 1) >= list.length;
+        if (isLastW) {
+          const closingW = "That's all for the worksheet. Now let's begin the test.";
+          ttsCache.prefetch(closingW);
+        } else {
+          const nextNextIdx = nextIdx + 1;
+          const nextNextObj = list[nextNextIdx];
+          const nextNextNum = (typeof nextNextObj?.number === 'number' && nextNextObj.number > 0) ? nextNextObj.number : (nextNextIdx + 1);
+          const nextNextQ = ensureQuestionMark(`${nextNextNum}. ${formatQuestionForSpeech(nextNextObj, { layout: 'multiline' })}`);
+          ttsCache.prefetch(nextNextQ);
+        }
+        
         // ATOMIC SNAPSHOT: Save after answering worksheet question (includes next question in response)
         try { await scheduleSaveSnapshot('worksheet-answered'); } catch {}
         
@@ -6368,6 +6381,15 @@ function SessionPageInner() {
             // Remember the exact next test question spoken
             activeQuestionBodyRef.current = nextQ;
             try { await speakFrontend(`${speech} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
+            
+            // Prefetch trigger: load next question while student works
+            const isLastT = (nextIdx + 1) >= totalLimit;
+            if (!isLastT) {
+              const nextNextIdx = nextIdx + 1;
+              const nextNextObj = generatedTest[nextNextIdx];
+              const nextNextQ = ensureQuestionMark(`${nextNextIdx + 1}. ${formatQuestionForSpeech(nextNextObj, { layout: 'multiline' })}`);
+              ttsCache.prefetch(nextNextQ);
+            }
             
             // ATOMIC SNAPSHOT: Save after answering test question (includes next question in response)
             try { await scheduleSaveSnapshot('test-answered'); } catch {}
