@@ -67,6 +67,38 @@ try {
 
 **After Exercise Answer (page.js line ~6063)**: Same pattern as comprehension.
 
+**After Worksheet Answer (page.js line ~6264)**:
+```javascript
+try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
+
+// Prefetch trigger: load next question OR closing line while student works
+const isLastW = (nextIdx + 1) >= list.length;
+if (isLastW) {
+  const closingW = "That's all for the worksheet. Now let's begin the test.";
+  ttsCache.prefetch(closingW);
+} else {
+  const nextNextIdx = nextIdx + 1;
+  const nextNextObj = list[nextNextIdx];
+  const nextNextNum = (typeof nextNextObj?.number === 'number' && nextNextObj.number > 0) ? nextNextObj.number : (nextNextIdx + 1);
+  const nextNextQ = ensureQuestionMark(`${nextNextNum}. ${formatQuestionForSpeech(nextNextObj, { layout: 'multiline' })}`);
+  ttsCache.prefetch(nextNextQ);
+}
+```
+
+**After Test Answer (page.js line ~6383)**:
+```javascript
+try { await speakFrontend(`${speech} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
+
+// Prefetch trigger: load next question while student works
+const isLastT = (nextIdx + 1) >= totalLimit;
+if (!isLastT) {
+  const nextNextIdx = nextIdx + 1;
+  const nextNextObj = generatedTest[nextNextIdx];
+  const nextNextQ = ensureQuestionMark(`${nextNextIdx + 1}. ${formatQuestionForSpeech(nextNextObj, { layout: 'multiline' })}`);
+  ttsCache.prefetch(nextNextQ);
+}
+```
+
 **On Phase Start (usePhaseHandlers.js line ~105 & ~163)**:
 ```javascript
 await speakFrontend(formatted, { mcLayout: 'multiline' });
@@ -203,7 +235,7 @@ ttsCache.prefetch(generatedComprehension[currentCompIndex]);
 - `src/app/session/utils/ttsCache.js`: TTSCache class, LRU cache, prefetch logic
 
 **Integration**:
-- `src/app/session/page.js`: Import (line 31), speakFrontendImpl cache check (line ~2927), prefetch after comprehension answer (~5895), prefetch after exercise answer (~6063), cache clear effect (~990)
+- `src/app/session/page.js`: Import (line 31), speakFrontendImpl cache check (line ~2927), prefetch after comprehension answer (~5934), prefetch after exercise answer (~6117), prefetch after worksheet answer (~6264), prefetch after test answer (~6383), cache clear effect (~1004)
 - `src/app/session/hooks/usePhaseHandlers.js`: Import (line 13), prefetch on comprehension start (~105), prefetch on exercise start (~163)
 
 **API**:
