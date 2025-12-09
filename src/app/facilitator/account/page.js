@@ -452,7 +452,8 @@ export default function FacilitatorAccountPage() {
             onClick={async () => {
               const supabase = getSupabaseClient();
               try { 
-                await supabase?.auth?.signOut?.();
+                // Use scope: 'local' to only log out this device, not all devices
+                await supabase?.auth?.signOut?.({ scope: 'local' });
                 // Clear session storage on logout
                 try {
                   sessionStorage.removeItem('facilitator_section_active');

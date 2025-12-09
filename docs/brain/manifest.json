@@ -203,5 +203,21 @@
     ],
     "last_updated": "2025-12-09T00:00:00Z",
     "status": "canonical"
+  },
+  "auth-session-isolation": {
+    "file": "auth-session-isolation.md",
+    "systems": [
+      "auth session isolation",
+      "per-tab auth",
+      "Supabase storageKey",
+      "tab-local sessionStorage",
+      "cross-tab auth leak prevention",
+      "unique storage keys",
+      "getTabStorageKey",
+      "supabaseClient factory",
+      "auth namespace isolation"
+    ],
+    "last_updated": "2025-12-09T20:00:00Z",
+    "status": "canonical"
   }
 }
