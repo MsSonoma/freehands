@@ -532,9 +532,10 @@ export async function PATCH(request) {
     }
 
     // Add client timestamp if provided
-    if (lastLocalUpdateAt) {
-      updates.last_local_update_at = lastLocalUpdateAt
-    }
+    // TODO: Uncomment after migration deployed (adds last_local_update_at column)
+    // if (lastLocalUpdateAt) {
+    //   updates.last_local_update_at = lastLocalUpdateAt
+    // }
 
     const { error: updateError } = await supabase
       .from('mentor_sessions')
