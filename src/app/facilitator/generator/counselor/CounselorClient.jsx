@@ -392,21 +392,31 @@ export default function CounselorClient() {
     const supabase = getSupabaseClient()
     if (!supabase) return
 
+    console.log('[Realtime] Starting subscription for session:', sessionId)
+
     // Subscribe to mentor_sessions changes for this facilitator
+    // Note: Can't filter by session_id in postgres_changes, so we filter in the callback
     const channel = supabase
       .channel('mentor-session-changes')
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
-        table: 'mentor_sessions',
-        filter: `session_id=eq.${sessionId}`
+        table: 'mentor_sessions'
       }, (payload) => {
         if (!isMountedRef.current) return
 
         const updatedSession = payload.new
+        const oldSession = payload.old
 
-        // Check if THIS session was taken over
-        if (!updatedSession.is_active) {
+        console.log('[Realtime] Session update detected:', { 
+          updatedSessionId: updatedSession.session_id, 
+          mySessionId: sessionId,
+          isActive: updatedSession.is_active,
+          wasActive: oldSession.is_active
+        })
+
+        // Check if THIS session was deactivated (taken over)
+        if (updatedSession.session_id === sessionId && oldSession.is_active && !updatedSession.is_active) {
           console.log('[Realtime] Session taken over by another device - ending session')
           
           // Clear local state
@@ -425,7 +435,9 @@ export default function CounselorClient() {
           // window.location.reload()
         }
       })
-      .subscribe()
+      .subscribe((status) => {
+        console.log('[Realtime] Subscription status:', status)
+      })
 
     realtimeChannelRef.current = channel
   }, [sessionId, accessToken, hasAccess])
