@@ -6557,6 +6557,64 @@ function SessionPageInner() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [showBegin, phase, subPhase, loading, isSpeaking, beginSession, beginComprehensionPhase, beginSkippedExercise, beginWorksheetPhase, beginTestPhase, hotkeys, showGames]);
 
+  // Global hotkey for Go buttons (Enter key triggers Go in opening actions)
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (showGames) return;
+      const code = e.code || e.key;
+      const target = e.target;
+      if (isTextEntryTarget(target)) return;
+      
+      const beginCode = hotkeys?.beginSend || DEFAULT_HOTKEYS.beginSend;
+      if (!beginCode || code !== beginCode) return;
+      
+      // Don't trigger if loading, speaking, or games are open
+      if (loading || isSpeaking) return;
+      
+      try {
+        // Discussion phase opening actions Go button
+        if (phase === 'discussion' && subPhase === 'awaiting-learner' && showOpeningActions &&
+            askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive' &&
+            storyState === 'inactive' && fillInFunState === 'inactive' && lessonData) {
+          e.preventDefault();
+          setPendingGoAction(() => handleStartLesson);
+          setShowGoConfirmation(true);
+          return;
+        }
+        
+        // Q&A phases opening actions Go button
+        const inQnA = (
+          (phase === 'comprehension' && subPhase === 'comprehension-active') ||
+          (phase === 'exercise' && (subPhase === 'exercise-start' || subPhase === 'exercise-active')) ||
+          (phase === 'worksheet' && subPhase === 'worksheet-active') ||
+          (phase === 'test' && subPhase === 'test-active')
+        );
+        
+        if (inQnA && showOpeningActions &&
+            askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive' &&
+            storyState === 'inactive' && fillInFunState === 'inactive' && lessonData) {
+          e.preventDefault();
+          const actualGoAction = (
+            phase === 'comprehension' ? handleGoComprehension :
+            phase === 'exercise' ? handleGoExercise :
+            phase === 'worksheet' ? handleGoWorksheet :
+            phase === 'test' ? handleGoTest :
+            handleStartLesson
+          );
+          setPendingGoAction(() => actualGoAction);
+          setShowGoConfirmation(true);
+          return;
+        }
+      } catch {}
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [
+    phase, subPhase, showOpeningActions, askState, riddleState, poemState, storyState, fillInFunState,
+    lessonData, loading, isSpeaking, handleStartLesson, handleGoComprehension, handleGoExercise,
+    handleGoWorksheet, handleGoTest, hotkeys, showGames
+  ]);
+
   // Global hotkeys for mute toggle, skip, and repeat
   useEffect(() => {
     const onKeyDown = (e) => {
