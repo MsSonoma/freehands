@@ -458,9 +458,22 @@ export default function CounselorClient() {
           setSessionStarted(false)
           setSessionLoading(false)
           
-          // Show takeover dialog to enter PIN
+          // Fetch the active session to show in takeover dialog
+          try {
+            const checkRes = await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
+              headers: { 'Authorization': `Bearer ${accessToken}` }
+            })
+            if (checkRes.ok) {
+              const checkData = await checkRes.json()
+              if (checkData.session) {
+                setConflictingSession(checkData.session)
+              }
+            }
+          } catch (err) {
+            console.error('[Realtime] Failed to fetch active session:', err)
+          }
+          
           setShowTakeoverDialog(true)
-          // The conflictingSession will be fetched when user tries to takeover
         } else {
           console.log('[Realtime] Update is for different session or not a takeover:', {
             isSameSession: updatedSession.session_id === sessionId,
@@ -741,9 +754,22 @@ export default function CounselorClient() {
           setSessionStarted(false)
           setSessionLoading(false)
           
-          // Show takeover dialog to enter PIN
+          // Fetch the active session to show in takeover dialog
+          try {
+            const checkRes = await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
+              headers: { 'Authorization': `Bearer ${accessToken}` }
+            })
+            if (checkRes.ok) {
+              const data = await checkRes.json()
+              if (data.session) {
+                setConflictingSession(data.session)
+              }
+            }
+          } catch (err) {
+            console.error('[410 Handler] Failed to fetch active session:', err)
+          }
+          
           setShowTakeoverDialog(true)
-          // Note: We don't have the conflicting session details here, but the dialog will fetch them
         }
       } catch (err) {
         console.error('[Mr. Mentor] Save error:', err)
