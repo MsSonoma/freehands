@@ -484,13 +484,14 @@ export async function PATCH(request) {
     }
 
     const body = await request.json()
-    const { sessionId, conversationHistory, draftSummary, tokenCount } = body
+    const { sessionId, conversationHistory, draftSummary, tokenCount, lastLocalUpdateAt } = body
 
     console.log('[PATCH] Received update:', { 
       sessionId, 
       conversationLength: conversationHistory?.length, 
       hasDraft: !!draftSummary,
-      tokenCount
+      tokenCount,
+      timestamp: lastLocalUpdateAt
     })
 
     if (!sessionId) {
@@ -532,6 +533,10 @@ export async function PATCH(request) {
 
     if (tokenCount !== undefined) {
       updates.token_count = tokenCount
+    }
+
+    if (lastLocalUpdateAt) {
+      updates.last_local_update_at = lastLocalUpdateAt
     }
 
     const { error: updateError } = await supabase
