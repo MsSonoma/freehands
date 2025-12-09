@@ -1,4 +1,22 @@
 {
+  "tts-prefetching": {
+    "file": "tts-prefetching.md",
+    "systems": [
+      "TTS prefetching",
+      "ttsCache",
+      "LRU cache",
+      "background loading",
+      "prefetch triggers",
+      "cache clearing",
+      "AbortController",
+      "speakFrontendImpl",
+      "question prefetch",
+      "performance optimization",
+      "cache hit instant audio"
+    ],
+    "last_updated": "2025-12-09T00:00:00Z",
+    "status": "canonical"
+  },
   "pin-protection": {
     "file": "pin-protection.md",
     "systems": [

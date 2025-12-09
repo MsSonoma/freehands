@@ -29,6 +29,7 @@ import { isAnswerCorrectLocal, expandExpectedAnswer, expandRiddleAcceptables, co
 import { ENCOURAGEMENT_SNIPPETS, CELEBRATE_CORRECT, HINT_FIRST, HINT_SECOND, pickHint, buildCountCuePattern } from './utils/feedbackMessages';
 import { generateClosing, getSimpleEncouragement } from './utils/closingSignals';
 import { getJokePrompt } from './utils/openingSignals';
+import { ttsCache } from './utils/ttsCache';
 import { normalizeBase64Audio, base64ToArrayBuffer, makeSilentWavDataUrl, ensureAudioContext, stopWebAudioSource, playViaWebAudio, unlockAudioPlayback, requestAudioAndMicPermissions, playVideoWithRetry } from './utils/audioUtils';
 import { clearCaptionTimers as clearCaptionTimersUtil, scheduleCaptionsForAudio as scheduleCaptionsForAudioUtil, scheduleCaptionsForDuration as scheduleCaptionsForDurationUtil } from './utils/captionUtils';
 import { clearSynthetic as clearSyntheticUtil, finishSynthetic as finishSyntheticUtil, pauseSynthetic as pauseSyntheticUtil, resumeSynthetic as resumeSyntheticUtil } from './utils/syntheticPlaybackUtils';
@@ -815,7 +816,18 @@ function SessionPageInner() {
     setPlayExpiredPhase(phaseName);
     // Close games overlay if it's open
     setShowGames(false);
-  }, []);
+    
+    // Prefetch first question during 30-second countdown (comprehension/exercise only)
+    try {
+      if (phaseName === 'comprehension' && Array.isArray(generatedComprehension) && generatedComprehension.length > 0) {
+        const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedComprehension[0], { layout: 'multiline' }));
+        ttsCache.prefetch(firstQ);
+      } else if (phaseName === 'exercise' && Array.isArray(generatedExercise) && generatedExercise.length > 0) {
+        const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedExercise[0], { layout: 'multiline' }));
+        ttsCache.prefetch(firstQ);
+      }
+    } catch {}
+  }, [generatedComprehension, generatedExercise]);
   
   // Handle PlayTimeExpiredOverlay countdown completion (auto-advance to work mode)
   const handlePlayExpiredComplete = useCallback(async () => {
@@ -987,6 +999,43 @@ function SessionPageInner() {
       try { setShowOpeningActions(false); } catch {}
     }
   }, [askState, riddleState, poemState, storyState, fillInFunState]);
+
+  // Clear TTS cache on phase transitions to prevent stale audio from previous phases
+  useEffect(() => {
+    try { ttsCache.clear(); } catch {}
+  }, [phase]);
+
+  // Prefetch intro lines and first question when entering awaiting-begin states
+  useEffect(() => {
+    try {
+      if (subPhase === 'comprehension-awaiting-begin') {
+        // Prefetch random intro from COMPREHENSION_INTROS
+        const intro = COMPREHENSION_INTROS[Math.floor(Math.random() * COMPREHENSION_INTROS.length)];
+        if (Array.isArray(generatedComprehension) && generatedComprehension.length > 0) {
+          const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedComprehension[0], { layout: 'multiline' }));
+          ttsCache.prefetch(`${intro} ${firstQ}`);
+        }
+      } else if (subPhase === 'exercise-awaiting-begin') {
+        const intro = EXERCISE_INTROS[Math.floor(Math.random() * EXERCISE_INTROS.length)];
+        if (Array.isArray(generatedExercise) && generatedExercise.length > 0) {
+          const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedExercise[0], { layout: 'multiline' }));
+          ttsCache.prefetch(`${intro} ${firstQ}`);
+        }
+      } else if (subPhase === 'worksheet-awaiting-begin') {
+        const intro = WORKSHEET_INTROS[Math.floor(Math.random() * WORKSHEET_INTROS.length)];
+        if (Array.isArray(generatedWorksheet) && generatedWorksheet.length > 0) {
+          const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedWorksheet[0], { layout: 'multiline' }));
+          ttsCache.prefetch(`Question 1. ${intro} ${firstQ}`);
+        }
+      } else if (subPhase === 'test-awaiting-begin') {
+        const intro = TEST_INTROS[Math.floor(Math.random() * TEST_INTROS.length)];
+        if (Array.isArray(generatedTest) && generatedTest.length > 0) {
+          const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedTest[0], { layout: 'multiline' }));
+          ttsCache.prefetch(`Question 1. ${intro} ${firstQ}`);
+        }
+      }
+    } catch {}
+  }, [subPhase, generatedComprehension, generatedExercise, generatedWorksheet, generatedTest]);
 
   // Helper: speak arbitrary frontend text via unified captions + TTS
   // Use a ref so early functions can call it before it's fully defined
@@ -2925,26 +2974,37 @@ function SessionPageInner() {
       }
       let dec = false;
       try {
-        setTtsLoadingCount((c) => c + 1);
-        let res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
-        if (!res.ok) {
-          try { await fetch('/api/tts', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(() => {}); } catch {}
-          res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
-        }
-        if (res.ok) {
-          const data = await res.json().catch(() => ({}));
-          let b64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
-          if (b64) b64 = normalizeBase64Audio(b64);
-          if (b64) {
-            if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
-            // Let the playback engine manage isSpeaking lifecycle
-            try { setIsSpeaking(true); } catch {}
-            try { await playAudioFromBase64(b64, noCaptions ? [] : assistantSentences, startIndexForBatch); } catch {}
-          } else {
-            if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
-            // Use unified synthetic playback so video + isSpeaking behave consistently
-            try { await playAudioFromBase64('', noCaptions ? [] : assistantSentences, startIndexForBatch); } catch {}
+        // Check cache first
+        let b64 = ttsCache.get(text);
+        
+        if (!b64) {
+          // Cache miss - fetch from API
+          setTtsLoadingCount((c) => c + 1);
+          let res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
+          if (!res.ok) {
+            try { await fetch('/api/tts', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(() => {}); } catch {}
+            res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
           }
+          if (res.ok) {
+            const data = await res.json().catch(() => ({}));
+            b64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
+            if (b64) {
+              b64 = normalizeBase64Audio(b64);
+              // Store successful fetch in cache
+              ttsCache.set(text, b64);
+            }
+          }
+          if (!dec) { setTtsLoadingCount((c) => Math.max(0, c - 1)); dec = true; }
+        }
+        // else: cache hit - b64 already set, no loading indicator needed
+        
+        if (b64) {
+          // Let the playback engine manage isSpeaking lifecycle
+          try { setIsSpeaking(true); } catch {}
+          try { await playAudioFromBase64(b64, noCaptions ? [] : assistantSentences, startIndexForBatch); } catch {}
+        } else {
+          // Use unified synthetic playback so video + isSpeaking behave consistently
+          try { await playAudioFromBase64('', noCaptions ? [] : assistantSentences, startIndexForBatch); } catch {}
         }
       } catch (err) {
         // Silent error handling
@@ -5879,6 +5939,21 @@ function SessionPageInner() {
             const nextQ = ensureQuestionMark(formatQuestionForSpeech(nextProblem, { layout: 'multiline' }));
             activeQuestionBodyRef.current = nextQ;
             try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
+            
+            // Prefetch the question after this one OR closing line if this is second-to-last
+            try {
+              if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
+                const prefetchProblem = generatedComprehension[currentCompIndex];
+                const prefetchQ = ensureQuestionMark(formatQuestionForSpeech(prefetchProblem, { layout: 'multiline' }));
+                const prefetchText = `${CELEBRATE_CORRECT[0]}. ${prefetchQ}`;
+                ttsCache.prefetch(prefetchText);
+              } else {
+                // This is the last question - prefetch closing line
+                const closingText = `${CELEBRATE_CORRECT[0]}. ${progressPhrase} That's all for comprehension. Now let's begin the exercise.`;
+                ttsCache.prefetch(closingText);
+              }
+            } catch {}
+            
             try { await scheduleSaveSnapshot('comprehension-answered'); } catch {}
             setSubPhase('comprehension-active');
             setCanSend(true);
@@ -6047,6 +6122,21 @@ function SessionPageInner() {
             const nextQ = ensureQuestionMark(formatQuestionForSpeech(nextProblem, { layout: 'multiline' }));
             activeQuestionBodyRef.current = nextQ;
             try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
+            
+            // Prefetch the question after this one OR closing line if this is second-to-last
+            try {
+              if (Array.isArray(generatedExercise) && currentExIndex < generatedExercise.length) {
+                const prefetchProblem = generatedExercise[currentExIndex];
+                const prefetchQ = ensureQuestionMark(formatQuestionForSpeech(prefetchProblem, { layout: 'multiline' }));
+                const prefetchText = `${CELEBRATE_CORRECT[0]}. ${prefetchQ}`;
+                ttsCache.prefetch(prefetchText);
+              } else {
+                // This is the last question - prefetch closing line
+                const closingText = `${CELEBRATE_CORRECT[0]}. ${progressPhrase} That's all for the exercise. Now let's move on to the worksheet.`;
+                ttsCache.prefetch(closingText);
+              }
+            } catch {}
+            
             try { await scheduleSaveSnapshot('exercise-answered'); } catch {}
             setSubPhase('exercise-active');
             setCanSend(true);

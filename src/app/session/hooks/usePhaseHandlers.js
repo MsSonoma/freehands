@@ -11,6 +11,7 @@
 import { useCallback } from 'react';
 import { ensureQuestionMark, formatQuestionForSpeech, isShortAnswerItem } from '../utils/questionFormatting';
 import { getEncouragement, ENCOURAGEMENT_SNIPPETS } from '../utils/openingSignals';
+import { ttsCache } from '../utils/ttsCache';
 
 export function usePhaseHandlers({
   // State setters
@@ -97,7 +98,20 @@ export function usePhaseHandlers({
       const formatted = ensureQuestionMark(formatQuestionForSpeech(item, { layout: 'multiline' }));
       activeQuestionBodyRef.current = formatted;
       setCanSend(false);
+      
+      // Prefetch this question immediately (before speaking it) for instant playback
+      try { ttsCache.prefetch(formatted); } catch {}
+      
       await speakFrontend(formatted, { mcLayout: 'multiline' });
+      
+      // Prefetch second question while student answers first
+      try {
+        if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
+          const prefetchProblem = generatedComprehension[currentCompIndex];
+          const prefetchQ = ensureQuestionMark(formatQuestionForSpeech(prefetchProblem, { layout: 'multiline' }));
+          ttsCache.prefetch(prefetchQ);
+        }
+      } catch {}
     } catch {}
     setCanSend(true);
     console.log('[handleGoComprehension] DONE');
@@ -146,7 +160,20 @@ export function usePhaseHandlers({
       }
       const formatted = ensureQuestionMark(formatQuestionForSpeech(item, { layout: 'multiline' }));
       activeQuestionBodyRef.current = formatted;
+      
+      // Prefetch this question immediately (before speaking it) for instant playback
+      try { ttsCache.prefetch(formatted); } catch {}
+      
       await speakFrontend(formatted, { mcLayout: 'multiline' });
+      
+      // Prefetch second question while student answers first
+      try {
+        if (Array.isArray(generatedExercise) && currentExIndex < generatedExercise.length) {
+          const prefetchProblem = generatedExercise[currentExIndex];
+          const prefetchQ = ensureQuestionMark(formatQuestionForSpeech(prefetchProblem, { layout: 'multiline' }));
+          ttsCache.prefetch(prefetchQ);
+        }
+      } catch {}
     } catch {}
     setCanSend(true);
   }, [
