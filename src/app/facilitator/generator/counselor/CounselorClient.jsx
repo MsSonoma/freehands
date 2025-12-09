@@ -445,22 +445,22 @@ export default function CounselorClient() {
 
         // Check if THIS session was deactivated (taken over)
         if (updatedSession.session_id === sessionId && oldSession.is_active && !updatedSession.is_active) {
-          console.log('[Realtime] THIS SESSION taken over by another device - clearing session ID and local state')
+          console.log('[Realtime] THIS SESSION taken over - showing PIN overlay')
           
           // Clear persisted session ID so next load generates a new one
           clearPersistedSessionIdentifier()
           initializedSessionIdRef.current = null
           
-          // Clear local state
+          // Clear conversation state
           setConversationHistory([])
           setDraftSummary('')
           setCurrentSessionTokens(0)
           setSessionStarted(false)
           setSessionLoading(false)
-          setShowTakeoverDialog(false)
-          setConflictingSession(null)
           
-          alert('This session has been taken over by another device. Your conversation was saved.')
+          // Show takeover dialog to enter PIN
+          setShowTakeoverDialog(true)
+          // The conflictingSession will be fetched when user tries to takeover
         } else {
           console.log('[Realtime] Update is for different session or not a takeover:', {
             isSameSession: updatedSession.session_id === sessionId,
@@ -728,22 +728,22 @@ export default function CounselorClient() {
         
         // Handle 410 Gone - session was taken over by another device
         if (response.status === 410) {
-          console.log('[Mr. Mentor] Session taken over (410) - clearing local state and session ID')
+          console.log('[Mr. Mentor] Session taken over (410) - showing PIN overlay')
           
           // Clear persisted session ID so next load generates a new one
           clearPersistedSessionIdentifier()
           initializedSessionIdRef.current = null
           
-          // Clear local state
+          // Clear conversation state
           setConversationHistory([])
           setDraftSummary('')
           setCurrentSessionTokens(0)
           setSessionStarted(false)
           setSessionLoading(false)
-          setShowTakeoverDialog(false)
-          setConflictingSession(null)
           
-          alert('This session has been taken over by another device.')
+          // Show takeover dialog to enter PIN
+          setShowTakeoverDialog(true)
+          // Note: We don't have the conflicting session details here, but the dialog will fetch them
         }
       } catch (err) {
         console.error('[Mr. Mentor] Save error:', err)
@@ -769,7 +769,7 @@ export default function CounselorClient() {
         
         // If we're not the owner anymore, we were taken over
         if (data.session && !data.isOwner && data.session.session_id !== sessionId) {
-          console.log('[Heartbeat] Session taken over - clearing local state')
+          console.log('[Heartbeat] Session taken over - showing PIN overlay')
           
           clearPersistedSessionIdentifier()
           initializedSessionIdRef.current = null
@@ -779,10 +779,10 @@ export default function CounselorClient() {
           setCurrentSessionTokens(0)
           setSessionStarted(false)
           setSessionLoading(false)
-          setShowTakeoverDialog(false)
-          setConflictingSession(null)
           
-          alert('This session has been taken over by another device.')
+          // Show takeover dialog with the active session info
+          setConflictingSession(data.session)
+          setShowTakeoverDialog(true)
         }
       } catch (err) {
         // Silent error
