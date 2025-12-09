@@ -587,6 +587,10 @@ export function useTeachingFlow({
           if (nextIndex + 1 < vocabSentencesRef.current.length) {
             console.log('[TEACHING] Prefetching vocab sentence', nextIndex + 2, ':', vocabSentencesRef.current[nextIndex + 1].substring(0, 50));
             ttsCache.prefetch(vocabSentencesRef.current[nextIndex + 1]);
+          } else {
+            // On the last sentence - prefetch "Do you have any questions?" for instant gate
+            console.log('[TEACHING] Prefetching gate prompt: Do you have any questions?');
+            ttsCache.prefetch('Do you have any questions?');
           }
           
           try { await speakFrontend(nextSentence); } catch (err) {
@@ -641,6 +645,10 @@ export function useTeachingFlow({
           // Prefetch the sentence AFTER this one BEFORE speaking current (parallel load)
           if (nextIndex + 1 < exampleSentencesRef.current.length) {
             ttsCache.prefetch(exampleSentencesRef.current[nextIndex + 1]);
+          } else {
+            // On the last sentence - prefetch "Do you have any questions?" for instant gate
+            console.log('[TEACHING] Prefetching gate prompt: Do you have any questions?');
+            ttsCache.prefetch('Do you have any questions?');
           }
           
           try { await speakFrontend(nextSentence); } catch {}
