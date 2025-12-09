@@ -484,14 +484,12 @@ export async function PATCH(request) {
     }
 
     const body = await request.json()
-    const { sessionId, conversationHistory, draftSummary, tokenCount, lastLocalUpdateAt } = body
+    const { sessionId, conversationHistory, draftSummary } = body
 
     console.log('[PATCH] Received update:', { 
       sessionId, 
       conversationLength: conversationHistory?.length, 
-      hasDraft: !!draftSummary,
-      tokenCount,
-      timestamp: lastLocalUpdateAt
+      hasDraft: !!draftSummary
     })
 
     if (!sessionId) {
@@ -531,15 +529,8 @@ export async function PATCH(request) {
       updates.draft_summary = draftSummary
     }
 
-    if (tokenCount !== undefined) {
-      updates.token_count = tokenCount
-    }
-
-    // Add client timestamp if provided
-    // TODO: Uncomment after migration deployed (adds last_local_update_at column)
-    // if (lastLocalUpdateAt) {
-    //   updates.last_local_update_at = lastLocalUpdateAt
-    // }
+    // Note: token_count column doesn't exist in schema, removed
+    // Note: last_local_update_at requires migration, commented out until deployed
 
     const { error: updateError } = await supabase
       .from('mentor_sessions')
