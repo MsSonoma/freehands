@@ -16,7 +16,8 @@ import { useState, useEffect, useRef } from 'react';
 export default function PlayTimeExpiredOverlay({
   isOpen,
   phase = 'lesson',
-  onComplete
+  onComplete,
+  onStartNow
 }) {
   const [countdown, setCountdown] = useState(30);
   const intervalRef = useRef(null);
@@ -145,6 +146,38 @@ export default function PlayTimeExpiredOverlay({
             {countdown === 1 ? 'second' : 'seconds'}
           </div>
         </div>
+
+        {/* Start Now button */}
+        {onStartNow && (
+          <button
+            onClick={onStartNow}
+            style={{
+              padding: '16px 32px',
+              fontSize: 'clamp(1.1rem, 2.5vw, 1.3rem)',
+              fontWeight: 700,
+              background: '#22c55e',
+              color: 'white',
+              border: 'none',
+              borderRadius: 12,
+              cursor: 'pointer',
+              marginBottom: 24,
+              boxShadow: '0 4px 12px rgba(34, 197, 94, 0.4)',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#16a34a';
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 16px rgba(34, 197, 94, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = '#22c55e';
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 12px rgba(34, 197, 94, 0.4)';
+            }}
+          >
+            Start Now
+          </button>
+        )}
 
         {/* Encouragement */}
         <div style={{

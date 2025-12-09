@@ -844,6 +844,32 @@ function SessionPageInner() {
     setPlayExpiredPhase(null);
   }, [playExpiredPhase, phase, transitionToWorkTimer]);
   
+  // Handle manual "Start Now" from PlayTimeExpiredOverlay
+  const handlePlayExpiredStartNow = useCallback(async () => {
+    setShowPlayTimeExpired(false);
+    if (playExpiredPhase) {
+      transitionToWorkTimer(playExpiredPhase);
+      
+      // Trigger the appropriate Go handler which will show confirmation if needed
+      try {
+        if (playExpiredPhase === 'discussion' || phase === 'discussion' || phase === 'teaching') {
+          if (handleStartLessonRef.current) await handleStartLessonRef.current();
+        } else if (playExpiredPhase === 'comprehension' || phase === 'comprehension') {
+          if (handleGoComprehensionRef.current) await handleGoComprehensionRef.current();
+        } else if (playExpiredPhase === 'exercise' || phase === 'exercise') {
+          if (handleGoExerciseRef.current) await handleGoExerciseRef.current();
+        } else if (playExpiredPhase === 'worksheet' || phase === 'worksheet') {
+          if (handleGoWorksheetRef.current) await handleGoWorksheetRef.current();
+        } else if (playExpiredPhase === 'test' || phase === 'test') {
+          if (handleGoTestRef.current) await handleGoTestRef.current();
+        }
+      } catch (e) {
+        // Start now failed
+      }
+    }
+    setPlayExpiredPhase(null);
+  }, [playExpiredPhase, phase, transitionToWorkTimer]);
+  
   // Handle work timer expiration (display 00:00 in red, allow continuing)
   const handleWorkTimeUp = useCallback((phaseName) => {
     // Work timer expired - mark this phase as NOT completed (timed out)
@@ -7662,6 +7688,7 @@ function SessionPageInner() {
         isOpen={showPlayTimeExpired}
         phase={playExpiredPhase}
         onComplete={handlePlayExpiredComplete}
+        onStartNow={handlePlayExpiredStartNow}
       />
     )}
 
