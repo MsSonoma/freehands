@@ -6028,7 +6028,7 @@ function SessionPageInner() {
             try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
             try { await scheduleSaveSnapshot('exercise-answered'); } catch {}
             setSubPhase('exercise-active');
-            setCanSend(false);
+            setCanSend(true);
           } else {
             // Shouldn't happen if lesson validation is correct
             console.error('[EXERCISE] No next question at index', currentExIndex);
