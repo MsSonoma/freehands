@@ -60,9 +60,16 @@ class TTSCache {
     const normalized = this.normalizeText(text);
     
     // Skip if already cached or being fetched
-    if (this.cache.has(normalized) || this.pendingFetches.has(normalized)) {
+    if (this.cache.has(normalized)) {
+      console.log('[TTS PREFETCH SKIP - CACHED]', text.substring(0, 50));
       return;
     }
+    if (this.pendingFetches.has(normalized)) {
+      console.log('[TTS PREFETCH SKIP - PENDING]', text.substring(0, 50));
+      return;
+    }
+
+    console.log('[TTS PREFETCH START]', text.substring(0, 50));
 
     // Create AbortController for this fetch
     const controller = new AbortController();
@@ -98,12 +105,16 @@ class TTSCache {
         const data = await response.json();
         const audio = this.extractAudio(data);
         if (audio) {
+          console.log('[TTS PREFETCH SUCCESS]', text.substring(0, 50));
           this.set(text, audio);
           if (onComplete) onComplete(null, audio);
+        } else {
+          console.log('[TTS PREFETCH FAIL - NO AUDIO]', text.substring(0, 50));
         }
       }
     } catch (err) {
       if (err.name !== 'AbortError') {
+        console.log('[TTS PREFETCH ERROR]', text.substring(0, 50), err.message);
         // Silent failure for prefetch
         if (onComplete) onComplete(err, null);
       }

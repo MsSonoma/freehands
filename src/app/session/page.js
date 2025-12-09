@@ -2970,6 +2970,12 @@ function SessionPageInner() {
         // Check cache first
         let b64 = ttsCache.get(text);
         
+        if (b64) {
+          console.log('[TTS CACHE HIT]', text.substring(0, 50));
+        } else {
+          console.log('[TTS CACHE MISS]', text.substring(0, 50));
+        }
+        
         if (!b64) {
           // Cache miss - fetch from API
           setTtsLoadingCount((c) => c + 1);
