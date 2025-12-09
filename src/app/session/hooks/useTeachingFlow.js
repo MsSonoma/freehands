@@ -304,10 +304,6 @@ export function useTeachingFlow({
       
       setTtsLoadingCount(prev => prev - 1);
       
-      // Set subPhase to awaiting-gate so buttons appear (do this BEFORE speaking)
-      setSubPhase('awaiting-gate');
-      setCanSend(false);
-      
       // Prefetch next sentence BEFORE speaking current one (parallel load while audio plays)
       if (sentences.length > 1) {
         ttsCache.prefetch(sentences[1]);
@@ -315,6 +311,10 @@ export function useTeachingFlow({
       
       // Speak the first sentence
       try { await speakFrontend(sentences[0]); } catch {}
+      
+      // Set subPhase to awaiting-gate so buttons appear AFTER speaking
+      setSubPhase('awaiting-gate');
+      setCanSend(false);
       
       return true;
     }
