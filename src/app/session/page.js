@@ -1005,38 +1005,6 @@ function SessionPageInner() {
     try { ttsCache.clear(); } catch {}
   }, [phase]);
 
-  // Prefetch intro lines and first question when entering awaiting-begin states
-  useEffect(() => {
-    try {
-      if (subPhase === 'comprehension-awaiting-begin') {
-        // Prefetch random intro from COMPREHENSION_INTROS
-        const intro = COMPREHENSION_INTROS[Math.floor(Math.random() * COMPREHENSION_INTROS.length)];
-        if (Array.isArray(generatedComprehension) && generatedComprehension.length > 0) {
-          const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedComprehension[0], { layout: 'multiline' }));
-          ttsCache.prefetch(`${intro} ${firstQ}`);
-        }
-      } else if (subPhase === 'exercise-awaiting-begin') {
-        const intro = EXERCISE_INTROS[Math.floor(Math.random() * EXERCISE_INTROS.length)];
-        if (Array.isArray(generatedExercise) && generatedExercise.length > 0) {
-          const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedExercise[0], { layout: 'multiline' }));
-          ttsCache.prefetch(`${intro} ${firstQ}`);
-        }
-      } else if (subPhase === 'worksheet-awaiting-begin') {
-        const intro = WORKSHEET_INTROS[Math.floor(Math.random() * WORKSHEET_INTROS.length)];
-        if (Array.isArray(generatedWorksheet) && generatedWorksheet.length > 0) {
-          const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedWorksheet[0], { layout: 'multiline' }));
-          ttsCache.prefetch(`Question 1. ${intro} ${firstQ}`);
-        }
-      } else if (subPhase === 'test-awaiting-begin') {
-        const intro = TEST_INTROS[Math.floor(Math.random() * TEST_INTROS.length)];
-        if (Array.isArray(generatedTest) && generatedTest.length > 0) {
-          const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedTest[0], { layout: 'multiline' }));
-          ttsCache.prefetch(`Question 1. ${intro} ${firstQ}`);
-        }
-      }
-    } catch {}
-  }, [subPhase, generatedComprehension, generatedExercise, generatedWorksheet, generatedTest]);
-
   // Helper: speak arbitrary frontend text via unified captions + TTS
   // Use a ref so early functions can call it before it's fully defined
   const speakFrontendRef = useRef(null);
@@ -1151,6 +1119,39 @@ function SessionPageInner() {
       } catch {}
     })();
   }, []);
+
+  // Prefetch intro lines and first question when entering awaiting-begin states
+  // Placed after state declarations to avoid TDZ errors
+  useEffect(() => {
+    try {
+      if (subPhase === 'comprehension-awaiting-begin') {
+        // Prefetch random intro from COMPREHENSION_INTROS
+        const intro = COMPREHENSION_INTROS[Math.floor(Math.random() * COMPREHENSION_INTROS.length)];
+        if (Array.isArray(generatedComprehension) && generatedComprehension.length > 0) {
+          const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedComprehension[0], { layout: 'multiline' }));
+          ttsCache.prefetch(`${intro} ${firstQ}`);
+        }
+      } else if (subPhase === 'exercise-awaiting-begin') {
+        const intro = EXERCISE_INTROS[Math.floor(Math.random() * EXERCISE_INTROS.length)];
+        if (Array.isArray(generatedExercise) && generatedExercise.length > 0) {
+          const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedExercise[0], { layout: 'multiline' }));
+          ttsCache.prefetch(`${intro} ${firstQ}`);
+        }
+      } else if (subPhase === 'worksheet-awaiting-begin') {
+        const intro = WORKSHEET_INTROS[Math.floor(Math.random() * WORKSHEET_INTROS.length)];
+        if (Array.isArray(generatedWorksheet) && generatedWorksheet.length > 0) {
+          const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedWorksheet[0], { layout: 'multiline' }));
+          ttsCache.prefetch(`Question 1. ${intro} ${firstQ}`);
+        }
+      } else if (subPhase === 'test-awaiting-begin') {
+        const intro = TEST_INTROS[Math.floor(Math.random() * TEST_INTROS.length)];
+        if (Array.isArray(generatedTest) && generatedTest.length > 0) {
+          const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedTest[0], { layout: 'multiline' }));
+          ttsCache.prefetch(`Question 1. ${intro} ${firstQ}`);
+        }
+      }
+    } catch {}
+  }, [subPhase, generatedComprehension, generatedExercise, generatedWorksheet, generatedTest]);
 
   // Calculate lesson progress percentage (defined after all state variables)
   const calculateLessonProgress = useCallback(() => {
