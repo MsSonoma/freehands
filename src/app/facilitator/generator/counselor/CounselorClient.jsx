@@ -530,8 +530,8 @@ export default function CounselorClient() {
         setDraftSummary(createdSession?.draft_summary || '')
         setCurrentSessionTokens(createdSession?.token_count || 0)
         // Update timestamp to match database so atomic gate works correctly
-        if (createdSession?.last_activity_at) {
-          lastLocalUpdateTimestamp.current = new Date(createdSession.last_activity_at).getTime()
+        if (createdSession?.last_local_update_at || createdSession?.last_activity_at) {
+          lastLocalUpdateTimestamp.current = new Date(createdSession.last_local_update_at || createdSession.last_activity_at).getTime()
         }
         setSessionStarted(true)
         setSessionLoading(false)
@@ -561,8 +561,9 @@ export default function CounselorClient() {
       setDraftSummary(activeSession?.draft_summary || '')
       setCurrentSessionTokens(activeSession?.token_count || 0)
       // Update timestamp to match database so atomic gate works correctly
-      if (activeSession?.last_activity_at) {
-        lastLocalUpdateTimestamp.current = new Date(activeSession.last_activity_at).getTime()
+      // Use last_local_update_at if available, fallback to last_activity_at
+      if (activeSession?.last_local_update_at || activeSession?.last_activity_at) {
+        lastLocalUpdateTimestamp.current = new Date(activeSession.last_local_update_at || activeSession.last_activity_at).getTime()
       }
       setSessionStarted(true)
       setSessionLoading(false)
@@ -701,14 +702,18 @@ export default function CounselorClient() {
       
       // ATOMIC GATE: Only load conversation if database is newer than local
       if (data.session?.conversation_history && Array.isArray(data.session.conversation_history)) {
-        const dbTimestamp = new Date(data.session.last_activity_at).getTime()
+        // Use last_local_update_at if available, fallback to last_activity_at
+        const dbTimestamp = new Date(data.session.last_local_update_at || data.session.last_activity_at).getTime()
         const localTimestamp = lastLocalUpdateTimestamp.current
+
+        console.log('[Takeover] Timestamp comparison:', { dbTimestamp, localTimestamp, willLoad: dbTimestamp > localTimestamp })
 
         if (dbTimestamp > localTimestamp) {
           // Database is newer - safe to load
           const history = data.session.conversation_history
           setConversationHistory(history)
           setDraftSummary(data.session.draft_summary || '')
+          setCurrentSessionTokens(data.session.token_count || 0)
           lastLocalUpdateTimestamp.current = dbTimestamp
           
           // Display last message
@@ -723,7 +728,7 @@ export default function CounselorClient() {
           }
         } else {
           // Database is stale - keep local conversation
-          console.warn('Ignoring stale database conversation from takeover')
+          console.warn('[Takeover] Ignoring stale database conversation')
         }
       }
       
