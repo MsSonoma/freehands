@@ -801,13 +801,14 @@ export default function CounselorClient() {
           mySessionId: sessionId,
           activeSessionId: data.session?.session_id,
           isOwner: data.isOwner,
-          sessionStarted
+          sessionStarted,
+          willTrigger: data.session && !data.isOwner
         })
         
-        // If there's an active session and we're not the owner AND we have a session started,
-        // it means we were taken over
-        if (data.session && !data.isOwner && sessionStarted) {
-          console.log('[Heartbeat] Session taken over - showing PIN overlay')
+        // If there's an active session and we're not the owner, show PIN overlay
+        // Don't check sessionStarted - we need to detect takeover even if we're at PIN screen
+        if (data.session && !data.isOwner) {
+          console.log('[Heartbeat] Not owner - showing PIN overlay')
           
           clearPersistedSessionIdentifier()
           initializedSessionIdRef.current = null
