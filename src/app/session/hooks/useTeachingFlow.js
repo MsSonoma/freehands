@@ -306,11 +306,15 @@ export function useTeachingFlow({
       
       // Prefetch next sentence BEFORE speaking current one (parallel load while audio plays)
       if (sentences.length > 1) {
+        console.log('[TEACHING] Prefetching vocab sentence 2:', sentences[1].substring(0, 50));
         ttsCache.prefetch(sentences[1]);
       }
       
       // Speak the first sentence
-      try { await speakFrontend(sentences[0]); } catch {}
+      console.log('[TEACHING] Speaking vocab sentence 1:', sentences[0].substring(0, 50));
+      try { await speakFrontend(sentences[0]); } catch (err) {
+        console.error('[TEACHING] Error speaking sentence 1:', err);
+      }
       
       // Set subPhase to awaiting-gate so buttons appear AFTER speaking
       setSubPhase('awaiting-gate');
@@ -544,13 +548,17 @@ export function useTeachingFlow({
           setTtsLoadingCount(prev => prev - 1);
           
           const nextSentence = vocabSentencesRef.current[nextIndex];
+          console.log('[TEACHING] Speaking vocab sentence', nextIndex + 1, ':', nextSentence.substring(0, 50));
           
           // Prefetch the sentence AFTER this one BEFORE speaking current (parallel load)
           if (nextIndex + 1 < vocabSentencesRef.current.length) {
+            console.log('[TEACHING] Prefetching vocab sentence', nextIndex + 2, ':', vocabSentencesRef.current[nextIndex + 1].substring(0, 50));
             ttsCache.prefetch(vocabSentencesRef.current[nextIndex + 1]);
           }
           
-          try { await speakFrontend(nextSentence); } catch {}
+          try { await speakFrontend(nextSentence); } catch (err) {
+            console.error('[TEACHING] Error speaking sentence', nextIndex + 1, ':', err);
+          }
           
           // Don't call promptGateRepeat - just show gate buttons again
           setSubPhase('awaiting-gate');
