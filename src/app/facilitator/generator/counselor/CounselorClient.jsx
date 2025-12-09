@@ -703,6 +703,8 @@ export default function CounselorClient() {
     try {
       const deviceName = `${navigator.platform || 'Unknown'} - ${navigator.userAgent.split(/[()]/)[1] || 'Browser'}`
       
+      console.log('[Takeover Client] Requesting takeover for session:', sessionId)
+      
       const res = await fetch('/api/mentor-session', {
         method: 'POST',
         headers: {
@@ -719,6 +721,13 @@ export default function CounselorClient() {
       
       const data = await res.json()
       
+      console.log('[Takeover Client] Takeover response:', {
+        ok: res.ok,
+        status: data.status,
+        conversationLength: data.session?.conversation_history?.length || 0,
+        hasDraft: !!data.session?.draft_summary
+      })
+      
       if (!res.ok) {
         throw new Error(data.error || 'Failed to take over session')
       }
@@ -734,6 +743,11 @@ export default function CounselorClient() {
         if (dbTimestamp > localTimestamp) {
           // Database is newer - safe to load
           const history = data.session.conversation_history
+          console.log('[Takeover Client] Loading conversation from takeover:', {
+            conversationLength: history.length,
+            tokenCount: data.session.token_count || 0,
+            hasDraft: !!data.session.draft_summary
+          })
           setConversationHistory(history)
           setDraftSummary(data.session.draft_summary || '')
           setCurrentSessionTokens(data.session.token_count || 0)

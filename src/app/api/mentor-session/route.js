@@ -354,6 +354,15 @@ export async function POST(request) {
       const conversationToCopy = existingSession.conversation_history || []
       const draftSummaryToCopy = existingSession.draft_summary || ''
 
+      console.log('[Takeover API] Copying conversation:', {
+        oldSessionId: existingSession.session_id,
+        oldDeviceName: existingSession.device_name,
+        conversationLength: conversationToCopy.length,
+        hasDraft: !!draftSummaryToCopy,
+        newSessionId: sessionId,
+        newDeviceName: deviceName
+      })
+
       // Deactivate old session
       const deactivated = await deactivateSessionById(existingSession.id)
 
@@ -383,6 +392,12 @@ export async function POST(request) {
           code: createError.code
         }, { status: 500 })
       }
+
+      console.log('[Takeover API] New session created:', {
+        sessionId: newSession.session_id,
+        conversationLength: newSession.conversation_history?.length || 0,
+        isActive: newSession.is_active
+      })
 
       return Response.json({
         session: newSession,
