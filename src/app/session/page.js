@@ -2798,6 +2798,9 @@ function SessionPageInner() {
   // Hide repeat button during the skip action
   try { setShowRepeatButton(false); } catch {}
     
+    // Enable input immediately when skipping
+    try { setCanSend(true); } catch {}
+    
     // Scroll transcript to bottom
     try {
       if (captionBoxRef.current) {
