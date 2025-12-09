@@ -549,7 +549,11 @@ export async function PATCH(request) {
     console.log('[PATCH] Update result:', { error: updateError, updates })
 
     if (updateError) {
-      return Response.json({ error: 'Failed to update session' }, { status: 500 })
+      return Response.json({ 
+        error: 'Failed to update session', 
+        supabaseError: updateError.message || updateError,
+        code: updateError.code
+      }, { status: 500 })
     }
 
     return Response.json({ success: true })
