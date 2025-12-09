@@ -4993,7 +4993,7 @@ function SessionPageInner() {
 
   // Finalize facilitator review: lock score, then advance to congrats
   const finalizeReview = useCallback(async () => {
-    try { abortAllActivity(); } catch {}
+    try { abortAllActivity(true); } catch {}
     const total = Array.isArray(generatedTest) ? generatedTest.length : 0;
     const correct = Array.isArray(testCorrectByIndex) ? testCorrectByIndex.filter(Boolean).length : 0;
     const safePercent = Math.round((correct / Math.max(1, Math.max(1, total))) * 100);
@@ -5135,7 +5135,7 @@ function SessionPageInner() {
       if (!ans || String(ans).trim().toLowerCase() !== 'ok') return;
     } catch {}
     // Centralized abort/cleanup
-    abortAllActivity();
+    abortAllActivity(true);
     // Ensure overlays tied to !loading can render immediately (Begin buttons)
     setLoading(false);
     // On any timeline skip, cut over transcript and clear prior resume snapshots
@@ -5253,7 +5253,7 @@ function SessionPageInner() {
       const ans = typeof window !== 'undefined' ? window.prompt("This will alter the lesson in a way that can't be reversed. Type 'ok' to proceed.") : null;
       if (!ans || String(ans).trim().toLowerCase() !== 'ok') return;
     } catch {}
-    abortAllActivity();
+    abortAllActivity(true);
     // Ensure overlays tied to !loading can render immediately after back-skip
     setLoading(false);
     // On any timeline skip back, also cut over transcript and clear snapshots
@@ -5351,7 +5351,7 @@ function SessionPageInner() {
     // Clear the flag so we only apply once
     setSkipPendingLessonLoad(false);
     // Align with skip behavior side-effects
-    abortAllActivity();
+    abortAllActivity(true);
     setLoading(false);
     // Fresh session: go to comprehension start
     if (showBegin) {
@@ -5417,7 +5417,7 @@ function SessionPageInner() {
     // Mark comprehension work phase as completed (user finished comprehension work)
     markWorkPhaseComplete('comprehension');
     // End any prior API/audio/mic activity before starting fresh
-    try { abortAllActivity(); } catch {}
+    try { abortAllActivity(true); } catch {}
     // Ensure audio/mic unlocked via Begin
   // mic permission will be requested only when user starts recording
     // Clear any temporary awaiting lock now that the user is explicitly starting
@@ -6754,7 +6754,7 @@ function SessionPageInner() {
       }
 
       // Stop any ongoing audio/speech/mic work first
-      try { abortAllActivity(); } catch {}
+      try { abortAllActivity(true); } catch {}
       const storageLearnerId = typeof window !== 'undefined' ? (localStorage.getItem('learner_id') || 'none') : 'none';
 
       // Clear cached assessments first so generated sets rebuild next session
@@ -6931,7 +6931,7 @@ function SessionPageInner() {
       // PIN check is sufficient confirmation for timeline jumps
       // Jump directly to a major phase emulating skip button side-effects
       // This centralizes transitional resets so timeline navigation = skip navigation.
-      try { abortAllActivity(); } catch {}
+      try { abortAllActivity(true); } catch {}
       setLoading(false); // allow overlays/buttons to show immediately
       // On timeline jump, cut transcript segment and clear snapshots so resume starts fresh
       try {
