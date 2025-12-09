@@ -308,13 +308,13 @@ export function useTeachingFlow({
       setSubPhase('awaiting-gate');
       setCanSend(false);
       
-      // Speak the first sentence
-      try { await speakFrontend(sentences[0]); } catch {}
-      
-      // Prefetch next sentence while student reads/processes current one
+      // Prefetch next sentence BEFORE speaking current one (parallel load while audio plays)
       if (sentences.length > 1) {
         ttsCache.prefetch(sentences[1]);
       }
+      
+      // Speak the first sentence
+      try { await speakFrontend(sentences[0]); } catch {}
       
       return true;
     }
@@ -429,13 +429,13 @@ export function useTeachingFlow({
       
       setTtsLoadingCount(prev => prev - 1);
       
-      // Speak the first sentence
-      try { await speakFrontend(sentences[0]); } catch {}
-      
-      // Prefetch next sentence while student reads/processes current one
+      // Prefetch next sentence BEFORE speaking current one (parallel load while audio plays)
       if (sentences.length > 1) {
         ttsCache.prefetch(sentences[1]);
       }
+      
+      // Speak the first sentence
+      try { await speakFrontend(sentences[0]); } catch {}
       
       // Set subPhase to awaiting-gate so buttons appear
       setSubPhase('awaiting-gate');
@@ -544,12 +544,13 @@ export function useTeachingFlow({
           setTtsLoadingCount(prev => prev - 1);
           
           const nextSentence = vocabSentencesRef.current[nextIndex];
-          try { await speakFrontend(nextSentence); } catch {}
           
-          // Prefetch the sentence after this one while student reads current
+          // Prefetch the sentence AFTER this one BEFORE speaking current (parallel load)
           if (nextIndex + 1 < vocabSentencesRef.current.length) {
             ttsCache.prefetch(vocabSentencesRef.current[nextIndex + 1]);
           }
+          
+          try { await speakFrontend(nextSentence); } catch {}
           
           // Don't call promptGateRepeat - just show gate buttons again
           setSubPhase('awaiting-gate');
@@ -600,12 +601,13 @@ export function useTeachingFlow({
           setTtsLoadingCount(prev => prev - 1);
           
           const nextSentence = exampleSentencesRef.current[nextIndex];
-          try { await speakFrontend(nextSentence); } catch {}
           
-          // Prefetch the sentence after this one while student reads current
+          // Prefetch the sentence AFTER this one BEFORE speaking current (parallel load)
           if (nextIndex + 1 < exampleSentencesRef.current.length) {
             ttsCache.prefetch(exampleSentencesRef.current[nextIndex + 1]);
           }
+          
+          try { await speakFrontend(nextSentence); } catch {}
           
           // Don't call promptGateRepeat - just show gate buttons again
           setSubPhase('awaiting-gate');
