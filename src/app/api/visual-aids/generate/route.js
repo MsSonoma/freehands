@@ -44,10 +44,9 @@ export async function POST(req) {
       return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 })
     }
 
-    // Generate image prompts based on teaching notes
-    const images = []
-    
-    for (let i = 0; i < count; i++) {
+    // Generate images in parallel to avoid timeout
+    // Helper function to generate a single image
+    async function generateSingleImage(index) {
       try {
         // Create a kid-friendly, educational image prompt
         const promptRequest = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -67,7 +66,7 @@ export async function POST(req) {
                 role: 'user',
                 content: customPrompt 
                   ? `Create an educational illustration prompt based on:\n\n${customPrompt}\n\nLesson: ${lessonTitle || 'Educational Lesson'}\nConcepts: ${teachingNotes}\n\nDescribe a visual scene with objects and actions only - absolutely no text or labels in the image.`
-                  : `Create an educational illustration prompt for this lesson:\n\nLesson: ${lessonTitle || 'Educational Lesson'}\nConcepts: ${teachingNotes}\n\nDescribe image #${i + 1}: Show a scene with objects, people, or nature that represents a key concept. Use only visual elements - no text, labels, or words anywhere in the image.`
+                  : `Create an educational illustration prompt for this lesson:\n\nLesson: ${lessonTitle || 'Educational Lesson'}\nConcepts: ${teachingNotes}\n\nDescribe image #${index + 1}: Show a scene with objects, people, or nature that represents a key concept. Use only visual elements - no text, labels, or words anywhere in the image.`
               }
             ],
             temperature: 0.8,
@@ -76,91 +75,96 @@ export async function POST(req) {
         })
 
         if (!promptRequest.ok) {
-          continue
+          return null
         }
 
         const promptData = await promptRequest.json()
         const imagePrompt = promptData.choices?.[0]?.message?.content?.trim()
 
         if (!imagePrompt) {
-          continue
+          return null
         }
 
-        // Generate kid-friendly description for Ms. Sonoma to read
-        const descriptionRequest = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${openaiKey}`
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            messages: [
-              {
-                role: 'system',
-                content: 'You are Ms. Sonoma, a warm and encouraging teacher. Convert technical image descriptions into simple, friendly explanations that a child aged 6-12 can understand. Use 2-3 short sentences. Be enthusiastic but clear. Speak directly to the child using "you" and "we". IMPORTANT: Always complete your sentences - never cut off mid-sentence. Use plain text only - no asterisks, markdown, bold, italics, or special formatting.'
-              },
-              {
-                role: 'user',
-                content: `Convert this image prompt into a kid-friendly explanation:\n\n${imagePrompt}\n\nMake it sound warm and encouraging, like you're explaining what's in the picture to help them learn. Make sure to complete all sentences. Use plain text only - no asterisks or special formatting.`
-              }
-            ],
-            temperature: 0.7,
-            max_tokens: 150
+        // Generate kid-friendly description and DALL-E image in parallel
+        const [descriptionRequest, imageRequest] = await Promise.all([
+          fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${openaiKey}`
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: [
+                {
+                  role: 'system',
+                  content: 'You are Ms. Sonoma, a warm and encouraging teacher. Convert technical image descriptions into simple, friendly explanations that a child aged 6-12 can understand. Use 2-3 short sentences. Be enthusiastic but clear. Speak directly to the child using "you" and "we". IMPORTANT: Always complete your sentences - never cut off mid-sentence. Use plain text only - no asterisks, markdown, bold, italics, or special formatting.'
+                },
+                {
+                  role: 'user',
+                  content: `Convert this image prompt into a kid-friendly explanation:\n\n${imagePrompt}\n\nMake it sound warm and encouraging, like you're explaining what's in the picture to help them learn. Make sure to complete all sentences. Use plain text only - no asterisks or special formatting.`
+                }
+              ],
+              temperature: 0.7,
+              max_tokens: 150
+            })
+          }),
+          fetch('https://api.openai.com/v1/images/generations', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${openaiKey}`
+            },
+            body: JSON.stringify({
+              model: 'dall-e-3',
+              prompt: `${imagePrompt} IMPORTANT: This image must contain absolutely NO text, words, letters, numbers, labels, captions, signs, or any written language of any kind. Show only visual elements.`,
+              n: 1,
+              size: '1024x1024',
+              quality: 'standard',
+              style: 'vivid'
+            })
           })
-        })
+        ])
 
         let description = imagePrompt // Fallback to technical prompt
         if (descriptionRequest.ok) {
           const descData = await descriptionRequest.json()
           const rawDescription = descData.choices?.[0]?.message?.content?.trim() || imagePrompt
-          // Strip all markdown formatting (asterisks, underscores, hashtags, etc.)
+          // Strip all markdown formatting
           description = rawDescription
-            .replace(/\*\*/g, '')  // Remove bold **text**
-            .replace(/\*/g, '')    // Remove any remaining asterisks
-            .replace(/_/g, '')     // Remove underscores
-            .replace(/#{1,6}\s/g, '') // Remove headers
+            .replace(/\*\*/g, '')
+            .replace(/\*/g, '')
+            .replace(/_/g, '')
+            .replace(/#{1,6}\s/g, '')
             .trim()
         }
 
-        // Generate image using DALL-E 3 with explicit no-text instruction
-        const enhancedPrompt = `${imagePrompt} IMPORTANT: This image must contain absolutely NO text, words, letters, numbers, labels, captions, signs, or any written language of any kind. Show only visual elements.`
-        
-        const imageRequest = await fetch('https://api.openai.com/v1/images/generations', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${openaiKey}`
-          },
-          body: JSON.stringify({
-            model: 'dall-e-3',
-            prompt: enhancedPrompt,
-            n: 1,
-            size: '1024x1024',
-            quality: 'standard',
-            style: 'vivid'
-          })
-        })
-
         if (!imageRequest.ok) {
-          continue
+          return null
         }
 
         const imageData = await imageRequest.json()
         const imageUrl = imageData.data?.[0]?.url
 
         if (imageUrl) {
-          images.push({
+          return {
             url: imageUrl,
             prompt: imagePrompt,
             description: description,
-            id: `img-${Date.now()}-${i}`
-          })
+            id: `img-${Date.now()}-${index}`
+          }
         }
+
+        return null
       } catch (err) {
-        // Continue to next image
+        return null
       }
     }
+
+    // Generate all images in parallel
+    const imagePromises = Array.from({ length: count }, (_, i) => generateSingleImage(i))
+    const results = await Promise.all(imagePromises)
+    const images = results.filter(img => img !== null)
 
     if (images.length === 0) {
       return NextResponse.json({ error: 'Failed to generate any images' }, { status: 500 })
