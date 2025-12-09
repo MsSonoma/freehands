@@ -6735,6 +6735,8 @@ function SessionPageInner() {
   {/** Clickable timeline jump logic */}
   {(() => {
     const handleJumpPhase = async (target) => {
+      // Block timeline navigation when Resume/Restart choice is pending
+      if (offerResume) return;
       const ok = await ensurePinAllowed('timeline');
       if (!ok) return;
       // PIN check is sufficient confirmation for timeline jumps
@@ -6875,7 +6877,7 @@ function SessionPageInner() {
             timelinePhases={timelinePhases}
             timelineHighlight={timelineHighlight}
             compact={isMobileLandscape}
-            onJumpPhase={handleJumpPhase}
+            onJumpPhase={offerResume ? null : handleJumpPhase}
           />
         </div>
       </div>
