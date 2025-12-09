@@ -6591,10 +6591,13 @@ function SessionPageInner() {
         }
       }
 
-      if (repeat && code === repeat && !isSpeaking && showRepeatButton && typeof handleRepeatSpeech === 'function') {
-        e.preventDefault();
-        handleRepeatSpeech();
-        return;
+      if (repeat && code === repeat) {
+        console.log('[HOTKEY DEBUG] Repeat key pressed. isSpeaking:', isSpeaking, 'showRepeatButton:', showRepeatButton, 'handleRepeatSpeech:', typeof handleRepeatSpeech);
+        if (!isSpeaking && showRepeatButton && typeof handleRepeatSpeech === 'function') {
+          e.preventDefault();
+          handleRepeatSpeech();
+          return;
+        }
       }
     };
     window.addEventListener('keydown', onKeyDown);
