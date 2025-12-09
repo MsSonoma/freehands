@@ -431,7 +431,11 @@ export default function CounselorClient() {
 
         // Check if THIS session was deactivated (taken over)
         if (updatedSession.session_id === sessionId && oldSession.is_active && !updatedSession.is_active) {
-          console.log('[Realtime] THIS SESSION taken over by another device - ending session')
+          console.log('[Realtime] THIS SESSION taken over by another device - clearing session ID and local state')
+          
+          // Clear persisted session ID so next load generates a new one
+          clearPersistedSessionIdentifier()
+          initializedSessionIdRef.current = null
           
           // Clear local state
           setConversationHistory([])
@@ -442,11 +446,7 @@ export default function CounselorClient() {
           setShowTakeoverDialog(false)
           setConflictingSession(null)
           
-          // Show alert to user
           alert('This session has been taken over by another device. Your conversation was saved.')
-          
-          // Optionally reload the page to force re-initialization
-          // window.location.reload()
         } else {
           console.log('[Realtime] Update is for different session or not a takeover:', {
             isSameSession: updatedSession.session_id === sessionId,
@@ -714,7 +714,13 @@ export default function CounselorClient() {
         
         // Handle 410 Gone - session was taken over by another device
         if (response.status === 410) {
-          console.log('[Mr. Mentor] Session taken over (410) - clearing local state')
+          console.log('[Mr. Mentor] Session taken over (410) - clearing local state and session ID')
+          
+          // Clear persisted session ID so next load generates a new one
+          clearPersistedSessionIdentifier()
+          initializedSessionIdRef.current = null
+          
+          // Clear local state
           setConversationHistory([])
           setDraftSummary('')
           setCurrentSessionTokens(0)
@@ -722,6 +728,7 @@ export default function CounselorClient() {
           setSessionLoading(false)
           setShowTakeoverDialog(false)
           setConflictingSession(null)
+          
           alert('This session has been taken over by another device.')
         }
       } catch (err) {
@@ -731,6 +738,47 @@ export default function CounselorClient() {
     
     return () => clearTimeout(saveTimer)
   }, [conversationHistory, draftSummary, currentSessionTokens, sessionId, accessToken, hasAccess, sessionLoading])
+
+  // Periodic heartbeat to detect if session was taken over (backup to realtime)
+  useEffect(() => {
+    if (!sessionId || !accessToken || !hasAccess || sessionLoading || !sessionStarted) return
+
+    const checkSessionStatus = async () => {
+      try {
+        const res = await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        })
+        
+        if (!res.ok) return
+
+        const data = await res.json()
+        
+        // If we're not the owner anymore, we were taken over
+        if (data.session && !data.isOwner && data.session.session_id !== sessionId) {
+          console.log('[Heartbeat] Session taken over - clearing local state')
+          
+          clearPersistedSessionIdentifier()
+          initializedSessionIdRef.current = null
+          
+          setConversationHistory([])
+          setDraftSummary('')
+          setCurrentSessionTokens(0)
+          setSessionStarted(false)
+          setSessionLoading(false)
+          setShowTakeoverDialog(false)
+          setConflictingSession(null)
+          
+          alert('This session has been taken over by another device.')
+        }
+      } catch (err) {
+        // Silent error
+      }
+    }
+
+    // Check every 3 seconds
+    const interval = setInterval(checkSessionStatus, 3000)
+    return () => clearInterval(interval)
+  }, [sessionId, accessToken, hasAccess, sessionLoading, sessionStarted, clearPersistedSessionIdentifier])
 
   // Stop polling on unmount
   useEffect(() => {
