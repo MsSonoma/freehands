@@ -773,5 +773,10 @@ export function useTeachingFlow({
     isInSentenceMode, // Export sentence navigation mode flag
     getTeachingFlowSnapshot,
     applyTeachingFlowSnapshot,
+    // Export sentence state for prefetch useEffect
+    vocabSentences,
+    vocabSentenceIndex,
+    exampleSentences,
+    exampleSentenceIndex,
   };
 }

@@ -4614,6 +4614,10 @@ function SessionPageInner() {
     isInSentenceMode,
     getTeachingFlowSnapshot,
     applyTeachingFlowSnapshot,
+    vocabSentences,
+    vocabSentenceIndex,
+    exampleSentences,
+    exampleSentenceIndex,
   } = useTeachingFlow({
     // State setters
     setCanSend,
