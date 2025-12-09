@@ -7,7 +7,7 @@
  */
 
 import { useState, useRef, useCallback } from 'react';
-import ttsCache from '../utils/ttsCache';
+import { ttsCache } from '../utils/ttsCache';
 
 export function useTeachingFlow({
   // State setters
