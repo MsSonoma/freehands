@@ -459,19 +459,21 @@ export default function CounselorClient() {
           setSessionLoading(false)
           
           // Fetch the active session to show in takeover dialog
-          try {
-            const checkRes = await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
-              headers: { 'Authorization': `Bearer ${accessToken}` }
-            })
-            if (checkRes.ok) {
-              const checkData = await checkRes.json()
-              if (checkData.session) {
-                setConflictingSession(checkData.session)
+          ;(async () => {
+            try {
+              const checkRes = await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+              })
+              if (checkRes.ok) {
+                const checkData = await checkRes.json()
+                if (checkData.session) {
+                  setConflictingSession(checkData.session)
+                }
               }
+            } catch (err) {
+              console.error('[Realtime] Failed to fetch active session:', err)
             }
-          } catch (err) {
-            console.error('[Realtime] Failed to fetch active session:', err)
-          }
+          })()
           
           setShowTakeoverDialog(true)
         } else {
@@ -755,19 +757,21 @@ export default function CounselorClient() {
           setSessionLoading(false)
           
           // Fetch the active session to show in takeover dialog
-          try {
-            const checkRes = await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
-              headers: { 'Authorization': `Bearer ${accessToken}` }
-            })
-            if (checkRes.ok) {
-              const data = await checkRes.json()
-              if (data.session) {
-                setConflictingSession(data.session)
+          ;(async () => {
+            try {
+              const checkRes = await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+              })
+              if (checkRes.ok) {
+                const data = await checkRes.json()
+                if (data.session) {
+                  setConflictingSession(data.session)
+                }
               }
+            } catch (err) {
+              console.error('[410 Handler] Failed to fetch active session:', err)
             }
-          } catch (err) {
-            console.error('[410 Handler] Failed to fetch active session:', err)
-          }
+          })()
           
           setShowTakeoverDialog(true)
         }
