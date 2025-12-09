@@ -459,6 +459,7 @@ export default function CounselorClient() {
       return
     }
 
+    console.log('[Mr. Mentor] Initializing session:', sessionId)
     setSessionLoading(true)
 
     try {
@@ -479,6 +480,7 @@ export default function CounselorClient() {
       }
 
       const payload = await checkRes.json()
+      console.log('[Mr. Mentor] GET response:', { status: payload.status, isOwner: payload.isOwner, hasConversation: !!payload.session?.conversation_history, conversationLength: payload.session?.conversation_history?.length })
 
       if (!isMountedRef.current) {
         return
@@ -522,7 +524,9 @@ export default function CounselorClient() {
         }
 
         // Load active conversation from database (will be cleared after save/delete)
-        setConversationHistory(Array.isArray(createdSession?.conversation_history) ? createdSession.conversation_history : [])
+        const convHistory = Array.isArray(createdSession?.conversation_history) ? createdSession.conversation_history : []
+        console.log('[Mr. Mentor] Loading conversation from NEW session:', convHistory.length, 'messages')
+        setConversationHistory(convHistory)
         setDraftSummary(createdSession?.draft_summary || '')
         setCurrentSessionTokens(createdSession?.token_count || 0)
         // Update timestamp to match database so atomic gate works correctly
@@ -551,7 +555,9 @@ export default function CounselorClient() {
       }
 
       // Load active conversation from database (will be cleared after save/delete)
-      setConversationHistory(Array.isArray(activeSession?.conversation_history) ? activeSession.conversation_history : [])
+      const convHistory = Array.isArray(activeSession?.conversation_history) ? activeSession.conversation_history : []
+      console.log('[Mr. Mentor] Loading conversation from EXISTING session:', convHistory.length, 'messages')
+      setConversationHistory(convHistory)
       setDraftSummary(activeSession?.draft_summary || '')
       setCurrentSessionTokens(activeSession?.token_count || 0)
       // Update timestamp to match database so atomic gate works correctly
@@ -608,6 +614,7 @@ export default function CounselorClient() {
       try {
         // Update local timestamp
         lastLocalUpdateTimestamp.current = Date.now()
+        console.log('[Mr. Mentor] Saving conversation to DB:', conversationHistory.length, 'messages')
         
         await fetch('/api/mentor-session', {
           method: 'PATCH',
