@@ -1145,42 +1145,6 @@ function SessionPageInner() {
     } catch {}
   }, [subPhase, generatedComprehension, generatedExercise, generatedWorksheet, generatedTest]);
 
-  // Prefetch next teaching sentence when gate buttons appear (handles Skip case)
-  useEffect(() => {
-    if (phase !== 'teaching' || subPhase !== 'awaiting-gate') return;
-    
-    try {
-      // Get current teaching state from refs
-      const teachingStageValue = teachingStage;
-      
-      if (teachingStageValue === 'definitions') {
-        const sentences = vocabSentences;
-        const currentIdx = vocabSentenceIndex;
-        
-        if (Array.isArray(sentences) && currentIdx < sentences.length) {
-          const nextIdx = currentIdx + 1;
-          if (nextIdx < sentences.length) {
-            console.log('[TEACHING PREFETCH] Prefetching vocab sentence', nextIdx + 1);
-            ttsCache.prefetch(sentences[nextIdx]);
-          }
-        }
-      } else if (teachingStageValue === 'examples') {
-        const sentences = exampleSentences;
-        const currentIdx = exampleSentenceIndex;
-        
-        if (Array.isArray(sentences) && currentIdx < sentences.length) {
-          const nextIdx = currentIdx + 1;
-          if (nextIdx < sentences.length) {
-            console.log('[TEACHING PREFETCH] Prefetching example sentence', nextIdx + 1);
-            ttsCache.prefetch(sentences[nextIdx]);
-          }
-        }
-      }
-    } catch (err) {
-      console.error('[TEACHING PREFETCH] Error:', err);
-    }
-  }, [phase, subPhase, teachingStage, vocabSentences, vocabSentenceIndex, exampleSentences, exampleSentenceIndex]);
-
   // Calculate lesson progress percentage (defined after all state variables)
   const calculateLessonProgress = useCallback(() => {
     // Map phases to progress percentages
@@ -4674,6 +4638,42 @@ function SessionPageInner() {
   useEffect(() => {
     startThreeStageTeachingRef.current = startThreeStageTeaching;
   }, [startThreeStageTeaching]);
+
+  // Prefetch next teaching sentence when gate buttons appear (handles Skip case)
+  useEffect(() => {
+    if (phase !== 'teaching' || subPhase !== 'awaiting-gate') return;
+    
+    try {
+      // Get current teaching state from refs
+      const teachingStageValue = teachingStage;
+      
+      if (teachingStageValue === 'definitions') {
+        const sentences = vocabSentences;
+        const currentIdx = vocabSentenceIndex;
+        
+        if (Array.isArray(sentences) && currentIdx < sentences.length) {
+          const nextIdx = currentIdx + 1;
+          if (nextIdx < sentences.length) {
+            console.log('[TEACHING PREFETCH] Prefetching vocab sentence', nextIdx + 1);
+            ttsCache.prefetch(sentences[nextIdx]);
+          }
+        }
+      } else if (teachingStageValue === 'examples') {
+        const sentences = exampleSentences;
+        const currentIdx = exampleSentenceIndex;
+        
+        if (Array.isArray(sentences) && currentIdx < sentences.length) {
+          const nextIdx = currentIdx + 1;
+          if (nextIdx < sentences.length) {
+            console.log('[TEACHING PREFETCH] Prefetching example sentence', nextIdx + 1);
+            ttsCache.prefetch(sentences[nextIdx]);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[TEACHING PREFETCH] Error:', err);
+    }
+  }, [phase, subPhase, teachingStage, vocabSentences, vocabSentenceIndex, exampleSentences, exampleSentenceIndex]);
 
   // Assessment downloads hook
   const {
