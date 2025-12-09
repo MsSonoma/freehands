@@ -498,14 +498,18 @@ export async function PATCH(request) {
       return Response.json({ error: 'Session ID required' }, { status: 400 })
     }
 
+    console.log('[PATCH] Looking for session:', { userId: user.id, sessionId })
+
     // Verify this is the active session
-    const { data: session } = await supabase
+    const { data: session, error: sessionError } = await supabase
       .from('mentor_sessions')
       .select('*')
       .eq('facilitator_id', user.id)
       .eq('session_id', sessionId)
       .eq('is_active', true)
       .single()
+
+    console.log('[PATCH] Session query result:', { found: !!session, error: sessionError })
 
     if (!session) {
       return Response.json({ 
@@ -551,7 +555,8 @@ export async function PATCH(request) {
     return Response.json({ success: true })
 
   } catch (err) {
-    return Response.json({ error: 'Internal error' }, { status: 500 })
+    console.error('[PATCH] Error:', err)
+    return Response.json({ error: 'Internal error', details: err.message }, { status: 500 })
   }
 }
 
