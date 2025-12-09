@@ -113,6 +113,54 @@ try {
 } catch {}
 ```
 
+**Teaching Flow Sentence-by-Sentence (useTeachingFlow.js)**:
+
+Definitions and examples are delivered sentence-by-sentence. After speaking each sentence, prefetch the next one.
+
+**After First Vocab Sentence (line ~312)**:
+```javascript
+// Speak the first sentence
+try { await speakFrontend(sentences[0]); } catch {}
+
+// Prefetch next sentence while student reads/processes current one
+if (sentences.length > 1) {
+  ttsCache.prefetch(sentences[1]);
+}
+```
+
+**After Subsequent Vocab Sentences (line ~550)**:
+```javascript
+const nextSentence = vocabSentencesRef.current[nextIndex];
+try { await speakFrontend(nextSentence); } catch {}
+
+// Prefetch the sentence after this one while student reads current
+if (nextIndex + 1 < vocabSentencesRef.current.length) {
+  ttsCache.prefetch(vocabSentencesRef.current[nextIndex + 1]);
+}
+```
+
+**After First Example Sentence (line ~436)**:
+```javascript
+// Speak the first sentence
+try { await speakFrontend(sentences[0]); } catch {}
+
+// Prefetch next sentence while student reads/processes current one
+if (sentences.length > 1) {
+  ttsCache.prefetch(sentences[1]);
+}
+```
+
+**After Subsequent Example Sentences (line ~607)**:
+```javascript
+const nextSentence = exampleSentencesRef.current[nextIndex];
+try { await speakFrontend(nextSentence); } catch {}
+
+// Prefetch the sentence after this one while student reads current
+if (nextIndex + 1 < exampleSentencesRef.current.length) {
+  ttsCache.prefetch(exampleSentencesRef.current[nextIndex + 1]);
+}
+```
+
 **3. Cache Clearing (page.js line ~990)**
 ```javascript
 // Clear TTS cache on phase transitions to prevent stale audio from previous phases
@@ -237,6 +285,7 @@ ttsCache.prefetch(generatedComprehension[currentCompIndex]);
 **Integration**:
 - `src/app/session/page.js`: Import (line 31), speakFrontendImpl cache check (line ~2927), prefetch after comprehension answer (~5934), prefetch after exercise answer (~6117), prefetch after worksheet answer (~6264), prefetch after test answer (~6383), cache clear effect (~1004)
 - `src/app/session/hooks/usePhaseHandlers.js`: Import (line 13), prefetch on comprehension start (~105), prefetch on exercise start (~163)
+- `src/app/session/hooks/useTeachingFlow.js`: Import (line 10), prefetch after first vocab sentence (~312), prefetch after subsequent vocab sentences (~550), prefetch after first example sentence (~436), prefetch after subsequent example sentences (~607)
 
 **API**:
 - `src/app/api/tts/route.js`: TTS endpoint that returns `{ audio: base64 }`
