@@ -7,6 +7,7 @@
  */
 
 import { useState, useRef, useCallback } from 'react';
+import ttsCache from '../utils/ttsCache';
 
 export function useTeachingFlow({
   // State setters
@@ -310,6 +311,11 @@ export function useTeachingFlow({
       // Speak the first sentence
       try { await speakFrontend(sentences[0]); } catch {}
       
+      // Prefetch next sentence while student reads/processes current one
+      if (sentences.length > 1) {
+        ttsCache.prefetch(sentences[1]);
+      }
+      
       return true;
     }
     
@@ -426,6 +432,11 @@ export function useTeachingFlow({
       // Speak the first sentence
       try { await speakFrontend(sentences[0]); } catch {}
       
+      // Prefetch next sentence while student reads/processes current one
+      if (sentences.length > 1) {
+        ttsCache.prefetch(sentences[1]);
+      }
+      
       // Set subPhase to awaiting-gate so buttons appear
       setSubPhase('awaiting-gate');
       setCanSend(false);
@@ -535,6 +546,11 @@ export function useTeachingFlow({
           const nextSentence = vocabSentencesRef.current[nextIndex];
           try { await speakFrontend(nextSentence); } catch {}
           
+          // Prefetch the sentence after this one while student reads current
+          if (nextIndex + 1 < vocabSentencesRef.current.length) {
+            ttsCache.prefetch(vocabSentencesRef.current[nextIndex + 1]);
+          }
+          
           // Don't call promptGateRepeat - just show gate buttons again
           setSubPhase('awaiting-gate');
           setCanSend(false);
@@ -585,6 +601,11 @@ export function useTeachingFlow({
           
           const nextSentence = exampleSentencesRef.current[nextIndex];
           try { await speakFrontend(nextSentence); } catch {}
+          
+          // Prefetch the sentence after this one while student reads current
+          if (nextIndex + 1 < exampleSentencesRef.current.length) {
+            ttsCache.prefetch(exampleSentencesRef.current[nextIndex + 1]);
+          }
           
           // Don't call promptGateRepeat - just show gate buttons again
           setSubPhase('awaiting-gate');
