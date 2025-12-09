@@ -804,8 +804,8 @@ export default function CounselorClient() {
           sessionStarted
         })
         
-        // If there's an active session and we're not the owner, we were taken over
-        // This means another device has an active session with a different session_id
+        // If there's an active session and we're not the owner AND we have a session started,
+        // it means we were taken over
         if (data.session && !data.isOwner && sessionStarted) {
           console.log('[Heartbeat] Session taken over - showing PIN overlay')
           
@@ -827,8 +827,12 @@ export default function CounselorClient() {
       }
     }
 
-    // Check every 3 seconds
+    // Check every 3 seconds - always run to catch ping-pong takeovers
     const interval = setInterval(checkSessionStatus, 3000)
+    
+    // Run immediately on mount
+    checkSessionStatus()
+    
     return () => clearInterval(interval)
   }, [sessionId, accessToken, hasAccess, sessionLoading, sessionStarted, clearPersistedSessionIdentifier])
 
