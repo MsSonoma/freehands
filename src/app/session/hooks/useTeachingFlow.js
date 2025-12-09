@@ -575,15 +575,10 @@ export function useTeachingFlow({
           vocabSentenceIndexRef.current = nextIndex;
           setVocabSentenceIndex(nextIndex);
           
-          // Show loading overlay during save
-          setTtsLoadingCount(prev => prev + 1);
-          
-          // ATOMIC SNAPSHOT: Save BEFORE speaking so skip doesn't lose progress
-          try { await scheduleSaveSnapshot(`vocab-sentence-${nextIndex + 1}`); } catch (err) {
+          // ATOMIC SNAPSHOT: Save (non-blocking) - progress is already in ref
+          scheduleSaveSnapshot(`vocab-sentence-${nextIndex + 1}`).catch(err => {
             console.error('[TEACHING FLOW] Save failed:', err);
-          }
-          
-          setTtsLoadingCount(prev => prev - 1);
+          });
           
           const nextSentence = vocabSentencesRef.current[nextIndex];
           console.log('[TEACHING] Speaking vocab sentence', nextIndex + 1, ':', nextSentence.substring(0, 50));
@@ -636,15 +631,10 @@ export function useTeachingFlow({
           exampleSentenceIndexRef.current = nextIndex;
           setExampleSentenceIndex(nextIndex);
           
-          // Show loading overlay during save
-          setTtsLoadingCount(prev => prev + 1);
-          
-          // ATOMIC SNAPSHOT: Save BEFORE speaking so skip doesn't lose progress
-          try { await scheduleSaveSnapshot(`example-sentence-${nextIndex + 1}`); } catch (err) {
+          // ATOMIC SNAPSHOT: Save (non-blocking) - progress is already in ref
+          scheduleSaveSnapshot(`example-sentence-${nextIndex + 1}`).catch(err => {
             console.error('[TEACHING FLOW] Save failed:', err);
-          }
-          
-          setTtsLoadingCount(prev => prev - 1);
+          });
           
           const nextSentence = exampleSentencesRef.current[nextIndex];
           
