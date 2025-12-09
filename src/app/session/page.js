@@ -7199,6 +7199,11 @@ function SessionPageInner() {
         conflictingSession={conflictingSession}
         handleSessionTakeover={handleSessionTakeover}
         handleCancelTakeover={handleCancelTakeover}
+        askState={askState}
+        setAskState={setAskState}
+        setAskOriginalQuestion={setAskOriginalQuestion}
+        setShowOpeningActions={setShowOpeningActions}
+        setCanSend={setCanSend}
       />
       {/* Worksheet end-of-phase Review button removed per requirements */}
     </div>
@@ -8220,7 +8225,7 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
   );
 }
 
-function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, lessonKey, muted, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle, handleTimerClick, phaseTimers, currentTimerMode, getCurrentPhaseName, getCurrentPhaseTimerDuration, goldenKeyBonus, showPlayTimeExpired, playExpiredPhase, handlePlayExpiredComplete, handlePhaseTimerTimeUp, showRepeatButton, handleRepeatSpeech, visualAids, onShowVisualAids, showGames, setShowGames, timerRefreshKey, showTakeoverDialog, conflictingSession, handleSessionTakeover, handleCancelTakeover }) {
+function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, lessonKey, muted, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle, handleTimerClick, phaseTimers, currentTimerMode, getCurrentPhaseName, getCurrentPhaseTimerDuration, goldenKeyBonus, showPlayTimeExpired, playExpiredPhase, handlePlayExpiredComplete, handlePhaseTimerTimeUp, showRepeatButton, handleRepeatSpeech, visualAids, onShowVisualAids, showGames, setShowGames, timerRefreshKey, showTakeoverDialog, conflictingSession, handleSessionTakeover, handleCancelTakeover, askState, setAskState, setAskOriginalQuestion, setShowOpeningActions, setCanSend }) {
   // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
   // Remove horizontal clamp: let the video occupy the full available width of its column
   const containerMaxWidth = 'none';
