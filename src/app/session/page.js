@@ -817,17 +817,9 @@ function SessionPageInner() {
     // Close games overlay if it's open
     setShowGames(false);
     
-    // Prefetch first question during 30-second countdown (comprehension/exercise only)
-    try {
-      if (phaseName === 'comprehension' && Array.isArray(generatedComprehension) && generatedComprehension.length > 0) {
-        const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedComprehension[0], { layout: 'multiline' }));
-        ttsCache.prefetch(firstQ);
-      } else if (phaseName === 'exercise' && Array.isArray(generatedExercise) && generatedExercise.length > 0) {
-        const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedExercise[0], { layout: 'multiline' }));
-        ttsCache.prefetch(firstQ);
-      }
-    } catch {}
-  }, [generatedComprehension, generatedExercise]);
+    // Note: Prefetch is handled by the awaiting-begin useEffect when phase transitions
+    // No need to prefetch here to avoid TDZ issues with state dependencies
+  }, []);
   
   // Handle PlayTimeExpiredOverlay countdown completion (auto-advance to work mode)
   const handlePlayExpiredComplete = useCallback(async () => {
