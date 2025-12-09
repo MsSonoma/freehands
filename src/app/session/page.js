@@ -8443,6 +8443,42 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
             </svg>
           </button>
         )}
+        {/* Back button when Ask is awaiting input (cancel Ask flow) */}
+        {askState === 'awaiting-input' && !isSpeaking && (
+          <button
+            type="button"
+            onClick={() => {
+              setAskState('inactive');
+              setAskOriginalQuestion('');
+              setShowOpeningActions(true);
+              setCanSend(false);
+            }}
+            aria-label="Back"
+            title="Cancel Ask Question"
+            style={{
+              position: 'absolute',
+              bottom: 16,
+              left: 16,
+              background: '#1f2937',
+              color: '#fff',
+              border: 'none',
+              width: 'var(--ctrlSize)',
+              height: 'var(--ctrlSize)',
+              display: 'grid',
+              placeItems: 'center',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+              zIndex: 10
+            }}
+          >
+            {/* Back arrow icon */}
+            <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+          </button>
+        )}
         {skipPendingLessonLoad && (
           <div style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(31,41,55,0.85)', color: '#fff', padding: '6px 12px', borderRadius: 8, fontSize: 'clamp(0.75rem, 1.4vw, 0.9rem)', fontWeight: 600, letterSpacing: 0.4, boxShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>Loading lesson… skip will apply</div>
         )}
