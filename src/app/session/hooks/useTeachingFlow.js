@@ -121,10 +121,7 @@ export function useTeachingFlow({
     setSubPhase('teaching-3stage'); // hide gate buttons while we generate examples
     
     try {
-      // First part: "Do you have any questions?"
-      await speakFrontend('Do you have any questions?');
-      
-      // Generate example questions relevant to the current teaching stage and lesson
+      // Start generating example questions BEFORE speaking so GPT completes during speech
       const lessonTitle = getCleanLessonTitle();
       const notes = getTeachingNotes() || '';
       
@@ -165,7 +162,8 @@ export function useTeachingFlow({
         'Always respond with natural spoken text only. Do not use emojis, decorative characters, repeated punctuation, or symbols.'
       ].filter(Boolean).join(' ');
       
-      const result = await callMsSonoma(
+      // Start GPT call (don't await yet)
+      const gptPromise = callMsSonoma(
         instruction,
         '',
         {
@@ -179,6 +177,12 @@ export function useTeachingFlow({
           stage: teachingStage
         }
       );
+      
+      // While GPT is generating, speak "Do you have any questions?"
+      await speakFrontend('Do you have any questions?');
+      
+      // By now GPT should be done or nearly done - wait for it to complete
+      const result = await gptPromise;
       
       if (!result.success) {
         // Failed to generate example questions - silent
