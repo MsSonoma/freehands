@@ -785,7 +785,7 @@ export default function CounselorClient() {
 
   // Periodic heartbeat to detect if session was taken over (backup to realtime)
   useEffect(() => {
-    if (!sessionId || !accessToken || !hasAccess || sessionLoading || !sessionStarted) return
+    if (!sessionId || !accessToken || !hasAccess || sessionLoading) return
 
     const checkSessionStatus = async () => {
       try {
@@ -797,8 +797,16 @@ export default function CounselorClient() {
 
         const data = await res.json()
         
-        // If we're not the owner anymore, we were taken over
-        if (data.session && !data.isOwner && data.session.session_id !== sessionId) {
+        console.log('[Heartbeat] Checking session status:', {
+          mySessionId: sessionId,
+          activeSessionId: data.session?.session_id,
+          isOwner: data.isOwner,
+          sessionStarted
+        })
+        
+        // If there's an active session and we're not the owner, we were taken over
+        // This means another device has an active session with a different session_id
+        if (data.session && !data.isOwner && sessionStarted) {
           console.log('[Heartbeat] Session taken over - showing PIN overlay')
           
           clearPersistedSessionIdentifier()
@@ -815,7 +823,7 @@ export default function CounselorClient() {
           setShowTakeoverDialog(true)
         }
       } catch (err) {
-        // Silent error
+        console.error('[Heartbeat] Error:', err)
       }
     }
 
