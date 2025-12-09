@@ -213,17 +213,18 @@ export function useTeachingFlow({
         setSubPhase('awaiting-gate');
         setCanSend(false);
         
-        // Prefetch next sentence BEFORE speaking current one (parallel load while audio plays)
+        // Speak the current sentence (whether repeat or continuing)
+        // Use noCaptions ONLY if it's truly a repeat (isRepeat=true), otherwise show captions normally
         const currentIdx = vocabSentenceIndexRef.current;
+        console.log('[TEACHING] Speaking vocab sentence', currentIdx + 1, ':', currentSentence.substring(0, 50));
+        try { await speakFrontend(currentSentence, isRepeat ? { noCaptions: true } : {}); } catch {}
+        
+        // Prefetch next sentence AFTER speaking completes (while student reads/processes)
         if (currentIdx + 1 < vocabSentencesRef.current.length) {
           console.log('[TEACHING] Prefetching vocab sentence', currentIdx + 2, ':', vocabSentencesRef.current[currentIdx + 1].substring(0, 50));
           ttsCache.prefetch(vocabSentencesRef.current[currentIdx + 1]);
         }
         
-        // Speak the current sentence (whether repeat or continuing)
-        // Use noCaptions ONLY if it's truly a repeat (isRepeat=true), otherwise show captions normally
-        console.log('[TEACHING] Speaking vocab sentence', currentIdx + 1, ':', currentSentence.substring(0, 50));
-        try { await speakFrontend(currentSentence, isRepeat ? { noCaptions: true } : {}); } catch {}
         return true;
       }
       return false;
@@ -325,16 +326,16 @@ export function useTeachingFlow({
       
       setTtsLoadingCount(prev => prev - 1);
       
-      // Prefetch next sentence BEFORE speaking current one (parallel load while audio plays)
-      if (sentences.length > 1) {
-        console.log('[TEACHING] Prefetching vocab sentence 2:', sentences[1].substring(0, 50));
-        ttsCache.prefetch(sentences[1]);
-      }
-      
       // Speak the first sentence
       console.log('[TEACHING] Speaking vocab sentence 1:', sentences[0].substring(0, 50));
       try { await speakFrontend(sentences[0]); } catch (err) {
         console.error('[TEACHING] Error speaking sentence 1:', err);
+      }
+      
+      // Prefetch next sentence AFTER speaking completes (while student reads/processes)
+      if (sentences.length > 1) {
+        console.log('[TEACHING] Prefetching vocab sentence 2:', sentences[1].substring(0, 50));
+        ttsCache.prefetch(sentences[1]);
       }
       
       // Set subPhase to awaiting-gate so buttons appear AFTER speaking
@@ -364,15 +365,16 @@ export function useTeachingFlow({
       const currentSentence = exampleSentencesRef.current[exampleSentenceIndexRef.current];
       if (currentSentence) {
         
-        // Prefetch next sentence BEFORE speaking current one (parallel load while audio plays)
+        // Speak the current sentence (whether repeat or continuing)
+        // Use noCaptions to avoid re-transcribing (sentence already in transcript from before)
+        try { await speakFrontend(currentSentence, { noCaptions: true }); } catch {}
+        
+        // Prefetch next sentence AFTER speaking completes (while student reads/processes)
         const currentIdx = exampleSentenceIndexRef.current;
         if (currentIdx + 1 < exampleSentencesRef.current.length) {
           ttsCache.prefetch(exampleSentencesRef.current[currentIdx + 1]);
         }
         
-        // Speak the current sentence (whether repeat or continuing)
-        // Use noCaptions to avoid re-transcribing (sentence already in transcript from before)
-        try { await speakFrontend(currentSentence, { noCaptions: true }); } catch {}
         return true;
       }
       return false;
@@ -468,13 +470,13 @@ export function useTeachingFlow({
       
       setTtsLoadingCount(prev => prev - 1);
       
-      // Prefetch next sentence BEFORE speaking current one (parallel load while audio plays)
+      // Speak the first sentence
+      try { await speakFrontend(sentences[0]); } catch {}
+      
+      // Prefetch next sentence AFTER speaking completes (while student reads/processes)
       if (sentences.length > 1) {
         ttsCache.prefetch(sentences[1]);
       }
-      
-      // Speak the first sentence
-      try { await speakFrontend(sentences[0]); } catch {}
       
       // Set subPhase to awaiting-gate so buttons appear
       setSubPhase('awaiting-gate');
