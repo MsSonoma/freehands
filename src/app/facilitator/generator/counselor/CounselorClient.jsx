@@ -2332,10 +2332,6 @@ Would you like to schedule this lesson for ${learnerName || 'this learner'}?`
         show={showClipboard}
         forced={clipboardForced}
       />
-          setClipboardInstructions(false)
-        }}
-        show={showClipboard}
-      />
 
       {/* Goals Clipboard Overlay */}
       <GoalsClipboardOverlay
