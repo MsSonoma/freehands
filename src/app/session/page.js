@@ -2798,6 +2798,13 @@ function SessionPageInner() {
   // Hide repeat button during the skip action
   try { setShowRepeatButton(false); } catch {}
     
+    // Scroll transcript to bottom
+    try {
+      if (captionBoxRef.current) {
+        captionBoxRef.current.scrollTop = captionBoxRef.current.scrollHeight;
+      }
+    } catch {}
+    
     // Show opening actions if in the right phase/state
     try {
       if (
