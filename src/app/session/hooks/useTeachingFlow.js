@@ -273,7 +273,7 @@ export function useTeachingFlow({
       }
       
       // If we just finished definitions stage, prefetch examples GPT content
-      // This gives maximum time to load while student processes the sample questions
+      // This starts loading in the background while student reads sample questions
       if (teachingStage === 'definitions' && result.success && result.text) {
         console.log('[TEACHING] Triggering examples GPT prefetch after sample questions loaded');
         prefetchExamplesContent();
@@ -479,19 +479,18 @@ export function useTeachingFlow({
     setCanSend(false);
     setSubPhase('teaching-3stage');
     
-    // First time through: speak intro and get all examples from GPT
-    if (!isRepeat) {
-      try { await speakFrontend("Now let's see this in action."); } catch {}
-    }
-    
     // Check if we already prefetched the examples content
     let result;
     if (examplesGptPromiseRef.current) {
       console.log('[TEACHING] Using prefetched examples GPT content');
+      // First time through: speak intro while waiting for prefetch to complete
+      if (!isRepeat) {
+        try { await speakFrontend("Now let's see this in action."); } catch {}
+      }
       result = await examplesGptPromiseRef.current;
       examplesGptPromiseRef.current = null; // Clear after use
     } else {
-      console.log('[TEACHING] No prefetch found, fetching examples GPT content now');
+      console.log('[TEACHING] No prefetch found, starting fetch now');
       
       const lessonTitle = getCleanLessonTitle();
       const notes = getTeachingNotes() || '';
@@ -530,8 +529,8 @@ export function useTeachingFlow({
         'Always respond with natural spoken text only. Do not use emojis, decorative characters, repeated punctuation, ASCII art, bullet lines, or other symbols that would be awkward to read aloud.'
       ].join('\n');
       
-      // Get full examples from GPT but skip audio playback (we'll play sentence-by-sentence)
-      result = await callMsSonoma(
+      // Start GPT call (don't await yet)
+      const gptPromise = callMsSonoma(
         instruction,
         '',
         {
@@ -547,6 +546,14 @@ export function useTeachingFlow({
         },
         { skipAudio: true } // Skip audio - we'll play sentence-by-sentence
       );
+      
+      // While GPT is generating, speak intro (if first time)
+      if (!isRepeat) {
+        try { await speakFrontend("Now let's see this in action."); } catch {}
+      }
+      
+      // Wait for GPT to complete
+      result = await gptPromise;
     }
     
     if (result.success && result.text) {
