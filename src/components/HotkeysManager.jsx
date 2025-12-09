@@ -62,6 +62,8 @@ export default function HotkeysManager() {
     { key:'skip', label:'Skip' },
     { key:'repeat', label:'Repeat' },
     { key:'muteToggle', label:'Mute toggle' },
+    { key:'nextSentence', label:'Next Sentence (teaching)' },
+    { key:'goButton', label:'Go Button (opening actions)' },
   ]
 
   const resetDefaults = () => {

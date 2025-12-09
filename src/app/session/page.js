@@ -6565,8 +6565,8 @@ function SessionPageInner() {
       const target = e.target;
       if (isTextEntryTarget(target)) return;
       
-      const beginCode = hotkeys?.beginSend || DEFAULT_HOTKEYS.beginSend;
-      if (!beginCode || code !== beginCode) return;
+      const goCode = hotkeys?.goButton || DEFAULT_HOTKEYS.goButton;
+      if (!goCode || code !== goCode) return;
       
       // Don't trigger if loading, speaking, or games are open
       if (loading || isSpeaking) return;
@@ -6635,13 +6635,17 @@ function SessionPageInner() {
       }
 
       if (skip && code === skip) {
-        // Skip has two uses: 1) Skip speech when speaking, 2) Next sentence during teaching gate
+        // Skip speech when speaking
         if (isSpeaking && typeof handleSkipSpeech === 'function') {
           e.preventDefault();
           handleSkipSpeech();
           return;
         }
-        // During teaching gate (awaiting-gate), ArrowRight acts as "Next Sentence"
+      }
+
+      // Next Sentence during teaching gate (separate hotkey)
+      const nextSentence = hotkeys?.nextSentence || DEFAULT_HOTKEYS.nextSentence;
+      if (nextSentence && code === nextSentence) {
         if (phase === 'teaching' && subPhase === 'awaiting-gate' && typeof handleGateNo === 'function') {
           e.preventDefault();
           handleGateNo();

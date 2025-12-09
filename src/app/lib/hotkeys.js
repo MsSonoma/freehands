@@ -1,11 +1,13 @@
 // Hotkeys preferences: defaults, local storage helpers, and server sync helpers
 
 export const DEFAULT_HOTKEYS = Object.freeze({
-  beginSend: 'Enter',            // Begin overlays + Send in input
+  beginSend: 'Enter',            // Begin overlays + Send in input + Go button
   micHold: 'NumpadAdd',          // Hold to record voice
-  skip: 'ArrowRight',            // Skip forward
+  skip: 'ArrowRight',            // Skip forward + Next Sentence (teaching gate)
   repeat: 'ArrowLeft',           // Repeat last speech
-  muteToggle: 'NumpadMultiply'   // Toggle mute
+  muteToggle: 'NumpadMultiply',  // Toggle mute
+  nextSentence: 'ArrowRight',    // Next sentence in teaching (same as skip)
+  goButton: 'Enter'              // Go button in opening actions (same as beginSend)
 });
 
 const LS_KEY = 'facilitator_hotkeys';
