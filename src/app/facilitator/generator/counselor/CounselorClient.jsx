@@ -523,6 +523,10 @@ export default function CounselorClient() {
         setConversationHistory(Array.isArray(createdSession?.conversation_history) ? createdSession.conversation_history : [])
         setDraftSummary(createdSession?.draft_summary || '')
         setCurrentSessionTokens(createdSession?.token_count || 0)
+        // Update timestamp to match database so atomic gate works correctly
+        if (createdSession?.last_activity_at) {
+          lastLocalUpdateTimestamp.current = new Date(createdSession.last_activity_at).getTime()
+        }
         setSessionStarted(true)
         setSessionLoading(false)
         setConflictingSession(null)
@@ -548,6 +552,10 @@ export default function CounselorClient() {
       setConversationHistory(Array.isArray(activeSession?.conversation_history) ? activeSession.conversation_history : [])
       setDraftSummary(activeSession?.draft_summary || '')
       setCurrentSessionTokens(activeSession?.token_count || 0)
+      // Update timestamp to match database so atomic gate works correctly
+      if (activeSession?.last_activity_at) {
+        lastLocalUpdateTimestamp.current = new Date(activeSession.last_activity_at).getTime()
+      }
       setSessionStarted(true)
       setSessionLoading(false)
       setConflictingSession(null)
