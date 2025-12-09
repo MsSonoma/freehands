@@ -628,13 +628,15 @@ export default function CounselorClient() {
         const payload = {
           sessionId,
           conversationHistory,
-          draftSummary
+          draftSummary,
+          tokenCount: currentSessionTokens
         }
         
         console.log('[Mr. Mentor] PATCH payload:', { 
           sessionId: payload.sessionId, 
           conversationLength: payload.conversationHistory?.length,
-          hasDraft: !!payload.draftSummary
+          hasDraft: !!payload.draftSummary,
+          tokenCount: payload.tokenCount
         })
         
         const response = await fetch('/api/mentor-session', {
