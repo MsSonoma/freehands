@@ -212,8 +212,17 @@ export function useTeachingFlow({
         // Ensure subPhase is set to awaiting-gate (in case we're resuming from snapshot)
         setSubPhase('awaiting-gate');
         setCanSend(false);
+        
+        // Prefetch next sentence BEFORE speaking current one (parallel load while audio plays)
+        const currentIdx = vocabSentenceIndexRef.current;
+        if (currentIdx + 1 < vocabSentencesRef.current.length) {
+          console.log('[TEACHING] Prefetching vocab sentence', currentIdx + 2, ':', vocabSentencesRef.current[currentIdx + 1].substring(0, 50));
+          ttsCache.prefetch(vocabSentencesRef.current[currentIdx + 1]);
+        }
+        
         // Speak the current sentence (whether repeat or continuing)
         // Use noCaptions ONLY if it's truly a repeat (isRepeat=true), otherwise show captions normally
+        console.log('[TEACHING] Speaking vocab sentence', currentIdx + 1, ':', currentSentence.substring(0, 50));
         try { await speakFrontend(currentSentence, isRepeat ? { noCaptions: true } : {}); } catch {}
         return true;
       }
@@ -354,6 +363,13 @@ export function useTeachingFlow({
       
       const currentSentence = exampleSentencesRef.current[exampleSentenceIndexRef.current];
       if (currentSentence) {
+        
+        // Prefetch next sentence BEFORE speaking current one (parallel load while audio plays)
+        const currentIdx = exampleSentenceIndexRef.current;
+        if (currentIdx + 1 < exampleSentencesRef.current.length) {
+          ttsCache.prefetch(exampleSentencesRef.current[currentIdx + 1]);
+        }
+        
         // Speak the current sentence (whether repeat or continuing)
         // Use noCaptions to avoid re-transcribing (sentence already in transcript from before)
         try { await speakFrontend(currentSentence, { noCaptions: true }); } catch {}
