@@ -6737,16 +6737,7 @@ function SessionPageInner() {
     const handleJumpPhase = async (target) => {
       const ok = await ensurePinAllowed('timeline');
       if (!ok) return;
-      // Always confirm on any move (forward or backward) from the current phase
-      try {
-        const currentIdx = timelinePhases.indexOf(phase);
-        const targetIdx = timelinePhases.indexOf(target);
-        const isDifferent = targetIdx !== currentIdx;
-        if (isDifferent) {
-          const ans = typeof window !== 'undefined' ? window.prompt("This will alter the lesson in a way that can't be reversed. Type 'ok' to proceed.") : null;
-          if (!ans || String(ans).trim().toLowerCase() !== 'ok') return;
-        }
-      } catch {}
+      // PIN check is sufficient confirmation for timeline jumps
       // Jump directly to a major phase emulating skip button side-effects
       // This centralizes transitional resets so timeline navigation = skip navigation.
       try { abortAllActivity(); } catch {}
