@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { resolveEffectiveTier } from '../../lib/entitlements';
+import { resolveEffectiveTier } from '../../../lib/entitlements';
 
 function getEnv() {
   return {
