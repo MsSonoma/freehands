@@ -975,7 +975,7 @@ export default function FacilitatorLessonsPage() {
                             }}
                             title="Schedule lesson"
                           >
-                            📅 Calendar
+                            📅 Schedule
                           </button>
                         </>
                       )}
