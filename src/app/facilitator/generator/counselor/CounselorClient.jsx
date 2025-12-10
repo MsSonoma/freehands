@@ -1421,6 +1421,13 @@ export default function CounselorClient() {
     const message = userInput.trim()
     if (!message || loading) return
 
+    // If no session ID exists (e.g., after delete), generate a new one
+    if (!sessionId) {
+      const newSessionIdentifier = generateSessionIdentifier()
+      assignSessionIdentifier(newSessionIdentifier)
+      // Session will be initialized on next render cycle via useEffect
+    }
+
     setLoading(true)
     setLoadingThought("Processing your request...")
     setError('')
@@ -2033,10 +2040,9 @@ Would you like to schedule this lesson for ${learnerName || 'this learner'}?`
     setConflictingSession(null)
     setShowTakeoverDialog(false)
 
+    // Don't generate new session ID yet - wait until user actually starts typing
     clearPersistedSessionIdentifier()
     initializedSessionIdRef.current = null
-    const newSessionIdentifier = generateSessionIdentifier()
-    assignSessionIdentifier(newSessionIdentifier)
   }
 
   // Toggle mute
