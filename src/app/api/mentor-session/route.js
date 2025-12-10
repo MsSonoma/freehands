@@ -191,6 +191,17 @@ export async function GET(request) {
       })
     }
 
+    // Update last_activity_at to keep session alive (heartbeat keepalive)
+    // Only update if this is the owner to avoid resetting timeout for kicked-out devices
+    const isOwner = activeSession.session_id === sessionId
+    
+    if (isOwner) {
+      await supabase
+        .from('mentor_sessions')
+        .update({ last_activity_at: now.toISOString() })
+        .eq('id', activeSession.id)
+    }
+
     // Conversation history is stored in mentor_sessions.conversation_history
     // Don't merge from conversation_drafts - that's for a different purpose
     const sessionWithConversation = {
@@ -198,9 +209,6 @@ export async function GET(request) {
       conversation_history: activeSession.conversation_history || [],
       draft_summary: activeSession.draft_summary || ''
     }
-
-    // Check if this device owns the active session by comparing session IDs
-    const isOwner = activeSession.session_id === sessionId
 
     return Response.json({
       session: sessionWithConversation,
