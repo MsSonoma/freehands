@@ -45,8 +45,8 @@ export default function HeaderBar() {
 	const [isMobileLandscape, setIsMobileLandscape] = useState(false);
 	const [isSmallWidth, setIsSmallWidth] = useState(false); // <= 600px viewport width/height min
 	const [viewportWidth, setViewportWidth] = useState(1024); // track width explicitly for brand visibility
-	// Only collapse the header into a hamburger on the Session page.
-	const showHamburger = useMemo(() => isSmallWidth && pathname.startsWith('/session'), [isSmallWidth, pathname]);
+	// Collapse header navigation into hamburger menu on mobile portrait (all pages)
+	const showHamburger = useMemo(() => isSmallWidth, [isSmallWidth]);
 	// Header sizing: responsive heights using clamp so it scales by screen size
 	const DEFAULT_HEADER_HEIGHT = 'clamp(56px, 9svh, 72px)';
 	const COMPACT_HEADER_HEIGHT = 'clamp(48px, 8svh, 60px)';
