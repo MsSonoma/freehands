@@ -62,9 +62,10 @@
       "golden key timer bonus",
       "timer state persistence",
       "Go button override",
-      "first-interaction timer gate"
+      "first-interaction timer gate",
+      "opening action clearing"
     ],
-    "last_updated": "2025-12-03T00:00:00Z",
+    "last_updated": "2025-12-09T22:00:00Z",
     "status": "canonical"
   },
   "lesson-assessment-architecture": {

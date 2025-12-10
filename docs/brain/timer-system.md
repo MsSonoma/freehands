@@ -1,6 +1,6 @@
 # Timer System Architecture
 
-**Last updated**: 2025-12-03T00:00:00Z  
+**Last updated**: 2025-12-09T22:00:00Z  
 **Status**: Canonical
 
 ## How It Works
@@ -37,7 +37,16 @@ When play timer reaches 00:00:
 1. **handlePlayTimeUp** fires:
    - Sets `showPlayTimeExpired = true`
    - Sets `playExpiredPhase` to current phase name
-   - Closes games overlay if open
+   - Closes games overlay if open (`setShowGames(false)`)
+   - **Clears all opening action sequences** to prevent hangover at work transition:
+     - Hides opening action buttons (`setShowOpeningActions(false)`)
+     - Resets Ask state to 'inactive' (`setAskState('inactive')`)
+     - Resets Riddle state to 'inactive' (`setRiddleState('inactive')`)
+     - Resets Poem state to 'inactive' (`setPoemState('inactive')`)
+     - Resets Story state to 'inactive' (`setStoryState('inactive')`)
+     - Resets Fill-in-Fun state to 'inactive' (`setFillInFunState('inactive')`)
+     - Clears story transcript and setup data
+     - Clears fill-in-fun template and collected words
 
 2. **PlayTimeExpiredOverlay** displays:
    - Shows "Time to Get Back to Work!" message
@@ -132,9 +141,11 @@ Defined in `src/app/session/utils/phaseTimerDefaults.js`:
   - Golden key bonus time constant
 
 ### Phase Handlers
-- **src/app/session/hooks/usePhaseHandlers.js**:
-  - All phase start handlers clear overlay state
-  - Transition from play to work when Go is clicked
+## Recent Changes
+
+**2025-12-09**: FIX - Clear opening action sequences when play timer expires to prevent hangover at work transition. When play timer reaches 00:00 and countdown starts, any active opening action (ask, joke, riddle, poem, story, fill-in-fun, games) must be cleared immediately. Without this, if an opening action is running when the countdown starts, it can interfere with the automatic transition to work subphase (teaching or Q&A) after the 30-second countdown completes. Added comprehensive state clearing to `handlePlayTimeUp`: all opening action states reset to 'inactive', story and fill-in-fun data cleared, games overlay closed. This ensures a clean slate before work phase begins.
+
+**2025-12-05**: CRITICAL FIX - Removed `setShowOpeningActions(false)` from `handlePlayExpiredComplete`. This was breaking all phase transitions because phase handlers already hide buttons as part of their normal flow. The premature state change created race conditions preventing Go button from working and timer from advancing phases. Each phase handler (handleGoComprehension, handleGoExercise, etc.) manages its own button visibility - timer handler should not interfere.
 
 ### Timer Persistence
 - **src/app/session/hooks/useSnapshot.js**:

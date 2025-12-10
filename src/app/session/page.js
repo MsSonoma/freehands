@@ -817,6 +817,26 @@ function SessionPageInner() {
     // Close games overlay if it's open
     setShowGames(false);
     
+    // Clear all opening action sequences to prevent hangover at transition to work subphase
+    setShowOpeningActions(false);
+    setAskState('inactive');
+    setRiddleState('inactive');
+    setPoemState('inactive');
+    setStoryState('inactive');
+    setFillInFunState('inactive');
+    
+    // Clear story-specific states
+    setStoryTranscript([]);
+    setStorySetupStep('');
+    setStoryCharacters('');
+    setStorySetting('');
+    setStoryPlot('');
+    
+    // Clear fill-in-fun specific states
+    setFillInFunTemplate(null);
+    setFillInFunCollectedWords({});
+    setFillInFunCurrentIndex(0);
+    
     // Note: Prefetch is handled by the awaiting-begin useEffect when phase transitions
     // No need to prefetch here to avoid TDZ issues with state dependencies
   }, []);
