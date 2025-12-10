@@ -200,7 +200,10 @@ export async function GET(request) {
     }
 
     // Check if the requesting session is the active one
-    const isOwner = activeSession.session_id === sessionId
+    // If sessionId matches, definitely the owner
+    // If sessionId doesn't match but there's only one active session, assume ownership
+    // (client might have stale sessionId in localStorage after refresh)
+    const isOwner = activeSession.session_id === sessionId || sessions.length === 1
 
     return Response.json({
       session: sessionWithConversation,
