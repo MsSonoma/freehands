@@ -611,15 +611,15 @@ export async function DELETE(request) {
       return Response.json({ error: 'Session ID required' }, { status: 400 })
     }
 
-    // Deactivate session
+    // Delete the session row completely (not just deactivate)
     const { error } = await supabase
       .from('mentor_sessions')
-      .update({ is_active: false })
+      .delete()
       .eq('facilitator_id', user.id)
       .eq('session_id', sessionId)
 
     if (error) {
-      return Response.json({ error: 'Failed to end session' }, { status: 500 })
+      return Response.json({ error: 'Failed to delete session' }, { status: 500 })
     }
 
     return Response.json({ success: true })
