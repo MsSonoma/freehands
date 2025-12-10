@@ -40,6 +40,7 @@ export default function PlatformJumper({ onBack }) {
   const PLAYER_SIZE = 30;
   const GRAVITY = 0.6;
   const JUMP_STRENGTH = -10;
+  const TRAMPOLINE_BOUNCE = -15; // Stronger bounce from trampolines
   const MOVE_SPEED = 5;
   const MAX_FALL_Y = GAME_HEIGHT + 50;
 
@@ -378,6 +379,520 @@ export default function PlatformJumper({ onBack }) {
       ],
       startPos: { x: 18, y: 420 },
       goalArea: { x: 755, y: 60, width: 45, height: 50 }
+    },
+    21: {
+      name: 'Trampoline Intro',
+      platforms: [
+        { x: 0, y: 450, width: 80, height: 20 },
+        { x: 150, y: 400, width: 60, height: 20, trampoline: true },
+        { x: 300, y: 200, width: 80, height: 20 },
+        { x: 450, y: 400, width: 60, height: 20, trampoline: true },
+        { x: 600, y: 150, width: 100, height: 20 },
+      ],
+      startPos: { x: 30, y: 400 },
+      goalArea: { x: 600, y: 100, width: 100, height: 50 }
+    },
+    22: {
+      name: 'Bounce Chain',
+      platforms: [
+        { x: 0, y: 470, width: 70, height: 20 },
+        { x: 100, y: 430, width: 50, height: 20, trampoline: true },
+        { x: 200, y: 250, width: 50, height: 20 },
+        { x: 300, y: 430, width: 50, height: 20, trampoline: true },
+        { x: 400, y: 200, width: 50, height: 20 },
+        { x: 500, y: 430, width: 50, height: 20, trampoline: true },
+        { x: 650, y: 150, width: 100, height: 20 },
+      ],
+      startPos: { x: 25, y: 420 },
+      goalArea: { x: 650, y: 100, width: 100, height: 50 }
+    },
+    23: {
+      name: 'High Bounce',
+      platforms: [
+        { x: 0, y: 460, width: 60, height: 20 },
+        { x: 100, y: 460, width: 50, height: 20, trampoline: true },
+        { x: 400, y: 80, width: 80, height: 20 },
+        { x: 550, y: 460, width: 50, height: 20, trampoline: true },
+        { x: 700, y: 100, width: 100, height: 20 },
+      ],
+      startPos: { x: 25, y: 410 },
+      goalArea: { x: 700, y: 50, width: 100, height: 50 }
+    },
+    24: {
+      name: 'Trampoline Maze',
+      platforms: [
+        { x: 0, y: 450, width: 60, height: 20 },
+        { x: 90, y: 400, width: 40, height: 20, trampoline: true },
+        { x: 170, y: 450, width: 40, height: 20 },
+        { x: 250, y: 400, width: 40, height: 20, trampoline: true },
+        { x: 330, y: 200, width: 50, height: 20 },
+        { x: 430, y: 400, width: 40, height: 20, trampoline: true },
+        { x: 520, y: 250, width: 50, height: 20 },
+        { x: 620, y: 400, width: 40, height: 20, trampoline: true },
+        { x: 720, y: 150, width: 80, height: 20 },
+      ],
+      startPos: { x: 25, y: 400 },
+      goalArea: { x: 720, y: 100, width: 80, height: 50 }
+    },
+    25: {
+      name: 'Sky Launcher',
+      platforms: [
+        { x: 0, y: 470, width: 60, height: 20 },
+        { x: 100, y: 450, width: 50, height: 20, trampoline: true },
+        { x: 250, y: 100, width: 40, height: 20 },
+        { x: 330, y: 180, width: 40, height: 20 },
+        { x: 410, y: 100, width: 40, height: 20 },
+        { x: 490, y: 180, width: 40, height: 20 },
+        { x: 570, y: 450, width: 50, height: 20, trampoline: true },
+        { x: 700, y: 120, width: 100, height: 20 },
+      ],
+      startPos: { x: 25, y: 420 },
+      goalArea: { x: 700, y: 70, width: 100, height: 50 }
+    },
+    26: {
+      name: 'Narrow Bounce',
+      platforms: [
+        { x: 0, y: 450, width: 55, height: 20 },
+        { x: 90, y: 420, width: 35, height: 20, trampoline: true },
+        { x: 170, y: 250, width: 30, height: 20 },
+        { x: 250, y: 350, width: 30, height: 20 },
+        { x: 330, y: 420, width: 35, height: 20, trampoline: true },
+        { x: 420, y: 200, width: 35, height: 20 },
+        { x: 510, y: 350, width: 30, height: 20 },
+        { x: 590, y: 420, width: 35, height: 20, trampoline: true },
+        { x: 680, y: 150, width: 120, height: 20 },
+      ],
+      startPos: { x: 22, y: 400 },
+      goalArea: { x: 680, y: 100, width: 120, height: 50 }
+    },
+    27: {
+      name: 'Double Bounce',
+      platforms: [
+        { x: 0, y: 460, width: 60, height: 20 },
+        { x: 90, y: 440, width: 40, height: 20, trampoline: true },
+        { x: 170, y: 420, width: 40, height: 20, trampoline: true },
+        { x: 350, y: 100, width: 60, height: 20 },
+        { x: 480, y: 420, width: 40, height: 20, trampoline: true },
+        { x: 560, y: 440, width: 40, height: 20, trampoline: true },
+        { x: 700, y: 120, width: 100, height: 20 },
+      ],
+      startPos: { x: 25, y: 410 },
+      goalArea: { x: 700, y: 70, width: 100, height: 50 }
+    },
+    28: {
+      name: 'Timing Test',
+      platforms: [
+        { x: 0, y: 450, width: 50, height: 20 },
+        { x: 80, y: 430, width: 35, height: 20, trampoline: true },
+        { x: 155, y: 300, width: 30, height: 20 },
+        { x: 225, y: 430, width: 35, height: 20, trampoline: true },
+        { x: 305, y: 250, width: 30, height: 20 },
+        { x: 380, y: 430, width: 35, height: 20, trampoline: true },
+        { x: 460, y: 200, width: 30, height: 20 },
+        { x: 540, y: 430, width: 35, height: 20, trampoline: true },
+        { x: 620, y: 250, width: 30, height: 20 },
+        { x: 700, y: 430, width: 35, height: 20, trampoline: true },
+        { x: 760, y: 150, width: 40, height: 20 },
+      ],
+      startPos: { x: 20, y: 400 },
+      goalArea: { x: 760, y: 100, width: 40, height: 50 }
+    },
+    29: {
+      name: 'Mixed Heights',
+      platforms: [
+        { x: 0, y: 470, width: 55, height: 20 },
+        { x: 85, y: 390, width: 40, height: 20 },
+        { x: 165, y: 450, width: 35, height: 20, trampoline: true },
+        { x: 240, y: 200, width: 40, height: 20 },
+        { x: 320, y: 320, width: 35, height: 20 },
+        { x: 395, y: 450, width: 35, height: 20, trampoline: true },
+        { x: 475, y: 150, width: 40, height: 20 },
+        { x: 560, y: 300, width: 35, height: 20 },
+        { x: 640, y: 450, width: 35, height: 20, trampoline: true },
+        { x: 720, y: 120, width: 80, height: 20 },
+      ],
+      startPos: { x: 22, y: 420 },
+      goalArea: { x: 720, y: 70, width: 80, height: 50 }
+    },
+    30: {
+      name: 'Trampoline Tower',
+      platforms: [
+        { x: 0, y: 470, width: 60, height: 20 },
+        { x: 100, y: 450, width: 40, height: 20, trampoline: true },
+        { x: 200, y: 350, width: 40, height: 20 },
+        { x: 280, y: 430, width: 40, height: 20, trampoline: true },
+        { x: 380, y: 250, width: 40, height: 20 },
+        { x: 460, y: 410, width: 40, height: 20, trampoline: true },
+        { x: 560, y: 180, width: 40, height: 20 },
+        { x: 640, y: 390, width: 40, height: 20, trampoline: true },
+        { x: 740, y: 110, width: 60, height: 20 },
+      ],
+      startPos: { x: 25, y: 420 },
+      goalArea: { x: 740, y: 60, width: 60, height: 50 }
+    },
+    31: {
+      name: 'Precision Bounce',
+      platforms: [
+        { x: 0, y: 460, width: 50, height: 20 },
+        { x: 80, y: 440, width: 30, height: 20, trampoline: true },
+        { x: 150, y: 280, width: 25, height: 20 },
+        { x: 215, y: 360, width: 25, height: 20 },
+        { x: 280, y: 440, width: 30, height: 20, trampoline: true },
+        { x: 355, y: 200, width: 25, height: 20 },
+        { x: 425, y: 300, width: 25, height: 20 },
+        { x: 495, y: 440, width: 30, height: 20, trampoline: true },
+        { x: 575, y: 220, width: 25, height: 20 },
+        { x: 645, y: 340, width: 25, height: 20 },
+        { x: 720, y: 120, width: 80, height: 20 },
+      ],
+      startPos: { x: 20, y: 410 },
+      goalArea: { x: 720, y: 70, width: 80, height: 50 }
+    },
+    32: {
+      name: 'Extreme Bounce',
+      platforms: [
+        { x: 0, y: 470, width: 55, height: 20 },
+        { x: 100, y: 460, width: 40, height: 20, trampoline: true },
+        { x: 400, y: 60, width: 50, height: 20 },
+        { x: 600, y: 460, width: 40, height: 20, trampoline: true },
+        { x: 750, y: 80, width: 50, height: 20 },
+      ],
+      startPos: { x: 22, y: 420 },
+      goalArea: { x: 750, y: 30, width: 50, height: 50 }
+    },
+    33: {
+      name: 'Stairway Bounce',
+      platforms: [
+        { x: 0, y: 460, width: 50, height: 20 },
+        { x: 80, y: 440, width: 35, height: 20, trampoline: true },
+        { x: 155, y: 360, width: 30, height: 20 },
+        { x: 225, y: 420, width: 35, height: 20, trampoline: true },
+        { x: 300, y: 280, width: 30, height: 20 },
+        { x: 370, y: 400, width: 35, height: 20, trampoline: true },
+        { x: 445, y: 220, width: 30, height: 20 },
+        { x: 515, y: 380, width: 35, height: 20, trampoline: true },
+        { x: 590, y: 180, width: 30, height: 20 },
+        { x: 660, y: 360, width: 35, height: 20, trampoline: true },
+        { x: 735, y: 120, width: 65, height: 20 },
+      ],
+      startPos: { x: 20, y: 410 },
+      goalArea: { x: 735, y: 70, width: 65, height: 50 }
+    },
+    34: {
+      name: 'Tiny Trampolines',
+      platforms: [
+        { x: 0, y: 450, width: 45, height: 20 },
+        { x: 75, y: 430, width: 25, height: 20, trampoline: true },
+        { x: 140, y: 250, width: 25, height: 20 },
+        { x: 205, y: 350, width: 25, height: 20 },
+        { x: 270, y: 430, width: 25, height: 20, trampoline: true },
+        { x: 340, y: 200, width: 25, height: 20 },
+        { x: 410, y: 320, width: 25, height: 20 },
+        { x: 480, y: 430, width: 25, height: 20, trampoline: true },
+        { x: 555, y: 180, width: 25, height: 20 },
+        { x: 630, y: 300, width: 25, height: 20 },
+        { x: 705, y: 430, width: 25, height: 20, trampoline: true },
+        { x: 760, y: 120, width: 40, height: 20 },
+      ],
+      startPos: { x: 18, y: 400 },
+      goalArea: { x: 760, y: 70, width: 40, height: 50 }
+    },
+    35: {
+      name: 'Bounce Gauntlet',
+      platforms: [
+        { x: 0, y: 460, width: 50, height: 20 },
+        { x: 75, y: 440, width: 30, height: 20, trampoline: true },
+        { x: 140, y: 420, width: 30, height: 20, trampoline: true },
+        { x: 205, y: 400, width: 30, height: 20, trampoline: true },
+        { x: 400, y: 150, width: 50, height: 20 },
+        { x: 520, y: 400, width: 30, height: 20, trampoline: true },
+        { x: 585, y: 420, width: 30, height: 20, trampoline: true },
+        { x: 650, y: 440, width: 30, height: 20, trampoline: true },
+        { x: 730, y: 130, width: 70, height: 20 },
+      ],
+      startPos: { x: 20, y: 410 },
+      goalArea: { x: 730, y: 80, width: 70, height: 50 }
+    },
+    36: {
+      name: 'Alternating Paths',
+      platforms: [
+        { x: 0, y: 450, width: 50, height: 20 },
+        { x: 80, y: 400, width: 35, height: 20 },
+        { x: 155, y: 430, width: 30, height: 20, trampoline: true },
+        { x: 225, y: 300, width: 30, height: 20 },
+        { x: 295, y: 380, width: 30, height: 20 },
+        { x: 365, y: 430, width: 30, height: 20, trampoline: true },
+        { x: 435, y: 250, width: 30, height: 20 },
+        { x: 505, y: 350, width: 30, height: 20 },
+        { x: 575, y: 430, width: 30, height: 20, trampoline: true },
+        { x: 645, y: 200, width: 30, height: 20 },
+        { x: 720, y: 300, width: 30, height: 20 },
+        { x: 770, y: 110, width: 30, height: 20 },
+      ],
+      startPos: { x: 20, y: 400 },
+      goalArea: { x: 770, y: 60, width: 30, height: 50 }
+    },
+    37: {
+      name: 'Super Launcher',
+      platforms: [
+        { x: 0, y: 470, width: 55, height: 20 },
+        { x: 100, y: 465, width: 45, height: 20, trampoline: true },
+        { x: 350, y: 50, width: 100, height: 20 },
+        { x: 550, y: 465, width: 45, height: 20, trampoline: true },
+        { x: 700, y: 80, width: 100, height: 20 },
+      ],
+      startPos: { x: 22, y: 420 },
+      goalArea: { x: 700, y: 30, width: 100, height: 50 }
+    },
+    38: {
+      name: 'Bounce Pyramid',
+      platforms: [
+        { x: 0, y: 470, width: 50, height: 20 },
+        { x: 75, y: 450, width: 30, height: 20, trampoline: true },
+        { x: 145, y: 350, width: 30, height: 20 },
+        { x: 215, y: 430, width: 30, height: 20, trampoline: true },
+        { x: 285, y: 280, width: 30, height: 20 },
+        { x: 355, y: 410, width: 30, height: 20, trampoline: true },
+        { x: 425, y: 220, width: 30, height: 20 },
+        { x: 495, y: 390, width: 30, height: 20, trampoline: true },
+        { x: 565, y: 180, width: 30, height: 20 },
+        { x: 635, y: 370, width: 30, height: 20, trampoline: true },
+        { x: 705, y: 140, width: 30, height: 20 },
+        { x: 765, y: 90, width: 35, height: 20 },
+      ],
+      startPos: { x: 20, y: 420 },
+      goalArea: { x: 765, y: 40, width: 35, height: 50 }
+    },
+    39: {
+      name: 'Quick Bounce',
+      platforms: [
+        { x: 0, y: 455, width: 45, height: 20 },
+        { x: 70, y: 435, width: 25, height: 20, trampoline: true },
+        { x: 130, y: 415, width: 25, height: 20, trampoline: true },
+        { x: 190, y: 395, width: 25, height: 20, trampoline: true },
+        { x: 250, y: 375, width: 25, height: 20, trampoline: true },
+        { x: 400, y: 150, width: 50, height: 20 },
+        { x: 520, y: 375, width: 25, height: 20, trampoline: true },
+        { x: 580, y: 395, width: 25, height: 20, trampoline: true },
+        { x: 640, y: 415, width: 25, height: 20, trampoline: true },
+        { x: 700, y: 435, width: 25, height: 20, trampoline: true },
+        { x: 755, y: 120, width: 45, height: 20 },
+      ],
+      startPos: { x: 18, y: 405 },
+      goalArea: { x: 755, y: 70, width: 45, height: 50 }
+    },
+    40: {
+      name: 'Ultimate Bounce',
+      platforms: [
+        { x: 0, y: 470, width: 50, height: 20 },
+        { x: 80, y: 455, width: 30, height: 20, trampoline: true },
+        { x: 150, y: 340, width: 25, height: 20 },
+        { x: 215, y: 440, width: 30, height: 20, trampoline: true },
+        { x: 285, y: 260, width: 25, height: 20 },
+        { x: 350, y: 425, width: 30, height: 20, trampoline: true },
+        { x: 420, y: 200, width: 25, height: 20 },
+        { x: 485, y: 410, width: 30, height: 20, trampoline: true },
+        { x: 555, y: 160, width: 25, height: 20 },
+        { x: 620, y: 395, width: 30, height: 20, trampoline: true },
+        { x: 690, y: 140, width: 25, height: 20 },
+        { x: 755, y: 380, width: 30, height: 20, trampoline: true },
+        { x: 790, y: 100, width: 10, height: 20 },
+      ],
+      startPos: { x: 20, y: 420 },
+      goalArea: { x: 790, y: 50, width: 10, height: 50 }
+    },
+    41: {
+      name: 'Triple Spring',
+      platforms: [
+        { x: 0, y: 460, width: 50, height: 20 },
+        { x: 80, y: 445, width: 25, height: 20, trampoline: true },
+        { x: 140, y: 430, width: 25, height: 20, trampoline: true },
+        { x: 200, y: 415, width: 25, height: 20, trampoline: true },
+        { x: 350, y: 120, width: 40, height: 20 },
+        { x: 480, y: 415, width: 25, height: 20, trampoline: true },
+        { x: 540, y: 430, width: 25, height: 20, trampoline: true },
+        { x: 600, y: 445, width: 25, height: 20, trampoline: true },
+        { x: 720, y: 100, width: 80, height: 20 },
+      ],
+      startPos: { x: 20, y: 410 },
+      goalArea: { x: 720, y: 50, width: 80, height: 50 }
+    },
+    42: {
+      name: 'Diagonal Bounce',
+      platforms: [
+        { x: 0, y: 470, width: 45, height: 20 },
+        { x: 70, y: 440, width: 25, height: 20, trampoline: true },
+        { x: 135, y: 330, width: 25, height: 20 },
+        { x: 200, y: 410, width: 25, height: 20, trampoline: true },
+        { x: 265, y: 260, width: 25, height: 20 },
+        { x: 330, y: 380, width: 25, height: 20, trampoline: true },
+        { x: 395, y: 200, width: 25, height: 20 },
+        { x: 460, y: 350, width: 25, height: 20, trampoline: true },
+        { x: 525, y: 160, width: 25, height: 20 },
+        { x: 590, y: 320, width: 25, height: 20, trampoline: true },
+        { x: 655, y: 140, width: 25, height: 20 },
+        { x: 720, y: 290, width: 25, height: 20, trampoline: true },
+        { x: 775, y: 100, width: 25, height: 20 },
+      ],
+      startPos: { x: 18, y: 420 },
+      goalArea: { x: 775, y: 50, width: 25, height: 50 }
+    },
+    43: {
+      name: 'Mega Bounce',
+      platforms: [
+        { x: 0, y: 465, width: 50, height: 20 },
+        { x: 90, y: 460, width: 40, height: 20, trampoline: true },
+        { x: 400, y: 40, width: 60, height: 20 },
+        { x: 670, y: 460, width: 40, height: 20, trampoline: true },
+        { x: 760, y: 60, width: 40, height: 20 },
+      ],
+      startPos: { x: 20, y: 415 },
+      goalArea: { x: 760, y: 10, width: 40, height: 50 }
+    },
+    44: {
+      name: 'Weave Bounce',
+      platforms: [
+        { x: 0, y: 455, width: 45, height: 20 },
+        { x: 70, y: 430, width: 25, height: 20, trampoline: true },
+        { x: 135, y: 350, width: 25, height: 20 },
+        { x: 200, y: 280, width: 25, height: 20 },
+        { x: 265, y: 420, width: 25, height: 20, trampoline: true },
+        { x: 330, y: 240, width: 25, height: 20 },
+        { x: 395, y: 330, width: 25, height: 20 },
+        { x: 460, y: 410, width: 25, height: 20, trampoline: true },
+        { x: 525, y: 210, width: 25, height: 20 },
+        { x: 590, y: 310, width: 25, height: 20 },
+        { x: 655, y: 400, width: 25, height: 20, trampoline: true },
+        { x: 720, y: 190, width: 25, height: 20 },
+        { x: 770, y: 100, width: 30, height: 20 },
+      ],
+      startPos: { x: 18, y: 405 },
+      goalArea: { x: 770, y: 50, width: 30, height: 50 }
+    },
+    45: {
+      name: 'Insane Bounce',
+      platforms: [
+        { x: 0, y: 470, width: 45, height: 20 },
+        { x: 70, y: 450, width: 25, height: 20, trampoline: true },
+        { x: 135, y: 430, width: 25, height: 20, trampoline: true },
+        { x: 200, y: 410, width: 25, height: 20, trampoline: true },
+        { x: 265, y: 390, width: 25, height: 20, trampoline: true },
+        { x: 330, y: 370, width: 25, height: 20, trampoline: true },
+        { x: 480, y: 80, width: 40, height: 20 },
+        { x: 600, y: 370, width: 25, height: 20, trampoline: true },
+        { x: 665, y: 390, width: 25, height: 20, trampoline: true },
+        { x: 730, y: 410, width: 25, height: 20, trampoline: true },
+        { x: 795, y: 430, width: 25, height: 20, trampoline: true },
+        { x: 860, y: 450, width: 25, height: 20, trampoline: true },
+        { x: 750, y: 60, width: 50, height: 20 },
+      ],
+      startPos: { x: 18, y: 420 },
+      goalArea: { x: 750, y: 10, width: 50, height: 50 }
+    },
+    46: {
+      name: 'Chaos Theory',
+      platforms: [
+        { x: 0, y: 460, width: 40, height: 20 },
+        { x: 60, y: 440, width: 20, height: 20, trampoline: true },
+        { x: 115, y: 380, width: 20, height: 20 },
+        { x: 170, y: 430, width: 20, height: 20, trampoline: true },
+        { x: 225, y: 300, width: 20, height: 20 },
+        { x: 280, y: 420, width: 20, height: 20, trampoline: true },
+        { x: 335, y: 240, width: 20, height: 20 },
+        { x: 390, y: 350, width: 20, height: 20 },
+        { x: 445, y: 410, width: 20, height: 20, trampoline: true },
+        { x: 500, y: 200, width: 20, height: 20 },
+        { x: 555, y: 320, width: 20, height: 20 },
+        { x: 610, y: 400, width: 20, height: 20, trampoline: true },
+        { x: 665, y: 170, width: 20, height: 20 },
+        { x: 720, y: 280, width: 20, height: 20 },
+        { x: 775, y: 390, width: 20, height: 20, trampoline: true },
+        { x: 795, y: 120, width: 5, height: 20 },
+      ],
+      startPos: { x: 16, y: 410 },
+      goalArea: { x: 795, y: 70, width: 5, height: 50 }
+    },
+    47: {
+      name: 'Spring Loaded',
+      platforms: [
+        { x: 0, y: 465, width: 45, height: 20 },
+        { x: 70, y: 445, width: 25, height: 20, trampoline: true },
+        { x: 135, y: 300, width: 20, height: 20 },
+        { x: 195, y: 200, width: 20, height: 20 },
+        { x: 255, y: 435, width: 25, height: 20, trampoline: true },
+        { x: 320, y: 160, width: 20, height: 20 },
+        { x: 380, y: 260, width: 20, height: 20 },
+        { x: 440, y: 425, width: 25, height: 20, trampoline: true },
+        { x: 505, y: 140, width: 20, height: 20 },
+        { x: 565, y: 240, width: 20, height: 20 },
+        { x: 625, y: 415, width: 25, height: 20, trampoline: true },
+        { x: 690, y: 130, width: 20, height: 20 },
+        { x: 750, y: 220, width: 20, height: 20 },
+        { x: 785, y: 90, width: 15, height: 20 },
+      ],
+      startPos: { x: 18, y: 415 },
+      goalArea: { x: 785, y: 40, width: 15, height: 50 }
+    },
+    48: {
+      name: 'Final Test',
+      platforms: [
+        { x: 0, y: 470, width: 40, height: 20 },
+        { x: 60, y: 450, width: 20, height: 20, trampoline: true },
+        { x: 115, y: 430, width: 20, height: 20, trampoline: true },
+        { x: 170, y: 410, width: 20, height: 20, trampoline: true },
+        { x: 300, y: 180, width: 30, height: 20 },
+        { x: 400, y: 300, width: 20, height: 20 },
+        { x: 500, y: 410, width: 20, height: 20, trampoline: true },
+        { x: 555, y: 430, width: 20, height: 20, trampoline: true },
+        { x: 610, y: 450, width: 20, height: 20, trampoline: true },
+        { x: 740, y: 150, width: 30, height: 20 },
+        { x: 790, y: 80, width: 10, height: 20 },
+      ],
+      startPos: { x: 16, y: 420 },
+      goalArea: { x: 790, y: 30, width: 10, height: 50 }
+    },
+    49: {
+      name: 'Endurance',
+      platforms: [
+        { x: 0, y: 465, width: 40, height: 20 },
+        { x: 60, y: 445, width: 20, height: 20, trampoline: true },
+        { x: 115, y: 360, width: 18, height: 20 },
+        { x: 168, y: 280, width: 18, height: 20 },
+        { x: 221, y: 430, width: 20, height: 20, trampoline: true },
+        { x: 276, y: 220, width: 18, height: 20 },
+        { x: 329, y: 320, width: 18, height: 20 },
+        { x: 382, y: 415, width: 20, height: 20, trampoline: true },
+        { x: 437, y: 180, width: 18, height: 20 },
+        { x: 490, y: 290, width: 18, height: 20 },
+        { x: 543, y: 400, width: 20, height: 20, trampoline: true },
+        { x: 598, y: 150, width: 18, height: 20 },
+        { x: 651, y: 260, width: 18, height: 20 },
+        { x: 704, y: 385, width: 20, height: 20, trampoline: true },
+        { x: 759, y: 130, width: 18, height: 20 },
+        { x: 795, y: 70, width: 5, height: 20 },
+      ],
+      startPos: { x: 16, y: 415 },
+      goalArea: { x: 795, y: 20, width: 5, height: 50 }
+    },
+    50: {
+      name: 'CHAMPION!',
+      platforms: [
+        { x: 0, y: 470, width: 35, height: 20 },
+        { x: 55, y: 450, width: 18, height: 20, trampoline: true },
+        { x: 105, y: 430, width: 18, height: 20, trampoline: true },
+        { x: 155, y: 410, width: 18, height: 20, trampoline: true },
+        { x: 205, y: 390, width: 18, height: 20, trampoline: true },
+        { x: 350, y: 120, width: 25, height: 20 },
+        { x: 450, y: 230, width: 15, height: 20 },
+        { x: 530, y: 390, width: 18, height: 20, trampoline: true },
+        { x: 580, y: 410, width: 18, height: 20, trampoline: true },
+        { x: 630, y: 430, width: 18, height: 20, trampoline: true },
+        { x: 680, y: 450, width: 18, height: 20, trampoline: true },
+        { x: 750, y: 170, width: 20, height: 20 },
+        { x: 792, y: 60, width: 8, height: 20 },
+      ],
+      startPos: { x: 14, y: 420 },
+      goalArea: { x: 792, y: 10, width: 8, height: 50 }
     }
   };
 
@@ -520,7 +1035,13 @@ export default function PlatformJumper({ onBack }) {
               newX < platform.x + platform.width
             ) {
               newY = platform.y - PLAYER_SIZE;
-              newVelY = 0;
+              // Check if it's a trampoline - gives extra bounce
+              if (platform.trampoline) {
+                newVelY = TRAMPOLINE_BOUNCE; // Stronger bounce
+                setPlayerVelocity(v => ({ ...v, y: TRAMPOLINE_BOUNCE }));
+              } else {
+                newVelY = 0;
+              }
               landed = true;
               // Update refs IMMEDIATELY for instant jump availability
               onGroundRef.current = true;
@@ -800,9 +1321,10 @@ export default function PlatformJumper({ onBack }) {
               top: platform.y,
               width: platform.width,
               height: platform.height,
-              background: '#78350f',
-              border: '2px solid #451a03',
-              borderRadius: '4px'
+              background: platform.trampoline ? '#10b981' : '#78350f',
+              border: platform.trampoline ? '2px solid #059669' : '2px solid #451a03',
+              borderRadius: '4px',
+              boxShadow: platform.trampoline ? '0 0 8px rgba(16, 185, 129, 0.5)' : 'none'
             }}
           />
         ))}
