@@ -718,7 +718,7 @@ function EditLessonContent() {
           >
             <h3 style={{ marginTop: 0, color: '#dc2626' }}>Delete Lesson?</h3>
             <p style={{ color: '#374151', fontSize: 14 }}>
-              Are you sure you want to delete "{lesson?.title}"? This action cannot be undone.
+              Are you sure you want to delete &ldquo;{lesson?.title}&rdquo;? This action cannot be undone.
             </p>
             <p style={{ color: '#6b7280', fontSize: 13, marginTop: 8 }}>
               Note: Only generated lessons can be deleted. Public lessons cannot be removed.
