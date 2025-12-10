@@ -29,6 +29,7 @@ export default function LessonMakerPage(){
   const [quotaInfo, setQuotaInfo] = useState(null)
   const [quotaLoading, setQuotaLoading] = useState(true)
   const [toast, setToast] = useState(null) // { message, type }
+  const [generatedLessonKey, setGeneratedLessonKey] = useState(null) // Track last generated lesson
   
   // AI Rewrite loading states
   const [rewritingDescription, setRewritingDescription] = useState(false)
@@ -169,6 +170,7 @@ export default function LessonMakerPage(){
     }
     
     setBusy(true); setMessage(''); setToast(null)
+    setGeneratedLessonKey(null) // Reset previous lesson
     let generatedFile = null
     let generatedUserId = null
     
@@ -239,6 +241,11 @@ export default function LessonMakerPage(){
         } else {
           setMessage(`Lesson generated successfully: ${js.file}`)
         }
+      }
+      
+      // Store the generated lesson key for the edit button
+      if (generatedFile) {
+        setGeneratedLessonKey(generatedFile)
       }
       
       // Handle storage errors (not blocking)
@@ -365,6 +372,21 @@ export default function LessonMakerPage(){
           >
             {busy ? 'Generating…' : 'Generate Lesson'}
           </button>
+          
+          {generatedLessonKey && (
+            <button
+              type="button"
+              onClick={() => router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(generatedLessonKey)}`)}
+              style={{
+                ...btn,
+                marginLeft: 12,
+                background: '#059669',
+                borderColor: '#059669'
+              }}
+            >
+              Edit This Lesson
+            </button>
+          )}
         </div>
       </form>
       {message && <p style={{ marginTop:12 }}>{message}</p>}
