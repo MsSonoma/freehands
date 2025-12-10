@@ -440,8 +440,8 @@ export default function PlatformJumper({ onBack }) {
       setPlayerVelocity(v => ({ ...v, y: JUMP_STRENGTH }));
       setIsJumping(true);
       isJumpingRef.current = true;
-      setOnGround(false);
-      onGroundRef.current = false;
+      // Don't set onGround here - let game loop physics handle it
+      // The upward velocity will naturally cause collision detection to clear onGround
     }
   }, []); // Empty deps - uses refs which are always current
 
