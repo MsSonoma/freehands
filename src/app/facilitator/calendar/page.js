@@ -105,14 +105,14 @@ export default function CalendarPage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('plan_tier')
+        .select('plan_tier, subscription_tier')
         .eq('id', session.user.id)
         .maybeSingle()
 
-      const planTier = (profile?.plan_tier || 'free').toLowerCase()
-      setTier(planTier)
+      const effectiveTier = resolveEffectiveTier(profile?.subscription_tier, profile?.plan_tier)
+      setTier(effectiveTier)
       
-      const ent = featuresForTier(planTier)
+      const ent = featuresForTier(effectiveTier)
       setHasAccess(ent.facilitatorTools)
       setLoading(false)
     } catch (err) {
