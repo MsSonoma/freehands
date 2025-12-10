@@ -9,30 +9,6 @@ import { ensurePinAllowed } from '@/app/lib/pinGate';
 export default function FacilitatorPage() {
   const router = useRouter();
 
-  const mainCardStyle = {
-    background: '#fff',
-    border: '1px solid #e5e7eb',
-    borderRadius: 8,
-    padding: 14,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 8,
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-    textDecoration: 'none',
-    color: '#111'
-  };
-
-  const iconStyle = {
-    fontSize: 24,
-    width: 36,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0
-  };
-
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
   const [facilitatorName, setFacilitatorName] = useState('');
