@@ -83,5 +83,23 @@ export function featuresForTier(tier) {
   return ENTITLEMENTS[key] || ENTITLEMENTS.free;
 }
 
-const entitlementsApi = { ENTITLEMENTS, featuresForTier };
+/**
+ * Resolve the effective tier for entitlement checks.
+ * Beta users get Plus-level features automatically.
+ * 
+ * @param {string|null} subscriptionTier - Value from profiles.subscription_tier
+ * @param {string|null} paidTier - Value from profiles.stripe_subscription_tier or plan_tier
+ * @returns {string} The effective tier to use for entitlement lookups
+ */
+export function resolveEffectiveTier(subscriptionTier, paidTier) {
+  // Beta users automatically get Plus-level features
+  if (subscriptionTier?.toLowerCase() === 'beta') {
+    return 'plus';
+  }
+  
+  // Otherwise use their paid tier (or default to free)
+  return (paidTier || 'free').toLowerCase();
+}
+
+const entitlementsApi = { ENTITLEMENTS, featuresForTier, resolveEffectiveTier };
 export default entitlementsApi;

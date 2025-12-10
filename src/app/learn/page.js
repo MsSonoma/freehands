@@ -3,15 +3,61 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import LearnerSelector from './LearnerSelector'
 import { ensurePinAllowed } from '../lib/pinGate'
+import { getLearner } from '../facilitator/learners/clientApi'
+import { getSupabaseClient } from '../lib/supabaseClient'
 
 export default function LearnPage() {
   const r = useRouter()
   const [learner, setLearner] = useState({ id: null, name: '' })
 
   useEffect(() => {
-    const id = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null
-    const name = typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null
-    setLearner({ id, name: name || '' })
+    let cancelled = false;
+    (async () => {
+      const id = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
+      const name = typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null;
+      
+      if (!id) {
+        setLearner({ id: null, name: '' });
+        return;
+      }
+      
+      // Validate learner belongs to current facilitator
+      try {
+        const supabase = getSupabaseClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.user) {
+          // Not logged in - clear learner data
+          localStorage.removeItem('learner_id');
+          localStorage.removeItem('learner_name');
+          localStorage.removeItem('learner_grade');
+          if (!cancelled) setLearner({ id: null, name: '' });
+          return;
+        }
+        
+        // Verify learner ownership via server
+        const learner = await getLearner(id);
+        if (!learner) {
+          // Learner doesn't exist or doesn't belong to this facilitator
+          localStorage.removeItem('learner_id');
+          localStorage.removeItem('learner_name');
+          localStorage.removeItem('learner_grade');
+          if (!cancelled) setLearner({ id: null, name: '' });
+          return;
+        }
+        
+        if (!cancelled) setLearner({ id, name: name || learner.name || '' });
+        
+      } catch (e) {
+        // On error, clear stale data
+        localStorage.removeItem('learner_id');
+        localStorage.removeItem('learner_name');
+        localStorage.removeItem('learner_grade');
+        if (!cancelled) setLearner({ id: null, name: '' });
+      }
+    })();
+    
+    return () => { cancelled = true; };
   }, [])
 
   const noLearner = !learner.id

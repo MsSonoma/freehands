@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { ENTITLEMENTS } from '../../../lib/entitlements';
+import { ENTITLEMENTS, resolveEffectiveTier } from '../../../lib/entitlements';
 
 export async function GET(request) {
   try {
@@ -21,10 +21,10 @@ export async function GET(request) {
       return Response.json({ allowed: false, reason: 'Invalid auth' }, { status: 401 });
     }
 
-    // Get profile with usage data
+    // Get profile with usage data - include subscription_tier for Beta check
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('plan_tier, lifetime_generations_used, weekly_generation_date, weekly_generations_used')
+      .select('subscription_tier, plan_tier, lifetime_generations_used, weekly_generation_date, weekly_generations_used')
       .eq('id', user.id)
       .single();
 
@@ -32,7 +32,7 @@ export async function GET(request) {
       return Response.json({ allowed: false, reason: 'Profile not found' }, { status: 404 });
     }
 
-    const tier = (profile.plan_tier || 'free').toLowerCase();
+    const tier = resolveEffectiveTier(profile.subscription_tier, profile.plan_tier);
     const entitlement = ENTITLEMENTS[tier] || ENTITLEMENTS.free;
     
     // Quota check

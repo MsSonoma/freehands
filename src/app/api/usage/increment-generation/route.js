@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { ENTITLEMENTS } from '../../../lib/entitlements';
+import { ENTITLEMENTS, resolveEffectiveTier } from '../../../lib/entitlements';
 
 export async function POST(request) {
   try {
@@ -21,10 +21,10 @@ export async function POST(request) {
       return Response.json({ success: false, reason: 'Invalid auth' }, { status: 401 });
     }
 
-    // Get current profile data
+    // Get current profile data - include subscription_tier for Beta check
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('stripe_subscription_tier, lifetime_generations_used, weekly_generation_date, weekly_generations_used')
+      .select('subscription_tier, stripe_subscription_tier, lifetime_generations_used, weekly_generation_date, weekly_generations_used')
       .eq('id', user.id)
       .single();
 
@@ -32,7 +32,7 @@ export async function POST(request) {
       return Response.json({ success: false, reason: 'Profile not found' }, { status: 404 });
     }
 
-    const tier = profile.stripe_subscription_tier || 'free';
+    const tier = resolveEffectiveTier(profile.subscription_tier, profile.stripe_subscription_tier);
     const entitlement = ENTITLEMENTS[tier] || ENTITLEMENTS.free;
     
     const lifetimeLimit = entitlement.lifetimeGenerations;

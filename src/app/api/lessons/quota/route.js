@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { resolveEffectiveTier } from '../../lib/entitlements';
 
 function getEnv() {
   return {
@@ -54,11 +55,13 @@ async function readPlanTierAndCountInTz(svc, userId, tzParam) {
   try {
     const { data: profile, error: profErr } = await svc
       .from('profiles')
-      .select('plan_tier, timezone')
+      .select('subscription_tier, plan_tier, timezone')
       .eq('id', userId)
       .maybeSingle();
     if (!profErr) {
-      plan_tier = (profile?.plan_tier || 'free').toLowerCase();
+      const subscription_tier = profile?.subscription_tier || null;
+      const rawTier = profile?.plan_tier || 'free';
+      plan_tier = resolveEffectiveTier(subscription_tier, rawTier);
       preferredTz = (profile?.timezone || '').trim();
     } else if (profErr?.code === 'PGRST116') {
       // MaybeSingle: no rows – keep defaults

@@ -457,7 +457,8 @@ export default function PlatformJumper({ onBack }) {
 
     gameLoopRef.current = setInterval(() => {
       setPlayerVelocity(prevVel => {
-        let newVelY = prevVel.y + GRAVITY;
+        // Only apply gravity if player is not on ground
+        let newVelY = onGround ? 0 : prevVel.y + GRAVITY;
         
         setPlayerPos(prevPos => {
           let newVelX = 0;

@@ -283,6 +283,32 @@ function DeleteAccount() {
 			try {
 				sessionStorage.removeItem('facilitator_section_active')
 			} catch (e) {}
+			// Clear learner data to prevent cross-facilitator leakage
+			try {
+				localStorage.removeItem('learner_id');
+				localStorage.removeItem('learner_name');
+				localStorage.removeItem('learner_grade');
+				localStorage.removeItem('learner_humor_level');
+				
+				// Clear learner-specific overrides and snapshots
+				const keys = Object.keys(localStorage);
+				keys.forEach(key => {
+					if (key.startsWith('learner_humor_level_') ||
+							key.startsWith('target_comprehension_') ||
+							key.startsWith('target_exercise_') ||
+							key.startsWith('target_worksheet_') ||
+							key.startsWith('target_test_') ||
+							key.startsWith('atomic_snapshot:')) {
+						localStorage.removeItem(key);
+					}
+				});
+				
+				// Clear global target overrides
+				localStorage.removeItem('target_comprehension');
+				localStorage.removeItem('target_exercise');
+				localStorage.removeItem('target_worksheet');
+				localStorage.removeItem('target_test');
+			} catch (e) {}
 				window.location.assign('/')
 				} catch (e) {
 					setError(e?.message || 'Unexpected error')
