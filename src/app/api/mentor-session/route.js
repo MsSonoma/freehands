@@ -607,16 +607,13 @@ export async function DELETE(request) {
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.get('sessionId')
 
-    if (!sessionId) {
-      return Response.json({ error: 'Session ID required' }, { status: 400 })
-    }
-
-    // Delete the session row completely (not just deactivate)
+    // Delete ALL active sessions for this user (not just the specific sessionId)
+    // This ensures delete works even if the session was taken over
     const { error } = await supabase
       .from('mentor_sessions')
       .delete()
       .eq('facilitator_id', user.id)
-      .eq('session_id', sessionId)
+      .eq('is_active', true)
 
     if (error) {
       return Response.json({ error: 'Failed to delete session' }, { status: 500 })
