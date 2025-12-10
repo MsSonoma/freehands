@@ -12,6 +12,7 @@ export default function FacilitatorPage() {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
   const [facilitatorName, setFacilitatorName] = useState('');
+  const [plan, setPlan] = useState(null);
   const [pinChecked, setPinChecked] = useState(false);
 
   // Check PIN requirement on mount - this is the main entry point to facilitator section
