@@ -607,18 +607,21 @@ export async function DELETE(request) {
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.get('sessionId')
 
-    console.log('[DELETE] Deleting ALL sessions for user:', user.id)
+    console.log('[DELETE] Deleting active session for user:', user.id, 'sessionId:', sessionId)
 
-    // Delete ALL sessions for this user (active and inactive)
+    // Delete only active sessions (is_active = true)
+    // Saved conversations (is_active = false) are preserved
     const { data: deletedRows, error } = await supabase
       .from('mentor_sessions')
       .delete()
       .eq('facilitator_id', user.id)
+      .eq('is_active', true)
       .select()
 
-    console.log('[DELETE] Deleted rows:', deletedRows?.length || 0, 'Error:', error)
+    console.log('[DELETE] Deleted active rows:', deletedRows?.length || 0, 'Rows:', deletedRows)
 
     if (error) {
+      console.error('[DELETE] Error:', error)
       return Response.json({ error: 'Failed to delete session', details: error.message }, { status: 500 })
     }
 
