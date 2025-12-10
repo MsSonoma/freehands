@@ -25,6 +25,7 @@ export default function PlatformJumper({ onBack }) {
   const touchRight = useRef(false);
   const onGroundRef = useRef(false);
   const isJumpingRef = useRef(false);
+  const currentPlatformRef = useRef(null);
 
   // Orientation detection effect
   useEffect(() => {
@@ -952,11 +953,16 @@ export default function PlatformJumper({ onBack }) {
   const performJump = useCallback(() => {
     // Simple check: only jump if on ground
     if (onGroundRef.current) {
-      setPlayerVelocity(v => ({ ...v, y: JUMP_STRENGTH }));
+      // Check if jumping from a trampoline
+      const jumpStrength = (currentPlatformRef.current && currentPlatformRef.current.trampoline) 
+        ? TRAMPOLINE_BOUNCE 
+        : JUMP_STRENGTH;
+      setPlayerVelocity(v => ({ ...v, y: jumpStrength }));
       setIsJumping(true);
       isJumpingRef.current = true;
       onGroundRef.current = false;
       setOnGround(false);
+      currentPlatformRef.current = null; // Clear platform reference when jumping
     }
   }, []);
 
@@ -1035,26 +1041,15 @@ export default function PlatformJumper({ onBack }) {
               newX < platform.x + platform.width
             ) {
               newY = platform.y - PLAYER_SIZE;
+              newVelY = 0; // Stop vertical movement
               landed = true;
               
-              // Check if it's a trampoline - gives extra bounce ONLY when falling (not standing)
-              if (platform.trampoline && newVelY > 0) {
-                // Don't stop - bounce back up!
-                newVelY = TRAMPOLINE_BOUNCE;
-                // Update refs to allow another jump mid-air if needed
-                onGroundRef.current = false;
-                isJumpingRef.current = true;
-                setOnGround(false);
-                setIsJumping(true);
-              } else {
-                // Normal platform - stop vertical movement
-                newVelY = 0;
-                // Update refs IMMEDIATELY for instant jump availability
-                onGroundRef.current = true;
-                isJumpingRef.current = false;
-                setOnGround(true);
-                setIsJumping(false);
-              }
+              // Update refs IMMEDIATELY for instant jump availability
+              onGroundRef.current = true;
+              isJumpingRef.current = false;
+              currentPlatformRef.current = platform; // Remember which platform we're on
+              setOnGround(true);
+              setIsJumping(false);
               break;
             }
           }
@@ -1062,6 +1057,7 @@ export default function PlatformJumper({ onBack }) {
           if (!landed && onGroundRef.current) {
             // Update refs IMMEDIATELY when leaving ground
             onGroundRef.current = false;
+            currentPlatformRef.current = null;
             setOnGround(false);
           }
 
