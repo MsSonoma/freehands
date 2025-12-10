@@ -511,9 +511,9 @@ export default function PlatformJumper({ onBack }) {
           // Platform collision detection - update refs immediately
           let landed = false;
           for (const platform of currentLevel.platforms) {
-            // Check if player is above platform and falling
+            // Check if player is on platform (falling OR standing still)
             if (
-              newVelY > 0 &&
+              newVelY >= 0 &&
               prevPos.y + PLAYER_SIZE <= platform.y &&
               newY + PLAYER_SIZE >= platform.y &&
               newX + PLAYER_SIZE > platform.x &&
