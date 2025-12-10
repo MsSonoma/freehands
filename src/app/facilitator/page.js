@@ -348,7 +348,7 @@ export default function FacilitatorPage() {
                 Subscription: {loading ? '…' : (plan || 'free')}
               </div>
             </div>
-          </Link>
+          </div>
         </div>
 
         {/* Mr. Mentor video button */}
