@@ -516,12 +516,18 @@ function SessionPageInner() {
   // User tier state for feature gating
   const [userTier, setUserTier] = useState('free');
   
-  // Helper: check if Ask feature is allowed (requires Basic+ tier)
+  // Per-learner AI feature toggles (loaded from learner profile)
+  const [askDisabled, setAskDisabled] = useState(false);
+  const [poemDisabled, setPoemDisabled] = useState(false);
+  const [storyDisabled, setStoryDisabled] = useState(false);
+  const [fillInFunDisabled, setFillInFunDisabled] = useState(false);
+  
+  // Helper: check if Ask feature is allowed (requires Basic+ tier AND not disabled for this learner)
   const askFeatureAllowed = useMemo(() => {
     const { ENTITLEMENTS } = require('../lib/entitlements');
     const entitlement = ENTITLEMENTS[userTier] || ENTITLEMENTS.free;
-    return entitlement.askFeature;
-  }, [userTier]);
+    return entitlement.askFeature && !askDisabled;
+  }, [userTier, askDisabled]);
   
   // Helper: get Ask button click handler (demo lessons show gate, others require tier)
   const getAskButtonHandler = useCallback((originalHandler) => {
@@ -588,6 +594,12 @@ function SessionPageInner() {
             setLearnerGrade(''); // Clear if not set
           }
           
+          // Load AI feature toggles (default to enabled if not set)
+          setAskDisabled(!!learner?.ask_disabled);
+          setPoemDisabled(!!learner?.poem_disabled);
+          setStoryDisabled(!!learner?.story_disabled);
+          setFillInFunDisabled(!!learner?.fill_in_fun_disabled);
+          
           // Load phase timer settings (11 timers)
           const timers = loadPhaseTimersForLearner(learner);
           setPhaseTimers(timers);
@@ -653,7 +665,7 @@ function SessionPageInner() {
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === 'facilitator_learners' || e.key === 'learner_id') {
-        // Reload timer setting and grade when learner data changes
+        // Reload timer setting, grade, and AI feature settings when learner data changes
         (async () => {
           try {
             const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
@@ -665,6 +677,11 @@ function SessionPageInner() {
               if (learner?.grade) {
                 setLearnerGrade(learner.grade);
               }
+              // Reload AI feature toggles
+              setAskDisabled(!!learner?.ask_disabled);
+              setPoemDisabled(!!learner?.poem_disabled);
+              setStoryDisabled(!!learner?.story_disabled);
+              setFillInFunDisabled(!!learner?.fill_in_fun_disabled);
             }
           } catch (e) {
             // Silent error handling
@@ -7502,12 +7519,12 @@ function SessionPageInner() {
               
               return (
                 <div style={wrap} aria-label="Opening actions">
-                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); getAskButtonHandler(handleAskQuestionStart)(); }}>Ask</button>
+                  {!askDisabled && <button type="button" style={btn} onClick={() => { recordFirstInteraction(); getAskButtonHandler(handleAskQuestionStart)(); }}>Ask</button>}
                   <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleTellJoke(); }}>Joke</button>
                   <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleTellRiddle(); }}>Riddle</button>
-                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handlePoemStart(); }}>Poem</button>
-                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleStoryStart(); }}>Story</button>
-                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleFillInFunStart(); }}>Fill-in-Fun</button>
+                  {!poemDisabled && <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handlePoemStart(); }}>Poem</button>}
+                  {!storyDisabled && <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleStoryStart(); }}>Story</button>}
+                  {!fillInFunDisabled && <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleFillInFunStart(); }}>Fill-in-Fun</button>}
                   <button type="button" style={btn} onClick={() => { recordFirstInteraction(); setShowGames(true); }}>Games</button>
                   <button type="button" style={goBtn} onClick={() => { recordFirstInteraction(); onGoWithConfirm(); }} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson…'}>Go</button>
                 </div>
@@ -7551,12 +7568,12 @@ function SessionPageInner() {
               
               return (
                 <div style={wrap} aria-label="Phase opening actions">
-                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); getAskButtonHandler(handleAskQuestionStart)(); }}>Ask</button>
+                  {!askDisabled && <button type="button" style={btn} onClick={() => { recordFirstInteraction(); getAskButtonHandler(handleAskQuestionStart)(); }}>Ask</button>}
                   <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleTellJoke(); }}>Joke</button>
                   <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleTellRiddle(); }}>Riddle</button>
-                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handlePoemStart(); }}>Poem</button>
-                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleStoryStart(); }}>Story</button>
-                  <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleFillInFunStart(); }}>Fill-in-Fun</button>
+                  {!poemDisabled && <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handlePoemStart(); }}>Poem</button>}
+                  {!storyDisabled && <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleStoryStart(); }}>Story</button>}
+                  {!fillInFunDisabled && <button type="button" style={btn} onClick={() => { recordFirstInteraction(); handleFillInFunStart(); }}>Fill-in-Fun</button>}
                   <button type="button" style={btn} onClick={() => { recordFirstInteraction(); setShowGames(true); }}>Games</button>
                   <button type="button" style={goBtn} onClick={() => { recordFirstInteraction(); onGo(); }} disabled={!lessonData} title={lessonData ? undefined : 'Loading lesson…'}>Go</button>
                 </div>
