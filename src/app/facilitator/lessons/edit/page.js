@@ -37,6 +37,10 @@ function EditLessonContent() {
   const [learners, setLearners] = useState([])
   const [assignedLearners, setAssignedLearners] = useState([]) // Array of learner IDs
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showLearnerSelect, setShowLearnerSelect] = useState(null) // 'notes', 'schedule', or 'assign'
+  const [selectedLearnerId, setSelectedLearnerId] = useState(null)
+  const [selectedLearner, setSelectedLearner] = useState(null)
+  const [loadingLearners, setLoadingLearners] = useState(false)
 
   // Check PIN requirement on mount
   useEffect(() => {
@@ -93,6 +97,39 @@ function EditLessonContent() {
     
     return () => { cancelled = true }
   }, [pinChecked, lessonKey])
+
+  // Load learners list
+  useEffect(() => {
+    if (!pinChecked) return
+    
+    let cancelled = false
+    ;(async () => {
+      try {
+        setLoadingLearners(true)
+        const supabase = getSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.user?.id) return
+        
+        const { data, error } = await supabase
+          .from('learners')
+          .select('id, name, approved_lessons, lesson_notes')
+          .eq('facilitator_id', session.user.id)
+          .order('name')
+        
+        if (error) throw error
+        
+        if (!cancelled) {
+          setLearners(data || [])
+        }
+      } catch (err) {
+        console.error('Failed to load learners:', err)
+      } finally {
+        if (!cancelled) setLoadingLearners(false)
+      }
+    })()
+    
+    return () => { cancelled = true }
+  }, [pinChecked])
 
   // Load visual aids separately from the database
   useEffect(() => {
@@ -528,10 +565,10 @@ function EditLessonContent() {
           rewritingDescription={rewritingDescription}
           rewritingTeachingNotes={rewritingTeachingNotes}
           rewritingVocabDefinition={rewritingVocabDefinition}
-          onNotes={() => setShowNotes(true)}
-          onSchedule={() => setShowSchedule(true)}
-          onAssign={() => setShowAssign(true)}
-          onDelete={() => setShowDeleteConfirm(true)}
+        onNotes={() => setShowLearnerSelect('notes')}
+        onSchedule={() => setShowLearnerSelect('schedule')}
+        onAssign={() => setShowLearnerSelect('assign')}
+        onDelete={() => setShowDeleteConfirm(true)}
         />
       )}
 
@@ -553,8 +590,109 @@ function EditLessonContent() {
         />
       )}
       
-      {/* Notes Modal - Placeholder for now */}
-      {showNotes && (
+      {/* Learner Selection Dropdown */}
+      {showLearnerSelect && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000
+        }}
+        onClick={() => setShowLearnerSelect(null)}
+        >
+          <div style={{
+            background: '#fff',
+            borderRadius: 8,
+            padding: 24,
+            maxWidth: 400,
+            width: '90%'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ marginTop: 0 }}>Select Learner</h3>
+            <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 16 }}>
+              {showLearnerSelect === 'notes' && 'Choose a learner to add notes for this lesson'}
+              {showLearnerSelect === 'schedule' && 'Choose a learner to schedule this lesson for'}
+              {showLearnerSelect === 'assign' && 'Choose a learner to assign this lesson to'}
+            </p>
+            
+            {loadingLearners ? (
+              <p style={{ color: '#6b7280', fontSize: 14 }}>Loading learners...</p>
+            ) : learners.length === 0 ? (
+              <p style={{ color: '#6b7280', fontSize: 14 }}>No learners found. Please add a learner first.</p>
+            ) : (
+              <div style={{ marginBottom: 16 }}>
+                {learners.map(learner => (
+                  <button
+                    key={learner.id}
+                    onClick={() => {
+                      setSelectedLearnerId(learner.id)
+                      setSelectedLearner(learner)
+                      setShowLearnerSelect(null)
+                      
+                      // Open the appropriate modal
+                      if (showLearnerSelect === 'notes') {
+                        // Load existing note if any
+                        const existingNote = (learner.lesson_notes || {})[lessonKey] || ''
+                        setLessonNote(existingNote)
+                        setShowNotes(true)
+                      } else if (showLearnerSelect === 'schedule') {
+                        setShowSchedule(true)
+                      } else if (showLearnerSelect === 'assign') {
+                        // Load current assignment status
+                        const isAssigned = !!(learner.approved_lessons || {})[lessonKey]
+                        setAssignedLearners(isAssigned ? [learner.id] : [])
+                        setShowAssign(true)
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      marginBottom: 8,
+                      border: '1px solid #d1d5db',
+                      borderRadius: 6,
+                      background: '#fff',
+                      color: '#1f2937',
+                      fontSize: 14,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      fontWeight: 500
+                    }}
+                    onMouseOver={(e) => e.target.style.background = '#f3f4f6'}
+                    onMouseOut={(e) => e.target.style.background = '#fff'}
+                  >
+                    {learner.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            
+            <button
+              onClick={() => setShowLearnerSelect(null)}
+              style={{
+                padding: '8px 16px',
+                background: '#fff',
+                color: '#6b7280',
+                border: '1px solid #d1d5db',
+                borderRadius: 6,
+                cursor: 'pointer',
+                fontWeight: 600
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Notes Modal */}
+      {showNotes && selectedLearnerId && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -578,29 +716,109 @@ function EditLessonContent() {
           }}
           onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ marginTop: 0 }}>Lesson Notes</h3>
-            <p style={{ color: '#6b7280', fontSize: 14 }}>Notes functionality requires learner context. Please use the main Lessons page to add notes when a learner is selected.</p>
-            <button
-              onClick={() => setShowNotes(false)}
+            <h3 style={{ marginTop: 0 }}>📝 Lesson Notes</h3>
+            <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 8 }}>
+              {selectedLearner?.name} - {lesson?.title}
+            </p>
+            <textarea
+              value={lessonNote}
+              onChange={(e) => setLessonNote(e.target.value)}
+              placeholder="Add notes about this lesson for this learner..."
               style={{
-                marginTop: 16,
-                padding: '8px 16px',
-                background: '#2563eb',
-                color: '#fff',
-                border: 'none',
+                width: '100%',
+                minHeight: 120,
+                padding: 12,
+                border: '1px solid #d1d5db',
                 borderRadius: 6,
-                cursor: 'pointer',
-                fontWeight: 600
+                fontSize: 14,
+                fontFamily: 'inherit',
+                resize: 'vertical',
+                marginBottom: 16,
+                boxSizing: 'border-box'
               }}
-            >
-              Close
-            </button>
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={async () => {
+                  try {
+                    setSaving(true)
+                    const supabase = getSupabaseClient()
+                    
+                    // Load current notes
+                    const { data: currentData } = await supabase
+                      .from('learners')
+                      .select('lesson_notes')
+                      .eq('id', selectedLearnerId)
+                      .maybeSingle()
+                    
+                    const updatedNotes = { ...(currentData?.lesson_notes || {}) }
+                    
+                    if (lessonNote.trim()) {
+                      updatedNotes[lessonKey] = lessonNote.trim()
+                    } else {
+                      delete updatedNotes[lessonKey]
+                    }
+                    
+                    const { error } = await supabase
+                      .from('learners')
+                      .update({ lesson_notes: updatedNotes })
+                      .eq('id', selectedLearnerId)
+                    
+                    if (error) throw error
+                    
+                    // Update learners list
+                    setLearners(prev => prev.map(l => 
+                      l.id === selectedLearnerId ? { ...l, lesson_notes: updatedNotes } : l
+                    ))
+                    
+                    setShowNotes(false)
+                  } catch (err) {
+                    alert('Failed to save note: ' + (err.message || 'Unknown error'))
+                  } finally {
+                    setSaving(false)
+                  }
+                }}
+                disabled={saving}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  background: '#2563eb',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: saving ? 'wait' : 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14
+                }}
+              >
+                {saving ? 'Saving...' : 'Save Note'}
+              </button>
+              <button
+                onClick={() => setShowNotes(false)}
+                disabled={saving}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  background: '#fff',
+                  color: '#6b7280',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 6,
+                  cursor: saving ? 'wait' : 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14
+                }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
       
-      {/* Schedule Modal - Placeholder for now */}
-      {showSchedule && (
+      {/* Schedule Modal */}
+      {showSchedule && selectedLearnerId && (
+      {/* Schedule Modal */}
+      {showSchedule && selectedLearnerId && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -624,29 +842,115 @@ function EditLessonContent() {
           }}
           onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ marginTop: 0 }}>Schedule Lesson</h3>
-            <p style={{ color: '#6b7280', fontSize: 14 }}>Schedule functionality requires learner context. Please use the main Lessons page to schedule when a learner is selected.</p>
-            <button
-              onClick={() => setShowSchedule(false)}
+            <h3 style={{ marginTop: 0 }}>📅 Schedule Lesson</h3>
+            <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 8 }}>
+              {selectedLearner?.name} - {lesson?.title}
+            </p>
+            
+            <input
+              type="date"
+              defaultValue={new Date().toISOString().split('T')[0]}
+              id="schedule-date-input"
               style={{
-                marginTop: 16,
-                padding: '8px 16px',
-                background: '#2563eb',
-                color: '#fff',
-                border: 'none',
+                width: '100%',
+                padding: 10,
+                border: '1px solid #d1d5db',
                 borderRadius: 6,
-                cursor: 'pointer',
-                fontWeight: 600
+                fontSize: 14,
+                marginBottom: 16,
+                boxSizing: 'border-box'
               }}
-            >
-              Close
-            </button>
+            />
+            
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={async () => {
+                  const dateInput = document.getElementById('schedule-date-input')
+                  const selectedDate = dateInput?.value
+                  
+                  if (!selectedDate) {
+                    alert('Please select a date')
+                    return
+                  }
+                  
+                  try {
+                    setSaving(true)
+                    const supabase = getSupabaseClient()
+                    const { data: { session } } = await supabase.auth.getSession()
+                    const token = session?.access_token
+                    
+                    if (!token) {
+                      alert('Not authenticated')
+                      return
+                    }
+                    
+                    const response = await fetch('/api/lesson-schedule', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                      },
+                      body: JSON.stringify({
+                        learnerId: selectedLearnerId,
+                        lessonKey: lessonKey,
+                        scheduledDate: selectedDate
+                      })
+                    })
+                    
+                    if (!response.ok) {
+                      const errorData = await response.json()
+                      throw new Error(errorData.error || 'Failed to schedule')
+                    }
+                    
+                    alert(`Lesson scheduled for ${selectedDate}`)
+                    setShowSchedule(false)
+                  } catch (err) {
+                    alert('Failed to schedule: ' + (err.message || 'Unknown error'))
+                  } finally {
+                    setSaving(false)
+                  }
+                }}
+                disabled={saving}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  background: '#2563eb',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: saving ? 'wait' : 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14
+                }}
+              >
+                {saving ? 'Scheduling...' : 'Schedule'}
+              </button>
+              <button
+                onClick={() => setShowSchedule(false)}
+                disabled={saving}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  background: '#fff',
+                  color: '#6b7280',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 6,
+                  cursor: saving ? 'wait' : 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14
+                }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
       
-      {/* Assign Modal - Placeholder for now */}
-      {showAssign && (
+      {/* Assign Modal */}
+      {showAssign && selectedLearnerId && (
+      {/* Assign Modal */}
+      {showAssign && selectedLearnerId && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -670,23 +974,95 @@ function EditLessonContent() {
           }}
           onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ marginTop: 0 }}>Assign to Learners</h3>
-            <p style={{ color: '#6b7280', fontSize: 14 }}>Assign functionality allows you to make lessons available to specific learners. Please use the main Lessons page to assign when viewing your learner list.</p>
-            <button
-              onClick={() => setShowAssign(false)}
-              style={{
-                marginTop: 16,
-                padding: '8px 16px',
-                background: '#2563eb',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 6,
-                cursor: 'pointer',
-                fontWeight: 600
-              }}
-            >
-              Close
-            </button>
+            <h3 style={{ marginTop: 0 }}>✓ Assign Lesson</h3>
+            <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 16 }}>
+              {selectedLearner?.name} - {lesson?.title}
+            </p>
+            
+            <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 16 }}>
+              {assignedLearners.includes(selectedLearnerId) 
+                ? 'This lesson is currently available to this learner. Click to remove access.'
+                : 'This lesson is not currently available to this learner. Click to grant access.'}
+            </p>
+            
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={async () => {
+                  try {
+                    setSaving(true)
+                    const supabase = getSupabaseClient()
+                    
+                    // Load current approved lessons
+                    const { data: currentData } = await supabase
+                      .from('learners')
+                      .select('approved_lessons')
+                      .eq('id', selectedLearnerId)
+                      .maybeSingle()
+                    
+                    const updatedApproved = { ...(currentData?.approved_lessons || {}) }
+                    const isCurrentlyAssigned = !!updatedApproved[lessonKey]
+                    
+                    if (isCurrentlyAssigned) {
+                      delete updatedApproved[lessonKey]
+                    } else {
+                      updatedApproved[lessonKey] = true
+                    }
+                    
+                    const { error } = await supabase
+                      .from('learners')
+                      .update({ approved_lessons: updatedApproved })
+                      .eq('id', selectedLearnerId)
+                    
+                    if (error) throw error
+                    
+                    // Update learners list
+                    setLearners(prev => prev.map(l => 
+                      l.id === selectedLearnerId ? { ...l, approved_lessons: updatedApproved } : l
+                    ))
+                    
+                    alert(isCurrentlyAssigned 
+                      ? 'Lesson access removed' 
+                      : 'Lesson assigned successfully')
+                    setShowAssign(false)
+                  } catch (err) {
+                    alert('Failed to update assignment: ' + (err.message || 'Unknown error'))
+                  } finally {
+                    setSaving(false)
+                  }
+                }}
+                disabled={saving}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  background: assignedLearners.includes(selectedLearnerId) ? '#dc2626' : '#059669',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: saving ? 'wait' : 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14
+                }}
+              >
+                {saving ? 'Updating...' : (assignedLearners.includes(selectedLearnerId) ? 'Remove Access' : 'Grant Access')}
+              </button>
+              <button
+                onClick={() => setShowAssign(false)}
+                disabled={saving}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  background: '#fff',
+                  color: '#6b7280',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 6,
+                  cursor: saving ? 'wait' : 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14
+                }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
