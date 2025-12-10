@@ -1441,6 +1441,12 @@ export default function CounselorClient() {
     const message = userInput.trim()
     if (!message || loading) return
 
+    // Clear the justDeleted flag when user starts a new conversation
+    if (justDeletedRef.current) {
+      console.log('[Send Message] Clearing justDeleted flag - new conversation starting')
+      justDeletedRef.current = false
+    }
+
     setLoading(true)
     setLoadingThought("Processing your request...")
     setError('')
@@ -2000,11 +2006,9 @@ Would you like to schedule this lesson for ${learnerName || 'this learner'}?`
 
   // Helper: Actually clear conversation state after save/delete
   const clearConversationAfterSave = async () => {
-    // Set flag to prevent PIN overlay from showing immediately after delete
+    // Set flag to prevent PIN overlay from showing after delete
+    // This flag stays set until a new conversation starts (when user sends first message)
     justDeletedRef.current = true
-    setTimeout(() => {
-      justDeletedRef.current = false
-    }, 5000) // Clear flag after 5 seconds
     
     // End current session in database
     if (sessionId && accessToken) {
