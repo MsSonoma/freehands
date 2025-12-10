@@ -625,8 +625,20 @@ export default function CounselorClient() {
         isOwner,
         hasActiveSession: !!activeSession,
         activeSessionId: activeSession?.session_id,
-        mySessionId: sessionId
+        mySessionId: sessionId,
+        justDeleted: justDeletedRef.current
       })
+
+      // Skip takeover check if we just deleted the conversation
+      if (justDeletedRef.current) {
+        console.log('[Mr. Mentor] Skipping takeover check - just deleted conversation')
+        // Just initialize a fresh session
+        setSessionLoading(false)
+        setSessionStarted(false)
+        setConflictingSession(null)
+        setShowTakeoverDialog(false)
+        return
+      }
 
       if (!isOwner && activeSession) {
         console.log('[Mr. Mentor] Showing takeover dialog - another device owns this conversation')
