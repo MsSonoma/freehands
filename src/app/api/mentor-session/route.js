@@ -199,9 +199,8 @@ export async function GET(request) {
       draft_summary: activeSession.draft_summary || ''
     }
 
-    // Check if this device owns the active session
-    // If sessionIds match OR if no sessionId provided (initial load), you own it
-    const isOwner = !sessionId || activeSession.session_id === sessionId
+    // Check if this device owns the active session by comparing session IDs
+    const isOwner = activeSession.session_id === sessionId
 
     return Response.json({
       session: sessionWithConversation,
