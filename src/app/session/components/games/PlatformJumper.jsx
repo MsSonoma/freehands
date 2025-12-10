@@ -615,45 +615,99 @@ export default function PlatformJumper({ onBack }) {
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      gap: '8px',
+      gap: '12px',
       alignItems: 'center'
     }}>
-      <button
-        onPointerDown={(e) => { 
-          e.preventDefault();
-          startMovingLeft();
-        }}
-        onPointerUp={(e) => {
-          e.preventDefault();
-          stopMovingLeft();
-        }}
-        onPointerLeave={(e) => {
-          e.preventDefault();
-          stopMovingLeft();
-        }}
-        onPointerCancel={(e) => {
-          e.preventDefault();
-          stopMovingLeft();
-        }}
-        style={{
-          padding: '8px',
-          fontSize: '18px',
-          background: '#3b82f6',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          userSelect: 'none',
-          WebkitUserSelect: 'none',
-          WebkitTouchCallout: 'none',
-          WebkitTapHighlightColor: 'transparent',
-          touchAction: 'none',
-          width: '40px',
-          height: '40px'
-        }}
-      >
-        ←
-      </button>
+      {/* Left and Right arrows in a row */}
+      <div style={{
+        display: 'flex',
+        gap: '12px',
+        alignItems: 'center'
+      }}>
+        <button
+          onPointerDown={(e) => { 
+            e.preventDefault();
+            startMovingLeft();
+          }}
+          onPointerUp={(e) => {
+            e.preventDefault();
+            stopMovingLeft();
+          }}
+          onPointerLeave={(e) => {
+            e.preventDefault();
+            stopMovingLeft();
+          }}
+          onPointerCancel={(e) => {
+            e.preventDefault();
+            stopMovingLeft();
+          }}
+          style={{
+            padding: '12px',
+            fontSize: '28px',
+            background: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+            WebkitTouchCallout: 'none',
+            WebkitTapHighlightColor: 'transparent',
+            touchAction: 'none',
+            width: '70px',
+            height: '70px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 'bold',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.2)'
+          }}
+        >
+          ←
+        </button>
+        <button
+          onPointerDown={(e) => { 
+            e.preventDefault();
+            startMovingRight();
+          }}
+          onPointerUp={(e) => {
+            e.preventDefault();
+            stopMovingRight();
+          }}
+          onPointerLeave={(e) => {
+            e.preventDefault();
+            stopMovingRight();
+          }}
+          onPointerCancel={(e) => {
+            e.preventDefault();
+            stopMovingRight();
+          }}
+          style={{
+            padding: '12px',
+            fontSize: '28px',
+            background: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+            WebkitTouchCallout: 'none',
+            WebkitTapHighlightColor: 'transparent',
+            touchAction: 'none',
+            width: '70px',
+            height: '70px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 'bold',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.2)'
+          }}
+        >
+          →
+        </button>
+      </div>
+      {/* Jump button below */}
       <button
         onPointerDown={(e) => {
           e.preventDefault();
@@ -664,59 +718,25 @@ export default function PlatformJumper({ onBack }) {
           }
         }}
         style={{
-          padding: '8px',
-          fontSize: '12px',
+          padding: '12px 20px',
+          fontSize: '18px',
+          fontWeight: 'bold',
           background: '#10b981',
           color: 'white',
           border: 'none',
-          borderRadius: '4px',
+          borderRadius: '8px',
           cursor: 'pointer',
           userSelect: 'none',
           WebkitUserSelect: 'none',
           WebkitTouchCallout: 'none',
           WebkitTapHighlightColor: 'transparent',
           touchAction: 'none',
-          width: '50px',
-          height: '40px'
+          width: '152px',
+          height: '60px',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.2)'
         }}
       >
         JUMP
-      </button>
-      <button
-        onPointerDown={(e) => { 
-          e.preventDefault();
-          startMovingRight();
-        }}
-        onPointerUp={(e) => {
-          e.preventDefault();
-          stopMovingRight();
-        }}
-        onPointerLeave={(e) => {
-          e.preventDefault();
-          stopMovingRight();
-        }}
-        onPointerCancel={(e) => {
-          e.preventDefault();
-          stopMovingRight();
-        }}
-        style={{
-          padding: '8px',
-          fontSize: '18px',
-          background: '#3b82f6',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          userSelect: 'none',
-          WebkitUserSelect: 'none',
-          WebkitTouchCallout: 'none',
-          WebkitTapHighlightColor: 'transparent',
-          touchAction: 'none',
-          width: '40px',
-          height: '40px'
-        }}
-      >
-        →
       </button>
     </div>
     );
