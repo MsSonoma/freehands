@@ -430,7 +430,6 @@ export default function FacilitatorAccountPage() {
         isOpen={activeOverlay === 'danger'}
         onClose={() => setActiveOverlay(null)}
       />
-    </main>
     
     <GatedOverlay
       show={!isAuthenticated}
