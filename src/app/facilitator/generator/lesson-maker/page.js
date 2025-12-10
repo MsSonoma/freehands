@@ -195,6 +195,7 @@ export default function LessonMakerPage(){
       
       generatedFile = js.file
       generatedUserId = js.userId
+      console.log('[lesson-maker] API returned file:', generatedFile, 'userId:', generatedUserId)
       
       // STEP 2: Validate the lesson
       setToast({ message: 'Validating lesson quality...', type: 'info' })
@@ -379,7 +380,10 @@ export default function LessonMakerPage(){
           {generatedLessonKey && (
             <button
               type="button"
-              onClick={() => router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(generatedLessonKey)}`)}
+              onClick={() => {
+                console.log('[lesson-maker] Edit button clicked, navigating with key:', generatedLessonKey)
+                router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(generatedLessonKey)}`)
+              }}
               style={{
                 ...btn,
                 marginLeft: 12,
