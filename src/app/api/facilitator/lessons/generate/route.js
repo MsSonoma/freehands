@@ -179,32 +179,11 @@ export async function POST(request){
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error:'Invalid body' }, { status: 400 }) }
   const { title, subject, difficulty, grade, description, notes, vocab } = body || {}
-  
-  console.log('[generate] Received request:', {
-    title,
-    subject,
-    difficulty,
-    grade,
-    description: description?.substring(0, 100),
-    notes: notes?.substring(0, 100),
-    vocab: vocab?.substring(0, 100)
-  })
-  
   if (!title || !subject || !difficulty || !grade) return NextResponse.json({ error:'Missing fields' }, { status: 400 })
   
   try {
     const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes, vocab })
-    console.log('[generate] Sending to AI, prompt length:', prompt.length)
     const lesson = await callModel(prompt)
-    
-    console.log('[generate] AI returned lesson:', {
-      id: lesson.id,
-      title: lesson.title,
-      grade: lesson.grade,
-      subject: lesson.subject,
-      difficulty: lesson.difficulty
-    })
-    
   // Normalize core fields
     lesson.id = lesson.id || `${grade}_${title}_${difficulty}`.replace(/\s+/g,'_')
     lesson.title = lesson.title || title

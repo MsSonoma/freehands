@@ -50,8 +50,6 @@ function EditLessonContent() {
   useEffect(() => {
     if (!pinChecked || !lessonKey) return
     
-    console.log('[edit page] Loading lesson with key:', lessonKey)
-    
     let cancelled = false
     ;(async () => {
       try {
@@ -59,31 +57,23 @@ function EditLessonContent() {
         const { data: { session } } = await supabase.auth.getSession()
         const token = session?.access_token
         
-        console.log('[edit page] Making request to /api/lesson-file')
-        
         const res = await fetch(`/api/lesson-file?key=${encodeURIComponent(lessonKey)}`, {
           headers: token ? {
             'Authorization': `Bearer ${token}`
           } : {}
         })
         
-        console.log('[edit page] Response status:', res.status)
-        
         if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}))
-          console.log('[edit page] Error response:', errorData)
-          throw new Error(errorData.error || 'Failed to load lesson')
+          throw new Error('Failed to load lesson')
         }
         
         const lessonData = await res.json()
-        console.log('[edit page] Lesson loaded successfully')
         
         if (!cancelled) {
           setLesson(lessonData)
           setLoading(false)
         }
       } catch (err) {
-        console.log('[edit page] Error loading lesson:', err)
         if (!cancelled) {
           setError(err.message || 'Failed to load lesson')
           setLoading(false)

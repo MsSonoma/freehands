@@ -25,13 +25,11 @@ export async function GET(request) {
     
     // Handle generated lessons from Supabase storage
     if (subject === 'generated') {
-      console.log('[lesson-file] Loading generated lesson:', filename)
       // Authenticate using Bearer token (same pattern as lesson-edit)
       const auth = request.headers.get('authorization') || ''
       const token = auth.startsWith('Bearer ') ? auth.slice(7) : null
       
       if (!token) {
-        console.log('[lesson-file] No token provided')
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
       
@@ -47,38 +45,24 @@ export async function GET(request) {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
-        console.log('[lesson-file] User authentication failed')
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
-      
-      console.log('[lesson-file] User authenticated:', user.id)
       
       // Use service role client for storage access
       const storageClient = svc ? createClient(url, svc, { auth: { persistSession: false } }) : supabase
       
       const filePath = `facilitator-lessons/${user.id}/${filename}`
-      console.log('[lesson-file] Attempting to download from:', filePath)
       
       const { data, error } = await storageClient.storage
         .from('lessons')
         .download(filePath)
       
       if (error) {
-        console.log('[lesson-file] Storage error:', error)
         return NextResponse.json({ error: 'Lesson file not found' }, { status: 404 })
       }
       
-      console.log('[lesson-file] File downloaded successfully')
       const text = await data.text()
       const lessonData = JSON.parse(text)
-      
-      console.log('[lesson-file] Loaded lesson:', {
-        id: lessonData.id,
-        title: lessonData.title,
-        grade: lessonData.grade,
-        subject: lessonData.subject,
-        difficulty: lessonData.difficulty
-      })
       
       return NextResponse.json(lessonData)
     }

@@ -195,7 +195,6 @@ export default function LessonMakerPage(){
       
       generatedFile = js.file
       generatedUserId = js.userId
-      console.log('[lesson-maker] API returned file:', generatedFile, 'userId:', generatedUserId)
       
       // STEP 2: Validate the lesson
       setToast({ message: 'Validating lesson quality...', type: 'info' })
@@ -247,9 +246,7 @@ export default function LessonMakerPage(){
       // Store the generated lesson key for the edit button
       // Key format must be "generated/filename" to match lesson-file API expectations
       if (generatedFile) {
-        const lessonKey = `generated/${generatedFile}`
-        console.log('[lesson-maker] Setting generatedLessonKey to:', lessonKey)
-        setGeneratedLessonKey(lessonKey)
+        setGeneratedLessonKey(`generated/${generatedFile}`)
       }
       
       // Handle storage errors (not blocking)
@@ -380,10 +377,7 @@ export default function LessonMakerPage(){
           {generatedLessonKey && (
             <button
               type="button"
-              onClick={() => {
-                console.log('[lesson-maker] Edit button clicked, navigating with key:', generatedLessonKey)
-                router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(generatedLessonKey)}`)
-              }}
+              onClick={() => router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(generatedLessonKey)}`)}
               style={{
                 ...btn,
                 marginLeft: 12,
