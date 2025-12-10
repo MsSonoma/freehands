@@ -50,20 +50,20 @@ export default function FacilitatorAccountPage() {
   const cardStyle = {
     background: '#fff',
     border: '1px solid #e5e7eb',
-    borderRadius: 12,
-    padding: '20px',
+    borderRadius: 8,
+    padding: '14px',
     cursor: 'pointer',
     transition: 'all 0.2s',
     display: 'flex',
     alignItems: 'center',
-    gap: 16,
+    gap: 12,
     boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
   }
 
   const iconStyle = {
-    fontSize: 28,
+    fontSize: 24,
     flexShrink: 0,
-    width: 40,
+    width: 36,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center'
@@ -77,8 +77,8 @@ export default function FacilitatorAccountPage() {
     <>
       <main style={{ padding: 7, opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
         <div style={{ width: '100%', maxWidth: 800, margin: '0 auto' }}>
-          <h1 style={{ marginTop: 0, marginBottom: 8, textAlign: 'left' }}>Account</h1>
-          <p style={{ color: '#6b7280', marginTop: 0, marginBottom: 24, textAlign: 'left' }}>
+          <h1 style={{ marginTop: 0, marginBottom: 4, textAlign: 'left', fontSize: 22 }}>Account</h1>
+          <p style={{ color: '#6b7280', marginTop: 0, marginBottom: 16, textAlign: 'left', fontSize: 14 }}>
             Manage your profile, security, connections, and preferences.
           </p>
 
@@ -86,8 +86,8 @@ export default function FacilitatorAccountPage() {
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: 16,
-            marginBottom: 24
+            gap: 12,
+            marginBottom: 16
           }}>
             {/* Your Name */}
             <div
@@ -104,8 +104,8 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>👤</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 16, color: '#111', marginBottom: 4 }}>Your Name</div>
-                <div style={{ fontSize: 14, color: '#6b7280' }}>Display name on your Facilitator page</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Your Name</div>
+                <div style={{ fontSize: 13, color: '#6b7280' }}>Display name on your Facilitator page</div>
               </div>
             </div>
 
@@ -124,8 +124,8 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>🔐</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 16, color: '#111', marginBottom: 4 }}>Email and Password</div>
-                <div style={{ fontSize: 14, color: '#6b7280' }}>Manage sign-in credentials</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Email and Password</div>
+                <div style={{ fontSize: 13, color: '#6b7280' }}>Manage sign-in credentials</div>
               </div>
             </div>
 
@@ -144,8 +144,8 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>🔒</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 16, color: '#111', marginBottom: 4 }}>Two-Factor Auth</div>
-                <div style={{ fontSize: 14, color: '#6b7280' }}>Add extra security layer</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Two-Factor Auth</div>
+                <div style={{ fontSize: 13, color: '#6b7280' }}>Add extra security layer</div>
               </div>
             </div>
 
@@ -164,8 +164,8 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>📌</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 16, color: '#111', marginBottom: 4 }}>Facilitator PIN</div>
-                <div style={{ fontSize: 14, color: '#6b7280' }}>Protect sensitive actions</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Facilitator PIN</div>
+                <div style={{ fontSize: 13, color: '#6b7280' }}>Protect sensitive actions</div>
               </div>
             </div>
 
@@ -184,8 +184,8 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>🔗</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 16, color: '#111', marginBottom: 4 }}>Connected Accounts</div>
-                <div style={{ fontSize: 14, color: '#6b7280' }}>Link Google and other services</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Connected Accounts</div>
+                <div style={{ fontSize: 13, color: '#6b7280' }}>Link Google and other services</div>
               </div>
             </div>
 
@@ -204,8 +204,8 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>⌨️</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 16, color: '#111', marginBottom: 4 }}>Hotkeys</div>
-                <div style={{ fontSize: 14, color: '#6b7280' }}>Customize keyboard shortcuts</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Hotkeys</div>
+                <div style={{ fontSize: 13, color: '#6b7280' }}>Customize keyboard shortcuts</div>
               </div>
             </div>
 
@@ -224,8 +224,8 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>🌍</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 16, color: '#111', marginBottom: 4 }}>Timezone</div>
-                <div style={{ fontSize: 14, color: '#6b7280' }}>Set your preferred timezone</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Timezone</div>
+                <div style={{ fontSize: 13, color: '#6b7280' }}>Set your preferred timezone</div>
               </div>
             </div>
 
@@ -244,8 +244,8 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>📧</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 16, color: '#111', marginBottom: 4 }}>Marketing Emails</div>
-                <div style={{ fontSize: 14, color: '#6b7280' }}>Manage email preferences</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Marketing Emails</div>
+                <div style={{ fontSize: 13, color: '#6b7280' }}>Manage email preferences</div>
               </div>
             </div>
 
@@ -264,8 +264,8 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>📄</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 16, color: '#111', marginBottom: 4 }}>Policies</div>
-                <div style={{ fontSize: 14, color: '#6b7280' }}>Privacy, terms, and data practices</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Policies</div>
+                <div style={{ fontSize: 13, color: '#6b7280' }}>Privacy, terms, and data practices</div>
               </div>
             </div>
 
@@ -284,8 +284,8 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>💎</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 16, color: '#111', marginBottom: 4 }}>Plan</div>
-                <div style={{ fontSize: 14, color: '#6b7280' }}>Manage subscription and billing</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Plan</div>
+                <div style={{ fontSize: 13, color: '#6b7280' }}>Manage subscription and billing</div>
               </div>
             </div>
 
@@ -308,14 +308,14 @@ export default function FacilitatorAccountPage() {
             >
               <div style={{ ...iconStyle, color: '#b00020' }}>⚠️</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 16, color: '#b00020', marginBottom: 4 }}>Danger Zone</div>
-                <div style={{ fontSize: 14, color: '#991b1b' }}>Delete your account</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#b00020', marginBottom: 2 }}>Danger Zone</div>
+                <div style={{ fontSize: 13, color: '#991b1b' }}>Delete your account</div>
               </div>
             </div>
           </div>
 
           {/* Logout button */}
-          <section style={{ marginTop: 16 }}>
+          <section style={{ marginTop: 12 }}>
             <button
               onClick={async () => {
                 const supabase = getSupabaseClient();
