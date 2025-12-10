@@ -17,7 +17,12 @@ export default function LessonEditor({
   onRewriteVocabDefinition,
   rewritingDescription = false,
   rewritingTeachingNotes = false,
-  rewritingVocabDefinition = {}
+  rewritingVocabDefinition = {},
+  // Additional action buttons
+  onNotes,
+  onSchedule,
+  onAssign,
+  onDelete
 }) {
   const [lesson, setLesson] = useState(initialLesson || {})
   const [errors, setErrors] = useState([])
@@ -344,6 +349,71 @@ export default function LessonEditor({
           >
             {busy ? 'Saving...' : '💾 Save'}
           </button>
+          
+          {onNotes && (
+            <button
+              style={{
+                ...btnStyle,
+                background: '#fff',
+                color: '#374151',
+                border: '1px solid #d1d5db'
+              }}
+              onClick={onNotes}
+              disabled={busy}
+              title="Add or edit notes"
+            >
+              📝 Notes
+            </button>
+          )}
+          
+          {onSchedule && (
+            <button
+              style={{
+                ...btnStyle,
+                background: '#fff',
+                color: '#374151',
+                border: '1px solid #d1d5db'
+              }}
+              onClick={onSchedule}
+              disabled={busy}
+              title="Schedule lesson"
+            >
+              📅 Schedule
+            </button>
+          )}
+          
+          {onAssign && (
+            <button
+              style={{
+                ...btnStyle,
+                background: '#fff',
+                color: '#374151',
+                border: '1px solid #d1d5db'
+              }}
+              onClick={onAssign}
+              disabled={busy}
+              title="Assign to learners"
+            >
+              ✓ Assign
+            </button>
+          )}
+          
+          {onDelete && (
+            <button
+              style={{
+                ...btnStyle,
+                background: '#dc2626',
+                borderColor: '#dc2626',
+                color: '#fff'
+              }}
+              onClick={onDelete}
+              disabled={busy}
+              title="Delete lesson"
+            >
+              🗑️ Delete
+            </button>
+          )}
+          
           <button 
             style={{
               padding: '6px 12px',

@@ -27,6 +27,16 @@ function EditLessonContent() {
   const [rewritingDescription, setRewritingDescription] = useState(false)
   const [rewritingTeachingNotes, setRewritingTeachingNotes] = useState(false)
   const [rewritingVocabDefinition, setRewritingVocabDefinition] = useState({})
+  
+  // New states for Notes, Schedule, Assign, Delete functionality
+  const [showNotes, setShowNotes] = useState(false)
+  const [lessonNote, setLessonNote] = useState('')
+  const [showSchedule, setShowSchedule] = useState(false)
+  const [scheduledDate, setScheduledDate] = useState(null) // null, 'today', or 'YYYY-MM-DD'
+  const [showAssign, setShowAssign] = useState(false)
+  const [learners, setLearners] = useState([])
+  const [assignedLearners, setAssignedLearners] = useState([]) // Array of learner IDs
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   // Check PIN requirement on mount
   useEffect(() => {
@@ -518,6 +528,10 @@ function EditLessonContent() {
           rewritingDescription={rewritingDescription}
           rewritingTeachingNotes={rewritingTeachingNotes}
           rewritingVocabDefinition={rewritingVocabDefinition}
+          onNotes={() => setShowNotes(true)}
+          onSchedule={() => setShowSchedule(true)}
+          onAssign={() => setShowAssign(true)}
+          onDelete={() => setShowDeleteConfirm(true)}
         />
       )}
 
@@ -537,6 +551,254 @@ function EditLessonContent() {
           generationCount={generationCount}
           maxGenerations={MAX_GENERATIONS}
         />
+      )}
+      
+      {/* Notes Modal - Placeholder for now */}
+      {showNotes && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000
+        }}
+        onClick={() => setShowNotes(false)}
+        >
+          <div style={{
+            background: '#fff',
+            borderRadius: 8,
+            padding: 24,
+            maxWidth: 500,
+            width: '90%'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ marginTop: 0 }}>Lesson Notes</h3>
+            <p style={{ color: '#6b7280', fontSize: 14 }}>Notes functionality requires learner context. Please use the main Lessons page to add notes when a learner is selected.</p>
+            <button
+              onClick={() => setShowNotes(false)}
+              style={{
+                marginTop: 16,
+                padding: '8px 16px',
+                background: '#2563eb',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                fontWeight: 600
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Schedule Modal - Placeholder for now */}
+      {showSchedule && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000
+        }}
+        onClick={() => setShowSchedule(false)}
+        >
+          <div style={{
+            background: '#fff',
+            borderRadius: 8,
+            padding: 24,
+            maxWidth: 400,
+            width: '90%'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ marginTop: 0 }}>Schedule Lesson</h3>
+            <p style={{ color: '#6b7280', fontSize: 14 }}>Schedule functionality requires learner context. Please use the main Lessons page to schedule when a learner is selected.</p>
+            <button
+              onClick={() => setShowSchedule(false)}
+              style={{
+                marginTop: 16,
+                padding: '8px 16px',
+                background: '#2563eb',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                fontWeight: 600
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Assign Modal - Placeholder for now */}
+      {showAssign && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000
+        }}
+        onClick={() => setShowAssign(false)}
+        >
+          <div style={{
+            background: '#fff',
+            borderRadius: 8,
+            padding: 24,
+            maxWidth: 400,
+            width: '90%'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ marginTop: 0 }}>Assign to Learners</h3>
+            <p style={{ color: '#6b7280', fontSize: 14 }}>Assign functionality allows you to make lessons available to specific learners. Please use the main Lessons page to assign when viewing your learner list.</p>
+            <button
+              onClick={() => setShowAssign(false)}
+              style={{
+                marginTop: 16,
+                padding: '8px 16px',
+                background: '#2563eb',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                fontWeight: 600
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000
+        }}
+        onClick={() => setShowDeleteConfirm(false)}
+        >
+          <div style={{
+            background: '#fff',
+            borderRadius: 8,
+            padding: 24,
+            maxWidth: 450,
+            width: '90%'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ marginTop: 0, color: '#dc2626' }}>Delete Lesson?</h3>
+            <p style={{ color: '#374151', fontSize: 14 }}>
+              Are you sure you want to delete "{lesson?.title}"? This action cannot be undone.
+            </p>
+            <p style={{ color: '#6b7280', fontSize: 13, marginTop: 8 }}>
+              Note: Only generated lessons can be deleted. Public lessons cannot be removed.
+            </p>
+            <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+              <button
+                onClick={async () => {
+                  if (!lessonKey || !lessonKey.startsWith('generated/')) {
+                    setError('Only generated lessons can be deleted')
+                    setShowDeleteConfirm(false)
+                    return
+                  }
+                  
+                  try {
+                    setSaving(true)
+                    const supabase = getSupabaseClient()
+                    const { data: { session } } = await supabase.auth.getSession()
+                    const token = session?.access_token
+                    
+                    const filename = lessonKey.replace('generated/', '')
+                    const { data: { user } } = await supabase.auth.getUser()
+                    
+                    if (!user) {
+                      setError('Not authenticated')
+                      return
+                    }
+                    
+                    // Delete from Supabase Storage
+                    const filePath = `facilitator-lessons/${user.id}/${filename}`
+                    const { error: deleteError } = await supabase.storage
+                      .from('lessons')
+                      .remove([filePath])
+                    
+                    if (deleteError) {
+                      setError('Failed to delete lesson: ' + deleteError.message)
+                      return
+                    }
+                    
+                    // Success - redirect to lessons page
+                    router.push('/facilitator/lessons')
+                  } catch (err) {
+                    setError('Error deleting lesson: ' + (err.message || String(err)))
+                  } finally {
+                    setSaving(false)
+                    setShowDeleteConfirm(false)
+                  }
+                }}
+                disabled={saving}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  background: '#dc2626',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: saving ? 'wait' : 'pointer',
+                  fontWeight: 600
+                }}
+              >
+                {saving ? 'Deleting...' : 'Delete Lesson'}
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={saving}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  background: '#fff',
+                  color: '#374151',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 6,
+                  cursor: saving ? 'wait' : 'pointer',
+                  fontWeight: 600
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
