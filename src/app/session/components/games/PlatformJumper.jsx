@@ -538,8 +538,9 @@ export default function PlatformJumper({ onBack }) {
             setOnGround(false);
           }
           
-          // Clear isJumping flag when in the air to allow next jump when landing
-          if (!landed) {
+          // Clear isJumping flag when falling (allows next jump when landing)
+          // Don't clear while jumping upward (newVelY < 0)
+          if (!landed && newVelY >= 0) {
             isJumpingRef.current = false;
           }
 
