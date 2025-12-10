@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { listLearners, deleteLearner, updateLearner } from './clientApi';
 import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
-import { featuresForTier } from '@/app/lib/entitlements';
+import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements';
 import { ensurePinAllowed } from '@/app/lib/pinGate';
 import { useAccessControl } from '@/app/hooks/useAccessControl';
 import GatedOverlay from '@/app/components/GatedOverlay';
