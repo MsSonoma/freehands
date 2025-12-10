@@ -1035,20 +1035,26 @@ export default function PlatformJumper({ onBack }) {
               newX < platform.x + platform.width
             ) {
               newY = platform.y - PLAYER_SIZE;
+              landed = true;
+              
               // Check if it's a trampoline - gives extra bounce ONLY when falling (not standing)
               if (platform.trampoline && newVelY > 0) {
-                newVelY = TRAMPOLINE_BOUNCE; // Stronger bounce
-                setPlayerVelocity(v => ({ ...v, y: TRAMPOLINE_BOUNCE }));
+                // Don't stop - bounce back up!
+                newVelY = TRAMPOLINE_BOUNCE;
+                // Update refs to allow another jump mid-air if needed
+                onGroundRef.current = false;
+                isJumpingRef.current = true;
+                setOnGround(false);
+                setIsJumping(true);
               } else {
+                // Normal platform - stop vertical movement
                 newVelY = 0;
+                // Update refs IMMEDIATELY for instant jump availability
+                onGroundRef.current = true;
+                isJumpingRef.current = false;
+                setOnGround(true);
+                setIsJumping(false);
               }
-              landed = true;
-              // Update refs IMMEDIATELY for instant jump availability
-              onGroundRef.current = true;
-              isJumpingRef.current = false;
-              // Also update state for rendering
-              setOnGround(true);
-              setIsJumping(false);
               break;
             }
           }
