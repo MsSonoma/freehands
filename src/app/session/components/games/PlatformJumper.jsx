@@ -23,6 +23,8 @@ export default function PlatformJumper({ onBack }) {
   const keysPressed = useRef({});
   const touchLeft = useRef(false);
   const touchRight = useRef(false);
+  const onGroundRef = useRef(false);
+  const isJumpingRef = useRef(false);
 
   // Orientation detection effect
   useEffect(() => {
@@ -387,7 +389,9 @@ export default function PlatformJumper({ onBack }) {
       setPlayerPos(currentLevel.startPos);
       setPlayerVelocity({ x: 0, y: 0 });
       setIsJumping(false);
+      isJumpingRef.current = false;
       setOnGround(false);
+      onGroundRef.current = false;
     }
   }, [level, gameStarted, gameWon]);
 
@@ -396,7 +400,9 @@ export default function PlatformJumper({ onBack }) {
     setPlayerPos(currentLevel.startPos);
     setPlayerVelocity({ x: 0, y: 0 });
     setIsJumping(false);
+    isJumpingRef.current = false;
     setOnGround(false);
+    onGroundRef.current = false;
     setGameWon(false);
     setGameLost(false);
     setGameStarted(true);
@@ -421,18 +427,23 @@ export default function PlatformJumper({ onBack }) {
     setPlayerPos(currentLevel.startPos);
     setPlayerVelocity({ x: 0, y: 0 });
     setIsJumping(false);
+    isJumpingRef.current = false;
     setOnGround(false);
+    onGroundRef.current = false;
     setGameLost(false);
   };
 
   // Shared jump function for both keyboard and touch
   const performJump = useCallback(() => {
-    if (onGround && !isJumping) {
+    // Use refs for immediate state check to avoid stale closure values
+    if (onGroundRef.current && !isJumpingRef.current) {
       setPlayerVelocity(v => ({ ...v, y: JUMP_STRENGTH }));
       setIsJumping(true);
+      isJumpingRef.current = true;
       setOnGround(false);
+      onGroundRef.current = false;
     }
-  }, [onGround, isJumping]);
+  }, []); // Empty deps - uses refs which are always current
 
   // Keyboard controls
   useEffect(() => {
@@ -512,13 +523,16 @@ export default function PlatformJumper({ onBack }) {
               newVelY = 0;
               landed = true;
               setOnGround(true);
+              onGroundRef.current = true;
               setIsJumping(false);
+              isJumpingRef.current = false;
               break;
             }
           }
 
           if (!landed && onGround) {
             setOnGround(false);
+            onGroundRef.current = false;
           }
 
           // Check if reached goal
