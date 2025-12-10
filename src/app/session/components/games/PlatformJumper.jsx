@@ -435,15 +435,15 @@ export default function PlatformJumper({ onBack }) {
 
   // Shared jump function for both keyboard and touch
   const performJump = useCallback(() => {
-    // Use refs for immediate state check to avoid stale closure values
-    if (onGroundRef.current && !isJumpingRef.current) {
+    // Simple check: only jump if on ground
+    if (onGroundRef.current) {
       setPlayerVelocity(v => ({ ...v, y: JUMP_STRENGTH }));
       setIsJumping(true);
       isJumpingRef.current = true;
-      // Don't set onGround here - let game loop physics handle it
-      // The upward velocity will naturally cause collision detection to clear onGround
+      onGroundRef.current = false;
+      setOnGround(false);
     }
-  }, []); // Empty deps - uses refs which are always current
+  }, []);
 
   // Keyboard controls
   useEffect(() => {
@@ -536,12 +536,6 @@ export default function PlatformJumper({ onBack }) {
             // Update refs IMMEDIATELY when leaving ground
             onGroundRef.current = false;
             setOnGround(false);
-          }
-          
-          // Clear isJumping flag when falling (allows next jump when landing)
-          // Don't clear while jumping upward (newVelY < 0)
-          if (!landed && newVelY >= 0) {
-            isJumpingRef.current = false;
           }
 
           // Check if reached goal
