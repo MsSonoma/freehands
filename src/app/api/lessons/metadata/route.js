@@ -8,7 +8,7 @@ export const revalidate = 0;
 export const runtime = 'nodejs';
 
 // Fetch metadata for specific lessons by their keys
-// POST body: { lessons: ["general/file1.json", "math/file2.json", ...] }
+// POST body: { lessons: ["general/file1.json", "math/file2.json", "generated/file3.json" ...] }
 export async function POST(request) {
   try {
     const { lessons } = await request.json();
@@ -20,6 +20,24 @@ export async function POST(request) {
     const results = [];
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    // SECURITY FIX: Get authenticated user for generated lessons
+    let authenticatedUserId = null;
+    const authHeader = request.headers.get('authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        if (supabaseUrl && supabaseServiceKey) {
+          const supabase = createClient(supabaseUrl, supabaseServiceKey);
+          const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+          if (!authError && user) {
+            authenticatedUserId = user.id;
+          }
+        }
+      } catch {
+        // Failed to authenticate - will only be able to access public lessons
+      }
+    }
 
     for (const lessonKey of lessons) {
       try {
@@ -35,7 +53,41 @@ export async function POST(request) {
           filename = parts[0];
         }
 
-        // Try to load from filesystem (for built-in lessons)
+        // SECURITY: If subject is "generated", only load from authenticated user's folder
+        if (subject === 'generated') {
+          if (!authenticatedUserId || !supabaseUrl || !supabaseServiceKey) {
+            // Skip generated lessons if not authenticated
+            continue;
+          }
+          
+          try {
+            const supabase = createClient(supabaseUrl, supabaseServiceKey);
+            const { data: fileData, error: downloadError } = await supabase.storage
+              .from('lessons')
+              .download(`facilitator-lessons/${authenticatedUserId}/${filename}`);
+            
+            if (fileData && !downloadError) {
+              const text = await fileData.text();
+              const data = JSON.parse(text);
+              results.push({
+                file: filename,
+                id: data.id || filename,
+                title: data.title || filename.replace(/\.json$/, '').split('_').join(' '),
+                blurb: data.blurb || '',
+                difficulty: (data.difficulty || '').toLowerCase(),
+                grade: data.grade != null ? String(data.grade) : null,
+                subject: data.subject || subject,
+                lessonKey: lessonKey,
+                isGenerated: true
+              });
+            }
+          } catch {
+            // Error loading generated lesson - skip
+          }
+          continue;
+        }
+
+        // Try to load from filesystem (for built-in lessons only)
         const subjectFolder = (subject === 'general') ? 'Facilitator Lessons' : subject;
         const lessonsDir = path.join(process.cwd(), 'public', 'lessons', subjectFolder);
         const filePath = path.join(lessonsDir, filename);
@@ -55,52 +107,8 @@ export async function POST(request) {
           });
           continue;
         }
-
-        // If not found in filesystem, try Supabase Storage (facilitator-created lessons)
-        if (supabaseUrl && supabaseServiceKey) {
-          try {
-            const supabase = createClient(supabaseUrl, supabaseServiceKey);
-            
-            // List all facilitator folders to find the lesson
-            const { data: folders, error: foldersError } = await supabase.storage
-              .from('lessons')
-              .list('facilitator-lessons', { limit: 1000 });
-            
-            if (!foldersError && folders) {
-              // Search each facilitator's folder for this lesson
-              for (const folder of folders) {
-                if (!folder.name) continue;
-                
-                try {
-                  const { data: fileData, error: downloadError } = await supabase.storage
-                    .from('lessons')
-                    .download(`facilitator-lessons/${folder.name}/${filename}`);
-                  
-                  if (fileData && !downloadError) {
-                    const text = await fileData.text();
-                    const data = JSON.parse(text);
-                    results.push({
-                      file: filename,
-                      id: data.id || filename,
-                      title: data.title || filename.replace(/\.json$/, '').split('_').join(' '),
-                      blurb: data.blurb || '',
-                      difficulty: (data.difficulty || '').toLowerCase(),
-                      grade: data.grade != null ? String(data.grade) : null,
-                      subject: data.subject || subject,
-                      lessonKey: lessonKey,
-                      isGenerated: true
-                    });
-                    break; // Found it, stop searching
-                  }
-                } catch {}
-              }
-            }
-          } catch (err) {
-            // Error searching Supabase Storage
-          }
-        }
         
-        // If still not found, skip it
+        // If not found, skip it
       } catch (err) {
         // Error loading lesson - skip
       }
