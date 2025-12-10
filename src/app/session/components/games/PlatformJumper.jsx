@@ -475,8 +475,8 @@ export default function PlatformJumper({ onBack }) {
 
     gameLoopRef.current = setInterval(() => {
       setPlayerVelocity(prevVel => {
-        // Only apply gravity if player is not on ground
-        let newVelY = onGround ? 0 : prevVel.y + GRAVITY;
+        // Only apply gravity if player is not on ground - use ref for immediate state
+        let newVelY = onGroundRef.current ? 0 : prevVel.y + GRAVITY;
         
         setPlayerPos(prevPos => {
           let newVelX = 0;
@@ -508,7 +508,7 @@ export default function PlatformJumper({ onBack }) {
             return prevPos;
           }
 
-          // Platform collision detection
+          // Platform collision detection - update refs immediately
           let landed = false;
           for (const platform of currentLevel.platforms) {
             // Check if player is above platform and falling
@@ -522,17 +522,20 @@ export default function PlatformJumper({ onBack }) {
               newY = platform.y - PLAYER_SIZE;
               newVelY = 0;
               landed = true;
-              setOnGround(true);
+              // Update refs IMMEDIATELY for instant jump availability
               onGroundRef.current = true;
-              setIsJumping(false);
               isJumpingRef.current = false;
+              // Also update state for rendering
+              setOnGround(true);
+              setIsJumping(false);
               break;
             }
           }
 
-          if (!landed && onGround) {
-            setOnGround(false);
+          if (!landed && onGroundRef.current) {
+            // Update refs IMMEDIATELY when leaving ground
             onGroundRef.current = false;
+            setOnGround(false);
           }
 
           // Check if reached goal
