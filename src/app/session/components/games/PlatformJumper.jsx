@@ -21,8 +21,8 @@ export default function PlatformJumper({ onBack }) {
 
   const gameLoopRef = useRef(null);
   const keysPressed = useRef({});
-  const leftIntervalRef = useRef(null);
-  const rightIntervalRef = useRef(null);
+  const touchLeft = useRef(false);
+  const touchRight = useRef(false);
 
   // Orientation detection effect
   useEffect(() => {
@@ -425,17 +425,24 @@ export default function PlatformJumper({ onBack }) {
     setGameLost(false);
   };
 
+  // Shared jump function for both keyboard and touch
+  const performJump = useCallback(() => {
+    if (onGround && !isJumping) {
+      setPlayerVelocity(v => ({ ...v, y: JUMP_STRENGTH }));
+      setIsJumping(true);
+      setOnGround(false);
+    }
+  }, [onGround, isJumping]);
+
   // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!gameStarted || gameWon || gameLost) return;
       keysPressed.current[e.key] = true;
 
-      if (e.key === ' ' && onGround && !isJumping) {
+      if (e.key === ' ') {
         e.preventDefault();
-        setPlayerVelocity(v => ({ ...v, y: JUMP_STRENGTH }));
-        setIsJumping(true);
-        setOnGround(false);
+        performJump();
       }
     };
 
@@ -449,7 +456,7 @@ export default function PlatformJumper({ onBack }) {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [gameStarted, gameWon, gameLost, onGround, isJumping]);
+  }, [gameStarted, gameWon, gameLost, performJump]);
 
   // Game loop
   useEffect(() => {
@@ -463,10 +470,13 @@ export default function PlatformJumper({ onBack }) {
         setPlayerPos(prevPos => {
           let newVelX = 0;
 
-          // Horizontal movement
-          if (keysPressed.current['ArrowLeft']) {
+          // Horizontal movement - check both keyboard and touch
+          const movingLeft = keysPressed.current['ArrowLeft'] || touchLeft.current;
+          const movingRight = keysPressed.current['ArrowRight'] || touchRight.current;
+          
+          if (movingLeft && !movingRight) {
             newVelX = -MOVE_SPEED;
-          } else if (keysPressed.current['ArrowRight']) {
+          } else if (movingRight && !movingLeft) {
             newVelX = MOVE_SPEED;
           }
 
@@ -534,73 +544,28 @@ export default function PlatformJumper({ onBack }) {
     };
   }, [gameStarted, gameWon, gameLost, onGround, currentLevel]);
 
-  const moveLeft = useCallback(() => {
-    if (!gameStarted || gameWon || gameLost) return;
-    setPlayerPos(prev => ({ x: Math.max(0, prev.x - MOVE_SPEED), y: prev.y }));
-  }, [gameStarted, gameWon, gameLost]);
-
-  const moveRight = useCallback(() => {
-    if (!gameStarted || gameWon || gameLost) return;
-    setPlayerPos(prev => ({ x: Math.min(GAME_WIDTH - PLAYER_SIZE, prev.x + MOVE_SPEED), y: prev.y }));
-  }, [gameStarted, gameWon, gameLost]);
-
-  const startMovingLeft = useCallback(() => {
-    if (!gameStarted || gameWon || gameLost) return;
-    if (rightIntervalRef.current) {
-      clearInterval(rightIntervalRef.current);
-      rightIntervalRef.current = null;
-    }
-    if (!leftIntervalRef.current) {
-      moveLeft();
-      leftIntervalRef.current = setInterval(moveLeft, 16);
-    }
-  }, [gameStarted, gameWon, gameLost, moveLeft]);
-
-  const stopMovingLeft = useCallback(() => {
-    if (leftIntervalRef.current) {
-      clearInterval(leftIntervalRef.current);
-      leftIntervalRef.current = null;
-    }
+  // Touch control handlers - simply set/clear refs
+  const startTouchLeft = useCallback(() => {
+    touchLeft.current = true;
   }, []);
 
-  const startMovingRight = useCallback(() => {
-    if (!gameStarted || gameWon || gameLost) return;
-    if (leftIntervalRef.current) {
-      clearInterval(leftIntervalRef.current);
-      leftIntervalRef.current = null;
-    }
-    if (!rightIntervalRef.current) {
-      moveRight();
-      rightIntervalRef.current = setInterval(moveRight, 16);
-    }
-  }, [gameStarted, gameWon, gameLost, moveRight]);
-
-  const stopMovingRight = useCallback(() => {
-    if (rightIntervalRef.current) {
-      clearInterval(rightIntervalRef.current);
-      rightIntervalRef.current = null;
-    }
+  const stopTouchLeft = useCallback(() => {
+    touchLeft.current = false;
   }, []);
 
-  // Clean up intervals when game ends
-  useEffect(() => {
-    if (gameWon || gameLost || !gameStarted) {
-      if (leftIntervalRef.current) {
-        clearInterval(leftIntervalRef.current);
-        leftIntervalRef.current = null;
-      }
-      if (rightIntervalRef.current) {
-        clearInterval(rightIntervalRef.current);
-        rightIntervalRef.current = null;
-      }
-    }
-  }, [gameWon, gameLost, gameStarted]);
+  const startTouchRight = useCallback(() => {
+    touchRight.current = true;
+  }, []);
+
+  const stopTouchRight = useCallback(() => {
+    touchRight.current = false;
+  }, []);
 
   // Global pointer listener as fallback
   useEffect(() => {
     const handleGlobalPointerUp = () => {
-      stopMovingLeft();
-      stopMovingRight();
+      touchLeft.current = false;
+      touchRight.current = false;
     };
 
     window.addEventListener('pointerup', handleGlobalPointerUp);
@@ -609,7 +574,7 @@ export default function PlatformJumper({ onBack }) {
       window.removeEventListener('pointerup', handleGlobalPointerUp);
       window.removeEventListener('pointercancel', handleGlobalPointerUp);
     };
-  }, [stopMovingLeft, stopMovingRight]);
+  }, []);
 
   const TouchControls = () => {
     return (
@@ -628,19 +593,19 @@ export default function PlatformJumper({ onBack }) {
         <button
           onPointerDown={(e) => { 
             e.preventDefault();
-            startMovingLeft();
+            startTouchLeft();
           }}
           onPointerUp={(e) => {
             e.preventDefault();
-            stopMovingLeft();
+            stopTouchLeft();
           }}
           onPointerLeave={(e) => {
             e.preventDefault();
-            stopMovingLeft();
+            stopTouchLeft();
           }}
           onPointerCancel={(e) => {
             e.preventDefault();
-            stopMovingLeft();
+            stopTouchLeft();
           }}
           style={{
             padding: '12px',
@@ -669,19 +634,19 @@ export default function PlatformJumper({ onBack }) {
         <button
           onPointerDown={(e) => { 
             e.preventDefault();
-            startMovingRight();
+            startTouchRight();
           }}
           onPointerUp={(e) => {
             e.preventDefault();
-            stopMovingRight();
+            stopTouchRight();
           }}
           onPointerLeave={(e) => {
             e.preventDefault();
-            stopMovingRight();
+            stopTouchRight();
           }}
           onPointerCancel={(e) => {
             e.preventDefault();
-            stopMovingRight();
+            stopTouchRight();
           }}
           style={{
             padding: '12px',
@@ -712,11 +677,7 @@ export default function PlatformJumper({ onBack }) {
       <button
         onPointerDown={(e) => {
           e.preventDefault();
-          if (onGround && !isJumping) {
-            setPlayerVelocity(v => ({ ...v, y: JUMP_STRENGTH }));
-            setIsJumping(true);
-            setOnGround(false);
-          }
+          performJump();
         }}
         style={{
           padding: '12px 20px',
