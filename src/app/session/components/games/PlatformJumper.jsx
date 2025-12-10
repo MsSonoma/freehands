@@ -537,6 +537,11 @@ export default function PlatformJumper({ onBack }) {
             onGroundRef.current = false;
             setOnGround(false);
           }
+          
+          // Clear isJumping flag when in the air to allow next jump when landing
+          if (!landed) {
+            isJumpingRef.current = false;
+          }
 
           // Check if reached goal
           const goal = currentLevel.goalArea;
