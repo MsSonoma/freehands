@@ -628,18 +628,7 @@ export default function CounselorClient() {
       })
 
       if (!isOwner && activeSession) {
-        console.log('[Mr. Mentor] Showing takeover dialog - another device owns this conversation, deactivating session')
-        
-        // Deactivate this device's session immediately so the other device doesn't need PIN
-        try {
-          await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${accessToken}` }
-          })
-        } catch (e) {
-          // Silent - just trying to clean up
-        }
-        
+        console.log('[Mr. Mentor] Showing takeover dialog - another device owns this conversation')
         setSessionLoading(false)
         setConflictingSession(activeSession)
         setShowTakeoverDialog(true)
@@ -819,17 +808,7 @@ export default function CounselorClient() {
         // Only show PIN if there's an active session AND we're not the owner
         // If there's no session at all, don't show PIN - user can start fresh
         if (data.session && !data.isOwner) {
-          console.log('[Heartbeat] Not owner - showing PIN overlay and deactivating session')
-          
-          // Deactivate this device's session immediately so the other device doesn't need PIN
-          try {
-            await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
-              method: 'DELETE',
-              headers: { 'Authorization': `Bearer ${accessToken}` }
-            })
-          } catch (e) {
-            // Silent - just trying to clean up
-          }
+          console.log('[Heartbeat] Not owner - showing PIN overlay')
           
           clearPersistedSessionIdentifier()
           initializedSessionIdRef.current = null
