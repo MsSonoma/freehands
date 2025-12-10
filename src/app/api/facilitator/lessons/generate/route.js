@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { resolveEffectiveTier, featuresForTier } from '@/app/lib/entitlements'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -8,36 +9,40 @@ async function readUserAndTier(request){
   try {
     const auth = request.headers.get('authorization') || ''
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : null
-    if (!token) return { user: null, plan_tier: 'free', token: null, supabase: null }
+    if (!token) return { user: null, tier: 'free', token: null, supabase: null }
     const { createClient } = await import('@supabase/supabase-js')
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     const svc = process.env.SUPABASE_SERVICE_ROLE_KEY
     const supabase = createClient(url, anon, { global: { headers: { Authorization: `Bearer ${token}` } }, auth: { persistSession: false } })
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { user: null, plan_tier: 'free', token: null, supabase: null }
+    if (!user) return { user: null, tier: 'free', token: null, supabase: null }
     const admin = svc ? createClient(url, svc, { auth: { persistSession:false } }) : null
-    let plan = 'free'
+    let subscriptionTier = null
+    let paidTier = 'free'
     if (admin) {
-      const { data } = await admin.from('profiles').select('plan_tier').eq('id', user.id).maybeSingle()
-      plan = (data?.plan_tier || 'free').toLowerCase()
+      const { data } = await admin.from('profiles').select('subscription_tier, plan_tier').eq('id', user.id).maybeSingle()
+      subscriptionTier = data?.subscription_tier || null
+      paidTier = (data?.plan_tier || 'free').toLowerCase()
     } else {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('plan_tier')
+          .select('subscription_tier, plan_tier')
           .eq('id', user.id)
           .maybeSingle()
-        if (!error && data?.plan_tier) {
-          plan = data.plan_tier.toLowerCase()
+        if (!error && data) {
+          subscriptionTier = data.subscription_tier || null
+          paidTier = (data.plan_tier || 'free').toLowerCase()
         }
       } catch {
         // ignore - fall back to default tier
       }
     }
-    return { user, plan_tier: plan, token, supabase: admin || supabase }
+    const effectiveTier = resolveEffectiveTier(subscriptionTier, paidTier)
+    return { user, tier: effectiveTier, token, supabase: admin || supabase }
   } catch {
-    return { user: null, plan_tier: 'free', token: null, supabase: null }
+    return { user: null, tier: 'free', token: null, supabase: null }
   }
 }
 
@@ -163,9 +168,14 @@ async function callModel(prompt){
 }
 
 export async function POST(request){
-  const { user, plan_tier, supabase } = await readUserAndTier(request)
+  const { user, tier, supabase } = await readUserAndTier(request)
   if (!user) return NextResponse.json({ error:'Unauthorized' }, { status: 401 })
-  if (plan_tier !== 'premium') return NextResponse.json({ error:'Premium plan required' }, { status: 403 })
+  
+  // Check if user has facilitatorTools feature (available on Plus and above, including Beta)
+  const features = featuresForTier(tier)
+  if (!features.facilitatorTools) {
+    return NextResponse.json({ error:'Premium plan required' }, { status: 403 })
+  }
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error:'Invalid body' }, { status: 400 }) }
   const { title, subject, difficulty, grade, description, notes, vocab } = body || {}
