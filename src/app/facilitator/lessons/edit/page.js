@@ -503,28 +503,6 @@ function EditLessonContent() {
 
   return (
     <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto' }}>
-      <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-        <button
-          onClick={handleGenerateVisualAids}
-          disabled={saving || generatingVisualAids || !lesson?.teachingNotes}
-          style={{
-            padding: '8px 16px',
-            background: (!lesson?.teachingNotes || generatingVisualAids) ? '#9ca3af' : '#6366f1',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 8,
-            cursor: (!lesson?.teachingNotes || generatingVisualAids) ? 'not-allowed' : 'pointer',
-            fontSize: 14,
-            fontWeight: 600
-          }}
-          title={!lesson?.teachingNotes ? 'Add teaching notes first' : (visualAidsImages.length > 0 ? 'View and manage visual aids' : 'Generate visual aids from teaching notes')}
-        >
-          {generatingVisualAids 
-            ? (generationProgress || 'Generating...') 
-            : (visualAidsImages.length > 0 ? '🖼️ Visual Aids' : '🖼️ Generate Visual Aids')}
-        </button>
-      </div>
-
       {error && (
         <div style={{ padding: 12, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#dc2626', marginBottom: 20 }}>
           {error}
@@ -543,10 +521,15 @@ function EditLessonContent() {
           rewritingDescription={rewritingDescription}
           rewritingTeachingNotes={rewritingTeachingNotes}
           rewritingVocabDefinition={rewritingVocabDefinition}
-        onNotes={() => setShowLearnerSelect('notes')}
-        onSchedule={() => setShowLearnerSelect('schedule')}
-        onAssign={() => setShowLearnerSelect('assign')}
-        onDelete={() => setShowDeleteConfirm(true)}
+          onNotes={() => setShowLearnerSelect('notes')}
+          onSchedule={() => setShowLearnerSelect('schedule')}
+          onAssign={() => setShowLearnerSelect('assign')}
+          onDelete={() => setShowDeleteConfirm(true)}
+          onGenerateVisualAids={handleGenerateVisualAids}
+          generatingVisualAids={generatingVisualAids}
+          visualAidsButtonText={generatingVisualAids 
+            ? (generationProgress || 'Generating...') 
+            : (visualAidsImages.length > 0 ? '🖼️ Visual Aids' : '🖼️ Generate Visual Aids')}
         />
       )}
 

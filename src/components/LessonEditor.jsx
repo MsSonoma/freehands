@@ -22,7 +22,10 @@ export default function LessonEditor({
   onNotes,
   onSchedule,
   onAssign,
-  onDelete
+  onDelete,
+  onGenerateVisualAids,
+  generatingVisualAids = false,
+  visualAidsButtonText = '🖼️ Visual Aids'
 }) {
   const [lesson, setLesson] = useState(initialLesson || {})
   const [errors, setErrors] = useState([])
@@ -395,6 +398,23 @@ export default function LessonEditor({
               title="Assign to learners"
             >
               ✓ Assign
+            </button>
+          )}
+          
+          {onGenerateVisualAids && (
+            <button
+              style={{
+                ...btnStyle,
+                background: generatingVisualAids ? '#9ca3af' : '#6366f1',
+                borderColor: generatingVisualAids ? '#9ca3af' : '#6366f1',
+                color: '#fff',
+                cursor: generatingVisualAids ? 'not-allowed' : 'pointer'
+              }}
+              onClick={onGenerateVisualAids}
+              disabled={busy || generatingVisualAids}
+              title="Generate or view visual aids"
+            >
+              {visualAidsButtonText}
             </button>
           )}
           
