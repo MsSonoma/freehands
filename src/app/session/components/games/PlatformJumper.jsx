@@ -1035,8 +1035,8 @@ export default function PlatformJumper({ onBack }) {
               newX < platform.x + platform.width
             ) {
               newY = platform.y - PLAYER_SIZE;
-              // Check if it's a trampoline - gives extra bounce
-              if (platform.trampoline) {
+              // Check if it's a trampoline - gives extra bounce ONLY when falling (not standing)
+              if (platform.trampoline && newVelY > 0) {
                 newVelY = TRAMPOLINE_BOUNCE; // Stronger bounce
                 setPlayerVelocity(v => ({ ...v, y: TRAMPOLINE_BOUNCE }));
               } else {
