@@ -503,26 +503,7 @@ function EditLessonContent() {
 
   return (
     <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto' }}>
-      <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button
-            onClick={handleCancel}
-            disabled={saving}
-            style={{
-              padding: '8px 16px',
-              background: '#f3f4f6',
-              color: '#374151',
-              border: '1px solid #d1d5db',
-              borderRadius: 8,
-              cursor: saving ? 'wait' : 'pointer',
-              fontSize: 14,
-              fontWeight: 600
-            }}
-          >
-            ← Back
-          </button>
-        </div>
-        
+      <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
         <button
           onClick={handleGenerateVisualAids}
           disabled={saving || generatingVisualAids || !lesson?.teachingNotes}
