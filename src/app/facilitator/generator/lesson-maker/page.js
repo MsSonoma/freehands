@@ -246,7 +246,9 @@ export default function LessonMakerPage(){
       // Store the generated lesson key for the edit button
       // Key format must be "generated/filename" to match lesson-file API expectations
       if (generatedFile) {
-        setGeneratedLessonKey(`generated/${generatedFile}`)
+        const lessonKey = `generated/${generatedFile}`
+        console.log('[lesson-maker] Setting generatedLessonKey to:', lessonKey)
+        setGeneratedLessonKey(lessonKey)
       }
       
       // Handle storage errors (not blocking)
