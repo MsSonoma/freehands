@@ -582,13 +582,18 @@ export default function PlatformJumper({ onBack }) {
       display: 'flex',
       flexDirection: 'column',
       gap: '12px',
-      alignItems: 'center'
+      alignItems: 'center',
+      userSelect: 'none',
+      WebkitUserSelect: 'none',
+      WebkitTouchCallout: 'none'
     }}>
       {/* Left and Right arrows in a row */}
       <div style={{
         display: 'flex',
         gap: '12px',
-        alignItems: 'center'
+        alignItems: 'center',
+        userSelect: 'none',
+        WebkitUserSelect: 'none'
       }}>
         <button
           onPointerDown={(e) => { 
@@ -677,7 +682,29 @@ export default function PlatformJumper({ onBack }) {
       <button
         onPointerDown={(e) => {
           e.preventDefault();
+          e.stopPropagation();
           performJump();
+        }}
+        onPointerUp={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onPointerLeave={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onPointerCancel={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+        }}
+        onMouseDown={(e) => {
+          e.preventDefault();
+        }}
+        onTouchStart={(e) => {
+          e.preventDefault();
         }}
         style={{
           padding: '12px 20px',
@@ -695,7 +722,8 @@ export default function PlatformJumper({ onBack }) {
           touchAction: 'none',
           width: '152px',
           height: '60px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.2)'
+          boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
+          WebkitTapHighlightColor: 'rgba(0,0,0,0)'
         }}
       >
         JUMP
