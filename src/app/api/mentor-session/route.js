@@ -199,14 +199,13 @@ export async function GET(request) {
       draft_summary: activeSession.draft_summary || ''
     }
 
-    // Since there can only be ONE active session per user (database constraint),
-    // if there's an active session, the requesting device owns it
-    // PIN is only required when explicitly taking over via POST, not on GET
-    const isOwner = true
+    // Check if this device owns the active session
+    // If sessionIds match OR if no sessionId provided (initial load), you own it
+    const isOwner = !sessionId || activeSession.session_id === sessionId
 
     return Response.json({
       session: sessionWithConversation,
-      status: 'active',
+      status: isOwner ? 'active' : 'taken',
       isOwner
     })
 
