@@ -947,8 +947,6 @@ function EditLessonContent() {
       
       {/* Assign Modal */}
       {showAssign && selectedLearnerId && (
-      {/* Assign Modal */}
-      {showAssign && selectedLearnerId && (
         <div style={{
           position: 'fixed',
           top: 0,
