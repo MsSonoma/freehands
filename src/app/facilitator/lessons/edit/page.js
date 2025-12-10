@@ -817,8 +817,6 @@ function EditLessonContent() {
       
       {/* Schedule Modal */}
       {showSchedule && selectedLearnerId && (
-      {/* Schedule Modal */}
-      {showSchedule && selectedLearnerId && (
         <div style={{
           position: 'fixed',
           top: 0,
