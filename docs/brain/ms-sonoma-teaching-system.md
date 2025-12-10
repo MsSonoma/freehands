@@ -308,8 +308,7 @@ You worked hard today. You learned how zeros change numbers in multiplication. S
 - Don't include definitions in Comprehension
 - Don't add anything after the silly question in Opening
 
-### Never Use Forbidden Words in Child-Facing Content
-- No "worksheet", "test", "exam", "quiz", "answer key"
+### Never Reference System Implementation Details
 - No capability/limitation disclaimers
 - No UI/tool/file/API mentions
 - No labels like "Opening:", "Teaching:", "AskQuestion:"
