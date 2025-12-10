@@ -72,6 +72,14 @@ export async function GET(request) {
       const text = await data.text()
       const lessonData = JSON.parse(text)
       
+      console.log('[lesson-file] Loaded lesson:', {
+        id: lessonData.id,
+        title: lessonData.title,
+        grade: lessonData.grade,
+        subject: lessonData.subject,
+        difficulty: lessonData.difficulty
+      })
+      
       return NextResponse.json(lessonData)
     }
     
