@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import AIRewriteButton from './AIRewriteButton'
 
 /**
@@ -29,6 +29,9 @@ export default function LessonEditor({
 }) {
   const [lesson, setLesson] = useState(initialLesson || {})
   const [errors, setErrors] = useState([])
+  const [isMobilePortrait, setIsMobilePortrait] = useState(false)
+  const [showActionsMenu, setShowActionsMenu] = useState(false)
+  const actionsMenuRef = useRef(null)
 
   useEffect(() => {
     if (initialLesson) {
@@ -37,6 +40,38 @@ export default function LessonEditor({
       setLesson(normalized)
     }
   }, [initialLesson])
+
+  // Detect mobile portrait for hamburger menu
+  useEffect(() => {
+    const checkMobilePortrait = () => {
+      if (typeof window === 'undefined') return
+      const minDimension = Math.min(window.innerWidth, window.innerHeight)
+      setIsMobilePortrait(minDimension <= 600)
+    }
+    
+    checkMobilePortrait()
+    window.addEventListener('resize', checkMobilePortrait)
+    window.addEventListener('orientationchange', checkMobilePortrait)
+    
+    return () => {
+      window.removeEventListener('resize', checkMobilePortrait)
+      window.removeEventListener('orientationchange', checkMobilePortrait)
+    }
+  }, [])
+
+  // Close actions menu when clicking outside
+  useEffect(() => {
+    if (!showActionsMenu) return
+    
+    const handleClickOutside = (e) => {
+      if (actionsMenuRef.current && !actionsMenuRef.current.contains(e.target)) {
+        setShowActionsMenu(false)
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showActionsMenu])
 
   // Normalize lesson data to consistent field names
   const normalizeLessonData = (lessonData) => {
@@ -340,7 +375,199 @@ export default function LessonEditor({
           fontWeight: 600 
         }}>Edit Lesson</h2>
         
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', position: 'relative' }}>
+          {isMobilePortrait ? (
+            <>
+              {/* Mobile: Hamburger menu */}
+              <button
+                onClick={() => setShowActionsMenu(!showActionsMenu)}
+                disabled={busy}
+                style={{
+                  padding: '8px 12px',
+                  background: '#111827',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: busy ? 'not-allowed' : 'pointer',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}
+                title="Actions"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6h18"/>
+                  <path d="M3 12h18"/>
+                  <path d="M3 18h18"/>
+                </svg>
+                Actions
+              </button>
+              
+              {showActionsMenu && (
+                <div
+                  ref={actionsMenuRef}
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: '100%',
+                    marginTop: 8,
+                    background: '#fff',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: 8,
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+                    minWidth: 200,
+                    zIndex: 1000,
+                    overflow: 'hidden'
+                  }}
+                >
+                  <button
+                    onClick={() => {
+                      handleSave()
+                      setShowActionsMenu(false)
+                    }}
+                    disabled={busy}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      background: '#fff',
+                      border: 'none',
+                      borderBottom: '1px solid #f3f4f6',
+                      textAlign: 'left',
+                      cursor: busy ? 'not-allowed' : 'pointer',
+                      fontSize: 14,
+                      fontWeight: 500,
+                      color: '#059669'
+                    }}
+                  >
+                    💾 Save
+                  </button>
+                  
+                  {onNotes && (
+                    <button
+                      onClick={() => {
+                        onNotes()
+                        setShowActionsMenu(false)
+                      }}
+                      disabled={busy}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        background: '#fff',
+                        border: 'none',
+                        borderBottom: '1px solid #f3f4f6',
+                        textAlign: 'left',
+                        cursor: busy ? 'not-allowed' : 'pointer',
+                        fontSize: 14,
+                        fontWeight: 500,
+                        color: '#374151'
+                      }}
+                    >
+                      📝 Notes
+                    </button>
+                  )}
+                  
+                  {onSchedule && (
+                    <button
+                      onClick={() => {
+                        onSchedule()
+                        setShowActionsMenu(false)
+                      }}
+                      disabled={busy}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        background: '#fff',
+                        border: 'none',
+                        borderBottom: '1px solid #f3f4f6',
+                        textAlign: 'left',
+                        cursor: busy ? 'not-allowed' : 'pointer',
+                        fontSize: 14,
+                        fontWeight: 500,
+                        color: '#374151'
+                      }}
+                    >
+                      📅 Schedule
+                    </button>
+                  )}
+                  
+                  {onAssign && (
+                    <button
+                      onClick={() => {
+                        onAssign()
+                        setShowActionsMenu(false)
+                      }}
+                      disabled={busy}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        background: '#fff',
+                        border: 'none',
+                        borderBottom: '1px solid #f3f4f6',
+                        textAlign: 'left',
+                        cursor: busy ? 'not-allowed' : 'pointer',
+                        fontSize: 14,
+                        fontWeight: 500,
+                        color: '#374151'
+                      }}
+                    >
+                      ✓ Assign
+                    </button>
+                  )}
+                  
+                  {onGenerateVisualAids && (
+                    <button
+                      onClick={() => {
+                        onGenerateVisualAids()
+                        setShowActionsMenu(false)
+                      }}
+                      disabled={busy || generatingVisualAids}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        background: '#fff',
+                        border: 'none',
+                        borderBottom: '1px solid #f3f4f6',
+                        textAlign: 'left',
+                        cursor: (busy || generatingVisualAids) ? 'not-allowed' : 'pointer',
+                        fontSize: 14,
+                        fontWeight: 500,
+                        color: '#6366f1'
+                      }}
+                    >
+                      {visualAidsButtonText}
+                    </button>
+                  )}
+                  
+                  {onDelete && (
+                    <button
+                      onClick={() => {
+                        onDelete()
+                        setShowActionsMenu(false)
+                      }}
+                      disabled={busy}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        background: '#fff',
+                        border: 'none',
+                        textAlign: 'left',
+                        cursor: busy ? 'not-allowed' : 'pointer',
+                        fontSize: 14,
+                        fontWeight: 500,
+                        color: '#dc2626'
+                      }}
+                    >
+                      🗑️ Delete
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Desktop: Inline buttons */}
           <button 
             style={{
               ...btnStyle,
@@ -432,6 +659,8 @@ export default function LessonEditor({
             >
               🗑️ Delete
             </button>
+          )}
+          </>
           )}
           
           <button 
