@@ -224,46 +224,120 @@ export default function LearnersPage() {
 
 	return (
 		<TutorialGuard>
-			<main style={{ padding: 24, overflowX: 'hidden', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
-			<div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap' }}>
-				<h1 style={{ marginTop:0, marginBottom:0 }}>Learners</h1>
-				<div style={{ display:'flex', alignItems:'center', gap:12 }}>
-					{Number.isFinite(maxLearners) && (
-						<span style={{ color:'#666', fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)' }}>Plan: {planTier} • {items.length} / {maxLearners} learners</span>
-					)}
-					<Link
-						href={items.length >= maxLearners ? '/facilitator/account/plan' : '/facilitator/learners/add'}
-						aria-disabled={items.length >= maxLearners}
-						style={{ padding:'10px 14px', border:'1px solid #111', borderRadius:8, background: items.length >= maxLearners ? '#999' : '#111', color:'#fff', textDecoration:'none', pointerEvents: items.length >= maxLearners ? 'none' : 'auto', opacity: items.length >= maxLearners ? 0.6 : 1 }}
-					>
-						Add Learner
-					</Link>
-				</div>
-			</div>
+			<main style={{ padding: 7, overflowX: 'hidden', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
+				<div style={{ width: '100%', maxWidth: 800, margin: '0 auto' }}>
+					<h1 style={{ marginTop: 0, marginBottom: 4, textAlign: 'left', fontSize: 22 }}>Learners</h1>
+					<p style={{ color: '#6b7280', marginTop: 0, marginBottom: 16, textAlign: 'left', fontSize: 14 }}>
+						Manage your students and customize their learning experience.
+					</p>
+
+					{/* Header with Add Learner button and plan info */}
+					<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+						{Number.isFinite(maxLearners) && (
+							<span style={{ color: '#6b7280', fontSize: 14 }}>
+								Plan: {planTier} • {items.length} / {maxLearners} learner{maxLearners === 1 ? '' : 's'}
+							</span>
+						)}
+						<Link
+							href={items.length >= maxLearners ? '/facilitator/account/plan' : '/facilitator/learners/add'}
+							aria-disabled={items.length >= maxLearners}
+							style={{
+								padding: '10px 14px',
+								border: '1px solid #111',
+								borderRadius: 8,
+								background: items.length >= maxLearners ? '#999' : '#111',
+								color: '#fff',
+								textDecoration: 'none',
+								fontWeight: 600,
+								fontSize: 14,
+								pointerEvents: items.length >= maxLearners ? 'none' : 'auto',
+								opacity: items.length >= maxLearners ? 0.6 : 1,
+								transition: 'all 0.2s'
+							}}
+						>
+							➕ Add Learner
+						</Link>
+					</div>
 
 			{items.length >= maxLearners && Number.isFinite(maxLearners) && (
-				<div style={{ marginTop:12, padding:12, border:'1px solid #eee', borderRadius:8, background:'#fff' }}>
-					<div style={{ fontWeight:600, marginBottom:6 }}>Learner limit reached</div>
-					<div style={{ color:'#444', marginBottom:8 }}>Your current plan allows up to {maxLearners} learner{maxLearners===1?'':'s'}. Upgrade to add more learners.</div>
-					<Link href="/facilitator/account/plan" style={{ padding:'8px 12px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff', textDecoration:'none' }}>View Plans</Link>
+				<div style={{
+					marginBottom: 12,
+					padding: 14,
+					border: '1px solid #e5e7eb',
+					borderRadius: 8,
+					background: '#fff',
+					boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+				}}>
+					<div style={{ fontWeight: 600, marginBottom: 6, color: '#111' }}>⚠️ Learner limit reached</div>
+					<div style={{ color: '#6b7280', marginBottom: 8, fontSize: 14 }}>Your current plan allows up to {maxLearners} learner{maxLearners === 1 ? '' : 's'}. Upgrade to add more learners.</div>
+					<Link
+						href="/facilitator/account/plan"
+						style={{
+							display: 'inline-block',
+							padding: '8px 12px',
+							border: '1px solid #111',
+							borderRadius: 8,
+							background: '#111',
+							color: '#fff',
+							textDecoration: 'none',
+							fontSize: 14,
+							fontWeight: 600,
+							transition: 'all 0.2s'
+						}}
+					>
+						View Plans
+					</Link>
 				</div>
 			)}
 
 							{errorMsg ? (
 								errorMsg.toLowerCase().includes('please log in') ? (
-									<div style={{ marginTop:16, padding:12, border:'1px solid #eee', borderRadius:8, background:'#fff' }}>
-										<div style={{ color:'#444', marginBottom:8 }}>{errorMsg}</div>
-										<a href="/auth/login" style={{ padding:'8px 12px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff', textDecoration:'none' }}>Go to Login</a>
+									<div style={{
+										padding: 14,
+										border: '1px solid #e5e7eb',
+										borderRadius: 8,
+										background: '#fff',
+										boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+									}}>
+										<div style={{ color: '#6b7280', marginBottom: 8, fontSize: 14 }}>{errorMsg}</div>
+										<a
+											href="/auth/login"
+											style={{
+												display: 'inline-block',
+												padding: '8px 12px',
+												border: '1px solid #111',
+												borderRadius: 8,
+												background: '#111',
+												color: '#fff',
+												textDecoration: 'none',
+												fontSize: 14,
+												fontWeight: 600
+											}}
+										>
+											Go to Login
+										</a>
 									</div>
 								) : (
-									<p style={{ color:'#b00020', marginTop:16 }}>{errorMsg}</p>
+									<p style={{ color: '#b00020', fontSize: 14 }}>{errorMsg}</p>
 								)
 							) : loading ? (
-				<p style={{ color:'#555', marginTop:16 }}>Loading…</p>
+				<p style={{ color: '#6b7280', fontSize: 14 }}>Loading…</p>
 			) : items.length === 0 ? (
-				<p style={{ color:'#555', marginTop:16 }}>No learners yet. Click &quot;Add Learner&quot; to create one.</p>
+				<div style={{
+					padding: 24,
+					border: '1px solid #e5e7eb',
+					borderRadius: 8,
+					background: '#fff',
+					boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+					textAlign: 'center'
+				}}>
+					<div style={{ fontSize: 48, marginBottom: 12 }}>👥</div>
+					<p style={{ color: '#6b7280', fontSize: 14, margin: 0 }}>
+						No learners yet. Click &quot;Add Learner&quot; to create one.
+					</p>
+				</div>
 			) : (
-				<div style={{ marginTop:16, display:'grid', gap:12, minWidth: 0 }}>
+				<div style={{ display: 'grid', gap: 12, minWidth: 0 }}>
 					{/* Header labels removed — labels are shown per-row */}
 					{items.map((it, idx) => (
 						<LearnerRow
@@ -279,6 +353,7 @@ export default function LearnersPage() {
 					))}
 				</div>
 			)}
+				</div>
 		</main>
 		
 		<GatedOverlay

@@ -16,15 +16,7 @@ export default function FacilitatorPage() {
     boxShadow: '0 2px 6px rgba(0,0,0,0.06)', boxSizing: 'border-box'
   };
 
-  // Black button variant for Login/Logout
-  const authCardStyle = {
-    ...cardStyle,
-    background: '#111',
-    color: '#fff',
-    border: '1px solid #111'
-  };
-
-  const [plan, setPlan] = useState('free');
+  const mainCardStyle = {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
   const [facilitatorName, setFacilitatorName] = useState('');
@@ -199,31 +191,149 @@ export default function FacilitatorPage() {
     return <div style={{ padding: '12px 24px 0', textAlign: 'center' }}><p>Loading…</p></div>;
   }
 
+  const mainCardStyle = {
+    background: '#fff',
+    border: '1px solid #e5e7eb',
+    borderRadius: 8,
+    padding: '14px',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+    textDecoration: 'none',
+    color: 'inherit'
+  }
+
+  const iconStyle = {
+    fontSize: 24,
+    flexShrink: 0,
+    width: 36,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  }
+
   return (
-    <div style={{ padding: '4px 24px 0' }}>
-      <div style={{ width: '100%', maxWidth: 560, margin: '0 auto' }}>
-        <h1 style={{ marginTop: 0, marginBottom: 0, textAlign: 'center' }}>{facilitatorName ? `Hi, ${facilitatorName}!` : 'Facilitator'}</h1>
-        <p style={{ color: '#555', marginTop: 0, marginBottom: 4, textAlign: 'center' }}>Choose a section to manage.</p>
+    <div style={{ padding: '7px' }}>
+      <div style={{ width: '100%', maxWidth: 800, margin: '0 auto' }}>
+        <h1 style={{ marginTop: 0, marginBottom: 4, textAlign: 'left', fontSize: 22 }}>
+          {facilitatorName ? `Hi, ${facilitatorName}!` : 'Facilitator'}
+        </h1>
+        <p style={{ color: '#6b7280', marginTop: 0, marginBottom: 16, textAlign: 'left', fontSize: 14 }}>
+          Choose a section to manage your homeschool or classroom.
+        </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <Link href="/facilitator/account" style={cardStyle}>Account</Link>
-          <Link href="/facilitator/learners" style={cardStyle}>Learners</Link>
-          <Link href="/facilitator/lessons" style={cardStyle}>Lessons</Link>
-          <Link href="/facilitator/calendar" style={cardStyle}>Calendar</Link>
+        {/* Main sections grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gap: 12,
+          marginBottom: 16
+        }}>
+          {/* Account */}
+          <Link
+            href="/facilitator/account"
+            style={mainCardStyle}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
+              e.currentTarget.style.borderColor = '#111'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
+              e.currentTarget.style.borderColor = '#e5e7eb'
+            }}
+          >
+            <div style={iconStyle}>⚙️</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Account</div>
+              <div style={{ fontSize: 13, color: '#6b7280' }}>Manage profile, security, and preferences</div>
+            </div>
+          </Link>
+
+          {/* Learners */}
+          <Link
+            href="/facilitator/learners"
+            style={mainCardStyle}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
+              e.currentTarget.style.borderColor = '#111'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
+              e.currentTarget.style.borderColor = '#e5e7eb'
+            }}
+          >
+            <div style={iconStyle}>👥</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Learners</div>
+              <div style={{ fontSize: 13, color: '#6b7280' }}>Add and manage your students</div>
+            </div>
+          </Link>
+
+          {/* Lessons */}
+          <Link
+            href="/facilitator/lessons"
+            style={mainCardStyle}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
+              e.currentTarget.style.borderColor = '#111'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
+              e.currentTarget.style.borderColor = '#e5e7eb'
+            }}
+          >
+            <div style={iconStyle}>📚</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Lessons</div>
+              <div style={{ fontSize: 13, color: '#6b7280' }}>Browse and assign lesson content</div>
+            </div>
+          </Link>
+
+          {/* Calendar */}
+          <Link
+            href="/facilitator/calendar"
+            style={mainCardStyle}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
+              e.currentTarget.style.borderColor = '#111'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
+              e.currentTarget.style.borderColor = '#e5e7eb'
+            }}
+          >
+            <div style={iconStyle}>📅</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Calendar</div>
+              <div style={{ fontSize: 13, color: '#6b7280' }}>View scheduled lessons</div>
+            </div>
+          </Link>
+
+          {/* Billing */}
+          <div
+            onClick={openPortal}
+            style={mainCardStyle}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
+              e.currentTarget.style.borderColor = '#111'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
+              e.currentTarget.style.borderColor = '#e5e7eb'
+            }}
+          >
+            <div style={iconStyle}>💳</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Billing</div>
+              <div style={{ fontSize: 13, color: '#6b7280' }}>
+                Subscription: {loading ? '…' : (plan || 'free')}
+              </div>
+            </div>
+          </Link>
         </div>
-
-        {/* Billing summary */}
-        <section aria-label="Billing" style={{ marginTop: 16, padding: 6, border: '1px solid #e5e7eb', borderRadius: 12, background: '#fff', textAlign: 'center' }}>
-          <h2 style={{ margin: '0 0 0', fontSize: 18, textAlign: 'center' }}>Billing</h2>
-          <p style={{ margin: '0 0 4px', color: '#444', textAlign: 'center' }}>
-            Subscription: {loading ? '…' : (plan || 'free')}
-          </p>
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <button type="button" onClick={openPortal} style={{ padding: '6px 10px', border: '1px solid #ddd', borderRadius: 8, background: '#f7f7f7' }}>
-              Manage subscription
-            </button>
-          </div>
-        </section>
 
         {/* Mr. Mentor video button */}
         <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>

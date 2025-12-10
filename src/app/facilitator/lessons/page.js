@@ -563,29 +563,55 @@ export default function FacilitatorLessonsPage() {
 
   return (
     <>
-      <main style={{ padding: '12px 24px', maxWidth: 1200, margin: '0 auto', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h1 style={{ margin: 0 }}>Manage Lessons</h1>
-          <button
-            onClick={() => router.push('/facilitator/generator/lesson-maker')}
-            style={{
-              padding: '10px 20px',
-              background: '#111',
-              color: '#fff',
-              border: '1px solid #111',
-              borderRadius: 8,
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontSize: 14
-            }}
-          >
-            Generate Lesson
-          </button>
+      <main style={{ padding: 7, maxWidth: 1200, margin: '0 auto', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
+        <div style={{ width: '100%', maxWidth: 800, margin: '0 auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <h1 style={{ marginTop: 0, marginBottom: 4, textAlign: 'left', fontSize: 22 }}>Lessons</h1>
+              <p style={{ color: '#6b7280', marginTop: 0, marginBottom: 0, textAlign: 'left', fontSize: 14 }}>
+                Browse, assign, and schedule lesson content for your learners.
+              </p>
+            </div>
+            <button
+              onClick={() => router.push('/facilitator/generator/lesson-maker')}
+              style={{
+                padding: '10px 16px',
+                background: '#111',
+                color: '#fff',
+                border: '1px solid #111',
+                borderRadius: 8,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontSize: 14,
+                whiteSpace: 'nowrap',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#000'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#111'
+              }}
+            >
+              ✨ Generate Lesson
+            </button>
+          </div>
         </div>
       
+        <div style={{ width: '100%', maxWidth: 800, margin: '0 auto' }}>
       {learners.length === 0 ? (
-        <div>
-          <p>No learners found. <a href="/facilitator/learners/add">Add a learner</a> first.</p>
+        <div style={{
+          padding: 24,
+          border: '1px solid #e5e7eb',
+          borderRadius: 8,
+          background: '#fff',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>📚</div>
+          <p style={{ color: '#6b7280', fontSize: 14, margin: 0 }}>
+            No learners found. <a href="/facilitator/learners/add" style={{ color: '#111', fontWeight: 600 }}>Add a learner</a> first.
+          </p>
         </div>
       ) : (
         <>
@@ -594,8 +620,9 @@ export default function FacilitatorLessonsPage() {
             background: '#fff',
             border: '1px solid #e5e7eb',
             borderRadius: 8,
-            padding: '16px',
-            marginBottom: 24
+            padding: 14,
+            marginBottom: 16,
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
           }}>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
               <select
@@ -1144,6 +1171,7 @@ export default function FacilitatorLessonsPage() {
           )}
         </>
       )}
+        </div>
     </main>
 
     <LessonHistoryModal
