@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
-import { featuresForTier } from '@/app/lib/entitlements'
+import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
 import Link from 'next/link'
 
@@ -42,8 +42,11 @@ export default function ClientGenerator(){
           if (!cancelled) setAccessToken(session?.access_token || null)
           const uid = session?.user?.id
           if (uid) {
-            const { data } = await supabase.from('profiles').select('plan_tier').eq('id', uid).maybeSingle()
-            if (!cancelled && data?.plan_tier) setTier((data.plan_tier || 'free').toLowerCase())
+            const { data } = await supabase.from('profiles').select('subscription_tier, plan_tier').eq('id', uid).maybeSingle()
+            if (!cancelled && data) {
+              const effectiveTier = resolveEffectiveTier(data.subscription_tier, data.plan_tier)
+              setTier(effectiveTier)
+            }
           }
         }
       } catch {}

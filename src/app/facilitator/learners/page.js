@@ -60,8 +60,8 @@ export default function LearnersPage() {
 						const { data: auth } = await supabase.auth.getUser();
 						const uid = auth?.user?.id;
 						if (uid) {
-							const { data: prof } = await supabase.from('profiles').select('plan_tier').eq('id', uid).maybeSingle();
-							tier = (prof?.plan_tier || 'free').toLowerCase();
+					const { data: prof } = await supabase.from('profiles').select('subscription_tier, plan_tier').eq('id', uid).maybeSingle();
+					tier = resolveEffectiveTier(prof?.subscription_tier, prof?.plan_tier);
 						}
 					} catch {}
 				}

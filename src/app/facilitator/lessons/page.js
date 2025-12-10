@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
-import { featuresForTier } from '@/app/lib/entitlements'
+import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
@@ -168,8 +168,8 @@ export default function FacilitatorLessonsPage() {
         const supabase = getSupabaseClient()
         const { data: { session } } = await supabase.auth.getSession()
         if (session?.user) {
-          const { data } = await supabase.from('profiles').select('plan_tier').eq('id', session.user.id).maybeSingle()
-          if (!cancelled && data?.plan_tier) setTier((data.plan_tier || 'free').toLowerCase())
+          const { data } = await supabase.from('profiles').select('subscription_tier, plan_tier').eq('id', session.user.id).maybeSingle()
+          if (!cancelled && data) setTier(resolveEffectiveTier(data.subscription_tier, data.plan_tier))
           
           // Fetch learners
           const { data: learnersData } = await supabase.from('learners').select('*').order('created_at', { ascending: false })

@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
-import { featuresForTier } from '@/app/lib/entitlements'
+import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 
 /**
  * useAccessControl - Hook for checking authentication and tier access
@@ -40,11 +40,11 @@ export function useAccessControl({
           // User is authenticated, check tier
           const { data } = await supabase
             .from('profiles')
-            .select('plan_tier')
+            .select('subscription_tier, plan_tier')
             .eq('id', uid)
             .maybeSingle()
           
-          const userTier = (data?.plan_tier || 'free').toLowerCase()
+          const userTier = resolveEffectiveTier(data?.subscription_tier, data?.plan_tier)
           if (!cancelled) setTier(userTier)
 
           // Check feature access

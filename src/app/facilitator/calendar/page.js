@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
-import { featuresForTier } from '@/app/lib/entitlements'
+import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
 import GatedOverlay from '@/app/components/GatedOverlay'
