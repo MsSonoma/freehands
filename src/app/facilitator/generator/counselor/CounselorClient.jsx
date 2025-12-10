@@ -34,6 +34,7 @@ export default function CounselorClient() {
   const sessionPollInterval = useRef(null)
   const isMountedRef = useRef(true)
   const initializedSessionIdRef = useRef(null)
+  const justDeletedRef = useRef(false)
 
   useEffect(() => {
     return () => {
@@ -802,8 +803,15 @@ export default function CounselorClient() {
           activeSessionId: data.session?.session_id,
           isOwner: data.isOwner,
           sessionStarted,
-          willTrigger: data.session && !data.isOwner
+          justDeleted: justDeletedRef.current,
+          willTrigger: data.session && !data.isOwner && !justDeletedRef.current
         })
+        
+        // Skip showing PIN overlay if we just deleted the conversation
+        if (justDeletedRef.current) {
+          console.log('[Heartbeat] Skipping PIN check - just deleted conversation')
+          return
+        }
         
         // If there's an active session and we're not the owner, show PIN overlay
         // Don't check sessionStarted - we need to detect takeover even if we're at PIN screen
@@ -1980,6 +1988,12 @@ Would you like to schedule this lesson for ${learnerName || 'this learner'}?`
 
   // Helper: Actually clear conversation state after save/delete
   const clearConversationAfterSave = async () => {
+    // Set flag to prevent PIN overlay from showing immediately after delete
+    justDeletedRef.current = true
+    setTimeout(() => {
+      justDeletedRef.current = false
+    }, 5000) // Clear flag after 5 seconds
+    
     // End current session in database
     if (sessionId && accessToken) {
       try {
