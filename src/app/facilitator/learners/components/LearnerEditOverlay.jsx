@@ -389,9 +389,14 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 									{learner?.id && onDelete && (
 										<button
 											onClick={() => {
-												if (window.confirm(`Are you sure you want to delete ${name}? This cannot be undone.`)) {
+												const confirmation = window.prompt(
+													`Are you sure you want to delete ${name}?\n\nThis cannot be undone. Type "delete learner" to confirm:`
+												);
+												if (confirmation === 'delete learner') {
 													onDelete(learner.id, name);
 													onClose();
+												} else if (confirmation !== null) {
+													alert('Deletion cancelled. You must type "delete learner" exactly to confirm.');
 												}
 											}}
 											style={{
