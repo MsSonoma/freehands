@@ -933,79 +933,85 @@ export default function FacilitatorLessonsPage() {
                         )}
                       </div>
 
-                      {/* Compact action buttons */}
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(lessonKey)}`)
-                        }}
-                        style={{
-                          padding: '4px 10px',
-                          border: '1px solid #d1d5db',
-                          borderRadius: 4,
-                          background: '#fff',
-                          color: '#6b7280',
-                          fontSize: 12,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4
-                        }}
-                        title="Edit lesson"
-                      >
-                        ✏️ Edit
-                      </button>
+                      {/* Compact action buttons - grouped to prevent breaking apart */}
+                      <div style={{ 
+                        display: 'flex', 
+                        gap: 8,
+                        flexShrink: 0
+                      }}>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(lessonKey)}`)
+                          }}
+                          style={{
+                            padding: '4px 10px',
+                            border: '1px solid #d1d5db',
+                            borderRadius: 4,
+                            background: '#fff',
+                            color: '#6b7280',
+                            fontSize: 12,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4
+                          }}
+                          title="Edit lesson"
+                        >
+                          ✏️ Edit
+                        </button>
 
-                      {learnerSelected && (
-                        <>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              setEditingNote(isEditingThisNote ? null : lessonKey)
-                            }}
-                            style={{
-                              padding: '4px 10px',
-                              border: '1px solid #d1d5db',
-                              borderRadius: 4,
-                              background: noteText ? '#fef3c7' : '#fff',
-                              color: '#6b7280',
-                              fontSize: 12,
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 4
-                            }}
-                            title={noteText ? 'Edit note' : 'Add note'}
-                          >
-                            📝 {noteText ? 'Note' : 'Notes'}
-                          </button>
+                        {learnerSelected && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                setEditingNote(isEditingThisNote ? null : lessonKey)
+                              }}
+                              style={{
+                                padding: '4px 10px',
+                                border: '1px solid #d1d5db',
+                                borderRadius: 4,
+                                background: noteText ? '#fef3c7' : '#fff',
+                                color: '#6b7280',
+                                fontSize: 12,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4
+                              }}
+                              title={noteText ? 'Edit note' : 'Add note'}
+                            >
+                              📝 {noteText ? 'Note' : 'Notes'}
+                            </button>
 
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              setScheduling(isSchedulingThis ? null : lessonKey)
-                            }}
-                            style={{
-                              padding: '4px 10px',
-                              border: '1px solid #d1d5db',
-                              borderRadius: 4,
-                              background: '#fff',
-                              color: '#6b7280',
-                              fontSize: 12,
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 4
-                            }}
-                            title="Schedule lesson"
-                          >
-                            📅 Schedule
-                          </button>
-                        </>
-                      )}
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                setScheduling(isSchedulingThis ? null : lessonKey)
+                              }}
+                              style={{
+                                padding: '4px 10px',
+                                border: '1px solid #d1d5db',
+                                borderRadius: 4,
+                                background: '#fff',
+                                color: '#6b7280',
+                                fontSize: 12,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4
+                              }}
+                              title="Schedule lesson"
+                            >
+                              📅 Schedule
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
 
                     {/* Notes editing section */}
