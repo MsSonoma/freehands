@@ -95,7 +95,7 @@ export default function FacilitatorAccountPage() {
               style={cardStyle}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
-                e.currentTarget.style.borderColor = '#111'
+                e.currentTarget.style.borderColor = '#9ca3af'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
@@ -104,7 +104,7 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>👤</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Your Name</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#374151', marginBottom: 2 }}>Your Name</div>
                 <div style={{ fontSize: 13, color: '#6b7280' }}>Display name on your Facilitator page</div>
               </div>
             </div>
@@ -115,7 +115,7 @@ export default function FacilitatorAccountPage() {
               style={cardStyle}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
-                e.currentTarget.style.borderColor = '#111'
+                e.currentTarget.style.borderColor = '#9ca3af'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
@@ -124,7 +124,7 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>🔐</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Email and Password</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#374151', marginBottom: 2 }}>Email and Password</div>
                 <div style={{ fontSize: 13, color: '#6b7280' }}>Manage sign-in credentials</div>
               </div>
             </div>
@@ -135,7 +135,7 @@ export default function FacilitatorAccountPage() {
               style={cardStyle}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
-                e.currentTarget.style.borderColor = '#111'
+                e.currentTarget.style.borderColor = '#9ca3af'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
@@ -144,7 +144,7 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>🔒</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Two-Factor Auth</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#374151', marginBottom: 2 }}>Two-Factor Auth</div>
                 <div style={{ fontSize: 13, color: '#6b7280' }}>Add extra security layer</div>
               </div>
             </div>
@@ -155,7 +155,7 @@ export default function FacilitatorAccountPage() {
               style={cardStyle}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
-                e.currentTarget.style.borderColor = '#111'
+                e.currentTarget.style.borderColor = '#9ca3af'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
@@ -164,7 +164,7 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>📌</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Facilitator PIN</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#374151', marginBottom: 2 }}>Facilitator PIN</div>
                 <div style={{ fontSize: 13, color: '#6b7280' }}>Protect sensitive actions</div>
               </div>
             </div>
@@ -175,7 +175,7 @@ export default function FacilitatorAccountPage() {
               style={cardStyle}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
-                e.currentTarget.style.borderColor = '#111'
+                e.currentTarget.style.borderColor = '#9ca3af'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
@@ -184,7 +184,7 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>🔗</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Connected Accounts</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#374151', marginBottom: 2 }}>Connected Accounts</div>
                 <div style={{ fontSize: 13, color: '#6b7280' }}>Link Google and other services</div>
               </div>
             </div>
@@ -195,7 +195,7 @@ export default function FacilitatorAccountPage() {
               style={cardStyle}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
-                e.currentTarget.style.borderColor = '#111'
+                e.currentTarget.style.borderColor = '#9ca3af'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
@@ -204,7 +204,7 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>⌨️</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Hotkeys</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#374151', marginBottom: 2 }}>Hotkeys</div>
                 <div style={{ fontSize: 13, color: '#6b7280' }}>Customize keyboard shortcuts</div>
               </div>
             </div>
@@ -215,7 +215,7 @@ export default function FacilitatorAccountPage() {
               style={cardStyle}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
-                e.currentTarget.style.borderColor = '#111'
+                e.currentTarget.style.borderColor = '#9ca3af'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
@@ -224,7 +224,7 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>🌍</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Timezone</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#374151', marginBottom: 2 }}>Timezone</div>
                 <div style={{ fontSize: 13, color: '#6b7280' }}>Set your preferred timezone</div>
               </div>
             </div>
@@ -235,7 +235,7 @@ export default function FacilitatorAccountPage() {
               style={cardStyle}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
-                e.currentTarget.style.borderColor = '#111'
+                e.currentTarget.style.borderColor = '#9ca3af'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
@@ -244,7 +244,7 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>📧</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Marketing Emails</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#374151', marginBottom: 2 }}>Marketing Emails</div>
                 <div style={{ fontSize: 13, color: '#6b7280' }}>Manage email preferences</div>
               </div>
             </div>
@@ -255,7 +255,7 @@ export default function FacilitatorAccountPage() {
               style={cardStyle}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
-                e.currentTarget.style.borderColor = '#111'
+                e.currentTarget.style.borderColor = '#9ca3af'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
@@ -264,7 +264,7 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>📄</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Policies</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#374151', marginBottom: 2 }}>Policies</div>
                 <div style={{ fontSize: 13, color: '#6b7280' }}>Privacy, terms, and data practices</div>
               </div>
             </div>
@@ -275,7 +275,7 @@ export default function FacilitatorAccountPage() {
               style={cardStyle}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
-                e.currentTarget.style.borderColor = '#111'
+                e.currentTarget.style.borderColor = '#9ca3af'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
@@ -284,7 +284,7 @@ export default function FacilitatorAccountPage() {
             >
               <div style={iconStyle}>💎</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Plan</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#374151', marginBottom: 2 }}>Plan</div>
                 <div style={{ fontSize: 13, color: '#6b7280' }}>Manage subscription and billing</div>
               </div>
             </div>
@@ -570,9 +570,9 @@ function NameOverlay({ isOpen, onClose }) {
               disabled={savingName || facilitatorName === serverFacilitatorName}
               style={{
                 padding: '8px 16px',
-                border: '1px solid #111',
+                border: '1px solid #3b82f6',
                 borderRadius: 8,
-                background: '#111',
+                background: '#3b82f6',
                 color: '#fff',
                 fontWeight: 600,
                 cursor: savingName || facilitatorName === serverFacilitatorName ? 'not-allowed' : 'pointer',
@@ -627,9 +627,9 @@ function PasswordOverlay({ isOpen, onClose, email }) {
               alignItems: 'center',
               justifyContent: 'center',
               padding: '8px 16px',
-              border: '1px solid #111',
+              border: '1px solid #3b82f6',
               borderRadius: 8,
-              background: '#111',
+              background: '#3b82f6',
               color: '#fff',
               fontWeight: 600,
               textDecoration: 'none',
@@ -703,9 +703,9 @@ function TwoFactorOverlay({ isOpen, onClose }) {
               disabled={mfaBusy}
               style={{
                 padding: '8px 16px',
-                border: '1px solid #111',
+                border: '1px solid #3b82f6',
                 borderRadius: 8,
-                background: '#111',
+                background: '#3b82f6',
                 color: '#fff',
                 fontWeight: 600,
                 cursor: mfaBusy ? 'not-allowed' : 'pointer',
@@ -757,9 +757,9 @@ function TwoFactorOverlay({ isOpen, onClose }) {
                   disabled={mfaBusy || !mfaCode || mfaCode.length < 6}
                   style={{
                     padding: '8px 16px',
-                    border: '1px solid #111',
+                    border: '1px solid #3b82f6',
                     borderRadius: 8,
-                    background: '#111',
+                    background: '#3b82f6',
                     color: '#fff',
                     fontWeight: 600,
                     cursor: mfaBusy || !mfaCode || mfaCode.length < 6 ? 'not-allowed' : 'pointer',
@@ -776,7 +776,7 @@ function TwoFactorOverlay({ isOpen, onClose }) {
                     border: '1px solid #e5e7eb',
                     borderRadius: 8,
                     background: '#fff',
-                    color: '#111',
+                    color: '#374151',
                     fontWeight: 600,
                     cursor: mfaBusy ? 'not-allowed' : 'pointer'
                   }}
@@ -813,7 +813,7 @@ function TwoFactorOverlay({ isOpen, onClose }) {
                   border: '1px solid #e5e7eb',
                   borderRadius: 8,
                   background: '#fff',
-                  color: '#111',
+                  color: '#374151',
                   fontWeight: 600,
                   cursor: mfaBusy ? 'not-allowed' : 'pointer'
                 }}
@@ -1023,7 +1023,7 @@ function PinOverlay({ isOpen, onClose, email }) {
                 padding:'8px 16px',
                 border:'1px solid #111',
                 borderRadius:8,
-                background:'#111',
+                background:'#3b82f6',
                 color:'#fff',
                 fontWeight:600,
                 cursor: saving ? 'not-allowed' : 'pointer',
@@ -1150,9 +1150,9 @@ function ConnectedAccountsOverlay({ isOpen, onClose }) {
                 disabled={linkBusy}
                 style={{
                   padding: '8px 16px',
-                  border: '1px solid #111',
+                  border: '1px solid #3b82f6',
                   borderRadius: 8,
-                  background: '#111',
+                  background: '#3b82f6',
                   color: '#fff',
                   fontWeight: 600,
                   cursor: linkBusy ? 'not-allowed' : 'pointer',
@@ -1189,7 +1189,7 @@ function ConnectedAccountsOverlay({ isOpen, onClose }) {
                   border: '1px solid #e5e7eb',
                   borderRadius: 8,
                   background: '#fff',
-                  color: '#111',
+                  color: '#374151',
                   fontWeight: 600,
                   cursor: linkBusy ? 'not-allowed' : 'pointer'
                 }}
@@ -1331,9 +1331,9 @@ function TimezoneOverlay({ isOpen, onClose }) {
               disabled={savingTz || timezone === serverTimezone}
               style={{
                 padding: '8px 16px',
-                border: '1px solid #111',
+                border: '1px solid #3b82f6',
                 borderRadius: 8,
-                background: '#111',
+                background: '#3b82f6',
                 color: '#fff',
                 fontWeight: 600,
                 cursor: savingTz || timezone === serverTimezone ? 'not-allowed' : 'pointer',
@@ -1432,9 +1432,9 @@ function MarketingOverlay({ isOpen, onClose }) {
               disabled={savingMarketing || marketingOptIn === serverMarketingOptIn}
               style={{
                 padding: '8px 16px',
-                border: '1px solid #111',
+                border: '1px solid #3b82f6',
                 borderRadius: 8,
-                background: '#111',
+                background: '#3b82f6',
                 color: '#fff',
                 fontWeight: 600,
                 cursor: savingMarketing || marketingOptIn === serverMarketingOptIn ? 'not-allowed' : 'pointer',
@@ -1477,7 +1477,7 @@ function PoliciesOverlay({ isOpen, onClose }) {
               border: '1px solid #e5e7eb',
               borderRadius: 8,
               textDecoration: 'none',
-              color: '#111',
+              color: '#374151',
               background: '#fff',
               transition: 'all 0.2s'
             }}
@@ -1503,7 +1503,7 @@ function PoliciesOverlay({ isOpen, onClose }) {
               border: '1px solid #e5e7eb',
               borderRadius: 8,
               textDecoration: 'none',
-              color: '#111',
+              color: '#374151',
               background: '#fff',
               transition: 'all 0.2s'
             }}
@@ -1529,7 +1529,7 @@ function PoliciesOverlay({ isOpen, onClose }) {
               border: '1px solid #e5e7eb',
               borderRadius: 8,
               textDecoration: 'none',
-              color: '#111',
+              color: '#374151',
               background: '#fff',
               transition: 'all 0.2s'
             }}
@@ -1676,7 +1676,7 @@ function DangerZoneOverlay({ isOpen, onClose }) {
                   border: '1px solid #e5e7eb',
                   borderRadius: 8,
                   background: '#fff',
-                  color: '#111',
+                  color: '#374151',
                   fontWeight: 600,
                   cursor: deleting ? 'not-allowed' : 'pointer'
                 }}
