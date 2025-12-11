@@ -413,7 +413,8 @@ export default function LearnersPage() {
 									className="learner-card-actions"
 									style={{
 										position: 'absolute',
-										top: 8,
+										top: '50%',
+										transform: 'translateY(-50%)',
 										right: 8,
 										display: 'flex',
 										gap: 4
