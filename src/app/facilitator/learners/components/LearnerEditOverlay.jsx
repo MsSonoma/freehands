@@ -138,7 +138,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 		boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
 		maxWidth: 600,
 		width: '100%',
-		maxHeight: '90vh',
+		height: '90vh',
 		display: 'flex',
 		flexDirection: 'column'
 	};
