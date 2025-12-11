@@ -836,7 +836,8 @@ export default function FacilitatorLessonsPage() {
               borderRadius: 8,
               padding: '32px',
               textAlign: 'center',
-              color: '#6b7280'
+              color: '#6b7280',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
             }}>
               {Object.keys(allLessons).length === 0 
                 ? 'Loading lessons...' 
@@ -847,7 +848,8 @@ export default function FacilitatorLessonsPage() {
               background: '#fff',
               border: '1px solid #e5e7eb',
               borderRadius: 8,
-              overflow: 'hidden'
+              overflow: 'hidden',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
             }}>
               {filteredLessons.map(lesson => {
                 const { lessonKey, subject, displayGrade } = lesson
@@ -867,8 +869,9 @@ export default function FacilitatorLessonsPage() {
                 
                 return (
                   <div key={`${subject}-${lessonKey}`} style={{
-                    padding: '12px 16px',
-                    borderBottom: '1px solid #f3f4f6'
+                    padding: '14px 16px',
+                    borderBottom: '1px solid #e5e7eb',
+                    transition: 'background 0.2s'
                   }}>
                     {/* Main lesson info with floating buttons */}
                     <div style={{ 
