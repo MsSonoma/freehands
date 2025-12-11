@@ -156,7 +156,8 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 		gap: 4,
 		padding: '12px 24px 0',
 		borderBottom: '1px solid #e5e7eb',
-		overflowX: 'auto'
+		overflowX: 'auto',
+		flexShrink: 0
 	};
 
 	const tabStyle = (active) => ({
@@ -175,7 +176,8 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 	const contentStyle = {
 		padding: 24,
 		overflowY: 'auto',
-		flex: 1
+		flex: 1,
+		minHeight: 0
 	};
 
 	const footerStyle = {
