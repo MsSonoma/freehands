@@ -22,7 +22,10 @@ export default function LearnersPage() {
     const [planTier, setPlanTier] = useState('free');
     const [maxLearners, setMaxLearners] = useState(Infinity);
 	const [selectedLearnerId, setSelectedLearnerId] = useState(null);
-	const [editingLearner, setEditingLearner] = useState(null); // Learner being edited in overlay
+	const [editingBasicInfo, setEditingBasicInfo] = useState(null);
+	const [editingTargets, setEditingTargets] = useState(null);
+	const [editingAiFeatures, setEditingAiFeatures] = useState(null);
+	const [editingTimers, setEditingTimers] = useState(null);
 
 	// Check PIN requirement on mount
 	useEffect(() => {
@@ -352,7 +355,7 @@ export default function LearnersPage() {
 										borderColor: isSelected ? '#c7442e' : '#e5e7eb',
 										background: isSelected ? '#fff5f5' : '#fff'
 									}}
-							onClick={() => setEditingLearner(learner)}
+							onClick={() => handleSelectLearner(learner, true)}
 							onMouseEnter={(e) => {
 								e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
 								if (!isSelected) e.currentTarget.style.borderColor = '#9ca3af';
@@ -410,7 +413,7 @@ export default function LearnersPage() {
 									<button
 										onClick={(e) => {
 											e.stopPropagation();
-											setEditingLearner({ ...learner, initialTab: 'basic' });
+											setEditingBasicInfo(learner);
 										}}
 										title="Basic Info"
 										style={{
@@ -430,7 +433,7 @@ export default function LearnersPage() {
 									<button
 										onClick={(e) => {
 											e.stopPropagation();
-											setEditingLearner({ ...learner, initialTab: 'targets' });
+											setEditingTargets(learner);
 										}}
 										title="Learning Targets"
 										style={{
@@ -450,7 +453,7 @@ export default function LearnersPage() {
 									<button
 										onClick={(e) => {
 											e.stopPropagation();
-											setEditingLearner({ ...learner, initialTab: 'ai-features' });
+											setEditingAiFeatures(learner);
 										}}
 										title="AI Features"
 										style={{
@@ -470,7 +473,7 @@ export default function LearnersPage() {
 									<button
 										onClick={(e) => {
 											e.stopPropagation();
-											setEditingLearner({ ...learner, initialTab: 'timers' });
+											setEditingTimers(learner);
 										}}
 										title="Timers"
 										style={{
@@ -497,20 +500,57 @@ export default function LearnersPage() {
 				</div>
 		</main>
 		
-		{/* Learner Edit Overlay */}
+		{/* Basic Info Overlay */}
 		<LearnerEditOverlay
-			isOpen={!!editingLearner}
-			learner={editingLearner}
-			onClose={() => setEditingLearner(null)}
+			isOpen={!!editingBasicInfo}
+			learner={editingBasicInfo ? { ...editingBasicInfo, initialTab: 'basic' } : null}
+			onClose={() => setEditingBasicInfo(null)}
 			onSave={async (updates) => {
-				const idx = items.findIndex(item => item.id === editingLearner.id);
+				const idx = items.findIndex(item => item.id === editingBasicInfo.id);
 				if (idx !== -1) {
 					await handleSaveLearner(idx, updates);
 				}
 			}}
 			onDelete={handleDelete}
-			onSetCurrent={handleSelectLearner}
-			isCurrentLearner={editingLearner?.id === selectedLearnerId}
+		/>
+
+		{/* Learning Targets Overlay */}
+		<LearnerEditOverlay
+			isOpen={!!editingTargets}
+			learner={editingTargets ? { ...editingTargets, initialTab: 'targets' } : null}
+			onClose={() => setEditingTargets(null)}
+			onSave={async (updates) => {
+				const idx = items.findIndex(item => item.id === editingTargets.id);
+				if (idx !== -1) {
+					await handleSaveLearner(idx, updates);
+				}
+			}}
+		/>
+
+		{/* AI Features Overlay */}
+		<LearnerEditOverlay
+			isOpen={!!editingAiFeatures}
+			learner={editingAiFeatures ? { ...editingAiFeatures, initialTab: 'ai-features' } : null}
+			onClose={() => setEditingAiFeatures(null)}
+			onSave={async (updates) => {
+				const idx = items.findIndex(item => item.id === editingAiFeatures.id);
+				if (idx !== -1) {
+					await handleSaveLearner(idx, updates);
+				}
+			}}
+		/>
+
+		{/* Timers Overlay */}
+		<LearnerEditOverlay
+			isOpen={!!editingTimers}
+			learner={editingTimers ? { ...editingTimers, initialTab: 'timers' } : null}
+			onClose={() => setEditingTimers(null)}
+			onSave={async (updates) => {
+				const idx = items.findIndex(item => item.id === editingTimers.id);
+				if (idx !== -1) {
+					await handleSaveLearner(idx, updates);
+				}
+			}}
 		/>
 		
 		<GatedOverlay

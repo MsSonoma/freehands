@@ -19,7 +19,7 @@ const normalizeHumorLevel = (value) => {
 	return HUMOR_LEVELS.includes(v) ? v : 'calm';
 };
 
-export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, onDelete, onSetCurrent, isCurrentLearner }) {
+export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, onDelete }) {
 	const [activeTab, setActiveTab] = useState(learner?.initialTab || 'basic'); // 'basic' | 'targets' | 'ai-features' | 'timers'
 	
 	// Form state
@@ -256,6 +256,16 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 		gap: 8
 	});
 
+	const getTitle = () => {
+		switch (activeTab) {
+			case 'basic': return '👤 Basic Info';
+			case 'targets': return '🎯 Learning Targets';
+			case 'ai-features': return '🤖 AI Features';
+			case 'timers': return '⏱️ Timers';
+			default: return 'Edit Learner';
+		}
+	};
+
 	return (
 		<div style={overlayStyle} onClick={onClose}>
 			<div style={modalStyle} onClick={(e) => e.stopPropagation()}>
@@ -263,7 +273,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 				<div style={headerStyle}>
 						<div>
 							<h2 style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>
-								Edit Learner
+								{getTitle()}
 							</h2>
 							<p style={{ margin: '4px 0 0', fontSize: 14, color: '#6b7280' }}>
 								{name || 'Configure learner settings'}
@@ -281,34 +291,6 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 							}}
 						>
 							×
-						</button>
-					</div>
-
-					{/* Tabs */}
-					<div style={tabsStyle}>
-						<button
-							style={tabStyle(activeTab === 'basic')}
-							onClick={() => setActiveTab('basic')}
-						>
-							👤 Basic Info
-						</button>
-						<button
-							style={tabStyle(activeTab === 'targets')}
-							onClick={() => setActiveTab('targets')}
-						>
-							🎯 Learning Targets
-						</button>
-						<button
-							style={tabStyle(activeTab === 'ai-features')}
-							onClick={() => setActiveTab('ai-features')}
-						>
-							🤖 AI Features
-						</button>
-						<button
-							style={tabStyle(activeTab === 'timers')}
-							onClick={() => setActiveTab('timers')}
-						>
-							⏱️ Timers
 						</button>
 					</div>
 
@@ -382,28 +364,6 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 									gap: 12,
 									flexWrap: 'wrap'
 								}}>
-									{!isCurrentLearner && learner?.id && onSetCurrent && (
-										<button
-											onClick={() => {
-												onSetCurrent(learner, true);
-											}}
-											style={{
-												display: 'inline-flex',
-												alignItems: 'center',
-												gap: 8,
-												padding: '8px 16px',
-												background: '#10b981',
-												color: '#fff',
-												border: 'none',
-												borderRadius: 8,
-												fontSize: 14,
-												fontWeight: 500,
-												cursor: 'pointer'
-											}}
-										>
-											✓ Set as Current Learner
-										</button>
-									)}
 									{learner?.id && (
 										<a
 											href={`/facilitator/learners/${learner.id}/transcripts`}
