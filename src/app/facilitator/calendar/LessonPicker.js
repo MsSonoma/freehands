@@ -661,33 +661,44 @@ export default function LessonPicker({
             </div>
 
             {/* Footer */}
-            {lessonDetails && !isScheduled(selectedLesson.key) && selectedDate && (
+            {lessonDetails && !isScheduled(selectedLesson.key) && (
               <div style={{
                 padding: '20px',
                 borderTop: '1px solid #e5e7eb',
                 display: 'flex',
                 justifyContent: 'flex-end'
               }}>
-                <button
-                  onClick={() => handleSchedule(selectedLesson.key)}
-                  disabled={loading}
-                  style={{
+                {selectedDate ? (
+                  <button
+                    onClick={() => handleSchedule(selectedLesson.key)}
+                    disabled={loading}
+                    style={{
+                      padding: '10px 20px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: '#3b82f6',
+                      color: '#ffffff',
+                      cursor: loading ? 'default' : 'pointer',
+                      transition: 'background 0.15s',
+                      opacity: loading ? 0.6 : 1
+                    }}
+                    onMouseEnter={(e) => !loading && (e.currentTarget.style.background = '#2563eb')}
+                    onMouseLeave={(e) => !loading && (e.currentTarget.style.background = '#3b82f6')}
+                  >
+                    {loading ? 'Scheduling...' : `Schedule on ${selectedDate && new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                  </button>
+                ) : (
+                  <div style={{
                     padding: '10px 20px',
                     fontSize: '14px',
-                    fontWeight: '600',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: '#3b82f6',
-                    color: '#ffffff',
-                    cursor: loading ? 'default' : 'pointer',
-                    transition: 'background 0.15s',
-                    opacity: loading ? 0.6 : 1
-                  }}
-                  onMouseEnter={(e) => !loading && (e.currentTarget.style.background = '#2563eb')}
-                  onMouseLeave={(e) => !loading && (e.currentTarget.style.background = '#3b82f6')}
-                >
-                  {loading ? 'Scheduling...' : `Schedule on ${selectedDate && new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
-                </button>
+                    color: '#6b7280',
+                    fontStyle: 'italic'
+                  }}>
+                    Select a date to schedule this lesson
+                  </div>
+                )}
               </div>
             )}
           </div>
