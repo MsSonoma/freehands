@@ -345,7 +345,10 @@ export default function LessonMakerPage(){
   return (
     <main style={{ padding:24, maxWidth:720, margin:'0 auto', position: 'relative' }}>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      <h1 style={{ marginTop:0 }}>Lesson Generator</h1>
+      <h1 style={{ marginTop:0, marginBottom:4 }}>Lesson Generator</h1>
+      <p style={{ color: '#6b7280', marginTop: 0, marginBottom: 16, fontSize: 14 }}>
+        Create custom AI-generated lessons tailored to your learners. Specify the grade, subject, and key concepts—Ms. Sonoma will handle the rest.
+      </p>
       
       {/* Quota Info */}
       {!quotaLoading && quotaInfo && hasAccess && (
