@@ -157,7 +157,7 @@ export default function LessonPicker({
       
       // Fetch lesson content to get metadata
       const lessonPath = lesson.key
-      const res = await fetch(`/api/lessons/load?key=${encodeURIComponent(lessonPath)}`, {
+      const res = await fetch(`/api/lesson-file?key=${encodeURIComponent(lessonPath)}`, {
         headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}
       })
       const lessonData = res.ok ? await res.json() : null
