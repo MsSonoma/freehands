@@ -163,7 +163,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 	const tabStyle = (active) => ({
 		padding: '8px 16px',
 		border: 'none',
-		background: active ? '#111' : 'transparent',
+		background: active ? '#3b82f6' : 'transparent',
 		color: active ? '#fff' : '#6b7280',
 		borderRadius: '8px 8px 0 0',
 		cursor: 'pointer',
@@ -190,9 +190,9 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 
 	const buttonStyle = {
 		padding: '10px 20px',
-		border: '1px solid #111',
+		border: '1px solid #3b82f6',
 		borderRadius: 8,
-		background: '#111',
+		background: '#3b82f6',
 		color: '#fff',
 		fontSize: 14,
 		fontWeight: 600,
@@ -203,14 +203,15 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 	const secondaryButtonStyle = {
 		...buttonStyle,
 		background: '#fff',
-		color: '#111'
+		color: '#6b7280',
+		border: '1px solid #e5e7eb'
 	};
 
 	const labelStyle = {
 		display: 'block',
 		fontSize: 14,
 		fontWeight: 600,
-		color: '#111',
+		color: '#374151',
 		marginBottom: 6
 	};
 
@@ -498,11 +499,11 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 									</div>
 								</div>
 
-								<div style={{ marginTop: 20, padding: 12, background: '#f3f4f6', borderRadius: 8 }}>
-									<p style={{ margin: 0, fontSize: 13, color: '#6b7280' }}>
-										💡 Learn more about <a href="/about#ai-features" target="_blank" style={{ color: '#111', fontWeight: 600 }}>AI features</a>
-									</p>
-								</div>
+							<div style={{ marginTop: 20, padding: 12, background: '#f3f4f6', borderRadius: 8 }}>
+								<p style={{ margin: 0, fontSize: 13, color: '#6b7280' }}>
+									💡 Learn more about <a href="/about#ai-features" target="_blank" style={{ color: '#3b82f6', fontWeight: 600 }}>AI features</a>
+								</p>
+							</div>
 							</div>
 						)}
 
