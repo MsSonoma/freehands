@@ -508,26 +508,24 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 
 						{activeTab === 'timers' && (
 							<div>
-								{/* Info note */}
-								<div style={{
-									background: '#eff6ff',
-									border: '1px solid #bfdbfe',
-									borderRadius: 8,
-									padding: 12,
-									marginBottom: 20,
-									fontSize: 13,
-									color: '#1e40af',
-									lineHeight: 1.5
-								}}>
-									<strong>How it works:</strong> Each phase has Play time (for games before work) and Work time (for actual lesson tasks). 
-									Click phase names for details.
-								</div>
-
-								{/* Phase timers */}
-								{['discussion', 'comprehension', 'exercise', 'worksheet', 'test'].map((phase) => (
-									<div key={phase} style={{ marginBottom: 20 }}>
-										{/* Phase header with tooltip */}
-										<div style={{ position: 'relative', marginBottom: 10 }}>
+						{/* Info note */}
+						<div style={{
+							background: '#eff6ff',
+							border: '1px solid #bfdbfe',
+							borderRadius: 6,
+							padding: 8,
+							marginBottom: 12,
+							fontSize: 12,
+							color: '#1e40af',
+							lineHeight: 1.4
+						}}>
+							<strong>How it works:</strong> Each phase has Play time (for games before work) and Work time (for actual lesson tasks). 
+							Click phase names for details.
+						</div>						{/* Phase timers */}
+						{['discussion', 'comprehension', 'exercise', 'worksheet', 'test'].map((phase) => (
+							<div key={phase} style={{ marginBottom: 12 }}>
+								{/* Phase header with tooltip */}
+								<div style={{ position: 'relative', marginBottom: 6 }}>
 											<div
 												style={{
 													fontSize: 16,
@@ -622,27 +620,27 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 													onChange={(e) => handleTimerChange(phase, 'play', e.target.value)}
 													style={{
 														width: '100%',
-														padding: '10px 12px',
-														border: '2px solid #d1d5db',
-														borderRadius: 8,
-														fontSize: 18,
+														padding: '8px 10px',
+												border: '2px solid #d1d5db',
+												borderRadius: 6,
+												fontSize: 16,
 														fontWeight: 700,
 														textAlign: 'center',
 														color: '#059669',
 														background: '#fff'
 													}}
-												/>
-												<div style={{ 
-													fontSize: 11, 
-													color: '#6b7280', 
-													marginTop: 4, 
-													textAlign: 'center' 
-												}}>
-													minutes
-												</div>
+											/>
+											<div style={{ 
+												fontSize: 10, 
+												color: '#6b7280', 
+												marginTop: 2, 
+												textAlign: 'center' 
+											}}>
+												minutes
 											</div>
+										</div>
 
-											{/* Work timer */}
+										{/* Work timer */}
 											<div>
 												<label style={{
 													display: 'block',
@@ -686,23 +684,23 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 													max="60"
 													value={phaseTimers[`${phase}_work_min`]}
 													onChange={(e) => handleTimerChange(phase, 'work', e.target.value)}
-													style={{
-														width: '100%',
-														padding: '10px 12px',
-														border: '2px solid #d1d5db',
-														borderRadius: 8,
-														fontSize: 18,
-														fontWeight: 700,
-														textAlign: 'center',
-														color: '#2563eb',
-														background: '#fff'
-													}}
-												/>
-												<div style={{ 
-													fontSize: 11, 
-													color: '#6b7280', 
-													marginTop: 4, 
-													textAlign: 'center' 
+												style={{
+													width: '100%',
+													padding: '8px 10px',
+													border: '2px solid #d1d5db',
+													borderRadius: 6,
+													fontSize: 16,
+													fontWeight: 700,
+													textAlign: 'center',
+													color: '#2563eb',
+													background: '#fff'
+												}}
+											/>
+											<div style={{ 
+												fontSize: 10, 
+												color: '#6b7280', 
+												marginTop: 2, 
+												textAlign: 'center'
 												}}>
 													minutes
 												</div>
@@ -711,13 +709,13 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 									</div>
 								))}
 
-								{/* Golden Key Bonus */}
-								<div style={{
-									borderTop: '2px solid #e5e7eb',
-									paddingTop: 20,
-									marginTop: 4
-								}}>
-									<div style={{ position: 'relative', marginBottom: 10 }}>
+							{/* Golden Key Bonus */}
+							<div style={{
+								borderTop: '2px solid #e5e7eb',
+								paddingTop: 12,
+								marginTop: 4
+							}}>
+								<div style={{ position: 'relative', marginBottom: 6 }}>
 										<div
 											style={{
 												fontSize: 16,
@@ -759,29 +757,29 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 									</div>
 
 									<div style={{ maxWidth: 240 }}>
-										<input
-											type="number"
-											min="1"
-											max="60"
-											value={phaseTimers.golden_key_bonus_min}
-											onChange={(e) => handleGoldenKeyChange(e.target.value)}
-											style={{
-												width: '100%',
-												padding: '10px 12px',
-												border: '2px solid #d1d5db',
-												borderRadius: 8,
-												fontSize: 18,
-												fontWeight: 700,
-												textAlign: 'center',
-												color: '#b45309',
-												background: '#fffbeb'
-											}}
-										/>
+									<input
+										type="number"
+										min="1"
+										max="60"
+										value={phaseTimers.golden_key_bonus_min}
+										onChange={(e) => handleGoldenKeyChange(e.target.value)}
+										style={{
+											width: '100%',
+											padding: '8px 10px',
+											border: '2px solid #d1d5db',
+											borderRadius: 6,
+											fontSize: 16,
+											fontWeight: 700,
+											textAlign: 'center',
+											color: '#b45309',
+											background: '#fffbeb'
+										}}
+									/>
 										<div style={{ 
-											fontSize: 11, 
+											fontSize: 10, 
 											color: '#6b7280', 
-											marginTop: 4, 
-											textAlign: 'center' 
+											marginTop: 2, 
+											textAlign: 'center'
 										}}>
 											bonus minutes per phase
 										</div>
