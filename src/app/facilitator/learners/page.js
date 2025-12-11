@@ -203,6 +203,16 @@ export default function LearnersPage() {
 
 	return (
 		<TutorialGuard>
+			<style jsx>{`
+				.button-text-tablet {
+					display: none !important;
+				}
+				@media (min-width: 640px) {
+					.button-text-tablet {
+						display: inline !important;
+					}
+				}
+			`}</style>
 			<main style={{ padding: 7, overflowX: 'hidden', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
 				<div style={{ width: '100%', maxWidth: 800, margin: '0 auto' }}>
 					<h1 style={{ marginTop: 0, marginBottom: 4, textAlign: 'left', fontSize: 22 }}>Learners</h1>
@@ -410,86 +420,94 @@ export default function LearnersPage() {
 									}}
 									onClick={(e) => e.stopPropagation()}
 								>
-									<button
-										onClick={(e) => {
-											e.stopPropagation();
-											setEditingBasicInfo(learner);
-										}}
-										title="Basic Info"
-										style={{
-											border: 'none',
-											background: '#3b82f6',
-											color: '#fff',
-											borderRadius: 6,
-											padding: '4px 8px',
-											fontSize: 16,
-											cursor: 'pointer',
-											display: 'flex',
-											alignItems: 'center'
-										}}
-									>
-										👤
-									</button>
-									<button
-										onClick={(e) => {
-											e.stopPropagation();
-											setEditingTargets(learner);
-										}}
-										title="Learning Targets"
-										style={{
-											border: 'none',
-											background: '#3b82f6',
-											color: '#fff',
-											borderRadius: 6,
-											padding: '4px 8px',
-											fontSize: 16,
-											cursor: 'pointer',
-											display: 'flex',
-											alignItems: 'center'
-										}}
-									>
-										🎯
-									</button>
-									<button
-										onClick={(e) => {
-											e.stopPropagation();
-											setEditingAiFeatures(learner);
-										}}
-										title="AI Features"
-										style={{
-											border: 'none',
-											background: '#3b82f6',
-											color: '#fff',
-											borderRadius: 6,
-											padding: '4px 8px',
-											fontSize: 16,
-											cursor: 'pointer',
-											display: 'flex',
-											alignItems: 'center'
-										}}
-									>
-										🤖
-									</button>
-									<button
-										onClick={(e) => {
-											e.stopPropagation();
-											setEditingTimers(learner);
-										}}
-										title="Timers"
-										style={{
-											border: 'none',
-											background: '#3b82f6',
-											color: '#fff',
-											borderRadius: 6,
-											padding: '4px 8px',
-											fontSize: 16,
-											cursor: 'pointer',
-											display: 'flex',
-											alignItems: 'center'
-										}}
-									>
-										⏱️
-									</button>
+								<button
+									onClick={(e) => {
+										e.stopPropagation();
+										setEditingBasicInfo(learner);
+									}}
+									title="Basic Info"
+									style={{
+										border: 'none',
+										background: '#3b82f6',
+										color: '#fff',
+										borderRadius: 6,
+										padding: '4px 8px',
+										fontSize: 14,
+										cursor: 'pointer',
+										display: 'flex',
+										alignItems: 'center',
+										gap: 6
+									}}
+								>
+									<span>👤</span>
+									<span style={{ display: 'none' }} className="button-text-tablet">Basic</span>
+								</button>
+								<button
+									onClick={(e) => {
+										e.stopPropagation();
+										setEditingTargets(learner);
+									}}
+									title="Learning Targets"
+									style={{
+										border: 'none',
+										background: '#3b82f6',
+										color: '#fff',
+										borderRadius: 6,
+										padding: '4px 8px',
+										fontSize: 14,
+										cursor: 'pointer',
+										display: 'flex',
+										alignItems: 'center',
+										gap: 6
+									}}
+								>
+									<span>🎯</span>
+									<span style={{ display: 'none' }} className="button-text-tablet">Targets</span>
+								</button>
+								<button
+									onClick={(e) => {
+										e.stopPropagation();
+										setEditingAiFeatures(learner);
+									}}
+									title="AI Features"
+									style={{
+										border: 'none',
+										background: '#3b82f6',
+										color: '#fff',
+										borderRadius: 6,
+										padding: '4px 8px',
+										fontSize: 14,
+										cursor: 'pointer',
+										display: 'flex',
+										alignItems: 'center',
+										gap: 6
+									}}
+								>
+									<span>🤖</span>
+									<span style={{ display: 'none' }} className="button-text-tablet">AI</span>
+								</button>
+								<button
+									onClick={(e) => {
+										e.stopPropagation();
+										setEditingTimers(learner);
+									}}
+									title="Timers"
+									style={{
+										border: 'none',
+										background: '#3b82f6',
+										color: '#fff',
+										borderRadius: 6,
+										padding: '4px 8px',
+										fontSize: 14,
+										cursor: 'pointer',
+										display: 'flex',
+										alignItems: 'center',
+										gap: 6
+									}}
+								>
+									<span>⏱️</span>
+									<span style={{ display: 'none' }} className="button-text-tablet">Timers</span>
+								</button>
 								</div>
 								</div>
 							);
