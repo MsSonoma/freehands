@@ -253,11 +253,10 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 	});
 
 	return (
-		<>
-			<div style={overlayStyle} onClick={onClose}>
-				<div style={modalStyle} onClick={(e) => e.stopPropagation()}>
-					{/* Header */}
-					<div style={headerStyle}>
+		<div style={overlayStyle} onClick={onClose}>
+			<div style={modalStyle} onClick={(e) => e.stopPropagation()}>
+				{/* Header */}
+				<div style={headerStyle}>
 						<div>
 							<h2 style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>
 								Edit Learner
@@ -806,7 +805,6 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 						>
 							{saving ? 'Saving…' : 'Save Changes'}
 						</button>
-					</div>
 				</div>
 			</div>
 		</div>
