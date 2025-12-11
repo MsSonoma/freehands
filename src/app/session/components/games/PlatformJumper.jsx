@@ -41,7 +41,7 @@ export default function PlatformJumper({ onBack }) {
   const PLAYER_SIZE = 30;
   const GRAVITY = 0.6;
   const JUMP_STRENGTH = -10;
-  const TRAMPOLINE_BOUNCE = -15; // Stronger bounce from trampolines
+  const TRAMPOLINE_BOUNCE = -18; // Stronger bounce from trampolines (80% higher than regular jump)
   const MOVE_SPEED = 5;
   const MAX_FALL_Y = GAME_HEIGHT + 50;
 
