@@ -181,19 +181,20 @@ export default function LessonPicker({
         .limit(1)
         .maybeSingle()
       
-      // Map difficulty string to number for display
-      let difficultyLevel = null
+      // Normalize difficulty string for display
+      let difficultyName = null
       if (lessonData?.difficulty) {
         const diffStr = lessonData.difficulty.toLowerCase()
-        if (diffStr.includes('easy') || diffStr.includes('beginner')) difficultyLevel = 1
-        else if (diffStr.includes('medium') || diffStr.includes('intermediate')) difficultyLevel = 2
-        else if (diffStr.includes('hard') || diffStr.includes('advanced') || diffStr.includes('challenge')) difficultyLevel = 3
+        if (diffStr.includes('easy') || diffStr.includes('beginner')) difficultyName = 'Beginner'
+        else if (diffStr.includes('medium') || diffStr.includes('intermediate')) difficultyName = 'Intermediate'
+        else if (diffStr.includes('hard') || diffStr.includes('advanced') || diffStr.includes('challenge')) difficultyName = 'Advanced'
+        else difficultyName = lessonData.difficulty // Use as-is if doesn't match
       }
       
       setLessonDetails({
         description: lessonData?.teachingNotes || lessonData?.blurb || lessonData?.description || 'No description available',
         grade: lessonData?.grade,
-        difficulty: difficultyLevel,
+        difficulty: difficultyName,
         medalsAvailable: lessonData?.medals_available || [],
         activated: !!activeSession,
         activatedAt: activeSession?.started_at,
@@ -559,10 +560,10 @@ export default function LessonPicker({
                         fontWeight: '600',
                         color: '#374151'
                       }}>
-                        {lessonDetails.difficulty === 1 ? '⭐ Easy' : 
-                         lessonDetails.difficulty === 2 ? '⭐⭐ Medium' : 
-                         lessonDetails.difficulty === 3 ? '⭐⭐⭐ Hard' : 
-                         `Difficulty ${lessonDetails.difficulty}`}
+                        {lessonDetails.difficulty === 'Beginner' ? '⭐ Beginner' : 
+                         lessonDetails.difficulty === 'Intermediate' ? '⭐⭐ Intermediate' : 
+                         lessonDetails.difficulty === 'Advanced' ? '⭐⭐⭐ Advanced' : 
+                         lessonDetails.difficulty}
                       </div>
                     )}
                   </div>
@@ -575,13 +576,20 @@ export default function LessonPicker({
                       borderRadius: '8px',
                       border: '1px solid #fde68a'
                     }}>
-                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#92400e', marginBottom: '6px' }}>
+                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#92400e', marginBottom: '8px' }}>
                         🏅 Medals Available
                       </div>
-                      <div style={{ display: 'flex', gap: '8px', fontSize: '20px' }}>
-                        {lessonDetails.medalsAvailable.includes('gold') && '🥇'}
-                        {lessonDetails.medalsAvailable.includes('silver') && '🥈'}
-                        {lessonDetails.medalsAvailable.includes('bronze') && '🥉'}
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        {lessonDetails.medalsAvailable.map((medal, idx) => (
+                          <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ fontSize: '24px' }}>
+                              {medal.toLowerCase() === 'gold' ? '🥇' : medal.toLowerCase() === 'silver' ? '🥈' : '🥉'}
+                            </span>
+                            <span style={{ fontSize: '11px', color: '#92400e', textTransform: 'capitalize' }}>
+                              {medal}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
