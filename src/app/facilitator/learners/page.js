@@ -233,9 +233,9 @@ export default function LearnersPage() {
 						style={{
 							display: 'inline-block',
 							padding: '8px 12px',
-							border: '1px solid #111',
+							border: '1px solid #3b82f6',
 							borderRadius: 8,
-							background: '#111',
+							background: '#3b82f6',
 							color: '#fff',
 							textDecoration: 'none',
 							fontSize: 14,
@@ -259,18 +259,18 @@ export default function LearnersPage() {
 					}}>
 						<div style={{ color: '#6b7280', marginBottom: 8, fontSize: 14 }}>{errorMsg}</div>
 						<a
-							href="/auth/login"
-							style={{
-								display: 'inline-block',
-								padding: '8px 12px',
-								border: '1px solid #111',
-								borderRadius: 8,
-								background: '#111',
-								color: '#fff',
-								textDecoration: 'none',
-								fontSize: 14,
-								fontWeight: 600
-							}}
+						href="/auth/login"
+						style={{
+							display: 'inline-block',
+							padding: '8px 12px',
+							border: '1px solid #3b82f6',
+							borderRadius: 8,
+							background: '#3b82f6',
+							color: '#fff',
+							textDecoration: 'none',
+							fontSize: 14,
+							fontWeight: 600
+						}}
 						>
 							Go to Login
 						</a>
@@ -295,17 +295,17 @@ export default function LearnersPage() {
 								href="/facilitator/learners/add"
 								style={{ textDecoration: 'none' }}
 							>
-								<div
-									style={cardStyle}
-									onMouseEnter={(e) => {
-										e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-										e.currentTarget.style.borderColor = '#111';
-									}}
-									onMouseLeave={(e) => {
-										e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
-										e.currentTarget.style.borderColor = '#e5e7eb';
-									}}
-								>
+							<div
+								style={cardStyle}
+								onMouseEnter={(e) => {
+									e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+									e.currentTarget.style.borderColor = '#9ca3af';
+								}}
+								onMouseLeave={(e) => {
+									e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
+									e.currentTarget.style.borderColor = '#e5e7eb';
+								}}
+							>
 									<div style={iconStyle}>➕</div>
 									<div style={{ flex: 1 }}>
 										<div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Add New Learner</div>
@@ -352,14 +352,14 @@ export default function LearnersPage() {
 										borderColor: isSelected ? '#c7442e' : '#e5e7eb',
 										background: isSelected ? '#fff5f5' : '#fff'
 									}}
-									onClick={() => setEditingLearner(learner)}
-									onMouseEnter={(e) => {
-										e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-										if (!isSelected) e.currentTarget.style.borderColor = '#111';
-										// Show action buttons
-										const actions = e.currentTarget.querySelector('.learner-card-actions');
-										if (actions) actions.style.opacity = '1';
-									}}
+								onClick={() => setEditingLearner(learner)}
+								onMouseEnter={(e) => {
+									e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+									if (!isSelected) e.currentTarget.style.borderColor = '#9ca3af';
+									// Show action buttons
+									const actions = e.currentTarget.querySelector('.learner-card-actions');
+									if (actions) actions.style.opacity = '1';
+								}}
 									onMouseLeave={(e) => {
 										e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
 										if (!isSelected) e.currentTarget.style.borderColor = '#e5e7eb';
