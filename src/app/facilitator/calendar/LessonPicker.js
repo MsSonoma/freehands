@@ -15,6 +15,8 @@ export default function LessonPicker({
   const [selectedGrade, setSelectedGrade] = useState('all')
   const [learnerGrade, setLearnerGrade] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [selectedLesson, setSelectedLesson] = useState(null)
+  const [lessonDetails, setLessonDetails] = useState(null)
 
   const subjects = ['math', 'science', 'language arts', 'social studies', 'general']
   const grades = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
@@ -136,6 +138,48 @@ export default function LessonPicker({
     setLoading(true)
     try {
       await onScheduleLesson(lessonKey, selectedDate)
+      setSelectedLesson(null)
+      setLessonDetails(null)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleLessonClick = async (lesson) => {
+    setSelectedLesson(lesson)
+    setLoading(true)
+    try {
+      // Load lesson details
+      const { getSupabaseClient } = await import('@/app/lib/supabaseClient')
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      // Fetch lesson content to get blurb
+      const lessonPath = lesson.key
+      const res = await fetch(`/api/lessons/load?key=${encodeURIComponent(lessonPath)}`, {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}
+      })
+      const lessonData = res.ok ? await res.json() : null
+      
+      // Fetch completion/medal data for this learner
+      const { data: historyData } = await supabase
+        .from('lesson_history')
+        .select('*')
+        .eq('learner_id', learnerId)
+        .eq('lesson_key', lessonPath)
+        .order('completed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      
+      setLessonDetails({
+        blurb: lessonData?.blurb || 'No description available',
+        completed: !!historyData,
+        completedAt: historyData?.completed_at,
+        score: historyData?.score,
+        medal: historyData?.medal_tier
+      })
+    } catch (err) {
+      setLessonDetails({ blurb: 'Error loading lesson details', completed: false })
     } finally {
       setLoading(false)
     }
@@ -167,7 +211,8 @@ export default function LessonPicker({
           ? `generated/${filename}` 
           : `${subject}/${filename}`
         
-        const lessonName = item.title || filename.replace('.json', '').replace(/_/g, ' ')
+        const baseName = item.title || filename.replace('.json', '').replace(/_/g, ' ')
+        const lessonName = (item.isGenerated || item?.isGenerated === true) ? `✨ ${baseName}` : baseName
         
         // Extract grade from filename (e.g., "4th_multiplying_with_zeros.json")
         let grade = null
@@ -329,6 +374,7 @@ export default function LessonPicker({
                     return (
                       <div
                         key={lesson.key}
+                        onClick={() => handleLessonClick(lesson)}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -336,9 +382,9 @@ export default function LessonPicker({
                           padding: '8px 12px',
                           borderBottom: '1px solid #e5e7eb',
                           transition: 'background 0.15s',
-                          cursor: scheduled ? 'default' : 'pointer'
+                          cursor: 'pointer'
                         }}
-                        onMouseEnter={(e) => !scheduled && (e.currentTarget.style.background = '#f9fafb')}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
                         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                       >
                         <div style={{ flex: '1', minWidth: 0 }}>
@@ -346,28 +392,18 @@ export default function LessonPicker({
                             {lesson.name}
                           </div>
                         </div>
-                        <button
-                          onClick={() => !scheduled && selectedDate && handleSchedule(lesson.key)}
-                          disabled={scheduled || loading || !selectedDate}
-                          style={{
-                            padding: scheduled ? '3px 10px' : '5px 12px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            borderRadius: '4px',
-                            border: 'none',
-                            cursor: scheduled || !selectedDate ? 'default' : 'pointer',
-                            transition: 'all 0.15s',
-                            background: scheduled ? '#d1fae5' : !selectedDate ? '#d1d5db' : '#3b82f6',
-                            color: scheduled ? '#065f46' : !selectedDate ? '#9ca3af' : '#ffffff',
-                            whiteSpace: 'nowrap',
-                            opacity: !selectedDate ? 0.6 : 1
-                          }}
-                          onMouseEnter={(e) => !scheduled && selectedDate && (e.currentTarget.style.background = '#2563eb')}
-                          onMouseLeave={(e) => !scheduled && selectedDate && (e.currentTarget.style.background = '#3b82f6')}
-                          title={!selectedDate ? 'Select a date first' : scheduled ? 'Already scheduled' : 'Add to schedule'}
-                        >
-                          {scheduled ? '✓' : 'Add'}
-                        </button>
+                        {scheduled && (
+                          <div style={{ 
+                            fontSize: '11px', 
+                            fontWeight: '600', 
+                            color: '#065f46',
+                            background: '#d1fae5',
+                            padding: '2px 8px',
+                            borderRadius: 4
+                          }}>
+                            ✓ Scheduled
+                          </div>
+                        )}
                       </div>
                     )
                   })}
@@ -377,6 +413,186 @@ export default function LessonPicker({
           </div>
         )}
       </div>
+
+      {/* Lesson Detail Overlay */}
+      {selectedLesson && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '20px'
+          }}
+          onClick={() => { setSelectedLesson(null); setLessonDetails(null); }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#ffffff',
+              borderRadius: '12px',
+              maxWidth: '500px',
+              width: '100%',
+              maxHeight: '80vh',
+              overflow: 'auto',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+            }}
+          >
+            {/* Header */}
+            <div style={{
+              padding: '20px',
+              borderBottom: '1px solid #e5e7eb',
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: '12px'
+            }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h3 style={{ 
+                  margin: 0, 
+                  fontSize: '18px', 
+                  fontWeight: '700', 
+                  color: '#111827',
+                  lineHeight: '1.4'
+                }}>
+                  {selectedLesson.name}
+                </h3>
+              </div>
+              <button
+                onClick={() => { setSelectedLesson(null); setLessonDetails(null); }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: '24px',
+                  color: '#9ca3af',
+                  cursor: 'pointer',
+                  padding: '0',
+                  lineHeight: '1',
+                  transition: 'color 0.15s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#374151'}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#9ca3af'}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Content */}
+            <div style={{ padding: '20px' }}>
+              {!lessonDetails ? (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#6b7280' }}>
+                  Loading lesson details...
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {/* Blurb */}
+                  {lessonDetails.blurb && (
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#6b7280', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        About This Lesson
+                      </div>
+                      <p style={{ margin: 0, fontSize: '14px', color: '#374151', lineHeight: '1.6' }}>
+                        {lessonDetails.blurb}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Completion Status */}
+                  {lessonDetails.completed && (
+                    <div style={{
+                      padding: '12px',
+                      background: '#d1fae5',
+                      borderRadius: '8px',
+                      border: '1px solid #a7f3d0'
+                    }}>
+                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#065f46', marginBottom: '4px' }}>
+                        ✓ Completed
+                      </div>
+                      <div style={{ fontSize: '13px', color: '#047857' }}>
+                        {lessonDetails.completedAt && new Date(lessonDetails.completedAt).toLocaleDateString()}
+                        {lessonDetails.score !== null && lessonDetails.score !== undefined && ` • Score: ${lessonDetails.score}%`}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Medal */}
+                  {lessonDetails.medal && (
+                    <div style={{
+                      padding: '12px',
+                      background: '#fef3c7',
+                      borderRadius: '8px',
+                      border: '1px solid #fde68a',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <span style={{ fontSize: '24px' }}>
+                        {lessonDetails.medal === 'gold' ? '🥇' : lessonDetails.medal === 'silver' ? '🥈' : '🥉'}
+                      </span>
+                      <div>
+                        <div style={{ fontSize: '12px', fontWeight: '600', color: '#92400e', textTransform: 'capitalize' }}>
+                          {lessonDetails.medal} Medal Earned
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Schedule Status */}
+                  {isScheduled(selectedLesson.key) && (
+                    <div style={{
+                      padding: '12px',
+                      background: '#dbeafe',
+                      borderRadius: '8px',
+                      border: '1px solid #93c5fd'
+                    }}>
+                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#1e40af' }}>
+                        📅 Already Scheduled
+                      </div>
+                      <div style={{ fontSize: '13px', color: '#1e3a8a', marginTop: '4px' }}>
+                        This lesson is scheduled for {selectedDate && new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            {lessonDetails && !isScheduled(selectedLesson.key) && selectedDate && (
+              <div style={{
+                padding: '20px',
+                borderTop: '1px solid #e5e7eb',
+                display: 'flex',
+                justifyContent: 'flex-end'
+              }}>
+                <button
+                  onClick={() => handleSchedule(selectedLesson.key)}
+                  disabled={loading}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: '#3b82f6',
+                    color: '#ffffff',
+                    cursor: loading ? 'default' : 'pointer',
+                    transition: 'background 0.15s',
+                    opacity: loading ? 0.6 : 1
+                  }}
+                  onMouseEnter={(e) => !loading && (e.currentTarget.style.background = '#2563eb')}
+                  onMouseLeave={(e) => !loading && (e.currentTarget.style.background = '#3b82f6')}
+                >
+                  {loading ? 'Scheduling...' : `Schedule on ${selectedDate && new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
