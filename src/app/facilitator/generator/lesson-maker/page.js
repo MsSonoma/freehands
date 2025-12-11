@@ -58,6 +58,38 @@ export default function LessonMakerPage(){
     return () => { cancelled = true; };
   }, [router]);
 
+  // Load quota info
+  useEffect(() => {
+    if (!isAuthenticated || !hasAccess) {
+      setQuotaLoading(false)
+      return
+    }
+    
+    let cancelled = false;
+    (async () => {
+      try {
+        const supabase = getSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+        
+        const res = await fetch('/api/facilitator/lessons/quota', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        })
+        
+        if (res.ok && !cancelled) {
+          const data = await res.json()
+          setQuotaInfo(data)
+        }
+      } catch (e) {
+        // Silent error
+      } finally {
+        if (!cancelled) setQuotaLoading(false)
+      }
+    })()
+    
+    return () => { cancelled = true }
+  }, [isAuthenticated, hasAccess])
+
   // AI Rewrite handlers
   const handleRewriteTitle = async () => {
     if (!form.title.trim()) return
