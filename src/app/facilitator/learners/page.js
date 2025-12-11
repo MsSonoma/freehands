@@ -285,7 +285,7 @@ export default function LearnersPage() {
 					{/* Learner cards grid */}
 					<div style={{
 						display: 'grid',
-						gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+						gridTemplateColumns: '1fr',
 						gap: 12,
 						marginBottom: 16
 					}}>
