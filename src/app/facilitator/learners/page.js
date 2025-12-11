@@ -10,9 +10,7 @@ import { ensurePinAllowed } from '@/app/lib/pinGate';
 import { useAccessControl } from '@/app/hooks/useAccessControl';
 import GatedOverlay from '@/app/components/GatedOverlay';
 import TutorialGuard from '@/components/TutorialGuard';
-import PhaseTimersOverlay from '@/app/session/components/PhaseTimersOverlay';
-import AIFeaturesOverlay from './components/AIFeaturesOverlay';
-import { loadPhaseTimersForLearner } from '@/app/session/utils/phaseTimerDefaults';
+import LearnerEditOverlay from './components/LearnerEditOverlay';
 
 export default function LearnersPage() {
 	const router = useRouter();
@@ -20,13 +18,11 @@ export default function LearnersPage() {
 	const [pinChecked, setPinChecked] = useState(false);
 	const [items, setItems] = useState([]);
 	const [loading, setLoading] = useState(true);
-	const [savingId, setSavingId] = useState(null);
-	const [savedId, setSavedId] = useState(null);
     const [errorMsg, setErrorMsg] = useState('');
     const [planTier, setPlanTier] = useState('free');
     const [maxLearners, setMaxLearners] = useState(Infinity);
-	// Shared current learner selection (same variable used on Learn page)
 	const [selectedLearnerId, setSelectedLearnerId] = useState(null);
+	const [editingLearner, setEditingLearner] = useState(null); // Learner being edited in overlay
 
 	// Check PIN requirement on mount
 	useEffect(() => {
@@ -141,81 +137,61 @@ export default function LearnersPage() {
 		} catch {}
 	};
 
-	const handleDelete = async (id) => {
-			if (!confirm('Delete this learner?')) return;
-			try {
-				await deleteLearner(id);
-				setItems(prev => prev.filter(x => x.id !== id));
-			} catch (err) {
-				alert(err?.message || 'Failed to delete learner');
-			}
+	const handleDelete = async (id, learnerName) => {
+		if (!confirm(`Delete ${learnerName || 'this learner'}?`)) return;
+		try {
+			await deleteLearner(id);
+			setItems(prev => prev.filter(x => x.id !== id));
+		} catch (err) {
+			alert(err?.message || 'Failed to delete learner');
+		}
 	};
 
-	const handleInlineSave = async (idx, updated) => {
-		const id = items[idx].id;
-		setSavingId(id);
-		setSavedId(null);
-			try {
-				const result = await updateLearner(id, updated);
-			setItems(prev => prev.map((x,i) => i===idx ? { 
-				...x, 
-				...updated, 
-				...(updated.targets?{
-					comprehension: Number(updated.targets.comprehension),
-					exercise: Number(updated.targets.exercise),
-					worksheet: Number(updated.targets.worksheet),
-					test: Number(updated.targets.test),
-				}:{}),
-				...(updated.session_timer_minutes !== undefined ? {
-					session_timer_minutes: Number(updated.session_timer_minutes)
-				}:{}),
-				...(updated.golden_keys !== undefined ? {
-					golden_keys: Number(updated.golden_keys)
-				}:{} ),
-			...(updated.humor_level !== undefined ? {
-				humor_level: normalizeHumorLevel(updated.humor_level)
-			}:{} ),
-			...(updated.ask_disabled !== undefined ? {
-				ask_disabled: !!updated.ask_disabled
-			}:{} ),
-			...(updated.poem_disabled !== undefined ? {
-				poem_disabled: !!updated.poem_disabled
-			}:{} ),
-			...(updated.story_disabled !== undefined ? {
-				story_disabled: !!updated.story_disabled
-			}:{} ),
-			...(updated.fill_in_fun_disabled !== undefined ? {
-				fill_in_fun_disabled: !!updated.fill_in_fun_disabled
-			}:{} ),
-			// Phase timer fields
-				...(updated.discussion_play_min !== undefined ? { discussion_play_min: Number(updated.discussion_play_min) } : {}),
-				...(updated.discussion_work_min !== undefined ? { discussion_work_min: Number(updated.discussion_work_min) } : {}),
-				...(updated.comprehension_play_min !== undefined ? { comprehension_play_min: Number(updated.comprehension_play_min) } : {}),
-				...(updated.comprehension_work_min !== undefined ? { comprehension_work_min: Number(updated.comprehension_work_min) } : {}),
-				...(updated.exercise_play_min !== undefined ? { exercise_play_min: Number(updated.exercise_play_min) } : {}),
-				...(updated.exercise_work_min !== undefined ? { exercise_work_min: Number(updated.exercise_work_min) } : {}),
-				...(updated.worksheet_play_min !== undefined ? { worksheet_play_min: Number(updated.worksheet_play_min) } : {}),
-				...(updated.worksheet_work_min !== undefined ? { worksheet_work_min: Number(updated.worksheet_work_min) } : {}),
-				...(updated.test_play_min !== undefined ? { test_play_min: Number(updated.test_play_min) } : {}),
-				...(updated.test_work_min !== undefined ? { test_work_min: Number(updated.test_work_min) } : {}),
-				...(updated.golden_key_bonus_min !== undefined ? { golden_key_bonus_min: Number(updated.golden_key_bonus_min) } : {})
-			} : x));
-			if (typeof window !== 'undefined' && String(selectedLearnerId) === String(id) && updated?.humor_level !== undefined) {
-				const humorValue = normalizeHumorLevel(updated.humor_level);
-				try {
+	const handleSaveLearner = async (idx, updates) => {
+		const learner = items[idx];
+		try {
+			await updateLearner(learner.id, updates);
+			setItems(prev => prev.map((x, i) => i === idx ? { ...x, ...updates } : x));
+			
+			// Update localStorage if this is the current learner
+			if (String(selectedLearnerId) === String(learner.id)) {
+				if (updates.name != null) localStorage.setItem('learner_name', updates.name);
+				if (updates.grade != null) localStorage.setItem('learner_grade', String(updates.grade));
+				if (updates.humor_level != null) {
+					const humorValue = normalizeHumorLevel(updates.humor_level);
 					localStorage.setItem('learner_humor_level', humorValue);
-					localStorage.setItem(`learner_humor_level_${id}`, humorValue);
-				} catch {}
+					localStorage.setItem(`learner_humor_level_${learner.id}`, humorValue);
+				}
 			}
-			// Show saved notification
-			setSavedId(id);
-			// Clear saved notification after 2 seconds
-			setTimeout(() => setSavedId(null), 2000);
-			} catch (err) {
-				alert(err?.message || 'Failed to save changes');
-			} finally {
-			setSavingId(null);
+			
+			setEditingLearner(null);
+		} catch (err) {
+			throw err; // Let overlay handle the error
 		}
+	};
+
+	// Card styling matching Account page
+	const cardStyle = {
+		background: '#fff',
+		border: '1px solid #e5e7eb',
+		borderRadius: 8,
+		padding: '14px',
+		cursor: 'pointer',
+		transition: 'all 0.2s',
+		display: 'flex',
+		alignItems: 'center',
+		gap: 12,
+		boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+		position: 'relative'
+	};
+
+	const iconStyle = {
+		fontSize: 24,
+		flexShrink: 0,
+		width: 36,
+		display: 'flex',
+		alignItems: 'center',
+		justifyContent: 'center'
 	};
 
 	if (!pinChecked || authLoading) {
@@ -231,32 +207,14 @@ export default function LearnersPage() {
 						Manage your students and customize their learning experience.
 					</p>
 
-					{/* Header with Add Learner button and plan info */}
+					{/* Header with plan info */}
 					<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
 						{Number.isFinite(maxLearners) && (
 							<span style={{ color: '#6b7280', fontSize: 14 }}>
 								Plan: {planTier} • {items.length} / {maxLearners} learner{maxLearners === 1 ? '' : 's'}
 							</span>
 						)}
-						<Link
-							href={items.length >= maxLearners ? '/facilitator/account/plan' : '/facilitator/learners/add'}
-							aria-disabled={items.length >= maxLearners}
-							style={{
-								padding: '10px 14px',
-								border: '1px solid #111',
-								borderRadius: 8,
-								background: items.length >= maxLearners ? '#999' : '#111',
-								color: '#fff',
-								textDecoration: 'none',
-								fontWeight: 600,
-								fontSize: 14,
-								pointerEvents: items.length >= maxLearners ? 'none' : 'auto',
-								opacity: items.length >= maxLearners ? 0.6 : 1,
-								transition: 'all 0.2s'
-							}}
-						>
-							➕ Add Learner
-						</Link>
+						<div style={{ flex: '1 1 auto' }}></div>
 					</div>
 
 			{items.length >= maxLearners && Number.isFinite(maxLearners) && (
@@ -290,71 +248,254 @@ export default function LearnersPage() {
 				</div>
 			)}
 
-							{errorMsg ? (
-								errorMsg.toLowerCase().includes('please log in') ? (
-									<div style={{
-										padding: 14,
-										border: '1px solid #e5e7eb',
-										borderRadius: 8,
-										background: '#fff',
-										boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-									}}>
-										<div style={{ color: '#6b7280', marginBottom: 8, fontSize: 14 }}>{errorMsg}</div>
-										<a
-											href="/auth/login"
+			{errorMsg ? (
+				errorMsg.toLowerCase().includes('please log in') ? (
+					<div style={{
+						padding: 14,
+						border: '1px solid #e5e7eb',
+						borderRadius: 8,
+						background: '#fff',
+						boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+					}}>
+						<div style={{ color: '#6b7280', marginBottom: 8, fontSize: 14 }}>{errorMsg}</div>
+						<a
+							href="/auth/login"
+							style={{
+								display: 'inline-block',
+								padding: '8px 12px',
+								border: '1px solid #111',
+								borderRadius: 8,
+								background: '#111',
+								color: '#fff',
+								textDecoration: 'none',
+								fontSize: 14,
+								fontWeight: 600
+							}}
+						>
+							Go to Login
+						</a>
+					</div>
+				) : (
+					<p style={{ color: '#b00020', fontSize: 14 }}>{errorMsg}</p>
+				)
+			) : loading ? (
+				<p style={{ color: '#6b7280', fontSize: 14 }}>Loading…</p>
+			) : (
+				<>
+					{/* Learner cards grid */}
+					<div style={{
+						display: 'grid',
+						gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+						gap: 12,
+						marginBottom: 16
+					}}>
+						{/* Add Learner Card */}
+						{items.length < maxLearners ? (
+							<Link
+								href="/facilitator/learners/add"
+								style={{ textDecoration: 'none' }}
+							>
+								<div
+									style={cardStyle}
+									onMouseEnter={(e) => {
+										e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+										e.currentTarget.style.borderColor = '#111';
+									}}
+									onMouseLeave={(e) => {
+										e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
+										e.currentTarget.style.borderColor = '#e5e7eb';
+									}}
+								>
+									<div style={iconStyle}>➕</div>
+									<div style={{ flex: 1 }}>
+										<div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Add New Learner</div>
+										<div style={{ fontSize: 13, color: '#6b7280' }}>Create a new student profile</div>
+									</div>
+								</div>
+							</Link>
+						) : (
+							<div
+								style={{
+									...cardStyle,
+									cursor: 'not-allowed',
+									opacity: 0.6,
+									borderColor: '#fca5a5',
+									background: '#fef2f2'
+								}}
+								onClick={() => router.push('/facilitator/account/plan')}
+								onMouseEnter={(e) => {
+									e.currentTarget.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.2)';
+									e.currentTarget.style.borderColor = '#b00020';
+									e.currentTarget.style.cursor = 'pointer';
+								}}
+								onMouseLeave={(e) => {
+									e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
+									e.currentTarget.style.borderColor = '#fca5a5';
+								}}
+							>
+								<div style={{ ...iconStyle, color: '#b00020' }}>⚠️</div>
+								<div style={{ flex: 1 }}>
+									<div style={{ fontWeight: 600, fontSize: 15, color: '#b00020', marginBottom: 2 }}>Learner Limit Reached</div>
+									<div style={{ fontSize: 13, color: '#991b1b' }}>Upgrade to add more learners</div>
+								</div>
+							</div>
+						)}
+
+						{/* Existing Learner Cards */}
+						{items.map((learner, idx) => {
+							const isSelected = String(selectedLearnerId) === String(learner.id);
+							return (
+								<div
+									key={learner.id || idx}
+									style={{
+										...cardStyle,
+										borderColor: isSelected ? '#c7442e' : '#e5e7eb',
+										background: isSelected ? '#fff5f5' : '#fff'
+									}}
+									onClick={() => setEditingLearner(learner)}
+									onMouseEnter={(e) => {
+										e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+										if (!isSelected) e.currentTarget.style.borderColor = '#111';
+										// Show action buttons
+										const actions = e.currentTarget.querySelector('.learner-card-actions');
+										if (actions) actions.style.opacity = '1';
+									}}
+									onMouseLeave={(e) => {
+										e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
+										if (!isSelected) e.currentTarget.style.borderColor = '#e5e7eb';
+										// Hide action buttons
+										const actions = e.currentTarget.querySelector('.learner-card-actions');
+										if (actions) actions.style.opacity = '0';
+									}}
+								>
+									{isSelected && (
+										<div style={{
+											position: 'absolute',
+											top: -8,
+											right: -8,
+											background: '#c7442e',
+											color: '#fff',
+											borderRadius: '50%',
+											width: 28,
+											height: 28,
+											display: 'flex',
+											alignItems: 'center',
+											justifyContent: 'center',
+											fontSize: 16,
+											boxShadow: '0 2px 8px rgba(199, 68, 46, 0.3)'
+										}}>
+											🌟
+										</div>
+									)}
+									
+									<div style={iconStyle}>👤</div>
+									<div style={{ flex: 1, minWidth: 0 }}>
+										<div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+											{learner.name || 'Unnamed Learner'}
+										</div>
+										<div style={{ fontSize: 13, color: '#6b7280' }}>
+											Grade {learner.grade || 'K'} • {learner.humor_level || 'calm'}
+										</div>
+										<div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>
+											{learner.golden_keys || 0} 🔑 • Targets: {learner.comprehension || learner.targets?.comprehension || 3}-{learner.test || learner.targets?.test || 3}
+										</div>
+									</div>
+
+									{/* Action buttons (shown on hover) */}
+									<div
+										className="learner-card-actions"
+										style={{
+											position: 'absolute',
+											top: 8,
+											right: 8,
+											display: 'flex',
+											gap: 4,
+											opacity: 0,
+											transition: 'opacity 0.2s'
+										}}
+										onClick={(e) => e.stopPropagation()}
+									>
+										{!isSelected && (
+											<button
+												onClick={(e) => {
+													e.stopPropagation();
+													handleSelectLearner(learner, true);
+												}}
+												title="Set as current learner"
+												style={{
+													border: 'none',
+													background: '#10b981',
+													color: '#fff',
+													borderRadius: 6,
+													padding: '4px 8px',
+													fontSize: 12,
+													fontWeight: 600,
+													cursor: 'pointer'
+												}}
+											>
+												Set Current
+											</button>
+										)}
+										{learner.id && (
+											<Link
+												href={`/facilitator/learners/${learner.id}/transcripts`}
+												title="View transcripts"
+												style={{
+													border: 'none',
+													background: '#3b82f6',
+													color: '#fff',
+													borderRadius: 6,
+													padding: '4px 8px',
+													fontSize: 18,
+													cursor: 'pointer',
+													textDecoration: 'none',
+													display: 'flex',
+													alignItems: 'center'
+												}}
+											>
+												📄
+											</Link>
+										)}
+										<button
+											onClick={(e) => {
+												e.stopPropagation();
+												handleDelete(learner.id, learner.name);
+											}}
+											title="Delete learner"
 											style={{
-												display: 'inline-block',
-												padding: '8px 12px',
-												border: '1px solid #111',
-												borderRadius: 8,
-												background: '#111',
+												border: 'none',
+												background: '#ef4444',
 												color: '#fff',
-												textDecoration: 'none',
-												fontSize: 14,
-												fontWeight: 600
+												borderRadius: 6,
+												padding: '4px 8px',
+												fontSize: 18,
+												cursor: 'pointer'
 											}}
 										>
-											Go to Login
-										</a>
+											🗑️
+										</button>
 									</div>
-								) : (
-									<p style={{ color: '#b00020', fontSize: 14 }}>{errorMsg}</p>
-								)
-							) : loading ? (
-				<p style={{ color: '#6b7280', fontSize: 14 }}>Loading…</p>
-			) : items.length === 0 ? (
-				<div style={{
-					padding: 24,
-					border: '1px solid #e5e7eb',
-					borderRadius: 8,
-					background: '#fff',
-					boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-					textAlign: 'center'
-				}}>
-					<div style={{ fontSize: 48, marginBottom: 12 }}>👥</div>
-					<p style={{ color: '#6b7280', fontSize: 14, margin: 0 }}>
-						No learners yet. Click &quot;Add Learner&quot; to create one.
-					</p>
-				</div>
-			) : (
-				<div style={{ display: 'grid', gap: 12, minWidth: 0 }}>
-					{/* Header labels removed — labels are shown per-row */}
-					{items.map((it, idx) => (
-						<LearnerRow
-                            key={it.id || idx}
-                            item={it}
-                            saving={savingId===it.id}
-                            saved={savedId===it.id}
-                            selected={String(selectedLearnerId) === String(it.id)}
-							onToggleSelected={(checked)=>handleSelectLearner(it, checked)}
-                            onSave={(u)=>handleInlineSave(idx,u)}
-                            onDelete={()=>handleDelete(it.id)}
-                        />
-					))}
-				</div>
+								</div>
+							);
+						})}
+					</div>
+				</>
 			)}
 				</div>
 		</main>
+		
+		{/* Learner Edit Overlay */}
+		<LearnerEditOverlay
+			isOpen={!!editingLearner}
+			learner={editingLearner}
+			onClose={() => setEditingLearner(null)}
+			onSave={async (updates) => {
+				const idx = items.findIndex(item => item.id === editingLearner.id);
+				if (idx !== -1) {
+					await handleSaveLearner(idx, updates);
+				}
+			}}
+		/>
 		
 		<GatedOverlay
 			show={!isAuthenticated}
@@ -373,438 +514,10 @@ export default function LearnersPage() {
 	);
 }
 
-function Select({ value, onChange, options, ariaLabel, title }){
-	return (
-		<select value={value} onChange={onChange} aria-label={ariaLabel} title={title || ariaLabel} style={{ padding:'8px 10px', border:'1px solid #ddd', borderRadius:8, width:'100%', minWidth:0 }}>
-			{options.map(o => <option key={o} value={o}>{o}</option>)}
-		</select>
-	);
-}
-
-// Compact Dial component for numeric targets. Keeps the same onChange signature
-// as a native <select> by calling onChange({ target: { value } }).
-function Dial({ value, onChange, options, ariaLabel, title }){
-	// Accepts options array of strings. If all options parse to numbers, treat as numeric dial.
-	const isNumeric = options.every(o => !Number.isNaN(Number(o)));
-
-	// For categorical options (like grades), we'll map index -> label
-	const labels = options.map(String);
-
-	// Determine current index
-	let idx = 0;
-	if (isNumeric) {
-		const nums = options.map(o => Number(o));
-		const curNum = Number(value) || nums[0];
-		// find nearest index for curNum
-		idx = nums.indexOf(curNum);
-		if (idx === -1) idx = 0;
-	} else {
-		idx = labels.indexOf(String(value));
-		if (idx === -1) idx = 0;
-	}
-
-	const setIdx = (newIdx) => {
-		const clamped = Math.max(0, Math.min(labels.length - 1, newIdx));
-		if (clamped === idx) return;
-		const out = labels[clamped];
-		onChange && onChange({ target: { value: out } });
-	};
-
-	const step = (delta) => setIdx(idx + delta);
-
-	const onKey = (e) => {
-		if (['ArrowUp','ArrowRight'].includes(e.key)) { e.preventDefault(); step(1); }
-		else if (['ArrowDown','ArrowLeft'].includes(e.key)) { e.preventDefault(); step(-1); }
-		else if (e.key === 'PageUp') { e.preventDefault(); step(5); }
-		else if (e.key === 'PageDown') { e.preventDefault(); step(-5); }
-		else if (e.key === 'Home') { e.preventDefault(); setIdx(0); }
-		else if (e.key === 'End') { e.preventDefault(); setIdx(labels.length - 1); }
-	};
-
-	const onWheel = (e) => {
-		e.preventDefault();
-		const delta = Math.sign(e.deltaY) * -1;
-		step(delta);
-	};
-
-	// Design system styles (compact, darker primary button, accessible focus)
-	const containerStyle = { display:'flex', alignItems:'center', gap:8, justifyContent:'space-between', padding:'6px 8px', border:'1px solid #e6e6e6', borderRadius:8, userSelect:'none', background:'#fff', width:'100%', maxWidth:100, minHeight:42 };
-	const btnStyle = { padding:'6px 8px', border:'1px solid #ddd', borderRadius:6, background:'#fff', cursor:'pointer', flex:'0 0 auto', color:'#0b1220' };
-	const valueStyle = { flex: '1 1 auto', textAlign:'center', fontWeight:700, color:'#0b1220' };
-
-	// Accessible attributes
-	const ariaProps = isNumeric ? {
-		role: 'spinbutton',
-		'aria-valuemin': Number(options[0]),
-		'aria-valuemax': Number(options[options.length-1]),
-		'aria-valuenow': Number(isNumeric ? options[idx] : idx),
-		'aria-valuetext': labels[idx]
-	} : {
-		role: 'listbox',
-		'aria-activedescendant': `dial-${ariaLabel || 'value'}-${idx}`
-	};
-
-	return (
-		<div {...ariaProps} aria-label={ariaLabel} title={title || ariaLabel} tabIndex={0} onKeyDown={onKey} onWheel={onWheel} style={containerStyle}>
-			<button
-				type="button"
-				aria-label={`Decrease ${ariaLabel || 'value'}`}
-				aria-controls={`dial-${ariaLabel || 'value'}-${idx}`}
-				tabIndex={-1}
-				onClick={()=>step(-1)}
-				disabled={idx <= 0}
-				style={btnStyle}
-			>
-				◀
-			</button>
-			<div id={`dial-${ariaLabel || 'value'}-${idx}`} style={valueStyle}>{labels[idx]}</div>
-			<button
-				type="button"
-				aria-label={`Increase ${ariaLabel || 'value'}`}
-				aria-controls={`dial-${ariaLabel || 'value'}-${idx}`}
-				tabIndex={-1}
-				onClick={()=>step(1)}
-				disabled={idx >= labels.length - 1}
-				style={btnStyle}
-			>
-				▶
-			</button>
-		</div>
-	);
-}
-
-// TimerDial component specifically for session timer (displays in hours and 15-minute increments)
-function TimerDial({ value, onChange, ariaLabel }){
-	const TIMER_OPTIONS = ['15', '30', '45', '60', '75', '90', '105', '120', '135', '150', '165', '180', '195', '210', '225', '240', '255', '270', '285', '300']; // minutes: 15min increments up to 5h
-	const TIMER_LABELS = { 
-		'15': '15m', '30': '30m', '45': '45m', 
-		'60': '1h', '75': '1h 15m', '90': '1h 30m', '105': '1h 45m',
-		'120': '2h', '135': '2h 15m', '150': '2h 30m', '165': '2h 45m',
-		'180': '3h', '195': '3h 15m', '210': '3h 30m', '225': '3h 45m',
-		'240': '4h', '255': '4h 15m', '270': '4h 30m', '285': '4h 45m',
-		'300': '5h'
-	};
-
-	const labels = TIMER_OPTIONS.map(v => TIMER_LABELS[v]);
-	let idx = TIMER_OPTIONS.indexOf(String(value));
-	if (idx === -1) idx = 3; // default to 1 hour (60 minutes)
-
-	const setIdx = (newIdx) => {
-		const clamped = Math.max(0, Math.min(TIMER_OPTIONS.length - 1, newIdx));
-		if (clamped === idx) return;
-		const out = TIMER_OPTIONS[clamped];
-		onChange && onChange({ target: { value: out } });
-	};
-
-	const step = (delta) => setIdx(idx + delta);
-
-	const onKey = (e) => {
-		if (['ArrowUp','ArrowRight'].includes(e.key)) { e.preventDefault(); step(1); }
-		else if (['ArrowDown','ArrowLeft'].includes(e.key)) { e.preventDefault(); step(-1); }
-		else if (e.key === 'Home') { e.preventDefault(); setIdx(0); }
-		else if (e.key === 'End') { e.preventDefault(); setIdx(TIMER_OPTIONS.length - 1); }
-	};
-
-	const onWheel = (e) => {
-		e.preventDefault();
-		const delta = Math.sign(e.deltaY) * -1;
-		step(delta);
-	};
-
-	const containerStyle = { display:'flex', alignItems:'center', gap:8, justifyContent:'space-between', padding:'6px 8px', border:'1px solid #e6e6e6', borderRadius:8, userSelect:'none', background:'#fff', width:'100%', maxWidth:100, minHeight:42 };
-	const btnStyle = { padding:'6px 8px', border:'1px solid #ddd', borderRadius:6, background:'#fff', cursor:'pointer', flex:'0 0 auto', color:'#0b1220' };
-	const valueStyle = { flex: '1 1 auto', textAlign:'center', fontWeight:700, color:'#0b1220' };
-
-	return (
-		<div
-			role="spinbutton"
-			aria-label={ariaLabel}
-			aria-valuemin={1}
-			aria-valuemax={20}
-			aria-valuenow={idx + 1}
-			aria-valuetext={labels[idx]}
-			tabIndex={0}
-			onKeyDown={onKey}
-			onWheel={onWheel}
-			style={containerStyle}
-		>
-			<button
-				type="button"
-				aria-label={`Decrease ${ariaLabel || 'timer'}`}
-				tabIndex={-1}
-				onClick={()=>step(-1)}
-				disabled={idx <= 0}
-				style={btnStyle}
-			>
-				◀
-			</button>
-			<div style={valueStyle}>{labels[idx]}</div>
-			<button
-				type="button"
-				aria-label={`Increase ${ariaLabel || 'timer'}`}
-				tabIndex={-1}
-				onClick={()=>step(1)}
-				disabled={idx >= TIMER_OPTIONS.length - 1}
-				style={btnStyle}
-			>
-				▶
-			</button>
-		</div>
-	);
-}
-
-const range = (a,b)=>Array.from({length:b-a+1},(_,i)=>String(a+i));
-const GRADES = ['K',...range(1,12)];
-const TARGETS = range(3,20);
-const HUMOR_LEVELS = ['calm', 'funny', 'hilarious'];
-
+// Helper function for normalizing humor level values
 const normalizeHumorLevel = (value) => {
 	if (typeof value !== 'string') return 'calm';
 	const v = value.trim().toLowerCase();
+	const HUMOR_LEVELS = ['calm', 'funny', 'hilarious'];
 	return HUMOR_LEVELS.includes(v) ? v : 'calm';
 };
-
-function LearnerRow({ item, saving, saved, selected, onToggleSelected, onSave, onDelete }){
-	const [name, setName] = useState(item.name || '');
-	const [grade, setGrade] = useState(item.grade || 'K');
-	const [comprehension, setComprehension] = useState(String(item.comprehension ?? item.targets?.comprehension ?? 3));
-	const [exercise, setExercise] = useState(String(item.exercise ?? item.targets?.exercise ?? 3));
-	const [worksheet, setWorksheet] = useState(String(item.worksheet ?? item.targets?.worksheet ?? 3));
-	const [test, setTest] = useState(String(item.test ?? item.targets?.test ?? 3));
-	const [sessionTimer, setSessionTimer] = useState(String(item.session_timer_minutes || '60'));
-	const [goldenKeys, setGoldenKeys] = useState(String(item.golden_keys ?? 0));
-	const [humorLevel, setHumorLevel] = useState(normalizeHumorLevel(item.humor_level));
-	const [askDisabled, setAskDisabled] = useState(!!item.ask_disabled);
-	const [poemDisabled, setPoemDisabled] = useState(!!item.poem_disabled);
-	const [storyDisabled, setStoryDisabled] = useState(!!item.story_disabled);
-	const [fillInFunDisabled, setFillInFunDisabled] = useState(!!item.fill_in_fun_disabled);
-	const [showTimersOverlay, setShowTimersOverlay] = useState(false);
-	const [showAIFeaturesOverlay, setShowAIFeaturesOverlay] = useState(false);
-	const [phaseTimers, setPhaseTimers] = useState(() => loadPhaseTimersForLearner(item));
-
-	useEffect(() => {
-		if (item.session_timer_minutes !== undefined) {
-			setSessionTimer(String(item.session_timer_minutes));
-		}
-		if (item.golden_keys !== undefined) {
-			setGoldenKeys(String(item.golden_keys));
-		}
-		if (item.humor_level !== undefined) {
-			setHumorLevel(normalizeHumorLevel(item.humor_level));
-		} else {
-			setHumorLevel('calm');
-		}
-		if (item.ask_disabled !== undefined) {
-			setAskDisabled(!!item.ask_disabled);
-		}
-		if (item.poem_disabled !== undefined) {
-			setPoemDisabled(!!item.poem_disabled);
-		}
-		if (item.story_disabled !== undefined) {
-			setStoryDisabled(!!item.story_disabled);
-		}
-		if (item.fill_in_fun_disabled !== undefined) {
-			setFillInFunDisabled(!!item.fill_in_fun_disabled);
-		}
-		// Reload phase timers from learner profile
-		setPhaseTimers(loadPhaseTimersForLearner(item));
-	}, [item.session_timer_minutes, item.golden_keys, item.humor_level, item.ask_disabled, item.poem_disabled, item.story_disabled, item.fill_in_fun_disabled, item]);
-
-    // Responsive redesign: remove fixed 616px dial grid and allow wrapping on small screens.
-    // Use flex for top row and auto-fit grid for dials.
-    const actionBtnStyle = { padding:'8px 12px', border:'1px solid #ddd', borderRadius:8, background:'#fff', display:'flex', alignItems:'center', justifyContent:'center', gap:8, width:140 };
-		return (
-      <div style={{ border:'1px solid #eee', borderRadius:12, padding:12, background:'#fff', display:'grid', gap:14, minWidth:0 }}>
-        {/* Top section: name + actions; wraps naturally */}
-        <div style={{ display:'flex', flexWrap:'wrap', gap:12, alignItems:'flex-start', padding:'0 4px' }}>
-					  <div className="ms-learner-name-block" style={{ display:'flex', flexDirection:'column', gap:6, flex:'0 0 50vw', width:'50vw', maxWidth:'50vw', minWidth:160 }}>
-						<div className="ms-learner-name-label" style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Name</div>
-						<div style={{ display:'flex', alignItems:'center', gap:10, width:'100%' }}>
-							<input
-								className="ms-learner-name-input"
-								aria-label="Name"
-								title="Name"
-								value={name}
-								onChange={(e)=>setName(e.target.value)}
-								placeholder="Name"
-								style={{ padding:'8px 10px', border:'1px solid #ddd', borderRadius:8, flex:'1 1 auto', width:'auto', minWidth:0 }}
-							/>
-							{/* Selection checkbox to the right of the name field */}
-							<label title="Set as current learner" style={{ display:'flex', alignItems:'center', gap:6, cursor:'pointer', whiteSpace:'nowrap' }}>
-								<input
-									type="checkbox"
-									aria-label="Set as current learner"
-									checked={!!selected}
-									onChange={(e)=>onToggleSelected && onToggleSelected(e.target.checked)}
-									style={{ width:18, height:18, accentColor:'#c7442e' }}
-								/>
-								<span style={{ fontSize:'clamp(0.75rem, 1.3vw, 0.9rem)', color:'#333' }}>Current</span>
-							</label>
-						</div>
-          </div>
-					<div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'flex-end', alignItems:'center', flex:'1 1 320px' }}>
-						<button onClick={()=>onSave({ name, grade, targets:{ comprehension, exercise, worksheet, test }, session_timer_minutes: Number(sessionTimer), golden_keys: Number(goldenKeys), humor_level: humorLevel, ask_disabled: askDisabled, poem_disabled: poemDisabled, story_disabled: storyDisabled, fill_in_fun_disabled: fillInFunDisabled })} disabled={saving} style={{ ...actionBtnStyle, color:'#0b1220' }}>{saving ? 'Saving…' : 'Save'}<span aria-hidden style={{ fontSize:16, lineHeight:1 }}>💾</span></button>
-            {saved && (
-			  <div style={{ padding:'8px 12px', background:'#d4f8d4', color:'#2d5a2d', borderRadius:8, fontSize:'clamp(0.9rem, 1.6vw, 1rem)', fontWeight:500 }}>Saved</div>
-            )}
-            <button onClick={onDelete} disabled={saving} style={actionBtnStyle}>
-              <span>Delete</span>
-			  <span aria-hidden style={{ fontSize:'clamp(1rem, 1.8vw, 1.125rem)', lineHeight:1 }}>🗑️</span>
-            </button>
-          </div>
-        </div>
-
-									{/* Tile grid: variable dials + transcripts tile with identical sizing/spacing */}
-									<div style={{ display:'grid', gap:16, gridTemplateColumns:'repeat(auto-fit, minmax(88px, 1fr))', justifyItems:'center', alignItems:'start', width:'100%' }}>
-									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
-			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Grade</div>
-            <Dial value={grade} onChange={e => setGrade(e.target.value)} options={GRADES} ariaLabel="Grade" title="Grade" />
-									</div>
-								<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
-						<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Humor</div>
-				            <Select value={humorLevel} onChange={e => setHumorLevel(normalizeHumorLevel(e.target.value))} options={HUMOR_LEVELS} ariaLabel="Humor level" title="Humor level" />
-								</div>
-								<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
-			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>AI Features</div>
-			<button
-				onClick={() => setShowAIFeaturesOverlay(true)}
-				aria-label="Configure AI features"
-				title="Configure AI features"
-				style={{
-					padding: '10px 16px',
-					border: '1px solid #ddd',
-					borderRadius: 8,
-					background: '#fff',
-					cursor: 'pointer',
-					fontSize: 'clamp(0.9rem, 1.6vw, 1rem)',
-					color: '#0b1220',
-					fontWeight: 500,
-					width: '100%',
-					maxWidth: 130
-				}}
-			>
-				🤖 Setup
-			</button>
-								</div>
-								<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
-		<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Comprehension</div>
-            <Dial value={comprehension} onChange={e => setComprehension(e.target.value)} options={TARGETS} ariaLabel="Comprehension" />
-									</div>
-									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
-			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Exercise</div>
-            <Dial value={exercise} onChange={e => setExercise(e.target.value)} options={TARGETS} ariaLabel="Exercise" />
-									</div>
-									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
-			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Worksheet</div>
-            <Dial value={worksheet} onChange={e => setWorksheet(e.target.value)} options={TARGETS} ariaLabel="Worksheet" />
-									</div>
-									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
-			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Test</div>
-            <Dial value={test} onChange={e => setTest(e.target.value)} options={TARGETS} ariaLabel="Test" />
-									</div>
-									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
-			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Timers</div>
-			<button
-				onClick={() => setShowTimersOverlay(true)}
-				aria-label="Configure phase timers"
-				title="Configure phase timers"
-				style={{
-					padding: '10px 16px',
-					border: '1px solid #ddd',
-					borderRadius: 8,
-					background: '#fff',
-					cursor: 'pointer',
-					fontSize: 'clamp(0.9rem, 1.6vw, 1rem)',
-					color: '#0b1220',
-					fontWeight: 500,
-					width: '100%',
-					maxWidth: 130
-				}}
-			>
-				⏱️ Setup
-			</button>
-									</div>
-									<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
-			<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Golden Keys</div>
-            <Dial value={goldenKeys} onChange={e => setGoldenKeys(e.target.value)} options={range(0, 10)} ariaLabel="Golden Keys" title="Golden Keys" />
-									</div>
-
-											{/* Transcripts as a matching tile */}
-											{item?.id && (
-																<div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:130 }}>
-													<div style={{ fontSize:'clamp(0.8rem, 1.4vw, 0.9rem)', color:'#666' }}>Transcripts</div>
-													<Link
-														href={`/facilitator/learners/${item.id}/transcripts`}
-														style={{
-																			display:'flex', alignItems:'center', justifyContent:'center',
-																			width:'100%', maxWidth:100, minHeight:42,
-																			padding:'6px 8px',
-																			border:'1px solid #e6e6e6', borderRadius:8,
-																			background:'#fff', color:'#0b1220', textDecoration:'none',
-																			whiteSpace:'nowrap'
-														}}
-													>
-														Open
-													</Link>
-												</div>
-											)}
-      </div>
-			
-			{/* Phase Timers Overlay */}
-			<PhaseTimersOverlay
-				isOpen={showTimersOverlay}
-				initialTimers={phaseTimers}
-				onClose={() => setShowTimersOverlay(false)}
-				onSave={(updatedTimers) => {
-					setPhaseTimers(updatedTimers);
-					setShowTimersOverlay(false);
-					// updatedTimers is already in the flat format with keys like discussion_play_min
-					// Call parent save with current values + timer updates
-					onSave({
-						name,
-						grade,
-						targets: { comprehension, exercise, worksheet, test },
-					session_timer_minutes: Number(sessionTimer),
-					golden_keys: Number(goldenKeys),
-					humor_level: humorLevel,
-					ask_disabled: askDisabled,
-					poem_disabled: poemDisabled,
-					story_disabled: storyDisabled,
-					fill_in_fun_disabled: fillInFunDisabled,
-					...updatedTimers  // Spread all 11 timer fields directly
-					});
-				}}
-			/>
-			
-			{/* AI Features Overlay */}
-			<AIFeaturesOverlay
-				isOpen={showAIFeaturesOverlay}
-				initialSettings={{
-					ask_disabled: askDisabled,
-					poem_disabled: poemDisabled,
-					story_disabled: storyDisabled,
-					fill_in_fun_disabled: fillInFunDisabled,
-				}}
-				onClose={() => setShowAIFeaturesOverlay(false)}
-				onSave={(updatedFeatures) => {
-					setAskDisabled(updatedFeatures.ask_disabled);
-					setPoemDisabled(updatedFeatures.poem_disabled);
-					setStoryDisabled(updatedFeatures.story_disabled);
-					setFillInFunDisabled(updatedFeatures.fill_in_fun_disabled);
-					setShowAIFeaturesOverlay(false);
-					// Save all current values including updated AI feature settings
-					onSave({
-						name,
-						grade,
-						targets: { comprehension, exercise, worksheet, test },
-						session_timer_minutes: Number(sessionTimer),
-						golden_keys: Number(goldenKeys),
-						humor_level: humorLevel,
-						...updatedFeatures,
-					});
-				}}
-			/>
-								{/* Close outer card container */}
-								</div>
-    );
-}
