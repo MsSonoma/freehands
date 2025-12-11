@@ -154,7 +154,7 @@ export default function LessonPicker({
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
       
-      // Fetch lesson content to get blurb
+      // Fetch lesson content to get blurb, description, grade, difficulty, etc.
       const lessonPath = lesson.key
       const res = await fetch(`/api/lessons/load?key=${encodeURIComponent(lessonPath)}`, {
         headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}
@@ -172,14 +172,18 @@ export default function LessonPicker({
         .maybeSingle()
       
       setLessonDetails({
-        blurb: lessonData?.blurb || 'No description available',
+        description: lessonData?.blurb || lessonData?.description || 'No description available',
+        grade: lessonData?.grade,
+        difficulty: lessonData?.difficulty,
+        medalsAvailable: lessonData?.medals_available || [],
+        activated: lessonData?.activated !== false, // default to true if not specified
         completed: !!historyData,
         completedAt: historyData?.completed_at,
         score: historyData?.score,
         medal: historyData?.medal_tier
       })
     } catch (err) {
-      setLessonDetails({ blurb: 'Error loading lesson details', completed: false })
+      setLessonDetails({ description: 'Error loading lesson details', completed: false })
     } finally {
       setLoading(false)
     }
@@ -491,15 +495,83 @@ export default function LessonPicker({
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {/* Blurb */}
-                  {lessonDetails.blurb && (
+                  {/* Description */}
+                  {lessonDetails.description && (
                     <div>
                       <div style={{ fontSize: '12px', fontWeight: '600', color: '#6b7280', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         About This Lesson
                       </div>
                       <p style={{ margin: 0, fontSize: '14px', color: '#374151', lineHeight: '1.6' }}>
-                        {lessonDetails.blurb}
+                        {lessonDetails.description}
                       </p>
+                    </div>
+                  )}
+
+                  {/* Grade & Difficulty */}
+                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    {lessonDetails.grade && (
+                      <div style={{
+                        padding: '8px 12px',
+                        background: '#f3f4f6',
+                        borderRadius: '6px',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        color: '#374151'
+                      }}>
+                        📚 Grade {lessonDetails.grade}
+                      </div>
+                    )}
+                    {lessonDetails.difficulty && (
+                      <div style={{
+                        padding: '8px 12px',
+                        background: '#f3f4f6',
+                        borderRadius: '6px',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        color: '#374151'
+                      }}>
+                        {lessonDetails.difficulty === 1 ? '⭐ Easy' : 
+                         lessonDetails.difficulty === 2 ? '⭐⭐ Medium' : 
+                         lessonDetails.difficulty === 3 ? '⭐⭐⭐ Hard' : 
+                         `Difficulty ${lessonDetails.difficulty}`}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Medals Available */}
+                  {lessonDetails.medalsAvailable && lessonDetails.medalsAvailable.length > 0 && (
+                    <div style={{
+                      padding: '12px',
+                      background: '#fef3c7',
+                      borderRadius: '8px',
+                      border: '1px solid #fde68a'
+                    }}>
+                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#92400e', marginBottom: '6px' }}>
+                        🏅 Medals Available
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', fontSize: '20px' }}>
+                        {lessonDetails.medalsAvailable.includes('gold') && '🥇'}
+                        {lessonDetails.medalsAvailable.includes('silver') && '🥈'}
+                        {lessonDetails.medalsAvailable.includes('bronze') && '🥉'}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Activated Status */}
+                  {lessonDetails.activated !== undefined && (
+                    <div style={{
+                      padding: '12px',
+                      background: lessonDetails.activated ? '#d1fae5' : '#fee2e2',
+                      borderRadius: '8px',
+                      border: lessonDetails.activated ? '1px solid #a7f3d0' : '1px solid #fecaca'
+                    }}>
+                      <div style={{ 
+                        fontSize: '12px', 
+                        fontWeight: '600', 
+                        color: lessonDetails.activated ? '#065f46' : '#991b1b' 
+                      }}>
+                        {lessonDetails.activated ? '✓ Activated' : '⚠️ Not Activated'}
+                      </div>
                     </div>
                   )}
 
@@ -507,21 +579,21 @@ export default function LessonPicker({
                   {lessonDetails.completed && (
                     <div style={{
                       padding: '12px',
-                      background: '#d1fae5',
+                      background: '#dbeafe',
                       borderRadius: '8px',
-                      border: '1px solid #a7f3d0'
+                      border: '1px solid #93c5fd'
                     }}>
-                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#065f46', marginBottom: '4px' }}>
-                        ✓ Completed
+                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#1e40af', marginBottom: '4px' }}>
+                        ✓ Completed by Learner
                       </div>
-                      <div style={{ fontSize: '13px', color: '#047857' }}>
+                      <div style={{ fontSize: '13px', color: '#1e3a8a' }}>
                         {lessonDetails.completedAt && new Date(lessonDetails.completedAt).toLocaleDateString()}
                         {lessonDetails.score !== null && lessonDetails.score !== undefined && ` • Score: ${lessonDetails.score}%`}
                       </div>
                     </div>
                   )}
 
-                  {/* Medal */}
+                  {/* Medal Earned */}
                   {lessonDetails.medal && (
                     <div style={{
                       padding: '12px',
