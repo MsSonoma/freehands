@@ -271,9 +271,9 @@ export default function LessonMakerPage(){
 
   if (loading) return <main style={{ padding:24 }}><p>Loading…</p></main>
 
-  const label = { display:'block', fontWeight:600, margin:'12px 0 4px' }
+  const label = { display:'block', fontWeight:600, margin:'12px 0 4px', color: '#374151' }
   const input = { width:'100%', padding:'10px 12px', border:'1px solid #e5e7eb', borderRadius:8 }
-  const btn = { display:'inline-flex', alignItems:'center', justifyContent:'center', padding:'10px 12px', border:'1px solid #111', background:'#111', color:'#fff', borderRadius:8, fontWeight:600 }
+  const btn = { display:'inline-flex', alignItems:'center', justifyContent:'center', padding:'10px 12px', border:'1px solid #3b82f6', background:'#3b82f6', color:'#fff', borderRadius:8, fontWeight:600 }
 
   return (
     <main style={{ padding:24, maxWidth:720, margin:'0 auto', position: 'relative' }}>
@@ -393,7 +393,7 @@ export default function LessonMakerPage(){
       {message && <p style={{ marginTop:12 }}>{message}</p>}
       
       <div style={{ marginTop:24, paddingTop:24, borderTop:'1px solid #e5e7eb' }}>
-        <a href="/facilitator/lessons" style={{ ...btn, textDecoration:'none', background:'#374151', borderColor:'#374151' }}>
+        <a href="/facilitator/lessons" style={{ ...btn, textDecoration:'none', background:'#6b7280', borderColor:'#6b7280' }}>
           View Lessons
         </a>
       </div>
