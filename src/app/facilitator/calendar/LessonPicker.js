@@ -195,7 +195,6 @@ export default function LessonPicker({
         description: lessonData?.teachingNotes || lessonData?.blurb || lessonData?.description || 'No description available',
         grade: lessonData?.grade,
         difficulty: difficultyName,
-        medalsAvailable: lessonData?.medals_available || [],
         activated: !!activeSession,
         activatedAt: activeSession?.started_at,
         completed: !!historyData,
@@ -567,32 +566,6 @@ export default function LessonPicker({
                       </div>
                     )}
                   </div>
-
-                  {/* Medals Available */}
-                  {lessonDetails.medalsAvailable && lessonDetails.medalsAvailable.length > 0 && (
-                    <div style={{
-                      padding: '12px',
-                      background: '#fef3c7',
-                      borderRadius: '8px',
-                      border: '1px solid #fde68a'
-                    }}>
-                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#92400e', marginBottom: '8px' }}>
-                        🏅 Medals Available
-                      </div>
-                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                        {lessonDetails.medalsAvailable.map((medal, idx) => (
-                          <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ fontSize: '24px' }}>
-                              {medal.toLowerCase() === 'gold' ? '🥇' : medal.toLowerCase() === 'silver' ? '🥈' : '🥉'}
-                            </span>
-                            <span style={{ fontSize: '11px', color: '#92400e', textTransform: 'capitalize' }}>
-                              {medal}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
                   {/* Activated Status */}
                   <div style={{
