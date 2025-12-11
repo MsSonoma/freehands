@@ -16,7 +16,7 @@ export default function LessonPicker({
   const [learnerGrade, setLearnerGrade] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  const subjects = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
+  const subjects = ['math', 'science', 'language arts', 'social studies', 'general']
   const grades = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
   useEffect(() => {
@@ -76,12 +76,12 @@ export default function LessonPicker({
       const token = session?.access_token
       
       const lessonsMap = {}
+      
+      // Load public lessons for each subject
       for (const subject of subjects) {
         try {
-          const headers = subject === 'generated' && token ? { Authorization: `Bearer ${token}` } : {}
           const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { 
-            cache: 'no-store',
-            headers
+            cache: 'no-store'
           })
           const list = res.ok ? await res.json() : []
           lessonsMap[subject] = Array.isArray(list) ? list : []
@@ -89,6 +89,38 @@ export default function LessonPicker({
           lessonsMap[subject] = []
         }
       }
+      
+      // Load generated lessons from user's storage and insert into their respective subjects
+      if (token) {
+        try {
+          const res = await fetch('/api/facilitator/lessons/list', {
+            cache: 'no-store',
+            headers: { Authorization: `Bearer ${token}` }
+          })
+          if (res.ok) {
+            const generatedList = await res.json()
+            const sortedGeneratedList = generatedList.sort((a, b) => {
+              const timeA = new Date(a.created_at || 0).getTime()
+              const timeB = new Date(b.created_at || 0).getTime()
+              return timeB - timeA
+            })
+            
+            for (const lesson of sortedGeneratedList) {
+              const subject = lesson.subject || 'math'
+              const generatedLesson = {
+                ...lesson,
+                isGenerated: true
+              }
+              
+              if (!lessonsMap[subject]) lessonsMap[subject] = []
+              lessonsMap[subject].unshift(generatedLesson)
+            }
+          }
+        } catch (err) {
+          // Silent fail on generated lessons
+        }
+      }
+      
       setAllLessons(lessonsMap)
     } catch (err) {
       // Silent fail
@@ -126,12 +158,16 @@ export default function LessonPicker({
       bySubject[subject] = []
       
       lessons.forEach(item => {
-        // Handle both string filenames and object format
+        // Handle generated lessons (object format) and public lessons (string filenames)
         const filename = typeof item === 'string' ? item : item.filename || item.file || item.key
         if (!filename) return
         
-        const key = `${subject}/${filename}`
-        const lessonName = filename.replace('.json', '').replace(/_/g, ' ')
+        // For generated lessons, use 'generated/' prefix in the key
+        const key = (item.isGenerated || item?.isGenerated === true) 
+          ? `generated/${filename}` 
+          : `${subject}/${filename}`
+        
+        const lessonName = item.title || filename.replace('.json', '').replace(/_/g, ' ')
         
         // Extract grade from filename (e.g., "4th_multiplying_with_zeros.json")
         let grade = null
@@ -154,7 +190,7 @@ export default function LessonPicker({
         if (lowerName.includes('beginner')) difficulty = 1
         else if (lowerName.includes('advanced')) difficulty = 3
         
-        bySubject[subject].push({ key, subject, name: lessonName, difficulty, grade })
+        bySubject[subject].push({ key, subject, name: lessonName, difficulty, grade, isGenerated: item.isGenerated })
       })
       
       // Sort within subject by difficulty then name
