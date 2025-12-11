@@ -13,6 +13,7 @@ import AIRewriteButton from '@/components/AIRewriteButton'
 
 const subjects = ['math','language arts','science','social studies','general']
 const difficulties = ['beginner','intermediate','advanced']
+const grades = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
 export default function LessonMakerPage(){
   const router = useRouter()
@@ -32,6 +33,7 @@ export default function LessonMakerPage(){
   const [generatedLessonKey, setGeneratedLessonKey] = useState(null) // Track last generated lesson
   
   // AI Rewrite loading states
+  const [rewritingTitle, setRewritingTitle] = useState(false)
   const [rewritingDescription, setRewritingDescription] = useState(false)
   const [rewritingVocab, setRewritingVocab] = useState(false)
   const [rewritingNotes, setRewritingNotes] = useState(false)
@@ -57,7 +59,41 @@ export default function LessonMakerPage(){
   }, [router]);
 
   // AI Rewrite handlers
-  const handleRewriteDescription = async () => {
+  const handleRewriteTitle = async () => {
+    if (!form.title.trim()) return
+    setRewritingTitle(true)
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      const res = await fetch('/api/ai/rewrite-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({
+          text: form.title,
+          context: `${form.subject} lesson for grade ${form.grade}`,
+          purpose: 'lesson-title'
+        })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (data.rewritten) {
+          setForm(f => ({ ...f, title: data.rewritten }))
+        }
+      }
+    } catch (err) {
+      // Silent error handling
+    } finally {
+      setRewritingTitle(false)
+    }
+  }
+
+  const handleRewriteDescription = async () {
     if (!form.description.trim()) return
     setRewritingDescription(true)
     try {
@@ -73,7 +109,6 @@ export default function LessonMakerPage(){
         },
         body: JSON.stringify({
           text: form.description,
-          context: form.title || 'lesson description',
           purpose: 'lesson-description'
         })
       })
@@ -306,11 +341,22 @@ export default function LessonMakerPage(){
       <form onSubmit={handleGenerate} style={{ opacity: hasAccess ? 1 : 0.6, pointerEvents: hasAccess ? 'auto' : 'none' }}>
         <label style={label}>Lesson Title</label>
         <input style={input} required value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} placeholder="e.g., Fractions on a Number Line" />
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+          <AIRewriteButton
+            text={form.title}
+            onRewrite={handleRewriteTitle}
+            loading={rewritingTitle}
+            size="small"
+          />
+        </div>
 
         <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
           <div style={{ flex: 1 }}>
             <label style={label}>Grade</label>
-            <input style={input} required value={form.grade} onChange={e=>setForm(f=>({...f,grade:e.target.value}))} placeholder="e.g., 3rd" />
+            <select style={input} required value={form.grade} onChange={e=>setForm(f=>({...f,grade:e.target.value}))}>
+              <option value="">Select grade</option>
+              {grades.map(g=> <option key={g} value={g}>Grade {g}</option>)}
+            </select>
           </div>
           
           <div style={{ flex: 1 }}>
@@ -391,12 +437,6 @@ export default function LessonMakerPage(){
         </div>
       </form>
       {message && <p style={{ marginTop:12 }}>{message}</p>}
-      
-      <div style={{ marginTop:24, paddingTop:24, borderTop:'1px solid #e5e7eb' }}>
-        <a href="/facilitator/lessons" style={{ ...btn, textDecoration:'none', background:'#6b7280', borderColor:'#6b7280' }}>
-          View Lessons
-        </a>
-      </div>
 
       {/* Gated Overlay */}
       <GatedOverlay
