@@ -357,9 +357,9 @@ export default function FacilitatorAccountPage() {
               }}
               style={{
                 padding: '10px 20px',
-                background: '#111',
+                background: '#6b7280',
                 color: '#fff',
-                border: '1px solid #111',
+                border: '1px solid #6b7280',
                 borderRadius: 8,
                 fontWeight: 600,
                 cursor: 'pointer',

@@ -423,8 +423,8 @@ export default function LearnersPage() {
 											}}
 											title="Set as current learner"
 											style={{
-												border: '1px solid #111',
-												background: '#111',
+												border: 'none',
+												background: '#10b981',
 												color: '#fff',
 												borderRadius: 6,
 												padding: '4px 8px',
@@ -441,8 +441,8 @@ export default function LearnersPage() {
 											href={`/facilitator/learners/${learner.id}/transcripts`}
 											title="View transcripts"
 											style={{
-												border: '1px solid #111',
-												background: '#111',
+												border: 'none',
+												background: '#3b82f6',
 												color: '#fff',
 												borderRadius: 6,
 												padding: '4px 8px',
@@ -463,8 +463,8 @@ export default function LearnersPage() {
 										}}
 										title="Delete learner"
 										style={{
-											border: '1px solid #111',
-											background: '#111',
+											border: 'none',
+											background: '#ef4444',
 											color: '#fff',
 											borderRadius: 6,
 											padding: '4px 8px',
