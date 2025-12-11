@@ -576,9 +576,9 @@ export default function FacilitatorLessonsPage() {
               onClick={() => router.push('/facilitator/generator/lesson-maker')}
               style={{
                 padding: '10px 16px',
-                background: '#111',
+                background: '#3b82f6',
                 color: '#fff',
-                border: '1px solid #111',
+                border: '1px solid #3b82f6',
                 borderRadius: 8,
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -587,10 +587,10 @@ export default function FacilitatorLessonsPage() {
                 transition: 'all 0.2s'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#000'
+                e.currentTarget.style.background = '#2563eb'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#111'
+                e.currentTarget.style.background = '#3b82f6'
               }}
             >
               ✨ Generate Lesson
@@ -610,7 +610,7 @@ export default function FacilitatorLessonsPage() {
         }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>📚</div>
           <p style={{ color: '#6b7280', fontSize: 14, margin: 0 }}>
-            No learners found. <a href="/facilitator/learners/add" style={{ color: '#111', fontWeight: 600 }}>Add a learner</a> first.
+            No learners found. <a href="/facilitator/learners/add" style={{ color: '#374151', fontWeight: 600 }}>Add a learner</a> first.
           </p>
         </div>
       ) : (
@@ -729,7 +729,7 @@ export default function FacilitatorLessonsPage() {
                     border: '1px solid #d1d5db',
                     borderRadius: 6,
                     background: '#fff',
-                    color: '#111827',
+                    color: '#374151',
                     fontSize: 14,
                     fontWeight: 600,
                     cursor: lessonHistoryLoading ? 'wait' : 'pointer',
@@ -753,7 +753,7 @@ export default function FacilitatorLessonsPage() {
                   onClick={() => setShowLessons(true)}
                   style={{
                     padding: '10px 24px',
-                    background: '#111',
+                    background: '#3b82f6',
                     color: '#fff',
                     border: 'none',
                     borderRadius: 6,
@@ -813,7 +813,7 @@ export default function FacilitatorLessonsPage() {
                 width: 48,
                 height: 48,
                 border: '4px solid #e5e7eb',
-                borderTop: '4px solid #111',
+                borderTop: '4px solid #3b82f6',
                 borderRadius: '50%',
                 animation: 'spin 1s linear infinite',
                 margin: '0 auto 16px'
