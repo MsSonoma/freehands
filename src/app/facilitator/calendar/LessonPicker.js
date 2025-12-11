@@ -181,6 +181,14 @@ export default function LessonPicker({
         .limit(1)
         .maybeSingle()
       
+      // Fetch medal data from learner_medals table
+      const { data: medalData } = await supabase
+        .from('learner_medals')
+        .select('medal_tier, best_percent')
+        .eq('learner_id', learnerId)
+        .eq('lesson_key', lessonPath)
+        .maybeSingle()
+      
       // Normalize difficulty string for display
       let difficultyName = null
       if (lessonData?.difficulty) {
@@ -200,7 +208,7 @@ export default function LessonPicker({
         completed: !!historyData,
         completedAt: historyData?.completed_at,
         score: historyData?.score,
-        medal: historyData?.medal_tier
+        medal: medalData?.medal_tier || null
       })
     } catch (err) {
       console.error('Error loading lesson details:', err)
