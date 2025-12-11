@@ -417,60 +417,60 @@ export default function LearnersPage() {
 									>
 										{!isSelected && (
 											<button
-												onClick={(e) => {
-													e.stopPropagation();
-													handleSelectLearner(learner, true);
-												}}
-												title="Set as current learner"
-												style={{
-													border: 'none',
-													background: '#10b981',
-													color: '#fff',
-													borderRadius: 6,
-													padding: '4px 8px',
-													fontSize: 12,
-													fontWeight: 600,
-													cursor: 'pointer'
-												}}
+											onClick={(e) => {
+												e.stopPropagation();
+												handleSelectLearner(learner, true);
+											}}
+											title="Set as current learner"
+											style={{
+												border: '1px solid #111',
+												background: '#111',
+												color: '#fff',
+												borderRadius: 6,
+												padding: '4px 8px',
+												fontSize: 12,
+												fontWeight: 600,
+												cursor: 'pointer'
+											}}
 											>
 												Set Current
 											</button>
 										)}
 										{learner.id && (
 											<Link
-												href={`/facilitator/learners/${learner.id}/transcripts`}
-												title="View transcripts"
-												style={{
-													border: 'none',
-													background: '#3b82f6',
-													color: '#fff',
-													borderRadius: 6,
-													padding: '4px 8px',
-													fontSize: 18,
-													cursor: 'pointer',
-													textDecoration: 'none',
-													display: 'flex',
-													alignItems: 'center'
-												}}
+											href={`/facilitator/learners/${learner.id}/transcripts`}
+											title="View transcripts"
+											style={{
+												border: '1px solid #111',
+												background: '#111',
+												color: '#fff',
+												borderRadius: 6,
+												padding: '4px 8px',
+												fontSize: 18,
+												cursor: 'pointer',
+												textDecoration: 'none',
+												display: 'flex',
+												alignItems: 'center'
+											}}
 											>
 												📄
 											</Link>
 										)}
 										<button
-											onClick={(e) => {
-												e.stopPropagation();
-												handleDelete(learner.id, learner.name);
-											}}
-											title="Delete learner"
-											style={{
-												border: 'none',
-												background: '#ef4444',
-												color: '#fff',
-												borderRadius: 6,
-												padding: '4px 8px',
-												fontSize: 18,
-												cursor: 'pointer'
-											}}
+										onClick={(e) => {
+											e.stopPropagation();
+											handleDelete(learner.id, learner.name);
+										}}
+										title="Delete learner"
+										style={{
+											border: '1px solid #111',
+											background: '#111',
+											color: '#fff',
+											borderRadius: 6,
+											padding: '4px 8px',
+											fontSize: 18,
+											cursor: 'pointer'
+										}}
 										>
 											🗑️
 										</button>
