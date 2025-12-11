@@ -263,9 +263,12 @@ export default function LessonPicker({
         bySubject[subject].push({ key, subject, name: lessonName, difficulty, grade, isGenerated: item.isGenerated })
       })
       
-      // Sort within subject by difficulty then name
+      // Sort within subject: generated first, then alphabetically
       bySubject[subject].sort((a, b) => {
-        if (a.difficulty !== b.difficulty) return a.difficulty - b.difficulty
+        // Generated lessons come first
+        if (a.isGenerated && !b.isGenerated) return -1
+        if (!a.isGenerated && b.isGenerated) return 1
+        // Then sort alphabetically
         return a.name.localeCompare(b.name)
       })
     })
@@ -370,7 +373,12 @@ export default function LessonPicker({
           </div>
         ) : (
           <div>
-            {Object.entries(filteredLessonsBySubject).map(([subject, lessons]) => {
+            {Object.entries(filteredLessonsBySubject)
+              .sort(([subjectA], [subjectB]) => {
+                // Sort subjects alphabetically
+                return subjectA.localeCompare(subjectB)
+              })
+              .map(([subject, lessons]) => {
               if (lessons.length === 0) return null
               
               return (
