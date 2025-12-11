@@ -611,9 +611,9 @@ export default function HeaderBar() {
 													setNavOpen(false);
 												}
 											}}
-											style={{ ...MOBILE_MENU_ITEM_STYLE, borderTop:'1px solid #f3f4f6' }}
-										>
-											{facilitatorName || 'Facilitator'}
+											style={{ ...MOBILE_MENU_ITEM_STYLE, borderTop:'1px solid #f3f4f6', whiteSpace:'nowrap' }}
+								>
+									{facilitatorName || 'Facilitator'}
 										</Link>
 									</div>
 
