@@ -721,7 +721,26 @@ export default function FacilitatorLessonsPage() {
                 ))}
               </select>
 
-              {selectedLearnerId && (
+              <button
+                onClick={() => setShowLessons(true)}
+                disabled={showLessons}
+                style={{
+                  padding: '10px 24px',
+                  background: showLessons ? '#e5e7eb' : '#3b82f6',
+                  color: showLessons ? '#9ca3af' : '#fff',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontWeight: 600,
+                  cursor: showLessons ? 'default' : 'pointer',
+                  fontSize: 14,
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Load Lessons
+              </button>
+
+              {selectedLearnerId && showLessons && (
                 <button
                   onClick={() => setShowHistoryModal(true)}
                   style={{
@@ -745,25 +764,6 @@ export default function FacilitatorLessonsPage() {
                   {activeLessonCount > 0 && (
                     <span style={{ fontSize: 12, color: '#d97706' }}>⏳ {activeLessonCount}</span>
                   )}
-                </button>
-              )}
-
-              {!showLessons && (
-                <button
-                  onClick={() => setShowLessons(true)}
-                  style={{
-                    padding: '10px 24px',
-                    background: '#3b82f6',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 6,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  Load Lessons
                 </button>
               )}
 
