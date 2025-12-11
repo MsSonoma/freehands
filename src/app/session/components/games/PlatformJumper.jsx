@@ -412,12 +412,14 @@ export default function PlatformJumper({ onBack }) {
       platforms: [
         { x: 0, y: 460, width: 60, height: 20 },
         { x: 100, y: 460, width: 50, height: 20, trampoline: true },
-        { x: 400, y: 80, width: 80, height: 20 },
-        { x: 550, y: 460, width: 50, height: 20, trampoline: true },
-        { x: 700, y: 100, width: 100, height: 20 },
+        { x: 200, y: 250, width: 60, height: 20 },
+        { x: 320, y: 350, width: 50, height: 20, trampoline: true },
+        { x: 450, y: 200, width: 60, height: 20 },
+        { x: 570, y: 380, width: 50, height: 20, trampoline: true },
+        { x: 700, y: 120, width: 100, height: 20 },
       ],
       startPos: { x: 25, y: 410 },
-      goalArea: { x: 700, y: 50, width: 100, height: 50 }
+      goalArea: { x: 700, y: 70, width: 100, height: 50 }
     },
     24: {
       name: 'Trampoline Maze',
