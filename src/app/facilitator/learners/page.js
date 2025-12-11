@@ -352,21 +352,15 @@ export default function LearnersPage() {
 										borderColor: isSelected ? '#c7442e' : '#e5e7eb',
 										background: isSelected ? '#fff5f5' : '#fff'
 									}}
-								onClick={() => setEditingLearner(learner)}
-								onMouseEnter={(e) => {
-									e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-									if (!isSelected) e.currentTarget.style.borderColor = '#9ca3af';
-									// Show action buttons
-									const actions = e.currentTarget.querySelector('.learner-card-actions');
-									if (actions) actions.style.opacity = '1';
+							onClick={() => setEditingLearner(learner)}
+							onMouseEnter={(e) => {
+								e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+								if (!isSelected) e.currentTarget.style.borderColor = '#9ca3af';
+							}}
+								onMouseLeave={(e) => {
+									e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
+									if (!isSelected) e.currentTarget.style.borderColor = '#e5e7eb';
 								}}
-									onMouseLeave={(e) => {
-										e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
-										if (!isSelected) e.currentTarget.style.borderColor = '#e5e7eb';
-										// Hide action buttons
-										const actions = e.currentTarget.querySelector('.learner-card-actions');
-										if (actions) actions.style.opacity = '0';
-									}}
 								>
 									{isSelected && (
 										<div style={{
@@ -401,20 +395,18 @@ export default function LearnersPage() {
 										</div>
 									</div>
 
-									{/* Action buttons (shown on hover) */}
-									<div
-										className="learner-card-actions"
-										style={{
-											position: 'absolute',
-											top: 8,
-											right: 8,
-											display: 'flex',
-											gap: 4,
-											opacity: 0,
-											transition: 'opacity 0.2s'
-										}}
-										onClick={(e) => e.stopPropagation()}
-									>
+								{/* Action buttons */}
+								<div
+									className="learner-card-actions"
+									style={{
+										position: 'absolute',
+										top: 8,
+										right: 8,
+										display: 'flex',
+										gap: 4
+									}}
+									onClick={(e) => e.stopPropagation()}
+								>
 										{!isSelected && (
 											<button
 											onClick={(e) => {
