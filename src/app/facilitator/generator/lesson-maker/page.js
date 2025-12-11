@@ -125,7 +125,7 @@ export default function LessonMakerPage(){
     }
   }
 
-  const handleRewriteDescription = async () {
+  const handleRewriteDescription = async () => {
     if (!form.description.trim()) return
     setRewritingDescription(true)
     try {
