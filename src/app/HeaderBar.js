@@ -725,7 +725,7 @@ export default function HeaderBar() {
 										goWithPin('/facilitator');
 									}
 								}}
-								style={{ textDecoration:'none', color:'#111', fontWeight:500 }}
+							style={{ textDecoration:'none', color:'#111', fontWeight:500, whiteSpace:'nowrap' }}
 							>
 								{facilitatorName || 'Facilitator'}
 							</Link>
@@ -738,3 +738,4 @@ export default function HeaderBar() {
 			</>
 		);
 }
+
