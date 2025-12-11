@@ -391,6 +391,9 @@ export default function LessonPicker({
                           <div style={{ fontSize: '13px', fontWeight: '600', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {lesson.name}
                           </div>
+                          <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px', textTransform: 'capitalize' }}>
+                            {subject}
+                          </div>
                         </div>
                         {scheduled && (
                           <div style={{ 
