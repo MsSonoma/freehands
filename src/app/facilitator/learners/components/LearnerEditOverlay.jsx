@@ -1,8 +1,13 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import PhaseTimersOverlay from '@/app/session/components/PhaseTimersOverlay';
-import { loadPhaseTimersForLearner } from '@/app/session/utils/phaseTimerDefaults';
+import { 
+	loadPhaseTimersForLearner,
+	PHASE_DISPLAY_NAMES,
+	TIMER_TYPE_EMOJI,
+	TIMER_TYPE_NAMES,
+	getDefaultPhaseTimers
+} from '@/app/session/utils/phaseTimerDefaults';
 
 const GRADES = ['K', ...Array.from({length: 12}, (_, i) => String(i + 1))];
 const TARGETS = Array.from({length: 18}, (_, i) => String(i + 3)); // 3-20
@@ -30,8 +35,9 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 	const [poemDisabled, setPoemDisabled] = useState(false);
 	const [storyDisabled, setStoryDisabled] = useState(false);
 	const [fillInFunDisabled, setFillInFunDisabled] = useState(false);
-	const [phaseTimers, setPhaseTimers] = useState({});
-	const [showTimersOverlay, setShowTimersOverlay] = useState(false);
+	const [phaseTimers, setPhaseTimers] = useState(getDefaultPhaseTimers());
+	const [hoveredTooltip, setHoveredTooltip] = useState(null);
+	const [clickedTooltip, setClickedTooltip] = useState(null);
 	
 	const [saving, setSaving] = useState(false);
 
@@ -51,8 +57,35 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 		setPoemDisabled(!!learner.poem_disabled);
 		setStoryDisabled(!!learner.story_disabled);
 		setFillInFunDisabled(!!learner.fill_in_fun_disabled);
-		setPhaseTimers(loadPhaseTimersForLearner(learner));
+		setPhaseTimers({ ...getDefaultPhaseTimers(), ...loadPhaseTimersForLearner(learner) });
 	}, [learner]);
+
+	const handleTimerChange = (phase, type, value) => {
+		const key = `${phase}_${type}_min`;
+		setPhaseTimers(prev => ({ ...prev, [key]: value }));
+	};
+
+	const handleGoldenKeyChange = (value) => {
+		setPhaseTimers(prev => ({ ...prev, golden_key_bonus_min: value }));
+	};
+
+	const handleTooltipHover = (key, isEntering) => {
+		if (!clickedTooltip) {
+			setHoveredTooltip(isEntering ? key : null);
+		}
+	};
+
+	const handleTooltipClick = (key) => {
+		if (clickedTooltip === key) {
+			setClickedTooltip(null);
+			setHoveredTooltip(null);
+		} else {
+			setClickedTooltip(key);
+			setHoveredTooltip(null);
+		}
+	};
+
+	const showTooltip = (key) => hoveredTooltip === key || clickedTooltip === key;
 
 	const handleSave = async () => {
 		setSaving(true);
@@ -474,29 +507,284 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 
 						{activeTab === 'timers' && (
 							<div>
-								<p style={{ margin: '0 0 16px', fontSize: 14, color: '#6b7280' }}>
-									Configure phase timers for this learner's sessions
-								</p>
+								{/* Info note */}
+								<div style={{
+									background: '#eff6ff',
+									border: '1px solid #bfdbfe',
+									borderRadius: 8,
+									padding: 12,
+									marginBottom: 20,
+									fontSize: 13,
+									color: '#1e40af',
+									lineHeight: 1.5
+								}}>
+									<strong>How it works:</strong> Each phase has Play time (for games before work) and Work time (for actual lesson tasks). 
+									Click phase names for details.
+								</div>
 
-								<button
-									onClick={() => setShowTimersOverlay(true)}
-									style={{
-										...buttonStyle,
-										width: '100%',
-										display: 'flex',
-										alignItems: 'center',
-										justifyContent: 'center',
-										gap: 8
-									}}
-								>
-									<span>⏱️</span>
-									<span>Configure Phase Timers</span>
-								</button>
+								{/* Phase timers */}
+								{['discussion', 'comprehension', 'exercise', 'worksheet', 'test'].map((phase) => (
+									<div key={phase} style={{ marginBottom: 20 }}>
+										{/* Phase header with tooltip */}
+										<div style={{ position: 'relative', marginBottom: 10 }}>
+											<div
+												style={{
+													fontSize: 16,
+													fontWeight: 700,
+													color: '#374151',
+													cursor: 'help',
+													display: 'inline-block',
+													borderBottom: '1px dotted #9ca3af',
+													userSelect: 'none'
+												}}
+												onMouseEnter={() => handleTooltipHover(`phase-${phase}`, true)}
+												onMouseLeave={() => handleTooltipHover(`phase-${phase}`, false)}
+												onClick={() => handleTooltipClick(`phase-${phase}`)}
+											>
+												{PHASE_DISPLAY_NAMES[phase]}
+											</div>
 
-								<div style={{ marginTop: 16, padding: 12, background: '#eff6ff', borderRadius: 8, border: '1px solid #dbeafe' }}>
-									<p style={{ margin: 0, fontSize: 13, color: '#1e40af' }}>
-										ℹ️ Phase timers control how long each part of a lesson lasts, including play time (games) and work time (learning activities).
-									</p>
+											{/* Tooltip */}
+											{showTooltip(`phase-${phase}`) && (
+												<div style={{
+													position: 'absolute',
+													top: '100%',
+													left: 0,
+													marginTop: 6,
+													background: '#1f2937',
+													color: '#fff',
+													padding: '8px 12px',
+													borderRadius: 6,
+													fontSize: 12,
+													lineHeight: 1.4,
+													boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+													zIndex: 10,
+													maxWidth: 280,
+													whiteSpace: 'normal'
+												}}>
+													<strong>Play:</strong> Time from "Begin {PHASE_DISPLAY_NAMES[phase]}" to "Go" button (games/exploration).
+													<br />
+													<strong>Work:</strong> Time from "Go" to next phase (actual lesson work).
+												</div>
+											)}
+										</div>
+
+										{/* Timer dials side-by-side */}
+										<div style={{ 
+											display: 'grid', 
+											gridTemplateColumns: '1fr 1fr', 
+											gap: 12 
+										}}>
+											{/* Play timer */}
+											<div>
+												<label style={{
+													display: 'block',
+													fontSize: 13,
+													fontWeight: 600,
+													color: '#059669',
+													marginBottom: 6,
+													cursor: 'help',
+													position: 'relative'
+												}}
+													onMouseEnter={() => handleTooltipHover(`${phase}-play`, true)}
+													onMouseLeave={() => handleTooltipHover(`${phase}-play`, false)}
+													onClick={() => handleTooltipClick(`${phase}-play`)}
+												>
+													{TIMER_TYPE_EMOJI.play} {TIMER_TYPE_NAMES.play}
+													
+													{/* Play tooltip */}
+													{showTooltip(`${phase}-play`) && (
+														<div style={{
+															position: 'absolute',
+															top: '100%',
+															left: 0,
+															marginTop: 4,
+															background: '#1f2937',
+															color: '#fff',
+															padding: '6px 10px',
+															borderRadius: 6,
+															fontSize: 11,
+															lineHeight: 1.3,
+															boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+															zIndex: 10,
+															whiteSpace: 'nowrap'
+														}}>
+															Time for games before work starts
+														</div>
+													)}
+												</label>
+												<input
+													type="number"
+													min="1"
+													max="60"
+													value={phaseTimers[`${phase}_play_min`]}
+													onChange={(e) => handleTimerChange(phase, 'play', e.target.value)}
+													style={{
+														width: '100%',
+														padding: '10px 12px',
+														border: '2px solid #d1d5db',
+														borderRadius: 8,
+														fontSize: 18,
+														fontWeight: 700,
+														textAlign: 'center',
+														color: '#059669',
+														background: '#fff'
+													}}
+												/>
+												<div style={{ 
+													fontSize: 11, 
+													color: '#6b7280', 
+													marginTop: 4, 
+													textAlign: 'center' 
+												}}>
+													minutes
+												</div>
+											</div>
+
+											{/* Work timer */}
+											<div>
+												<label style={{
+													display: 'block',
+													fontSize: 13,
+													fontWeight: 600,
+													color: '#2563eb',
+													marginBottom: 6,
+													cursor: 'help',
+													position: 'relative'
+												}}
+													onMouseEnter={() => handleTooltipHover(`${phase}-work`, true)}
+													onMouseLeave={() => handleTooltipHover(`${phase}-work`, false)}
+													onClick={() => handleTooltipClick(`${phase}-work`)}
+												>
+													{TIMER_TYPE_EMOJI.work} {TIMER_TYPE_NAMES.work}
+													
+													{/* Work tooltip */}
+													{showTooltip(`${phase}-work`) && (
+														<div style={{
+															position: 'absolute',
+															top: '100%',
+															left: 0,
+															marginTop: 4,
+															background: '#1f2937',
+															color: '#fff',
+															padding: '6px 10px',
+															borderRadius: 6,
+															fontSize: 11,
+															lineHeight: 1.3,
+															boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+															zIndex: 10,
+															whiteSpace: 'nowrap'
+														}}>
+															Actual lesson work time
+														</div>
+													)}
+												</label>
+												<input
+													type="number"
+													min="1"
+													max="60"
+													value={phaseTimers[`${phase}_work_min`]}
+													onChange={(e) => handleTimerChange(phase, 'work', e.target.value)}
+													style={{
+														width: '100%',
+														padding: '10px 12px',
+														border: '2px solid #d1d5db',
+														borderRadius: 8,
+														fontSize: 18,
+														fontWeight: 700,
+														textAlign: 'center',
+														color: '#2563eb',
+														background: '#fff'
+													}}
+												/>
+												<div style={{ 
+													fontSize: 11, 
+													color: '#6b7280', 
+													marginTop: 4, 
+													textAlign: 'center' 
+												}}>
+													minutes
+												</div>
+											</div>
+										</div>
+									</div>
+								))}
+
+								{/* Golden Key Bonus */}
+								<div style={{
+									borderTop: '2px solid #e5e7eb',
+									paddingTop: 20,
+									marginTop: 4
+								}}>
+									<div style={{ position: 'relative', marginBottom: 10 }}>
+										<div
+											style={{
+												fontSize: 16,
+												fontWeight: 700,
+												color: '#b45309',
+												cursor: 'help',
+												display: 'inline-block',
+												borderBottom: '1px dotted #9ca3af',
+												userSelect: 'none'
+											}}
+											onMouseEnter={() => handleTooltipHover('golden-key', true)}
+											onMouseLeave={() => handleTooltipHover('golden-key', false)}
+											onClick={() => handleTooltipClick('golden-key')}
+										>
+											⚡ Golden Key Bonus
+										</div>
+
+										{/* Golden key tooltip */}
+										{showTooltip('golden-key') && (
+											<div style={{
+												position: 'absolute',
+												top: '100%',
+												left: 0,
+												marginTop: 6,
+												background: '#1f2937',
+												color: '#fff',
+												padding: '8px 12px',
+												borderRadius: 6,
+												fontSize: 12,
+												lineHeight: 1.4,
+												boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+												zIndex: 10,
+												maxWidth: 280,
+												whiteSpace: 'normal'
+											}}>
+												Extra time added to <strong>all play timers</strong> when golden key is earned (completing 4/5 work phases) or applied by facilitator.
+											</div>
+										)}
+									</div>
+
+									<div style={{ maxWidth: 240 }}>
+										<input
+											type="number"
+											min="1"
+											max="60"
+											value={phaseTimers.golden_key_bonus_min}
+											onChange={(e) => handleGoldenKeyChange(e.target.value)}
+											style={{
+												width: '100%',
+												padding: '10px 12px',
+												border: '2px solid #d1d5db',
+												borderRadius: 8,
+												fontSize: 18,
+												fontWeight: 700,
+												textAlign: 'center',
+												color: '#b45309',
+												background: '#fffbeb'
+											}}
+										/>
+										<div style={{ 
+											fontSize: 11, 
+											color: '#6b7280', 
+											marginTop: 4, 
+											textAlign: 'center' 
+										}}>
+											bonus minutes per phase
+										</div>
+									</div>
 								</div>
 							</div>
 						)}
@@ -521,17 +809,6 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 					</div>
 				</div>
 			</div>
-
-			{/* Phase Timers Sub-Overlay */}
-			<PhaseTimersOverlay
-				isOpen={showTimersOverlay}
-				initialTimers={phaseTimers}
-				onClose={() => setShowTimersOverlay(false)}
-				onSave={(updatedTimers) => {
-					setPhaseTimers(updatedTimers);
-					setShowTimersOverlay(false);
-				}}
-			/>
-		</>
+		</div>
 	);
 }
